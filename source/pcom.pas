@@ -246,7 +246,11 @@ type                                                        (*describing:*)
                colon,becomes,range,labelsy,constsy,typesy,varsy,funcsy,progsy,
                procsy,setsy,packedsy,arraysy,recordsy,filesy,beginsy,ifsy,
                casesy,repeatsy,whilesy,forsy,withsy,gotosy,endsy,elsesy,untilsy,
-               ofsy,dosy,tosy,downtosy,thensy,nilsy,othersy);
+               ofsy,dosy,tosy,downtosy,thensy,nilsy,forwardsy,modulesy,usessy,
+               privatesy,externalsy,viewsy,fixedsy,processsy,monitorsy,sharesy,
+               classsy,issy,overloadsy,overridesy,referencesy,joinssy,staticsy,
+               inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
+               resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy);
      operator = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
                  neop,eqop,inop,noop);
      setofsys = set of symbol;
@@ -1175,6 +1179,7 @@ var
     303: write('Value to be assigned is out of bounds');
     304: write('Element expression out of range');
 
+    397: write('Feature not valid in ISO 7185 Pascal');
     398: write('Implementation restriction');
     399: write('Feature not implemented');
 
@@ -1308,7 +1313,13 @@ var
           if k <= reslen then
             for i := frw[k] to frw[k+1] - 1 do
               if strequri(rw[i], id) then
-                begin sy := rsy[i]; op := rop[i] end;
+                begin sy := rsy[i]; op := rop[i];
+                  { if in ISO 7185 mode and keyword is extended, then revert it
+                    to label. Note that forward and external get demoted to
+                    "word symbols" in ISO 7185 }
+                  if iso7185 and (sy >= forwardsy) then
+                    begin sy := ident; op := noop end 
+                end;
       end;
       number:
         begin op := noop; i := 0;
@@ -1451,8 +1462,11 @@ var
          until iscmte or (ch = ')') or eof(prd);
          if not iscmte then nextch; goto 1
        end;
-      chrem: begin repeat nextch until eol; { '!' skip next line }
-       goto 1 end;
+      chrem: 
+       begin if iso7185 then error(397); 
+         repeat nextch until eol; { '!' skip next line }
+         goto 1 
+       end;
       special:
         begin sy := ssy[ch]; op := sop[ch];
           nextch
@@ -1487,7 +1501,22 @@ var
          forsy: write('for'); withsy: write('with'); gotosy: write('goto');
          endsy: write('end'); elsesy: write('else'); untilsy: write('until');
          ofsy: write('of'); dosy: write('do'); tosy: write('to');
-         downtosy: write('downto'); thensy: write('then');
+         downtosy: write('downto'); thensy: write('then'); 
+         forwardsy: write('forward'); modulesy: write('module'); 
+         usessy: write('uses'); privatesy:write('private'); 
+         externalsy: write('external'); viewsy: write('view'); 
+         fixedsy: write('fixed'); processsy: write('process');
+         monitorsy: write('monitor'); sharesy: write('share');
+         classsy: write('class'); issy: write('is'); 
+         overloadsy: write('overload'); overridesy: write('override');
+         referencesy: write('reference'); joinssy: write('joins');
+         staticsy: write('static'); inheritedsy: write('inherited');
+         selfsy: write('self'); virtualsy: write('virtual');
+         trysy: write('try'); exceptsy: write('except');
+         extendssy: write('extends'); onsy: write('on');
+         resultsy: write('result'); operatorsy: write('operator');
+         outsy: write('out'); propertysy: write('property');
+         channelsy: write('channel'); streamsy: write('stream');
          othersy: write('<other>');
       end;
       writeln
@@ -5706,18 +5735,29 @@ var
 
     procedure symbols;
     begin
-      rsy[ 1] := ifsy;      rsy[ 2] := dosy;      rsy[ 3] := ofsy;
-      rsy[ 4] := tosy;      rsy[ 5] := relop;     rsy[ 6] := addop;
-      rsy[ 7] := endsy;     rsy[ 8] := forsy;     rsy[ 9] := varsy;
-      rsy[10] := mulop;     rsy[11] := mulop;     rsy[12] := setsy;
-      rsy[13] := mulop;     rsy[14] := notsy;     rsy[15] := nilsy;
-      rsy[16] := thensy;    rsy[17] := elsesy;    rsy[18] := withsy;
-      rsy[19] := gotosy;    rsy[20] := casesy;    rsy[21] := typesy;
-      rsy[22] := filesy;    rsy[23] := beginsy;   rsy[24] := untilsy;
-      rsy[25] := whilesy;   rsy[26] := arraysy;   rsy[27] := constsy;
-      rsy[28] := labelsy;   rsy[29] := repeatsy;  rsy[30] := recordsy;
-      rsy[31] := downtosy;  rsy[32] := packedsy;  rsy[33] := progsy;
-      rsy[34] := funcsy;    rsy[35] := procsy;
+      rsy[ 1] := ifsy;       rsy[ 2] := dosy;       rsy[ 3] := ofsy;
+      rsy[ 4] := tosy;       rsy[ 5] := relop;      rsy[ 6] := addop;
+      rsy[ 7] := endsy;      rsy[ 8] := forsy;      rsy[ 9] := varsy;
+      rsy[10] := mulop;      rsy[11] := mulop;      rsy[12] := setsy;
+      rsy[13] := mulop;      rsy[14] := notsy;      rsy[15] := nilsy;
+      rsy[16] := thensy;     rsy[17] := elsesy;     rsy[18] := withsy;
+      rsy[19] := gotosy;     rsy[20] := casesy;     rsy[21] := typesy;
+      rsy[22] := filesy;     rsy[23] := beginsy;    rsy[24] := untilsy;
+      rsy[25] := whilesy;    rsy[26] := arraysy;    rsy[27] := constsy;
+      rsy[28] := labelsy;    rsy[29] := repeatsy;   rsy[30] := recordsy;
+      rsy[31] := downtosy;   rsy[32] := packedsy;   rsy[33] := progsy;
+      rsy[34] := funcsy;     rsy[35] := procsy;     rsy[36] := forwardsy;  
+      rsy[37] := modulesy;   rsy[38] := usessy;      rsy[39] := privatesy;  
+      rsy[40] := externalsy; rsy[41] := viewsy;      rsy[42] := fixedsy;    
+      rsy[43] := processsy;  rsy[44] := monitorsy;   rsy[45] := sharesy;    
+      rsy[46] := classsy;    rsy[47] := issy;        rsy[48] := overloadsy; 
+      rsy[49] := overridesy; rsy[50] := referencesy; rsy[51] := joinssy;    
+      rsy[52] := staticsy;   rsy[53] := inheritedsy; rsy[54] := selfsy;     
+      rsy[55] := virtualsy;  rsy[56] := trysy;       rsy[57] := exceptsy;   
+      rsy[58] := extendssy;  rsy[59] := onsy;        rsy[60] := resultsy;   
+      rsy[61] := operatorsy; rsy[62] := outsy;       rsy[63] := propertysy; 
+      rsy[64] := channelsy;  rsy[65] := streamsy;        
+      
       ssy['+'] := addop ;   ssy['-'] := addop;    ssy['*'] := mulop;
       ssy['/'] := mulop ;   ssy['('] := lparent;  ssy[')'] := rparent;
       ssy['$'] := othersy ; ssy['='] := relop;    ssy[' '] := othersy;
