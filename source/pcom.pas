@@ -210,7 +210,7 @@ const
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 39;  { number of standard identifiers }
-   maxres     = 35;  { number of reserved words }
+   maxres     = 65;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
@@ -230,8 +230,8 @@ const
 
    { version numbers }
 
-   majorver   = 1; { major version number }
-   minorver   = 3; { minor version number }
+   majorver   = 0; { major version number }
+   minorver   = 1; { minor version number }
    experiment = true; { is version experimental? }
 
 type                                                        (*describing:*)
@@ -251,7 +251,7 @@ type                                                        (*describing:*)
                  neop,eqop,inop,noop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
-             chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt);
+             chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem);
      { Here is the variable length string containment to save on space. strings
        strings are only stored in their length rounded to the nearest 10th. }
      strvsp = ^strvs; { pointer to variable length id string }
@@ -430,6 +430,7 @@ var
     chkref: boolean;                { -- Reference checks }
     chkudtc, chkudtf: boolean;      { -- Check undefined tagfields, candidate
                                          and final }
+    iso7185: boolean;               { -- restrict to iso7185 language }
     option: array ['a'..'z'] of     { option array }
               boolean;
 
@@ -1264,6 +1265,8 @@ var
           switch(chkref)
         else if ch1 = 'u' then
           switch(chkudtc)
+        else if ch1 = 's' then
+          switch(iso7185)
         else if ch1 in ['a'..'z'] then
           switch(dummy) { pass through unknown options }
         else begin 
@@ -1448,6 +1451,8 @@ var
          until iscmte or (ch = ')') or eof(prd);
          if not iscmte then nextch; goto 1
        end;
+      chrem: begin repeat nextch until eol; { '!' skip next line }
+       goto 1 end;
       special:
         begin sy := ssy[ch]; op := sop[ch];
           nextch
@@ -5635,7 +5640,7 @@ var
     prtables := false; option['t'] := false; list := true; option['l'] := true;
     prcode := true; option['c'] := true; debug := true; option['d'] := true;
     chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
-    chkudtc := true; option['u'] := true;
+    chkudtc := true; option['u'] := true; option['s'] := false; iso7185 := false;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;
@@ -5683,7 +5688,18 @@ var
       rw[25] := 'while    '; rw[26] := 'array    '; rw[27] := 'const    ';
       rw[28] := 'label    '; rw[29] := 'repeat   '; rw[30] := 'record   ';
       rw[31] := 'downto   '; rw[32] := 'packed   '; rw[33] := 'program  ';
-      rw[34] := 'function '; rw[35] := 'procedure';
+      rw[34] := 'function '; rw[35] := 'procedure'; rw[36] := 'forward  ';
+      rw[37] := 'module   '; rw[38] := 'uses     '; rw[39] := 'private  ';
+      rw[40] := 'external '; rw[41] := 'view     '; rw[42] := 'fixed    ';
+      rw[43] := 'process  '; rw[44] := 'monitor  '; rw[45] := 'share    ';
+      rw[46] := 'class    '; rw[47] := 'is       '; rw[48] := 'overload ';
+      rw[49] := 'override '; rw[50] := 'reference'; rw[51] := 'joins    ';
+      rw[52] := 'static   '; rw[53] := 'inherited'; rw[54] := 'self     ';
+      rw[55] := 'virtual  '; rw[56] := 'try      '; rw[57] := 'except   ';
+      rw[58] := 'extends  '; rw[59] := 'on       '; rw[60] := 'result   ';
+      rw[61] := 'operator '; rw[62] := 'out      '; rw[63] := 'property ';
+      rw[64] := 'channel  '; rw[65] := 'stream   ';
+      
       frw[1] :=  1; frw[2] :=  1; frw[3] :=  7; frw[4] := 16; frw[5] := 23;
       frw[6] := 29; frw[7] := 33; frw[8] := 34; frw[9] := 35; frw[10] := 36;
     end (*reswords*) ;
@@ -5806,6 +5822,7 @@ var
       chartp['V'] := letter  ; chartp['W'] := letter  ;
       chartp['X'] := letter  ; chartp['Y'] := letter  ;
       chartp['Z'] := letter  ;
+      chartp['_'] := letter  ;
       chartp['0'] := number  ;
       chartp['1'] := number  ; chartp['2'] := number  ;
       chartp['3'] := number  ; chartp['4'] := number  ;
@@ -5822,7 +5839,7 @@ var
       chartp['^'] := special ; chartp[';'] := special ;
       chartp['<'] := chlt    ; chartp['>'] := chgt    ;
       chartp['{'] := chlcmt  ; chartp['}'] := special ;
-      chartp['@'] := special ;
+      chartp['@'] := special ; chartp['!'] := chrem   ;
 
       ordint['0'] := 0; ordint['1'] := 1; ordint['2'] := 2;
       ordint['3'] := 3; ordint['4'] := 4; ordint['5'] := 5;
@@ -5976,16 +5993,18 @@ begin
   if marksl = 0 then;    
   if maxresult = 0 then; 
   if maxsize = 0 then;   
-  
-  write('P5 Pascal compiler vs. ', majorver:1, '.', minorver:1);
-  if experiment then write('.x');
-  writeln;
-  writeln('Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.');
-  writeln;
 
   (*initialize*)
   (************)
   initscalars; initsets; inittables;
+  
+  write('P6 Pascal compiler vs. ', majorver:1, '.', minorver:1);
+  if experiment then write('.x');
+  writeln;
+  if iso7185 then begin
+    writeln('Pascal-P6 complies with the requirements of level 0 of ISO/IEC 7185.');
+    writeln
+  end;
 
   (*enter standard names and standard types:*)
   (******************************************)
