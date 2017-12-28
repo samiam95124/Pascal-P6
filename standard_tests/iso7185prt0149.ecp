@@ -1,0 +1,30 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 149: Missing first variable in with statement list 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0149; 
+     8      -32  
+     9      -32 var a: record b, c: integer end; 
+    10      -32     d: record e, f: integer end; 
+    11      -32  
+    12      -32 begin 
+    13        3  
+    14        3    with ,d do e := f 
+    14   ****           ^2
+    15        5  
+    16        5 end. 
+a          unreferenced
+
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+  2  Identifier expected
+

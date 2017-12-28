@@ -1,0 +1,17 @@
+************************** WHATS NEW IN THIS VERSION ***************************
+
+Welcome to version 1.2
+
+2013/11/11
+
+- Added run of P4 on P5 to regression test suite.
+
+- Added a section on use of GPC under Mingw/msys to installation descriptions.
+
+- Fixed error generated on p2 directory fixups.
+
+- Removed 7185 documentation, which was claimed as an ISO copyright violation.
+
+- Fixed overflow check bug in pint.
+
+********************************************************************************

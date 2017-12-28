@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Compile pcom using IP Pascal
+#
+# *** This script does not work, use the .bat file.
+# There is a problem with getting command parameters from Bash.
+#
+
+if [ ! -f pcom.pas ]
+then
+   echo "*** Error: Missing pcom.pas file"
+   exit 1
+fi
+
+echo
+echo Compiling pcom.pas to create pcom.exe
+echo
+echo pc pcom /standard /nrf /r

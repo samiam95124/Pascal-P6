@@ -1,0 +1,47 @@
+Pascal-P5 is derived from the original sources of the Pascal-P compiler from
+ETH Zurich, as created by Niklaus Wirth and his students. It was and is public
+domain, as acknowledged by Professor Wirth, and I add my modifications to it to
+the public domain as well.
+
+Public domain is a widely misunderstood concept. There is no "license" possible
+nor needed for public domain works. There are no restrictions on it's use, nor 
+do it's authors have any rights to it. It can be used for any purpose, public or
+private, and distributed or modified for any use whatever, paid or not.
+
+The following are typical answers to questions about public domain works in
+general, and this work in specific.
+
+Q. The Berne convention states that copyright in europe, where Pascal-P 
+originated, is automatic. Doesn't that make Pascal-P a copyrighted work?
+
+A. The laws in all copyright countries dictate what must be done to qualify
+as a copyrighted work. Since there is no specific legal agreement concerning
+public domain work, public domain is shaped by what constitutes enforceable
+copyright. The most common features of public domain are, but not limited to:
+
+   1. The author has stated the work is public domain.
+   
+   2. The work has been distributed freely and with knowledge of the author(s).
+   
+In the case of Pascal-P, both are true.
+
+Q. Dosen't public domain mean that I may no longer be able to gain access to the
+source?
+
+A. If every copy of the work were to be erased or burned, but that is virtually
+impossible. Nobody can order you to release your copy since, by definition, 
+there are no "rights" to a public domain work.
+
+Q. Can't someone just copyright or patent the work later?
+
+A. Showing that a work is in the public domain is part of denying copyright or
+patent to a work. By definition, a legitimate public domain work cannot later
+be copyrighted or patented.
+
+Q. Can't someone improve the work, then gain rights to that derived work and
+thus restrict it's use?
+
+A. Anyone can improve a public domain work, but they only have rights to their
+improvements, not to the original work. If their improvements are trivial, then
+it would be trivial for others to add that functionality. If it is not trivial,
+then you might want to pay for it.

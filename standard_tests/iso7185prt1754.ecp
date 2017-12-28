@@ -1,0 +1,29 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1754: On reading an integer from a textfile, after skipping preceding 
+     4      -32                spaces and end-of-lines, it is an error if the rest of the  
+     5      -32                sequence does not form a signed-integer. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.9.1 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1754(output); 
+    12      -32  
+    13      -32 var a: text; 
+    14      -32     b: integer; 
+    15      -32  
+    16      -32 begin 
+    17        3  
+    18        3    rewrite(a); 
+    19        7    writeln(a, '      five       '); 
+    20       14    reset(a); 
+    21       16    read(a, b) 
+    22       21  
+    23       21 end. 
+
+Errors in program: 0

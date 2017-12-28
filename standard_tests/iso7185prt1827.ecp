@@ -1,0 +1,37 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1827: Files of files 
+     4      -32  
+     5      -32     File in substructure. 
+     6      -32     ISO 7185 6.4.3.5 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1827; 
+    11      -32  
+    12      -32 type r = record 
+    13      -32  
+    14      -32             i: integer; 
+    15      -32             f: text 
+    16      -32  
+    17      -32          end; 
+    18      -32  
+    19      -32 var f: file of r; 
+    19   ****                   ^190
+    20      -32  
+    21      -32 begin 
+    22        3  
+    23        3    rewrite(f) 
+    24        7  
+    25        7 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+190  File component may not contain other files
+

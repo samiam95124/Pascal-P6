@@ -1,0 +1,29 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 404: Missing ')' on enumeration 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0404; 
+     8      -32  
+     9      -32 var a: (one, two, three; 
+     9   ****                          ^4
+    10      -32  
+    11      -32 begin 
+    12        3  
+    13        3    a := one; 
+    14        8    a := two; 
+    15       11    a := three 
+    16       11  
+    17       11 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+  4  ')' expected
+

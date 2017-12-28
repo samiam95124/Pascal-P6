@@ -1,0 +1,34 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 804: Missing second parameter in parameter list 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0804; 
+     8      -32  
+     9      -32 procedure test(a, b: integer); 
+    10      -40  
+    11      -40 begin 
+    12        3  
+    13        3    a := 1; 
+    14        7    b := 1 
+    15        7  
+    16        7 end; 
+    17       10  
+    18       10 begin 
+    19       10  
+    20       10    test(1, ) 
+    20   ****              ^58
+    21       14  
+    22       14 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+ 58  Error in factor
+

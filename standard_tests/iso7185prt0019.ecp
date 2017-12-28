@@ -1,0 +1,28 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 19: Missing constant right side 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0019(output); 
+     8      -32  
+     9      -32 const one; 
+     9   ****            ^16,50
+    10      -32  
+    11      -32 begin 
+    12        3  
+    13        3    writeln(one) 
+    14        6  
+    15        6 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+ 16  '=' expected
+ 50  Error in constant
+

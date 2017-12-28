@@ -1,0 +1,36 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 606: Missing parameter specification after 'var' 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0606; 
+     8      -32  
+     9      -32 var b: integer; 
+    10      -32  
+    11      -32 procedure a(var ); 
+    11   ****                   ^2,7,5
+    12      -32  
+    13      -32 begin 
+    14        3 end; 
+    15        6  
+    16        6 begin 
+    17        6  
+    18        6    a(b) 
+    18   ****       ^126
+    19        9  
+    20        9 end. 
+
+Errors in program: 4
+
+Error numbers in listing:
+-------------------------
+  2  Identifier expected
+  5  ':' expected
+  7  Error in parameter list
+126  Number of parameters does not agree with declaration
+

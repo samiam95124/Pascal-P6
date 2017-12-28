@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Script to run a pint self compile
+#
+# First, change elide patterns to #ove prd and prr file statements.
+# The modified file goes in pintm.pas (pint modified).
+#
+sed -e 's/{elide}/{/g' -e 's/{noelide}/}/g' -e 's/{remove//g' -e 's/remove}//g' source/pint.pas > pintm.pas
+#
+# Compile the final target, the PAT
+#
+echo Compiling the ISO 7185 PAT
+compile standard_tests/iso7185pat
+cat standard_tests/iso7185pat.err
+#
+# Compile pint itself
+#
+echo Compiling pint to intermediate code
+compile pintm
+cat pintm.err
+#
+# Add the final target program (the pat) to the end of pint.
+# This means that the version of pint will read and interpret
+# this.
+#
+cat pintm.p5 standard_tests/iso7185pat.p5 > tmp.p5
+rm pintm.p5
+mv tmp.p5 pintm.p5
+#
+# Create null input file
+#
+echo > pintm.inp
+#
+# Now run pint on pint, which runs the PAT.
+#
+echo Running pint on itself, to run the ISO 7185 PAT
+run pintm
+cp pintm.lst standard_tests/iso7185pats.lst
+echo -n "Comparing PAT result to reference ... "
+diffnole standard_tests/iso7185pats.lst standard_tests/iso7185pats.cmp > standard_tests/iso7185pats.dif
+if test -s iso7185pats.dif
+then
+    echo FAILED
+else
+    echo PASS
+fi
+
+#
+# Show the file, so if the length is zero, it compared ok.
+#
+#echo Resulting diff file length should be zero for pass
+#ls -l standard_tests/iso7185pats.dif

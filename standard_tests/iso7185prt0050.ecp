@@ -1,0 +1,32 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 50: Misspelled function 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0050(output); 
+     8      -32  
+     9      -32 funktion x: integer; begin end; 
+     9   ****          ^18                    ^6
+    10        3  
+    11        3 begin 
+    11   ****       ^21
+    12        3  
+    13        3    writeln(x) 
+    13   ****              ^104
+    14        6  
+    15        6 end. 
+
+Errors in program: 4
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+ 18  Error in declaration part
+ 21  '.' expected
+104  Identifier not declared
+

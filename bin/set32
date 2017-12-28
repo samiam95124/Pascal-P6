@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#
+# Convert pcom and pint to 64 bit definitions
+#
+function replace {
+
+    sed "s/$1\(\s*\)=\(\s*\){\([0-9][0-9]*\)}\(\s*\)\([0-9][0-9]*\)/$1\1=\2\3\4{\5}/" <  $2 > temp
+    cp temp $2
+
+}
+
+function replaceinfile {
+
+    replace intsize $1
+    replace intdig $1
+    replace inthex $1
+    replace ptrsize $1
+    replace adrsize $1
+    replace stackelsize $1
+    replace marksize $1
+    replace begincode $1
+    replace markfv $1
+    replace marksl $1
+    replace markdl $1
+    replace markep $1
+    replace marksb $1
+    replace market $1
+    replace markra $1
+
+}
+
+replaceinfile source/pcom.pas
+replaceinfile source/pint.pas

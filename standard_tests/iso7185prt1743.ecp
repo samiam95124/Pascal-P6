@@ -1,0 +1,27 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1743: An expression denotes a value unless a variable denoted by a 
+     4      -32                variable-access contained by the expression is undefined at the 
+     5      -32                time of its use, in which case that use is an error. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.7.1 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1743(output); 
+    12      -32  
+    13      -32 var a: integer; 
+    14      -32  
+    15      -32 begin 
+    16        3  
+    17        3    { In this case the undefined variable is output to force the error, if it can 
+    18        3      be done. Not many compilers check for undefines. } 
+    19        3    write(a) 
+    20       10  
+    21       10 end. 
+
+Errors in program: 0

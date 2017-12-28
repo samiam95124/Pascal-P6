@@ -1,0 +1,27 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 41: Missing "procedure" or "function" 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0041; 
+     8      -32  
+     9      -32 x; begin end; 
+     9   ****   ^18         ^6
+    10        3  
+    11        3 begin 
+    11   ****       ^21
+    12        3 end. 
+
+Errors in program: 3
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+ 18  Error in declaration part
+ 21  '.' expected
+

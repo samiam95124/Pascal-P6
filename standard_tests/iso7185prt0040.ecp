@@ -1,0 +1,31 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 40: Reverse order between type and var 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0040(output); 
+     8      -32  
+     9      -32 var   one: integer; 
+    10      -32  
+    11      -32 type  integer = char; 
+    11   ****      ^18
+    12      -32  
+    13      -32 begin 
+    14        3  
+    15        3    writeln(one) 
+    16       10  
+    17       10 end. 
+integer    unreferenced
+
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+ 18  Error in declaration part
+

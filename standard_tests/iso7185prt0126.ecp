@@ -1,0 +1,36 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 126: Missing "while" on while statement 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0126; 
+     8      -32  
+     9      -32 var a, b: integer; 
+    10      -32  
+    11      -32 begin 
+    12        3  
+    13        3    1=1 do a := b 
+    13   ****      ^167^5,6
+    14        5  
+    15        5 end. 
+label           1 unreferenced
+                     
+b          unreferenced
+a          unreferenced
+
+    15   ****      ^168
+
+Errors in program: 4
+
+Error numbers in listing:
+-------------------------
+  5  ':' expected
+  6  Illegal symbol
+167  Undeclared label
+168  Undefined label
+

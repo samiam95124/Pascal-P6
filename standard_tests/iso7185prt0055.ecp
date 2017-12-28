@@ -1,0 +1,34 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 55: Reverse order between var and function 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0055(output); 
+     8      -32  
+     9      -32 function x: integer; begin x := 1 end; 
+    10        8  
+    11        8 var y: integer; 
+    11   ****     ^6
+    12      -36  
+    13      -36 begin 
+    14        8  
+    15        8    writeln(x, y) 
+    16       19  
+    17       19 end. 
+    17   ****      ^6,14,18,17,6,13
+
+Errors in program: 7
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+ 13  'end' expected
+ 14  ';' expected
+ 17  'begin' expected
+ 18  Error in declaration part
+

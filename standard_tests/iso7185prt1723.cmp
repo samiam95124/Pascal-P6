@@ -1,0 +1,9 @@
+P5 Pascal interpreter vs. 1.3.x
+
+Assembling/loading program
+Running program
+
+
+*** Runtime error [17]: Dispose nil pointer      
+
+program complete

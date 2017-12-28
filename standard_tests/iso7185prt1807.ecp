@@ -1,0 +1,47 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1807: Threats to FOR statement index. 
+     4      -32  
+     5      -32     Threat in same scope block, read or readln. 
+     6      -32     ISO 7185 6.8.3.9 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1807(output); 
+    11      -32  
+    12      -32 var i: integer; 
+    13      -32     f: file of integer; 
+    14      -32  
+    15      -32 procedure a; 
+    16      -32  
+    17      -32 begin 
+    18        3  
+    19        3    read(f, i) 
+    20        9  
+    21        9 end; 
+    22       11  
+    23       11 begin 
+    24       11  
+    25       11    rewrite(f); 
+    26       15    write(f, 10); 
+    27       19    reset(f); 
+    28       21    for i := 1 to 10 do begin 
+    28   ****          ^195
+    29       31  
+    30       31       write(i:1, ' ') 
+    31       39  
+    32       39    end; 
+    33       50    a 
+    34       50  
+    35       50 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+195  For loop index is threatened
+

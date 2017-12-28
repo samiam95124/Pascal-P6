@@ -1,0 +1,34 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1900: Elide of type 
+     4      -32  
+     5      -32    Type description completely missing. 
+     6      -32  
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1900(output); 
+    11      -32  
+    12      -32 var 
+    13      -32     avi:   { packed [1..10] of integer} ; 
+    13   ****                                           ^10
+    14      -32     pavi:  packed array [1..10] of integer; 
+    15      -32     i:     integer; 
+    16      -32  
+    17      -32 begin 
+    18        3  
+    19        3     for i := 1 to 10 do pavi[i] := i+10; 
+    20       34     unpack(pavi, avi, 1); 
+    21       40  
+    22       40 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+ 10  Error in type
+

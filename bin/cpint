@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Compile pint using IP Pascal
+#
+# This script does not work, use the .bat file.
+# There is a problem with getting command parameters from Bash.
+#
+
+if [ ! -f pint.pas ]
+then
+   echo "*** Error: Missing pint.pas file"
+   exit 1
+fi
+
+echo
+echo Compiling pint.pas to create pint.exe
+echo
+pc pint/standard/nrf/r

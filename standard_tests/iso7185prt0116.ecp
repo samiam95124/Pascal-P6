@@ -1,0 +1,46 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 116: Misspelled "case" on case statement 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0116; 
+     8      -32  
+     9      -32 var x, a: integer; 
+    10      -32  
+    11      -32 begin 
+    12        3  
+    13        3    csae x of  
+    13   ****         ^104^59
+    14        5  
+    15        5       1: a := 1; 
+    16        6       2: a := 2 
+    16   ****         ^167
+    17        6  
+    18        6    end 
+    19        8  
+    20        8 end.
+label           2 unreferenced
+                    
+x          unreferenced
+ 
+    20   ****     ^168,6
+   *** eof encountered
+
+    21   ****  ^21
+
+Errors in program: 6
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+ 21  '.' expected
+ 59  Error in variable
+104  Identifier not declared
+167  Undeclared label
+168  Undefined label
+

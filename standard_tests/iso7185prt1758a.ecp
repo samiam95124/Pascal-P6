@@ -1,0 +1,32 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1758a: On writing to a textfile, the values of TotalWidth and  
+     4      -32                 FracDigits are greater than or equal to one ; it is an error if 
+     5      -32                 either value is less than one. 
+     6      -32  
+     7      -32                 ISO 7185 reference: 6.9.3.1 
+     8      -32  
+     9      -32                 Divided into: 
+    10      -32  
+    11      -32                 A: TotalWidth is zero. 
+    12      -32  
+    13      -32                 B: FracDigits is zero. 
+    14      -32  
+    15      -32 } 
+    16      -32  
+    17      -32 program iso7185prt1758a(output); 
+    18      -32  
+    19      -32 var a: real; 
+    20      -32  
+    21      -32 begin 
+    22        3  
+    23        3    a := 1.0; 
+    24        7    write(a: 0) 
+    25       12  
+    26       12 end. 
+
+Errors in program: 0

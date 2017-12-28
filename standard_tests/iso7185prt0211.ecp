@@ -1,0 +1,36 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 211: Misspelled 'of' on variant 
+     4      -32  
+     5      -32 } 
+     6      -32  
+     7      -32 program iso7185prt0211; 
+     8      -32  
+     9      -32 var a: record b, c: integer; 
+    10      -32               case d: boolean fo 
+    10   ****                                  ^8,104
+    11      -32                  true: (); 
+    11   ****                       ^6
+    12      -32                  false: () 
+    12   ****                         ^178
+    13      -32        end; 
+    14      -32  
+    15      -32 begin 
+    16        3  
+    17        3    a.b := 1 
+    18        5  
+    19        5 end. 
+
+Errors in program: 4
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+  8  'of' expected
+104  Identifier not declared
+178  Multidefined record variant
+

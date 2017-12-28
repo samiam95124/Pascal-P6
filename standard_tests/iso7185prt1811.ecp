@@ -1,0 +1,29 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1811: State of for loop index after loop 
+     4      -32  
+     5      -32     Test undefined value of loop index after for. 
+     6      -32     ISO 7185 6.8.3.9 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1811(output); 
+    11      -32  
+    12      -32 var i: integer; 
+    13      -32  
+    14      -32 begin 
+    15        3  
+    16        3    for i := 1 to 10 do begin 
+    17       15  
+    18       15       write(i:1, ' ') 
+    19       23  
+    20       23    end; 
+    21       34    write(i:1) 
+    22       39  
+    23       39 end. 
+
+Errors in program: 0

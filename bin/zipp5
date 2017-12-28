@@ -1,0 +1,5 @@
+#!/bin/bash
+#
+# Make Zip archive of this directory
+#
+zip -r p5.zip *

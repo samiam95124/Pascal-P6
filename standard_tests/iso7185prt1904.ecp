@@ -1,0 +1,36 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1904: if statement 
+     4      -32  
+     5      -32     the condition part of an if statement must have boolean type 
+     6      -32 ISO 7185 6.8.3.4 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1904(output); 
+    11      -32  
+    12      -32 type myBoolean = (myFalse, myTrue); 
+    13      -32  
+    14      -32 var b: myBoolean; 
+    15      -32  
+    16      -32 begin 
+    17        3  
+    18        3    b := myTrue; 
+    19        8    if b then 
+    19   ****              ^144
+    20       10       writeln('error not detected'); 
+    21       18  
+    22       18 end. 
+myFalse    unreferenced
+
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+144  Illegal type of expression
+

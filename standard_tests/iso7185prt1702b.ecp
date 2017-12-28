@@ -1,0 +1,52 @@
+P5 Pascal compiler vs. 1.3.x
+Pascal-P5 complies with the requirements of level 0 of ISO/IEC 7185.
+
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     4      -32                each reference and access to each component of the variant. 
+     5      -32  
+     6      -32                ISO 7185 reference: 6.5.3.3 
+     7      -32  
+     8      -32                There are four possible cases for active variants: 
+     9      -32  
+    10      -32                   A: Reference to discriminated variant. 
+    11      -32                   B: Change to the tagfield of a discriminated variant with 
+    12      -32                      an outstanding reference. 
+    13      -32                   C: Read of an undiscriminated variant after a write. 
+    14      -32                   D: Write of an undiscriminated variant with outstanding 
+    15      -32                      reference. 
+    16      -32  
+    17      -32                This is case B. 
+    18      -32 } 
+    19      -32  
+    20      -32 program iso7185prt1702(output); 
+    21      -32  
+    22      -32 var a: record case val: boolean of 
+    23      -32  
+    24      -32           true: (i: integer); 
+    25      -32           false: (c: char); 
+    26      -32  
+    27      -32        end; 
+    28      -32  
+    29      -32 procedure b(var i: integer); 
+    30      -36  
+    31      -36 begin 
+    32        3  
+    33        3    { Outstanding references are dificult to track. The error should occur 
+    34        3      when the variant is changed, but could also be differed to the time the bad 
+    35        3      variant is assigned. } 
+    36        3    a.val := false; 
+    37        9    i := 1 
+    38       10  
+    39       10 end; 
+    40       13  
+    41       13 begin 
+    42       13  
+    43       13    a.val := true; 
+    44       19    b(a.i) 
+    45       25  
+    46       25 end. 
+
+Errors in program: 0
