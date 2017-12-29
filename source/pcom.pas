@@ -372,6 +372,7 @@ type                                                        (*describing:*)
                    defined: boolean; { label defining point was seen }
                    labval,           { numeric value of label }
                    labname: integer; { internal sequental name of label }
+                   labid:   strvsp;  { id in case of identifier label }
                    vlevel: levrange; { procedure level of definition }
                    slevel:  integer; { statement level of definition }
                    ipcref:  boolean; { was referenced by another proc/func }
@@ -578,6 +579,7 @@ var
   { recycle label entry }
   procedure putlab(p: lbp);
   begin
+     putstrs(p^.labid); { release any id label } 
      dispose(p); { release entry }
      lbpcnt := lbpcnt-1 { remove from count }
   end;
@@ -1043,6 +1045,7 @@ var
     19:  write('Error in field-list');
     20:  write(''','' expected');
     21:  write('''.'' expected');
+    22:  write('Integer or identifier expected');
 
     50:  write('Error in constant');
     51:  write(''':='' expected');
@@ -1939,13 +1942,18 @@ var
     nxtlab := intlabel
   end (*genlabel*);
 
-  procedure searchlabel(var llp: lbp; level: disprange);
+  procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
   var fllp: lbp; { found label entry }
   begin
     fllp := nil; { set no label found }
     llp := display[level].flabel; { index top of label list }
     while llp <> nil do begin { traverse }
-      if llp^.labval = val.ival then begin { found }
+      if isid and (llp^.labid <> nil) then begin { id type label }
+        if strequvf(llp^.labid, id) then begin
+          fllp := llp; { set entry found }
+          llp := nil { stop }        
+        end
+      end else if not isid and (llp^.labval = val.ival) then begin { found }
         fllp := llp; { set entry found }
         llp := nil { stop }
       end else llp := llp^.nextlab { next in list }
@@ -1953,13 +1961,16 @@ var
     llp := fllp { return found entry or nil }
   end;
 
-  procedure newlabel(var llp: lbp);
+  procedure newlabel(var llp: lbp; isid: boolean);
   var lbname: integer;
   begin
     with display[top] do
       begin getlab(llp);
         with llp^ do
-          begin labval := val.ival; if labval > 9999 then error(261);
+          begin labid := nil; labval := 0; 
+            if isid then strassvf(labid, id) { id type label }
+            else labval := val.ival; { numeric type label }
+            if labval > 9999 then error(261);
             genlabel(lbname); defined := false; nextlab := flabel; 
             labname := lbname; vlevel := level; slevel := 0; 
             ipcref := false; minlvl := maxint; bact := false; 
@@ -2606,12 +2617,13 @@ var
           test: boolean;
     begin
       repeat
-        if sy = intconst then begin
-          searchlabel(llp, top); { search preexisting label }
+        if (sy = intconst) or (sy = ident) then begin
+          if sy = ident then chkstd;
+          searchlabel(llp, top, sy = ident); { search preexisting label }
           if llp <> nil then error(166) { multideclared label }
-          else newlabel(llp);
+          else newlabel(llp, sy = ident);
           insymbol
-        end else error(15);
+        end else if iso7185 then error(15) else error(22);
         if not ( sy in fsys + [comma, semicolon] ) then
           begin error(6); skip(fsys+[comma,semicolon]) end;
         test := sy <> comma;
@@ -3423,7 +3435,7 @@ var
       end (*putlabel*);
 
       procedure statement(fsys: setofsys);
-        var lcp: ctp; llp: lbp;
+        var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean;
 
         procedure expression(fsys: setofsys; threaten: boolean); forward;
 
@@ -4879,13 +4891,14 @@ var
           var llp: lbp; ttop,ttop1: disprange;
 
         begin
-          if sy = intconst then
+          if (sy = intconst) or (sy = ident) then
             begin
+              if sy = ident then chkstd;
               ttop := top;
               while display[ttop].occur <> blck do ttop := ttop - 1;
               ttop1 := ttop;
               repeat
-                searchlabel(llp, ttop); { find label }
+                searchlabel(llp, ttop, sy = ident); { find label }
                 if llp <> nil then with llp^ do begin
                   refer := true;
                   if defined then
@@ -4908,12 +4921,12 @@ var
               until (llp <> nil) or (ttop = 0);
               if llp = nil then begin
                 error(167); { undeclared label }
-                newlabel(llp); { create dummy label in current context }
+                newlabel(llp, sy = ident); { create dummy label in current context }
                 llp^.refer := true
               end;
               insymbol
             end
-          else error(15)
+          else if iso7185 then error(15) else error(22);
         end (*gotostatement*) ;
 
         procedure compoundstatement;
@@ -5245,34 +5258,43 @@ var
         end (*withstatement*) ;
 
       begin (*statement*)
-        if sy = intconst then (*label*)
-          begin
-            searchlabel(llp, level); { search label }
-            if llp <> nil then with llp^ do begin { found }
-              if defined then error(165); { multidefined label }
-              bact := true; { set in active block now }
-              slevel := stalvl; { establish statement level }
-              defined := true; { set defined }
-              if ipcref and (stalvl > 1) then
-                error(184) { intraprocedure goto does not reference outter block }
-              else if minlvl < stalvl then
-                { Label referenced by goto at lesser statement level or 
-                  differently nested statement }
-                error(186);
-              putlabel(labname); { output label to intermediate }
-            end else begin { not found }
-              error(167); { undeclared label }
-              newlabel(llp) { create a dummy level }
-            end;
-            insymbol;
-            if sy = colon then insymbol else error(5)
+        if (sy = intconst) or (sy = ident) then (*label*)
+          begin sk := false;
+            { and here is why Wirth didn't include symbolic labels in Pascal.
+              We are ambiguous with assigns and calls, so must look ahead for 
+              the ':' }
+            if sy = ident then 
+              begin ids := id; insymbol; sk := true; syn := sy; id := ids; sy := ident end;
+            if (syn = colon) or (sy = intconst) then begin
+              searchlabel(llp, level, sy = ident); { search label }
+              if llp <> nil then with llp^ do begin { found }
+                if defined then error(165); { multidefined label }
+                bact := true; { set in active block now }
+                slevel := stalvl; { establish statement level }
+                defined := true; { set defined }
+                if ipcref and (stalvl > 1) then
+                  error(184) { intraprocedure goto does not reference outter block }
+                else if minlvl < stalvl then
+                  { Label referenced by goto at lesser statement level or 
+                    differently nested statement }
+                  error(186);
+                putlabel(labname); { output label to intermediate }
+              end else begin { not found }
+                error(167); { undeclared label }
+                newlabel(llp, false) { create a dummy level }
+              end;
+              if sk then sy := syn else insymbol;
+              if sy = colon then insymbol else error(5);
+              sk := false
+            end
           end;
         if not (sy in fsys + [ident]) then
           begin error(6); skip(fsys) end;
         if sy in statbegsys + [ident] then
           begin
             case sy of
-              ident:    begin searchid([vars,field,func,proc],lcp); insymbol;
+              ident:    begin searchid([vars,field,func,proc],lcp); 
+                          if not sk then insymbol;
                           if lcp^.klass = proc then call(fsys,lcp)
                           else assignment(lcp)
                         end;
