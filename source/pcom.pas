@@ -209,7 +209,7 @@ const
    maxsp      = 48;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 39;  { number of standard identifiers }
+   maxstd     = 50;  { number of standard identifiers }
    maxres     = 65;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    varsqt     = 10;  { variable string quanta }
@@ -237,7 +237,6 @@ const
 type                                                        (*describing:*)
                                                             (*************)
 
-     {marktype= ^integer;}
                                                             (*basic symbols*)
                                                             (***************)
 
@@ -320,6 +319,7 @@ type                                                        (*describing:*)
      restr = packed array [1..reslen] of char;
      nmstr = packed array [1..digmax] of char;
      csstr = packed array [1..strglgth] of char;
+     keyrng = 1..28; { range of standard call keys }
      identifier = record
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; refer: boolean;
@@ -334,7 +334,7 @@ type                                                        (*describing:*)
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    asgn: boolean; { assigned }
                                    case pfdeckind: declkind of
-                              standard: (key: 1..18);
+                              standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
                                           case pfkind: idkind of
                                            actual: (forwdecl, externl: boolean);
@@ -392,6 +392,8 @@ type                                                        (*describing:*)
                   cslab: integer
                 end;
 
+      stdrng = 1..maxstd; { range of standard name entries }
+      
 (*-------------------------------------------------------------------------*)
 
 var
@@ -506,7 +508,7 @@ var
     ssy: array [char] of symbol;
     rop: array [1..maxres(*nr. of res. words*)] of operator;
     sop: array [char] of operator;
-    na:  array [1..maxstd] of restr;
+    na:  array [stdrng] of restr;
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     cdx: array [0..maxins] of integer;
@@ -4206,6 +4208,46 @@ var
             end else gen1(30(*csp*),14(*eln*));
               gattr.typtr := boolptr
           end (*eof*) ;
+          
+          procedure assignprocedure;
+          begin
+          end;
+          
+          procedure closeprocedure;
+          begin
+          end;
+          
+          procedure positionprocedure;
+          begin
+          end;
+          
+          procedure updateprocedure;
+          begin
+          end;
+          
+          procedure appendprocedure;
+          begin
+          end;
+          
+          procedure deleteprocedure;
+          begin
+          end;
+          
+          procedure changeprocedure;
+          begin
+          end;
+          
+          procedure lengthfunction;
+          begin
+          end;
+          
+          procedure locationfunction;
+          begin
+          end;
+          
+          procedure existsfunction;
+          begin
+          end;
 
           procedure callnonstandard(fcp: ctp);
             var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
@@ -4356,6 +4398,13 @@ var
                     7:     packprocedure;
                     8:     unpackprocedure;
                     9,18:  newdisposeprocedure(lkey = 18);
+                    19:    assignprocedure;
+                    20:    closeprocedure;
+                    23:    positionprocedure;
+                    24:    updateprocedure;
+                    25:    appendprocedure;
+                    27:    deleteprocedure;
+                    28:    changeprocedure;
                     10,13: error(399)
                   end;
                   if not(lkey in [5,6,11,12,17]) then
@@ -4377,7 +4426,10 @@ var
                     5:    ordfunction;
                     6:    chrfunction;
                     7,8:  predsuccfunction;
-                    9,10: eofeolnfunction
+                    9,10: eofeolnfunction;
+                    21:   lengthfunction;
+                    22:   locationfunction;
+                    26:   existsfunction;
                   end;
                   if (lkey <= 8) or (lkey = 16) then
                     if sy = rparent then insymbol else error(4)
@@ -5294,7 +5346,7 @@ var
           begin
             case sy of
               ident:    begin searchid([vars,field,func,proc],lcp); 
-                          if not sk then insymbol;
+                          if sk then sy := syn else insymbol;
                           if lcp^.klass = proc then call(fsys,lcp)
                           else assignment(lcp)
                         end;
@@ -5510,17 +5562,19 @@ var
     na[ 4] := 'output   '; na[ 5] := 'get      '; na[ 6] := 'put      ';
     na[ 7] := 'reset    '; na[ 8] := 'rewrite  '; na[ 9] := 'read     ';
     na[10] := 'write    '; na[11] := 'pack     '; na[12] := 'unpack   ';
-    na[13] := 'new      '; na[14] := '---      '; na[15] := 'readln   ';
-    na[16] := 'writeln  ';
-    na[17] := 'abs      '; na[18] := 'sqr      '; na[19] := 'trunc    ';
-    na[20] := 'odd      '; na[21] := 'ord      '; na[22] := 'chr      ';
-    na[23] := 'pred     '; na[24] := 'succ     '; na[25] := 'eof      ';
-    na[26] := 'eoln     ';
-    na[27] := 'sin      '; na[28] := 'cos      '; na[29] := 'exp      ';
-    na[30] := 'sqrt     '; na[31] := 'ln       '; na[32] := 'arctan   ';
-    na[33] := 'prd      '; na[34] := 'prr      '; na[35] := '---      ';
-    na[36] := 'maxint   '; na[37] := 'round    '; na[38] := 'page     ';
-    na[39] := 'dispose  ';
+    na[13] := 'new      '; na[14] := 'assign   '; na[15] := 'readln   ';
+    na[16] := 'writeln  '; na[17] := 'abs      '; na[18] := 'sqr      '; 
+    na[19] := 'trunc    '; na[20] := 'odd      '; na[21] := 'ord      '; 
+    na[22] := 'chr      '; na[23] := 'pred     '; na[24] := 'succ     '; 
+    na[25] := 'eof      '; na[26] := 'eoln     '; na[27] := 'sin      '; 
+    na[28] := 'cos      '; na[29] := 'exp      '; na[30] := 'sqrt     '; 
+    na[31] := 'ln       '; na[32] := 'arctan   '; na[33] := 'prd      '; 
+    na[34] := 'prr      '; na[35] := 'close    '; na[36] := 'maxint   '; 
+    na[37] := 'round    '; na[38] := 'page     '; na[39] := 'dispose  ';
+    na[40] := 'length   '; na[41] := 'location '; na[42] := 'position ';
+    na[43] := 'update   '; na[44] := 'append   '; na[45] := 'exists   ';
+    na[46] := 'delete   '; na[47] := 'change   '; na[48] := 'error    ';
+    na[49] := 'list     '; na[50] := 'command  ';
   end (*stdnames*) ;
 
   procedure enterstdtypes;
@@ -5562,6 +5616,19 @@ var
   procedure entstdnames;
     var cp,cp1: ctp; i: integer;
 
+  procedure entstdprocfunc(idc: idclass; sn: stdrng; kn: keyrng; idt: stp);
+  
+  begin
+    if idc = proc then new(cp,proc,standard)
+    else new(cp,func,standard);
+    ininam(cp);
+    with cp^ do
+      begin strassvr(name, na[sn]); idtype := idt;
+        pflist := nil; next := nil; key := kn;
+        klass := idc; pfdeckind := standard
+      end; enterid(cp)
+  end;
+      
   begin                                                       (*name:*)
                                                               (*******)
 
@@ -5616,25 +5683,7 @@ var
               threat := false; forcnt := 0
            end;
          enterid(cp)
-      end;
-    for i := 5 to 16 do if i <> 14 then { no longer doing release }
-      begin new(cp,proc,standard); ininam(cp);                 (*get,put,reset*)
-        with cp^ do                                            (*rewrite,read*)
-          begin strassvr(name, na[i]); idtype := nil;          (*write,pack*)
-            pflist := nil; next := nil; key := i - 4;          (*unpack,new*)
-            klass := proc; pfdeckind := standard               (*readln,writeln*)
-          end;
-        enterid(cp)
-      end;
-    for i := 17 to 26 do
-      begin new(cp,func,standard); ininam(cp);                 (*abs,sqr,trunc*)
-        with cp^ do                                            (*odd,ord,chr*)
-          begin strassvr(name, na[i]); idtype := nil;          (*pred,succ,eof*)
-            pflist := nil; next := nil; key := i - 16;
-            klass := func; pfdeckind := standard
-          end;
-        enterid(cp)
-      end;
+      end;  
     for i := 27 to 32 do
       begin
         new(cp,vars); ininam(cp);                                (*parameter of predeclared functions*)
@@ -5656,24 +5705,42 @@ var
       begin strassvr(name, na[36]); idtype := intptr;
         next := nil; values.ival := maxint; klass := konst
       end; enterid(cp);
-    new(cp,func,standard); ininam(cp);                         (*round*)
-    with cp^ do
-      begin strassvr(name, na[37]); idtype := nil;
-        pflist := nil; next := nil; key := 16;
-        klass := func; pfdeckind := standard
-      end; enterid(cp);
-    new(cp,proc,standard); ininam(cp);                         (*page*)
-    with cp^ do
-      begin strassvr(name, na[38]); idtype := nil;
-        pflist := nil; next := nil; key := 17;
-        klass := proc; pfdeckind := standard
-      end; enterid(cp);
-    new(cp,proc,standard); ininam(cp);                         (*dispose*)
-    with cp^ do
-      begin strassvr(name, na[39]); idtype := nil;
-        pflist := nil; next := nil; key := 18;
-        klass := proc; pfdeckind := standard
-      end; enterid(cp)
+    
+    entstdprocfunc(proc, 5,  1,  nil);     { get }
+    entstdprocfunc(proc, 6,  2,  nil);     { put }
+    entstdprocfunc(proc, 7,  3,  nil);     { reset }
+    entstdprocfunc(proc, 8,  4,  nil);     { rewrite }
+    entstdprocfunc(proc, 9,  5,  nil);     { read }
+    entstdprocfunc(proc, 10, 6,  nil);     { write }
+    entstdprocfunc(proc, 11, 7,  nil);     { pack }
+    entstdprocfunc(proc, 12, 8,  nil);     { unpack }
+    entstdprocfunc(proc, 13, 9,  nil);     { new }
+    entstdprocfunc(proc, 15, 11, nil);     { readln }
+    entstdprocfunc(proc, 16, 12, nil);     { writeln }
+    entstdprocfunc(func, 17, 1,  nil);     { abs }
+    entstdprocfunc(func, 18, 2,  nil);     { sqr }
+    entstdprocfunc(func, 19, 3,  nil);     { trunc }
+    entstdprocfunc(func, 20, 4,  nil);     { odd }
+    entstdprocfunc(func, 21, 5,  nil);     { ord }
+    entstdprocfunc(func, 22, 6,  nil);     { chr }
+    entstdprocfunc(func, 23, 7,  nil);     { pred }
+    entstdprocfunc(func, 24, 8,  nil);     { succ }
+    entstdprocfunc(func, 25, 9,  nil);     { eof }
+    entstdprocfunc(func, 26, 10, nil);     { eoln }
+    entstdprocfunc(func, 37, 16, nil);     { round }
+    entstdprocfunc(proc, 38, 17, nil);     { page }    
+    entstdprocfunc(proc, 39, 18, nil);     { dispose }
+    { Note: I was to lazy to overload the keys on these }
+    entstdprocfunc(proc, 14, 19, nil);     { assign }
+    entstdprocfunc(proc, 35, 20, nil);     { close }
+    entstdprocfunc(func, 40, 21, intptr);  { length }
+    entstdprocfunc(func, 41, 22, intptr);  { location }
+    entstdprocfunc(proc, 42, 23, nil);     { position }
+    entstdprocfunc(proc, 43, 24, nil);     { update }
+    entstdprocfunc(proc, 44, 25, nil);     { append }
+    entstdprocfunc(func, 45, 26, boolptr); { exists }
+    entstdprocfunc(proc, 46, 27, nil);     { delete }
+    entstdprocfunc(proc, 47, 28, nil);     { change }
   end (*entstdnames*) ;
 
   procedure enterundecl;
