@@ -255,7 +255,8 @@ type                                                        (*describing:*)
                  neop,eqop,inop,noop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
-             chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem);
+             chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
+             chhex,choct,chbin);
      { Here is the variable length string containment to save on space. strings
        strings are only stored in their length rounded to the nearest 10th. }
      strvsp = ^strvs; { pointer to variable length id string }
@@ -512,7 +513,7 @@ var
     pdx: array [1..maxsp] of integer;
     ordint: array [char] of integer;
 
-    intlabel,mxint10: integer;
+    intlabel,mxint10,maxpow10: integer;
     inputhdf: boolean; { 'input' appears in header files }
     outputhdf: boolean; { 'output' appears in header files }
     errtbl: array [1..500] of boolean; { error occrence tracking }
@@ -1159,6 +1160,7 @@ var
     204: write('8 or 9 in octal number');
     205: write('Zero string not allowed');
     206: write('Integer part of real constant exceeds ranqe');
+    207: write('Digit beyond radix');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1178,6 +1180,7 @@ var
     302: write('Index expression out of bounds');
     303: write('Value to be assigned is out of bounds');
     304: write('Element expression out of range');
+    305: write('Cannot use non-decimal with real format');
 
     397: write('Feature not valid in ISO 7185 Pascal');
     398: write('Implementation restriction');
@@ -1208,12 +1211,18 @@ var
     errlist[errinx].pos := chcnt;
     toterr := toterr+1
   end (*error*) ;
+  
+  { chkstd: called whenever a non-ISO7185 construct is being processed }
+  procedure chkstd;
+  begin
+    if iso7185 then error(397)
+  end;
 
   procedure insymbol;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
     label 1;
-    var i,k: integer;
+    var i,k,v,r,p: integer;
         digit: nmstr; { temp holding for digit string }
         rvalb: nmstr; { temp holding for real string }
         string: csstr;
@@ -1321,13 +1330,41 @@ var
                     begin sy := ident; op := noop end 
                 end;
       end;
-      number:
-        begin op := noop; i := 0;
-          repeat i := i+1; if i<= digmax then digit[i] := ch; nextch
-          until chartp[ch] <> number;
+      chhex, choct, chbin, number:
+        begin op := noop; i := 0; r := 10;
+          if chartp[ch] = chhex then begin chkstd; r := 16; nextch end
+          else if chartp[ch] = choct then begin chkstd; r := 8; nextch end
+          else if chartp[ch] = chbin then begin chkstd; r := 2; nextch end;
+          repeat if (ch <> '_') and (i < digmax) then 
+            begin i := i+1; digit[i] := ch end;
+            nextch
+          until (chartp[ch] <> number) and ((chartp[ch] <> letter) or iso7185);
+          { if radix is <> 10, then number in buffer must be converted. Note
+            this abrogates Wirth's "numeric size independence" plan for 
+            r <> 10 }
+          if r <> 10 then begin
+            v := 0; for k := 1 to i do begin 
+              if v > maxint div r then error(203);
+              { note the fallback for digit beyond radix is to add zeros }
+              if ((r = 16) and not (digit[k] in ['0'..'9', 'a'..'f', 'A'..'F'])) or 
+                 ((r = 8) and not (digit[k] in ['0'..'7'])) or
+                 ((r = 2) and not (digit[k] in ['0'..'1'])) then error(207);              
+              v := v*r+ordint[digit[k]]
+            end;
+            p := maxpow10; i := 0; 
+            while p > 0 do begin 
+              if i < digmax then begin 
+                i := i+1; 
+                digit[i] := chr(v div p mod 10+ord('0')) 
+              end; 
+              p := p div 10
+            end
+          end;
           if ((ch = '.') and (prd^ <> '.') and (prd^ <> ')')) or
              (lcase(ch) = 'e') then
             begin
+              { its a real, reject non-decimal radixes }
+              if r <> 10 then error(305);
               k := i;
               if ch = '.' then
                 begin k := k+1; if k <= digmax then digit[k] := ch;
@@ -1463,7 +1500,7 @@ var
          if not iscmte then nextch; goto 1
        end;
       chrem: 
-       begin if iso7185 then error(397); 
+       begin chkstd; 
          repeat nextch until eol; { '!' skip next line }
          goto 1 
        end;
@@ -5677,6 +5714,7 @@ var
     ic := 3; eol := true; linecount := 0;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
+    maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
     inputhdf := false; { set 'input' not in header files }
     outputhdf := false; { set 'output' not in header files }
     for i := 1 to 500 do errtbl[i] := false; { initialize error tracking }
@@ -5880,11 +5918,18 @@ var
       chartp['<'] := chlt    ; chartp['>'] := chgt    ;
       chartp['{'] := chlcmt  ; chartp['}'] := special ;
       chartp['@'] := special ; chartp['!'] := chrem   ;
+      chartp['$'] := chhex   ; chartp['&'] := choct   ;
+      chartp['%'] := chbin   ;
 
-      ordint['0'] := 0; ordint['1'] := 1; ordint['2'] := 2;
-      ordint['3'] := 3; ordint['4'] := 4; ordint['5'] := 5;
-      ordint['6'] := 6; ordint['7'] := 7; ordint['8'] := 8;
-      ordint['9'] := 9;
+      for i := ordminchar to ordmaxchar do ordint[chr(i)] := 0;
+      ordint['0'] := 0;  ordint['1'] := 1;  ordint['2'] := 2;
+      ordint['3'] := 3;  ordint['4'] := 4;  ordint['5'] := 5;
+      ordint['6'] := 6;  ordint['7'] := 7;  ordint['8'] := 8;
+      ordint['a'] := 10; ordint['b'] := 11; ordint['c'] := 12;
+      ordint['d'] := 13; ordint['e'] := 14; ordint['f'] := 15;
+      ordint['A'] := 10; ordint['B'] := 11; ordint['C'] := 12;
+      ordint['D'] := 13; ordint['E'] := 14; ordint['F'] := 15;
+      
     end;
 
     procedure initdx;
