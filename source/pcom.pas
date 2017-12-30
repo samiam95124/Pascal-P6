@@ -6014,11 +6014,11 @@ var
       ordint['0'] := 0;  ordint['1'] := 1;  ordint['2'] := 2;
       ordint['3'] := 3;  ordint['4'] := 4;  ordint['5'] := 5;
       ordint['6'] := 6;  ordint['7'] := 7;  ordint['8'] := 8;
-      ordint['a'] := 10; ordint['b'] := 11; ordint['c'] := 12;
-      ordint['d'] := 13; ordint['e'] := 14; ordint['f'] := 15;
-      ordint['A'] := 10; ordint['B'] := 11; ordint['C'] := 12;
-      ordint['D'] := 13; ordint['E'] := 14; ordint['F'] := 15;
-      
+      ordint['9'] := 9;  ordint['a'] := 10; ordint['b'] := 11; 
+      ordint['c'] := 12; ordint['d'] := 13; ordint['e'] := 14; 
+      ordint['f'] := 15; ordint['A'] := 10; ordint['B'] := 11; 
+      ordint['C'] := 12; ordint['D'] := 13; ordint['E'] := 14; 
+      ordint['F'] := 15;
     end;
 
     procedure initdx;
