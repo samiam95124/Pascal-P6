@@ -3437,7 +3437,8 @@ var
       end (*putlabel*);
 
       procedure statement(fsys: setofsys);
-        var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean;
+        var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean; 
+            kks: 1..maxids;
 
         procedure expression(fsys: setofsys; threaten: boolean); forward;
 
@@ -5316,7 +5317,8 @@ var
               We are ambiguous with assigns and calls, so must look ahead for 
               the ':' }
             if sy = ident then 
-              begin ids := id; insymbol; sk := true; syn := sy; id := ids; sy := ident end;
+              begin ids := id; kks := kk; insymbol; sk := true; syn := sy; 
+                    id := ids; kk := kks; sy := ident end;
             if (syn = colon) or (sy = intconst) then begin
               searchlabel(llp, level, sy = ident); { search label }
               if llp <> nil then with llp^ do begin { found }
