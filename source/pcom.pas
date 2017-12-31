@@ -206,7 +206,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 48;  { number of standard procedures/functions }
+   maxsp      = 58;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 50;  { number of standard identifiers }
@@ -1166,6 +1166,7 @@ var
     205: write('Zero string not allowed');
     206: write('Integer part of real constant exceeds ranqe');
     207: write('Digit beyond radix');
+    208: write('Type must be string');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3694,7 +3695,7 @@ var
         end (*selector*) ;
 
         procedure call(fsys: setofsys; fcp: ctp);
-          var lkey: 1..18;
+          var lkey: 1..28;
 
           procedure variable(fsys: setofsys; threaten: boolean);
             var lcp: ctp;
@@ -4212,42 +4213,74 @@ var
           
           procedure assignprocedure;
           begin
+            variable(fsys+[comma,rparent], false); loadaddress;
+            if gattr.typtr <> nil then
+              if gattr.typtr^.form <> files then error(125);
+            if sy = comma then insymbol else error(20);  
+            expression(fsys + [rparent], false); loadaddress;  
+            if not string(gattr.typtr) then error(208);
+            gen1(30(*csp*),49(*ass*));
           end;
           
-          procedure closeprocedure;
+          procedure closeupdateappendprocedure;
           begin
+            variable(fsys+[rparent], false); loadaddress;
+            if gattr.typtr <> nil then
+              if gattr.typtr^.form <> files then error(125);
+            if lkey = 20 then gen1(30(*csp*),50(*cls*))
+            else if lkey = 24 then gen1(30(*csp*),52(*upd*))
+            else gen1(30(*csp*),53(*app*));
           end;
           
           procedure positionprocedure;
           begin
-          end;
-          
-          procedure updateprocedure;
-          begin
-          end;
-          
-          procedure appendprocedure;
-          begin
+            variable(fsys+[comma,rparent], false); loadaddress;
+            if gattr.typtr <> nil then
+              if gattr.typtr^.form <> files then error(125);
+            if sy = comma then insymbol else error(20);  
+            expression(fsys + [rparent], false); load;  
+            if gattr.typtr <> nil then
+              if gattr.typtr <> intptr then error(125);
+            gen1(30(*csp*),51(*pos*));
           end;
           
           procedure deleteprocedure;
           begin
+            expression(fsys + [rparent], false); loadaddress;  
+            if not string(gattr.typtr) then error(208);
+            gen1(30(*csp*),54(*del*));
           end;
           
           procedure changeprocedure;
           begin
+            expression(fsys + [comma,rparent], false); loadaddress;  
+            if not string(gattr.typtr) then error(208);
+            if sy = comma then insymbol else error(20);
+            expression(fsys + [rparent], false); loadaddress;  
+            if not string(gattr.typtr) then error(208);
+            gen1(30(*csp*),55(*del*));
           end;
           
-          procedure lengthfunction;
+          procedure lengthlocationfunction;
           begin
+            if sy = lparent then insymbol else error(9);
+            variable(fsys+[rparent], false); loadaddress;
+            if gattr.typtr <> nil then
+              if gattr.typtr^.form <> files then error(125);
+            if lkey = 21 then gen1(30(*csp*),56(*len*))
+            else gen1(30(*csp*),57(*loc*));
+            if sy = rparent then insymbol else error(4);
+            gattr.typtr := intptr
           end;
-          
-          procedure locationfunction;
-          begin
-          end;
-          
+                
           procedure existsfunction;
           begin
+            if sy = lparent then insymbol else error(9);
+            expression(fsys + [rparent], false); loadaddress;
+            if not string(gattr.typtr) then error(208);
+            gen1(30(*csp*),58(*exs*));
+            if sy = rparent then insymbol else error(4);
+            gattr.typtr := boolptr
           end;
 
           procedure callnonstandard(fcp: ctp);
@@ -4392,21 +4425,20 @@ var
                     if sy = lparent then insymbol else error(9);
                   case lkey of
                     1,2,
-                    3,4:   getputresetrewriteprocedure;
-                    17:    pageprocedure;
-                    5,11:  readprocedure;
-                    6,12:  writeprocedure;
-                    7:     packprocedure;
-                    8:     unpackprocedure;
-                    9,18:  newdisposeprocedure(lkey = 18);
-                    19:    assignprocedure;
-                    20:    closeprocedure;
-                    23:    positionprocedure;
-                    24:    updateprocedure;
-                    25:    appendprocedure;
-                    27:    deleteprocedure;
-                    28:    changeprocedure;
-                    10,13: error(399)
+                    3,4:    getputresetrewriteprocedure;
+                    17:     pageprocedure;
+                    5,11:   readprocedure;
+                    6,12:   writeprocedure;
+                    7:      packprocedure;
+                    8:      unpackprocedure;
+                    9,18:   newdisposeprocedure(lkey = 18);
+                    19:     assignprocedure;
+                    20, 24, 
+                    25:     closeupdateappendprocedure;
+                    23:     positionprocedure;
+                    27:     deleteprocedure;
+                    28:     changeprocedure;
+                    10,13:  error(399)
                   end;
                   if not(lkey in [5,6,11,12,17]) then
                     if sy = rparent then insymbol else error(4)
@@ -4419,18 +4451,17 @@ var
                       expression(fsys+[rparent], false); load
                     end;
                   case lkey of
-                    1:    absfunction;
-                    2:    sqrfunction;
-                    3:    truncfunction;
-                    16:   roundfunction;
-                    4:    oddfunction;
-                    5:    ordfunction;
-                    6:    chrfunction;
-                    7,8:  predsuccfunction;
-                    9,10: eofeolnfunction;
-                    21:   lengthfunction;
-                    22:   locationfunction;
-                    26:   existsfunction;
+                    1:     absfunction;
+                    2:     sqrfunction;
+                    3:     truncfunction;
+                    16:    roundfunction;
+                    4:     oddfunction;
+                    5:     ordfunction;
+                    6:     chrfunction;
+                    7,8:   predsuccfunction;
+                    9,10:  eofeolnfunction;
+                    21,22: lengthlocationfunction;
+                    26:    existsfunction;
                   end;
                   if (lkey <= 8) or (lkey = 16) then
                     if sy = rparent then insymbol else error(4)
@@ -5918,15 +5949,16 @@ var
       sna[13] :=' rst'; sna[14] :=' eln'; sna[15] :=' sin'; sna[16] :=' cos';
       sna[17] :=' exp'; sna[18] :=' sqt'; sna[19] :=' log'; sna[20] :=' atn';
       sna[21] :=' rln'; sna[22] :=' wln'; sna[23] :=' sav';
-      { new procedure/function memonics for p5 }
+      { new procedure/function memonics for p5/p6 }
       sna[24] :=' pag'; sna[25] :=' rsf'; sna[26] :=' rwf'; sna[27] :=' wrb';
       sna[28] :=' wrf'; sna[29] :=' dsp'; sna[30] :=' wbf'; sna[31] :=' wbi';
       sna[32] :=' wbr'; sna[33] :=' wbc'; sna[34] :=' wbb'; sna[35] :=' rbf';
       sna[36] :=' rsb'; sna[37] :=' rwb'; sna[38] :=' gbf'; sna[39] :=' pbf';
       sna[40] :=' rib'; sna[41] :=' rcb'; sna[42] :=' nwl'; sna[43] :=' dsl';
       sna[44] :=' eof'; sna[45] :=' efb'; sna[46] :=' fbv'; sna[47] :=' fvb';
-      sna[48] :=' wbx';
-      
+      sna[48] :=' wbx'; sna[49] :=' ass'; sna[50] :=' cls'; sna[51] :=' pos'; 
+      sna[52] :=' upd'; sna[53] :=' app'; sna[54] :=' del'; sna[55] :=' chg'; 
+      sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs';
 
     end (*procmnemonics*) ;
 
@@ -6145,6 +6177,12 @@ var
       pdx[43] := +(adrsize+intsize*2); pdx[44] := +adrsize-intsize;     
       pdx[45] := +adrsize-intsize;     pdx[46] :=  0;                   
       pdx[47] := +intsize;             pdx[48] := +intsize;
+      pdx[49] := +adrsize*2;           pdx[50] := +adrsize;
+      pdx[51] := +adrsize+intsize;     pdx[52] := +adrsize;
+      pdx[53] := +adrsize;             pdx[54] := +adrsize;
+      pdx[55] := +adrsize*2;           pdx[56] := +adrsize-intsize;
+      pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize-intsize;
+                                                      
     end;
 
   begin (*inittables*)
