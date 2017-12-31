@@ -236,11 +236,12 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 45;      { number of predefined procedures/functions }
+      maxsp       = 58;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
       ujplen      = 5;       { length of ujp instruction (used for case jumps) }
+      fillen      = 250;     { maximum length of filenames }
 
       { check flags: these turn on runtime checks }
       dochkovf    = true;    { check arithmetic overflow }
@@ -293,6 +294,7 @@ type
       byte        = 0..255; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
+      filnam      = packed array [1..fillen] of char; { filename strings }
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -493,6 +495,117 @@ procedure chkdef(a: address);
 begin
    if dochkdef then if not getdef(a) then errori('Undefined location access')
 end;
+
+(*--------------------------------------------------------------------*)
+
+{ Language extension routines. These routines allow specification of semantic
+  functions beyond the base ISO 7185 specification. 
+  
+  There are two kinds of files, and both need to be represented here:
+  text files and binary files. Binary files are files of bytes, and everything
+  besides text is broken down into bytes and transferred via byte files. 
+  Note that several functions don't have text equivalents, like length,
+  location, position and update. 
+  
+  ISO 7185 mode: The Pascaline specification gives "equivalences" for
+  several file handlers. These are routines that replace extended file
+  functions at "any cost", that is, they do the job, but may take
+  unreasonable steps to achieve it, such as making a copy of the entire
+  file. These routines are the default where available. 
+  
+  In P6, we can actually use more "equivalent" routines than the
+  Pascaline specification. The reason is because we have a standard
+  "other than text" in bytfil form. Thus we have a filetype that
+  the standard cannot specify. }
+  
+procedure assigntext(var f: text; var fn: filnam);
+
+begin
+  writeln('assigntext: filename: ', fn);
+  errori('Assign to text file undef')
+end;
+
+procedure assignbin(var f: bytfil; var fn: filnam);
+
+begin
+  writeln('assignbin: filename: ', fn);
+  errori('Assign to bin file undef ')
+end;
+
+procedure closetext(var f: text);
+
+begin
+  errori('Close of text file undef ')
+end;
+
+procedure closebin(var f: bytfil);
+
+begin
+  errori('Close of binary file udef')
+end;
+
+function lengthbin(var f: bytfil): integer;
+
+begin
+  errori('Length of bin file undef ');
+  lengthbin := 1
+end;
+
+function locationbin(var f: bytfil): integer;
+
+begin
+  errori('Location of bin file udef');
+  locationbin := 1
+end;
+
+procedure positionbin(var f: bytfil; p: integer);
+
+begin
+  errori('Position of bin file udef')
+end;
+
+procedure updatebin(var f: bytfil);
+
+begin
+  errori('Update binary file undef ')
+end;
+
+procedure appendtext(var f: text);
+
+begin
+  errori('Append text file undef   ')
+end;
+
+procedure appendbin(var f: bytfil);
+
+begin
+  errori('Append binary file undef ')
+end;
+
+function existsfile(var fn: filnam): boolean;
+
+begin
+  writeln('existsfile: filename: ', fn);
+  errori('Check exists file undef  ');
+  existsfile := true { supress compiler error }
+end;
+
+procedure deletefile(var fn: filnam);
+
+begin
+  writeln('deletefile: filename: ', fn);
+  errori('Delete file by name udef ')
+end;
+
+procedure changefile(var dfn, sfn: filnam);
+
+begin
+  writeln('changefile: dest filename: ', dfn);
+  writeln('changefile: src filename: ', sfn);
+  errori('Change name file undef   ')
+end;
+
+{ End of language extension routines }
 
 (*--------------------------------------------------------------------*)
 
@@ -831,6 +944,14 @@ begin
   flc := l - algn  +  (algn-l) mod algn
 end (*align*);
 
+{ clear filename string }
+
+procedure clrfn(var fn: filnam);
+var i: 1..fillen;
+begin
+  for i := 1 to fillen do fn[i] := ' '
+end;
+
 (*--------------------------------------------------------------------*)
 
 { load intermediate file }
@@ -1094,7 +1215,14 @@ procedure load;
          sptable[40]:='dsl       ';     sptable[41]:='eof       ';
          sptable[42]:='efb       ';     sptable[43]:='fbv       ';
          sptable[44]:='fvb       ';     sptable[45]:='wbx       ';
-
+         sptable[46]:='asst      ';     sptable[47]:='clst      ';
+         sptable[48]:='pos       ';     sptable[49]:='upd       ';
+         sptable[50]:='appt      ';     sptable[51]:='del       ';
+         sptable[52]:='chg       ';     sptable[53]:='len       ';
+         sptable[54]:='loc       ';     sptable[55]:='exs       ';
+         sptable[56]:='assb      ';     sptable[57]:='clsb      ';
+         sptable[58]:='appb      ';
+         
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
          for i:= 1 to 10 do word[i]:= ' ';
@@ -1777,6 +1905,7 @@ procedure callsp;
        r: real;
        fn: fileno;
        mn,mx: integer;
+       fl1, fl2: filnam;
 
    procedure readi(var f: text; var i: integer);
 
@@ -2391,6 +2520,55 @@ begin (*callsp*)
                             end;
                           filbuff[fn] := true
                         end;
+           { extended Pascaline file handlers }
+           46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
+                         fn := store[ad]; clrfn(fl1); 
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
+                         assigntext(filtable[fn], fl1) 
+                       end;
+           56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
+                         fn := store[ad]; clrfn(fl1); 
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
+                         assignbin(bfiltable[fn], fl1) 
+                       end;
+           47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         closetext(filtable[fn])
+                       end;
+           57 (*clsb*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         closebin(bfiltable[fn])
+                       end;
+           48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad]; 
+                         positionbin(bfiltable[fn], i)
+                       end;
+           49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         updatebin(bfiltable[fn])
+                       end;
+           50 (*appt*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         appendtext(filtable[fn])
+                       end;
+           58 (*appb*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         appendbin(bfiltable[fn])
+                       end;
+           51 (*del*): begin popint(i); popadr(ad1); clrfn(fl1); 
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
+                         deletefile(fl1) 
+                       end;
+           52 (*chg*): begin popint(i); popadr(ad1); popint(l); popadr(ad); 
+                         clrfn(fl1); clrfn(fl2);
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
+                         for j := 1 to l do fl2[j] := chr(store[ad+j-1]); 
+                         changefile(fl2, fl1) 
+                       end;
+           53 (*len*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         pshint(lengthbin(bfiltable[fn]))
+                       end;
+           54 (*loc*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                         pshint(locationbin(bfiltable[fn]))
+                       end;
+           55 (*exs*): begin popint(i); popadr(ad1); clrfn(fl1); 
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
+                         pshint(ord(existsfile(fl1))) 
+                       end;  
       end;(*case q*)
 end;(*callsp*)
 

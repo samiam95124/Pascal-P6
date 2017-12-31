@@ -206,7 +206,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 58;  { number of standard procedures/functions }
+   maxsp      = 61;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 50;  { number of standard identifiers }
@@ -1180,6 +1180,7 @@ var
     259: write('Expression too complicated');
     260: write('Too many exit labels');
     261: write('Label beyond valid integral value (>9999)');
+    262: write('Function/procedure cannot be applied to text files');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -4212,14 +4213,23 @@ var
           end (*eof*) ;
           
           procedure assignprocedure;
+            var len: addrrange; lattr: attr;
           begin
             variable(fsys+[comma,rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
             if sy = comma then insymbol else error(20);  
+            lattr := gattr;
             expression(fsys + [rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
-            gen1(30(*csp*),49(*ass*));
+            if gattr.typtr <> nil then begin
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len);
+              if lattr.typtr = textptr then { text }
+                gen1(30(*csp*),49(*ass*))
+              else { binary }
+                gen1(30(*csp*),59(*assb*))
+            end
           end;
           
           procedure closeupdateappendprocedure;
@@ -4227,16 +4237,29 @@ var
             variable(fsys+[rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
-            if lkey = 20 then gen1(30(*csp*),50(*cls*))
-            else if lkey = 24 then gen1(30(*csp*),52(*upd*))
-            else gen1(30(*csp*),53(*app*));
+            if lkey = 20 then begin
+              if gattr.typtr = textptr then { text } 
+                gen1(30(*csp*),50(*clst*))
+              else { binary }
+                gen1(30(*csp*),60(*clst*))
+            end else if lkey = 24 then begin
+              if gattr.typtr = textptr then error(262);
+              gen1(30(*csp*),52(*upd*))
+            end else begin
+              if gattr.typtr = textptr then { text }
+                gen1(30(*csp*),53(*appt*))
+              else { binary }
+                gen1(30(*csp*),61(*appb*))
+            end
           end;
           
           procedure positionprocedure;
           begin
             variable(fsys+[comma,rparent], false); loadaddress;
-            if gattr.typtr <> nil then
+            if gattr.typtr <> nil then begin
               if gattr.typtr^.form <> files then error(125);
+              if gattr.typtr = textptr then error(262);
+            end;
             if sy = comma then insymbol else error(20);  
             expression(fsys + [rparent], false); load;  
             if gattr.typtr <> nil then
@@ -4245,19 +4268,33 @@ var
           end;
           
           procedure deleteprocedure;
+          var len: addrrange; lattr: attr;
           begin
             expression(fsys + [rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
-            gen1(30(*csp*),54(*del*));
+            if gattr.typtr <> nil then begin
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len);
+              gen1(30(*csp*),54(*del*));
+            end
           end;
           
           procedure changeprocedure;
+          var len: addrrange;
           begin
             expression(fsys + [comma,rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
+            if gattr.typtr <> nil then begin
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len)
+            end;
             if sy = comma then insymbol else error(20);
             expression(fsys + [rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
+            if gattr.typtr <> nil then begin
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len)
+            end;
             gen1(30(*csp*),55(*del*));
           end;
           
@@ -4265,8 +4302,10 @@ var
           begin
             if sy = lparent then insymbol else error(9);
             variable(fsys+[rparent], false); loadaddress;
-            if gattr.typtr <> nil then
+            if gattr.typtr <> nil then begin
               if gattr.typtr^.form <> files then error(125);
+              if gattr.typtr = textptr then error(262);
+            end;
             if lkey = 21 then gen1(30(*csp*),56(*len*))
             else gen1(30(*csp*),57(*loc*));
             if sy = rparent then insymbol else error(4);
@@ -4274,10 +4313,15 @@ var
           end;
                 
           procedure existsfunction;
+          var len: addrrange;
           begin
             if sy = lparent then insymbol else error(9);
             expression(fsys + [rparent], false); loadaddress;
             if not string(gattr.typtr) then error(208);
+            if gattr.typtr <> nil then begin
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len)
+            end;
             gen1(30(*csp*),58(*exs*));
             if sy = rparent then insymbol else error(4);
             gattr.typtr := boolptr
@@ -5956,9 +6000,10 @@ var
       sna[36] :=' rsb'; sna[37] :=' rwb'; sna[38] :=' gbf'; sna[39] :=' pbf';
       sna[40] :=' rib'; sna[41] :=' rcb'; sna[42] :=' nwl'; sna[43] :=' dsl';
       sna[44] :=' eof'; sna[45] :=' efb'; sna[46] :=' fbv'; sna[47] :=' fvb';
-      sna[48] :=' wbx'; sna[49] :=' ass'; sna[50] :=' cls'; sna[51] :=' pos'; 
-      sna[52] :=' upd'; sna[53] :=' app'; sna[54] :=' del'; sna[55] :=' chg'; 
-      sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs';
+      sna[48] :=' wbx'; sna[49] :='asst'; sna[50] :='clst'; sna[51] :=' pos'; 
+      sna[52] :=' upd'; sna[53] :='appt'; sna[54] :=' del'; sna[55] :=' chg'; 
+      sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
+      sna[60] :='clsb'; sna[61] :='appb';
 
     end (*procmnemonics*) ;
 
@@ -6177,11 +6222,13 @@ var
       pdx[43] := +(adrsize+intsize*2); pdx[44] := +adrsize-intsize;     
       pdx[45] := +adrsize-intsize;     pdx[46] :=  0;                   
       pdx[47] := +intsize;             pdx[48] := +intsize;
-      pdx[49] := +adrsize*2;           pdx[50] := +adrsize;
+      pdx[49] := +adrsize*2+intsize;   pdx[50] := +adrsize;
       pdx[51] := +adrsize+intsize;     pdx[52] := +adrsize;
-      pdx[53] := +adrsize;             pdx[54] := +adrsize;
-      pdx[55] := +adrsize*2;           pdx[56] := +adrsize-intsize;
-      pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize-intsize;
+      pdx[53] := +adrsize;             pdx[54] := +adrsize+intsize;
+      pdx[55] := +adrsize*2+intsize*2; pdx[56] := +adrsize-intsize;
+      pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize+intsize-intsize;
+      pdx[59] := +adrsize*2+intsize;   pdx[60] := +adrsize;
+      pdx[61] := +adrsize;
                                                       
     end;
 
