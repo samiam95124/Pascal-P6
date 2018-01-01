@@ -295,6 +295,7 @@ type
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
+      filsts      = (fclosed, fread, fwrite);
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -329,7 +330,7 @@ var   pc          : address;   (*program address register*)
       { general (temp) binary file holders }
       bfiltable   : array [1..maxfil] of bytfil;
       { file state holding }
-      filstate    : array [1..maxfil] of (fclosed, fread, fwrite);
+      filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
 
@@ -498,111 +499,170 @@ end;
 
 (*--------------------------------------------------------------------*)
 
-{ Language extension routines. These routines allow specification of semantic
-  functions beyond the base ISO 7185 specification. 
+{ 
+
+Language extension routines. These routines allow specification of semantic
+functions beyond the base ISO 7185 specification. 
+
+There are two kinds of files, and both need to be represented here:
+text files and binary files. Binary files are files of bytes, and everything
+besides text is broken down into bytes and transferred via byte files. 
+Note that several functions don't have text equivalents, like length,
+location, position and update. 
+
+Each alternate set of routine contents are marked as:
+
+XXX equivalence ->start
+...
+XXX equivalence -> end
+
+These represent the code for that option. A script can be used to select or
+unselect those contents.
   
-  There are two kinds of files, and both need to be represented here:
-  text files and binary files. Binary files are files of bytes, and everything
-  besides text is broken down into bytes and transferred via byte files. 
-  Note that several functions don't have text equivalents, like length,
-  location, position and update. 
-  
-  ISO 7185 mode: The Pascaline specification gives "equivalences" for
-  several file handlers. These are routines that replace extended file
-  functions at "any cost", that is, they do the job, but may take
-  unreasonable steps to achieve it, such as making a copy of the entire
-  file. These routines are the default where available. 
-  
-  In P6, we can actually use more "equivalent" routines than the
-  Pascaline specification. The reason is because we have a standard
-  "other than text" in bytfil form. Thus we have a filetype that
-  the standard cannot specify. }
+}
   
 procedure assigntext(var f: text; var fn: filnam);
-
+{ GPC -> start }
+var s: string(fillen);
+    i, l: integer;
+{ GPC -> end }
 begin
-  writeln('assigntext: filename: ', fn);
+  { Undefined -> start 
   errori('Assign to text file undef')
+    Undefined -> end }
+
+  { GPC -> start }
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  assign(f, s);
+  { GPC -> end }
 end;
 
 procedure assignbin(var f: bytfil; var fn: filnam);
-
+{ GPC -> start }
+var s: string(fillen);
+    i, l: integer;
+{ GPC -> end }
 begin
-  writeln('assignbin: filename: ', fn);
+  { Undefined -> start 
   errori('Assign to bin file undef ')
+    Undefined -> end }
+  
+  { GPC -> start }
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  assign(f, s);
+  { GPC -> end }
 end;
 
 procedure closetext(var f: text);
 
 begin
+  { Undefined -> start 
   errori('Close of text file undef ')
+    Undefined -> end }
+  
+  { GPC -> start }
+  close(f)
+  { GPC -> end }
 end;
 
 procedure closebin(var f: bytfil);
 
 begin
+  { Undefined -> start 
   errori('Close of binary file udef')
+    Undefined -> end }
+  
+  { GPC -> start }
+  close(f)
+  { GPC -> end }
 end;
 
 function lengthbin(var f: bytfil): integer;
-
 begin
+  { Undefined -> start
   errori('Length of bin file undef ');
   lengthbin := 1
+    Undefined -> end }
+  
+  { GPC -> start }
+  if empty(f) then
+    lengthbin := 0
+  else
+    lengthbin := LastPosition (f) + 1;
+  { GPC -> end }
 end;
 
 function locationbin(var f: bytfil): integer;
-
 begin
+  { Undefined -> start 
   errori('Location of bin file udef');
   locationbin := 1
+    Undefined -> start } 
+  
+  { GPC -> start }
+  locationbin := position(f);
+  { GPC -> end }
 end;
 
 procedure positionbin(var f: bytfil; p: integer);
-
 begin
+  { Undefined -> start 
   errori('Position of bin file udef')
+    Undefined -> end }
+  
+  { GPC -> start }
+  seek(f, p);
+  { GPC -> end }
 end;
 
 procedure updatebin(var f: bytfil);
-
 begin
+  { Undefined -> start }
   errori('Update binary file undef ')
+  { Undefined -> end }
 end;
 
 procedure appendtext(var f: text);
-
 begin
+  { Undefined -> start }
   errori('Append text file undef   ')
+  { Undefined -> end }
 end;
 
 procedure appendbin(var f: bytfil);
-
 begin
+  { Undefined -> start } 
   errori('Append binary file undef ')
+  {  Undefined -> end }
 end;
 
 function existsfile(var fn: filnam): boolean;
-
 begin
-  writeln('existsfile: filename: ', fn);
+  { Undefined -> start }
   errori('Check exists file undef  ');
-  existsfile := true { supress compiler error }
+  existsfile := true
+  { Undefined -> end }
 end;
 
 procedure deletefile(var fn: filnam);
-
 begin
-  writeln('deletefile: filename: ', fn);
+  { Undefined -> start }
   errori('Delete file by name udef ')
+  {  Undefined -> end }
 end;
 
 procedure changefile(var dfn, sfn: filnam);
 
 begin
-  writeln('changefile: dest filename: ', dfn);
-  writeln('changefile: src filename: ', sfn);
+  { Undefined -> start }
   errori('Change name file undef   ')
+  { Undefined -> end }
 end;
 
 { End of language extension routines }
@@ -2522,8 +2582,8 @@ begin (*callsp*)
                         end;
            { extended Pascaline file handlers }
            46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
-                         fn := store[ad]; clrfn(fl1); 
-                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
+                         fn := store[ad]; clrfn(fl1);
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          assigntext(filtable[fn], fl1) 
                        end;
            56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
@@ -2537,7 +2597,8 @@ begin (*callsp*)
            57 (*clsb*): begin popadr(ad); valfil(ad); fn := store[ad]; 
                          closebin(bfiltable[fn])
                        end;
-           48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad]; 
+           48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad];
+                         if i < 1 then errori('Position < 1             '); 
                          positionbin(bfiltable[fn], i)
                        end;
            49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad]; 
