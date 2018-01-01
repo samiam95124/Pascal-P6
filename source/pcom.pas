@@ -206,10 +206,10 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 61;  { number of standard procedures/functions }
+   maxsp      = 62;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 50;  { number of standard identifiers }
+   maxstd     = 51;  { number of standard identifiers }
    maxres     = 65;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    varsqt     = 10;  { variable string quanta }
@@ -319,7 +319,7 @@ type                                                        (*describing:*)
      restr = packed array [1..reslen] of char;
      nmstr = packed array [1..digmax] of char;
      csstr = packed array [1..strglgth] of char;
-     keyrng = 1..28; { range of standard call keys }
+     keyrng = 1..29; { range of standard call keys }
      identifier = record
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; refer: boolean;
@@ -3696,7 +3696,7 @@ var
         end (*selector*) ;
 
         procedure call(fsys: setofsys; fcp: ctp);
-          var lkey: 1..28;
+          var lkey: keyrng;
 
           procedure variable(fsys: setofsys; threaten: boolean);
             var lcp: ctp;
@@ -4326,6 +4326,11 @@ var
             if sy = rparent then insymbol else error(4);
             gattr.typtr := boolptr
           end;
+          
+          procedure haltprocedure;
+          begin
+            gen1(30(*csp*),62(*hlt*))
+          end;
 
           procedure callnonstandard(fcp: ctp);
             var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
@@ -4465,7 +4470,7 @@ var
             begin lkey := fcp^.key;
               if fcp^.klass = proc then
                 begin
-                  if not(lkey in [5,6,11,12,17]) then
+                  if not(lkey in [5,6,11,12,17,29]) then
                     if sy = lparent then insymbol else error(9);
                   case lkey of
                     1,2,
@@ -4482,9 +4487,10 @@ var
                     23:     positionprocedure;
                     27:     deleteprocedure;
                     28:     changeprocedure;
+                    29:     haltprocedure;
                     10,13:  error(399)
                   end;
-                  if not(lkey in [5,6,11,12,17]) then
+                  if not(lkey in [5,6,11,12,17,29]) then
                     if sy = rparent then insymbol else error(4)
                 end
               else
@@ -5651,7 +5657,7 @@ var
     na[40] := 'length   '; na[41] := 'location '; na[42] := 'position ';
     na[43] := 'update   '; na[44] := 'append   '; na[45] := 'exists   ';
     na[46] := 'delete   '; na[47] := 'change   '; na[48] := 'error    ';
-    na[49] := 'list     '; na[50] := 'command  ';
+    na[49] := 'list     '; na[50] := 'command  '; na[51] := 'halt     ';
   end (*stdnames*) ;
 
   procedure enterstdtypes;
@@ -5818,6 +5824,8 @@ var
     entstdprocfunc(func, 45, 26, boolptr); { exists }
     entstdprocfunc(proc, 46, 27, nil);     { delete }
     entstdprocfunc(proc, 47, 28, nil);     { change }
+    entstdprocfunc(proc, 51, 29, nil);     { halt }
+    
   end (*entstdnames*) ;
 
   procedure enterundecl;
@@ -6003,7 +6011,7 @@ var
       sna[48] :=' wbx'; sna[49] :='asst'; sna[50] :='clst'; sna[51] :=' pos'; 
       sna[52] :=' upd'; sna[53] :='appt'; sna[54] :=' del'; sna[55] :=' chg'; 
       sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
-      sna[60] :='clsb'; sna[61] :='appb';
+      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; 
 
     end (*procmnemonics*) ;
 
@@ -6228,7 +6236,7 @@ var
       pdx[55] := +adrsize*2+intsize*2; pdx[56] := +adrsize-intsize;
       pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize+intsize-intsize;
       pdx[59] := +adrsize*2+intsize;   pdx[60] := +adrsize;
-      pdx[61] := +adrsize;
+      pdx[61] := +adrsize;             pdx[62] := 0;
                                                       
     end;
 

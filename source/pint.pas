@@ -105,7 +105,7 @@
 
 program pcode(input,output,prd,prr);
 
-label 1;
+label 1, 2;
 
 const
 
@@ -236,7 +236,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 58;      { number of predefined procedures/functions }
+      maxsp       = 59;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -522,103 +522,103 @@ unselect those contents.
 }
   
 procedure assigntext(var f: text; var fn: filnam);
-{ GPC -> start }
+{ GPC -> start
 var s: string(fillen);
     i, l: integer;
-{ GPC -> end }
+  GPC -> end }
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Assign to text file undef')
-    Undefined -> end }
+  {  Undefined -> end }
 
-  { GPC -> start }
+  { GPC -> start 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
   s := '';
   for i := 1 to l do s := s+fn[i];
   assign(f, s);
-  { GPC -> end }
+    GPC -> end }
 end;
 
 procedure assignbin(var f: bytfil; var fn: filnam);
-{ GPC -> start }
+{ GPC -> start 
 var s: string(fillen);
     i, l: integer;
-{ GPC -> end }
+  GPC -> end }
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Assign to bin file undef ')
-    Undefined -> end }
+  {  Undefined -> end }
   
-  { GPC -> start }
+  { GPC -> start 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
   s := '';
   for i := 1 to l do s := s+fn[i];
   assign(f, s);
-  { GPC -> end }
+    GPC -> end }
 end;
 
 procedure closetext(var f: text);
 
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Close of text file undef ')
-    Undefined -> end }
+  { Undefined -> end }
   
-  { GPC -> start }
+  { GPC -> start 
   close(f)
-  { GPC -> end }
+    GPC -> end }
 end;
 
 procedure closebin(var f: bytfil);
 
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Close of binary file udef')
-    Undefined -> end }
+  {  Undefined -> end }
   
-  { GPC -> start }
+  { GPC -> start 
   close(f)
-  { GPC -> end }
+    GPC -> end }
 end;
 
 function lengthbin(var f: bytfil): integer;
 begin
-  { Undefined -> start
+  { Undefined -> start }
   errori('Length of bin file undef ');
   lengthbin := 1
-    Undefined -> end }
+  {  Undefined -> end }
   
-  { GPC -> start }
+  { GPC -> start 
   if empty(f) then
     lengthbin := 0
   else
     lengthbin := LastPosition (f) + 1;
-  { GPC -> end }
+    GPC -> end }
 end;
 
 function locationbin(var f: bytfil): integer;
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Location of bin file udef');
   locationbin := 1
-    Undefined -> start } 
+  {  Undefined -> start } 
   
-  { GPC -> start }
+  { GPC -> start 
   locationbin := position(f);
-  { GPC -> end }
+    GPC -> end }
 end;
 
 procedure positionbin(var f: bytfil; p: integer);
 begin
-  { Undefined -> start 
+  { Undefined -> start } 
   errori('Position of bin file udef')
-    Undefined -> end }
+  {  Undefined -> end }
   
-  { GPC -> start }
+  { GPC -> start 
   seek(f, p);
-  { GPC -> end }
+    GPC -> end }
 end;
 
 procedure updatebin(var f: bytfil);
@@ -1281,7 +1281,7 @@ procedure load;
          sptable[52]:='chg       ';     sptable[53]:='len       ';
          sptable[54]:='loc       ';     sptable[55]:='exs       ';
          sptable[56]:='assb      ';     sptable[57]:='clsb      ';
-         sptable[58]:='appb      ';
+         sptable[58]:='appb      ';     sptable[59]:='hlt       ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2630,6 +2630,8 @@ begin (*callsp*)
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
                          pshint(ord(existsfile(fl1))) 
                        end;  
+           59 (*hlt*): goto 2;
+                       
       end;(*case q*)
 end;(*callsp*)
 
@@ -3184,6 +3186,8 @@ begin (* main *)
     end
   end; (*while interpreting*)
 
+  2 : { stop run }
+  
   { perform heap dump if requested }
   if dodmpspc then repspc;
 
