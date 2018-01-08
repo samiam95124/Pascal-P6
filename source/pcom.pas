@@ -209,9 +209,10 @@ const
    maxsp      = 62;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 51;  { number of standard identifiers }
+   maxstd     = 68;  { number of standard identifiers }
    maxres     = 65;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
+   maxrld     = 22;  { maximum length of real in digit form }
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
 
@@ -319,6 +320,7 @@ type                                                        (*describing:*)
      restr = packed array [1..reslen] of char;
      nmstr = packed array [1..digmax] of char;
      csstr = packed array [1..strglgth] of char;
+     rlstr = packed array [1..maxrld] of char;
      keyrng = 1..29; { range of standard call keys }
      identifier = record
                    name: strvsp; llink, rlink: ctp;
@@ -446,7 +448,7 @@ var
                                     (*pointers:*)
                                     (***********)
     parmptr,
-    intptr,realptr,charptr,
+    intptr,crdptr,realptr,charptr,
     boolptr,nilptr,textptr: stp;    (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
@@ -1345,7 +1347,8 @@ var
           repeat if (ch <> '_') and (i < digmax) then 
             begin i := i+1; digit[i] := ch end;
             nextch
-          until (chartp[ch] <> number) and ((chartp[ch] <> letter) or iso7185);
+          until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
+                (r < 16) or iso7185);
           { if radix is <> 10, then number in buffer must be converted. Note
             this abrogates Wirth's "numeric size independence" plan for 
             r <> 10 }
@@ -3292,12 +3295,13 @@ var
       end (*gen2t*);
 
       procedure load;
+      var fsp: stp;
       begin
         with gattr do
           if typtr <> nil then
             begin
               case kind of
-                cst:   if (typtr^.form = scalar) and (typtr <> realptr) then
+                cst: if (typtr^.form <= subrange) and (typtr <> realptr) then
                          if typtr = boolptr then gen2(51(*ldc*),3,cval.ival)
                          else
                            if typtr=charptr then
@@ -4214,7 +4218,7 @@ var
           
           procedure assignprocedure;
             var len: addrrange; lattr: attr;
-          begin
+          begin chkstd;
             variable(fsys+[comma,rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
@@ -4233,7 +4237,7 @@ var
           end;
           
           procedure closeupdateappendprocedure;
-          begin
+          begin chkstd;
             variable(fsys+[rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
@@ -4254,7 +4258,7 @@ var
           end;
           
           procedure positionprocedure;
-          begin
+          begin chkstd;
             variable(fsys+[comma,rparent], false); loadaddress;
             if gattr.typtr <> nil then begin
               if gattr.typtr^.form <> files then error(125);
@@ -4269,7 +4273,7 @@ var
           
           procedure deleteprocedure;
           var len: addrrange; lattr: attr;
-          begin
+          begin chkstd;
             expression(fsys + [rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
             if gattr.typtr <> nil then begin
@@ -4281,7 +4285,7 @@ var
           
           procedure changeprocedure;
           var len: addrrange;
-          begin
+          begin chkstd;
             expression(fsys + [comma,rparent], false); loadaddress;  
             if not string(gattr.typtr) then error(208);
             if gattr.typtr <> nil then begin
@@ -4299,7 +4303,7 @@ var
           end;
           
           procedure lengthlocationfunction;
-          begin
+          begin chkstd;
             if sy = lparent then insymbol else error(9);
             variable(fsys+[rparent], false); loadaddress;
             if gattr.typtr <> nil then begin
@@ -4314,7 +4318,7 @@ var
                 
           procedure existsfunction;
           var len: addrrange;
-          begin
+          begin chkstd;
             if sy = lparent then insymbol else error(9);
             expression(fsys + [rparent], false); loadaddress;
             if not string(gattr.typtr) then error(208);
@@ -4328,7 +4332,7 @@ var
           end;
           
           procedure haltprocedure;
-          begin
+          begin chkstd;
             gen1(30(*csp*),62(*hlt*))
           end;
 
@@ -5658,6 +5662,13 @@ var
     na[43] := 'update   '; na[44] := 'append   '; na[45] := 'exists   ';
     na[46] := 'delete   '; na[47] := 'change   '; na[48] := 'error    ';
     na[49] := 'list     '; na[50] := 'command  '; na[51] := 'halt     ';
+    na[52] := 'linteger '; na[53] := 'maxlint  '; na[54] := 'cardinal ';
+    na[55] := 'maxcrd   '; na[56] := 'lcardinal'; na[57] := 'maxlcrd  ';
+    na[58] := 'sreal    '; na[59] := 'lreal    '; na[60] := 'maxreal  ';
+    na[61] := 'maxsreal '; na[62] := 'maxlreal '; na[63] := 'integer  ';
+    na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
+    na[67] := 'text     '; na[68] := 'maxchr   ';
+    
   end (*stdnames*) ;
 
   procedure enterstdtypes;
@@ -5669,6 +5680,10 @@ var
     with intptr^ do
       begin size := intsize; form := scalar; scalkind := standard; 
             packing := false end;
+    new(crdptr,scalar,standard); pshstc(crdptr);               (*cardinal*)
+    with crdptr^ do
+      begin size := intsize; form := subrange; rangetype := intptr; 
+            min.ival := 0; max.ival := maxint; packing := false end;
     new(realptr,scalar,standard); pshstc(realptr);             (*real*)
     with realptr^ do
       begin size := realsize; form := scalar; scalkind := standard; 
@@ -5700,7 +5715,6 @@ var
     var cp,cp1: ctp; i: integer;
 
   procedure entstdprocfunc(idc: idclass; sn: stdrng; kn: keyrng; idt: stp);
-  
   begin
     if idc = proc then new(cp,proc,standard)
     else new(cp,func,standard);
@@ -5711,31 +5725,51 @@ var
         klass := idc; pfdeckind := standard
       end; enterid(cp)
   end;
+  
+  procedure entstdtyp(sn: stdrng; idt: stp);
+  begin
+    new(cp,types); ininam(cp);
+    with cp^ do
+      begin strassvr(name, na[sn]); idtype := idt; klass := types end;
+    enterid(cp)
+  end;
+  
+  procedure entstdintcst(sn: stdrng; idt: stp; i: integer);
+  begin
+    new(cp,konst); ininam(cp);
+    with cp^ do
+      begin strassvr(name, na[sn]); idtype := idt; next := nil; 
+        values.ival := i; klass := konst end;
+    enterid(cp)
+  end;
+  
+  procedure entstdrlcst(sn: stdrng; idt: stp; r: rlstr);
+  var lvp: csp; rvalb: nmstr; i: 1..digmax;
+  begin
+    new(cp,konst); ininam(cp); new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
+    for i := 1 to maxrld do rvalb[i] := r[i]; 
+    for i := maxrld+1 to digmax do rvalb[i] := ' '; strassvd(lvp^.rval, rvalb); 
+    with cp^ do
+      begin strassvr(name, na[sn]); idtype := idt; next := nil; 
+        values.valp := lvp; klass := konst end;
+    enterid(cp)
+  end;
       
   begin                                                       (*name:*)
                                                               (*******)
 
-    new(cp,types); ininam(cp);                                (*integer*)
-    with cp^ do
-      begin strassvr(name, 'integer  '); idtype := intptr; klass := types end;
-    enterid(cp);
-    new(cp,types); ininam(cp);                                (*real*)
-    with cp^ do
-      begin strassvr(name, 'real     '); idtype := realptr; klass := types end;
-    enterid(cp);
-    new(cp,types); ininam(cp);                                (*char*)
-    with cp^ do
-      begin strassvr(name, 'char     '); idtype := charptr; klass := types end;
-    enterid(cp);
-    new(cp,types); ininam(cp);                                (*boolean*)
-    with cp^ do
-      begin strassvr(name, 'boolean  '); idtype := boolptr; klass := types end;
+    entstdtyp(63, intptr);                                    (*integer*)
+    entstdtyp(52, intptr);                                    (*linteger*)
+    entstdtyp(54, crdptr);                                    (*cardinal*)
+    entstdtyp(56, crdptr);                                    (*lcardinal*)
+    entstdtyp(64, realptr);                                   (*real*)
+    entstdtyp(58, realptr);                                   (*sreal*)
+    entstdtyp(59, realptr);                                   (*lreal*)
+    entstdtyp(65, charptr);                                   (*char*)
+    entstdtyp(66, boolptr);                                   (*boolean*)
     usclrptr := cp; { save to satisfy broken tags }
-    enterid(cp);
-    new(cp,types); ininam(cp);                                (*text*)
-    with cp^ do
-      begin strassvr(name, 'text     '); idtype := textptr; klass := types end;
-    enterid(cp);
+    entstdtyp(67, textptr);                                   (*text*)
+
     cp1 := nil;
     for i := 1 to 2 do
       begin new(cp,konst); ininam(cp);                        (*false,true*)
@@ -5783,11 +5817,15 @@ var
           end;
         enterid(cp1)
       end;
-    new(cp,konst); ininam(cp);                                 (*maxint*)
-    with cp^ do
-      begin strassvr(name, na[36]); idtype := intptr;
-        next := nil; values.ival := maxint; klass := konst
-      end; enterid(cp);
+      
+    entstdintcst(36, intptr, maxint);                          (*maxint*)
+    entstdintcst(53, intptr, maxint);                          (*maxlint*)
+    entstdintcst(55, crdptr, maxint);                          (*maxcrd*)
+    entstdintcst(57, crdptr, maxint);                          (*maxlcrd*)
+    entstdintcst(68, charptr, ordmaxchar);                     (*maxlcrd*)
+    entstdrlcst(60, realptr, '1.7976931348623157e308');        (*maxreal*)
+    entstdrlcst(61, realptr, '1.7976931348623157e308');        (*maxsreal*)
+    entstdrlcst(62, realptr, '1.7976931348623157e308');        (*maxlreal*)
     
     entstdprocfunc(proc, 5,  1,  nil);     { get }
     entstdprocfunc(proc, 6,  2,  nil);     { put }

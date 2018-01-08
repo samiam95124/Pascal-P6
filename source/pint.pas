@@ -2685,7 +2685,7 @@ begin (* main *)
   pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 0;
   
   { clear globals }
-  for ad := pctop to gbtop-1 do store[gbtop] := 0;
+  for ad := pctop to gbtop-1 do begin store[ad] := 0; putdef(ad, false) end;
 
   interpreting := true;
 
