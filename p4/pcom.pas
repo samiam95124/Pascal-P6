@@ -170,8 +170,8 @@ type                                                        (*describing:*)
                beginsy,ifsy,casesy,repeatsy,whilesy,forsy,withsy,
                gotosy,endsy,elsesy,untilsy,ofsy,dosy,tosy,downtosy,
                thensy,othersy);
-     operator = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                 neop,eqop,inop,noop);
+     operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
+                  neop,eqop,inop,noop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace);
@@ -285,7 +285,7 @@ var
                                      **********)
 
     sy: symbol;                     (*last symbol*)
-    op: operator;                   (*classification of last symbol*)
+    op: operatort;                  (*classification of last symbol*)
     val: valu;                      (*value of last constant*)
     lgth: integer;                  (*length of last string constant*)
     id: alpha;                      (*last identifier (possibly truncated)*)
@@ -376,8 +376,8 @@ var
     frw: array [1..9] of 1..36(*nr. of res. words + 1*);
     rsy: array [1..35(*nr. of res. words*)] of symbol;
     ssy: array [char] of symbol;
-    rop: array [1..35(*nr. of res. words*)] of operator;
-    sop: array [char] of operator;
+    rop: array [1..35(*nr. of res. words*)] of operatort;
+    sop: array [char] of operatort;
     na:  array [1..35] of alpha;
     mn:  array [0..60] of packed array [1..4] of char;
     sna: array [1..23] of packed array [1..4] of char;
@@ -2850,13 +2850,13 @@ var
         end (*call*) ;
 
         procedure expression;
-          var lattr: attr; lop: operator; typind: char; lsize: addrrange;
+          var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
 
           procedure simpleexpression(fsys: setofsys);
-            var lattr: attr; lop: operator; signed: boolean;
+            var lattr: attr; lop: operatort; signed: boolean;
 
             procedure term(fsys: setofsys);
-              var lattr: attr; lop: operator;
+              var lattr: attr; lop: operatort;
 
               procedure factor(fsys: setofsys);
                 var lcp: ctp; lvp: csp; varpart: boolean;

@@ -251,8 +251,8 @@ type                                                        (*describing:*)
                classsy,issy,overloadsy,overridesy,referencesy,joinssy,staticsy,
                inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy);
-     operator = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                 neop,eqop,inop,noop);
+     operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
+                  neop,eqop,inop,noop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
@@ -408,7 +408,7 @@ var
                                      **********)
 
     sy: symbol;                     (*last symbol*)
-    op: operator;                   (*classification of last symbol*)
+    op: operatort;                  (*classification of last symbol*)
     val: valu;                      (*value of last constant*)
     lgth: integer;                  (*length of last string constant*)
     id: idstr;                      (*last identifier (possibly truncated)*)
@@ -505,11 +505,10 @@ var
     statbegsys,typedels: setofsys;
     chartp : array[char] of chtp;
     rw:  array [1..maxres(*nr. of res. words*)] of restr;
-    frw: array [1..10] of 1..36(*nr. of res. words + 1*);
     rsy: array [1..maxres(*nr. of res. words*)] of symbol;
     ssy: array [char] of symbol;
-    rop: array [1..maxres(*nr. of res. words*)] of operator;
-    sop: array [char] of operator;
+    rop: array [1..maxres(*nr. of res. words*)] of operatort;
+    sop: array [char] of operatort;
     na:  array [stdrng] of restr;
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
@@ -1169,6 +1168,7 @@ var
     206: write('Integer part of real constant exceeds ranqe');
     207: write('Digit beyond radix');
     208: write('Type must be string');
+    209: write('''procedure'' or ''function'' expected');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1329,7 +1329,7 @@ var
             until kk = k;
           sy := ident; op := noop;
           if k <= reslen then
-            for i := frw[k] to frw[k+1] - 1 do
+            for i := 1 to maxres do
               if strequri(rw[i], id) then
                 begin sy := rsy[i]; op := rop[i];
                   { if in ISO 7185 mode and keyword is extended, then revert it
@@ -2946,6 +2946,12 @@ var
     end (*parameterlist*) ;
 
     begin (*procdeclaration*)
+      if fsy = staticsy then begin { 'static' leader parsed }
+        { static attribute ignored here }
+        chkstd; 
+        if (sy <> procsy) and (sy <> funcsy) then error(209)
+        else fsy := sy; insymbol
+      end;
       llc := lc; lc := lcaftermarkstack; forw := false;
       if sy = ident then
         begin searchsection(display[top].fname,lcp); (*decide whether forw.*)
@@ -3017,7 +3023,7 @@ var
             if not forw then error(123)
         end;
       if sy = semicolon then insymbol else error(14);
-      if (sy = ident) and strequri('forward  ', id) then
+      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy)  then
         begin
           if forw then error(161)
           else lcp^.forwdecl := true;
@@ -3032,11 +3038,11 @@ var
           repeat block(fsys,semicolon,lcp);
             if sy = semicolon then
               begin if prtables then printtables(false); insymbol;
-                if not (sy in [beginsy,procsy,funcsy]) then
+                if not (sy in [beginsy,procsy,funcsy,staticsy]) then
                   begin error(6); skip(fsys) end
               end
             else error(14)
-          until (sy in [beginsy,procsy,funcsy]) or eof(prd);
+          until (sy in [beginsy,procsy,funcsy,staticsy]) or eof(prd);
           if lcp^.klass = func then
             if lcp <> ufctptr then
               if not lcp^.asgn then error(193); { no function result assign }
@@ -4525,13 +4531,13 @@ var
         end (*call*) ;
 
         procedure expression;
-          var lattr: attr; lop: operator; typind: char; lsize: addrrange;
+          var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
 
           procedure simpleexpression(fsys: setofsys; threaten: boolean);
-            var lattr: attr; lop: operator; signed: boolean;
+            var lattr: attr; lop: operatort; signed: boolean;
 
             procedure term(fsys: setofsys; threaten: boolean);
-              var lattr: attr; lop: operator;
+              var lattr: attr; lop: operatort;
 
               procedure factor(fsys: setofsys; threaten: boolean);
                 var lcp: ctp; lvp: csp; varpart: boolean;
@@ -5591,7 +5597,7 @@ var
         begin insymbol; typedeclaration end;
       if sy = varsy then
         begin insymbol; vardeclaration end;
-      while sy in [procsy,funcsy] do
+      while sy in [procsy,funcsy,staticsy] do
         begin lsy := sy; insymbol; procdeclaration(lsy) end;
       if sy <> beginsy then
         begin error(18); skip(fsys) end
@@ -5947,7 +5953,7 @@ var
     simptypebegsys := [lparent] + constbegsys;
     typebegsys:=[arrow,packedsy,arraysy,recordsy,setsy,filesy]+simptypebegsys;
     typedels := [arraysy,recordsy,setsy,filesy];
-    blockbegsys := [labelsy,constsy,typesy,varsy,procsy,funcsy,beginsy];
+    blockbegsys := [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,beginsy];
     selectsys := [arrow,period,lbrack];
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
     statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy];
@@ -5978,9 +5984,6 @@ var
       rw[58] := 'extends  '; rw[59] := 'on       '; rw[60] := 'result   ';
       rw[61] := 'operator '; rw[62] := 'out      '; rw[63] := 'property ';
       rw[64] := 'channel  '; rw[65] := 'stream   ';
-      
-      frw[1] :=  1; frw[2] :=  1; frw[3] :=  7; frw[4] := 16; frw[5] := 23;
-      frw[6] := 29; frw[7] := 33; frw[8] := 34; frw[9] := 35; frw[10] := 36;
     end (*reswords*) ;
 
     procedure symbols;

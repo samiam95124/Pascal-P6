@@ -1,4 +1,3 @@
-
 (*$L-*)
  (*********************************************************
   *                                                       *
@@ -81,8 +80,8 @@ TYPE                                                        (*DESCRIBING:*)
                BEGINSY,IFSY,CASESY,REPEATSY,WHILESY,FORSY,WITHSY,
                GOTOSY,ENDSY,ELSESY,UNTILSY,OFSY,DOSY,TOSY,DOWNTOSY,
                THENSY,OTHERSY);
-     OPERATOR = (MUL,RDIV,ANDOP,IDIV,IMOD,PLUS,MINUS,OROP,LTOP,LEOP,GEOP,GTOP,
-                 NEOP,EQOP,INOP,NOOP);
+     OPERATORT = (MUL,RDIV,ANDOP,IDIV,IMOD,PLUS,MINUS,OROP,LTOP,LEOP,GEOP,GTOP,
+                  NEOP,EQOP,INOP,NOOP);
      SETOFSYS = SET OF SYMBOL;
 
                                                             (*CONSTANTS*)
@@ -205,7 +204,7 @@ VAR
                                      **********)
 
     SY: SYMBOL;                     (*LAST SYMBOL*)
-    OP: OPERATOR;                   (*CLASSIFICATION OF LAST SYMBOL*)
+    OP: OPERATORT;                  (*CLASSIFICATION OF LAST SYMBOL*)
     VAL: VALU;                      (*VALUE OF LAST CONSTANT*)
     LGTH: INTEGER;                  (*LENGTH OF LAST STRING CONSTANT*)
     ID: ALPHA;                      (*LAST IDENTIFIER (POSSIBLY TRUNCATED)*)
@@ -295,9 +294,9 @@ VAR
     RSY: ARRAY [1..35(*NR. OF RES. WORDS*)] OF SYMBOL;
     { THIS DEFINITION IS CDC DEPENDENT, CHANGED TO ALL CHARACTERS [SAM] }
     SSY: ARRAY [CHAR {'+'..';'}] OF SYMBOL;
-    ROP: ARRAY [1..35(*NR. OF RES. WORDS*)] OF OPERATOR;
+    ROP: ARRAY [1..35(*NR. OF RES. WORDS*)] OF OPERATORT;
     { THIS DEFINITION IS CDC DEPENDENT, CHANGED TO ALL CHARACTERS [SAM] }
-    SOP: ARRAY [CHAR {'+'..';'}] OF OPERATOR;
+    SOP: ARRAY [CHAR {'+'..';'}] OF OPERATORT;
     NA:  ARRAY [1..35] OF ALPHA;
     MN:  ARRAY [0..57] OF PACKED ARRAY [1..4] OF CHAR;
     SNA: ARRAY [1..23] OF PACKED ARRAY [1..4] OF CHAR;
@@ -2591,13 +2590,13 @@ PROCEDURE ENDOFLINE;
         END (*CALL*) ;
 
         PROCEDURE EXPRESSION;
-          VAR LATTR: ATTR; LOP: OPERATOR; TYPIND: CHAR; LSIZE: ADDRRANGE;
+          VAR LATTR: ATTR; LOP: OPERATORT; TYPIND: CHAR; LSIZE: ADDRRANGE;
 
           PROCEDURE SIMPLEEXPRESSION(FSYS: SETOFSYS);
-            VAR LATTR: ATTR; LOP: OPERATOR; SIGNED: BOOLEAN;
+            VAR LATTR: ATTR; LOP: OPERATORT; SIGNED: BOOLEAN;
 
             PROCEDURE TERM(FSYS: SETOFSYS);
-              VAR LATTR: ATTR; LOP: OPERATOR;
+              VAR LATTR: ATTR; LOP: OPERATORT;
 
               PROCEDURE FACTOR(FSYS: SETOFSYS);
                 VAR LCP: CTP; LVP: CSP; VARPART: BOOLEAN;
