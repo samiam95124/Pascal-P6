@@ -206,10 +206,10 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 62;  { number of standard procedures/functions }
+   maxsp      = 64;  { number of standard procedures/functions }
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 68;  { number of standard identifiers }
+   maxstd     = 69;  { number of standard identifiers }
    maxres     = 65;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    maxrld     = 22;  { maximum length of real in digit form }
@@ -316,7 +316,7 @@ type                                                        (*describing:*)
      nmstr = packed array [1..digmax] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
-     keyrng = 1..29; { range of standard call keys }
+     keyrng = 1..30; { range of standard call keys }
      identifier = record
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; refer: boolean;
@@ -4351,6 +4351,24 @@ var
           begin chkstd;
             gen1(30(*csp*),62(*hlt*))
           end;
+          
+          procedure assertprocedure;
+          var len: addrrange;
+          begin chkstd;
+            expression(fsys+[comma,rparent], false); load;
+            if gattr.typtr <> nil then
+              if gattr.typtr <> boolptr then error(135);
+            if sy = comma then begin insymbol;
+              expression(fsys + [rparent], false); loadaddress;
+              if not string(gattr.typtr) then error(208);
+              if gattr.typtr <> nil then begin
+                len := gattr.typtr^.size div charmax;
+                gen2(51(*ldc*),1,len);
+                gen1(30(*csp*),64(*asts*))
+              end
+            end else
+              gen1(30(*csp*),63(*ast*))
+          end;
 
           procedure callnonstandard(fcp: ctp);
             var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
@@ -4508,6 +4526,7 @@ var
                     27:     deleteprocedure;
                     28:     changeprocedure;
                     29:     haltprocedure;
+                    30:     assertprocedure;
                     10,13:  error(399)
                   end;
                   if not(lkey in [5,6,11,12,17,29]) then
@@ -5683,7 +5702,7 @@ var
     na[58] := 'sreal    '; na[59] := 'lreal    '; na[60] := 'maxreal  ';
     na[61] := 'maxsreal '; na[62] := 'maxlreal '; na[63] := 'integer  ';
     na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
-    na[67] := 'text     '; na[68] := 'maxchr   ';
+    na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
     
   end (*stdnames*) ;
 
@@ -5879,6 +5898,7 @@ var
     entstdprocfunc(proc, 46, 27, nil);     { delete }
     entstdprocfunc(proc, 47, 28, nil);     { change }
     entstdprocfunc(proc, 51, 29, nil);     { halt }
+    entstdprocfunc(proc, 69, 30, nil);     { assert }
     
   end (*entstdnames*) ;
 
@@ -6063,7 +6083,8 @@ var
       sna[48] :=' wbx'; sna[49] :='asst'; sna[50] :='clst'; sna[51] :=' pos'; 
       sna[52] :=' upd'; sna[53] :='appt'; sna[54] :=' del'; sna[55] :=' chg'; 
       sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
-      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; 
+      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
+      sna[64] :='asts';
 
     end (*procmnemonics*) ;
 
@@ -6289,6 +6310,7 @@ var
       pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize+intsize-intsize;
       pdx[59] := +adrsize*2+intsize;   pdx[60] := +adrsize;
       pdx[61] := +adrsize;             pdx[62] := 0;
+      pdx[63] := +intsize;             pdx[64] := +adrsize+intsize+intsize;
                                                       
     end;
 

@@ -215,6 +215,7 @@ const
       maxdef      = 2097152; { maxstr / 8 for defined bits }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
+      maxast      = 100;     { maximum size of assert message }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -236,7 +237,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 59;      { number of predefined procedures/functions }
+      maxsp       = 61;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -443,6 +444,15 @@ procedure errori(string: beta);
 begin writeln; write('*** Runtime error');
       if srclin > 0 then write(' [', srclin:1, ']');
       writeln(': ', string);
+      pmd; goto 1
+end;(*errori*)
+
+procedure errors(a: address; l: address);
+begin writeln; write('*** Runtime error'); 
+      if srclin > 0 then write(' [', srclin:1, ']');
+      write(': ');
+      if l > maxast then l := maxast;
+      while l > 0 do begin write(chr(store[a])); a := a+1; l := l-1 end;
       pmd; goto 1
 end;(*errori*)
 
@@ -1282,6 +1292,7 @@ procedure load;
          sptable[54]:='loc       ';     sptable[55]:='exs       ';
          sptable[56]:='assb      ';     sptable[57]:='clsb      ';
          sptable[58]:='appb      ';     sptable[59]:='hlt       ';
+         sptable[60]:='ast       ';     sptable[61]:='asts      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2649,6 +2660,12 @@ begin (*callsp*)
                          pshint(ord(existsfile(fl1))) 
                        end;  
            59 (*hlt*): goto 2;
+           60 (*ast*): begin popint(i); 
+                         if i = 0 then errori('Code asserted            ');
+                       end;
+           61 (*asts*): begin popint(i); popadr(ad); popint(j);
+                         if j = 0 then errors(ad, i);
+                       end;
                        
       end;(*case q*)
 end;(*callsp*)
