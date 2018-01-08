@@ -1183,6 +1183,9 @@ var
     207: write('Digit beyond radix');
     208: write('Type must be string');
     209: write('''procedure'' or ''function'' expected');
+    210: write('No function active to set result');
+    211: write('Anonymous function result must be at function end');
+    212: write('Function result assigned before result given');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3044,7 +3047,6 @@ var
         end
       else
         begin lcp^.forwdecl := false;
-          { mark(markp); }
           repeat block(fsys,semicolon,lcp);
             if sy = semicolon then
               begin if prtables then printtables(false); insymbol;
@@ -3080,6 +3082,9 @@ var
           fp: extfilep;
           test: boolean;
           printed: boolean;
+          lattr: attr;
+          fid: stp;
+          lsize: addrrange;
 
       { add statement level }
       procedure addlvl;
@@ -3475,7 +3480,7 @@ var
           taggedrec := b
         end;
 
-        procedure selector(fsys: setofsys; fcp: ctp);
+        procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
         var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer; 
             id: stp;
         function schblk(fcp: ctp): boolean;
@@ -3584,7 +3589,7 @@ var
                     end
               end (*case*)
             end (*with*);
-          if not (sy in selectsys + fsys) then
+          if not (sy in selectsys + fsys) and not skp then
             begin error(59); skip(selectsys + fsys) end;
           while sy in selectsys do
             begin
@@ -3728,7 +3733,7 @@ var
               if vlev < level then threat := true;
               if forcnt > 0 then error(195);
             end;
-            selector(fsys,lcp)
+            selector(fsys,lcp, false)
           end (*variable*) ;
 
           procedure getputresetrewriteprocedure;
@@ -4600,7 +4605,7 @@ var
                                   cval := values
                                 end
                             else
-                              begin selector(fsys,lcp);
+                              begin selector(fsys,lcp,false);
                                 if threaten and (lcp^.klass = vars) then with lcp^ do begin
                                   if vlev < level then threat := true;
                                   if forcnt > 0 then error(195);
@@ -4993,10 +4998,10 @@ var
             end (*sy = relop*)
         end (*expression*) ;
 
-        procedure assignment(fcp: ctp);
+        procedure assignment(fcp: ctp; skp: boolean);
           var lattr, lattr2: attr; tagasc: boolean;
-        begin tagasc := false; selector(fsys + [becomes],fcp);
-          if sy = becomes then
+        begin tagasc := false; selector(fsys + [becomes],fcp,skp);
+          if (sy = becomes) or skp then
             begin
               { if function result, set assigned }
               if fcp^.klass = func then fcp^.asgn := true
@@ -5381,7 +5386,7 @@ var
             if sy = ident then
               begin searchid([vars,field],lcp); insymbol end
             else begin error(2); lcp := uvarptr end;
-            selector(fsys + [comma,dosy],lcp);
+            selector(fsys + [comma,dosy],lcp,false);
             if gattr.typtr <> nil then
               if gattr.typtr^.form = records then
                 if top < displimit then
@@ -5462,15 +5467,15 @@ var
               sk := false
             end
           end;
-        if not (sy in fsys + [ident]) then
+        if not (sy in fsys + [ident,resultsy]) then
           begin error(6); skip(fsys) end;
-        if sy in statbegsys + [ident] then
+        if sy in statbegsys + [ident,resultsy] then
           begin
             case sy of
               ident:    begin searchid([vars,field,func,proc],lcp); 
                           if sk then sy := syn else insymbol;
                           if lcp^.klass = proc then call(fsys,lcp)
-                          else assignment(lcp)
+                          else assignment(lcp, false)
                         end;
               beginsy:  begin insymbol; compoundstatement end;
               gotosy:   begin insymbol; gotostatement end;
@@ -5479,7 +5484,17 @@ var
               whilesy:  begin insymbol; whilestatement end;
               repeatsy: begin insymbol; repeatstatement end;
               forsy:    begin insymbol; forstatement end;
-              withsy:   begin insymbol; withstatement end
+              withsy:   begin insymbol; withstatement end;
+              { process result as a pseudostatement }
+              resultsy: begin
+                if fprocp <> nil then if fprocp^.klass <> func then error(210)
+                else begin
+                  if fprocp^.asgn then error(212);
+                  fprocp^.asgn := true
+                end;
+                assignment(fprocp, true);
+                if not (sy = endsy) or (stalvl > 1) then error(211)
+              end 
             end;
             if not (sy in [semicolon,endsy,elsesy,untilsy]) then
               begin error(6); skip(fsys) end
@@ -5618,16 +5633,19 @@ var
     stalvl := 0; { clear statement nesting level }
     dp := true;
     repeat
-      if sy = labelsy then
-        begin insymbol; labeldeclaration end;
-      if sy = constsy then
-        begin insymbol; constdeclaration end;
-      if sy = typesy then
-        begin insymbol; typedeclaration end;
-      if sy = varsy then
-        begin insymbol; vardeclaration end;
-      while sy in [procsy,funcsy,staticsy] do
-        begin lsy := sy; insymbol; procdeclaration(lsy) end;
+      repeat
+        if sy = labelsy then
+          begin insymbol; labeldeclaration end;
+        if sy = constsy then
+          begin insymbol; constdeclaration end;
+        if sy = typesy then
+          begin insymbol; typedeclaration end;
+        if sy = varsy then
+          begin insymbol; vardeclaration end;
+        while sy in [procsy,funcsy,staticsy] do
+          begin lsy := sy; insymbol; procdeclaration(lsy) end
+      until iso7185 or (sy = beginsy) or eof(prd) or
+            not (sy in [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy]);
       if sy <> beginsy then
         begin error(18); skip(fsys) end
     until (sy in statbegsys) or eof(prd);
