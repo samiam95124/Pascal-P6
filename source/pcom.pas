@@ -222,12 +222,7 @@ const
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
 
-   { debug flags }
 
-   dodmplex   = false; { dump lexical }
-   doprtryc   = false; { dump recycling tracker counts }
-   doprtlab   = false; { print labels }
-   dodmpdsp   = false; { dump the display }
 
    { version numbers }
 
@@ -429,18 +424,37 @@ var
                                     (*switches:*)
                                     (***********)
 
-    dp,                             (*declaration part*)
-    list,prcode,prtables,
-    chkvar: boolean;                (*output options for
-                                      -- source program listing
-                                      -- printing symbolic code
-                                      -- displaying ident and struct tables
-                                      -- procedure option*)
-    debug: boolean;                 { -- Debug checks }
-    chkref: boolean;                { -- Reference checks }
-    chkudtc, chkudtf: boolean;      { -- Check undefined tagfields, candidate
+    dp: boolean;                    (*declaration part*)
+    list: boolean;                  { -- l: source program listing }
+    prcode: boolean;                { -- c: print symbolic code }
+    prtables: boolean;              { -- t: displaying ident and struct tables }
+    chkvar: boolean;                { -- v: check variant records }
+    debug: boolean;                 { -- d: Debug checks }
+    chkref: boolean;                { -- r: Reference checks }
+    chkudtc, chkudtf: boolean;      { -- u: Check undefined tagfields, candidate
                                          and final }
-    iso7185: boolean;               { -- restrict to iso7185 language }
+    iso7185: boolean;               { -- s: restrict to iso7185 language }
+    dodmplex: boolean;              { -- x: dump lexical }
+    doprtryc: boolean;              { -- z: dump recycling tracker counts }
+    doprtlab: boolean;              { -- b: print labels }
+    dodmpdsp: boolean;              { -- y: dump the display }
+    
+    { switches passed through to pint }
+
+    { -- o: check arithmetic overflow }
+    { -- a: dump instructions after assembly }
+    { -- g: dump label definitions }
+    { -- f: dump storage area specs }
+    { -- e: trace routine executions }
+    { -- i: trace instruction executions }
+    { -- m: perform post-mortem dump on error }
+    { -- h: add source line sets to code }
+    { -- j: trace source line executions (requires dosrclin) }
+    { -- k: dump heap space after execution }
+    { -- n: obey heap space recycle requests }
+    { -- p: check reuse of freed entry } 
+    { -- q: check undefined accesses }   
+    
     option: array ['a'..'z'] of     { option array }
               boolean;
 
@@ -1271,25 +1285,21 @@ var
       repeat
         nextch;
         ch1 := lcase(ch);
-        if ch1 = 't' then
-          switch(prtables)
+        if ch1 = 't' then switch(prtables)
         else if ch1 = 'l' then begin
           switch(list);
           if not list then writeln(output)
         end
-        else if ch1 = 'd' then begin
-          switch(debug);
-        end
-       else if ch1 = 'c' then
-          switch(prcode)
-        else if ch1 = 'v' then
-          switch(chkvar)
-        else if ch1 = 'r' then
-          switch(chkref)
-        else if ch1 = 'u' then
-          switch(chkudtc)
-        else if ch1 = 's' then
-          switch(iso7185)
+        else if ch1 = 'd' then switch(debug)
+        else if ch1 = 'c' then switch(prcode)
+        else if ch1 = 'v' then switch(chkvar)
+        else if ch1 = 'r' then switch(chkref)
+        else if ch1 = 'u' then switch(chkudtc)
+        else if ch1 = 's' then switch(iso7185)
+        else if ch1 = 'x' then switch(dodmplex)
+        else if ch1 = 'z' then switch(doprtryc)
+        else if ch1 = 'b' then switch(doprtlab)
+        else if ch1 = 'y' then switch(dodmpdsp)
         else if ch1 in ['a'..'z'] then
           switch(dummy) { pass through unknown options }
         else begin 
@@ -5925,6 +5935,7 @@ var
     prcode := true; option['c'] := true; debug := true; option['d'] := true;
     chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
     chkudtc := true; option['u'] := true; option['s'] := false; iso7185 := false;
+    dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;

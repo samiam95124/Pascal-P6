@@ -243,29 +243,6 @@ const
       ujplen      = 5;       { length of ujp instruction (used for case jumps) }
       fillen      = 250;     { maximum length of filenames }
 
-      { check flags: these turn on runtime checks }
-      dochkovf    = true;    { check arithmetic overflow }
-
-      { debug flags: turn these on for various dumps and traces }
-
-      dodmpins    = false;    { dump instructions after assembly }
-      dodmplab    = false;    { dump label definitions }
-      dodmpsto    = false;    { dump storage area specs }
-      dotrcrot    = false;    { trace routine executions }
-      dotrcins    = false;    { trace instruction executions }
-      dopmd       = false;    { perform post-mortem dump on error }
-      dosrclin    = true;     { add source line sets to code }
-      dotrcsrc    = false;    { trace source line executions (requires dosrclin) }
-      dodmpspc    = false;    { dump heap space after execution }
-      dorecycl    = true;     { obey heap space recycle requests }
-      { invoke a special recycle mode that creates single word entries on
-        recycle of any object, breaking off and recycling the rest. Once
-        allocated, each entry exists forever, and accesses to it can be
-        checked. }
-      dochkrpt    = false;    { check reuse of freed entry (automatically
-                                invokes dorecycl = false }
-      dochkdef    = true;     { check undefined accesses }
-
       { version numbers }
 
       majorver   = 1; { major version number }
@@ -313,6 +290,29 @@ var   pc          : address;   (*program address register*)
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of byte; { bits in byte }
+      
+      { check flags: these turn on runtime checks }
+      dochkovf: boolean; { check arithmetic overflow }
+
+      { debug flags: turn these on for various dumps and traces }
+
+      dodmpins: boolean; { dump instructions after assembly }
+      dodmplab: boolean; { dump label definitions }
+      dodmpsto: boolean; { dump storage area specs }
+      dotrcrot: boolean; { trace routine executions }
+      dotrcins: boolean; { trace instruction executions }
+      dopmd:    boolean; { perform post-mortem dump on error }
+      dosrclin: boolean; { add source line sets to code }
+      dotrcsrc: boolean; { trace source line executions (requires dosrclin) }
+      dodmpspc: boolean; { dump heap space after execution }
+      dorecycl: boolean; { obey heap space recycle requests }
+      { invoke a special recycle mode that creates single word entries on
+        recycle of any object, breaking off and recycling the rest. Once
+        allocated, each entry exists forever, and accesses to it can be
+        checked. }
+      dochkrpt: boolean; { check reuse of freed entry (automatically
+                           invokes dorecycl = false }
+      dochkdef: boolean; { check undefined accesses }
 
       interpreting: boolean;
 
@@ -1417,9 +1417,27 @@ procedure load;
                                 if not (ch in ['a'..'z']) then 
                                   errorl('No valid option found    ');
                                 ch1 := ch; getnxt;
-                                option[ch1] := ch = '+'; getnxt
+                                option[ch1] := ch = '+'; getnxt;
+                                case ch1 of
+                                  'a': dodmpins := option[ch1]; 
+                                  'e': dotrcrot := option[ch1]; 
+                                  'f': dodmpsto := option[ch1];
+                                  'g': dodmplab := option[ch1];
+                                  'h': dosrclin := option[ch1];
+                                  'i': dotrcins := option[ch1];
+                                  'j': dotrcsrc := option[ch1];
+                                  'k': dodmpspc := option[ch1];
+                                  'm': dopmd    := option[ch1];
+                                  'n': dorecycl := option[ch1];
+                                  'o': dochkovf := option[ch1];
+                                  'p': dochkrpt := option[ch1];
+                                  'q': dochkdef := option[ch1];
+                                  'b':; 'c':; 'd':; 'l':; 'r':; 's':; 't':; 
+                                  'u':; 'v':; 'w':; 'x':; 'y':; 'z':;
+                                end
                               until not (ch in ['a'..'z']);
-                              getlin 
+                              getlin;
+                              
                             end;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
                   end;
@@ -2670,6 +2688,23 @@ begin (* main *)
   writeln;
   writeln;
 
+  for c1 := 'a' to 'z' do option[c1] := false;
+  
+  { preset options }
+  dochkovf := true;  { check arithmetic overflow }
+  dodmpins := false; { dump instructions after assembly }
+  dodmplab := false; { dump label definitions }
+  dodmpsto := false; { dump storage area specs }
+  dotrcrot := false; { trace routine executions }
+  dotrcins := false; { trace instruction executions }
+  dopmd    := false; { perform post-mortem dump on error }
+  dosrclin := true;  { add source line sets to code }
+  dotrcsrc := false; { trace source line executions (requires dosrclin) }
+  dodmpspc := false; { dump heap space after execution }
+  dorecycl := true;  { obey heap space recycle requests }
+  dochkrpt := false; { check reuse of freed entry (automatically
+  dochkdef := true;  { check undefined accesses }
+      
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
 
