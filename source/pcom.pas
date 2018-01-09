@@ -188,8 +188,6 @@ const
      string quanta system, string lengths are effectively unlimited, but there
      it still sets the size of some buffers in pcom. }
    strglgth    = 250;
-   { maximum number of digits in real, including sign and exponent }
-   digmax      = 250;
    { lcaftermarkstack is a very pcom specific way of stating the size of a mark
      in pint. However, it is used frequently in Perberton's documentation, so I
      left it, but equated it to the more portable marksize. }
@@ -268,7 +266,7 @@ type                                                        (*describing:*)
      constant = record
                        next: csp; { next entry link }
                        case cclass: cstclass of
-                         reel: (rval: strvsp);
+                         reel: (rval: real);
                          pset: (pval: setty);
                          strg: (slgth: 0..strglgth; sval: strvsp)
                        end;
@@ -313,7 +311,6 @@ type                                                        (*describing:*)
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
      restr = packed array [1..reslen] of char;
-     nmstr = packed array [1..digmax] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..30; { range of standard call keys }
@@ -614,8 +611,7 @@ var
   procedure putcst(p: csp);
   begin
      { recycle string if present }
-     if p^.cclass = strg then putstrs(p^.sval)
-     else if p^.cclass = reel then putstrs(p^.rval);
+     if p^.cclass = strg then putstrs(p^.sval);
      dispose(p); { release entry }
      cspcnt := cspcnt-1 { remove from count }
   end;
@@ -822,23 +818,6 @@ var
   procedure strassvr(var a: strvsp; b: restr);
   var i, j, l: integer; p, lp: strvsp;
   begin l := reslen; p := nil; a := nil; lp := nil; j := 1;
-    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-    if b[l] = ' ' then l := 0;
-    for i := 1 to l do begin
-      if j > varsqt then p := nil;
-      if p = nil then begin
-        getstr(p); p^.next := nil; j := 1;
-        if a = nil then a := p else lp^.next := p; lp := p
-      end;
-      p^.str[j] := b[i]; j := j+1
-    end;
-    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-  end;
-
-  { assign number string fixed to variable length string, including allocation }
-  procedure strassvd(var a: strvsp; b: nmstr);
-  var i, j, l: integer; p, lp: strvsp;
-  begin l := digmax; p := nil; a := nil; lp := nil; j := 1;
     while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
     if b[l] = ' ' then l := 0;
     for i := 1 to l do begin
@@ -1249,12 +1228,12 @@ var
     description in the global variables sy, op, id, val and lgth*)
     label 1;
     var i,k,v,r,p: integer;
-        digit: nmstr; { temp holding for digit string }
-        rvalb: nmstr; { temp holding for real string }
         string: csstr;
         lvp: csp; test, ferr: boolean;
         iscmte: boolean;
         ev: integer;
+        rv: real;
+        sgn: integer;
 
     procedure nextch;
     begin if eol then
@@ -1312,6 +1291,20 @@ var
         end;
       until ch <> ',';
     end (*options*) ;
+    
+    function pwrten(e: integer): real;
+    var t: real; { accumulator }
+        p: real; { current power }
+    begin
+      p := 1.0e+1; { set 1st power }
+      t := 1.0; { initalize result }
+      repeat
+         if odd(e) then t := t*p; { if bit set, add this power }
+         e := e div 2; { index next bit }
+         p := sqr(p) { find next power }
+      until e = 0;
+      pwrten := t
+    end;
 
   begin (*insymbol*)
   1:
@@ -1357,94 +1350,53 @@ var
           if chartp[ch] = chhex then begin chkstd; r := 16; nextch end
           else if chartp[ch] = choct then begin chkstd; r := 8; nextch end
           else if chartp[ch] = chbin then begin chkstd; r := 2; nextch end;
-          repeat if (ch <> '_') and (i < digmax) then 
-            begin i := i+1; digit[i] := ch end;
+          v := 0;
+          repeat 
+            if ch <> '_' then
+              if v <= maxint div r then 
+                v := v*r+ordint[ch] 
+              else begin error(203); v := 0 end;
             nextch
           until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
                 (r < 16) or iso7185);
-          { if radix is <> 10, then number in buffer must be converted. Note
-            this abrogates Wirth's "numeric size independence" plan for 
-            r <> 10 }
-          if r <> 10 then begin
-            v := 0; for k := 1 to i do begin 
-              if v > maxint div r then error(203);
-              { note the fallback for digit beyond radix is to add zeros }
-              if ((r = 16) and not (digit[k] in ['0'..'9', 'a'..'f', 'A'..'F'])) or 
-                 ((r = 8) and not (digit[k] in ['0'..'7'])) or
-                 ((r = 2) and not (digit[k] in ['0'..'1'])) then error(207);              
-              v := v*r+ordint[digit[k]]
-            end;
-            p := maxpow10; i := 0; 
-            while p > 0 do begin 
-              if i < digmax then begin 
-                i := i+1; 
-                digit[i] := chr(v div p mod 10+ord('0')) 
-              end; 
-              p := p div 10
-            end
-          end;
+          val.ival := v; 
+          sy := intconst;
           if ((ch = '.') and (prd^ <> '.') and (prd^ <> ')')) or
              (lcase(ch) = 'e') then
             begin
               { its a real, reject non-decimal radixes }
               if r <> 10 then error(305);
-              k := i;
-              if ch = '.' then
-                begin k := k+1; if k <= digmax then digit[k] := ch;
-                  nextch; (*if ch = '.' then begin ch := ':'; goto 3 end;*)
-                  if chartp[ch] <> number then error(201)
-                  else
-                    repeat k := k + 1;
-                      if k <= digmax then digit[k] := ch; nextch
-                    until chartp[ch] <>  number
-                end;
+              rv := v; ev := 0;
+              if ch = '.' then begin
+                nextch;
+                if chartp[ch] <> number then error(201);
+                repeat 
+                  rv := rv*10+ordint[ch]; nextch; ev := ev-1 
+                until chartp[ch] <> number;
+              end; 
               if lcase(ch) = 'e' then
-                begin k := k+1; if k <= digmax then digit[k] := ch;
-                  nextch;
-                  if (ch = '+') or (ch ='-') then
-                    begin k := k+1; if k <= digmax then digit[k] := ch;
-                      nextch
-                    end;
+                begin nextch; sgn := +1;
+                  if (ch = '+') or (ch ='-') then begin
+                    if ch = '-' then sgn := -1;
+                    nextch
+                  end;
                   if chartp[ch] <> number then error(201)
-                  else begin ev := 0; ferr := true;
-                    repeat k := k+1;
-                      if k <= digmax then digit[k] := ch; nextch;
+                  else begin ferr := true; i := 0;
+                    repeat
                       if ferr then begin
-                        if ev <= mxint10 then
-                          ev := ev*10+ordint[digit[k]]
-                        else begin error(194); ferr := false end
+                        if i <= mxint10 then i := i*10+ordint[ch]
+                        else begin error(194); ferr := false end;
+                        nextch
                       end
-                    until chartp[ch] <> number
+                    until chartp[ch] <> number;
+                    ev := ev+i*sgn
                   end
-                 end;
-               new(lvp,reel); pshcst(lvp); sy:= realconst;
-               lvp^.cclass := reel;
-               with lvp^ do
-                 begin for i := 1 to digmax do rvalb[i] := ' ';
-                   if k <= digmax then
-                     for i := 2 to k + 1 do rvalb[i] := digit[i-1]
-                   else begin error(203); rvalb[2] := '0';
-                          rvalb[3] := '.'; rvalb[4] := '0'
-                        end;
-                   { place buffered real string in constant }
-                   strassvd(rval, rvalb)
-                 end;
-               val.valp := lvp
-            end
-          else
-            begin
-              if i > digmax then begin error(203); val.ival := 0 end
-              else
-                with val do
-                  begin ival := 0;
-                    for k := 1 to i do
-                      begin
-                        if ival <= mxint10 then
-                          ival := ival*10+ordint[digit[k]]
-                        else begin error(203); ival := 0 end
-                      end;
-                    sy := intconst
-                  end
+                end;
+              if ev < 0 then rv := rv/pwrten(ev) else rv := rv*pwrten(ev);
+              new(lvp,reel); pshcst(lvp); sy:= realconst;
+              lvp^.cclass := reel;
+              with lvp^ do lvp^.rval := rv;
+              val.valp := lvp
             end
         end;
       chstrquo:
@@ -1541,8 +1493,7 @@ var
       case sy of
          ident:       write('ident: ', id:10);
          intconst:    write('int const: ', val.ival:1);
-         realconst:   begin write('real const: ');
-                            writev(output, val.valp^.rval, 9) end;
+         realconst:   begin write('real const: ', val.valp^.rval: 9) end;
          stringconst: begin write('string const: ''');
                             writev(output, val.valp^.sval, val.valp^.slgth);
                             write('''') end;
@@ -1834,8 +1785,8 @@ var
                             write(output,min.ival:intdig, ' ', max.ival:intdig)
                           else
                             if (min.valp <> nil) and (max.valp <> nil) then begin
-                              write(' '); writev(output, min.valp^.rval, 9);
-                              write(' '); writev(output, max.valp^.rval, 9)
+                              write(' '); write(min.valp^.rval:9);
+                              write(' '); write(max.valp^.rval:9)
                             end;
                           writeln(output); followstp(rangetype);
                         end;
@@ -1882,7 +1833,7 @@ var
                          if idtype = realptr then
                            begin
                              if values.valp <> nil then begin
-                               writev(output, values.valp^.rval, 9)
+                               write(values.valp^.rval:9)
                              end
                            end
                          else
@@ -2086,14 +2037,8 @@ var
         if (fsp <> intptr) and (fsp <> realptr) then error(106);
         if sign = neg then { must flip sign }
           if fsp = intptr then fvalu.ival := -fvalu.ival
-          else begin
-            new(lvp,reel); pshcst(lvp); lvp^.rval := nil;
-            if strchr(fvalu.valp^.rval, 1) = '-' then
-              strchrass(lvp^.rval, 1, '+')
-            else strchrass(lvp^.rval, 1, '-');
-            for i := 2 to digmax do
-              strchrass(lvp^.rval, i, strchr(fvalu.valp^.rval, i));
-            fvalu.valp := lvp;
+          else begin new(lvp,reel); pshcst(lvp);
+            lvp^.rval := -fvalu.valp^.rval; fvalu.valp := lvp
           end
       end
     end (*constant*) ;
@@ -3221,7 +3166,7 @@ var
                          mesl(cdxs[cdx[fop]][1]) 
                        end;
                     2: begin write(prr,'r ');
-                         with cstptr[fp2]^ do writev(prr,rval,lenpv(rval));
+                         with cstptr[fp2]^ do write(prr,rval:23);
                          writeln(prr);
                          mesl(cdxs[cdx[fop]][2]);
                        end;
@@ -5793,12 +5738,11 @@ var
     enterid(cp)
   end;
   
-  procedure entstdrlcst(sn: stdrng; idt: stp; r: rlstr);
-  var lvp: csp; rvalb: nmstr; i: 1..digmax;
+  procedure entstdrlcst(sn: stdrng; idt: stp; r: real);
+  var lvp: csp;
   begin
     new(cp,konst); ininam(cp); new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
-    for i := 1 to maxrld do rvalb[i] := r[i]; 
-    for i := maxrld+1 to digmax do rvalb[i] := ' '; strassvd(lvp^.rval, rvalb); 
+    lvp^.rval := r;
     with cp^ do
       begin strassvr(name, na[sn]); idtype := idt; next := nil; 
         values.valp := lvp; klass := konst end;
@@ -5873,9 +5817,9 @@ var
     entstdintcst(55, crdptr, maxint);                          (*maxcrd*)
     entstdintcst(57, crdptr, maxint);                          (*maxlcrd*)
     entstdintcst(68, charptr, ordmaxchar);                     (*maxlcrd*)
-    entstdrlcst(60, realptr, '1.7976931348623157e308');        (*maxreal*)
-    entstdrlcst(61, realptr, '1.7976931348623157e308');        (*maxsreal*)
-    entstdrlcst(62, realptr, '1.7976931348623157e308');        (*maxlreal*)
+    entstdrlcst(60, realptr, 1.7976931348623157e308);          (*maxreal*)
+    entstdrlcst(61, realptr, 1.7976931348623157e308);          (*maxsreal*)
+    entstdrlcst(62, realptr, 1.7976931348623157e308);          (*maxlreal*)
     
     entstdprocfunc(proc, 5,  1,  nil);     { get }
     entstdprocfunc(proc, 6,  2,  nil);     { put }
