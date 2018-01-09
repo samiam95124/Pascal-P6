@@ -40,6 +40,6 @@ cp %2 %2.tmp
 flip -d -b %1.tmp
 flip -d -b %2.tmp
 rem ignore lines with compiler/interpreter vs number
-diff -I 'P5 Pascal .*er vs.' %1.tmp %2.tmp
+diff -I 'P. Pascal .*er vs.' %1.tmp %2.tmp
 rm -f %1.tmp
 rm -f %2.tmp

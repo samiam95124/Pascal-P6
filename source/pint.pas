@@ -2700,7 +2700,7 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  write('P5 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
+  write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   writeln;

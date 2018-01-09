@@ -2029,10 +2029,9 @@ var
           if not (sy in fsys) then insymbol
         end
     end (*skip*) ;
-
-    procedure constant(fsys: setofsys; var fsp: stp; var fvalu: valu);
-      var lsp: stp; lcp: ctp; sign: (none,pos,neg);
-          lvp: csp; i: 2..strglgth;
+    
+    procedure constfactor(fsys: setofsys; var fsp: stp; var fvalu: valu);
+      var lsp: stp; lcp: ctp;
     begin lsp := nil; fvalu.ival := 0;
       if not(sy in constbegsys) then
         begin error(50); skip(fsys+constbegsys) end;
@@ -2054,44 +2053,18 @@ var
             end
           else
             begin
-              sign := none;
-              if (sy = addop) and (op in [plus,minus]) then
-                begin if op = plus then sign := pos else sign := neg;
-                  insymbol
-                end;
               if sy = ident then
                 begin searchid([konst],lcp);
                   with lcp^ do
                     begin lsp := idtype; fvalu := values end;
-                  if sign <> none then
-                    if lsp = intptr then
-                      begin if sign = neg then fvalu.ival := -fvalu.ival end
-                    else
-                      if lsp = realptr then
-                        begin
-                          if sign = neg then
-                            begin new(lvp,reel); pshcst(lvp); lvp^.rval := nil;
-                              if strchr(fvalu.valp^.rval, 1) = '-' then
-                                strchrass(lvp^.rval, 1, '+')
-                              else strchrass(lvp^.rval, 1, '-');
-                              for i := 2 to digmax do
-                                strchrass(lvp^.rval, i, strchr(fvalu.valp^.rval, i));
-                              fvalu.valp := lvp;
-                            end
-                          end
-                        else error(105);
                   insymbol;
                 end
               else
                 if sy = intconst then
-                  begin if sign = neg then val.ival := -val.ival;
-                    lsp := intptr; fvalu := val; insymbol
-                  end
+                  begin lsp := intptr; fvalu := val; insymbol end
                 else
                   if sy = realconst then
-                    begin if sign = neg then strchrass(val.valp^.rval, 1, '-');
-                      lsp := realptr; fvalu := val; insymbol
-                    end
+                    begin lsp := realptr; fvalu := val; insymbol end
                   else
                     begin error(106); skip(fsys) end
             end;
@@ -2099,6 +2072,30 @@ var
             begin error(6); skip(fsys) end
           end;
       fsp := lsp
+    end (*constfactor*) ;
+
+    procedure constant(fsys: setofsys; var fsp: stp; var fvalu: valu);
+    var sign: (none,pos,neg); lvp: csp; i: 2..strglgth;
+    begin sign := none;
+      if (sy = addop) and (op in [plus,minus]) then
+                begin if op = plus then sign := pos else sign := neg;
+                  insymbol
+                end;
+      constfactor(fsys, fsp, fvalu);
+      if sign > none then begin { apply sign to number }
+        if (fsp <> intptr) and (fsp <> realptr) then error(106);
+        if sign = neg then { must flip sign }
+          if fsp = intptr then fvalu.ival := -fvalu.ival
+          else begin
+            new(lvp,reel); pshcst(lvp); lvp^.rval := nil;
+            if strchr(fvalu.valp^.rval, 1) = '-' then
+              strchrass(lvp^.rval, 1, '+')
+            else strchrass(lvp^.rval, 1, '-');
+            for i := 2 to digmax do
+              strchrass(lvp^.rval, i, strchr(fvalu.valp^.rval, i));
+            fvalu.valp := lvp;
+          end
+      end
     end (*constant*) ;
 
     function string(fsp: stp) : boolean; forward;
