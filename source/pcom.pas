@@ -208,7 +208,7 @@ const
    maxins     = 82;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
-   maxres     = 65;  { number of reserved words }
+   maxres     = 66;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    maxrld     = 22;  { maximum length of real in digit form }
    varsqt     = 10;  { variable string quanta }
@@ -245,7 +245,7 @@ type                                                        (*describing:*)
                inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                  neop,eqop,inop,noop);
+                  neop,eqop,inop,noop,xorop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
@@ -951,6 +951,60 @@ var
 
 (*-------------------------------------------------------------------------*)
 
+                        { Boolean integer emulation }
+
+(*-------------------------------------------------------------------------*)
+
+function bnot(a: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if not odd(a) then r := r+p;
+    a := a div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bnot := r
+end;
+
+function bor(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if odd(a) or odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bor := r
+end;
+
+function band(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1;  i := maxint;
+  while i <> 0 do begin
+    if odd(a) and odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  band := r
+end;
+
+function bxor(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if odd(a) <> odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bxor := r
+end;
+
+(*-------------------------------------------------------------------------*)
+
   { dump the display }
   procedure prtdsp;
   var i: integer;
@@ -1165,6 +1219,7 @@ var
     210: write('No function active to set result');
     211: write('Anonymous function result must be at function end');
     212: write('Function result assigned before result given');
+    213: write('Cannot take boolean integer operation on negative');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1981,6 +2036,8 @@ var
         end
     end (*skip*) ;
     
+    procedure constant(fsys: setofsys; var fsp: stp; var fvalu: valu); forward;
+    
     procedure constfactor(fsys: setofsys; var fsp: stp; var fvalu: valu);
       var lsp: stp; lcp: ctp;
     begin lsp := nil; fvalu.ival := 0;
@@ -1988,7 +2045,19 @@ var
         begin error(50); skip(fsys+constbegsys) end;
       if sy in constbegsys then
         begin
-          if sy = stringconst then
+          if sy = lparent then begin chkstd;
+            insymbol; constant(fsys+[rparent], fsp, fvalu);
+            if sy = rparent then insymbol else error(4);
+            lsp := fsp
+          end else if sy = notsy then begin chkstd;
+            insymbol; constfactor(fsys+[rparent], fsp, fvalu);
+            if fvalu.ival < 0 then error(213)
+            else if (fsp <> intptr) and (fsp <> boolptr) then error(134)
+            else fvalu.ival := bnot(fvalu.ival);
+            { not boolean does not quite work here }
+            if fsp = boolptr then fvalu.ival := band(fvalu.ival, 1);
+            lsp := fsp
+          end else if sy = stringconst then
             begin
               if lgth = 1 then lsp := charptr
               else
@@ -2025,21 +2094,111 @@ var
       fsp := lsp
     end (*constfactor*) ;
 
-    procedure constant(fsys: setofsys; var fsp: stp; var fvalu: valu);
-    var sign: (none,pos,neg); lvp: csp; i: 2..strglgth;
-    begin sign := none;
+    procedure constterm(fsys: setofsys; var fsp: stp; var fvalu: valu);
+    var lvp: csp; lv: valu; lop: operatort; lsp: stp; 
+    begin
+      constfactor(fsys+[mulop], fsp, fvalu);
+      while (sy = mulop) and (op in [mul,rdiv,idiv,imod,andop]) do begin
+        chkstd; lv := fvalu; lsp := fsp; lop := op; insymbol; 
+        constfactor(fsys+[mulop], fsp, fvalu);
+        lvp := nil;
+        if ((lop in [mul,minus]) and ((lsp = realptr) or (fsp = realptr))) or
+           (lop = rdiv) then 
+          begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel end;
+        case lop of { operator }
+          { * } mul: if (lsp = intptr) and (fsp = intptr) then
+                        fvalu.ival := lv.ival*fvalu.ival
+                      else if (lsp = realptr) and (fsp = realptr) then
+                        lvp^.rval := lv.valp^.rval*fvalu.valp^.rval
+                      else if (lsp = realptr) and (fsp = intptr) then
+                        lvp^.rval := lv.valp^.rval*fvalu.ival
+                      else if (lsp = intptr) and (fsp = realptr) then
+                        lvp^.rval := lv.ival*fvalu.valp^.rval
+                      else error(134);
+          { / } rdiv: if (lsp = intptr) and (fsp = intptr) then
+                         lvp^.rval := lv.ival/fvalu.ival
+                       else if (lsp = realptr) and (fsp = realptr) then
+                         lvp^.rval := lv.valp^.rval/fvalu.valp^.rval
+                       else if (lsp = realptr) and (fsp = intptr) then
+                         lvp^.rval := lv.valp^.rval/fvalu.ival
+                       else if (lsp = intptr) and (fsp = realptr) then
+                         lvp^.rval := lv.ival/fvalu.valp^.rval
+                       else error(134);
+          { div } idiv: if (lsp = intptr) and (fsp = intptr) then
+                         fvalu.ival := lv.ival div fvalu.ival
+                       else error(134);
+          { mod } imod: if (lsp = intptr) and (fsp = intptr) then
+                         fvalu.ival := lv.ival mod fvalu.ival
+                       else error(134);
+          { and } andop: if ((lsp = intptr) and (fsp = intptr)) or
+                           ((lsp = boolptr) and (fsp = boolptr)) then
+                         if (lv.ival < 0) or (fvalu.ival < 0) then error(213)
+                         else fvalu.ival := band(lv.ival, fvalu.ival)
+                       else error(134);
+        end;
+        if lvp <> nil then fvalu.valp := lvp; { place result }
+        { mixed types or / = real }
+        if (lsp = realptr) or (lop = rdiv) then fsp := realptr
+      end
+    end (*constterm*) ;
+
+    procedure constant { (fsys: setofsys; var fsp: stp; var fvalu: valu) };
+    var sign: (none,pos,neg); lvp,svp: csp; i: 2..strglgth; lv: valu;
+        lop: operatort; lsp: stp;
+    begin sign := none; svp := nil;
       if (sy = addop) and (op in [plus,minus]) then
                 begin if op = plus then sign := pos else sign := neg;
                   insymbol
                 end;
-      constfactor(fsys, fsp, fvalu);
+      constterm(fsys+[addop], fsp, fvalu);
       if sign > none then begin { apply sign to number }
         if (fsp <> intptr) and (fsp <> realptr) then error(106);
         if sign = neg then { must flip sign }
           if fsp = intptr then fvalu.ival := -fvalu.ival
-          else begin new(lvp,reel); pshcst(lvp);
-            lvp^.rval := -fvalu.valp^.rval; fvalu.valp := lvp
+          else begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
+            lvp^.rval := -fvalu.valp^.rval; fvalu.valp := lvp; svp := lvp;
           end
+      end;
+      while (sy = addop) and (op in [plus,minus,orop,xorop]) do begin
+        chkstd; lv := fvalu; lsp := fsp; lop := op; insymbol;
+        constterm(fsys+[addop], fsp, fvalu); 
+        lvp := nil;
+        if (lop in [plus,minus]) and ((lsp = realptr) or (fsp = realptr)) then 
+          begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel end;
+        case lop of { operator }
+          { + } plus: if (lsp = intptr) and (fsp = intptr) then
+                        fvalu.ival := lv.ival+fvalu.ival
+                      else if (lsp = realptr) and (fsp = realptr) then
+                        lvp^.rval := lv.valp^.rval+fvalu.valp^.rval
+                      else if (lsp = realptr) and (fsp = intptr) then
+                        lvp^.rval := lv.valp^.rval+fvalu.ival
+                      else if (lsp = intptr) and (fsp = realptr) then
+                        lvp^.rval := lv.ival+fvalu.valp^.rval
+                      else error(134);
+          { - } minus: if (lsp = intptr) and (fsp = intptr) then
+                         fvalu.ival := lv.ival-fvalu.ival
+                       else if (lsp = realptr) and (fsp = realptr) then
+                         lvp^.rval := lv.valp^.rval-fvalu.valp^.rval
+                       else if (lsp = realptr) and (fsp = intptr) then
+                         lvp^.rval := lv.valp^.rval-fvalu.ival
+                       else if (lsp = intptr) and (fsp = realptr) then
+                         lvp^.rval := lv.ival-fvalu.valp^.rval
+                       else error(134);
+          { or } orop: if ((lsp = intptr) and (fsp = intptr)) or
+                           ((lsp = boolptr) and (fsp = boolptr)) then
+                         if (lv.ival < 0) or (fvalu.ival < 0) then error(213)
+                         else fvalu.ival := bor(lv.ival, fvalu.ival)
+                       else error(134);
+          { xor } xorop: if ((lsp = intptr) and (fsp = intptr)) or
+                           ((lsp = boolptr) and (fsp = boolptr)) then
+                         if (lv.ival < 0) or (fvalu.ival < 0) then error(213)
+                         else fvalu.ival := bxor(lv.ival, fvalu.ival)
+                       else error(134)
+        end;
+        { if left negated, recycle it just once }
+        if svp <> nil then begin putcst(svp); svp := nil end;
+        if lvp <> nil then fvalu.valp := lvp; { place result }
+        if lsp = realptr then fsp := realptr { mixed types = real }
       end
     end (*constant*) ;
 
@@ -5939,8 +6098,8 @@ var
 
   procedure initsets;
   begin
-    constbegsys := [addop,intconst,realconst,stringconst,ident];
-    simptypebegsys := [lparent] + constbegsys;
+    constbegsys := [lparent,notsy,intconst,realconst,stringconst,ident];
+    simptypebegsys := [lparent,addop,intconst,realconst,stringconst,ident];
     typebegsys:=[arrow,packedsy,arraysy,recordsy,setsy,filesy]+simptypebegsys;
     typedels := [arraysy,recordsy,setsy,filesy];
     blockbegsys := [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,beginsy];
@@ -5973,7 +6132,7 @@ var
       rw[55] := 'virtual  '; rw[56] := 'try      '; rw[57] := 'except   ';
       rw[58] := 'extends  '; rw[59] := 'on       '; rw[60] := 'result   ';
       rw[61] := 'operator '; rw[62] := 'out      '; rw[63] := 'property ';
-      rw[64] := 'channel  '; rw[65] := 'stream   ';
+      rw[64] := 'channel  '; rw[65] := 'stream   '; rw[66] := 'xor      ';
     end (*reswords*) ;
 
     procedure symbols;
@@ -5999,7 +6158,7 @@ var
       rsy[55] := virtualsy;  rsy[56] := trysy;       rsy[57] := exceptsy;   
       rsy[58] := extendssy;  rsy[59] := onsy;        rsy[60] := resultsy;   
       rsy[61] := operatorsy; rsy[62] := outsy;       rsy[63] := propertysy; 
-      rsy[64] := channelsy;  rsy[65] := streamsy;        
+      rsy[64] := channelsy;  rsy[65] := streamsy;    rsy[66] := addop;    
       
       ssy['+'] := addop ;   ssy['-'] := addop;    ssy['*'] := mulop;
       ssy['/'] := mulop ;   ssy['('] := lparent;  ssy[')'] := rparent;
@@ -6015,7 +6174,7 @@ var
     begin
       for i := 1 to maxres (*nr of res words*) do rop[i] := noop;
       rop[5] := inop; rop[10] := idiv; rop[11] := imod;
-      rop[6] := orop; rop[13] := andop;
+      rop[6] := orop; rop[13] := andop; rop[66] := xorop;
       for i := ordminchar to ordmaxchar do sop[chr(i)] := noop;
       sop['+'] := plus; sop['-'] := minus; sop['*'] := mul; sop['/'] := rdiv;
       sop['='] := eqop; sop['<'] := ltop;  sop['>'] := gtop;
