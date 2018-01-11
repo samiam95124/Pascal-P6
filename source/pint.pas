@@ -628,7 +628,7 @@ begin
   ! ISO7185 end }
   
   {$gnu-pascal}
-  seek(f, p);
+  seek(f, p-1);
   {$classic-pascal-level-0}
 end;
 
@@ -637,6 +637,11 @@ begin
   { ISO7185 start !
   errori('Update binary file undef ')
   ! ISO7185 end }
+  
+  {$gnu-pascal}
+  append(f);
+  seek(f, 0);
+  {$classic-pascal-level-0}
 end;
 
 procedure appendtext(var f: text);
@@ -644,6 +649,10 @@ begin
   { ISO7185 start !
   errori('Append text file undef   ')
   ! ISO7185 end }
+  
+  {$gnu-pascal}
+  append(f);
+  {$classic-pascal-level-0}
 end;
 
 procedure appendbin(var f: bytfil);
@@ -651,6 +660,10 @@ begin
   { ISO7185 start ! 
   errori('Append binary file undef ')
   ! ISO7185 end }
+  
+  {$gnu-pascal}
+  append(f);
+  {$classic-pascal-level-0}
 end;
 
 {$gnu-pascal}
