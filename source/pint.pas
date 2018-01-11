@@ -653,7 +653,16 @@ begin
   ! ISO7185 end }
 end;
 
+{$gnu-pascal}
+function open(fn: Cstring; f: integer): integer; external name 'open';
+function c_close(fd: integer): integer; external name 'close';
+{$classic-pascal-level-0}
+
 function existsfile(var fn: filnam): boolean;
+{$gnu-pascal}
+var s: string(fillen);
+    i, l, r, fd: integer;
+{$classic-pascal-level-0}
 begin
   { ISO7185 start !
   errori('Check exists file undef  ');
@@ -661,23 +670,64 @@ begin
   ! ISO7185 end }
   
   {$gnu-pascal}
-  existsfile := true
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  fd := open(s, 0);
+  if fd > 0 then r := c_close(fd);
+  existsfile := fd >= 0
   {$classic-pascal-level-0}
 end;
 
+{$gnu-pascal}
+function remove(fn: Cstring): integer; external name 'remove';
+{$classic-pascal-level-0}
 procedure deletefile(var fn: filnam);
+{$gnu-pascal}
+var s: string(fillen);
+    i, l, r: integer;
+{$classic-pascal-level-0}
 begin
   { ISO7185 start !
   errori('Delete file by name udef ')
   ! ISO7185 end }
+  
+  {$gnu-pascal}
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  r := remove(s);
+  if r <> 0 then errori('Could not delete file    ')
+  {$classic-pascal-level-0}
 end;
 
-procedure changefile(var dfn, sfn: filnam);
-
+{$gnu-pascal}
+function rename(fns, fnd: Cstring): integer; external name 'rename';
+{$classic-pascal-level-0}
+procedure changefile(var fnd, fns: filnam);
+{$gnu-pascal}
+var ss,sd: string(fillen);
+    i, l, r: integer;
+{$classic-pascal-level-0}
 begin
   { ISO7185 start !
   errori('Change name file undef   ')
   ! ISO7185 end }
+  
+  {$gnu-pascal}
+  l := fillen;
+  while (fns[l] = ' ') and (l > 1) do l := l-1;
+  ss := '';
+  for i := 1 to l do ss := ss+fns[i];
+  l := fillen;
+  while (fnd[l] = ' ') and (l > 1) do l := l-1;
+  sd := '';
+  for i := 1 to l do sd := sd+fnd[i];
+  r := rename(ss,sd);
+  if r <> 0 then errori('Could not rename file    ')
+  {$classic-pascal-level-0}
 end;
 
 (*-------------------------------------------------------------------------*)
