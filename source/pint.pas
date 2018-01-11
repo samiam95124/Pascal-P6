@@ -522,157 +522,162 @@ location, position and update.
 
 Each alternate set of routine contents are marked as:
 
-XXX equivalence ->start
+XXX equivalence start
 ...
-XXX equivalence -> end
+XXX equivalence end
 
+Where "equivalence" is the language standard, like ISO7185, GPC, FPC, etc.
 These represent the code for that option. A script can be used to select or
 unselect those contents.
   
 }
   
 procedure assigntext(var f: text; var fn: filnam);
-{ GPC -> start
+{$gnu-pascal}
 var s: string(fillen);
     i, l: integer;
-  GPC -> end }
+{$classic-pascal-level-0}
 begin
-  { Undefined -> start } 
+  { ISO7185 start !  
   errori('Assign to text file undef')
-  {  Undefined -> end }
+  ! ISO7185 end }
 
-  { GPC -> start 
+  {$gnu-pascal} 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
   s := '';
   for i := 1 to l do s := s+fn[i];
   assign(f, s);
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 procedure assignbin(var f: bytfil; var fn: filnam);
-{ GPC -> start 
+{$gnu-pascal}
 var s: string(fillen);
     i, l: integer;
-  GPC -> end }
+{$classic-pascal-level-0}
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Assign to bin file undef ')
-  {  Undefined -> end }
+  ! ISO7185 end }
   
-  { GPC -> start 
+  {$gnu-pascal} 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
   s := '';
   for i := 1 to l do s := s+fn[i];
   assign(f, s);
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 procedure closetext(var f: text);
 
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Close of text file undef ')
-  { Undefined -> end }
+  ! ISO7185 end }
   
-  { GPC -> start 
+  {$gnu-pascal} 
   close(f)
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 procedure closebin(var f: bytfil);
 
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Close of binary file udef')
-  {  Undefined -> end }
+  ! ISO7185 end }
   
-  { GPC -> start 
+  {$gnu-pascal} 
   close(f)
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 function lengthbin(var f: bytfil): integer;
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Length of bin file undef ');
   lengthbin := 1
-  {  Undefined -> end }
+  ! ISO7185 end }
   
-  { GPC -> start 
+  {$gnu-pascal} 
   if empty(f) then
     lengthbin := 0
   else
     lengthbin := LastPosition (f) + 1;
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 function locationbin(var f: bytfil): integer;
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Location of bin file udef');
   locationbin := 1
-  {  Undefined -> start } 
+  ! ISO7185 end } 
   
-  { GPC -> start 
+  {$gnu-pascal} 
   locationbin := position(f);
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 procedure positionbin(var f: bytfil; p: integer);
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Position of bin file udef')
-  {  Undefined -> end }
+  ! ISO7185 end }
   
-  { GPC -> start 
+  {$gnu-pascal}
   seek(f, p);
-    GPC -> end }
+  {$classic-pascal-level-0}
 end;
 
 procedure updatebin(var f: bytfil);
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Update binary file undef ')
-  { Undefined -> end }
+  ! ISO7185 end }
 end;
 
 procedure appendtext(var f: text);
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Append text file undef   ')
-  { Undefined -> end }
+  ! ISO7185 end }
 end;
 
 procedure appendbin(var f: bytfil);
 begin
-  { Undefined -> start } 
+  { ISO7185 start ! 
   errori('Append binary file undef ')
-  {  Undefined -> end }
+  ! ISO7185 end }
 end;
 
 function existsfile(var fn: filnam): boolean;
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Check exists file undef  ');
   existsfile := true
-  { Undefined -> end }
+  ! ISO7185 end }
+  
+  {$gnu-pascal}
+  existsfile := true
+  {$classic-pascal-level-0}
 end;
 
 procedure deletefile(var fn: filnam);
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Delete file by name udef ')
-  {  Undefined -> end }
+  ! ISO7185 end }
 end;
 
 procedure changefile(var dfn, sfn: filnam);
 
 begin
-  { Undefined -> start }
+  { ISO7185 start !
   errori('Change name file undef   ')
-  { Undefined -> end }
+  ! ISO7185 end }
 end;
 
 (*-------------------------------------------------------------------------*)
