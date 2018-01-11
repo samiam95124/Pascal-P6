@@ -205,7 +205,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 64;  { number of standard procedures/functions }
-   maxins     = 82;  { maximum number of instructions }
+   maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
@@ -1246,8 +1246,9 @@ end;
     398: write('Implementation restriction');
     399: write('Feature not implemented');
 
-    400,
-    500: write('Compiler internal error');
+    400,401,402,403,404,405,406,407,
+    500,501,502,503,
+    504: write('Compiler internal error');
     end
   end;
 
@@ -3240,13 +3241,13 @@ end;
                power:    ss := 6;
                records,arrays: ss := 7;
                files:    ss := 5;
-               tagfld,variant: error(500)
+               tagfld,variant: error(501)
               end;
           mestn := ss
         end;
       
       begin (*mest*)
-        if (cdx[i] < 1) and (cdx[i] > 6) then error(500);
+        if (cdx[i] < 1) or (cdx[i] > 6) then error(502);
         mesl(cdxs[cdx[i]][mestn(fsp)]);
       end (*mest*);
 
@@ -3379,7 +3380,7 @@ end;
              power:    write(prr,'s');
              records,arrays: write(prr,'m');
              files:    write(prr,'a');
-             tagfld,variant: error(500)
+             tagfld,variant: error(503)
             end
       end (*typindicator*);
 
@@ -3463,9 +3464,9 @@ end;
             case access of
               drct:   if vlevel <= 1 then gen1t(43(*sro*),dplmt,typtr)
                       else gen2t(56(*str*),level-vlevel,dplmt,typtr);
-              indrct: if idplmt <> 0 then error(400)
+              indrct: if idplmt <> 0 then error(401)
                       else gen0t(26(*sto*),typtr);
-              inxd:   error(400)
+              inxd:   error(402)
             end
       end (*store*) ;
 
@@ -3482,15 +3483,15 @@ end;
                              cstptr[cstptrix] := cval.valp;
                              gen1(38(*lca*),cstptrix)
                            end
-                       else error(400);
+                       else error(403);
                 varbl: case access of
                          drct:   if vlevel <= 1 then gen1(37(*lao*),dplmt)
                                  else gen2(50(*lda*),level-vlevel,dplmt);
                          indrct: if idplmt <> 0 then
                                    gen1t(34(*inc*),idplmt,nilptr);
-                         inxd:   error(400)
+                         inxd:   error(404)
                        end;
-                expr:  error(400)
+                expr:  error(405)
               end;
               kind := varbl; access := indrct; idplmt := 0; packing := false
             end
@@ -3607,7 +3608,7 @@ end;
 	                          idplmt := idplmt + fldaddr;
 	                          gen0t(76(*dup*),nilptr)
 	                        end;
-	                inxd:   error(400)
+	                inxd:   error(406)
 	              end;
 	              load;
 	              gen0(78(*cks*));
@@ -3775,7 +3776,7 @@ end;
                                       case access of
                                         drct:   dplmt := dplmt + fldaddr;
                                         indrct: idplmt := idplmt + fldaddr;
-                                        inxd:   error(400)
+                                        inxd:   error(407)
                                       end
                                     end
                               end;
@@ -4755,9 +4756,10 @@ end;
                         end;
               (*not*)   notsy:
                         begin insymbol; factor(fsys, false);
-                          load; gen0(19(*not*));
+                          load; gen0t(19(*not*),gattr.typtr);
                           if gattr.typtr <> nil then
-                            if gattr.typtr <> boolptr then
+                            if (gattr.typtr <> boolptr) and 
+                              ((gattr.typtr <> intptr) or iso7185) then
                               begin error(135); gattr.typtr := nil end;
                         end;
               (*[*)     lbrack:
@@ -4940,8 +4942,9 @@ end;
             (*mod*)   imod: if (lattr.typtr = intptr)
                               and (gattr.typtr = intptr) then gen0(14(*mod*))
                             else begin error(134); gattr.typtr := nil end;
-            (*and*)   andop:if (lattr.typtr = boolptr)
-                              and (gattr.typtr = boolptr) then gen0(4(*and*))
+            (*and*)   andop:if ((lattr.typtr = boolptr) and (gattr.typtr = boolptr)) or
+                               ((lattr.typtr=intptr) and (gattr.typtr=intptr) and
+                                not iso7185) then gen0(4(*and*))
                             else begin error(134); gattr.typtr := nil end
                     end (*case*)
                   else gattr.typtr := nil
@@ -5009,8 +5012,14 @@ end;
                             else begin error(134); gattr.typtr := nil end
                         end;
           (*or*)      orop:
-                      if(lattr.typtr=boolptr)and(gattr.typtr=boolptr)then
-                        gen0(13(*ior*))
+                      if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
+                         ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
+                          not iso7185) then gen0(13(*ior*))
+                      else begin error(134); gattr.typtr := nil end;
+          (*xor*)     xorop:
+                      if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
+                         ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
+                          not iso7185) then gen0(83(*ixor*))
                       else begin error(134); gattr.typtr := nil end
                   end (*case*)
                 else gattr.typtr := nil
@@ -5661,7 +5670,7 @@ end;
           end;
       printed := false; chkrefs(display[top].fname, printed);
       if toterr = 0 then
-        if topnew <> 0 then error(500); { stack should have wound to zero }
+        if topnew <> 0 then error(504); { stack should have wound to zero }
       if fprocp <> nil then
         begin
           if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
@@ -6231,7 +6240,7 @@ end;
       mn[69] :=' ???'; mn[70] :=' ???'; mn[71] :=' dmp'; mn[72] :=' swp';
       mn[73] :=' tjp'; mn[74] :=' lip'; mn[75] :=' ckv'; mn[76] :=' dup';
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
-      mn[81] :=' cta'; mn[82] :=' ivt';
+      mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor';
 
     end (*instrmnemonics*) ;
 
@@ -6313,7 +6322,7 @@ end;
       cdx[12] := +setsize;             cdx[13] := +intsize; 
       cdx[14] := +intsize;             cdx[15] := +intsize;
       cdx[16] := +realsize;            cdx[17] :=  0; 
-      cdx[18] :=  0;                   cdx[19] :=  0;
+      cdx[18] :=  0;                   cdx[19] :=  2{*};
       cdx[20] :=  0;                   cdx[21] := +intsize; 
       cdx[22] := +realsize;            cdx[23] := +intsize-setsize;
       cdx[24] :=  0;                   cdx[25] :=  0; 
@@ -6344,8 +6353,8 @@ end;
       cdx[74] := -adrsize*2;           cdx[75] :=  2{*};
       cdx[76] :=  4{*};                cdx[77] :=  +intsize*2;
       cdx[78] := -intsize;             cdx[79] :=  +adrsize;
-      cdx[80] :=  0;                   cdx[81] :=  0;
-      cdx[82] :=  0;
+      cdx[80] :=  2{*};                cdx[81] :=  0;
+      cdx[82] :=  0;                   cdx[83] := +intsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
@@ -6356,11 +6365,11 @@ end;
       cdxs[1][6] := +(adrsize+setsize);  { stos }
       cdxs[1][7] := 0;
       
-      cdxs[2][1] := 0; { deci/inci/ordi/chki/reti }   
+      cdxs[2][1] := 0; { deci/inci/ordi/chki/reti/noti }   
       cdxs[2][2] := 0; { chkr/retr }
-      cdxs[2][3] := 0; { decb/incb/ordb/chkb/retb }
+      cdxs[2][3] := 0; { decb/incb/ordb/chkb/retb/notb }
       cdxs[2][4] := 0; { decc/incc/ordc/chkc/retc }
-      cdxs[2][5] := 0; { chka/reta }
+      cdxs[2][5] := 0; { chka/reta/ckl }
       cdxs[2][6] := 0; { chks }
       cdxs[2][7] := 0;
       

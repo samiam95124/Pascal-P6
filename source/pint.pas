@@ -675,6 +675,63 @@ begin
   { Undefined -> end }
 end;
 
+(*-------------------------------------------------------------------------*)
+
+                        { Boolean integer emulation }
+
+  { Boolean emulation can be remapped directly to operators for performance
+    reasons, but is typically left alone. The results are the same. }
+  
+(*-------------------------------------------------------------------------*)
+
+function bnot(a: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if not odd(a) then r := r+p;
+    a := a div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bnot := r
+end;
+
+function bor(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if odd(a) or odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bor := r
+end;
+
+function band(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1;  i := maxint;
+  while i <> 0 do begin
+    if odd(a) and odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  band := r
+end;
+
+function bxor(a, b: integer): integer;
+var i, r, p: integer;
+begin
+  r := 0; p := 1; i := maxint;
+  while i <> 0 do begin
+    if odd(a) <> odd(b) then r := r+p;
+    a := a div 2; b := b div 2; i := i div 2;
+    if i > 0 then p := p*2
+  end;
+  bxor := r
+end;
+
 { End of language extension routines }
 
 (*--------------------------------------------------------------------*)
@@ -1097,7 +1154,7 @@ procedure load;
          instr[ 39]:='sqr       '; insp[ 39] := false; insq[ 39] := 0;
          instr[ 40]:='abi       '; insp[ 40] := false; insq[ 40] := 0;
          instr[ 41]:='abr       '; insp[ 41] := false; insq[ 41] := 0;
-         instr[ 42]:='not       '; insp[ 42] := false; insq[ 42] := 0;
+         instr[ 42]:='notb      '; insp[ 42] := false; insq[ 42] := 0;
          instr[ 43]:='and       '; insp[ 43] := false; insq[ 43] := 0;
          instr[ 44]:='ior       '; insp[ 44] := false; insq[ 44] := 0;
          instr[ 45]:='dif       '; insp[ 45] := false; insq[ 45] := 0;
@@ -1260,6 +1317,8 @@ procedure load;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
          instr[204]:='retx      '; insp[204] := false; insq[204] := 0;
+         instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
+         instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
 
          { sav (mark) and rst (release) were removed }
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
@@ -1448,7 +1507,6 @@ procedure load;
                                 end
                               until not (ch in ['a'..'z']);
                               getlin;
-                              
                             end;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
                   end;
@@ -1696,12 +1754,12 @@ procedure load;
 
           6, 80, 81, 82, 83, 84, 197, (*sto*)
 
-          { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,not,and,
-            ior,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,rnd,rgs,fbv,
-            fvb }
+          { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
+            noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,
+            rnd,rgs,fbv,fvb }
           27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,58,60,62,110,111,
-          115, 116,
+          115,116,205,206,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
           181, 182, 183, 184, 185, 186,187,188,189: storeop;
@@ -3093,13 +3151,25 @@ begin (* main *)
           39 (*sqr*): begin poprel(r1); pshrel(sqr(r1)) end;
           40 (*abi*): begin popint(i1); pshint(abs(i1)) end;
           41 (*abr*): begin poprel(r1); pshrel(abs(r1)) end;
-          42 (*not*): begin popint(i1); b1 := i1 <> 0; pshint(ord(not b1)) end;
-          43 (*and*): begin popint(i2); b2 := i2 <> 0;
+          42 (*notb*): begin popint(i1); b1 := i1 <> 0; pshint(ord(not b1)) end;
+          205 (*noti*): begin popint(i1); 
+                            if i1 < 0 then errori('Boolean of negative      '); 
+                            pshint(bnot(i1)) end;
+          43 (*and*): begin popint(i2);
+                            if i2 < 0 then errori('Boolean of negative      '); 
+                            popint(i1); 
+                            if i1 < 0 then errori('Boolean of negative      ');
+                            pshint(band(i1, i2)) end;
+          44 (*ior*): begin popint(i2);
+                            if i2 < 0 then errori('Boolean of negative      ');
+                            popint(i1);
+                            if i1 < 0 then errori('Boolean of negative      ');
+                            pshint(bor(i1, i2)) end;
+          206 (*xor*): begin popint(i2); b2 := i2 <> 0;
+                            if i2 < 0 then errori('Boolean of negative      ');
                             popint(i1); b1 := i1 <> 0;
-                            pshint(ord(b1 and b2)) end;
-          44 (*ior*): begin popint(i2); b2 := i2 <> 0;
-                            popint(i1); b1 := i1 <> 0;
-                            pshint(ord(b1 or b2)) end;
+                            if i1 < 0 then errori('Boolean of negative      ');
+                            pshint(bxor(i1, i2)) end;
           45 (*dif*): begin popset(s2); popset(s1); pshset(s1-s2) end;
           46 (*int*): begin popset(s2); popset(s1); pshset(s1*s2) end;
           47 (*uni*): begin popset(s2); popset(s1); pshset(s1+s2) end;
@@ -3229,11 +3299,11 @@ begin (* main *)
 
           { illegal instructions }
           8,    19,  20,  21,  22,  27,  91,  92,  96, 100, 101, 102, 111, 115, 
-          116, 121, 122, 133, 135, 176, 177, 178, 205, 206, 207, 208, 209, 210, 
-          211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 
-          225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 
-          239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 
-          253, 254, 255: errori('Illegal instruction      ');
+          116, 121, 122, 133, 135, 176, 177, 178, 207, 208, 209, 210, 211, 212,
+          213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
+          227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
+          241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+          255: errori('Illegal instruction      ');
 
     end
   end; (*while interpreting*)
