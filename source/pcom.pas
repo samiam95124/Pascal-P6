@@ -2885,9 +2885,9 @@ end;
         if sy = lparent then
           begin if forw then error(119);
             insymbol;
-            if not (sy in [ident,varsy,procsy,funcsy]) then
+            if not (sy in [ident,varsy,procsy,funcsy,viewsy,outsy]) then
               begin error(7); skip(fsys + [ident,rparent]) end;
-            while sy in [ident,varsy,procsy,funcsy] do
+            while sy in [ident,varsy,procsy,funcsy,viewsy,outsy] do
               begin
                 if sy = procsy then
                   begin
@@ -2959,9 +2959,11 @@ end;
                       end
                     else
                       begin
-                        if sy = varsy then
+                        if (sy = varsy) or (sy = outsy) then
                           begin lkind := formal; insymbol end
-                        else lkind := actual;
+                        else begin lkind := actual; 
+                          if sy = viewsy then insymbol 
+                        end;
                         lcp2 := nil;
                         count := 0;
                         repeat
