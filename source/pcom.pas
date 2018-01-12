@@ -3016,6 +3016,10 @@ end;
                                       begin idtype := lsp;
                                         vaddr := llc;
                                         llc := llc+lsize;
+                                        { if the type is structured, and is
+                                          a view parameter, promote to formal }
+                                        if (lsp^.form <= power) and 
+                                           (part = ptview) then vkind := formal 
                                       end;
                                     lcp2 := lcp2^.next
                                   end;
@@ -3055,7 +3059,10 @@ end;
                 begin lcp2 := next; next := lcp3;
                   if klass = vars then
                     if idtype <> nil then
-                      if (vkind=actual)and(idtype^.form>power) then
+                      { if value variable, and structured, we make a copy to
+                        play with. However, structured is treated as var if
+                        it is view, since that is protected }
+                      if (vkind=actual) and (idtype^.form>power) then
                         begin
                           lc := lc-idtype^.size;
                           alignd(idtype,lc);
