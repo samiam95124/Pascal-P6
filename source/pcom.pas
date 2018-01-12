@@ -2334,7 +2334,7 @@ end;
     procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
       var lsp,lsp1,lsp2: stp; oldtop: disprange; lcp: ctp;
           lsize,displ: addrrange; lmin,lmax: integer;
-          test: boolean; ispacked: boolean;
+          test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
         var lsp,lsp1: stp; lcp,lcp1: ctp; ttop: disprange;
@@ -2620,30 +2620,53 @@ end;
                   end;
     (*array*)     if sy = arraysy then
                   begin insymbol;
-                    if sy = lbrack then insymbol else error(11);
-                    lsp1 := nil;
-                    repeat new(lsp,arrays); pshstc(lsp);
-                      with lsp^ do
-                        begin aeltype := lsp1; inxtype := nil; form:=arrays;
-                              packing := ispacked end;
-                      lsp1 := lsp;
-                      simpletype(fsys + [comma,rbrack,ofsy],lsp2,lsize);
-                      lsp1^.size := lsize;
-                      if lsp2 <> nil then
-                        if lsp2^.form <= subrange then
-                          begin
-                            if lsp2 = realptr then
-                              begin error(109); lsp2 := nil end
-                            else
-                              if lsp2 = intptr then
-                                begin error(149); lsp2 := nil end;
-                            lsp^.inxtype := lsp2
-                          end
-                        else begin error(113); lsp2 := nil end;
-                      test := sy <> comma;
-                      if not test then insymbol
-                    until test;
-                    if sy = rbrack then insymbol else error(12);
+                    if (sy <> lbrack) and iso7185 then error(11);
+                    if (sy <> lbrack) and not iso7185 then begin
+                      { process Pascaline array }
+                      lsp1 := nil;
+                      repeat new(lsp,arrays); pshstc(lsp);
+                        with lsp^ do
+                          begin aeltype := lsp1; inxtype := nil; form:=arrays;
+                                packing := ispacked end;
+                        lsp1 := lsp;
+                        constant(fsys+[comma,ofsy],lsp2,lvalu);
+                        if lsp2 <> nil then if lsp2 <> intptr then error(15);
+                        lsp1^.size := lsize;
+                        { build subrange type based on 1..n }
+                        new(lsp2,subrange); pshstc(lsp2);
+                          with lsp2^ do
+                            begin rangetype := intptr; min.ival := 1; 
+                                  max := lvalu end;
+                        lsp^.inxtype := lsp2;
+                        test := sy <> comma;
+                        if not test then insymbol
+                      until test                      
+                    end else begin if sy = lbrack then insymbol;
+                      { process ISO 7185 array }
+                      lsp1 := nil;
+                      repeat new(lsp,arrays); pshstc(lsp);
+                        with lsp^ do
+                          begin aeltype := lsp1; inxtype := nil; form:=arrays;
+                                packing := ispacked end;
+                        lsp1 := lsp;
+                        simpletype(fsys + [comma,rbrack,ofsy],lsp2,lsize);
+                        lsp1^.size := lsize;
+                        if lsp2 <> nil then
+                          if lsp2^.form <= subrange then
+                            begin
+                              if lsp2 = realptr then
+                                begin error(109); lsp2 := nil end
+                              else
+                                if lsp2 = intptr then
+                                  begin error(149); lsp2 := nil end;
+                              lsp^.inxtype := lsp2
+                            end
+                          else begin error(113); lsp2 := nil end;
+                        test := sy <> comma;
+                        if not test then insymbol
+                      until test;
+                      if sy = rbrack then insymbol else error(12)
+                    end;
                     if sy = ofsy then insymbol else error(8);
                     typ(fsys,lsp,lsize);
                     repeat
