@@ -314,6 +314,7 @@ type                                                        (*describing:*)
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..30; { range of standard call keys }
+     partyp = (ptval, ptvar, ptview, ptout);
      identifier = record
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; refer: boolean;
@@ -321,7 +322,7 @@ type                                                        (*describing:*)
                      types: ();
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
-                             threat: boolean; forcnt: integer);
+                             threat: boolean; forcnt: integer; part: partyp);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange);
@@ -1206,6 +1207,7 @@ end;
     197: write('Var parameter cannot be packed');
     198: write('Var parameter cannot be a tagfield');
     199: write('Var parameter must be same type');
+    200: write('Cannot threaten view parameter');
 
     201: write('Error in real constant: digit expected');
     202: write('String constant must not exceed source line');
@@ -2816,7 +2818,7 @@ end;
               with lcp^ do
                begin strassvf(name, id); next := nxt; klass := vars;
                   idtype := nil; vkind := actual; vlev := level;
-                  refer := false; threat := false; forcnt := 0
+                  refer := false; threat := false; forcnt := 0; part := ptval
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -2875,7 +2877,7 @@ end;
 
       procedure parameterlist(fsy: setofsys; var fpar: ctp);
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
-          llc,lsize: addrrange; count: integer;
+          llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
           lcs: addrrange;
           test: boolean;
@@ -2959,6 +2961,10 @@ end;
                       end
                     else
                       begin
+                        pt := ptval; 
+                        if sy = varsy then pt := ptvar
+                        else if sy = viewsy then pt := ptview
+                        else if sy = outsy then pt := ptout;
                         if (sy = varsy) or (sy = outsy) then
                           begin lkind := formal; insymbol end
                         else begin lkind := actual; 
@@ -2973,7 +2979,7 @@ end;
                                 begin strassvf(name,id); idtype:=nil; klass:=vars;
                                   vkind := lkind; next := lcp2; vlev := level;
                                   keep := true; refer := false; threat := false;
-                                  forcnt := 0
+                                  forcnt := 0; part := pt
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -3836,6 +3842,7 @@ end;
             if threaten and (lcp^.klass = vars) then with lcp^ do begin
               if vlev < level then threat := true;
               if forcnt > 0 then error(195);
+              if part = ptview then error(200)
             end;
             selector(fsys,lcp, false)
           end (*variable*) ;
@@ -4713,6 +4720,7 @@ end;
                                 if threaten and (lcp^.klass = vars) then with lcp^ do begin
                                   if vlev < level then threat := true;
                                   if forcnt > 0 then error(195);
+                                  if part = ptview then error(200)
                                 end;
                                 if gattr.typtr<>nil then(*elim.subr.types to*)
                                   with gattr,typtr^ do(*simplify later tests*)
@@ -5119,7 +5127,8 @@ end;
               if fcp^.klass = func then fcp^.asgn := true
               else if fcp^.klass = vars then with fcp^ do begin
                  if vlev < level then threat := true;
-                 if forcnt > 0 then error(195)
+                 if forcnt > 0 then error(195);
+                 if part = ptview then error(200)
               end;
               if gattr.kind = varbl then tagasc := gattr.tagfield and debug;
               lattr2 := gattr; { save access before load }
@@ -5404,6 +5413,7 @@ end;
               with lcp^, lattr do
                 begin typtr := idtype; kind := varbl; packing := false;
                   if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
+                  if part = ptview then error(200);
                   if vkind = actual then
                     begin access := drct; vlevel := vlev;
                       if vlev <> level then error(183);
@@ -5950,7 +5960,7 @@ end;
           begin strassvr(name, na[i]); idtype := textptr; klass := vars;
             vkind := actual; next := nil; vlev := 1;
             vaddr := gc; gc := gc+filesize+charsize; { files are global now }
-            threat := false; forcnt := 0
+            threat := false; forcnt := 0; part := ptval
           end;
         enterid(cp);
         if i = 3 then inputptr := cp else outputptr := cp
@@ -5961,7 +5971,7 @@ end;
            begin strassvr(name, na[i]); idtype := textptr; klass := vars;
               vkind := actual; next := nil; vlev := 1;
               vaddr := gc; gc := gc+filesize+charsize; { alloc global file }
-              threat := false; forcnt := 0
+              threat := false; forcnt := 0; part := ptval
            end;
          enterid(cp)
       end;  
@@ -5971,7 +5981,7 @@ end;
         with cp^ do
           begin strassvr(name, '         '); idtype := realptr; klass := vars;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
-            threat := false; forcnt := 0
+            threat := false; forcnt := 0; part := ptval
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -6045,7 +6055,7 @@ end;
     with uvarptr^ do
       begin strassvr(name, '         '); idtype := nil; vkind := actual;
         next := nil; vlev := 0; vaddr := 0; klass := vars;
-        threat := false; forcnt := 0
+        threat := false; forcnt := 0; part := ptval
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
