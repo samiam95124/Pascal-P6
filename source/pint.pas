@@ -296,7 +296,6 @@ var   pc          : address;   (*program address register*)
       dochkovf: boolean; { check arithmetic overflow }
 
       { debug flags: turn these on for various dumps and traces }
-
       dodmpins: boolean; { dump instructions after assembly }
       dodmplab: boolean; { dump label definitions }
       dodmpsto: boolean; { dump storage area specs }
@@ -314,6 +313,9 @@ var   pc          : address;   (*program address register*)
       dochkrpt: boolean; { check reuse of freed entry (automatically
                            invokes dorecycl = false }
       dochkdef: boolean; { check undefined accesses }
+      
+      { other flags }
+      iso7185: boolean; { iso7185 standard flag }
 
       interpreting: boolean;
 
@@ -1057,6 +1059,13 @@ procedure pshset(s: settype); begin sp := sp-setsize; putset(sp, s) end;
 procedure popadr(var a: address); begin a := getadr(sp); sp := sp+adrsize end;
 procedure pshadr(a: address); begin sp := sp-adrsize; putadr(sp, a) end;
 
+{ chkstd: called whenever a non-ISO7185 construct is being processed }
+
+procedure chkstd;
+begin
+  if iso7185 then errori('Invalid in ISO 7185 mode ')
+end;
+  
 { list single instruction at address }
 
 procedure lstins(var ad: address);
@@ -1570,8 +1579,9 @@ procedure load;
                                   'o': dochkovf := option[ch1];
                                   'p': dochkrpt := option[ch1];
                                   'q': dochkdef := option[ch1];
-                                  'b':; 'c':; 'd':; 'l':; 'r':; 's':; 't':; 
-                                  'u':; 'v':; 'w':; 'x':; 'y':; 'z':;
+                                  's': iso7185  := option[ch1];
+                                  'b':; 'c':; 'd':; 'l':; 'r':; 't':; 'u':;
+                                  'v':; 'w':; 'x':; 'y':; 'z':;
                                 end
                               until not (ch in ['a'..'z']);
                               getlin;
@@ -2240,10 +2250,20 @@ procedure callsp;
    procedure writestr(var f: text; ad: address; w: integer; l: integer);
       var i: integer;
    begin (* l and w are numbers of characters *)
-         if w>l then for i:=1 to w-l do write(f,' ')
-                else l := w;
-         for i := 0 to l-1 do write(f, getchr(ad+i))
+         if l > abs(w) then l := abs(w);
+         if w >= 1 then for i := 1 to w-l do write(f,' '); 
+         for i := 0 to l-1 do write(f, getchr(ad+i));
+         if w < 1 then for i:=1 to abs(w)-l do write(f,' ') 
    end;(*writestr*)
+   
+   procedure writec(var f: text; c: char; w: integer);
+   var i: integer;
+   begin
+     if w < 1 then begin 
+       if abs(w) > 0 then write(f, c); 
+       for i := 1 to abs(w)-1 do write(f,' ') 
+     end else write(f, c:w)
+   end;
 
    procedure getfile(var f: text);
    begin if eof(f) then errori('End of file              ');
@@ -2255,6 +2275,29 @@ procedure callsp;
          f^:= getchr(ad+fileidsize); put(f);
          filbuff[fn] := false
    end;(*putfile*)
+   
+   procedure writei(var f: text; w: integer; fl: integer);
+   var c: integer; p: integer;
+   begin
+     if fl < 1 then begin
+       c := 1; if i < 0 then c := c+1; p := maxint;
+       while p > 0 do begin if abs(i) > p then c := c+1; p := p div 10 end;
+       write(f, i:1); if abs(fl) > c then write(f, ' ':abs(fl)-c)
+     end else write(f, i:fl)
+   end;
+   
+   procedure writerf(var f: text; r: real; fl: integer; fr: integer);
+   var c: integer; p: real;
+ 
+   begin
+     if fl < 1 then begin
+       c := 2; if r < 0 then c := c+1;
+       p := 10.0;
+       while p <= abs(r) do begin c := c+1; p := p*10 end;
+       write(f, r:c:fr);
+       if abs(fl) > c then write(f, ' ':abs(fl)-(c+fr))
+     end else write(f, r:fl:fr)
+   end;
 
 begin (*callsp*)
       if q > maxsp then errori('Invalid std proc/func    ');
@@ -2338,7 +2381,8 @@ begin (*callsp*)
                       end;
            6 (*wrs*): begin popint(l); popint(w); popadr(ad1);
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
-                           if w < 1 then errori('Width cannot be < 1      ');
+                           if (w < 1) and iso7185 then 
+                             errori('Width cannot be < 1      ');
                            if fn <= prrfn then case fn of
                               inputfn: errori('Write on input file      ');
                               outputfn: writestr(output, ad1, w, l);
@@ -2384,17 +2428,18 @@ begin (*callsp*)
                       end;
            8 (*wri*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
                             valfil(ad); fn := store[ad];
-                            if w < 1 then errori('Width cannot be < 1      ');
+                            if (w < 1) and iso7185 then 
+                              errori('Width cannot be < 1      ');
                             if fn <= prrfn then case fn of
                                  inputfn: errori('Write on input file      ');
-                                 outputfn: write(output, i:w);
+                                 outputfn: writei(output, i, w);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: write(prr, i:w)
+                                 prrfn: writei(prr, i, w)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
-                                write(filtable[fn], i:w)
+                                writei(filtable[fn], i, w)
                             end
                       end;
            9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);
@@ -2414,17 +2459,18 @@ begin (*callsp*)
                       end;
            10(*wrc*): begin popint(w); popint(i); c := chr(i); popadr(ad);
                             pshadr(ad); valfil(ad); fn := store[ad];
-                            if w < 1 then errori('Width cannot be < 1      ');
+                            if (w < 1) and iso7185 then 
+                              errori('Width cannot be < 1      ');
                             if fn <= prrfn then case fn of
                                  inputfn: errori('Write on input file      ');
-                                 outputfn: write(output, c:w);
+                                 outputfn: writec(output, c, w);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: write(prr, c:w)
+                                 prrfn: writec(prr, c, w)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
-                                write(filtable[fn], c:w)
+                                writec(filtable[fn], c, w)
                             end
                       end;
            11(*rdi*): begin popadr(ad1); popadr(ad); pshadr(ad); valfil(ad);
@@ -2594,18 +2640,19 @@ begin (*callsp*)
                       end;
            25(*wrf*): begin popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
                             valfil(ad); fn := store[ad];
-                            if w < 1 then errori('Width cannot be < 1      ');
+                            if (w < 1) and iso7185 then 
+                              errori('Width cannot be < 1      ');
                             if f < 1 then errori('Fraction cannot be < 1   ');
                             if fn <= prrfn then case fn of
                                  inputfn: errori('Write on input file      ');
-                                 outputfn: write(output, r:w:f);
+                                 outputfn: writerf(output, r, w, f);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: write(prr, r:w:f)
+                                 prrfn: writerf(prr, r, w, f)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
-                                write(filtable[fn], r:w:f)
+                                writerf(filtable[fn], r, w, f)
                             end
                       end;
            26(*dsp*): begin
@@ -2847,6 +2894,7 @@ begin (* main *)
   dorecycl := true;  { obey heap space recycle requests }
   dochkrpt := false; { check reuse of freed entry (automatically
   dochkdef := true;  { check undefined accesses }
+  iso7185 := false; { iso7185 standard mode }
       
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
