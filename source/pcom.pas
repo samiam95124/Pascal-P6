@@ -243,7 +243,8 @@ type                                                        (*describing:*)
                privatesy,externalsy,viewsy,fixedsy,processsy,monitorsy,sharesy,
                classsy,issy,overloadsy,overridesy,referencesy,joinssy,staticsy,
                inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
-               resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy);
+               resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
+               hexsy,octsy,binsy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
                   neop,eqop,inop,noop,xorop);
      setofsys = set of symbol;
@@ -1408,54 +1409,61 @@ end;
           if chartp[ch] = chhex then begin chkstd; r := 16; nextch end
           else if chartp[ch] = choct then begin chkstd; r := 8; nextch end
           else if chartp[ch] = chbin then begin chkstd; r := 2; nextch end;
-          v := 0;
-          repeat 
-            if ch <> '_' then
-              if v <= maxint div r then 
-                v := v*r+ordint[ch] 
-              else begin error(203); v := 0 end;
-            nextch
-          until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
-                (r < 16) or iso7185);
-          val.ival := v; 
-          sy := intconst;
-          if ((ch = '.') and (prd^ <> '.') and (prd^ <> ')')) or
-             (lcase(ch) = 'e') then
-            begin
-              { its a real, reject non-decimal radixes }
-              if r <> 10 then error(305);
-              rv := v; ev := 0;
-              if ch = '.' then begin
-                nextch;
-                if chartp[ch] <> number then error(201);
-                repeat 
-                  rv := rv*10+ordint[ch]; nextch; ev := ev-1 
-                until chartp[ch] <> number;
-              end; 
-              if lcase(ch) = 'e' then
-                begin nextch; sgn := +1;
-                  if (ch = '+') or (ch ='-') then begin
-                    if ch = '-' then sgn := -1;
-                    nextch
+          if (r = 10) or (chartp[ch] = number) or (chartp[ch] = letter) then 
+          begin
+          
+            v := 0;
+            repeat 
+              if ch <> '_' then
+                if v <= maxint div r then 
+                  v := v*r+ordint[ch] 
+                else begin error(203); v := 0 end;
+              nextch
+            until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
+                  (r < 16) or iso7185);
+            val.ival := v; 
+            sy := intconst;
+            if ((ch = '.') and (prd^ <> '.') and (prd^ <> ')')) or
+               (lcase(ch) = 'e') then
+              begin
+                { its a real, reject non-decimal radixes }
+                if r <> 10 then error(305);
+                rv := v; ev := 0;
+                if ch = '.' then begin
+                  nextch;
+                  if chartp[ch] <> number then error(201);
+                  repeat 
+                    rv := rv*10+ordint[ch]; nextch; ev := ev-1 
+                  until chartp[ch] <> number;
+                end; 
+                if lcase(ch) = 'e' then
+                  begin nextch; sgn := +1;
+                    if (ch = '+') or (ch ='-') then begin
+                      if ch = '-' then sgn := -1;
+                      nextch
+                    end;
+                    if chartp[ch] <> number then error(201)
+                    else begin ferr := true; i := 0;
+                      repeat
+                        if ferr then begin
+                          if i <= mxint10 then i := i*10+ordint[ch]
+                          else begin error(194); ferr := false end;
+                          nextch
+                        end
+                      until chartp[ch] <> number;
+                      ev := ev+i*sgn
+                    end
                   end;
-                  if chartp[ch] <> number then error(201)
-                  else begin ferr := true; i := 0;
-                    repeat
-                      if ferr then begin
-                        if i <= mxint10 then i := i*10+ordint[ch]
-                        else begin error(194); ferr := false end;
-                        nextch
-                      end
-                    until chartp[ch] <> number;
-                    ev := ev+i*sgn
-                  end
-                end;
-              if ev < 0 then rv := rv/pwrten(ev) else rv := rv*pwrten(ev);
-              new(lvp,reel); pshcst(lvp); sy:= realconst;
-              lvp^.cclass := reel;
-              with lvp^ do lvp^.rval := rv;
-              val.valp := lvp
-            end
+                if ev < 0 then rv := rv/pwrten(ev) else rv := rv*pwrten(ev);
+                new(lvp,reel); pshcst(lvp); sy:= realconst;
+                lvp^.cclass := reel;
+                with lvp^ do lvp^.rval := rv;
+                val.valp := lvp
+              end
+          end else { convert radix to symbol }
+            if r = 16 then sy := hexsy
+            else if r = 8 then sy := octsy
+            else sy := binsy
         end;
       chstrquo:
         begin lgth := 0; sy := stringconst;  op := noop;
@@ -1586,7 +1594,8 @@ end;
          resultsy: write('result'); operatorsy: write('operator');
          outsy: write('out'); propertysy: write('property');
          channelsy: write('channel'); streamsy: write('stream');
-         othersy: write('<other>');
+         othersy: write('<other>'); hexsy: write('$'); octsy: write('&');
+         binsy: write('%');
       end;
       writeln
 
