@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 67;  { number of standard procedures/functions }
+   maxsp      = 68;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
@@ -1223,6 +1223,7 @@ end;
     212: write('Function result assigned before result given');
     213: write('Cannot take boolean integer operation on negative');
     214: write('Must apply $, & or % posfix modifier to integer');
+    215: write('Must apply * (padded string field) to string');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -4018,6 +4019,7 @@ end;
                 deffil: boolean; { default file was loaded }
                 test: boolean;
                 r: integer; { radix of print }
+                spad: boolean; { write space padded string }
           begin llkey := lkey; txt := true; deffil := true; byt := false;
             if sy = lparent then
             begin insymbol;
@@ -4075,16 +4077,24 @@ end;
                 else if sy = octsy then begin r := 8; insymbol end
                 else if sy = binsy then begin r := 2; insymbol end;
                 if (r <> 10) and (lsp <> intptr) then error(214);
+                spad := false; { set no padded string }
                 if sy = colon then
-                  begin insymbol;
-                    expression(fsys + [comma,colon,rparent], false);
-                    if gattr.typtr <> nil then
-                      if gattr.typtr <> intptr then error(116);
-                    load; default := false
+                  begin insymbol; 
+                    if (sy = mulop) and (op = mul) then begin
+                      spad := true; insymbol;
+                      if not string(lsp) then error(215)
+                    end else begin
+                      expression(fsys + [comma,colon,rparent], false);
+                      if gattr.typtr <> nil then
+                        if gattr.typtr <> intptr then error(116);
+                      load; 
+                    end;
+                    default := false
                   end
                 else default := true;
                 if sy = colon then
-                  begin insymbol; expression(fsys + [comma,rparent], false);
+                  begin insymbol; 
+                    expression(fsys + [comma,rparent], false);
                     if gattr.typtr <> nil then
                       if gattr.typtr <> intptr then error(116);
                     if lsp <> realptr then error(124);
@@ -4128,7 +4138,8 @@ end;
                                   if default then
                                         gen2(51(*ldc*),1,len);
                                   gen2(51(*ldc*),1,len);
-                                  gen1(30(*csp*),10(*wrs*))
+                                  if spad then gen1(30(*csp*),68(*wrsp*))
+                                  else gen1(30(*csp*),10(*wrs*))
                                 end
                               else error(116)
                           end
@@ -6275,6 +6286,7 @@ end;
       sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
       sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
       sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
+      sna[68] :='wrsp';
 
     end (*procmnemonics*) ;
 
@@ -6502,7 +6514,7 @@ end;
       pdx[61] := +adrsize;             pdx[62] := 0;
       pdx[63] := +intsize;             pdx[64] := +adrsize+intsize+intsize;
       pdx[65] := +adrsize*2;           pdx[66] := +adrsize*2;
-      pdx[67] := +adrsize*2;
+      pdx[67] := +adrsize*2;           pdx[68] := +(adrsize+intsize);
                                                       
     end;
 

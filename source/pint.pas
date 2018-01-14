@@ -238,7 +238,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 64;      { number of predefined procedures/functions }
+      maxsp       = 65;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1432,7 +1432,7 @@ procedure load;
          sptable[58]:='appb      ';     sptable[59]:='hlt       ';
          sptable[60]:='ast       ';     sptable[61]:='asts      ';
          sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
-         sptable[64]:='wrib      ';
+         sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2261,6 +2261,15 @@ procedure callsp;
          if w < 1 then for i:=1 to abs(w)-l do write(f,' ') 
    end;(*writestr*)
    
+   procedure writestrp(var f: text; ad: address; l: integer);
+      var i: integer;
+   begin
+         ad1 := ad+l-1; { find end }
+         while (l > 0) and (getchr(ad1) = ' ') do 
+           begin ad1 := ad1-1; l := l-1 end;
+         for i := 0 to l-1 do write(f, getchr(ad+i));
+   end;
+   
    procedure writec(var f: text; c: char; w: integer);
    var i: integer;
    begin
@@ -2410,6 +2419,21 @@ begin (*callsp*)
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
                                 writestr(filtable[fn], ad1, w, l)
+                           end;
+                      end;
+           65 (*wrsp*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+                           valfil(ad); fn := store[ad];
+                           if (w < 1) and iso7185 then 
+                             errori('Width cannot be < 1      ');
+                           if fn <= prrfn then case fn of
+                              inputfn: errori('Write on input file      ');
+                              outputfn: writestrp(output, ad1, l);
+                              prdfn: errori('Write on prd file        ');
+                              prrfn: writestrp(prr, ad1, l)
+                           end else begin
+                                if filstate[fn] <> fwrite then
+                                   errori('File not in write mode   ');
+                                writestrp(filtable[fn], ad1, l)
                            end;
                       end;
           41 (*eof*): begin popadr(ad); valfil(ad); fn := store[ad];
