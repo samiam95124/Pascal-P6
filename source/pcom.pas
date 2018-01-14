@@ -1209,7 +1209,6 @@ end;
     198: write('Var parameter cannot be a tagfield');
     199: write('Var parameter must be same type');
     200: write('Cannot threaten view parameter');
-
     201: write('Error in real constant: digit expected');
     202: write('String constant must not exceed source line');
     203: write('Integer constant exceeds range');
@@ -1223,6 +1222,7 @@ end;
     211: write('Anonymous function result must be at function end');
     212: write('Function result assigned before result given');
     213: write('Cannot take boolean integer operation on negative');
+    214: write('Must apply $, & or % posfix modifier to integer');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -4074,6 +4074,7 @@ end;
                 if sy = hexsy then begin r := 16; insymbol end
                 else if sy = octsy then begin r := 8; insymbol end
                 else if sy = binsy then begin r := 2; insymbol end;
+                if (r <> 10) and (lsp <> intptr) then error(214);
                 if sy = colon then
                   begin insymbol;
                     expression(fsys + [comma,colon,rparent], false);
