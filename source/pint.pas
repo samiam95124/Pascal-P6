@@ -238,7 +238,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 65;      { number of predefined procedures/functions }
+      maxsp       = 69;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1433,6 +1433,8 @@ procedure load;
          sptable[60]:='ast       ';     sptable[61]:='asts      ';
          sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
          sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
+         sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
+         sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2136,6 +2138,7 @@ procedure callsp;
        mn,mx: integer;
        fl1, fl2: filnam;
        rd: integer;
+       lz: boolean;
 
    procedure readi(var f: text; var i: integer);
 
@@ -2290,9 +2293,13 @@ procedure callsp;
          filbuff[fn] := false
    end;(*putfile*)
    
-   procedure writei(var f: text; w: integer; fl: integer; r: integer);
+   procedure writei(var f: text; w: integer; fl: integer; r: integer; 
+                    lz: boolean);
    var c: integer; p: integer; digit: array [1..maxdbf] of char; i: integer;
        sgn: boolean; d, ds: integer;
+   procedure filllz(n: integer); 
+   begin while n > 0 do begin write(f, '0'); n := n-1 end 
+   end;
    begin
      if w < 0 then begin 
        sgn := true; w := abs(w);
@@ -2307,7 +2314,8 @@ procedure callsp;
      until w = 0;   
      if sgn then ds := d+1 else ds := d; { add sign }
      if ds > abs(fl) then if fl < 0 then fl := -ds else fl := ds;
-     if (fl > 0) and (fl > ds) then write(f, ' ':fl-ds);
+     if (fl > 0) and (fl > ds) then 
+       if lz then filllz(fl-ds) else write(f, ' ':fl-ds);
      if sgn then write(f, '-');
      for i := maxdbf-d+1 to maxdbf do write(f, digit[i]);
      if (fl < 1) and (abs(fl) > ds) then write(f, ' ':abs(fl)-ds)
@@ -2471,24 +2479,29 @@ begin (*callsp*)
            8 (*wri*),
            62 (*wrih*),
            63 (*wrio*),
-           64 (*wrib*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
+           64 (*wrib*),
+           66 (*wiz*),
+           67 (*wizh*),
+           68 (*wizo*),
+           69 (*wizb*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
                             rd := 10;
-                            if q = 62 then rd := 16
-                            else if q = 63 then rd := 8
-                            else if q = 64 then rd := 2;
+                            if (q = 62) or (q = 67) then rd := 16
+                            else if (q = 63) or (q = 68) then rd := 8
+                            else if (q = 64) or (q = 69) then rd := 2;
+                            lz := (q >= 66) and (q <= 69);
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errori('Width cannot be < 1      ');
                             if fn <= prrfn then case fn of
                                  inputfn: errori('Write on input file      ');
-                                 outputfn: writei(output, i, w, rd);
+                                 outputfn: writei(output, i, w, rd, lz);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: writei(prr, i, w, rd)
+                                 prrfn: writei(prr, i, w, rd, lz)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
-                                writei(filtable[fn], i, w, rd)
+                                writei(filtable[fn], i, w, rd, lz)
                             end
                       end;
            9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);

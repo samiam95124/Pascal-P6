@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 68;  { number of standard procedures/functions }
+   maxsp      = 72;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
@@ -244,7 +244,7 @@ type                                                        (*describing:*)
                classsy,issy,overloadsy,overridesy,referencesy,joinssy,staticsy,
                inheritedsy,selfsy,virtualsy,trysy,exceptsy,extendssy,onsy,
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
-               hexsy,octsy,binsy);
+               hexsy,octsy,binsy,numsy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
                   neop,eqop,inop,noop,xorop);
      setofsys = set of symbol;
@@ -1595,7 +1595,7 @@ end;
          outsy: write('out'); propertysy: write('property');
          channelsy: write('channel'); streamsy: write('stream');
          othersy: write('<other>'); hexsy: write('$'); octsy: write('&');
-         binsy: write('%');
+         binsy: write('%'); numsy: write('#');
       end;
       writeln
 
@@ -4020,6 +4020,7 @@ end;
                 test: boolean;
                 r: integer; { radix of print }
                 spad: boolean; { write space padded string }
+                ledz: boolean; { use leading zeros }
           begin llkey := lkey; txt := true; deffil := true; byt := false;
             if sy = lparent then
             begin insymbol;
@@ -4078,12 +4079,14 @@ end;
                 else if sy = binsy then begin r := 2; insymbol end;
                 if (r <> 10) and (lsp <> intptr) then error(214);
                 spad := false; { set no padded string }
+                ledz := false; { set no leading zero }
                 if sy = colon then
                   begin insymbol; 
                     if (sy = mulop) and (op = mul) then begin
                       spad := true; insymbol;
                       if not string(lsp) then error(215)
                     end else begin
+                      if sy = numsy then begin ledz := true; insymbol end;
                       expression(fsys + [comma,colon,rparent], false);
                       if gattr.typtr <> nil then
                         if gattr.typtr <> intptr then error(116);
@@ -4102,10 +4105,17 @@ end;
                   end else default1 := true;
                 if lsp = intptr then
                   begin if default then gen2(51(*ldc*),1,intdeff);
-                    if r = 10 then gen1(30(*csp*),6(*wri*))
-                    else if r = 16 then gen1(30(*csp*),65(*wrih*))
-                    else if r = 8 then gen1(30(*csp*),66(*wrio*))
-                    else if r = 2 then gen1(30(*csp*),67(*wrib*))
+                    if ledz then begin { leading zeros }
+                      if r = 10 then gen1(30(*csp*),69(*wiz*))
+                      else if r = 16 then gen1(30(*csp*),70(*wizh*))
+                      else if r = 8 then gen1(30(*csp*),71(*wizo*))
+                      else if r = 2 then gen1(30(*csp*),72(*wizb*))
+                    end else begin
+                      if r = 10 then gen1(30(*csp*),6(*wri*))
+                      else if r = 16 then gen1(30(*csp*),65(*wrih*))
+                      else if r = 8 then gen1(30(*csp*),66(*wrio*))
+                      else if r = 2 then gen1(30(*csp*),67(*wrib*))
+                    end
                   end
                 else
                   if lsp = realptr then
@@ -6249,7 +6259,7 @@ end;
       ssy[','] := comma ;   ssy['.'] := period;   ssy['''']:= othersy;
       ssy['['] := lbrack ;  ssy[']'] := rbrack;   ssy[':'] := colon;
       ssy['^'] := arrow ;   ssy['<'] := relop;    ssy['>'] := relop;
-      ssy[';'] := semicolon; ssy['@'] := arrow;
+      ssy[';'] := semicolon; ssy['@'] := arrow;   ssy['#'] := numsy;
     end (*symbols*) ;
 
     procedure rators;
@@ -6286,7 +6296,8 @@ end;
       sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
       sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
       sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
-      sna[68] :='wrsp';
+      sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
+      sna[72] :='wizb';
 
     end (*procmnemonics*) ;
 
@@ -6370,7 +6381,7 @@ end;
       chartp['{'] := chlcmt  ; chartp['}'] := special ;
       chartp['@'] := special ; chartp['!'] := chrem   ;
       chartp['$'] := chhex   ; chartp['&'] := choct   ;
-      chartp['%'] := chbin   ;
+      chartp['%'] := chbin   ; chartp['#'] := special ;
 
       for i := ordminchar to ordmaxchar do ordint[chr(i)] := 0;
       ordint['0'] := 0;  ordint['1'] := 1;  ordint['2'] := 2;
@@ -6515,6 +6526,8 @@ end;
       pdx[63] := +intsize;             pdx[64] := +adrsize+intsize+intsize;
       pdx[65] := +adrsize*2;           pdx[66] := +adrsize*2;
       pdx[67] := +adrsize*2;           pdx[68] := +(adrsize+intsize);
+      pdx[69] := +adrsize*2;           pdx[70] := +adrsize*2;
+      pdx[71] := +adrsize*2;           pdx[72] := +adrsize*2;
                                                       
     end;
 
