@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 64;  { number of standard procedures/functions }
+   maxsp      = 67;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
@@ -1411,7 +1411,6 @@ end;
           else if chartp[ch] = chbin then begin chkstd; r := 2; nextch end;
           if (r = 10) or (chartp[ch] = number) or (chartp[ch] = letter) then 
           begin
-          
             v := 0;
             repeat 
               if ch <> '_' then
@@ -4018,10 +4017,11 @@ end;
                 byt: boolean; { is a byte file }
                 deffil: boolean; { default file was loaded }
                 test: boolean;
+                r: integer; { radix of print }
           begin llkey := lkey; txt := true; deffil := true; byt := false;
             if sy = lparent then
             begin insymbol;
-            expression(fsys + [comma,colon,rparent], false);
+            expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false);
             lsp := gattr.typtr; test := false;
             if lsp <> nil then
               if lsp^.form = files then
@@ -4042,7 +4042,8 @@ end;
                         begin error(116); skip(fsys+[comma,rparent]) end;
                     if sy = comma then
                       begin insymbol;
-                        expression(fsys+[comma,colon,rparent], false)
+                        expression(fsys+[comma,colon,rparent,hexsy,octsy,binsy], 
+                                   false)
                       end
                     else test := true
                   end
@@ -4068,6 +4069,11 @@ end;
                 deffil := false
               end;
               if txt then begin
+                { check radix markers }
+                r := 10;
+                if sy = hexsy then begin r := 16; insymbol end
+                else if sy = octsy then begin r := 8; insymbol end
+                else if sy = binsy then begin r := 2; insymbol end;
                 if sy = colon then
                   begin insymbol;
                     expression(fsys + [comma,colon,rparent], false);
@@ -4085,7 +4091,10 @@ end;
                   end else default1 := true;
                 if lsp = intptr then
                   begin if default then gen2(51(*ldc*),1,intdeff);
-                    gen1(30(*csp*),6(*wri*))
+                    if r = 10 then gen1(30(*csp*),6(*wri*))
+                    else if r = 16 then gen1(30(*csp*),65(*wrih*))
+                    else if r = 8 then gen1(30(*csp*),66(*wrio*))
+                    else if r = 2 then gen1(30(*csp*),67(*wrib*))
                   end
                 else
                   if lsp = realptr then
@@ -4143,7 +4152,9 @@ end;
               end;
               test := sy <> comma;
               if not test then
-                begin insymbol; expression(fsys + [comma,colon,rparent], false)
+                begin insymbol; 
+                  expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], 
+                             false)
                 end
             until test;
             if sy = rparent then insymbol else error(4)
@@ -6262,7 +6273,7 @@ end;
       sna[52] :=' upd'; sna[53] :='appt'; sna[54] :=' del'; sna[55] :=' chg'; 
       sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb'; 
       sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
-      sna[64] :='asts';
+      sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
 
     end (*procmnemonics*) ;
 
@@ -6489,6 +6500,8 @@ end;
       pdx[59] := +adrsize*2+intsize;   pdx[60] := +adrsize;
       pdx[61] := +adrsize;             pdx[62] := 0;
       pdx[63] := +intsize;             pdx[64] := +adrsize+intsize+intsize;
+      pdx[65] := +adrsize*2;           pdx[66] := +adrsize*2;
+      pdx[67] := +adrsize*2;
                                                       
     end;
 

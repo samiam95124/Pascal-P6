@@ -216,6 +216,7 @@ const
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxast      = 100;     { maximum size of assert message }
+      maxdbf      = 30;      { size of numeric conversion buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -237,7 +238,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 61;      { number of predefined procedures/functions }
+      maxsp       = 64;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -291,6 +292,7 @@ var   pc          : address;   (*program address register*)
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of byte; { bits in byte }
+      maxdig      : integer; { number of decimal digits in integer }
       
       { check flags: these turn on runtime checks }
       dochkovf: boolean; { check arithmetic overflow }
@@ -1429,6 +1431,8 @@ procedure load;
          sptable[56]:='assb      ';     sptable[57]:='clsb      ';
          sptable[58]:='appb      ';     sptable[59]:='hlt       ';
          sptable[60]:='ast       ';     sptable[61]:='asts      ';
+         sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
+         sptable[64]:='wrib      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2131,6 +2135,7 @@ procedure callsp;
        fn: fileno;
        mn,mx: integer;
        fl1, fl2: filnam;
+       rd: integer;
 
    procedure readi(var f: text; var i: integer);
 
@@ -2276,14 +2281,27 @@ procedure callsp;
          filbuff[fn] := false
    end;(*putfile*)
    
-   procedure writei(var f: text; w: integer; fl: integer);
-   var c: integer; p: integer;
+   procedure writei(var f: text; w: integer; fl: integer; r: integer);
+   var c: integer; p: integer; digit: array [1..maxdbf] of char; i: integer;
+       sgn: boolean; d, ds: integer;
    begin
-     if fl < 1 then begin
-       c := 1; if i < 0 then c := c+1; p := maxint;
-       while p > 0 do begin if abs(i) > p then c := c+1; p := p div 10 end;
-       write(f, i:1); if abs(fl) > c then write(f, ' ':abs(fl)-c)
-     end else write(f, i:fl)
+     if w < 0 then begin 
+       sgn := true; w := abs(w);
+       if r <> 10 then errori('Non-decimal radix of neg ') 
+     end else sgn := false;
+     for i := 1 to maxdbf do digit[i] := ' ';
+     i := maxdbf; d := 0;
+     repeat 
+       if (w mod r) < 10 then digit[i] := chr(w mod r+ord('0'))
+       else digit[i] := chr(w mod r -10 +ord('a'));
+       w := w div r; i := i-1; d := d+1
+     until w = 0;   
+     if sgn then ds := d+1 else ds := d; { add sign }
+     if ds > abs(fl) then if fl < 0 then fl := -ds else fl := ds;
+     if (fl > 0) and (fl > ds) then write(f, ' ':fl-ds);
+     if sgn then write(f, '-');
+     for i := maxdbf-d+1 to maxdbf do write(f, digit[i]);
+     if (fl < 1) and (abs(fl) > ds) then write(f, ' ':abs(fl)-ds)
    end;
    
    procedure writerf(var f: text; r: real; fl: integer; fr: integer);
@@ -2426,20 +2444,27 @@ begin (*callsp*)
                            end;
                            pshint(ord(line))
                       end;
-           8 (*wri*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
+           8 (*wri*),
+           62 (*wrih*),
+           63 (*wrio*),
+           64 (*wrib*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
+                            rd := 10;
+                            if q = 62 then rd := 16
+                            else if q = 63 then rd := 8
+                            else if q = 64 then rd := 2;
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errori('Width cannot be < 1      ');
                             if fn <= prrfn then case fn of
                                  inputfn: errori('Write on input file      ');
-                                 outputfn: writei(output, i, w);
+                                 outputfn: writei(output, i, w, rd);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: writei(prr, i, w)
+                                 prrfn: writei(prr, i, w, rd)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
-                                writei(filtable[fn], i, w)
+                                writei(filtable[fn], i, w, rd)
                             end
                       end;
            9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);
@@ -2877,6 +2902,10 @@ begin (* main *)
   if experiment then write('.x');
   writeln;
   writeln;
+
+  { find integer parameters }
+  i := maxint;  maxdig := 0;
+  while i > 0 do begin maxdig := maxdig+1; i := i div 10 end;
 
   for c1 := 'a' to 'z' do option[c1] := false;
   
