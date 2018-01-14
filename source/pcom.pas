@@ -3199,15 +3199,21 @@ end;
           repeat block(fsys,semicolon,lcp);
             if sy = semicolon then
               begin if prtables then printtables(false); insymbol;
-                if not (sy in [beginsy,procsy,funcsy,staticsy]) then
-                  begin error(6); skip(fsys) end
+                if iso7185 then begin { handle according to standard }
+                  if not (sy in [beginsy,procsy,funcsy,staticsy]) then
+                    begin error(6); skip(fsys) end
+                end else begin
+                  if not (sy in [labelsy,constsy,typesy,varsy,beginsy,procsy,
+                                 funcsy,staticsy]) then
+                    begin error(6); skip(fsys) end
+                end
               end
             else error(14)
-          until (sy in [beginsy,procsy,funcsy,staticsy]) or eof(prd);
+          until (sy in [labelsy,constsy,typesy,varsy,beginsy,procsy,funcsy,
+                        staticsy]) or eof(prd);
           if lcp^.klass = func then
             if lcp <> ufctptr then
-              if not lcp^.asgn then error(193); { no function result assign }
-          { release(markp); } (* return local entries on runtime heap *)
+              if not lcp^.asgn then error(193) { no function result assign }
         end;
       level := oldlev; putdsps(oldtop); top := oldtop; lc := llc;
     end (*procdeclaration*) ;
