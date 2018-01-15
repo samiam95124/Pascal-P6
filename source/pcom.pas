@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 73;  { number of standard procedures/functions }
+   maxsp      = 80;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
@@ -1321,6 +1321,9 @@ end;
           option[ch1] := opt;
           writeln(prr, 'o ', ch1, ch);
           nextch;
+        end else begin { just default to on }
+          option[ch1] := true;
+          writeln(prr, 'o ', ch1, '+')
         end
       end; { switch() }
     begin { options() }
@@ -3938,11 +3941,12 @@ end;
                 test: boolean;
                 lmin,lmax: integer;
                 len:addrrange;
+                fld, spad: boolean;
           begin
             txt := true; deffil := true;
             if sy = lparent then
               begin insymbol;
-                variable(fsys + [comma,rparent], true);
+                variable(fsys + [comma,colon,rparent], true);
                 lsp := gattr.typtr; test := false;
                 if lsp <> nil then
                   if lsp^.form = files then
@@ -3957,9 +3961,12 @@ end;
                           end
                         else
                           if sy <> comma then
-                            begin error(116); skip(fsys + [comma,rparent]) end;
+                            begin error(116); 
+                              skip(fsys + [comma,colon,rparent]) 
+                            end;
                         if sy = comma then
-                          begin insymbol; variable(fsys + [comma,rparent], true)
+                          begin insymbol; 
+                            variable(fsys + [comma,colon,rparent], true)
                           end
                         else test := true
                       end
@@ -3973,32 +3980,52 @@ end;
                     gen1(72(*swp*),ptrsize); { note 2nd is always pointer }
                     deffil := false
                   end;
-                  if txt then begin
-                    if gattr.typtr <> nil then
-                      if (gattr.typtr^.form <= subrange) or 
-                         (string(gattr.typtr) and not iso7185) then
-                        if comptypes(intptr,gattr.typtr) then begin
+                  if txt then begin lsp := gattr.typtr;
+                    fld := false; spad := false;
+                    if sy = colon then begin { field }
+                      chkstd; insymbol; 
+                      if (sy = mulop) and (op = mul) then begin
+                        spad := true; insymbol;
+                        if not string(lsp) then error(215);
+                      end else begin
+                        expression(fsys + [comma,rparent], false);
+                        if gattr.typtr <> nil then
+                          if gattr.typtr <> intptr then error(116);
+                        load; fld := true 
+                      end
+                    end;
+                    if lsp <> nil then
+                      if (lsp^.form <= subrange) or 
+                         (string(lsp) and not iso7185) then
+                        if comptypes(intptr,lsp) then begin
                           if debug then begin
-                            getbounds(gattr.typtr, lmin, lmax);
-                            gen1t(51(*ldc*),lmin,basetype(gattr.typtr));
-                            gen1t(51(*ldc*),lmax,basetype(gattr.typtr));
-                            gen1(30(*csp*),40(*rib*))
-                          end else gen1(30(*csp*),3(*rdi*))
+                            getbounds(lsp, lmin, lmax);
+                            gen1t(51(*ldc*),lmin,basetype(lsp));
+                            gen1t(51(*ldc*),lmax,basetype(lsp));
+                            if fld then gen1(30(*csp*),74(*ribf*))
+                            else gen1(30(*csp*),40(*rib*))
+                          end else if fld then gen1(30(*csp*),75(*rdif*))
+                                   else gen1(30(*csp*),3(*rdi*))
                         end else
-                          if comptypes(realptr,gattr.typtr) then
-                            gen1(30(*csp*),4(*rdr*))
+                          if comptypes(realptr,lsp) then
+                            if fld then gen1(30(*csp*),76(*rdrf*))
+                            else gen1(30(*csp*),4(*rdr*))
                           else
-                            if comptypes(charptr,gattr.typtr) then begin
+                            if comptypes(charptr,lsp) then begin
                               if debug then begin
-                                getbounds(gattr.typtr, lmin, lmax);
+                                getbounds(lsp, lmin, lmax);
                                 gen2(51(*ldc*),6,lmin);
                                 gen2(51(*ldc*),6,lmax);
-                                gen1(30(*csp*),41(*rcb*))
-                              end else gen1(30(*csp*),5(*rdc*))
-                            end else if string(gattr.typtr) then begin
+                                if fld then gen1(30(*csp*),77(*rcbf*))
+                                else gen1(30(*csp*),41(*rcb*))
+                              end else if fld then gen1(30(*csp*),78(*rdcf*))
+                                       else gen1(30(*csp*),5(*rdc*))
+                            end else if string(lsp) then begin
                               len := lsp^.size div charmax;
                               gen2(51(*ldc*),1,len);
-                              gen1(30(*csp*),73(*rds*))
+                              if fld then gen1(30(*csp*),79(*rdsf*))
+                              else if spad then gen1(30(*csp*),80(*rdsp*))
+                              else gen1(30(*csp*),73(*rds*))
                             end else error(399)
                       else error(116);
                   end else begin { binary file }
@@ -4008,7 +4035,7 @@ end;
                   end;
                   test := sy <> comma;
                   if not test then
-                    begin insymbol; variable(fsys + [comma,rparent], true)
+                    begin insymbol; variable(fsys + [comma,colon,rparent], true)
                     end
                 until test;
                 if sy = rparent then insymbol else error(4)
@@ -4098,7 +4125,8 @@ end;
                       spad := true; insymbol;
                       if not string(lsp) then error(215)
                     end else begin
-                      if sy = numsy then begin ledz := true; insymbol end;
+                      if sy = numsy then 
+                        begin chkstd; ledz := true; insymbol end;
                       expression(fsys + [comma,colon,rparent], false);
                       if gattr.typtr <> nil then
                         if gattr.typtr <> intptr then error(116);
@@ -6309,7 +6337,9 @@ end;
       sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
       sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
       sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
-      sna[72] :='wizb'; sna[73] :='rds ';
+      sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
+      sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
+      sna[80] :='rdsp';
 
     end (*procmnemonics*) ;
 
@@ -6540,7 +6570,10 @@ end;
       pdx[67] := +adrsize*2;           pdx[68] := +(adrsize+intsize);
       pdx[69] := +adrsize*2;           pdx[70] := +adrsize*2;
       pdx[71] := +adrsize*2;           pdx[72] := +adrsize*2;
-      pdx[73] := +adrsize+intsize;
+      pdx[73] := +adrsize+intsize;     pdx[74] := +(adrsize+intsize*3);
+      pdx[75] := +adrsize+intsize;     pdx[76] := +adrsize+intsize;
+      pdx[77] := +(adrsize+intsize*3); pdx[78] := +adrsize+intsize;
+      pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
                                                       
     end;
 

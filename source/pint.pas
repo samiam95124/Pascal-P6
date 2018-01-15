@@ -238,7 +238,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 70;      { number of predefined procedures/functions }
+      maxsp       = 77;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1435,7 +1435,10 @@ procedure load;
          sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
          sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
          sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
-         sptable[70]:='rds       ';
+         sptable[70]:='rds       ';     sptable[71]:='ribf      ';
+         sptable[72]:='rdif      ';     sptable[73]:='rdrf      ';
+         sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
+         sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2140,129 +2143,185 @@ procedure callsp;
        fl1, fl2: filnam;
        rd: integer;
        lz: boolean;
+       fld: boolean;
 
-   procedure readi(var f: text; var i: integer);
-
+   procedure readi(var f: text; var i: integer; var w: integer; fld: boolean);
    var s: integer;
        d: integer;
-
+   function chkbuf: char;
+   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   procedure getbuf; 
+   begin 
+     if w > 0 then begin
+       if eof(f) then errori('End of file              ');
+       get(f); w := w-1 
+     end
+   end;
+   function chkend: boolean;
    begin
-
+     chkend := (w = 0) or eof(f)
+   end;
+   begin
       s := +1; { set sign }
       { skip leading spaces }
-      while (f^ = ' ') and not eoln(f) do get(f);
-      if not (f^ in ['+', '-', '0'..'9']) then
+      while (chkbuf = ' ') and not chkend do getbuf;
+      if not (chkbuf in ['+', '-', '0'..'9']) then
         errori('Invalid integer format   ');
-      if f^ = '+' then get(f)
-      else if f^ = '-' then begin get(f); s := -1 end;
-      if not (f^ in ['0'..'9']) then errori('Invalid integer format   ');
+      if chkbuf = '+' then getbuf
+      else if chkbuf = '-' then begin getbuf; s := -1 end;
+      if not (chkbuf in ['0'..'9']) then errori('Invalid integer format   ');
       i := 0; { clear initial value }
-      while (f^ in ['0'..'9']) do begin { parse digit }
-
-         d := ord(f^)-ord('0');
-         if (i > maxint div 10) or 
-            ((i = maxint div 10) and (d > maxint mod 10)) then 
-           errori('Input value overflows    ');
-         i := i*10+d; { add in new digit }
-         get(f)
-
+      while (chkbuf in ['0'..'9']) do begin { parse digit }
+        d := ord(chkbuf)-ord('0');
+        if (i > maxint div 10) or 
+           ((i = maxint div 10) and (d > maxint mod 10)) then 
+          errori('Input value overflows    ');
+        i := i*10+d; { add in new digit }
+        getbuf
       end;
-      i := i*s { place sign }
-
+      i := i*s; { place sign }
+      { if fielded, validate the rest of the field is blank }
+      if fld then while not chkend do begin 
+        if chkbuf <> ' ' then errori('Remaining field not blank');
+        getbuf
+      end
    end;
 
-   procedure readr(var f: text; var r: real);
-
+   procedure readr(var f: text; var r: real; w: integer; fld: boolean);
    var i: integer; { integer holding }
        e: integer; { exponent }
        d: integer; { digit }
        s: boolean; { sign }
-
+   function chkbuf: char;
+   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   procedure getbuf; 
+   begin 
+     if w > 0 then begin
+       if eof(f) then errori('End of file              ');
+       get(f); w := w-1 
+     end
+   end;
+   function chkend: boolean;
+   begin
+     chkend := (w = 0) or eof(f)
+   end;
    { find power of ten }
-
    function pwrten(e: integer): real;
-
    var t: real; { accumulator }
        p: real; { current power }
-
    begin
-
       p := 1.0e+1; { set 1st power }
       t := 1.0; { initalize result }
       repeat
-
          if odd(e) then t := t*p; { if bit set, add this power }
          e := e div 2; { index next bit }
          p := sqr(p) { find next power }
-
       until e = 0;
       pwrten := t
-
    end;
-
    begin
-
       e := 0; { clear exponent }
       s := false; { set sign }
       r := 0.0; { clear result }
       { skip leading spaces }
-      while (f^ = ' ') and not eoln(f) do get(f);
+      while (chkbuf = ' ') and not chkend do getbuf;
       { get any sign from number }
-      if f^ = '-' then begin get(f); s := true end
-      else if f^ = '+' then get(f);
-      if not (f^ in ['0'..'9']) then errori('Invalid real format      ');
-      while (f^ in ['0'..'9']) do begin { parse digit }
-
-         d := ord(f^)-ord('0');
+      if chkbuf = '-' then begin getbuf; s := true end
+      else if chkbuf = '+' then getbuf;
+      if not (chkbuf in ['0'..'9']) then errori('Invalid real format      ');
+      while (chkbuf in ['0'..'9']) do begin { parse digit }
+         d := ord(chkbuf)-ord('0');
          r := r*10+d; { add in new digit }
-         get(f)
-
+         getbuf
       end;
-      if f^ in ['.', 'e', 'E'] then begin { it's a real }
-
-         if f^ = '.' then begin { decimal point }
-
-            get(f); { skip '.' }
-            if not (f^ in ['0'..'9']) then errori('Invalid real format      ');
-            while (f^ in ['0'..'9']) do begin { parse digit }
-
-               d := ord(f^)-ord('0');
+      if chkbuf in ['.', 'e', 'E'] then begin { it's a real }
+         if chkbuf = '.' then begin { decimal point }
+            getbuf; { skip '.' }
+            if not (chkbuf in ['0'..'9']) then errori('Invalid real format      ');
+            while (chkbuf in ['0'..'9']) do begin { parse digit }
+               d := ord(chkbuf)-ord('0');
                r := r*10+d; { add in new digit }
-               get(f);
+               getbuf;
                e := e-1 { count off right of decimal }
-
             end;
-
          end;
-         if f^ in ['e', 'E'] then begin { exponent }
-
-            get(f); { skip 'e' }
-            if not (f^ in ['0'..'9', '+', '-']) then
+         if chkbuf in ['e', 'E'] then begin { exponent }
+            getbuf; { skip 'e' }
+            if not (chkbuf in ['0'..'9', '+', '-']) then
                errori('Invalid real format      ');
-            readi(f, i); { get exponent }
+            readi(f, i, w, fld); { get exponent }
             { find with exponent }
             e := e+i
-
          end;
          if e < 0 then r := r/pwrten(e) else r := r*pwrten(e)
-
       end;
-      if s then r := -r
-
+      if s then r := -r;
+      { if fielded, validate the rest of the field is blank }
+      if fld then while not chkend do begin 
+        if chkbuf <> ' ' then errori('Remaining field not blank');
+        getbuf
+      end
    end;
 
-   procedure readc(var f: text; var c: char);
-   begin if eof(f) then errori('End of file              ');
-         read(f,c);
+   procedure readc(var f: text; var c: char; w: integer; fld: boolean);
+   function chkbuf: char;
+   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   procedure getbuf; 
+   begin 
+     if w > 0 then begin
+       if eof(f) then errori('End of file              ');
+       get(f); w := w-1 
+     end
+   end;
+   function chkend: boolean;
+   begin
+     chkend := (w = 0) or eof(f)
+   end;
+   begin 
+      c := chkbuf; getbuf;
+      { if fielded, validate the rest of the field is blank }
+      if fld then while not chkend do begin 
+        if chkbuf <> ' ' then errori('Remaining field not blank');
+        getbuf
+      end
    end;(*readc*)
    
-   procedure reads(var f: text; ad: address; l: integer);
-   begin
-     while l > 0 do begin
+   procedure reads(var f: text; ad: address; l: integer; w: integer; 
+                   fld: boolean);
+   function chkbuf: char;
+   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   procedure getbuf; 
+   begin 
+     if w > 0 then begin
        if eof(f) then errori('End of file              ');
-       read(f,c); putchr(ad, c); ad := ad+1; l := l-1
+       get(f); w := w-1 
+     end
+   end;
+   function chkend: boolean;
+   begin
+     chkend := (w = 0) or eof(f)
+   end;
+   begin
+;writeln; writeln('reads: begin: w: ', w:1);
+     while l > 0 do begin
+       c := chkbuf; getbuf; putchr(ad, c); ad := ad+1; l := l-1
+     end;
+;writeln; writeln('reads: w: ', w:1);
+     { if fielded, validate the rest of the field is blank }
+     if fld then while not chkend do begin 
+       if chkbuf <> ' ' then errori('Remaining field not blank');
+       getbuf
      end
    end;(*readc*)
+   
+   procedure readsp(var f: text; ad: address; l: integer);
+   begin
+     while (l > 0) and not eoln(f) do begin
+       if eof(f) then errori('End of file              ');
+       read(f, c); putchr(ad, c); ad := ad+1; l := l-1
+     end;
+     while l > 0 do begin putchr(ad, ' '); ad := ad+1; l := l-1 end
+   end;
 
    procedure writestr(var f: text; ad: address; w: integer; l: integer);
       var i: integer;
@@ -2544,32 +2603,37 @@ begin (*callsp*)
                                 writec(filtable[fn], c, w)
                             end
                       end;
-           11(*rdi*): begin popadr(ad1); popadr(ad); pshadr(ad); valfil(ad);
-                            fn := store[ad];
+           11(*rdi*),
+           72(*rdif*): begin w := maxint; fld := q = 72; if fld then popint(w);
+                           popadr(ad1); popadr(ad); pshadr(ad); 
+                           valfil(ad); fn := store[ad];
                            if fn <= prrfn then case fn of
-                                 inputfn: begin readi(input, i); putint(ad1, i);
-                                          end;
+                                 inputfn: begin readi(input, i, w, fld); 
+                                                putint(ad1, i) end;
                                  outputfn: errori('Read on output file      ');
-                                 prdfn: begin readi(prd, i); putint(ad1, i) end;
+                                 prdfn: begin readi(prd, i, w, fld); 
+                                              putint(ad1, i) end;
                                  prrfn: errori('Read on prr file         ')
                               end
                            else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
-                                readi(filtable[fn], i);
+                                readi(filtable[fn], i, w, fld);
                                 putint(ad1, i)
                            end
                       end;
-           37(*rib*): begin popint(mx); popint(mn); popadr(ad1); popadr(ad);
-                            pshadr(ad); valfil(ad); fn := store[ad];
+           37(*rib*),
+           71(*ribf*): begin w := maxint; fld := q = 71; popint(mx); popint(mn); 
+                           if fld then popint(w); popadr(ad1); popadr(ad);
+                           pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= prrfn then case fn of
-                                 inputfn: begin readi(input, i);
+                                 inputfn: begin readi(input, i, w, fld);
                                    if (i < mn) or (i > mx) then
                                      errori('Value read out of range  ');
                                    putint(ad1, i);
                                  end;
                                  outputfn: errori('Read on output file      ');
-                                 prdfn: begin readi(prd, i);
+                                 prdfn: begin readi(prd, i, w, fld);
                                    if (i < mn) or (i > mx) then
                                      errori('Value read out of range  ');
                                    putint(ad1, i)
@@ -2579,56 +2643,63 @@ begin (*callsp*)
                            else begin
                                 if filstate[fn] <> fread then
                                   errori('File not in read mode    ');
-                                readi(filtable[fn], i);
+                                readi(filtable[fn], i, w, fld);
                                 if (i < mn) or (i > mx) then
                                   errori('Value read out of range  ');
                                 putint(ad1, i)
                            end
                       end;
-           12(*rdr*): begin popadr(ad1); popadr(ad); pshadr(ad); valfil(ad);
-                            fn := store[ad];
+           12(*rdr*),
+           73(*rdrf*): begin w := maxint; fld := q = 73; if fld then popint(w);
+                           popadr(ad1); popadr(ad); pshadr(ad); 
+                           valfil(ad); fn := store[ad];
                            if fn <= prrfn then case fn of
-                                 inputfn: begin readr(input, r); putrel(ad1, r);
-                                          end;
+                                 inputfn: begin readr(input, r, w, fld); 
+                                                putrel(ad1, r) end;
                                  outputfn: errori('Read on output file      ');
-                                 prdfn: begin readr(prd, r); putrel(ad1, r) end;
+                                 prdfn: begin readr(prd, r, w, fld); 
+                                              putrel(ad1, r) end;
                                  prrfn: errori('Read on prr file         ')
                               end
                            else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
-                                readr(filtable[fn], r);
+                                readr(filtable[fn], r, w, fld);
                                 putrel(ad1, r)
                            end
                       end;
-           13(*rdc*): begin popadr(ad1); popadr(ad); pshadr(ad); valfil(ad);
-                            fn := store[ad];
+           13(*rdc*),
+           75(*rdcf*): begin w := maxint; fld := q = 75; if fld then popint(w);
+                           popadr(ad1); popadr(ad); pshadr(ad); 
+                           valfil(ad); fn := store[ad];
                            if fn <= prrfn then case fn of
-                                 inputfn: begin readc(input, c); putchr(ad1, c);
-                                          end;
+                                 inputfn: begin readc(input, c, w, fld); 
+                                                putchr(ad1, c) end;
                                  outputfn: errori('Read on output file      ');
-                                 prdfn: begin readc(prd, c); putchr(ad1, c);
-                                        end;
+                                 prdfn: begin readc(prd, c, w, fld); 
+                                              putchr(ad1, c) end;
                                  prrfn: errori('Read on prr file         ')
                               end
                            else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
-                                readc(filtable[fn], c);
+                                readc(filtable[fn], c, w, fld);
                                 putchr(ad1, c)
                            end
                       end;
-           38(*rcb*): begin popint(mx); popint(mn); popadr(ad1); popadr(ad);
+           38(*rcb*),
+           74(*rcbf*): begin w := maxint; fld := q = 74; popint(mx); popint(mn); 
+                            if fld then popint(w); popadr(ad1); popadr(ad);
                             pshadr(ad); valfil(ad);
                             fn := store[ad];
                            if fn <= prrfn then case fn of
-                                 inputfn: begin readc(input, c);
+                                 inputfn: begin readc(input, c, w, fld);
                                    if (ord(c) < mn) or (ord(c) > mx) then
                                      errori('Value read out of range  ');
                                    putchr(ad1, c)
                                  end;
                                  outputfn: errori('Read on output file      ');
-                                 prdfn: begin readc(prd, c);
+                                 prdfn: begin readc(prd, c, w, fld);
                                    if (ord(c) < mn) or (ord(c) > mx) then
                                      errori('Value read out of range  ');
                                    putchr(ad1, c)
@@ -2638,7 +2709,7 @@ begin (*callsp*)
                            else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
-                                readc(filtable[fn], c);
+                                readc(filtable[fn], c, w, fld);
                                 if (ord(c) < mn) or (ord(c) > mx) then
                                   errori('Value read out of range  ');
                                 putchr(ad1, c)
@@ -2910,17 +2981,32 @@ begin (*callsp*)
            61 (*asts*): begin popint(i); popadr(ad); popint(j);
                          if j = 0 then errors(ad, i);
                        end;
-           70 (*rds*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad); 
-                         valfil(ad); fn := store[ad];
+           70(*rds*),
+           76(*rdsf*): begin w := maxint; fld := q = 76; popint(i); 
+                         if fld then popint(w); popadr(ad1); popadr(ad); 
+                         pshadr(ad); valfil(ad); fn := store[ad];
                          if fn <= prrfn then case fn of
-                           inputfn: reads(input, ad1, i);
+                           inputfn: reads(input, ad1, i, w, fld);
                            outputfn: errori('Read on output file      ');
-                           prdfn: reads(prd, ad1, i);
+                           prdfn: reads(prd, ad1, i, w, fld);
                            prrfn: errori('Read on prr file         ')
                          end else begin
                            if filstate[fn] <> fread then
                              errori('File not in read mode    ');
-                           reads(filtable[fn], ad1, i)
+                           reads(filtable[fn], ad1, i, w, fld)
+                         end
+                       end;
+           77(*rdsp*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad);
+                         valfil(ad); fn := store[ad];
+                         if fn <= prrfn then case fn of
+                           inputfn: readsp(input, ad1, i);
+                           outputfn: errori('Read on output file      ');
+                           prdfn: readsp(prd, ad1, i);
+                           prrfn: errori('Read on prr file         ')
+                         end else begin
+                           if filstate[fn] <> fread then
+                             errori('File not in read mode    ');
+                           readsp(filtable[fn], ad1, i)
                          end
                        end;
                        
