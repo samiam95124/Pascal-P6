@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 72;  { number of standard procedures/functions }
+   maxsp      = 73;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 69;  { number of standard identifiers }
@@ -3937,6 +3937,7 @@ end;
                 deffil: boolean; { default file was loaded }
                 test: boolean;
                 lmin,lmax: integer;
+                len:addrrange;
           begin
             txt := true; deffil := true;
             if sy = lparent then
@@ -3974,7 +3975,8 @@ end;
                   end;
                   if txt then begin
                     if gattr.typtr <> nil then
-                      if gattr.typtr^.form <= subrange then
+                      if (gattr.typtr^.form <= subrange) or 
+                         (string(gattr.typtr) and not iso7185) then
                         if comptypes(intptr,gattr.typtr) then begin
                           if debug then begin
                             getbounds(gattr.typtr, lmin, lmax);
@@ -3993,6 +3995,10 @@ end;
                                 gen2(51(*ldc*),6,lmax);
                                 gen1(30(*csp*),41(*rcb*))
                               end else gen1(30(*csp*),5(*rdc*))
+                            end else if string(gattr.typtr) then begin
+                              len := lsp^.size div charmax;
+                              gen2(51(*ldc*),1,len);
+                              gen1(30(*csp*),73(*rds*))
                             end else error(399)
                       else error(116);
                   end else begin { binary file }
@@ -6303,7 +6309,7 @@ end;
       sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
       sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
       sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
-      sna[72] :='wizb';
+      sna[72] :='wizb'; sna[73] :='rds ';
 
     end (*procmnemonics*) ;
 
@@ -6534,6 +6540,7 @@ end;
       pdx[67] := +adrsize*2;           pdx[68] := +(adrsize+intsize);
       pdx[69] := +adrsize*2;           pdx[70] := +adrsize*2;
       pdx[71] := +adrsize*2;           pdx[72] := +adrsize*2;
+      pdx[73] := +adrsize+intsize;
                                                       
     end;
 

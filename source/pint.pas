@@ -238,7 +238,7 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 69;      { number of predefined procedures/functions }
+      maxsp       = 70;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1435,6 +1435,7 @@ procedure load;
          sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
          sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
          sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
+         sptable[70]:='rds       ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -2254,6 +2255,14 @@ procedure callsp;
    begin if eof(f) then errori('End of file              ');
          read(f,c);
    end;(*readc*)
+   
+   procedure reads(var f: text; ad: address; l: integer);
+   begin
+     while l > 0 do begin
+       if eof(f) then errori('End of file              ');
+       read(f,c); putchr(ad, c); ad := ad+1; l := l-1
+     end
+   end;(*readc*)
 
    procedure writestr(var f: text; ad: address; w: integer; l: integer);
       var i: integer;
@@ -2900,6 +2909,19 @@ begin (*callsp*)
                        end;
            61 (*asts*): begin popint(i); popadr(ad); popint(j);
                          if j = 0 then errors(ad, i);
+                       end;
+           70 (*rds*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad); 
+                         valfil(ad); fn := store[ad];
+                         if fn <= prrfn then case fn of
+                           inputfn: reads(input, ad1, i);
+                           outputfn: errori('Read on output file      ');
+                           prdfn: reads(prd, ad1, i);
+                           prrfn: errori('Read on prr file         ')
+                         end else begin
+                           if filstate[fn] <> fread then
+                             errori('File not in read mode    ');
+                           reads(filtable[fn], ad1, i)
+                         end
                        end;
                        
       end;(*case q*)
