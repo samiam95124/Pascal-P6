@@ -207,7 +207,7 @@ const
    maxsp      = 80;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 69;  { number of standard identifiers }
+   maxstd     = 72;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    maxrld     = 22;  { maximum length of real in digit form }
@@ -220,10 +220,7 @@ const
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
 
-
-
    { version numbers }
-
    majorver   = 0; { major version number }
    minorver   = 1; { minor version number }
    experiment = true; { is version experimental? }
@@ -5869,8 +5866,11 @@ end;
                 if not (strequri('input    ', filename) or
                         strequri('output   ', filename) or
                         strequri('prd      ', filename) or
-                        strequri('prr      ', filename))
-                then begin id := filename;
+                        strequri('prr      ', filename) or
+                        strequri('error    ', filename) or
+                        strequri('list     ', filename) or
+                        strequri('command  ', filename)) then begin 
+                       id := filename;
                        { output general error for undefined external file }
                        writeln(output);
                        writeln(output,'**** Error: external file unknown ''',
@@ -5996,6 +5996,7 @@ end;
     na[61] := 'maxsreal '; na[62] := 'maxlreal '; na[63] := 'integer  ';
     na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
     na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
+    na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
     
   end (*stdnames*) ;
 
@@ -6081,6 +6082,19 @@ end;
         values.valp := lvp; klass := konst end;
     enterid(cp)
   end;
+  
+  procedure entstdhdr(sn: stdrng);
+  var lvp: csp;
+  begin
+    new(cp,vars); ininam(cp); 
+    with cp^ do
+    begin strassvr(name, na[sn]); idtype := textptr; klass := vars;
+      vkind := actual; next := nil; vlev := 1;
+      vaddr := gc; gc := gc+filesize+charsize; { files are global now }
+      threat := false; forcnt := 0; part := ptval
+    end;
+    enterid(cp)
+  end;
       
   begin                                                       (*name:*)
                                                               (*******)
@@ -6107,27 +6121,15 @@ end;
         enterid(cp); cp1 := cp
       end;
     boolptr^.fconst := cp;
-    for i := 3 to 4 do
-      begin new(cp,vars); ininam(cp);                         (*input,output*)
-        with cp^ do
-          begin strassvr(name, na[i]); idtype := textptr; klass := vars;
-            vkind := actual; next := nil; vlev := 1;
-            vaddr := gc; gc := gc+filesize+charsize; { files are global now }
-            threat := false; forcnt := 0; part := ptval
-          end;
-        enterid(cp);
-        if i = 3 then inputptr := cp else outputptr := cp
-      end;
-    for i:=33 to 34 do
-      begin new(cp,vars); ininam(cp);                         (*prd,prr files*)
-         with cp^ do
-           begin strassvr(name, na[i]); idtype := textptr; klass := vars;
-              vkind := actual; next := nil; vlev := 1;
-              vaddr := gc; gc := gc+filesize+charsize; { alloc global file }
-              threat := false; forcnt := 0; part := ptval
-           end;
-         enterid(cp)
-      end;  
+    
+    entstdhdr(3); inputptr := cp;                             (*input*)
+    entstdhdr(4); outputptr := cp;                            (*output*)
+    entstdhdr(33);                                            (*prd*)
+    entstdhdr(34);                                            (*prr*)
+    entstdhdr(70);                                            (*error*)
+    entstdhdr(71);                                            (*list*)
+    entstdhdr(72);                                            (*command*)
+    
     for i := 27 to 32 do
       begin
         new(cp,vars); ininam(cp);                                (*parameter of predeclared functions*)

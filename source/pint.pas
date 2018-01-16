@@ -225,17 +225,23 @@ const
 
       { locations of header files after program block mark, each header
         file is two values, a file number and a single character buffer }
-      filres    = 2;         { space reserved for file }  
-      inputoff  = 0;         { 'input' file address }
-      outputoff = 2;         { 'output' file address }
-      prdoff    = 4;         { 'prd' file address }
-      prroff    = 6;         { 'prr' file address }
+      filres     = 2;        { space reserved for file }  
+      inputoff   = 0;        { 'input' file address }
+      outputoff  = 2;        { 'output' file address }
+      prdoff     = 4;        { 'prd' file address }
+      prroff     = 6;        { 'prr' file address }
+      erroroff   = 8;        { 'error' file address }
+      listoff    = 10;       { 'list' file address }
+      commandoff = 12;       { 'command' file address }
 
       { assigned logical channels for header files }
       inputfn    = 1;        { 'input' file no. }
       outputfn   = 2;        { 'output' file no. }
       prdfn      = 3;        { 'prd' file no. }
       prrfn      = 4;        { 'prr' file no. }
+      errorfn    = 5;        { 'error' file no. }
+      listfn     = 6;        { 'list' file no. }
+      commandfn  = 7;        { 'command' file no. }    
 
       stringlgth  = 1000;    { longest string length we can buffer }
       maxsp       = 77;      { number of predefined procedures/functions }
@@ -805,6 +811,12 @@ begin
 end;
 
 { End of language extension routines }
+
+function bufcommand: char; begin bufcommand := ' ' end;
+procedure getcommand; begin end;
+function eofcommand: boolean; begin eofcommand := true end;
+function eolncommand: boolean; begin eolncommand := true end;
+procedure readlncommand; begin end;
 
 (*--------------------------------------------------------------------*)
 
@@ -1935,8 +1947,11 @@ begin
      else if fa = pctop+outputoff then ff := outputfn
      else if fa = pctop+prdoff then ff := prdfn
      else if fa = pctop+prroff then ff := prrfn
+     else if fa = pctop+erroroff then ff := errorfn
+     else if fa = pctop+listoff then ff := listfn
+     else if fa = pctop+commandoff then ff := commandfn
      else begin
-       i := 5; { start search after the header files }
+       i := commandfn+1; { start search after the header files }
        ff := 0;
        while i <= maxfil do begin
          if filstate[i] = fclosed then begin ff := i; i := maxfil end;
@@ -2145,21 +2160,81 @@ procedure callsp;
        lz: boolean;
        fld: boolean;
 
-   procedure readi(var f: text; var i: integer; var w: integer; fld: boolean);
+   function buffn(fn: fileno): char;
+   begin 
+     if fn <= commandfn then case fn of
+       inputfn:   buffn := input^;
+       outputfn:  errori('Read on output file      ');
+       prdfn:     buffn := prd^;
+       prrfn:     errori('Read on prr file         ');
+       errorfn:   errori('Read on error file       ');
+       listfn:    errori('Read on list file        ');
+       commandfn: buffn := bufcommand;
+     end else begin
+       if filstate[fn] <> fread then errori('File not in read mode    ');
+       buffn := filtable[fn]^
+     end
+   end;
+   
+   procedure getfn(fn: fileno);
+   begin 
+     if fn <= commandfn then case fn of
+       inputfn:   get(input);
+       outputfn:  errori('Read on output file      ');
+       prdfn:     get(prd);
+       prrfn:     errori('Read on prr file         ');
+       errorfn:   errori('Read on error file       ');
+       listfn:    errori('Read on list file        ');
+       commandfn: getcommand;
+     end else begin
+       if filstate[fn] <> fread then errori('File not in read mode    ');
+       get(filtable[fn])
+     end
+   end;
+   
+   function eoffn(fn: fileno): boolean;
+   begin 
+     if fn <= commandfn then case fn of
+       inputfn:   eoffn := eof(input);
+       outputfn:  eoffn := eof(output);
+       prdfn:     eoffn := eof(prd);
+       prrfn:     eoffn := eof(prr);
+       errorfn:   eoffn := eof(output);
+       listfn:    eoffn := eof(output);
+       commandfn: eoffn := eofcommand;
+     end else
+       eoffn := eof(filtable[fn])
+   end;
+   
+   function eolnfn(fn: fileno): boolean;
+   begin 
+     if fn <= commandfn then case fn of
+       inputfn:   eolnfn := eoln(input);
+       outputfn:  eolnfn := eoln(output);
+       prdfn:     eolnfn := eoln(prd);
+       prrfn:     eolnfn := eoln(prr);
+       errorfn:   eolnfn := eoln(output);
+       listfn:    eolnfn := eoln(output);
+       commandfn: eolnfn := eolncommand;
+     end else
+       eolnfn := eoln(filtable[fn])
+   end;
+
+   procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean);
    var s: integer;
        d: integer;
    function chkbuf: char;
-   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eof(f) then errori('End of file              ');
-       get(f); w := w-1 
+       if eoffn(fn) then errori('End of file              ');
+       getfn(fn); w := w-1 
      end
    end;
    function chkend: boolean;
    begin
-     chkend := (w = 0) or eof(f)
+     chkend := (w = 0) or eoffn(fn)
    end;
    begin
       s := +1; { set sign }
@@ -2187,23 +2262,23 @@ procedure callsp;
       end
    end;
 
-   procedure readr(var f: text; var r: real; w: integer; fld: boolean);
+   procedure readr(fn: fileno; var r: real; w: integer; fld: boolean);
    var i: integer; { integer holding }
        e: integer; { exponent }
        d: integer; { digit }
        s: boolean; { sign }
    function chkbuf: char;
-   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf; 
-   begin 
+   begin
      if w > 0 then begin
-       if eof(f) then errori('End of file              ');
-       get(f); w := w-1 
+       if eoffn(fn) then errori('End of file              ');
+       getfn(fn); w := w-1 
      end
    end;
    function chkend: boolean;
    begin
-     chkend := (w = 0) or eof(f)
+     chkend := (w = 0) or eoffn(fn)
    end;
    { find power of ten }
    function pwrten(e: integer): real;
@@ -2249,7 +2324,7 @@ procedure callsp;
             getbuf; { skip 'e' }
             if not (chkbuf in ['0'..'9', '+', '-']) then
                errori('Invalid real format      ');
-            readi(f, i, w, fld); { get exponent }
+            readi(fn, i, w, fld); { get exponent }
             { find with exponent }
             e := e+i
          end;
@@ -2263,19 +2338,19 @@ procedure callsp;
       end
    end;
 
-   procedure readc(var f: text; var c: char; w: integer; fld: boolean);
+   procedure readc(fn: fileno; var c: char; w: integer; fld: boolean);
    function chkbuf: char;
-   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eof(f) then errori('End of file              ');
-       get(f); w := w-1 
+       if eoffn(fn) then errori('End of file              ');
+       getfn(fn); w := w-1 
      end
    end;
    function chkend: boolean;
    begin
-     chkend := (w = 0) or eof(f)
+     chkend := (w = 0) or eoffn(fn)
    end;
    begin 
       c := chkbuf; getbuf;
@@ -2286,39 +2361,37 @@ procedure callsp;
       end
    end;(*readc*)
    
-   procedure reads(var f: text; ad: address; l: integer; w: integer; 
+   procedure reads(fn: fileno; ad: address; l: integer; w: integer; 
                    fld: boolean);
    function chkbuf: char;
-   begin if w > 0 then chkbuf := f^ else chkbuf := ' ' end;
+   begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eof(f) then errori('End of file              ');
-       get(f); w := w-1 
+       if eoffn(fn) then errori('End of file              ');
+       getfn(fn); w := w-1 
      end
    end;
    function chkend: boolean;
    begin
-     chkend := (w = 0) or eof(f)
+     chkend := (w = 0) or eoffn(fn)
    end;
    begin
-;writeln; writeln('reads: begin: w: ', w:1);
      while l > 0 do begin
        c := chkbuf; getbuf; putchr(ad, c); ad := ad+1; l := l-1
      end;
-;writeln; writeln('reads: w: ', w:1);
      { if fielded, validate the rest of the field is blank }
      if fld then while not chkend do begin 
        if chkbuf <> ' ' then errori('Remaining field not blank');
        getbuf
      end
-   end;(*readc*)
+   end;(*reads*)
    
-   procedure readsp(var f: text; ad: address; l: integer);
+   procedure readsp(fn: fileno; ad: address; l: integer);
    begin
-     while (l > 0) and not eoln(f) do begin
-       if eof(f) then errori('End of file              ');
-       read(f, c); putchr(ad, c); ad := ad+1; l := l-1
+     while (l > 0) and not eolnfn(fn) do begin
+       if eoffn(fn) then errori('End of file              ');
+       read(filtable[fn], c); putchr(ad, c); ad := ad+1; l := l-1
      end;
      while l > 0 do begin putchr(ad, ' '); ad := ad+1; l := l-1 end
    end;
@@ -2410,11 +2483,14 @@ begin (*callsp*)
 
       case q of
            0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: getfile(input);
                               outputfn: errori('Get on output file       ');
                               prdfn: getfile(prd);
-                              prrfn: errori('Get on prr file          ')
+                              prrfn: errori('Get on prr file          ');
+                              errorfn: errori('Get on error file        ');
+                              listfn: errori('Get on list file         ');
+                              commandfn: getcommand;
                            end else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
@@ -2422,11 +2498,14 @@ begin (*callsp*)
                            end
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: errori('Put on read file         ');
                               outputfn: putfile(output, ad, fn);
                               prdfn: errori('Put on prd file          ');
-                              prrfn: putfile(prr, ad, fn)
+                              prrfn: putfile(prr, ad, fn);
+                              errorfn: putfile(output, ad, fn);
+                              listfn: putfile(output, ad, fn);
+                              commandfn: errori('Put on command file      ')
                            end else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
@@ -2436,7 +2515,7 @@ begin (*callsp*)
            { unused placeholder for "release" }
            2 (*rst*): errori('Invalid std proc/func    ');
            3 (*rln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: begin
                                  if eof(input) then errori('End of file              ');
                                  readln(input)
@@ -2446,7 +2525,10 @@ begin (*callsp*)
                                  if eof(prd) then errori('End of file              ');
                                  readln(prd)
                               end;
-                              prrfn: errori('Readln on prr file       ')
+                              prrfn: errori('Readln on prr file       ');
+                              errorfn: errori('Readln on error file     ');
+                              listfn: errori('Readln on list file      ');
+                              commandfn: readlncommand
                            end else begin
                                 if filstate[fn] <> fread then
                                    errori('File not in read mode    ');
@@ -2471,11 +2553,14 @@ begin (*callsp*)
                             popadr(ad1); putadr(ad1, ad+(i+1)*intsize)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: errori('Writeln on input file    ');
                               outputfn: writeln(output);
                               prdfn: errori('Writeln on prd file      ');
-                              prrfn: writeln(prr)
+                              prrfn: writeln(prr);
+                              errorfn: writeln(output);
+                              listfn: writeln(output);
+                              commandfn: errori('Writeln on command file  ')
                            end else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
@@ -2486,11 +2571,14 @@ begin (*callsp*)
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errori('Width cannot be < 1      ');
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: errori('Write on input file      ');
                               outputfn: writestr(output, ad1, w, l);
                               prdfn: errori('Write on prd file        ');
-                              prrfn: writestr(prr, ad1, w, l)
+                              prrfn: writestr(prr, ad1, w, l);
+                              errorfn: writestr(output, ad1, w, l);
+                              listfn: writestr(output, ad1, w, l);
+                              commandfn: errori('Write on command file    ');
                            end else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
@@ -2501,11 +2589,14 @@ begin (*callsp*)
                            valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errori('Width cannot be < 1      ');
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                               inputfn: errori('Write on input file      ');
                               outputfn: writestrp(output, ad1, l);
                               prdfn: errori('Write on prd file        ');
-                              prrfn: writestrp(prr, ad1, l)
+                              prrfn: writestrp(prr, ad1, l);
+                              errorfn: writestrp(output, ad1, l);
+                              listfn: writestrp(output, ad1, l);
+                              commandfn: errori('Write on command file    ');
                            end else begin
                                 if filstate[fn] <> fwrite then
                                    errori('File not in write mode   ');
@@ -2513,11 +2604,14 @@ begin (*callsp*)
                            end;
                       end;
           41 (*eof*): begin popadr(ad); valfil(ad); fn := store[ad];
-                        if fn <= prrfn then case fn of
+                        if fn <= commandfn then case fn of
                           inputfn: pshint(ord(eof(input)));
                           prdfn: pshint(ord(eof(prd)));
                           outputfn,
-                          prrfn: errori('Eof test on output file  ')
+                          prrfn: errori('Eof test on output file  ');
+                          errorfn: errori('Eof test on error file   ');
+                          listfn: errori('Eof test on list file    ');
+                          commandfn: pshint(ord(eofcommand))
                         end else begin
                           if filstate[fn] = fwrite then pshint(ord(true))
                           else if filstate[fn] = fread then
@@ -2531,11 +2625,14 @@ begin (*callsp*)
                         pshint(ord(eof(bfiltable[fn]) and not filbuff[fn]))
                       end;
            7 (*eln*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                                  inputfn: line:= eoln(input);
                                  outputfn: errori('Eoln output file         ');
                                  prdfn: line:=eoln(prd);
-                                 prrfn: errori('Eoln on prr file         ')
+                                 prrfn: errori('Eoln on prr file         ');
+                                 errorfn: errori('Eoln error file          ');
+                                 listfn: errori('Eoln list file           ');
+                                 commandfn: line := eolncommand
                               end
                            else begin
                                 if filstate[fn] <> fread then
@@ -2560,11 +2657,14 @@ begin (*callsp*)
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errori('Width cannot be < 1      ');
-                            if fn <= prrfn then case fn of
+                            if fn <= commandfn then case fn of
                                  inputfn: errori('Write on input file      ');
                                  outputfn: writei(output, i, w, rd, lz);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: writei(prr, i, w, rd, lz)
+                                 prrfn: writei(prr, i, w, rd, lz);
+                                 errorfn: writei(output, i, w, rd, lz);
+                                 listfn: writei(output, i, w, rd, lz);
+                                 commandfn: errori('Write on command file    ')
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
@@ -2575,11 +2675,14 @@ begin (*callsp*)
            9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);
                             valfil(ad); fn := store[ad];
                             if w < 1 then errori('Width cannot be < 1      ');
-                            if fn <= prrfn then case fn of
+                            if fn <= commandfn then case fn of
                                  inputfn: errori('Write on input file      ');
                                  outputfn: write(output, r: w);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: write(prr, r:w)
+                                 prrfn: write(prr, r:w);
+                                 errorfn: write(output, r: w);
+                                 listfn: write(output, r: w);
+                                 commandfn: errori('Write on command file    ')
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
@@ -2591,11 +2694,14 @@ begin (*callsp*)
                             pshadr(ad); valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errori('Width cannot be < 1      ');
-                            if fn <= prrfn then case fn of
+                            if fn <= commandfn then case fn of
                                  inputfn: errori('Write on input file      ');
                                  outputfn: writec(output, c, w);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: writec(prr, c, w)
+                                 prrfn: writec(prr, c, w);
+                                 errorfn: writec(output, c, w);
+                                 listfn: writec(output, c, w);
+                                 commandfn: errori('Write on command file    ')
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
@@ -2606,114 +2712,39 @@ begin (*callsp*)
            11(*rdi*),
            72(*rdif*): begin w := maxint; fld := q = 72; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
-                           valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
-                                 inputfn: begin readi(input, i, w, fld); 
-                                                putint(ad1, i) end;
-                                 outputfn: errori('Read on output file      ');
-                                 prdfn: begin readi(prd, i, w, fld); 
-                                              putint(ad1, i) end;
-                                 prrfn: errori('Read on prr file         ')
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                readi(filtable[fn], i, w, fld);
-                                putint(ad1, i)
-                           end
+                           valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
+                           putint(ad1, i);
                       end;
            37(*rib*),
            71(*ribf*): begin w := maxint; fld := q = 71; popint(mx); popint(mn); 
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
-                                 inputfn: begin readi(input, i, w, fld);
-                                   if (i < mn) or (i > mx) then
-                                     errori('Value read out of range  ');
-                                   putint(ad1, i);
-                                 end;
-                                 outputfn: errori('Read on output file      ');
-                                 prdfn: begin readi(prd, i, w, fld);
-                                   if (i < mn) or (i > mx) then
-                                     errori('Value read out of range  ');
-                                   putint(ad1, i)
-                                 end;
-                                 prrfn: errori('Read on prr file         ')
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                  errori('File not in read mode    ');
-                                readi(filtable[fn], i, w, fld);
-                                if (i < mn) or (i > mx) then
-                                  errori('Value read out of range  ');
-                                putint(ad1, i)
-                           end
+                           readi(fn, i, w, fld); 
+                           if (i < mn) or (i > mx) then 
+                             errori('Value read out of range  ');
+                           putint(ad1, i);
                       end;
            12(*rdr*),
            73(*rdrf*): begin w := maxint; fld := q = 73; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
                            valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
-                                 inputfn: begin readr(input, r, w, fld); 
-                                                putrel(ad1, r) end;
-                                 outputfn: errori('Read on output file      ');
-                                 prdfn: begin readr(prd, r, w, fld); 
-                                              putrel(ad1, r) end;
-                                 prrfn: errori('Read on prr file         ')
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                readr(filtable[fn], r, w, fld);
-                                putrel(ad1, r)
-                           end
+                           readr(fn, r, w, fld); putrel(ad1, r)
                       end;
            13(*rdc*),
            75(*rdcf*): begin w := maxint; fld := q = 75; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
                            valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
-                                 inputfn: begin readc(input, c, w, fld); 
-                                                putchr(ad1, c) end;
-                                 outputfn: errori('Read on output file      ');
-                                 prdfn: begin readc(prd, c, w, fld); 
-                                              putchr(ad1, c) end;
-                                 prrfn: errori('Read on prr file         ')
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                readc(filtable[fn], c, w, fld);
-                                putchr(ad1, c)
-                           end
+                           readc(fn, c, w, fld); putchr(ad1, c)
                       end;
            38(*rcb*),
            74(*rcbf*): begin w := maxint; fld := q = 74; popint(mx); popint(mn); 
                             if fld then popint(w); popadr(ad1); popadr(ad);
                             pshadr(ad); valfil(ad);
                             fn := store[ad];
-                           if fn <= prrfn then case fn of
-                                 inputfn: begin readc(input, c, w, fld);
-                                   if (ord(c) < mn) or (ord(c) > mx) then
-                                     errori('Value read out of range  ');
-                                   putchr(ad1, c)
-                                 end;
-                                 outputfn: errori('Read on output file      ');
-                                 prdfn: begin readc(prd, c, w, fld);
-                                   if (ord(c) < mn) or (ord(c) > mx) then
-                                     errori('Value read out of range  ');
-                                   putchr(ad1, c)
-                                 end;
-                                 prrfn: errori('Read on prr file         ')
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                readc(filtable[fn], c, w, fld);
-                                if (ord(c) < mn) or (ord(c) > mx) then
-                                  errori('Value read out of range  ');
-                                putchr(ad1, c)
-                           end
+                            readc(fn, c, w, fld);
+                            if (ord(c) < mn) or (ord(c) > mx) then
+                              errori('Value read out of range  ');
+                            putchr(ad1, c)
                       end;
            14(*sin*): begin poprel(r1); pshrel(sin(r1)) end;
            15(*cos*): begin poprel(r1); pshrel(cos(r1)) end;
@@ -2728,11 +2759,14 @@ begin (*callsp*)
            { placeholder for "mark" }
            20(*sav*): errori('Invalid std proc/func    ');
            21(*pag*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                                 inputfn: errori('Page on read file        ');
                                 outputfn: page(output);
                                 prdfn: errori('Page on prd file         ');
-                                prrfn: page(prr)
+                                prrfn: page(prr);
+                                errorfn: page(output);
+                                listfn: page(output);
+                                commandfn: errori('Page on command file     ')
                               end
                            else begin
                                 if filstate[fn] <> fwrite then
@@ -2741,11 +2775,14 @@ begin (*callsp*)
                            end
                       end;
            22(*rsf*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                                 inputfn: errori('Reset on input file      ');
                                 outputfn: errori('Reset on output file     ');
                                 prdfn: reset(prd);
-                                prrfn: errori('Reset on prr file        ')
+                                prrfn: errori('Reset on prr file        ');
+                                errorfn: errori('Reset on error file      ');
+                                listfn: errori('Reset on list file       ');
+                                commandfn: errori('Reset on command file    ')
                               end
                            else begin
                                 filstate[fn] := fread;
@@ -2754,11 +2791,14 @@ begin (*callsp*)
                            end
                       end;
            23(*rwf*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= prrfn then case fn of
+                           if fn <= commandfn then case fn of
                                 inputfn: errori('Rewrite on input file    ');
                                 outputfn: errori('Rewrite on output file   ');
                                 prdfn: errori('Rewrite on prd file      ');
-                                prrfn: rewrite(prr)
+                                prrfn: rewrite(prr);
+                                errorfn: errori('Rewrite on error file    ');
+                                listfn: errori('Rewrite on list file     ');
+                                commandfn: errori('Reset on command file    ')
                               end
                            else begin
                                 filstate[fn] := fwrite;
@@ -2768,11 +2808,14 @@ begin (*callsp*)
            24(*wrb*): begin popint(w); popint(i); b := i <> 0; popadr(ad);
                             pshadr(ad); valfil(ad); fn := store[ad];
                             if w < 1 then errori('Width cannot be < 1      ');
-                            if fn <= prrfn then case fn of
+                            if fn <= commandfn then case fn of
                                  inputfn: errori('Write on input file      ');
                                  outputfn: write(output, b:w);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: write(prr, b:w)
+                                 prrfn: write(prr, b:w);
+                                 errorfn: write(output, b:w);
+                                 listfn: write(output, b:w);
+                                 commandfn: errori('Write on command file    ')
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
@@ -2785,11 +2828,14 @@ begin (*callsp*)
                             if (w < 1) and iso7185 then 
                               errori('Width cannot be < 1      ');
                             if f < 1 then errori('Fraction cannot be < 1   ');
-                            if fn <= prrfn then case fn of
+                            if fn <= commandfn then case fn of
                                  inputfn: errori('Write on input file      ');
                                  outputfn: writerf(output, r, w, f);
                                  prdfn: errori('Write on prd file        ');
-                                 prrfn: writerf(prr, r, w, f)
+                                 prrfn: writerf(prr, r, w, f);
+                                 errorfn: writerf(output, r, w, f);
+                                 listfn: writerf(output, r, w, f);
+                                 commandfn: errori('Write on command file    ')
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
@@ -2985,29 +3031,11 @@ begin (*callsp*)
            76(*rdsf*): begin w := maxint; fld := q = 76; popint(i); 
                          if fld then popint(w); popadr(ad1); popadr(ad); 
                          pshadr(ad); valfil(ad); fn := store[ad];
-                         if fn <= prrfn then case fn of
-                           inputfn: reads(input, ad1, i, w, fld);
-                           outputfn: errori('Read on output file      ');
-                           prdfn: reads(prd, ad1, i, w, fld);
-                           prrfn: errori('Read on prr file         ')
-                         end else begin
-                           if filstate[fn] <> fread then
-                             errori('File not in read mode    ');
-                           reads(filtable[fn], ad1, i, w, fld)
-                         end
+                         reads(fn, ad1, i, w, fld);
                        end;
            77(*rdsp*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad);
                          valfil(ad); fn := store[ad];
-                         if fn <= prrfn then case fn of
-                           inputfn: readsp(input, ad1, i);
-                           outputfn: errori('Read on output file      ');
-                           prdfn: readsp(prd, ad1, i);
-                           prrfn: errori('Read on prr file         ')
-                         end else begin
-                           if filstate[fn] <> fread then
-                             errori('File not in read mode    ');
-                           readsp(filtable[fn], ad1, i)
-                         end
+                         readsp(fn, ad1, i)
                        end;
                        
       end;(*case q*)
