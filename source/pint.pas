@@ -217,6 +217,7 @@ const
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxast      = 100;     { maximum size of assert message }
       maxdbf      = 30;      { size of numeric conversion buffer }
+      maxcmd      = 250;     { size of command line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -253,8 +254,8 @@ const
 
       { version numbers }
 
-      majorver   = 1; { major version number }
-      minorver   = 3; { minor version number }
+      majorver   = 0; { major version number }
+      minorver   = 1; { minor version number }
       experiment = true; { is version experimental? }
 
 type
@@ -281,6 +282,8 @@ type
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fclosed, fread, fwrite);
+      cmdinx      = 1..maxcmd; { index for command line buffer }
+      cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -336,6 +339,9 @@ var   pc          : address;   (*program address register*)
       insq        : array[instyp] of 0..16; { length of q parameter }
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
+      cmdlin      : cmdbuf; { command line }
+      cmdlen      : cmdinx; { length of command line }
+      cmdpos      : cmdinx; { current position in command line }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -753,6 +759,29 @@ begin
   {$classic-pascal-level-0}
 end;
 
+procedure getcommandline(var cb: cmdbuf; var l: cmdinx);
+var i: cmdinx;
+    x, p: integer;
+procedure putcmd(c: char);
+begin
+  if i >= maxcmd-1 then errori('Command line too large   ');
+  cb[i] := c; i := i+1
+end;
+begin
+  { ISO7185 start !
+  errori('Change name file undef   ')
+  ! ISO7185 end }
+  
+  {$gnu-pascal}
+  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
+  for p := 1 to paramcount do begin
+    for x := 1 to length(paramstr(p)) do putcmd(paramstr(p)[x]); 
+    if p < paramcount then putcmd(' ')
+  end;
+  l := i-1
+  {$classic-pascal-level-0}
+end;
+
 (*-------------------------------------------------------------------------*)
 
                         { Boolean integer emulation }
@@ -812,11 +841,41 @@ end;
 
 { End of language extension routines }
 
-function bufcommand: char; begin bufcommand := ' ' end;
-procedure getcommand; begin end;
-function eofcommand: boolean; begin eofcommand := true end;
-function eolncommand: boolean; begin eolncommand := true end;
-procedure readlncommand; begin end;
+(*--------------------------------------------------------------------*)
+
+{ "fileofy" routines for command line processing.
+  
+  These routines implement the command header file by reading from a
+  buffer where the command line is stored. The assumption here is that
+  there is a fairly simple call to retrieve the command line.
+  
+  If it is wanted, the command file primitives can be used to implement
+  another type of interface, say, reading from an actual file.
+  
+  The command buffer is designed to never be completely full.
+  The last two locations indicate:
+  
+  maxcmd: end of file
+  maxcmd-1: end of line
+  
+  These locations are always left as space, thus eoln returns space as
+  the standard specifies.
+}
+  
+function bufcommand: char; 
+begin bufcommand := cmdlin[cmdpos] end;
+
+procedure getcommand; 
+begin if cmdpos <= cmdlen then cmdpos := cmdpos+1 end;
+
+function eofcommand: boolean; 
+begin eofcommand := cmdpos > cmdlen+1 end;
+
+function eolncommand: boolean; 
+begin eolncommand := cmdpos >= cmdlen+1 end;
+
+procedure readlncommand; 
+begin cmdpos := maxcmd end;
 
 (*--------------------------------------------------------------------*)
 
@@ -3097,7 +3156,11 @@ begin (* main *)
   dochkrpt := false; { check reuse of freed entry (automatically
   dochkdef := true;  { check undefined accesses }
   iso7185 := false; { iso7185 standard mode }
-      
+
+  { get the command line }
+  getcommandline(cmdlin, cmdlen);
+  cmdpos := 1;
+        
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
 
