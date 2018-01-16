@@ -2900,7 +2900,8 @@ end;
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1: ctp; lsp: stp;
           forw: boolean; oldtop: disprange;
-          llc: stkoff; lbname: integer; {markp: marktype;}
+          llc: stkoff; lbname: integer;
+          plst: boolean;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -2919,14 +2920,16 @@ end;
         else error(250);
       end;
 
-      procedure parameterlist(fsy: setofsys; var fpar: ctp);
+      procedure parameterlist(fsy: setofsys; var fpar: ctp; var plst: boolean);
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
           llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
           oldlevf: 0..maxlevel; oldtopf: disprange;
           lcs: addrrange;
           test: boolean;
+          dummy: boolean;
       begin
+        plst := false;
         if forw then begin { isolate duplicated list in level }
           oldlevf := level; oldtopf := top; pushlvl(false, nil)  
         end; 
@@ -2934,7 +2937,7 @@ end;
         if not (sy in fsy + [lparent]) then
           begin error(7); skip(fsys + fsy + [lparent]) end;
         if sy = lparent then
-          begin if forw and iso7185 then error(119);
+          begin if forw and iso7185 then error(119); plst := true;
             insymbol;
             if not (sy in [ident,varsy,procsy,funcsy,viewsy,outsy]) then
               begin error(7); skip(fsys + [ident,rparent]) end;
@@ -2959,7 +2962,7 @@ end;
                       end
                     else error(2);
                     oldlev := level; oldtop := top; pushlvl(false, lcp);
-                    lcs := lc; parameterlist([semicolon,rparent],lcp2); 
+                    lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy); 
                     lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                     if not (sy in fsys+[semicolon,rparent]) then
                       begin error(7);skip(fsys+[semicolon,rparent]) end;
@@ -2986,7 +2989,8 @@ end;
                           end
                         else error(2);
                         oldlev := level; oldtop := top; pushlvl(false, lcp);
-                        lcs := lc; parameterlist([colon,semicolon,rparent],lcp2); 
+                        lcs := lc; 
+                        parameterlist([colon,semicolon,rparent],lcp2,dummy); 
                         lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                         if not (sy in fsys+[colon]) then
                           begin error(7);skip(fsys+[comma,semicolon,rparent]) end;
@@ -3181,18 +3185,18 @@ end;
       oldlev := level; oldtop := top;
       pushlvl(forw, lcp);
       if fsy = procsy then
-        begin parameterlist([semicolon],lcp1);
+        begin parameterlist([semicolon],lcp1,plst);
           if not forw then lcp^.pflist := lcp1
           else putnamlst(lcp1) { redeclare, dispose of copy }
         end
       else
-        begin parameterlist([semicolon,colon],lcp1);
+        begin parameterlist([semicolon,colon],lcp1,plst);
           if not forw then lcp^.pflist := lcp1 
           else putnamlst(lcp1); { redeclare, dispose of copy }
           if sy = colon then
             begin insymbol;
               if sy = ident then
-                begin if forw then error(122);
+                begin if forw and iso7185 then error(122);
                   searchid([types],lcp1);
                   lsp := lcp1^.idtype;
                   lcp^.idtype := lsp;
@@ -3204,7 +3208,7 @@ end;
               else begin error(2); skip(fsys + [semicolon]) end
             end
           else
-            if not forw then error(123)
+            if not forw or plst then error(123)
         end;
       if sy = semicolon then insymbol else error(14);
       if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy)  then
