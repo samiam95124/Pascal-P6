@@ -641,7 +641,7 @@ var
      p^.keep := false; { clear keepme flag }
      p^.refer := false { clear referred flag }
   end;
-
+  
   { recycle identifier entry }
   procedure putnam(p: ctp);
   var p1: ctp;
@@ -656,7 +656,16 @@ var
      dispose(p); { release entry }
      ctpcnt := ctpcnt-1 { remove from count }
   end;
-
+  
+  { recycle identifier list }
+  procedure putnamlst(p: ctp);
+  var p1: ctp;
+  begin
+    while p <> nil do begin
+       p1 := p; p := p^.next; putnam(p1) { release }
+    end
+  end;
+  
   { recycle identifier tree }
   procedure putnams(p: ctp);
   begin
@@ -2914,13 +2923,18 @@ end;
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
           llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
+          oldlevf: 0..maxlevel; oldtopf: disprange;
           lcs: addrrange;
           test: boolean;
-      begin lcp1 := nil;
+      begin
+        if forw then begin { isolate duplicated list in level }
+          oldlevf := level; oldtopf := top; pushlvl(false, nil)  
+        end; 
+        lcp1 := nil;
         if not (sy in fsy + [lparent]) then
           begin error(7); skip(fsys + fsy + [lparent]) end;
         if sy = lparent then
-          begin if forw then error(119);
+          begin if forw and iso7185 then error(119);
             insymbol;
             if not (sy in [ident,varsy,procsy,funcsy,viewsy,outsy]) then
               begin error(7); skip(fsys + [ident,rparent]) end;
@@ -2945,8 +2959,8 @@ end;
                       end
                     else error(2);
                     oldlev := level; oldtop := top; pushlvl(false, lcp);
-                    lcs := lc; parameterlist([semicolon,rparent],lcp2); lc := lcs;
-                    if lcp <> nil then lcp^.pflist := lcp2;
+                    lcs := lc; parameterlist([semicolon,rparent],lcp2); 
+                    lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                     if not (sy in fsys+[semicolon,rparent]) then
                       begin error(7);skip(fsys+[semicolon,rparent]) end;
                     level := oldlev; putdsps(oldtop); top := oldtop
@@ -2972,8 +2986,8 @@ end;
                           end
                         else error(2);
                         oldlev := level; oldtop := top; pushlvl(false, lcp);
-                        lcs := lc; parameterlist([colon,semicolon,rparent],lcp2); lc := lcs;
-                        if lcp <> nil then lcp^.pflist := lcp2;
+                        lcs := lc; parameterlist([colon,semicolon,rparent],lcp2); 
+                        lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                         if not (sy in fsys+[colon]) then
                           begin error(7);skip(fsys+[comma,semicolon,rparent]) end;
                         if sy = colon then
@@ -3107,7 +3121,10 @@ end;
                 end;
             fpar := lcp3
           end
-            else fpar := nil
+            else fpar := nil;
+      if forw then begin { isolate duplicated list in level }
+        level := oldlevf; putdsps(oldtopf); top := oldtopf
+      end
     end (*parameterlist*) ;
 
     begin (*procdeclaration*)
@@ -3166,10 +3183,12 @@ end;
       if fsy = procsy then
         begin parameterlist([semicolon],lcp1);
           if not forw then lcp^.pflist := lcp1
+          else putnamlst(lcp1) { redeclare, dispose of copy }
         end
       else
         begin parameterlist([semicolon,colon],lcp1);
-          if not forw then lcp^.pflist := lcp1;
+          if not forw then lcp^.pflist := lcp1 
+          else putnamlst(lcp1); { redeclare, dispose of copy }
           if sy = colon then
             begin insymbol;
               if sy = ident then
