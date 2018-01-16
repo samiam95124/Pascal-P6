@@ -1233,6 +1233,7 @@ end;
     213: write('Cannot take boolean integer operation on negative');
     214: write('Must apply $, & or % posfix modifier to integer');
     215: write('Must apply * (padded string field) to string');
+    216: write('Original and forwarded procedure/function parameters not congruous');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3131,6 +3132,15 @@ end;
       end
     end (*parameterlist*) ;
 
+    procedure compparam(pla, plb: ctp);
+    begin
+      while (pla <> nil) and (plb <> nil) do begin
+        if not comptypes(pla^.idtype,plb^.idtype) then error(216);
+        pla := pla^.next; plb := plb^.next
+      end;
+      if (pla <> nil) or (plb <> nil) then error(216)
+    end;
+
     begin (*procdeclaration*)
       if fsy = staticsy then begin { 'static' leader parsed }
         { static attribute ignored here }
@@ -3187,19 +3197,27 @@ end;
       if fsy = procsy then
         begin parameterlist([semicolon],lcp1,plst);
           if not forw then lcp^.pflist := lcp1
-          else putnamlst(lcp1) { redeclare, dispose of copy }
+          else begin
+            if plst then compparam(lcp^.pflist, lcp1);
+            putnamlst(lcp1) { redeclare, dispose of copy }
+          end
         end
       else
         begin parameterlist([semicolon,colon],lcp1,plst);
           if not forw then lcp^.pflist := lcp1 
-          else putnamlst(lcp1); { redeclare, dispose of copy }
+          else begin
+            if plst then compparam(lcp^.pflist, lcp1);
+            putnamlst(lcp1); { redeclare, dispose of copy }
+          end;
           if sy = colon then
             begin insymbol;
               if sy = ident then
                 begin if forw and iso7185 then error(122);
                   searchid([types],lcp1);
                   lsp := lcp1^.idtype;
-                  lcp^.idtype := lsp;
+                  if forw then begin
+                    if not comptypes(lcp^.idtype, lsp) then error(216)
+                  end else lcp^.idtype := lsp;
                   if lsp <> nil then
                     if not (lsp^.form in [scalar,subrange,pointer]) then
                       begin error(120); lcp^.idtype := nil end;
