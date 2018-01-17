@@ -2261,8 +2261,10 @@ procedure callsp;
        errorfn:   eoffn := eof(output);
        listfn:    eoffn := eof(output);
        commandfn: eoffn := eofcommand;
-     end else
+     end else begin
+       if filstate[fn] = fclosed then errori('File not open            ');
        eoffn := eof(filtable[fn])
+     end
    end;
    
    function eolnfn(fn: fileno): boolean;
@@ -2275,8 +2277,10 @@ procedure callsp;
        errorfn:   eolnfn := eoln(output);
        listfn:    eolnfn := eoln(output);
        commandfn: eolnfn := eolncommand;
-     end else
+     end else begin
+       if filstate[fn] = fclosed then errori('File not open            ');
        eolnfn := eoln(filtable[fn])
+     end
    end;
 
    procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean);
@@ -2541,20 +2545,7 @@ begin (*callsp*)
       if dotrcrot then writeln(pc:6, '/', sp:6, '-> ', q:2);
 
       case q of
-           0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= commandfn then case fn of
-                              inputfn: getfile(input);
-                              outputfn: errori('Get on output file       ');
-                              prdfn: getfile(prd);
-                              prrfn: errori('Get on prr file          ');
-                              errorfn: errori('Get on error file        ');
-                              listfn: errori('Get on list file         ');
-                              commandfn: getcommand;
-                           end else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                getfile(filtable[fn])
-                           end
+           0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad]; getfn(fn)
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
@@ -2662,21 +2653,8 @@ begin (*callsp*)
                                 writestrp(filtable[fn], ad1, l)
                            end;
                       end;
-          41 (*eof*): begin popadr(ad); valfil(ad); fn := store[ad];
-                        if fn <= commandfn then case fn of
-                          inputfn: pshint(ord(eof(input)));
-                          prdfn: pshint(ord(eof(prd)));
-                          outputfn,
-                          prrfn: errori('Eof test on output file  ');
-                          errorfn: errori('Eof test on error file   ');
-                          listfn: errori('Eof test on list file    ');
-                          commandfn: pshint(ord(eofcommand))
-                        end else begin
-                          if filstate[fn] = fwrite then pshint(ord(true))
-                          else if filstate[fn] = fread then
-                            pshint(ord(eof(filtable[fn]) and not filbuff[fn]))
-                          else errori('File is not open         ')
-                        end
+          41 (*eof*): begin popadr(ad); valfil(ad); fn := store[ad]; 
+                        pshint(ord(eoffn(fn)))
                       end;
           42 (*efb*): begin
                         popadr(ad); valfilrm(ad); fn := store[ad];
@@ -2684,21 +2662,7 @@ begin (*callsp*)
                         pshint(ord(eof(bfiltable[fn]) and not filbuff[fn]))
                       end;
            7 (*eln*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= commandfn then case fn of
-                                 inputfn: line:= eoln(input);
-                                 outputfn: errori('Eoln output file         ');
-                                 prdfn: line:=eoln(prd);
-                                 prrfn: errori('Eoln on prr file         ');
-                                 errorfn: errori('Eoln error file          ');
-                                 listfn: errori('Eoln list file           ');
-                                 commandfn: line := eolncommand
-                              end
-                           else begin
-                                if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                line:=eoln(filtable[fn])
-                           end;
-                           pshint(ord(line))
+                        pshint(ord(eolnfn(fn)))
                       end;
            8 (*wri*),
            62 (*wrih*),
