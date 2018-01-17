@@ -320,7 +320,8 @@ type                                                        (*describing:*)
                      types: ();
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
-                             threat: boolean; forcnt: integer; part: partyp);
+                             threat: boolean; forcnt: integer; part: partyp; 
+                             hdr: boolean);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange);
@@ -463,7 +464,9 @@ var
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
     fwptr: ctp;                     (*head of chain of forw decl type ids*)
-    outputptr,inputptr: ctp;        { pointers to default files }
+    outputptr,inputptr,
+    prdptr,prrptr,errorptr,
+    listptr,commandptr: ctp;        { pointers to default files }
     usclrptr: ctp;                  { used to satisfy broken record tag fields }
     fextfilep: extfilep;            (*head of chain of external files*)
 
@@ -528,8 +531,6 @@ var
     ordint: array [char] of integer;
 
     intlabel,mxint10,maxpow10: integer;
-    inputhdf: boolean; { 'input' appears in header files }
-    outputhdf: boolean; { 'output' appears in header files }
     errtbl: array [1..500] of boolean; { error occrence tracking }
     toterr: integer; { total errors in program }
 
@@ -1231,6 +1232,11 @@ end;
     214: write('Must apply $, & or % posfix modifier to integer');
     215: write('Must apply * (padded string field) to string');
     216: write('Original and forwarded procedure/function parameters not congruous');
+    217: write('Missing file "prd" in program heading');
+    218: write('Missing file "prr" in program heading');
+    219: write('Missing file "error" in program heading');
+    220: write('Missing file "list" in program heading');
+    221: write('Missing file "command" in program heading');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3932,9 +3938,24 @@ end;
             end;
             selector(fsys,lcp, false)
           end (*variable*) ;
+          
+          procedure chkhdr;
+          var lcp: ctp; dummy: boolean;
+          begin
+            if sy = ident then begin { test for file }
+              searchidnenm([vars],lcp,dummy);
+              if (lcp = inputptr) and not inputptr^.hdr then error(175)
+              else if (lcp = outputptr) and not outputptr^.hdr then error(176)
+              else if (lcp = prdptr) and not outputptr^.hdr then error(217)
+              else if (lcp = prrptr) and not outputptr^.hdr then error(218)
+              else if (lcp = errorptr) and not outputptr^.hdr then error(219)
+              else if (lcp = listptr) and not outputptr^.hdr then error(220)
+              else if (lcp = commandptr) and not outputptr^.hdr then error(221)
+            end
+          end;
 
           procedure getputresetrewriteprocedure;
-          begin variable(fsys + [rparent], false); loadaddress;
+          begin chkhdr; variable(fsys + [rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(116);
             if lkey <= 2 then begin
@@ -3960,13 +3981,13 @@ end;
           begin
             llev := 1;
             if sy = lparent then
-            begin insymbol;
+            begin insymbol; chkhdr;
               variable(fsys + [rparent], false); loadaddress;
               if gattr.typtr <> nil then
                 if gattr.typtr <> textptr then error(116);
               if sy = rparent then insymbol else error(4)
             end else begin
-              if not outputhdf then error(176);
+              if not outputptr^.hdr then error(176);
               gen1(37(*lao*),outputptr^.vaddr);
             end;
             gen1(30(*csp*),24(*page*))
@@ -3983,7 +4004,7 @@ end;
           begin
             txt := true; deffil := true;
             if sy = lparent then
-              begin insymbol;
+              begin insymbol; chkhdr;
                 variable(fsys + [comma,colon,rparent], true);
                 lsp := gattr.typtr; test := false;
                 if lsp <> nil then
@@ -4008,7 +4029,7 @@ end;
                           end
                         else test := true
                       end
-                  else if not inputhdf then error(175);
+                  else if not inputptr^.hdr then error(175);
                if not test then
                 repeat loadaddress;
                   if deffil then begin
@@ -4079,7 +4100,7 @@ end;
                 if sy = rparent then insymbol else error(4)
               end
             else begin
-              if not inputhdf then error(175);
+              if not inputptr^.hdr then error(175);
               if lkey = 5 then error(116);
               gen1(37(*lao*),inputptr^.vaddr);
             end;
@@ -4100,7 +4121,7 @@ end;
                 ledz: boolean; { use leading zeros }
           begin llkey := lkey; txt := true; deffil := true; byt := false;
             if sy = lparent then
-            begin insymbol;
+            begin insymbol; chkhdr;
             expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false);
             lsp := gattr.typtr; test := false;
             if lsp <> nil then
@@ -4127,7 +4148,7 @@ end;
                       end
                     else test := true
                   end
-              else if not outputhdf then error(176);
+              else if not outputptr^.hdr then error(176);
             if not test then
             repeat
               lsp := gattr.typtr;
@@ -4259,7 +4280,7 @@ end;
             until test;
             if sy = rparent then insymbol else error(4)
             end else begin
-              if not outputhdf then error(176);
+              if not outputptr^.hdr then error(176);
               if lkey = 6 then error(116);
               gen1(37(*lao*),outputptr^.vaddr);
             end;
@@ -4484,7 +4505,7 @@ end;
                 loadaddress
               end
             else begin
-              if not inputhdf then error(175);
+              if not inputptr^.hdr then error(175);
               gen1(37(*lao*),inputptr^.vaddr);
               gattr.typtr := textptr
             end;
@@ -4500,7 +4521,7 @@ end;
           
           procedure assignprocedure;
             var len: addrrange; lattr: attr;
-          begin chkstd;
+          begin chkstd; chkhdr;
             variable(fsys+[comma,rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
@@ -4519,7 +4540,7 @@ end;
           end;
           
           procedure closeupdateappendprocedure;
-          begin chkstd;
+          begin chkstd; chkhdr;
             variable(fsys+[rparent], false); loadaddress;
             if gattr.typtr <> nil then
               if gattr.typtr^.form <> files then error(125);
@@ -4540,7 +4561,7 @@ end;
           end;
           
           procedure positionprocedure;
-          begin chkstd;
+          begin chkstd; chkhdr;
             variable(fsys+[comma,rparent], false); loadaddress;
             if gattr.typtr <> nil then begin
               if gattr.typtr^.form <> files then error(125);
@@ -4585,7 +4606,7 @@ end;
           end;
           
           procedure lengthlocationfunction;
-          begin chkstd;
+          begin chkstd; chkhdr;
             if sy = lparent then insymbol else error(9);
             variable(fsys+[rparent], false); loadaddress;
             if gattr.typtr <> nil then begin
@@ -5948,8 +5969,13 @@ end;
                     begin filename := id; nextfile := fextfilep end;
                   fextfilep := extfp;
                   { check 'input' or 'output' appears in header for defaults }
-                  if strequri('input    ', id) then inputhdf := true
-                  else if strequri('output   ', id) then outputhdf := true;
+                  if strequri('input    ', id) then inputptr^.hdr := true
+                  else if strequri('output   ', id) then outputptr^.hdr := true
+                  else if strequri('prd      ', id) then prdptr^.hdr := true
+                  else if strequri('prr      ', id) then prrptr^.hdr := true
+                  else if strequri('error    ', id) then errorptr^.hdr := true
+                  else if strequri('list     ', id) then listptr^.hdr := true
+                  else if strequri('command  ', id) then commandptr^.hdr := true;
                   insymbol;
                   if not ( sy in [comma,rparent] ) then error(20)
                 end
@@ -6091,7 +6117,7 @@ end;
     begin strassvr(name, na[sn]); idtype := textptr; klass := vars;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
-      threat := false; forcnt := 0; part := ptval
+      threat := false; forcnt := 0; part := ptval; hdr := false
     end;
     enterid(cp)
   end;
@@ -6124,11 +6150,11 @@ end;
     
     entstdhdr(3); inputptr := cp;                             (*input*)
     entstdhdr(4); outputptr := cp;                            (*output*)
-    entstdhdr(33);                                            (*prd*)
-    entstdhdr(34);                                            (*prr*)
-    entstdhdr(70);                                            (*error*)
-    entstdhdr(71);                                            (*list*)
-    entstdhdr(72);                                            (*command*)
+    entstdhdr(33); prdptr := cp;                              (*prd*)
+    entstdhdr(34); prrptr := cp;                              (*prr*)
+    entstdhdr(70); errorptr := cp;                            (*error*)
+    entstdhdr(71); listptr := cp;                             (*list*)
+    entstdhdr(72); commandptr := cp;                          (*command*)
     
     for i := 27 to 32 do
       begin
@@ -6258,8 +6284,7 @@ end;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
-    inputhdf := false; { set 'input' not in header files }
-    outputhdf := false; { set 'output' not in header files }
+    
     for i := 1 to 500 do errtbl[i] := false; { initialize error tracking }
     toterr := 0; { clear error count }
     { clear the recycling tracking counters }
