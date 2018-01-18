@@ -1381,6 +1381,64 @@ end;
       until e = 0;
       pwrten := t
     end;
+    
+    procedure escchr(cp: integer);
+    type escstr = packed array [1..5] of char; { escape string }
+    var c: char; l: 0..4; i: 1..strglgth;
+    
+    function match(es: escstr): boolean;
+    var i: 1..4;
+    begin
+      i := 1;
+      { move to first mismatch or end }
+      while (es[i] = string[cp+i-1]) and (es[i] <> ' ') and (i < 4) do i := i+1;
+      match := es[i] = ' '      
+    end;
+    
+    begin
+      cp := cp+1; { past '\' }
+      c := ' '; { set none found }
+      if match('xoff ') then begin c := chr(19); l := 4 end
+      else if match('dle  ') then begin c := chr(16); l := 3 end 
+      else if match('dc1  ') then begin c := chr(17); l := 3 end  
+      else if match('xon  ') then begin c := chr(17); l := 3 end  
+      else if match('dc2  ') then begin c := chr(18); l := 3 end  
+      else if match('dc3  ') then begin c := chr(19); l := 3 end  
+      else if match('dc4  ') then begin c := chr(20); l := 3 end  
+      else if match('nak  ') then begin c := chr(21); l := 3 end  
+      else if match('syn  ') then begin c := chr(22); l := 3 end  
+      else if match('etb  ') then begin c := chr(23); l := 3 end  
+      else if match('can  ') then begin c := chr(24); l := 3 end  
+      else if match('nul  ') then begin c := chr(0); l := 3 end   
+      else if match('soh  ') then begin c := chr(1); l := 3 end   
+      else if match('stx  ') then begin c := chr(2); l := 3 end   
+      else if match('etx  ') then begin c := chr(3); l := 3 end   
+      else if match('eot  ') then begin c := chr(4); l := 3 end   
+      else if match('enq  ') then begin c := chr(5); l := 3 end   
+      else if match('ack  ') then begin c := chr(6); l := 3 end   
+      else if match('bel  ') then begin c := chr(7); l := 3 end   
+      else if match('sub  ') then begin c := chr(26); l := 3 end  
+      else if match('esc  ') then begin c := chr(27); l := 3 end  
+      else if match('del  ') then begin c := chr(127); l := 3 end 
+      else if match('bs   ') then begin c := chr(8); l := 2 end   
+      else if match('ht   ') then begin c := chr(9); l := 2 end   
+      else if match('lf   ') then begin c := chr(10); l := 2 end  
+      else if match('vt   ') then begin c := chr(11); l := 2 end  
+      else if match('ff   ') then begin c := chr(12); l := 2 end  
+      else if match('cr   ') then begin c := chr(13); l := 2 end  
+      else if match('so   ') then begin c := chr(14); l := 2 end  
+      else if match('si   ') then begin c := chr(15); l := 2 end  
+      else if match('em   ') then begin c := chr(25); l := 2 end  
+      else if match('fs   ') then begin c := chr(28); l := 2 end  
+      else if match('gs   ') then begin c := chr(29); l := 2 end  
+      else if match('rs   ') then begin c := chr(30); l := 2 end  
+      else if match('us   ') then begin c := chr(31); l := 2 end; 
+      if c <> ' ' then begin { replace }
+        string[cp-1] := c; { overwrite '\' }
+        for i := cp to strglgth-l do string[i] := string[i+l];
+        lgth := lgth-l
+      end
+    end;
 
   begin (*insymbol*)
   1:
@@ -1492,6 +1550,12 @@ end;
           until ch <> '''';
           string[lgth] := ' '; { get rid of trailing quote }
           lgth := lgth - 1;   (*now lgth = nr of chars in string*)
+          { see if string contains character escapes }
+          i := 1;
+          while i <= strglgth do begin
+            if string[i] = chr(92){\} then escchr(i); { process force sequence }
+            i := i+1 { pass escaped char or forced char }
+          end; 
           if lgth = 1 then val.ival := ord(string[1])
           else
             begin
