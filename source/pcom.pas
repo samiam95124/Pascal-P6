@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 80;  { number of standard procedures/functions }
+   maxsp      = 82;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 72;  { number of standard identifiers }
@@ -2866,7 +2866,8 @@ end;
               with lcp^ do
                begin strassvf(name, id); next := nxt; klass := vars;
                   idtype := nil; vkind := actual; vlev := level;
-                  refer := false; threat := false; forcnt := 0; part := ptval
+                  refer := false; threat := false; forcnt := 0; part := ptval;
+                  hdr := false
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -3036,7 +3037,7 @@ end;
                                 begin strassvf(name,id); idtype:=nil; klass:=vars;
                                   vkind := lkind; next := lcp2; vlev := level;
                                   keep := true; refer := false; threat := false;
-                                  forcnt := 0; part := pt
+                                  forcnt := 0; part := pt; hdr := false
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -3269,7 +3270,6 @@ end;
       const cstoccmax=4000; cixmax=10000;
       type oprange = 0..maxins;
       var
-          llcp:ctp; saveid:idstr;
           cstptr: array [1..cstoccmax] of csp;
           cstptrix: 0..cstoccmax;
           (*allows referencing of noninteger constants by an index
@@ -3287,6 +3287,7 @@ end;
           lattr: attr;
           fid: stp;
           lsize: addrrange;
+          
 
       { add statement level }
       procedure addlvl;
@@ -4533,7 +4534,7 @@ end;
               len := gattr.typtr^.size div charmax;
               gen2(51(*ldc*),1,len);
               if lattr.typtr = textptr then { text }
-                gen1(30(*csp*),49(*ass*))
+                gen1(30(*csp*),49(*asst*))
               else { binary }
                 gen1(30(*csp*),59(*assb*))
             end
@@ -5794,6 +5795,66 @@ end;
           end
       end (*statement*) ;
 
+      { validate and start external header files }
+      procedure externalheader;
+      var valp: csp; saveid: idstr; llcp:ctp;
+      begin
+        saveid := id;
+        while fextfilep <> nil do begin
+          with fextfilep^ do begin
+            id := filename;
+            searchidne([vars],llcp);
+            if llcp = nil then begin
+              { a header file was never defined in a var statement }
+              writeln(output);
+              writeln(output,'**** Error: Undeclared external file ''',
+                             fextfilep^.filename:8, '''');
+              toterr := toterr+1;
+              llcp := uvarptr
+            end;
+            if llcp^.idtype<>nil then
+              if llcp^.idtype^.form<>files then
+                begin writeln(output);
+                  writeln(output,'**** Error: Undeclared external file ''',
+                                 fextfilep^.filename:8, '''');
+                  toterr := toterr+1
+                end
+            else begin { process header file }
+              llcp^.hdr := true; { appears in header }
+              { check is a standard header file }
+              if not (strequri('input    ', filename) or
+                      strequri('output   ', filename) or
+                      strequri('prd      ', filename) or
+                      strequri('prr      ', filename) or
+                      strequri('error    ', filename) or
+                      strequri('list     ', filename) or
+                      strequri('command  ', filename)) then begin 
+                gen1(37(*lao*),llcp^.vaddr); { load file address }
+                { put name in constants table }
+                new(valp,strg); valp^.cclass := strg;
+                valp^.slgth := lenpv(llcp^.name); 
+                valp^.sval := llcp^.name;
+                if cstptrix >= cstoccmax then error(254)
+                else begin cstptrix := cstptrix + 1;
+                  cstptr[cstptrix] := valp;
+                  gen1(38(*lca*),cstptrix)
+                end;
+                cstptrix := cstptrix - 1;
+                { load length of name }
+                gen2(51(*ldc*),1,valp^.slgth);
+                if llcp^.idtype = textptr then { text }
+                  gen1(30(*csp*),81(*aeft*))
+                else { binary }
+                  gen1(30(*csp*),82(*aefb*));
+                dispose(valp,strg)
+              end
+            end
+          end;
+          fp := fextfilep; fextfilep := fextfilep^.nextfile; putfil(fp)
+        end;
+        id := saveid
+      end;
+          
     begin (*body*)
       if fprocp <> nil then entname := fprocp^.pfname
       else genlabel(entname);
@@ -5830,6 +5891,7 @@ end;
         end;
       lcmin := lc;
       addlvl;
+      if level = 1 then externalheader; { process external header files }
       repeat
         repeat statement(fsys + [semicolon,endsy])
         until not (sy in statbegsys);
@@ -5880,45 +5942,6 @@ end;
           gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
           if prcode then
             writeln(prr,'q');
-          saveid := id;
-          while fextfilep <> nil do
-            begin
-              with fextfilep^ do
-                if not (strequri('input    ', filename) or
-                        strequri('output   ', filename) or
-                        strequri('prd      ', filename) or
-                        strequri('prr      ', filename) or
-                        strequri('error    ', filename) or
-                        strequri('list     ', filename) or
-                        strequri('command  ', filename)) then begin 
-                       id := filename;
-                       { output general error for undefined external file }
-                       writeln(output);
-                       writeln(output,'**** Error: external file unknown ''',
-                                      fextfilep^.filename:8, '''');
-                       toterr := toterr+1;
-                       { hold the error in case not found, since this error
-                         occurs far from the original symbol }
-                       searchidne([vars],llcp);
-                       if llcp = nil then begin
-                         { a header file was never defined in a var statement }
-                         writeln(output);
-                         writeln(output,'**** Error: Undeclared external file ''',
-                                        fextfilep^.filename:8, '''');
-                         toterr := toterr+1;
-                         llcp := uvarptr
-                       end;
-                       if llcp^.idtype<>nil then
-                         if llcp^.idtype^.form<>files then
-                           begin writeln(output);
-                             writeln(output,'**** Error: Undeclared external file ''',
-                                            fextfilep^.filename:8, '''');
-                             toterr := toterr+1
-                           end
-                     end;
-                fp := fextfilep; fextfilep := fextfilep^.nextfile; putfil(fp);
-            end;
-          id := saveid;
           if prtables then
             begin writeln(output); printtables(true)
             end
@@ -6162,7 +6185,7 @@ end;
         with cp^ do
           begin strassvr(name, '         '); idtype := realptr; klass := vars;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
-            threat := false; forcnt := 0; part := ptval
+            threat := false; forcnt := 0; part := ptval; hdr := false
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -6236,7 +6259,7 @@ end;
     with uvarptr^ do
       begin strassvr(name, '         '); idtype := nil; vkind := actual;
         next := nil; vlev := 0; vaddr := 0; klass := vars;
-        threat := false; forcnt := 0; part := ptval
+        threat := false; forcnt := 0; part := ptval; hdr := false
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
@@ -6407,7 +6430,7 @@ end;
       sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
-      sna[80] :='rdsp';
+      sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb';
 
     end (*procmnemonics*) ;
 
@@ -6642,6 +6665,7 @@ end;
       pdx[75] := +adrsize+intsize;     pdx[76] := +adrsize+intsize;
       pdx[77] := +(adrsize+intsize*3); pdx[78] := +adrsize+intsize;
       pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
+      pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
                                                       
     end;
 

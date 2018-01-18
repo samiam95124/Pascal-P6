@@ -245,7 +245,7 @@ const
       commandfn  = 7;        { 'command' file no. }    
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 77;      { number of predefined procedures/functions }
+      maxsp       = 79;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -876,6 +876,50 @@ begin eolncommand := cmdpos >= cmdlen+1 end;
 
 procedure readlncommand; 
 begin cmdpos := maxcmd end;
+
+{ The external assigns read a filename off the command line. The original name
+  of the header file is also passed in, and can be used to process. However,
+  this implementation ignores them and just reads the names in order off the
+  command line (as provided for in Annex C of the Pascaline standard).
+  
+  The processing of command line filenames does not exclude the use of the
+  command file. The command file simply starts reading after all filename
+  parameters have been removed.
+}
+
+procedure assignexternaltext(var f: text; var fn: filnam);
+var fne: filnam; i: integer;
+begin
+  for i := 1 to fillen do fne[i] := ' ';
+  { skip leading spaces }
+  while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
+  i := 1;
+  while not eolncommand and not eofcommand and 
+        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+    if i = fillen then errori('Header ext name too large');
+    fne[i] := bufcommand;
+    getcommand;
+    i := i+1
+  end;
+  assigntext(f, fne) { assign to that }
+end;
+
+procedure assignexternalbin(var f: bytfil; var fn: filnam);
+var fne: filnam; i: integer;
+begin
+  for i := 1 to fillen do fne[i] := ' ';
+  { skip leading spaces }
+  while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
+  i := 1;
+  while not eolncommand and not eofcommand and 
+        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+    if i = fillen then errori('Header ext name too large');
+    fne[i] := bufcommand;
+    getcommand;
+    i := i+1
+  end;
+  assignbin(f, fne) { assign to that }
+end;
 
 (*--------------------------------------------------------------------*)
 
@@ -1510,6 +1554,7 @@ procedure load;
          sptable[72]:='rdif      ';     sptable[73]:='rdrf      ';
          sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
          sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
+         sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -3059,6 +3104,16 @@ begin (*callsp*)
            77(*rdsp*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad);
                          valfil(ad); fn := store[ad];
                          readsp(fn, ad1, i)
+                       end;
+           78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
+                         fn := store[ad]; clrfn(fl1);
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
+                         assignexternaltext(filtable[fn], fl1) 
+                       end;
+           79(*aefb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
+                         fn := store[ad]; clrfn(fl1);
+                         for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
+                         assignexternalbin(bfiltable[fn], fl1) 
                        end;
                        
       end;(*case q*)
