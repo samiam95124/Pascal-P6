@@ -245,7 +245,7 @@ const
       commandfn  = 7;        { 'command' file no. }    
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 79;      { number of predefined procedures/functions }
+      maxsp       = 81;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1555,6 +1555,7 @@ procedure load;
          sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
          sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
+         sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
          
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -3114,6 +3115,12 @@ begin (*callsp*)
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          assignexternalbin(bfiltable[fn], fl1) 
+                       end;
+           80(*rdie*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
+                         readi(commandfn, i, w, false); putint(ad, i);
+                       end;
+           81(*rdre*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
+                         readr(commandfn, r, w, false); putrel(ad, r);
                        end;
                        
       end;(*case q*)

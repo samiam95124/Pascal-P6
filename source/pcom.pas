@@ -204,7 +204,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 82;  { number of standard procedures/functions }
+   maxsp      = 84;  { number of standard procedures/functions }
    maxins     = 83;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 72;  { number of standard identifiers }
@@ -5813,7 +5813,8 @@ end;
               llcp := uvarptr
             end;
             if llcp^.idtype<>nil then
-              if llcp^.idtype^.form<>files then
+              if (llcp^.idtype^.form<>files) and (llcp^.idtype <> intptr) and
+                 (llcp^.idtype <> realptr) then
                 begin writeln(output);
                   writeln(output,'**** Error: Undeclared external file ''',
                                  fextfilep^.filename:8, '''');
@@ -5829,7 +5830,7 @@ end;
                       strequri('error    ', filename) or
                       strequri('list     ', filename) or
                       strequri('command  ', filename)) then begin 
-                gen1(37(*lao*),llcp^.vaddr); { load file address }
+                gen1(37(*lao*),llcp^.vaddr); { load file/variable address }
                 { put name in constants table }
                 new(valp,strg); valp^.cclass := strg;
                 valp^.slgth := lenpv(llcp^.name); 
@@ -5842,7 +5843,11 @@ end;
                 cstptrix := cstptrix - 1;
                 { load length of name }
                 gen2(51(*ldc*),1,valp^.slgth);
-                if llcp^.idtype = textptr then { text }
+                if llcp^.idtype = intptr then { integer }
+                  gen1(30(*csp*),83(*rdie*))
+                else if llcp^.idtype = realptr then { real }
+                  gen1(30(*csp*),84(*rdir*))
+                else if llcp^.idtype = textptr then { text }
                   gen1(30(*csp*),81(*aeft*))
                 else { binary }
                   gen1(30(*csp*),82(*aefb*));
@@ -6430,7 +6435,8 @@ end;
       sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
-      sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb';
+      sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
+      sna[84] :='rdre';
 
     end (*procmnemonics*) ;
 
@@ -6666,6 +6672,7 @@ end;
       pdx[77] := +(adrsize+intsize*3); pdx[78] := +adrsize+intsize;
       pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
       pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
+      pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
                                                       
     end;
 
