@@ -1,4 +1,4 @@
-P5 Pascal interpreter vs. 1.2
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
@@ -50,9 +50,9 @@ Hit <return> to continue
 
                      0
                  315 | 45
-                    \\|/
+                    \|/
                270 --*-- 90
-                    /|\\
+                    /|\
                  225 | 135
                     180
 

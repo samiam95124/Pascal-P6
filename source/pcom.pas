@@ -1237,6 +1237,7 @@ end;
     219: write('Missing file "error" in program heading');
     220: write('Missing file "list" in program heading');
     221: write('Missing file "command" in program heading');
+    222: write('Value out of character range');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1300,7 +1301,7 @@ end;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
     label 1;
-    var i,k,v,r,p: integer;
+    var i,j,k,v,r,p: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
         iscmte: boolean;
@@ -1382,7 +1383,7 @@ end;
       pwrten := t
     end;
     
-    procedure escchr(cp: integer);
+    procedure escchr(var cp: integer);
     type escstr = packed array [1..5] of char; { escape string }
     var c: char; l: 0..4; i: 1..strglgth;
     
@@ -1437,6 +1438,8 @@ end;
         string[cp-1] := c; { overwrite '\' }
         for i := cp to strglgth-l do string[i] := string[i+l];
         lgth := lgth-l
+      end else begin { gap common forced }
+        for i := cp-1 to strglgth-1 do string[i] := string[i+1]
       end
     end;
 
@@ -1552,8 +1555,41 @@ end;
           lgth := lgth - 1;   (*now lgth = nr of chars in string*)
           { see if string contains character escapes }
           i := 1;
-          while i <= strglgth do begin
-            if string[i] = chr(92){\} then escchr(i); { process force sequence }
+          if not iso7185 then
+            while i <= strglgth do begin
+            if string[i] = chr(92){\} then begin
+              if string[i+1] in ['$','&','%','0'..'9'] then begin
+                j := i+1; v := 0; k := 1; 
+                { parse in radix and only correct number of digits to keep from
+                  eating follow on characters }
+                if string[j] = '$' then begin j := j+1;
+                  if not (string[j] in ['0'..'9','a'..'f','A'..'F']) then 
+                    error(207); 
+                  while (string[j] in ['0'..'9', 'a'..'f', 'A'..'F']) and 
+                        (k <= 2) do begin
+                    v := v*16+ordint[string[j]]; j := j+1; k := k+1
+                  end; k := k+1
+                end else if string[j] = '&' then begin j := j+1;
+                  if not (string[j] in ['0'..'7']) then error(207);
+                  while (string[j] in ['0'..'7']) and (k <= 3) do begin
+                    v := v*8+ordint[string[j]]; j := j+1; k := k+1
+                  end; k := k+1
+                end else if string[j] = '%' then begin j := j+1;
+                  if not (string[j] in ['0'..'1']) then error(207);
+                  while (string[j] in ['0'..'1']) and (k <= 8) do begin
+                    v := v*2+ordint[string[j]]; j := j+1; k := k+1
+                  end; k := k+1
+                end else begin
+                  while (string[j] in ['0'..'9']) and (k <= 3) do begin
+                    v := v*10+ordint[string[j]]; j := j+1; k := k+1
+                  end
+                end;
+                if v > ordmaxchar then error(222);
+                string[i] := chr(v);
+                for j := i+1 to strglgth-k+1 do string[j] := string[j+k-1];
+                lgth := lgth-k+1
+              end else escchr(i) { process force sequence }
+            end;
             i := i+1 { pass escaped char or forced char }
           end; 
           if lgth = 1 then val.ival := ord(string[1])

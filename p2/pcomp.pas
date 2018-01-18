@@ -580,7 +580,7 @@ PROCEDURE ENDOFLINE;
         IT TO USE THE ISO 8859-1 (ASCII) CHARACTER SET FROM THE ORIGINAL CDC
         CHARACTER SET. THE CHARACTERS ARE ALL THOSE THAT ARE NOT USED IN THE
         LANGUAGE, AND THEY APPEAR IN ISO 8859-1 ORDERING. [SAM] }
-      '!','"','#','%', '&','?','@','\','_','`','{','|','~',' ':
+      '!','"','#','%', '&','?','@',{'\',}'_','`','{','|','~',' ':
         BEGIN SY := OTHERSY; OP := NOOP; ERROR(399) END
     END (*CASE*)
   END (*INSYMBOL*) ;

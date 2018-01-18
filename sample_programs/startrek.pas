@@ -1,4 +1,4 @@
-{$l-}
+{$l-,s+}
 PROGRAM startrek(input, output);
 
 label 99;
@@ -772,9 +772,9 @@ VAR ch : CHAR;
     WRITELN;
     WRITELN ('                     0');
     WRITELN ('                 315 | 45');
-    WRITELN ('                    \\|/');
+    WRITELN ('                    \|/');
     WRITELN ('               270 --*-- 90');
-    WRITELN ('                    /|\\');
+    WRITELN ('                    /|\');
     WRITELN ('                 225 | 135');
     WRITELN ('                    180');
     WRITELN;
