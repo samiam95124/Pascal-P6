@@ -1238,6 +1238,8 @@ end;
     220: write('Missing file "list" in program heading');
     221: write('Missing file "command" in program heading');
     222: write('Value out of character range');
+    223: write('Type converter/restrictor must be scalar or subrange');
+    224: write('Type to be converted must be scalar or subrange');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -4970,7 +4972,7 @@ end;
                   begin
                     case sy of
               (*id*)    ident:
-                        begin searchid([konst,vars,field,func],lcp);
+                        begin searchid([types,konst,vars,field,func],lcp);
                           insymbol;
                           if lcp^.klass = func then
                             begin call(fsys,lcp);
@@ -4987,16 +4989,33 @@ end;
                                 begin typtr := idtype; kind := cst;
                                   cval := values
                                 end
-                            else
-                              begin selector(fsys,lcp,false);
-                                if threaten and (lcp^.klass = vars) then with lcp^ do begin
-                                  if vlev < level then threat := true;
-                                  if forcnt > 0 then error(195);
-                                  if part = ptview then error(200)
-                                end;
-                                if gattr.typtr<>nil then(*elim.subr.types to*)
-                                  with gattr,typtr^ do(*simplify later tests*)
-                              end
+                            else 
+                              if lcp^.klass = types then begin
+                                { type convert/restrict }
+                                chkstd; 
+                                if lcp^.idtype <> nil then 
+                                  if (lcp^.idtype^.form <> scalar) and
+                                     (lcp^.idtype^.form <> subrange) then 
+                                  error(223);
+                                if sy <> lparent then error(9);
+                                insymbol; expression(fsys + [rparent], false); 
+                                load;
+                                if sy = rparent then insymbol else error(4);
+                                if (gattr.typtr^.form <> scalar) and 
+                                   (gattr.typtr^.form <> subrange) then error(224);
+                                { bounds check to target type }
+                                checkbnds(lcp^.idtype);
+                                gattr.typtr := lcp^.idtype { retype } 
+                              end else
+                                begin selector(fsys,lcp,false);
+                                  if threaten and (lcp^.klass = vars) then with lcp^ do begin
+                                    if vlev < level then threat := true;
+                                    if forcnt > 0 then error(195);
+                                    if part = ptview then error(200)
+                                  end;
+                                  if gattr.typtr<>nil then(*elim.subr.types to*)
+                                    with gattr,typtr^ do(*simplify later tests*)
+                                end
                         end;
               (*cst*)   intconst:
                         begin
