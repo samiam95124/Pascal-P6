@@ -1240,6 +1240,7 @@ end;
     222: write('Value out of character range');
     223: write('Type converter/restrictor must be scalar or subrange');
     224: write('Type to be converted must be scalar or subrange');
+    225: write('In constant range first value must be less than or equal to second');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -2558,7 +2559,7 @@ end;
       procedure fieldlist(fsys: setofsys; var frecvar: stp; vartyp: stp;
                           varlab: ctp; lvl: integer);
         var lcp,lcp1,nxt,nxt1: ctp; lsp,lsp1,lsp2,lsp3,lsp4: stp;
-            minsize,maxsize,lsize: addrrange; lvalu: valu;
+            minsize,maxsize,lsize: addrrange; lvalu,rvalu: valu;
             test: boolean; mm: boolean;
       begin nxt1 := nil; lsp := nil;
         if not (sy in (fsys+[ident,casesy])) then
@@ -2660,22 +2661,31 @@ end;
             repeat lsp2 := nil;
               if not (sy in fsys + [semicolon]) then
               begin
-                repeat constant(fsys + [comma,colon,lparent],lsp3,lvalu);
-                  if lsp^.tagfieldp <> nil then
-                   if not comptypes(lsp^.tagfieldp^.idtype,lsp3)then error(111);
-                  new(lsp3,variant); pshstc(lsp3);
-                  with lsp3^ do
-                    begin nxtvar := lsp1; subvar := lsp2; varval := lvalu;
-                          caslst := lsp2; form := variant; packing := false
-                    end;
-                  lsp4 := lsp1;
-                  while lsp4 <> nil do
-                    with lsp4^ do
-                      begin
-                        if varval.ival = lvalu.ival then error(178);
-                        lsp4 := nxtvar
+                repeat constant(fsys + [comma,colon,lparent,range],lsp3,lvalu); 
+                  rvalu := lvalu; lsp4 := lsp3; if sy = range then begin chkstd;
+                    insymbol; constant(fsys + [comma,colon,lparent],lsp4,rvalu)
+                  end;
+                  if lsp^.tagfieldp <> nil then begin
+                    if not comptypes(lsp^.tagfieldp^.idtype,lsp3)then error(111);
+                    if not comptypes(lsp^.tagfieldp^.idtype,lsp4)then error(111);
+                  end;
+                  if lvalu.ival > rvalu.ival then error(225);
+                  repeat { case range }
+                    new(lsp3,variant); pshstc(lsp3);
+                    with lsp3^ do
+                      begin nxtvar := lsp1; subvar := lsp2; varval := lvalu;
+                            caslst := lsp2; form := variant; packing := false
                       end;
-                  lsp1 := lsp3; lsp2 := lsp3;
+                    lsp4 := lsp1;
+                    while lsp4 <> nil do
+                      with lsp4^ do
+                        begin
+                          if varval.ival = lvalu.ival then error(178);
+                          lsp4 := nxtvar
+                        end;
+                    lsp1 := lsp3; lsp2 := lsp3;
+                    lvalu.ival := lvalu.ival+1 { next range value }
+                  until lvalu.ival > rvalu.ival; { range is complete }
                   test := sy <> comma;
                   if not test then insymbol
                 until test;
