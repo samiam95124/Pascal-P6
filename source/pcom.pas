@@ -129,6 +129,8 @@ const
       setal       =        1;        { alignment of set }
       filesize    =        1;        { required runtime space for file (lfn) }
       fileidsize  =        1;        { size of the lfn only }
+      exceptsize  =        1;        { size of exception variable }
+      exceptal    =        1;
       stackal     =        4;        { alignment of stack }
       stackelsize =        4   {8};  { stack element size }
       maxsize     =       32;        { this is the largest type that can be on
@@ -204,10 +206,10 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    =  maxint;
-   maxsp      = 84;  { number of standard procedures/functions }
-   maxins     = 83;  { maximum number of instructions }
+   maxsp      = 85;  { number of standard procedures/functions }
+   maxins     = 86;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 72;  { number of standard identifiers }
+   maxstd     = 73;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    maxrld     = 22;  { maximum length of real in digit form }
@@ -278,7 +280,7 @@ type                                                        (*describing:*)
                                                            (*****************)
      levrange = 0..maxlevel; addrrange = -maxaddr..maxaddr; stkoff = -maxaddr..0;
      structform = (scalar,subrange,pointer,power,arrays,records,files,
-                   tagfld,variant);
+                   tagfld,variant,except);
      declkind = (standard,declared);
      stp = ^ structure;
      ctp = ^ identifier;
@@ -298,7 +300,8 @@ type                                                        (*describing:*)
                      records:  (fstfld: ctp; recvar: stp; recyc: stp);
                      files:    (filtype: stp);
                      tagfld:   (tagfieldp: ctp; fstvar: stp);
-                     variant:  (nxtvar,subvar,caslst: stp; varval: valu)
+                     variant:  (nxtvar,subvar,caslst: stp; varval: valu);
+                     except:   ()
                    end;
 
                                                             (*names*)
@@ -460,7 +463,8 @@ var
                                     (***********)
     parmptr,
     intptr,crdptr,realptr,charptr,
-    boolptr,nilptr,textptr: stp;    (*pointers to entries of standard ids*)
+    boolptr,nilptr,textptr,
+    exceptptr: stp;                 (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
     fwptr: ctp;                     (*head of chain of forw decl type ids*)
@@ -1105,6 +1109,8 @@ end;
     20:  write(''','' expected');
     21:  write('''.'' expected');
     22:  write('Integer or identifier expected');
+    23:  write('''except'' expected');
+    24:  write('''on'' or ''except'' expected');
 
     50:  write('Error in constant');
     51:  write(''':='' expected');
@@ -1241,6 +1247,7 @@ end;
     223: write('Type converter/restrictor must be scalar or subrange');
     224: write('Type to be converted must be scalar or subrange');
     225: write('In constant range first value must be less than or equal to second');
+    226: write('Type of variable is not exception');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1875,6 +1882,7 @@ end;
           files:    alignquot := fileal;
           arrays:   alignquot := alignquot(aeltype);
           records:  alignquot := recal;
+          except:   alignquot := exceptal;
           variant,tagfld: error(501)
         end
   end (*alignquot*);
@@ -3450,10 +3458,11 @@ end;
                              if scalkind = declared then ss := 1
                              else ss := 2;
                subrange: ss := mestn(rangetype);
-               pointer:  ss := 5;
+               pointer,
+               files,
+               except:   ss := 5;
                power:    ss := 6;
                records,arrays: ss := 7;
-               files:    ss := 5;
                tagfld,variant: error(501)
               end;
           mestn := ss
@@ -3589,10 +3598,11 @@ end;
                            end else write(prr,'r');
              subrange: if fsp^.size = 1 then write(prr, 'x')
                        else gentypindicator(rangetype);
-             pointer:  write(prr,'a');
+             pointer,
+             files,
+             except:   write(prr,'a');
              power:    write(prr,'s');
              records,arrays: write(prr,'m');
-             files:    write(prr,'a');
              tagfld,variant: error(503)
             end
       end (*typindicator*);
@@ -3721,14 +3731,14 @@ end;
       procedure genujpxjp(fop: oprange; fp2: integer);
       begin
        if prcode then
-          begin putic; writeln(prr, mn[fop]:4, ' l':8,fp2:4) end;
+          begin putic; writeln(prr,mn[fop]:4, ' l':8,fp2:4) end;
         ic := ic + 1; mes(fop)
       end (*genujpxjp*);
 
       procedure genipj(fop: oprange; fp1, fp2: integer);
       begin
        if prcode then
-          begin putic; writeln(prr, mn[fop]:4,fp1:4,' l':8,fp2:4) end;
+          begin putic; writeln(prr,mn[fop]:4,fp1:4,' l':8,fp2:4) end;
         ic := ic + 1; mes(fop)
       end (*genujpxjp*);
 
@@ -5857,6 +5867,78 @@ end;
           end;
           lc := llc;
         end (*withstatement*) ;
+        
+        procedure trystatement;
+        var test: boolean; lcp: ctp; lattr: attr;
+            endlbl, noexplbl, bgnexplbl, onendlbl,onstalbl: integer;
+        begin genlabel(endlbl); genlabel(noexplbl); genlabel(bgnexplbl);
+          genujpxjp(84(*bge*),bgnexplbl);
+          addlvl;
+          repeat
+            statement(fsys + [semicolon,onsy,exceptsy,elsesy]);
+            if sy in statbegsys then error(14)
+          until not(sy in statbegsys);
+          while sy = semicolon do
+            begin insymbol;
+              repeat
+                statement(fsys + [semicolon,onsy,exceptsy,elsesy]);
+                if sy in statbegsys then error(14);
+              until not (sy in statbegsys);
+            end;
+          sublvl;
+          genujpxjp(57(*ujp*),noexplbl);
+          putlabel(bgnexplbl);
+          if (sy <> onsy) and (sy <> exceptsy) then error(24);
+          while sy = onsy do begin insymbol; genlabel(onstalbl); 
+            genlabel(onendlbl);
+            repeat
+              if sy = ident then begin
+                searchid([vars],lcp); 
+                with lcp^, lattr do
+                  begin typtr := idtype; kind := varbl; packing := false;
+                    if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
+                    if part = ptview then error(200);
+                    if vkind = actual then
+                      begin access := drct; vlevel := vlev;
+                        if vlev <> level then error(183);
+                        dplmt := vaddr
+                      end
+                    else begin error(155); typtr := nil end
+                  end;                
+                if lcp^.idtype <> nil then 
+                  if lcp^.idtype^.form <> except then error(226);
+                insymbol;
+                gen0t(76(*dup*),nilptr);{ make copy of original vector }
+                gattr := lattr; load; { load compare vector }
+                gen2(47(*equ*),ord('a'),lsize);
+                genujpxjp(73(*tjp*),onstalbl);
+              end else begin error(2); skip(fsys+[onsy,exceptsy,elsesy]) end;
+              test := sy <> comma;
+              if not test then insymbol
+            until test;
+            genujpxjp(57(*ujp*),onendlbl);
+            if sy = exceptsy then insymbol else 
+              begin error(23); skip(fsys+[onsy,exceptsy,elsesy]) end;
+            putlabel(onstalbl);
+            addlvl;
+            statement(fsys+[exceptsy]);
+            sublvl;
+            genujpxjp(57(*ujp*),endlbl);
+            putlabel(onendlbl)
+          end;
+          if sy = exceptsy then begin addlvl; 
+            insymbol; statement(fsys+[elsesy]); sublvl; 
+            genujpxjp(57(*ujp*),endlbl)
+          end;
+          gen0(86(*mse*));
+          putlabel(noexplbl);
+          if sy = elsesy then begin addlvl;
+            insymbol; statement(fsys); sublvl 
+          end;
+          sublvl;
+          putlabel(endlbl);
+          gen0(85(*ede*))
+        end (*trystatement*) ;
 
       begin (*statement*)
         if (sy = intconst) or (sy = ident) then (*label*)
@@ -5908,6 +5990,7 @@ end;
               repeatsy: begin insymbol; repeatstatement end;
               forsy:    begin insymbol; forstatement end;
               withsy:   begin insymbol; withstatement end;
+              trysy:    begin insymbol; trystatement end;
               { process result as a pseudostatement }
               resultsy: begin
                 if fprocp <> nil then if fprocp^.klass <> func then error(210)
@@ -5919,7 +6002,7 @@ end;
                 if not (sy = endsy) or (stalvl > 1) then error(211)
               end 
             end;
-            if not (sy in [semicolon,endsy,elsesy,untilsy]) then
+            if not (sy in [semicolon,endsy,elsesy,untilsy,exceptsy,onsy]) then
               begin error(6); skip(fsys) end
           end
       end (*statement*) ;
@@ -6152,7 +6235,6 @@ end;
       begin list := false; endofline end;
   end (*programme*) ;
 
-
   procedure stdnames;
   begin
     { 'mark' and 'release' were removed and replaced with placeholders }
@@ -6180,6 +6262,7 @@ end;
     na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
     na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
     na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
+    na[73] := 'exception';
     
   end (*stdnames*) ;
 
@@ -6220,7 +6303,11 @@ end;
     new(textptr,files); pshstc(textptr);                       (*text*)
     with textptr^ do
       begin filtype := charptr; size := filesize+charsize; form := files;
-            packing := false end
+            packing := false end;
+    new(exceptptr,except); pshstc(exceptptr);                  (*exception*)
+    with exceptptr^ do
+      begin size := exceptsize; form := except; packing := false end;
+    
   end (*enterstdtypes*) ;
 
   procedure entstdnames;
@@ -6293,6 +6380,7 @@ end;
     entstdtyp(66, boolptr);                                   (*boolean*)
     usclrptr := cp; { save to satisfy broken tags }
     entstdtyp(67, textptr);                                   (*text*)
+    entstdtyp(73, exceptptr);                                 (*exception*)
 
     cp1 := nil;
     for i := 1 to 2 do
@@ -6463,7 +6551,8 @@ end;
     blockbegsys := [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,beginsy];
     selectsys := [arrow,period,lbrack];
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
-    statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy];
+    statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy,
+                   trysy];
   end (*initsets*) ;
 
   procedure inittables;
@@ -6566,6 +6655,8 @@ end;
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
       sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
       sna[84] :='rdre';
+      
+      sna[85] :='thw ';
 
     end (*procmnemonics*) ;
 
@@ -6588,13 +6679,14 @@ end;
       mn[52] :=' leq'; mn[53] :=' les'; mn[54] :=' lod'; mn[55] :=' neq';
       mn[56] :=' str'; mn[57] :=' ujp'; mn[58] :=' ord'; mn[59] :=' chr';
       mn[60] :=' ujc';
-      { new instruction memonics for p5 }
+      { new instruction memonics for p5/p6 }
       mn[61] :=' rnd'; mn[62] :=' pck'; mn[63] :=' upk'; mn[64] :=' rgs';
       mn[65] :=' ???'; mn[66] :=' ipj'; mn[67] :=' cip'; mn[68] :=' lpa';
       mn[69] :=' ???'; mn[70] :=' ???'; mn[71] :=' dmp'; mn[72] :=' swp';
       mn[73] :=' tjp'; mn[74] :=' lip'; mn[75] :=' ckv'; mn[76] :=' dup';
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
-      mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor';
+      mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
+      mn[85] :=' ede'; mn[86] :=' mse';
 
     end (*instrmnemonics*) ;
 
@@ -6709,6 +6801,8 @@ end;
       cdx[78] := -intsize;             cdx[79] :=  +adrsize;
       cdx[80] :=  2{*};                cdx[81] :=  0;
       cdx[82] :=  0;                   cdx[83] := +intsize;
+      cdx[84] := -adrsize;             cdx[85] := +adrsize;
+      cdx[86] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
@@ -6802,6 +6896,7 @@ end;
       pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
       pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
       pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
+      pdx[85] := -adrsize;
                                                       
     end;
 
@@ -6860,7 +6955,7 @@ begin
  
   { write generator comment }
   writeln(prr, 'i');
-  writeln(prr, 'i Pascal intermediate file Generated by P5 Pascal compiler vs. ',
+  writeln(prr, 'i Pascal intermediate file Generated by P6 Pascal compiler vs. ',
           majorver:1, '.', minorver:1);
   writeln(prr, 'i');
   

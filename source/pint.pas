@@ -154,6 +154,8 @@ const
       setal       =        1;        { alignment of set }
       filesize    =        1;        { required runtime space for file (lfn) }
       fileidsize  =        1;        { size of the lfn only }
+      exceptsize  =        1;        { size of exception variable }
+      exceptal    =        1;      
       stackal     =        4;        { alignment of stack }
       stackelsize =        4   {8};  { stack element size }
       maxsize     =       32;        { this is the largest type that can be on
