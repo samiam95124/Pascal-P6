@@ -211,7 +211,9 @@ const
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
+   maxexp     = 57;  { number of exception vectors }
    reslen     = 9;   { maximum length of reserved words }
+   explen     = 30;  { length of exception names }
    maxrld     = 22;  { maximum length of real in digit form }
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
@@ -312,6 +314,7 @@ type                                                        (*describing:*)
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
      restr = packed array [1..reslen] of char;
+     expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..31; { range of standard call keys }
@@ -390,6 +393,7 @@ type                                                        (*describing:*)
                 end;
 
       stdrng = 1..maxstd; { range of standard name entries }
+      exprng = 1..maxexp; { range of exception entries }
       
 (*-------------------------------------------------------------------------*)
 
@@ -527,6 +531,7 @@ var
     rop: array [1..maxres(*nr. of res. words*)] of operatort;
     sop: array [char] of operatort;
     na:  array [stdrng] of restr;
+    en: array [1..maxexp] of expstr;
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     cdx: array [0..maxins] of integer;
@@ -831,6 +836,24 @@ var
   procedure strassvr(var a: strvsp; b: restr);
   var i, j, l: integer; p, lp: strvsp;
   begin l := reslen; p := nil; a := nil; lp := nil; j := 1;
+    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+    if b[l] = ' ' then l := 0;
+    for i := 1 to l do begin
+      if j > varsqt then p := nil;
+      if p = nil then begin
+        getstr(p); p^.next := nil; j := 1;
+        if a = nil then a := p else lp^.next := p; lp := p
+      end;
+      p^.str[j] := b[i]; j := j+1
+    end;
+    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+  end;
+  
+  
+  { assign exception word fixed to variable length string, including allocation }
+  procedure strassve(var a: strvsp; b: expstr);
+  var i, j, l: integer; p, lp: strvsp;
+  begin l := explen; p := nil; a := nil; lp := nil; j := 1;
     while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
     if b[l] = ' ' then l := 0;
     for i := 1 to l do begin
@@ -1286,9 +1309,7 @@ end;
     { This diagnostic is here because error buffers error numbers til the end
       of line, and sometimes you need to know exactly where they occurred. }
 
-    {
     writeln; writeln('error: ', ferrnr:1);
-    }
     
     errtbl[ferrnr] := true; { track this error }
     if errinx >= 9 then
@@ -6274,6 +6295,8 @@ end;
     na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
     na[73] := 'exception'; na[74] := 'throw    ';
     
+
+
   end (*stdnames*) ;
 
   procedure enterstdtypes;
@@ -6371,6 +6394,19 @@ end;
     begin strassvr(name, na[sn]); idtype := textptr; klass := vars;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
+      threat := false; forcnt := 0; part := ptval; hdr := false
+    end;
+    enterid(cp)
+  end;
+  
+  procedure entstdexp(en: expstr);
+  var lvp: csp;
+  begin
+    new(cp,vars); ininam(cp); 
+    with cp^ do
+    begin strassve(name, en); idtype := exceptptr; klass := vars;
+      vkind := actual; next := nil; vlev := 1;
+      vaddr := gc; gc := gc+exceptsize;
       threat := false; forcnt := 0; part := ptval; hdr := false
     end;
     enterid(cp)
@@ -6475,6 +6511,65 @@ end;
     entstdprocfunc(proc, 51, 29, nil);     { halt }
     entstdprocfunc(proc, 69, 30, nil);     { assert }
     entstdprocfunc(proc, 74, 31, nil);     { throw }
+    
+    { standard exceptions }
+    entstdexp('ValueOutOfRange               ');
+    entstdexp('ArrayLengthMatch              ');
+    entstdexp('CaseValueNotFound             ');
+    entstdexp('ZeroDivide                    ');
+    entstdexp('InvalidOperand                ');
+    entstdexp('NilPointerDereference         ');
+    entstdexp('RealOverflow                  ');
+    entstdexp('RealUnderflow                 ');
+    entstdexp('RealProcessingFault           ');
+    entstdexp('TagValueNotActive             ');
+    entstdexp('TooManyFiles                  ');
+    entstdexp('FileIsOpen                    ');
+    entstdexp('FileAlreadyNamed              ');
+    entstdexp('FileNotOpen                   ');
+    entstdexp('FileModeIncorrect             ');
+    entstdexp('InvalidFieldSpecification     ');
+    entstdexp('InvalidRealNumber             ');
+    entstdexp('InvalidFractionSpecification  ');
+    entstdexp('InvalidIntegerFormat          ');
+    entstdexp('IntegerValueOverflow          ');
+    entstdexp('InvalidRealFormat             ');
+    entstdexp('EndOfFile                     ');
+    entstdexp('InvalidFilePosition           ');
+    entstdexp('FilenameTooLong               ');
+    entstdexp('FileOpenFail                  ');
+    entstdexp('FileSIzeFail                  ');
+    entstdexp('FileCloseFail                 ');
+    entstdexp('FileReadFail                  ');
+    entstdexp('FileWriteFail                 ');
+    entstdexp('FilePositionFail              ');
+    entstdexp('FileDeleteFail                ');
+    entstdexp('FileNameChangeFail            ');
+    entstdexp('SpaceAllocateFail             ');
+    entstdexp('SpaceReleaseFail              ');
+    entstdexp('SpaceAllocateNegative         ');
+    entstdexp('CannotPerformSpecial          ');
+    entstdexp('CommandLineTooLong            ');
+    entstdexp('ReadPastEOF                   ');
+    entstdexp('FileTransferLengthZero        ');
+    entstdexp('FileSizeTooLarge              ');
+    entstdexp('FilenameEmpty                 ');
+    entstdexp('CannotOpenStandard            ');
+    entstdexp('TooManyTemporaryFiles         ');
+    entstdexp('InputBufferOverflow           ');
+    entstdexp('TooManyThreads                ');
+    entstdexp('CannotStartThread             ');
+    entstdexp('InvalidThreadHandle           ');
+    entstdexp('CannotStopThread              ');
+    entstdexp('TooManyIntertaskLocks         ');
+    entstdexp('InvalidLockHandle             ');
+    entstdexp('LockSequenceFail              ');
+    entstdexp('TooManySignals                ');
+    entstdexp('CannotCreateSignal            ');
+    entstdexp('InvalidSignalHandle           ');
+    entstdexp('CannotDeleteSignal            ');
+    entstdexp('CannotSendSignal              ');
+    entstdexp('WaitForSignalFail             ');
     
   end (*entstdnames*) ;
 

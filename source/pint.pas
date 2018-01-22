@@ -244,7 +244,68 @@ const
       prrfn      = 4;        { 'prr' file no. }
       errorfn    = 5;        { 'error' file no. }
       listfn     = 6;        { 'list' file no. }
-      commandfn  = 7;        { 'command' file no. }    
+      commandfn  = 7;        { 'command' file no. }
+      
+      { locations of standard exceptions }
+      exceptionbase                 = 14;
+      ValueOutOfRange               = 14;
+      ArrayLengthMatch              = 15;
+      CaseValueNotFound             = 16;
+      ZeroDivide                    = 17;
+      InvalidOperand                = 18;
+      NilPointerDereference         = 19;
+      RealOverflow                  = 20;
+      RealUnderflow                 = 21;
+      RealProcessingFault           = 22;
+      TagValueNotActive             = 23;
+      TooManyFiles                  = 24;
+      FileIsOpen                    = 25;
+      FileAlreadyNamed              = 26;
+      FileNotOpen                   = 27;
+      FileModeIncorrect             = 28;
+      InvalidFieldSpecification     = 29;
+      InvalidRealNumber             = 30;
+      InvalidFractionSpecification  = 31;
+      InvalidIntegerFormat          = 32;
+      IntegerValueOverflow          = 33;
+      InvalidRealFormat             = 34;
+      EndOfFile                     = 35;
+      InvalidFilePosition           = 36;
+      FilenameTooLong               = 37;
+      FileOpenFail                  = 38;
+      FileSIzeFail                  = 39;
+      FileCloseFail                 = 40;
+      FileReadFail                  = 41;
+      FileWriteFail                 = 42;
+      FilePositionFail              = 43;
+      FileDeleteFail                = 44;
+      FileNameChangeFail            = 45;
+      SpaceAllocateFail             = 46;
+      SpaceReleaseFail              = 47;
+      SpaceAllocateNegative         = 48;
+      CannotPerformSpecial          = 49;
+      CommandLineTooLong            = 50;
+      ReadPastEOF                   = 51;
+      FileTransferLengthZero        = 52;
+      FileSizeTooLarge              = 53;
+      FilenameEmpty                 = 54;
+      CannotOpenStandard            = 55;
+      TooManyTemporaryFiles         = 56;
+      InputBufferOverflow           = 57;
+      TooManyThreads                = 58;
+      CannotStartThread             = 59;
+      InvalidThreadHandle           = 60;
+      CannotStopThread              = 61;
+      TooManyIntertaskLocks         = 62;
+      InvalidLockHandle             = 63;
+      LockSequenceFail              = 64;
+      TooManySignals                = 65;
+      CannotCreateSignal            = 66;
+      InvalidSignalHandle           = 67;
+      CannotDeleteSignal            = 68;
+      CannotSendSignal              = 69;
+      WaitForSignalFail             = 70;
+      exceptiontop                  = 70;
 
       stringlgth  = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
@@ -461,6 +522,7 @@ begin
    end
 end; (*pmd*)
 
+{ runtime error }
 procedure errori(string: beta);
 begin writeln; write('*** Runtime error');
       if srclin > 0 then write(' [', srclin:1, ']');
@@ -476,6 +538,78 @@ begin writeln; write('*** Runtime error');
       while l > 0 do begin write(chr(store[a])); a := a+1; l := l-1 end;
       pmd; goto 1
 end;(*errori*)
+
+procedure errore(ei: integer); forward;
+
+{ handle exception vector }
+procedure errorv(ea: address);
+begin writeln; write('*** Runtime error');
+  if srclin > 0 then write(' [', srclin:1, ']');
+  write(': ');
+  { check is a standard exception }
+  if (ea-pctop >= exceptionbase) and (ea-pctop <= exceptiontop) then
+    case ea-pctop of
+      14: writeln('Value out of range');
+      15: writeln('Array length match');
+      16: writeln('Case value not found');
+      17: writeln('Zero divide');
+      18: writeln('Invalid operand');
+      19: writeln('Nil pointer dereference');
+      20: writeln('Real overflow');
+      21: writeln('Real underflow');
+      22: writeln('Real processing fault');
+      23: writeln('Tag value not active');
+      24: writeln('Too many files');
+      25: writeln('File is open');
+      26: writeln('File already named');
+      27: writeln('File not open');
+      28: writeln('File mode incorrect');
+      29: writeln('Invalid field specification');
+      30: writeln('Invalid real number');
+      31: writeln('Invalid fraction specification');
+      32: writeln('Invalid integer format');
+      33: writeln('Integer value overflow');
+      34: writeln('Invalid real format');
+      35: writeln('End of file');
+      36: writeln('Invalid fileposition');
+      37: writeln('Filename too long');
+      38: writeln('File open fail');
+      39: writeln('File size fail');
+      40: writeln('File close fail');
+      41: writeln('File read fail');
+      42: writeln('File write fail');
+      43: writeln('File position fail');
+      44: writeln('File delete fail');
+      45: writeln('File name change fail');
+      46: writeln('Space allocate fail');
+      47: writeln('Space release fail');
+      48: writeln('Space allocate negative');
+      49: writeln('Cannot perform special');
+      50: writeln('Command line too long');
+      51: writeln('Read past eof');
+      52: writeln('File transfer length zero');
+      53: writeln('File size too large');
+      54: writeln('Filename empty');
+      55: writeln('Cannot open standard');
+      56: writeln('Too many temporary files');
+      57: writeln('Input buffer overflow');
+      58: writeln('Too many threads');
+      59: writeln('Cannot start thread');
+      60: writeln('Invalid thread handle');
+      61: writeln('Cannot stop thread');
+      62: writeln('Too many inter task locks');
+      63: writeln('Invalid lock handle');
+      64: writeln('Lock sequence fail');
+      65: writeln('Too many signals');
+      66: writeln('Cannot create signal');
+      67: writeln('Invalid signal handle');
+      68: writeln('Cannot delete signal');
+      69: writeln('Cannot send signal');
+      70: writeln('Wait for signal fail');
+    end
+  else writeln('Unhandled exception');
+  pmd; goto 1
+end;
 
 { get bit from defined array }
 
@@ -733,7 +867,7 @@ begin
   s := '';
   for i := 1 to l do s := s+fn[i];
   r := remove(s);
-  if r <> 0 then errori('Could not delete file    ')
+  if r <> 0 then errore(FileDeleteFail);
   {$classic-pascal-level-0}
 end;
 
@@ -1180,6 +1314,13 @@ procedure popset(var s: settype); begin getset(sp, s); sp := sp+setsize end;
 procedure pshset(s: settype); begin sp := sp-setsize; putset(sp, s) end;
 procedure popadr(var a: address); begin a := getadr(sp); sp := sp+adrsize end;
 procedure pshadr(a: address); begin sp := sp-adrsize; putadr(sp, a) end;
+
+{ throw an exception by vector }
+procedure errore {(ei: integer)} ;
+begin
+  mp := expmrk; sp := expstk; pc := expadr; popadr(ad2); pshadr(pctop+ei); 
+  ep := getadr(mp+market) { get the mark ep }
+end;
 
 { chkstd: called whenever a non-ISO7185 construct is being processed }
 
@@ -3725,13 +3866,12 @@ begin (* main *)
                          { restore previous exception frame }
                          popadr(expmrk); popadr(expstk); popadr(expadr)
                        end;
-          209 (*mse*): begin popadr(a1); { dispose vector }
+          209 (*mse*): begin popadr(a1);
                          { restore previous exception frame }
                          popadr(expmrk); popadr(expstk); popadr(expadr);
-                         { throw to new frame }
-                         if expadr = 0 then begin interpreting := false;
-                           writeln('*** Runtime error: Unhandled exception');
-                         end else begin { throw to new frame }
+                         { if there is no surrounding frame, handle fixed }
+                         if expadr = 0 then errorv(a1)
+                         else begin { throw to new frame }
                            pshadr(a1); mp := expmrk; sp := expstk; pc := expadr;
                            ep := getadr(mp+market) { get the mark ep }
                            { release to search vectors }
