@@ -298,6 +298,9 @@ var   pc          : address;   (*program address register*)
       sdi         : 0..maxdef; { index for that }
       cp          : address;  (* pointer to next free constant position *)
       mp,sp,np,ep : address;  (* address registers *)
+      expadr      : address; { exception address of exception handler starts }
+      expstk      : address; { exception address of sp at handlers }
+      expmrk      : address; { exception address of mp at handlers }
       (*mp  points to beginning of a data segment
         sp  points to top of the stack
         ep  points to the maximum extent of the stack
@@ -1515,10 +1518,12 @@ procedure load;
          instr[204]:='retx      '; insp[204] := false; insq[204] := 0;
          instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
          instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
+         instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
+         instr[208]:='ede       '; insp[208] := false; insq[208] := 0;
+         instr[209]:='mse       '; insp[209] := false; insq[209] := 0;
 
-         { sav (mark) and rst (release) were removed }
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
-         sptable[ 2]:='---       ';     sptable[ 3]:='rln       ';
+         sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
          sptable[ 4]:='new       ';     sptable[ 5]:='wln       ';
          sptable[ 6]:='wrs       ';     sptable[ 7]:='eln       ';
          sptable[ 8]:='wri       ';     sptable[ 9]:='wrr       ';
@@ -1822,8 +1827,8 @@ procedure load;
           63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
 
-          (*ujp,fjp,xjp,tjp*)
-          23,24,25,119,
+          (*ujp,fjp,xjp,tjp,bge*)
+          23,24,25,119,207,
 
           (*ents,ente*)
           13, 173: begin labelsearch; storeop; storeq end;
@@ -1963,10 +1968,10 @@ procedure load;
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,
-            rnd,rgs,fbv,fvb }
+            rnd,rgs,fbv,fvb,ede,mse }
           27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,58,60,62,110,111,
-          115,116,205,206,
+          115,116,205,206,208,209,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
           181, 182, 183, 184, 185, 186,187,188,189: storeop;
@@ -2610,8 +2615,6 @@ begin (*callsp*)
                                 putfile(filtable[fn], ad, fn)
                            end
                       end;
-           { unused placeholder for "release" }
-           2 (*rst*): errori('Invalid std proc/func    ');
            3 (*rln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
                               inputfn: begin
@@ -3124,6 +3127,11 @@ begin (*callsp*)
            81(*rdre*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
                          readr(commandfn, r, w, false); putrel(ad, r);
                        end;
+           2(*thw*):   begin popadr(ad1); mp := expmrk; sp := expstk; 
+                         pc := expadr; popadr(ad2); pshadr(ad1); 
+                         ep := getadr(mp+market) { get the mark ep }
+                         { release to search vectors }
+                       end;
                        
       end;(*case q*)
 end;(*callsp*)
@@ -3202,12 +3210,12 @@ begin (* main *)
   load; (* assembles and stores code *)
   
   pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 0;
+  expadr := 0; expstk := 0; expmrk := 0;
   
   { clear globals }
   for ad := pctop to gbtop-1 do begin store[ad] := 0; putdef(ad, false) end;
 
   interpreting := true;
-
   writeln('Running program');
   writeln;
   while interpreting do
@@ -3705,13 +3713,38 @@ begin (* main *)
                               if dotrcsrc then
                                 writeln('Source line executed: ', q:1)
                         end;
+             
+          207 (*bge*): begin getq;
+                         { save current exception framing }
+                         pshadr(expadr); pshadr(expstk); pshadr(expmrk);
+                         pshadr(0); { place dummy vector }
+                         { place new exception frame }
+                         expadr := q; expstk := sp; expmrk := mp
+                       end;
+          208 (*ede*): begin popadr(a1); { dispose vector }
+                         { restore previous exception frame }
+                         popadr(expmrk); popadr(expstk); popadr(expadr)
+                       end;
+          209 (*mse*): begin popadr(a1); { dispose vector }
+                         { restore previous exception frame }
+                         popadr(expmrk); popadr(expstk); popadr(expadr);
+                         { throw to new frame }
+                         if expadr = 0 then begin interpreting := false;
+                           writeln('*** Runtime error: Unhandled exception');
+                         end else begin { throw to new frame }
+                           pshadr(a1); mp := expmrk; sp := expstk; pc := expadr;
+                           ep := getadr(mp+market) { get the mark ep }
+                           { release to search vectors }
+                         end
+                       end;
+                       
 
           { illegal instructions }
           8,    19,  20,  21,  22,  27,  91,  92,  96, 100, 101, 102, 111, 115, 
-          116, 121, 122, 133, 135, 176, 177, 178, 207, 208, 209, 210, 211, 212,
-          213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
-          227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
-          241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+          116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 
+          216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
+          230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 
+          244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
           255: errori('Illegal instruction      ');
 
     end

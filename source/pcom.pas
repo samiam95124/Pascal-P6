@@ -209,7 +209,7 @@ const
    maxsp      = 85;  { number of standard procedures/functions }
    maxins     = 86;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
-   maxstd     = 73;  { number of standard identifiers }
+   maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
    reslen     = 9;   { maximum length of reserved words }
    maxrld     = 22;  { maximum length of real in digit form }
@@ -314,7 +314,7 @@ type                                                        (*describing:*)
      restr = packed array [1..reslen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
-     keyrng = 1..30; { range of standard call keys }
+     keyrng = 1..31; { range of standard call keys }
      partyp = (ptval, ptvar, ptview, ptout);
      identifier = record
                    name: strvsp; llink, rlink: ctp;
@@ -4779,6 +4779,15 @@ end;
             end else
               gen1(30(*csp*),63(*ast*))
           end;
+          
+          procedure throwprocedure;
+          begin chkstd;
+            variable(fsys+[rparent], false); loadaddress;
+            if gattr.typtr <> nil then begin
+              if gattr.typtr^.form <> except then error(226);
+            end;
+            gen1(30(*csp*),85(*thw*));
+          end;
 
           procedure callnonstandard(fcp: ctp);
             var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
@@ -4937,6 +4946,7 @@ end;
                     28:     changeprocedure;
                     29:     haltprocedure;
                     30:     assertprocedure;
+                    31:     throwprocedure;
                     10,13:  error(399)
                   end;
                   if not(lkey in [5,6,11,12,17,29]) then
@@ -5909,7 +5919,7 @@ end;
                   if lcp^.idtype^.form <> except then error(226);
                 insymbol;
                 gen0t(76(*dup*),nilptr);{ make copy of original vector }
-                gattr := lattr; load; { load compare vector }
+                gattr := lattr; loadaddress; { load compare vector }
                 gen2(47(*equ*),ord('a'),lsize);
                 genujpxjp(73(*tjp*),onstalbl);
               end else begin error(2); skip(fsys+[onsy,exceptsy,elsesy]) end;
@@ -6262,7 +6272,7 @@ end;
     na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
     na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
     na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
-    na[73] := 'exception';
+    na[73] := 'exception'; na[74] := 'throw    ';
     
   end (*stdnames*) ;
 
@@ -6464,6 +6474,7 @@ end;
     entstdprocfunc(proc, 47, 28, nil);     { change }
     entstdprocfunc(proc, 51, 29, nil);     { halt }
     entstdprocfunc(proc, 69, 30, nil);     { assert }
+    entstdprocfunc(proc, 74, 31, nil);     { throw }
     
   end (*entstdnames*) ;
 
@@ -6654,9 +6665,7 @@ end;
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
       sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
-      sna[84] :='rdre';
-      
-      sna[85] :='thw ';
+      sna[84] :='rdre'; sna[85] :=' thw';
 
     end (*procmnemonics*) ;
 
@@ -6896,7 +6905,7 @@ end;
       pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
       pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
       pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
-      pdx[85] := -adrsize;
+      pdx[85] := +adrsize;
                                                       
     end;
 
