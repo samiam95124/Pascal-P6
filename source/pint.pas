@@ -247,65 +247,109 @@ const
       commandfn  = 7;        { 'command' file no. }
       
       { locations of standard exceptions }
-      exceptionbase                 = 14;
-      ValueOutOfRange               = 14;
-      ArrayLengthMatch              = 15;
-      CaseValueNotFound             = 16;
-      ZeroDivide                    = 17;
-      InvalidOperand                = 18;
-      NilPointerDereference         = 19;
-      RealOverflow                  = 20;
-      RealUnderflow                 = 21;
-      RealProcessingFault           = 22;
-      TagValueNotActive             = 23;
-      TooManyFiles                  = 24;
-      FileIsOpen                    = 25;
-      FileAlreadyNamed              = 26;
-      FileNotOpen                   = 27;
-      FileModeIncorrect             = 28;
-      InvalidFieldSpecification     = 29;
-      InvalidRealNumber             = 30;
-      InvalidFractionSpecification  = 31;
-      InvalidIntegerFormat          = 32;
-      IntegerValueOverflow          = 33;
-      InvalidRealFormat             = 34;
-      EndOfFile                     = 35;
-      InvalidFilePosition           = 36;
-      FilenameTooLong               = 37;
-      FileOpenFail                  = 38;
-      FileSIzeFail                  = 39;
-      FileCloseFail                 = 40;
-      FileReadFail                  = 41;
-      FileWriteFail                 = 42;
-      FilePositionFail              = 43;
-      FileDeleteFail                = 44;
-      FileNameChangeFail            = 45;
-      SpaceAllocateFail             = 46;
-      SpaceReleaseFail              = 47;
-      SpaceAllocateNegative         = 48;
-      CannotPerformSpecial          = 49;
-      CommandLineTooLong            = 50;
-      ReadPastEOF                   = 51;
-      FileTransferLengthZero        = 52;
-      FileSizeTooLarge              = 53;
-      FilenameEmpty                 = 54;
-      CannotOpenStandard            = 55;
-      TooManyTemporaryFiles         = 56;
-      InputBufferOverflow           = 57;
-      TooManyThreads                = 58;
-      CannotStartThread             = 59;
-      InvalidThreadHandle           = 60;
-      CannotStopThread              = 61;
-      TooManyIntertaskLocks         = 62;
-      InvalidLockHandle             = 63;
-      LockSequenceFail              = 64;
-      TooManySignals                = 65;
-      CannotCreateSignal            = 66;
-      InvalidSignalHandle           = 67;
-      CannotDeleteSignal            = 68;
-      CannotSendSignal              = 69;
-      WaitForSignalFail             = 70;
-      exceptiontop                  = 70;
+      exceptionbase                      = 14;
+      ValueOutOfRange                    = 14;
+      ArrayLengthMatch                   = 15;
+      CaseValueNotFound                  = 16;
+      ZeroDivide                         = 17;
+      InvalidOperand                     = 18;
+      NilPointerDereference              = 19;
+      RealOverflow                       = 20;
+      RealUnderflow                      = 21;
+      RealProcessingFault                = 22;
+      TagValueNotActive                  = 23;
+      TooManyFiles                       = 24;
+      FileIsOpen                         = 25;
+      FileAlreadyNamed                   = 26;
+      FileNotOpen                        = 27;
+      FileModeIncorrect                  = 28;
+      InvalidFieldSpecification          = 29;
+      InvalidRealNumber                  = 30;
+      InvalidFractionSpecification       = 31;
+      InvalidIntegerFormat               = 32;
+      IntegerValueOverflow               = 33;
+      InvalidRealFormat                  = 34;
+      EndOfFile                          = 35;
+      InvalidFilePosition                = 36;
+      FilenameTooLong                    = 37;
+      FileOpenFail                       = 38;
+      FileSIzeFail                       = 39;
+      FileCloseFail                      = 40;
+      FileReadFail                       = 41;
+      FileWriteFail                      = 42;
+      FilePositionFail                   = 43;
+      FileDeleteFail                     = 44;
+      FileNameChangeFail                 = 45;
+      SpaceAllocateFail                  = 46;
+      SpaceReleaseFail                   = 47;
+      SpaceAllocateNegative              = 48;
+      CannotPerformSpecial               = 49;
+      CommandLineTooLong                 = 50;
+      ReadPastEOF                        = 51;
+      FileTransferLengthZero             = 52;
+      FileSizeTooLarge                   = 53;
+      FilenameEmpty                      = 54;
+      CannotOpenStandard                 = 55;
+      TooManyTemporaryFiles              = 56;
+      InputBufferOverflow                = 57;
+      TooManyThreads                     = 58;
+      CannotStartThread                  = 59;
+      InvalidThreadHandle                = 60;
+      CannotStopThread                   = 61;
+      TooManyIntertaskLocks              = 62;
+      InvalidLockHandle                  = 63;
+      LockSequenceFail                   = 64;
+      TooManySignals                     = 65;
+      CannotCreateSignal                 = 66;
+      InvalidSignalHandle                = 67;
+      CannotDeleteSignal                 = 68;
+      CannotSendSignal                   = 69;
+      WaitForSignalFail                  = 70;
+      FieldNotBlank                      = 71;
+      ReadOnWriteOnlyFile                = 72;
+      WriteOnReadOnlyFile                = 73;
+      FileBufferVariableUndefined        = 74;
+      NondecimalRadixOfNegative          = 75;
+      InvalidArgumentToLn                = 76;
+      InvalidArgumentToSqrt              = 77;
+      CannotResetOrRewriteStandardFile   = 78;
+      CannotResetWriteOnlyFile           = 79;
+      CannotRewriteReadOnlyFile          = 80;
+      ProgramCodeAssertion               = 81;
+      SetElementOutOfRange               = 82;
+      RealArgumentTooLarge               = 83;
+      BooleanOperatorOfNegative          = 84;
+      InvalidDivisorToMod                = 85;
+      PackElementsOutOfBounds            = 86;
+      UnpackElementsOutOfBounds          = 87;
+      exceptiontop                       = 87;
+      
+      { Exceptions that can't be caught.
+        Note that these don't have associated exception variables. }
+      
+      UndefinedLocationAccess            = 88;
+      FunctionNotImplemented             = 89;
+      InvalidInISO7185Mode               = 90;
+      HeapFormatInvalid                  = 91;
+      DisposeOfUninitalizedPointer       = 92;
+      DisposeOfNilPointer                = 93;
+      BadPointerValue                    = 94;
+      BlockAlreadyFreed                  = 95;
+      InvalidStandardProcedureOrFunction = 96;
+      InvalidInstruction                 = 97;
+      NewDisposeTagsMismatch             = 98;
+      PCOutOfRange                       = 99;
+      StoreOverflow                      = 100;
+      StackBalance                       = 101;
+      SetInclusion                       = 102;
+      UninitializedPointer               = 103;
+      DereferenceOfNilPointer            = 104;
+      PointerUsedAfterDispose            = 105;
+      VariantNotActive                   = 106;
+      InvalidCase                        = 107;
+      SystemError                        = 108;
+      ChangeToAllocatedTagfield          = 109;
+      UnhandledException                 = 110;
 
       stringlgth  = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
@@ -539,6 +583,14 @@ begin writeln; write('*** Runtime error');
       pmd; goto 1
 end;(*errori*)
 
+{ Error handling:
+
+  To throw a standard exception, errore() is used. To bypass the interceptable
+  exceptions and directly print, use errorv().
+ 
+}
+
+{ throw an exception by vector }
 procedure errore(ei: integer); forward;
 
 { handle exception vector }
@@ -546,69 +598,119 @@ procedure errorv(ea: address);
 begin writeln; write('*** Runtime error');
   if srclin > 0 then write(' [', srclin:1, ']');
   write(': ');
-  { check is a standard exception }
-  if (ea-pctop >= exceptionbase) and (ea-pctop <= exceptiontop) then
-    case ea-pctop of
-      14: writeln('Value out of range');
-      15: writeln('Array length match');
-      16: writeln('Case value not found');
-      17: writeln('Zero divide');
-      18: writeln('Invalid operand');
-      19: writeln('Nil pointer dereference');
-      20: writeln('Real overflow');
-      21: writeln('Real underflow');
-      22: writeln('Real processing fault');
-      23: writeln('Tag value not active');
-      24: writeln('Too many files');
-      25: writeln('File is open');
-      26: writeln('File already named');
-      27: writeln('File not open');
-      28: writeln('File mode incorrect');
-      29: writeln('Invalid field specification');
-      30: writeln('Invalid real number');
-      31: writeln('Invalid fraction specification');
-      32: writeln('Invalid integer format');
-      33: writeln('Integer value overflow');
-      34: writeln('Invalid real format');
-      35: writeln('End of file');
-      36: writeln('Invalid fileposition');
-      37: writeln('Filename too long');
-      38: writeln('File open fail');
-      39: writeln('File size fail');
-      40: writeln('File close fail');
-      41: writeln('File read fail');
-      42: writeln('File write fail');
-      43: writeln('File position fail');
-      44: writeln('File delete fail');
-      45: writeln('File name change fail');
-      46: writeln('Space allocate fail');
-      47: writeln('Space release fail');
-      48: writeln('Space allocate negative');
-      49: writeln('Cannot perform special');
-      50: writeln('Command line too long');
-      51: writeln('Read past eof');
-      52: writeln('File transfer length zero');
-      53: writeln('File size too large');
-      54: writeln('Filename empty');
-      55: writeln('Cannot open standard');
-      56: writeln('Too many temporary files');
-      57: writeln('Input buffer overflow');
-      58: writeln('Too many threads');
-      59: writeln('Cannot start thread');
-      60: writeln('Invalid thread handle');
-      61: writeln('Cannot stop thread');
-      62: writeln('Too many inter task locks');
-      63: writeln('Invalid lock handle');
-      64: writeln('Lock sequence fail');
-      65: writeln('Too many signals');
-      66: writeln('Cannot create signal');
-      67: writeln('Invalid signal handle');
-      68: writeln('Cannot delete signal');
-      69: writeln('Cannot send signal');
-      70: writeln('Wait for signal fail');
-    end
-  else writeln('Unhandled exception');
+  case ea-pctop of
+  
+    { Exceptions that can be intercepted }
+    14: writeln('Value out of range');
+    15: writeln('Array length match');
+    16: writeln('Case value not found');
+    17: writeln('Zero divide');
+    18: writeln('Invalid operand');
+    19: writeln('Nil pointer dereference');
+    20: writeln('Real overflow');
+    21: writeln('Real underflow');
+    22: writeln('Real processing fault');
+    23: writeln('Tag value not active');
+    24: writeln('Too many files');
+    25: writeln('File is open');
+    26: writeln('File already named');
+    27: writeln('File not open');
+    28: writeln('File mode incorrect');
+    29: writeln('Invalid field specification');
+    30: writeln('Invalid real number');
+    31: writeln('Invalid fraction specification');
+    32: writeln('Invalid integer format');
+    33: writeln('Integer value overflow');
+    34: writeln('Invalid real format');
+    35: writeln('End of file');
+    36: writeln('Invalid file position');
+    37: writeln('Filename too long');
+    38: writeln('File open fail');
+    39: writeln('File size fail');
+    40: writeln('File close fail');
+    41: writeln('File read fail');
+    42: writeln('File write fail');
+    43: writeln('File position fail');
+    44: writeln('File delete fail');
+    45: writeln('File name change fail');
+    46: writeln('Space allocate fail');
+    47: writeln('Space release fail');
+    48: writeln('Space allocate negative');
+    49: writeln('Cannot perform special');
+    50: writeln('Command line too long');
+    51: writeln('Read past eof');
+    52: writeln('File transfer length zero');
+    53: writeln('File size too large');
+    54: writeln('Filename empty');
+    55: writeln('Cannot open standard');
+    56: writeln('Too many temporary files');
+    57: writeln('Input buffer overflow');
+    58: writeln('Too many threads');
+    59: writeln('Cannot start thread');
+    60: writeln('Invalid thread handle');
+    61: writeln('Cannot stop thread');
+    62: writeln('Too many inter task locks');
+    63: writeln('Invalid lock handle');
+    64: writeln('Lock sequence fail');
+    65: writeln('Too many signals');
+    66: writeln('Cannot create signal');
+    67: writeln('Invalid signal handle');
+    68: writeln('Cannot delete signal');
+    69: writeln('Cannot send signal');
+    70: writeln('Wait for signal fail');
+    71: writeln('Field not blank');
+    72: writeln('Read On Write Only File');              
+    73: writeln('Write On Read Only File');              
+    74: writeln('File Buffer Variable Undefined');      
+    75: writeln('Nondecimal Radix Of Negative');        
+    76: writeln('Invalid Argument To Ln');              
+    77: writeln('Invalid Argument To Sqrt');            
+    78: writeln('Cannot Reset Or Rewrite Standard File'); 
+    79: writeln('Cannot Reset Write Only File');         
+    80: writeln('Cannot Rewrite Read Only File');        
+    81: writeln('Program Code Assertion');             
+    82: writeln('Set Element Out Of Range');             
+    83: writeln('Real Argument Too Large');             
+    84: writeln('Boolean Operator Of Negative');        
+    85: writeln('Invalid Divisor To Mod');              
+    86: writeln('Pack Elements Out Of Bounds');          
+    87: writeln('Unpack Elements Out Of Bounds');        
+
+    { Exceptions that can't be intercepted }
+    88: writeln('Undefined location access');
+    89: writeln('Function not implemented');
+    90: writeln('Invalid In ISO 7185 Mode');              
+    91: writeln('Heap Format Invalid');                 
+    92: writeln('Dispose Of Uninitalized Pointer');      
+    93: writeln('Dispose Of Nil Pointer');               
+    94: writeln('Bad Pointer Value');                   
+    95: writeln('Block Already Freed');                 
+    96: writeln('Invalid Standard Procedure Or Function');
+    97: writeln('Invalid Instruction');                
+    98: writeln('New Dispose Tags Mismatch');            
+    99: writeln('PC Out Of Range');                      
+    100: writeln('Store Overflow');                    
+    101: writeln('Stack Balance');                     
+    102: writeln('Set Inclusion');                     
+    103: writeln('Uninitialized Pointer');             
+    104: writeln('Dereference Of Nil Pointer');          
+    105: writeln('Pointer Used After Dispose');          
+    106: writeln('Variant Not Active');                 
+    107: writeln('Invalid Case');                      
+    108: writeln('System Error');                      
+    109: writeln('Change To Allocated Tag field');  
+    110: writeln('Unhandled exception');      
+  end;
   pmd; goto 1
+end;
+
+procedure errorm(ea: address);
+begin 
+;writeln; writeln('errorm: begin: ea: ', ea:1);
+  { check is a standard exception }
+  if (ea-pctop >= exceptionbase) and (ea-pctop <= exceptiontop) then errorv(ea)
+  else errorv(UnhandledException)
+;writeln; writeln('errorm: end');
 end;
 
 { get bit from defined array }
@@ -659,7 +761,7 @@ end;
 
 procedure chkdef(a: address);
 begin
-   if dochkdef then if not getdef(a) then errori('Undefined location access')
+   if dochkdef then if not getdef(a) then errorv(UndefinedLocationAccess)
 end;
 
 (*--------------------------------------------------------------------*)
@@ -694,7 +796,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !  
-  errori('Assign to text file undef')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
 
   {$gnu-pascal} 
@@ -713,7 +815,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start ! 
-  errori('Assign to bin file undef ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal} 
@@ -728,8 +830,8 @@ end;
 procedure closetext(var f: text);
 
 begin
-  { ISO7185 start ! 
-  errori('Close of text file undef ')
+  { ISO7185 start !
+  errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
   {$gnu-pascal} 
@@ -740,8 +842,8 @@ end;
 procedure closebin(var f: bytfil);
 
 begin
-  { ISO7185 start ! 
-  errori('Close of binary file udef')
+  { ISO7185 start !
+  errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
   {$gnu-pascal} 
@@ -752,7 +854,7 @@ end;
 function lengthbin(var f: bytfil): integer;
 begin
   { ISO7185 start !
-  errori('Length of bin file undef ');
+  errorv(FunctionNotImplemented)
   lengthbin := 1
   ! ISO7185 end }
   
@@ -766,8 +868,8 @@ end;
 
 function locationbin(var f: bytfil): integer;
 begin
-  { ISO7185 start ! 
-  errori('Location of bin file udef');
+  { ISO7185 start !
+  errorv(FunctionNotImplemented) 
   locationbin := 1
   ! ISO7185 end } 
   
@@ -778,8 +880,8 @@ end;
 
 procedure positionbin(var f: bytfil; p: integer);
 begin
-  { ISO7185 start ! 
-  errori('Position of bin file udef')
+  { ISO7185 start !
+  errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -790,7 +892,7 @@ end;
 procedure updatebin(var f: bytfil);
 begin
   { ISO7185 start !
-  errori('Update binary file undef ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -802,7 +904,7 @@ end;
 procedure appendtext(var f: text);
 begin
   { ISO7185 start !
-  errori('Append text file undef   ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -812,8 +914,8 @@ end;
 
 procedure appendbin(var f: bytfil);
 begin
-  { ISO7185 start ! 
-  errori('Append binary file undef ')
+  { ISO7185 start !
+  errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -833,7 +935,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !
-  errori('Check exists file undef  ');
+  errorv(FunctionNotImplemented)
   existsfile := true
   ! ISO7185 end }
   
@@ -858,7 +960,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !
-  errori('Delete file by name udef ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -881,7 +983,7 @@ var ss,sd: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !
-  errori('Change name file undef   ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -894,7 +996,7 @@ begin
   sd := '';
   for i := 1 to l do sd := sd+fnd[i];
   r := rename(ss,sd);
-  if r <> 0 then errori('Could not rename file    ')
+  if r <> 0 then errore(FileNameChangeFail)
   {$classic-pascal-level-0}
 end;
 
@@ -903,12 +1005,12 @@ var i: cmdinx;
     x, p: integer;
 procedure putcmd(c: char);
 begin
-  if i >= maxcmd-1 then errori('Command line too large   ');
+  if i >= maxcmd-1 then errore(CommandLineTooLong);
   cb[i] := c; i := i+1
 end;
 begin
   { ISO7185 start !
-  errori('Change name file undef   ')
+  errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
   {$gnu-pascal}
@@ -1035,7 +1137,7 @@ begin
   i := 1;
   while not eolncommand and not eofcommand and 
         (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
-    if i = fillen then errori('Header ext name too large');
+    if i = fillen then errorv(FilenameTooLong);
     fne[i] := bufcommand;
     getcommand;
     i := i+1
@@ -1052,7 +1154,7 @@ begin
   i := 1;
   while not eolncommand and not eofcommand and 
         (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
-    if i = fillen then errori('Header ext name too large');
+    if i = fillen then errorv(FileNameTooLong);
     fne[i] := bufcommand;
     getcommand;
     i := i+1
@@ -1326,7 +1428,7 @@ end;
 
 procedure chkstd;
 begin
-  if iso7185 then errori('Invalid in ISO 7185 mode ')
+  if iso7185 then errorv(InvalidInISO7185Mode)
 end;
   
 { list single instruction at address }
@@ -2210,7 +2312,7 @@ begin
          if filstate[i] = fclosed then begin ff := i; i := maxfil end;
          i := i+1
        end;
-       if ff = 0 then errori('To many files            ');
+       if ff = 0 then errore(TooManyFiles);
      end;
      store[fa] := ff; putdef(fa, true)
    end
@@ -2219,13 +2321,13 @@ end;
 procedure valfilwm(fa: address); { validate file write mode }
 begin
    valfil(fa); { validate file address }
-   if filstate[store[fa]] <> fwrite then errori('File not in write mode   ')
+   if filstate[store[fa]] <> fwrite then errore(FileModeIncorrect)
 end;
 
 procedure valfilrm(fa: address); { validate file read mode }
 begin
    valfil(fa); { validate file address }
-   if filstate[store[fa]] <> fread then errori('File not in read mode    ')
+   if filstate[store[fa]] <> fread then errore(FileModeIncorrect)
 end;
 
 procedure getop; { get opcode }
@@ -2297,7 +2399,7 @@ begin
   blk := gbtop; { set to bottom of heap }
   while blk < np do begin { search blocks in heap }
      l := getadr(blk); { get length }
-     if (abs(l) < heapal) or (abs(l) > np) then errori('Heap format invalid      ');
+     if (abs(l) < heapal) or (abs(l) > np) then errorv(HeapFormatInvalid);
      if l >= len+adrsize then begin b := blk; blk := np end { found }
      else blk := blk+abs(l) { go next block }
   end;
@@ -2358,7 +2460,7 @@ begin
      ad1 := np; { save address }
      alignu(heapal, np); { align to arena }
      len := len+(np-ad1); { adjust length upwards for alignment }
-     if np > sp then errori('Store overflow: dynamic  ');
+     if np > sp then errore(SpaceAllocateFail);
      putadr(ad, -(len+adrsize)); { allocate block }
      blk := ad+adrsize { index start of block }
   end;
@@ -2372,11 +2474,11 @@ procedure dspspc(len, blk: address);
 var ad: address;
 begin
    len := len; { shut up compiler check }
-   if blk = 0 then errori('Dispose uninit pointer   ')
-   else if blk = nilval then errori('Dispose nil pointer      ')
-   else if (blk < gbtop) or (blk >= np) then errori('Bad pointer value        ');
+   if blk = 0 then errorv(DisposeOfUninitalizedPointer)
+   else if blk = nilval then errorv(DisposeOfNilPointer)
+   else if (blk < gbtop) or (blk >= np) then errorv(BadPointerValue);
    ad := blk-adrsize; { index header }
-   if getadr(ad) >= 0 then errori('Block already freed      ');
+   if getadr(ad) >= 0 then errorv(BlockAlreadyFreed);
    if dorecycl and not dochkrpt then begin { obey recycling requests }
       putadr(ad, abs(getadr(ad))); { set block free }
       cscspc { coalesce free space }
@@ -2417,14 +2519,12 @@ procedure callsp;
    begin 
      if fn <= commandfn then case fn of
        inputfn:   buffn := input^;
-       outputfn:  errori('Read on output file      ');
        prdfn:     buffn := prd^;
-       prrfn:     errori('Read on prr file         ');
-       errorfn:   errori('Read on error file       ');
-       listfn:    errori('Read on list file        ');
+       outputfn,prrfn,errorfn,
+       listfn:    errore(ReadOnWriteOnlyFile);
        commandfn: buffn := bufcommand;
      end else begin
-       if filstate[fn] <> fread then errori('File not in read mode    ');
+       if filstate[fn] <> fread then errore(FileModeIncorrect);
        buffn := filtable[fn]^
      end
    end;
@@ -2433,14 +2533,13 @@ procedure callsp;
    begin 
      if fn <= commandfn then case fn of
        inputfn:   get(input);
-       outputfn:  errori('Read on output file      ');
+       
        prdfn:     get(prd);
-       prrfn:     errori('Read on prr file         ');
-       errorfn:   errori('Read on error file       ');
-       listfn:    errori('Read on list file        ');
+       outputfn,prrfn,errorfn,
+       listfn:    errore(ReadOnWriteOnlyFile);
        commandfn: getcommand;
      end else begin
-       if filstate[fn] <> fread then errori('File not in read mode    ');
+       if filstate[fn] <> fread then errore(FileModeIncorrect);
        get(filtable[fn])
      end
    end;
@@ -2456,7 +2555,7 @@ procedure callsp;
        listfn:    eoffn := eof(output);
        commandfn: eoffn := eofcommand;
      end else begin
-       if filstate[fn] = fclosed then errori('File not open            ');
+       if filstate[fn] = fclosed then errore(FileNotOPen);
        eoffn := eof(filtable[fn])
      end
    end;
@@ -2472,7 +2571,7 @@ procedure callsp;
        listfn:    eolnfn := eoln(output);
        commandfn: eolnfn := eolncommand;
      end else begin
-       if filstate[fn] = fclosed then errori('File not open            ');
+       if filstate[fn] = fclosed then errore(FileNotOpen);
        eolnfn := eoln(filtable[fn])
      end
    end;
@@ -2485,7 +2584,7 @@ procedure callsp;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eoffn(fn) then errori('End of file              ');
+       if eoffn(fn) then errore(EndOfFile);
        getfn(fn); w := w-1 
      end
    end;
@@ -2498,23 +2597,23 @@ procedure callsp;
       { skip leading spaces }
       while (chkbuf = ' ') and not chkend do getbuf;
       if not (chkbuf in ['+', '-', '0'..'9']) then
-        errori('Invalid integer format   ');
+        errore(InvalidIntegerFormat);
       if chkbuf = '+' then getbuf
       else if chkbuf = '-' then begin getbuf; s := -1 end;
-      if not (chkbuf in ['0'..'9']) then errori('Invalid integer format   ');
+      if not (chkbuf in ['0'..'9']) then errore(InvalidIntegerFormat);
       i := 0; { clear initial value }
       while (chkbuf in ['0'..'9']) do begin { parse digit }
         d := ord(chkbuf)-ord('0');
         if (i > maxint div 10) or 
            ((i = maxint div 10) and (d > maxint mod 10)) then 
-          errori('Input value overflows    ');
+          errore(IntegerValueOverFlow);
         i := i*10+d; { add in new digit }
         getbuf
       end;
       i := i*s; { place sign }
       { if fielded, validate the rest of the field is blank }
       if fld then while not chkend do begin 
-        if chkbuf <> ' ' then errori('Remaining field not blank');
+        if chkbuf <> ' ' then errore(FieldNotBlank);
         getbuf
       end
    end;
@@ -2529,7 +2628,7 @@ procedure callsp;
    procedure getbuf; 
    begin
      if w > 0 then begin
-       if eoffn(fn) then errori('End of file              ');
+       if eoffn(fn) then errore(EndOfFile);
        getfn(fn); w := w-1 
      end
    end;
@@ -2560,7 +2659,7 @@ procedure callsp;
       { get any sign from number }
       if chkbuf = '-' then begin getbuf; s := true end
       else if chkbuf = '+' then getbuf;
-      if not (chkbuf in ['0'..'9']) then errori('Invalid real format      ');
+      if not (chkbuf in ['0'..'9']) then errore(InvalidRealNumber);
       while (chkbuf in ['0'..'9']) do begin { parse digit }
          d := ord(chkbuf)-ord('0');
          r := r*10+d; { add in new digit }
@@ -2569,7 +2668,7 @@ procedure callsp;
       if chkbuf in ['.', 'e', 'E'] then begin { it's a real }
          if chkbuf = '.' then begin { decimal point }
             getbuf; { skip '.' }
-            if not (chkbuf in ['0'..'9']) then errori('Invalid real format      ');
+            if not (chkbuf in ['0'..'9']) then errore(InvalidRealNumber);
             while (chkbuf in ['0'..'9']) do begin { parse digit }
                d := ord(chkbuf)-ord('0');
                r := r*10+d; { add in new digit }
@@ -2580,7 +2679,7 @@ procedure callsp;
          if chkbuf in ['e', 'E'] then begin { exponent }
             getbuf; { skip 'e' }
             if not (chkbuf in ['0'..'9', '+', '-']) then
-               errori('Invalid real format      ');
+               errore(InvalidRealNumber);
             readi(fn, i, w, fld); { get exponent }
             { find with exponent }
             e := e+i
@@ -2590,7 +2689,7 @@ procedure callsp;
       if s then r := -r;
       { if fielded, validate the rest of the field is blank }
       if fld then while not chkend do begin 
-        if chkbuf <> ' ' then errori('Remaining field not blank');
+        if chkbuf <> ' ' then errore(FieldNotBlank);
         getbuf
       end
    end;
@@ -2601,7 +2700,7 @@ procedure callsp;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eoffn(fn) then errori('End of file              ');
+       if eoffn(fn) then errore(EndOfFile);
        getfn(fn); w := w-1 
      end
    end;
@@ -2613,7 +2712,7 @@ procedure callsp;
       c := chkbuf; getbuf;
       { if fielded, validate the rest of the field is blank }
       if fld then while not chkend do begin 
-        if chkbuf <> ' ' then errori('Remaining field not blank');
+        if chkbuf <> ' ' then errore(FieldNotBlank);
         getbuf
       end
    end;(*readc*)
@@ -2625,7 +2724,7 @@ procedure callsp;
    procedure getbuf; 
    begin 
      if w > 0 then begin
-       if eoffn(fn) then errori('End of file              ');
+       if eoffn(fn) then errore(EndOfFile);
        getfn(fn); w := w-1 
      end
    end;
@@ -2639,7 +2738,7 @@ procedure callsp;
      end;
      { if fielded, validate the rest of the field is blank }
      if fld then while not chkend do begin 
-       if chkbuf <> ' ' then errori('Remaining field not blank');
+       if chkbuf <> ' ' then errore(FieldNotBlank);
        getbuf
      end
    end;(*reads*)
@@ -2647,7 +2746,7 @@ procedure callsp;
    procedure readsp(fn: fileno; ad: address; l: integer);
    begin
      while (l > 0) and not eolnfn(fn) do begin
-       if eoffn(fn) then errori('End of file              ');
+       if eoffn(fn) then errore(EndOfFile);
        read(filtable[fn], c); putchr(ad, c); ad := ad+1; l := l-1
      end;
      while l > 0 do begin putchr(ad, ' '); ad := ad+1; l := l-1 end
@@ -2681,12 +2780,12 @@ procedure callsp;
    end;
 
    procedure getfile(var f: text);
-   begin if eof(f) then errori('End of file              ');
+   begin if eof(f) then errore(EndOfFile);
          get(f);
    end;(*getfile*)
 
    procedure putfile(var f: text; var ad: address; fn: fileno);
-   begin if not filbuff[fn] then errori('File buffer undefined    ');
+   begin if not filbuff[fn] then errore(FileBufferVariableUndefined);
          f^:= getchr(ad+fileidsize); put(f);
          filbuff[fn] := false
    end;(*putfile*)
@@ -2701,7 +2800,7 @@ procedure callsp;
    begin
      if w < 0 then begin 
        sgn := true; w := abs(w);
-       if r <> 10 then errori('Non-decimal radix of neg ') 
+       if r <> 10 then errore(NondecimalRadixOfNegative) 
      end else sgn := false;
      for i := 1 to maxdbf do digit[i] := ' ';
      i := maxdbf; d := 0;
@@ -2733,7 +2832,7 @@ procedure callsp;
    end;
 
 begin (*callsp*)
-      if q > maxsp then errori('Invalid std proc/func    ');
+      if q > maxsp then errorv(InvalidStandardProcedureOrFunction);
 
       { trace routine executions }
       if dotrcrot then writeln(pc:6, '/', sp:6, '-> ', q:2);
@@ -2743,38 +2842,37 @@ begin (*callsp*)
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                              inputfn: errori('Put on read file         ');
+                              
                               outputfn: putfile(output, ad, fn);
-                              prdfn: errori('Put on prd file          ');
+                              
                               prrfn: putfile(prr, ad, fn);
                               errorfn: putfile(output, ad, fn);
                               listfn: putfile(output, ad, fn);
-                              commandfn: errori('Put on command file      ')
+                              inputfn,prdfn,
+                              commandfn: errore(WriteOnReadOnlyFile)
                            end else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 putfile(filtable[fn], ad, fn)
                            end
                       end;
            3 (*rln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
                               inputfn: begin
-                                 if eof(input) then errori('End of file              ');
+                                 if eof(input) then errore(EndOfFile);
                                  readln(input)
                               end;
-                              outputfn: errori('Readln on output file    ');
                               prdfn: begin
-                                 if eof(prd) then errori('End of file              ');
+                                 if eof(prd) then errore(EndOfFile);
                                  readln(prd)
                               end;
-                              prrfn: errori('Readln on prr file       ');
-                              errorfn: errori('Readln on error file     ');
-                              listfn: errori('Readln on list file      ');
+                              outputfn,prrfn,errorfn,
+                              listfn: errore(ReadOnWriteOnlyFile);
                               commandfn: readlncommand
                            end else begin
                                 if filstate[fn] <> fread then
-                                   errori('File not in read mode    ');
-                                if eof(filtable[fn]) then errori('End of file              ');
+                                   errore(FileModeIncorrect);
+                                if eof(filtable[fn]) then errore(EndOfFile);
                                 readln(filtable[fn])
                            end
                       end;
@@ -2796,53 +2894,50 @@ begin (*callsp*)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                              inputfn: errori('Writeln on input file    ');
                               outputfn: writeln(output);
-                              prdfn: errori('Writeln on prd file      ');
                               prrfn: writeln(prr);
                               errorfn: writeln(output);
                               listfn: writeln(output);
-                              commandfn: errori('Writeln on command file  ')
+                              prdfn,inputfn,
+                              commandfn: errore(WriteOnReadOnlyFile)
                            end else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 writeln(filtable[fn])
                            end
                       end;
            6 (*wrs*): begin popint(l); popint(w); popadr(ad1);
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
-                             errori('Width cannot be < 1      ');
+                             errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
-                              inputfn: errori('Write on input file      ');
                               outputfn: writestr(output, ad1, w, l);
-                              prdfn: errori('Write on prd file        ');
                               prrfn: writestr(prr, ad1, w, l);
                               errorfn: writestr(output, ad1, w, l);
                               listfn: writestr(output, ad1, w, l);
-                              commandfn: errori('Write on command file    ');
+                              prdfn,inputfn,
+                              commandfn: errore(WriteOnReadOnlyFile);
                            end else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 writestr(filtable[fn], ad1, w, l)
                            end;
                       end;
            65 (*wrsp*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                            valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
-                             errori('Width cannot be < 1      ');
+                             errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
-                              inputfn: errori('Write on input file      ');
-                              outputfn: writestrp(output, ad1, l);
-                              prdfn: errori('Write on prd file        ');
-                              prrfn: writestrp(prr, ad1, l);
-                              errorfn: writestrp(output, ad1, l);
-                              listfn: writestrp(output, ad1, l);
-                              commandfn: errori('Write on command file    ');
+                             outputfn: writestrp(output, ad1, l);
+                             prrfn: writestrp(prr, ad1, l);
+                             errorfn: writestrp(output, ad1, l);
+                             listfn: writestrp(output, ad1, l);
+                             prdfn,inputfn,
+                             commandfn: errore(WriteOnReadOnlyFile);
                            end else begin
-                                if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
-                                writestrp(filtable[fn], ad1, l)
+                             if filstate[fn] <> fwrite then
+                               errore(FileModeIncorrect);
+                             writestrp(filtable[fn], ad1, l)
                            end;
                       end;
           41 (*eof*): begin popadr(ad); valfil(ad); fn := store[ad]; 
@@ -2871,56 +2966,53 @@ begin (*callsp*)
                             lz := (q >= 66) and (q <= 69);
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
-                              errori('Width cannot be < 1      ');
+                              errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 inputfn: errori('Write on input file      ');
                                  outputfn: writei(output, i, w, rd, lz);
-                                 prdfn: errori('Write on prd file        ');
                                  prrfn: writei(prr, i, w, rd, lz);
                                  errorfn: writei(output, i, w, rd, lz);
                                  listfn: writei(output, i, w, rd, lz);
-                                 commandfn: errori('Write on command file    ')
+                                 prdfn,inputfn,
+                                 commandfn: errore(WriteOnReadOnlyFile)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 writei(filtable[fn], i, w, rd, lz)
                             end
                       end;
            9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);
                             valfil(ad); fn := store[ad];
-                            if w < 1 then errori('Width cannot be < 1      ');
+                            if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 inputfn: errori('Write on input file      ');
                                  outputfn: write(output, r: w);
-                                 prdfn: errori('Write on prd file        ');
                                  prrfn: write(prr, r:w);
                                  errorfn: write(output, r: w);
                                  listfn: write(output, r: w);
-                                 commandfn: errori('Write on command file    ')
+                                 prdfn,inputfn,
+                                 commandfn: errore(WriteOnReadOnlyFile)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 write(filtable[fn], r:w)
                             end;
                       end;
            10(*wrc*): begin popint(w); popint(i); c := chr(i); popadr(ad);
                             pshadr(ad); valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
-                              errori('Width cannot be < 1      ');
+                              errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 inputfn: errori('Write on input file      ');
                                  outputfn: writec(output, c, w);
-                                 prdfn: errori('Write on prd file        ');
                                  prrfn: writec(prr, c, w);
                                  errorfn: writec(output, c, w);
                                  listfn: writec(output, c, w);
-                                 commandfn: errori('Write on command file    ')
+                                 prdfn,inputfn,
+                                 commandfn: errore(WriteOnReadOnlyfile)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FIleModeIncorrect);
                                 writec(filtable[fn], c, w)
                             end
                       end;
@@ -2936,7 +3028,7 @@ begin (*callsp*)
                            pshadr(ad); valfil(ad); fn := store[ad];
                            readi(fn, i, w, fld); 
                            if (i < mn) or (i > mx) then 
-                             errori('Value read out of range  ');
+                             errore(ValueOutOfRange);
                            putint(ad1, i);
                       end;
            12(*rdr*),
@@ -2958,46 +3050,43 @@ begin (*callsp*)
                             fn := store[ad];
                             readc(fn, c, w, fld);
                             if (ord(c) < mn) or (ord(c) > mx) then
-                              errori('Value read out of range  ');
+                              errore(ValueOutOfRange);
                             putchr(ad1, c)
                       end;
            14(*sin*): begin poprel(r1); pshrel(sin(r1)) end;
            15(*cos*): begin poprel(r1); pshrel(cos(r1)) end;
            16(*exp*): begin poprel(r1); pshrel(exp(r1)) end;
            17(*log*): begin poprel(r1);
-                            if r1 <= 0 then errori('Cannot find ln <= 0      ');
+                            if r1 <= 0 then errore(InvalidArgumentToLn);
                             pshrel(ln(r1)) end;
            18(*sqt*): begin poprel(r1);
-                            if r1 < 0 then errori('Cannot find sqrt < 0     ');
+                            if r1 < 0 then errore(InvalidArgumentToSqrt);
                             pshrel(sqrt(r1)) end;
            19(*atn*): begin poprel(r1); pshrel(arctan(r1)) end;
            { placeholder for "mark" }
-           20(*sav*): errori('Invalid std proc/func    ');
+           20(*sav*): errorv(InvalidStandardProcedureOrFunction);
            21(*pag*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                                inputfn: errori('Page on read file        ');
                                 outputfn: page(output);
-                                prdfn: errori('Page on prd file         ');
                                 prrfn: page(prr);
                                 errorfn: page(output);
                                 listfn: page(output);
-                                commandfn: errori('Page on command file     ')
+                                prdfn,inputfn,
+                                commandfn: errore(WriteOnReadOnlyFile)
                               end
                            else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 page(filtable[fn])
                            end
                       end;
            22(*rsf*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                                inputfn: errori('Reset on input file      ');
-                                outputfn: errori('Reset on output file     ');
                                 prdfn: reset(prd);
-                                prrfn: errori('Reset on prr file        ');
-                                errorfn: errori('Reset on error file      ');
-                                listfn: errori('Reset on list file       ');
-                                commandfn: errori('Reset on command file    ')
+                                prrfn: errore(CannotResetWriteOnlyFile);
+                                outputfn,errorfn,listfn,inputfn,
+                                commandfn: 
+                                  errore(CannotResetOrRewriteStandardFile)
                               end
                            else begin
                                 filstate[fn] := fread;
@@ -3007,13 +3096,11 @@ begin (*callsp*)
                       end;
            23(*rwf*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                                inputfn: errori('Rewrite on input file    ');
-                                outputfn: errori('Rewrite on output file   ');
-                                prdfn: errori('Rewrite on prd file      ');
                                 prrfn: rewrite(prr);
-                                errorfn: errori('Rewrite on error file    ');
-                                listfn: errori('Rewrite on list file     ');
-                                commandfn: errori('Reset on command file    ')
+                                prdfn: errore(CannotRewriteReadOnlyFile);
+                                errorfn,listfn,outputfn,inputfn,
+                                commandfn: 
+                                  errore(CannotResetOrRewriteStandardFile)
                               end
                            else begin
                                 filstate[fn] := fwrite;
@@ -3022,39 +3109,38 @@ begin (*callsp*)
                       end;
            24(*wrb*): begin popint(w); popint(i); b := i <> 0; popadr(ad);
                             pshadr(ad); valfil(ad); fn := store[ad];
-                            if w < 1 then errori('Width cannot be < 1      ');
+                            if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 inputfn: errori('Write on input file      ');
                                  outputfn: write(output, b:w);
-                                 prdfn: errori('Write on prd file        ');
                                  prrfn: write(prr, b:w);
                                  errorfn: write(output, b:w);
                                  listfn: write(output, b:w);
-                                 commandfn: errori('Write on command file    ')
+                                 prdfn,inputfn,
+                                 commandfn: errore(WriteOnReadOnlyFile)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 write(filtable[fn], b:w)
                             end
                       end;
            25(*wrf*): begin popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
-                              errori('Width cannot be < 1      ');
-                            if f < 1 then errori('Fraction cannot be < 1   ');
+                              errore(InvalidFieldSpecification);
+                            if f < 1 then errore(InvalidFractionSpecification);
                             if fn <= commandfn then case fn of
-                                 inputfn: errori('Write on input file      ');
                                  outputfn: writerf(output, r, w, f);
-                                 prdfn: errori('Write on prd file        ');
                                  prrfn: writerf(prr, r, w, f);
                                  errorfn: writerf(output, r, w, f);
                                  listfn: writerf(output, r, w, f);
-                                 commandfn: errori('Write on command file    ')
+                                 prdfn,
+                                 inputfn,
+                                 commandfn: errore(WriteOnReadOnlyFile)
                               end
                             else begin
                                 if filstate[fn] <> fwrite then
-                                   errori('File not in write mode   ');
+                                   errore(FileModeIncorrect);
                                 writerf(filtable[fn], r, w, f)
                             end
                       end;
@@ -3067,9 +3153,9 @@ begin (*callsp*)
                            { under us is either the number of tags or the length of the block, if it
                              was freed. Either way, it is >= adrsize if not free }
                            if getint(ad-intsize) <= adrsize then
-                             errori('Block already freed      ');
+                             errorv(BlockAlreadyFreed);
                            if i <> getint(ad-intsize)-adrsize-1 then
-                             errori('New/dispose tags mismatch');
+                             errorv(NewDisposeTagsMismatch);
                            ad := ad-intsize; ad2 := sp;
                            { ad = top of tags in dynamic, ad2 = top of tags in
                              stack }
@@ -3077,7 +3163,7 @@ begin (*callsp*)
                            while k > 0 do
                              begin
                                if getint(ad) <> getint(ad2) then
-                                 errori('New/dispose tags mismatch');
+                                 errorv(NewDisposeTagsMismatch);
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
                            dspspc(ad1+(i+1)*intsize, ad+intsize);
@@ -3128,7 +3214,7 @@ begin (*callsp*)
                               putdef(ad1+i-1, true)
                             end else begin
                               if eof(bfiltable[fn]) then
-                                errori('End of file              ');
+                                errore(EndOfFile);
                               for i := 1 to l do begin
                                 read(bfiltable[fn], store[ad1]);
                                 putdef(ad1, true);
@@ -3138,7 +3224,7 @@ begin (*callsp*)
                       end;
            33(*rsb*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if filstate[fn] = fclosed then
-                             errori('Cannot reset closed file ');
+                             errore(FileNotOpen);
                            filstate[fn] := fread;
                            reset(bfiltable[fn]);
                            filbuff[fn] := false
@@ -3158,7 +3244,7 @@ begin (*callsp*)
            36(*pbf*): begin popint(i); popadr(ad); valfilwm(ad);
                         fn := store[ad];
                         if not filbuff[fn] then
-                          errori('File buffer undefined    ');
+                          errore(FileBufferVariableUndefined);
                         for j := 1 to i do
                           write(bfiltable[fn], store[ad+fileidsize+j-1]);
                         filbuff[fn] := false;
@@ -3203,7 +3289,7 @@ begin (*callsp*)
                          closebin(bfiltable[fn])
                        end;
            48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad];
-                         if i < 1 then errori('Position < 1             '); 
+                         if i < 1 then errore(InvalidFilePosition); 
                          positionbin(bfiltable[fn], i)
                        end;
            49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad]; 
@@ -3237,7 +3323,7 @@ begin (*callsp*)
                        end;  
            59 (*hlt*): goto 2;
            60 (*ast*): begin popint(i); 
-                         if i = 0 then errori('Code asserted            ');
+                         if i = 0 then errore(ProgramCodeAssertion);
                        end;
            61 (*asts*): begin popint(i); popadr(ad); popint(j);
                          if j = 0 then errors(ad, i);
@@ -3362,7 +3448,7 @@ begin (* main *)
   while interpreting do
   begin
 
-    if pc >= pctop then errori('pc out of range          ');
+    if pc >= pctop then errorv(PCOutOfRange);
     { fetch instruction from byte store }
     pcs := pc; { save starting pc }
     getop;
@@ -3452,7 +3538,7 @@ begin (* main *)
           10 (*inci*): begin getq; popint(i1);
                          if dochkovf then if (i1<0) = (q<0) then
                             if maxint-abs(i1) < abs(q) then
-                              errori('Arithmetic overflow      ');
+                              errore(IntegerValueOverflow);
                          pshint(i1+q)
                          end;
           90 (*inca*): begin getq; popadr(a1); pshadr(a1+q) end;
@@ -3483,7 +3569,7 @@ begin (* main *)
 
           13 (*ents*): begin getq; ad := mp+q; (*q = length of dataseg*)
                           if ad <= np then begin
-                            errori('Store overflow: ents     ');
+                            errorv(StoreOverflow);
                           end;
                           { clear allocated memory and set undefined }
                           while sp > ad do
@@ -3493,14 +3579,14 @@ begin (* main *)
                        end;
 
           173 (*ente*): begin getq; ep := sp+q;
-                          if ep <= np then errori('Store overflow: ente     ');
+                          if ep <= np then errorv(StoreOverFlow);
                           putadr(mp+market, ep) { place current ep }
                         end;
                         (*q = max space required on stack*)
                         
           14  (*retp*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          sp := mp;
                          pc := getadr(mp+markra); { get ra }
                          ep := getadr(mp+markep); { get old ep }
@@ -3510,7 +3596,7 @@ begin (* main *)
             only the lower 8 bits were stored to. }
           130 (*retc*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          putint(mp+markfv+maxresult div 2, 
                                 ord(getchr(mp+markfv+maxresult div 2)));
                          { set stack below function result }
@@ -3521,7 +3607,7 @@ begin (* main *)
                        end;
           131 (*retb*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          putint(mp+markfv+maxresult div 2, 
                                 ord(getbol(mp+markfv+maxresult div 2)));
                          { set stack below function result }
@@ -3533,7 +3619,7 @@ begin (* main *)
           128 (*reti*),
           204 (*retx*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          { set stack below function result }
                          sp := mp+markfv+maxresult div 2;
                          pc := getadr(mp+markra);
@@ -3542,7 +3628,7 @@ begin (* main *)
                        end;
           129 (*retr*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          sp := mp+markfv; { set stack below function result }
                          pc := getadr(mp+markra);
                          ep := getadr(mp+markep);
@@ -3550,7 +3636,7 @@ begin (* main *)
                        end;
           132  (*reta*): begin
                          if sp <> getadr(mp+marksb) then 
-                           errori('Stack balance            ');
+                           errorv(StackBalance);
                          { set stack below function result }  
                          sp := mp+markfv+maxresult div 2;
                          pc := getadr(mp+markra);
@@ -3591,7 +3677,7 @@ begin (* main *)
           159 { grtc },
           155 { grti }: begin popint(i2); popint(i1); pshint(ord(i1>i2)) end;
           156 { grtr }: begin poprel(r2); poprel(r1); pshint(ord(r1>r2)) end;
-          158 { grts }: errori('set inclusion            ');
+          158 { grts }: errorv(SetInclusion);
           160 { grtm }: begin getq; compare;
                               pshint(ord(not b and (store[a1+i] > store[a2+i])))
                         end;
@@ -3609,7 +3695,7 @@ begin (* main *)
           171 { lesc },
           167 { lesi }: begin popint(i2); popint(i1); pshint(ord(i1<i2)) end;
           168 { lesr }: begin poprel(r2); poprel(r1); pshint(ord(r1<r2)) end;
-          170 { less }: errori('Set inclusion            ');
+          170 { less }: errorv(SetInclusion);
           172 { lesm }: begin getq; compare;
                               pshint(ord(not b and (store[a1+i] < store[a2+i])))
                         end;
@@ -3624,36 +3710,36 @@ begin (* main *)
                                Not 0 = assign pointer from heap address }
                              if a1 = 0 then
                                 { if zero, but not nil, it's never been assigned }
-                                errori('Uninitialized pointer    ')
+                                errorv(UninitializedPointer)
                              else if (q <> 0) and (a1 = nilval) then
                                 { q <> 0 means deref, and it was nil
                                   (which is not zero) }
-                                errori('Dereference of nil ptr   ')
+                                errorv(DereferenceOfNilPointer)
                              else if ((a1 < gbtop) or (a1 >= np)) and
                                      (a1 <> nilval) then
                                 { outside heap space (which could have
                                   contracted!) }
-                                errori('Bad pointer value        ')
+                                errorv(BadPointerValue)
                              else if dochkrpt and (a1 <> nilval) then begin
                                { perform use of freed space check }
                                if isfree(a1) then
                                  { attempt to dereference or assign a freed
                                    block }
-                                 errori('Ptr used after dispose op')
+                                 errorv(PointerUsedAfterDispose)
                              end
                        end;
           97 (*chks*): begin getq; popset(s1); pshset(s1);
                          for j := setlow to getint(q)-1 do
-                           if j in s1 then errori('Set element out of range ');
+                           if j in s1 then errorv(SetElementOutOfRange);
                          for j := getint(q+intsize)+1 to sethigh do
-                           if j in s1 then errori('Set element out of range ');
+                           if j in s1 then errorv(SetElementOutOfRange);
                        end;
           98 (*chkb*),
           99 (*chkc*),
           199 { chkx },
           26 (*chki*): begin getq; popint(i1); pshint(i1);
                         if (i1 < getint(q)) or (i1 > getint(q+intsize)) then
-                        errori('Value out of range       ')
+                        errore(ValueOutOfRange)
                       end;
 
           187 { cks }: pshint(0);
@@ -3664,7 +3750,7 @@ begin (* main *)
                           pshint(i1); pshint(ord((i1 = q) or (i2 <> 0)));
                         end;
           188 { cke }: begin popint(i2); popint(i1);
-                          if i2 = 0 then errori('Variant not active       ')
+                          if i2 = 0 then errorv(VariantNotActive)
                         end;
 
           { all the dups are defined, but not all used }
@@ -3680,13 +3766,13 @@ begin (* main *)
           28 (*adi*): begin popint(i2); popint(i1);
                         if dochkovf then if (i1<0) = (i2<0) then
                           if maxint-abs(i1) < abs(i2) then
-                            errori('Arithmetic overflow      ');
+                            errore(IntegerValueOverflow);
                       pshint(i1+i2) end;
           29 (*adr*): begin poprel(r2); poprel(r1); pshrel(r1+r2) end;
           30 (*sbi*): begin popint(i2); popint(i1);
                         if dochkovf then if (i1<0) <> (i2<0) then
                           if maxint-abs(i1) < abs(i2) then
-                            errori('Arithmetic overflow      ');
+                            errore(IntegerValueOverflow);
                       pshint(i1-i2) end;
           31 (*sbr*): begin poprel(r2); poprel(r1); pshrel(r1-r2) end;
           32 (*sgs*): begin popint(i1); pshset([i1]); end;
@@ -3697,56 +3783,57 @@ begin (* main *)
 
           35 (*trc*): begin poprel(r1);
                         if dochkovf then if (r1 < -maxint) or (r1 > maxint) then
-                          errori('Real argument to large   ');
+                          errore(RealArgumentTooLarge);
                         pshint(trunc(r1)) end;
           36 (*ngi*): begin popint(i1); pshint(-i1) end;
           37 (*ngr*): begin poprel(r1); pshrel(-r1) end;
           38 (*sqi*): begin popint(i1);
                       if dochkovf then if i1 <> 0 then
                         if abs(i1) > maxint div abs(i1) then
-                          errori('Arithmetic overflow      ');
+                          errore(IntegerValueOverflow);
                       pshint(sqr(i1)) end;
           39 (*sqr*): begin poprel(r1); pshrel(sqr(r1)) end;
           40 (*abi*): begin popint(i1); pshint(abs(i1)) end;
           41 (*abr*): begin poprel(r1); pshrel(abs(r1)) end;
           42 (*notb*): begin popint(i1); b1 := i1 <> 0; pshint(ord(not b1)) end;
           205 (*noti*): begin popint(i1); 
-                            if i1 < 0 then errori('Boolean of negative      '); 
+                            if i1 < 0 then errore(BooleanOperatorOfNegative); 
                             pshint(bnot(i1)) end;
           43 (*and*): begin popint(i2);
-                            if i2 < 0 then errori('Boolean of negative      '); 
+                            if i2 < 0 then errore(BooleanOperatorOfNegative);
                             popint(i1); 
-                            if i1 < 0 then errori('Boolean of negative      ');
+                            if i1 < 0 then errore(BooleanOperatorOfNegative);
                             pshint(band(i1, i2)) end;
           44 (*ior*): begin popint(i2);
-                            if i2 < 0 then errori('Boolean of negative      ');
+                            if i2 < 0 then errore(BooleanOperatorOfNegative);
                             popint(i1);
-                            if i1 < 0 then errori('Boolean of negative      ');
+                            if i1 < 0 then errore(BooleanOperatorOfNegative);
                             pshint(bor(i1, i2)) end;
           206 (*xor*): begin popint(i2); b2 := i2 <> 0;
-                            if i2 < 0 then errori('Boolean of negative      ');
+                            if i2 < 0 then errore(BooleanOperatorOfNegative);
                             popint(i1); b1 := i1 <> 0;
-                            if i1 < 0 then errori('Boolean of negative      ');
+                            if i1 < 0 then errore(BooleanOperatorOfNegative);
                             pshint(bxor(i1, i2)) end;
           45 (*dif*): begin popset(s2); popset(s1); pshset(s1-s2) end;
           46 (*int*): begin popset(s2); popset(s1); pshset(s1*s2) end;
           47 (*uni*): begin popset(s2); popset(s1); pshset(s1+s2) end;
           48 (*inn*): begin popset(s1); popint(i1); pshint(ord(i1 in s1)) end;
           49 (*mod*): begin popint(i2); popint(i1);
-                        if dochkovf then if i2 <= 0 then errori('Invalid divisor in mod   ');
+                        if dochkovf then if i2 <= 0 then 
+                          errore(InvalidDivisorToMod);
                         pshint(i1 mod i2) end;
           50 (*odd*): begin popint(i1); pshint(ord(odd(i1))) end;
           51 (*mpi*): begin popint(i2); popint(i1);
                         if dochkovf then if (i1 <> 0) and (i2 <> 0) then
                           if abs(i1) > maxint div abs(i2) then
-                            errori('Arithmetic overflow      ');
+                            errore(IntegerValueOverflow);
                         pshint(i1*i2) end;
           52 (*mpr*): begin poprel(r2); poprel(r1); pshrel(r1*r2) end;
           53 (*dvi*): begin popint(i2); popint(i1);
-                            if dochkovf then if i2 = 0 then errori('Zero divide              ');
+                            if dochkovf then if i2 = 0 then errore(ZeroDivide);
                             pshint(i1 div i2) end;
           54 (*dvr*): begin poprel(r2); poprel(r1);
-                            if dochkovf then if r2 = 0.0 then errori('Zero divide              ');
+                            if dochkovf then if r2 = 0.0 then errore(ZeroDivide);
                             pshrel(r1/r2) end;
           55 (*mov*): begin getq; popint(i2); popint(i1);
                        for i3 := 0 to q-1 do
@@ -3762,7 +3849,7 @@ begin (* main *)
           57  (*deci*): begin getq; popint(i1);
                           if dochkovf then if (i1<0) <> (q<0) then
                             if maxint-abs(i1) < abs(q) then
-                              errori('Arithmetic overflow      ');
+                              errore(IntegerValueOverflow);
                           pshint(i1-q) end;
 
           58 (*stp*): interpreting := false;
@@ -3774,13 +3861,13 @@ begin (* main *)
 
           60 (*chr*): ; { chr is a no-op }
 
-          61 (*ujc*): errori('Case - error             ');
+          61 (*ujc*): errorv(InvalidCase);
           62 (*rnd*): begin poprel(r1);
                         if dochkovf then if (r1 < -(maxint+0.5)) or (r1 > maxint+0.5) then
-                          errori('Real argument to large   ');
+                          errore(RealArgumentTooLarge);
                         pshint(round(r1)) end;
           63 (*pck*): begin getq; getq1; popadr(a3); popadr(a2); popadr(a1);
-                       if a2+q > q1 then errori('Pack elements out of bnds');
+                       if a2+q > q1 then errore(PackElementsOutOfBounds);
                        for i4 := 0 to q-1 do begin chkdef(a1+a2);
                           store[a3+i4] := store[a1+a2];
                           putdef(a3+i4, getdef(a1+a2));
@@ -3788,7 +3875,7 @@ begin (* main *)
                        end
                      end;
           64 (*upk*): begin getq; getq1; popadr(a3); popadr(a2); popadr(a1);
-                       if a3+q > q1 then errori('Unpack elem out of bnds  ');
+                       if a3+q > q1 then errore(UnpackElementsOutOfBounds);
                        for i4 := 0 to q-1 do begin chkdef(a1+i4);
                           store[a2+a3] := store[a1+i4];
                           putdef(a2+a3, getdef(a1+i4));
@@ -3828,12 +3915,12 @@ begin (* main *)
           191 (*cta*): begin getq; getq1; popint(i); popadr(ad); pshadr(ad);
                              pshint(i); ad := ad-q-intsize; ad1 := getadr(ad);
                              if ad1 < intsize then
-                               errori('System error             ');
+                               errorv(SystemError);
                              ad1 := ad1-adrsize-1;
                              if ad1 >= q1 then begin
                                ad := ad-ad1*intsize;
                                if getadr(ad+(q1-1)*intsize) <> i then
-                                 errori('Change to alloc tagfield ');
+                                 errorv(ChangeToAllocatedTagfield);
                              end
                        end;
 
@@ -3870,9 +3957,10 @@ begin (* main *)
                          { restore previous exception frame }
                          popadr(expmrk); popadr(expstk); popadr(expadr);
                          { if there is no surrounding frame, handle fixed }
-                         if expadr = 0 then errorv(a1)
+                         if expadr = 0 then errorm(a1)
                          else begin { throw to new frame }
-                           pshadr(a1); mp := expmrk; sp := expstk; pc := expadr;
+                           mp := expmrk; sp := expstk; pc := expadr;
+                           popadr(a2); pshadr(a1);
                            ep := getadr(mp+market) { get the mark ep }
                            { release to search vectors }
                          end
@@ -3885,7 +3973,7 @@ begin (* main *)
           216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
           230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 
           244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
-          255: errori('Illegal instruction      ');
+          255: errorv(InvalidInstruction)
 
     end
   end; (*while interpreting*)

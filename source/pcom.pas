@@ -211,9 +211,8 @@ const
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
-   maxexp     = 57;  { number of exception vectors }
    reslen     = 9;   { maximum length of reserved words }
-   explen     = 30;  { length of exception names }
+   explen     = 32;  { length of exception names }
    maxrld     = 22;  { maximum length of real in digit form }
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
@@ -393,7 +392,6 @@ type                                                        (*describing:*)
                 end;
 
       stdrng = 1..maxstd; { range of standard name entries }
-      exprng = 1..maxexp; { range of exception entries }
       
 (*-------------------------------------------------------------------------*)
 
@@ -531,7 +529,6 @@ var
     rop: array [1..maxres(*nr. of res. words*)] of operatort;
     sop: array [char] of operatort;
     na:  array [stdrng] of restr;
-    en: array [1..maxexp] of expstr;
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     cdx: array [0..maxins] of integer;
@@ -1309,7 +1306,9 @@ end;
     { This diagnostic is here because error buffers error numbers til the end
       of line, and sometimes you need to know exactly where they occurred. }
 
+    {
     writeln; writeln('error: ', ferrnr:1);
+    }
     
     errtbl[ferrnr] := true; { track this error }
     if errinx >= 9 then
@@ -6513,64 +6512,81 @@ end;
     entstdprocfunc(proc, 74, 31, nil);     { throw }
     
     { standard exceptions }
-    entstdexp('ValueOutOfRange               ');
-    entstdexp('ArrayLengthMatch              ');
-    entstdexp('CaseValueNotFound             ');
-    entstdexp('ZeroDivide                    ');
-    entstdexp('InvalidOperand                ');
-    entstdexp('NilPointerDereference         ');
-    entstdexp('RealOverflow                  ');
-    entstdexp('RealUnderflow                 ');
-    entstdexp('RealProcessingFault           ');
-    entstdexp('TagValueNotActive             ');
-    entstdexp('TooManyFiles                  ');
-    entstdexp('FileIsOpen                    ');
-    entstdexp('FileAlreadyNamed              ');
-    entstdexp('FileNotOpen                   ');
-    entstdexp('FileModeIncorrect             ');
-    entstdexp('InvalidFieldSpecification     ');
-    entstdexp('InvalidRealNumber             ');
-    entstdexp('InvalidFractionSpecification  ');
-    entstdexp('InvalidIntegerFormat          ');
-    entstdexp('IntegerValueOverflow          ');
-    entstdexp('InvalidRealFormat             ');
-    entstdexp('EndOfFile                     ');
-    entstdexp('InvalidFilePosition           ');
-    entstdexp('FilenameTooLong               ');
-    entstdexp('FileOpenFail                  ');
-    entstdexp('FileSIzeFail                  ');
-    entstdexp('FileCloseFail                 ');
-    entstdexp('FileReadFail                  ');
-    entstdexp('FileWriteFail                 ');
-    entstdexp('FilePositionFail              ');
-    entstdexp('FileDeleteFail                ');
-    entstdexp('FileNameChangeFail            ');
-    entstdexp('SpaceAllocateFail             ');
-    entstdexp('SpaceReleaseFail              ');
-    entstdexp('SpaceAllocateNegative         ');
-    entstdexp('CannotPerformSpecial          ');
-    entstdexp('CommandLineTooLong            ');
-    entstdexp('ReadPastEOF                   ');
-    entstdexp('FileTransferLengthZero        ');
-    entstdexp('FileSizeTooLarge              ');
-    entstdexp('FilenameEmpty                 ');
-    entstdexp('CannotOpenStandard            ');
-    entstdexp('TooManyTemporaryFiles         ');
-    entstdexp('InputBufferOverflow           ');
-    entstdexp('TooManyThreads                ');
-    entstdexp('CannotStartThread             ');
-    entstdexp('InvalidThreadHandle           ');
-    entstdexp('CannotStopThread              ');
-    entstdexp('TooManyIntertaskLocks         ');
-    entstdexp('InvalidLockHandle             ');
-    entstdexp('LockSequenceFail              ');
-    entstdexp('TooManySignals                ');
-    entstdexp('CannotCreateSignal            ');
-    entstdexp('InvalidSignalHandle           ');
-    entstdexp('CannotDeleteSignal            ');
-    entstdexp('CannotSendSignal              ');
-    entstdexp('WaitForSignalFail             ');
-    
+    entstdexp('ValueOutOfRange                 ');
+    entstdexp('ArrayLengthMatch                ');
+    entstdexp('CaseValueNotFound               ');
+    entstdexp('ZeroDivide                      ');
+    entstdexp('InvalidOperand                  ');
+    entstdexp('NilPointerDereference           ');
+    entstdexp('RealOverflow                    ');
+    entstdexp('RealUnderflow                   ');
+    entstdexp('RealProcessingFault             ');
+    entstdexp('TagValueNotActive               ');
+    entstdexp('TooManyFiles                    ');
+    entstdexp('FileIsOpen                      ');
+    entstdexp('FileAlreadyNamed                ');
+    entstdexp('FileNotOpen                     ');
+    entstdexp('FileModeIncorrect               ');
+    entstdexp('InvalidFieldSpecification       ');
+    entstdexp('InvalidRealNumber               ');
+    entstdexp('InvalidFractionSpecification    ');
+    entstdexp('InvalidIntegerFormat            ');
+    entstdexp('IntegerValueOverflow            ');
+    entstdexp('InvalidRealFormat               ');
+    entstdexp('EndOfFile                       ');
+    entstdexp('InvalidFilePosition             ');
+    entstdexp('FilenameTooLong                 ');
+    entstdexp('FileOpenFail                    ');
+    entstdexp('FileSIzeFail                    ');
+    entstdexp('FileCloseFail                   ');
+    entstdexp('FileReadFail                    ');
+    entstdexp('FileWriteFail                   ');
+    entstdexp('FilePositionFail                ');
+    entstdexp('FileDeleteFail                  ');
+    entstdexp('FileNameChangeFail              ');
+    entstdexp('SpaceAllocateFail               ');
+    entstdexp('SpaceReleaseFail                ');
+    entstdexp('SpaceAllocateNegative           ');
+    entstdexp('CannotPerformSpecial            ');
+    entstdexp('CommandLineTooLong              ');
+    entstdexp('ReadPastEOF                     ');
+    entstdexp('FileTransferLengthZero          ');
+    entstdexp('FileSizeTooLarge                ');
+    entstdexp('FilenameEmpty                   ');
+    entstdexp('CannotOpenStandard              ');
+    entstdexp('TooManyTemporaryFiles           ');
+    entstdexp('InputBufferOverflow             ');
+    entstdexp('TooManyThreads                  ');
+    entstdexp('CannotStartThread               ');
+    entstdexp('InvalidThreadHandle             ');
+    entstdexp('CannotStopThread                ');
+    entstdexp('TooManyIntertaskLocks           ');
+    entstdexp('InvalidLockHandle               ');
+    entstdexp('LockSequenceFail                ');
+    entstdexp('TooManySignals                  ');
+    entstdexp('CannotCreateSignal              ');
+    entstdexp('InvalidSignalHandle             ');
+    entstdexp('CannotDeleteSignal              ');
+    entstdexp('CannotSendSignal                ');
+    entstdexp('WaitForSignalFail               ');
+    entstdexp('FieldNotBlank                   ');
+    entstdexp('ReadOnWriteOnlyFile             ');
+    entstdexp('WriteOnReadOnlyFile             ');
+    entstdexp('FileBufferVariableUndefined     ');
+    entstdexp('NondecimalRadixOfNegative       ');
+    entstdexp('InvalidArgumentToLn             ');  
+    entstdexp('InvalidArgumentToSqrt           ');  
+    entstdexp('CannotResetOrRewriteStandardFile');  
+    entstdexp('CannotResetWriteOnlyFile        ');  
+    entstdexp('CannotRewriteReadOnlyFile       ');  
+    entstdexp('ProgramCodeAssertion            ');  
+    entstdexp('SetElementOutOfRange            ');  
+    entstdexp('RealArgumentTooLarge            ');  
+    entstdexp('BooleanOperatorOfNegative       ');  
+    entstdexp('InvalidDivisorToMod             ');  
+    entstdexp('PackElementsOutOfBounds         ');  
+    entstdexp('UnpackElementsOutOfBounds       ');  
+       
   end (*entstdnames*) ;
 
   procedure enterundecl;
