@@ -6579,7 +6579,6 @@ end;
     entstdexp('CannotResetOrRewriteStandardFile');  
     entstdexp('CannotResetWriteOnlyFile        ');  
     entstdexp('CannotRewriteReadOnlyFile       ');  
-    entstdexp('ProgramCodeAssertion            ');  
     entstdexp('SetElementOutOfRange            ');  
     entstdexp('RealArgumentTooLarge            ');  
     entstdexp('BooleanOperatorOfNegative       ');  

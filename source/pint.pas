@@ -315,41 +315,41 @@ const
       CannotResetOrRewriteStandardFile   = 78;
       CannotResetWriteOnlyFile           = 79;
       CannotRewriteReadOnlyFile          = 80;
-      ProgramCodeAssertion               = 81;
-      SetElementOutOfRange               = 82;
-      RealArgumentTooLarge               = 83;
-      BooleanOperatorOfNegative          = 84;
-      InvalidDivisorToMod                = 85;
-      PackElementsOutOfBounds            = 86;
-      UnpackElementsOutOfBounds          = 87;
-      exceptiontop                       = 87;
+      SetElementOutOfRange               = 81;
+      RealArgumentTooLarge               = 82;
+      BooleanOperatorOfNegative          = 83;
+      InvalidDivisorToMod                = 84;
+      PackElementsOutOfBounds            = 85;
+      UnpackElementsOutOfBounds          = 86;
+      exceptiontop                       = 86;
       
       { Exceptions that can't be caught.
         Note that these don't have associated exception variables. }
       
-      UndefinedLocationAccess            = 88;
-      FunctionNotImplemented             = 89;
-      InvalidInISO7185Mode               = 90;
-      HeapFormatInvalid                  = 91;
-      DisposeOfUninitalizedPointer       = 92;
-      DisposeOfNilPointer                = 93;
-      BadPointerValue                    = 94;
-      BlockAlreadyFreed                  = 95;
-      InvalidStandardProcedureOrFunction = 96;
-      InvalidInstruction                 = 97;
-      NewDisposeTagsMismatch             = 98;
-      PCOutOfRange                       = 99;
-      StoreOverflow                      = 100;
-      StackBalance                       = 101;
-      SetInclusion                       = 102;
-      UninitializedPointer               = 103;
-      DereferenceOfNilPointer            = 104;
-      PointerUsedAfterDispose            = 105;
-      VariantNotActive                   = 106;
-      InvalidCase                        = 107;
-      SystemError                        = 108;
-      ChangeToAllocatedTagfield          = 109;
-      UnhandledException                 = 110;
+      UndefinedLocationAccess            = 87;
+      FunctionNotImplemented             = 88;
+      InvalidInISO7185Mode               = 89;
+      HeapFormatInvalid                  = 90;
+      DisposeOfUninitalizedPointer       = 91;
+      DisposeOfNilPointer                = 92;
+      BadPointerValue                    = 93;
+      BlockAlreadyFreed                  = 94;
+      InvalidStandardProcedureOrFunction = 95;
+      InvalidInstruction                 = 96;
+      NewDisposeTagsMismatch             = 97;
+      PCOutOfRange                       = 98;
+      StoreOverflow                      = 99;
+      StackBalance                       = 100;
+      SetInclusion                       = 101;
+      UninitializedPointer               = 102;
+      DereferenceOfNilPointer            = 103;
+      PointerUsedAfterDispose            = 104;
+      VariantNotActive                   = 105;
+      InvalidCase                        = 106;
+      SystemError                        = 107;
+      ChangeToAllocatedTagfield          = 108;
+      UnhandledException                 = 109;
+      ProgramCodeAssertion               = 110;
 
       stringlgth  = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
@@ -566,14 +566,6 @@ begin
    end
 end; (*pmd*)
 
-{ runtime error }
-procedure errori(string: beta);
-begin writeln; write('*** Runtime error');
-      if srclin > 0 then write(' [', srclin:1, ']');
-      writeln(': ', string);
-      pmd; goto 1
-end;(*errori*)
-
 procedure errors(a: address; l: address);
 begin writeln; write('*** Runtime error'); 
       if srclin > 0 then write(' [', srclin:1, ']');
@@ -668,38 +660,38 @@ begin writeln; write('*** Runtime error');
     78: writeln('Cannot Reset Or Rewrite Standard File'); 
     79: writeln('Cannot Reset Write Only File');         
     80: writeln('Cannot Rewrite Read Only File');        
-    81: writeln('Program Code Assertion');             
-    82: writeln('Set Element Out Of Range');             
-    83: writeln('Real Argument Too Large');             
-    84: writeln('Boolean Operator Of Negative');        
-    85: writeln('Invalid Divisor To Mod');              
-    86: writeln('Pack Elements Out Of Bounds');          
-    87: writeln('Unpack Elements Out Of Bounds');        
+    81: writeln('Set Element Out Of Range');             
+    82: writeln('Real Argument Too Large');             
+    83: writeln('Boolean Operator Of Negative');        
+    84: writeln('Invalid Divisor To Mod');              
+    85: writeln('Pack Elements Out Of Bounds');          
+    86: writeln('Unpack Elements Out Of Bounds');        
 
     { Exceptions that can't be intercepted }
-    88: writeln('Undefined location access');
-    89: writeln('Function not implemented');
-    90: writeln('Invalid In ISO 7185 Mode');              
-    91: writeln('Heap Format Invalid');                 
-    92: writeln('Dispose Of Uninitalized Pointer');      
-    93: writeln('Dispose Of Nil Pointer');               
-    94: writeln('Bad Pointer Value');                   
-    95: writeln('Block Already Freed');                 
-    96: writeln('Invalid Standard Procedure Or Function');
-    97: writeln('Invalid Instruction');                
-    98: writeln('New Dispose Tags Mismatch');            
-    99: writeln('PC Out Of Range');                      
-    100: writeln('Store Overflow');                    
-    101: writeln('Stack Balance');                     
-    102: writeln('Set Inclusion');                     
-    103: writeln('Uninitialized Pointer');             
-    104: writeln('Dereference Of Nil Pointer');          
-    105: writeln('Pointer Used After Dispose');          
-    106: writeln('Variant Not Active');                 
-    107: writeln('Invalid Case');                      
-    108: writeln('System Error');                      
-    109: writeln('Change To Allocated Tag field');  
-    110: writeln('Unhandled exception');      
+    87: writeln('Undefined location access');
+    88: writeln('Function not implemented');
+    89: writeln('Invalid In ISO 7185 Mode');              
+    90: writeln('Heap Format Invalid');                 
+    91: writeln('Dispose Of Uninitalized Pointer');      
+    92: writeln('Dispose Of Nil Pointer');               
+    93: writeln('Bad Pointer Value');                   
+    94: writeln('Block Already Freed');                 
+    95: writeln('Invalid Standard Procedure Or Function');
+    96: writeln('Invalid Instruction');                
+    97: writeln('New Dispose Tags Mismatch');            
+    98: writeln('PC Out Of Range');                      
+    99: writeln('Store Overflow');                    
+    100: writeln('Stack Balance');                     
+    101: writeln('Set Inclusion');                     
+    102: writeln('Uninitialized Pointer');             
+    103: writeln('Dereference Of Nil Pointer');          
+    104: writeln('Pointer Used After Dispose');          
+    105: writeln('Variant Not Active');                 
+    106: writeln('Invalid Case');                      
+    107: writeln('System Error');                      
+    108: writeln('Change To Allocated Tag field');  
+    109: writeln('Unhandled exception');   
+    110: writeln('Program Code Assertion');   
   end;
   pmd; goto 1
 end;
@@ -3323,7 +3315,7 @@ begin (*callsp*)
                        end;  
            59 (*hlt*): goto 2;
            60 (*ast*): begin popint(i); 
-                         if i = 0 then errore(ProgramCodeAssertion);
+                         if i = 0 then errorv(ProgramCodeAssertion);
                        end;
            61 (*asts*): begin popint(i); popadr(ad); popint(j);
                          if j = 0 then errors(ad, i);
