@@ -207,7 +207,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;  { number of standard procedures/functions }
-   maxins     = 86;  { maximum number of instructions }
+   maxins     = 87;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
@@ -216,6 +216,7 @@ const
    maxrld     = 22;  { maximum length of real in digit form }
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
+   minocc     = 50;  { minimum occupancy for case tables }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -3754,6 +3755,16 @@ end;
           begin putic; writeln(prr,mn[fop]:4, ' l':8,fp2:4) end;
         ic := ic + 1; mes(fop)
       end (*genujpxjp*);
+      
+      procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
+      begin
+       if prcode then
+          begin putic; 
+            writeln(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
+                        ' l':8,fp3:4) 
+          end;
+        ic := ic + 1; mes(fop)
+      end (*genujpxjp*);
 
       procedure genipj(fop: oprange; fp1, fp2: integer);
       begin
@@ -5607,7 +5618,14 @@ end;
           label 1;
           var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
               laddr, lcix, lcix1, lelse, lelse2, lmin, lmax: integer;
-              test: boolean; i: integer;
+              test: boolean; i,occ: integer;
+        function casecount(cp: cip): integer;
+        var c: integer;
+        begin c := 0; 
+          while cp <> nil do 
+            begin c := c+cp^.cslabe-cp^.cslabs+1; cp := cp^.next end;
+          casecount := c
+        end;
         begin expression(fsys + [ofsy,comma,colon], false);
           load; genlabel(lcix); lelse := 0;
           lsp := gattr.typtr;
@@ -5673,7 +5691,8 @@ end;
             addlvl;
             statement(fsys + [semicolon]);
             sublvl;
-            genujpxjp(57(*ujp*),laddr)
+            genujpxjp(57(*ujp*),laddr);
+            if sy = semicolon then insymbol
           end;
           putlabel(lcix);
           mesl(-intsize); { put selector back on stack }
@@ -5685,34 +5704,49 @@ end;
                 fstptr := lpt1; lpt1 := lpt2
               until lpt1 = nil;
               lmin := fstptr^.cslabs;
-              if lmax - lmin < cixmax then
+              { find occupancy }
+              occ := casecount(fstptr)*100 div (lmax-lmin+1);
+              if lmax - lmin < cixmax then 
                 begin
-                  if lelse > 0 then begin
-                    gen0t(76(*dup*),intptr); 
-                    gen2(51(*ldc*),1,lmin);
-                    gen2(53(*les*),ord('i'),0);
-                    genujpxjp(73(*tjp*),lelse2); 
-                    gen0t(76(*dup*),intptr);
-                    gen2(51(*ldc*),1,lmax); 
-                    gen2(49(*grt*),ord('i'),0);
-                    genujpxjp(73(*tjp*),lelse2);
-                  end else gen2t(45(*chk*),lmin,lmax,intptr);
-                  gen2(51(*ldc*),1,lmin); gen0(21(*sbi*)); genlabel(lcix);
-                  genujpxjp(44(*xjp*),lcix); putlabel(lcix);
-                  repeat
-                    with fstptr^ do
-                      begin
-                        while cslabs > lmin do begin
-                           if lelse > 0 then genujpxjp(57(*ujp*),lelse)
-                           else gen0(60(*ujc error*));
-                           lmin := lmin+1
-                        end;
-                        for i := cslabs to cslabe do
-                          genujpxjp(57(*ujp*),csstart);
+                  if occ >= minocc then begin { build straight vector table }
+                    if lelse > 0 then begin
+                      gen0t(76(*dup*),intptr); 
+                      gen2(51(*ldc*),1,lmin);
+                      gen2(53(*les*),ord('i'),0);
+                      genujpxjp(73(*tjp*),lelse2); 
+                      gen0t(76(*dup*),intptr);
+                      gen2(51(*ldc*),1,lmax); 
+                      gen2(49(*grt*),ord('i'),0);
+                      genujpxjp(73(*tjp*),lelse2);
+                    end else gen2t(45(*chk*),lmin,lmax,intptr);
+                    gen2(51(*ldc*),1,lmin); gen0(21(*sbi*)); genlabel(lcix);
+                    genujpxjp(44(*xjp*),lcix); putlabel(lcix);
+                    repeat
+                      with fstptr^ do
+                        begin
+                          while cslabs > lmin do begin
+                             if lelse > 0 then genujpxjp(57(*ujp*),lelse)
+                             else gen0(60(*ujc error*));
+                             lmin := lmin+1
+                          end;
+                          for i := cslabs to cslabe do
+                            genujpxjp(57(*ujp*),csstart);
+                          lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
+                          putcas(lpt1);
+                        end
+                    until fstptr = nil;
+                  end else begin
+                    { devolve to comp/jmp seq }
+                    repeat
+                      with fstptr^ do begin
+                        gencjp(87(*cjp*),cslabs,cslabe,csstart);   
                         lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
                         putcas(lpt1);
                       end
-                  until fstptr = nil;
+                    until fstptr = nil;
+                    if lelse > 0 then genujpxjp(57(*ujp*),lelse2);
+                    mesl(+intsize) { remove selector from stack }
+                  end;
                   putlabel(laddr)
                 end
               else begin
@@ -6830,7 +6864,7 @@ end;
       mn[73] :=' tjp'; mn[74] :=' lip'; mn[75] :=' ckv'; mn[76] :=' dup';
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
-      mn[85] :=' ede'; mn[86] :=' mse';
+      mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp';
 
     end (*instrmnemonics*) ;
 
@@ -6946,7 +6980,7 @@ end;
       cdx[80] :=  2{*};                cdx[81] :=  0;
       cdx[82] :=  0;                   cdx[83] := +intsize;
       cdx[84] := -adrsize;             cdx[85] := +adrsize;
-      cdx[86] := 0;
+      cdx[86] := 0;                    cdx[87] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

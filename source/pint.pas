@@ -698,12 +698,10 @@ end;
 
 procedure errorm(ea: address);
 begin 
-;writeln; writeln('errorm: begin: ea: ', ea:1);
   { check is a standard exception }
   if (ea-pctop >= exceptionbase) and 
      (ea-pctop <= exceptiontop) then errorv(ea-pctop)
   else errorv(UnhandledException)
-;writeln; writeln('errorm: end');
 end;
 
 { get bit from defined array }
@@ -1413,6 +1411,7 @@ procedure pshadr(a: address); begin sp := sp-adrsize; putadr(sp, a) end;
 { throw an exception by vector }
 procedure errore {(ei: integer)} ;
 begin
+  if expadr = 0 then errorm(pctop+ei); { no surrounding frame, throw system }
   mp := expmrk; sp := expstk; pc := expadr; popadr(ad2); pshadr(pctop+ei); 
   ep := getadr(mp+market) { get the mark ep }
 end;
@@ -1555,7 +1554,7 @@ procedure load;
          instr[  5]:='lao       '; insp[  5] := false; insq[  5] := intsize;
          instr[  6]:='stoi      '; insp[  6] := false; insq[  6] := 0;
          instr[  7]:='ldcs      '; insp[  7] := false; insq[  7] := intsize;
-         instr[  8]:='---       '; insp[  8] := false; insq[  8] := 0;
+         instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
          instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
@@ -2142,8 +2141,10 @@ procedure load;
                            end (*case*)
                      end;
 
-           26, 95, 96, 97, 98, 99, 190, 199 (*chk*): begin
+           26, 95, 96, 97, 98, 99, 190, 199,8 (*chk,cjp*): begin
                          read(prd,lb,ub);
+                         { cjp is compare with jump }
+                         if op = 8 then begin labelsearch; q1 := q end;
                          if (op = 95) or (op = 190) then q := lb
                          else
                          begin
@@ -2156,7 +2157,8 @@ procedure load;
                            if cp <= 0 then errorl('constant table overflow  ');
                            putint(cp, lb); q := cp
                          end;
-                         storeop; storeq
+                         storeop; storeq; 
+                         if op = 8 then storeq1
                        end;
 
            56 (*lca*): begin read(prd,l); skpspc;
@@ -3958,14 +3960,18 @@ begin (* main *)
                            { release to search vectors }
                          end
                        end;
+          8 (*cjp*): begin getq; getq1; popint(i1); pshint(i1);
+                        if (i1 >= getint(q)) and (i1 <= getint(q+intsize)) then
+                          begin pc := q1; popint(i1) end
+                      end;
                        
 
           { illegal instructions }
-          8,    19,  20,  21,  22,  27,  91,  92,  96, 100, 101, 102, 111, 115, 
-          116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 
-          216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
-          230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 
-          244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+          19,  20,  21,  22,  27,  91,  92,  96,  100, 101, 102, 111, 115, 116,
+          121, 122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216,
+          217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
+          231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
+          245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
           255: errorv(InvalidInstruction)
 
     end
