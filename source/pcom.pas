@@ -388,7 +388,7 @@ type                                                        (*describing:*)
      cip = ^caseinfo;
      caseinfo = record next: cip;
                   csstart: integer;
-                  cslab: integer
+                  cslabs,cslabe: integer
                 end;
 
       stdrng = 1..maxstd; { range of standard name entries }
@@ -507,7 +507,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..500
+                      nmr: 1..504
                end;
 
 
@@ -537,7 +537,7 @@ var
     ordint: array [char] of integer;
 
     intlabel,mxint10,maxpow10: integer;
-    errtbl: array [1..500] of boolean; { error occrence tracking }
+    errtbl: array [1..504] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
@@ -550,7 +550,7 @@ var
     cipcnt: integer; { case entry tracking counts }
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..500; { index for error number tracking array }
+    i: 1..504; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -5605,41 +5605,46 @@ end;
 
         procedure casestatement;
           label 1;
-          var lsp,lsp1: stp; fstptr,lpt1,lpt2,lpt3: cip; lval: valu;
-              laddr, lcix, lcix1, lmin, lmax: integer;
-              test: boolean;
+          var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
+              laddr, lcix, lcix1, lelse, lelse2, lmin, lmax: integer;
+              test: boolean; i: integer;
         begin expression(fsys + [ofsy,comma,colon], false);
-          load; genlabel(lcix);
+          load; genlabel(lcix); lelse := 0;
           lsp := gattr.typtr;
           if lsp <> nil then
             if (lsp^.form <> scalar) or (lsp = realptr) then
               begin error(144); lsp := nil end
             else if not comptypes(lsp,intptr) then gen0t(58(*ord*),lsp);
           genujpxjp(57(*ujp*),lcix);
-          mesl(-intsize); { remove selector from stack }
+          mesl(+intsize); { remove selector from stack }
           if sy = ofsy then insymbol else error(8);
           fstptr := nil; genlabel(laddr);
           repeat
             lpt3 := nil; genlabel(lcix1);
-            if not(sy in [semicolon,endsy]) then
+            if not(sy in [semicolon,endsy,elsesy]) then
               begin
-                repeat constant(fsys + [comma,colon],lsp1,lval);
+                repeat constant(fsys + [comma,colon,range],lsp1,lvals);
+                  lvale := lvals;
+                  if sy = range then begin
+                    chkstd; insymbol; 
+                    constant(fsys + [comma,colon],lsp2,lvale);
+                    if lvale.ival < lvals.ival then error(225)
+                  end;
                   if lsp <> nil then
                     if comptypes(lsp,lsp1) then
                       begin lpt1 := fstptr; lpt2 := nil;
                         while lpt1 <> nil do
                           with lpt1^ do
                             begin
-                              if cslab <= lval.ival then
-                                begin if cslab = lval.ival then error(156);
-                                  goto 1
-                                end;
+                              if (cslabs <= lvale.ival) and
+                                 (cslabe >= lvals.ival) then error(156);
+                              if cslabs <= lvals.ival then goto 1;
                               lpt2 := lpt1; lpt1 := next
                             end;
-            1:    getcas(lpt3);
+            1:          getcas(lpt3);
                         with lpt3^ do
-                          begin next := lpt1; cslab := lval.ival;
-                            csstart := lcix1
+                          begin next := lpt1; cslabs := lvals.ival; 
+                            cslabe := lvale.ival; csstart := lcix1
                           end;
                         if lpt2 = nil then fstptr := lpt3
                         else lpt2^.next := lpt3
@@ -5655,36 +5660,56 @@ end;
                   statement(fsys + [semicolon]);
                   sublvl
                 until not (sy in statbegsys);
-                if lpt3 <> nil then
-                  genujpxjp(57(*ujp*),laddr);
+                if lpt3 <> nil then genujpxjp(57(*ujp*),laddr);
               end;
             test := sy <> semicolon;
             if not test then insymbol
           until test;
+          if sy = elsesy then begin chkstd; insymbol; genlabel(lelse);
+            genlabel(lelse2); putlabel(lelse2);
+            mesl(-intsize); { put selector on stack }
+            gen1(71(*dmp*),intsize); 
+            putlabel(lelse);
+            addlvl;
+            statement(fsys + [semicolon]);
+            sublvl;
+            genujpxjp(57(*ujp*),laddr)
+          end;
           putlabel(lcix);
-          mesl(+intsize); { put selector back on stack }
+          mesl(-intsize); { put selector back on stack }
           if fstptr <> nil then
-            begin lmax := fstptr^.cslab;
+            begin lmax := fstptr^.cslabe;
               (*reverse pointers*)
               lpt1 := fstptr; fstptr := nil;
               repeat lpt2 := lpt1^.next; lpt1^.next := fstptr;
                 fstptr := lpt1; lpt1 := lpt2
               until lpt1 = nil;
-              lmin := fstptr^.cslab;
+              lmin := fstptr^.cslabs;
               if lmax - lmin < cixmax then
                 begin
-                  gen2t(45(*chk*),lmin,lmax,intptr);
+                  if lelse > 0 then begin
+                    gen0t(76(*dup*),intptr); 
+                    gen2(51(*ldc*),1,lmin);
+                    gen2(53(*les*),ord('i'),0);
+                    genujpxjp(73(*tjp*),lelse2); 
+                    gen0t(76(*dup*),intptr);
+                    gen2(51(*ldc*),1,lmax); 
+                    gen2(49(*grt*),ord('i'),0);
+                    genujpxjp(73(*tjp*),lelse2);
+                  end else gen2t(45(*chk*),lmin,lmax,intptr);
                   gen2(51(*ldc*),1,lmin); gen0(21(*sbi*)); genlabel(lcix);
                   genujpxjp(44(*xjp*),lcix); putlabel(lcix);
                   repeat
                     with fstptr^ do
                       begin
-                        while cslab > lmin do
-                           begin gen0(60(*ujc error*));
-                             lmin := lmin+1
-                           end;
-                        genujpxjp(57(*ujp*),csstart);
-                        lpt1 := fstptr; fstptr := next; lmin := lmin + 1;
+                        while cslabs > lmin do begin
+                           if lelse > 0 then genujpxjp(57(*ujp*),lelse)
+                           else gen0(60(*ujc error*));
+                           lmin := lmin+1
+                        end;
+                        for i := cslabs to cslabe do
+                          genujpxjp(57(*ujp*),csstart);
+                        lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
                         putcas(lpt1);
                       end
                   until fstptr = nil;
@@ -5701,7 +5726,7 @@ end;
                 until fstptr = nil
               end
             end;
-            if sy = endsy then insymbol else error(13)
+          if sy = endsy then insymbol else error(13)
         end (*casestatement*) ;
 
         procedure repeatstatement;
