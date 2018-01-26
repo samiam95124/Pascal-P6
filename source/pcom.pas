@@ -7139,7 +7139,9 @@ begin
   
   { write initial option values }
   write(prr, 'o '); 
-  for c := 'a' to 'z' do begin write(prr, c); 
+  for c := 'a' to 'z' do 
+    if not (c in ['g','h','n','o','p','q','s','w','r']) then
+      begin write(prr, c); 
     if option[c] then write(prr, '+') else write(prr, '-')
   end;
   writeln(prr);
