@@ -1367,6 +1367,14 @@ begin
   if iso7185 then errorv(InvalidInISO7185Mode)
 end;
   
+function isbrk(a: address): boolean;
+var i: 1..maxbrk;
+    m: boolean;
+begin m := false;
+  for i := 1 to maxbrk do if brktbl[i].sa = a then m := true;
+  isbrk := m
+end;
+
 { list single instruction at address }
 
 procedure lstins(var ad: address);
@@ -1422,6 +1430,7 @@ begin
    i := 0;
    while i < lsttop do begin
 
+      if isbrk(i) then write('b ') else write('  ');
       wrthex(i, maxdigh);
       lstins(i);
       writeln
@@ -3286,7 +3295,8 @@ begin
   (*execute*)
 
   { trace executed instructions }
-  if dotrcins and (op <> brkins) then begin
+  if dotrcins then begin
+    if isbrk(pcs) then write('b ') else write('  ');
     wrthex(pcs, maxdigh);
     write('/');
     wrthex(sp, maxdigh);
@@ -3901,14 +3911,6 @@ begin
     if sa > 0 then begin ss := store[sa]; store[sa] := brkins end
 end;
 
-function isbrk(a: address): boolean;
-var i: 1..maxbrk;
-    m: boolean;
-begin m := false;
-  for i := 1 to maxbrk do if brktbl[i].sa = a then m := true;
-  isbrk := m
-end;
-
 procedure prtrng(a, b: address);
 var i: 1..maxdigh;
 begin
@@ -3952,6 +3954,7 @@ begin
   write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
   write(' cp: '); wrthex(cp, maxdigh);
   writeln;
+  if isbrk(pc) then write('b ') else write('  ');
   wrthex(pc, maxdigh); ad := pc; lstins(ad); 
   writeln
 end;
@@ -4008,6 +4011,7 @@ begin { debug }
         writeln('Addr    Op Ins         P  Q');
         writeln('----------------------------------');
         while s <= e do begin
+          if isbrk(s) then write('b ') else write('  ');
           wrthex(s, maxdigh);
           lstins(s);
           writeln
