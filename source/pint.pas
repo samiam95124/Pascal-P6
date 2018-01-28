@@ -1850,7 +1850,8 @@ procedure load;
       while again do
             begin if eof(prd) then errorl('unexpected eof on input  ');
                   getnxt;(* first character of line*)
-                  if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g']) then
+                  if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g', 'b',
+                                 'e', 's']) then
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
@@ -1906,6 +1907,9 @@ procedure load;
                               getlin;
                             end;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
+                       'b': getlin; { begin block }
+                       'e': getlin; { end block }
+                       's': getlin; { symbol }
                   end;
             end
    end; (*generate*)

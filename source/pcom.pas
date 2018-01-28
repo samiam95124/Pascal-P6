@@ -302,7 +302,8 @@ type                                                        (*describing:*)
                      records:  (fstfld: ctp; recvar: stp; recyc: stp);
                      files:    (filtype: stp);
                      tagfld:   (tagfieldp: ctp; fstvar: stp);
-                     variant:  (nxtvar,subvar,caslst: stp; varval: valu);
+                     variant:  (nxtvar,subvar,caslst: stp; varfld: ctp; 
+                                varval: valu);
                      except:   ()
                    end;
 
@@ -788,7 +789,7 @@ var
     strequri := m
   end { equstr };
 
-  { write variable length id string to output }
+  { write variable length id string to file }
   procedure writev(var f: text; s: strvsp; fl: integer);
   var i: integer; c: char;
   begin i := 1;
@@ -1071,33 +1072,33 @@ end;
     var lastpos,freepos,currpos,currnmr,f,k: integer;
   begin
     if errinx > 0 then   (*output error messages*)
-      begin write(output,linecount:6,' ****  ':9);
+      begin write(linecount:6,' ****  ':9);
         lastpos := -1; freepos := 1;
         for k := 1 to errinx do
           begin
             with errlist[k] do
               begin currpos := pos; currnmr := nmr end;
-            if currpos = lastpos then write(output,',')
+            if currpos = lastpos then write(',')
             else
               begin
                 while freepos < currpos do
-                  begin write(output,' '); freepos := freepos + 1 end;
-                write(output,'^');
+                  begin write(' '); freepos := freepos + 1 end;
+                write('^');
                 lastpos := currpos
               end;
             if currnmr < 10 then f := 1
             else if currnmr < 100 then f := 2
               else f := 3;
-            write(output,currnmr:f);
+            write(currnmr:f);
             freepos := freepos + f + 1
           end;
         writeln(output); errinx := 0
       end;
     linecount := linecount + 1;
     if list and (not eof(prd)) then
-      begin write(output,linecount:6,'  ':2);
-        if dp then write(output,lc:7) else write(output,ic:7);
-        write(output,' ')
+      begin write(linecount:6,'  ':2);
+        if dp then write(lc:7) else write(ic:7);
+        write(' ')
       end;
     { output line marker in intermediate file }
     if not eof(prd) then begin
@@ -1346,11 +1347,11 @@ end;
       end;
       if not eof(prd) then
        begin eol := eoln(prd); read(prd,ch);
-        if list then write(output,ch);
+        if list then write(ch);
         chcnt := chcnt + 1
        end
       else
-        begin writeln(output,'   *** eof ','encountered');
+        begin writeln('   *** eof ','encountered');
           test := false
         end
     end;
@@ -1960,7 +1961,8 @@ end;
               records:  begin markctp(fstfld); markstp(recvar) end;
               files:    markstp(filtype);
               tagfld:   markstp(fstvar);
-              variant:  begin markstp(nxtvar); markstp(subvar) end
+              variant:  begin markstp(nxtvar); markstp(subvar) end;
+              except:   ;
               end (*case*)
             end (*with*)
       end (*markstp*);
@@ -1988,16 +1990,16 @@ end;
           if marked then
             begin marked := false; write('S: ', stptoint(fp):intdig,' ', size:intdig, ' ');
               case form of
-              scalar:   begin write(output,'scalar':intdig, ' ');
+              scalar:   begin write('scalar':intdig, ' ');
                           if scalkind = standard then
-                            write(output,'standard':intdig)
-                          else write(output,'declared':intdig,' ',ctptoint(fconst):intdig);
+                            write('standard':intdig)
+                          else write('declared':intdig,' ',ctptoint(fconst):intdig);
                           writeln(output)
                         end;
               subrange: begin
-                          write(output,'subrange':intdig,' ',stptoint(rangetype):intdig, ' ');
+                          write('subrange':intdig,' ',stptoint(rangetype):intdig, ' ');
                           if rangetype <> realptr then
-                            write(output,min.ival:intdig, ' ', max.ival:intdig)
+                            write(min.ival:intdig, ' ', max.ival:intdig)
                           else
                             if (min.valp <> nil) and (max.valp <> nil) then begin
                               write(' '); write(min.valp^.rval:9);
@@ -2005,31 +2007,33 @@ end;
                             end;
                           writeln(output); followstp(rangetype);
                         end;
-              pointer:  writeln(output,'pointer':intdig,' ',stptoint(eltype):intdig);
-              power:    begin writeln(output,'set':intdig,' ',stptoint(elset):intdig);
+              pointer:  writeln('pointer':intdig,' ',stptoint(eltype):intdig);
+              power:    begin writeln('set':intdig,' ',stptoint(elset):intdig);
                           followstp(elset)
                         end;
               arrays:   begin
-                          writeln(output,'array':intdig,' ',stptoint(aeltype):intdig,' ',
+                          writeln('array':intdig,' ',stptoint(aeltype):intdig,' ',
                             stptoint(inxtype):intdig);
                           followstp(aeltype); followstp(inxtype)
                         end;
               records:  begin
-                          writeln(output,'record':intdig,' ',ctptoint(fstfld):intdig,' ',
-                            stptoint(recvar):intdig); followctp(fstfld);
-                          followstp(recvar)
+                          writeln('record':intdig,' ',ctptoint(fstfld):intdig,' ',
+                            stptoint(recvar):intdig, ' ', stptoint(recyc):intdig); 
+                          followctp(fstfld); followstp(recvar)
                         end;
-              files:    begin writeln(output,'file':intdig,' ',stptoint(filtype):intdig);
+              files:    begin writeln('file':intdig,' ',stptoint(filtype):intdig);
                           followstp(filtype)
                         end;
-              tagfld:   begin writeln(output,'tagfld':intdig,' ',ctptoint(tagfieldp):intdig,
+              tagfld:   begin writeln('tagfld':intdig,' ',ctptoint(tagfieldp):intdig,
                             ' ',stptoint(fstvar):intdig);
                           followstp(fstvar)
                         end;
-              variant:  begin writeln(output,'variant':intdig,' ',stptoint(nxtvar):intdig,
-                            ' ',stptoint(subvar):intdig,varval.ival);
+              variant:  begin writeln('variant':intdig,' ',stptoint(nxtvar):intdig,
+                            ' ',stptoint(subvar):intdig,' ',stptoint(caslst):intdig, 
+                            ' ',varval.ival);
                           followstp(nxtvar); followstp(subvar)
-                        end
+                        end;
+              except:  begin writeln('except':intdig) end
               end (*case*)
             end (*if marked*)
     end (*followstp*);
@@ -2042,8 +2046,8 @@ end;
                 writev(output, name, intdig); write(' ', ctptoint(llink):intdig,
             ' ',ctptoint(rlink):intdig,' ',stptoint(idtype):intdig, ' ');
             case klass of
-              types: write(output,'type':intdig);
-              konst: begin write(output,'constant':intdig,' ',ctptoint(next):intdig, ' ');
+              types: write('type':intdig);
+              konst: begin write('constant':intdig,' ',ctptoint(next):intdig, ' ');
                        if idtype <> nil then
                          if idtype = realptr then
                            begin
@@ -2060,31 +2064,46 @@ end;
                                      writev(output, sval, slgth)
                                  end
                              end
-                           else write(output,values.ival:intdig)
+                           else write(values.ival:intdig)
                      end;
-              vars:  begin write(output,'variable':intdig, ' ');
-                       if vkind = actual then write(output,'actual':intdig)
-                       else write(output,'formal':intdig);
-                       write(output,' ',ctptoint(next):intdig,' ', vlev:intdig,' ',vaddr:intdig);
+              vars:  begin write('variable':intdig, ' ');
+                       if vkind = actual then write('actual':intdig)
+                       else write('formal':intdig);
+                       write(' ',ctptoint(next):intdig,' ', vlev:intdig,' ',vaddr:intdig, ' ');
+                       if threat then write('threat':intdig) else write(' ':intdig);
+                       write(' ', forcnt:intdig, ' ');
+                       case part of 
+                         ptval: write('value':intdig, ' '); 
+                         ptvar: write('var':intdig, ' ');
+                         ptview: write('view':intdig, ' ');
+                         ptout:write('out':intdig, ' ');
+                       end;
+                       if hdr then write('header':intdig) else write(' ':intdig)
                      end;
-              field: write(output,'field':intdig,' ',ctptoint(next):intdig,' ',fldaddr:intdig);
+              field: begin write('field':intdig,' ',ctptoint(next):intdig,' ',
+                                 fldaddr:intdig,' ',stptoint(varnt):intdig,' ',
+                                 ctptoint(varlb):intdig,' ');
+                       if tagfield then write('tagfield':intdig) else write(' ':intdig);
+                       write(' ', taglvl:intdig, ' ',varsaddr:intdig, ' ', varssize:intdig)
+                     end;             
               proc,
               func:  begin
-                       if klass = proc then write(output,'procedure':intdig, ' ')
-                       else write(output,'function':intdig, ' ');
+                       if klass = proc then write('procedure':intdig, ' ')
+                       else write('function':intdig, ' ');
+                       if asgn then write('assigned':intdig, ' ') else write(' ':intdig, ' ');
                        if pfdeckind = standard then
-                         write(output,'standard':intdig, '-', key:intdig)
+                         write('standard':intdig, '-', key:intdig)
                        else
-                         begin write(output,'declared':intdig,'-',ctptoint(next):intdig, '-');
-                           write(output,pflev:intdig,' ',pfname:intdig, ' ');
+                         begin write('declared':intdig,'-',ctptoint(next):intdig, '-');
+                           write(pflev:intdig,' ',pfname:intdig, ' ');
                            if pfkind = actual then
-                             begin write(output,'actual':intdig, ' ');
-                               if forwdecl then write(output,'forward':intdig, ' ')
-                               else write(output,'notforward':intdig, ' ');
-                               if externl then write(output,'extern':intdig)
-                               else write(output,'not extern':intdig);
+                             begin write('actual':intdig, ' ');
+                               if forwdecl then write('forward':intdig, ' ')
+                               else write('notforward':intdig, ' ');
+                               if externl then write('extern':intdig)
+                               else write('not extern':intdig);
                              end
-                           else write(output,'formal':intdig)
+                           else write('formal':intdig)
                          end
                      end
             end (*case*);
@@ -2097,17 +2116,18 @@ end;
   begin (*printtables*)
     writeln(output); writeln(output); writeln(output);
     if fb then lim := 0
-    else begin lim := top; write(output,' local') end;
-    writeln(output,' tables:'); writeln(output);
+    else begin lim := top; write(' local') end;
+    writeln(' tables:'); writeln(output);
     writeln('C: ', 'Entry #':intdig, ' ', 'Id':intdig, ' ', 'llink':intdig, ' ',
             'rlink':intdig, ' ', 'Typ':intdig, ' ', 'Class':intdig);
     writeln('S: ', 'Entry #':intdig, ' ', 'Size':intdig, ' ', 'Form ':intdig);
-    writeln('===============================================================');
+    write('===============================================================');
+    writeln('==========================');
     marker;
     for i := top downto lim do
       followctp(display[i].fname);
     writeln(output);
-    if not eol then write(output,' ':chcnt+16)
+    if not eol then write(' ':chcnt+16)
   end (*printtables*);
 
   procedure chkrefs(p: ctp; var w: boolean);
@@ -2445,6 +2465,7 @@ end;
         files:    f := true;
         tagfld:   ;
         variant:  ;
+        except:   ;
       end;
       filecomponent := f
     end;
@@ -2494,7 +2515,7 @@ end;
           test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
-        var lsp,lsp1: stp; lcp,lcp1: ctp; ttop: disprange;
+        var lsp,lsp1: stp; lcp,lcp1,lcp2: ctp; ttop: disprange;
             lcnt: integer; lvalu: valu;
       begin fsize := 1;
         if not (sy in simptypebegsys) then
@@ -2586,18 +2607,19 @@ end;
       end (*simpletype*) ;
 
       procedure fieldlist(fsys: setofsys; var frecvar: stp; vartyp: stp;
-                          varlab: ctp; lvl: integer);
-        var lcp,lcp1,nxt,nxt1: ctp; lsp,lsp1,lsp2,lsp3,lsp4: stp;
+                          varlab: ctp; lvl: integer; var fstlab: ctp);
+        var lcp,lcp1,lcp2,nxt,nxt1: ctp; lsp,lsp1,lsp2,lsp3,lsp4: stp;
             minsize,maxsize,lsize: addrrange; lvalu,rvalu: valu;
             test: boolean; mm: boolean;
-      begin nxt1 := nil; lsp := nil;
+      begin nxt1 := nil; lsp := nil; fstlab := nil;
         if not (sy in (fsys+[ident,casesy])) then
           begin error(19); skip(fsys + [ident,casesy]) end;
         while sy = ident do
           begin nxt := nxt1;
             repeat
               if sy = ident then
-                begin new(lcp,field); ininam(lcp);
+                begin new(lcp,field); ininam(lcp); 
+                  if fstlab = nil then fstlab := lcp;
                   with lcp^ do
                     begin strassvf(name, id); idtype := nil; next := nxt;
                       klass := field; varnt := vartyp; varlb := varlab;
@@ -2722,11 +2744,12 @@ end;
                 if sy = lparent then insymbol else error(9);
                 alignu(nilptr, displ); { max align all variants }
                 if lcp <> nil then lcp^.varsaddr := displ;
-                fieldlist(fsys + [rparent,semicolon],lsp2,lsp3,lcp, lvl+1);
+                fieldlist(fsys + [rparent,semicolon],lsp2,lsp3,lcp, lvl+1,lcp2);
                 if displ > maxsize then maxsize := displ;
                 if lcp <> nil then lcp^.varssize := maxsize-lcp^.varsaddr;
                 while lsp3 <> nil do
                   begin lsp4 := lsp3^.subvar; lsp3^.subvar := lsp2;
+                    lsp3^.varfld := lcp2;
                     lsp3^.size := displ;
                     lsp3 := lsp4
                   end;
@@ -2865,7 +2888,7 @@ end;
                         end
                       else error(250);
                       displ := 0;
-                      fieldlist(fsys-[semicolon]+[endsy],lsp1,nil,nil,1);
+                      fieldlist(fsys-[semicolon]+[endsy],lsp1,nil,nil,1,lcp);
                       new(lsp,records);
                       with lsp^ do
                         begin fstfld := display[top].fname;
@@ -2996,6 +3019,72 @@ end;
       resolvep
     end (*typedeclaration*) ;
 
+    { write shorthand type }
+    procedure wrttyp(var f: text; tp: stp);
+    var cp: ctp;
+    
+    procedure wrtrfd(fld: ctp);
+    begin
+      while fld <> nil do begin
+        with fld^ do begin
+          writev(f, name, lenpv(name)); write(f, ':'); 
+          if klass = field then write(f, fldaddr:1) else write(f, '?'); 
+          write(f, ':'); wrttyp(f, idtype); 
+        end;
+        fld := fld^.next;
+        if fld <> nil then write(prr, ',')  
+      end
+    end;
+    
+    procedure wrtvar(sp: stp);
+    begin
+      while sp <> nil do with sp^ do
+        if form = variant then begin
+          write(f, varval.ival:1, '('); wrtrfd(varfld); write(f, ')');
+          sp := nxtvar
+        end else sp := nil
+    end;
+
+    { enums are backwards, so print thus }
+    procedure wrtenm(ep: ctp; i: integer);
+    begin
+      if ep <> nil then begin
+        wrtenm(ep^.next, i+1); 
+        writev(f, ep^.name, lenpv(ep^.name));
+        if i > 0 then write(f, ',')
+      end
+    end;
+    
+    begin
+      if tp <> nil then with tp^ do case form of
+        scalar: begin 
+                  if tp = intptr then write(f, 'i')
+                  else if tp = boolptr then write(f, 'b')
+                  else if tp = charptr then write(f, 'c')
+                  else if tp = realptr then write(f, 'n')
+                  else if scalkind = declared then
+                    begin write(f, 'x('); wrtenm(fconst, 0); write(f, ')') end
+                  else write(f, '?')
+                end;
+        subrange: begin
+                    write(f, 'x(', min.ival:1, ',', max.ival:1, ')');
+                    wrttyp(f, rangetype)
+                  end;
+        pointer: begin write(f, 'p?'); {wrttyp(f, eltype)} end;
+        power: begin write(f, 's'); wrttyp(f, elset) end;
+        arrays: begin write(f, 'a'); wrttyp(f, inxtype); wrttyp(f, aeltype) end;
+        records: begin write(f, 'r('); wrtrfd(fstfld); 
+                   if recvar <> nil then if recvar^.form = tagfld then
+                     begin write(f, ','); wrtrfd(recvar^.tagfieldp);
+                           write(f, '('); wrtvar(recvar^.fstvar); 
+                           write(f, ')') end;
+                   write(f, ')') end; 
+        files: begin write(f, 'f'); wrttyp(f, filtype) end;
+        variant: write(f, '?');
+        except: write(f, 'e')
+      end else write(f, '?')
+    end;
+
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
           test: boolean;
@@ -3023,7 +3112,7 @@ end;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon] + typedels,lsp,lsize);
         while nxt <> nil do
-          with  nxt^ do
+          with nxt^ do
             begin
               idtype := lsp; 
               { globals are alloc/increment, locals are decrement/alloc }
@@ -3031,6 +3120,12 @@ end;
                 begin alignu(lsp,gc); vaddr := gc; gc := gc + lsize end
               else 
                 begin lc := lc - lsize; alignd(lsp,lc); vaddr := lc end;
+              { mark symbol }
+              if prcode then begin
+                write(prr, 's '); writev(prr, nxt^.name, lenpv(nxt^.name)); 
+                if level <= 1 then write(prr, ' g') else write(prr, ' l');
+                write(prr, ' ', vaddr:1, ' '); wrttyp(prr, idtype); writeln(prr);
+              end;
               nxt := next
             end;
         if sy = semicolon then
@@ -3385,6 +3480,11 @@ end;
         end
       else
         begin lcp^.forwdecl := false;
+          { output block begin marker }
+          if prcode then begin
+            if lcp^.klass = proc then write(prr, 'b r ') else write(prr, 'b f ');
+            writev(prr, lcp^.name, lenpv(lcp^.name)); writeln(prr);
+          end;
           repeat block(fsys,semicolon,lcp);
             if sy = semicolon then
               begin if prtables then printtables(false); insymbol;
@@ -3400,6 +3500,10 @@ end;
             else error(14)
           until (sy in [labelsy,constsy,typesy,varsy,beginsy,procsy,funcsy,
                         staticsy]) or eof(prd);
+          { output block end marker }
+          if prcode then
+            if lcp^.klass = proc then writeln(prr, 'e r') 
+            else writeln(prr, 'e f');
           if lcp^.klass = func then
             if lcp <> ufctptr then
               if not lcp^.asgn then error(193) { no function result assign }
@@ -6108,7 +6212,7 @@ end;
             if llcp = nil then begin
               { a header file was never defined in a var statement }
               writeln(output);
-              writeln(output,'**** Error: Undeclared external file ''',
+              writeln('**** Error: Undeclared external file ''',
                              fextfilep^.filename:8, '''');
               toterr := toterr+1;
               llcp := uvarptr
@@ -6117,7 +6221,7 @@ end;
               if (llcp^.idtype^.form<>files) and (llcp^.idtype <> intptr) and
                  (llcp^.idtype <> realptr) then
                 begin writeln(output);
-                  writeln(output,'**** Error: Undeclared external file ''',
+                  writeln('**** Error: Undeclared external file ''',
                                  fextfilep^.filename:8, '''');
                   toterr := toterr+1
                 end
@@ -6212,10 +6316,10 @@ end;
           begin
             if not defined or not refer then
               begin if not defined then error(168);
-                writeln(output); write(output,'label ',labval:11);
+                writeln(output); write('label ',labval:11);
                 if not refer then write(' unreferenced');
                 writeln;
-                write(output,' ':chcnt+16)
+                write(' ':chcnt+16)
               end;
             llp := nextlab
           end;
@@ -6246,8 +6350,10 @@ end;
           (*generate call of main program; note that this call must be loaded
             at absolute address zero*)
           gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
-          if prcode then
-            writeln(prr,'q');
+          if prcode then begin
+            writeln(prr, 'e p'); { mark program block end }
+            writeln(prr,'q')
+          end;
           if prtables then
             begin writeln(output); printtables(true)
             end
@@ -6287,7 +6393,11 @@ end;
   begin
     chkudtf := chkudtc; { finalize undefined tag checking flag }
     if sy = progsy then
-      begin insymbol; if sy <> ident then error(2) else insymbol;
+      begin insymbol; 
+        if sy <> ident then error(2) else begin
+          if prcode then writeln(prr, 'b p ', id:kk); { mark program block start } 
+          insymbol;
+        end;
         if not (sy in [lparent,semicolon]) then error(14);
         if sy = lparent  then
           begin
