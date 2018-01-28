@@ -35,9 +35,9 @@ compile p4/pint
 # describes what is going on: we are concatenating and running two different
 # intermediate codes together in completely different formats!
 #
-cat p4/pint.p5 p4/standardp.p4 > tmp.p5
-rm -f p4/pint.p5
-cp tmp.p5 p4/pint.p5
+cat p4/pint.pint p4/standardp.p4 > tmp.pint
+rm -f p4/pint.pint
+cp tmp.pint p4/pint.pint
 #
 # Create null input file
 #

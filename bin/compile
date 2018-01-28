@@ -14,7 +14,7 @@
 # The files are:
 #
 # <file>.pas - The Pascal source file
-# <file>.p5  - The intermediate file produced
+# <file>.pint  - The intermediate file produced
 # <file>.err - The errors output from the compiler
 #
 # Note that the l+ option must be specified to get a full
@@ -47,7 +47,7 @@ if [[ $rc != 0 ]] ; then
         
 fi
 #
-# Move the prr file to <file.p5>
+# Move the prr file to <file.pint>
 #
-rm -f $1.p5
-mv prr $1.p5
+rm -f $1.pint
+mv prr $1.pint

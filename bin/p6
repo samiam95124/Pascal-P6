@@ -4,7 +4,7 @@
 #
 # Execute with:
 #
-# p5 <file>
+# p6 <file>
 #
 # Where <file> is the name of the source file without
 # extention. The Pascal file is compiled and run.
@@ -12,7 +12,7 @@
 # and output to and from the running program are from
 # the console, but output to the prr file is placed
 # in <file>.out.
-# The intermediate code is placed in <file>.p5.
+# The intermediate code is placed in <file>.pint.
 #
 
 if [ -z "$1" ]
@@ -36,8 +36,8 @@ echo Compiling and running $1
 echo
 cp $1.pas prd
 pcom < $1.pas
-mv prr $1.p5
-cp $1.p5 prd
+mv prr $1.pint
+cp $1.pint prd
 pint
 rm prd
 rm prr

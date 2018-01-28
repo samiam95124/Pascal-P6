@@ -31,9 +31,9 @@ rem For those of you having fun reading this, yes, the next statement accurately
 rem describes what is going on: we are concatenating and running two different
 rem intermediate codes together in completely different formats!
 rem
-cat p2\pasint.p5 p2\roman.p2 > tmp.p5
-rm p2\pasint.p5
-mv tmp.p5 p2\pasint.p5
+cat p2\pasint.pint p2\roman.p2 > tmp.pint
+rm p2\pasint.pint
+mv tmp.pint p2\pasint.pint
 rem
 rem Create null input file
 rem

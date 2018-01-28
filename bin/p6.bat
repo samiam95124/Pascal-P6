@@ -13,7 +13,7 @@ rem and output to and from the running program are from
 rem the console, but output to the prr file is placed
 rem in <sourcefile>.out.
 rem
-rem The intermediate code is placed in <file>.p5.
+rem The intermediate code is placed in <file>.pint.
 rem
 rem If <inputfile> and <outputfile> are specified, then these will be
 rem placed as input to the "prd" file, and output from the "prr" file.
@@ -38,13 +38,13 @@ echo Compiling and running %1
 echo.
 cp %1.pas prd
 pcom
-mv prr %1.p5
+mv prr %1.pint
 if not "%2"=="" goto useinputfile
-cp %1.p5 prd
+cp %1.pint prd
 goto run
 :useinputfile
 rem The input file, if it exists, gets put on the end of the intermediate
-cat %1.p5 %2 > prd
+cat %1.pint %2 > prd
 :run
 pint
 if "%3"=="" goto stop

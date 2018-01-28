@@ -12,7 +12,7 @@
 #
 # The files are:
 #
-# <file>.p5  - The intermediate file
+# <file>.pint  - The intermediate file
 # <file>.out - The prr file produced
 # <file>.inp - The input file to the program
 # <file>.lst - The output file from the program
@@ -24,9 +24,9 @@ then
    exit 1
 fi
 
-if [ ! -f $1.p5 ]
+if [ ! -f $1.pint ]
 then
-   echo "*** Error: Missing $1.p5 file"
+   echo "*** Error: Missing $1.pint file"
    exit 1
 fi
 
@@ -36,7 +36,7 @@ then
    exit 1
 fi
 
-cp $1.p5 prd 
+cp $1.pint prd 
 pint < $1.inp &> $1.lst
 rm -f $1
 mv prd $1.out

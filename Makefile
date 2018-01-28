@@ -5,7 +5,6 @@
 #
 PC=gpc
 CFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names --no-range-checking
-#CFLAGS=--no-warnings --transparent-file-names --no-range-checking
 
 all: pcom pint
 
@@ -17,7 +16,7 @@ pint: source/pint.pas
 	
 clean:
 	rm -f bin/pcom bin/pint 
-	find . -name "*.p5" -type f -delete
+	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete
 	find . -name "*.lst" -type f -delete
 	find . -name "*.obj" -type f -delete

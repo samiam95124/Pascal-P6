@@ -12,7 +12,7 @@ rem <file> is the filename without extention.
 rem
 rem The files are:
 rem
-rem <file>.p5  - The intermediate file
+rem <file>.pint  - The intermediate file
 rem <file>.out - The prr file produced
 rem <file>.inp - The input file to the program
 rem <file>.lst - The output file from the program
@@ -25,9 +25,9 @@ if "%1"=="" (
 
 )
 
-if not exist "%1.p5" (
+if not exist "%1.pint" (
 
-    echo *** Error: Missing %1.p5 file
+    echo *** Error: Missing %1.pint file
     exit /b 1
 
 )
@@ -39,7 +39,7 @@ if not exist "%1.inp" (
 
 )
 
-cp %1.p5 prd
+cp %1.pint prd
 pint < %1.inp > %1.lst 2>&1
 if exist "%1" rm %1.out
 mv prr %1.out
