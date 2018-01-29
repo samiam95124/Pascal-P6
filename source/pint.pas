@@ -3424,8 +3424,8 @@ begin (*callsp*)
 end;(*callsp*)
 
 { print source lines }
-procedure prtsrc(s, e: integer);
-var f: text; i: integer; c: char; newline: boolean; 
+procedure prtsrc(s, e: integer; comp: boolean);
+var f: text; i: integer; c: char; newline: boolean; si,ei: address; 
 begin
   if not existsfile(srcfnm) then 
     writeln('*** Source file ', srcfnm:srcfnl, ' not found')
@@ -3442,7 +3442,22 @@ begin
         newline := false
       end;
       if not eoln(f) then begin read(f, c); write(c) end
-      else begin readln(f); writeln; i := i+1; newline := true end 
+      else begin 
+        readln(f); writeln;
+        if comp then begin { coordinated listing mode }
+          si := lintrk[i]; ei := lintrk[i+1];
+          if (si >= 0) and (ei >= 0) then
+            while si <= ei-1 do begin { list machine instructions }
+              if isbrk(si) then write('b') else write(' ');
+              if pc = si then write('*') else write(' ');
+              write(' ');
+              wrthex(si, maxdigh);
+              lstins(si);
+              writeln 
+            end
+        end; 
+        i := i+1; newline := true 
+      end 
     end;
     closetext(f)
   end
@@ -3949,7 +3964,7 @@ begin
                         if dotrcsrc then
                           if dodbgsrc then begin
                             writeln;
-                            prtsrc(srclin-1, srclin+1);
+                            prtsrc(srclin-1, srclin+1, false);
                             writeln
                           end else writeln('Source line executed: ', q:1);
                         sourcemark := true
@@ -4123,7 +4138,7 @@ procedure prthdr;
 var ad: address;
 begin
   writeln;
-  if dodbgsrc then prtsrc(srclin-1, srclin+1) { do source level }
+  if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
     write('pc: '); wrthex(pc, maxdigh); write(' sp: '); wrthex(sp, maxdigh);
     write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
@@ -4263,14 +4278,15 @@ begin { debug }
             pc := pc-1; i := 0
           end
         end
-      end else if cn = 'l         ' then begin { list source }
+      end else if (cn = 'l         ') or
+                  (cn = 'lc        ') then begin { list source }
         s := 0; e := maxsrc;
         skpspc; if not chkend then begin getnum(i); s := i end;
         skpspc;
         if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
         writeln;
-        prtsrc(s, e);
+        prtsrc(s, e, cn = 'lc        ');
         writeln
       end else if (cn = 's         ') or
                   (cn = 'ss        ') then begin { step source line }
@@ -4290,11 +4306,24 @@ begin { debug }
       end else if cn = 'p         ' then begin { print (various) }
         writeln('*** Command not implemented')
       end else if cn = 'e         ' then begin { enter (hex) }
-        writeln('*** Command not implemented')
+        getnum(i); s := i; { get address }
+        repeat
+          getnum(i); 
+          if (i > 255) or (i < 0) then 
+            begin writeln('*** Bad byte value'); s := -1 end
+          else begin
+            store[s] := i;
+            s := s+1
+          end
+        until chkend or (s < 0);
       end else if cn = 's         ' then begin { set (variable) }
         writeln('*** Command not implemented')
       end else if cn = 'w         ' then begin { watch (variable) }
         writeln('*** Command not implemented')
+      end else if cn = 'pg        ' then begin { print globals }
+        writeln('*** Command not implemented')
+      end else if cn = 'pl        ' then begin { print locals }
+        writeln('*** Command not implemented')  
       end else if cn = 'hs        ' then repspc { report heap space }
       else if cn = 'pc        ' then begin { set pc }
         if not chkend then begin getnum(i); pc := i end
@@ -4351,34 +4380,36 @@ begin { debug }
         writeln;
         writeln('Commands:');
         writeln;
-        writeln('l   [s[,e|:l] List source lines');
-        writeln('li  [s[,e|:l] List machine instructions');
-        writeln('d   [s[,e|:l] Dump memory');
-        writeln('ds            Dump storage parameters');
-        writeln('dd  [s]       Dump display frames');
-        writeln('b   a         Place breakpoint at source line number');
-        writeln('bi  a         Place breakpoint at instruction');
-        writeln('c   [a]       Clear breakpoint/all breakpoints');
-        writeln('lb            List active breakpoints');
-        writeln('s   [n]       Step next source line execution');
-        writeln('ss  [n]       Step next source line execution silently');
-        writeln('si  [n]       Step instructions');
-        writeln('sis [n]       Step instructions silently');
-        writeln('hs            Report heap space');
-        writeln('pc  [a]       Set/print pc contents');
-        writeln('sp  [a]       Set/print sp contents');
-        writeln('mp  [a]       Set/print mp contents');
-        writeln('np  [a]       Set/print np contents');
-        writeln('cp  [a]       Set cp contents');
-        writeln('ti            Turn instruction tracing on');
-        writeln('nti           Turn instruction tracing off');
-        writeln('tr            Turn system routine tracing on');
-        writeln('ntr           Turn system routine tracing off');
-        writeln('ts            Turn source line tracing on');
-        writeln('nts           Turn source line tracing off');
-        writeln('r             Run program from current pc');
-        writeln('ps            Print current registers and instruction');
-        writeln('q             Quit interpreter');
+        writeln('l   [s[ e|:l]  List source lines');
+        writeln('lc  [s[ e|:l]  List source and machine lines coordinated');
+        writeln('li  [s[ e|:l]  List machine instructions');
+        writeln('d   [s[ e|:l]  Dump memory');
+        writeln('e   a v[ v]... Enter byte values to memory address');
+        writeln('ds             Dump storage parameters');
+        writeln('dd  [s]        Dump display frames');
+        writeln('b   a          Place breakpoint at source line number');
+        writeln('bi  a          Place breakpoint at instruction');
+        writeln('c   [a]        Clear breakpoint/all breakpoints');
+        writeln('lb             List active breakpoints');
+        writeln('s   [n]        Step next source line execution');
+        writeln('ss  [n]        Step next source line execution silently');
+        writeln('si  [n]        Step instructions');
+        writeln('sis [n]        Step instructions silently');
+        writeln('hs             Report heap space');
+        writeln('pc  [a]        Set/print pc contents');
+        writeln('sp  [a]        Set/print sp contents');
+        writeln('mp  [a]        Set/print mp contents');
+        writeln('np  [a]        Set/print np contents');
+        writeln('cp  [a]        Set cp contents');
+        writeln('ti             Turn instruction tracing on');
+        writeln('nti            Turn instruction tracing off');
+        writeln('tr             Turn system routine tracing on');
+        writeln('ntr            Turn system routine tracing off');
+        writeln('ts             Turn source line tracing on');
+        writeln('nts            Turn source line tracing off');
+        writeln('r              Run program from current pc');
+        writeln('ps             Print current registers and instruction');
+        writeln('q              Quit interpreter');
         writeln
       end
       { these are internal debugger commands } 
