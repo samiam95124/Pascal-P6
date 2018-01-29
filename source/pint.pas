@@ -359,7 +359,14 @@ const
       ujplen      = 5;    { length of ujp instruction (used for case jumps) }
       fillen      = 250;  { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
-      brkins      = 19;   { breakpoint instruction no. }   
+      brkins      = 19;   { breakpoint instruction no. }
+      mrkins      = 174;  { source line marker instruction executed }
+      mrkinsl     = 5;    { length of that instruction } 
+      varsqt      = 10;   { variable string quanta }
+      { 25k lines is well above my personal limit. I tend to split files with
+        more than 10,000 lines. Obviously others think that's excessive. }
+      maxsrc      = 25000; { maximum number of source lines in source file }
+      extsrc      = '.pas'; { extention for source file }   
 
       { version numbers }
 
@@ -393,7 +400,14 @@ type
       filsts      = (fclosed, fread, fwrite);
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
-      break       = record ss: byte; sa: address end;
+      break       = record ss: byte; sa: address; line: 1..maxsrc end;
+      { Here is the variable length string containment to save on space. strings
+        are only stored in their length rounded to the nearest 10th. }
+      strvsp = ^strvs; { pointer to variable length id string }
+      strvs = record { id string variable length }
+                str:   packed array [1..varsqt] of char; { data contained }
+                next:  strvsp { next }
+              end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -428,6 +442,9 @@ var   pc          : address;   (*program address register*)
       dorecycl: boolean; { obey heap space recycle requests }
       dodebug:  boolean; { start up debug on entry }
       dodbgflt: boolean; { enter debug on fault }
+      { Don't set this option unless you have file language extensions!
+        It will just cause the run to fail }
+      dodbgsrc: boolean; { do source file debugging }
       { invoke a special recycle mode that creates single word entries on
         recycle of any object, breaking off and recycling the rest. Once
         allocated, each entry exists forever, and accesses to it can be
@@ -457,6 +474,7 @@ var   pc          : address;   (*program address register*)
       bi          : 1..maxbrk; { index for same }
       stopins     : boolean; { stop instruction executed }
       breakins    : boolean; { break instruction executed }
+      sourcemark  : boolean; { source line instruction executed }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -465,6 +483,12 @@ var   pc          : address;   (*program address register*)
       filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
+      
+      srcfnm      : filnam; { filename for current source file }
+      srcfnl      : 1..fillen; { length of source file name }
+      srcbuf      : cmdbuf; { input source line buffer }
+      strcnt      : integer; { string allocation count }
+      lintrk      : array [1..maxsrc] of address; { addresses of lines }
 
       i           : integer;
       c1          : char;
@@ -593,47 +617,47 @@ begin writeln; write('*** Runtime error');
     CannotSendSignal:                   writeln('Cannot send signal');
     WaitForSignalFail:                  writeln('Wait for signal fail');
     FieldNotBlank:                      writeln('Field not blank');
-    ReadOnWriteOnlyFile:                writeln('Read On Write Only File');              
-    WriteOnReadOnlyFile:                writeln('Write On Read Only File');              
-    FileBufferVariableUndefined:        writeln('File Buffer Variable Undefined');      
-    NondecimalRadixOfNegative:          writeln('Nondecimal Radix Of Negative');        
-    InvalidArgumentToLn:                writeln('Invalid Argument To Ln');              
-    InvalidArgumentToSqrt:              writeln('Invalid Argument To Sqrt');            
-    CannotResetOrRewriteStandardFile:   writeln('Cannot Reset Or Rewrite Standard File'); 
-    CannotResetWriteOnlyFile:           writeln('Cannot Reset Write Only File');         
-    CannotRewriteReadOnlyFile :         writeln('Cannot Rewrite Read Only File');        
-    SetElementOutOfRange:               writeln('Set Element Out Of Range');             
-    RealArgumentTooLarge:               writeln('Real Argument Too Large');             
-    BooleanOperatorOfNegative:          writeln('Boolean Operator Of Negative');        
-    InvalidDivisorToMod:                writeln('Invalid Divisor To Mod');              
-    PackElementsOutOfBounds:            writeln('Pack Elements Out Of Bounds');          
-    UnpackElementsOutOfBounds:          writeln('Unpack Elements Out Of Bounds');        
+    ReadOnWriteOnlyFile:                writeln('Read on write only file');              
+    WriteOnReadOnlyFile:                writeln('Write on read only file');              
+    FileBufferVariableUndefined:        writeln('File buffer variable undefined');      
+    NondecimalRadixOfNegative:          writeln('Nondecimal radix of negative');        
+    InvalidArgumentToLn:                writeln('Invalid argument to ln');              
+    InvalidArgumentToSqrt:              writeln('Invalid argument to sqrt');            
+    CannotResetOrRewriteStandardFile:   writeln('Cannot reset or rewrite standard file'); 
+    CannotResetWriteOnlyFile:           writeln('Cannot reset write only file');         
+    CannotRewriteReadOnlyFile :         writeln('Cannot rewrite read only file');        
+    SetElementOutOfRange:               writeln('Set element out of range');             
+    RealArgumentTooLarge:               writeln('Real argument too large');             
+    BooleanOperatorOfNegative:          writeln('Boolean operator of negative');        
+    InvalidDivisorToMod:                writeln('Invalid divisor to mod');              
+    PackElementsOutOfBounds:            writeln('Pack elements out of bounds');          
+    UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');        
                       
     { Exceptions that can't be intercepted }
     UndefinedLocationAccess:            writeln('Undefined location access');
     FunctionNotImplemented:             writeln('Function not implemented');
-    InvalidInISO7185Mode:               writeln('Invalid In ISO 7185 Mode');              
-    HeapFormatInvalid:                  writeln('Heap Format Invalid');                 
-    DisposeOfUninitalizedPointer:       writeln('Dispose Of Uninitalized Pointer');      
-    DisposeOfNilPointer:                writeln('Dispose Of Nil Pointer');               
-    BadPointerValue:                    writeln('Bad Pointer Value');                   
-    BlockAlreadyFreed:                  writeln('Block Already Freed');                 
-    InvalidStandardProcedureOrFunction: writeln('Invalid Standard Procedure Or Function');
-    InvalidInstruction:                 writeln('Invalid Instruction');                
-    NewDisposeTagsMismatch:             writeln('New Dispose Tags Mismatch');            
-    PCOutOfRange:                       writeln('PC Out Of Range');                      
-    StoreOverflow:                      writeln('Store Overflow');                    
-    StackBalance:                       writeln('Stack Balance');                     
-    SetInclusion:                       writeln('Set Inclusion');                     
-    UninitializedPointer:               writeln('Uninitialized Pointer');             
-    DereferenceOfNilPointer:            writeln('Dereference Of Nil Pointer');          
-    PointerUsedAfterDispose:            writeln('Pointer Used After Dispose');          
-    VariantNotActive:                   writeln('Variant Not Active');                 
-    InvalidCase:                        writeln('Invalid Case');                      
-    SystemError:                        writeln('System Error');                      
-    ChangeToAllocatedTagfield:          writeln('Change To Allocated Tag field');  
+    InvalidInISO7185Mode:               writeln('Invalid in ISO 7185 mode');              
+    HeapFormatInvalid:                  writeln('Heap format invalid');                 
+    DisposeOfUninitalizedPointer:       writeln('Dispose of uninitalized pointer');      
+    DisposeOfNilPointer:                writeln('Dispose of nil pointer');               
+    BadPointerValue:                    writeln('Bad pointer value');                   
+    BlockAlreadyFreed:                  writeln('Block already freed');                 
+    InvalidStandardProcedureOrFunction: writeln('Invalid standard procedure or function');
+    InvalidInstruction:                 writeln('Invalid instruction');                
+    NewDisposeTagsMismatch:             writeln('New dispose tags mismatch');            
+    PCOutOfRange:                       writeln('Pc out of range');                      
+    StoreOverflow:                      writeln('Store overflow');                    
+    StackBalance:                       writeln('Stack balance');                     
+    SetInclusion:                       writeln('Set inclusion');                     
+    UninitializedPointer:               writeln('Uninitialized pointer');             
+    DereferenceOfNilPointer:            writeln('Dereference of nil pointer');          
+    PointerUsedAfterDispose:            writeln('Pointer used after dispose');          
+    VariantNotActive:                   writeln('Variant not active');                 
+    InvalidCase:                        writeln('Invalid case');                      
+    SystemError:                        writeln('System error');                      
+    ChangeToAllocatedTagfield:          writeln('Change to allocated tag field');  
     UnhandledException:                 writeln('Unhandled exception');   
-    ProgramCodeAssertion:               writeln('Program Code Assertion');   
+    ProgramCodeAssertion:               writeln('Program code assertion');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -1096,6 +1120,90 @@ begin
   assignbin(f, fne) { assign to that }
 end;
 
+(*-------------------------------------------------------------------------*)
+
+                { character and string quanta functions }
+
+(*-------------------------------------------------------------------------*)
+
+{ get string quanta }
+procedure getstr(var p: strvsp);
+begin
+  new(p); { get new entry }
+  strcnt := strcnt+1 { count }
+end;
+
+{ recycle string quanta list }
+procedure putstrs(p: strvsp);
+var p1: strvsp;
+begin
+  while p <> nil do begin
+    p1 := p; p := p^.next; dispose(p1); strcnt := strcnt-1
+  end
+end;
+  
+{ write variable length id string to file }
+procedure writev(var f: text; s: strvsp; fl: integer);
+var i: integer; c: char;
+begin i := 1;
+  while fl > 0 do begin
+    c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
+    write(f, c); fl := fl-1;
+    if i > varsqt then begin s := s^.next; i := 1 end
+  end
+end;
+
+{ find padded length of variable length id string }
+function lenpv(s: strvsp): integer;
+var i, l, lc: integer;
+begin l := 1; lc := 0;
+  while s <> nil do begin
+    for i := 1 to varsqt do begin
+      if s^.str[i] <> ' ' then lc := l;
+      l := l+1; { count characters }
+    end;
+    s := s^.next
+  end;
+  lenpv := lc
+end;
+
+{ get character from variable length string }
+
+function strchr(a: strvsp; x: integer): char;
+var c: char; i: integer; q: integer;
+begin
+   c := ' '; i := 1; q := 1;
+   while i < x do begin
+      if q >= varsqt then begin q := 1; if a <> nil then a := a^.next end
+      else q := q+1;
+      i := i+1
+   end;
+   if a <> nil then c := a^.str[q];
+   strchr := c
+ end;
+
+{ put character to variable length string }
+
+procedure strchrass(var a: strvsp; x: integer; c: char);
+var i: integer; q: integer; p, l: strvsp;
+procedure getsqt;
+var y: integer;
+begin
+   if p = nil then begin getstr(p); for y := 1 to varsqt do p^.str[y] := ' ';
+      p^.next := nil; if a = nil then a := p else l^.next := p
+   end
+end;
+begin
+   i := 1; q := 1; p := a; l := nil;
+   getsqt;
+   while i < x do begin
+      if q >= varsqt then begin q := 1; l := p; p := p^.next; getsqt end
+      else q := q+1;
+      i := i+1
+   end;
+   p^.str[q] := c
+ end;
+ 
 (*--------------------------------------------------------------------*)
 
 { Accessor functions
@@ -1430,7 +1538,9 @@ begin
    i := 0;
    while i < lsttop do begin
 
-      if isbrk(i) then write('b ') else write('  ');
+      if isbrk(i) then write('b') else write(' ');
+      if pc = i then write('*') else write(' ');
+      write(' ');
       wrthex(i, maxdigh);
       lstins(i);
       writeln
@@ -1845,6 +1955,8 @@ procedure load;
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
+          i,j: integer;
+          ext: packed array [1..4] of char;
    begin
       again := true;
       while again do
@@ -1869,6 +1981,7 @@ procedure load;
                             end;
                        ':': begin { source line }
                                read(prd,x); { get source line number }
+                               lintrk[x] := pc; { place in line tracking }
                                if dosrclin then begin
                                   { pass source line register instruction }
                                   store[pc] := 174; putdef(pc, true); pc := pc+1;
@@ -1898,16 +2011,40 @@ procedure load;
                                   's': iso7185  := option[ch1];
                                   'w': dodebug  := option[ch1];
                                   'r': dodbgflt := option[ch1];
+                                  'f': dodbgsrc := option[ch1];
                                   'b':; 'c':; 'd':; 'l':; 't':; 'u':;
                                   'v':; 'x':; 'y':; 'z':; 'm':; 'a':;
-                                  'f':; 'k':; 'i':; 'e':; 'j':;
-                                  { unused: m,a,f,i,e }
+                                  'k':; 'i':; 'e':; 'j':;
+                                  { unused: m,a,i,e }
                                 end
                               until not (ch in ['a'..'z']);
-                              getlin;
+                              getlin
                             end;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
-                       'b': getlin; { begin block }
+                       'b': begin 
+                              getnxt;
+                              while not eoln(prd) and (ch = ' ') do getnxt;
+                              if not (ch in ['p', 'r', 'f']) then
+                                errorl('Block type is invalid    ');
+                              if ch = 'p' then begin { program block }
+                                getnxt;
+                                while not eoln(prd) and (ch = ' ') do getnxt;
+                                srcfnl := 1;
+                                while ch <> ' ' do begin
+                                  if srcfnl >= fillen-4 then 
+                                    errorl('Program name too long    ');
+                                  srcfnm[srcfnl] := ch; getnxt; 
+                                  srcfnl := srcfnl+1
+                                end;
+                                srcfnl := srcfnl-1;
+                                { add file extension }
+                                ext := extsrc;
+                                for i := 1 to 4 do begin
+                                  srcfnm[srcfnl+1] := ext[i]; srcfnl := srcfnl+1 
+                                end
+                              end;   
+                              getlin
+                            end;
                        'e': getlin; { end block }
                        's': getlin; { symbol }
                   end;
@@ -3286,6 +3423,31 @@ begin (*callsp*)
       end;(*case q*)
 end;(*callsp*)
 
+{ print source lines }
+procedure prtsrc(s, e: integer);
+var f: text; i: integer; c: char; newline: boolean; 
+begin
+  if not existsfile(srcfnm) then 
+    writeln('*** Source file ', srcfnm:srcfnl, ' not found')
+  else begin
+    assigntext(f, srcfnm); reset(f); i := 1;
+    newline := true;
+    while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
+    while (i <= e) and not eof(f) do begin
+      if newline then begin { output line head }
+        write(i:4, ': ');
+        if isbrk(lintrk[i]) then write('b') else write(' ');
+        if lintrk[i] = pc then write('*') else write(' ');
+        write(' ');
+        newline := false
+      end;
+      if not eoln(f) then begin read(f, c); write(c) end
+      else begin readln(f); writeln; i := i+1; newline := true end 
+    end;
+    closetext(f)
+  end
+end;
+
 procedure singleins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
@@ -3301,6 +3463,8 @@ begin
   { trace executed instructions }
   if dotrcins then begin
     if isbrk(pcs) then write('b ') else write('  ');
+    if pc = pcs then write('*') else write(' ');
+    write(' ');
     wrthex(pcs, maxdigh);
     write('/');
     wrthex(sp, maxdigh);
@@ -3783,7 +3947,12 @@ begin
 
     174 (*mrkl*): begin getq; srclin := q;
                         if dotrcsrc then
-                          writeln('Source line executed: ', q:1)
+                          if dodbgsrc then begin
+                            writeln;
+                            prtsrc(srclin-1, srclin+1);
+                            writeln
+                          end else writeln('Source line executed: ', q:1);
+                        sourcemark := true
                   end;
        
     207 (*bge*): begin getq;
@@ -3954,12 +4123,15 @@ procedure prthdr;
 var ad: address;
 begin
   writeln;
-  write('pc: '); wrthex(pc, maxdigh); write(' sp: '); wrthex(sp, maxdigh);
-  write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
-  write(' cp: '); wrthex(cp, maxdigh);
-  writeln;
-  if isbrk(pc) then write('b ') else write('  ');
-  wrthex(pc, maxdigh); ad := pc; lstins(ad); 
+  if dodbgsrc then prtsrc(srclin-1, srclin+1) { do source level }
+  else begin { machine level }
+    write('pc: '); wrthex(pc, maxdigh); write(' sp: '); wrthex(sp, maxdigh);
+    write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
+    write(' cp: '); wrthex(cp, maxdigh);
+    writeln;
+    if isbrk(pc) then write('b ') else write('  ');
+    wrthex(pc, maxdigh); ad := pc; lstins(ad)
+  end; 
   writeln
 end;
 
@@ -3996,6 +4168,10 @@ begin { debug }
     writeln
   end;
   getbrk;
+  { if we broke on a source marker, execute it then back up.
+    This is because break on source line always will do this, and we need the
+    source line from the instruction. }
+  if store[pc] = mrkins then begin singleins; pc := pc-mrkinsl end;
   dbgend := false;
   debugstart := true; { set we started }
   prthdr;
@@ -4015,7 +4191,9 @@ begin { debug }
         writeln('Addr    Op Ins         P  Q');
         writeln('----------------------------------');
         while s <= e do begin
-          if isbrk(s) then write('b ') else write('  ');
+          if isbrk(s) then write('b') else write(' ');
+          if pc = s then write('*') else write(' ');
+          write(' ');
           wrthex(s, maxdigh);
           lstins(s);
           writeln
@@ -4043,12 +4221,17 @@ begin { debug }
         repeat dmpdsp(s); s := getadr(s+marksl); i := i-1 
         until (i = 0) or (s = getadr(s+marksl))
       end else if cn = 'b         ' then begin { place breakpoint source }
-        writeln('*** Command not implemented')
+        getnum(i); s := i; if i > maxsrc then writeln('*** Invalid source line')
+        else begin
+          x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
+          if x = 0 then writeln('*** Breakpoint table full')
+          else brktbl[x].sa := lintrk[s]; brktbl[x].line := s
+        end
       end else if cn = 'bi        ' then begin { place breakpoint instruction }
         getnum(i); s := i;
         x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
-        else brktbl[x].sa := s
+        else brktbl[x].sa := s; brktbl[x].line := -1
       end else if cn = 'c         ' then begin { clear breakpoint }
         skpspc; if not chkend then begin
           getnum(i); s := i; i := 0;
@@ -4061,7 +4244,9 @@ begin { debug }
         writeln('Breakpoints:');
         writeln;
         for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
-          write(i:2, ': '); wrthex(brktbl[i].sa, maxdigh); writeln
+          if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
+          else write(i:2, ':****', ': ');
+          wrthex(brktbl[i].sa, maxdigh); writeln
         end;
         writeln
       end else if (cn = 'si        ') or
@@ -4079,22 +4264,73 @@ begin { debug }
           end
         end
       end else if cn = 'l         ' then begin { list source }
-        writeln('*** Command not implemented')
-      end else if cn = 's         ' then begin { step source line }
-        writeln('*** Command not implemented')
+        s := 0; e := maxsrc;
+        skpspc; if not chkend then begin getnum(i); s := i end;
+        skpspc;
+        if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
+        else if not chkend then begin getnum(i); e := i end;
+        writeln;
+        prtsrc(s, e);
+        writeln
+      end else if (cn = 's         ') or
+                  (cn = 'ss        ') then begin { step source line }
+        i := 1; skpspc; if not chkend then getnum(i);
+        while i > 0 do begin
+          repeat singleins until stopins or sourcemark; 
+          singleins; if cn = 's         ' then prthdr; i := i-1;
+          { if we hit break or stop, just stay on that instruction }
+          if breakins then begin
+            writeln('*** Break instruction hit');
+            pc := pc-1; i := 0 
+          end else if stopins then begin
+            writeln('*** Stop instruction hit');
+            pc := pc-1; i := 0
+          end
+        end
       end else if cn = 'p         ' then begin { print (various) }
+        writeln('*** Command not implemented')
+      end else if cn = 'e         ' then begin { enter (hex) }
+        writeln('*** Command not implemented')
+      end else if cn = 's         ' then begin { set (variable) }
+        writeln('*** Command not implemented')
+      end else if cn = 'w         ' then begin { watch (variable) }
         writeln('*** Command not implemented')
       end else if cn = 'hs        ' then repspc { report heap space }
       else if cn = 'pc        ' then begin { set pc }
-        getnum(i); pc := i  
+        if not chkend then begin getnum(i); pc := i end
+        else begin
+          writeln;
+          write('pc: '); wrthex(pc, 8); writeln;
+          writeln
+        end  
       end else if cn = 'sp        ' then begin { set sp }
-        getnum(i); sp := i  
+        if not chkend then begin getnum(i); sp := i end
+        else begin
+          writeln;
+          write('sp: '); wrthex(sp, 8); writeln;
+          writeln
+        end  
       end else if cn = 'mp        ' then begin { set mp }
-        getnum(i); mp := i  
+        if not chkend then begin getnum(i); mp := i end
+        else begin
+          writeln;
+          write('mp: '); wrthex(mp, 8); writeln;
+          writeln
+        end  
       end else if cn = 'np        ' then begin { set np }
-        getnum(i); np := i    
+        if not chkend then begin getnum(i); np := i end
+        else begin
+          writeln;
+          write('np: '); wrthex(np, 8); writeln;
+          writeln
+        end  
       end else if cn = 'cp        ' then begin { set cp }
-        getnum(i); cp := i  
+        if not chkend then begin getnum(i); cp := i end
+        else begin
+          writeln;
+          write('cp: '); wrthex(cp, 8); writeln;
+          writeln
+        end  
       end else if cn = 'ti        ' then 
         dotrcins := true { trace instructions }
       else if cn = 'nti       ' then 
@@ -4115,21 +4351,25 @@ begin { debug }
         writeln;
         writeln('Commands:');
         writeln;
-        writeln('li [s[,e|:l]  List machine instructions');
-        writeln('d  [s[,e|:l]  Dump memory');
+        writeln('l   [s[,e|:l] List source lines');
+        writeln('li  [s[,e|:l] List machine instructions');
+        writeln('d   [s[,e|:l] Dump memory');
         writeln('ds            Dump storage parameters');
-        writeln('dd [s]        Dump display frames');
-        writeln('bi a          Place breakpoint at instruction');
-        writeln('c [a]         Clear breakpoint/all breakpoints');
+        writeln('dd  [s]       Dump display frames');
+        writeln('b   a         Place breakpoint at source line number');
+        writeln('bi  a         Place breakpoint at instruction');
+        writeln('c   [a]       Clear breakpoint/all breakpoints');
         writeln('lb            List active breakpoints');
-        writeln('si [n]        Step instructions');
+        writeln('s   [n]       Step next source line execution');
+        writeln('ss  [n]       Step next source line execution silently');
+        writeln('si  [n]       Step instructions');
         writeln('sis [n]       Step instructions silently');
         writeln('hs            Report heap space');
-        writeln('pc a          Set pc contents');
-        writeln('sp a          Set sp contents');
-        writeln('mp a          Set mp contents');
-        writeln('np a          Set np contents');
-        writeln('cp a          Set cp contents');
+        writeln('pc  [a]       Set/print pc contents');
+        writeln('sp  [a]       Set/print sp contents');
+        writeln('mp  [a]       Set/print mp contents');
+        writeln('np  [a]       Set/print np contents');
+        writeln('cp  [a]       Set cp contents');
         writeln('ti            Turn instruction tracing on');
         writeln('nti           Turn instruction tracing off');
         writeln('tr            Turn system routine tracing on');
@@ -4139,6 +4379,16 @@ begin { debug }
         writeln('r             Run program from current pc');
         writeln('ps            Print current registers and instruction');
         writeln('q             Quit interpreter');
+        writeln
+      end
+      { these are internal debugger commands } 
+        else if cn = 'listline  ' then begin
+        writeln;
+        writeln('Defined line to address entries:');
+        writeln;
+        for i := 1 to maxsrc do if lintrk[i] >= 0 then begin
+          write(i:4, ':'); wrthex(lintrk[i], 8); writeln
+        end;
         writeln
       end else writeln('*** Command error')
     end
@@ -4186,16 +4436,25 @@ begin (* main *)
   dorecycl := true;  { obey heap space recycle requests }
   dochkrpt := false; { check reuse of freed entry (automatically
   dochkdef := true;  { check undefined accesses }
-  iso7185 := false; { iso7185 standard mode }
-  dodebug := false; { no debug }
-  dodbgflt := false;  { no debug on fault }
+  iso7185 := false;  { iso7185 standard mode }
+  dodebug := false;  { no debug }
+  dodbgflt := false; { no debug on fault }
+  dodbgsrc := false; { no source level debug }
 
+  strcnt := 0; { clear string quanta allocation count }
+  
+  { clear source filename }
+  for i := 1 to fillen do srcfnm[i] := ' ';
+  
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
   
   { clear breakpoint table }
   for bi := 1 to maxbrk do brktbl[bi].sa := -1;
+  
+  { clear source line tracking }
+  for i := 1 to maxsrc do lintrk[i] := -1;
         
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
@@ -4209,7 +4468,7 @@ begin (* main *)
   writeln('Assembling/loading program');
   load; (* assembles and stores code *)
   
-  pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 0;
+  pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
   
   { clear globals }
@@ -4225,11 +4484,13 @@ begin (* main *)
   repeat
     stopins := false; { set no stop flag }
     breakins := false; { set no break instruction }
+    sourcemark := false; { set no source line instruction }
     singleins;
     { if breakpoint hit, back up pc and go debugger }
     if breakins or (stopins and dodebug) then begin
       if stopins then begin writeln; writeln('*** Stop instruction hit') end; 
-      pc := pc-1; breakins := false; stopins := false; debug 
+      pc := pc-1; breakins := false; stopins := false; writeln; 
+      writeln('=== break ==='); debug 
     end
   until stopins; { until stop instruction is seen }
 
