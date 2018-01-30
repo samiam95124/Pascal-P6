@@ -357,7 +357,7 @@ const
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       ujplen      = 5;    { length of ujp instruction (used for case jumps) }
-      fillen      = 250;  { maximum length of filenames }
+      fillen      = 2000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
       brkins      = 19;   { breakpoint instruction no. }
       mrkins      = 174;  { source line marker instruction executed }
@@ -408,6 +408,23 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
+      psymbol     = ^symbol;
+      symbol      = record
+                      next:   psymbol; { next list symbol }  
+                      name:   strvsp; { name }
+                      styp:   (stglobal, stlocal); { area type }
+                      off:    address; { offset address }
+                      digest: strvsp { type digest }
+                    end;
+      pblock       = ^block;
+      block        = record
+                       next:    pblock; { next list block }
+                       name:    strvsp; { name of block }
+                       symbols: psymbol; { symbol list for block }
+                       btyp:    (btprog, btproc, btfunc); { block type }
+                       bstart:  address; { block start address }
+                       bend:    address; { block end address }
+                     end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -489,6 +506,8 @@ var   pc          : address;   (*program address register*)
       srcbuf      : cmdbuf; { input source line buffer }
       strcnt      : integer; { string allocation count }
       lintrk      : array [1..maxsrc] of address; { addresses of lines }
+      blkstk      : pblock; { stack of symbol blocks }
+      blklst      : pblock; { discard list of symbols blocks }
 
       i           : integer;
       c1          : char;
@@ -1203,6 +1222,24 @@ begin
    end;
    p^.str[q] := c
  end;
+ 
+{ assign symbol identifier fixed to variable length string, including 
+  allocation }
+procedure strassvf(var a: strvsp; var b: filnam);
+var i, j, l: integer; p, lp: strvsp;
+begin l := fillen; p := nil; a := nil; j := 1;
+  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+  if b[l] = ' ' then l := 0;
+  for i := 1 to l do begin
+    if j > varsqt then p := nil;
+    if p = nil then begin
+      getstr(p); p^.next := nil; j := 1;
+      if a = nil then a := p else lp^.next := p; lp := p
+    end;
+    p^.str[j] := b[i]; j := j+1
+  end;
+  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
  
 (*--------------------------------------------------------------------*)
 
@@ -1957,6 +1994,12 @@ procedure load;
           c,ch1: char;
           i,j: integer;
           ext: packed array [1..4] of char;
+          sn: filnam;
+          snl: 1..fillen;
+          bp: pblock;
+          sp: psymbol;
+          ad: address;
+          sgn: boolean;
    begin
       again := true;
       while again do
@@ -2022,31 +2065,97 @@ procedure load;
                             end;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
                        'b': begin 
-                              getnxt;
-                              while not eoln(prd) and (ch = ' ') do getnxt;
+                              getnxt; skpspc;
                               if not (ch in ['p', 'r', 'f']) then
                                 errorl('Block type is invalid    ');
-                              if ch = 'p' then begin { program block }
-                                getnxt;
-                                while not eoln(prd) and (ch = ' ') do getnxt;
-                                srcfnl := 1;
-                                while ch <> ' ' do begin
-                                  if srcfnl >= fillen-4 then 
-                                    errorl('Program name too long    ');
-                                  srcfnm[srcfnl] := ch; getnxt; 
-                                  srcfnl := srcfnl+1
-                                end;
-                                srcfnl := srcfnl-1;
+                              ch1 := ch; { save block type }
+                              getnxt; skpspc;
+                              for snl := 1 to fillen do sn[snl] := ' ';
+                              snl := 1;
+                              while ch <> ' ' do begin
+                                if snl >= fillen then 
+                                  errorl('Block name too long      ');
+                                sn[snl] := ch; getnxt; snl := snl+1
+                              end;
+                              snl := snl-1;
+                              new(bp); strassvf(bp^.name, sn); 
+                              bp^.symbols := nil;
+                              case ch1 of { block type }
+                                'p': bp^.btyp := btprog;
+                                'r': bp^.btyp := btproc;
+                                'f': bp^.btyp := btfunc
+                              end;
+                              bp^.bend := -1;
+                              { put onto block stack }
+                              bp^.next := blkstk; blkstk := bp;
+                              if ch1 = 'p' then begin { it's a program block }
+                                { has to have room for extention }
+                                if snl >= fillen-4 then 
+                                  errorl('Block name too long      ');
                                 { add file extension }
                                 ext := extsrc;
                                 for i := 1 to 4 do begin
-                                  srcfnm[srcfnl+1] := ext[i]; srcfnl := srcfnl+1 
-                                end
-                              end;   
+                                  sn[snl+1] := ext[i]; snl := snl+1 
+                                end;
+                                { place as source file }
+                                srcfnm := sn; srcfnl := snl
+                              end;
+                              blkstk^.bstart := pc; { set start address }   
                               getlin
                             end;
-                       'e': getlin; { end block }
-                       's': getlin; { symbol }
+                       'e': begin { end block }
+                              if blkstk = nil then 
+                                errorl('No block to end          ');
+                              { mark block non-inclusive }
+                              blkstk^.bend := pc;
+                              bp := blkstk; { remove from block stack }
+                              blkstk := blkstk^.next;
+                              bp^.next := blklst; { put to discard list }
+                              blklst := bp;
+                              if blkstk <> nil then blkstk^.bstart := pc;
+                              getlin
+                            end;
+                       's': begin { symbol }
+                              getnxt; skpspc;
+                              for snl := 1 to fillen do sn[snl] := ' '; 
+                              snl := 1;
+                              while ch <> ' ' do begin
+                                if snl >= fillen then 
+                                  errorl('Symbol name too long     ');
+                                sn[snl] := ch; getnxt; snl := snl+1
+                              end;
+                              snl := snl-1;
+                              new(sp); strassvf(sp^.name, sn);
+                              skpspc; 
+                              if not (ch in ['g', 'l']) then
+                                errorl('Symbol type is invalid   ');
+                              if ch = 'g' then sp^.styp := stglobal 
+                              else sp^.styp := stlocal;
+                              getnxt;
+                              skpspc;
+                              if not (ch in ['0'..'9','-']) then 
+                                errorl('No offset found          ');
+                              sgn := ch = '-'; if ch = '-' then getnxt;
+                              ad := 0; while ch in ['0'..'9'] do 
+                                begin ad := ad*10+ord(ch)-ord('0'); getnxt end;
+                              if sgn then ad := -ad;
+                              sp^.off := ad;
+                              for snl := 1 to fillen do sn[snl] := ' ';
+                              skpspc; snl := 1;
+                              while ch <> ' ' do begin
+                                if snl >= fillen then 
+                                  errorl('Type digest too long     ');
+                                sn[snl] := ch; getnxt; snl := snl+1
+                              end;
+                              snl := snl-1;
+                              strassvf(sp^.digest, sn);
+                              if blkstk = nil then 
+                                errorl('Symbol not in block      ');
+                              { place in block symbol list }
+                              sp^.next := blkstk^.symbols; 
+                              blkstk^.symbols := sp;
+                              getlin
+                            end;
                   end;
             end
    end; (*generate*)
@@ -4016,7 +4125,7 @@ procedure debug;
 label 2;
 
 var dbglin: cmdbuf; dbglen: 0..maxcmd; dbgpos: cmdinx; cn: alfa; 
-    dbgend: boolean; s,e: address; i,x: integer;
+    dbgend: boolean; s,e: address; i,x: integer; bp: pblock; syp: psymbol;
 
 procedure getlin;
 var c: char;
@@ -4197,12 +4306,12 @@ begin { debug }
     if not chkend then begin
       getnam;
       if cn = 'li        ' then begin { list instructions }
-        s := 0; e := lsttop;
+        s := 0; e := lsttop-1;
         skpspc; if not chkend then begin getnum(i); s := i end;
         skpspc; 
         if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
-        if e > lsttop then e := lsttop;
+        if e > lsttop-1 then e := lsttop-1;
         writeln('Addr    Op Ins         P  Q');
         writeln('----------------------------------');
         while s <= e do begin
@@ -4231,10 +4340,14 @@ begin { debug }
         write('Constants   '); prtrng(cp, maxstr);
         writeln
       end else if cn = 'dd        ' then begin { dump displays }
-        i := 1; skpspc; if not chkend then getnum(i);
-        s := mp;
-        repeat dmpdsp(s); s := getadr(s+marksl); i := i-1 
-        until (i = 0) or (s = getadr(s+marksl))
+        if mp = cp then 
+          begin writeln; writeln('No displays active'); writeln end
+        else begin
+          i := 1; skpspc; if not chkend then getnum(i);
+          s := mp;
+          repeat dmpdsp(s); s := getadr(s+marksl); i := i-1
+          until (i = 0) or (s = getadr(s+marksl))
+        end
       end else if cn = 'b         ' then begin { place breakpoint source }
         getnum(i); s := i; if i > maxsrc then writeln('*** Invalid source line')
         else begin
@@ -4421,6 +4534,38 @@ begin { debug }
           write(i:4, ':'); wrthex(lintrk[i], 8); writeln
         end;
         writeln
+      end else if cn = 'dumpsymbol' then begin
+        writeln;
+        writeln('Symbols:');
+        writeln;
+        bp := blklst;
+        while bp <> nil do begin
+          write('Block: '); writev(output, bp^.name, 20);
+          write(' ');
+          case bp^.btyp of
+            btprog: write('program');
+            btproc: write('procedure');
+            btfunc: write('function')
+          end;
+          write(' '); wrthex(bp^.bstart, 8); write(' '); wrthex(bp^.bend, 8);
+          writeln;
+          writeln;
+          syp := bp^.symbols;
+          while syp <> nil do begin
+            write('   Symbol: '); writev(output, syp^.name, 40);
+            write(' ');
+            case syp^.styp of
+              stglobal: write('global');
+              stlocal: write('local ')
+            end; 
+            write(' ', syp^.off:10, ' ');
+            writev(output, syp^.digest, lenpv(syp^.digest));
+            writeln; syp := syp^.next
+          end;
+          writeln;
+          bp := bp^.next
+        end;
+        writeln
       end else writeln('*** Command error')
     end
   until dbgend;
@@ -4473,6 +4618,8 @@ begin (* main *)
   dodbgsrc := false; { no source level debug }
 
   strcnt := 0; { clear string quanta allocation count }
+  blkstk := nil; { clear symbols block stack }
+  blklst := nil; { clear symbols block discard list }
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';

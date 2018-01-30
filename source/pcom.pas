@@ -6341,7 +6341,9 @@ end;
         begin gen1(42(*ret*),ord('p'));
           alignd(parmptr,lcmin);
           if prcode then
-          begin writeln(prr,'l',segsize:4,'=',lcmin:1);
+          begin
+              writeln(prr, 'e p'); { mark program block end } 
+              writeln(prr,'l',segsize:4,'=',lcmin:1);
               writeln(prr,'l',stackbot:4,'=',topmin:1);
               writeln(prr,'g ',gc:1);
               writeln(prr,'q')
@@ -6350,10 +6352,7 @@ end;
           (*generate call of main program; note that this call must be loaded
             at absolute address zero*)
           gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
-          if prcode then begin
-            writeln(prr, 'e p'); { mark program block end }
-            writeln(prr,'q')
-          end;
+          if prcode then writeln(prr,'q');
           if prtables then
             begin writeln(output); printtables(true)
             end
