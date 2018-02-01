@@ -401,6 +401,8 @@ type
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       break       = record ss: byte; sa: address; line: 1..maxsrc end;
+      brkinx      = 1..maxbrk;
+      brknum      = 0..maxbrk;
       { Here is the variable length string containment to save on space. strings
         are only stored in their length rounded to the nearest 10th. }
       strvsp = ^strvs; { pointer to variable length id string }
@@ -487,8 +489,8 @@ var   pc          : address;   (*program address register*)
       cmdlin      : cmdbuf; { command line }
       cmdlen      : cmdinx; { length of command line }
       cmdpos      : cmdinx; { current position in command line }
-      brktbl      : array [1..maxbrk] of break; { breakpoint table }
-      bi          : 1..maxbrk; { index for same }
+      brktbl      : array [brkinx] of break; { breakpoint table }
+      bi          : brkinx; { index for same }
       stopins     : boolean; { stop instruction executed }
       breakins    : boolean; { break instruction executed }
       sourcemark  : boolean; { source line instruction executed }
@@ -1145,6 +1147,13 @@ end;
 
 (*-------------------------------------------------------------------------*)
 
+{ find lower case of character }
+function lcase(c: char): char;
+begin
+  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
+  lcase := c
+end { lcase };
+
 { get string quanta }
 procedure getstr(var p: strvsp);
 begin
@@ -1240,7 +1249,20 @@ begin l := fillen; p := nil; a := nil; j := 1;
   end;
   if p <> nil then for j := j to varsqt do p^.str[j] := ' '
 end;
- 
+
+{ compare variable length id string to fixed }
+function strequvf(a: strvsp; var b: filnam): boolean;
+var m: boolean; i, j: integer; c: char;
+begin
+  m := true; j := 1;
+  for i := 1 to fillen do begin
+    c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
+    if lcase(c) <> lcase(b[i]) then m := false;
+    if j > varsqt then begin a := a^.next; j := 1 end
+  end;
+  strequvf := m
+end;
+   
 (*--------------------------------------------------------------------*)
 
 { Accessor functions
@@ -1513,11 +1535,19 @@ begin
 end;
   
 function isbrk(a: address): boolean;
-var i: 1..maxbrk;
+var i: brkinx;
     m: boolean;
 begin m := false;
   for i := 1 to maxbrk do if brktbl[i].sa = a then m := true;
   isbrk := m
+end;
+
+function isbrkl(l: integer): boolean;
+var i: brkinx;
+    m: boolean;
+begin m := false;
+  for i := 1 to maxbrk do if brktbl[i].line = l then m := true;
+  isbrkl := m
 end;
 
 { list single instruction at address }
@@ -1556,34 +1586,6 @@ begin
       if insq[op] > intsize then begin write(','); wrthex(q1, inthex) end
 
    end
-
-end;
-
-{ dump contents of instruction memory }
-
-procedure dmpins;
-
-var i:  address;
-
-begin
-
-   writeln;
-   writeln('Contents of instruction memory');
-   writeln;
-   writeln('Addr    Op Ins         P  Q');
-   writeln('----------------------------------');
-   i := 0;
-   while i < lsttop do begin
-
-      if isbrk(i) then write('b') else write(' ');
-      if pc = i then write('*') else write(' ');
-      write(' ');
-      wrthex(i, maxdigh);
-      lstins(i);
-      writeln
-
-   end;
-   writeln
 
 end;
 
@@ -2000,6 +2002,16 @@ procedure load;
           sp: psymbol;
           ad: address;
           sgn: boolean;
+   procedure getlab;
+   var i: 1..fillen;
+   begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
+     if ch = ' ' then errorl('Symbols format error     ');
+     while ch <> ' ' do begin
+       if snl >= fillen then errorl('Symbols format error     ');
+       sn[snl] := ch; getnxt; snl := snl+1
+     end;
+     snl := snl-1
+   end;
    begin
       again := true;
       while again do
@@ -2069,15 +2081,7 @@ procedure load;
                               if not (ch in ['p', 'r', 'f']) then
                                 errorl('Block type is invalid    ');
                               ch1 := ch; { save block type }
-                              getnxt; skpspc;
-                              for snl := 1 to fillen do sn[snl] := ' ';
-                              snl := 1;
-                              while ch <> ' ' do begin
-                                if snl >= fillen then 
-                                  errorl('Block name too long      ');
-                                sn[snl] := ch; getnxt; snl := snl+1
-                              end;
-                              snl := snl-1;
+                              getnxt; skpspc; getlab;
                               new(bp); strassvf(bp^.name, sn); 
                               bp^.symbols := nil;
                               case ch1 of { block type }
@@ -2116,15 +2120,7 @@ procedure load;
                               getlin
                             end;
                        's': begin { symbol }
-                              getnxt; skpspc;
-                              for snl := 1 to fillen do sn[snl] := ' '; 
-                              snl := 1;
-                              while ch <> ' ' do begin
-                                if snl >= fillen then 
-                                  errorl('Symbol name too long     ');
-                                sn[snl] := ch; getnxt; snl := snl+1
-                              end;
-                              snl := snl-1;
+                              getnxt; getlab;
                               new(sp); strassvf(sp^.name, sn);
                               skpspc; 
                               if not (ch in ['g', 'l']) then
@@ -2139,15 +2135,7 @@ procedure load;
                               ad := 0; while ch in ['0'..'9'] do 
                                 begin ad := ad*10+ord(ch)-ord('0'); getnxt end;
                               if sgn then ad := -ad;
-                              sp^.off := ad;
-                              for snl := 1 to fillen do sn[snl] := ' ';
-                              skpspc; snl := 1;
-                              while ch <> ' ' do begin
-                                if snl >= fillen then 
-                                  errorl('Type digest too long     ');
-                                sn[snl] := ch; getnxt; snl := snl+1
-                              end;
-                              snl := snl-1;
+                              sp^.off := ad; getlab;
                               strassvf(sp^.digest, sn);
                               if blkstk = nil then 
                                 errorl('Symbol not in block      ');
@@ -3545,7 +3533,7 @@ begin
     while (i <= e) and not eof(f) do begin
       if newline then begin { output line head }
         write(i:4, ': ');
-        if isbrk(lintrk[i]) then write('b') else write(' ');
+        if isbrkl(i) then write('b') else write(' ');
         if lintrk[i] = pc then write('*') else write(' ');
         write(' ');
         newline := false
@@ -4125,7 +4113,8 @@ procedure debug;
 label 2;
 
 var dbglin: cmdbuf; dbglen: 0..maxcmd; dbgpos: cmdinx; cn: alfa; 
-    dbgend: boolean; s,e: address; i,x: integer; bp: pblock; syp: psymbol;
+    dbgend: boolean; s,e: address; i,x, l: integer; bp: pblock; syp: psymbol;
+    sn: filnam; snl: 1..fillen;
 
 procedure getlin;
 var c: char;
@@ -4145,7 +4134,7 @@ begin
   if dbgpos <= dbglen then chkchr := dbglin[dbgpos] else chkchr := ' '
 end;
 
-procedure getchr;
+procedure nxtchr;
 begin
   if dbgpos <= dbglen then dbgpos := dbgpos+1
 end;
@@ -4157,7 +4146,7 @@ end;
 
 procedure skpspc;
 begin
-  while (chkchr = ' ') and not chkend do getchr
+  while (chkchr = ' ') and not chkend do nxtchr
 end;
  
 procedure getnam;
@@ -4166,7 +4155,7 @@ begin
   skpspc;
   for i := 1 to maxalfa do cn[i] := ' '; i := 1;
   while (chkchr <> ' ') and not chkend do 
-    begin cn[i] := chkchr; i := i+1; getchr end
+    begin cn[i] := chkchr; i := i+1; nxtchr end
 end;
 
 procedure getnum(var n: integer);
@@ -4176,9 +4165,9 @@ begin
    if not (chkchr in ['$', '&', '%', '0'..'9']) then begin
      writeln('*** Number expected'); goto 2
    end;
-   if chkchr = '$' then begin r := 16; getchr end
-   else if chkchr = '&' then begin r := 8; getchr end
-   else if chkchr = '%' then begin r := 2; getchr end;  
+   if chkchr = '$' then begin r := 16; nxtchr end
+   else if chkchr = '&' then begin r := 8; nxtchr end
+   else if chkchr = '%' then begin r := 2; nxtchr end;  
    while chkchr in ['0'..'9','A'..'F','a'..'f'] do begin
      if ((r = 10) and (chkchr > '9')) or
         ((r = 2) and (chkchr > '1')) or
@@ -4189,7 +4178,7 @@ begin
      if chkchr in ['0'..'9'] then n := n*r+ord(chkchr)-ord('0')
      else if chkchr in ['A'..'F'] then n := n*r+ord(chkchr)-ord('A')+10
      else n := n*r+ord(chkchr)-ord('a')+10;
-     getchr
+     nxtchr
    end
 end;
 
@@ -4285,6 +4274,154 @@ begin
   writeln
 end;
 
+{ find active symbol }
+procedure symadr(var fs: psymbol; var ma: address);
+var bp: pblock; cpc: address;
+procedure fndsym;
+var bp: pblock; sp: psymbol;
+begin
+  bp := blklst; { index the block list }
+  while bp <> nil do begin { traverse block list }
+    if (cpc >= bp^.bstart) and (cpc < bp^.bend) then begin { search this section }
+      sp := bp^.symbols;
+      while sp <> nil do begin { traverse symbols list }
+        if strequvf(sp^.name, sn) then begin fs := sp; sp := nil; bp := nil end
+        else sp := sp^.next
+      end;
+      bp := nil { no need to search other blocks }
+    end;
+    if bp <> nil then bp := bp^.next
+  end
+end;
+begin
+  if getadr(mp+markdl) <> 0 then begin { there is an active frame }
+    ma := mp; { set current mark }
+    cpc := pc; { set current pc }
+    repeat
+      fndsym; { find in this frame }
+      if fs = nil then begin
+        cpc := getadr(ma+markra); { get next frame }
+        ma := getadr(ma+marksl)
+      end
+    until (fs <> nil) or (mp = cp); { found or no next frame }
+  end
+end; 
+
+procedure getsym;
+var i: 1..fillen;
+begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
+  if chkchr = ' ' then begin writeln('*** Symbol name expected'); goto 2 end;
+  while chkchr <> ' ' do begin
+    if snl >= fillen then begin writeln('*** Symbol name too long'); goto 2 end;
+    sn[snl] := chkchr; nxtchr; snl := snl+1
+  end;
+  snl := snl-1
+end;
+
+{ print value by type }
+procedure prttyp(var ad: address; td: strvsp; p: integer; byt: boolean);
+var i: integer; b: boolean; c: char; s, e: integer; l: integer;
+    sn, sns: filnam; snl, snsl: 1..fillen;
+
+function chkchr: char;
+begin if p > l then chkchr := ' ' else chkchr := strchr(td, p) end;
+
+procedure nxtchr; begin if p <= l then p := p+1 end;
+
+function chkend: boolean; begin chkend := p > l end;
+
+procedure skpspc; begin if (chkchr = ' ') and not chkend then nxtchr end;
+
+procedure expect(c: char);
+begin
+  if chkchr <> c then begin writeln('*** Type string error'); goto 2 end;
+  nxtchr
+end;
+
+procedure getnum(var i: integer);
+begin
+  i := 0; 
+  while chkchr in ['0'..'9'] do 
+    begin i := i*10+ord(chkchr)-ord('0'); nxtchr end
+end;
+
+function isbyte(v: integer): boolean; 
+begin isbyte := (v >= 0) and (v <= 255) end;
+
+procedure getsym;
+var i: 1..fillen;
+begin for i := 1 to fillen do sn[i] := ' '; snl := 1;
+  if not (chkchr in ['a'..'z', 'A'..'Z', '0'..'9', '_']) then 
+    begin writeln('*** Symbol name expected'); goto 2 end;
+  while chkchr in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
+    if snl >= fillen then begin writeln('*** Symbol name too long'); goto 2 end;
+    sn[snl] := chkchr; nxtchr; snl := snl+1
+  end;
+  snl := snl-1
+end;
+
+begin
+  l := lenpv(td); { get length of type string }
+  case chkchr of
+    'i': begin 
+           if getdef(ad) then begin
+             { fetch according to size }
+             if byt then begin i := getbyt(ad); ad := ad+1 end 
+             else begin i := getint(ad); ad := ad+intsize end;
+             write(i:1) 
+           end else write('Undefined') 
+         end;
+    'b': begin if getdef(ad) then write(getbol(ad)) else write('Undefined'); 
+               ad := ad+boolsize end;
+    'c': begin if getdef(ad) then write(getchr(ad)) else write('Undefined'); 
+               ad := ad+charsize end;
+    'n': begin if getdef(ad) then write(getrel(ad)) else write('Undefined'); 
+               ad := ad+realsize end;
+    'x': begin nxtchr; expect('(');
+           { It's subrange or enumerated. Subrange has a subtype. Note all 
+           subranges are reduced to numeric. }
+           if chkchr in ['0'..'9'] then begin
+             getnum(s); expect(','); getnum(e); expect(')');
+             prttyp(ad, td, p, isbyte(s) and isbyte(e)) { eval subtype }
+           end else begin { it's an enumeration, that's terminal }
+             if getdef(ad) then begin
+               { fetch according to size }
+               if byt then begin i := getbyt(ad); ad := ad+1 end 
+               else begin i := getint(ad); ad := ad+intsize end;
+               s := i;
+               { now get the enum label according to number }
+               repeat getsym; i := i-1;
+                 c := chkchr; if chkchr = ',' then nxtchr;
+                 if i = -1 then begin sns := sn; snsl := snl end
+               until c <> ',';
+               expect(')');
+               write(sns:snsl, '(', s:1, ')')
+             end else write('Undefined')     
+           end
+         end;
+    'p': writeln('Pointer');
+    's': writeln('Set');
+    'a': begin nxtchr; expect('x'); { must be subrange }
+           expect('('); if chkchr in ['0'..'9'] then begin { subrange }
+             getnum(s); expect(','); getnum(e); expect(')'); nxtchr
+           end else begin { enum }
+             s := 0; e := 0; 
+             repeat getsym; e := e+1; c := chkchr; 
+               if c = ',' then nxtchr
+             until c <> ',';
+             expect(')'); e := e-1
+           end; 
+           write('array ');
+           { print whole array }
+           for i := s to e do 
+             begin prttyp(ad, td, p, false); if i < e then write(', ') end;
+           writeln(' end');
+         end;
+    'r': writeln('Record');
+    'e': writeln('Exception');
+  end
+end;
+
 begin { debug }
   if not debugstart then begin
     writeln;
@@ -4292,6 +4429,12 @@ begin { debug }
     writeln
   end;
   getbrk;
+  { if we broke on line, fix the line to point }
+  if isbrk(pc) then begin { standing on a breakpoint }
+      x := 0;
+      for i := 1 to maxbrk do if brktbl[i].sa = pc then x := i;
+      if x >= 1 then if brktbl[x].line >= 0 then srclin := brktbl[x].line
+  end;
   { if we broke on a source marker, execute it then back up.
     This is because break on source line always will do this, and we need the
     source line from the instruction. }
@@ -4309,10 +4452,10 @@ begin { debug }
         s := 0; e := lsttop-1;
         skpspc; if not chkend then begin getnum(i); s := i end;
         skpspc; 
-        if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
+        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
         if e > lsttop-1 then e := lsttop-1;
-        writeln('Addr    Op Ins         P  Q');
+        writeln('Addr    Op Ins            P  Q');
         writeln('----------------------------------');
         while s <= e do begin
           if isbrk(s) then write('b') else write(' ');
@@ -4326,7 +4469,7 @@ begin { debug }
         s := 0; e := lsttop;
         skpspc; if not chkend then begin getnum(i); s := i end;
         skpspc;
-        if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
+        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
         if e > lsttop then e := lsttop;
         dmpmem(s, e)
@@ -4340,7 +4483,7 @@ begin { debug }
         write('Constants   '); prtrng(cp, maxstr);
         writeln
       end else if cn = 'dd        ' then begin { dump displays }
-        if mp = cp then 
+        if getadr(mp+markdl) = 0 then 
           begin writeln; writeln('No displays active'); writeln end
         else begin
           i := 1; skpspc; if not chkend then getnum(i);
@@ -4349,11 +4492,22 @@ begin { debug }
           until (i = 0) or (s = getadr(s+marksl))
         end
       end else if cn = 'b         ' then begin { place breakpoint source }
-        getnum(i); s := i; if i > maxsrc then writeln('*** Invalid source line')
+        getnum(l); if l > maxsrc then writeln('*** Invalid source line')
         else begin
-          x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
-          if x = 0 then writeln('*** Breakpoint table full')
-          else brktbl[x].sa := lintrk[s]; brktbl[x].line := s
+          if lintrk[l] < 0 then writeln('*** Invalid source line')
+          else begin s := lintrk[l]; i := 1;
+            while store[s] = mrkins do begin { walk over source line markers }
+              { source markers should always be within valid code, but we bail
+                on out of memory store or taking too long to find code to keep
+                this from locking up }
+              if (s > maxstr) or (i > 100) then 
+                begin writeln('*** Could not place breakpoint'); goto 2 end;
+              s := s+mrkinsl; i := i+1
+            end;
+            x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
+            if x = 0 then writeln('*** Breakpoint table full')
+            else brktbl[x].sa := s; brktbl[x].line := l
+          end
         end
       end else if cn = 'bi        ' then begin { place breakpoint instruction }
         getnum(i); s := i;
@@ -4396,7 +4550,7 @@ begin { debug }
         s := 0; e := maxsrc;
         skpspc; if not chkend then begin getnum(i); s := i end;
         skpspc;
-        if chkchr = ':' then begin getchr; getnum(i); e := s+i-1 end
+        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
         writeln;
         prtsrc(s, e, cn = 'lc        ');
@@ -4417,7 +4571,19 @@ begin { debug }
           end
         end
       end else if cn = 'p         ' then begin { print (various) }
-        writeln('*** Command not implemented')
+        if getadr(mp+markdl) = 0 then 
+          begin writeln; writeln('No displays active'); writeln; goto 2 end;
+        getsym; symadr(syp, s);
+        if syp = nil then writeln('*** symbol not found in current context(s)')
+        else begin
+          if syp^.styp = stglobal then begin
+            write('Symbol: '); writev(output, syp^.name, lenpv(syp^.name));
+            s := pctop+syp^.off; { find address }
+            write(': '); prttyp(s, syp^.digest, 1, false);
+            writeln;
+            writeln
+          end else writeln('*** locals not implemented')
+        end
       end else if cn = 'e         ' then begin { enter (hex) }
         getnum(i); s := i; { get address }
         repeat
@@ -4654,7 +4820,8 @@ begin (* main *)
 
   { set breakpoint at 0 to kick off debugger }
   if dodebug then
-    begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; store[0] := brkins end;
+    begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 1; 
+          store[0] := brkins end;
   
   debugstart := false;
   writeln('Running program');

@@ -3694,8 +3694,7 @@ end;
                     5: begin write(prr,'s(');
                          with cstptr[fp2]^ do
                            for k := setlow to sethigh do
-                             (* increased for testing [sam] *)
-                             if k in pval then write(prr,k:7(*3*));
+                             if k in pval then write(prr,k:4);
                          writeln(prr,')');
                          mesl(cdxs[cdx[fop]][6])
                        end
