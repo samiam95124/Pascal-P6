@@ -400,7 +400,7 @@ type
       filsts      = (fclosed, fread, fwrite);
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
-      break       = record ss: byte; sa: address; line: 1..maxsrc end;
+      break       = record ss: byte; sa: address; line: 0..maxsrc end;
       brkinx      = 1..maxbrk;
       brknum      = 0..maxbrk;
       { Here is the variable length string containment to save on space. strings
@@ -4114,7 +4114,7 @@ label 2;
 
 var dbglin: cmdbuf; dbglen: 0..maxcmd; dbgpos: cmdinx; cn: alfa; 
     dbgend: boolean; s,e: address; i,x, l: integer; bp: pblock; syp: psymbol;
-    sn: filnam; snl: 1..fillen;
+    sn: filnam; snl: 1..fillen; ens: array [1..100] of integer;
 
 procedure getlin;
 var c: char;
@@ -4319,9 +4319,10 @@ begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
 end;
 
 { print value by type }
-procedure prttyp(var ad: address; td: strvsp; p: integer; byt: boolean);
-var i: integer; b: boolean; c: char; s, e: integer; l: integer;
-    sn, sns: filnam; snl, snsl: 1..fillen;
+procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean);
+var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
+    sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
+    off, ad2, ad3: address;
 
 function chkchr: char;
 begin if p > l then chkchr := ' ' else chkchr := strchr(td, p) end;
@@ -4360,10 +4361,103 @@ begin for i := 1 to fillen do sn[i] := ' '; snl := 1;
   snl := snl-1
 end;
 
+procedure getrng;
+var si: integer;
+begin enum := false; { not enumeration }
+  { check for common types (yep, boolean and char can be a range) }
+  if chkchr = 'b' then begin s := 0; e := 1 end
+  else if chkchr = 'c' then begin s := ordminchar; e := ordmaxchar end
+  else begin
+    expect('x'); { must be subrange or enum }
+    expect('('); if chkchr in ['0'..'9'] then begin { subrange }
+      getnum(s); expect(','); getnum(e); expect(')')
+    end else begin { enum }
+      enum := true; s := 0; e := 0; si := 1; 
+      repeat ens[si] := p; getsym; e := e+1; c := chkchr; 
+        if c = ',' then nxtchr;
+        if si < 100 then si := si+1
+      until c <> ',';
+      expect(')'); e := e-1
+     end
+   end
+end; 
+         
+function bitset(ad: address; bit: integer): boolean;
+var b: byte;
+begin
+   b := getbyt(ad+bit div 8);
+   bitset := odd(b div bitmsk[bit mod 8])
+end;
+
+procedure skptyp; forward;
+
+{ skip fieldlist }
+procedure skiplist;
+var c: char; i: integer;
+begin
+  expect('(');
+  while chkchr <> ')' do begin
+    getsym; expect(':'); getnum(i); expect(':'); skptyp;
+    if chkchr = '(' then begin nxtchr;
+      { tagfield, parse sublists }
+      while chkchr <> ')' do begin getnum(i); skiplist end;
+      expect(')')
+    end;
+    c := chkchr; if c = ',' then begin nxtchr; write(',') end
+  end;
+  expect(')')
+end;
+
+{ skip over, don't print, type }
+procedure skptyp;
+begin
+  case chkchr of
+    'i','b','c','n', 'p', 'e': nxtchr;
+    'x': begin nxtchr; expect('(');
+           if chkchr in ['0'..'9'] then begin
+             getnum(s); expect(','); getnum(e); expect(')');
+           end else begin 
+             repeat getsym;
+               c := chkchr; if chkchr = ',' then nxtchr;
+             until c <> ',';
+             expect(')');
+           end
+         end;
+    's': begin nxtchr; getrng end;
+    'a': begin nxtchr; getrng; if not enum then nxtchr end;
+    'r': begin nxtchr; skiplist end; 
+  end
+end;
+
+{ process fieldlist }
+procedure fieldlist;
+var i, x: integer; c: char;
+begin
+  expect('('); 
+  while chkchr <> ')' do begin
+    getsym; expect(':'); getnum(i); off := i; expect(':');
+    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, p, false);
+    if chkchr = '(' then begin nxtchr;
+      { tagfield, parse sublists }
+      while chkchr <> ')' do begin
+        { need to fetch and check if this case is active }
+        getnum(i); 
+        { get actual tagfield according to size }
+        if ad2-ad3 = 1 then x := getbyt(ad+off) else x := getint(ad+off);
+        if i = x then begin write('('); fieldlist; write(')') end
+        else skiplist
+      end;
+      expect(')')
+    end;
+    c := chkchr; if c = ',' then begin nxtchr; write(',') end
+  end;
+  expect(')')
+end;
+
 begin
   l := lenpv(td); { get length of type string }
   case chkchr of
-    'i': begin 
+    'i': begin nxtchr;
            if getdef(ad) then begin
              { fetch according to size }
              if byt then begin i := getbyt(ad); ad := ad+1 end 
@@ -4371,12 +4465,21 @@ begin
              write(i:1) 
            end else write('Undefined') 
          end;
-    'b': begin if getdef(ad) then write(getbol(ad)) else write('Undefined'); 
-               ad := ad+boolsize end;
-    'c': begin if getdef(ad) then write(getchr(ad)) else write('Undefined'); 
-               ad := ad+charsize end;
-    'n': begin if getdef(ad) then write(getrel(ad)) else write('Undefined'); 
-               ad := ad+realsize end;
+    'b': begin nxtchr; 
+           if getdef(ad) then begin 
+             b := getbol(ad); 
+             if b = false then write('false(0)') else write('true(1)')
+           end else write('Undefined'); 
+           ad := ad+boolsize 
+         end;
+    'c': begin nxtchr;
+           if getdef(ad) then write(getchr(ad)) else write('Undefined'); 
+           ad := ad+charsize 
+         end;
+    'n': begin nxtchr;
+           if getdef(ad) then write(getrel(ad)) else write('Undefined'); 
+           ad := ad+realsize 
+         end;
     'x': begin nxtchr; expect('(');
            { It's subrange or enumerated. Subrange has a subtype. Note all 
            subranges are reduced to numeric. }
@@ -4400,24 +4503,37 @@ begin
            end
          end;
     'p': writeln('Pointer');
-    's': writeln('Set');
-    'a': begin nxtchr; expect('x'); { must be subrange }
-           expect('('); if chkchr in ['0'..'9'] then begin { subrange }
-             getnum(s); expect(','); getnum(e); expect(')'); nxtchr
-           end else begin { enum }
-             s := 0; e := 0; 
-             repeat getsym; e := e+1; c := chkchr; 
-               if c = ',' then nxtchr
-             until c <> ',';
-             expect(')'); e := e-1
-           end; 
+    's': begin nxtchr; getrng;
+           write('['); first := true;
+           for i := s to e do
+             if bitset(ad, i) then begin
+               if not first then write(','); 
+               if not enum then begin
+                 if chkchr = 'c' then write('''', chr(i), '''')
+                 else if chkchr = 'b' then begin 
+                   if i = 0 then write('false(0)')
+                   else write('true(1)')
+                 end else write(i:1)
+               end else if e <= 100 then begin { output symbolic }
+                 x := ens[i]; { get start position }
+                 repeat
+                   c := strchr(td, x); 
+                   if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
+                 until (c = ')') or (c = ',') 
+               end else write(i:1); 
+               first := false 
+             end;
+           write(']')
+         end;
+    'a': begin nxtchr; getrng; { get range of index }
+           if not enum then nxtchr; { discard index type, we don't need it }
            write('array ');
            { print whole array }
            for i := s to e do 
              begin prttyp(ad, td, p, false); if i < e then write(', ') end;
-           writeln(' end');
+           write(' end');
          end;
-    'r': writeln('Record');
+    'r': begin nxtchr; write('record '); fieldlist; write(' end') end; 
     'e': writeln('Exception');
   end
 end;
@@ -4433,7 +4549,7 @@ begin { debug }
   if isbrk(pc) then begin { standing on a breakpoint }
       x := 0;
       for i := 1 to maxbrk do if brktbl[i].sa = pc then x := i;
-      if x >= 1 then if brktbl[x].line >= 0 then srclin := brktbl[x].line
+      if x >= 1 then if brktbl[x].line > 0 then srclin := brktbl[x].line
   end;
   { if we broke on a source marker, execute it then back up.
     This is because break on source line always will do this, and we need the
@@ -4471,7 +4587,7 @@ begin { debug }
         skpspc;
         if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
         else if not chkend then begin getnum(i); e := i end;
-        if e > lsttop then e := lsttop;
+        if e > maxstr then e := maxstr;
         dmpmem(s, e)
       end else if cn = 'ds        ' then begin { dump storage specs }
         writeln;
@@ -4513,7 +4629,7 @@ begin { debug }
         getnum(i); s := i;
         x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
-        else brktbl[x].sa := s; brktbl[x].line := -1
+        else brktbl[x].sa := s; brktbl[x].line := 0
       end else if cn = 'c         ' then begin { clear breakpoint }
         skpspc; if not chkend then begin
           getnum(i); s := i; i := 0;
@@ -4577,9 +4693,9 @@ begin { debug }
         if syp = nil then writeln('*** symbol not found in current context(s)')
         else begin
           if syp^.styp = stglobal then begin
-            write('Symbol: '); writev(output, syp^.name, lenpv(syp^.name));
+            writeln;
             s := pctop+syp^.off; { find address }
-            write(': '); prttyp(s, syp^.digest, 1, false);
+            x := 1; prttyp(s, syp^.digest, x, false);
             writeln;
             writeln
           end else writeln('*** locals not implemented')
