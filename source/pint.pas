@@ -4112,73 +4112,79 @@ procedure debug;
 
 label 2;
 
-var dbglin: cmdbuf; dbglen: 0..maxcmd; dbgpos: cmdinx; cn: alfa; 
-    dbgend: boolean; s,e: address; i,x, l: integer; bp: pblock; syp: psymbol;
-    sn: filnam; snl: 1..fillen; ens: array [1..100] of integer;
+{ parser control record }
+type parctl = record b: strvsp; l, p: integer end;  
 
-procedure getlin;
+var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x, l: integer;
+    bp: pblock; syp: psymbol; sn: filnam; snl: 1..fillen; 
+    ens: array [1..100] of integer;
+
+procedure getlin(var pc: parctl);
 var c: char;
-begin
-   dbglen := 0; write('debug> '); 
-   while not eoln do begin 
-     read(c); 
-     { for now toss excess characters }
-     if dbglen < maxcmd then begin dbglen := dbglen+1; dbglin[dbglen] := c end
-   end;
-   readln;
-   dbgpos := 1;
+begin 
+  with pc do begin
+    b := nil; l := 0; write('debug> '); 
+    while not eoln do begin read(c); l := l+1; strchrass(b, l, c) end;
+    readln; p := 1
+  end
 end;
 
-function chkchr: char;
+function chkchr(var pc: parctl): char;
 begin
-  if dbgpos <= dbglen then chkchr := dbglin[dbgpos] else chkchr := ' '
+  with pc do if p <= l then chkchr := strchr(b, p) else chkchr := ' '
 end;
 
-procedure nxtchr;
+procedure nxtchr(var pc: parctl);
 begin
-  if dbgpos <= dbglen then dbgpos := dbgpos+1
+  with pc do if p <= l then p := p+1
 end;
 
-function chkend: boolean;
+function chkend(var pc: parctl): boolean;
 begin
-  chkend := dbgpos > dbglen
+  with pc do chkend := p > l
 end;
 
-procedure skpspc;
+procedure skpspc(var pc: parctl);
 begin
-  while (chkchr = ' ') and not chkend do nxtchr
+  while (chkchr(pc) = ' ') and not chkend(pc) do nxtchr(pc)
+end;
+
+procedure expect(var pc: parctl; c: char);
+begin
+  if chkchr(pc) <> c then begin writeln('*** Expected ''', c, ''''); goto 2 end;
+  nxtchr(pc)
 end;
  
-procedure getnam;
+procedure getnam(var pc: parctl);
 var i: alfainx;
 begin
-  skpspc;
+  skpspc(pc);
   for i := 1 to maxalfa do cn[i] := ' '; i := 1;
-  while (chkchr <> ' ') and not chkend do 
-    begin cn[i] := chkchr; i := i+1; nxtchr end
+  while (chkchr(pc) <> ' ') and not chkend(pc) do 
+    begin cn[i] := chkchr(pc); i := i+1; nxtchr(pc) end
 end;
 
-procedure getnum(var n: integer);
+procedure getnum(var pc: parctl; var n: integer);
 var r: integer;
 begin
-   n := 0; r := 10; skpspc; 
-   if not (chkchr in ['$', '&', '%', '0'..'9']) then begin
+   n := 0; r := 10; skpspc(pc); 
+   if not (chkchr(pc) in ['$', '&', '%', '0'..'9']) then begin
      writeln('*** Number expected'); goto 2
    end;
-   if chkchr = '$' then begin r := 16; nxtchr end
-   else if chkchr = '&' then begin r := 8; nxtchr end
-   else if chkchr = '%' then begin r := 2; nxtchr end;  
-   while chkchr in ['0'..'9','A'..'F','a'..'f'] do begin
-     if ((r = 10) and (chkchr > '9')) or
-        ((r = 2) and (chkchr > '1')) or
-        ((r = 8) and (chkchr > '7')) then begin
+   if chkchr(pc) = '$' then begin r := 16; nxtchr(pc) end
+   else if chkchr(pc) = '&' then begin r := 8; nxtchr(pc) end
+   else if chkchr(pc) = '%' then begin r := 2; nxtchr(pc) end;  
+   while chkchr(pc) in ['0'..'9','A'..'F','a'..'f'] do begin
+     if ((r = 10) and (chkchr(pc) > '9')) or
+        ((r = 2) and (chkchr(pc) > '1')) or
+        ((r = 8) and (chkchr(pc) > '7')) then begin
        writeln('*** Digit beyond radix');
        goto 2
      end; 
-     if chkchr in ['0'..'9'] then n := n*r+ord(chkchr)-ord('0')
-     else if chkchr in ['A'..'F'] then n := n*r+ord(chkchr)-ord('A')+10
-     else n := n*r+ord(chkchr)-ord('a')+10;
-     nxtchr
+     if chkchr(pc) in ['0'..'9'] then n := n*r+ord(chkchr(pc))-ord('0')
+     else if chkchr(pc) in ['A'..'F'] then n := n*r+ord(chkchr(pc))-ord('A')+10
+     else n := n*r+ord(chkchr(pc))-ord('a')+10;
+     nxtchr(pc)
    end
 end;
 
@@ -4307,13 +4313,14 @@ begin
   end
 end; 
 
-procedure getsym;
+procedure getsym(var pc: parctl);
 var i: 1..fillen;
-begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
-  if chkchr = ' ' then begin writeln('*** Symbol name expected'); goto 2 end;
-  while chkchr <> ' ' do begin
+begin for i := 1 to fillen do sn[i] := ' '; snl := 1; skpspc(pc);
+  if not (chkchr(pc) in ['a'..'z', 'A'..'Z', '0'..'9', '_']) then 
+    begin writeln('*** Symbol name expected'); goto 2 end;
+  while chkchr(pc) in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
     if snl >= fillen then begin writeln('*** Symbol name too long'); goto 2 end;
-    sn[snl] := chkchr; nxtchr; snl := snl+1
+    sn[snl] := chkchr(pc); nxtchr(pc); snl := snl+1
   end;
   snl := snl-1
 end;
@@ -4322,62 +4329,28 @@ end;
 procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean);
 var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
     sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
-    off, ad2, ad3: address;
-
-function chkchr: char;
-begin if p > l then chkchr := ' ' else chkchr := strchr(td, p) end;
-
-procedure nxtchr; begin if p <= l then p := p+1 end;
-
-function chkend: boolean; begin chkend := p > l end;
-
-procedure skpspc; begin if (chkchr = ' ') and not chkend then nxtchr end;
-
-procedure expect(c: char);
-begin
-  if chkchr <> c then begin writeln('*** Type string error'); goto 2 end;
-  nxtchr
-end;
-
-procedure getnum(var i: integer);
-begin
-  i := 0; 
-  while chkchr in ['0'..'9'] do 
-    begin i := i*10+ord(chkchr)-ord('0'); nxtchr end
-end;
+    ad2, ad3: address; tdc: parctl;
 
 function isbyte(v: integer): boolean; 
 begin isbyte := (v >= 0) and (v <= 255) end;
 
-procedure getsym;
-var i: 1..fillen;
-begin for i := 1 to fillen do sn[i] := ' '; snl := 1;
-  if not (chkchr in ['a'..'z', 'A'..'Z', '0'..'9', '_']) then 
-    begin writeln('*** Symbol name expected'); goto 2 end;
-  while chkchr in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
-    if snl >= fillen then begin writeln('*** Symbol name too long'); goto 2 end;
-    sn[snl] := chkchr; nxtchr; snl := snl+1
-  end;
-  snl := snl-1
-end;
-
-procedure getrng;
+procedure getrng(var pc: parctl);
 var si: integer;
 begin enum := false; { not enumeration }
   { check for common types (yep, boolean and char can be a range) }
-  if chkchr = 'b' then begin s := 0; e := 1 end
-  else if chkchr = 'c' then begin s := ordminchar; e := ordmaxchar end
+  if chkchr(pc) = 'b' then begin s := 0; e := 1 end
+  else if chkchr(pc) = 'c' then begin s := ordminchar; e := ordmaxchar end
   else begin
-    expect('x'); { must be subrange or enum }
-    expect('('); if chkchr in ['0'..'9'] then begin { subrange }
-      getnum(s); expect(','); getnum(e); expect(')')
+    expect(pc, 'x'); { must be subrange or enum }
+    expect(pc, '('); if chkchr(pc) in ['0'..'9'] then begin { subrange }
+      getnum(pc, s); expect(pc, ','); getnum(pc, e); expect(pc, ')')
     end else begin { enum }
       enum := true; s := 0; e := 0; si := 1; 
-      repeat ens[si] := p; getsym; e := e+1; c := chkchr; 
-        if c = ',' then nxtchr;
+      repeat ens[si] := p; getsym(pc); e := e+1; c := chkchr(pc); 
+        if c = ',' then nxtchr(pc);
         if si < 100 then si := si+1
       until c <> ',';
-      expect(')'); e := e-1
+      expect(pc, ')'); e := e-1
      end
    end
 end; 
@@ -4389,75 +4362,76 @@ begin
    bitset := odd(b div bitmsk[bit mod 8])
 end;
 
-procedure skptyp; forward;
+procedure skptyp(var pc: parctl); forward;
 
 { skip fieldlist }
-procedure skiplist;
+procedure skiplist(var pc: parctl);
 var c: char; i: integer;
 begin
-  expect('(');
-  while chkchr <> ')' do begin
-    getsym; expect(':'); getnum(i); expect(':'); skptyp;
-    if chkchr = '(' then begin nxtchr;
+  expect(pc, '(');
+  while chkchr(pc) <> ')' do begin
+    getsym(pc); expect(pc, ':'); getnum(pc, i); expect(pc, ':'); skptyp(pc);
+    if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
-      while chkchr <> ')' do begin getnum(i); skiplist end;
-      expect(')')
+      while chkchr(pc) <> ')' do begin getnum(pc, i); skiplist(pc) end;
+      expect(pc, ')')
     end;
-    c := chkchr; if c = ',' then begin nxtchr; write(',') end
+    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
   end;
-  expect(')')
+  expect(pc, ')')
 end;
 
 { skip over, don't print, type }
-procedure skptyp;
+procedure skptyp{(var pc: parctl)};
 begin
-  case chkchr of
-    'i','b','c','n', 'p', 'e': nxtchr;
-    'x': begin nxtchr; expect('(');
-           if chkchr in ['0'..'9'] then begin
-             getnum(s); expect(','); getnum(e); expect(')');
+  case chkchr(pc) of
+    'i','b','c','n', 'p', 'e': nxtchr(pc);
+    'x': begin nxtchr(pc); expect(pc, '(');
+           if chkchr(pc) in ['0'..'9'] then begin
+             getnum(pc, s); expect(pc, ','); getnum(pc, e); expect(pc, ')');
            end else begin 
-             repeat getsym;
-               c := chkchr; if chkchr = ',' then nxtchr;
+             repeat getsym(pc);
+               c := chkchr(pc); if chkchr(pc) = ',' then nxtchr(pc);
              until c <> ',';
-             expect(')');
+             expect(pc, ')');
            end
          end;
-    's': begin nxtchr; getrng end;
-    'a': begin nxtchr; getrng; if not enum then nxtchr end;
-    'r': begin nxtchr; skiplist end; 
+    's': begin nxtchr(pc); getrng(pc) end;
+    'a': begin nxtchr(pc); getrng(pc); if not enum then nxtchr(pc) end;
+    'r': begin nxtchr(pc); skiplist(pc) end; 
   end
 end;
 
 { process fieldlist }
-procedure fieldlist;
-var i, x: integer; c: char;
+procedure fieldlist(var pc: parctl);
+var i, x: integer; c: char; off: address;
 begin
-  expect('('); 
-  while chkchr <> ')' do begin
-    getsym; expect(':'); getnum(i); off := i; expect(':');
-    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, p, false);
-    if chkchr = '(' then begin nxtchr;
+  expect(pc, '('); 
+  while chkchr(pc) <> ')' do begin
+    getsym(pc); expect(pc, ':'); getnum(pc, i); off := i; expect(pc, ':');
+    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false);
+    if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
-      while chkchr <> ')' do begin
+      while chkchr(pc) <> ')' do begin
         { need to fetch and check if this case is active }
-        getnum(i); 
+        getnum(pc, i); 
         { get actual tagfield according to size }
         if ad2-ad3 = 1 then x := getbyt(ad+off) else x := getint(ad+off);
-        if i = x then begin write('('); fieldlist; write(')') end
-        else skiplist
+        if i = x then begin write('('); fieldlist(pc); write(')') end
+        else skiplist(pc)
       end;
-      expect(')')
+      expect(pc, ')')
     end;
-    c := chkchr; if c = ',' then begin nxtchr; write(',') end
+    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
   end;
-  expect(')')
+  expect(pc, ')')
 end;
 
 begin
-  l := lenpv(td); { get length of type string }
-  case chkchr of
-    'i': begin nxtchr;
+  { set up type digest for parse }
+  tdc.b := td; tdc.l := lenpv(td); tdc.p := p;
+  case chkchr(tdc) of
+    'i': begin nxtchr(tdc);
            if getdef(ad) then begin
              { fetch according to size }
              if byt then begin i := getbyt(ad); ad := ad+1 end 
@@ -4465,27 +4439,27 @@ begin
              write(i:1) 
            end else write('Undefined') 
          end;
-    'b': begin nxtchr; 
+    'b': begin nxtchr(tdc); 
            if getdef(ad) then begin 
              b := getbol(ad); 
              if b = false then write('false(0)') else write('true(1)')
            end else write('Undefined'); 
            ad := ad+boolsize 
          end;
-    'c': begin nxtchr;
+    'c': begin nxtchr(tdc);
            if getdef(ad) then write(getchr(ad)) else write('Undefined'); 
            ad := ad+charsize 
          end;
-    'n': begin nxtchr;
+    'n': begin nxtchr(tdc);
            if getdef(ad) then write(getrel(ad)) else write('Undefined'); 
            ad := ad+realsize 
          end;
-    'x': begin nxtchr; expect('(');
+    'x': begin nxtchr(tdc); expect(tdc, '(');
            { It's subrange or enumerated. Subrange has a subtype. Note all 
            subranges are reduced to numeric. }
-           if chkchr in ['0'..'9'] then begin
-             getnum(s); expect(','); getnum(e); expect(')');
-             prttyp(ad, td, p, isbyte(s) and isbyte(e)) { eval subtype }
+           if chkchr(tdc) in ['0'..'9'] then begin
+             getnum(tdc, s); expect(tdc, ','); getnum(tdc, e); expect(tdc, ')');
+             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e)) { eval subtype }
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin
                { fetch according to size }
@@ -4493,24 +4467,24 @@ begin
                else begin i := getint(ad); ad := ad+intsize end;
                s := i;
                { now get the enum label according to number }
-               repeat getsym; i := i-1;
-                 c := chkchr; if chkchr = ',' then nxtchr;
+               repeat getsym(tdc); i := i-1;
+                 c := chkchr(tdc); if chkchr(tdc) = ',' then nxtchr(tdc);
                  if i = -1 then begin sns := sn; snsl := snl end
                until c <> ',';
-               expect(')');
+               expect(tdc, ')');
                write(sns:snsl, '(', s:1, ')')
              end else write('Undefined')     
            end
          end;
     'p': writeln('Pointer');
-    's': begin nxtchr; getrng;
+    's': begin nxtchr(tdc); getrng(tdc);
            write('['); first := true;
            for i := s to e do
              if bitset(ad, i) then begin
                if not first then write(','); 
                if not enum then begin
-                 if chkchr = 'c' then write('''', chr(i), '''')
-                 else if chkchr = 'b' then begin 
+                 if chkchr(tdc) = 'c' then write('''', chr(i), '''')
+                 else if chkchr(tdc) = 'b' then begin 
                    if i = 0 then write('false(0)')
                    else write('true(1)')
                  end else write(i:1)
@@ -4525,17 +4499,18 @@ begin
              end;
            write(']')
          end;
-    'a': begin nxtchr; getrng; { get range of index }
-           if not enum then nxtchr; { discard index type, we don't need it }
+    'a': begin nxtchr(tdc); getrng(tdc); { get range of index }
+           if not enum then nxtchr(tdc); { discard index type, we don't need it }
            write('array ');
            { print whole array }
            for i := s to e do 
-             begin prttyp(ad, td, p, false); if i < e then write(', ') end;
+             begin prttyp(ad, td, tdc.p, false); if i < e then write(', ') end;
            write(' end');
          end;
-    'r': begin nxtchr; write('record '); fieldlist; write(' end') end; 
+    'r': begin nxtchr(tdc); write('record '); fieldlist(tdc); write(' end') end; 
     'e': writeln('Exception');
-  end
+  end;
+  p := tdc.p { put back digest position (string does not change) }
 end;
 
 begin { debug }
@@ -4560,16 +4535,18 @@ begin { debug }
   prthdr;
   2: { error reenter interpreter }
   repeat
-    getlin;
-    skpspc;
-    if not chkend then begin
-      getnam;
+    getlin(dbc);
+    skpspc(dbc);
+    if not chkend(dbc) then begin
+      getnam(dbc);
       if cn = 'li        ' then begin { list instructions }
         s := 0; e := lsttop-1;
-        skpspc; if not chkend then begin getnum(i); s := i end;
-        skpspc; 
-        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
-        else if not chkend then begin getnum(i); e := i end;
+        skpspc(dbc); 
+        if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        skpspc(dbc); 
+        if chkchr(dbc) = ':' then 
+          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
+        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
         if e > lsttop-1 then e := lsttop-1;
         writeln('Addr    Op Ins            P  Q');
         writeln('----------------------------------');
@@ -4583,10 +4560,11 @@ begin { debug }
         end
       end else if cn = 'd         ' then begin { dump memory }
         s := 0; e := lsttop;
-        skpspc; if not chkend then begin getnum(i); s := i end;
-        skpspc;
-        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
-        else if not chkend then begin getnum(i); e := i end;
+        skpspc(dbc); if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        skpspc(dbc);
+        if chkchr(dbc) = ':' then 
+          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
+        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
         if e > maxstr then e := maxstr;
         dmpmem(s, e)
       end else if cn = 'ds        ' then begin { dump storage specs }
@@ -4602,13 +4580,13 @@ begin { debug }
         if getadr(mp+markdl) = 0 then 
           begin writeln; writeln('No displays active'); writeln end
         else begin
-          i := 1; skpspc; if not chkend then getnum(i);
+          i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
           s := mp;
           repeat dmpdsp(s); s := getadr(s+marksl); i := i-1
           until (i = 0) or (s = getadr(s+marksl))
         end
       end else if cn = 'b         ' then begin { place breakpoint source }
-        getnum(l); if l > maxsrc then writeln('*** Invalid source line')
+        getnum(dbc, l); if l > maxsrc then writeln('*** Invalid source line')
         else begin
           if lintrk[l] < 0 then writeln('*** Invalid source line')
           else begin s := lintrk[l]; i := 1;
@@ -4626,13 +4604,13 @@ begin { debug }
           end
         end
       end else if cn = 'bi        ' then begin { place breakpoint instruction }
-        getnum(i); s := i;
+        getnum(dbc, i); s := i;
         x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
         else brktbl[x].sa := s; brktbl[x].line := 0
       end else if cn = 'c         ' then begin { clear breakpoint }
-        skpspc; if not chkend then begin
-          getnum(i); s := i; i := 0;
+        skpspc(dbc); if not chkend(dbc) then begin
+          getnum(dbc, i); s := i; i := 0;
           for i := 1 to maxbrk do if brktbl[i].sa = s then x := i;
           if i = 0 then writeln('*** No breakpoint at address')
           else brktbl[x].sa := -1
@@ -4649,7 +4627,7 @@ begin { debug }
         writeln
       end else if (cn = 'si        ') or
                   (cn = 'sis       ') then begin { step instruction }
-        i := 1; skpspc; if not chkend then getnum(i);
+        i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
         while i > 0 do begin 
           singleins; if cn = 'si        ' then prthdr; i := i-1;
           { if we hit break or stop, just stay on that instruction }
@@ -4664,16 +4642,17 @@ begin { debug }
       end else if (cn = 'l         ') or
                   (cn = 'lc        ') then begin { list source }
         s := 0; e := maxsrc;
-        skpspc; if not chkend then begin getnum(i); s := i end;
-        skpspc;
-        if chkchr = ':' then begin nxtchr; getnum(i); e := s+i-1 end
-        else if not chkend then begin getnum(i); e := i end;
+        skpspc(dbc); if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        skpspc(dbc);
+        if chkchr(dbc) = ':' then 
+          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
+        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
         writeln;
         prtsrc(s, e, cn = 'lc        ');
         writeln
       end else if (cn = 's         ') or
                   (cn = 'ss        ') then begin { step source line }
-        i := 1; skpspc; if not chkend then getnum(i);
+        i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
         while i > 0 do begin
           repeat singleins until stopins or sourcemark; 
           singleins; if cn = 's         ' then prthdr; i := i-1;
@@ -4689,7 +4668,7 @@ begin { debug }
       end else if cn = 'p         ' then begin { print (various) }
         if getadr(mp+markdl) = 0 then 
           begin writeln; writeln('No displays active'); writeln; goto 2 end;
-        getsym; symadr(syp, s);
+        getsym(dbc); symadr(syp, s);
         if syp = nil then writeln('*** symbol not found in current context(s)')
         else begin
           if syp^.styp = stglobal then begin
@@ -4701,16 +4680,16 @@ begin { debug }
           end else writeln('*** locals not implemented')
         end
       end else if cn = 'e         ' then begin { enter (hex) }
-        getnum(i); s := i; { get address }
+        getnum(dbc, i); s := i; { get address }
         repeat
-          getnum(i); 
+          getnum(dbc, i); 
           if (i > 255) or (i < 0) then 
             begin writeln('*** Bad byte value'); s := -1 end
           else begin
             store[s] := i;
             s := s+1
           end
-        until chkend or (s < 0);
+        until chkend(dbc) or (s < 0);
       end else if cn = 's         ' then begin { set (variable) }
         writeln('*** Command not implemented')
       end else if cn = 'w         ' then begin { watch (variable) }
@@ -4721,35 +4700,35 @@ begin { debug }
         writeln('*** Command not implemented')  
       end else if cn = 'hs        ' then repspc { report heap space }
       else if cn = 'pc        ' then begin { set pc }
-        if not chkend then begin getnum(i); pc := i end
+        if not chkend(dbc) then begin getnum(dbc, i); pc := i end
         else begin
           writeln;
           write('pc: '); wrthex(pc, 8); writeln;
           writeln
         end  
       end else if cn = 'sp        ' then begin { set sp }
-        if not chkend then begin getnum(i); sp := i end
+        if not chkend(dbc) then begin getnum(dbc, i); sp := i end
         else begin
           writeln;
           write('sp: '); wrthex(sp, 8); writeln;
           writeln
         end  
       end else if cn = 'mp        ' then begin { set mp }
-        if not chkend then begin getnum(i); mp := i end
+        if not chkend(dbc) then begin getnum(dbc, i); mp := i end
         else begin
           writeln;
           write('mp: '); wrthex(mp, 8); writeln;
           writeln
         end  
       end else if cn = 'np        ' then begin { set np }
-        if not chkend then begin getnum(i); np := i end
+        if not chkend(dbc) then begin getnum(dbc, i); np := i end
         else begin
           writeln;
           write('np: '); wrthex(np, 8); writeln;
           writeln
         end  
       end else if cn = 'cp        ' then begin { set cp }
-        if not chkend then begin getnum(i); cp := i end
+        if not chkend(dbc) then begin getnum(dbc, i); cp := i end
         else begin
           writeln;
           write('cp: '); wrthex(cp, 8); writeln;
