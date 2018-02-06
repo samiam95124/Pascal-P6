@@ -4116,7 +4116,7 @@ label 2;
 type parctl = record b: strvsp; l, p: integer end;  
 
 var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x, l: integer;
-    bp: pblock; syp: psymbol; sn: filnam; snl: 1..fillen; 
+    bp: pblock; syp: psymbol; sn, sn2: filnam; snl: 1..fillen; 
     ens: array [1..100] of integer;
 
 procedure getlin(var pc: parctl);
@@ -4325,17 +4325,8 @@ begin for i := 1 to fillen do sn[i] := ' '; snl := 1; skpspc(pc);
   snl := snl-1
 end;
 
-{ print value by type }
-procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean);
-var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
-    sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
-    ad2, ad3: address; tdc: parctl;
-
-function isbyte(v: integer): boolean; 
-begin isbyte := (v >= 0) and (v <= 255) end;
-
-procedure getrng(var pc: parctl);
-var si: integer;
+procedure getrng(var pc: parctl; var enum: boolean; var s, e: integer);
+var si: integer; c: char;
 begin enum := false; { not enumeration }
   { check for common types (yep, boolean and char can be a range) }
   if chkchr(pc) = 'b' then begin s := 0; e := 1 end
@@ -4354,13 +4345,6 @@ begin enum := false; { not enumeration }
      end
    end
 end; 
-         
-function bitset(ad: address; bit: integer): boolean;
-var b: byte;
-begin
-   b := getbyt(ad+bit div 8);
-   bitset := odd(b div bitmsk[bit mod 8])
-end;
 
 procedure skptyp(var pc: parctl); forward;
 
@@ -4383,6 +4367,7 @@ end;
 
 { skip over, don't print, type }
 procedure skptyp{(var pc: parctl)};
+var s,e: integer; c: char; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
@@ -4396,10 +4381,30 @@ begin
              expect(pc, ')');
            end
          end;
-    's': begin nxtchr(pc); getrng(pc) end;
-    'a': begin nxtchr(pc); getrng(pc); if not enum then nxtchr(pc) end;
+    's': begin nxtchr(pc); getrng(pc, enum, s, e); 
+           if not enum then nxtchr(pc)
+         end;
+    'a': begin nxtchr(pc); getrng(pc, enum, s, e); 
+           if not enum then nxtchr(pc) 
+         end;
     'r': begin nxtchr(pc); skiplist(pc) end; 
   end
+end;
+
+function isbyte(v: integer): boolean; 
+begin isbyte := (v >= 0) and (v <= 255) end;
+      
+{ print value by type }
+procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean);
+var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
+    sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
+    ad2, ad3: address; tdc: parctl; ps: integer;
+
+function bitset(ad: address; bit: integer): boolean;
+var b: byte;
+begin
+   b := getbyt(ad+bit div 8);
+   bitset := odd(b div bitmsk[bit mod 8])
 end;
 
 { process fieldlist }
@@ -4477,7 +4482,7 @@ begin
            end
          end;
     'p': writeln('Pointer');
-    's': begin nxtchr(tdc); getrng(tdc);
+    's': begin nxtchr(tdc); getrng(tdc, enum, s, e);
            write('['); first := true;
            for i := s to e do
              if bitset(ad, i) then begin
@@ -4499,18 +4504,145 @@ begin
              end;
            write(']')
          end;
-    'a': begin nxtchr(tdc); getrng(tdc); { get range of index }
+    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
            if not enum then nxtchr(tdc); { discard index type, we don't need it }
            write('array ');
            { print whole array }
+           ps := tdc.p; 
            for i := s to e do 
-             begin prttyp(ad, td, tdc.p, false); if i < e then write(', ') end;
+             begin prttyp(ad, td, tdc.p, false); tdc.p := ps; 
+                   if i < e then write(', ') 
+             end;
            write(' end');
          end;
     'r': begin nxtchr(tdc); write('record '); fieldlist(tdc); write(' end') end; 
     'e': writeln('Exception');
   end;
   p := tdc.p { put back digest position (string does not change) }
+end;
+
+{ process variable reference }
+procedure vartyp(var sp: psymbol; var ad: address; var p: integer);
+var tdc: parctl; fnd, act: boolean; foff: address; ad2, ad3: address;
+    enum: boolean; s, e: integer; sz: integer; ma: address; i: integer;
+    fp: integer; ps: integer;
+
+function siztyp: integer; forward;
+
+function sizlst: integer;
+var i, x: integer; c: char; sz, sz2, mxsz: integer;
+begin
+  sz := 0;
+  expect(tdc, '('); 
+  while chkchr(tdc) <> ')' do begin
+    getsym(tdc); expect(tdc, ':'); getnum(tdc, i); expect(tdc, ':');
+    sz := sz+siztyp;
+    if chkchr(tdc) = '(' then begin nxtchr(tdc); mxsz := 0;
+      { tagfield, parse sublists }
+      while chkchr(tdc) <> ')' do begin
+        getnum(tdc, i); sz2 := sizlst; if sz2 > mxsz then mxsz := sz2
+      end;
+      expect(tdc, ')');
+      sz := sz+mxsz
+    end;
+    c := chkchr(tdc); if c = ',' then begin nxtchr(tdc); write(',') end
+  end;
+  expect(tdc, ')');
+  sizlst := sz
+end;
+
+function siztyp{: integer};
+var sz: integer; enum: boolean; s, e: integer;
+begin
+  case chkchr(tdc) of
+    'i': begin nxtchr(tdc); sz := intsize end;
+    'b': begin nxtchr(tdc); sz := boolsize end;
+    'c': begin nxtchr(tdc); sz := charsize end;
+    'n': begin nxtchr(tdc); sz := realsize end;
+    'x': begin getrng(tdc, enum, s, e); if not enum then nxtchr(tdc); 
+           if isbyte(s) and isbyte(e) then sz := 1 else sz := intsize;
+         end;
+    'p': begin nxtchr(tdc); sz := ptrsize end;
+    's': begin nxtchr(tdc); sz := setsize end;
+    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
+           if not enum then nxtchr(tdc); sz := siztyp*(e-s+1)
+         end;
+    'r': begin nxtchr(tdc); sz := sizlst end; 
+    'e': begin nxtchr(tdc); sz := exceptsize end;
+  end;
+  siztyp := sz { return size }
+end;
+
+procedure matrec(isact: boolean);
+var i, x, sz: integer; c: char; off: address;
+
+function strmat: boolean;
+var i: integer;
+begin i := 1; 
+  while (lcase(sn[i]) = lcase(sn2[i])) and (sn[i] <> ' ') and (sn2[i] <> ' ') do
+    i := i+1;
+  strmat := (sn[i] = ' ') and (sn2[i] = ' ')
+end;
+
+begin
+  expect(tdc, '('); 
+  while chkchr(tdc) <> ')' do begin
+    getsym(tdc); expect(tdc, ':'); getnum(tdc, i); off := i; expect(tdc, ':');
+    if strmat then 
+      begin fnd := true; foff := off; act := isact; fp := tdc.p end;
+    sz := siztyp;
+    if chkchr(tdc) = '(' then begin nxtchr(tdc);
+      { tagfield, parse sublists }
+      while chkchr(tdc) <> ')' do begin
+        { need to fetch and check if this case is active }
+        getnum(tdc, i); 
+        { get actual tagfield according to size }
+        if sz = 1 then x := getbyt(ad+off) else x := getint(ad+off);
+        matrec((i = x) and isact);
+      end;
+      expect(tdc, ')')
+    end;
+    c := chkchr(tdc); if c = ',' then nxtchr(tdc);
+  end;
+  expect(tdc, ')')
+end;
+
+begin
+  getsym(dbc); symadr(sp, ma);
+  if syp = nil then 
+    begin writeln('*** symbol not found in current context(s)'); goto 2 end;
+  if sp^.styp <> stglobal then
+    begin writeln('*** Locals not implemented'); goto 2 end;
+  ad := pctop+syp^.off; { find address }
+  { set up type digest for parse }
+  tdc.b := sp^.digest; tdc.l := lenpv(sp^.digest); tdc.p := 1;
+  while chkchr(dbc) in ['.', '[', '^'] do begin
+    if chkchr(dbc) = '.' then begin { record field }
+      if chkchr(tdc) <> 'r' then 
+        begin writeln('*** Type is not record'); goto 2 end;
+      nxtchr(dbc); nxtchr(tdc); getsym(dbc); sn2 := sn; { get field and save }
+      fnd := false; act := false; matrec(true);
+      if not fnd then begin writeln('*** Record field not found'); goto 2 end
+      else if not act then 
+        begin writeln('*** Record field not active'); goto 2 end;
+      ad := ad+foff; { set field address }
+      tdc.p := fp { set type position }
+    end else if chkchr(dbc) = '[' then begin { array index }
+      if chkchr(tdc) <> 'a' then
+        begin writeln('*** Type is not array'); goto 2 end;
+      nxtchr(dbc); nxtchr(tdc); getrng(tdc, enum, s, e);
+      if not enum then nxtchr(tdc);
+      getnum(dbc, i); expect(dbc, ']');
+      if (i < s) or (i > e) then
+        begin writeln('*** Index out of range'); goto 2 end;
+      ps := tdc.p; sz := siztyp; ad := ad+(i-s)*sz; { find element address }
+      tdc.p := ps { back to base type }
+    end else if chkchr(dbc) = '^' then begin { pointer dereference }
+      writeln('*** Pointer dereference not implemented');
+      goto 2
+    end
+  end;
+  p := tdc.p { put digest position }
 end;
 
 begin { debug }
@@ -4668,17 +4800,11 @@ begin { debug }
       end else if cn = 'p         ' then begin { print (various) }
         if getadr(mp+markdl) = 0 then 
           begin writeln; writeln('No displays active'); writeln; goto 2 end;
-        getsym(dbc); symadr(syp, s);
-        if syp = nil then writeln('*** symbol not found in current context(s)')
-        else begin
-          if syp^.styp = stglobal then begin
-            writeln;
-            s := pctop+syp^.off; { find address }
-            x := 1; prttyp(s, syp^.digest, x, false);
-            writeln;
-            writeln
-          end else writeln('*** locals not implemented')
-        end
+        vartyp(syp, s, x); { process variable reference }
+        writeln;
+        prttyp(s, syp^.digest, x, false); { print the resulting tail }
+        writeln;
+        writeln
       end else if cn = 'e         ' then begin { enter (hex) }
         getnum(dbc, i); s := i; { get address }
         repeat
