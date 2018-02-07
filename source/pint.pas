@@ -4115,9 +4115,9 @@ label 2;
 { parser control record }
 type parctl = record b: strvsp; l, p: integer end;  
 
-var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x, l: integer;
+var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l: integer;
     bp: pblock; syp: psymbol; sn, sn2: filnam; snl: 1..fillen; 
-    ens: array [1..100] of integer;
+    ens: array [1..100] of integer; sim: boolean;
 
 procedure getlin(var pc: parctl);
 var c: char;
@@ -4645,6 +4645,155 @@ begin
   p := tdc.p { put digest position }
 end;
 
+{ process expression or structured reference }
+procedure exptyp(var sp: psymbol; var ad: address; var p, i: integer; 
+                 var simple: boolean);
+type opstr = packed array [1..4] of char;
+
+var r: integer;
+
+function matop(os: opstr): boolean;
+var i,ps: integer;
+begin
+   i := 1; ps := dbc.p;
+   while (os[i] = chkchr(dbc)) and (os[i] <> ' ') do
+     begin i := i+1; nxtchr(dbc) end;
+   matop := (os[i] = ' ') and 
+            not (chkchr(dbc) in ['a'..'z', 'A'..'Z', '_','0'..'9']);
+   dbc.p := ps
+end;
+
+procedure sexpr(var sp: psymbol; var ad: address; var p, i: integer; 
+                 var simple: boolean);
+var r: integer; c: char;
+
+procedure term(var sp: psymbol; var ad: address; var p, i: integer; 
+                 var simple: boolean);
+var r: integer;
+
+procedure factor(var sp: psymbol; var ad: address; var p, i: integer; 
+                 var simple: boolean);
+var tdc: parctl; enum: boolean; s, e: integer;               
+begin skpspc(dbc);
+  if chkchr(dbc) in ['$','&','%','0'..'9'] then
+    begin getnum(dbc, i); simple := true end
+  else if matop('not ') then begin
+    nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(sp, ad, p, i, simple);
+    if not simple then 
+      begin writeln('*** Structured operand to operator'); goto 2 end;
+    i := bnot(i)
+  end else if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
+    p := 1; vartyp(sp, ad, p);
+    { set up type digest for parse }
+    tdc.b := sp^.digest; tdc.l := lenpv(sp^.digest); tdc.p := p;
+    if chkchr(tdc) in ['i', 'b','c','p','x'] then begin
+      { scalar }
+      simple := true;
+      case chkchr(tdc) of
+        'i','p': i := getint(ad);
+        'b','c': i := getbyt(ad);
+        'x': begin nxtchr(tdc); getrng(tdc, enum, s, e); 
+                   if not enum then nxtchr(tdc);
+                   if isbyte(s) and isbyte(e) then i := getbyt(ad) 
+                   else i := getint(ad)
+             end
+      end
+    end else simple := false;
+    p := tdc.p
+  end else if chkchr(dbc) = '(' then begin
+    nxtchr(dbc); exptyp(sp, ad, p, i, simple);
+    expect(dbc, ')')
+  end else begin
+    writeln('*** Error in factor'); goto 2
+  end
+end;
+
+procedure right;
+begin factor(sp, ad, p, r, simple);
+  if not simple then 
+    begin writeln('*** Structured operand to operator'); goto 2 end
+end;
+
+begin factor(sp, ad, p, i, simple); 
+  skpspc(dbc);
+  while (chkchr(dbc) in ['*', '/']) or matop('div ') or matop('mod ') or 
+     matop('and ') do begin { operator }
+    if not simple then 
+      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if chkchr(dbc) = '*' then begin nxtchr(dbc); right; i := i*r end
+    else if chkchr(dbc) = '/' then
+      begin writeln('*** Reals not implemented'); goto 2 end 
+    else if matop('div  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := i div r end
+    else if matop('mod  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := i mod r end
+    else if matop('and  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := band(i,r) end;
+    skpspc(dbc)
+  end
+end;
+
+procedure right;
+begin term(sp, ad, p, r, simple);
+  if not simple then 
+    begin writeln('*** Structured operand to operator'); goto 2 end
+end;
+
+begin skpspc(dbc); c := chkchr(dbc); if c in ['+','-'] then nxtchr(dbc);
+  term(sp, ad, p, i, simple); 
+  if c in ['+','-'] then begin
+    if not simple then begin writeln('*** Operand must be integer'); goto 2 end;
+    if c = '-' then i := -i;
+  end;
+  skpspc(dbc);
+  while (chkchr(dbc) in ['+', '-']) or matop('or  ') or matop('xor ') do begin 
+    if not simple then 
+      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if chkchr(dbc) = '+' then begin nxtchr(dbc); right; i := i+r end
+    else if chkchr(dbc) = '-' then begin nxtchr(dbc); right; i := i-r end
+    else if matop('or  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); right; i := bor(i, r) end
+    else if matop('xor ') then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := bxor(i, r) end;
+    skpspc(dbc)
+  end
+end;
+
+procedure right;
+begin sexpr(sp, ad, p, r, simple);
+  if not simple then 
+    begin writeln('*** Structured operand to operator'); goto 2 end
+end;
+
+begin sexpr(sp, ad, p, i, simple); skpspc(dbc);
+  if (chkchr(dbc) in ['=', '<', '>']) or matop('in') then begin { operator }
+    if not simple then 
+      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if chkchr(dbc) = '=' then begin nxtchr(dbc); right; i := ord(i = r) end
+    else if matop('<>  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i <> r) end
+    else if matop('<=  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i <= r) end
+    else if matop('>=  ') then 
+      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i >= r) end
+    else if chkchr(dbc) = '<' then begin nxtchr(dbc); right; i := ord(i < r) end
+    else if chkchr(dbc) = '>' then begin nxtchr(dbc); right; i := ord(i > r) end
+    else if matop('in  ') then begin
+      writeln('*** Sets not implemented');
+      goto 2
+    end
+  end
+end;
+
+{ process expression }
+procedure expr(var i: integer);
+var ad: address; sp: psymbol; p: integer; simple: boolean;
+begin
+  { get complex or simple reference }
+  exptyp(sp, ad, p, i, simple);
+  if not simple then begin writeln('*** Value is structured'); goto 2 end;
+end;
+
 begin { debug }
   if not debugstart then begin
     writeln;
@@ -4798,11 +4947,10 @@ begin { debug }
           end
         end
       end else if cn = 'p         ' then begin { print (various) }
-        if getadr(mp+markdl) = 0 then 
-          begin writeln; writeln('No displays active'); writeln; goto 2 end;
-        vartyp(syp, s, x); { process variable reference }
+        exptyp(syp, s, x, i, sim); { process variable/expression reference }
         writeln;
-        prttyp(s, syp^.digest, x, false); { print the resulting tail }
+        if sim then write(i:1) { write simple result }
+        else prttyp(s, syp^.digest, x, false); { print the resulting tail }
         writeln;
         writeln
       end else if cn = 'e         ' then begin { enter (hex) }
