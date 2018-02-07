@@ -4115,9 +4115,9 @@ label 2;
 { parser control record }
 type parctl = record b: strvsp; l, p: integer end;  
 
-var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l: integer;
-    bp: pblock; syp: psymbol; sn, sn2: filnam; snl: 1..fillen; 
-    ens: array [1..100] of integer; sim: boolean;
+var dbc, tdc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l,p: integer;
+    bp: pblock; syp: psymbol; sn, sn2: filnam; snl: 1..fillen; si,ei: integer;
+    ens: array [1..100] of integer; sim: boolean; enum: boolean; ad: address;
 
 procedure getlin(var pc: parctl);
 var c: char;
@@ -4964,8 +4964,20 @@ begin { debug }
             s := s+1
           end
         until chkend(dbc) or (s < 0);
-      end else if cn = 's         ' then begin { set (variable) }
-        writeln('*** Command not implemented')
+      end else if cn = 'st        ' then begin { set (variable) }
+        vartyp(syp, ad, p); expr(i); 
+        tdc.b := syp^.digest; tdc.l := lenpv(syp^.digest); tdc.p := p;
+        if chkchr(tdc) in ['i', 'b','c','p','x'] then begin
+          case chkchr(tdc) of
+            'i','p': putint(ad, i);
+            'b','c': putbyt(ad, i);
+            'x': begin nxtchr(tdc); getrng(tdc, enum, si, ei); 
+                   if not enum then nxtchr(tdc);
+                   if isbyte(si) and isbyte(ei) then putbyt(ad, i)
+                   else putint(ad, i)
+             end
+          end
+        end else begin writeln('*** Cannot set complex type'); goto 2 end
       end else if cn = 'w         ' then begin { watch (variable) }
         writeln('*** Command not implemented')
       end else if cn = 'pg        ' then begin { print globals }
@@ -5033,6 +5045,7 @@ begin { debug }
         writeln('li  [s[ e|:l]  List machine instructions');
         writeln('d   [s[ e|:l]  Dump memory');
         writeln('e   a v[ v]... Enter byte values to memory address');
+        writeln('st  d v        Set program variable');
         writeln('ds             Dump storage parameters');
         writeln('dd  [s]        Dump display frames');
         writeln('b   a          Place breakpoint at source line number');
