@@ -4823,11 +4823,11 @@ begin { debug }
       if cn = 'li        ' then begin { list instructions }
         s := 0; e := lsttop-1;
         skpspc(dbc); 
-        if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        if not chkend(dbc) then begin expr(i); s := i end;
         skpspc(dbc); 
         if chkchr(dbc) = ':' then 
-          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
-        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
+          begin nxtchr(dbc); expr(i); e := s+i-1 end
+        else if not chkend(dbc) then begin expr(i); e := i end;
         if e > lsttop-1 then e := lsttop-1;
         writeln('Addr    Op Ins            P  Q');
         writeln('----------------------------------');
@@ -4841,11 +4841,11 @@ begin { debug }
         end
       end else if cn = 'd         ' then begin { dump memory }
         s := 0; e := lsttop;
-        skpspc(dbc); if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i end;
         skpspc(dbc);
         if chkchr(dbc) = ':' then 
-          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
-        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
+          begin nxtchr(dbc); expr(i); e := s+i-1 end
+        else if not chkend(dbc) then begin expr(i); e := i end;
         if e > maxstr then e := maxstr;
         dmpmem(s, e)
       end else if cn = 'ds        ' then begin { dump storage specs }
@@ -4861,13 +4861,13 @@ begin { debug }
         if getadr(mp+markdl) = 0 then 
           begin writeln; writeln('No displays active'); writeln end
         else begin
-          i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
+          i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
           s := mp;
           repeat dmpdsp(s); s := getadr(s+marksl); i := i-1
           until (i = 0) or (s = getadr(s+marksl))
         end
       end else if cn = 'b         ' then begin { place breakpoint source }
-        getnum(dbc, l); if l > maxsrc then writeln('*** Invalid source line')
+        expr(l); if l > maxsrc then writeln('*** Invalid source line')
         else begin
           if lintrk[l] < 0 then writeln('*** Invalid source line')
           else begin s := lintrk[l]; i := 1;
@@ -4885,13 +4885,13 @@ begin { debug }
           end
         end
       end else if cn = 'bi        ' then begin { place breakpoint instruction }
-        getnum(dbc, i); s := i;
+        expr(i); s := i;
         x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
         else brktbl[x].sa := s; brktbl[x].line := 0
       end else if cn = 'c         ' then begin { clear breakpoint }
         skpspc(dbc); if not chkend(dbc) then begin
-          getnum(dbc, i); s := i; i := 0;
+          expr(i); s := i; i := 0;
           for i := 1 to maxbrk do if brktbl[i].sa = s then x := i;
           if i = 0 then writeln('*** No breakpoint at address')
           else brktbl[x].sa := -1
@@ -4908,7 +4908,7 @@ begin { debug }
         writeln
       end else if (cn = 'si        ') or
                   (cn = 'sis       ') then begin { step instruction }
-        i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
+        i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
         while i > 0 do begin 
           singleins; if cn = 'si        ' then prthdr; i := i-1;
           { if we hit break or stop, just stay on that instruction }
@@ -4923,17 +4923,17 @@ begin { debug }
       end else if (cn = 'l         ') or
                   (cn = 'lc        ') then begin { list source }
         s := 0; e := maxsrc;
-        skpspc(dbc); if not chkend(dbc) then begin getnum(dbc, i); s := i end;
+        skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i end;
         skpspc(dbc);
         if chkchr(dbc) = ':' then 
-          begin nxtchr(dbc); getnum(dbc, i); e := s+i-1 end
-        else if not chkend(dbc) then begin getnum(dbc, i); e := i end;
+          begin nxtchr(dbc); expr(i); e := s+i-1 end
+        else if not chkend(dbc) then begin expr(i); e := i end;
         writeln;
         prtsrc(s, e, cn = 'lc        ');
         writeln
       end else if (cn = 's         ') or
                   (cn = 'ss        ') then begin { step source line }
-        i := 1; skpspc(dbc); if not chkend(dbc) then getnum(dbc, i);
+        i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
         while i > 0 do begin
           repeat singleins until stopins or sourcemark; 
           singleins; if cn = 's         ' then prthdr; i := i-1;
@@ -4954,9 +4954,9 @@ begin { debug }
         writeln;
         writeln
       end else if cn = 'e         ' then begin { enter (hex) }
-        getnum(dbc, i); s := i; { get address }
+        expr(i); s := i; { get address }
         repeat
-          getnum(dbc, i); 
+          expr(i); 
           if (i > 255) or (i < 0) then 
             begin writeln('*** Bad byte value'); s := -1 end
           else begin
@@ -4974,35 +4974,35 @@ begin { debug }
         writeln('*** Command not implemented')  
       end else if cn = 'hs        ' then repspc { report heap space }
       else if cn = 'pc        ' then begin { set pc }
-        if not chkend(dbc) then begin getnum(dbc, i); pc := i end
+        if not chkend(dbc) then begin expr(i); pc := i end
         else begin
           writeln;
           write('pc: '); wrthex(pc, 8); writeln;
           writeln
         end  
       end else if cn = 'sp        ' then begin { set sp }
-        if not chkend(dbc) then begin getnum(dbc, i); sp := i end
+        if not chkend(dbc) then begin expr(i); sp := i end
         else begin
           writeln;
           write('sp: '); wrthex(sp, 8); writeln;
           writeln
         end  
       end else if cn = 'mp        ' then begin { set mp }
-        if not chkend(dbc) then begin getnum(dbc, i); mp := i end
+        if not chkend(dbc) then begin expr(i); mp := i end
         else begin
           writeln;
           write('mp: '); wrthex(mp, 8); writeln;
           writeln
         end  
       end else if cn = 'np        ' then begin { set np }
-        if not chkend(dbc) then begin getnum(dbc, i); np := i end
+        if not chkend(dbc) then begin expr(i); np := i end
         else begin
           writeln;
           write('np: '); wrthex(np, 8); writeln;
           writeln
         end  
       end else if cn = 'cp        ' then begin { set cp }
-        if not chkend(dbc) then begin getnum(dbc, i); cp := i end
+        if not chkend(dbc) then begin expr(i); cp := i end
         else begin
           writeln;
           write('cp: '); wrthex(cp, 8); writeln;
