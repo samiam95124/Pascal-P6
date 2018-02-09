@@ -3577,10 +3577,11 @@ begin
 end;
 
 function iswatch(ad: address): boolean;
-var fnd: boolean; wi: wthinx;
+var wi: wthinx;
 begin
-  fnd := false; for wi := 1 to maxwth do if wthtbl[wi] = ad then fnd := true;
-  iswatch := fnd 
+  wi := 1; 
+  while (wi < maxwth) and (wthtbl[wi] <> ad) and (wthtbl[wi] > 0) do wi := wi+1;
+  iswatch := wthtbl[wi] = ad  
 end;
 
 procedure singleins;
@@ -3972,7 +3973,11 @@ begin
     183 { dupr }: begin poprel(r1); pshrel(r1); pshrel(r1) end;
     184 { dups }: begin popset(s1); pshset(s1); pshset(s1) end;
 
-    189 { inv }: begin popadr(ad); putdef(ad, false) end;
+    189 { inv }: begin popadr(stoad);
+                       if iswatch(stoad) and stopwatch then 
+                         begin pshadr(stoad); watchmatch := true end
+                       else putdef(stoad, false) 
+                 end;
 
     28 (*adi*): begin popint(i2); popint(i1);
                   if dochkovf then if (i1<0) = (i2<0) then
@@ -4900,14 +4905,16 @@ begin { debug }
       write('Watch variable: @'); wrthex(pc, 8); write(': '); 
       writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
       write('@'); wrthex(wthtbl[fw], 8); write(': ');
-      ad := wthtbl[fw]; p := wthsym[fw].p; 
-      prttyp(ad, wthsym[fw].sp^.digest, p, false);
+      ad := wthtbl[fw]; p := wthsym[fw].p;
+      if not getdef(ad) then write('*') 
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false);
       stopwatch := false; { let instruction run }
       singleins;
       stopwatch := true;
       write(' -> ');
       ad := wthtbl[fw]; p := wthsym[fw].p; 
-      prttyp(ad, wthsym[fw].sp^.digest, p, false);
+      if not getdef(ad) then write('*')
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false);
       writeln
     end;
     goto 3 { skip main section }
@@ -5111,7 +5118,9 @@ begin { debug }
         if not chkend(dbc) then begin expr(i);
           if (i < 1) or (i > maxwth) then
             begin writeln('*** Invalid watch number'); goto 2 end;
-          wthtbl[i] := -1
+          { move entries down to gap }
+          for x := 1 to maxwth-1 do wthtbl[x] := wthtbl[x+1];
+          wthtbl[maxwth] := -1
         end else for wi := 1 to maxwth do wthtbl[wi] := -1
       end else if cn = 'pg        ' then begin { print globals }
         writeln('*** Command not implemented')
@@ -5295,7 +5304,7 @@ begin (* main *)
   dosrclin := true;  { add source line sets to code }
   dotrcsrc := false; { trace source line executions (requires dosrclin) }
   dorecycl := true;  { obey heap space recycle requests }
-  dochkrpt := false; { check reuse of freed entry (automatically
+  dochkrpt := false; { check reuse of freed entry (automatically) }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
   dodebug := false;  { no debug }
