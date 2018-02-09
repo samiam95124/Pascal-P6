@@ -1557,8 +1557,8 @@ end;
                         if ferr then begin
                           if i <= mxint10 then i := i*10+ordint[ch]
                           else begin error(194); ferr := false end;
-                          nextch
-                        end
+                        end;
+                        nextch
                       until chartp[ch] <> number;
                       ev := ev+i*sgn
                     end
@@ -3905,17 +3905,19 @@ end;
         var lmin,lmax: integer;
             fsp2: stp;
       begin
-        { if set use the base type for the check }
-        fsp2 := fsp;
-        if fsp^.form = power then fsp := fsp^.elset;
-        if fsp <> nil then
-          if fsp <> intptr then
-            if fsp <> realptr then
-              if fsp^.form <= subrange then
-                begin
-                  getbounds(fsp,lmin,lmax);
-                  gen2t(45(*chk*),lmin,lmax,fsp2)
-                end
+        if fsp <> nil then begin
+          { if set use the base type for the check }
+          fsp2 := fsp;
+          if fsp^.form = power then fsp := fsp^.elset;
+          if fsp <> nil then
+            if fsp <> intptr then
+              if fsp <> realptr then
+                if fsp^.form <= subrange then
+                  begin
+                    getbounds(fsp,lmin,lmax);
+                    gen2t(45(*chk*),lmin,lmax,fsp2)
+                  end
+        end
       end (*checkbnds*);
 
       procedure putlabel(labname: integer);
@@ -5162,11 +5164,13 @@ end;
                                      (lcp^.idtype^.form <> subrange) then 
                                   error(223);
                                 if sy <> lparent then error(9);
-                                insymbol; expression(fsys + [rparent], false); 
+                                insymbol; expression(fsys + [rparent], false);
                                 load;
                                 if sy = rparent then insymbol else error(4);
-                                if (gattr.typtr^.form <> scalar) and 
-                                   (gattr.typtr^.form <> subrange) then error(224);
+                                if gattr.typtr <> nil then
+                                  if (gattr.typtr^.form <> scalar) and 
+                                     (gattr.typtr^.form <> subrange) then 
+                                     error(224);
                                 { bounds check to target type }
                                 checkbnds(lcp^.idtype);
                                 gattr.typtr := lcp^.idtype { retype } 
