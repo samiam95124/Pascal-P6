@@ -4717,9 +4717,8 @@ begin { vartyp }
   getsym(dbc); symadr(sp, ma);
   if sp = nil then 
     begin writeln('*** symbol not found in current context(s)'); goto 2 end;
-  if sp^.styp <> stglobal then
-    begin writeln('*** Locals not implemented'); goto 2 end;
-  ad := pctop+syp^.off; { find address }
+  if sp^.styp = stlocal then ad := ma+sp^.off { local }
+  else ad := pctop+sp^.off; { global }
   setpar(tdc, sp^.digest, p); { set up type digest for parse }
   while chkchr(dbc) in ['.', '[', '^'] do begin
     if chkchr(dbc) = '.' then begin { record field }
