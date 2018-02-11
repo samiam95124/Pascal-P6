@@ -522,6 +522,7 @@ var   pc          : address;   (*program address register*)
       srcbuf      : cmdbuf; { input source line buffer }
       strcnt      : integer; { string allocation count }
       lintrk      : array [1..maxsrc] of address; { addresses of lines }
+      linprf      : array [1..maxsrc] of integer; { line profiling }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
       wthtbl      : array [wthinx] of address; { watch table }
@@ -3611,7 +3612,7 @@ begin
     while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
     while (i <= e) and not eof(f) do begin
       if newline then begin { output line head }
-        write(i:4, ': ');
+        write(i:4, ': ', linprf[i]:6, ': ');
         if isbrkl(i) then write('b') else write(' ');
         if i = srclin then write('*') else write(' ');
         write(' ');
@@ -4237,7 +4238,8 @@ begin
                       end
                 end;
 
-    174 (*mrkl*): begin getq; srclin := q;
+    174 (*mrkl*): begin getq; srclin := q; 
+                        if linprf[q] < maxint then linprf[q] := linprf[q]+1;
                         if dotrcsrc then
                           if dodbgsrc then begin
                             writeln;
@@ -5432,14 +5434,10 @@ begin (* main *)
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
   
-  { clear breakpoint table }
-  for bi := 1 to maxbrk do brktbl[bi].sa := -1;
-  
-  { clear source line tracking }
-  for i := 1 to maxsrc do lintrk[i] := -1;
-  
-  { clear watch table }
-  for wi := 1 to maxwth do wthtbl[wi] := -1;
+  for bi := 1 to maxbrk do brktbl[bi].sa := -1; { clear breakpoint table }
+  for i := 1 to maxsrc do lintrk[i] := -1; { clear source line tracking }
+  for i := 1 to maxsrc do linprf[i] := 0; { clear line profiling }
+  for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }
         
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
