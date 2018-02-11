@@ -436,6 +436,7 @@ type
       parctl       = record b: strvsp; l, p: integer end;  
 
 var   pc          : address;   (*program address register*)
+      pcs         : address;   { starting address of current instruction }
       pctop,lsttop: address;   { top of code store }
       gbtop, gbsiz: address;   { top of globals, size of globals }
       gbset       : boolean;   { global size was set }
@@ -525,7 +526,6 @@ var   pc          : address;   (*program address register*)
       wthsym      : array [wthinx] of wthrec;
       { address of watchpoint instruction store in progress }
       stoad       : address;
-      startins    : address; { starting address of current instruction }
 
       i           : integer;
       c1          : char;
@@ -3550,7 +3550,7 @@ begin
       if newline then begin { output line head }
         write(i:4, ': ');
         if isbrkl(i) then write('b') else write(' ');
-        if lintrk[i] = pc then write('*') else write(' ');
+        if i = srclin then write('*') else write(' ');
         write(' ');
         newline := false
       end;
@@ -3591,20 +3591,20 @@ var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
   { fetch instruction from byte store }
-  startins := pc; { save starting pc }
+  pcs := pc; { save starting pc }
   getop;
 
   (*execute*)
 
   { trace executed instructions }
   if dotrcins then begin
-    if isbrk(startins) then write('b ') else write('  ');
-    if pc = startins then write('*') else write(' ');
+    if isbrk(pcs) then write('b ') else write('  ');
+    if pc = pcs then write('*') else write(' ');
     write(' ');
-    wrthex(startins, maxdigh);
+    wrthex(pcs, maxdigh);
     write('/');
     wrthex(sp, maxdigh);
-    lstins(startins);
+    lstins(pcs);
     writeln
   end;
   case op of
@@ -3626,63 +3626,77 @@ begin
     69  (*ldoc*): begin getq; pshint(ord(getchr(pctop+q))) end;
 
     2   (*stri*): begin getp; getq; stoad := base(p)+q; 
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popint(i); putint(stoad, i) end
                   end;
     195 (*strx*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
     70  (*stra*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
                   end;
     71  (*strr*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin poprel(r1); putrel(stoad, r1) end
                   end;
     72  (*strs*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popset(s1); putset(stoad, s1) end
                   end;
     73  (*strb*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else 
                           begin popint(i1); b1 := i1 <> 0; putbol(stoad, b1) end 
                   end;
     74  (*strc*): begin getp; getq; stoad := base(p)+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else 
                           begin popint(i1); c1 := chr(i1); putchr(stoad, c1) end
                   end;
 
     3   (*sroi*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popint(i); putint(stoad, i) end
                   end;
     196 (*srox*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
     75  (*sroa*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
                   end;
     76  (*sror*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin poprel(r1); putrel(stoad, r1) end
                   end;
     77  (*sros*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else begin popset(s1); putset(stoad, s1) end
                   end;
     78  (*srob*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else 
                           begin popint(i1); b1 := i1 <> 0; putbol(stoad, b1) end
                   end;
     79  (*sroc*): begin getq; stoad := pctop+q;
-                        if iswatch(stoad) and stopwatch then watchmatch := true
+                        if iswatch(stoad) and stopwatch then 
+                          begin watchmatch := true; pc := pcs end
                         else 
                           begin popint(i1); c1 := chr(i1); putchr(stoad, c1) end
                   end;
@@ -3692,37 +3706,44 @@ begin
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putint(stoad, i) 
                   end;
     197 (*stox*): begin popint(i); popadr(stoad); 
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putbyt(stoad, i) 
                   end;
     80  (*stoa*): begin popadr(ad1); popadr(stoad); 
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putadr(stoad, ad1) 
                   end;
     81  (*stor*): begin poprel(r1); popadr(stoad); 
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putrel(stoad, r1) 
                   end;
     82  (*stos*): begin popset(s1); popadr(stoad); 
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putset(stoad, s1) 
                   end;
     83  (*stob*): begin popint(i1); b1 := i1 <> 0; popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putbol(stoad, b1) 
                   end;
     84  (*stoc*): begin popint(i1); c1 := chr(i1); popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
-                          begin watchmatch := true; pshadr(stoad); pshint(i) end
+                          begin watchmatch := true; pc := pcs; pshadr(stoad); 
+                                pshint(i) end
                         else putchr(stoad, c1) 
                   end;
 
@@ -4068,7 +4089,7 @@ begin
                         errore(IntegerValueOverflow);
                     pshint(i1-q) end;
 
-    58 (*stp*): stopins := true;
+    58 (*stp*): begin stopins := true; pc := pcs end;
 
     134 (*ordb*),
     136 (*ordc*),
@@ -4191,7 +4212,7 @@ begin
                     begin pc := q1; popint(i1) end
                 end;
                 
-    19 (*brk*): breakins := true;
+    19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
     20,  21,  22,  27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
@@ -4380,6 +4401,13 @@ begin
   { for this mark system, the mp points at frame top, so sp = mp means not
     allocated }
   noframe := sp = mp
+end;
+
+{ test if last frame }
+function lastframe(ma: address): boolean;
+begin
+  { the last frame points to itself }
+  lastframe := ma = getadr(ma+marksl)
 end;
 
 { find active symbol }
@@ -4919,7 +4947,6 @@ begin { debug }
     fw := watchno(stoad); { get the watch number }
     if fw > 0 then begin
       { obviously system error if we don't find the watch, but just ignore }
-      pc := startins; { return to instruction start }
       write('Watch variable: @'); wrthex(pc, 8); write(': '); 
       writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
       write('@'); wrthex(wthtbl[fw], 8); write(': ');
@@ -5005,8 +5032,8 @@ begin { debug }
         else begin
           i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
           s := mp;
-          repeat dmpdsp(s); s := getadr(s+marksl); i := i-1
-          until (i = 0) or (s = getadr(s+marksl))
+          repeat dmpdsp(s); e := s; s := getadr(s+marksl); i := i-1
+          until (i = 0) or lastframe(e)
         end
       end else if cn = 'b         ' then begin { place breakpoint source }
         expr(l); if l > maxsrc then writeln('*** Invalid source line')
@@ -5082,10 +5109,10 @@ begin { debug }
           { if we hit break or stop, just stay on that instruction }
           if breakins then begin
             writeln('*** Break instruction hit');
-            pc := pc-1; i := 0 
+            i := 0 
           end else if stopins then begin
             writeln('*** Stop instruction hit');
-            pc := pc-1; i := 0
+            i := 0
           end
         end
       end else if cn = 'p         ' then begin { print (various) }
@@ -5387,7 +5414,7 @@ begin (* main *)
     { if breakpoint hit, back up pc and go debugger }
     if breakins or (stopins and dodebug) or watchmatch then begin
       if stopins then begin writeln; writeln('*** Stop instruction hit') end; 
-      pc := pc-1; breakins := false; stopins := false; writeln; 
+      breakins := false; stopins := false; writeln; 
       if not watchmatch then writeln('=== break ==='); 
       debug 
     end
