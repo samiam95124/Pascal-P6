@@ -103,7 +103,11 @@
 *                                                                              *
 *******************************************************************************}
 
-program pcode(input,output,prd,prr);
+program pcode(input,output,prd,prr
+              { Pascaline start !
+              ,command
+              ! Pascaline end }
+              );
 
 label 1;
 
@@ -400,6 +404,7 @@ type
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fclosed, fread, fwrite);
       cmdinx      = 1..maxcmd; { index for command line buffer }
+      cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       break       = record ss: byte; sa: address; line: 0..maxsrc end;
       brkinx      = 1..maxbrk;
@@ -436,7 +441,6 @@ type
       parctl       = record b: strvsp; l, p: integer end;  
 
 var   pc          : address;   (*program address register*)
-      pcs         : address;   { starting address of current instruction }
       pctop,lsttop: address;   { top of code store }
       gbtop, gbsiz: address;   { top of globals, size of globals }
       gbset       : boolean;   { global size was set }
@@ -495,7 +499,7 @@ var   pc          : address;   (*program address register*)
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
       cmdlin      : cmdbuf; { command line }
-      cmdlen      : cmdinx; { length of command line }
+      cmdlen      : cmdnum; { length of command line }
       cmdpos      : cmdinx; { current position in command line }
       brktbl      : array [brkinx] of break; { breakpoint table }
       bi          : brkinx; { index for same }
@@ -794,6 +798,10 @@ begin
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
 
+  { Pascaline start !
+  assign(f, fn);
+  ! Pascaline end }
+
   {$gnu-pascal} 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
@@ -813,6 +821,10 @@ begin
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
+  { Pascaline start !
+  assign(f, fn);
+  ! Pascaline end }
+  
   {$gnu-pascal} 
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
@@ -829,6 +841,10 @@ begin
   errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
+  { Pascaline start !
+  close(f);
+  ! Pascaline end }
+  
   {$gnu-pascal} 
   close(f)
   {$classic-pascal-level-0}
@@ -840,6 +856,10 @@ begin
   { ISO7185 start !
   errorv(FunctionNotImplemented) 
   ! ISO7185 end }
+
+  { Pascaline start !
+  close(f);
+  ! Pascaline end }
   
   {$gnu-pascal} 
   close(f)
@@ -852,6 +872,10 @@ begin
   errorv(FunctionNotImplemented)
   lengthbin := 1
   ! ISO7185 end }
+  
+  { Pascaline start !
+  lengthbin := length(f);
+  ! Pascaline end }
   
   {$gnu-pascal} 
   if empty(f) then
@@ -867,6 +891,10 @@ begin
   errorv(FunctionNotImplemented) 
   locationbin := 1
   ! ISO7185 end } 
+
+  { Pascaline start !
+  location := location(f);
+  ! Pascaline end }
   
   {$gnu-pascal} 
   locationbin := position(f);
@@ -879,6 +907,10 @@ begin
   errorv(FunctionNotImplemented) 
   ! ISO7185 end }
   
+  { Pascaline start !
+  position(f, p);
+  ! Pascaline end }
+  
   {$gnu-pascal}
   seek(f, p-1);
   {$classic-pascal-level-0}
@@ -889,7 +921,11 @@ begin
   { ISO7185 start !
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
-  
+
+  { Pascaline start !
+  update(f);
+  ! Pascaline end }
+    
   {$gnu-pascal}
   append(f);
   seek(f, 0);
@@ -902,6 +938,10 @@ begin
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
+  { Pascaline start !
+  append(f);
+  ! Pascaline end }
+  
   {$gnu-pascal}
   append(f);
   {$classic-pascal-level-0}
@@ -912,6 +952,10 @@ begin
   { ISO7185 start !
   errorv(FunctionNotImplemented) 
   ! ISO7185 end }
+
+  { Pascaline start !
+  append(f);
+  ! Pascaline end }
   
   {$gnu-pascal}
   append(f);
@@ -933,6 +977,10 @@ begin
   errorv(FunctionNotImplemented)
   existsfile := true
   ! ISO7185 end }
+  
+  { Pascaline start !
+  existsfile := exists(fn);
+  ! Pascaline end }
   
   {$gnu-pascal}
   l := fillen;
@@ -958,6 +1006,10 @@ begin
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
+  { Pascaline start !
+  delete(fn);
+  ! Pascaline end }
+  
   {$gnu-pascal}
   l := fillen;
   while (fn[l] = ' ') and (l > 1) do l := l-1;
@@ -981,6 +1033,10 @@ begin
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
   
+  { Pascaline start !
+  change(fnd, fns);
+  ! Pascaline end }
+  
   {$gnu-pascal}
   l := fillen;
   while (fns[l] = ' ') and (l > 1) do l := l-1;
@@ -995,7 +1051,7 @@ begin
   {$classic-pascal-level-0}
 end;
 
-procedure getcommandline(var cb: cmdbuf; var l: cmdinx);
+procedure getcommandline(var cb: cmdbuf; var l: cmdnum);
 var i: cmdinx;
     x, p: integer;
 procedure putcmd(c: char);
@@ -1007,6 +1063,13 @@ begin
   { ISO7185 start !
   errorv(FunctionNotImplemented)
   ! ISO7185 end }
+  
+  { Pascaline start !
+  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
+  i := 1; 
+  while not eoln(command) do begin read(command, c); putcmd(c) end;
+  l := i-1;
+  ! Pascaline end }
   
   {$gnu-pascal}
   for i := 1 to maxcmd do cb[i] := ' '; i := 1;
@@ -3587,7 +3650,7 @@ end;
 procedure singleins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
-    a1,a2,a3: address;
+    a1,a2,a3: address; pcs: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
   { fetch instruction from byte store }
@@ -5364,7 +5427,7 @@ begin (* main *)
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
-  
+
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;

@@ -4,7 +4,7 @@
 # Makes the main compiler interpreter set.
 #
 PC=gpc
-CFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names --no-range-checking
+CFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 
 all: pcom pint
 
