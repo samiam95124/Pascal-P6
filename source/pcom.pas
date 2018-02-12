@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l-*)
+(*$c+,t+,d-,l-*)
 {*******************************************************************************
 *                                                                              *
 *                     Portable Pascal assembler/interpreter                    *
@@ -288,6 +288,7 @@ type                                                        (*describing:*)
      ctp = ^ identifier;
 
      structure = record
+                   snm: integer; { serial number }
                    next: stp; { next entry link }
                    marked: boolean;   (*for test phase only*)
                    size: addrrange;
@@ -321,6 +322,7 @@ type                                                        (*describing:*)
      keyrng = 1..31; { range of standard call keys }
      partyp = (ptval, ptvar, ptview, ptout);
      identifier = record
+                   snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; refer: boolean;
                    case klass: idclass of
@@ -550,24 +552,14 @@ var
     lbpcnt: integer; { label counts }
     filcnt: integer; { file tracking counts }
     cipcnt: integer; { case entry tracking counts }
+    
+    { serial numbers to label structure and identifier entries for dumps }
+    ctpsnm: integer;
+    stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
     i: 1..504; { index for error number tracking array }
     c: char;
-
-(*-------------------------------------------------------------------------*)
-
-                           { type change }
-
-(*-------------------------------------------------------------------------*)
-
-    function stptoint(p: stp): integer;
-    var r: record case boolean of false: (p: stp); true: (i: integer) end;
-    begin r.p := p; stptoint := r.i end;
-
-    function ctptoint(p: ctp): integer;
-    var r: record case boolean of false: (p: ctp); true: (i: integer) end;
-    begin r.p := p; ctptoint := r.i end;
 
 (*-------------------------------------------------------------------------*)
 
@@ -630,7 +622,9 @@ var
      { push to structures list }
      p^.next := display[top].fstruct;
      display[top].fstruct := p;
-     stpcnt := stpcnt+1 { count entries }
+     stpcnt := stpcnt+1; { count entries }
+     stpsnm := stpsnm+1; { identify entry in dumps }
+     p^.snm := stpsnm
   end;
 
   { recycle structure entry }
@@ -645,7 +639,9 @@ var
   begin
      ctpcnt := ctpcnt+1; { count entry }
      p^.keep := false; { clear keepme flag }
-     p^.refer := false { clear referred flag }
+     p^.refer := false; { clear referred flag }
+     ctpsnm := ctpsnm+1; { identify entry in dumps }
+     p^.snm := ctpsnm
   end;
   
   { recycle identifier entry }
@@ -1980,6 +1976,16 @@ end;
       for i := top downto lim do
         markctp(display[i].fname)
     end (*marker*);
+    
+    procedure wrtctp(ip: ctp);
+    begin
+      if ip = nil then write('<nil>':intdig) else write(ip^.snm:intdig)
+    end;
+    
+    procedure wrtstp(sp: stp);
+    begin
+      if sp = nil then write('<nil>':intdig) else write(sp^.snm:intdig)
+    end;
 
     procedure followctp(fp: ctp); forward;
 
@@ -1988,16 +1994,17 @@ end;
       if fp <> nil then
         with fp^ do
           if marked then
-            begin marked := false; write('S: ', stptoint(fp):intdig,' ', size:intdig, ' ');
+            begin marked := false; write('S: '); wrtstp(fp); 
+              write(' ', size:intdig, ' ');
               case form of
               scalar:   begin write('scalar':intdig, ' ');
                           if scalkind = standard then
                             write('standard':intdig)
-                          else write('declared':intdig,' ',ctptoint(fconst):intdig);
+                          else write('declared':intdig,' '); wrtctp(fconst);
                           writeln(output)
                         end;
               subrange: begin
-                          write('subrange':intdig,' ',stptoint(rangetype):intdig, ' ');
+                          write('subrange':intdig,' '); wrtstp(rangetype); write(' ');
                           if rangetype <> realptr then
                             write(min.ival:intdig, ' ', max.ival:intdig)
                           else
@@ -2005,32 +2012,33 @@ end;
                               write(' '); write(min.valp^.rval:9);
                               write(' '); write(max.valp^.rval:9)
                             end;
-                          writeln(output); followstp(rangetype);
+                          writeln; followstp(rangetype);
                         end;
-              pointer:  writeln('pointer':intdig,' ',stptoint(eltype):intdig);
-              power:    begin writeln('set':intdig,' ',stptoint(elset):intdig);
+              pointer:  begin write('pointer':intdig,' '); wrtstp(eltype); 
+                              writeln end;
+              power:    begin write('set':intdig,' '); wrtstp(elset); writeln;
                           followstp(elset)
                         end;
               arrays:   begin
-                          writeln('array':intdig,' ',stptoint(aeltype):intdig,' ',
-                            stptoint(inxtype):intdig);
+                          write('array':intdig,' '); wrtstp(aeltype); 
+                          write(' '); wrtstp(inxtype); writeln;
                           followstp(aeltype); followstp(inxtype)
                         end;
               records:  begin
-                          writeln('record':intdig,' ',ctptoint(fstfld):intdig,' ',
-                            stptoint(recvar):intdig, ' ', stptoint(recyc):intdig); 
+                          write('record':intdig,' '); wrtctp(fstfld); write(' ');
+                          wrtstp(recvar); write(' '); wrtstp(recyc); writeln;
                           followctp(fstfld); followstp(recvar)
                         end;
-              files:    begin writeln('file':intdig,' ',stptoint(filtype):intdig);
+              files:    begin write('file':intdig,' '); wrtstp(filtype); writeln;
                           followstp(filtype)
                         end;
-              tagfld:   begin writeln('tagfld':intdig,' ',ctptoint(tagfieldp):intdig,
-                            ' ',stptoint(fstvar):intdig);
+              tagfld:   begin write('tagfld':intdig,' '); wrtctp(tagfieldp);
+                          write(' '); wrtstp(fstvar); writeln;
                           followstp(fstvar)
                         end;
-              variant:  begin writeln('variant':intdig,' ',stptoint(nxtvar):intdig,
-                            ' ',stptoint(subvar):intdig,' ',stptoint(caslst):intdig, 
-                            ' ',varval.ival);
+              variant:  begin write('variant':intdig,' '); wrtstp(nxtvar);
+                          write(' '); wrtstp(subvar); write(' '); wrtstp(caslst);
+                          writeln(' ',varval.ival);
                           followstp(nxtvar); followstp(subvar)
                         end;
               except:  begin writeln('except':intdig) end
@@ -2042,12 +2050,12 @@ end;
     begin
       if fp <> nil then
         with fp^ do
-          begin write('C: ', ctptoint(fp):intdig,' ');
-                writev(output, name, intdig); write(' ', ctptoint(llink):intdig,
-            ' ',ctptoint(rlink):intdig,' ',stptoint(idtype):intdig, ' ');
+          begin write('C: '); wrtctp(fp); write(' ');
+                writev(output, name, intdig); write(' '); wrtctp(llink);
+                write(' '); wrtctp(rlink); write(' '); wrtstp(idtype); write(' ');
             case klass of
               types: write('type':intdig);
-              konst: begin write('constant':intdig,' ',ctptoint(next):intdig, ' ');
+              konst: begin write('constant':intdig,' '); wrtctp(next); write(' ');
                        if idtype <> nil then
                          if idtype = realptr then
                            begin
@@ -2069,7 +2077,8 @@ end;
               vars:  begin write('variable':intdig, ' ');
                        if vkind = actual then write('actual':intdig)
                        else write('formal':intdig);
-                       write(' ',ctptoint(next):intdig,' ', vlev:intdig,' ',vaddr:intdig, ' ');
+                       write(' '); wrtctp(next); 
+                       write(' ', vlev:intdig,' ',vaddr:intdig, ' ');
                        if threat then write('threat':intdig) else write(' ':intdig);
                        write(' ', forcnt:intdig, ' ');
                        case part of 
@@ -2080,9 +2089,9 @@ end;
                        end;
                        if hdr then write('header':intdig) else write(' ':intdig)
                      end;
-              field: begin write('field':intdig,' ',ctptoint(next):intdig,' ',
-                                 fldaddr:intdig,' ',stptoint(varnt):intdig,' ',
-                                 ctptoint(varlb):intdig,' ');
+              field: begin write('field':intdig,' '); wrtctp(next); write(' ');
+                           write(fldaddr:intdig,' '); wrtstp(varnt); write(' ');
+                           wrtctp(varlb); write(' ');
                        if tagfield then write('tagfield':intdig) else write(' ':intdig);
                        write(' ', taglvl:intdig, ' ',varsaddr:intdig, ' ', varssize:intdig)
                      end;             
@@ -2094,7 +2103,7 @@ end;
                        if pfdeckind = standard then
                          write('standard':intdig, '-', key:intdig)
                        else
-                         begin write('declared':intdig,'-',ctptoint(next):intdig, '-');
+                         begin write('declared':intdig,'-'); wrtctp(next); write('-');
                            write(pflev:intdig,' ',pfname:intdig, ' ');
                            if pfkind = actual then
                              begin write('actual':intdig, ' ');
@@ -2107,7 +2116,7 @@ end;
                          end
                      end
             end (*case*);
-            writeln(output);
+            writeln;
             followctp(llink); followctp(rlink);
             followstp(idtype)
           end (*with*)
@@ -6608,7 +6617,8 @@ end;
         enterid(cp); cp1 := cp
       end;
     boolptr^.fconst := cp;
-    
+
+
     entstdhdr(3); inputptr := cp;                             (*input*)
     entstdhdr(4); outputptr := cp;                            (*output*)
     entstdhdr(33); prdptr := cp;                              (*prd*)
@@ -6633,7 +6643,7 @@ end;
           end;
         enterid(cp1)
       end;
-      
+
     entstdintcst(36, intptr, maxint);                          (*maxint*)
     entstdintcst(53, intptr, maxint);                          (*maxlint*)
     entstdintcst(55, crdptr, maxint);                          (*maxcrd*)
@@ -6756,7 +6766,6 @@ end;
     entstdexp('InvalidDivisorToMod             ');  
     entstdexp('PackElementsOutOfBounds         ');  
     entstdexp('UnpackElementsOutOfBounds       ');  
-       
   end (*entstdnames*) ;
 
   procedure enterundecl;
@@ -6831,7 +6840,11 @@ end;
     ctpcnt := 0; { identifiers }
     lbpcnt := 0; { label counts }
     filcnt := 0; { file tracking counts }
-    cipcnt := 0 { case entry tracking counts }
+    cipcnt := 0; { case entry tracking counts }
+    
+    { clear id counts }
+    ctpsnm := 0;
+    stpsnm := 0
   end (*initscalars*) ;
 
   procedure initsets;
@@ -7231,7 +7244,7 @@ begin
   with display[0] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
           packing := false; occur := blck; bname := nil end;
-  enterstdtypes;   stdnames; entstdnames;   enterundecl;
+  enterstdtypes; stdnames; entstdnames; enterundecl;
   top := 1; level := 1;
   with display[1] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
@@ -7257,7 +7270,7 @@ begin
     if option[c] then write(prr, '+') else write(prr, '-')
   end;
   writeln(prr);
-  
+
   insymbol;
   programme(blockbegsys+statbegsys-[casesy]);
 
