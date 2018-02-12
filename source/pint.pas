@@ -448,6 +448,7 @@ var   pc          : address;   (*program address register*)
       q1: address; { extra parameter }
       store       : packed array [0..maxstr] of byte; { complete program storage }
       storedef    : packed array [0..maxdef] of byte; { defined bits }
+      storecov    : packed array [0..maxdef] of byte; { coverage bits }
       sdi         : 0..maxdef; { index for that }
       cp          : address;  (* pointer to next free constant position *)
       mp,sp,np,ep : address;  (* address registers *)
@@ -483,6 +484,8 @@ var   pc          : address;   (*program address register*)
       dochkrpt: boolean; { check reuse of freed entry (automatically
                            invokes dorecycl = false }
       dochkdef: boolean; { check undefined accesses }
+      dosrcprf: boolean; { do source level profiling }
+      dochkcov: boolean; { do code coverage }
       
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -762,6 +765,35 @@ end;
 procedure chkdef(a: address);
 begin
    if dochkdef then if not getdef(a) then errorv(UndefinedLocationAccess)
+end;
+
+{ get bit from coverage array }
+function getcov(a: address): boolean;
+
+var b: byte;
+    r: boolean;
+
+begin
+  b := storecov[a div 8]; { get byte }
+  r := odd(b div bitmsk[a mod 8]);
+  getcov := r
+end;
+
+{ put bit to coverage array }
+procedure putcov(a: address; b: boolean);
+
+var sb: byte;
+    r:  boolean;
+
+begin
+  sb := storecov[a div 8]; { get byte }
+  { test bit as is }
+  r := odd(sb div bitmsk[a mod 8]);
+  if r <> b then begin
+    if b then sb := sb+bitmsk[a mod 8]
+    else sb := sb-bitmsk[a mod 8];
+    storecov[a div 8] := sb
+  end
 end;
 
 (*--------------------------------------------------------------------*)
@@ -3612,7 +3644,8 @@ begin
     while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
     while (i <= e) and not eof(f) do begin
       if newline then begin { output line head }
-        write(i:4, ': ', linprf[i]:6, ': ');
+        write(i:4, ': ');
+        if dosrcprf then write(linprf[i]:6, ': ');
         if isbrkl(i) then write('b') else write(' ');
         if i = srclin then write('*') else write(' ');
         write(' ');
@@ -3626,6 +3659,7 @@ begin
           if (si >= 0) and (ei >= 0) then
             while si <= ei-1 do begin { list machine instructions }
               if isbrk(si) then write('b') else write(' ');
+              if getcov(si) then write('c') else write(' ');
               if pc = si then write('*') else write(' ');
               write(' ');
               wrthex(si, maxdigh);
@@ -3654,6 +3688,9 @@ var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     a1,a2,a3: address; pcs: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
+  
+  if dochkcov then putcov(pc, true); { check coverage if enabled }
+  
   { fetch instruction from byte store }
   pcs := pc; { save starting pc }
   getop;
@@ -3662,7 +3699,8 @@ begin
 
   { trace executed instructions }
   if dotrcins then begin
-    if isbrk(pcs) then write('b ') else write('  ');
+    if isbrk(pcs) then write('b') else write(' ');
+    if getcov(pcs) then write('c') else write(' ');
     if pc = pcs then write('*') else write(' ');
     write(' ');
     wrthex(pcs, maxdigh);
@@ -4239,7 +4277,8 @@ begin
                 end;
 
     174 (*mrkl*): begin getq; srclin := q; 
-                        if linprf[q] < maxint then linprf[q] := linprf[q]+1;
+                        if dosrcprf then
+                          if linprf[q] < maxint then linprf[q] := linprf[q]+1;
                         if dotrcsrc then
                           if dodbgsrc then begin
                             writeln;
@@ -4428,7 +4467,9 @@ begin
     write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
     write(' cp: '); wrthex(cp, maxdigh);
     writeln;
-    if isbrk(pc) then write('b ') else write('  ');
+    if isbrk(pc) then write('b') else write(' ');
+    if getcov(pc) then write('c') else write(' ');
+    write('*');
     wrthex(pc, maxdigh); ad := pc; lstins(ad)
   end; 
   writeln
@@ -5068,6 +5109,7 @@ begin { debug }
         while s <= e do begin
           if isbrk(s) then write('b') else write(' ');
           if pc = s then write('*') else write(' ');
+          if getcov(s) then write('c') else write(' ');
           write(' ');
           wrthex(s, maxdigh);
           lstins(s);
@@ -5285,7 +5327,15 @@ begin { debug }
       else if cn = 'ts        ' then 
         dotrcsrc := true { trace source lines }
       else if cn = 'nts       ' then 
-        dotrcsrc := false { no trace source lines }  
+        dotrcsrc := false { no trace source lines }
+      else if cn = 'spf       ' then 
+        dosrcprf := true { source level profiling } 
+      else if cn = 'nspf      ' then 
+        dosrcprf := false { no source level profiling }
+      else if cn = 'ic        ' then 
+        dochkcov := true { instruction level coverage } 
+      else if cn = 'nic       ' then 
+        dochkcov := false { instruction level coverage }  
       else if cn = 'ps        ' then prthdr { print status } 
       else if cn = 'r         ' then dbgend := true
       else if cn = 'q         ' then goto 1
@@ -5325,6 +5375,8 @@ begin { debug }
         writeln('ntr            Turn system routine tracing off');
         writeln('ts             Turn source line tracing on');
         writeln('nts            Turn source line tracing off');
+        writeln('spf            Turn on source level profiling');
+        writeln('nspf           Turn off source level profiling');
         writeln('r              Run program from current pc');
         writeln('ps             Print current registers and instruction');
         writeln('q              Quit interpreter');
@@ -5422,6 +5474,8 @@ begin (* main *)
   dodebug := false;  { no debug }
   dodbgflt := false; { no debug on fault }
   dodbgsrc := false; { no source level debug }
+  dosrcprf := true;  { do source level profiling }
+  dochkcov := false; { don't do code coverage }
 
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
@@ -5447,6 +5501,7 @@ begin (* main *)
   for bai := 0 to 7 do begin bitmsk[bai] := i; i := i*2 end;
   
   for sdi := 0 to maxdef do storedef[sdi] := 0; { clear storage defined flags }
+  for sdi := 0 to maxdef do storecov[sdi] := 0; { clear coverage bits }
 
   writeln('Assembling/loading program');
   load; (* assembles and stores code *)
