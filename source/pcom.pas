@@ -1266,6 +1266,7 @@ end;
     224: write('Type to be converted must be scalar or subrange');
     225: write('In constant range first value must be less than or equal to second');
     226: write('Type of variable is not exception');
+    227: write('Type too complex to track');
 
     250: write('Too many nestedscopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3030,18 +3031,49 @@ end;
 
     { write shorthand type }
     procedure wrttyp(var f: text; tp: stp);
-    var cp: ctp;
+    const maxtrk = 2000;
+    var cp: ctp; typtrk: array [1..maxtrk] of stp; i, cti: integer; 
+        err: boolean;
+    
+    procedure wrttypsub(tp: stp);
+    var x, y, fi: integer;
+    
+    procedure nxtcti;
+    begin
+      cti := cti+1; if cti <= maxtrk then typtrk[cti] := nil
+    end;
+    
+    procedure nxtctis(i: integer);
+    var x: integer;
+    begin
+      for x := 1 to i do nxtcti
+    end;
+    
+    procedure wrtchr(c: char);
+    begin
+      write(f, c); nxtcti
+    end;
+
+    procedure wrtint(i: integer);
+    var p, d: integer;
+    begin
+       p := 10; d := 1;
+       while (i >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
+       write(f, i:1);
+       nxtctis(d)
+    end;
     
     procedure wrtrfd(fld: ctp);
     begin
       while fld <> nil do begin
         with fld^ do begin
-          writev(f, name, lenpv(name)); write(f, ':'); 
-          if klass = field then write(f, fldaddr:1) else write(f, '?'); 
-          write(f, ':'); wrttyp(f, idtype); 
+          writev(f, name, lenpv(name)); nxtctis(lenpv(name));
+          wrtchr(':'); 
+          if klass = field then wrtint(fldaddr) else wrtchr('?'); 
+          wrtchr(':'); wrttypsub(idtype); 
         end;
         fld := fld^.next;
-        if fld <> nil then write(prr, ',')  
+        if fld <> nil then wrtchr(',')  
       end
     end;
     
@@ -3049,49 +3081,70 @@ end;
     begin
       while sp <> nil do with sp^ do
         if form = variant then begin
-          write(f, varval.ival:1, '('); wrtrfd(varfld); write(f, ')');
+          wrtint(varval.ival); wrtchr('('); wrtrfd(varfld); wrtchr(')');
           sp := nxtvar
         end else sp := nil
     end;
 
     { enums are backwards, so print thus }
     procedure wrtenm(ep: ctp; i: integer);
+    var x: integer;
     begin
       if ep <> nil then begin
         wrtenm(ep^.next, i+1); 
-        writev(f, ep^.name, lenpv(ep^.name));
-        if i > 0 then write(f, ',')
+        writev(f, ep^.name, lenpv(ep^.name)); nxtctis(lenpv(ep^.name));
+        if i > 0 then wrtchr(',')
       end
     end;
     
-    begin
+    begin { wrttypsub }
+      if cti > maxtrk then begin
+        if not err then error(227);
+        err := true
+      end else typtrk[cti] := tp; { track this type entry }
       if tp <> nil then with tp^ do case form of
         scalar: begin 
-                  if tp = intptr then write(f, 'i')
-                  else if tp = boolptr then write(f, 'b')
-                  else if tp = charptr then write(f, 'c')
-                  else if tp = realptr then write(f, 'n')
+                  if tp = intptr then wrtchr('i')
+                  else if tp = boolptr then wrtchr('b')
+                  else if tp = charptr then wrtchr('c')
+                  else if tp = realptr then wrtchr('n')
                   else if scalkind = declared then
-                    begin write(f, 'x('); wrtenm(fconst, 0); write(f, ')') end
-                  else write(f, '?')
+                    begin wrtchr('x'); wrtchr('('); wrtenm(fconst, 0); 
+                          wrtchr(')') end
+                  else wrtchr('?')
                 end;
         subrange: begin
-                    write(f, 'x(', min.ival:1, ',', max.ival:1, ')');
-                    wrttyp(f, rangetype)
+                    wrtchr('x'); wrtchr('('); wrtint(min.ival); wrtchr(',');
+                    wrtint(max.ival); wrtchr(')'); 
+                    wrttypsub(rangetype)
                   end;
-        pointer: begin write(f, 'p?'); {wrttyp(f, eltype)} end;
-        power: begin write(f, 's'); wrttyp(f, elset) end;
-        arrays: begin write(f, 'a'); wrttyp(f, inxtype); wrttyp(f, aeltype) end;
-        records: begin write(f, 'r('); wrtrfd(fstfld); 
+        pointer: begin 
+                   wrtchr('p'); fi := 0; y := cti; 
+                   if y > maxtrk then y := maxtrk;
+                   if eltype <> nil then
+                     for x := y downto 1 do if typtrk[x] = eltype then fi := x;
+                   { if there is a cycle, output type digest position, otherwise
+                     the actual type }
+                   if fi > 0 then wrtint(fi) else wrttypsub(eltype) 
+                 end;
+        power: begin wrtchr('s'); wrttypsub(elset) end;
+        arrays: begin wrtchr('a'); wrttypsub(inxtype); wrttypsub(aeltype) end;
+        records: begin wrtchr('r'); wrtchr('('); wrtrfd(fstfld); 
                    if recvar <> nil then if recvar^.form = tagfld then
-                     begin write(f, ','); wrtrfd(recvar^.tagfieldp);
-                           write(f, '('); wrtvar(recvar^.fstvar); 
-                           write(f, ')') end;
-                   write(f, ')') end; 
-        files: begin write(f, 'f'); wrttyp(f, filtype) end;
-        variant: write(f, '?');
-        except: write(f, 'e')
-      end else write(f, '?')
+                     begin wrtchr(','); wrtrfd(recvar^.tagfieldp);
+                           wrtchr('('); wrtvar(recvar^.fstvar); 
+                           wrtchr(')') end;
+                   wrtchr(')') end; 
+        files: begin wrtchr('f'); wrttypsub(filtype) end;
+        variant: wrtchr('?');
+        except: wrtchr('e')
+      end else wrtchr('?')
+    end;
+    
+    begin { wrttyp }
+      cti := 1; { set 1st position in tracking }
+      err := false; { set no error }
+      wrttypsub(tp) { issue type }
     end;
 
     procedure vardeclaration;
@@ -3120,6 +3173,7 @@ end;
         until test;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon] + typedels,lsp,lsize);
+        resolvep; { resolve pointer defs before symbol generate }
         while nxt <> nil do
           with nxt^ do
             begin
