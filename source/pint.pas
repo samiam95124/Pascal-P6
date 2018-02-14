@@ -4905,7 +4905,6 @@ begin { vartyp }
     end
   end;
   p := tdc.p { put digest position }
-;writeln; writeln('vartyp: end');
 end;
 
 { process expression or structured reference }
