@@ -6418,7 +6418,6 @@ end;
           (*generate call of main program; note that this call must be loaded
             at absolute address zero*)
           gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
-          if prcode then writeln(prr,'q');
           if prtables then
             begin writeln(output); printtables(true)
             end
@@ -6494,7 +6493,11 @@ end;
     repeat block(fsys,period,nil);
       if sy <> period then error(21)
     until (sy = period) or eof(prd);
-    if list then writeln(output);
+    if prcode then begin
+      writeln(prr, 'f ', toterr:1);
+      writeln(prr,'q')
+    end;
+    if list then writeln;
     if errinx <> 0 then
       begin list := false; endofline end;
   end (*programme*) ;

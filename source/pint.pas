@@ -534,6 +534,7 @@ var   pc          : address;   (*program address register*)
       wthsym      : array [wthinx] of wthrec;
       { address of watchpoint instruction store in progress }
       stoad       : address;
+      errsinprg   : integer; { errors in source program }
 
       i           : integer;
       c1          : char;
@@ -2130,7 +2131,7 @@ procedure load;
             begin if eof(prd) then errorl('unexpected eof on input  ');
                   getnxt;(* first character of line*)
                   if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                                 'e', 's']) then
+                                 'e', 's', 'f']) then
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
@@ -2255,6 +2256,9 @@ procedure load;
                               sp^.next := blkstk^.symbols; 
                               blkstk^.symbols := sp;
                               getlin
+                            end;
+                       'f': begin { faults (errors) }
+                              read(prd,errsinprg); getlin
                             end;
                   end;
             end
@@ -5504,6 +5508,7 @@ begin (* main *)
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
+  errsinprg := 0; { set no source errors }
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
@@ -5529,7 +5534,14 @@ begin (* main *)
 
   writeln('Assembling/loading program');
   load; (* assembles and stores code *)
-  
+
+  { check and abort if source errors: this indicates a bad intermediate }
+  if errsinprg > 0 then begin
+    writeln;
+    writeln('*** Source program contains errors: ', errsinprg:1);
+    goto 1
+  end;
+    
   pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
   
