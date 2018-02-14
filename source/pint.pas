@@ -4403,8 +4403,11 @@ var i: alfainx;
 begin
   skpspc(pc);
   for i := 1 to maxalfa do cn[i] := ' '; i := 1;
+  { note we abbreviate after 9 characters }
   while (chkchr(pc) <> ' ') and not chkend(pc) do 
-    begin cn[i] := chkchr(pc); i := i+1; nxtchr(pc) end
+    begin cn[i] := chkchr(pc); if i < maxalfa then i := i+1 else cn[i] := ' '; 
+    nxtchr(pc) 
+  end
 end;
 
 procedure getbrk;
@@ -4721,7 +4724,11 @@ begin
              end else write('Undefined')     
            end
          end;
-    'p': writeln('Pointer');
+    'p': begin nxtchr(tdc); 
+           { Pointers either give a full subtype or cycle back in the digest.
+             Cycles have an offset number into the digest. }
+           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, tdc.p)
+         end; 
     's': begin nxtchr(tdc); getrng(tdc, enum, s, e);
            write('['); first := true;
            for i := s to e do
@@ -4757,6 +4764,7 @@ begin
          end;
     'r': begin nxtchr(tdc); write('record '); fieldlist(tdc); write(' end') end; 
     'e': writeln('Exception');
+    'f': writeln('File');
   end;
   p := tdc.p { put back digest position (string does not change) }
 end;
@@ -4802,13 +4810,16 @@ begin
     'x': begin getrng(tdc, enum, s, e); if not enum then nxtchr(tdc); 
            if isbyte(s) and isbyte(e) then sz := 1 else sz := intsize;
          end;
-    'p': begin nxtchr(tdc); sz := ptrsize end;
-    's': begin nxtchr(tdc); sz := setsize end;
+    'p': begin nxtchr(tdc); sz := ptrsize; 
+           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) else s := siztyp
+         end;
+    's': begin nxtchr(tdc); sz := setsize; s := siztyp end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
            if not enum then nxtchr(tdc); sz := siztyp*(e-s+1)
          end;
     'r': begin nxtchr(tdc); sz := sizlst end; 
     'e': begin nxtchr(tdc); sz := exceptsize end;
+    'f': begin nxtchr(tdc); sz := filesize; s := siztyp end;
   end;
   siztyp := sz { return size }
 end;
@@ -4848,7 +4859,7 @@ begin { matrec }
 end;
 
 begin { vartyp }
-  getsym(dbc); symadr(sp, ma);
+  getsym(dbc); symadr(sp, ma); p := 1;
   if sp = nil then 
     begin writeln('*** symbol not found in current context(s)'); goto 2 end;
   if sp^.styp = stlocal then ad := ma+sp^.off { local }
@@ -4876,11 +4887,25 @@ begin { vartyp }
       ps := tdc.p; sz := siztyp; ad := ad+(i-s)*sz; { find element address }
       tdc.p := ps { back to base type }
     end else if chkchr(dbc) = '^' then begin { pointer dereference }
-      writeln('*** Pointer dereference not implemented');
-      goto 2
+      if chkchr(tdc) <> 'p' then
+        begin writeln('*** Type is not pointer'); goto 2 end;
+      nxtchr(dbc); nxtchr(tdc);
+      { various pointer checks, see chka instruction }
+      if not getdef(ad) then 
+        begin writeln('*** Pointer undefined'); goto 2 end;
+      ad2 := getadr(ad);
+      if ad2 = 0 then begin writeln('*** Pointer never assigned'); goto 2 end;
+      if ad2 = nilval then begin writeln('*** Pointer is nil'); goto 2 end;
+      if dochkrpt and isfree(ad2) then
+        begin writeln('*** Pointer has been disposed'); goto 2 end;
+      ad := ad2;
+      { Pointers either give a full subtype or cycle back in the digest.
+        Cycles have an offset number into the digest. }
+      if chkchr(tdc) in ['0'..'9'] then begin getnum(tdc, s); tdc.p := s end
     end
   end;
   p := tdc.p { put digest position }
+;writeln; writeln('vartyp: end');
 end;
 
 { process expression or structured reference }
@@ -5383,7 +5408,7 @@ begin { debug }
         writeln
       end
       { these are internal debugger commands } 
-        else if cn = 'listline  ' then begin
+      else if cn = 'listline  ' then begin
         writeln;
         writeln('Defined line to address entries:');
         writeln;
@@ -5391,7 +5416,7 @@ begin { debug }
           write(i:4, ':'); wrthex(lintrk[i], 8); writeln
         end;
         writeln
-      end else if cn = 'dumpsymbol' then begin
+      end else if cn = 'dumpsymbo ' then begin
         writeln;
         writeln('Symbols:');
         writeln;
@@ -5468,7 +5493,7 @@ begin (* main *)
   dosrclin := true;  { add source line sets to code }
   dotrcsrc := false; { trace source line executions (requires dosrclin) }
   dorecycl := true;  { obey heap space recycle requests }
-  dochkrpt := false; { check reuse of freed entry (automatically) }
+  dochkrpt := false;  { check reuse of freed entry (automatically) }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
   dodebug := false;  { no debug }
