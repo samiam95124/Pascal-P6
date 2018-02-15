@@ -406,7 +406,12 @@ type
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
-      break       = record ss: byte; sa: address; line: 0..maxsrc end;
+      break       = record 
+                      ss: byte; { byte under breakpoint }
+                      sa: address; { code address }
+                      line: 0..maxsrc; { source line if associated, or 0 }
+                      trace: boolean { is a tracepoint }
+                    end;
       brkinx      = 1..maxbrk;
       brknum      = 0..maxbrk;
       { Here is the variable length string containment to save on space. strings
@@ -1661,6 +1666,22 @@ var i: brkinx;
 begin m := false;
   for i := 1 to maxbrk do if brktbl[i].line = l then m := true;
   isbrkl := m
+end;
+
+function fndbrk: integer;
+var i, x: integer;
+begin
+  x := 0;
+  for i := 1 to maxbrk do if brktbl[i].sa = pc then x := i;
+  fndbrk := x
+end;
+
+function tracepoint: boolean;
+var i: integer; t: boolean;
+begin t := false;
+  i := fndbrk;
+  if i > 0 then t := brktbl[i].trace;
+  tracepoint := t
 end;
 
 { list single instruction at address }
@@ -5106,8 +5127,8 @@ begin { debug }
   getbrk;
   { if we broke on line, fix the line to point }
   if isbrk(pc) then begin { standing on a breakpoint }
-      x := 0;
-      for i := 1 to maxbrk do if brktbl[i].sa = pc then x := i;
+      { get source line from breakpoint table if exists }
+      x := fndbrk;
       if x >= 1 then if brktbl[x].line > 0 then srclin := brktbl[x].line
   end;
   { if we broke on a source marker, execute it then back up.
@@ -5117,8 +5138,10 @@ begin { debug }
   dbgend := false;
   debugstart := true; { set we started }
   prthdr;
+  
   2: { error reenter interpreter }
-  repeat
+  if not tracepoint then { not tracepoint, enter debugger cli }
+    repeat
     getlin(dbc);
     skpspc(dbc);
     if not chkend(dbc) then begin
@@ -5170,7 +5193,9 @@ begin { debug }
           repeat dmpdsp(s); e := s; s := getadr(s+marksl); i := i-1
           until (i = 0) or lastframe(e)
         end
-      end else if cn = 'b         ' then begin { place breakpoint source }
+      end else if (cn = 'b         ') or 
+                  (cn = 'tp        ') then begin 
+        { place breakpoint/tracepoint source }
         expr(l); if l > maxsrc then writeln('*** Invalid source line')
         else begin
           if lintrk[l] < 0 then writeln('*** Invalid source line')
@@ -5185,14 +5210,22 @@ begin { debug }
             end;
             x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
             if x = 0 then writeln('*** Breakpoint table full')
-            else brktbl[x].sa := s; brktbl[x].line := l
+            else begin 
+              brktbl[x].sa := s; brktbl[x].line := l; 
+              brktbl[x].trace := cn = 'tp        '
+            end
           end
         end
-      end else if cn = 'bi        ' then begin { place breakpoint instruction }
+      end else if (cn = 'bi        ') or
+                  (cn = 'tpi       ') then begin 
+        { place breakpoint/tracepoint instruction }
         expr(i); s := i;
         x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
-        else brktbl[x].sa := s; brktbl[x].line := 0
+        else begin
+          brktbl[x].sa := s; brktbl[x].line := 0; 
+          brktbl[x].trace := cn = 'tpi       '
+        end
       end else if cn = 'c         ' then begin { clear breakpoint }
         skpspc(dbc); if not chkend(dbc) then begin
           expr(i); s := i; i := 0;
@@ -5381,7 +5414,9 @@ begin { debug }
         writeln('ds             Dump storage parameters');
         writeln('dd  [s]        Dump display frames');
         writeln('b   a          Place breakpoint at source line number');
+        writeln('tp  a          Place tracepoint at source line number');
         writeln('bi  a          Place breakpoint at instruction');
+        writeln('tpi a          Place tracepoint at instruction');
         writeln('c   [a]        Clear breakpoint/all breakpoints');
         writeln('lb             List active breakpoints');
         writeln('w   a          Watch variable');
@@ -5567,7 +5602,7 @@ begin (* main *)
     if breakins or (stopins and dodebug) or watchmatch then begin
       if stopins then begin writeln; writeln('*** Stop instruction hit') end; 
       breakins := false; stopins := false; writeln; 
-      if not watchmatch then writeln('=== break ==='); 
+      if not watchmatch and not tracepoint then writeln('=== break ==='); 
       debug 
     end
   until stopins; { until stop instruction is seen }
