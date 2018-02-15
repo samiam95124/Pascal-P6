@@ -1652,36 +1652,45 @@ begin
   if iso7185 then errorv(InvalidInISO7185Mode)
 end;
   
-function isbrk(a: address): boolean;
-var i: brkinx;
-    m: boolean;
-begin m := false;
-  for i := 1 to maxbrk do if brktbl[i].sa = a then m := true;
-  isbrk := m
+function fndbrk(a: address): integer;
+var i, x: integer;
+begin
+  x := 0;
+  for i := 1 to maxbrk do if brktbl[i].sa = a then x := i;
+  fndbrk := x
 end;
+
+function isbrk(a: address): boolean;
+var i: brknum;
+begin i := fndbrk(a); isbrk := i > 0 end;
 
 function isbrkl(l: integer): boolean;
 var i: brkinx;
     m: boolean;
 begin m := false;
-  for i := 1 to maxbrk do if brktbl[i].line = l then m := true;
+  for i := 1 to maxbrk do 
+    if (brktbl[i].sa >= 0) and (brktbl[i].line = l) and not brktbl[i].trace then 
+      m := true;
   isbrkl := m
 end;
 
-function fndbrk: integer;
-var i, x: integer;
-begin
-  x := 0;
-  for i := 1 to maxbrk do if brktbl[i].sa = pc then x := i;
-  fndbrk := x
+function istrc(a: address): boolean;
+var i: brkinx;
+    m: boolean;
+begin m := false;
+  for i := 1 to maxbrk do if (brktbl[i].sa = a) and brktbl[i].trace then 
+    m := true;
+  istrc := m
 end;
 
-function tracepoint: boolean;
-var i: integer; t: boolean;
-begin t := false;
-  i := fndbrk;
-  if i > 0 then t := brktbl[i].trace;
-  tracepoint := t
+function istrcl(l: integer): boolean;
+var i: brkinx;
+    m: boolean;
+begin m := false;
+  for i := 1 to maxbrk do 
+    if (brktbl[i].sa >= 0) and (brktbl[i].line = l) and brktbl[i].trace then 
+      m := true;
+  istrcl := m
 end;
 
 { list single instruction at address }
@@ -3671,7 +3680,9 @@ begin
       if newline then begin { output line head }
         write(i:4, ': ');
         if dosrcprf then write(linprf[i]:6, ': ');
-        if isbrkl(i) then write('b') else write(' ');
+        if isbrkl(i) then write('b') 
+        else if istrcl(i) then write('t') 
+        else write(' ');
         if i = srclin then write('*') else write(' ');
         write(' ');
         newline := false
@@ -3683,7 +3694,9 @@ begin
           si := lintrk[i]; ei := lintrk[i+1];
           if (si >= 0) and (ei >= 0) then
             while si <= ei-1 do begin { list machine instructions }
-              if isbrk(si) then write('b') else write(' ');
+              if isbrk(si) then write('b') 
+              else if istrc(si) then write('t')
+              else write(' ');
               if getcov(si) then write('c') else write(' ');
               if pc = si then write('*') else write(' ');
               write(' ');
@@ -3724,7 +3737,9 @@ begin
 
   { trace executed instructions }
   if dotrcins then begin
-    if isbrk(pcs) then write('b') else write(' ');
+    if isbrk(pcs) then write('b') 
+    else if istrc(pcs) then write('t')
+    else write(' ');
     if getcov(pcs) then write('c') else write(' ');
     if pc = pcs then write('*') else write(' ');
     write(' ');
@@ -4495,7 +4510,9 @@ begin
     write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
     write(' cp: '); wrthex(cp, maxdigh);
     writeln;
-    if isbrk(pc) then write('b') else write(' ');
+    if isbrk(pc) then write('b') 
+    else if istrc(pc) then write('t')
+    else write(' ');
     if getcov(pc) then write('c') else write(' ');
     write('*');
     wrthex(pc, maxdigh); ad := pc; lstins(ad)
@@ -5128,7 +5145,7 @@ begin { debug }
   { if we broke on line, fix the line to point }
   if isbrk(pc) then begin { standing on a breakpoint }
       { get source line from breakpoint table if exists }
-      x := fndbrk;
+      x := fndbrk(pc);
       if x >= 1 then if brktbl[x].line > 0 then srclin := brktbl[x].line
   end;
   { if we broke on a source marker, execute it then back up.
@@ -5140,7 +5157,7 @@ begin { debug }
   prthdr;
   
   2: { error reenter interpreter }
-  if not tracepoint then { not tracepoint, enter debugger cli }
+  if not istrc(pc) then { not tracepoint, enter debugger cli }
     repeat
     getlin(dbc);
     skpspc(dbc);
@@ -5158,7 +5175,9 @@ begin { debug }
         writeln('Addr    Op Ins            P  Q');
         writeln('----------------------------------');
         while s <= e do begin
-          if isbrk(s) then write('b') else write(' ');
+          if isbrk(s) then write('b') 
+          else if istrc(s) then write('t')
+          else write(' ');
           if pc = s then write('*') else write(' ');
           if getcov(s) then write('c') else write(' ');
           write(' ');
@@ -5208,7 +5227,7 @@ begin { debug }
                 begin writeln('*** Could not place breakpoint'); goto 2 end;
               s := s+mrkinsl; i := i+1
             end;
-            x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
+            x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
             if x = 0 then writeln('*** Breakpoint table full')
             else begin 
               brktbl[x].sa := s; brktbl[x].line := l; 
@@ -5220,7 +5239,7 @@ begin { debug }
                   (cn = 'tpi       ') then begin 
         { place breakpoint/tracepoint instruction }
         expr(i); s := i;
-        x := 0; for i := 1 to maxbrk do if brktbl[i].sa < 0 then x := i;
+        x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
         if x = 0 then writeln('*** Breakpoint table full')
         else begin
           brktbl[x].sa := s; brktbl[x].line := 0; 
@@ -5237,10 +5256,13 @@ begin { debug }
         writeln;
         writeln('Breakpoints:');
         writeln;
+        writeln('No Srclin Addr       Trace/break');
+        writeln('================================');
         for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
           if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
           else write(i:2, ':****', ': ');
-          wrthex(brktbl[i].sa, maxdigh); writeln
+          wrthex(brktbl[i].sa, maxdigh); write(' '); 
+          if brktbl[i].trace then write('t') else write('b'); writeln;
         end;
         writeln
       end else if (cn = 'si        ') or
@@ -5602,7 +5624,7 @@ begin (* main *)
     if breakins or (stopins and dodebug) or watchmatch then begin
       if stopins then begin writeln; writeln('*** Stop instruction hit') end; 
       breakins := false; stopins := false; writeln; 
-      if not watchmatch and not tracepoint then writeln('=== break ==='); 
+      if not watchmatch and not istrc(pc) then writeln('=== break ==='); 
       debug 
     end
   until stopins; { until stop instruction is seen }
