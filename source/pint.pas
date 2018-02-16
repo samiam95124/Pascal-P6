@@ -5453,6 +5453,8 @@ begin
     writeln('w   a          Watch variable');
     writeln('lw             List watch table');
     writeln('cw  [n]        Clear watch table entry/all watch entries');
+    writeln('lia            List instruction analyzer buffer');
+    writeln('lsa            List source analyzer buffer');
     writeln('s   [n]        Step next source line execution');
     writeln('ss  [n]        Step next source line execution silently');
     writeln('si  [n]        Step instructions');
@@ -5471,6 +5473,8 @@ begin
     writeln('nts            Turn source line tracing off');
     writeln('spf            Turn on source level profiling');
     writeln('nspf           Turn off source level profiling');
+    writeln('an             Turn on analyzer mode');
+    writeln('nan            Turn off analyzer mode');
     writeln('r              Run program from current pc');
     writeln('ps             Print current registers and instruction');
     writeln('q              Quit interpreter');
