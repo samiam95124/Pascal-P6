@@ -371,7 +371,8 @@ const
         more than 10,000 lines. Obviously others think that's excessive. }
       maxsrc      = 25000; { maximum number of source lines in source file }
       extsrc      = '.pas'; { extention for source file }
-      maxwth      = 10;   { maximum number of watched addresses }   
+      maxwth      = 10;   { maximum number of watched addresses }
+      maxana      = 10;   { maximum depth of analyzer traces }   
 
       { version numbers }
 
@@ -491,6 +492,7 @@ var   pc          : address;   (*program address register*)
       dochkdef: boolean; { check undefined accesses }
       dosrcprf: boolean; { do source level profiling }
       dochkcov: boolean; { do code coverage }
+      doanalys: boolean; { do analyze }
       
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -511,6 +513,10 @@ var   pc          : address;   (*program address register*)
       cmdpos      : cmdinx; { current position in command line }
       brktbl      : array [brkinx] of break; { breakpoint table }
       bi          : brkinx; { index for same }
+      anitbl      : array [1..maxana] of address; { instruction analyzer queue }
+      aniptr      : 1..maxana; { input pointer }
+      anstbl      : array [1..maxana] of 0..maxsrc; { source analyzer queue }
+      ansptr      : 1..maxana; { input pointer }
       stopins     : boolean; { stop instruction executed }
       breakins    : boolean; { break instruction executed }
       sourcemark  : boolean; { source line instruction executed }
@@ -545,6 +551,7 @@ var   pc          : address;   (*program address register*)
       c1          : char;
       ad          : address;
       bai         : integer;
+      ai          : 1..maxana;
 
 (*--------------------------------------------------------------------*)
 
@@ -3666,6 +3673,19 @@ begin (*callsp*)
       end;(*case q*)
 end;(*callsp*)
 
+procedure lstinsa(var a: address);
+begin
+  if isbrk(a) then write('b') 
+  else if istrc(a) then write('t') 
+  else write(' ');
+  if getcov(a) then write('c') else write(' ');
+  if a = pc then write('*') else write(' ');
+  write(' ');
+  wrthex(a, maxdigh);
+  lstins(a);
+  writeln
+end;
+
 { print source lines }
 procedure prtsrc(s, e: integer; comp: boolean);
 var f: text; i: integer; c: char; newline: boolean; si,ei: address; 
@@ -3693,17 +3713,7 @@ begin
         if comp then begin { coordinated listing mode }
           si := lintrk[i]; ei := lintrk[i+1];
           if (si >= 0) and (ei >= 0) then
-            while si <= ei-1 do begin { list machine instructions }
-              if isbrk(si) then write('b') 
-              else if istrc(si) then write('t')
-              else write(' ');
-              if getcov(si) then write('c') else write(' ');
-              if pc = si then write('*') else write(' ');
-              write(' ');
-              wrthex(si, maxdigh);
-              lstins(si);
-              writeln 
-            end
+            while si <= ei-1 do lstinsa(si) { list machine instructions }
         end; 
         i := i+1; newline := true 
       end 
@@ -3718,6 +3728,21 @@ begin
   wi := 1; 
   while (wi < maxwth) and (wthtbl[wi] <> ad) and (wthtbl[wi] > 0) do wi := wi+1;
   iswatch := wthtbl[wi] = ad  
+end;
+
+procedure putani(a: address);
+begin
+  anitbl[aniptr] := a; 
+  if aniptr = maxana then aniptr := 1 else aniptr := aniptr+1
+end;
+
+function lstana(a: integer): integer;
+begin if a > 1 then a := a-1 else a := maxana; lstana := a end;
+
+procedure putans(l: integer);
+begin
+  anstbl[ansptr] := l; 
+  if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
 end;
 
 procedure singleins;
@@ -3736,19 +3761,23 @@ begin
   (*execute*)
 
   { trace executed instructions }
-  if dotrcins then begin
-    if isbrk(pcs) then write('b') 
-    else if istrc(pcs) then write('t')
+  if dotrcins then begin ad := pcs;
+    if isbrk(ad) then write('b') 
+    else if istrc(ad) then write('t')
     else write(' ');
-    if getcov(pcs) then write('c') else write(' ');
-    if pc = pcs then write('*') else write(' ');
+    if getcov(ad) then write('c') else write(' ');
+    write('*');
     write(' ');
-    wrthex(pcs, maxdigh);
+    wrthex(ad, maxdigh);
     write('/');
     wrthex(sp, maxdigh);
-    lstins(pcs);
+    lstins(ad);
     writeln
   end;
+  
+  { process instruction analysis }
+  if doanalys then putani(pcs);
+  
   case op of
 
     0   (*lodi*): begin getp; getq; pshint(getint(base(p) + q)) end;
@@ -4316,7 +4345,7 @@ begin
                       end
                 end;
 
-    174 (*mrkl*): begin getq; srclin := q; 
+    174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin); 
                         if dosrcprf then
                           if linprf[q] < maxint then linprf[q] := linprf[q]+1;
                         if dotrcsrc then
@@ -5115,7 +5144,7 @@ end;
 
 procedure debugins;
 var i, x: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
-    si,ei: integer; sim: boolean; enum: boolean;
+    si,ei: integer; sim: boolean; enum: boolean; s,e: address;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1;
@@ -5313,6 +5342,28 @@ begin
       for x := 1 to maxwth-1 do wthtbl[x] := wthtbl[x+1];
       wthtbl[maxwth] := -1
     end else for wi := 1 to maxwth do wthtbl[wi] := -1
+  end else if cn = 'lia       ' then begin { list instruction analysis }
+    i := lstana(aniptr); writeln; writeln('last instructions executed:'); 
+    writeln;
+    while i > 0 do begin
+      if anitbl[i] < 0 then i := 0
+      else begin 
+        s := anitbl[i]; lstinsa(s); i := lstana(i); 
+        if i = lstana(aniptr) then i := 0 
+      end
+    end;
+    writeln
+  end else if cn = 'lsa       ' then begin { list source analysis }
+    i := lstana(aniptr); writeln; writeln('last source lines executed:'); 
+    writeln;
+    while i > 0 do begin
+      if anstbl[i] <= 0 then i := 0
+      else begin 
+        prtsrc(anstbl[i], anstbl[i], false); i := lstana(i); 
+        if i = lstana(aniptr) then i := 0 
+      end
+    end;
+    writeln  
   end else if cn = 'pg        ' then begin { print globals }
     writeln('*** Command not implemented')
   end else if cn = 'pl        ' then begin { print locals }
@@ -5372,7 +5423,11 @@ begin
   else if cn = 'ic        ' then 
     dochkcov := true { instruction level coverage } 
   else if cn = 'nic       ' then 
-    dochkcov := false { instruction level coverage }  
+    dochkcov := false { no instruction level coverage }
+  else if cn = 'an        ' then 
+    doanalys := true { do analyze } 
+  else if cn = 'nan       ' then 
+    doanalys := false { no analyze }
   else if cn = 'ps        ' then prthdr { print status } 
   else if cn = 'r         ' then dbgend := true
   else if cn = 'q         ' then goto 1
@@ -5568,11 +5623,14 @@ begin (* main *)
   dodbgsrc := false; { no source level debug }
   dosrcprf := true;  { do source level profiling }
   dochkcov := false; { don't do code coverage }
+  doanalys := false; { don't do analyze mode }
 
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
   errsinprg := 0; { set no source errors }
+  aniptr := 1; { clear analysis }
+  ansptr := 1;
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
@@ -5585,6 +5643,10 @@ begin (* main *)
   for i := 1 to maxsrc do lintrk[i] := -1; { clear source line tracking }
   for i := 1 to maxsrc do linprf[i] := 0; { clear line profiling }
   for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }
+  { clear instruction analyzer table }
+  for ai := 1 to maxana do anitbl[ai] := -1; 
+  { clear source analyzer table }
+  for ai := 1 to maxana do anstbl[ai] := 0;
         
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
