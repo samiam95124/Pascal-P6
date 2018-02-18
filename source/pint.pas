@@ -546,6 +546,7 @@ var   pc          : address;   (*program address register*)
       { address of watchpoint instruction store in progress }
       stoad       : address;
       errsinprg   : integer; { errors in source program }
+      newline     : boolean; { output is on new line }
 
       i           : integer;
       c1          : char;
@@ -3206,11 +3207,13 @@ begin (*callsp*)
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
                               
-                              outputfn: putfile(output, ad, fn);
-                              
+                              outputfn: begin putfile(output, ad, fn); 
+                                              newline := false end;                              
                               prrfn: putfile(prr, ad, fn);
-                              errorfn: putfile(output, ad, fn);
-                              listfn: putfile(output, ad, fn);
+                              errorfn: begin putfile(output, ad, fn); 
+                                             newline := false end;
+                              listfn: begin putfile(output, ad, fn); 
+                                            newline := false end;
                               inputfn,prdfn,
                               commandfn: errore(WriteOnReadOnlyFile)
                            end else begin
@@ -3257,10 +3260,13 @@ begin (*callsp*)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                              outputfn: writeln(output);
+                              outputfn: begin writeln(output); 
+                                              newline := true end;
                               prrfn: writeln(prr);
-                              errorfn: writeln(output);
-                              listfn: writeln(output);
+                              errorfn: begin writeln(output); 
+                                             newline := true end;
+                              listfn: begin writeln(output); 
+                                            newline := true end;
                               prdfn,inputfn,
                               commandfn: errore(WriteOnReadOnlyFile)
                            end else begin
@@ -3274,10 +3280,13 @@ begin (*callsp*)
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
-                              outputfn: writestr(output, ad1, w, l);
+                              outputfn: begin writestr(output, ad1, w, l); 
+                                              newline := false end;
                               prrfn: writestr(prr, ad1, w, l);
-                              errorfn: writestr(output, ad1, w, l);
-                              listfn: writestr(output, ad1, w, l);
+                              errorfn: begin writestr(output, ad1, w, l); 
+                                             newline := false end;
+                              listfn: begin writestr(output, ad1, w, l); 
+                                            newline := false end;
                               prdfn,inputfn,
                               commandfn: errore(WriteOnReadOnlyFile);
                            end else begin
@@ -3291,10 +3300,13 @@ begin (*callsp*)
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
-                             outputfn: writestrp(output, ad1, l);
+                             outputfn: begin writestrp(output, ad1, l); 
+                                             newline := false end;
                              prrfn: writestrp(prr, ad1, l);
-                             errorfn: writestrp(output, ad1, l);
-                             listfn: writestrp(output, ad1, l);
+                             errorfn: begin writestrp(output, ad1, l); 
+                                            newline := false end;
+                             listfn: begin writestrp(output, ad1, l); 
+                                           newline := false end;
                              prdfn,inputfn,
                              commandfn: errore(WriteOnReadOnlyFile);
                            end else begin
@@ -3331,10 +3343,13 @@ begin (*callsp*)
                             if (w < 1) and iso7185 then 
                               errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 outputfn: writei(output, i, w, rd, lz);
+                                 outputfn: begin writei(output, i, w, rd, lz); 
+                                                 newline := false end;
                                  prrfn: writei(prr, i, w, rd, lz);
-                                 errorfn: writei(output, i, w, rd, lz);
-                                 listfn: writei(output, i, w, rd, lz);
+                                 errorfn: begin writei(output, i, w, rd, lz); 
+                                                newline := false end;
+                                 listfn: begin writei(output, i, w, rd, lz); 
+                                               newline := false end;
                                  prdfn,inputfn,
                                  commandfn: errore(WriteOnReadOnlyFile)
                               end
@@ -3348,10 +3363,13 @@ begin (*callsp*)
                             valfil(ad); fn := store[ad];
                             if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 outputfn: write(output, r: w);
+                                 outputfn: begin write(output, r: w); 
+                                                 newline := false end;
                                  prrfn: write(prr, r:w);
-                                 errorfn: write(output, r: w);
-                                 listfn: write(output, r: w);
+                                 errorfn: begin write(output, r: w); 
+                                                newline := false end;
+                                 listfn: begin write(output, r: w); 
+                                               newline := false end;
                                  prdfn,inputfn,
                                  commandfn: errore(WriteOnReadOnlyFile)
                               end
@@ -3366,10 +3384,13 @@ begin (*callsp*)
                             if (w < 1) and iso7185 then 
                               errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 outputfn: writec(output, c, w);
+                                 outputfn: begin writec(output, c, w); 
+                                                 newline := false end;
                                  prrfn: writec(prr, c, w);
-                                 errorfn: writec(output, c, w);
-                                 listfn: writec(output, c, w);
+                                 errorfn: begin writec(output, c, w); 
+                                                newline := false end;
+                                 listfn: begin writec(output, c, w); 
+                                               newline := false end;
                                  prdfn,inputfn,
                                  commandfn: errore(WriteOnReadOnlyfile)
                               end
@@ -3430,10 +3451,13 @@ begin (*callsp*)
            20(*sav*): errorv(InvalidStandardProcedureOrFunction);
            21(*pag*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-                                outputfn: page(output);
+                                outputfn: begin page(output); 
+                                                newline := true end;
                                 prrfn: page(prr);
-                                errorfn: page(output);
-                                listfn: page(output);
+                                errorfn: begin page(output); 
+                                               newline := true end;
+                                listfn: begin page(output); 
+                                              newline := true end;
                                 prdfn,inputfn,
                                 commandfn: errore(WriteOnReadOnlyFile)
                               end
@@ -3474,10 +3498,13 @@ begin (*callsp*)
                             pshadr(ad); valfil(ad); fn := store[ad];
                             if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
-                                 outputfn: write(output, b:w);
+                                 outputfn: begin write(output, b:w); 
+                                                 newline := false end;
                                  prrfn: write(prr, b:w);
-                                 errorfn: write(output, b:w);
-                                 listfn: write(output, b:w);
+                                 errorfn: begin write(output, b:w); 
+                                                newline := false end;
+                                 listfn: begin write(output, b:w); 
+                                               newline := false end;
                                  prdfn,inputfn,
                                  commandfn: errore(WriteOnReadOnlyFile)
                               end
@@ -3493,10 +3520,13 @@ begin (*callsp*)
                               errore(InvalidFieldSpecification);
                             if f < 1 then errore(InvalidFractionSpecification);
                             if fn <= commandfn then case fn of
-                                 outputfn: writerf(output, r, w, f);
+                                 outputfn: begin writerf(output, r, w, f); 
+                                                 newline := false end;
                                  prrfn: writerf(prr, r, w, f);
-                                 errorfn: writerf(output, r, w, f);
-                                 listfn: writerf(output, r, w, f);
+                                 errorfn: begin writerf(output, r, w, f); 
+                                                newline := false end;
+                                 listfn: begin writerf(output, r, w, f); 
+                                               newline := false end;
                                  prdfn,
                                  inputfn,
                                  commandfn: errore(WriteOnReadOnlyFile)
@@ -3741,16 +3771,16 @@ end;
 
 { print source lines }
 procedure prtsrc(s, e: integer; comp: boolean);
-var f: text; i: integer; c: char; newline: boolean; si,ei: address; 
+var f: text; i: integer; c: char; nl: boolean; si,ei: address; 
 begin
   if not existsfile(srcfnm) then 
     writeln('*** Source file ', srcfnm:srcfnl, ' not found')
   else begin
     assigntext(f, srcfnm); reset(f); i := 1;
-    newline := true;
+    nl := true;
     while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
     while (i <= e) and not eof(f) do begin
-      if newline then begin { output line head }
+      if nl then begin { output line head }
         write(i:4, ': ');
         if dosrcprf then write(linprf[i]:6, ': ');
         if isbrkl(i) then write('b') 
@@ -3758,7 +3788,7 @@ begin
         else write(' ');
         if i = srclin then write('*') else write(' ');
         write(' ');
-        newline := false
+        nl := false
       end;
       if not eoln(f) then begin read(f, c); write(c) end
       else begin 
@@ -3768,7 +3798,7 @@ begin
           if (si >= 0) and (ei >= 0) then
             while si <= ei-1 do lstinsa(si) { list machine instructions }
         end; 
-        i := i+1; newline := true 
+        i := i+1; nl := true 
       end 
     end;
     closetext(f)
@@ -4451,6 +4481,11 @@ begin
   end
 end;
 
+procedure wrtnewline;
+begin
+  if not newline then begin writeln; newline := true end
+end;
+
 procedure debug;
 
 label 2,3;
@@ -4586,7 +4621,7 @@ end;
 procedure prthdr;
 var ad: address;
 begin
-  writeln;
+  wrtnewline; writeln;
   if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
     write('pc: '); wrthex(pc, maxdigh, true); write(' sp: '); 
@@ -4602,7 +4637,7 @@ end;
 
 procedure dmpdsp(mp: address);
 begin
-  writeln;
+  wrtnewline; writeln;
   write('Mark @'); wrthex(mp, maxdigh, true); writeln;
   write('sl: '); wrthex(mp+marksl, 8, true); write(': '); 
   if getdef(mp+marksl) then wrthex(getadr(mp+marksl), 8, true) 
@@ -4649,7 +4684,7 @@ end;
 begin
   bp := fndblk(pc); { find address in block }
   if bp = nil then begin writeln('*** Cannot find indicated block'); goto 2 end;
-  writeln;
+  wrtnewline; writeln;
   writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
   wrthex(pc, 8, true);
   write(' locals/stack: '); wrthex(ep, 8, true); write('-'); 
@@ -5248,6 +5283,7 @@ begin
       begin nxtchr(dbc); expr(i); e := s+i-1 end
     else if not chkend(dbc) then begin expr(i); e := i end;
     if e > lsttop-1 then e := lsttop-1;
+    wrtnewline; writeln;
     writeln('Addr    Op Ins            P  Q');
     writeln('----------------------------------');
     while s <= e do begin
@@ -5269,9 +5305,11 @@ begin
       begin nxtchr(dbc); expr(i); e := s+i-1 end
     else if not chkend(dbc) then begin expr(i); e := i end;
     if e > maxstr then e := maxstr;
-    dmpmem(s, e)
+    wrtnewline; writeln;
+    dmpmem(s, e);
+    writeln
   end else if cn = 'ds        ' then begin { dump storage specs }
-    writeln;
+    wrtnewline; writeln;
     writeln('Storage areas occupied');
     writeln;
     write('Program     '); prtrng(0, pctop-1);
@@ -5281,7 +5319,7 @@ begin
     writeln
   end else if cn = 'dd        ' then begin { dump displays }
     if noframe then 
-      begin writeln; writeln('No displays active'); writeln end
+      begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
@@ -5290,7 +5328,7 @@ begin
     end
   end else if (cn = 'df        ') then begin
     if noframe then 
-      begin writeln; writeln('No displays active'); writeln end
+      begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc; eps := getadr(s+market);
@@ -5339,7 +5377,7 @@ begin
       else brktbl[x].sa := -1
     end else for i := 1 to maxbrk do brktbl[i].sa := -1
   end else if cn = 'lb        ' then begin { list breakpoints }
-    writeln;
+    wrtnewline; writeln;
     writeln('Breakpoints:');
     writeln;
     writeln('No  Src  Addr   Trc/brk');
@@ -5373,7 +5411,7 @@ begin
     if chkchr(dbc) = ':' then 
       begin nxtchr(dbc); expr(i); e := s+i-1 end
     else if not chkend(dbc) then begin expr(i); e := i end;
-    writeln;
+    wrtnewline; writeln;
     prtsrc(s, e, cn = 'lc        ');
     writeln
   end else if (cn = 's         ') or
@@ -5405,7 +5443,7 @@ begin
       if chkchr(dbc) = '#' then begin nxtchr(dbc); lz := true end;
       getnum(dbc, fl)
     end;
-    writeln;
+    wrtnewline; writeln;
     if undef then write('*') { can't print, undefined }
     else if sim then begin { write simple result }
       if r = 16 then wrthex(i, fl, lz) { hex }
@@ -5445,7 +5483,7 @@ begin
     if fw = 0 then begin writeln('*** Watch table full'); goto 2 end;
     wthtbl[fw] := ad; wthsym[fw].sp := syp; wthsym[fw].p := p
   end else if cn = 'lw        ' then begin { list watch table }
-    writeln;
+    wrtnewline; writeln;
     writeln('Watch table:');
     writeln;  
     for wi := 1 to maxwth do if wthtbl[wi] >= 0 then
@@ -5461,7 +5499,7 @@ begin
     end else for wi := 1 to maxwth do wthtbl[wi] := -1
   end else if cn = 'lia       ' then begin { list instruction analysis }
     i := lstana(aniptr); writeln; writeln('last instructions executed:'); 
-    writeln;
+    wrtnewline; writeln;
     while i > 0 do begin
       if anitbl[i] < 0 then i := 0
       else begin 
@@ -5472,7 +5510,7 @@ begin
     writeln
   end else if cn = 'lsa       ' then begin { list source analysis }
     i := lstana(aniptr); writeln; writeln('last source lines executed:'); 
-    writeln;
+    wrtnewline; writeln;
     while i > 0 do begin
       if anstbl[i] <= 0 then i := 0
       else begin 
@@ -5489,35 +5527,35 @@ begin
   else if cn = 'pc        ' then begin { set pc }
     if not chkend(dbc) then begin expr(i); pc := i end
     else begin
-      writeln;
+      wrtnewline; writeln;
       write('pc: '); wrthex(pc, 8, true); writeln;
       writeln
     end  
   end else if cn = 'sp        ' then begin { set sp }
     if not chkend(dbc) then begin expr(i); sp := i end
     else begin
-      writeln;
+      wrtnewline; writeln;
       write('sp: '); wrthex(sp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'mp        ' then begin { set mp }
     if not chkend(dbc) then begin expr(i); mp := i end
     else begin
-      writeln;
+      wrtnewline; writeln;
       write('mp: '); wrthex(mp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'np        ' then begin { set np }
     if not chkend(dbc) then begin expr(i); np := i end
     else begin
-      writeln;
+      wrtnewline; writeln;
       write('np: '); wrthex(np, 8, true); writeln;
       writeln
     end  
   end else if cn = 'cp        ' then begin { set cp }
     if not chkend(dbc) then begin expr(i); cp := i end
     else begin
-      writeln;
+      wrtnewline; writeln;
       write('cp: '); wrthex(cp, 8, true); writeln;
       writeln
     end  
@@ -5550,7 +5588,7 @@ begin
   else if cn = 'q         ' then goto 1
   else if (cn = 'h         ') or
           (cn = 'help      ') then begin
-    writeln;
+    wrtnewline; writeln;
     writeln('Commands:');
     writeln;
     writeln('l   [s[ e|:l]  List source lines');
@@ -5600,7 +5638,7 @@ begin
   end
   { these are internal debugger commands } 
   else if cn = 'listline  ' then begin
-    writeln;
+    wrtnewline; writeln;
     writeln('Defined line to address entries:');
     writeln;
     for i := 1 to maxsrc do if lintrk[i] >= 0 then begin
@@ -5608,7 +5646,7 @@ begin
     end;
     writeln
   end else if cn = 'dumpsymbo ' then begin
-    writeln;
+    wrtnewline; writeln;
     writeln('Symbols:');
     writeln;
     bp := blklst;
@@ -5649,7 +5687,7 @@ begin { debug }
     fw := watchno(stoad); { get the watch number }
     if fw > 0 then begin
       { obviously system error if we don't find the watch, but just ignore }
-      write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
+      wrtnewline; write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
       writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
       write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
       ad := wthtbl[fw]; p := wthsym[fw].p;
@@ -5667,7 +5705,7 @@ begin { debug }
     goto 3 { skip main section }
   end;
   if not debugstart then begin
-    writeln;
+    wrtnewline; writeln;
     writeln('P6 debug mode');
     writeln
   end;
@@ -5754,6 +5792,7 @@ begin (* main *)
   errsinprg := 0; { set no source errors }
   aniptr := 1; { clear analysis }
   ansptr := 1;
+  newline := true; { set on new line }
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
