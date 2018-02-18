@@ -194,7 +194,7 @@ const
         Mark format is:
 
         -8:  Function return value, 64 bits, enables a full real result.
-        -12:  Static link.
+        -12: Static link.
         -16: Dynamic link.
         -20: Saved EP from previous frame.
         -24: Stack bottom after locals allocate. Used for interprocdural gotos.
@@ -559,10 +559,10 @@ procedure debug; forward;
 
 { Low level error check and handling }
 
-{ print in hex (carefull, it chops high digits freely!) }
+{ print in hex w/sign preservation }
 
-procedure wrthex(v: integer; { value } f: integer { field });
-var p,i,d,t,n: integer;
+procedure wrthex(v: integer; { value } f: integer { field }; lz: boolean);
+var p,i,d,t,n: integer; ledz: boolean;
     digits: packed array [1..8] of char;
 function digit(d: integer): char;
 var c: char;
@@ -586,7 +586,60 @@ begin
       digits[i] := digit(d); { place }
       if i < 8 then p := p*16
    end;
-   for i := f downto 1 do write(digits[i]) { output }
+   i := 8; while (digits[i] = '0') and (i > 1) do i := i-1;
+   if i > f then f := i;
+   if f > 8 then begin 
+     for i := 1 to f-8 do if lz then write('0') else write(' '); 
+     f := 8 
+   end;
+   { find significant digits }
+   ledz := true;
+   for i := f downto 1 do begin
+     if digits[i] = '0' then begin
+       if not lz and ledz then write(' ') else write('0')
+     end else begin
+       ledz := false; write(digits[i]) { output }
+     end
+   end;
+end;
+
+procedure wrtnum(v: integer; r: integer; f: integer; lz: boolean);
+var p,i,d,t,n: integer; ledz: boolean;
+    digits: packed array [1..31] of char;
+function digit(d: integer): char;
+var c: char;
+begin
+  if d < 10 then c := chr(d+ord('0'))
+  else c := chr(d-10+ord('A'));
+  digit := c
+end;
+begin
+   if r = 16 then n := 8
+   else if r = 10 then n := 10
+   else if r = 8 then n := 11
+   else n := 31;
+   for i := 1 to 11 do digits[i] := '0';
+   p := 1;
+   for i := 1 to n do begin
+      d := v div p mod r; { extract digit }
+      digits[i] := digit(d); { place }
+      p := p*r
+   end;
+   i := 31; while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
+   if i > f then f := i;
+   if f > 31 then begin 
+     for i := 1 to f-8 do if lz then write('0') else write(' '); 
+     f := 31 
+   end;
+   { find significant digits }
+   ledz := true;
+   for i := f downto 1 do begin
+     if digits[i] = '0' then begin
+       if not lz and ledz then write(' ') else write('0')
+     end else begin
+       ledz := false; write(digits[i]) { output }
+     end
+   end;
 end;
 
 procedure errors(a: address; l: address);
@@ -1722,18 +1775,18 @@ begin
 
    end;
    write(': ');
-   wrthex(op, 2);
+   wrthex(op, 2, true);
    write(' ', instr[op]:10, '  ');
    if insp[op] then begin
 
-      wrthex(p, 2);
-      if insq[op] > 0 then begin write(','); wrthex(q, inthex) end;
-      if insq[op] > intsize then  begin write(','); wrthex(q1, inthex) end
+      wrthex(p, 2, true);
+      if insq[op] > 0 then begin write(','); wrthex(q, inthex, true) end;
+      if insq[op] > intsize then  begin write(','); wrthex(q1, inthex, true) end
 
    end else if insq[op] > 0 then begin
 
-      write('   '); wrthex(q, inthex);
-      if insq[op] > intsize then begin write(','); wrthex(q1, inthex) end
+      write('   '); wrthex(q, inthex, true);
+      if insq[op] > intsize then begin write(','); wrthex(q1, inthex, true) end
 
    end
 
@@ -2694,7 +2747,7 @@ begin
    ad := gbtop; { index the bottom of heap }
    while ad < np do begin
       l := getadr(ad); { get next block length }
-      write('addr: '); wrthex(ad, maxdigh); write(': ', abs(l):6, ': ');
+      write('addr: '); wrthex(ad, maxdigh, true); write(': ', abs(l):6, ': ');
       if l >= 0 then writeln('free') else writeln('alloc');
       ad := ad+abs(l)
    end
@@ -3681,7 +3734,7 @@ begin
   if getcov(a) then write('c') else write(' ');
   if a = pc then write('*') else write(' ');
   write(' ');
-  wrthex(a, maxdigh);
+  wrthex(a, maxdigh, true);
   lstins(a);
   writeln
 end;
@@ -3711,7 +3764,7 @@ begin
       else begin 
         readln(f); writeln;
         if comp then begin { coordinated listing mode }
-          si := lintrk[i]; ei := lintrk[i+1];
+          si := lintrk[i]; ei := lintrk[i+1]; if ei < 0 then ei := lsttop;
           if (si >= 0) and (ei >= 0) then
             while si <= ei-1 do lstinsa(si) { list machine instructions }
         end; 
@@ -3768,9 +3821,9 @@ begin
     if getcov(ad) then write('c') else write(' ');
     write('*');
     write(' ');
-    wrthex(ad, maxdigh);
+    wrthex(ad, maxdigh, true);
     write('/');
-    wrthex(sp, maxdigh);
+    wrthex(sp, maxdigh, true);
     lstins(ad);
     writeln
   end;
@@ -4497,9 +4550,10 @@ end;
 procedure prtrng(a, b: address);
 var i: 1..maxdigh;
 begin
-  wrthex(a, maxdigh); write('-');
-  if b+1 > a then wrthex(b, maxdigh) else for i := 1 to maxdigh do write('*');
-  writeln(' (',b+1-a:maxdigd,')')
+  wrthex(a, maxdigh, true); write('-');
+  if b+1 > a then wrthex(b, maxdigh, true) 
+  else for i := 1 to maxdigh do write('*');
+  writeln(' (',b+1-a:1,')')
 end;
 
 procedure dmpmem(s, e: address);
@@ -4520,8 +4574,8 @@ begin l := false; for i := 1 to 16 do bs[i] := 0;
          for x := 1 to maxdigh do write('*'); write(': ');
          for x := 1 to 16 do write('** ');
        end;
-       writeln; wrthex(ba, maxdigh); write(': ');
-       for x := 1 to i-1 do begin wrthex(bs[x], 2); write(' ') end;
+       writeln; wrthex(ba, maxdigh, true); write(': ');
+       for x := 1 to i-1 do begin wrthex(bs[x], 2, true); write(' ') end;
        l := false
      end else l := true
    end;
@@ -4535,43 +4589,79 @@ begin
   writeln;
   if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
-    write('pc: '); wrthex(pc, maxdigh); write(' sp: '); wrthex(sp, maxdigh);
-    write(' mp: '); wrthex(mp, maxdigh); write(' np: '); wrthex(np, maxdigh);
-    write(' cp: '); wrthex(cp, maxdigh);
+    write('pc: '); wrthex(pc, maxdigh, true); write(' sp: '); 
+    wrthex(sp, maxdigh, true);
+    write(' mp: '); wrthex(mp, maxdigh, true); write(' np: '); 
+    wrthex(np, maxdigh, true);
+    write(' cp: '); wrthex(cp, maxdigh, true);
     writeln;
-    if isbrk(pc) then write('b') 
-    else if istrc(pc) then write('t')
-    else write(' ');
-    if getcov(pc) then write('c') else write(' ');
-    write('*');
-    wrthex(pc, maxdigh); ad := pc; lstins(ad)
+    ad := pc; lstinsa(ad)
   end; 
   writeln
 end;
 
 procedure dmpdsp(mp: address);
-
 begin
   writeln;
-  write('Mark @'); wrthex(mp, maxdigh); writeln;
-  write('sl: '); wrthex(mp+marksl, 8); write(': '); 
-  if getdef(mp+marksl) then wrthex(getadr(mp+marksl), 8) 
+  write('Mark @'); wrthex(mp, maxdigh, true); writeln;
+  write('sl: '); wrthex(mp+marksl, 8, true); write(': '); 
+  if getdef(mp+marksl) then wrthex(getadr(mp+marksl), 8, true) 
   else write('********'); writeln;
-  write('dl: '); wrthex(mp+markdl, 8); write(': '); 
-  if getdef(mp+markdl) then wrthex(getadr(mp+markdl), 8) 
+  write('dl: '); wrthex(mp+markdl, 8, true); write(': '); 
+  if getdef(mp+markdl) then wrthex(getadr(mp+markdl), 8, true) 
   else write('********'); writeln;
-  write('ep: '); wrthex(mp+markep, 8); write(': '); 
-  if getdef(mp+markep) then wrthex(getadr(mp+markep), 8) 
+  write('ep: '); wrthex(mp+markep, 8, true); write(': '); 
+  if getdef(mp+markep) then wrthex(getadr(mp+markep), 8, true) 
   else write('********'); writeln;
-  write('sb: '); wrthex(mp+marksb, 8); write(': '); 
-  if getdef(mp+marksb) then wrthex(getadr(mp+marksb), 8) 
+  write('sb: '); wrthex(mp+marksb, 8, true); write(': '); 
+  if getdef(mp+marksb) then wrthex(getadr(mp+marksb), 8, true) 
   else write('********'); writeln;
-  write('et: '); wrthex(mp+market, 8); write(': '); 
-  if getdef(mp+market) then wrthex(getadr(mp+market), 8) 
+  write('et: '); wrthex(mp+market, 8, true); write(': '); 
+  if getdef(mp+market) then wrthex(getadr(mp+market), 8, true) 
   else write('********'); writeln;
-  write('ra: '); wrthex(mp+markra, 8); write(': '); 
-  if getdef(mp+markra) then wrthex(getadr(mp+markra), 8) 
+  write('ra: '); wrthex(mp+markra, 8, true); write(': '); 
+  if getdef(mp+markra) then wrthex(getadr(mp+markra), 8, true) 
   else write('********'); writeln;
+  writeln
+end;
+
+procedure dmpfrm(mp, ep: address; pc: address);
+var bp: pblock; line: integer;
+function fndblk(a: address): pblock;
+var fbp: pblock;
+begin
+  { search for location in blocks }
+  fbp := nil; bp := blklst;
+  while bp <> nil do begin { traverse blocks }
+    if (a >= bp^.bstart) and (a < bp^.bend) then fbp := bp; { found }
+    bp := bp^.next
+  end;
+  fndblk := fbp
+end;
+function addr2line(a: address): integer;
+begin
+  i := 1;
+  while (lintrk[i] < a) and (i < maxsrc) and (lintrk[i] >= 0) do i := i+1; 
+  if i > 1 then i := i-1;
+  if lintrk[i] < 0 then begin writeln('*** Cannot find line'); goto 2 end;
+  addr2line := i
+end;
+begin
+  bp := fndblk(pc); { find address in block }
+  if bp = nil then begin writeln('*** Cannot find indicated block'); goto 2 end;
+  writeln;
+  writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
+  wrthex(pc, 8, true);
+  write(' locals/stack: '); wrthex(ep, 8, true); write('-'); 
+  wrthex(mp-marksize, 8, true); 
+  write(' (', mp-marksize-ep:1, ')'); 
+  writeln;
+  if dodbgsrc then begin
+    line := addr2line(pc); { get equivalent line }
+    prtsrc(line-1, line+1, false) { do source level }
+  end else begin { machine level }
+    ad := pc; lstinsa(ad)
+  end;
   writeln
 end;
 
@@ -4710,7 +4800,8 @@ procedure setpar(var pc: parctl; td: strvsp; p: integer);
 begin pc.b := td; pc.l := lenpv(td); pc.p := p end;
 
 { print value by type }
-procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean);
+procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
+                 r: integer; fl: integer; lz: boolean);
 var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
     sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
     ad2, ad3: address; tdc: parctl; ps: integer;
@@ -4729,7 +4820,7 @@ begin
   expect(pc, '('); 
   while chkchr(pc) <> ')' do begin
     getsym(pc); expect(pc, ':'); getnum(pc, i); off := i; expect(pc, ':');
-    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false);
+    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false, r, fl, lz);
     if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
       while chkchr(pc) <> ')' do begin
@@ -4755,7 +4846,7 @@ begin
              { fetch according to size }
              if byt then begin i := getbyt(ad); ad := ad+1 end 
              else begin i := getint(ad); ad := ad+intsize end;
-             write(i:1) 
+             if r = 10 then write(i:fl) else wrthex(i, fl, lz) 
            end else write('Undefined') 
          end;
     'b': begin nxtchr(tdc); 
@@ -4778,7 +4869,8 @@ begin
            subranges are reduced to numeric. }
            if chkchr(tdc) in ['0'..'9'] then begin
              getnum(tdc, s); expect(tdc, ','); getnum(tdc, e); expect(tdc, ')');
-             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e)) { eval subtype }
+             { eval subtype }
+             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz)
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin
                { fetch according to size }
@@ -4828,7 +4920,7 @@ begin
            { print whole array }
            ps := tdc.p; 
            for i := s to e do 
-             begin prttyp(ad, td, tdc.p, false); tdc.p := ps; 
+             begin prttyp(ad, td, tdc.p, false, r, fl, lz); tdc.p := ps; 
                    if i < e then write(', ') 
              end;
            write(' end');
@@ -5144,7 +5236,8 @@ end;
 
 procedure debugins;
 var i, x: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
-    si,ei: integer; sim: boolean; enum: boolean; s,e: address;
+    si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
+    r: integer; fl: integer; lz: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1;
@@ -5164,7 +5257,7 @@ begin
       if pc = s then write('*') else write(' ');
       if getcov(s) then write('c') else write(' ');
       write(' ');
-      wrthex(s, maxdigh);
+      wrthex(s, maxdigh, true);
       lstins(s);
       writeln
     end
@@ -5190,9 +5283,19 @@ begin
     if noframe then 
       begin writeln; writeln('No displays active'); writeln end
     else begin
-      i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
+      i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
       repeat dmpdsp(s); e := s; s := getadr(s+marksl); i := i-1
+      until (i = 0) or lastframe(e)
+    end
+  end else if (cn = 'df        ') then begin
+    if noframe then 
+      begin writeln; writeln('No displays active'); writeln end
+    else begin
+      i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
+      s := mp; pcs := pc; eps := getadr(s+market);
+      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+markra);  
+        e := s; s := getadr(s+marksl); eps := getadr(s+market); i := i-1;
       until (i = 0) or lastframe(e)
     end
   end else if (cn = 'b         ') or 
@@ -5244,7 +5347,7 @@ begin
     for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
       if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
       else write(i:2, ':****', ': ');
-      wrthex(brktbl[i].sa, maxdigh); write(' '); 
+      wrthex(brktbl[i].sa, maxdigh, true); write(' '); 
       if brktbl[i].trace then write('t') else write('b'); writeln;
     end;
     writeln
@@ -5291,10 +5394,24 @@ begin
   end else if cn = 'p         ' then begin { print (various) }
     { process variable/expression reference }
     exptyp(syp, s, x, i, sim, undef); 
+    skpspc(dbc); r := 10; fl := 1; lz := false;
+    { get any print radix }
+    if chkchr(dbc) = '$' then begin r := 16; nxtchr(dbc) end
+    else if chkchr(dbc) = '&' then begin r := 8; nxtchr(dbc) end
+    else if chkchr(dbc) = '%' then begin r := 2; nxtchr(dbc) end;
+    skpspc(dbc);
+    if chkchr(dbc) = ':' then begin { there is a field }
+      nxtchr(dbc); skpspc(dbc); 
+      if chkchr(dbc) = '#' then begin nxtchr(dbc); lz := true end;
+      getnum(dbc, fl)
+    end;
     writeln;
     if undef then write('*') { can't print, undefined }
-    else if sim then write(i:1) { write simple result }
-    else prttyp(s, syp^.digest, x, false); { print the resulting tail }
+    else if sim then begin { write simple result }
+      if r = 16 then wrthex(i, fl, lz) { hex }
+      else wrtnum(i, r, fl, lz) { others }
+    end else 
+      prttyp(s, syp^.digest, x, false, r, fl, lz); { print the resulting tail }
     writeln;
     writeln
   end else if cn = 'e         ' then begin { enter (hex) }
@@ -5332,7 +5449,7 @@ begin
     writeln('Watch table:');
     writeln;  
     for wi := 1 to maxwth do if wthtbl[wi] >= 0 then
-      begin write(wi:1, ': '); wrthex(wthtbl[wi], 8); writeln end;
+      begin write(wi:1, ': '); wrthex(wthtbl[wi], 8, true); writeln end;
     writeln
   end else if cn = 'cw        ' then begin { clear watch table }
     if not chkend(dbc) then begin expr(i);
@@ -5373,35 +5490,35 @@ begin
     if not chkend(dbc) then begin expr(i); pc := i end
     else begin
       writeln;
-      write('pc: '); wrthex(pc, 8); writeln;
+      write('pc: '); wrthex(pc, 8, true); writeln;
       writeln
     end  
   end else if cn = 'sp        ' then begin { set sp }
     if not chkend(dbc) then begin expr(i); sp := i end
     else begin
       writeln;
-      write('sp: '); wrthex(sp, 8); writeln;
+      write('sp: '); wrthex(sp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'mp        ' then begin { set mp }
     if not chkend(dbc) then begin expr(i); mp := i end
     else begin
       writeln;
-      write('mp: '); wrthex(mp, 8); writeln;
+      write('mp: '); wrthex(mp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'np        ' then begin { set np }
     if not chkend(dbc) then begin expr(i); np := i end
     else begin
       writeln;
-      write('np: '); wrthex(np, 8); writeln;
+      write('np: '); wrthex(np, 8, true); writeln;
       writeln
     end  
   end else if cn = 'cp        ' then begin { set cp }
     if not chkend(dbc) then begin expr(i); cp := i end
     else begin
       writeln;
-      write('cp: '); wrthex(cp, 8); writeln;
+      write('cp: '); wrthex(cp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'ti        ' then 
@@ -5444,6 +5561,7 @@ begin
     writeln('st  d v        Set program variable');
     writeln('ds             Dump storage parameters');
     writeln('dd  [s]        Dump display frames');
+    writeln('df  [s]        Dump frames formatted (call trace)');
     writeln('b   a          Place breakpoint at source line number');
     writeln('tp  a          Place tracepoint at source line number');
     writeln('bi  a          Place breakpoint at instruction');
@@ -5486,7 +5604,7 @@ begin
     writeln('Defined line to address entries:');
     writeln;
     for i := 1 to maxsrc do if lintrk[i] >= 0 then begin
-      write(i:4, ':'); wrthex(lintrk[i], 8); writeln
+      write(i:4, ':'); wrthex(lintrk[i], 8, true); writeln
     end;
     writeln
   end else if cn = 'dumpsymbo ' then begin
@@ -5502,7 +5620,8 @@ begin
         btproc: write('procedure');
         btfunc: write('function')
       end;
-      write(' '); wrthex(bp^.bstart, 8); write(' '); wrthex(bp^.bend, 8);
+      write(' '); 
+      wrthex(bp^.bstart, 8, true); write(' '); wrthex(bp^.bend, 8, true);
       writeln;
       writeln;
       syp := bp^.symbols;
@@ -5530,19 +5649,19 @@ begin { debug }
     fw := watchno(stoad); { get the watch number }
     if fw > 0 then begin
       { obviously system error if we don't find the watch, but just ignore }
-      write('Watch variable: @'); wrthex(pc, 8); write(': '); 
+      write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
       writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
-      write('@'); wrthex(wthtbl[fw], 8); write(': ');
+      write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
       ad := wthtbl[fw]; p := wthsym[fw].p;
       if not getdef(ad) then write('*') 
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false);
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false);
       stopwatch := false; { let instruction run }
       singleins;
       stopwatch := true;
       write(' -> ');
       ad := wthtbl[fw]; p := wthsym[fw].p; 
       if not getdef(ad) then write('*')
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false);
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false);
       writeln
     end;
     goto 3 { skip main section }
