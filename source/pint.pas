@@ -4490,11 +4490,61 @@ procedure debug;
 
 label 2,3;
 
+type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
+               etypnr,erecfnf,erecfna,etypna,einxoor,etypnp,eptrudf,eptrnas,
+               eptrnil,eptrdis,eoprudf,estropr,efactor,erlni,eoprmbi,esetni,
+               evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
+               einvwnm,ecmdni,ecmderr);
+               
 var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
     fw: wthnum; undef: boolean;
 
+procedure error(e: errcod);
+
+begin
+  wrtnewline; write('*** ');
+  case e of { error }
+    esyntax: writeln('Syntax error');
+    enumexp: writeln('Number expected');
+    edigbrx: writeln('Digit beyond radix');
+    elinnf:  writeln('Cannot find line');
+    eblknf:  writeln('Block not found in symbol table');
+    esymnam: writeln('Symbol name expected');
+    esymntl: writeln('Symbol name too long');
+    esnficc: writeln('symbol not found in current context(s)');
+    etypnr:  writeln('Type is not record');
+    erecfnf: writeln('Record field not found');
+    erecfna: writeln('Record field not active');
+    etypna:  writeln('Type is not array');
+    einxoor: writeln('Index out of range');
+    etypnp:  writeln('Type is not pointer');
+    eptrudf: writeln('Pointer undefined');
+    eptrnas: writeln('Pointer never assigned');
+    eptrnil: writeln('Pointer is nil');
+    eptrdis: writeln('Pointer has been disposed');
+    eoprudf: writeln('operand is undefined');
+    estropr: writeln('Structured operand to operator');
+    efactor: writeln('Error in factor');
+    erlni:   writeln('Reals not implemented');
+    eoprmbi: writeln('Operand must be integer');
+    esetni:  writeln('Sets not implemented');
+    evalstr: writeln('Value is structured');
+    einvsln: writeln('Invalid source line');
+    ecntpbk: writeln('Could not place breakpoint');
+    ebktblf: writeln('Breakpoint table full');
+    enbpaad: writeln('No breakpoint at address');
+    ebadbv:  writeln('Bad byte value');
+    ecntsct: writeln('Cannot set complex type');
+    ewtblf:  writeln('Watch table full');
+    einvwnm: writeln('Invalid watch number');
+    ecmdni:  writeln('Command not implemented');
+    ecmderr: writeln('Command error');
+  end;
+  goto 2
+end;
+  
 procedure getlin(var pc: parctl);
 var c: char;
 begin 
@@ -4527,7 +4577,7 @@ end;
 
 procedure expect(var pc: parctl; c: char);
 begin
-  if chkchr(pc) <> c then begin writeln('*** Expected ''', c, ''''); goto 2 end;
+  if chkchr(pc) <> c then error(esyntax);
   nxtchr(pc)
 end;
 
@@ -4535,19 +4585,14 @@ procedure getnum(var pc: parctl; var n: integer);
 var r: integer;
 begin
    n := 0; r := 10; skpspc(pc); 
-   if not (chkchr(pc) in ['$', '&', '%', '0'..'9']) then begin
-     writeln('*** Number expected'); goto 2
-   end;
+   if not (chkchr(pc) in ['$', '&', '%', '0'..'9']) then error(enumexp);
    if chkchr(pc) = '$' then begin r := 16; nxtchr(pc) end
    else if chkchr(pc) = '&' then begin r := 8; nxtchr(pc) end
    else if chkchr(pc) = '%' then begin r := 2; nxtchr(pc) end;  
    while chkchr(pc) in ['0'..'9','A'..'F','a'..'f'] do begin
      if ((r = 10) and (chkchr(pc) > '9')) or
         ((r = 2) and (chkchr(pc) > '1')) or
-        ((r = 8) and (chkchr(pc) > '7')) then begin
-       writeln('*** Digit beyond radix');
-       goto 2
-     end; 
+        ((r = 8) and (chkchr(pc) > '7')) then error(edigbrx);
      if chkchr(pc) in ['0'..'9'] then n := n*r+ord(chkchr(pc))-ord('0')
      else if chkchr(pc) in ['A'..'F'] then n := n*r+ord(chkchr(pc))-ord('A')+10
      else n := n*r+ord(chkchr(pc))-ord('a')+10;
@@ -4678,12 +4723,12 @@ begin
   i := 1;
   while (lintrk[i] < a) and (i < maxsrc) and (lintrk[i] >= 0) do i := i+1; 
   if i > 1 then i := i-1;
-  if lintrk[i] < 0 then begin writeln('*** Cannot find line'); goto 2 end;
+  if lintrk[i] < 0 then error(elinnf);
   addr2line := i
 end;
 begin
   bp := fndblk(pc); { find address in block }
-  if bp = nil then begin writeln('*** Cannot find indicated block'); goto 2 end;
+  if bp = nil then error(eblknf);
   wrtnewline; writeln;
   writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
   wrthex(pc, 8, true);
@@ -4754,9 +4799,9 @@ procedure getsym(var pc: parctl);
 var i: 1..fillen;
 begin for i := 1 to fillen do sn[i] := ' '; snl := 1; skpspc(pc);
   if not (chkchr(pc) in ['a'..'z', 'A'..'Z', '0'..'9', '_']) then 
-    begin writeln('*** Symbol name expected'); goto 2 end;
+    error(esymnam); 
   while chkchr(pc) in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
-    if snl >= fillen then begin writeln('*** Symbol name too long'); goto 2 end;
+    if snl >= fillen then error(esymntl);
     sn[snl] := chkchr(pc); nxtchr(pc); snl := snl+1
   end;
   snl := snl-1
@@ -5058,44 +5103,36 @@ end;
 
 begin { vartyp }
   getsym(dbc); symadr(sp, ma); p := 1;
-  if sp = nil then 
-    begin writeln('*** symbol not found in current context(s)'); goto 2 end;
+  if sp = nil then error(esnficc);
   if sp^.styp = stlocal then ad := ma+sp^.off { local }
   else ad := pctop+sp^.off; { global }
   setpar(tdc, sp^.digest, p); { set up type digest for parse }
   while chkchr(dbc) in ['.', '[', '^'] do begin
     if chkchr(dbc) = '.' then begin { record field }
-      if chkchr(tdc) <> 'r' then 
-        begin writeln('*** Type is not record'); goto 2 end;
+      if chkchr(tdc) <> 'r' then error(etypnr);
       nxtchr(dbc); nxtchr(tdc); getsym(dbc); sn2 := sn; { get field and save }
       fnd := false; act := false; matrec(true);
-      if not fnd then begin writeln('*** Record field not found'); goto 2 end
-      else if not act then 
-        begin writeln('*** Record field not active'); goto 2 end;
+      if not fnd then error(erecfnf);
+      if not act then error(erecfna); 
       ad := ad+foff; { set field address }
       tdc.p := fp { set type position }
     end else if chkchr(dbc) = '[' then begin { array index }
-      if chkchr(tdc) <> 'a' then
-        begin writeln('*** Type is not array'); goto 2 end;
+      if chkchr(tdc) <> 'a' then error(etypna);
       nxtchr(dbc); nxtchr(tdc); getrng(tdc, enum, s, e);
       if not enum then nxtchr(tdc);
       getnum(dbc, i); expect(dbc, ']');
-      if (i < s) or (i > e) then
-        begin writeln('*** Index out of range'); goto 2 end;
+      if (i < s) or (i > e) then error(einxoor);
       ps := tdc.p; sz := siztyp; ad := ad+(i-s)*sz; { find element address }
       tdc.p := ps { back to base type }
     end else if chkchr(dbc) = '^' then begin { pointer dereference }
-      if chkchr(tdc) <> 'p' then
-        begin writeln('*** Type is not pointer'); goto 2 end;
+      if chkchr(tdc) <> 'p' then error(etypnp);
       nxtchr(dbc); nxtchr(tdc);
       { various pointer checks, see chka instruction }
-      if not getdef(ad) then 
-        begin writeln('*** Pointer undefined'); goto 2 end;
+      if not getdef(ad) then error(eptrudf);
       ad2 := getadr(ad);
-      if ad2 = 0 then begin writeln('*** Pointer never assigned'); goto 2 end;
-      if ad2 = nilval then begin writeln('*** Pointer is nil'); goto 2 end;
-      if dochkrpt and isfree(ad2) then
-        begin writeln('*** Pointer has been disposed'); goto 2 end;
+      if ad2 = 0 then error(eptrnas);
+      if ad2 = nilval then error(eptrnil);
+      if dochkrpt and isfree(ad2) then error(eptrdis);
       ad := ad2;
       { Pointers either give a full subtype or cycle back in the digest.
         Cycles have an offset number into the digest. }
@@ -5139,9 +5176,8 @@ begin undef := false; skpspc(dbc);
     begin getnum(dbc, i); simple := true end
   else if matop('not ') then begin
     nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(sp, ad, p, i, simple, undef);
-    if undef then begin writeln('*** operand is undefined'); goto 2 end;
-    if not simple then 
-      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if undef then error(eoprudf);
+    if not simple then error(estropr);
     i := bnot(i)
   end else if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
     p := 1; vartyp(sp, ad, p);
@@ -5163,28 +5199,23 @@ begin undef := false; skpspc(dbc);
   end else if chkchr(dbc) = '(' then begin
     nxtchr(dbc); exptyp(sp, ad, p, i, simple, undef);
     expect(dbc, ')')
-  end else begin
-    writeln('*** Error in factor'); goto 2
-  end
+  end else error(efactor)
 end;
 
 procedure right;
 begin factor(sp, ad, p, r, simple, undef);
-  if undef then begin writeln('*** operand is undefined'); goto 2 end;
-  if not simple then 
-    begin writeln('*** Structured operand to operator'); goto 2 end
+  if undef then error(eoprudf);
+  if not simple then error(estropr)
 end;
 
 begin factor(sp, ad, p, i, simple, undef); 
   skpspc(dbc);
   while (chkchr(dbc) in ['*', '/']) or matop('div ') or matop('mod ') or 
      matop('and ') do begin { operator }
-    if undef then begin writeln('*** operand is undefined'); goto 2 end;
-    if not simple then 
-      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if undef then error(eoprudf);
+    if not simple then error(estropr); 
     if chkchr(dbc) = '*' then begin nxtchr(dbc); right; i := i*r end
-    else if chkchr(dbc) = '/' then
-      begin writeln('*** Reals not implemented'); goto 2 end 
+    else if chkchr(dbc) = '/' then error(erlni)
     else if matop('div  ') then 
       begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := i div r end
     else if matop('mod  ') then 
@@ -5197,23 +5228,21 @@ end;
 
 procedure right;
 begin term(sp, ad, p, r, simple, undef);
-  if undef then begin writeln('*** operand is undefined'); goto 2 end;
-  if not simple then 
-    begin writeln('*** Structured operand to operator'); goto 2 end
+  if undef then error(eoprudf);
+  if not simple then error(estropr) 
 end;
 
 begin skpspc(dbc); c := chkchr(dbc); if c in ['+','-'] then nxtchr(dbc);
   term(sp, ad, p, i, simple, undef); 
   if c in ['+','-'] then begin
-    if undef then begin writeln('*** operand is undefined'); goto 2 end;
-    if not simple then begin writeln('*** Operand must be integer'); goto 2 end;
+    if undef then error(eoprudf);
+    if not simple then error(eoprmbi);
     if c = '-' then i := -i;
   end;
   skpspc(dbc);
   while (chkchr(dbc) in ['+', '-']) or matop('or  ') or matop('xor ') do begin
-    if undef then begin writeln('*** operand is undefined'); goto 2 end; 
-    if not simple then 
-      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if undef then error(eoprudf);
+    if not simple then error(estropr); 
     if chkchr(dbc) = '+' then begin nxtchr(dbc); right; i := i+r end
     else if chkchr(dbc) = '-' then begin nxtchr(dbc); right; i := i-r end
     else if matop('or  ') then 
@@ -5226,16 +5255,14 @@ end;
 
 procedure right;
 begin sexpr(sp, ad, p, r, simple, undef);
-  if undef then begin writeln('*** operand is undefined'); goto 2 end;
-  if not simple then 
-    begin writeln('*** Structured operand to operator'); goto 2 end
+  if undef then error(eoprudf);
+  if not simple then error(estropr) 
 end;
 
 begin sexpr(sp, ad, p, i, simple, undef); skpspc(dbc);
   if (chkchr(dbc) in ['=', '<', '>']) or matop('in') then begin { operator }
-    if undef then begin writeln('*** operand is undefined'); goto 2 end;
-    if not simple then 
-      begin writeln('*** Structured operand to operator'); goto 2 end;
+    if undef then error(eoprudf);
+    if not simple then error(estropr);
     if chkchr(dbc) = '=' then begin nxtchr(dbc); right; i := ord(i = r) end
     else if matop('<>  ') then 
       begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i <> r) end
@@ -5245,10 +5272,7 @@ begin sexpr(sp, ad, p, i, simple, undef); skpspc(dbc);
       begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i >= r) end
     else if chkchr(dbc) = '<' then begin nxtchr(dbc); right; i := ord(i < r) end
     else if chkchr(dbc) = '>' then begin nxtchr(dbc); right; i := ord(i > r) end
-    else if matop('in  ') then begin
-      writeln('*** Sets not implemented');
-      goto 2
-    end
+    else if matop('in  ') then error(esetni)
   end
 end;
 
@@ -5258,8 +5282,8 @@ var ad: address; sp: psymbol; p: integer; simple: boolean; undef: boolean;
 begin
   { get complex or simple reference }
   exptyp(sp, ad, p, i, simple, undef);
-  if undef then begin writeln('*** operand is undefined'); goto 2 end;
-  if not simple then begin writeln('*** Value is structured'); goto 2 end;
+  if undef then error(eoprudf);
+  if not simple then error(evalstr)
 end;
 
 function watchno(ad: address): wthnum;
@@ -5339,42 +5363,34 @@ begin
   end else if (cn = 'b         ') or 
               (cn = 'tp        ') then begin 
     { place breakpoint/tracepoint source }
-    expr(l); if l > maxsrc then writeln('*** Invalid source line')
-    else begin
-      if lintrk[l] < 0 then writeln('*** Invalid source line')
-      else begin s := lintrk[l]; i := 1;
-        while store[s] = mrkins do begin { walk over source line markers }
-          { source markers should always be within valid code, but we bail
-            on out of memory store or taking too long to find code to keep
-            this from locking up }
-          if (s > maxstr) or (i > 100) then 
-            begin writeln('*** Could not place breakpoint'); goto 2 end;
-          s := s+mrkinsl; i := i+1
-        end;
-        x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-        if x = 0 then writeln('*** Breakpoint table full')
-        else begin 
-          brktbl[x].sa := s; brktbl[x].line := l; 
-          brktbl[x].trace := cn = 'tp        '
-        end
-      end
-    end
+    expr(l); if l > maxsrc then error(einvsln);
+    if lintrk[l] < 0 then error(einvsln);
+    s := lintrk[l]; i := 1;
+    while store[s] = mrkins do begin { walk over source line markers }
+      { source markers should always be within valid code, but we bail
+        on out of memory store or taking too long to find code to keep
+        this from locking up }
+      if (s > maxstr) or (i > 100) then error(ecntpbk);
+      s := s+mrkinsl; i := i+1
+    end;
+    x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
+    if x = 0 then error(ebktblf);
+    brktbl[x].sa := s; brktbl[x].line := l; 
+    brktbl[x].trace := cn = 'tp        '
   end else if (cn = 'bi        ') or
               (cn = 'tpi       ') then begin 
     { place breakpoint/tracepoint instruction }
     expr(i); s := i;
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-    if x = 0 then writeln('*** Breakpoint table full')
-    else begin
-      brktbl[x].sa := s; brktbl[x].line := 0; 
-      brktbl[x].trace := cn = 'tpi       '
-    end
+    if x = 0 then error(ebktblf);
+    brktbl[x].sa := s; brktbl[x].line := 0; 
+    brktbl[x].trace := cn = 'tpi       '
   end else if cn = 'c         ' then begin { clear breakpoint }
     skpspc(dbc); if not chkend(dbc) then begin
       expr(i); s := i; i := 0;
       for i := 1 to maxbrk do if brktbl[i].sa = s then x := i;
-      if i = 0 then writeln('*** No breakpoint at address')
-      else brktbl[x].sa := -1
+      if i = 0 then error(enbpaad);
+      brktbl[x].sa := -1
     end else for i := 1 to maxbrk do brktbl[i].sa := -1
   end else if cn = 'lb        ' then begin { list breakpoints }
     wrtnewline; writeln;
@@ -5456,12 +5472,9 @@ begin
     expr(i); s := i; { get address }
     repeat
       expr(i); 
-      if (i > 255) or (i < 0) then 
-        begin writeln('*** Bad byte value'); s := -1 end
-      else begin
-        store[s] := i;
-        s := s+1
-      end
+      if (i > 255) or (i < 0) then error(ebadbv);
+      store[s] := i;
+      s := s+1
     until chkend(dbc) or (s < 0);
   end else if cn = 'st        ' then begin { set (variable) }
     vartyp(syp, ad, p); expr(i); setpar(tdc, syp^.digest, p);
@@ -5475,12 +5488,12 @@ begin
                else putint(ad, i)
          end
       end
-    end else begin writeln('*** Cannot set complex type'); goto 2 end
+    end else error(ecntsct)
   end else if cn = 'w         ' then begin { watch (variable) }
     vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
     { find free watch entry }
     fw := 0; for wi := maxwth downto 1 do if wthtbl[wi] < 0 then fw := wi;
-    if fw = 0 then begin writeln('*** Watch table full'); goto 2 end;
+    if fw = 0 then error(ewtblf);
     wthtbl[fw] := ad; wthsym[fw].sp := syp; wthsym[fw].p := p
   end else if cn = 'lw        ' then begin { list watch table }
     wrtnewline; writeln;
@@ -5491,8 +5504,7 @@ begin
     writeln
   end else if cn = 'cw        ' then begin { clear watch table }
     if not chkend(dbc) then begin expr(i);
-      if (i < 1) or (i > maxwth) then
-        begin writeln('*** Invalid watch number'); goto 2 end;
+      if (i < 1) or (i > maxwth) then error(einvwnm);
       { move entries down to gap }
       for x := 1 to maxwth-1 do wthtbl[x] := wthtbl[x+1];
       wthtbl[maxwth] := -1
@@ -5519,11 +5531,9 @@ begin
       end
     end;
     writeln  
-  end else if cn = 'pg        ' then begin { print globals }
-    writeln('*** Command not implemented')
-  end else if cn = 'pl        ' then begin { print locals }
-    writeln('*** Command not implemented')  
-  end else if cn = 'hs        ' then repspc { report heap space }
+  end else if cn = 'pg        ' then error(ecmdni) { print globals }
+  else if cn = 'pl        ' then error(ecmdni) { print locals }
+  else if cn = 'hs        ' then repspc { report heap space }
   else if cn = 'pc        ' then begin { set pc }
     if not chkend(dbc) then begin expr(i); pc := i end
     else begin
@@ -5678,7 +5688,7 @@ begin
       bp := bp^.next
     end;
     writeln
-  end else writeln('*** Command error')
+  end else error(ecmderr)
 end;
       
 begin { debug }
@@ -5853,9 +5863,11 @@ begin (* main *)
     singleins;
     { if breakpoint hit, back up pc and go debugger }
     if breakins or (stopins and dodebug) or watchmatch then begin
-      if stopins then begin writeln; writeln('*** Stop instruction hit') end; 
+      if stopins then 
+        begin wrtnewline; writeln; writeln('*** Stop instruction hit') end; 
       breakins := false; stopins := false; writeln; 
-      if not watchmatch and not istrc(pc) then writeln('=== break ==='); 
+      if not watchmatch and not istrc(pc) then 
+        begin wrtnewline; writeln('=== break ===') end; 
       debug 
     end
   until stopins; { until stop instruction is seen }
