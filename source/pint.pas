@@ -4918,7 +4918,7 @@ begin
   expect(pc, ')')
 end;
 
-begin
+begin { prttyp }
   setpar(tdc, td, p); { set up type digest for parse }
   case chkchr(tdc) of
     'i': begin nxtchr(tdc);
@@ -5294,7 +5294,7 @@ begin
 end;
 
 procedure debugins;
-var i, x: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
+var i, x, p: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
     si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
     r: integer; fl: integer; lz: boolean;
 begin
@@ -5531,8 +5531,24 @@ begin
       end
     end;
     writeln  
-  end else if cn = 'pg        ' then error(ecmdni) { print globals }
-  else if cn = 'pl        ' then error(ecmdni) { print locals }
+  end else if cn = 'pg        ' then begin { print globals }
+    wrtnewline; writeln; writeln('Globals:'); writeln;
+    bp := blklst; { index top of block list }
+    while bp <> nil do begin
+      syp := bp^.symbols;
+      while syp <> nil do begin { traverse symbols list }
+        if syp^.styp = stglobal then begin 
+          writev(output, syp^.name, 20); write(' ');
+          s := pctop+syp^.off; p := 1; 
+          prttyp(s, syp^.digest, p, false, 10, 1, false);
+          writeln
+        end;
+        syp := syp^.next
+      end;
+      bp := bp^.next
+    end;
+    writeln
+  end else if cn = 'pl        ' then error(ecmdni) { print locals }
   else if cn = 'hs        ' then repspc { report heap space }
   else if cn = 'pc        ' then begin { set pc }
     if not chkend(dbc) then begin expr(i); pc := i end
@@ -5604,9 +5620,11 @@ begin
     writeln('l   [s[ e|:l]  List source lines');
     writeln('lc  [s[ e|:l]  List source and machine lines coordinated');
     writeln('li  [s[ e|:l]  List machine instructions');
+    writeln('p   v          Print expression');
     writeln('d   [s[ e|:l]  Dump memory');
     writeln('e   a v[ v]... Enter byte values to memory address');
     writeln('st  d v        Set program variable');
+    writeln('pg             Print all globals');
     writeln('ds             Dump storage parameters');
     writeln('dd  [s]        Dump display frames');
     writeln('df  [s]        Dump frames formatted (call trace)');
@@ -5736,6 +5754,7 @@ begin { debug }
   
   2: { error reenter interpreter }
   if not istrc(pc) then { not tracepoint, enter debugger cli }
+    wrtnewline;
     repeat
     getlin(dbc);
     skpspc(dbc);
