@@ -619,7 +619,7 @@ begin
    else if r = 10 then n := 10
    else if r = 8 then n := 11
    else n := 31;
-   for i := 1 to 11 do digits[i] := '0';
+   for i := 1 to 31 do digits[i] := '0';
    p := 1;
    for i := 1 to n do begin
       d := v div p mod r; { extract digit }
