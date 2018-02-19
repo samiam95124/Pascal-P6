@@ -4705,10 +4705,8 @@ begin
   writeln
 end;
 
-procedure dmpfrm(mp, ep: address; pc: address);
-var bp: pblock; line: integer;
 function fndblk(a: address): pblock;
-var fbp: pblock;
+var fbp, bp: pblock;
 begin
   { search for location in blocks }
   fbp := nil; bp := blklst;
@@ -4718,6 +4716,9 @@ begin
   end;
   fndblk := fbp
 end;
+
+procedure dmpfrm(mp, ep: address; pc: address);
+var bp: pblock; line: integer;
 function addr2line(a: address): integer;
 begin
   i := 1;
@@ -5548,8 +5549,36 @@ begin
       bp := bp^.next
     end;
     writeln
-  end else if cn = 'pl        ' then error(ecmdni) { print locals }
-  else if cn = 'hs        ' then repspc { report heap space }
+  end else if cn = 'pl        ' then begin { print locals }
+    if noframe then 
+      begin wrtnewline; writeln; writeln('No displays active'); writeln end
+    else begin
+      i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
+      s := mp; pcs := pc;
+      wrtnewline;
+      repeat
+        bp := fndblk(pcs);
+        if bp = nil then error(eblknf);
+        if (bp^.btyp = btproc) or (bp^.btyp = btfunc) then begin
+          writeln;
+          write('Locals for block: '); writev(output, bp^.name, lenpv(bp^.name)); 
+          writeln; writeln;
+          syp := bp^.symbols;
+          while syp <> nil do begin { traverse symbols list }
+            if syp^.styp = stlocal then begin 
+              writev(output, syp^.name, 20); write(' ');
+              e := s+syp^.off; p := 1; 
+              prttyp(e, syp^.digest, p, false, 10, 1, false);
+              writeln
+            end;
+            syp := syp^.next
+          end;
+          writeln
+        end;
+        pcs := getadr(s+markra); e := s; s := getadr(s+marksl); i := i-1
+      until (i = 0) or lastframe(e)
+    end
+  end else if cn = 'hs        ' then repspc { report heap space }
   else if cn = 'pc        ' then begin { set pc }
     if not chkend(dbc) then begin expr(i); pc := i end
     else begin
@@ -5625,9 +5654,11 @@ begin
     writeln('e   a v[ v]... Enter byte values to memory address');
     writeln('st  d v        Set program variable');
     writeln('pg             Print all globals');
+    writeln('pl  [n]        print locals for current/number of enclosing ',
+            'blocks');        
     writeln('ds             Dump storage parameters');
-    writeln('dd  [s]        Dump display frames');
-    writeln('df  [s]        Dump frames formatted (call trace)');
+    writeln('dd  [n]        Dump display frames');
+    writeln('df  [n]        Dump frames formatted (call trace)');
     writeln('b   a          Place breakpoint at source line number');
     writeln('tp  a          Place tracepoint at source line number');
     writeln('bi  a          Place breakpoint at instruction');
