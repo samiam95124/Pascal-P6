@@ -428,7 +428,7 @@ type
                       name:   strvsp; { name }
                       styp:   (stglobal, stlocal); { area type }
                       off:    address; { offset address }
-                      digest: strvsp { type digest }
+                      digest: strvsp; { type digest }
                     end;
       pblock       = ^block;
       block        = record
@@ -547,6 +547,12 @@ var   pc          : address;   (*program address register*)
       stoad       : address;
       errsinprg   : integer; { errors in source program }
       newline     : boolean; { output is on new line }
+      boolsym     : psymbol; { symbol for boolean result }
+      realsym     : psymbol; { symbol for real result }
+      intsym      : psymbol; { symbol for integer result }
+      charsym     : psymbol; { symbol for character result }
+      tmpsym      : psymbol; { list of expression temp symbols }
+      maxpow10    : integer; { maximum power of 10 }
 
       i           : integer;
       c1          : char;
@@ -1441,6 +1447,36 @@ begin
   end;
   strequvf := m
 end;
+
+{ compare variable length id strings }
+function strequvv(a, b: strvsp): boolean;
+var m: boolean; i: integer;
+begin
+  m := true;
+  while (a <> nil) and (b <> nil) do begin
+    for i := 1 to varsqt do if lcase(a^.str[i]) <> lcase(b^.str[i]) then m := false;
+    a := a^.next; b := b^.next
+  end;
+  if a <> b then m := false;
+  strequvv := m
+end;
+
+{ compare variable length id strings, a < b }
+function strltnvv(a, b: strvsp): boolean;
+var i: integer; ca, cb: char;
+begin ca := ' '; cb := ' ';
+  while (a <> nil) or (b <> nil) do begin
+    i := 1;
+    while (i <= varsqt) and ((a <> nil) or (b <> nil)) do begin
+      if a <> nil then ca := lcase(a^.str[i]) else ca := ' ';
+      if b <> nil then cb := lcase(b^.str[i]) else cb := ' ';
+      if ca <> cb then begin a := nil; b := nil end;
+      i := i+1
+    end;
+    if a <> nil then a := a^.next; if b <> nil then b := b^.next
+  end;
+  strltnvv := ca < cb
+end;
    
 (*--------------------------------------------------------------------*)
 
@@ -2325,7 +2361,7 @@ procedure load;
                             end;
                        's': begin { symbol }
                               getnxt; getlab;
-                              new(sp); strassvf(sp^.name, sn);
+                              new(sp); strassvf(sp^.name, sn); 
                               skpspc; 
                               if not (ch in ['g', 'l']) then
                                 errorl('Symbol type is invalid   ');
@@ -4494,53 +4530,74 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                etypnr,erecfnf,erecfna,etypna,einxoor,etypnp,eptrudf,eptrnas,
                eptrnil,eptrdis,eoprudf,estropr,efactor,erlni,eoprmbi,esetni,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
-               einvwnm,ecmdni,ecmderr);
+               einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
+               etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem);
+     restyp = (rtint, rtreal, rtset, rtstrg);
+     expres = record case t: restyp of
+                       rtint:  (i: integer);
+                       rtreal: (r: real);
+                       rtset:  (s: settype);
+                       rtstrg: (sc: strvsp; l: integer);
+              end;
                
 var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
-    fw: wthnum; undef: boolean;
+    fw: wthnum; undef: boolean; c: char;
 
 procedure error(e: errcod);
 
 begin
   wrtnewline; write('*** ');
   case e of { error }
-    esyntax: writeln('Syntax error');
-    enumexp: writeln('Number expected');
-    edigbrx: writeln('Digit beyond radix');
-    elinnf:  writeln('Cannot find line');
-    eblknf:  writeln('Block not found in symbol table');
-    esymnam: writeln('Symbol name expected');
-    esymntl: writeln('Symbol name too long');
-    esnficc: writeln('symbol not found in current context(s)');
-    etypnr:  writeln('Type is not record');
-    erecfnf: writeln('Record field not found');
-    erecfna: writeln('Record field not active');
-    etypna:  writeln('Type is not array');
-    einxoor: writeln('Index out of range');
-    etypnp:  writeln('Type is not pointer');
-    eptrudf: writeln('Pointer undefined');
-    eptrnas: writeln('Pointer never assigned');
-    eptrnil: writeln('Pointer is nil');
-    eptrdis: writeln('Pointer has been disposed');
-    eoprudf: writeln('operand is undefined');
-    estropr: writeln('Structured operand to operator');
-    efactor: writeln('Error in factor');
-    erlni:   writeln('Reals not implemented');
-    eoprmbi: writeln('Operand must be integer');
-    esetni:  writeln('Sets not implemented');
-    evalstr: writeln('Value is structured');
-    einvsln: writeln('Invalid source line');
-    ecntpbk: writeln('Could not place breakpoint');
-    ebktblf: writeln('Breakpoint table full');
-    enbpaad: writeln('No breakpoint at address');
-    ebadbv:  writeln('Bad byte value');
-    ecntsct: writeln('Cannot set complex type');
-    ewtblf:  writeln('Watch table full');
-    einvwnm: writeln('Invalid watch number');
-    ecmdni:  writeln('Command not implemented');
-    ecmderr: writeln('Command error');
+    esyntax:  writeln('Syntax error');
+    enumexp:  writeln('Number expected');
+    edigbrx:  writeln('Digit beyond radix');
+    elinnf:   writeln('Cannot find line');
+    eblknf:   writeln('Block not found in symbol table');
+    esymnam:  writeln('Symbol name expected');
+    esymntl:  writeln('Symbol name too long');
+    esnficc:  writeln('symbol not found in current context(s)');
+    etypnr:   writeln('Type is not record');
+    erecfnf:  writeln('Record field not found');
+    erecfna:  writeln('Record field not active');
+    etypna:   writeln('Type is not array');
+    einxoor:  writeln('Index out of range');
+    etypnp:   writeln('Type is not pointer');
+    eptrudf:  writeln('Pointer undefined');
+    eptrnas:  writeln('Pointer never assigned');
+    eptrnil:  writeln('Pointer is nil');
+    eptrdis:  writeln('Pointer has been disposed');
+    eoprudf:  writeln('operand is undefined');
+    estropr:  writeln('Structured operand to operator');
+    efactor:  writeln('Error in factor');
+    erlni:    writeln('Reals not implemented');
+    eoprmbi:  writeln('Operand must be integer');
+    esetni:   writeln('Sets not implemented');
+    evalstr:  writeln('Value is structured');
+    einvsln:  writeln('Invalid source line');
+    ecntpbk:  writeln('Could not place breakpoint');
+    ebktblf:  writeln('Breakpoint table full');
+    enbpaad:  writeln('No breakpoint at address');
+    ebadbv:   writeln('Bad byte value');
+    ecntsct:  writeln('Cannot set complex type');
+    ewtblf:   writeln('Watch table full');
+    einvwnm:  writeln('Invalid watch number');
+    ecmdni:   writeln('Command not implemented');
+    ecmderr:  writeln('Command error');
+    etypmbus: writeln('Operand type must be unstructured');
+    einvcop:  writeln('Invalid combination of operands');
+    etypmir:  writeln('Type must be integer or real');
+    eintexp:  writeln('Integer result expected');
+    etypmat:  writeln('Type of operands does not match');
+    etypset:  writeln('Type must be set');
+    eoprenm:  writeln('Operand cannot be enumerated type');
+    erealrx:  writeln('Real number starts with radix specifier');
+    esetval:  writeln('Value out of range for set');
+    eutstrg:  writeln('Unterminated string constant');
+    etyperr:  writeln('Error in type');
+    etypmis:  writeln('Type mismatch');
+    esystem:  writeln('System error');
   end;
   goto 2
 end;
@@ -4581,6 +4638,12 @@ begin
   nxtchr(pc)
 end;
 
+procedure texpect(var pc: parctl; c: char);
+begin
+  if chkchr(pc) <> c then error(esyntax);
+  nxtchr(pc)
+end;
+
 procedure getnum(var pc: parctl; var n: integer);
 var r: integer;
 begin
@@ -4589,9 +4652,9 @@ begin
    if chkchr(pc) = '$' then begin r := 16; nxtchr(pc) end
    else if chkchr(pc) = '&' then begin r := 8; nxtchr(pc) end
    else if chkchr(pc) = '%' then begin r := 2; nxtchr(pc) end;  
-   while chkchr(pc) in ['0'..'9','A'..'F','a'..'f'] do begin
-     if ((r = 10) and (chkchr(pc) > '9')) or
-        ((r = 2) and (chkchr(pc) > '1')) or
+   while (chkchr(pc) in ['0'..'9']) or 
+         ((chkchr(pc) in ['A'..'F','a'..'f']) and (r = 16)) do begin
+     if ((r = 2) and (chkchr(pc) > '1')) or
         ((r = 8) and (chkchr(pc) > '7')) then error(edigbrx);
      if chkchr(pc) in ['0'..'9'] then n := n*r+ord(chkchr(pc))-ord('0')
      else if chkchr(pc) in ['A'..'F'] then n := n*r+ord(chkchr(pc))-ord('A')+10
@@ -4817,17 +4880,19 @@ begin enum := false; { not enumeration }
   { check for common types (yep, boolean and char can be a range) }
   if chkchr(pc) = 'b' then begin s := 0; e := 1 end
   else if chkchr(pc) = 'c' then begin s := ordminchar; e := ordmaxchar end
+  { this is a cheat to make general integer sets work }
+  else if chkchr(pc) = 'i' then begin s := setlow; e := sethigh end
   else begin
-    expect(pc, 'x'); { must be subrange or enum }
-    expect(pc, '('); if chkchr(pc) in ['0'..'9'] then begin { subrange }
-      getnum(pc, s); expect(pc, ','); getnum(pc, e); expect(pc, ')')
+    texpect(pc, 'x'); { must be subrange or enum }
+    texpect(pc, '('); if chkchr(pc) in ['0'..'9'] then begin { subrange }
+      getnum(pc, s); texpect(pc, ','); getnum(pc, e); texpect(pc, ')')
     end else begin { enum }
       enum := true; s := 0; e := 0; si := 1; 
       repeat ens[si] := p; getsym(pc); e := e+1; c := chkchr(pc); 
         if c = ',' then nxtchr(pc);
         if si < 100 then si := si+1
       until c <> ',';
-      expect(pc, ')'); e := e-1
+      texpect(pc, ')'); e := e-1
      end
    end
 end; 
@@ -4880,19 +4945,99 @@ end;
 procedure setpar(var pc: parctl; td: strvsp; p: integer);
 begin pc.b := td; pc.l := lenpv(td); pc.p := p end;
 
+procedure wrtset(var st: settype; var tdc: parctl);
+var s, e, i, ss, se: integer; enum: boolean; first: boolean;
+
+procedure wrtval(i: integer);
+begin
+  if not enum then begin
+    if chkchr(tdc) = 'c' then write('''', chr(i), '''')
+    else if chkchr(tdc) = 'b' then begin 
+      if i = 0 then write('false(0)')
+      else write('true(1)')
+    end else write(i:1)
+  end else if (e <= 100) and (i >= s) and (i <= e) then begin 
+    { output symbolic }
+    x := ens[i]; { get start position }
+    repeat
+      c := strchr(tdc.b, x); 
+      if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
+    until (c = ')') or (c = ',') 
+  end else write(i:1); 
+end;
+
+begin 
+  getrng(tdc, enum, s, e);
+  write('['); first := true;
+  { we print the whole set even if the range does not cover it. This means we
+    tell the user if bits are set, even if outside their range. }
+  ss := setlow;
+  repeat
+    if ss in st then begin
+      se := ss;
+      while (se in st) and (se <= sethigh) do se := se+1; se := se-1;
+      if not first then write(','); 
+      wrtval(ss);
+      if se > ss then begin
+        write('..'); wrtval(se); ss := se
+      end;
+      first := false
+    end;
+    ss := ss+1
+  until ss > sethigh;
+  write(']')
+end;
+
+{ print simple value }
+procedure prtsim(var v: expres; tdc: parctl; r: integer; fl: integer; 
+                    lz: boolean);
+var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
+begin
+  case chkchr(tdc) of { type }
+    'i','p': begin nxtchr(tdc); if v.t <> rtint then error(etypmis);
+               if r = 10 then wrtnum(v.i, r, fl, lz) else wrthex(v.i, fl, lz) 
+             end;
+    'b': begin nxtchr(tdc); if v.t <> rtint then error(etypmis);
+           if v.i = 0 then write('false(0)') else write('true(0)') 
+         end;
+    'c': begin if v.t <> rtint then error(etypmis);
+           nxtchr(tdc); write('''', chr(v.i), '''(', v.i:1, ')') 
+         end;
+    'n': begin if v.t <> rtreal then error(etypmis); 
+           nxtchr(tdc); write(v.r:fl) 
+         end;
+    'x': begin if v.t <> rtint then error(etypmis); 
+           getrng(tdc, enum, s, e); 
+           if not enum then prtsim(v, tdc, r, fl, lz)
+           else if (e < 100) and (v.i >= s) and (v.i <= e) then begin
+             x := ens[i]; { get start position }
+             repeat
+               c := strchr(tdc.b, x); 
+               if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
+             until (c = ')') or (c = ',') 
+           end else write(i:1);  
+         end;
+    's': begin if v.t <> rtset then error(etypmis); 
+           nxtchr(tdc); wrtset(v.s, tdc) 
+         end;
+    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
+           if not enum then nxtchr(tdc); { discard index type, we don't need it }
+           if (chkchr(tdc) = 'c') and (s = 1) then begin nxtchr(tdc);
+             if v.t <> rtstrg then error(etypmis);
+             { print as string constant }
+             write(''''); writev(output, v.sc, v.l); write('''');
+           end else error(esystem)
+         end;
+    'r','e','f': error(esystem); { should not happen }
+  end
+end;         
+    
 { print value by type }
 procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
                  r: integer; fl: integer; lz: boolean);
 var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
     sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
-    ad2, ad3: address; tdc: parctl; ps: integer;
-
-function bitset(ad: address; bit: integer): boolean;
-var b: byte;
-begin
-   b := getbyt(ad+bit div 8);
-   bitset := odd(b div bitmsk[bit mod 8])
-end;
+    ad2, ad3: address; tdc, stdc: parctl; ps: integer; st: settype; v: expres;
 
 { process fieldlist }
 procedure fieldlist(var pc: parctl);
@@ -4922,50 +5067,51 @@ end;
 begin { prttyp }
   setpar(tdc, td, p); { set up type digest for parse }
   case chkchr(tdc) of
-    'i': begin nxtchr(tdc);
-           if getdef(ad) then begin
-             { fetch according to size }
-             if byt then begin i := getbyt(ad); ad := ad+1 end 
-             else begin i := getint(ad); ad := ad+intsize end;
-             if r = 10 then write(i:fl) else wrthex(i, fl, lz) 
-           end else write('Undefined') 
-         end;
-    'b': begin nxtchr(tdc); 
+    'i': begin 
            if getdef(ad) then begin 
-             b := getbol(ad); 
-             if b = false then write('false(0)') else write('true(1)')
-           end else write('Undefined'); 
+             if byt then begin v.i := getbyt(ad); ad := ad+1 end
+             else begin v.i := getint(ad); ad := ad+intsize end;
+             prtsim(v, tdc, r, fl, lz)
+           end else begin nxtchr(tdc); write('Undefined') end;
+         end;
+    'b': begin 
+           if getdef(ad) then begin 
+             v.i := ord(getbol(ad));
+             prtsim(v, tdc, r, fl, lz); 
+           end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+boolsize 
          end;
-    'c': begin nxtchr(tdc);
-           if getdef(ad) then write(getchr(ad)) else write('Undefined'); 
+    'c': begin
+           if getdef(ad) then begin 
+             v.i := ord(getchr(ad));
+             prtsim(v, tdc, r, fl, lz) 
+           end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+charsize 
          end;
-    'n': begin nxtchr(tdc);
-           if getdef(ad) then write(getrel(ad)) else write('Undefined'); 
+    'n': begin
+           if getdef(ad) then begin 
+             v.r := getrel(ad);
+             prtsim(v, tdc, r, fl, lz)  
+           end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+realsize 
          end;
-    'x': begin nxtchr(tdc); expect(tdc, '(');
+    'x': begin
+           { have to parse ahead to know type and size } 
+           stdc := tdc; getrng(tdc, enum, s, e);
            { It's subrange or enumerated. Subrange has a subtype. Note all 
            subranges are reduced to numeric. }
-           if chkchr(tdc) in ['0'..'9'] then begin
-             getnum(tdc, s); expect(tdc, ','); getnum(tdc, e); expect(tdc, ')');
-             { eval subtype }
+           if not enum then begin { eval subtype }
              prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz)
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin
                { fetch according to size }
-               if byt then begin i := getbyt(ad); ad := ad+1 end 
-               else begin i := getint(ad); ad := ad+intsize end;
-               s := i;
-               { now get the enum label according to number }
-               repeat getsym(tdc); i := i-1;
-                 c := chkchr(tdc); if chkchr(tdc) = ',' then nxtchr(tdc);
-                 if i = -1 then begin sns := sn; snsl := snl end
-               until c <> ',';
-               expect(tdc, ')');
-               write(sns:snsl, '(', s:1, ')')
-             end else write('Undefined')     
+               if byt then begin v.i := getbyt(ad); ad := ad+1 end 
+               else begin v.i := getint(ad); ad := ad+intsize end;
+               tdc := stdc; prtsim(v, tdc, r, fl, lz)
+             end else begin 
+               if byt then ad := ad+1 else ad := ad+intsize; 
+               write('Undefined') 
+             end     
            end
          end;
     'p': begin nxtchr(tdc); 
@@ -4973,38 +5119,28 @@ begin { prttyp }
              Cycles have an offset number into the digest. }
            if chkchr(tdc) in ['0'..'9'] then getnum(tdc, tdc.p)
          end; 
-    's': begin nxtchr(tdc); getrng(tdc, enum, s, e);
-           write('['); first := true;
-           for i := s to e do
-             if bitset(ad, i) then begin
-               if not first then write(','); 
-               if not enum then begin
-                 if chkchr(tdc) = 'c' then write('''', chr(i), '''')
-                 else if chkchr(tdc) = 'b' then begin 
-                   if i = 0 then write('false(0)')
-                   else write('true(1)')
-                 end else write(i:1)
-               end else if e <= 100 then begin { output symbolic }
-                 x := ens[i]; { get start position }
-                 repeat
-                   c := strchr(td, x); 
-                   if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
-                 until (c = ')') or (c = ',') 
-               end else write(i:1); 
-               first := false 
-             end;
-           write(']')
+    's': begin
+           if getdef(ad) then 
+             begin getset(ad, v.s); prtsim(v, tdc, r, fl, lz) end
+           else begin nxtchr(tdc); write('Undefined') end;
+           ad := ad+setsize
          end;
-    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
+    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e);
            if not enum then nxtchr(tdc); { discard index type, we don't need it }
-           write('array ');
-           { print whole array }
-           ps := tdc.p; 
-           for i := s to e do 
-             begin prttyp(ad, td, tdc.p, false, r, fl, lz); tdc.p := ps; 
-                   if i < e then write(', ') 
-             end;
-           write(' end');
+           if (chkchr(tdc) = 'c') and (s = 1) then begin
+             { print as string constant }
+             write(''''); for i := s to e do write(getchr(ad+i-s)); write('''');
+             nxtchr(tdc)
+           end else begin
+             write('array ');
+             { print whole array }
+             ps := tdc.p; 
+             for i := s to e do 
+               begin prttyp(ad, td, tdc.p, false, r, fl, lz); 
+                     if i < e then begin tdc.p := ps; write(', ') end 
+               end;
+             write(' end')
+           end
          end;
     'r': begin nxtchr(tdc); write('record '); fieldlist(tdc); write(' end') end; 
     'e': writeln('Exception');
@@ -5143,86 +5279,245 @@ begin { vartyp }
   p := tdc.p { put digest position }
 end;
 
+function mattyp(ldc, rdc: parctl): boolean;
+begin
+  while not chkend(ldc) and not chkend(rdc) and 
+        (chkchr(ldc) = chkchr(rdc)) do begin nxtchr(ldc); nxtchr(rdc) end;
+  mattyp := chkend(ldc) and chkend(rdc)
+end;
+ 
 { process expression or structured reference }
-procedure exptyp(var sp: psymbol; var ad: address; var p, i: integer; 
-                 var simple: boolean; var undef: boolean);
+procedure exptyp(var sp: psymbol; var ad: address; var p: integer; 
+                 var r: expres; var simple: boolean; var undef: boolean);
 type opstr = packed array [1..4] of char;
 
-var r: integer;
+var l: expres; b: boolean; ldc: parctl; opin: boolean;
 
-function matop(os: opstr): boolean;
+function matop(os: opstr; keyword: boolean): boolean;
 var i,ps: integer;
 begin
    i := 1; ps := dbc.p;
    while (os[i] = chkchr(dbc)) and (os[i] <> ' ') do
      begin i := i+1; nxtchr(dbc) end;
    matop := (os[i] = ' ') and 
-            not (chkchr(dbc) in ['a'..'z', 'A'..'Z', '_','0'..'9']);
+            not ((chkchr(dbc) in ['a'..'z', 'A'..'Z', '_','0'..'9']) and 
+                 keyword);
    dbc.p := ps
 end;
 
-procedure sexpr(var sp: psymbol; var ad: address; var p, i: integer; 
-                 var simple: boolean; var undef: boolean);
-var r: integer; c: char;
+procedure float(var r: expres);
+var f: real;
+begin
+  if r.t = rtint then begin f := r.i; r.t := rtreal; r.r := f end
+end; 
 
-procedure term(var sp: psymbol; var ad: address; var p, i: integer; 
-                 var simple: boolean; var undef: boolean);
-var r: integer;
+procedure gettmp(var sp: psymbol);
+begin
+  new(sp); sp^.next := tmpsym; tmpsym := sp; sp^.name := nil; 
+  sp^.styp := stglobal; sp^.off := 0; sp^.digest := nil
+end;
 
-procedure factor(var sp: psymbol; var ad: address; var p, i: integer; 
-                 var simple: boolean; var undef: boolean);
-var tdc: parctl; enum: boolean; s, e: integer;               
-begin undef := false; skpspc(dbc);
-  if chkchr(dbc) in ['$','&','%','0'..'9'] then
-    begin getnum(dbc, i); simple := true end
-  else if matop('not ') then begin
-    nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(sp, ad, p, i, simple, undef);
+procedure sexpr(var sp: psymbol; var ad: address; var p: integer; 
+                var r: expres; var simple: boolean; var undef: boolean);
+var l: expres; c: char; f: real; ldc, rdc: parctl;
+
+procedure term(var sp: psymbol; var ad: address; var p: integer; 
+               var r: expres; var simple: boolean; var undef: boolean);
+var l: expres; f: real; ldc, rdc: parctl; c: char; lsp: psymbol;
+
+procedure factor(var sp: psymbol; var ad: address; var p: integer; 
+                 var r: expres; var simple: boolean; var undef: boolean);
+var tdc: parctl; enum: boolean; s, e, i, ps, ev, sgn: integer; f: real; c: char;
+    st: settype; l: expres; first: boolean; ldc, rdc: parctl;
+
+function pwrten(e: integer): real;
+var t: real; { accumulator }
+    p: real; { current power }
+begin
+  p := 1.0e+1; { set 1st power }
+  t := 1.0; { initalize result }
+  repeat
+    if odd(e) then t := t*p; { if bit set, add this power }
+    e := e div 2; { index next bit }
+    p := sqr(p) { find next power }
+  until e = 0;
+  pwrten := t
+end;
+
+procedure pd(c: char);
+begin strchrass(sp^.digest, p, c); p := p+1 end;
+
+procedure pdn(i: integer);
+var c: char; lz: boolean; p: integer;
+begin
+  p := maxpow10; lz := true; 
+  while p > 0 do begin 
+    c := chr(i div p mod 10+ord('0'));
+    if not lz or (c <> '0') then begin pd(c); lz := false end;
+    p := p div 10 
+  end
+end;
+            
+begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
+  if chkchr(dbc) in ['$','&','%','0'..'9'] then begin
+    getnum(dbc, i); simple := true; r.t := rtint; r.i := i; sp := intsym; p := 1;
+    if ((chkchr(dbc) = '.') and not matop('..  ', false)) or 
+       (lcase(chkchr(dbc)) = 'e') then begin { real }
+      f := i; ev := 0; if c in ['$','&','%'] then error(erealrx);
+      if chkchr(dbc) = '.' then begin
+        nxtchr(dbc); if not (chkchr(dbc) in ['0'..'9']) then error(enumexp);
+        repeat
+          f := f*10+ord(chkchr(dbc))-ord('0'); nxtchr(dbc); ev := ev-1
+        until not (chkchr(dbc) in ['0'..'9'])
+      end;
+      if lcase(chkchr(dbc)) = 'e' then begin
+        nxtchr(dbc); sgn := +1;
+        if (chkchr(dbc) = '+') or (chkchr(dbc) = '-') then begin
+          if chkchr(dbc) = '-' then sgn := -1;
+          nxtchr(dbc)
+        end;
+        getnum(dbc, i); { get rest of exponent }
+        ev := ev+i*sgn  
+      end;
+      if ev < 0 then f := f/pwrten(ev) else f := f*pwrten(ev);
+      r.t := rtreal; r.r := f; sp := realsym; p := 1
+    end
+  end else if matop('not ', true) then begin
+    nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(sp, ad, p, r, simple, undef);
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    i := bnot(i)
+    if r.t <> rtint then error(etypmbus);
+    setpar(tdc, sp^.digest, p);
+    { if boolean treat as boolean, else whole integer }
+    if chkchr(tdc) = 'b' then 
+      begin if r.i = 0 then r.i := 1 else r.i := 1 end
+    else if chkchr(tdc) = 'x' then error(eoprenm)
+    else r.i := bnot(r.i)
   end else if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
     p := 1; vartyp(sp, ad, p);
     setpar(tdc, sp^.digest, p); { set up type digest for parse }
-    if chkchr(tdc) in ['i', 'b','c','p','x'] then begin
+    if chkchr(tdc) in ['i', 'b','c','p','x','n','s'] then begin
       { scalar }
       simple := true;
+      { note for simple loads we leave the digest pointing to type }
       if getdef(ad) then case chkchr(tdc) of
-        'i','p': i := getint(ad);
-        'b','c': i := getbyt(ad);
-        'x': begin nxtchr(tdc); getrng(tdc, enum, s, e); 
-                   if not enum then nxtchr(tdc);
-                   if isbyte(s) and isbyte(e) then i := getbyt(ad) 
-                   else i := getint(ad)
+        'i','p': begin r.t := rtint; r.i := getint(ad) end;
+        'b','c': begin r.t := rtint; r.i := getbyt(ad) end;
+        'x': begin ps := tdc.p; r.t := rtint; nxtchr(tdc); 
+               getrng(tdc, enum, s, e);
+               if isbyte(s) and isbyte(e) then i := getbyt(ad) 
+               else r.i := getint(ad);
+               if enum then tdc.p := ps { return type as enum if so }
+             end;
+        'n': begin r.t := rtreal; r.r := getrel(ad) end;
+        's': begin r.t := rtset; getset(ad, r.s) end;
+        'a': begin ps := tdc.p; nxtchr(tdc); getrng(tdc, enum, s, e);
+               if not enum then nxtchr(tdc); 
+               if (chkchr(tdc) = 'c') and (s = 1) then begin { string }
+                 r.t := rtstrg; getstr(r.sc); 
+                 for i := 1 to e do 
+                   begin strchrass(r.sc, i, getchr(ad)); ad := ad+charsize end;
+                 r.l := e
+               end else simple := false;
+               tdc.p := ps { back to original type }
              end
       end else undef := true
     end else simple := false;
     p := tdc.p
   end else if chkchr(dbc) = '(' then begin
-    nxtchr(dbc); exptyp(sp, ad, p, i, simple, undef);
+    nxtchr(dbc); exptyp(sp, ad, p, r, simple, undef);
     expect(dbc, ')')
+  end else if chkchr(dbc) = '[' then begin { set constant }
+    nxtchr(dbc); st := []; first := true;
+    repeat { set elements }
+      exptyp(sp, ad, p, r, simple, undef); setpar(rdc, sp^.digest, p);
+      if undef then error(eoprudf);
+      if not simple then error(estropr);
+      if r.t <> rtint then error(etypmbus);
+      if first then ldc := rdc;
+      if not mattyp(ldc, rdc) then error(etypmat);
+      if not isbyte(r.i) then error(esetval);
+      first := false; s := r.i; e := s;
+      if matop('..  ', false) then begin { range }
+        nxtchr(dbc); nxtchr(dbc);
+        exptyp(sp, ad, p, r, simple, undef);
+        if undef then error(eoprudf);
+        if not simple then error(estropr);
+        if r.t <> rtint then error(etypmbus);
+        if not mattyp(ldc, rdc) then error(etypmat);
+        if not isbyte(r.i) then error(esetval);
+        e := r.i
+      end;
+      for i := s to e do st := st+[i];
+      c := chkchr(dbc);
+      if c = ',' then nxtchr(dbc);
+    until c <> ',';
+    expect(dbc, ']');
+    r.t := rtset; r.s := st; { place result }
+    { create set version of base type }
+    gettmp(sp); strchrass(sp^.digest, 1, 's'); 
+    for i := rdc.p to rdc.l do strchrass(sp^.digest, i+1, strchr(rdc.b, i));
+    p := 1
+  end else if chkchr(dbc) = '''' then begin { string }
+    nxtchr(dbc); r.t := rtstrg; r.sc := nil; r.l := 0;
+    while not chkend(dbc) and (chkchr(dbc) <> '''') do begin
+      r.l := r.l+1; strchrass(r.sc, r.l, chkchr(dbc)); nxtchr(dbc);
+    end;
+    if chkchr(dbc) <> '''' then error(eutstrg); nxtchr(dbc);
+    if r.l = 1 then begin { single character }
+      c := strchr(r.sc, 1); r.t := rtint; r.i := ord(c); sp := charsym 
+    end else begin
+      { construct a type for fixed string }
+      gettmp(sp); p := 1; pd('a'); pd('x'); pd('('); pd('1'); pd(','); pdn(r.l);
+      pd(')'); pd('i'); pd('c');
+    end;
+    p := 1; simple := true
   end else error(efactor)
 end;
 
 procedure right;
 begin factor(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
-  if not simple then error(estropr)
+  if not simple then error(estropr);
+  if (r.t <> rtint) and (c <> '*') and (c <> '/') then error(etypmbus)
 end;
 
-begin factor(sp, ad, p, i, simple, undef); 
+begin { term }
+  factor(sp, ad, p, r, simple, undef); 
   skpspc(dbc);
-  while (chkchr(dbc) in ['*', '/']) or matop('div ') or matop('mod ') or 
-     matop('and ') do begin { operator }
+  while (chkchr(dbc) in ['*', '/']) or matop('div ', true) or 
+        matop('mod ', true) or 
+     matop('and ', true) do begin { operator }
     if undef then error(eoprudf);
-    if not simple then error(estropr); 
-    if chkchr(dbc) = '*' then begin nxtchr(dbc); right; i := i*r end
-    else if chkchr(dbc) = '/' then error(erlni)
-    else if matop('div  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := i div r end
-    else if matop('mod  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := i mod r end
-    else if matop('and  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := band(i,r) end;
+    if not simple then error(estropr);
+    if (r.t <> rtint) and (chkchr(dbc) <> '*') then error(etypmbus);
+    l := r; lsp := sp; setpar(ldc, sp^.digest, p); c := chkchr(dbc);
+    if chkchr(dbc) = '*' then begin nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin
+        sp := realsym; p := 1; float(l); float(r); 
+      end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := l.i*r.i
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin f := l.r*r.r; r.t := rtreal; r.r := f end
+      else if (l.t = rtset) and (r.t = rtset) then begin
+        setpar(rdc, sp^.digest, p);
+        if mattyp(ldc, rdc) then r.s := l.s*r.s
+        else error(etypmat)
+      end else error(einvcop)
+    end else if chkchr(dbc) = '/' then begin
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtreal) and (r.t = rtreal) then 
+        begin f := l.r*r.r; r.t := rtreal; r.r := f end
+      else error(einvcop)
+    end else if matop('div  ', true) then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+            r.i := l.i div r.i end
+    else if matop('mod  ', true) then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+            r.i := l.i mod r.i end
+    else if matop('and  ', true) then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+            l.i := band(l.i,r.i) end;
     skpspc(dbc)
   end
 end;
@@ -5230,61 +5525,149 @@ end;
 procedure right;
 begin term(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
-  if not simple then error(estropr) 
+  if not simple then error(estropr);
+  if (r.t <> rtint) and (chkchr(dbc) <> '+') and (chkchr(dbc) <> '-') then 
+    error(etypmbus)
 end;
 
-begin skpspc(dbc); c := chkchr(dbc); if c in ['+','-'] then nxtchr(dbc);
-  term(sp, ad, p, i, simple, undef); 
+begin { sexpr } 
+  skpspc(dbc); c := chkchr(dbc); if c in ['+','-'] then nxtchr(dbc);
+  term(sp, ad, p, r, simple, undef); 
   if c in ['+','-'] then begin
     if undef then error(eoprudf);
     if not simple then error(eoprmbi);
-    if c = '-' then i := -i;
+    if (r.t <> rtint) and (r.t <> rtreal) then 
+    if c = '-' then if r.t = rtint then r.i := -r.i else r.r := -r.r
   end;
   skpspc(dbc);
-  while (chkchr(dbc) in ['+', '-']) or matop('or  ') or matop('xor ') do begin
+  while (chkchr(dbc) in ['+', '-']) or matop('or  ', true) or 
+        matop('xor ', true) do begin
     if undef then error(eoprudf);
     if not simple then error(estropr); 
-    if chkchr(dbc) = '+' then begin nxtchr(dbc); right; i := i+r end
-    else if chkchr(dbc) = '-' then begin nxtchr(dbc); right; i := i-r end
-    else if matop('or  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); right; i := bor(i, r) end
-    else if matop('xor ') then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; i := bxor(i, r) end;
+    if (r.t <> rtint) and (chkchr(dbc) <> '+') and (chkchr(dbc) <> '-') then 
+      error(etypmbus);
+    l := r; setpar(ldc, sp^.digest, p);
+    if chkchr(dbc) = '+' then begin nxtchr(dbc); right; 
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := l.i+r.i
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin f := l.r+r.r; r.t := rtreal; r.r := f end
+      else if (l.t = rtset) and (r.t = rtset) then r.s := l.s+r.s
+      else error(einvcop)
+    end else if chkchr(dbc) = '-' then begin nxtchr(dbc); right; 
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := l.i-r.i
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin f := l.r-r.r; r.t := rtreal; r.r := f end
+      else if (l.t = rtset) and (r.t = rtset) then begin
+        setpar(rdc, sp^.digest, p);
+        if mattyp(ldc, rdc) then r.s := l.s-r.s
+        else error(etypmat)
+      end else error(einvcop)
+    end else if matop('or  ', true) then 
+      begin nxtchr(dbc); nxtchr(dbc); right; r.i := bor(l.i, r.i) end
+    else if matop('xor ', true) then 
+      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+            r.i := bxor(r.i, r.i) end;
     skpspc(dbc)
   end
 end;
 
 procedure right;
+var rdc: parctl;
 begin sexpr(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
-  if not simple then error(estropr) 
+  if not simple then error(estropr);
+  setpar(rdc, sp^.digest, p);
+  if opin then begin { a in b }
+    if chkchr(rdc) <> 's' then error(etypset);
+    nxtchr(rdc) { get base type }
+  end;
+  if not mattyp(ldc, rdc) then error(etypmat)
 end;
 
-begin sexpr(sp, ad, p, i, simple, undef); skpspc(dbc);
-  if (chkchr(dbc) in ['=', '<', '>']) or matop('in') then begin { operator }
+begin { exptyp }
+  sexpr(sp, ad, p, r, simple, undef); skpspc(dbc); opin := matop('in  ', true);
+  if (chkchr(dbc) in ['=', '<', '>']) or opin then begin { operator }
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    if chkchr(dbc) = '=' then begin nxtchr(dbc); right; i := ord(i = r) end
-    else if matop('<>  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i <> r) end
-    else if matop('<=  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i <= r) end
-    else if matop('>=  ') then 
-      begin nxtchr(dbc); nxtchr(dbc); right; i := ord(i >= r) end
-    else if chkchr(dbc) = '<' then begin nxtchr(dbc); right; i := ord(i < r) end
-    else if chkchr(dbc) = '>' then begin nxtchr(dbc); right; i := ord(i > r) end
-    else if matop('in  ') then error(esetni)
+    l := r; setpar(ldc, sp^.digest, p);
+    if chkchr(dbc) = '=' then begin nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i = r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r = r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtset) and (r.t = rtset) then
+        begin b := l.s = r.s; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := strequvv(l.sc, r.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)
+    end else if matop('<>  ', false) then begin nxtchr(dbc); nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i <> r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r <> r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtset) and (r.t = rtset) then begin
+        begin b := l.s <> r.s; r.t := rtint; r.i := ord(b) end
+      end else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := not strequvv(l.sc, r.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)
+    end else if matop('<=  ', false) then begin nxtchr(dbc); nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i <= r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r <= r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtset) and (r.t = rtset) then 
+        begin b := l.s <= r.s; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := not strltnvv(r.sc, l.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)
+    end else if matop('>=  ', false) then begin nxtchr(dbc); nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i >= r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r >= r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtset) and (r.t = rtset) then 
+        begin b := l.s >= r.s; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := not strltnvv(l.sc, r.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)    
+    end else if chkchr(dbc) = '<' then begin nxtchr(dbc); right; 
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i < r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r < r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := strltnvv(l.sc, r.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)    
+    end else if chkchr(dbc) = '>' then begin nxtchr(dbc); right;
+      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i > r.i)
+      else if (l.t = rtreal) and (r.t = rtreal) then 
+        begin b := l.r > r.r; r.t := rtint; r.i := ord(b) end
+      else if (l.t = rtstrg) and (r.t = rtstrg) then 
+        begin b := strltnvv(r.sc, l.sc); r.t := rtint; r.i := ord(b) end
+      else error(einvcop)         
+    end else if opin then begin nxtchr(dbc); nxtchr(dbc); right;
+      if (l.t = rtint) and (r.t = rtset) then 
+        begin b := l.i in r.s; r.t := rtint; r.i := ord(b) end
+      else error(einvcop)
+    end;
+    sp := boolsym; p := 1 { retype for boolean result }
   end
 end;
 
 { process expression }
 procedure expr(var i: integer);
 var ad: address; sp: psymbol; p: integer; simple: boolean; undef: boolean;
+    r: expres;
 begin
   { get complex or simple reference }
-  exptyp(sp, ad, p, i, simple, undef);
+  exptyp(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
-  if not simple then error(evalstr)
+  if not simple then error(evalstr);
+  if r.t <> rtint then error(eintexp);
+  i := r.i
 end;
 
 function watchno(ad: address): wthnum;
@@ -5297,7 +5680,8 @@ end;
 procedure debugins;
 var i, x, p: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
     si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
-    r: integer; fl: integer; lz: boolean;
+    r: integer; fl: integer; lz: boolean; eres: expres; first: boolean;
+    deffld: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1;
@@ -5448,8 +5832,8 @@ begin
     end
   end else if cn = 'p         ' then begin { print (various) }
     { process variable/expression reference }
-    exptyp(syp, s, x, i, sim, undef); 
-    skpspc(dbc); r := 10; fl := 1; lz := false;
+    exptyp(syp, s, p, eres, sim, undef);
+    skpspc(dbc); r := 10; fl := 1; lz := false; deffld := true;
     { get any print radix }
     if chkchr(dbc) = '$' then begin r := 16; nxtchr(dbc) end
     else if chkchr(dbc) = '&' then begin r := 8; nxtchr(dbc) end
@@ -5458,15 +5842,16 @@ begin
     if chkchr(dbc) = ':' then begin { there is a field }
       nxtchr(dbc); skpspc(dbc); 
       if chkchr(dbc) = '#' then begin nxtchr(dbc); lz := true end;
-      getnum(dbc, fl)
+      getnum(dbc, fl);
+      deffld := false
     end;
     wrtnewline; writeln;
     if undef then write('*') { can't print, undefined }
     else if sim then begin { write simple result }
-      if r = 16 then wrthex(i, fl, lz) { hex }
-      else wrtnum(i, r, fl, lz) { others }
+      setpar(tdc, syp^.digest, p);
+      prtsim(eres, tdc, r, fl, lz)
     end else 
-      prttyp(s, syp^.digest, x, false, r, fl, lz); { print the resulting tail }
+      prttyp(s, syp^.digest, p, false, r, fl, lz); { print the resulting tail }
     writeln;
     writeln
   end else if cn = 'e         ' then begin { enter (hex) }
@@ -5784,21 +6169,35 @@ begin { debug }
   prthdr;
   
   2: { error reenter interpreter }
-  if not istrc(pc) then { not tracepoint, enter debugger cli }
+  if not istrc(pc) then begin { not tracepoint, enter debugger cli }
     wrtnewline;
     repeat
-    getlin(dbc);
-    skpspc(dbc);
-    if not chkend(dbc) then begin
-      getnam(dbc);
-      debugins
-    end
-  until dbgend;
+      getlin(dbc);
+      repeat { statements }
+        skpspc(dbc);
+        if not chkend(dbc) then begin
+          getnam(dbc);
+          debugins
+        end;
+        c := chkchr(dbc);
+        if c = ';' then nxtchr(dbc)
+      until c <> ';'
+    until dbgend
+  end;
   { single step past entry breakpoint (if it exists) }
   if isbrk(pc) then singleins;
   putbrk; { put back breakpoints }
   3: { exit from watch }
 end;
+
+procedure maktyp(var sp: psymbol; c: char);
+begin
+  new(sp); 
+  with sp^ do begin
+    next := nil; name := nil; styp := stglobal; off := 0; 
+    strchrass(digest, 1, c);
+  end
+end; 
 
 begin (* main *)
 
@@ -5853,6 +6252,12 @@ begin (* main *)
   aniptr := 1; { clear analysis }
   ansptr := 1;
   newline := true; { set on new line }
+  maktyp(boolsym, 'b'); { create standard types }
+  maktyp(realsym, 'n');
+  maktyp(intsym, 'i');
+  maktyp(charsym, 'c');
+  maxpow10 := 1; while maxpow10 < maxint div 10 do maxpow10 := maxpow10*10;
+  maxpow10 := maxpow10*10;
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
