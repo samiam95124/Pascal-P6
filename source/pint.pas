@@ -566,53 +566,10 @@ procedure debug; forward;
 
 { Low level error check and handling }
 
-{ print in hex w/sign preservation }
-
-procedure wrthex(v: integer; { value } f: integer { field }; lz: boolean);
-var p,i,d,t,n: integer; ledz: boolean;
-    digits: packed array [1..8] of char;
-function digit(d: integer): char;
-var c: char;
-begin
-  if d < 10 then c := chr(d+ord('0'))
-  else c := chr(d-10+ord('A'));
-  digit := c
-end;
-begin
-   n := 8; { number of digits }
-   if v < 0 then begin { signed }
-     v := v+1+maxint; { convert number to 31 bit unsigned }
-     t := v div 268435456+8; { extract high digit }
-     digits[8] := digit(t); { place high digit }
-     v := v mod 268435456; { remove digit }
-     n := 7 { set number of digits-1 }
-   end;
-   p := 1;
-   for i := 1 to n do begin
-      d := v div p mod 16; { extract digit }
-      digits[i] := digit(d); { place }
-      if i < 8 then p := p*16
-   end;
-   i := 8; while (digits[i] = '0') and (i > 1) do i := i-1;
-   if i > f then f := i;
-   if f > 8 then begin 
-     for i := 1 to f-8 do if lz then write('0') else write(' '); 
-     f := 8 
-   end;
-   { find significant digits }
-   ledz := true;
-   for i := f downto 1 do begin
-     if digits[i] = '0' then begin
-       if not lz and ledz then write(' ') else write('0')
-     end else begin
-       ledz := false; write(digits[i]) { output }
-     end
-   end;
-end;
-
 procedure wrtnum(v: integer; r: integer; f: integer; lz: boolean);
-var p,i,d,t,n: integer; ledz: boolean;
-    digits: packed array [1..31] of char;
+const digmax = 32;
+var p,i,x,d,t,n: integer; sgn: boolean;
+    digits: packed array [1..digmax] of char;
 function digit(d: integer): char;
 var c: char;
 begin
@@ -620,33 +577,53 @@ begin
   else c := chr(d-10+ord('A'));
   digit := c
 end;
-begin
+begin sgn := false;
+   if (r = 10) and (v < 0) then begin sgn := true; v := -v; lz := false end;
    if r = 16 then n := 8
    else if r = 10 then n := 10
    else if r = 8 then n := 11
-   else n := 31;
-   for i := 1 to 31 do digits[i] := '0';
+   else n := 32;
+   for i := 1 to digmax do digits[i] := '0';
+   { adjust signed radix }
+   if (r = 16) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     t := v div 268435456{ $1000_0000}+8; { extract high digit }
+     digits[8] := digit(t); { place high digit }
+     v := v mod 268435456{ $1000_0000}; { remove digit }
+     n := 7 { set number of digits-1 }
+   end else if (r = 8) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     t := v div 1073741824{ &10_000_000_000}+2; { extract high digit }
+     digits[11] := digit(t); { place high digit }
+     v := v mod 1073741824{ $10_000_000_000}; { remove digit }
+     n := 10 { set number of digits-1 }
+   end else if (r = 2) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     t := v div 268435456{ $1000_0000}+8; { extract high digit }
+     digits[32] := '1'; { place high digit }
+     n := 31 { set number of digits-1 }
+   end;
    p := 1;
    for i := 1 to n do begin
       d := v div p mod r; { extract digit }
       digits[i] := digit(d); { place }
       p := p*r
    end;
-   i := 31; while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
+   i := digmax; while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
+   if sgn then begin digits[i+1] := '-'; i := i+1 end;
+   if not lz then for x := digmax downto i+1 do digits[x] := ' '; 
    if i > f then f := i;
-   if f > 31 then begin 
+   if f > digmax then begin 
      for i := 1 to f-8 do if lz then write('0') else write(' '); 
-     f := 31 
+     f := digmax 
    end;
-   { find significant digits }
-   ledz := true;
-   for i := f downto 1 do begin
-     if digits[i] = '0' then begin
-       if not lz and ledz then write(' ') else write('0')
-     end else begin
-       ledz := false; write(digits[i]) { output }
-     end
-   end;
+   { print result }
+   for i := f downto 1 do write(digits[i])
+end;
+
+procedure wrthex(v: integer; f: integer; lz: boolean);
+begin
+  wrtnum(v, 16, f, lz)
 end;
 
 procedure errors(a: address; l: address);
@@ -4531,7 +4508,8 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                eptrnil,eptrdis,eoprudf,estropr,efactor,erlni,eoprmbi,esetni,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
-               etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem);
+               etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
+               esrcudf,etypmirs);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -4597,6 +4575,8 @@ begin
     eutstrg:  writeln('Unterminated string constant');
     etyperr:  writeln('Error in type');
     etypmis:  writeln('Type mismatch');
+    esrcudf:  writeln('Source is undefined');
+    etypmirs: writeln('Type must be integer, real or set');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -4640,7 +4620,7 @@ end;
 
 procedure texpect(var pc: parctl; c: char);
 begin
-  if chkchr(pc) <> c then error(esyntax);
+  if chkchr(pc) <> c then error(etyperr);
   nxtchr(pc)
 end;
 
@@ -4652,13 +4632,16 @@ begin
    if chkchr(pc) = '$' then begin r := 16; nxtchr(pc) end
    else if chkchr(pc) = '&' then begin r := 8; nxtchr(pc) end
    else if chkchr(pc) = '%' then begin r := 2; nxtchr(pc) end;  
-   while (chkchr(pc) in ['0'..'9']) or 
+   while (chkchr(pc) in ['0'..'9','_']) or 
          ((chkchr(pc) in ['A'..'F','a'..'f']) and (r = 16)) do begin
-     if ((r = 2) and (chkchr(pc) > '1')) or
-        ((r = 8) and (chkchr(pc) > '7')) then error(edigbrx);
-     if chkchr(pc) in ['0'..'9'] then n := n*r+ord(chkchr(pc))-ord('0')
-     else if chkchr(pc) in ['A'..'F'] then n := n*r+ord(chkchr(pc))-ord('A')+10
-     else n := n*r+ord(chkchr(pc))-ord('a')+10;
+     if chkchr(pc) <> '_' then begin
+       if ((r = 2) and (chkchr(pc) > '1')) or
+          ((r = 8) and (chkchr(pc) > '7')) then error(edigbrx);
+       if chkchr(pc) in ['0'..'9'] then n := n*r+ord(chkchr(pc))-ord('0')
+       else if chkchr(pc) in ['A'..'F'] then 
+         n := n*r+ord(chkchr(pc))-ord('A')+10
+       else n := n*r+ord(chkchr(pc))-ord('a')+10
+     end;
      nxtchr(pc)
    end
 end;
@@ -4988,25 +4971,38 @@ begin
   write(']')
 end;
 
+{ crosscheck simple types }
+procedure valsim(var v: expres; tdc: parctl);
+var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
+begin
+  case chkchr(tdc) of { type }
+    'i','p','b','c','x': if v.t <> rtint then error(etypmis);
+    'n': if v.t <> rtreal then error(etypmis); 
+    's': if v.t <> rtset then error(etypmis); 
+    'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
+           if not enum then nxtchr(tdc); { discard index type, we don't need it }
+           if (chkchr(tdc) = 'c') and (s = 1) then begin nxtchr(tdc);
+             if v.t <> rtstrg then error(etypmis);
+           end else error(esystem)
+         end;
+    'r','e','f': error(esystem); { should not happen }
+  end
+end;         
+
 { print simple value }
 procedure prtsim(var v: expres; tdc: parctl; r: integer; fl: integer; 
                     lz: boolean);
 var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
 begin
+  valsim(v, tdc); { validate value matches type }
   case chkchr(tdc) of { type }
-    'i','p': begin nxtchr(tdc); if v.t <> rtint then error(etypmis);
-               if r = 10 then wrtnum(v.i, r, fl, lz) else wrthex(v.i, fl, lz) 
-             end;
-    'b': begin nxtchr(tdc); if v.t <> rtint then error(etypmis);
+    'i','p': begin nxtchr(tdc); wrtnum(v.i, r, fl, lz) end;
+    'b': begin nxtchr(tdc);
            if v.i = 0 then write('false(0)') else write('true(0)') 
          end;
-    'c': begin if v.t <> rtint then error(etypmis);
-           nxtchr(tdc); write('''', chr(v.i), '''(', v.i:1, ')') 
-         end;
-    'n': begin if v.t <> rtreal then error(etypmis); 
-           nxtchr(tdc); write(v.r:fl) 
-         end;
-    'x': begin if v.t <> rtint then error(etypmis); 
+    'c': begin nxtchr(tdc); write('''', chr(v.i), '''(', v.i:1, ')') end;
+    'n': begin nxtchr(tdc); write(v.r:fl) end;
+    'x': begin 
            getrng(tdc, enum, s, e); 
            if not enum then prtsim(v, tdc, r, fl, lz)
            else if (e < 100) and (v.i >= s) and (v.i <= e) then begin
@@ -5017,13 +5013,10 @@ begin
              until (c = ')') or (c = ',') 
            end else write(i:1);  
          end;
-    's': begin if v.t <> rtset then error(etypmis); 
-           nxtchr(tdc); wrtset(v.s, tdc) 
-         end;
+    's': begin nxtchr(tdc); wrtset(v.s, tdc) end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
            if not enum then nxtchr(tdc); { discard index type, we don't need it }
            if (chkchr(tdc) = 'c') and (s = 1) then begin nxtchr(tdc);
-             if v.t <> rtstrg then error(etypmis);
              { print as string constant }
              write(''''); writev(output, v.sc, v.l); write('''');
            end else error(esystem)
@@ -5031,7 +5024,7 @@ begin
     'r','e','f': error(esystem); { should not happen }
   end
 end;         
-    
+
 { print value by type }
 procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
                  r: integer; fl: integer; lz: boolean);
@@ -5149,13 +5142,9 @@ begin { prttyp }
   p := tdc.p { put back digest position (string does not change) }
 end;
 
-{ process variable reference }
-procedure vartyp(var sp: psymbol; var ad: address; var p: integer);
-var tdc: parctl; fnd, act: boolean; foff: address; ad2, ad3: address;
-    enum: boolean; s, e: integer; sz: integer; ma: address; i: integer;
-    fp: integer; ps: integer;
+function siztyp(tdc: parctl): integer;
 
-function siztyp: integer; forward;
+var sz: integer; enum: boolean; s, e: integer;
 
 function sizlst: integer;
 var i, x: integer; c: char; sz, sz2, mxsz: integer;
@@ -5164,7 +5153,7 @@ begin
   expect(tdc, '('); 
   while chkchr(tdc) <> ')' do begin
     getsym(tdc); expect(tdc, ':'); getnum(tdc, i); expect(tdc, ':');
-    sz := sz+siztyp;
+    sz := sz+siztyp(tdc);
     if chkchr(tdc) = '(' then begin nxtchr(tdc); mxsz := 0;
       { tagfield, parse sublists }
       while chkchr(tdc) <> ')' do begin
@@ -5179,8 +5168,6 @@ begin
   sizlst := sz
 end;
 
-function siztyp{: integer};
-var sz: integer; enum: boolean; s, e: integer;
 begin
   case chkchr(tdc) of
     'i': begin nxtchr(tdc); sz := intsize end;
@@ -5191,18 +5178,25 @@ begin
            if isbyte(s) and isbyte(e) then sz := 1 else sz := intsize;
          end;
     'p': begin nxtchr(tdc); sz := ptrsize; 
-           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) else s := siztyp
+           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) 
+           else s := siztyp(tdc)
          end;
-    's': begin nxtchr(tdc); sz := setsize; s := siztyp end;
+    's': begin nxtchr(tdc); sz := setsize; s := siztyp(tdc) end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
-           if not enum then nxtchr(tdc); sz := siztyp*(e-s+1)
+           if not enum then nxtchr(tdc); sz := siztyp(tdc)*(e-s+1)
          end;
     'r': begin nxtchr(tdc); sz := sizlst end; 
     'e': begin nxtchr(tdc); sz := exceptsize end;
-    'f': begin nxtchr(tdc); sz := filesize; s := siztyp end;
+    'f': begin nxtchr(tdc); sz := filesize; s := siztyp(tdc) end;
   end;
   siztyp := sz { return size }
 end;
+
+{ process variable reference }
+procedure vartyp(var sp: psymbol; var ad: address; var p: integer);
+var tdc: parctl; fnd, act: boolean; foff: address; ad2, ad3: address;
+    enum: boolean; s, e: integer; sz: integer; ma: address; i: integer;
+    fp: integer; ps: integer;
 
 procedure matrec(isact: boolean);
 var i, x, sz: integer; c: char; off: address;
@@ -5221,7 +5215,7 @@ begin { matrec }
     getsym(tdc); expect(tdc, ':'); getnum(tdc, i); off := i; expect(tdc, ':');
     if strmat then 
       begin fnd := true; foff := off; act := isact; fp := tdc.p end;
-    sz := siztyp;
+    sz := siztyp(tdc);
     if chkchr(tdc) = '(' then begin nxtchr(tdc);
       { tagfield, parse sublists }
       while chkchr(tdc) <> ')' do begin
@@ -5259,7 +5253,7 @@ begin { vartyp }
       if not enum then nxtchr(tdc);
       getnum(dbc, i); expect(dbc, ']');
       if (i < s) or (i > e) then error(einxoor);
-      ps := tdc.p; sz := siztyp; ad := ad+(i-s)*sz; { find element address }
+      ps := tdc.p; sz := siztyp(tdc); ad := ad+(i-s)*sz; { find element address }
       tdc.p := ps { back to base type }
     end else if chkchr(dbc) = '^' then begin { pointer dereference }
       if chkchr(tdc) <> 'p' then error(etypnp);
@@ -5390,7 +5384,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     setpar(tdc, sp^.digest, p);
     { if boolean treat as boolean, else whole integer }
     if chkchr(tdc) = 'b' then 
-      begin if r.i = 0 then r.i := 1 else r.i := 1 end
+      begin if r.i = 0 then r.i := 1 else r.i := 0 end
     else if chkchr(tdc) = 'x' then error(eoprenm)
     else r.i := bnot(r.i)
   end else if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
@@ -5479,7 +5473,6 @@ procedure right;
 begin factor(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
   if not simple then error(estropr);
-  if (r.t <> rtint) and (c <> '*') and (c <> '/') then error(etypmbus)
 end;
 
 begin { term }
@@ -5490,12 +5483,11 @@ begin { term }
      matop('and ', true) do begin { operator }
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    if (r.t <> rtint) and (chkchr(dbc) <> '*') then error(etypmbus);
     l := r; lsp := sp; setpar(ldc, sp^.digest, p); c := chkchr(dbc);
     if chkchr(dbc) = '*' then begin nxtchr(dbc); right;
-      if (l.t = rtreal) or (r.t = rtreal) then begin
-        sp := realsym; p := 1; float(l); float(r); 
-      end;
+      if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
+      if (l.t = rtreal) or (r.t = rtreal) then 
+        begin  float(l); float(r); sp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i*r.i
       else if (l.t = rtreal) and (r.t = rtreal) then 
         begin f := l.r*r.r; r.t := rtreal; r.r := f end
@@ -5504,20 +5496,27 @@ begin { term }
         if mattyp(ldc, rdc) then r.s := l.s*r.s
         else error(etypmat)
       end else error(einvcop)
-    end else if chkchr(dbc) = '/' then begin
-      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+    end else if chkchr(dbc) = '/' then begin nxtchr(dbc); right;
+      if ((l.t <> rtint) and (l.t <> rtreal)) or
+         ((l.t <> rtint) and (l.t <> rtreal)) then error(etypmir);
+      if (l.t = rtreal) or (r.t = rtreal) then 
+        begin float(l); float(r); sp := realsym; p := 1 end;
       if (l.t = rtreal) and (r.t = rtreal) then 
         begin f := l.r*r.r; r.t := rtreal; r.r := f end
       else error(einvcop)
-    end else if matop('div  ', true) then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
-            r.i := l.i div r.i end
-    else if matop('mod  ', true) then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
-            r.i := l.i mod r.i end
-    else if matop('and  ', true) then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
-            l.i := band(l.i,r.i) end;
+    end else if matop('div  ', true) then begin 
+      nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+      if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
+      r.i := l.i div r.i
+    end else if matop('mod  ', true) then begin 
+      nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+      if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
+      r.i := l.i mod r.i
+    end else if matop('and  ', true) then begin
+      nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
+      if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
+      l.i := band(l.i,r.i) 
+    end;
     skpspc(dbc)
   end
 end;
@@ -5525,9 +5524,7 @@ end;
 procedure right;
 begin term(sp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
-  if not simple then error(estropr);
-  if (r.t <> rtint) and (chkchr(dbc) <> '+') and (chkchr(dbc) <> '-') then 
-    error(etypmbus)
+  if not simple then error(estropr)
 end;
 
 begin { sexpr } 
@@ -5536,7 +5533,7 @@ begin { sexpr }
   if c in ['+','-'] then begin
     if undef then error(eoprudf);
     if not simple then error(eoprmbi);
-    if (r.t <> rtint) and (r.t <> rtreal) then 
+    if (r.t <> rtint) and (r.t <> rtreal) then error(etypmir);
     if c = '-' then if r.t = rtint then r.i := -r.i else r.r := -r.r
   end;
   skpspc(dbc);
@@ -5544,18 +5541,23 @@ begin { sexpr }
         matop('xor ', true) do begin
     if undef then error(eoprudf);
     if not simple then error(estropr); 
-    if (r.t <> rtint) and (chkchr(dbc) <> '+') and (chkchr(dbc) <> '-') then 
-      error(etypmbus);
     l := r; setpar(ldc, sp^.digest, p);
     if chkchr(dbc) = '+' then begin nxtchr(dbc); right; 
-      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
+      if (l.t = rtreal) or (r.t = rtreal) then 
+        begin float(l); float(r); sp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i+r.i
       else if (l.t = rtreal) and (r.t = rtreal) then 
         begin f := l.r+r.r; r.t := rtreal; r.r := f end
-      else if (l.t = rtset) and (r.t = rtset) then r.s := l.s+r.s
-      else error(einvcop)
+      else if (l.t = rtset) and (r.t = rtset) then begin
+        setpar(rdc, sp^.digest, p);
+        if mattyp(ldc, rdc) then r.s := l.s+r.s
+        else error(etypmat)
+      end else error(einvcop)
     end else if chkchr(dbc) = '-' then begin nxtchr(dbc); right; 
-      if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
+      if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
+      if (l.t = rtreal) or (r.t = rtreal) then 
+        begin float(l); float(r); sp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i-r.i
       else if (l.t = rtreal) and (r.t = rtreal) then 
         begin f := l.r-r.r; r.t := rtreal; r.r := f end
@@ -5564,11 +5566,14 @@ begin { sexpr }
         if mattyp(ldc, rdc) then r.s := l.s-r.s
         else error(etypmat)
       end else error(einvcop)
-    end else if matop('or  ', true) then 
-      begin nxtchr(dbc); nxtchr(dbc); right; r.i := bor(l.i, r.i) end
-    else if matop('xor ', true) then 
-      begin nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
-            r.i := bxor(r.i, r.i) end;
+    end else if matop('or  ', true) then begin nxtchr(dbc); nxtchr(dbc); right;
+      if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
+      r.i := bor(l.i, r.i) 
+    end else if matop('xor ', true) then begin nxtchr(dbc); nxtchr(dbc);
+      if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
+      nxtchr(dbc); right; 
+      r.i := bxor(r.i, r.i) 
+    end;
     skpspc(dbc)
   end
 end;
@@ -5677,8 +5682,8 @@ begin
   watchno := wn
 end;
 
-procedure debugins;
-var i, x, p: integer; wi: wthinx; tdc: parctl; bp: pblock; syp: psymbol; 
+procedure dbgins;
+var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp: pblock; syp: psymbol; 
     si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
     r: integer; fl: integer; lz: boolean; eres: expres; first: boolean;
     deffld: boolean;
@@ -5863,18 +5868,42 @@ begin
       s := s+1
     until chkend(dbc) or (s < 0);
   end else if cn = 'st        ' then begin { set (variable) }
-    vartyp(syp, ad, p); expr(i); setpar(tdc, syp^.digest, p);
-    if chkchr(tdc) in ['i', 'b','c','p','x'] then begin
-      case chkchr(tdc) of
-        'i','p': putint(ad, i);
-        'b','c': putbyt(ad, i);
-        'x': begin nxtchr(tdc); getrng(tdc, enum, si, ei); 
-               if not enum then nxtchr(tdc);
-               if isbyte(si) and isbyte(ei) then putbyt(ad, i)
-               else putint(ad, i)
-         end
+    vartyp(syp, ad, p); setpar(tdc, syp^.digest, p); 
+    exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
+    if not mattyp(tdc, stdc) then error(etypmat);
+    if undef then error(esrcudf);
+    if sim then begin { simple }
+      if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
+        valsim(eres, stdc);
+        case chkchr(stdc) of
+          'i','p': putint(ad, i);
+          'b','c': putbyt(ad, i);
+          'x': begin nxtchr(stdc); getrng(stdc, enum, si, ei); 
+                 if not enum then nxtchr(stdc);
+                 if isbyte(si) and isbyte(ei) then putbyt(ad, i)
+                 else putint(ad, i)
+               end;
+          'n': putrel(ad, eres.r);
+          's': putset(ad, eres.s);
+          'a': begin getrng(stdc, enum, si, ei);
+                 if not enum then nxtchr(stdc);
+                 if (chkchr(tdc) = 'c') and (si = 1) then begin { string }
+                   for i := 1 to ei do 
+                     begin putbyt(ad, ord(strchr(eres.sc, i))); 
+                           ad := ad+charsize end;
+                 end else error(esystem)
+               end;
+        end
+      end else error(esystem)
+    end else begin { set complex }
+      case chkchr(stdc) of
+        'i','b','c','n','x','p','s','e','f': error(esystem);
+        'a','r': begin x := siztyp(stdc); 
+                   for i := 1 to x do 
+                     begin putbyt(ad, getbyt(s)); ad := ad+1; s := s+1 end;
+                 end
       end
-    end else error(ecntsct)
+    end
   end else if cn = 'w         ' then begin { watch (variable) }
     vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
     { find free watch entry }
@@ -6177,7 +6206,7 @@ begin { debug }
         skpspc(dbc);
         if not chkend(dbc) then begin
           getnam(dbc);
-          debugins
+          dbgins
         end;
         c := chkchr(dbc);
         if c = ';' then nxtchr(dbc)
