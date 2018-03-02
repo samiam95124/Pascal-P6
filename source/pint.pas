@@ -5279,6 +5279,22 @@ begin
         (chkchr(ldc) = chkchr(rdc)) do begin nxtchr(ldc); nxtchr(rdc) end;
   mattyp := chkend(ldc) and chkend(rdc)
 end;
+
+procedure gettmp(var sp: psymbol);
+begin
+  new(sp); sp^.next := tmpsym; tmpsym := sp; sp^.name := nil; 
+  sp^.styp := stglobal; sp^.off := 0; sp^.digest := nil
+end;
+
+procedure puttmps;
+var sp: psymbol;
+begin
+  while tmpsym <> nil do begin
+    sp := tmpsym; tmpsym := tmpsym^.next;
+    putstrs(sp^.name); putstrs(sp^.digest); 
+    dispose(sp)
+  end
+end;
  
 { process expression or structured reference }
 procedure exptyp(var sp: psymbol; var ad: address; var p: integer; 
@@ -5304,12 +5320,6 @@ var f: real;
 begin
   if r.t = rtint then begin f := r.i; r.t := rtreal; r.r := f end
 end; 
-
-procedure gettmp(var sp: psymbol);
-begin
-  new(sp); sp^.next := tmpsym; tmpsym := sp; sp^.name := nil; 
-  sp^.styp := stglobal; sp^.off := 0; sp^.digest := nil
-end;
 
 procedure sexpr(var sp: psymbol; var ad: address; var p: integer; 
                 var r: expres; var simple: boolean; var undef: boolean);
@@ -6151,7 +6161,8 @@ begin
       bp := bp^.next
     end;
     writeln
-  end else error(ecmderr)
+  end else error(ecmderr);
+  puttmps { clear any temps }
 end;
       
 begin { debug }
@@ -6198,6 +6209,7 @@ begin { debug }
   prthdr;
   
   2: { error reenter interpreter }
+  puttmps; { clear any temps }
   if not istrc(pc) then begin { not tracepoint, enter debugger cli }
     wrtnewline;
     repeat
