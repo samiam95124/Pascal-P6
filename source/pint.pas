@@ -4886,17 +4886,17 @@ procedure skptyp(var pc: parctl); forward;
 procedure skiplist(var pc: parctl);
 var c: char; i: integer;
 begin
-  expect(pc, '(');
+  texpect(pc, '(');
   while chkchr(pc) <> ')' do begin
-    getsym(pc); expect(pc, ':'); getnum(pc, i); expect(pc, ':'); skptyp(pc);
+    getsym(pc); texpect(pc, ':'); getnum(pc, i); texpect(pc, ':'); skptyp(pc);
     if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
       while chkchr(pc) <> ')' do begin getnum(pc, i); skiplist(pc) end;
-      expect(pc, ')')
+      texpect(pc, ')')
     end;
     c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
   end;
-  expect(pc, ')')
+  texpect(pc, ')')
 end;
 
 { skip over, don't print, type }
@@ -4905,14 +4905,14 @@ var s,e: integer; c: char; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
-    'x': begin nxtchr(pc); expect(pc, '(');
+    'x': begin nxtchr(pc); texpect(pc, '(');
            if chkchr(pc) in ['0'..'9'] then begin
-             getnum(pc, s); expect(pc, ','); getnum(pc, e); expect(pc, ')');
+             getnum(pc, s); texpect(pc, ','); getnum(pc, e); texpect(pc, ')');
            end else begin 
              repeat getsym(pc);
                c := chkchr(pc); if chkchr(pc) = ',' then nxtchr(pc);
              until c <> ',';
-             expect(pc, ')');
+             texpect(pc, ')');
            end
          end;
     's': begin nxtchr(pc); getrng(pc, enum, s, e); 
@@ -4990,7 +4990,7 @@ begin
 end;         
 
 { print simple value }
-procedure prtsim(var v: expres; tdc: parctl; r: integer; fl: integer; 
+procedure prtsim(var v: expres; var tdc: parctl; r: integer; fl: integer; 
                     lz: boolean);
 var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
 begin
@@ -5036,9 +5036,9 @@ var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
 procedure fieldlist(var pc: parctl);
 var i, x: integer; c: char; off: address;
 begin
-  expect(pc, '('); 
+  texpect(pc, '('); 
   while chkchr(pc) <> ')' do begin
-    getsym(pc); expect(pc, ':'); getnum(pc, i); off := i; expect(pc, ':');
+    getsym(pc); texpect(pc, ':'); getnum(pc, i); off := i; texpect(pc, ':');
     ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false, r, fl, lz);
     if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
@@ -5050,11 +5050,11 @@ begin
         if i = x then begin write('('); fieldlist(pc); write(')') end
         else skiplist(pc)
       end;
-      expect(pc, ')')
+      texpect(pc, ')')
     end;
     c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
   end;
-  expect(pc, ')')
+  texpect(pc, ')')
 end;
 
 begin { prttyp }
@@ -5146,25 +5146,27 @@ function siztyp(tdc: parctl): integer;
 
 var sz: integer; enum: boolean; s, e: integer;
 
+function siztypd: integer;
+
 function sizlst: integer;
 var i, x: integer; c: char; sz, sz2, mxsz: integer;
 begin
   sz := 0;
-  expect(tdc, '('); 
+  texpect(tdc, '('); 
   while chkchr(tdc) <> ')' do begin
-    getsym(tdc); expect(tdc, ':'); getnum(tdc, i); expect(tdc, ':');
-    sz := sz+siztyp(tdc);
+    getsym(tdc); texpect(tdc, ':'); getnum(tdc, i); texpect(tdc, ':');
+    sz := sz+siztypd;
     if chkchr(tdc) = '(' then begin nxtchr(tdc); mxsz := 0;
       { tagfield, parse sublists }
       while chkchr(tdc) <> ')' do begin
         getnum(tdc, i); sz2 := sizlst; if sz2 > mxsz then mxsz := sz2
       end;
-      expect(tdc, ')');
+      texpect(tdc, ')');
       sz := sz+mxsz
     end;
-    c := chkchr(tdc); if c = ',' then begin nxtchr(tdc); write(',') end
+    c := chkchr(tdc); if c = ',' then begin nxtchr(tdc) end
   end;
-  expect(tdc, ')');
+  texpect(tdc, ')');
   sizlst := sz
 end;
 
@@ -5178,18 +5180,21 @@ begin
            if isbyte(s) and isbyte(e) then sz := 1 else sz := intsize;
          end;
     'p': begin nxtchr(tdc); sz := ptrsize; 
-           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) 
-           else s := siztyp(tdc)
+           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) else s := siztypd
          end;
-    's': begin nxtchr(tdc); sz := setsize; s := siztyp(tdc) end;
+    's': begin nxtchr(tdc); sz := setsize; s := siztypd end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
-           if not enum then nxtchr(tdc); sz := siztyp(tdc)*(e-s+1)
+           if not enum then nxtchr(tdc); sz := siztypd*(e-s+1)
          end;
     'r': begin nxtchr(tdc); sz := sizlst end; 
     'e': begin nxtchr(tdc); sz := exceptsize end;
-    'f': begin nxtchr(tdc); sz := filesize; s := siztyp(tdc) end;
+    'f': begin nxtchr(tdc); sz := filesize; s := siztypd end;
   end;
-  siztyp := sz { return size }
+  siztypd := sz { return size }
+end;
+
+begin
+  siztyp := siztypd
 end;
 
 { process variable reference }
@@ -5210,9 +5215,9 @@ begin i := 1;
 end;
 
 begin { matrec }
-  expect(tdc, '('); 
+  texpect(tdc, '('); 
   while chkchr(tdc) <> ')' do begin
-    getsym(tdc); expect(tdc, ':'); getnum(tdc, i); off := i; expect(tdc, ':');
+    getsym(tdc); texpect(tdc, ':'); getnum(tdc, i); off := i; texpect(tdc, ':');
     if strmat then 
       begin fnd := true; foff := off; act := isact; fp := tdc.p end;
     sz := siztyp(tdc);
@@ -5225,11 +5230,11 @@ begin { matrec }
         if sz = 1 then x := getbyt(ad+off) else x := getint(ad+off);
         matrec((i = x) and isact);
       end;
-      expect(tdc, ')')
+      texpect(tdc, ')')
     end;
     c := chkchr(tdc); if c = ',' then nxtchr(tdc);
   end;
-  expect(tdc, ')')
+  texpect(tdc, ')')
 end;
 
 begin { vartyp }
@@ -5251,7 +5256,7 @@ begin { vartyp }
       if chkchr(tdc) <> 'a' then error(etypna);
       nxtchr(dbc); nxtchr(tdc); getrng(tdc, enum, s, e);
       if not enum then nxtchr(tdc);
-      getnum(dbc, i); expect(dbc, ']');
+      getnum(dbc, i); texpect(dbc, ']');
       if (i < s) or (i > e) then error(einxoor);
       ps := tdc.p; sz := siztyp(tdc); ad := ad+(i-s)*sz; { find element address }
       tdc.p := ps { back to base type }
@@ -5430,7 +5435,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     p := tdc.p
   end else if chkchr(dbc) = '(' then begin
     nxtchr(dbc); exptyp(sp, ad, p, r, simple, undef);
-    expect(dbc, ')')
+    texpect(dbc, ')')
   end else if chkchr(dbc) = '[' then begin { set constant }
     nxtchr(dbc); st := []; first := true;
     repeat { set elements }
@@ -5456,7 +5461,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
       c := chkchr(dbc);
       if c = ',' then nxtchr(dbc);
     until c <> ',';
-    expect(dbc, ']');
+    texpect(dbc, ']');
     r.t := rtset; r.s := st; { place result }
     { create set version of base type }
     gettmp(sp); strchrass(sp^.digest, 1, 's'); 
@@ -5910,7 +5915,8 @@ begin
         'i','b','c','n','x','p','s','e','f': error(esystem);
         'a','r': begin x := siztyp(stdc); 
                    for i := 1 to x do 
-                     begin putbyt(ad, getbyt(s)); ad := ad+1; s := s+1 end;
+                     begin store[ad] := store[s]; putdef(ad, getdef(s)); 
+                           ad := ad+1; s := s+1 end;
                  end
       end
     end
