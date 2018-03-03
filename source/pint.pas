@@ -5061,28 +5061,28 @@ begin { prttyp }
   setpar(tdc, td, p); { set up type digest for parse }
   case chkchr(tdc) of
     'i': begin 
-           if getdef(ad) then begin 
+           if getdef(ad) then begin v.t := rtint;
              if byt then begin v.i := getbyt(ad); ad := ad+1 end
              else begin v.i := getint(ad); ad := ad+intsize end;
              prtsim(v, tdc, r, fl, lz)
            end else begin nxtchr(tdc); write('Undefined') end;
          end;
     'b': begin 
-           if getdef(ad) then begin 
+           if getdef(ad) then begin v.t := rtint;
              v.i := ord(getbol(ad));
              prtsim(v, tdc, r, fl, lz); 
            end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+boolsize 
          end;
     'c': begin
-           if getdef(ad) then begin 
+           if getdef(ad) then begin v.t := rtint;
              v.i := ord(getchr(ad));
              prtsim(v, tdc, r, fl, lz) 
            end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+charsize 
          end;
     'n': begin
-           if getdef(ad) then begin 
+           if getdef(ad) then begin v.t := rtreal;
              v.r := getrel(ad);
              prtsim(v, tdc, r, fl, lz)  
            end else begin nxtchr(tdc); write('Undefined') end;
@@ -5096,7 +5096,7 @@ begin { prttyp }
            if not enum then begin { eval subtype }
              prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz)
            end else begin { it's an enumeration, that's terminal }
-             if getdef(ad) then begin
+             if getdef(ad) then begin v.t := rtint;
                { fetch according to size }
                if byt then begin v.i := getbyt(ad); ad := ad+1 end 
                else begin v.i := getint(ad); ad := ad+intsize end;
@@ -5114,7 +5114,7 @@ begin { prttyp }
          end; 
     's': begin
            if getdef(ad) then 
-             begin getset(ad, v.s); prtsim(v, tdc, r, fl, lz) end
+             begin v.t := rtset; getset(ad, v.s); prtsim(v, tdc, r, fl, lz) end
            else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+setsize
          end;
@@ -5884,20 +5884,20 @@ begin
     if undef then error(esrcudf);
     if sim then begin { simple }
       if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
-        valsim(eres, stdc);
-        case chkchr(stdc) of
-          'i','p': putint(ad, i);
-          'b','c': putbyt(ad, i);
+        valsim(eres, tdc);
+        case chkchr(tdc) of
+          'i','p': putint(ad, eres.i);
+          'b','c': putbyt(ad, eres.i);
           'x': begin nxtchr(stdc); getrng(stdc, enum, si, ei); 
                  if not enum then nxtchr(stdc);
-                 if isbyte(si) and isbyte(ei) then putbyt(ad, i)
-                 else putint(ad, i)
+                 if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
+                 else putint(ad, eres.i)
                end;
           'n': putrel(ad, eres.r);
           's': putset(ad, eres.s);
-          'a': begin getrng(stdc, enum, si, ei);
+          'a': begin nxtchr(stdc); getrng(stdc, enum, si, ei);
                  if not enum then nxtchr(stdc);
-                 if (chkchr(tdc) = 'c') and (si = 1) then begin { string }
+                 if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
                    for i := 1 to ei do 
                      begin putbyt(ad, ord(strchr(eres.sc, i))); 
                            ad := ad+charsize end;
@@ -6298,7 +6298,6 @@ begin (* main *)
   maktyp(intsym, 'i');
   maktyp(charsym, 'c');
   maxpow10 := 1; while maxpow10 < maxint div 10 do maxpow10 := maxpow10*10;
-  maxpow10 := maxpow10*10;
   
   { clear source filename }
   for i := 1 to fillen do srcfnm[i] := ' ';
