@@ -4907,7 +4907,7 @@ begin
       while chkchr(pc) <> ')' do begin getnum(pc, i); skiplist(pc) end;
       texpect(pc, ')')
     end;
-    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
+    c := chkchr(pc); if c = ',' then nxtchr(pc)
   end;
   texpect(pc, ')')
 end;
@@ -4918,21 +4918,16 @@ var s,e: integer; c: char; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
-    'x': begin nxtchr(pc); texpect(pc, '(');
-           if chkchr(pc) in ['0'..'9'] then begin
-             getnum(pc, s); texpect(pc, ','); getnum(pc, e); texpect(pc, ')');
-           end else begin 
-             repeat getsym(pc);
-               c := chkchr(pc); if chkchr(pc) = ',' then nxtchr(pc);
-             until c <> ',';
-             texpect(pc, ')');
-           end
+    'x': begin nxtchr(pc); getrng(pc, enum, s, e); 
+           if not enum then skptyp(pc) 
          end;
     's': begin nxtchr(pc); getrng(pc, enum, s, e); 
-           if not enum then nxtchr(pc)
+           if not enum then nxtchr(pc);
+           skptyp(pc)
          end;
     'a': begin nxtchr(pc); getrng(pc, enum, s, e); 
-           if not enum then nxtchr(pc) 
+           if not enum then nxtchr(pc); 
+           skptyp(pc)
          end;
     'r': begin nxtchr(pc); skiplist(pc) end; 
   end
@@ -5040,19 +5035,26 @@ end;
 
 { print value by type }
 procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
-                 r: integer; fl: integer; lz: boolean);
+                 r: integer; fl: integer; lz: boolean; indent: integer);
+const ispc = 2;
 var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
     sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
     ad2, ad3: address; tdc, stdc: parctl; ps: integer; st: settype; v: expres;
+    subc: boolean;
+    
+procedure newline;
+begin
+  writeln; if indent > 0 then write(' ':indent)
+end;
 
 { process fieldlist }
-procedure fieldlist(var pc: parctl);
+procedure fieldlist(var pc: parctl; line: boolean);
 var i, x: integer; c: char; off: address;
 begin
   texpect(pc, '('); 
   while chkchr(pc) <> ')' do begin
     getsym(pc); texpect(pc, ':'); getnum(pc, i); off := i; texpect(pc, ':');
-    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false, r, fl, lz);
+    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false, r, fl, lz, indent);
     if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
       while chkchr(pc) <> ')' do begin
@@ -5060,14 +5062,63 @@ begin
         getnum(pc, i); 
         { get actual tagfield according to size }
         if ad2-ad3 = 1 then x := getbyt(ad+off) else x := getint(ad+off);
-        if i = x then begin write('('); fieldlist(pc); write(')') end
+        if i = x then begin write('('); fieldlist(pc, line); write(')') end
         else skiplist(pc)
       end;
       texpect(pc, ')')
     end;
-    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end
+    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end;
+    if line and (chkchr(pc) <> ')') then newline
   end;
   texpect(pc, ')')
+end;
+
+function complex(pc: parctl): boolean;
+var cplx: boolean;
+
+procedure skptyp(var pc: parctl); forward;
+
+procedure skiplist(var pc: parctl);
+var c: char; i: integer;
+begin
+  texpect(pc, '(');
+  while chkchr(pc) <> ')' do begin
+    getsym(pc); texpect(pc, ':'); getnum(pc, i); texpect(pc, ':');
+    if chkchr(pc) in ['s','a','r'] then cplx := true; 
+    skptyp(pc);
+    if chkchr(pc) = '(' then begin nxtchr(pc);
+      { tagfield, parse sublists }
+      while chkchr(pc) <> ')' do begin getnum(pc, i); skiplist(pc) end;
+      texpect(pc, ')')
+    end;
+    c := chkchr(pc); if c = ',' then nxtchr(pc)
+  end;
+  texpect(pc, ')')
+end;
+
+procedure skptyp{(var pc: parctl)};
+var s,e: integer; c: char; enum: boolean;
+begin
+  case chkchr(pc) of
+    'i','b','c','n', 'p', 'e': nxtchr(pc);
+    'x': begin nxtchr(pc); getrng(pc, enum, s, e); 
+           if not enum then skptyp(pc) 
+         end;
+    's': begin nxtchr(pc); getrng(pc, enum, s, e); 
+           if not enum then nxtchr(pc);
+           skptyp(pc)
+         end;
+    'a': begin nxtchr(pc); getrng(pc, enum, s, e);
+           if not enum then nxtchr(pc);
+           skptyp(pc) 
+         end;
+    'r': begin nxtchr(pc); skiplist(pc) end; 
+  end
+end;
+
+begin cplx := false;
+  skiplist(pc);
+  complex := cplx
 end;
 
 begin { prttyp }
@@ -5107,7 +5158,7 @@ begin { prttyp }
            { It's subrange or enumerated. Subrange has a subtype. Note all 
            subranges are reduced to numeric. }
            if not enum then begin { eval subtype }
-             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz)
+             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz, indent)
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin v.t := rtint;
                { fetch according to size }
@@ -5137,18 +5188,29 @@ begin { prttyp }
              { print as string constant }
              write(''''); for i := s to e do write(getchr(ad+i-s)); write('''');
              nxtchr(tdc)
-           end else begin
-             write('array ');
+           end else begin subc := chkchr(tdc) in ['s','a','r'];
+             write('array '); indent := indent+ispc;
+             if subc then newline;
              { print whole array }
-             ps := tdc.p; 
-             for i := s to e do 
-               begin prttyp(ad, td, tdc.p, false, r, fl, lz); 
-                     if i < e then begin tdc.p := ps; write(', ') end 
-               end;
-             write(' end')
+             ps := tdc.p;
+             for i := s to e do begin 
+               prttyp(ad, td, tdc.p, false, r, fl, lz, indent); 
+               if i < e then begin tdc.p := ps; write(', ') end 
+               else indent := indent-ispc;
+               if subc then newline 
+             end;
+             if not subc then write(' ');
+             write('end')
            end
          end;
-    'r': begin nxtchr(tdc); write('record '); fieldlist(tdc); write(' end') end; 
+    'r': begin nxtchr(tdc); subc := complex(tdc); 
+           write('record '); indent := indent+ispc; 
+           if subc then newline;
+           fieldlist(tdc, subc); 
+           indent := indent-ispc;
+           if subc then newline else write(' ');
+           write('end') 
+         end; 
     'e': writeln('Exception');
     'f': writeln('File');
   end;
@@ -5896,7 +5958,8 @@ begin
       setpar(tdc, syp^.digest, p);
       prtsim(eres, tdc, r, fl, lz)
     end else 
-      prttyp(s, syp^.digest, p, false, r, fl, lz); { print the resulting tail }
+      { print the resulting tail }
+      prttyp(s, syp^.digest, p, false, r, fl, lz, 0); 
     writeln;
     writeln
   end else if cn = 'e         ' then begin { enter (hex) }
@@ -6008,7 +6071,7 @@ begin
         if syp^.styp = stglobal then begin 
           writev(output, syp^.name, 20); write(' ');
           s := pctop+syp^.off; p := 1; 
-          prttyp(s, syp^.digest, p, false, 10, 1, false);
+          prttyp(s, syp^.digest, p, false, 10, 1, false, 0);
           writeln
         end;
         syp := syp^.next
@@ -6035,7 +6098,7 @@ begin
             if syp^.styp = stlocal then begin 
               writev(output, syp^.name, 20); write(' ');
               e := s+syp^.off; p := 1; 
-              prttyp(e, syp^.digest, p, false, 10, 1, false);
+              prttyp(e, syp^.digest, p, false, 10, 1, false, 0);
               writeln
             end;
             syp := syp^.next
@@ -6219,14 +6282,14 @@ begin { debug }
       write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
       ad := wthtbl[fw]; p := wthsym[fw].p;
       if not getdef(ad) then write('*') 
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false);
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
       stopwatch := false; { let instruction run }
       singleins;
       stopwatch := true;
       write(' -> ');
       ad := wthtbl[fw]; p := wthsym[fw].p; 
       if not getdef(ad) then write('*')
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false);
+      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
       writeln
     end;
     goto 3 { skip main section }
