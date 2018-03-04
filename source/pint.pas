@@ -5705,6 +5705,19 @@ begin
   watchno := wn
 end;
 
+procedure fndrot(var ra: address);
+var bp, fbp: pblock;
+begin p := dbc.p; ra := -1; skpspc(dbc);
+  if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
+    getsym(dbc); bp := blklst; fbp := nil;
+    while bp <> nil do begin
+      if strequvf(bp^.name, sn) then begin fbp := bp; bp := nil end;
+      if bp <> nil then bp := bp^.next
+    end;
+    if fbp <> nil then ra := fbp^.bstart else dbc.p := p
+  end
+end;
+  
 procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp: pblock; syp: psymbol; 
     si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
@@ -5776,9 +5789,13 @@ begin
   end else if (cn = 'b         ') or 
               (cn = 'tp        ') then begin 
     { place breakpoint/tracepoint source }
-    expr(l); if l > maxsrc then error(einvsln);
-    if lintrk[l] < 0 then error(einvsln);
-    s := lintrk[l]; i := 1;
+    fndrot(s); { see if routine name }
+    if s < 0 then begin { not a routine, get line no }     
+      expr(l); if l > maxsrc then error(einvsln);
+      if lintrk[l] < 0 then error(einvsln);
+      s := lintrk[l]
+    end; 
+    i := 1;
     while store[s] = mrkins do begin { walk over source line markers }
       { source markers should always be within valid code, but we bail
         on out of memory store or taking too long to find code to keep
@@ -6109,8 +6126,8 @@ begin
     writeln('ds             Dump storage parameters');
     writeln('dd  [n]        Dump display frames');
     writeln('df  [n]        Dump frames formatted (call trace)');
-    writeln('b   a          Place breakpoint at source line number');
-    writeln('tp  a          Place tracepoint at source line number');
+    writeln('b   a          Place breakpoint at source line number/routine');
+    writeln('tp  a          Place tracepoint at source line number/routine');
     writeln('bi  a          Place breakpoint at instruction');
     writeln('tpi a          Place tracepoint at instruction');
     writeln('c   [a]        Clear breakpoint/all breakpoints');
