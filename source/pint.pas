@@ -4880,6 +4880,19 @@ begin enum := false; { not enumeration }
    end
 end; 
 
+{ skip subrange if exists }
+procedure skpsub(var pc: parctl);
+var p, i: integer;
+begin p := pc.p;
+  if chkchr(pc) = 'x' then begin { possible subrange }
+    nxtchr(pc); texpect(pc, '(');
+    if chkchr(pc) in ['0'..'9'] then begin
+      { we have a leader }
+      getnum(pc, i); texpect(pc, ','); getnum(pc, i); texpect(pc, ')')
+    end else pc.p := p
+  end else pc.p := p
+end;
+
 procedure skptyp(var pc: parctl); forward;
 
 { skip fieldlist }
@@ -4998,7 +5011,7 @@ begin
   case chkchr(tdc) of { type }
     'i','p': begin nxtchr(tdc); wrtnum(v.i, r, fl, lz) end;
     'b': begin nxtchr(tdc);
-           if v.i = 0 then write('false(0)') else write('true(0)') 
+           if v.i = 0 then write('false(0)') else write('true(1)') 
          end;
     'c': begin nxtchr(tdc); write('''', chr(v.i), '''(', v.i:1, ')') end;
     'n': begin nxtchr(tdc); write(v.r:fl) end;
@@ -5142,11 +5155,9 @@ begin { prttyp }
   p := tdc.p { put back digest position (string does not change) }
 end;
 
-function siztyp(tdc: parctl): integer;
+function siztyp(var tdc: parctl): integer;
 
 var sz: integer; enum: boolean; s, e: integer;
-
-function siztypd: integer;
 
 function sizlst: integer;
 var i, x: integer; c: char; sz, sz2, mxsz: integer;
@@ -5155,7 +5166,7 @@ begin
   texpect(tdc, '('); 
   while chkchr(tdc) <> ')' do begin
     getsym(tdc); texpect(tdc, ':'); getnum(tdc, i); texpect(tdc, ':');
-    sz := sz+siztypd;
+    sz := sz+siztyp(tdc);
     if chkchr(tdc) = '(' then begin nxtchr(tdc); mxsz := 0;
       { tagfield, parse sublists }
       while chkchr(tdc) <> ')' do begin
@@ -5180,21 +5191,18 @@ begin
            if isbyte(s) and isbyte(e) then sz := 1 else sz := intsize;
          end;
     'p': begin nxtchr(tdc); sz := ptrsize; 
-           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) else s := siztypd
+           if chkchr(tdc) in ['0'..'9'] then getnum(tdc, s) 
+           else s := siztyp(tdc)
          end;
-    's': begin nxtchr(tdc); sz := setsize; s := siztypd end;
+    's': begin nxtchr(tdc); sz := setsize; s := siztyp(tdc) end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
-           if not enum then nxtchr(tdc); sz := siztypd*(e-s+1)
+           if not enum then nxtchr(tdc); sz := siztyp(tdc)*(e-s+1)
          end;
     'r': begin nxtchr(tdc); sz := sizlst end; 
     'e': begin nxtchr(tdc); sz := exceptsize end;
-    'f': begin nxtchr(tdc); sz := filesize; s := siztypd end;
+    'f': begin nxtchr(tdc); sz := filesize; s := siztyp(tdc) end;
   end;
-  siztypd := sz { return size }
-end;
-
-begin
-  siztyp := siztypd
+  siztyp := sz { return size }
 end;
 
 { process variable reference }
@@ -5301,6 +5309,12 @@ begin
   end
 end;
  
+procedure float(var r: expres);
+var f: real;
+begin
+  if r.t = rtint then begin f := r.i; r.t := rtreal; r.r := f end
+end; 
+
 { process expression or structured reference }
 procedure exptyp(var sp: psymbol; var ad: address; var p: integer; 
                  var r: expres; var simple: boolean; var undef: boolean);
@@ -5319,12 +5333,6 @@ begin
                  keyword);
    dbc.p := ps
 end;
-
-procedure float(var r: expres);
-var f: real;
-begin
-  if r.t = rtint then begin f := r.i; r.t := rtreal; r.r := f end
-end; 
 
 procedure sexpr(var sp: psymbol; var ad: address; var p: integer; 
                 var r: expres; var simple: boolean; var undef: boolean);
@@ -5885,32 +5893,44 @@ begin
   end else if cn = 'st        ' then begin { set (variable) }
     vartyp(syp, ad, p); setpar(tdc, syp^.digest, p); 
     exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
-    if not mattyp(tdc, stdc) then error(etypmat);
     if undef then error(esrcudf);
     if sim then begin { simple }
       if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
-        valsim(eres, tdc);
         case chkchr(tdc) of
-          'i','p': putint(ad, eres.i);
-          'b','c': putbyt(ad, eres.i);
-          'x': begin nxtchr(stdc); getrng(stdc, enum, si, ei); 
-                 if not enum then nxtchr(stdc);
+          'i','p': begin if eres.t <> rtint then error(etypmis);
+                     putint(ad, eres.i)
+                   end;
+          'b','c': begin if eres.t <> rtint then error(etypmis);
+                     putbyt(ad, eres.i)
+                   end;
+          'x': begin if eres.t <> rtint then error(etypmis);
+                 nxtchr(tdc); getrng(tdc, enum, si, ei); 
+                 if not enum then nxtchr(tdc);
                  if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
                  else putint(ad, eres.i)
                end;
-          'n': putrel(ad, eres.r);
-          's': putset(ad, eres.s);
-          'a': begin nxtchr(stdc); getrng(stdc, enum, si, ei);
+          'n': begin float(eres); if eres.t <> rtreal then error(etypmis);
+                 putrel(ad, eres.r)
+               end;
+          's': begin if eres.t <> rtreal then error(etypmis);
+                 skpsub(tdc); skpsub(stdc);
+                 if not mattyp(tdc, stdc) then error(etypmat);
+                 putset(ad, eres.s)
+               end;
+          'a': begin if eres.t <> rtstrg then error(etypmis);
+                 if not mattyp(tdc, stdc) then error(etypmat); 
+                 nxtchr(stdc); getrng(stdc, enum, si, ei);
                  if not enum then nxtchr(stdc);
                  if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
                    for i := 1 to ei do 
                      begin putbyt(ad, ord(strchr(eres.sc, i))); 
                            ad := ad+charsize end;
-                 end else error(esystem)
+                 end else error(etypmis)
                end;
         end
-      end else error(esystem)
+      end else error(etypmis)
     end else begin { set complex }
+      if not mattyp(tdc, stdc) then error(etypmat);
       case chkchr(stdc) of
         'i','b','c','n','x','p','s','e','f': error(esystem);
         'a','r': begin x := siztyp(stdc); 
