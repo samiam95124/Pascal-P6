@@ -426,7 +426,7 @@ type
       symbol      = record
                       next:   psymbol; { next list symbol }  
                       name:   strvsp; { name }
-                      styp:   (stglobal, stlocal); { area type }
+                      styp:   (stglobal, stlocal, stparam); { area type }
                       off:    address; { offset address }
                       digest: strvsp; { type digest }
                     end;
@@ -2340,9 +2340,10 @@ procedure load;
                               getnxt; getlab;
                               new(sp); strassvf(sp^.name, sn); 
                               skpspc; 
-                              if not (ch in ['g', 'l']) then
+                              if not (ch in ['g', 'l','p']) then
                                 errorl('Symbol type is invalid   ');
-                              if ch = 'g' then sp^.styp := stglobal 
+                              if ch = 'g' then sp^.styp := stglobal
+                              else if ch = 'p' then sp^.styp := stparam 
                               else sp^.styp := stlocal;
                               getnxt;
                               skpspc;
@@ -5310,7 +5311,8 @@ end;
 begin { vartyp }
   getsym(dbc); symadr(sp, ma); p := 1;
   if sp = nil then error(esnficc);
-  if sp^.styp = stlocal then ad := ma+sp^.off { local }
+  if (sp^.styp = stlocal) or (sp^.styp = stparam) then 
+    ad := ma+sp^.off { local }
   else ad := pctop+sp^.off; { global }
   setpar(tdc, sp^.digest, p); { set up type digest for parse }
   while chkchr(dbc) in ['.', '[', '^'] do begin
@@ -6079,7 +6081,8 @@ begin
       bp := bp^.next
     end;
     writeln
-  end else if cn = 'pl        ' then begin { print locals }
+  end else if (cn = 'pl        ') or
+              (cn = 'pp        ') then begin { print locals }
     if noframe then 
       begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
@@ -6095,7 +6098,8 @@ begin
           writeln; writeln;
           syp := bp^.symbols;
           while syp <> nil do begin { traverse symbols list }
-            if syp^.styp = stlocal then begin 
+            if ((syp^.styp = stlocal) and (cn <> 'pp        ')) or 
+               (syp^.styp = stparam) then begin 
               writev(output, syp^.name, 20); write(' ');
               e := s+syp^.off; p := 1; 
               prttyp(e, syp^.digest, p, false, 10, 1, false, 0);
@@ -6257,7 +6261,8 @@ begin
         write(' ');
         case syp^.styp of
           stglobal: write('global');
-          stlocal: write('local ')
+          stlocal: write('local ');
+          stparam:  write('param ')
         end; 
         write(' ', syp^.off:10, ' ');
         writev(output, syp^.digest, lenpv(syp^.digest));

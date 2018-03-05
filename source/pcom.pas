@@ -3147,6 +3147,17 @@ end;
       wrttypsub(tp) { issue type }
     end;
 
+    procedure wrtsym(lcp: ctp; typ: char);
+    begin
+      if prcode then begin
+        with lcp^ do begin
+          write(prr, 's '); 
+          writev(prr, name, lenpv(name)); write(prr, ' ', typ);
+          write(prr, ' ', vaddr:1, ' '); wrttyp(prr, idtype); writeln(prr)
+        end
+      end
+    end;
+    
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
           test: boolean;
@@ -3184,11 +3195,8 @@ end;
               else 
                 begin lc := lc - lsize; alignd(lsp,lc); vaddr := lc end;
               { mark symbol }
-              if prcode then begin
-                write(prr, 's '); writev(prr, nxt^.name, lenpv(nxt^.name)); 
-                if level <= 1 then write(prr, ' g') else write(prr, ' l');
-                write(prr, ' ', vaddr:1, ' '); wrttyp(prr, idtype); writeln(prr);
-              end;
+              if prcode then
+                if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
               nxt := next
             end;
         if sy = semicolon then
@@ -3376,7 +3384,7 @@ end;
                                         { if the type is structured, and is
                                           a view parameter, promote to formal }
                                         if (lsp^.form <= power) and 
-                                           (part = ptview) then vkind := formal 
+                                           (part = ptview) then vkind := formal
                                       end;
                                     lcp2 := lcp2^.next
                                   end;
@@ -3548,6 +3556,9 @@ end;
             if lcp^.klass = proc then write(prr, 'b r ') else write(prr, 'b f ');
             writev(prr, lcp^.name, lenpv(lcp^.name)); writeln(prr);
           end;
+          { output parameter symbols }
+          lcp1 := lcp^.pflist;
+          while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
           repeat block(fsys,semicolon,lcp);
             if sy = semicolon then
               begin if prtables then printtables(false); insymbol;
