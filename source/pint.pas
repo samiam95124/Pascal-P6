@@ -3827,6 +3827,17 @@ begin
   iswatch := wthtbl[wi] = ad  
 end;
 
+{ watch table evict }
+procedure evict(s, e: address);
+var wi: wthinx;
+begin
+  wi := 1; 
+  while (wi < maxwth) and (wthtbl[wi] > 0) do begin
+    if (wthtbl[wi] >= s) and (wthtbl[wi] <= e) then wthtbl[wi] := -1;
+    wi := wi+1
+  end
+end;
+
 procedure putani(a: address);
 begin
   anitbl[aniptr] := a; 
@@ -3842,7 +3853,7 @@ begin
   if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
 end;
 
-procedure singleins;
+procedure sinins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
     a1,a2,a3: address; pcs: address;
@@ -4083,7 +4094,7 @@ begin
                   end;
                   (*q = max space required on stack*)
                   
-    14  (*retp*): begin
+    14  (*retp*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    sp := mp;
@@ -4093,7 +4104,7 @@ begin
                  end;
     { For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. }
-    130 (*retc*): begin
+    130 (*retc*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    putint(mp+markfv+maxresult div 2, 
@@ -4104,7 +4115,7 @@ begin
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
-    131 (*retb*): begin
+    131 (*retb*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    putint(mp+markfv+maxresult div 2, 
@@ -4116,7 +4127,7 @@ begin
                    mp := getadr(mp+markdl)
                  end;
     128 (*reti*),
-    204 (*retx*): begin
+    204 (*retx*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    { set stack below function result }
@@ -4125,7 +4136,7 @@ begin
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
-    129 (*retr*): begin
+    129 (*retr*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    sp := mp+markfv; { set stack below function result }
@@ -4133,7 +4144,7 @@ begin
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
-    132  (*reta*): begin
+    132  (*reta*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    { set stack below function result }  
@@ -5903,7 +5914,7 @@ begin
               (cn = 'sis       ') then begin { step instruction }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
     while i > 0 do begin 
-      singleins; if cn = 'si        ' then prthdr; i := i-1;
+      sinins; if cn = 'si        ' then prthdr; i := i-1;
       { if we hit break or stop, just stay on that instruction }
       if breakins then begin
         writeln('*** Break instruction hit');
@@ -5928,8 +5939,8 @@ begin
               (cn = 'ss        ') then begin { step source line }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
     while i > 0 do begin
-      repeat singleins until stopins or sourcemark; 
-      singleins; if cn = 's         ' then prthdr; i := i-1;
+      repeat sinins until stopins or sourcemark; 
+      sinins; if cn = 's         ' then prthdr; i := i-1;
       { if we hit break or stop, just stay on that instruction }
       if breakins then begin
         writeln('*** Break instruction hit');
@@ -6189,7 +6200,9 @@ begin
     writeln('st  d v        Set program variable');
     writeln('pg             Print all globals');
     writeln('pl  [n]        print locals for current/number of enclosing ',
-            'blocks');        
+            'blocks');
+    writeln('pp  [n]        print parameters for current/number of enclosing ',
+            'blocks');
     writeln('ds             Dump storage parameters');
     writeln('dd  [n]        Dump display frames');
     writeln('df  [n]        Dump frames formatted (call trace)');
@@ -6289,7 +6302,7 @@ begin { debug }
       if not getdef(ad) then write('*') 
       else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
       stopwatch := false; { let instruction run }
-      singleins;
+      sinins;
       stopwatch := true;
       write(' -> ');
       ad := wthtbl[fw]; p := wthsym[fw].p; 
@@ -6314,7 +6327,7 @@ begin { debug }
   { if we broke on a source marker, execute it then back up.
     This is because break on source line always will do this, and we need the
     source line from the instruction. }
-  if store[pc] = mrkins then begin singleins; pc := pc-mrkinsl end;
+  if store[pc] = mrkins then begin sinins; pc := pc-mrkinsl end;
   dbgend := false;
   debugstart := true; { set we started }
   prthdr;
@@ -6337,7 +6350,7 @@ begin { debug }
     until dbgend
   end;
   { single step past entry breakpoint (if it exists) }
-  if isbrk(pc) then singleins;
+  if isbrk(pc) then sinins;
   putbrk; { put back breakpoints }
   3: { exit from watch }
 end;
@@ -6466,7 +6479,7 @@ begin (* main *)
     sourcemark := false; { set no source line instruction }
     stopwatch := true; { set stop on watch match }
     watchmatch := false; { set no watch was matched }
-    singleins;
+    sinins;
     { if breakpoint hit, back up pc and go debugger }
     if breakins or (stopins and dodebug) or watchmatch then begin
       if stopins then 
