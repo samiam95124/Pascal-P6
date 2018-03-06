@@ -5936,7 +5936,9 @@ begin
               (cn = 'sis       ') then begin { step instruction }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
     while i > 0 do begin 
-      sinins; if cn = 'si        ' then prthdr; i := i-1;
+      sinins;
+      if watchmatch then begin watchmatch := false; prtwth end; 
+      if cn = 'si        ' then prthdr; i := i-1;
       { if we hit break or stop, just stay on that instruction }
       if breakins then begin
         writeln('*** Break instruction hit');
@@ -6361,7 +6363,10 @@ begin { debug }
     until dbgend
   end;
   { single step past entry breakpoint (if it exists) }
-  if isbrk(pc) then sinins;
+  if isbrk(pc) then begin
+    sinins;
+    if watchmatch then begin watchmatch := false; prtwth end
+  end;
   putbrk; { put back breakpoints }
   3: { exit from watch }
 end;
