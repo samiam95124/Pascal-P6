@@ -5792,7 +5792,29 @@ begin p := dbc.p; ra := -1; skpspc(dbc);
     if fbp <> nil then ra := fbp^.bstart else dbc.p := p
   end
 end;
-  
+
+{ print watch }
+procedure prtwth;
+var dotrcinss: boolean;
+begin
+  dotrcinss := dotrcins; dotrcins := false; { have to turn off during this }
+  wrtnewline; write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
+  writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
+  write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
+  ad := wthtbl[fw]; p := wthsym[fw].p;
+  if not getdef(ad) then write('*') 
+  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
+  stopwatch := false; { let instruction run }
+  sinins;
+  stopwatch := true;
+  write(' -> ');
+  ad := wthtbl[fw]; p := wthsym[fw].p; 
+  if not getdef(ad) then write('*')
+  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
+  writeln;
+  dotrcins := dotrcinss
+end;
+
 procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp: pblock; syp: psymbol; 
     si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
@@ -5939,7 +5961,10 @@ begin
               (cn = 'ss        ') then begin { step source line }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
     while i > 0 do begin
-      repeat sinins until stopins or sourcemark; 
+      repeat 
+        sinins;
+        if watchmatch then begin watchmatch := false; prtwth end 
+      until stopins or sourcemark;
       sinins; if cn = 's         ' then prthdr; i := i-1;
       { if we hit break or stop, just stay on that instruction }
       if breakins then begin
@@ -6293,23 +6318,9 @@ begin { debug }
   if watchmatch then begin { a variable watch matched, handle special }
     watchmatch := false;
     fw := watchno(stoad); { get the watch number }
-    if fw > 0 then begin
+    if fw > 0 then
       { obviously system error if we don't find the watch, but just ignore }
-      wrtnewline; write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
-      writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
-      write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
-      ad := wthtbl[fw]; p := wthsym[fw].p;
-      if not getdef(ad) then write('*') 
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
-      stopwatch := false; { let instruction run }
-      sinins;
-      stopwatch := true;
-      write(' -> ');
-      ad := wthtbl[fw]; p := wthsym[fw].p; 
-      if not getdef(ad) then write('*')
-      else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
-      writeln
-    end;
+      prtwth;
     goto 3 { skip main section }
   end;
   if not debugstart then begin
