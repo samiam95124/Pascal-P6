@@ -425,6 +425,7 @@ var
     ic,gc: addrrange;               (*data location and instruction counter*)
     lc:    stkoff;
     linecount: integer;
+    lineout: integer;
 
 
                                     (*switches:*)
@@ -1096,13 +1097,21 @@ end;
         if dp then write(lc:7) else write(ic:7);
         write(' ')
       end;
-    { output line marker in intermediate file }
-    if not eof(prd) then begin
-      writeln(prr, ':', linecount:1);
-    end;
     chcnt := 0
   end  (*endofline*) ;
 
+  { output lines passed to intermediate }
+  procedure outline;
+  begin
+    while lineout < linecount do begin
+      lineout := lineout+1;
+      { output line marker in intermediate file }
+      if not eof(prd) then begin
+        writeln(prr, ':', lineout:1);
+      end
+    end
+  end;
+      
   procedure errmsg(ferrnr: integer);
   begin case ferrnr of
     1:   write('Error in simple type');
@@ -1473,6 +1482,7 @@ end;
     end;
 
   begin (*insymbol*)
+    outline;
   1:
     { Skip both spaces and controls. This allows arbitrary formatting characters
       in the source. }
@@ -6894,7 +6904,7 @@ end;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
-    ic := 3; eol := true; linecount := 0;
+    ic := 3; eol := true; linecount := 0; lineout := 0;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
@@ -7341,6 +7351,7 @@ begin
 
   insymbol;
   programme(blockbegsys+statbegsys-[casesy]);
+  outline;
 
   { dispose of levels 0 and 1 }
   putdsp(1);
