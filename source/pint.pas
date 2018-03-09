@@ -433,6 +433,7 @@ type
       pblock       = ^block;
       block        = record
                        next:    pblock; { next list block }
+                       incnxt:  pblock; { included blocks list }
                        name:    strvsp; { name of block }
                        symbols: psymbol; { symbol list for block }
                        btyp:    (btprog, btproc, btfunc); { block type }
@@ -2301,12 +2302,18 @@ procedure load;
                               getnxt; skpspc; getlab;
                               new(bp); strassvf(bp^.name, sn); 
                               bp^.symbols := nil;
+                              bp^.incnxt := nil;
                               case ch1 of { block type }
                                 'p': bp^.btyp := btprog;
                                 'r': bp^.btyp := btproc;
                                 'f': bp^.btyp := btfunc
                               end;
                               bp^.bend := -1;
+                              if blkstk <> nil then begin 
+                                { process block inclusions }
+                                bp^.incnxt := blkstk^.incnxt; { insert to list }
+                                blkstk^.incnxt := bp
+                              end;
                               { put onto block stack }
                               bp^.next := blkstk; blkstk := bp;
                               if ch1 = 'p' then begin { it's a program block }
@@ -4521,7 +4528,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
                etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
-               esrcudf,etypmirs);
+               esrcudf,etypmirs,esymnfb,emssym,eblkmba);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -4589,6 +4596,9 @@ begin
     etypmis:  writeln('Type mismatch');
     esrcudf:  writeln('Source is undefined');
     etypmirs: writeln('Type must be integer, real or set');
+    esymnfb:  writeln('Symbol not found in block');
+    emssym:   writeln('Must specify symbol in block');
+    eblkmba:  writeln('Block containing symbol must be active');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -4850,7 +4860,7 @@ begin
         cpc := getadr(ma+markra); { get next frame }
         ma := getadr(ma+marksl)
       end
-    until (fs <> nil) or (mp = cp); { found or no next frame }
+    until (fs <> nil) or (ma = cp); { found or no next frame }
   end
 end; 
 
@@ -4864,6 +4874,55 @@ begin for i := 1 to fillen do sn[i] := ' '; snl := 1; skpspc(pc);
     sn[snl] := chkchr(pc); nxtchr(pc); snl := snl+1
   end;
   snl := snl-1
+end;
+
+procedure fndrot(var fbp: pblock);
+var bp: pblock;
+begin p := dbc.p; skpspc(dbc); fbp := nil;
+  if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
+    getsym(dbc); bp := blklst;
+    while bp <> nil do begin
+      if strequvf(bp^.name, sn) then begin fbp := bp; bp := nil end;
+      if bp <> nil then bp := bp^.next
+    end;
+    if fbp = nil then dbc.p := p
+  end
+end;
+
+procedure qualident(var bp: pblock; var fsp: psymbol; var ma: address);
+var bp2, fbp: pblock; sp: psymbol;
+
+begin
+  fndrot(bp); { find head block }
+  if bp <> nil then begin { found }
+    fsp := nil; { symbol not found }
+    while (chkchr(dbc) = '.') and (fsp = nil) do begin { parse qualifiers }
+      nxtchr(dbc); bp2 := bp^.incnxt; getsym(dbc);
+      fbp := nil; { search included blocks }
+      while bp2 <> nil do begin
+        if strequvf(bp2^.name, sn) then begin fbp := bp2; bp2 := nil end
+        else bp2 := bp2^.incnxt
+      end;  
+      if fbp <> nil then bp := fbp { advance to found block }
+      else begin { not a sub-block name, search symbol }
+        sp := bp^.symbols; fsp := nil;
+        while sp <> nil do begin { traverse symbols list }
+          if strequvf(sp^.name, sn) then begin fsp := sp; sp := nil end
+          else sp := sp^.next
+        end;
+        if fsp = nil then error(esymnfb);
+        { search for active frame on block }
+        ma := mp; ad := pc;
+        while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and 
+              (ma <> cp) do begin
+          ad := getadr(ma+markra);
+          ma := getadr(ma+marksl)
+        end;
+        if ma = cp then error(eblkmba)
+      end
+    end;
+    if fsp = nil then error(emssym);
+  end
 end;
 
 function isbyte(v: integer): boolean; 
@@ -5283,7 +5342,7 @@ end;
 procedure vartyp(var sp: psymbol; var ad: address; var p: integer);
 var tdc: parctl; fnd, act: boolean; foff: address; ad2, ad3: address;
     enum: boolean; s, e: integer; sz: integer; ma: address; i: integer;
-    fp: integer; ps: integer;
+    fp: integer; ps: integer; bp: pblock;
 
 procedure matrec(isact: boolean);
 var i, x, sz: integer; c: char; off: address;
@@ -5320,7 +5379,11 @@ begin { matrec }
 end;
 
 begin { vartyp }
-  getsym(dbc); symadr(sp, ma); p := 1;
+  qualident(bp, sp, ma); { process possible qualident }
+  if bp = nil then begin { search all blocks in active frame order }
+    getsym(dbc); symadr(sp, ma) 
+  end;
+  p := 1;
   if sp = nil then error(esnficc);
   if (sp^.styp = stlocal) or (sp^.styp = stparam) then 
     ad := ma+sp^.off { local }
@@ -5780,19 +5843,6 @@ begin
   watchno := wn
 end;
 
-procedure fndrot(var ra: address);
-var bp, fbp: pblock;
-begin p := dbc.p; ra := -1; skpspc(dbc);
-  if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
-    getsym(dbc); bp := blklst; fbp := nil;
-    while bp <> nil do begin
-      if strequvf(bp^.name, sn) then begin fbp := bp; bp := nil end;
-      if bp <> nil then bp := bp^.next
-    end;
-    if fbp <> nil then ra := fbp^.bstart else dbc.p := p
-  end
-end;
-
 { print watch }
 procedure prtwth;
 var dotrcinss: boolean;
@@ -5886,8 +5936,9 @@ begin
   end else if (cn = 'b         ') or 
               (cn = 'tp        ') then begin 
     { place breakpoint/tracepoint source }
-    fndrot(s); { see if routine name }
-    if s < 0 then begin { not a routine, get line no }     
+    fndrot(bp); { see if routine name }
+    if bp <> nil then s := bp^.bstart
+    else begin { not a routine, get line no }     
       expr(l); if l > maxsrc then error(einvsln);
       if lintrk[l] < 0 then error(einvsln);
       s := lintrk[l]
