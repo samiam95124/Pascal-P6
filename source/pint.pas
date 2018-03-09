@@ -5071,8 +5071,8 @@ begin
 end;         
 
 { print simple value }
-procedure prtsim(var v: expres; var tdc: parctl; r: integer; fl: integer; 
-                    lz: boolean);
+procedure prtsim(var v: expres; var tdc: parctl; r: integer; fl: integer;
+                 deffld: boolean; lz: boolean);
 var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
 begin
   valsim(v, tdc); { validate value matches type }
@@ -5082,10 +5082,10 @@ begin
            if v.i = 0 then write('false(0)') else write('true(1)') 
          end;
     'c': begin nxtchr(tdc); write('''', chr(v.i), '''(', v.i:1, ')') end;
-    'n': begin nxtchr(tdc); write(v.r:fl) end;
+    'n': begin nxtchr(tdc); if deffld then write(v.r) else write(v.r:fl) end;
     'x': begin 
            getrng(tdc, enum, s, e); 
-           if not enum then prtsim(v, tdc, r, fl, lz)
+           if not enum then prtsim(v, tdc, r, fl, deffld, lz)
            else if (e < 100) and (v.i >= s) and (v.i <= e) then begin
              x := ens[i]; { get start position }
              repeat
@@ -5108,7 +5108,8 @@ end;
 
 { print value by type }
 procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
-                 r: integer; fl: integer; lz: boolean; indent: integer);
+                 r: integer; fl: integer; deffld: boolean; lz: boolean; 
+                 indent: integer);
 const ispc = 2;
 var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
     sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
@@ -5127,7 +5128,8 @@ begin
   texpect(pc, '('); 
   while chkchr(pc) <> ')' do begin
     getsym(pc); texpect(pc, ':'); getnum(pc, i); off := i; texpect(pc, ':');
-    ad2 := ad+off; ad3 := ad2; prttyp(ad2, td, pc.p, false, r, fl, lz, indent);
+    ad2 := ad+off; ad3 := ad2; 
+    prttyp(ad2, td, pc.p, false, r, fl, deffld, lz, indent);
     if chkchr(pc) = '(' then begin nxtchr(pc);
       { tagfield, parse sublists }
       while chkchr(pc) <> ')' do begin
@@ -5201,27 +5203,27 @@ begin { prttyp }
            if getdef(ad) then begin v.t := rtint;
              if byt then begin v.i := getbyt(ad); ad := ad+1 end
              else begin v.i := getint(ad); ad := ad+intsize end;
-             prtsim(v, tdc, r, fl, lz)
+             prtsim(v, tdc, r, fl, deffld, lz)
            end else begin nxtchr(tdc); write('Undefined') end;
          end;
     'b': begin 
            if getdef(ad) then begin v.t := rtint;
              v.i := ord(getbol(ad));
-             prtsim(v, tdc, r, fl, lz); 
+             prtsim(v, tdc, r, fl, deffld, lz); 
            end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+boolsize 
          end;
     'c': begin
            if getdef(ad) then begin v.t := rtint;
              v.i := ord(getchr(ad));
-             prtsim(v, tdc, r, fl, lz) 
+             prtsim(v, tdc, r, fl, deffld, lz) 
            end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+charsize 
          end;
     'n': begin
            if getdef(ad) then begin v.t := rtreal;
              v.r := getrel(ad);
-             prtsim(v, tdc, r, fl, lz)  
+             prtsim(v, tdc, r, fl, deffld, lz)  
            end else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+realsize 
          end;
@@ -5231,13 +5233,14 @@ begin { prttyp }
            { It's subrange or enumerated. Subrange has a subtype. Note all 
            subranges are reduced to numeric. }
            if not enum then begin { eval subtype }
-             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, lz, indent)
+             prttyp(ad, td, tdc.p, isbyte(s) and isbyte(e), r, fl, deffld, lz, 
+                    indent)
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin v.t := rtint;
                { fetch according to size }
                if byt then begin v.i := getbyt(ad); ad := ad+1 end 
                else begin v.i := getint(ad); ad := ad+intsize end;
-               tdc := stdc; prtsim(v, tdc, r, fl, lz)
+               tdc := stdc; prtsim(v, tdc, r, fl, deffld, lz)
              end else begin 
                if byt then ad := ad+1 else ad := ad+intsize; 
                write('Undefined') 
@@ -5251,7 +5254,8 @@ begin { prttyp }
          end; 
     's': begin
            if getdef(ad) then 
-             begin v.t := rtset; getset(ad, v.s); prtsim(v, tdc, r, fl, lz) end
+             begin v.t := rtset; getset(ad, v.s); 
+                   prtsim(v, tdc, r, fl, deffld, lz) end
            else begin nxtchr(tdc); write('Undefined') end;
            ad := ad+setsize
          end;
@@ -5267,7 +5271,7 @@ begin { prttyp }
              { print whole array }
              ps := tdc.p;
              for i := s to e do begin 
-               prttyp(ad, td, tdc.p, false, r, fl, lz, indent); 
+               prttyp(ad, td, tdc.p, false, r, fl, deffld, lz, indent); 
                if i < e then begin tdc.p := ps; write(', ') end 
                else indent := indent-ispc;
                if subc then newline 
@@ -5855,14 +5859,14 @@ begin
   write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
   ad := wthtbl[fw]; p := wthsym[fw].p;
   if not getdef(ad) then write('*') 
-  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
+  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, true, false, 0);
   stopwatch := false; { let instruction run }
   sinins;
   stopwatch := true;
   write(' -> ');
   ad := wthtbl[fw]; p := wthsym[fw].p; 
   if not getdef(ad) then write('*')
-  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, false, 0);
+  else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, true, false, 0);
   writeln;
   dotrcins := dotrcinss
 end;
@@ -6049,10 +6053,10 @@ begin
     if undef then write('*') { can't print, undefined }
     else if sim then begin { write simple result }
       setpar(tdc, syp^.digest, p);
-      prtsim(eres, tdc, r, fl, lz)
+      prtsim(eres, tdc, r, fl, deffld, lz)
     end else 
       { print the resulting tail }
-      prttyp(s, syp^.digest, p, false, r, fl, lz, 0); 
+      prttyp(s, syp^.digest, p, false, r, fl, deffld, lz, 0); 
     writeln;
     writeln
   end else if cn = 'e         ' then begin { enter (hex) }
@@ -6164,7 +6168,7 @@ begin
         if syp^.styp = stglobal then begin 
           writev(output, syp^.name, 20); write(' ');
           s := pctop+syp^.off; p := 1; 
-          prttyp(s, syp^.digest, p, false, 10, 1, false, 0);
+          prttyp(s, syp^.digest, p, false, 10, 1, true, false, 0);
           writeln
         end;
         syp := syp^.next
@@ -6193,7 +6197,7 @@ begin
                (syp^.styp = stparam) then begin 
               writev(output, syp^.name, 20); write(' ');
               e := s+syp^.off; p := 1; 
-              prttyp(e, syp^.digest, p, false, 10, 1, false, 0);
+              prttyp(e, syp^.digest, p, false, 10, 1, true, false, 0);
               writeln
             end;
             syp := syp^.next
