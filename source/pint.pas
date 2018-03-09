@@ -4911,14 +4911,16 @@ begin
           else sp := sp^.next
         end;
         if fsp = nil then error(esymnfb);
-        { search for active frame on block }
-        ma := mp; ad := pc;
-        while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and 
-              (ma <> cp) do begin
-          ad := getadr(ma+markra);
-          ma := getadr(ma+marksl)
-        end;
-        if ma = cp then error(eblkmba)
+        if fsp^.styp <> stglobal then begin
+          { search for active frame on block }
+          ma := mp; ad := pc;
+          while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and 
+                (ma <> cp) do begin
+            ad := getadr(ma+markra);
+            ma := getadr(ma+marksl)
+          end;
+          if ma = cp then error(eblkmba)
+        end
       end
     end;
     if fsp = nil then error(emssym);
