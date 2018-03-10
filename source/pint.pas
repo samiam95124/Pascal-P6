@@ -82,11 +82,9 @@
 * operations using one file reference. Finally, files were tied to the type    *
 * ending 'a', because files are now full variable references.                  *
 *                                                                              *
-* New layout of memory in store:                                               *
+* Layout of memory in store:                                                   *
 *                                                                              *
 *    maxstr ->    ---------------------                                        *
-*                 | Constants         |                                        *
-*        cp ->    ---------------------                                        *
 *                 | Stack             |                                        *
 *        sp ->    ---------------------                                        *
 *                 | Free space        |                                        *
@@ -95,6 +93,8 @@
 *        gbtop -> ---------------------                                        *
 *                 | Globals           |                                        *
 *        pctop -> ---------------------                                        *
+*                 | Constants         |                                        *
+*                 ---------------------                                        *
 *                 | Code              |                                        *
 *                 ---------------------                                        *
 *                                                                              *
@@ -217,7 +217,9 @@ const
       { !!! Need to use the small size memory to self compile, otherwise, by
         definition, pint cannot fit into its own memory. }
       {elide}maxstr      = 16777215;{noelide}  { maximum size of addressing for program/var }
+      {elide}maxtop      = 16777216;{noelide}  { maximum size of addressing for program/var+1 }
       {remove maxstr     =  2000000; remove}  { maximum size of addressing for program/var }
+      {remove maxtop     =  2000001; remove}  { maximum size of addressing for program/var+1 }
       maxdef      = 2097152; { maxstr / 8 for defined bits }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
@@ -228,6 +230,7 @@ const
       codemax     = maxstr;  { set size of code store to maximum possible }
 
       maxlabel = 5000;       { total possible labels in intermediate }
+      maxcstfx = 10000;      { maximum constant fixup in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
       { locations of header files after program block mark, each header
@@ -393,7 +396,7 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-      address     = -maxstr..maxstr; { address }
+      address     = -maxtop..maxtop; { address }
 
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;
@@ -457,7 +460,7 @@ var   pc          : address;   (*program address register*)
       storedef    : packed array [0..maxdef] of byte; { defined bits }
       storecov    : packed array [0..maxdef] of byte; { coverage bits }
       sdi         : 0..maxdef; { index for that }
-      cp          : address;  (* pointer to next free constant position *)
+      cststr      : address; { start of constants block }
       mp,sp,np,ep : address;  (* address registers *)
       expadr      : address; { exception address of exception handler starts }
       expstk      : address; { exception address of sp at handlers }
@@ -1825,6 +1828,13 @@ begin
   flc := l - algn  +  (algn-l) mod algn
 end (*align*);
 
+{ align upwards with space clear }
+procedure alignuc(algn: address; var flc: address);
+var flcs,ad: address;
+begin
+  flcs := flc; alignu(algn, flc); for ad := flcs to flc-1 do putbyt(ad, 0)
+end;   
+
 { clear filename string }
 
 procedure clrfn(var fn: filnam);
@@ -1844,10 +1854,17 @@ procedure load;
                           val: address;
                            st: labelst
                     end;
+         cstfixrg  = 1..maxcstfx; { constant fixup range }
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
         iline: integer; { line number of intermediate file }
+        cstfixtab: array [cstfixrg] of address;
+        cstfixi: 0..maxcstfx;
+        ci: cstfixrg;
+        pctops: address;
+        ad, ad2, crf: address;
+        cp: address;  (* pointer to next free constant position *)
 
    procedure init;
       var i: integer;
@@ -2120,10 +2137,13 @@ procedure load;
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
          
          pc := begincode;
-         cp := maxstr; { set constants pointer to top of storage }
+         { constants are stored at top of memory, but relocated to the top of
+           the code deck }
+         cp := maxtop; { set constants pointer to top of storage }
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered end;
+         cstfixi := 0; { set no constant fixups }
          { initalize file state }
          for i := 1 to maxfil do filstate[i] := fclosed;
 
@@ -2188,7 +2208,7 @@ procedure load;
              labeltab[x].val:= labelvalue;
       end
    end;(*update*)
-
+   
    procedure getnxt; { get next character }
    begin
       ch := ' ';
@@ -2396,7 +2416,13 @@ procedure load;
       begin while (ch<>'l') and not eoln(prd) do read(prd,ch);
             read(prd,x); lookup(x)
       end;(*labelsearch*)
-
+      
+      procedure putcstfix;
+      begin
+        if cstfixi = maxcstfx then errorl('Too many constants in pgm');
+        cstfixi := cstfixi+1; cstfixtab[cstfixi] := pc
+      end; 
+      
       procedure getname;
       var i: alfainx;
       begin
@@ -2508,7 +2534,7 @@ procedure load;
                                       if cp <= 0 then
                                          errorl('constant table overflow  ');
                                       putrel(cp, r); q := cp;
-                                      storeop; storeq
+                                      storeop; putcstfix; storeq
                                 end;
 
                            125: storeop; (*p,q = 0*)
@@ -2550,7 +2576,7 @@ procedure load;
                                       errorl('constant table overflow  ');
                                    putset(cp, s);
                                    q := cp;
-                                   storeop; storeq
+                                   storeop; putcstfix; storeq
                                 end
                            end (*case*)
                      end;
@@ -2559,19 +2585,19 @@ procedure load;
                          read(prd,lb,ub);
                          { cjp is compare with jump }
                          if op = 8 then begin labelsearch; q1 := q end;
-                         if (op = 95) or (op = 190) then q := lb
-                         else
-                         begin
+                         if (op = 95) or (op = 190) then begin
+                           q := lb;
+                           storeop; storeq
+                         end else begin
                            cp := cp-intsize;
                            alignd(intal, cp);
                            if cp <= 0 then errorl('constant table overflow  ');
                            putint(cp, ub);
                            cp := cp-intsize;
-                           alignd(intal, cp);
                            if cp <= 0 then errorl('constant table overflow  ');
-                           putint(cp, lb); q := cp
+                           putint(cp, lb); q := cp;
+                           storeop; putcstfix; storeq
                          end;
-                         storeop; storeq; 
                          if op = 8 then storeq1
                        end;
 
@@ -2601,7 +2627,7 @@ procedure load;
                            set
                          for i := 0 to i-1 do putchr(q+i, str[i+1]);
                          }
-                         storeop; storeq
+                         storeop; putcstfix; storeq
                        end;
 
           14, 128, 129, 130, 131, 132, 204, (*ret*)
@@ -2639,19 +2665,31 @@ procedure load;
    end; (*assemble*)
 
 begin (*load*)
-   init;
-   generate;
-   pctop := pc; { save top of code store }
-   gbtop := pctop+gbsiz; { set top of globals }
-   lsttop := pctop; { save as top of listing }
-   pc := 0;
-   generate;
-   if not gbset then errorl('global space not set     ');
-   alignu(stackal, pctop); { align the end of code for globals }
-   alignd(heapal, cp); { align the start of cp for stack top }
-   gbtop := pctop+gbsiz; { set top of globals }
-   alignu(gbsal, gbtop); { align the globals top }
-   if dodmplab then dmplabs { Debug: dump label definitions }
+  init;
+  { first pass }
+  generate;
+  if not gbset then errorl('global space not set     ');
+  pctop := pc; { save top of code store }
+  lsttop := pctop; { save as top of listing }
+  pctops := pctop; { save fractional address }
+  alignuc(gbsal, pctop); { align end of code block }
+  pc := 0;
+  { second pass }
+  generate;
+  { relocate constants }
+  ad2 := pctop; crf := pctop-cp; cststr := ad2;
+  for ad := cp to maxstr do 
+    begin store[ad2] := store[ad]; putdef(ad2, getdef(ad)); ad2 := ad2+1 end;
+  pctop := ad2; { move globals to the top of that }
+  alignuc(gbsal, pctop);
+  gbtop := pctop+gbsiz;
+  alignu(gbsal, gbtop);
+  { relocate constants deck }
+  if cstfixi >= 1 then for ci := 1 to cstfixi do 
+    begin ad := cstfixtab[ci]; putadr(ad, getadr(ad)+crf) end;
+  { clear globals area }
+  for ad := pctop to gbtop-1 do putbyt(ad, 0);
+  if dodmplab then dmplabs { Debug: dump label definitions }
 end; (*load*)
 
 (*------------------------------------------------------------------------*)
@@ -4079,7 +4117,6 @@ begin
     12 (*cup*): begin (*p=no of locations for parameters, q=entry point*)
                  getp; getq;
                  mp := sp+(p+marksize); { mp to base of mark }
-
                  putadr(mp+markra, pc); { place ra }
                  pc := q
                 end;
@@ -4737,11 +4774,10 @@ begin
   wrtnewline; writeln;
   if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
-    write('pc: '); wrthex(pc, maxdigh, true); write(' sp: '); 
-    wrthex(sp, maxdigh, true);
-    write(' mp: '); wrthex(mp, maxdigh, true); write(' np: '); 
-    wrthex(np, maxdigh, true);
-    write(' cp: '); wrthex(cp, maxdigh, true);
+    write('pc: '); wrthex(pc, maxdigh, true); 
+    write(' sp: '); wrthex(sp, maxdigh, true);
+    write(' mp: '); wrthex(mp, maxdigh, true); 
+    write(' np: '); wrthex(np, maxdigh, true);
     writeln;
     ad := pc; lstinsa(ad)
   end; 
@@ -4860,7 +4896,7 @@ begin
         cpc := getadr(ma+markra); { get next frame }
         ma := getadr(ma+marksl)
       end
-    until (fs <> nil) or (ma = cp); { found or no next frame }
+    until (fs <> nil) or (ma = maxtop); { found or no next frame }
   end
 end; 
 
@@ -4915,11 +4951,11 @@ begin
           { search for active frame on block }
           ma := mp; ad := pc;
           while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and 
-                (ma <> cp) do begin
+                (ma <> maxtop) do begin
             ad := getadr(ma+markra);
             ma := getadr(ma+marksl)
           end;
-          if ma = cp then error(eblkmba)
+          if ma = maxtop then error(eblkmba)
         end
       end
     end;
@@ -5916,9 +5952,9 @@ begin
     writeln('Storage areas occupied');
     writeln;
     write('Program     '); prtrng(0, pctop-1);
+    write('Constants   '); prtrng(cststr, pctop-1);
     write('Globals     '); prtrng(pctop, gbtop-1);
-    write('Stack/Heap  '); prtrng(gbtop, cp-1);
-    write('Constants   '); prtrng(cp, maxstr);
+    write('Stack/Heap  '); prtrng(gbtop, maxstr);
     writeln
   end else if cn = 'dd        ' then begin { dump displays }
     if noframe then 
@@ -6236,13 +6272,6 @@ begin
       write('np: '); wrthex(np, 8, true); writeln;
       writeln
     end  
-  end else if cn = 'cp        ' then begin { set cp }
-    if not chkend(dbc) then begin expr(i); cp := i end
-    else begin
-      wrtnewline; writeln;
-      write('cp: '); wrthex(cp, 8, true); writeln;
-      writeln
-    end  
   end else if cn = 'ti        ' then 
     dotrcins := true { trace instructions }
   else if cn = 'nti       ' then 
@@ -6310,7 +6339,6 @@ begin
     writeln('sp  [a]        Set/print sp contents');
     writeln('mp  [a]        Set/print mp contents');
     writeln('np  [a]        Set/print np contents');
-    writeln('cp  [a]        Set cp contents');
     writeln('ti             Turn instruction tracing on');
     writeln('nti            Turn instruction tracing off');
     writeln('tr             Turn system routine tracing on');
@@ -6532,12 +6560,9 @@ begin (* main *)
     goto 1
   end;
     
-  pc := 0; sp := cp; np := gbtop; mp := cp; ep := 5; srclin := 1;
+  pc := 0; sp := maxtop; np := gbtop; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
   
-  { clear globals }
-  for ad := pctop to gbtop-1 do begin store[ad] := 0; putdef(ad, false) end;
-
   { set breakpoint at 0 to kick off debugger }
   if dodebug then
     begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 1; 
