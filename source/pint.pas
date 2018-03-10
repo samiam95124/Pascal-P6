@@ -2308,36 +2308,17 @@ procedure load;
                                 ch1 := ch; getnxt;
                                 option[ch1] := ch = '+'; getnxt;
                                 case ch1 of
-                                  'g': begin dodmplab := option[ch1];
-                                         { if we print these, don't output a
-                                           deck }
-                                         if dodmplab then dodckout := false
-                                       end;
+                                  'g': dodmplab := option[ch1];
                                   'h': dosrclin := option[ch1];
                                   'n': dorecycl := option[ch1];
                                   'o': dochkovf := option[ch1];
                                   'p': dochkrpt := option[ch1];
                                   'q': dochkdef := option[ch1];
                                   's': iso7185  := option[ch1];
-                                  'w': begin dodebug  := option[ch1];
-                                         { if we go debug mode, don't output a
-                                           deck }
-                                         if dodebug then dodckout := false
-                                       end;
-                                  'r': begin dodbgflt := option[ch1];
-                                         { if we go debug mode, don't output a
-                                           deck }
-                                         if dodebug then dodckout := false
-                                       end;
+                                  'w': dodebug  := option[ch1];
+                                  'r': dodbgflt := option[ch1];
                                   'f': dodbgsrc := option[ch1];
-                                  'e': begin dodckout := option[ch1];
-                                         if dodckout then begin
-                                           { we are going to output code block,
-                                             turn off all printers }
-                                           dodmplab := false; dodebug := false; 
-                                           dodbgflt := false
-                                         end
-                                       end;
+                                  'e': dodckout := option[ch1];
                                   'b':; 'c':; 'd':; 'l':; 't':; 'u':;
                                   'v':; 'x':; 'y':; 'z':; 'm':; 'a':;
                                   'k':; 'i':; 'j':;
