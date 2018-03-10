@@ -159,7 +159,7 @@ const
         1:    stp
 
       }
-      begincode   =        9   {13};
+      begincode   =        14   {13};
 
       { Mark element offsets
 
@@ -207,7 +207,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;  { number of standard procedures/functions }
-   maxins     = 87;  { maximum number of instructions }
+   maxins     = 88;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
@@ -6438,7 +6438,7 @@ end;
           ic := 0;
           (*generate call of main program; note that this call must be loaded
             at absolute address zero*)
-          gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
+          gen0(88(*lnp*)); gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
           if prtables then
             begin writeln(output); printtables(true)
             end
@@ -7067,7 +7067,7 @@ end;
       mn[73] :=' tjp'; mn[74] :=' lip'; mn[75] :=' ckv'; mn[76] :=' dup';
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
-      mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp';
+      mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
 
     end (*instrmnemonics*) ;
 
@@ -7184,6 +7184,7 @@ end;
       cdx[82] :=  0;                   cdx[83] := +intsize;
       cdx[84] := -adrsize;             cdx[85] := +adrsize;
       cdx[86] := 0;                    cdx[87] := 0;
+      cdx[88] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
