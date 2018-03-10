@@ -187,7 +187,7 @@ const
         1:    stp
 
       }
-      begincode   =        9   {13};
+      begincode   =        14   {13};
 
       { Mark element offsets
 
@@ -498,6 +498,7 @@ var   pc          : address;   (*program address register*)
       dosrcprf: boolean; { do source level profiling }
       dochkcov: boolean; { do code coverage }
       doanalys: boolean; { do analyze }
+      dodckout: boolean; { do output code deck }
       
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -571,7 +572,7 @@ procedure debug; forward;
 
 { Low level error check and handling }
 
-procedure wrtnum(v: integer; r: integer; f: integer; lz: boolean);
+procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
 const digmax = 32;
 var p,i,x,d,t,n: integer; sgn: boolean;
     digits: packed array [1..digmax] of char;
@@ -614,21 +615,22 @@ begin sgn := false;
       digits[i] := digit(d); { place }
       p := p*r
    end;
-   i := digmax; while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
+   i := digmax; 
+   while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
    if sgn then begin digits[i+1] := '-'; i := i+1 end;
    if not lz then for x := digmax downto i+1 do digits[x] := ' '; 
    if i > f then f := i;
    if f > digmax then begin 
-     for i := 1 to f-8 do if lz then write('0') else write(' '); 
+     for i := 1 to f-8 do if lz then write(tf, '0') else write(tf, ' '); 
      f := digmax 
    end;
    { print result }
-   for i := f downto 1 do write(digits[i])
+   for i := f downto 1 do write(tf, digits[i])
 end;
 
-procedure wrthex(v: integer; f: integer; lz: boolean);
+procedure wrthex(var tf: text; v: integer; f: integer; lz: boolean);
 begin
-  wrtnum(v, 16, f, lz)
+  wrtnum(tf, v, 16, f, lz)
 end;
 
 procedure errors(a: address; l: address);
@@ -1794,18 +1796,21 @@ begin
 
    end;
    write(': ');
-   wrthex(op, 2, true);
+   wrthex(output, op, 2, true);
    write(' ', instr[op]:10, '  ');
    if insp[op] then begin
 
-      wrthex(p, 2, true);
-      if insq[op] > 0 then begin write(','); wrthex(q, inthex, true) end;
-      if insq[op] > intsize then  begin write(','); wrthex(q1, inthex, true) end
+      wrthex(output, p, 2, true);
+      if insq[op] > 0 then 
+        begin write(','); wrthex(output, q, inthex, true) end;
+      if insq[op] > intsize then 
+        begin write(','); wrthex(output, q1, inthex, true) end
 
    end else if insq[op] > 0 then begin
 
-      write('   '); wrthex(q, inthex, true);
-      if insq[op] > intsize then begin write(','); wrthex(q1, inthex, true) end
+      write('   '); wrthex(output, q, inthex, true);
+      if insq[op] > intsize then 
+        begin write(','); wrthex(output, q1, inthex, true) end
 
    end
 
@@ -1870,6 +1875,7 @@ procedure load;
         pctops: address;
         ad, ad2, crf: address;
         cp: address;  (* pointer to next free constant position *)
+        npadr: address;
 
    procedure init;
       var i: integer;
@@ -1908,7 +1914,7 @@ procedure load;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
          instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;
          instr[ 19]:='brk       '; insp[ 19] := false; insq[ 19] := 0;
-         instr[ 20]:='---       '; insp[ 20] := false; insq[ 20] := 0;
+         instr[ 20]:='lnp       '; insp[ 20] := false; insq[ 20] := intsize;
          instr[ 21]:='---       '; insp[ 21] := false; insq[ 21] := 0;
          instr[ 22]:='---       '; insp[ 22] := false; insq[ 22] := 0;
          instr[ 23]:='ujp       '; insp[ 23] := false; insq[ 23] := intsize;
@@ -2150,6 +2156,7 @@ procedure load;
              with labeltab[i] do begin val:=-1; st:= entered end;
          cstfixi := 0; { set no constant fixups }
          gblfixi := 0; { set no global fixups }
+         npadr := -1;
          { initalize file state }
          for i := 1 to maxfil do filstate[i] := fclosed;
 
@@ -2301,19 +2308,39 @@ procedure load;
                                 ch1 := ch; getnxt;
                                 option[ch1] := ch = '+'; getnxt;
                                 case ch1 of
-                                  'g': dodmplab := option[ch1];
+                                  'g': begin dodmplab := option[ch1];
+                                         { if we print these, don't output a
+                                           deck }
+                                         if dodmplab then dodckout := false
+                                       end;
                                   'h': dosrclin := option[ch1];
                                   'n': dorecycl := option[ch1];
                                   'o': dochkovf := option[ch1];
                                   'p': dochkrpt := option[ch1];
                                   'q': dochkdef := option[ch1];
                                   's': iso7185  := option[ch1];
-                                  'w': dodebug  := option[ch1];
-                                  'r': dodbgflt := option[ch1];
+                                  'w': begin dodebug  := option[ch1];
+                                         { if we go debug mode, don't output a
+                                           deck }
+                                         if dodebug then dodckout := false
+                                       end;
+                                  'r': begin dodbgflt := option[ch1];
+                                         { if we go debug mode, don't output a
+                                           deck }
+                                         if dodebug then dodckout := false
+                                       end;
                                   'f': dodbgsrc := option[ch1];
+                                  'e': begin dodckout := option[ch1];
+                                         if dodckout then begin
+                                           { we are going to output code block,
+                                             turn off all printers }
+                                           dodmplab := false; dodebug := false; 
+                                           dodbgflt := false
+                                         end
+                                       end;
                                   'b':; 'c':; 'd':; 'l':; 't':; 'u':;
                                   'v':; 'x':; 'y':; 'z':; 'm':; 'a':;
-                                  'k':; 'i':; 'e':; 'j':;
+                                  'k':; 'i':; 'j':;
                                   { unused: m,a,i,e }
                                 end
                               until not (ch in ['a'..'z']);
@@ -2503,8 +2530,8 @@ procedure load;
 
           (*ind,inc,dec,ckv*)
           198, 9, 85, 86, 87, 88, 89,
-          10, 90, 91, 92, 93, 94,
-          57, 100, 101, 102, 103, 104,
+          10, 90, 93, 94,
+          57, 103, 104,
           175, 176, 177, 178, 179, 180, 201, 202, 
           203: begin read(prd,q); storeop; storeq end;
           
@@ -2595,7 +2622,7 @@ procedure load;
                            end (*case*)
                      end;
 
-           26, 95, 96, 97, 98, 99, 190, 199,8 (*chk,cjp*): begin
+           26, 95, 97, 98, 99, 190, 199,8 (*chk,cjp*): begin
                          read(prd,lb,ub);
                          { cjp is compare with jump }
                          if op = 8 then begin labelsearch; q1 := q end;
@@ -2650,9 +2677,9 @@ procedure load;
           17, 137, 138, 139, 140, 141,
           18, 143, 144, 145, 146, 147,
           19, 149, 150, 151, 152, 153,
-          20, 155, 156, 157, 158, 159,
-          21, 161, 162, 163, 164, 165,
-          22, 167, 168, 169, 170, 171,
+          155, 156, 157, 158, 159,
+          161, 162, 163, 164, 165,
+          167, 168, 169, 170, 171,
 
           59, 133, 134, 135, 136, 200, (*ord*)
 
@@ -2661,16 +2688,17 @@ procedure load;
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,
             rnd,rgs,fbv,fvb,ede,mse }
-          27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-          48,49,50,51,52,53,54,58,60,62,110,111,
-          115,116,205,206,208,209,
+          28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
+          48,49,50,51,52,53,54,58,60,62,110,
+          205,206,208,209,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
           181, 182, 183, 184, 185, 186,187,188,189: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
-          61 (*ujc*): begin storeop; q := 0; storeq end
+          61 (*ujc*): begin storeop; q := 0; storeq end;
+          20 (*lnp*): begin storeop; q := 0; npadr := pc; storeq end;
 
       end; (*case*)
 
@@ -2706,6 +2734,9 @@ begin (*load*)
   { relocate global references }
   if gblfixi >= 1 then for gi := 1 to gblfixi do 
     begin ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
+  { set heap bottom pointer }
+  if npadr < 0 then errorl('Heap bottom not set      ');
+  putadr(npadr, gbtop);
   if dodmplab then dmplabs { Debug: dump label definitions }
 end; (*load*)
 
@@ -2824,7 +2855,8 @@ begin
    ad := gbtop; { index the bottom of heap }
    while ad < np do begin
       l := getadr(ad); { get next block length }
-      write('addr: '); wrthex(ad, maxdigh, true); write(': ', abs(l):6, ': ');
+      write('addr: '); wrthex(output, ad, maxdigh, true); 
+      write(': ', abs(l):6, ': ');
       if l >= 0 then writeln('free') else writeln('alloc');
       ad := ad+abs(l)
    end
@@ -3840,7 +3872,7 @@ begin
   if getcov(a) then write('c') else write(' ');
   if a = pc then write('*') else write(' ');
   write(' ');
-  wrthex(a, maxdigh, true);
+  wrthex(output, a, maxdigh, true);
   lstins(a);
   writeln
 end;
@@ -3938,9 +3970,9 @@ begin
     if getcov(ad) then write('c') else write(' ');
     write('*');
     write(' ');
-    wrthex(ad, maxdigh, true);
+    wrthex(output, ad, maxdigh, true);
     write('/');
-    wrthex(sp, maxdigh, true);
+    wrthex(output, sp, maxdigh, true);
     lstins(ad);
     writeln
   end;
@@ -4553,11 +4585,12 @@ begin
                   if (i1 >= getint(q)) and (i1 <= getint(q+intsize)) then
                     begin pc := q1; popint(i1) end
                 end;
+    20 (*lnp*): begin getq; np := q end;
                 
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-    20,  21,  22,  27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
+    21,  22,  27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
     122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217,
     218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
     232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245,
@@ -4752,8 +4785,8 @@ end;
 procedure prtrng(a, b: address);
 var i: 1..maxdigh;
 begin
-  wrthex(a, maxdigh, true); write('-');
-  if b+1 > a then wrthex(b, maxdigh, true) 
+  wrthex(output, a, maxdigh, true); write('-');
+  if b+1 > a then wrthex(output, b, maxdigh, true) 
   else for i := 1 to maxdigh do write('*');
   writeln(' (',b+1-a:1,')')
 end;
@@ -4776,8 +4809,9 @@ begin l := false; for i := 1 to 16 do bs[i] := 0;
          for x := 1 to maxdigh do write('*'); write(': ');
          for x := 1 to 16 do write('** ');
        end;
-       writeln; wrthex(ba, maxdigh, true); write(': ');
-       for x := 1 to i-1 do begin wrthex(bs[x], 2, true); write(' ') end;
+       writeln; wrthex(output, ba, maxdigh, true); write(': ');
+       for x := 1 to i-1 do 
+         begin wrthex(output, bs[x], 2, true); write(' ') end;
        l := false
      end else l := true
    end;
@@ -4791,10 +4825,10 @@ begin
   wrtnewline; writeln;
   if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
-    write('pc: '); wrthex(pc, maxdigh, true); 
-    write(' sp: '); wrthex(sp, maxdigh, true);
-    write(' mp: '); wrthex(mp, maxdigh, true); 
-    write(' np: '); wrthex(np, maxdigh, true);
+    write('pc: '); wrthex(output, pc, maxdigh, true); 
+    write(' sp: '); wrthex(output, sp, maxdigh, true);
+    write(' mp: '); wrthex(output, mp, maxdigh, true); 
+    write(' np: '); wrthex(output, np, maxdigh, true);
     writeln;
     ad := pc; lstinsa(ad)
   end; 
@@ -4804,24 +4838,24 @@ end;
 procedure dmpdsp(mp: address);
 begin
   wrtnewline; writeln;
-  write('Mark @'); wrthex(mp, maxdigh, true); writeln;
-  write('sl: '); wrthex(mp+marksl, 8, true); write(': '); 
-  if getdef(mp+marksl) then wrthex(getadr(mp+marksl), 8, true) 
+  write('Mark @'); wrthex(output, mp, maxdigh, true); writeln;
+  write('sl: '); wrthex(output, mp+marksl, 8, true); write(': '); 
+  if getdef(mp+marksl) then wrthex(output, getadr(mp+marksl), 8, true) 
   else write('********'); writeln;
-  write('dl: '); wrthex(mp+markdl, 8, true); write(': '); 
-  if getdef(mp+markdl) then wrthex(getadr(mp+markdl), 8, true) 
+  write('dl: '); wrthex(output, mp+markdl, 8, true); write(': '); 
+  if getdef(mp+markdl) then wrthex(output, getadr(mp+markdl), 8, true) 
   else write('********'); writeln;
-  write('ep: '); wrthex(mp+markep, 8, true); write(': '); 
-  if getdef(mp+markep) then wrthex(getadr(mp+markep), 8, true) 
+  write('ep: '); wrthex(output, mp+markep, 8, true); write(': '); 
+  if getdef(mp+markep) then wrthex(output, getadr(mp+markep), 8, true) 
   else write('********'); writeln;
-  write('sb: '); wrthex(mp+marksb, 8, true); write(': '); 
-  if getdef(mp+marksb) then wrthex(getadr(mp+marksb), 8, true) 
+  write('sb: '); wrthex(output, mp+marksb, 8, true); write(': '); 
+  if getdef(mp+marksb) then wrthex(output, getadr(mp+marksb), 8, true) 
   else write('********'); writeln;
-  write('et: '); wrthex(mp+market, 8, true); write(': '); 
-  if getdef(mp+market) then wrthex(getadr(mp+market), 8, true) 
+  write('et: '); wrthex(output, mp+market, 8, true); write(': '); 
+  if getdef(mp+market) then wrthex(output, getadr(mp+market), 8, true) 
   else write('********'); writeln;
-  write('ra: '); wrthex(mp+markra, 8, true); write(': '); 
-  if getdef(mp+markra) then wrthex(getadr(mp+markra), 8, true) 
+  write('ra: '); wrthex(output, mp+markra, 8, true); write(': '); 
+  if getdef(mp+markra) then wrthex(output, getadr(mp+markra), 8, true) 
   else write('********'); writeln;
   writeln
 end;
@@ -4853,9 +4887,9 @@ begin
   if bp = nil then error(eblknf);
   wrtnewline; writeln;
   writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
-  wrthex(pc, 8, true);
-  write(' locals/stack: '); wrthex(ep, 8, true); write('-'); 
-  wrthex(mp-marksize, 8, true); 
+  wrthex(output, pc, 8, true);
+  write(' locals/stack: '); wrthex(output, ep, 8, true); write('-'); 
+  wrthex(output, mp-marksize, 8, true); 
   write(' (', mp-marksize-ep:1, ')'); 
   writeln;
   if dodbgsrc then begin
@@ -5130,7 +5164,7 @@ var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;
 begin
   valsim(v, tdc); { validate value matches type }
   case chkchr(tdc) of { type }
-    'i','p': begin nxtchr(tdc); wrtnum(v.i, r, fl, lz) end;
+    'i','p': begin nxtchr(tdc); wrtnum(output, v.i, r, fl, lz) end;
     'b': begin nxtchr(tdc);
            if v.i = 0 then write('false(0)') else write('true(1)') 
          end;
@@ -5907,9 +5941,9 @@ procedure prtwth;
 var dotrcinss: boolean;
 begin
   dotrcinss := dotrcins; dotrcins := false; { have to turn off during this }
-  wrtnewline; write('Watch variable: @'); wrthex(pc, 8, true); write(': '); 
-  writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
-  write('@'); wrthex(wthtbl[fw], 8, true); write(': ');
+  wrtnewline; write('Watch variable: @'); wrthex(output, pc, 8, true); 
+  write(': '); writev(output, wthsym[fw].sp^.name, lenpv(wthsym[fw].sp^.name));
+  write('@'); wrthex(output, wthtbl[fw], 8, true); write(': ');
   ad := wthtbl[fw]; p := wthsym[fw].p;
   if not getdef(ad) then write('*') 
   else prttyp(ad, wthsym[fw].sp^.digest, p, false, 10, 1, true, false, 0);
@@ -5949,7 +5983,7 @@ begin
       if pc = s then write('*') else write(' ');
       if getcov(s) then write('c') else write(' ');
       write(' ');
-      wrthex(s, maxdigh, true);
+      wrthex(output, s, maxdigh, true);
       lstins(s);
       writeln
     end
@@ -6038,7 +6072,7 @@ begin
     for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
       if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
       else write(i:2, ':****', ': ');
-      wrthex(brktbl[i].sa, maxdigh, true); write(' '); 
+      wrthex(output, brktbl[i].sa, maxdigh, true); write(' '); 
       if brktbl[i].trace then write('t') else write('b'); writeln;
     end;
     writeln
@@ -6181,7 +6215,7 @@ begin
     writeln('Watch table:');
     writeln;  
     for wi := 1 to maxwth do if wthtbl[wi] >= 0 then
-      begin write(wi:1, ': '); wrthex(wthtbl[wi], 8, true); writeln end;
+      begin write(wi:1, ': '); wrthex(output, wthtbl[wi], 8, true); writeln end;
     writeln
   end else if cn = 'cw        ' then begin { clear watch table }
     if not chkend(dbc) then begin expr(i);
@@ -6265,28 +6299,28 @@ begin
     if not chkend(dbc) then begin expr(i); pc := i end
     else begin
       wrtnewline; writeln;
-      write('pc: '); wrthex(pc, 8, true); writeln;
+      write('pc: '); wrthex(output, pc, 8, true); writeln;
       writeln
     end  
   end else if cn = 'sp        ' then begin { set sp }
     if not chkend(dbc) then begin expr(i); sp := i end
     else begin
       wrtnewline; writeln;
-      write('sp: '); wrthex(sp, 8, true); writeln;
+      write('sp: '); wrthex(output, sp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'mp        ' then begin { set mp }
     if not chkend(dbc) then begin expr(i); mp := i end
     else begin
       wrtnewline; writeln;
-      write('mp: '); wrthex(mp, 8, true); writeln;
+      write('mp: '); wrthex(output, mp, 8, true); writeln;
       writeln
     end  
   end else if cn = 'np        ' then begin { set np }
     if not chkend(dbc) then begin expr(i); np := i end
     else begin
       wrtnewline; writeln;
-      write('np: '); wrthex(np, 8, true); writeln;
+      write('np: '); wrthex(output, np, 8, true); writeln;
       writeln
     end  
   end else if cn = 'ti        ' then 
@@ -6377,7 +6411,7 @@ begin
     writeln('Defined line to address entries:');
     writeln;
     for i := 1 to maxsrc do if lintrk[i] >= 0 then begin
-      write(i:4, ':'); wrthex(lintrk[i], 8, true); writeln
+      write(i:4, ':'); wrthex(output, lintrk[i], 8, true); writeln
     end;
     writeln
   end else if cn = 'dumpsymbo ' then begin
@@ -6394,7 +6428,8 @@ begin
         btfunc: write('function')
       end;
       write(' '); 
-      wrthex(bp^.bstart, 8, true); write(' '); wrthex(bp^.bend, 8, true);
+      wrthex(output, bp^.bstart, 8, true); write(' '); 
+      wrthex(output, bp^.bend, 8, true);
       writeln;
       writeln;
       syp := bp^.symbols;
@@ -6482,6 +6517,26 @@ begin
   end
 end; 
 
+procedure wrtdck;
+var ad,ad2: address; l, cs: integer;
+begin
+  ad := 0;
+  while ad < pctop do begin { output deck }
+    { output header }
+    l := pctop-ad; if l > 16 then l := 16;
+    write(prr, ':'); wrthex(prr, l, 2, true); wrthex(prr, ad, 16, true);
+    cs := 0; 
+    for ad2 := ad to ad+l-1 do begin
+      cs := (cs+store[ad2]) mod 256;
+      wrthex(prr, store[ad2], 2, true)
+    end;
+    wrthex(prr, cs, 2, true);
+    writeln(prr);
+    ad := ad+l
+  end;
+  writeln(prr, ':00000000000000000000')
+end;
+
 begin (* main *)
 
   { Suppress unreferenced errors. }
@@ -6527,6 +6582,7 @@ begin (* main *)
   dosrcprf := true;  { do source level profiling }
   dochkcov := false; { don't do code coverage }
   doanalys := false; { don't do analyze mode }
+  dodckout := false; { don't output code deck }
 
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
@@ -6569,6 +6625,9 @@ begin (* main *)
 
   writeln('Assembling/loading program');
   load; (* assembles and stores code *)
+  
+  { if we are to output a deck, write that and stop }
+  if dodckout then begin wrtdck; goto 1 end;
 
   { check and abort if source errors: this indicates a bad intermediate }
   if errsinprg > 0 then begin
@@ -6577,7 +6636,7 @@ begin (* main *)
     goto 1
   end;
     
-  pc := 0; sp := maxtop; np := gbtop; mp := maxtop; ep := 5; srclin := 1;
+  pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
   
   { set breakpoint at 0 to kick off debugger }
