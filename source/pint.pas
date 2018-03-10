@@ -231,6 +231,7 @@ const
 
       maxlabel = 5000;       { total possible labels in intermediate }
       maxcstfx = 10000;      { maximum constant fixup in intermediate }
+      maxgblfx = 10000;      { maximum global access fixup in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
       { locations of header files after program block mark, each header
@@ -1855,6 +1856,7 @@ procedure load;
                            st: labelst
                     end;
          cstfixrg  = 1..maxcstfx; { constant fixup range }
+         gblfixrg  = 1..maxgblfx; { globals fixup range }
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
@@ -1862,6 +1864,9 @@ procedure load;
         cstfixtab: array [cstfixrg] of address;
         cstfixi: 0..maxcstfx;
         ci: cstfixrg;
+        gblfixtab: array [gblfixrg] of address;
+        gblfixi: 0..maxgblfx;
+        gi: gblfixrg;
         pctops: address;
         ad, ad2, crf: address;
         cp: address;  (* pointer to next free constant position *)
@@ -2144,6 +2149,7 @@ procedure load;
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered end;
          cstfixi := 0; { set no constant fixups }
+         gblfixi := 0; { set no global fixups }
          { initalize file state }
          for i := 1 to maxfil do filstate[i] := fclosed;
 
@@ -2423,6 +2429,12 @@ procedure load;
         cstfixi := cstfixi+1; cstfixtab[cstfixi] := pc
       end; 
       
+      procedure putgblfix;
+      begin
+        if gblfixi = maxgblfx then errorl('Too many globals in pgm');
+        gblfixi := gblfixi+1; gblfixtab[gblfixi] := pc
+      end; 
+      
       procedure getname;
       var i: alfainx;
       begin
@@ -2486,17 +2498,19 @@ procedure load;
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
           142, 148, 154, 160, 166, 172,
 
-          (*lao,ixa,mov,dmp,swp*)
-          5,16,55,117,118,
+          (*ixa,mov,dmp,swp*)
+          16,55,117,118,
 
-          (*ldo,sro,ind,inc,dec,ckv*)
-          1, 194, 196, 198, 65, 66, 67, 68, 69,
-          3, 75, 76, 77, 78, 79,
-          9, 85, 86, 87, 88, 89,
+          (*ind,inc,dec,ckv*)
+          198, 9, 85, 86, 87, 88, 89,
           10, 90, 91, 92, 93, 94,
           57, 100, 101, 102, 103, 104,
           175, 176, 177, 178, 179, 180, 201, 202, 
           203: begin read(prd,q); storeop; storeq end;
+          
+          (*ldo,sro,lao*)
+          1, 194, 65, 66, 67, 68, 69,
+          3,196,75,76,77,78,79, 5: begin read(prd,q); storeop; putgblfix; storeq end;
 
           (*pck,upk,cta,ivt*)
           63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
@@ -2689,6 +2703,9 @@ begin (*load*)
     begin ad := cstfixtab[ci]; putadr(ad, getadr(ad)+crf) end;
   { clear globals area }
   for ad := pctop to gbtop-1 do putbyt(ad, 0);
+  { relocate global references }
+  if gblfixi >= 1 then for gi := 1 to gblfixi do 
+    begin ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
   if dodmplab then dmplabs { Debug: dump label definitions }
 end; (*load*)
 
@@ -3941,13 +3958,13 @@ begin
     108 (*lodb*): begin getp; getq; pshint(ord(getbol(base(p) + q))) end;
     109 (*lodc*): begin getp; getq; pshint(ord(getchr(base(p) + q))) end;
 
-    1   (*ldoi*): begin getq; pshint(getint(pctop+q)) end;
-    194 (*ldox*): begin getq; pshint(getbyt(pctop+q)) end;
-    65  (*ldoa*): begin getq; pshadr(getadr(pctop+q)) end;
-    66  (*ldor*): begin getq; pshrel(getrel(pctop+q)) end;
-    67  (*ldos*): begin getq; getset(pctop+q, s1); pshset(s1) end;
-    68  (*ldob*): begin getq; pshint(ord(getbol(pctop+q))) end;
-    69  (*ldoc*): begin getq; pshint(ord(getchr(pctop+q))) end;
+    1   (*ldoi*): begin getq; pshint(getint(q)) end;
+    194 (*ldox*): begin getq; pshint(getbyt(q)) end;
+    65  (*ldoa*): begin getq; pshadr(getadr(q)) end;
+    66  (*ldor*): begin getq; pshrel(getrel(q)) end;
+    67  (*ldos*): begin getq; getset(q, s1); pshset(s1) end;
+    68  (*ldob*): begin getq; pshint(ord(getbol(q))) end;
+    69  (*ldoc*): begin getq; pshint(ord(getchr(q))) end;
 
     2   (*stri*): begin getp; getq; stoad := base(p)+q; 
                         if iswatch(stoad) and stopwatch then 
@@ -3987,38 +4004,38 @@ begin
                           begin popint(i1); c1 := chr(i1); putchr(stoad, c1) end
                   end;
 
-    3   (*sroi*): begin getq; stoad := pctop+q;
+    3   (*sroi*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putint(stoad, i) end
                   end;
-    196 (*srox*): begin getq; stoad := pctop+q;
+    196 (*srox*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
-    75  (*sroa*): begin getq; stoad := pctop+q;
+    75  (*sroa*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
                   end;
-    76  (*sror*): begin getq; stoad := pctop+q;
+    76  (*sror*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else begin poprel(r1); putrel(stoad, r1) end
                   end;
-    77  (*sros*): begin getq; stoad := pctop+q;
+    77  (*sros*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else begin popset(s1); putset(stoad, s1) end
                   end;
-    78  (*srob*): begin getq; stoad := pctop+q;
+    78  (*srob*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else 
                           begin popint(i1); b1 := i1 <> 0; putbol(stoad, b1) end
                   end;
-    79  (*sroc*): begin getq; stoad := pctop+q;
+    79  (*sroc*): begin getq; stoad := q;
                         if iswatch(stoad) and stopwatch then 
                           begin watchmatch := true; pc := pcs end
                         else 
@@ -4026,7 +4043,7 @@ begin
                   end;
 
     4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
-    5 (*lao*): begin getq; pshadr(pctop+q) end;
+    5 (*lao*): begin getq; pshadr(q) end;
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
