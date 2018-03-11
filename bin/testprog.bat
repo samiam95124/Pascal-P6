@@ -2,6 +2,10 @@
 rem
 rem Test a single program run
 rem
+rem Execution:
+rem
+rem testprog <file> [mach]
+rem
 rem Tests the compile and run of a single program.
 rem
 rem To do this, there must be the files:
@@ -9,9 +13,10 @@ rem
 rem <file>.inp - Contains all input to the program
 rem <file>.cmp - Used to compare the <file>.lst program to, should
 rem              contain an older, fully checked version of <file>.lst.
-rem
 rem <file>.dif will contain the differences in output of the run.
 rem
+rem The "mach" parameter changes the run to a mach engine run. 
+rem 
 
 rem
 rem Check there is a parameter
@@ -49,14 +54,14 @@ rem
 rem Compile and run the program
 rem
 echo Compile and run %1
-call compile %1
+call compile %1 %2
 rem echo Error return after compile: %errorlevel%
 rem
 rem Proceed to run and compare only if compile suceeded
 rem
 if not errorlevel 1 (
 
-    call run %1
+    call run %1 %2
 
     rem
     rem Check output matches the compare file

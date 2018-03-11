@@ -5,13 +5,13 @@ rem
 rem Compile p4
 rem
 echo Compling pcom to intermediate code
-call compile p4\pcom
+call compile p4\pcom %1
 cat p4\pcom.err
 rem
 rem Copy the test file to the input file and compile it via interpreted p4
 rem
 cp p4\standardp.pas p4\pcom.inp
-call run p4\pcom
+call run p4\pcom %1
 cat p4\pcom.lst
 rem
 rem For neatness sake, copy out the intermediate to .p4 file
@@ -21,7 +21,7 @@ rem
 rem Compile pint
 rem
 echo Compiling pint to intermediate code
-call compile p4\pint
+call compile p4\pint %1
 rem
 rem Add the final target program to the end of pint.
 rem This means that the version of pint will read and interpret
@@ -42,7 +42,7 @@ rem
 rem Now run pint(p4) on pint(p5), which runs the test program.
 rem
 echo Running pint(p4) on pint(p5) to execute test program
-call run p4\pint
+call run p4\pint %1
 rem
 rem Copy the result listing back to standardp.lst, again for neatness
 rem

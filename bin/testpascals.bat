@@ -4,7 +4,7 @@ rem Script to test pascals
 rem
 rem Compile pascals
 rem
-call compile sample_programs\pascals
+call compile sample_programs\pascals %1
 rem
 rem Prepare a prd deck that has the pascals intermediate first, followed by the
 rem program to run.
@@ -16,7 +16,7 @@ rm sample_programs\tmp.pint
 rem
 rem Run that
 rem
-call run sample_programs\pascals
+call run sample_programs\pascals %1
 rem
 rem Compare to reference
 call diffnole sample_programs\pascals.lst sample_programs\pascals.cmp > sample_programs\pascals.dif

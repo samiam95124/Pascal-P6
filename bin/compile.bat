@@ -7,7 +7,7 @@ rem going to files.
 rem
 rem Execution:
 rem
-rem Compile <file>
+rem Compile <file> [mach]
 rem
 rem <file> is the filename without extention.
 rem
@@ -19,6 +19,9 @@ rem <file>.err - The errors output from the compiler
 rem
 rem Note that the l+ option must be specified to get a full
 rem listing in the .err file (or just a lack of l-).
+rem
+rem The "mach" parameter changes the compile to a mach interpreter compile.
+rem This just consists of adding the e+ (output object) parameter.
 rem
 
 if "%1"=="" (
@@ -35,7 +38,17 @@ if not exist "%1.pas" (
 
 )
 
-cp %1.pas prd
+if "%2"=="mach" (
+
+    echo {$e+} > temp
+    cat temp %1.pas > prd
+    rm temp
+    
+) else (
+
+    cp %1.pas prd
+    
+)
 pcom > %1.err
 rem
 rem The status of the compile is not returned, so convert a non-zero

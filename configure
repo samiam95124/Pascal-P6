@@ -191,8 +191,9 @@ then
    echo "Set up for $compiler"
    cp $compiler/p5.bat      bin/p5.bat
    cp $compiler/compile.bat bin/compile.bat
+   cp $compiler/compilem.bat bin/compilem.bat
    cp $compiler/run.bat     bin/run.bat
-
+   cp $compiler/runm.bat    bin/runm.bat
 
    cp $compiler/p5          bin/p5
    cp $compiler/compile     bin/compile
