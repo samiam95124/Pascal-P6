@@ -14,7 +14,7 @@ rem
 rem The files are:
 rem
 rem <file>.pas - The Pascal source file
-rem <file>.pint  - The intermediate file produced
+rem <file>.p6  - The intermediate file produced
 rem <file>.err - The errors output from the compiler
 rem
 rem Note that the l+ option must be specified to get a full
@@ -57,8 +57,8 @@ rem
 grep -q "Errors in program: 0" %1.err
 if errorlevel 1 exit /b 1
 rem
-rem Move the prr file to <file.pint>
+rem Move the prr file to <file.p6>
 rem
-if exist "%1.pint" del %1.pint
-mv prr %1.pint
-chmod +w %1.pint
+if exist "%1.p6" del %1.p6
+mv prr %1.p6
+chmod +w %1.p6

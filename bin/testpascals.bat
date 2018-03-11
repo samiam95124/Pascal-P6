@@ -9,10 +9,10 @@ rem
 rem Prepare a prd deck that has the pascals intermediate first, followed by the
 rem program to run.
 rem
-cat sample_programs\pascals.pint sample_programs\roman.pas > sample_programs\tmp.pint
-rm sample_programs\pascals.pint
-cp sample_programs\tmp.pint sample_programs\pascals.pint
-rm sample_programs\tmp.pint
+cat sample_programs\pascals.p6 sample_programs\roman.pas > sample_programs\tmp.p6
+rm sample_programs\pascals.p6
+cp sample_programs\tmp.p6 sample_programs\pascals.p6
+rm sample_programs\tmp.p6
 rem
 rem Run that
 rem

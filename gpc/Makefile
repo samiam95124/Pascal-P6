@@ -41,4 +41,6 @@ clean:
 	find . -name "*.norerr" -type f -delete
 	find . -name "*.p2" -type f -delete
 	find . -name "*.p4" -type f -delete
-	find . -name "*.mach" -type f -delete	
+	find . -name "*.p5" -type f -delete
+	find . -name "*.p6" -type f -delete
+	find . -name "*.p6o" -type f -delete	
