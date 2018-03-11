@@ -2157,11 +2157,6 @@ procedure load;
          cstfixi := 0; { set no constant fixups }
          gblfixi := 0; { set no global fixups }
          npadr := -1;
-         { initalize file state }
-         for i := 1 to maxfil do filstate[i] := fclosed;
-
-         { !!! remove this next statement for self compile }
-         {elide}reset(prd);{noelide}
 
          iline := 1; { set 1st line of intermediate }
          
@@ -2710,8 +2705,6 @@ begin (*load*)
   { relocate constants deck }
   if cstfixi >= 1 then for ci := 1 to cstfixi do 
     begin ad := cstfixtab[ci]; putadr(ad, getadr(ad)+crf) end;
-  { clear globals area }
-  for ad := pctop to gbtop-1 do putbyt(ad, 0);
   { relocate global references }
   if gblfixi >= 1 then for gi := 1 to gblfixi do 
     begin ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
@@ -4566,7 +4559,11 @@ begin
                   if (i1 >= getint(q)) and (i1 <= getint(q+intsize)) then
                     begin pc := q1; popint(i1) end
                 end;
-    20 (*lnp*): begin getq; np := q end;
+    20 (*lnp*): begin getq; np := q; gbtop := np; ad := pctop; 
+                  { clear global memory and set undefined }
+                  while np > ad do
+                    begin store[ad] := 0; putdef(ad, false); ad := ad+1 end
+                end;
                 
     19 (*brk*): begin breakins := true; pc := pcs end;
 
@@ -6595,6 +6592,9 @@ begin (* main *)
   for ai := 1 to maxana do anstbl[ai] := 0;
         
   { !!! remove this next statement for self compile }
+  {elide}reset(prd);{noelide}
+  
+  { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
 
   { construct bit equivalence table }
@@ -6616,6 +6616,9 @@ begin (* main *)
     writeln('*** Source program contains errors: ', errsinprg:1);
     goto 1
   end;
+
+  { initalize file state }
+  for i := 1 to maxfil do filstate[i] := fclosed;
     
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
