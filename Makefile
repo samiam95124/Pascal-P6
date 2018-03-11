@@ -6,13 +6,16 @@
 PC=gpc
 CFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 
-all: pcom pint
+all: pcom pint pmach
 
 pcom: source/pcom.pas
 	$(PC) $(CFLAGS) -o bin/pcom source/pcom.pas
 	
 pint: source/pint.pas
 	$(PC) $(CFLAGS) -o bin/pint source/pint.pas
+
+pmach: source/pmach.pas
+	$(PC) $(CFLAGS) -o bin/pmach source/pmach.pas
 	
 clean:
 	rm -f bin/pcom bin/pint 
