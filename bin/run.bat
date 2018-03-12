@@ -6,7 +6,7 @@ rem Runs a Pascal intermediate in batch mode.
 rem
 rem Execution:
 rem
-rem run <file> [mach]
+rem run <file> [mach|pint] [inp]
 rem
 rem <file> is the filename without extention.
 rem
@@ -21,6 +21,11 @@ rem
 rem The "mach" parameter changes the run to include the mach interpreter. To do
 rem this the mach compile must be used -- we can't insert the object option to 
 rem intermediate here. If mach is selected, the .p6o file is also created.
+rem
+rem The "inp" parameter gives a file to be concatenated with the run input file.
+rem This will be .p6 or .p6o depending on the run mode. When programs read their
+rem input from the prd file, this is required. Otherwise it is left blank. To 
+rem satisfy the mach parameter in this case, use "pint".
 rem
 
 if "%1"=="" (
@@ -48,13 +53,13 @@ if "%2"=="mach" (
 
     cp %1.p6 prd
     pint
-    cp prr %1.p6o
-    cp prr prd
+    cat prr %3 > %1.p6o
+    cp %1.p6o prd
     pmach < %1.inp > %1.lst 2>&1
     
 ) else (
 
-    cp %1.p6 prd
+    cat %1.p6 %3 > prd
     pint < %1.inp > %1.lst 2>&1
     
 )

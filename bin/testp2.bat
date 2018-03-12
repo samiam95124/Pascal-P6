@@ -27,14 +27,6 @@ rem Add the final target program to the end of pasint.
 rem This means that the version of pint will read and interpret
 rem this.
 rem
-rem For those of you having fun reading this, yes, the next statement accurately
-rem describes what is going on: we are concatenating and running two different
-rem intermediate codes together in completely different formats!
-rem
-cat p2\pasint.p6 p2\roman.p2 > tmp.p6
-rm p2\pasint.p6
-mv tmp.p6 p2\pasint.p6
-rem
 rem Create null input file
 rem
 echo.>p2\pasint.inp
@@ -42,7 +34,15 @@ rem
 rem Now run pasint on pint, which runs the test program.
 rem
 echo Running pasint on pint to execute test program
-call run p2\pasint %1
+if "%1"=="" (
+
+    call run p2\pasint int p2\roman.p2
+    
+) else (
+
+    call run p2\pasint %1 p2\roman.p2
+    
+)
 rem
 rem Copy the result listing back to roman.lst, again for neatness
 rem

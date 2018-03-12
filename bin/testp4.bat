@@ -27,14 +27,6 @@ rem Add the final target program to the end of pint.
 rem This means that the version of pint will read and interpret
 rem this.
 rem
-rem For those of you having fun reading this, yes, the next statement accurately
-rem describes what is going on: we are concatenating and running two different
-rem intermediate codes together in completely different formats!
-rem
-cat p4\pint.p6 p4\standardp.p4 > tmp.p6
-del p4\pint.p6
-cp tmp.p6 p4\pint.p6
-rem
 rem Create null input file
 rem
 echo.>p4\pint.inp
@@ -42,7 +34,15 @@ rem
 rem Now run pint(p4) on pint(p5), which runs the test program.
 rem
 echo Running pint(p4) on pint(p5) to execute test program
-call run p4\pint %1
+if "%1"=="" (
+
+    call run p4\pint int p4\standardp.p4
+    
+) else (
+
+    call run p4\pint %1 p4\standardp.p4
+    
+)
 rem
 rem Copy the result listing back to standardp.lst, again for neatness
 rem
