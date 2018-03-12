@@ -217,6 +217,7 @@ const
    varsqt     = 10;  { variable string quanta }
    prtlln     = 10;  { number of label characters to print in dumps }
    minocc     = 50;  { minimum occupancy for case tables }
+   cstoccmax=4000; cixmax=10000;
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -364,7 +365,7 @@ type                                                        (*describing:*)
                           drct: (vlevel: levrange; dplmt: addrrange);
                           indrct: (idplmt: addrrange);
            inxd: ());
-      expr: ()
+           expr: ()
               end;
 
                                                                  (*labels*)
@@ -395,7 +396,8 @@ type                                                        (*describing:*)
                   cslabs,cslabe: integer
                 end;
 
-      stdrng = 1..maxstd; { range of standard name entries }
+     stdrng = 1..maxstd; { range of standard name entries }
+     oprange = 0..maxins;
       
 (*-------------------------------------------------------------------------*)
 
@@ -544,6 +546,13 @@ var
     intlabel,mxint10,maxpow10: integer;
     errtbl: array [1..504] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
+    stackbot, topnew, topmin: integer;
+    cstptr: array [1..cstoccmax] of csp;
+    cstptrix: 0..cstoccmax;
+    (*allows referencing of noninteger constants by an index
+      (instead of a pointer), which can be stored in the p2-field
+      of the instruction record until writeout.
+      --> procedure load, procedure writeout*)
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -2168,6 +2177,10 @@ end;
     nxtlab := intlabel
   end (*genlabel*);
 
+  procedure putlabel(labname: integer);
+  begin if prcode then writeln(prr, 'l', labname:4)
+  end (*putlabel*);
+      
   procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
   var fllp: lbp; { found label entry }
   begin
@@ -2222,6 +2235,263 @@ end;
       llp := llp^.nextlab { next in list }
     end
   end;
+
+  procedure mesl(i: integer);
+  begin topnew := topnew + i;
+    if topnew < topmin then topmin := topnew;
+    if toterr = 0 then
+      if topnew > 0 then error(500) { stack should never go positive }
+  end;
+  
+  procedure mes(i: integer);
+  begin mesl(cdx[i]) end;
+  
+  procedure mest(i: integer; fsp: stp);
+  
+    function mestn(fsp: stp): integer;
+    var ss: integer;
+    begin ss := 1;
+      if fsp<>nil then
+        with fsp^ do
+          case form of
+           scalar: if fsp=intptr then ss := 1
+                   else
+                     if fsp=boolptr then ss := 3
+                     else
+                       if fsp=charptr then ss := 4
+                       else
+                         if scalkind = declared then ss := 1
+                         else ss := 2;
+           subrange: ss := mestn(rangetype);
+           pointer,
+           files,
+           except:   ss := 5;
+           power:    ss := 6;
+           records,arrays: ss := 7;
+           tagfld,variant: error(501)
+          end;
+      mestn := ss
+    end;
+  
+  begin (*mest*)
+    if (cdx[i] < 1) or (cdx[i] > 6) then error(502);
+    mesl(cdxs[cdx[i]][mestn(fsp)]);
+  end (*mest*);
+
+  procedure putic;
+  begin if ic mod 10 = 0 then writeln(prr,'i',ic:5) end;
+
+  procedure gen0(fop: oprange);
+  begin
+    if prcode then begin putic; writeln(prr,mn[fop]:4) end;
+    ic := ic + 1; mes(fop)
+  end (*gen0*) ;
+
+  procedure gen1(fop: oprange; fp2: integer);
+    var k, j: integer; p: strvsp;
+  begin
+    if prcode then
+      begin putic; write(prr,mn[fop]:4);
+        if fop = 30 then
+          begin writeln(prr,sna[fp2]:12);
+            mesl(pdx[fp2]);
+          end
+        else
+          begin
+            if fop = 38 then
+               begin with cstptr[fp2]^ do begin p := sval; j := 1;
+                   write(prr,' ',slgth:4,' ''');
+                   for k := 1 to lenpv(p) do begin
+                     if p^.str[j] = '''' then write(prr, '''''')
+                     else write(prr,p^.str[j]:1);
+                     j := j+1; if j > varsqt then begin
+                       p := p^.next; j := 1
+                     end
+                   end
+                 end;
+                 writeln(prr,'''')
+               end
+            else if fop = 42 then writeln(prr,chr(fp2))
+            else if fop = 67 then writeln(prr,fp2:4)
+            else writeln(prr,fp2:12);
+            if fop = 42 then mes(0)
+            else mes(fop)
+          end
+      end;
+    ic := ic + 1
+  end (*gen1*) ;
+
+  procedure gen2(fop: oprange; fp1,fp2: integer);
+    var k : integer;
+  begin
+    if prcode then
+      begin putic; write(prr,mn[fop]:4);
+        case fop of
+          45,50,54,56,74,62,63,81,82: 
+            begin
+              writeln(prr,' ',fp1:3,fp2:8);
+              mes(fop)
+            end;
+          47,48,49,52,53,55:
+            begin write(prr,chr(fp1));
+              if chr(fp1) = 'm' then write(prr,' ',fp2:11);
+              writeln(prr);
+              case chr(fp1) of
+                'i': mesl(cdxs[cdx[fop]][1]);
+                'r': mesl(cdxs[cdx[fop]][2]);
+                'b': mesl(cdxs[cdx[fop]][3]);
+                'c': mesl(cdxs[cdx[fop]][4]);
+                'a': mesl(cdxs[cdx[fop]][5]);
+                's': mesl(cdxs[cdx[fop]][6]);
+                'm': mesl(cdxs[cdx[fop]][7])
+              end
+            end;
+          51:
+            begin
+              case fp1 of
+                1: begin writeln(prr,'i ',fp2:1);
+                     mesl(cdxs[cdx[fop]][1]) 
+                   end;
+                2: begin write(prr,'r ');
+                     with cstptr[fp2]^ do write(prr,rval:23);
+                     writeln(prr);
+                     mesl(cdxs[cdx[fop]][2]);
+                   end;
+                3: begin writeln(prr,'b ',fp2:1);
+                     mesl(cdxs[cdx[fop]][3]) 
+                   end;
+                4: begin writeln(prr,'n');
+                     mesl(-ptrsize)
+                   end;
+                6: begin
+                if chartp[chr(fp2)] = illegal then
+                     { output illegal characters as numbers }
+                     writeln(prr,'c  ':3,fp2:1)
+                   else 
+                     writeln(prr,'c ''':3,chr(fp2),'''');
+                     mesl(cdxs[cdx[fop]][4])
+                   end;
+                5: begin write(prr,'s(');
+                     with cstptr[fp2]^ do
+                       for k := setlow to sethigh do
+                         if k in pval then write(prr,k:4);
+                     writeln(prr,')');
+                     mesl(cdxs[cdx[fop]][6])
+                   end
+              end
+            end
+        end
+      end;
+    ic := ic + 1
+  end (*gen2*) ;
+
+  procedure gentypindicator(fsp: stp);
+  begin
+    if fsp<>nil then
+      with fsp^ do
+        case form of
+         scalar: if fsp=intptr then write(prr,'i')
+                 else
+                   if fsp=boolptr then write(prr,'b')
+                   else
+                     if fsp=charptr then write(prr,'c')
+                     else
+                       if scalkind = declared then begin
+                         if fsp^.size = 1 then write(prr, 'x')
+                         else write(prr,'i')
+                       end else write(prr,'r');
+         subrange: if fsp^.size = 1 then write(prr, 'x')
+                   else gentypindicator(rangetype);
+         pointer,
+         files,
+         except:   write(prr,'a');
+         power:    write(prr,'s');
+         records,arrays: write(prr,'m');
+         tagfld,variant: error(503)
+        end
+  end (*typindicator*);
+
+  procedure gen0t(fop: oprange; fsp: stp);
+  begin
+    if prcode then
+      begin putic;
+        write(prr,mn[fop]:4);
+        gentypindicator(fsp);
+        writeln(prr);
+      end;
+    ic := ic + 1; mest(fop, fsp)
+  end (*gen0t*);
+
+  procedure gen1t(fop: oprange; fp2: integer; fsp: stp);
+  begin
+    if prcode then
+      begin putic;
+        write(prr,mn[fop]:4);
+        gentypindicator(fsp);
+        writeln(prr,' ',fp2:11)
+      end;
+    ic := ic + 1; mest(fop, fsp)
+  end (*gen1t*);
+
+  procedure gen2t(fop: oprange; fp1,fp2: integer; fsp: stp);
+  begin
+    if prcode then
+      begin putic;
+        write(prr,mn[fop]: 4);
+        gentypindicator(fsp);
+        writeln(prr,' ', fp1:3+5*ord(abs(fp1)>99),fp2:11);
+      end;
+    ic := ic + 1; mest(fop, fsp)
+  end (*gen2t*);
+
+  procedure genujpxjp(fop: oprange; fp2: integer);
+  begin
+   if prcode then
+      begin putic; writeln(prr,mn[fop]:4, ' l':8,fp2:4) end;
+    ic := ic + 1; mes(fop)
+  end (*genujpxjp*);
+  
+  procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
+  begin
+   if prcode then
+      begin putic; 
+        writeln(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
+                    ' l':8,fp3:4) 
+      end;
+    ic := ic + 1; mes(fop)
+  end (*genujpxjp*);
+
+  procedure genipj(fop: oprange; fp1, fp2: integer);
+  begin
+   if prcode then
+      begin putic; writeln(prr,mn[fop]:4,fp1:4,' l':8,fp2:4) end;
+    ic := ic + 1; mes(fop)
+  end (*genujpxjp*);
+
+  procedure gencupent(fop: oprange; fp1,fp2: integer);
+  begin
+    if prcode then
+      begin putic;
+        if fop = 32 then begin { create ents or ente instructions }
+          if fp1 = 1 then writeln(prr,mn[fop]:4,'s','l':8,fp2:4)
+          else writeln(prr,mn[fop]:4,'e','l':8,fp2:4);
+          mes(fop)
+        end else begin
+          writeln(prr,mn[fop]:4,fp1:4,'l':4,fp2:4);
+          mesl(fp1)
+        end
+      end;
+    ic := ic + 1
+  end;
+
+  procedure genlpa(fp1,fp2: integer);
+  begin
+    if prcode then
+      begin putic;
+        writeln(prr,mn[68]:4,fp2:4,'l':4,fp1:4)
+      end;
+    ic := ic + 1; mes(68)
+  end (*genlpa*);
 
   procedure block(fsys: setofsys; fsy: symbol; fprocp: ctp);
     var lsy: symbol;
@@ -3596,17 +3866,8 @@ end;
     end (*procdeclaration*) ;
 
     procedure body(fsys: setofsys);
-      const cstoccmax=4000; cixmax=10000;
-      type oprange = 0..maxins;
       var
-          cstptr: array [1..cstoccmax] of csp;
-          cstptrix: 0..cstoccmax;
-          (*allows referencing of noninteger constants by an index
-           (instead of a pointer), which can be stored in the p2-field
-           of the instruction record until writeout.
-           --> procedure load, procedure writeout*)
           entname, segsize, gblsize: integer;
-          stackbot, topnew, topmin: integer;
           lcmin: stkoff;
           llc1: stkoff; lcp: ctp;
           llp: lbp;
@@ -3616,7 +3877,6 @@ end;
           lattr: attr;
           fid: stp;
           lsize: addrrange;
-          
 
       { add statement level }
       procedure addlvl;
@@ -3640,214 +3900,25 @@ end;
          end
       end;
 
-      procedure mesl(i: integer);
-      begin topnew := topnew + i;
-        if topnew < topmin then topmin := topnew;
-        if toterr = 0 then
-          if topnew > 0 then error(500) { stack should never go positive }
-      end;
-      
-      procedure mes(i: integer);
-      begin mesl(cdx[i]) end;
-      
-      procedure mest(i: integer; fsp: stp);
-      
-        function mestn(fsp: stp): integer;
-        var ss: integer;
-        begin ss := 1;
-          if fsp<>nil then
-            with fsp^ do
-              case form of
-               scalar: if fsp=intptr then ss := 1
-                       else
-                         if fsp=boolptr then ss := 3
-                         else
-                           if fsp=charptr then ss := 4
-                           else
-                             if scalkind = declared then ss := 1
-                             else ss := 2;
-               subrange: ss := mestn(rangetype);
-               pointer,
-               files,
-               except:   ss := 5;
-               power:    ss := 6;
-               records,arrays: ss := 7;
-               tagfld,variant: error(501)
-              end;
-          mestn := ss
-        end;
-      
-      begin (*mest*)
-        if (cdx[i] < 1) or (cdx[i] > 6) then error(502);
-        mesl(cdxs[cdx[i]][mestn(fsp)]);
-      end (*mest*);
-
-      procedure putic;
-      begin if ic mod 10 = 0 then writeln(prr,'i',ic:5) end;
-
-      procedure gen0(fop: oprange);
+      procedure checkbnds(fsp: stp);
+        var lmin,lmax: integer;
+            fsp2: stp;
       begin
-        if prcode then begin putic; writeln(prr,mn[fop]:4) end;
-        ic := ic + 1; mes(fop)
-      end (*gen0*) ;
-
-      procedure gen1(fop: oprange; fp2: integer);
-        var k, j: integer; p: strvsp;
-      begin
-        if prcode then
-          begin putic; write(prr,mn[fop]:4);
-            if fop = 30 then
-              begin writeln(prr,sna[fp2]:12);
-                mesl(pdx[fp2]);
-              end
-            else
-              begin
-                if fop = 38 then
-                   begin with cstptr[fp2]^ do begin p := sval; j := 1;
-                       write(prr,' ',slgth:4,' ''');
-                       for k := 1 to lenpv(p) do begin
-                         if p^.str[j] = '''' then write(prr, '''''')
-                         else write(prr,p^.str[j]:1);
-                         j := j+1; if j > varsqt then begin
-                           p := p^.next; j := 1
-                         end
-                       end
-                     end;
-                     writeln(prr,'''')
-                   end
-                else if fop = 42 then writeln(prr,chr(fp2))
-                else if fop = 67 then writeln(prr,fp2:4)
-                else writeln(prr,fp2:12);
-                if fop = 42 then mes(0)
-                else mes(fop)
-              end
-          end;
-        ic := ic + 1
-      end (*gen1*) ;
-
-      procedure gen2(fop: oprange; fp1,fp2: integer);
-        var k : integer;
-      begin
-        if prcode then
-          begin putic; write(prr,mn[fop]:4);
-            case fop of
-              45,50,54,56,74,62,63,81,82: 
-                begin
-                  writeln(prr,' ',fp1:3,fp2:8);
-                  mes(fop)
-                end;
-              47,48,49,52,53,55:
-                begin write(prr,chr(fp1));
-                  if chr(fp1) = 'm' then write(prr,' ',fp2:11);
-                  writeln(prr);
-                  case chr(fp1) of
-                    'i': mesl(cdxs[cdx[fop]][1]);
-                    'r': mesl(cdxs[cdx[fop]][2]);
-                    'b': mesl(cdxs[cdx[fop]][3]);
-                    'c': mesl(cdxs[cdx[fop]][4]);
-                    'a': mesl(cdxs[cdx[fop]][5]);
-                    's': mesl(cdxs[cdx[fop]][6]);
-                    'm': mesl(cdxs[cdx[fop]][7])
+        if fsp <> nil then begin
+          { if set use the base type for the check }
+          fsp2 := fsp;
+          if fsp^.form = power then fsp := fsp^.elset;
+          if fsp <> nil then
+            if fsp <> intptr then
+              if fsp <> realptr then
+                if fsp^.form <= subrange then
+                  begin
+                    getbounds(fsp,lmin,lmax);
+                    gen2t(45(*chk*),lmin,lmax,fsp2)
                   end
-                end;
-              51:
-                begin
-                  case fp1 of
-                    1: begin writeln(prr,'i ',fp2:1);
-                         mesl(cdxs[cdx[fop]][1]) 
-                       end;
-                    2: begin write(prr,'r ');
-                         with cstptr[fp2]^ do write(prr,rval:23);
-                         writeln(prr);
-                         mesl(cdxs[cdx[fop]][2]);
-                       end;
-                    3: begin writeln(prr,'b ',fp2:1);
-                         mesl(cdxs[cdx[fop]][3]) 
-                       end;
-                    4: begin writeln(prr,'n');
-                         mesl(-ptrsize)
-                       end;
-                    6: begin
-                    if chartp[chr(fp2)] = illegal then
-                         { output illegal characters as numbers }
-                         writeln(prr,'c  ':3,fp2:1)
-                       else 
-                         writeln(prr,'c ''':3,chr(fp2),'''');
-                         mesl(cdxs[cdx[fop]][4])
-                       end;
-                    5: begin write(prr,'s(');
-                         with cstptr[fp2]^ do
-                           for k := setlow to sethigh do
-                             if k in pval then write(prr,k:4);
-                         writeln(prr,')');
-                         mesl(cdxs[cdx[fop]][6])
-                       end
-                  end
-                end
-            end
-          end;
-        ic := ic + 1
-      end (*gen2*) ;
-
-      procedure gentypindicator(fsp: stp);
-      begin
-        if fsp<>nil then
-          with fsp^ do
-            case form of
-             scalar: if fsp=intptr then write(prr,'i')
-                     else
-                       if fsp=boolptr then write(prr,'b')
-                       else
-                         if fsp=charptr then write(prr,'c')
-                         else
-                           if scalkind = declared then begin
-                             if fsp^.size = 1 then write(prr, 'x')
-                             else write(prr,'i')
-                           end else write(prr,'r');
-             subrange: if fsp^.size = 1 then write(prr, 'x')
-                       else gentypindicator(rangetype);
-             pointer,
-             files,
-             except:   write(prr,'a');
-             power:    write(prr,'s');
-             records,arrays: write(prr,'m');
-             tagfld,variant: error(503)
-            end
-      end (*typindicator*);
-
-      procedure gen0t(fop: oprange; fsp: stp);
-      begin
-        if prcode then
-          begin putic;
-            write(prr,mn[fop]:4);
-            gentypindicator(fsp);
-            writeln(prr);
-          end;
-        ic := ic + 1; mest(fop, fsp)
-      end (*gen0t*);
-
-      procedure gen1t(fop: oprange; fp2: integer; fsp: stp);
-      begin
-        if prcode then
-          begin putic;
-            write(prr,mn[fop]:4);
-            gentypindicator(fsp);
-            writeln(prr,' ',fp2:11)
-          end;
-        ic := ic + 1; mest(fop, fsp)
-      end (*gen1t*);
-
-      procedure gen2t(fop: oprange; fp1,fp2: integer; fsp: stp);
-      begin
-        if prcode then
-          begin putic;
-            write(prr,mn[fop]: 4);
-            gentypindicator(fsp);
-            writeln(prr,' ', fp1:3+5*ord(abs(fp1)>99),fp2:11);
-          end;
-        ic := ic + 1; mest(fop, fsp)
-      end (*gen2t*);
-
+        end
+      end (*checkbnds*);
+      
       procedure load;
       var fsp: stp;
       begin
@@ -3888,6 +3959,14 @@ end;
             end
       end (*load*) ;
 
+      procedure genfjp(faddr: integer);
+      begin load;
+        if gattr.typtr <> nil then
+          if gattr.typtr <> boolptr then error(144);
+        if prcode then begin putic; writeln(prr,mn[33]:4,' l':8,faddr:4) end;
+        ic := ic + 1; mes(33)
+      end (*genfjp*) ;
+
       procedure store(var fattr: attr);
       begin
         with fattr do
@@ -3927,86 +4006,6 @@ end;
               kind := varbl; access := indrct; idplmt := 0; packing := false
             end
       end (*loadaddress*) ;
-
-      procedure genfjp(faddr: integer);
-      begin load;
-        if gattr.typtr <> nil then
-          if gattr.typtr <> boolptr then error(144);
-        if prcode then begin putic; writeln(prr,mn[33]:4,' l':8,faddr:4) end;
-        ic := ic + 1; mes(33)
-      end (*genfjp*) ;
-
-      procedure genujpxjp(fop: oprange; fp2: integer);
-      begin
-       if prcode then
-          begin putic; writeln(prr,mn[fop]:4, ' l':8,fp2:4) end;
-        ic := ic + 1; mes(fop)
-      end (*genujpxjp*);
-      
-      procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
-      begin
-       if prcode then
-          begin putic; 
-            writeln(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
-                        ' l':8,fp3:4) 
-          end;
-        ic := ic + 1; mes(fop)
-      end (*genujpxjp*);
-
-      procedure genipj(fop: oprange; fp1, fp2: integer);
-      begin
-       if prcode then
-          begin putic; writeln(prr,mn[fop]:4,fp1:4,' l':8,fp2:4) end;
-        ic := ic + 1; mes(fop)
-      end (*genujpxjp*);
-
-      procedure gencupent(fop: oprange; fp1,fp2: integer);
-      begin
-        if prcode then
-          begin putic;
-            if fop = 32 then begin { create ents or ente instructions }
-              if fp1 = 1 then writeln(prr,mn[fop]:4,'s','l':8,fp2:4)
-              else writeln(prr,mn[fop]:4,'e','l':8,fp2:4);
-              mes(fop)
-            end else begin
-              writeln(prr,mn[fop]:4,fp1:4,'l':4,fp2:4);
-              mesl(fp1)
-            end
-          end;
-        ic := ic + 1
-      end;
-
-      procedure genlpa(fp1,fp2: integer);
-      begin
-        if prcode then
-          begin putic;
-            writeln(prr,mn[68]:4,fp2:4,'l':4,fp1:4)
-          end;
-        ic := ic + 1; mes(68)
-      end (*genlpa*);
-
-      procedure checkbnds(fsp: stp);
-        var lmin,lmax: integer;
-            fsp2: stp;
-      begin
-        if fsp <> nil then begin
-          { if set use the base type for the check }
-          fsp2 := fsp;
-          if fsp^.form = power then fsp := fsp^.elset;
-          if fsp <> nil then
-            if fsp <> intptr then
-              if fsp <> realptr then
-                if fsp^.form <= subrange then
-                  begin
-                    getbounds(fsp,lmin,lmax);
-                    gen2t(45(*chk*),lmin,lmax,fsp2)
-                  end
-        end
-      end (*checkbnds*);
-
-      procedure putlabel(labname: integer);
-      begin if prcode then writeln(prr, 'l', labname:4)
-      end (*putlabel*);
 
       procedure statement(fsys: setofsys);
         var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean; 
@@ -6476,6 +6475,7 @@ end;
   procedure programme(fsys:setofsys);
     var extfp:extfilep;
   begin
+    cstptrix := 0; topnew := 0; topmin := 0;
     chkudtf := chkudtc; { finalize undefined tag checking flag }
     if sy = progsy then
       begin insymbol; 
