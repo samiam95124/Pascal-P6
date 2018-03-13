@@ -180,14 +180,6 @@ const
         In the new unified code/data space scheme, 0 and 1 are always invalid
         addresses, since the startup code is at least that long. }
       nilval      =        1;  { value of 'nil' }
-      { beginning of code, offset by program preamble:
-
-        2:    mst
-        6/10: cup
-        1:    stp
-
-      }
-      begincode   =        14   {13};
 
       { Mark element offsets
 
@@ -1872,7 +1864,6 @@ procedure load;
         gblfixtab: array [gblfixrg] of address;
         gblfixi: 0..maxgblfx;
         gi: gblfixrg;
-        pctops: address;
         ad, ad2, crf: address;
         cp: address;  (* pointer to next free constant position *)
         npadr: address;
@@ -2147,7 +2138,6 @@ procedure load;
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
          
-         pc := begincode;
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
          cp := maxtop; { set constants pointer to top of storage }
@@ -2684,22 +2674,17 @@ procedure load;
 
 begin (*load*)
   init;
-  { first pass }
+  pc := 0;
   generate;
   if not gbset then errorl('global space not set     ');
   pctop := pc; { save top of code store }
   lsttop := pctop; { save as top of listing }
-  pctops := pctop; { save fractional address }
   alignuc(gbsal, pctop); { align end of code block }
-  pc := 0;
-  { second pass }
-  generate;
   { relocate constants }
   ad2 := pctop; crf := pctop-cp; cststr := ad2;
   for ad := cp to maxstr do 
     begin store[ad2] := store[ad]; putdef(ad2, getdef(ad)); ad2 := ad2+1 end;
   pctop := ad2; { move globals to the top of that }
-  alignuc(gbsal, pctop);
   gbtop := pctop+gbsiz;
   alignu(gbsal, gbtop);
   { relocate constants deck }

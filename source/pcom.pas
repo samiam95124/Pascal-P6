@@ -152,15 +152,6 @@ const
         addresses, since the startup code is at least that long. }
       nilval      =        1;  { value of 'nil' }
 
-      { beginning of code, offset by program preamble:
-
-        2:    mst
-        6/10: cup
-        1:    stp
-
-      }
-      begincode   =        14   {13};
-
       { Mark element offsets
 
         Mark format is:
@@ -544,6 +535,7 @@ var
     ordint: array [char] of integer;
 
     intlabel,mxint10,maxpow10: integer;
+    entname: integer;
     errtbl: array [1..504] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
@@ -3867,7 +3859,7 @@ end;
 
     procedure body(fsys: setofsys);
       var
-          entname, segsize, gblsize: integer;
+          segsize, gblsize: integer;
           lcmin: stkoff;
           llc1: stkoff; lcp: ctp;
           llp: lbp;
@@ -6352,10 +6344,11 @@ end;
       end;
           
     begin (*body*)
-      if fprocp <> nil then entname := fprocp^.pfname
-      else genlabel(entname);
       cstptrix := 0; topnew := 0; topmin := 0;
-      putlabel(entname); genlabel(segsize); genlabel(stackbot); 
+      { if processing procedure/function, use that entry label, otherwise set 
+        at program }
+      if fprocp <> nil then putlabel(fprocp^.pfname) else putlabel(entname);
+      genlabel(segsize); genlabel(stackbot); 
       genlabel(gblsize);
       gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
       if fprocp <> nil then (*copy multiple values into local cells*)
@@ -6432,12 +6425,8 @@ end;
               writeln(prr,'l',segsize:4,'=',lcmin:1);
               writeln(prr,'l',stackbot:4,'=',topmin:1);
               writeln(prr,'g ',gc:1);
-              writeln(prr,'q')
             end;
           ic := 0;
-          (*generate call of main program; note that this call must be loaded
-            at absolute address zero*)
-          gen0(88(*lnp*)); gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
           if prtables then
             begin writeln(output); printtables(true)
             end
@@ -6475,7 +6464,9 @@ end;
   procedure programme(fsys:setofsys);
     var extfp:extfilep;
   begin
-    cstptrix := 0; topnew := 0; topmin := 0;
+    cstptrix := 0; topnew := 0; topmin := 0; genlabel(entname);
+    { load heap ptr, mark stack, generate call of main program, then stop after return }
+    gen0(88(*lnp*)); gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
     chkudtf := chkudtc; { finalize undefined tag checking flag }
     if sy = progsy then
       begin insymbol; 
@@ -7292,7 +7283,6 @@ begin
   
   { Suppress unreferenced errors. These are all MPB (machine parameter
     block) equations that need to stay the same between front end and backend. }
-  if begincode = 0 then;
   if heapal = 0 then;    
   if inthex = 0 then;    
   if market = 0 then;    
