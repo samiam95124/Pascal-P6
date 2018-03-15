@@ -198,7 +198,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;  { number of standard procedures/functions }
-   maxins     = 88;  { maximum number of instructions }
+   maxins     = 90;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
@@ -389,6 +389,7 @@ type                                                        (*describing:*)
 
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
+     modtyp = (mtprogram, mtmodule); { type of current module }
       
 (*-------------------------------------------------------------------------*)
 
@@ -535,7 +536,7 @@ var
     ordint: array [char] of integer;
 
     intlabel,mxint10,maxpow10: integer;
-    entname: integer;
+    entname,extname,nxtname: integer;
     errtbl: array [1..504] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
@@ -545,6 +546,7 @@ var
       (instead of a pointer), which can be stored in the p2-field
       of the instruction record until writeout.
       --> procedure load, procedure writeout*)
+    curmod: modtyp;
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -2451,14 +2453,14 @@ end;
                     ' l':8,fp3:4) 
       end;
     ic := ic + 1; mes(fop)
-  end (*genujpxjp*);
+  end (*gencjp*);
 
   procedure genipj(fop: oprange; fp1, fp2: integer);
   begin
    if prcode then
       begin putic; writeln(prr,mn[fop]:4,fp1:4,' l':8,fp2:4) end;
     ic := ic + 1; mes(fop)
-  end (*genujpxjp*);
+  end (*genipj*);
 
   procedure gencupent(fop: oprange; fp1,fp2: integer);
   begin
@@ -6446,7 +6448,6 @@ end;
         alignd(parmptr,lcmin);
         if prcode then
         begin
-            writeln(prr, 'e p'); { mark program block end } 
             writeln(prr,'l',segsize:4,'=',lcmin:1);
             writeln(prr,'l',stackbot:4,'=',topmin:1);
             writeln(prr,'g ',gc:1);
@@ -6458,18 +6459,34 @@ end;
       end;
   end (*body*) ;
 
-  procedure programme(fsys:setofsys);
-    var extfp:extfilep;
+  procedure module(fsys:setofsys);
+    var extfp:extfilep; curmod: modtyp; segsize: integer;
   begin
-    cstptrix := 0; topnew := 0; topmin := 0; genlabel(entname);
-    { load heap ptr, mark stack, generate call of main program, then stop after return }
-    gen0(88(*lnp*)); gen1(41(*mst*),0); gencupent(46(*cup*),0,entname); gen0(29(*stp*));
+    cstptrix := 0; topnew := 0; topmin := 0; genlabel(entname); 
+    genlabel(extname); genlabel(nxtname);
     chkudtf := chkudtc; { finalize undefined tag checking flag }
-    if sy = progsy then
+    { set type of module parsing }
+    curmod := mtprogram;
+    if sy = modulesy then curmod := mtmodule;
+    if (sy = progsy) or (sy = modulesy) then
       begin insymbol; 
         if sy <> ident then error(2) else begin
-          if prcode then writeln(prr, 'b p ', id:kk); { mark program block start } 
+          if prcode then begin
+            if curmod = mtmodule then 
+              writeln(prr, 'b m ', id:kk) { mark module block start }
+            else
+              writeln(prr, 'b p ', id:kk) { mark program block start }
+          end; 
           insymbol;
+          { mark stack, generate call to startup block }
+          gen1(41(*mst*),0); gencupent(46(*cup*),0,entname);
+          if curmod = mtmodule then begin
+            { for module we need call next in module stack, then call exit
+              module }
+            genujpxjp(89(*cal*),nxtname); 
+            gen1(41(*mst*),0); gencupent(46(*cup*),0,extname)
+          end;
+          gen0(90(*ret*)) { return last module stack }
         end;
         if not (sy in [lparent,semicolon]) then error(14);
         if sy = lparent  then
@@ -6501,15 +6518,35 @@ end;
       end else error(3);
     declare(fsys,period,nil);
     body(fsys,nil);
+    if curmod = mtmodule then begin
+      if sy = semicolon then begin
+        insymbol;
+        if sy <> beginsy then error(17)
+      end;
+      if sy = beginsy then begin
+        { gen exit block }
+        entname := extname; body(fsys, nil);
+      end else begin { generate dummy terminator block }
+        genlabel(segsize); genlabel(stackbot); putlabel(extname);
+        gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
+        gen1(42(*ret*),ord('p'));
+        writeln(prr,'l',segsize:4,'=',0:1);
+        writeln(prr,'l',stackbot:4,'=',0:1);
+        writeln(prr,'g ',gc:1);
+      end;
+      writeln(prr, 'e m'); { mark module block end }
+      putlabel(nxtname) { set skip module stack }
+    end else writeln(prr, 'e p'); { mark program block end }
     if sy <> period then begin error(21); skip([period]) end;
     if prcode then begin
       writeln(prr, 'f ', toterr:1);
-      writeln(prr,'q')
+      { only terminate intermediate if we are a cap cell (program) }
+      if curmod = mtprogram then writeln(prr,'q')
     end;
     if list then writeln;
     if errinx <> 0 then
       begin list := false; endofline end;
-  end (*programme*) ;
+  end (*module*) ;
 
   procedure stdnames;
   begin
@@ -7056,6 +7093,7 @@ end;
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
       mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
+      mn[89] :=' cal'; mn[90] :=' ret';
 
     end (*instrmnemonics*) ;
 
@@ -7172,7 +7210,8 @@ end;
       cdx[82] :=  0;                   cdx[83] := +intsize;
       cdx[84] := -adrsize;             cdx[85] := +adrsize;
       cdx[86] := 0;                    cdx[87] := 0;
-      cdx[88] := 0;
+      cdx[88] := 0;                    cdx[89] := 0;
+      cdx[90] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
@@ -7338,7 +7377,7 @@ begin
   writeln(prr);
 
   insymbol;
-  programme(blockbegsys+statbegsys-[casesy]);
+  module(blockbegsys+statbegsys-[casesy]);
   outline;
 
   { dispose of levels 0 and 1 }

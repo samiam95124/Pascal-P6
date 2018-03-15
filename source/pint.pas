@@ -432,7 +432,8 @@ type
                        incnxt:  pblock; { included blocks list }
                        name:    strvsp; { name of block }
                        symbols: psymbol; { symbol list for block }
-                       btyp:    (btprog, btproc, btfunc); { block type }
+                       { block type }
+                       btyp:    (btprog, btmod, btproc, btfunc); 
                        bstart:  address; { block start address }
                        bend:    address; { block end address }
                      end;
@@ -1905,9 +1906,9 @@ procedure load;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
          instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;
          instr[ 19]:='brk       '; insp[ 19] := false; insq[ 19] := 0;
-         instr[ 20]:='lnp       '; insp[ 20] := false; insq[ 20] := intsize;
-         instr[ 21]:='---       '; insp[ 21] := false; insq[ 21] := 0;
-         instr[ 22]:='---       '; insp[ 22] := false; insq[ 22] := 0;
+         instr[ 20]:='lnp*      '; insp[ 20] := false; insq[ 20] := intsize;
+         instr[ 21]:='cal       '; insp[ 21] := false; insq[ 21] := intsize;
+         instr[ 22]:='ret       '; insp[ 22] := false; insq[ 22] := 0;
          instr[ 23]:='ujp       '; insp[ 23] := false; insq[ 23] := intsize;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
@@ -1943,7 +1944,7 @@ procedure load;
          instr[ 55]:='mov       '; insp[ 55] := false; insq[ 55] := intsize;
          instr[ 56]:='lca       '; insp[ 56] := false; insq[ 56] := intsize;
          instr[ 57]:='deci      '; insp[ 57] := false; insq[ 57] := intsize;
-         instr[ 58]:='stp       '; insp[ 58] := false; insq[ 58] := 0;
+         instr[ 58]:='stp*      '; insp[ 58] := false; insq[ 58] := 0;
          instr[ 59]:='ordi      '; insp[ 59] := false; insq[ 59] := 0;
          instr[ 60]:='chr       '; insp[ 60] := false; insq[ 60] := 0;
          instr[ 61]:='ujc       '; insp[ 61] := false; insq[ 61] := intsize;
@@ -2315,7 +2316,7 @@ procedure load;
                        'g': begin read(prd,gbsiz); gbset := true; getlin end;
                        'b': begin 
                               getnxt; skpspc;
-                              if not (ch in ['p', 'r', 'f']) then
+                              if not (ch in ['p', 'm', 'r', 'f']) then
                                 errorl('Block type is invalid    ');
                               ch1 := ch; { save block type }
                               getnxt; skpspc; getlab;
@@ -2324,6 +2325,7 @@ procedure load;
                               bp^.incnxt := nil;
                               case ch1 of { block type }
                                 'p': bp^.btyp := btprog;
+                                'm': bp^.btyp := btmod;
                                 'r': bp^.btyp := btproc;
                                 'f': bp^.btyp := btfunc
                               end;
@@ -2395,6 +2397,30 @@ procedure load;
             end
    end; (*generate*)
 
+   procedure storeop;
+   begin
+     if pc+1 > cp then errorl('Program code overflow    ');
+     store[pc] := op; putdef(pc, true); pc := pc+1
+   end;
+
+   procedure storep;
+   begin
+     if pc+1 > cp then errorl('Program code overflow    ');
+     store[pc] := p; putdef(pc, true); pc := pc+1
+   end;
+
+   procedure storeq;
+   begin
+     if pc+adrsize > cp then errorl('Program code overflow    ');
+      putadr(pc, q); pc := pc+adrsize
+   end;
+
+   procedure storeq1;
+   begin
+     if pc+adrsize > cp then errorl('Program code overflow    ');
+      putadr(pc, q1); pc := pc+adrsize
+   end;
+      
    procedure assemble; (*translate symbolic code into machine code and store*)
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
@@ -2444,30 +2470,6 @@ procedure load;
         pack(word,1,name)
       end; (*getname*)
 
-      procedure storeop;
-      begin
-        if pc+1 > cp then errorl('Program code overflow    ');
-        store[pc] := op; putdef(pc, true); pc := pc+1
-      end;
-
-      procedure storep;
-      begin
-        if pc+1 > cp then errorl('Program code overflow    ');
-        store[pc] := p; putdef(pc, true); pc := pc+1
-      end;
-
-      procedure storeq;
-      begin
-        if pc+adrsize > cp then errorl('Program code overflow    ');
-         putadr(pc, q); pc := pc+adrsize
-      end;
-
-      procedure storeq1;
-      begin
-        if pc+adrsize > cp then errorl('Program code overflow    ');
-         putadr(pc, q1); pc := pc+adrsize
-      end;
-
    begin  p := 0;  q := 0;  op := 0;
       getname;
       { note this search removes the top instruction from use }
@@ -2509,8 +2511,8 @@ procedure load;
           63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
 
-          (*ujp,fjp,xjp,tjp,bge*)
-          23,24,25,119,207,
+          (*ujp,fjp,xjp,tjp,bge,cal*)
+          23,24,25,119,207,21,
 
           (*ents,ente*)
           13, 173: begin labelsearch; storeop; storeq end;
@@ -2652,19 +2654,18 @@ procedure load;
           6, 80, 81, 82, 83, 84, 197, (*sto*)
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
-            noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,
+            noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
             rnd,rgs,fbv,fvb,ede,mse }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-          48,49,50,51,52,53,54,58,60,62,110,
+          48,49,50,51,52,53,54,60,62,110,
           205,206,208,209,
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
-          181, 182, 183, 184, 185, 186,187,188,189: storeop;
+          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal }
+          181, 182, 183, 184, 185, 186,187,188,189,22: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
           61 (*ujc*): begin storeop; q := 0; storeq end;
-          20 (*lnp*): begin storeop; q := 0; npadr := pc; storeq end;
 
       end; (*case*)
 
@@ -2675,6 +2676,17 @@ procedure load;
 begin (*load*)
   init;
   pc := 0;
+  { insert start sequence:
+  
+    lnp
+    call skip
+    stp
+    mstack:
+    
+  }
+  op := 20; storeop; q := 0; npadr := pc; storeq; { lnp }
+  op := 21; storeop; q := pc+intsize+1; storeq; { call mstack }
+  op := 58; storeop; { stp }
   generate;
   if not gbset then errorl('global space not set     ');
   pctop := pc; { save top of code store }
@@ -4549,11 +4561,12 @@ begin
                   while np > ad do
                     begin store[ad] := 0; putdef(ad, false); ad := ad+1 end
                 end;
-                
+    21 (*cal*): begin getq; pshadr(pc); pc := q end;
+    22 (*ret*): popadr(pc);
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-    21,  22,  27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
+    27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
     122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217,
     218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
     232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245,
@@ -6387,6 +6400,7 @@ begin
       write(' ');
       case bp^.btyp of
         btprog: write('program');
+        btmod:  write('module');
         btproc: write('procedure');
         btfunc: write('function')
       end;
