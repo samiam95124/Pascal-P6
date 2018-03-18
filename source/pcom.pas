@@ -546,7 +546,8 @@ var
       (instead of a pointer), which can be stored in the p2-field
       of the instruction record until writeout.
       --> procedure load, procedure writeout*)
-    curmod: modtyp;
+    curmod: modtyp; { type of current module }
+    nammod: strvsp; { name of current module }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -798,6 +799,16 @@ var
       write(f, c); fl := fl-1;
       if i > varsqt then begin s := s^.next; i := 1 end
     end
+  end;
+
+  { write padded string to file }
+  procedure writevp(var f: text; s: strvsp);
+  var i: integer;
+  begin
+    while s <> nil do begin
+      for i := 1 to varsqt do if s^.str[i] <> ' ' then write(f, s^.str[i]);
+      s := s^.next
+    end;
   end;
 
   { find padded length of variable length id string }
@@ -2171,8 +2182,14 @@ end;
     nxtlab := intlabel
   end (*genlabel*);
 
+  procedure prtlabel(labname: integer);
+  begin
+    write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
+  end;
+
   procedure putlabel(labname: integer);
-  begin if prcode then writeln(prr, 'l', labname:4)
+  begin 
+    if prcode then begin prtlabel(labname); writeln(prr) end 
   end (*putlabel*);
       
   procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
@@ -2441,7 +2458,7 @@ end;
   procedure genujpxjp(fop: oprange; fp2: integer);
   begin
    if prcode then
-      begin putic; writeln(prr,mn[fop]:4, ' l':8,fp2:4) end;
+      begin putic; write(prr,mn[fop]:4, ' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genujpxjp*);
   
@@ -2449,8 +2466,8 @@ end;
   begin
    if prcode then
       begin putic; 
-        writeln(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
-                    ' l':8,fp3:4) 
+        write(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
+                    ' '); prtlabel(fp3); writeln(prr) 
       end;
     ic := ic + 1; mes(fop)
   end (*gencjp*);
@@ -2458,7 +2475,7 @@ end;
   procedure genipj(fop: oprange; fp1, fp2: integer);
   begin
    if prcode then
-      begin putic; writeln(prr,mn[fop]:4,fp1:4,' l':8,fp2:4) end;
+      begin putic; write(prr,mn[fop]:4,fp1:4,' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
@@ -2467,11 +2484,14 @@ end;
     if prcode then
       begin putic;
         if fop = 32 then begin { create ents or ente instructions }
-          if fp1 = 1 then writeln(prr,mn[fop]:4,'s','l':8,fp2:4)
-          else writeln(prr,mn[fop]:4,'e','l':8,fp2:4);
+          if fp1 = 1 then 
+            begin write(prr,mn[fop]:4,'s '); prtlabel(fp2) end
+          else 
+            begin write(prr,mn[fop]:4,'e '); prtlabel(fp2) end;
+          writeln(prr);
           mes(fop)
         end else begin
-          writeln(prr,mn[fop]:4,fp1:4,'l':4,fp2:4);
+          write(prr,mn[fop]:4,fp1:4,' '); prtlabel(fp2); writeln(prr);
           mesl(fp1)
         end
       end;
@@ -2482,7 +2502,7 @@ end;
   begin
     if prcode then
       begin putic;
-        writeln(prr,mn[68]:4,fp2:4,'l':4,fp1:4)
+        write(prr,mn[68]:4,fp2:4, ' '); prtlabel(fp1); writeln(prr);
       end;
     ic := ic + 1; mes(68)
   end (*genlpa*);
@@ -3980,7 +4000,8 @@ end;
     begin load;
       if gattr.typtr <> nil then
         if gattr.typtr <> boolptr then error(144);
-      if prcode then begin putic; writeln(prr,mn[33]:4,' l':8,faddr:4) end;
+      if prcode then 
+        begin putic; write(prr,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
       ic := ic + 1; mes(33)
     end (*genfjp*) ;
 
@@ -6438,9 +6459,8 @@ end;
         else gen0t(42(*ret*),basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
-        begin writeln(prr,'l',segsize:4,'=',lcmin:1);
-           writeln(prr,'l',stackbot:4,'=',topmin:1);
-           writeln(prr,'g ',gc:1)
+        begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
+           prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end
       end
     else
@@ -6448,9 +6468,8 @@ end;
         alignd(parmptr,lcmin);
         if prcode then
         begin
-            writeln(prr,'l',segsize:4,'=',lcmin:1);
-            writeln(prr,'l',stackbot:4,'=',topmin:1);
-            writeln(prr,'g ',gc:1);
+            prtlabel(segsize); writeln(prr,'=',lcmin:1);
+            prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end;
         ic := 0;
         if prtables then
@@ -6460,9 +6479,9 @@ end;
   end (*body*) ;
 
   procedure module(fsys:setofsys);
-    var extfp:extfilep; curmod: modtyp; segsize: integer;
+    var extfp:extfilep; segsize: integer;
   begin
-    cstptrix := 0; topnew := 0; topmin := 0; genlabel(entname); 
+    cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname); 
     genlabel(extname); genlabel(nxtname);
     chkudtf := chkudtc; { finalize undefined tag checking flag }
     { set type of module parsing }
@@ -6471,12 +6490,19 @@ end;
     if (sy = progsy) or (sy = modulesy) then
       begin insymbol; 
         if sy <> ident then error(2) else begin
+          strassvf(nammod, id); { place module name }
           if prcode then begin
+            writeln(prr, 'i');
+            if curmod = mtprogram then 
+              begin write(prr, 'i Program '); writevp(prr, nammod); writeln(prr) end
+            else 
+              begin write(prr, 'i Module '); writevp(prr, nammod); writeln(prr) end;
+            writeln(prr, 'i');
             if curmod = mtmodule then 
               writeln(prr, 'b m ', id:kk) { mark module block start }
             else
               writeln(prr, 'b p ', id:kk) { mark program block start }
-          end; 
+          end;
           insymbol;
           { mark stack, generate call to startup block }
           gen1(41(*mst*),0); gencupent(46(*cup*),0,entname);
@@ -6530,13 +6556,16 @@ end;
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
         gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
         gen1(42(*ret*),ord('p'));
-        writeln(prr,'l',segsize:4,'=',0:1);
-        writeln(prr,'l',stackbot:4,'=',0:1);
+        prtlabel(segsize); writeln(prr,'=',0:1);
+        prtlabel(stackbot); writeln(prr,'=',0:1);
         writeln(prr,'g ',gc:1);
       end;
-      writeln(prr, 'e m'); { mark module block end }
-      putlabel(nxtname) { set skip module stack }
-    end else writeln(prr, 'e p'); { mark program block end }
+      putlabel(nxtname); { set skip module stack }
+      writeln(prr, 'e m') { mark module block end }
+    end else begin { program }
+      writeln(prr,'g ',gc:1);
+      writeln(prr, 'e p') { mark program block end }
+    end;
     if sy <> period then begin error(21); skip([period]) end;
     if prcode then begin
       writeln(prr, 'f ', toterr:1);
@@ -6546,6 +6575,7 @@ end;
     if list then writeln;
     if errinx <> 0 then
       begin list := false; endofline end;
+    putstrs(nammod) { release module name }
   end (*module*) ;
 
   procedure stdnames;

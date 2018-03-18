@@ -236,6 +236,7 @@ const
       erroroff   = 8;        { 'error' file address }
       listoff    = 10;       { 'list' file address }
       commandoff = 12;       { 'command' file address }
+      filmax     = 13;       { maximum reserved file region }
 
       { assigned logical channels for header files }
       inputfn    = 1;        { 'input' file no. }
@@ -1343,6 +1344,16 @@ begin i := 1;
   end
 end;
 
+{ write padded string to file }
+procedure writevp(var f: text; s: strvsp);
+var i: integer;
+begin
+  while s <> nil do begin
+    for i := 1 to varsqt do if s^.str[i] <> ' ' then write(f, s^.str[i]);
+    s := s^.next
+  end;
+end;
+  
 { find padded length of variable length id string }
 function lenpv(s: strvsp): integer;
 var i, l, lc: integer;
@@ -1865,10 +1876,20 @@ procedure load;
         gblfixtab: array [gblfixrg] of address;
         gblfixi: 0..maxgblfx;
         gi: gblfixrg;
+        gbloff: address; { load offset of globals }
         ad, ad2, crf: address;
         cp: address;  (* pointer to next free constant position *)
         npadr: address;
+        sn: filnam;
+        snl: 1..fillen;
 
+   procedure clrlab;
+   var i: integer;
+   begin
+     for i:= 0 to maxlabel do
+       with labeltab[i] do begin val:=-1; st:= entered end
+   end;
+   
    procedure init;
       var i: integer;
    begin for i := 0 to maxins do instr[i] := '          ';
@@ -2143,15 +2164,13 @@ procedure load;
            the code deck }
          cp := maxtop; { set constants pointer to top of storage }
          for i:= 1 to 10 do word[i]:= ' ';
-         for i:= 0 to maxlabel do
-             with labeltab[i] do begin val:=-1; st:= entered end;
+         clrlab;
          cstfixi := 0; { set no constant fixups }
          gblfixi := 0; { set no global fixups }
          npadr := -1;
-
          iline := 1; { set 1st line of intermediate }
-         
-         gbset := false { global size not set }
+         gbset := false; { global size not set }
+         gbloff := 0; { set global offset }
          
    end;(*init*)
 
@@ -2224,22 +2243,20 @@ procedure load;
      readln(prd);
      iline := iline+1 { next intermediate line }
    end;
-
-   procedure assemble; forward;
-
-   procedure generate;(*generate segment of code*)
-      var x: integer; (* label number *)
-          again: boolean;
-          c,ch1: char;
-          i,j: integer;
-          ext: packed array [1..4] of char;
-          sn: filnam;
-          snl: 1..fillen;
-          bp: pblock;
-          sp: psymbol;
-          ad: address;
-          sgn: boolean;
+   
    procedure getlab;
+   var i: 1..fillen;
+   begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
+     if not (ch in ['a'..'z','A'..'Z','_']) then 
+       errorl('Symbols format error     ');
+     while ch in ['a'..'z','A'..'Z','0'..'9','_'] do begin
+       if snl >= fillen then errorl('Symbols format error     ');
+       sn[snl] := ch; getnxt; snl := snl+1
+     end;
+     snl := snl-1
+   end;
+   
+   procedure getsds;
    var i: 1..fillen;
    begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
      if ch = ' ' then errorl('Symbols format error     ');
@@ -2249,6 +2266,26 @@ procedure load;
      end;
      snl := snl-1
    end;
+   
+   procedure parlab(var x: integer);
+   begin
+     getlab; if ch <> '.' then errorl('Symbols format error     ');
+     read(prd, x)
+   end;
+
+   procedure assemble; forward;
+
+   procedure generate;(*generate segment of code*)
+      var x: integer; (* label number *)
+          again: boolean;
+          c,ch1: char;
+          i,j: integer;
+          ext: packed array [1..4] of char;
+          bp: pblock;
+          sp: psymbol;
+          ad: address;
+          sgn: boolean;
+
    begin
       again := true;
       while again do
@@ -2259,7 +2296,7 @@ procedure load;
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
-                       'l': begin read(prd,x);
+                       'l': begin getnxt; parlab(x);
                                   getnxt;
                                   if ch='=' then read(prd,labelvalue)
                                             else labelvalue:= pc;
@@ -2313,7 +2350,8 @@ procedure load;
                               until not (ch in ['a'..'z']);
                               getlin
                             end;
-                       'g': begin read(prd,gbsiz); gbset := true; getlin end;
+                       'g': begin read(prd,gbsiz); gbset := true;
+                                  gbloff := gbloff+gbsiz; getlin end;
                        'b': begin 
                               getnxt; skpspc;
                               if not (ch in ['p', 'm', 'r', 'f']) then
@@ -2353,6 +2391,11 @@ procedure load;
                               getlin
                             end;
                        'e': begin { end block }
+                              getnxt; skpspc;
+                              if not (ch in ['p', 'm', 'r', 'f']) then
+                                errorl('Block type is invalid    ');
+                              { end of any module, clear labels }
+                              if ch in ['p','m'] then clrlab;
                               if blkstk = nil then 
                                 errorl('No block to end          ');
                               { mark block non-inclusive }
@@ -2381,7 +2424,7 @@ procedure load;
                               ad := 0; while ch in ['0'..'9'] do 
                                 begin ad := ad*10+ord(ch)-ord('0'); getnxt end;
                               if sgn then ad := -ad;
-                              sp^.off := ad; getlab;
+                              sp^.off := ad; getsds;
                               strassvf(sp^.digest, sn);
                               if blkstk = nil then 
                                 errorl('Symbol not in block      ');
@@ -2391,7 +2434,7 @@ procedure load;
                               getlin
                             end;
                        'f': begin { faults (errors) }
-                              read(prd,errsinprg); getlin
+                              read(prd,i); errsinprg := errsinprg+i; getlin
                             end;
                   end;
             end
@@ -2437,9 +2480,9 @@ procedure load;
       end;(*lookup*)
 
       procedure labelsearch;
-         var x: labelrg;
-      begin while (ch<>'l') and not eoln(prd) do read(prd,ch);
-            read(prd,x); lookup(x)
+         var x: integer;
+      begin skpspc; if ch <> 'l' then errorl('Label format error       ');
+            getnxt; parlab(x); lookup(x)
       end;(*labelsearch*)
       
       procedure putcstfix;
@@ -2505,7 +2548,9 @@ procedure load;
           
           (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
-          3,196,75,76,77,78,79, 5: begin read(prd,q); storeop; putgblfix; storeq end;
+          3,196,75,76,77,78,79, 
+          5: begin read(prd,q); if q > filmax then q := q+gbloff; storeop;
+                   putgblfix; storeq end;
 
           (*pck,upk,cta,ivt*)
           63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
@@ -2697,6 +2742,7 @@ begin (*load*)
   for ad := cp to maxstr do 
     begin store[ad2] := store[ad]; putdef(ad2, getdef(ad)); ad2 := ad2+1 end;
   pctop := ad2; { move globals to the top of that }
+  alignuc(gbsal, pctop); { align end of constants block }
   gbtop := pctop+gbsiz;
   alignu(gbsal, gbtop);
   { relocate constants deck }
@@ -2704,7 +2750,8 @@ begin (*load*)
     begin ad := cstfixtab[ci]; putadr(ad, getadr(ad)+crf) end;
   { relocate global references }
   if gblfixi >= 1 then for gi := 1 to gblfixi do 
-    begin ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
+    begin
+    ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
   { set heap bottom pointer }
   if npadr < 0 then errorl('Heap bottom not set      ');
   putadr(npadr, gbtop);
@@ -3918,6 +3965,11 @@ begin
   if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
 end;
 
+procedure wrtnewline;
+begin
+  if not newline then begin writeln; newline := true end
+end;
+
 procedure sinins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
@@ -3934,7 +3986,7 @@ begin
   (*execute*)
 
   { trace executed instructions }
-  if dotrcins then begin ad := pcs;
+  if dotrcins then begin wrtnewline; ad := pcs;
     if isbrk(ad) then write('b') 
     else if istrc(ad) then write('t')
     else write(' ');
@@ -4576,11 +4628,6 @@ begin
   end
 end;
 
-procedure wrtnewline;
-begin
-  if not newline then begin writeln; newline := true end
-end;
-
 procedure debug;
 
 label 2,3;
@@ -5054,7 +5101,7 @@ var s,e: integer; c: char; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
-    'x': begin nxtchr(pc); getrng(pc, enum, s, e); 
+    'x': begin getrng(pc, enum, s, e); 
            if not enum then skptyp(pc) 
          end;
     's': begin nxtchr(pc); getrng(pc, enum, s, e); 
@@ -5239,7 +5286,7 @@ var s,e: integer; c: char; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
-    'x': begin nxtchr(pc); getrng(pc, enum, s, e); 
+    'x': begin getrng(pc, enum, s, e); 
            if not enum then skptyp(pc) 
          end;
     's': begin nxtchr(pc); getrng(pc, enum, s, e); 
@@ -5326,7 +5373,10 @@ begin { prttyp }
            if not enum then nxtchr(tdc); { discard index type, we don't need it }
            if (chkchr(tdc) = 'c') and (s = 1) then begin
              { print as string constant }
-             write(''''); for i := s to e do write(getchr(ad+i-s)); write('''');
+             write(''''); 
+             for i := s to e do
+               if getdef(ad+i-s) then write(getchr(ad+i-s)) else write('*');
+             write('''');
              nxtchr(tdc)
            end else begin subc := chkchr(tdc) in ['s','a','r'];
              write('array '); indent := indent+ispc;
@@ -5627,7 +5677,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
       if getdef(ad) then case chkchr(tdc) of
         'i','p': begin r.t := rtint; r.i := getint(ad) end;
         'b','c': begin r.t := rtint; r.i := getbyt(ad) end;
-        'x': begin ps := tdc.p; r.t := rtint; nxtchr(tdc); 
+        'x': begin ps := tdc.p; r.t := rtint;
                getrng(tdc, enum, s, e);
                if isbyte(s) and isbyte(e) then i := getbyt(ad) 
                else r.i := getint(ad);
@@ -5978,7 +6028,7 @@ begin
     wrtnewline; writeln;
     writeln('Storage areas occupied');
     writeln;
-    write('Program     '); prtrng(0, pctop-1);
+    write('Program     '); prtrng(0, cststr-1);
     write('Constants   '); prtrng(cststr, pctop-1);
     write('Globals     '); prtrng(pctop, gbtop-1);
     write('Stack/Heap  '); prtrng(gbtop, maxstr);
@@ -6144,7 +6194,7 @@ begin
                      putbyt(ad, eres.i)
                    end;
           'x': begin if eres.t <> rtint then error(etypmis);
-                 nxtchr(tdc); getrng(tdc, enum, si, ei); 
+                 getrng(tdc, enum, si, ei); 
                  if not enum then nxtchr(tdc);
                  if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
                  else putint(ad, eres.i)
