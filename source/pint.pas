@@ -2272,6 +2272,24 @@ procedure load;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
      read(prd, x)
    end;
+   
+   procedure gblrlc(off: address);
+   var sp: psymbol; bp: pblock;
+   begin
+     if blklst <> nil then begin { there is a top block }
+       bp := blklst;
+       while bp <> nil do begin
+         if bp^.btyp in [btprog, btmod] then begin { it is a module }
+           sp := bp^.symbols;
+           while sp <> nil do begin
+             if sp^.styp = stglobal then sp^.off := sp^.off+off;
+             sp := sp^.next
+           end
+         end;
+         bp := bp^.next
+       end
+     end
+   end;
 
    procedure assemble; forward;
 
@@ -2285,6 +2303,20 @@ procedure load;
           sp: psymbol;
           ad: address;
           sgn: boolean;
+          
+   procedure gblrlc;
+   var sp: psymbol;
+   begin
+     if blkstk <> nil then begin { there is a top block }
+       if blkstk^.btyp in [btprog, btmod] then begin { it is a module }
+         sp := blkstk^.symbols;
+         while sp <> nil do begin
+           if sp^.styp = stglobal then sp^.off := sp^.off+gbloff;
+           sp := sp^.next
+         end
+       end
+     end
+   end;
 
    begin
       again := true;
@@ -2350,8 +2382,9 @@ procedure load;
                               until not (ch in ['a'..'z']);
                               getlin
                             end;
-                       'g': begin read(prd,gbsiz); gbset := true;
-                                  gbloff := gbloff+gbsiz; getlin end;
+                       'g': begin read(prd,i); gblrlc; gbset := true;
+                                  gbloff := gbloff+i; gbsiz := gbsiz+i; 
+                                  getlin end;
                        'b': begin 
                               getnxt; skpspc;
                               if not (ch in ['p', 'm', 'r', 'f']) then
@@ -2717,7 +2750,7 @@ procedure load;
       getlin { next intermediate line }
 
    end; (*assemble*)
-
+   
 begin (*load*)
   init;
   pc := 0;
@@ -2752,6 +2785,7 @@ begin (*load*)
   if gblfixi >= 1 then for gi := 1 to gblfixi do 
     begin
     ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
+  gblrlc(pctop); { relocate symbols as well }
   { set heap bottom pointer }
   if npadr < 0 then errorl('Heap bottom not set      ');
   putadr(npadr, gbtop);
@@ -5506,7 +5540,7 @@ begin { vartyp }
   if sp = nil then error(esnficc);
   if (sp^.styp = stlocal) or (sp^.styp = stparam) then 
     ad := ma+sp^.off { local }
-  else ad := pctop+sp^.off; { global }
+  else ad := sp^.off; { global }
   setpar(tdc, sp^.digest, p); { set up type digest for parse }
   while chkchr(dbc) in ['.', '[', '^'] do begin
     if chkchr(dbc) = '.' then begin { record field }
@@ -6381,6 +6415,7 @@ begin
     wrtnewline; writeln;
     writeln('Commands:');
     writeln;
+    writeln('h|help         Help (this command)');
     writeln('l   [s[ e|:l]  List source lines');
     writeln('lc  [s[ e|:l]  List source and machine lines coordinated');
     writeln('li  [s[ e|:l]  List machine instructions');
@@ -6618,6 +6653,7 @@ begin (* main *)
   aniptr := 1; { clear analysis }
   ansptr := 1;
   newline := true; { set on new line }
+  gbsiz := 0;
   maktyp(boolsym, 'b'); { create standard types }
   maktyp(realsym, 'n');
   maktyp(intsym, 'i');
