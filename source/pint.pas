@@ -351,6 +351,7 @@ const
       ChangeToAllocatedTagfield          = 108;
       UnhandledException                 = 109;
       ProgramCodeAssertion               = 110;
+      privexceptiontop                   = 110;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -2290,6 +2291,13 @@ procedure load;
        end
      end
    end;
+   
+   function isprog: boolean;
+   begin
+     if blkstk <> nil then { there is a top block }
+       isprog := blkstk^.btyp = btprog
+     else isprog := false
+   end;
 
    procedure assemble; forward;
 
@@ -2382,7 +2390,12 @@ procedure load;
                               until not (ch in ['a'..'z']);
                               getlin
                             end;
-                       'g': begin read(prd,i); gblrlc; gbset := true;
+                       'g': begin read(prd,i); 
+                                  { if not program, adjust so files and 
+                                    exceptions from all other modules merge into
+                                    program }
+                                  if not isprog then i := i-exceptiontop;
+                                  gblrlc; gbset := true;
                                   gbloff := gbloff+i; gbsiz := gbsiz+i; 
                                   getlin end;
                        'b': begin 
@@ -2582,7 +2595,7 @@ procedure load;
           (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
           3,196,75,76,77,78,79, 
-          5: begin read(prd,q); if q > filmax then q := q+gbloff; storeop;
+          5: begin read(prd,q); if q > exceptiontop then q := q+gbloff; storeop;
                    putgblfix; storeq end;
 
           (*pck,upk,cta,ivt*)
