@@ -209,6 +209,8 @@ const
    prtlln     = 10;  { number of label characters to print in dumps }
    minocc     = 50;  { minimum occupancy for case tables }
    cstoccmax=4000; cixmax=10000;
+   fillen     = maxids;
+   extsrc      = '.pas'; { extention for source file }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -390,6 +392,9 @@ type                                                        (*describing:*)
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
      modtyp = (mtprogram, mtmodule); { type of current module }
+     filnam = packed array [1..fillen] of char; { filename strings }
+     filptr = ^filrec;
+     filrec = record next: filptr; fn: filnam; f: text end;
       
 (*-------------------------------------------------------------------------*)
 
@@ -411,7 +416,6 @@ var
     ch: char;                       (*last character*)
     eol: boolean;                   (*end of line flag*)
 
-
                                     (*counters:*)
                                     (***********)
 
@@ -420,7 +424,6 @@ var
     lc:    stkoff;
     linecount: integer;
     lineout: integer;
-
 
                                     (*switches:*)
                                     (***********)
@@ -548,6 +551,7 @@ var
       --> procedure load, procedure writeout*)
     curmod: modtyp; { type of current module }
     nammod: strvsp; { name of current module }
+    incstk: filptr; { stack of included files }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -1049,6 +1053,95 @@ begin
   bxor := r
 end;
 
+(*--------------------------------------------------------------------*)
+
+{ 
+
+Language extension routines. These routines allow specification of semantic
+functions beyond the base ISO 7185 specification. 
+
+Each alternate set of routine contents are marked as:
+
+XXX equivalence start
+...
+XXX equivalence end
+
+Where "equivalence" is the language standard, like ISO7185, GPC, FPC, etc.
+These represent the code for that option. A script can be used to select or
+unselect those contents.
+  
+}
+  
+procedure assigntext(var f: text; var fn: filnam);
+{$gnu-pascal}
+var s: string(fillen);
+    i, l: integer;
+{$classic-pascal-level-0}
+begin
+  { ISO7185 start !  
+  errorv(FunctionNotImplemented)
+  ! ISO7185 end }
+
+  { Pascaline start !
+  assign(f, fn);
+  ! Pascaline end }
+
+  {$gnu-pascal} 
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  assign(f, s);
+  {$classic-pascal-level-0}
+end;
+
+procedure closetext(var f: text);
+
+begin
+  { ISO7185 start !
+  errorv(263) 
+  ! ISO7185 end }
+  
+  { Pascaline start !
+  close(f);
+  ! Pascaline end }
+  
+  {$gnu-pascal} 
+  close(f)
+  {$classic-pascal-level-0}
+end;
+
+{$gnu-pascal}
+function open(fn: Cstring; f: integer): integer; external name 'open';
+function c_close(fd: integer): integer; external name 'close';
+{$classic-pascal-level-0}
+
+function existsfile(var fn: filnam): boolean;
+{$gnu-pascal}
+var s: string(fillen);
+    i, l, r, fd: integer;
+{$classic-pascal-level-0}
+begin
+  { ISO7185 start !
+  errorv(FunctionNotImplemented)
+  existsfile := true
+  ! ISO7185 end }
+  
+  { Pascaline start !
+  existsfile := exists(fn);
+  ! Pascaline end }
+  
+  {$gnu-pascal}
+  l := fillen;
+  while (fn[l] = ' ') and (l > 1) do l := l-1;
+  s := '';
+  for i := 1 to l do s := s+fn[i];
+  fd := open(s, 0);
+  if fd > 0 then r := c_close(fd);
+  existsfile := fd >= 0
+  {$classic-pascal-level-0}
+end;
+
 (*-------------------------------------------------------------------------*)
 
   { dump the display }
@@ -1078,6 +1171,28 @@ end;
     end;
     writeln;
   end;
+  
+  { this block of functions wraps source reads }
+  function eofinp: boolean;
+  begin
+    if incstk <> nil then eofinp := eof(incstk^.f) else eofinp := eof(prd)
+  end;
+  
+  function eolninp: boolean;
+  begin
+    if incstk <> nil then eolninp := eoln(incstk^.f) else eolninp := eoln(prd)
+  end;
+  
+  procedure readinp(var c: char);
+  begin
+    if incstk <> nil then read(incstk^.f, c) else read(prd, c)
+  end;
+  
+  function bufinp: char;
+  begin
+    if incstk <> nil then bufinp := incstk^.f^ else bufinp := prd^
+  end;
+  { --- }
 
   procedure endofline;
     var lastpos,freepos,currpos,currnmr,f,k: integer;
@@ -1106,7 +1221,7 @@ end;
         writeln(output); errinx := 0
       end;
     linecount := linecount + 1;
-    if list and (not eof(prd)) then
+    if list and (not eofinp) then
       begin write(linecount:6,'  ':2);
         if dp then write(lc:7) else write(ic:7);
         write(' ')
@@ -1120,7 +1235,7 @@ end;
     while lineout < linecount do begin
       lineout := lineout+1;
       { output line marker in intermediate file }
-      if not eof(prd) then begin
+      if not eofinp then begin
         writeln(prr, ':', lineout:1);
       end
     end
@@ -1304,6 +1419,9 @@ end;
     260: write('Too many exit labels');
     261: write('Label beyond valid integral value (>9999)');
     262: write('Function/procedure cannot be applied to text files');
+    263: write('No function to open/close external files');
+    264: write('External file not found');
+    265: write('Filename too long');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -1318,7 +1436,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504: write('Compiler internal error');
+    504,505: write('Compiler internal error');
     end
   end;
 
@@ -1328,9 +1446,7 @@ end;
     { This diagnostic is here because error buffers error numbers til the end
       of line, and sometimes you need to know exactly where they occurred. }
 
-    {
     writeln; writeln('error: ', ferrnr:1);
-    }
     
     errtbl[ferrnr] := true; { track this error }
     if errinx >= 9 then
@@ -1365,8 +1481,8 @@ end;
     begin if eol then
       begin if list then writeln(output); endofline
       end;
-      if not eof(prd) then
-       begin eol := eoln(prd); read(prd,ch);
+      if not eofinp then
+       begin eol := eolninp; readinp(ch);
         if list then write(ch);
         chcnt := chcnt + 1
        end
@@ -1388,6 +1504,7 @@ end;
           writeln(prr, 'o ', ch1, ch);
           nextch;
         end else begin { just default to on }
+          opt := true;
           option[ch1] := true;
           writeln(prr, 'o ', ch1, '+')
         end
@@ -1553,7 +1670,7 @@ end;
                   (r < 16) or iso7185);
             val.ival := v; 
             sy := intconst;
-            if ((ch = '.') and (prd^ <> '.') and (prd^ <> ')')) or
+            if ((ch = '.') and (bufinp <> '.') and (bufinp <> ')')) or
                (lcase(ch) = 'e') then
               begin
                 { its a real, reject non-decimal radixes }
@@ -1691,9 +1808,9 @@ end;
            begin nextch;
              if ch = '$' then options;
              repeat
-               while (ch <> '}') and (ch <> '*') and not eof(prd) do nextch;
+               while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
                iscmte := ch = '}'; nextch
-             until iscmte or (ch = ')') or eof(prd);
+             until iscmte or (ch = ')') or eofinp;
              if not iscmte then nextch; goto 1
            end
          else if ch = '.' then begin sy := lbrack; nextch end
@@ -1704,9 +1821,9 @@ end;
        begin nextch;
          if ch = '$' then options;
          repeat
-            while (ch <> '}') and (ch <> '*') and not eof(prd) do nextch;
+            while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
             iscmte := ch = '}'; nextch
-         until iscmte or (ch = ')') or eof(prd);
+         until iscmte or (ch = ')') or eofinp;
          if not iscmte then nextch; goto 1
        end;
       chrem: 
@@ -2509,9 +2626,9 @@ end;
 
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
-  function string(fsp: stp) : boolean;
+  function stringt(fsp: stp) : boolean;
   var fmin, fmax: integer;
-  begin string := false;
+  begin stringt := false;
     if fsp <> nil then
       if fsp^.form = arrays then
         if fsp^.packing then begin
@@ -2519,9 +2636,9 @@ end;
           index type was in error. Either way, we call it a string }
         if fsp^.inxtype = nil then fmin := 1
         else getbounds(fsp^.inxtype,fmin,fmax);
-        if comptypes(fsp^.aeltype,charptr) and (fmin = 1) then string := true
+        if comptypes(fsp^.aeltype,charptr) and (fmin = 1) then stringt := true
       end
-  end (*string*) ;
+  end (*stringt*) ;
   
   { check structure is, or contains, a file }
   function filecomponent(fsp: stp): boolean;
@@ -2586,7 +2703,7 @@ end;
                                    not fsp2^.matchpack)) or
                                 (fsp1^.elset = nil) or (fsp2^.elset = nil);
             { Arrays are compatible if they are string types and equal in size }
-            arrays: comptypes := string(fsp1) and string(fsp2) and
+            arrays: comptypes := stringt(fsp1) and stringt(fsp2) and
                                  (fsp1^.size = fsp2^.size );
             { Pointers, must either be the same type or aliases of the same
               type, or one must be nil. The nil pointer is indicated by a nil
@@ -2612,8 +2729,8 @@ end;
   procedure skip(fsys: setofsys);
   (*skip input string until relevant symbol found*)
   begin
-    if not eof(prd) then
-      begin while not(sy in fsys) and (not eof(prd)) do insymbol;
+    if not eofinp then
+      begin while not(sy in fsys) and (not eofinp) do insymbol;
         if not (sy in fsys) then insymbol
       end
   end (*skip*) ;
@@ -2866,7 +2983,7 @@ end;
                       begin new(lsp,subrange); pshstc(lsp);
                         with lsp^, lcp^ do
                           begin form := subrange; rangetype := idtype; 
-                            if string(rangetype) then
+                            if stringt(rangetype) then
                               begin error(148); rangetype := nil end;
                             min := values; size := intsize; packing := false
                           end;
@@ -2885,7 +3002,7 @@ end;
                   begin new(lsp,subrange); pshstc(lsp);
                     lsp^.form := subrange; lsp^.packing := false;
                     constexpr(fsys + [range],lsp1,lvalu);
-                    if string(lsp1) then
+                    if stringt(lsp1) then
                       begin error(148); lsp1 := nil end;
                     with lsp^ do
                       begin rangetype:=lsp1; min:=lvalu; size:=intsize end;
@@ -3001,9 +3118,9 @@ end;
                         tagfield checks are on }
                       if (lcp^.name <> nil) or chkudtf then
                         displ := displ+lsp1^.size;
-                      if (lsp1^.form <= subrange) or string(lsp1) then
+                      if (lsp1^.form <= subrange) or stringt(lsp1) then
                         begin if comptypes(realptr,lsp1) then error(109)
-                          else if string(lsp1) then error(399);
+                          else if stringt(lsp1) then error(399);
                           lcp^.idtype := lsp1; lsp^.tagfieldp := lcp;
                         end
                       else error(110);
@@ -3893,11 +4010,11 @@ end;
           begin insymbol; vardeclaration end;
         while sy in [procsy,funcsy,staticsy] do
           begin lsy := sy; insymbol; procdeclaration(lsy) end
-      until iso7185 or (sy = beginsy) or eof(prd) or
+      until iso7185 or (sy = beginsy) or eofinp or
             not (sy in [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy]);
       if sy <> beginsy then
         begin error(18); skip(fsys) end
-    until (sy in statbegsys) or eof(prd);
+    until (sy in statbegsys) or eofinp;
     dp := false;
   end (*declare*) ;
 
@@ -4024,7 +4141,7 @@ end;
         if typtr <> nil then
           begin
             case kind of
-              cst:   if string(typtr) then
+              cst:   if stringt(typtr) then
                        if cstptrix >= cstoccmax then error(254)
                        else
                          begin cstptrix := cstptrix + 1;
@@ -4425,7 +4542,7 @@ end;
                     chkstd; insymbol; 
                     if (sy = mulop) and (op = mul) then begin
                       spad := true; insymbol;
-                      if not string(lsp) then error(215);
+                      if not stringt(lsp) then error(215);
                     end else begin
                       expression(fsys + [comma,rparent], false);
                       if gattr.typtr <> nil then
@@ -4435,7 +4552,7 @@ end;
                   end;
                   if lsp <> nil then
                     if (lsp^.form <= subrange) or 
-                       (string(lsp) and not iso7185) then
+                       (stringt(lsp) and not iso7185) then
                       if comptypes(intptr,lsp) then begin
                         if debug then begin
                           getbounds(lsp, lmin, lmax);
@@ -4459,7 +4576,7 @@ end;
                               else gen1(30(*csp*),41(*rcb*))
                             end else if fld then gen1(30(*csp*),78(*rdcf*))
                                      else gen1(30(*csp*),5(*rdc*))
-                          end else if string(lsp) then begin
+                          end else if stringt(lsp) then begin
                             len := lsp^.size div charmax;
                             gen2(51(*ldc*),1,len);
                             if fld then gen1(30(*csp*),79(*rdsf*))
@@ -4562,7 +4679,7 @@ end;
                 begin insymbol; 
                   if (sy = mulop) and (op = mul) then begin
                     spad := true; insymbol;
-                    if not string(lsp) then error(215)
+                    if not stringt(lsp) then error(215)
                   end else begin
                     if sy = numsy then 
                       begin chkstd; ledz := true; insymbol end;
@@ -4622,7 +4739,7 @@ end;
                         begin
                           if lsp^.form = scalar then error(399)
                           else
-                            if string(lsp) then
+                            if stringt(lsp) then
                               begin len := lsp^.size div charmax;
                                 if default then
                                       gen2(51(*ldc*),1,len);
@@ -4777,7 +4894,7 @@ end;
                 if lsp^.form <> tagfld then error(162)
                 else
                   if lsp^.tagfieldp <> nil then
-                    if string(lsp1) or (lsp1 = realptr) then error(159)
+                    if stringt(lsp1) or (lsp1 = realptr) then error(159)
                     else
                       if comptypes(lsp^.tagfieldp^.idtype,lsp1) then
                         begin
@@ -4908,7 +5025,7 @@ end;
           if sy = comma then insymbol else error(20);  
           lattr := gattr;
           expression(fsys + [rparent], false); loadaddress;  
-          if not string(gattr.typtr) then error(208);
+          if not stringt(gattr.typtr) then error(208);
           if gattr.typtr <> nil then begin
             len := gattr.typtr^.size div charmax;
             gen2(51(*ldc*),1,len);
@@ -4958,7 +5075,7 @@ end;
         var len: addrrange; lattr: attr;
         begin chkstd;
           expression(fsys + [rparent], false); loadaddress;  
-          if not string(gattr.typtr) then error(208);
+          if not stringt(gattr.typtr) then error(208);
           if gattr.typtr <> nil then begin
             len := gattr.typtr^.size div charmax;
             gen2(51(*ldc*),1,len);
@@ -4970,14 +5087,14 @@ end;
         var len: addrrange;
         begin chkstd;
           expression(fsys + [comma,rparent], false); loadaddress;  
-          if not string(gattr.typtr) then error(208);
+          if not stringt(gattr.typtr) then error(208);
           if gattr.typtr <> nil then begin
             len := gattr.typtr^.size div charmax;
             gen2(51(*ldc*),1,len)
           end;
           if sy = comma then insymbol else error(20);
           expression(fsys + [rparent], false); loadaddress;  
-          if not string(gattr.typtr) then error(208);
+          if not stringt(gattr.typtr) then error(208);
           if gattr.typtr <> nil then begin
             len := gattr.typtr^.size div charmax;
             gen2(51(*ldc*),1,len)
@@ -5004,7 +5121,7 @@ end;
         begin chkstd;
           if sy = lparent then insymbol else error(9);
           expression(fsys + [rparent], false); loadaddress;
-          if not string(gattr.typtr) then error(208);
+          if not stringt(gattr.typtr) then error(208);
           if gattr.typtr <> nil then begin
             len := gattr.typtr^.size div charmax;
             gen2(51(*ldc*),1,len)
@@ -5027,7 +5144,7 @@ end;
             if gattr.typtr <> boolptr then error(135);
           if sy = comma then begin insymbol;
             expression(fsys + [rparent], false); loadaddress;
-            if not string(gattr.typtr) then error(208);
+            if not stringt(gattr.typtr) then error(208);
             if gattr.typtr <> nil then begin
               len := gattr.typtr^.size div charmax;
               gen2(51(*ldc*),1,len);
@@ -5671,7 +5788,7 @@ end;
                           end;
                         arrays:
                           begin
-                            if not string(lattr.typtr)
+                            if not stringt(lattr.typtr)
                               then error(134);
                             typind := 'm'
                           end;
@@ -6388,7 +6505,7 @@ end;
       end;
       id := saveid
     end;
-        
+          
   begin (*body*)
     stalvl := 0; { clear statement nesting level }
     cstptrix := 0; topnew := 0; topmin := 0;
@@ -6478,8 +6595,37 @@ end;
       end;
   end (*body*) ;
 
+  procedure openinput(var ff: boolean);
+  var fp: filptr; i, x: integer;
+  begin ff := true;
+    new(fp); 
+    with fp^ do begin
+      next := incstk; incstk := fp;
+      fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
+      if i > fillen-4-1 then error(265);
+      for x := 1 to 4 do begin i := i+1; fn[i] := extsrc[x] end;
+      if not existsfile(fn) then begin
+        error(264);
+        incstk := incstk^.next;
+        dispose(fp);
+        ff := false 
+      end else begin assigntext(f, fn); reset(f) end
+    end
+  end;
+    
+  procedure closeinput;
+  var fp: filptr;
+  begin
+    if incstk = nil then error(505);
+    closetext(incstk^.f);
+    { remove top include entry }
+    fp := incstk; incstk := incstk^.next;
+    dispose(fp)
+  end;
+    
   procedure module(fsys:setofsys);
-    var extfp:extfilep; segsize: integer;
+    var extfp:extfilep; segsize: integer; sys: symbol; prcodes: boolean;
+        ff: boolean; chs: char; eols: boolean;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname); 
     genlabel(extname); genlabel(nxtname);
@@ -6542,6 +6688,24 @@ end;
           end;
         if sy = semicolon then insymbol
       end else error(3);
+    if (sy = usessy) or (sy = joinssy) then begin { process uses/joins }
+      insymbol;
+      repeat { modules }
+        if sy <> ident then error(2) else begin 
+          chs := ch; eols := eol; ch := ' ';
+          openinput(ff);
+          if ff then begin
+            prcodes := prcode; insymbol; module(blockbegsys+statbegsys-[casesy]);
+            prcode := prcodes; closeinput
+          end;
+          ch := chs; eol := eols;
+          insymbol { skip id }
+        end;
+        sys := sy;
+        if sy = comma then insymbol
+      until sys <> comma;
+      if sy = semicolon then insymbol else error(14)
+    end; 
     declare(fsys,period,nil);
     body(fsys,nil);
     if curmod = mtmodule then begin
@@ -6556,15 +6720,21 @@ end;
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
         gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
         gen1(42(*ret*),ord('p'));
-        prtlabel(segsize); writeln(prr,'=',0:1);
-        prtlabel(stackbot); writeln(prr,'=',0:1);
-        writeln(prr,'g ',gc:1);
+        if prcode then begin
+          prtlabel(segsize); writeln(prr,'=',0:1);
+          prtlabel(stackbot); writeln(prr,'=',0:1);
+          writeln(prr,'g ',gc:1)
+        end
       end;
-      putlabel(nxtname); { set skip module stack }
-      writeln(prr, 'e m') { mark module block end }
+      if prcode then begin
+        putlabel(nxtname); { set skip module stack }
+        writeln(prr, 'e m') { mark module block end }
+      end
     end else begin { program }
-      writeln(prr,'g ',gc:1);
-      writeln(prr, 'e p') { mark program block end }
+      if prcode then begin
+        writeln(prr,'g ',gc:1);
+        writeln(prr, 'e p') { mark program block end }
+      end
     end;
     if sy <> period then begin error(21); skip([period]) end;
     if prcode then begin
@@ -6959,7 +7129,7 @@ end;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
-    ic := 3; eol := true; linecount := 0; lineout := 0;
+    ic := 3; eol := true; linecount := 0; lineout := 0; incstk := nil;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
