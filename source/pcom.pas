@@ -1806,7 +1806,7 @@ end;
        begin nextch;
          if ch = '*' then
            begin nextch;
-             if ch = '$' then options;
+             if (ch = '$') and (incstk = nil) then options;
              repeat
                while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
                iscmte := ch = '}'; nextch
@@ -6567,7 +6567,8 @@ end;
             end;
           llp := nextlab
         end;
-    printed := false; chkrefs(display[top].fname, printed);
+    printed := false; 
+    if fprocp <> nil then chkrefs(display[top].fname, printed);
     if toterr = 0 then
       if topnew <> 0 then error(504); { stack should have wound to zero }
     if fprocp <> nil then
@@ -6623,9 +6624,35 @@ end;
     dispose(fp)
   end;
     
-  procedure module(fsys:setofsys);
-    var extfp:extfilep; segsize: integer; sys: symbol; prcodes: boolean;
-        ff: boolean; chs: char; eols: boolean;
+  procedure module(fsys:setofsys); forward;
+    
+  procedure usesjoins;
+  var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
+      lists: boolean; nammods: strvsp;
+  begin
+    insymbol; { skip uses/joins }
+    repeat { modules }
+      if sy <> ident then error(2) else begin 
+        chs := ch; eols := eol; prcodes := prcode; lists := list; 
+        nammods := nammod;
+        openinput(ff);
+        if ff then begin
+          ch := ' '; eol := true; prcode := false; list := false;
+          insymbol; module(blockbegsys+statbegsys-[casesy]);
+          closeinput
+        end;
+        ch := chs; eol := eols;prcode := prcodes; list := lists; 
+        nammod := nammods;
+        insymbol { skip id }
+      end;
+      sys := sy;
+      if sy = comma then insymbol
+    until sys <> comma;
+    if sy = semicolon then insymbol else error(14)
+  end;
+    
+  procedure module{(fsys:setofsys)};
+    var extfp:extfilep; segsize: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname); 
     genlabel(extname); genlabel(nxtname);
@@ -6688,24 +6715,7 @@ end;
           end;
         if sy = semicolon then insymbol
       end else error(3);
-    if (sy = usessy) or (sy = joinssy) then begin { process uses/joins }
-      insymbol;
-      repeat { modules }
-        if sy <> ident then error(2) else begin 
-          chs := ch; eols := eol; ch := ' ';
-          openinput(ff);
-          if ff then begin
-            prcodes := prcode; insymbol; module(blockbegsys+statbegsys-[casesy]);
-            prcode := prcodes; closeinput
-          end;
-          ch := chs; eol := eols;
-          insymbol { skip id }
-        end;
-        sys := sy;
-        if sy = comma then insymbol
-      until sys <> comma;
-      if sy = semicolon then insymbol else error(14)
-    end; 
+    if (sy = usessy) or (sy = joinssy) then usesjoins; { process uses/joins }
     declare(fsys,period,nil);
     body(fsys,nil);
     if curmod = mtmodule then begin
