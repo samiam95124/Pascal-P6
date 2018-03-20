@@ -552,6 +552,7 @@ var
     curmod: modtyp; { type of current module }
     nammod: strvsp; { name of current module }
     incstk: filptr; { stack of included files }
+    inclst: filptr; { discard list for includes }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -6568,7 +6569,7 @@ end;
           llp := nextlab
         end;
     printed := false; 
-    if fprocp <> nil then chkrefs(display[top].fname, printed);
+    if (fprocp <> nil) or iso7185 then chkrefs(display[top].fname, printed);
     if toterr = 0 then
       if topnew <> 0 then error(504); { stack should have wound to zero }
     if fprocp <> nil then
@@ -6599,6 +6600,7 @@ end;
   procedure openinput(var ff: boolean);
   var fp: filptr; i, x: integer;
   begin ff := true;
+    { have not previously parsed this module }
     new(fp); 
     with fp^ do begin
       next := incstk; incstk := fp;
@@ -6621,28 +6623,36 @@ end;
     closetext(incstk^.f);
     { remove top include entry }
     fp := incstk; incstk := incstk^.next;
-    dispose(fp)
+    fp^.next := inclst; { put on discard list }
+    inclst := fp
   end;
     
   procedure module(fsys:setofsys); forward;
     
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
-      lists: boolean; nammods: strvsp;
+      lists: boolean; nammods: strvsp; gcs: addrrange;
+  function schnam(fp: filptr): boolean;
+  begin schnam := false;
+    while fp <> nil do 
+      begin if fp^.fn = id then schnam := true; fp := fp^.next end
+  end;
   begin
     insymbol; { skip uses/joins }
     repeat { modules }
-      if sy <> ident then error(2) else begin 
-        chs := ch; eols := eol; prcodes := prcode; lists := list; 
-        nammods := nammod;
-        openinput(ff);
-        if ff then begin
-          ch := ' '; eol := true; prcode := false; list := false;
-          insymbol; module(blockbegsys+statbegsys-[casesy]);
-          closeinput
+      if sy <> ident then error(2) else begin
+        if not schnam(incstk) and not schnam(inclst) then begin 
+          chs := ch; eols := eol; prcodes := prcode; lists := list; gcs := gc; 
+          nammods := nammod;
+          openinput(ff);
+          if ff then begin
+            ch := ' '; eol := true; prcode := false; list := false;
+            insymbol; module(blockbegsys+statbegsys-[casesy]);
+            closeinput
+          end;
+          ch := chs; eol := eols;prcode := prcodes; list := lists; gc := gcs; 
+          nammod := nammods;
         end;
-        ch := chs; eol := eols;prcode := prcodes; list := lists; 
-        nammod := nammods;
         insymbol { skip id }
       end;
       sys := sy;
@@ -7139,7 +7149,8 @@ end;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
-    ic := 3; eol := true; linecount := 0; lineout := 0; incstk := nil;
+    ic := 3; eol := true; linecount := 0; lineout := 0; 
+    incstk := nil; inclst := nil;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
