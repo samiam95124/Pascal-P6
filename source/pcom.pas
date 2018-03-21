@@ -509,7 +509,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..504
+                      nmr: 1..505
                end;
 
 
@@ -540,7 +540,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..504] of boolean; { error occurence tracking }
+    errtbl: array [1..505] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -568,7 +568,7 @@ var
     stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..504; { index for error number tracking array }
+    i: 1..505; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -2369,7 +2369,7 @@ end;
   begin topnew := topnew + i;
     if topnew < topmin then topmin := topnew;
     if toterr = 0 then
-      if topnew > 0 then error(500) { stack should never go positive }
+      if (topnew > 0) and prcode then error(500) { stack should never go positive }
   end;
   
   procedure mes(i: integer);
@@ -6571,7 +6571,8 @@ end;
     printed := false; 
     if (fprocp <> nil) or iso7185 then chkrefs(display[top].fname, printed);
     if toterr = 0 then
-      if topnew <> 0 then error(504); { stack should have wound to zero }
+      if (topnew <> 0) and prcode then 
+        error(504); { stack should have wound to zero }
     if fprocp <> nil then
       begin
         if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
@@ -6631,7 +6632,8 @@ end;
     
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
-      lists: boolean; nammods: strvsp; gcs: addrrange;
+      lists: boolean; nammods: strvsp; gcs: addrrange; curmods: modtyp;
+      entnames: integer;
   function schnam(fp: filptr): boolean;
   begin schnam := false;
     while fp <> nil do 
@@ -6643,7 +6645,7 @@ end;
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin 
           chs := ch; eols := eol; prcodes := prcode; lists := list; gcs := gc; 
-          nammods := nammod;
+          nammods := nammod; curmods := curmod; entnames := entname;
           openinput(ff);
           if ff then begin
             ch := ' '; eol := true; prcode := false; list := false;
@@ -6651,7 +6653,7 @@ end;
             closeinput
           end;
           ch := chs; eol := eols;prcode := prcodes; list := lists; gc := gcs; 
-          nammod := nammods;
+          nammod := nammods; curmod := curmods; entname := entnames
         end;
         insymbol { skip id }
       end;
@@ -6742,12 +6744,12 @@ end;
         gen1(42(*ret*),ord('p'));
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
-          prtlabel(stackbot); writeln(prr,'=',0:1);
-          writeln(prr,'g ',gc:1)
+          prtlabel(stackbot); writeln(prr,'=',0:1)
         end
       end;
       if prcode then begin
         putlabel(nxtname); { set skip module stack }
+        writeln(prr,'g ',gc:1);
         writeln(prr, 'e m') { mark module block end }
       end
     end else begin { program }
