@@ -351,7 +351,7 @@ type                                                        (*describing:*)
      attrkind = (cst,varbl,expr);
      vaccess = (drct,indrct,inxd);
 
-     attr = record typtr: stp;
+     attr = record symptr: ctp; typtr: stp;
               case kind: attrkind of
                 cst:   (cval: valu);
                 varbl: (packing: boolean; packcom: boolean;
@@ -2439,7 +2439,7 @@ end;
     ic := ic + 1; mes(fop)
   end (*gen0*) ;
 
-  procedure gen1(fop: oprange; fp2: integer);
+  procedure gen1s(fop: oprange; fp2: integer; symptr: ctp);
     var k, j: integer; p: strvsp;
   begin
     if prcode then
@@ -2465,6 +2465,8 @@ end;
                end
             else if fop = 42 then writeln(prr,chr(fp2))
             else if fop = 67 then writeln(prr,fp2:4)
+            else if chkext(symptr) then 
+              begin prtflabel(symptr); writeln(prr) end
             else writeln(prr,fp2:12);
             if fop = 42 then mes(0)
             else mes(fop)
@@ -2472,6 +2474,11 @@ end;
       end;
     ic := ic + 1
   end (*gen1*) ;
+  
+  procedure gen1(fop: oprange; fp2: integer);
+  begin
+    gen1s(fop, fp2, nil)
+  end;
 
   procedure gen2(fop: oprange; fp1,fp2: integer);
     var k : integer;
@@ -2574,16 +2581,23 @@ end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen0t*);
 
-  procedure gen1t(fop: oprange; fp2: integer; fsp: stp);
+  procedure gen1ts(fop: oprange; fp2: integer; fsp: stp; symptr: ctp);
   begin
     if prcode then
       begin putic;
         write(prr,mn[fop]:4);
         gentypindicator(fsp);
-        writeln(prr,' ',fp2:11)
+        write(prr, ' ');
+        if chkext(symptr) then prtflabel(symptr) else write(prr,fp2:11);
+        writeln(prr)
       end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen1t*);
+  
+  procedure gen1t(fop: oprange; fp2: integer; fsp: stp);
+  begin
+    gen1ts(fop, fp2, fsp, nil)
+  end;
 
   procedure gen2t(fop: oprange; fp1,fp2: integer; fsp: stp);
   begin
@@ -4128,7 +4142,8 @@ end;
                                gen2(51(*ldc*),5,cstptrix)
                            end;
               varbl: case access of
-                       drct:   if vlevel<=1 then gen1t(39(*ldo*),dplmt,typtr)
+                       drct:   if vlevel<=1 then 
+                                 gen1ts(39(*ldo*),dplmt,typtr,symptr)
                                else gen2t(54(*lod*),level-vlevel,dplmt,typtr);
                        indrct: gen1t(35(*ind*),idplmt,typtr);
                        inxd:   error(400)
@@ -4138,32 +4153,11 @@ end;
             kind := expr;
             { operand is loaded, and subranges are now normalized to their
               base type }
-            typtr := basetype(typtr)
+            typtr := basetype(typtr);
+            symptr := nil { break variable association }
           end
     end (*load*) ;
-
-    procedure genfjp(faddr: integer);
-    begin load;
-      if gattr.typtr <> nil then
-        if gattr.typtr <> boolptr then error(144);
-      if prcode then 
-        begin putic; write(prr,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
-      ic := ic + 1; mes(33)
-    end (*genfjp*) ;
-
-    procedure store(var fattr: attr);
-    begin
-      with fattr do
-        if typtr <> nil then
-          case access of
-            drct:   if vlevel <= 1 then gen1t(43(*sro*),dplmt,typtr)
-                    else gen2t(56(*str*),level-vlevel,dplmt,typtr);
-            indrct: if idplmt <> 0 then error(401)
-                    else gen0t(26(*sto*),typtr);
-            inxd:   error(402)
-          end
-    end (*store*) ;
-
+    
     procedure loadaddress;
     begin
       with gattr do
@@ -4179,7 +4173,7 @@ end;
                          end
                      else error(403);
               varbl: case access of
-                       drct:   if vlevel <= 1 then gen1(37(*lao*),dplmt)
+                       drct:   if vlevel <= 1 then gen1s(37(*lao*),dplmt,symptr)
                                else gen2(50(*lda*),level-vlevel,dplmt);
                        indrct: if idplmt <> 0 then
                                  gen1t(34(*inc*),idplmt,nilptr);
@@ -4187,9 +4181,32 @@ end;
                      end;
               expr:  error(405)
             end;
-            kind := varbl; access := indrct; idplmt := 0; packing := false
+            kind := varbl; access := indrct; idplmt := 0; packing := false;
+            symptr := nil { break variable association }
           end
     end (*loadaddress*) ;
+
+    procedure store(var fattr: attr);
+    begin
+      with fattr do
+        if typtr <> nil then
+          case access of
+            drct:   if vlevel <= 1 then gen1ts(43(*sro*),dplmt,typtr,symptr)
+                    else gen2t(56(*str*),level-vlevel,dplmt,typtr);
+            indrct: if idplmt <> 0 then error(401)
+                    else gen0t(26(*sto*),typtr);
+            inxd:   error(402)
+          end
+    end (*store*) ;
+    
+    procedure genfjp(faddr: integer);
+    begin load;
+      if gattr.typtr <> nil then
+        if gattr.typtr <> boolptr then error(144);
+      if prcode then 
+        begin putic; write(prr,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
+      ic := ic + 1; mes(33)
+    end (*genfjp*) ;
 
     procedure statement(fsys: setofsys);
       var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean; 
@@ -4251,10 +4268,10 @@ end;
       end;
       begin { selector }
         with fcp^, gattr do
-          begin typtr := idtype; kind := varbl; packing := false;
+          begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
             packcom := false; tagfield := false; ptrref := false;
             case klass of
-              vars: begin
+              vars: begin symptr := fcp;
                   if typtr <> nil then packing := typtr^.packing;
                   if vkind = actual then
                     begin access := drct; vlevel := vlev;
@@ -4423,16 +4440,16 @@ end;
                              else gen2t(45(*chk*),1,maxaddr,nilptr);
                           end;
                           with gattr do
-                            begin kind := varbl; access := indrct;
-                              idplmt := 0; packing := false;
-                              packcom := false; tagfield := false;
-                              ptrref := true;
+                            begin kind := varbl; access := indrct; idplmt := 0;
+                              packing := false; packcom := false; 
+                              tagfield := false; ptrref := true;
                             end
                         end
                       else
                         if form = files then begin loadaddress;
                            { generate buffer validate for file }
-                           if typtr = textptr then gen1(30(*csp*), 46(*fbv*))
+                           if typtr = textptr then 
+                             gen1(30(*csp*), 46(*fbv*))
                            else begin
                              gen2(51(*ldc*),1,filtype^.size);
                              gen1(30(*csp*),47(*fvb*))
@@ -4688,7 +4705,8 @@ end;
               if lsp <> nil then
                 if lsp^.form <= subrange then begin
                 if lsp^.size < stackelsize then
-                  gen1(72(*swp*),stackelsize) { size of 2nd is minimum stack }
+                  { size of 2nd is minimum stack }
+                  gen1(72(*swp*),stackelsize) 
                 else
                   gen1(72(*swp*),lsp^.size) { size of 2nd is operand }
               end else
