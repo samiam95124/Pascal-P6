@@ -314,6 +314,9 @@ type                                                        (*describing:*)
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..31; { range of standard call keys }
+     filnam = packed array [1..fillen] of char; { filename strings }
+     filptr = ^filrec;
+     filrec = record next: filptr; fn: filnam; mn: strvsp; f: text end;
      partyp = (ptval, ptvar, ptview, ptout);
      identifier = record
                    snm: integer; { serial number }
@@ -324,12 +327,13 @@ type                                                        (*describing:*)
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp; 
-                             hdr: boolean);
+                             hdr: boolean; vext: boolean; vmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    asgn: boolean; { assigned }
+                                   pext: boolean; pmod: filptr;
                                    case pfdeckind: declkind of
                               standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
@@ -392,9 +396,6 @@ type                                                        (*describing:*)
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
      modtyp = (mtprogram, mtmodule); { type of current module }
-     filnam = packed array [1..fillen] of char; { filename strings }
-     filptr = ^filrec;
-     filrec = record next: filptr; fn: filnam; f: text end;
       
 (*-------------------------------------------------------------------------*)
 
@@ -806,7 +807,7 @@ var
     end
   end;
 
-  { write padded string to file }
+  { write variable length padded string to file }
   procedure writevp(var f: text; s: strvsp);
   var i: integer;
   begin
@@ -2230,7 +2231,9 @@ end;
                          ptview: write('view':intdig, ' ');
                          ptout:write('out':intdig, ' ');
                        end;
-                       if hdr then write('header':intdig) else write(' ':intdig)
+                       if hdr then write('header':intdig) else write(' ':intdig);
+                       if vext then write('external':intdig) else write(' ':intdig);
+                       if vext then write(vmod^.fn:intdig) else write(' ':intdig)
                      end;
               field: begin write('field':intdig,' '); wrtctp(next); write(' ');
                            write(fldaddr:intdig,' '); wrtstp(varnt); write(' ');
@@ -2243,6 +2246,8 @@ end;
                        if klass = proc then write('procedure':intdig, ' ')
                        else write('function':intdig, ' ');
                        if asgn then write('assigned':intdig, ' ') else write(' ':intdig, ' ');
+                       if pext then write('external':intdig, ' ') else write(' ':intdig, ' ');
+                       if pext then write(pmod^.fn:intdig) else write(' ':intdig);
                        if pfdeckind = standard then
                          write('standard':intdig, '-', key:intdig)
                        else
@@ -2294,6 +2299,15 @@ end;
       end
     end
   end;
+  
+  function chkext(fcp: ctp): boolean;
+  begin chkext := false;
+    if fcp <> nil then begin
+      if fcp^.klass = vars then chkext := fcp^.vext
+      else if (fcp^.klass = proc) or (fcp^.klass = func) then 
+        chkext := fcp^.pext
+    end
+  end;
 
   procedure genlabel(var nxtlab: integer);
   begin intlabel := intlabel + 1;
@@ -2303,6 +2317,15 @@ end;
   procedure prtlabel(labname: integer);
   begin
     write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
+  end;
+  
+  procedure prtflabel(fcp: ctp);
+  begin
+    write(prr, 'l '); 
+    if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn) 
+    else writevp(prr, fcp^.pmod^.mn); 
+    write(prr, '.'); 
+    writevp(prr, fcp^.name)
   end;
 
   procedure putlabel(labname: integer);
@@ -2597,7 +2620,7 @@ end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
-  procedure gencupent(fop: oprange; fp1,fp2: integer);
+  procedure gencupent(fop: oprange; fp1,fp2: integer; fcp: ctp);
   begin
     if prcode then
       begin putic;
@@ -2609,7 +2632,9 @@ end;
           writeln(prr);
           mes(fop)
         end else begin
-          write(prr,mn[fop]:4,fp1:4,' '); prtlabel(fp2); writeln(prr);
+          write(prr,mn[fop]:4,fp1:4,' ');
+          if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
+          writeln(prr);
           mesl(fp1)
         end
       end;
@@ -3583,7 +3608,7 @@ end;
                begin strassvf(name, id); next := nxt; klass := vars;
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; threat := false; forcnt := 0; part := ptval;
-                  hdr := false
+                  hdr := false; vext := incstk <> nil; vmod := incstk
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -3679,7 +3704,8 @@ end;
                           begin strassvf(name, id); idtype := nil; next := lcp1;
                             pflev := level (*beware of parameter procedures*);
                             klass:=proc;pfdeckind:=declared;
-                            pfkind:=formal; pfaddr := lc; keep := true
+                            pfkind:=formal; pfaddr := lc; pext := false; 
+                            pmod := nil; keep := true
                           end;
                         enterid(lcp);
                         lcp1 := lcp;
@@ -3706,7 +3732,8 @@ end;
                               begin strassvf(name, id); idtype := nil; next := lcp1;
                                 pflev := level (*beware param funcs*);
                                 klass:=func;pfdeckind:=declared;
-                                pfkind:=formal; pfaddr:=lc; keep := true
+                                pfkind:=formal; pfaddr:=lc; pext := false; 
+                                pmod := nil; keep := true
                               end;
                             enterid(lcp);
                             lcp1 := lcp;
@@ -3757,7 +3784,8 @@ end;
                                 begin strassvf(name,id); idtype:=nil; klass:=vars;
                                   vkind := lkind; next := lcp2; vlev := level;
                                   keep := true; refer := false; threat := false;
-                                  forcnt := 0; part := pt; hdr := false
+                                  forcnt := 0; part := pt; hdr := false; 
+                                  vext := false; vmod := nil
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -3894,8 +3922,8 @@ end;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   if fsy = procsy then klass := proc
-                  else begin klass := func; asgn := false end;
-                  refer := false
+                  else begin klass := func; asgn := false end; 
+                  pext := incstk <> nil; pmod := incstk; refer := false
                 end;
               enterid(lcp)
             end
@@ -5273,7 +5301,7 @@ end;
                 begin
                   if externl then gen1(30(*csp*),pfname)
                   else begin
-                    gencupent(46(*cup*),locpar,pfname);
+                    gencupent(46(*cup*),locpar,pfname,fcp);
                     if fcp^.klass = func then begin
                       { add size of function result back to stack }
                       lsize := fcp^.idtype^.size;
@@ -6515,7 +6543,8 @@ end;
     if fprocp <> nil then putlabel(fprocp^.pfname) else putlabel(entname);
     genlabel(segsize); genlabel(stackbot); 
     genlabel(gblsize);
-    gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
+    gencupent(32(*ents*),1,segsize,fprocp); 
+    gencupent(32(*ente*),2,stackbot,fprocp);
     if fprocp <> nil then (*copy multiple values into local cells*)
       begin llc1 := lcaftermarkstack;
         lcp := fprocp^.pflist;
@@ -6604,7 +6633,7 @@ end;
     { have not previously parsed this module }
     new(fp); 
     with fp^ do begin
-      next := incstk; incstk := fp;
+      next := incstk; incstk := fp; strassvf(mn, id);
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
       if i > fillen-4-1 then error(265);
       for x := 1 to 4 do begin i := i+1; fn[i] := extsrc[x] end;
@@ -6626,6 +6655,14 @@ end;
     fp := incstk; incstk := incstk^.next;
     fp^.next := inclst; { put on discard list }
     inclst := fp
+  end;
+  
+  procedure putinp(var fl: filptr);
+  var fp: filptr;
+  begin
+    while fl <> nil do begin
+      fp := fl; fl := fl^.next; putstrs(fp^.mn); dispose(fp)
+    end
   end;
     
   procedure module(fsys:setofsys); forward;
@@ -6690,12 +6727,12 @@ end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
-          gen1(41(*mst*),0); gencupent(46(*cup*),0,entname);
+          gen1(41(*mst*),0); gencupent(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjp(89(*cal*),nxtname); 
-            gen1(41(*mst*),0); gencupent(46(*cup*),0,extname)
+            gen1(41(*mst*),0); gencupent(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
@@ -6740,7 +6777,8 @@ end;
         entname := extname; body(fsys, nil);
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
-        gencupent(32(*ents*),1,segsize); gencupent(32(*ente*),2,stackbot);
+        gencupent(32(*ents*),1,segsize,nil); 
+        gencupent(32(*ente*),2,stackbot,nil);
         gen1(42(*ret*),ord('p'));
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
@@ -6898,7 +6936,8 @@ end;
     begin strassvr(name, na[sn]); idtype := textptr; klass := vars;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
-      threat := false; forcnt := 0; part := ptval; hdr := false
+      threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
+      vmod := nil
     end;
     enterid(cp)
   end;
@@ -6911,7 +6950,8 @@ end;
     begin strassve(name, en); idtype := exceptptr; klass := vars;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
-      threat := false; forcnt := 0; part := ptval; hdr := false
+      threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
+      vmod := nil
     end;
     enterid(cp)
   end;
@@ -6958,7 +6998,8 @@ end;
         with cp^ do
           begin strassvr(name, '         '); idtype := realptr; klass := vars;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
-            threat := false; forcnt := 0; part := ptval; hdr := false
+            threat := false; forcnt := 0; part := ptval; hdr := false; 
+            vext := false; vmod := nil
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -7107,7 +7148,8 @@ end;
     with uvarptr^ do
       begin strassvr(name, '         '); idtype := nil; vkind := actual;
         next := nil; vlev := 0; vaddr := 0; klass := vars;
-        threat := false; forcnt := 0; part := ptval; hdr := false
+        threat := false; forcnt := 0; part := ptval; hdr := false; 
+        vext := false; vmod := nil
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
@@ -7601,6 +7643,8 @@ begin
 
   insymbol;
   module(blockbegsys+statbegsys-[casesy]);
+  { release file tracking entries }
+  putinp(incstk); putinp(inclst);
   outline;
 
   { dispose of levels 0 and 1 }
