@@ -316,7 +316,8 @@ type                                                        (*describing:*)
      keyrng = 1..31; { range of standard call keys }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
-     filrec = record next: filptr; fn: filnam; mn: strvsp; f: text end;
+     filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
+                     priv: boolean end;
      partyp = (ptval, ptvar, ptview, ptout);
      identifier = record
                    snm: integer; { serial number }
@@ -1177,12 +1178,16 @@ end;
   { this block of functions wraps source reads }
   function eofinp: boolean;
   begin
-    if incstk <> nil then eofinp := eof(incstk^.f) else eofinp := eof(prd)
+    if incstk <> nil then begin
+      if incstk^.priv then eofinp := true else eofinp := eof(incstk^.f) 
+    end else eofinp := eof(prd)
   end;
   
   function eolninp: boolean;
-  begin
-    if incstk <> nil then eolninp := eoln(incstk^.f) else eolninp := eoln(prd)
+  begin 
+    if eofinp then eolninp := true
+    else if incstk <> nil then eolninp := eoln(incstk^.f) 
+         else eolninp := eoln(prd)
   end;
   
   procedure readinp(var c: char);
@@ -1242,7 +1247,13 @@ end;
       end
     end
   end;
-      
+
+  { check in private section }
+  function inpriv: boolean;
+  begin inpriv := false;
+    if incstk <> nil then inpriv := incstk^.priv
+  end;
+        
   procedure errmsg(ferrnr: integer);
   begin case ferrnr of
     1:   write('Error in simple type');
@@ -1396,11 +1407,11 @@ end;
     214: write('Must apply $, & or % posfix modifier to integer');
     215: write('Must apply * (padded string field) to string');
     216: write('Original and forwarded procedure/function parameters not congruous');
-    217: write('Missing file "prd" in program heading');
-    218: write('Missing file "prr" in program heading');
-    219: write('Missing file "error" in program heading');
-    220: write('Missing file "list" in program heading');
-    221: write('Missing file "command" in program heading');
+    217: write('Missing file ''prd'' in program heading');
+    218: write('Missing file ''prr'' in program heading');
+    219: write('Missing file ''error'' in program heading');
+    220: write('Missing file ''list'' in program heading');
+    221: write('Missing file ''command'' in program heading');
     222: write('Value out of character range');
     223: write('Type converter/restrictor must be scalar or subrange');
     224: write('Type to be converted must be scalar or subrange');
@@ -1424,6 +1435,7 @@ end;
     263: write('No function to open/close external files');
     264: write('External file not found');
     265: write('Filename too long');
+    266: write('''private'' has no meaning here');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -1444,21 +1456,25 @@ end;
 
   procedure error(ferrnr: integer);
   begin
+    if incstk = nil then begin { supress errors in includes }
 
-    { This diagnostic is here because error buffers error numbers til the end
-      of line, and sometimes you need to know exactly where they occurred. }
+      { This diagnostic is here because error buffers error numbers til the end
+        of line, and sometimes you need to know exactly where they occurred. }
 
-    writeln; writeln('error: ', ferrnr:1);
+      {
+      writeln; writeln('error: ', ferrnr:1);
+      }
     
-    errtbl[ferrnr] := true; { track this error }
-    if errinx >= 9 then
-      begin errlist[10].nmr := 255; errinx := 10 end
-    else
-      begin errinx := errinx + 1;
-        errlist[errinx].nmr := ferrnr
-      end;
-    errlist[errinx].pos := chcnt;
-    toterr := toterr+1
+      errtbl[ferrnr] := true; { track this error }
+      if errinx >= 9 then
+        begin errlist[10].nmr := 255; errinx := 10 end
+      else
+        begin errinx := errinx + 1;
+          errlist[errinx].nmr := ferrnr
+        end;
+      errlist[errinx].pos := chcnt;
+      toterr := toterr+1
+    end
   end (*error*) ;
   
   { chkstd: called whenever a non-ISO7185 construct is being processed }
@@ -1466,7 +1482,7 @@ end;
   begin
     if iso7185 then error(397)
   end;
-
+  
   procedure insymbol;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
@@ -1490,7 +1506,7 @@ end;
        end
       else
         begin writeln('   *** eof ','encountered');
-          test := false
+          test := false; eol := true
         end
     end;
 
@@ -1888,7 +1904,6 @@ end;
       writeln
 
     end
-
   end (*insymbol*) ;
 
   procedure enterid(fcp: ctp);
@@ -2107,7 +2122,7 @@ end;
             end (*with*)
       end (*markstp*);
 
-      procedure markctp;
+      procedure markctp{(fp: ctp)};
       begin
         if fp <> nil then
           with fp^ do
@@ -2190,7 +2205,7 @@ end;
             end (*if marked*)
     end (*followstp*);
 
-    procedure followctp;
+    procedure followctp{(fp: ctp)};
     begin
       if fp <> nil then
         with fp^ do
@@ -4043,21 +4058,29 @@ end;
     dp := true;
     repeat
       repeat
-        if sy = labelsy then
-          begin insymbol; labeldeclaration end;
-        if sy = constsy then
-          begin insymbol; constdeclaration end;
-        if sy = typesy then
-          begin insymbol; typedeclaration end;
-        if sy = varsy then
-          begin insymbol; vardeclaration end;
-        while sy in [procsy,funcsy,staticsy] do
-          begin lsy := sy; insymbol; procdeclaration(lsy) end
-      until iso7185 or (sy = beginsy) or eofinp or
-            not (sy in [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy]);
-      if sy <> beginsy then
+        if sy = privatesy then begin insymbol;
+          if level > 1 then error(266);
+          if (incstk <> nil) and (level <= 1) then 
+            incstk^.priv := true { flag private encountered }
+        end;
+        if not inpriv then begin { if private, get us out quickly }
+          if sy = labelsy then
+            begin insymbol; labeldeclaration end;
+          if sy = constsy then
+            begin insymbol; constdeclaration end;
+          if sy = typesy then
+            begin insymbol; typedeclaration end;
+          if sy = varsy then
+            begin insymbol; vardeclaration end;
+          while sy in [procsy,funcsy,staticsy] do
+            begin lsy := sy; insymbol; procdeclaration(lsy) end
+        end
+      until inpriv or iso7185 or (sy = beginsy) or eofinp or
+            not (sy in [privatesy,labelsy,constsy,typesy,varsy,procsy,funcsy,
+                        staticsy]);
+      if (sy <> beginsy) and not inpriv then
         begin error(18); skip(fsys) end
-    until (sy in statbegsys) or eofinp;
+    until (sy in statbegsys) or eofinp or inpriv;
     dp := false;
   end (*declare*) ;
 
@@ -5400,7 +5423,7 @@ end;
         else callnonstandard(fcp)
       end (*call*) ;
 
-      procedure expression;
+      procedure expression{(fsys: setofsys; threaten: boolean)};
         var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
 
         procedure simpleexpression(fsys: setofsys; threaten: boolean);
@@ -6651,7 +6674,7 @@ end;
     { have not previously parsed this module }
     new(fp); 
     with fp^ do begin
-      next := incstk; incstk := fp; strassvf(mn, id);
+      next := incstk; incstk := fp; strassvf(mn, id); priv := false;
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
       if i > fillen-4-1 then error(265);
       for x := 1 to 4 do begin i := i+1; fn[i] := extsrc[x] end;
@@ -6784,7 +6807,7 @@ end;
       end else error(3);
     if (sy = usessy) or (sy = joinssy) then usesjoins; { process uses/joins }
     declare(fsys,period,nil);
-    body(fsys,nil);
+    if not inpriv then body(fsys,nil);
     if curmod = mtmodule then begin
       if sy = semicolon then begin
         insymbol;
@@ -6814,7 +6837,7 @@ end;
         writeln(prr, 'e p') { mark program block end }
       end
     end;
-    if sy <> period then begin error(21); skip([period]) end;
+    if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
     if prcode then begin
       writeln(prr, 'f ', toterr:1);
       { only terminate intermediate if we are a cap cell (program) }
@@ -7239,7 +7262,8 @@ end;
     simptypebegsys := [lparent,addop,intconst,realconst,stringconst,ident];
     typebegsys:=[arrow,packedsy,arraysy,recordsy,setsy,filesy]+simptypebegsys;
     typedels := [arraysy,recordsy,setsy,filesy];
-    blockbegsys := [labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,beginsy];
+    blockbegsys := [privatesy,labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,
+                    beginsy];
     selectsys := [arrow,period,lbrack];
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
     statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy,
