@@ -221,10 +221,10 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel = 5000;       { total possible labels in intermediate }
-      maxcstfx = 10000;      { maximum constant fixup in intermediate }
-      maxgblfx = 10000;      { maximum global access fixup in intermediate }
-      resspc   = 0;          { reserve space in heap (if you want) }
+      maxlabel  = 5000;      { total possible near labels in intermediate }
+      maxcstfx  = 10000;     { maximum constant fixup in intermediate }
+      maxgblfx  = 10000;     { maximum global access fixup in intermediate }
+      resspc    = 0;         { reserve space in heap (if you want) }
 
       { locations of header files after program block mark, each header
         file is two values, a file number and a single character buffer }
@@ -1865,8 +1865,15 @@ procedure load;
                           val: address;
                            st: labelst
                     end;
+         flabelp = ^flabel;
+         flabel = record
+                       next: flabelp;
+                       val: address;
+                       ref: strvsp
+                     end;
          cstfixrg  = 1..maxcstfx; { constant fixup range }
          gblfixrg  = 1..maxgblfx; { globals fixup range }
+         
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
@@ -1883,6 +1890,7 @@ procedure load;
         npadr: address;
         sn: filnam;
         snl: 1..fillen;
+        flablst: flabelp; { list of far labels }
 
    procedure clrlab;
    var i: integer;
@@ -2172,6 +2180,7 @@ procedure load;
          iline := 1; { set 1st line of intermediate }
          gbset := false; { global size not set }
          gbloff := 0; { set global offset }
+         flablst := nil; { clear far label list }
          
    end;(*init*)
 
@@ -2268,10 +2277,15 @@ procedure load;
      snl := snl-1
    end;
    
-   procedure parlab(var x: integer);
-   begin
+   procedure parlab(var x: integer; var fl: strvsp);
+   var i,j: integer;
+   begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
-     read(prd, x)
+     if prd^ in ['0'..'9'] then read(prd, x) { near label }
+     else begin { far label }
+       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab; 
+       for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
+     end
    end;
    
    procedure gblrlc(off: address);
@@ -2289,6 +2303,53 @@ procedure load;
          end;
          bp := bp^.next
        end
+     end
+   end;
+   
+   procedure flabrlc;
+   var ad,q: address; op: instyp; flp: flabelp; c: char;
+   function symref(lsp: strvsp): address;
+   var mods, syms: filnam; i,x: 1..fillen; bp, fbp: pblock; sp, fsp: psymbol;
+   begin
+     { break name into module.symbol components }
+     for i := 1 to fillen do begin mods[i] := ' '; syms[i] := ' ' end;
+     i := 1;
+     c := strchr(lsp, i); 
+     while c <> '.' do 
+       begin mods[i] := c; i := i+1; c := strchr(lsp, i) end;
+     i := i+1; c := strchr(lsp, i); x := 1;
+     while c <> ' ' do
+       begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
+     bp := blklst; fbp := nil; { find module }
+     while bp <> nil do begin
+       if strequvf(bp^.name, mods) then begin fbp := bp; bp := nil end
+       else bp := bp^.next
+     end;
+     if fbp = nil then errorl('Module not present       ');
+     sp := fbp^.symbols; fsp := nil;
+     while sp <> nil do begin
+       if strequvf(sp^.name, syms) then begin fsp := sp; sp := nil end
+       else sp := sp^.next
+     end;
+     if fsp <> nil then begin
+       if fsp^.styp <> stglobal then errorl('Symbol not global        ');
+       symref := fsp^.off { return address of symbol }
+     end else begin { search for routine }
+       bp := fbp^.incnxt; fbp := nil;
+       while bp <> nil do begin
+         if strequvf(bp^.name, syms) then begin fbp := bp; bp := nil end
+         else bp := bp^.next
+       end;
+       if fbp = nil then errorl('Symbol not present       ');
+       symref := fbp^.bstart
+     end
+   end;
+   begin
+     while flablst <> nil do begin { empty far label list }
+       flp := flablst; flablst := flablst^.next;
+       ad := flp^.val; op := store[ad]; 
+       q := ad+1+ord(insp[op]); putadr(q, symref(flp^.ref));
+       dispose(flp) 
      end
    end;
    
@@ -2311,6 +2372,7 @@ procedure load;
           sp: psymbol;
           ad: address;
           sgn: boolean;
+          ls: strvsp;
           
    procedure gblrlc;
    var sp: psymbol;
@@ -2336,7 +2398,9 @@ procedure load;
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
-                       'l': begin getnxt; parlab(x);
+                       'l': begin getnxt; parlab(x,ls);
+                                  if ls <> nil then 
+                                    errorl('Invalid intermediate     ');
                                   getnxt;
                                   if ch='=' then read(prd,labelvalue)
                                             else labelvalue:= pc;
@@ -2526,9 +2590,13 @@ procedure load;
       end;(*lookup*)
 
       procedure labelsearch;
-         var x: integer;
+         var x: integer; sp: strvsp; flp: flabelp;
       begin skpspc; if ch <> 'l' then errorl('Label format error       ');
-            getnxt; parlab(x); lookup(x)
+            getnxt; parlab(x,sp); 
+            if sp <> nil then begin { far label }
+              new(flp); flp^.next := flablst; flablst := flp; 
+              flp^.val := pc; flp^.ref := sp; q := 0
+            end else lookup(x) { near label }
       end;(*labelsearch*)
       
       procedure putcstfix;
@@ -2595,7 +2663,10 @@ procedure load;
           (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
           3,196,75,76,77,78,79, 
-          5: begin read(prd,q); if q > exceptiontop then q := q+gbloff; storeop;
+          5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+                   if prd^ = 'l' then begin getnxt; labelsearch end 
+                   else read(prd,q);
+                   if q > exceptiontop then q := q+gbloff; storeop;
                    putgblfix; storeq end;
 
           (*pck,upk,cta,ivt*)
@@ -2802,6 +2873,7 @@ begin (*load*)
   { set heap bottom pointer }
   if npadr < 0 then errorl('Heap bottom not set      ');
   putadr(npadr, gbtop);
+  flabrlc; { link far labels }
   if dodmplab then dmplabs { Debug: dump label definitions }
 end; (*load*)
 
