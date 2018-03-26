@@ -103,7 +103,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pcode(input,output,prd,prr
+program pint(input,output,prd,prr
               { Pascaline start !
               ,command
               ! Pascaline end }
@@ -420,6 +420,8 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
+      lintrkt      = array [1..maxsrc] of address; { addresses of lines }
+      linprft      = array [1..maxsrc] of integer; { line profiling }   
       psymbol     = ^symbol;
       symbol      = record
                       next:   psymbol; { next list symbol }  
@@ -433,11 +435,15 @@ type
                        next:    pblock; { next list block }
                        incnxt:  pblock; { included blocks list }
                        name:    strvsp; { name of block }
+                       fname:   strvsp; { filename of block(module) }
                        symbols: psymbol; { symbol list for block }
                        { block type }
-                       btyp:    (btprog, btmod, btproc, btfunc); 
+                       btyp:    (btprog, btmod, btproc, btfunc);
+                       bestart: address; { block enclosing start } 
                        bstart:  address; { block start address }
                        bend:    address; { block end address }
+                       lintrk: ^lintrkt; { addresses of lines }
+                       linprf: ^linprft; { line profiling }
                      end;
       wthinx       = 1..maxwth; { index for watch table }
       wthnum       = 0..maxwth; { watch table number }
@@ -532,12 +538,7 @@ var   pc          : address;   (*program address register*)
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
       
-      srcfnm      : filnam; { filename for current source file }
-      srcfnl      : 1..fillen; { length of source file name }
-      srcbuf      : cmdbuf; { input source line buffer }
       strcnt      : integer; { string allocation count }
-      lintrk      : array [1..maxsrc] of address; { addresses of lines }
-      linprf      : array [1..maxsrc] of integer; { line profiling }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
       wthtbl      : array [wthinx] of address; { watch table }
@@ -554,6 +555,7 @@ var   pc          : address;   (*program address register*)
       charsym     : psymbol; { symbol for character result }
       tmpsym      : psymbol; { list of expression temp symbols }
       maxpow10    : integer; { maximum power of 10 }
+      curmod      : pblock; { currently active block }
 
       i           : integer;
       c1          : char;
@@ -1369,6 +1371,15 @@ begin l := 1; lc := 0;
   lenpv := lc
 end;
 
+{ find length of fixed padded string }
+function lenp(var s: filnam): integer;
+var i: integer;
+begin
+  i := fillen; while (i > 1) and (s[i] = ' ') do i := i-1;
+  if s[i] = ' ' then i := 0;
+  lenp := i
+end;
+
 { get character from variable length string }
 
 function strchr(a: strvsp; x: integer): char;
@@ -1422,6 +1433,16 @@ begin l := fillen; p := nil; a := nil; j := 1;
     p^.str[j] := b[i]; j := j+1
   end;
   if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
+
+{ assign variable length string to fixed identifier }
+procedure strassfv(var a: filnam; b: strvsp);
+var i, j: integer;
+begin for i := 1 to fillen do a[i] := ' '; i := 1;
+  while b <> nil do begin
+    for j := 1 to varsqt do begin a[i] := b^.str[j]; i := i+1 end;
+    b := b^.next
+  end
 end;
 
 { compare variable length id string to fixed }
@@ -2388,7 +2409,7 @@ procedure load;
      end
    end;
 
-   begin
+   begin (*generate*)
       again := true;
       while again do
             begin if eof(prd) then errorl('unexpected eof on input  ');
@@ -2414,7 +2435,8 @@ procedure load;
                             end;
                        ':': begin { source line }
                                read(prd,x); { get source line number }
-                               lintrk[x] := pc; { place in line tracking }
+                               { place in line tracking }
+                               if curmod <> nil then curmod^.lintrk^[x] := pc; 
                                if dosrclin then begin
                                   { pass source line register instruction }
                                   store[pc] := 174; putdef(pc, true); pc := pc+1;
@@ -2462,7 +2484,7 @@ procedure load;
                                   gblrlc; gbset := true;
                                   gbloff := gbloff+i; gbsiz := gbsiz+i; 
                                   getlin end;
-                       'b': begin 
+                       'b': begin
                               getnxt; skpspc;
                               if not (ch in ['p', 'm', 'r', 'f']) then
                                 errorl('Block type is invalid    ');
@@ -2485,7 +2507,16 @@ procedure load;
                               end;
                               { put onto block stack }
                               bp^.next := blkstk; blkstk := bp;
-                              if ch1 = 'p' then begin { it's a program block }
+                              bp^.fname := nil;
+                              { check module }
+                              if bp^.btyp in [btprog, btmod] then begin
+                                { create line track data for module }
+                                new(bp^.lintrk); new(bp^.linprf);
+                                { clear source line tracking }
+                                for i := 1 to maxsrc do 
+                                  bp^.lintrk^[i] := -1; 
+                                { clear line profiling }
+                                for i := 1 to maxsrc do bp^.linprf^[i] := 0;
                                 { has to have room for extention }
                                 if snl >= fillen-4 then 
                                   errorl('Block name too long      ');
@@ -2495,9 +2526,11 @@ procedure load;
                                   sn[snl+1] := ext[i]; snl := snl+1 
                                 end;
                                 { place as source file }
-                                srcfnm := sn; srcfnl := snl
+                                strassvf(bp^.fname, sn);
+                                curmod := bp { set this block current }
                               end;
-                              blkstk^.bstart := pc; { set start address }   
+                              blkstk^.bestart := pc; { set enclosure start }
+                              blkstk^.bstart := pc; { set start address }
                               getlin
                             end;
                        'e': begin { end block }
@@ -2627,7 +2660,7 @@ procedure load;
         pack(word,1,name)
       end; (*getname*)
 
-   begin  p := 0;  q := 0;  op := 0;
+   begin  p := 0;  q := 0;  op := 0; (*assemble*)
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
@@ -2832,7 +2865,6 @@ procedure load;
       end; (*case*)
 
       getlin { next intermediate line }
-
    end; (*assemble*)
    
 begin (*load*)
@@ -4014,39 +4046,79 @@ begin
   writeln
 end;
 
+function fndblk(a: address): pblock;
+var fbp, bp: pblock;
+begin
+  { search for location in blocks }
+  fbp := nil; bp := blklst;
+  while bp <> nil do begin { traverse blocks }
+    if (a >= bp^.bstart) and (a < bp^.bend) then 
+      begin fbp := bp; bp := nil end { found }
+    else bp := bp^.next
+  end;
+  fndblk := fbp
+end;
+
+function fndmod(a: address): pblock;
+var fbp, bp: pblock;
+begin
+  { search for location in blocks }
+  fbp := nil; bp := blklst;
+  while bp <> nil do begin { traverse blocks }
+    if (a >= bp^.bestart) and (a < bp^.bend) and 
+       (bp^.btyp in [btprog, btmod]) then begin fbp := bp; bp := nil end { found }
+    else bp := bp^.next
+  end;
+  fndmod := fbp
+end;
+
+procedure setcur;
+begin
+  { check already active, and don't do a full search if so. This saves time. }
+  if curmod <> nil then begin
+    if (pc < curmod^.bestart) or (pc >= curmod^.bend) then curmod := fndmod(pc)
+  end else curmod := fndmod(pc) 
+end;    
+
 { print source lines }
 procedure prtsrc(s, e: integer; comp: boolean);
-var f: text; i: integer; c: char; nl: boolean; si,ei: address; 
+var f: text; i: integer; c: char; nl: boolean; si,ei: address; fn: filnam;
 begin
-  if not existsfile(srcfnm) then 
-    writeln('*** Source file ', srcfnm:srcfnl, ' not found')
+  setcur; 
+  if curmod = nil then writeln('*** No active module')
   else begin
-    assigntext(f, srcfnm); reset(f); i := 1;
-    nl := true;
-    while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
-    while (i <= e) and not eof(f) do begin
-      if nl then begin { output line head }
-        write(i:4, ': ');
-        if dosrcprf then write(linprf[i]:6, ': ');
-        if isbrkl(i) then write('b') 
-        else if istrcl(i) then write('t') 
-        else write(' ');
-        if i = srclin then write('*') else write(' ');
-        write(' ');
-        nl := false
+    strassfv(fn, curmod^.fname);
+    if not existsfile(fn) then 
+      writeln('*** Source file ', fn:lenp(fn), ' not found')
+    else begin
+      assigntext(f, fn); reset(f); i := 1;
+      nl := true;
+      while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
+      while (i <= e) and not eof(f) do begin
+        if nl then begin { output line head }
+          write(i:4, ': ');
+          if dosrcprf then write(curmod^.linprf^[i]:6, ': ');
+          if isbrkl(i) then write('b') 
+          else if istrcl(i) then write('t') 
+          else write(' ');
+          if i = srclin then write('*') else write(' ');
+          write(' ');
+          nl := false
+        end;
+        if not eoln(f) then begin read(f, c); write(c) end
+        else begin 
+          readln(f); writeln;
+          if comp then begin { coordinated listing mode }
+            si := curmod^.lintrk^[i]; ei := curmod^.lintrk^[i+1]; 
+            if ei < 0 then ei := lsttop;
+            if (si >= 0) and (ei >= 0) then
+              while si <= ei-1 do lstinsa(si) { list machine instructions }
+          end; 
+          i := i+1; nl := true 
+        end 
       end;
-      if not eoln(f) then begin read(f, c); write(c) end
-      else begin 
-        readln(f); writeln;
-        if comp then begin { coordinated listing mode }
-          si := lintrk[i]; ei := lintrk[i+1]; if ei < 0 then ei := lsttop;
-          if (si >= 0) and (ei >= 0) then
-            while si <= ei-1 do lstinsa(si) { list machine instructions }
-        end; 
-        i := i+1; nl := true 
-      end 
-    end;
-    closetext(f)
+      closetext(f)
+    end
   end
 end;
 
@@ -4689,8 +4761,11 @@ begin
                 end;
 
     174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin); 
-                        if dosrcprf then
-                          if linprf[q] < maxint then linprf[q] := linprf[q]+1;
+                        if dosrcprf then begin setcur;
+                          if curmod <> nil then 
+                            if curmod^.linprf^[q] < maxint then 
+                              curmod^.linprf^[q] := curmod^.linprf^[q]+1;
+                        end;
                         if dotrcsrc then
                           if dodbgsrc then begin
                             writeln;
@@ -4757,7 +4832,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
                etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
-               esrcudf,etypmirs,esymnfb,emssym,eblkmba);
+               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -4828,6 +4903,7 @@ begin
     esymnfb:  writeln('Symbol not found in block');
     emssym:   writeln('Must specify symbol in block');
     eblkmba:  writeln('Block containing symbol must be active');
+    emodmba:  writeln('Module must be active');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -4965,7 +5041,8 @@ procedure prthdr;
 var ad: address;
 begin
   wrtnewline; writeln;
-  if dodbgsrc then prtsrc(srclin-1, srclin+1,false) { do source level }
+  if dodbgsrc and (curmod <> nil) then 
+    prtsrc(srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
     write('pc: '); wrthex(output, pc, maxdigh, true); 
     write(' sp: '); wrthex(output, sp, maxdigh, true);
@@ -5002,45 +5079,38 @@ begin
   writeln
 end;
 
-function fndblk(a: address): pblock;
-var fbp, bp: pblock;
-begin
-  { search for location in blocks }
-  fbp := nil; bp := blklst;
-  while bp <> nil do begin { traverse blocks }
-    if (a >= bp^.bstart) and (a < bp^.bend) then fbp := bp; { found }
-    bp := bp^.next
-  end;
-  fndblk := fbp
-end;
-
 procedure dmpfrm(mp, ep: address; pc: address);
 var bp: pblock; line: integer;
 function addr2line(a: address): integer;
 begin
   i := 1;
-  while (lintrk[i] < a) and (i < maxsrc) and (lintrk[i] >= 0) do i := i+1; 
+  while (curmod^.lintrk^[i] < a) and (i < maxsrc) and 
+        (curmod^.lintrk^[i] >= 0) do i := i+1; 
   if i > 1 then i := i-1;
-  if lintrk[i] < 0 then error(elinnf);
+  if curmod^.lintrk^[i] < 0 then error(elinnf);
   addr2line := i
 end;
 begin
-  bp := fndblk(pc); { find address in block }
-  if bp = nil then error(eblknf);
-  wrtnewline; writeln;
-  writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
-  wrthex(output, pc, 8, true);
-  write(' locals/stack: '); wrthex(output, ep, 8, true); write('-'); 
-  wrthex(output, mp-marksize, 8, true); 
-  write(' (', mp-marksize-ep:1, ')'); 
-  writeln;
-  if dodbgsrc then begin
-    line := addr2line(pc); { get equivalent line }
-    prtsrc(line-1, line+1, false) { do source level }
-  end else begin { machine level }
-    ad := pc; lstinsa(ad)
-  end;
-  writeln
+  setcur;
+  if curmod = nil then error(emodmba)
+  else begin
+    bp := fndblk(pc); { find address in block }
+    if bp = nil then error(eblknf);
+    wrtnewline; writeln;
+    writev(output, bp^.name, lenpv(bp^.name)); write(': addr: '); 
+    wrthex(output, pc, 8, true);
+    write(' locals/stack: '); wrthex(output, ep, 8, true); write('-'); 
+    wrthex(output, mp-marksize, 8, true); 
+    write(' (', mp-marksize-ep:1, ')'); 
+    writeln;
+    if dodbgsrc and (curmod <> nil) then begin
+      line := addr2line(pc); { get equivalent line }
+      prtsrc(line-1, line+1, false) { do source level }
+    end else begin { machine level }
+      ad := pc; lstinsa(ad)
+    end;
+    writeln
+  end
 end;
 
 { test if there are any frames }
@@ -6178,8 +6248,10 @@ begin
     if bp <> nil then s := bp^.bstart
     else begin { not a routine, get line no }     
       expr(l); if l > maxsrc then error(einvsln);
-      if lintrk[l] < 0 then error(einvsln);
-      s := lintrk[l]
+      setcur;
+      if curmod = nil then error(emodmba);
+      if curmod^.lintrk^[l] < 0 then error(einvsln);
+      s := curmod^.lintrk^[l]
     end; 
     i := 1;
     while store[s] = mrkins do begin { walk over source line markers }
@@ -6553,11 +6625,12 @@ begin
   end
   { these are internal debugger commands } 
   else if cn = 'listline  ' then begin
+    setcur; if curmod = nil then error(emodmba);
     wrtnewline; writeln;
     writeln('Defined line to address entries:');
     writeln;
-    for i := 1 to maxsrc do if lintrk[i] >= 0 then begin
-      write(i:4, ':'); wrthex(output, lintrk[i], 8, true); writeln
+    for i := 1 to maxsrc do if curmod^.lintrk^[i] >= 0 then begin
+      write(i:4, ':'); wrthex(output, curmod^.lintrk^[i], 8, true); writeln
     end;
     writeln
   end else if cn = 'dumpsymbo ' then begin
@@ -6575,6 +6648,7 @@ begin
         btfunc: write('function')
       end;
       write(' '); 
+      wrthex(output, bp^.bestart, 8, true); write(' '); 
       wrthex(output, bp^.bstart, 8, true); write(' '); 
       wrthex(output, bp^.bend, 8, true);
       writeln;
@@ -6745,16 +6819,11 @@ begin (* main *)
   maktyp(charsym, 'c');
   maxpow10 := 1; while maxpow10 < maxint div 10 do maxpow10 := maxpow10*10;
   
-  { clear source filename }
-  for i := 1 to fillen do srcfnm[i] := ' ';
-
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
   
   for bi := 1 to maxbrk do brktbl[bi].sa := -1; { clear breakpoint table }
-  for i := 1 to maxsrc do lintrk[i] := -1; { clear source line tracking }
-  for i := 1 to maxsrc do linprf[i] := 0; { clear line profiling }
   for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }
   { clear instruction analyzer table }
   for ai := 1 to maxana do anitbl[ai] := -1; 
@@ -6798,7 +6867,7 @@ begin (* main *)
     begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 1; 
           store[0] := brkins end;
   
-  debugstart := false;
+  debugstart := false; setcur;
   writeln('Running program');
   writeln;
   repeat

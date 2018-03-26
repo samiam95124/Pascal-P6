@@ -78,7 +78,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pascalcompiler(output,prd,prr);
+program pcom(output,prd,prr);
 
 label 99; { terminate immediately }
 
@@ -865,7 +865,6 @@ var
     end;
     if p <> nil then for j := j to varsqt do p^.str[j] := ' '
   end;
-  
   
   { assign exception word fixed to variable length string, including allocation }
   procedure strassve(var a: strvsp; b: expstr);
