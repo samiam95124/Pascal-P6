@@ -2537,8 +2537,11 @@ procedure load;
                               getnxt; skpspc;
                               if not (ch in ['p', 'm', 'r', 'f']) then
                                 errorl('Block type is invalid    ');
-                              { end of any module, clear labels }
-                              if ch in ['p','m'] then clrlab;
+                              if ch in ['p','m'] then begin { end module }
+                                clrlab; { clear near labels }
+                                { if this module active, clear it }
+                                if curmod = blkstk then curmod := nil
+                              end;
                               if blkstk = nil then 
                                 errorl('No block to end          ');
                               { mark block non-inclusive }
@@ -4110,9 +4113,9 @@ begin
           readln(f); writeln;
           if comp then begin { coordinated listing mode }
             si := curmod^.lintrk^[i]; ei := curmod^.lintrk^[i+1]; 
-            if ei < 0 then ei := lsttop;
+            if ei < 0 then ei := curmod^.bend-1;
             if (si >= 0) and (ei >= 0) then
-              while si <= ei-1 do lstinsa(si) { list machine instructions }
+              while si <= ei do lstinsa(si) { list machine instructions }
           end; 
           i := i+1; nl := true 
         end 
