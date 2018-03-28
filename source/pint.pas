@@ -4084,13 +4084,16 @@ begin
 end;    
 
 { print source lines }
-procedure prtsrc(s, e: integer; comp: boolean);
+procedure prtsrc(bp: pblock; s, e: integer; comp: boolean);
 var f: text; i: integer; c: char; nl: boolean; si,ei: address; fn: filnam;
 begin
-  setcur; 
-  if curmod = nil then writeln('*** No active module')
-  else begin
-    strassfv(fn, curmod^.fname);
+  if bp = nil then begin
+    setcur; 
+    if curmod = nil then writeln('*** No active module');
+    bp := curmod
+  end;
+  if bp <> nil then begin
+    strassfv(fn, bp^.fname);
     if not existsfile(fn) then 
       writeln('*** Source file ', fn:lenp(fn), ' not found')
     else begin
@@ -4100,7 +4103,7 @@ begin
       while (i <= e) and not eof(f) do begin
         if nl then begin { output line head }
           write(i:4, ': ');
-          if dosrcprf then write(curmod^.linprf^[i]:6, ': ');
+          if dosrcprf then write(bp^.linprf^[i]:6, ': ');
           if isbrkl(i) then write('b') 
           else if istrcl(i) then write('t') 
           else write(' ');
@@ -4112,13 +4115,13 @@ begin
         else begin 
           readln(f); writeln;
           if comp then begin { coordinated listing mode }
-            si := curmod^.lintrk^[i]; ei := curmod^.lintrk^[i+1]; 
-            if ei < 0 then ei := curmod^.bend-1;
+            si := bp^.lintrk^[i]; ei := bp^.lintrk^[i+1]; 
+            if ei < 0 then ei := bp^.bend-1;
             if (si >= 0) and (ei >= 0) then
               while si <= ei do lstinsa(si) { list machine instructions }
           end; 
           i := i+1; nl := true 
-        end 
+        end
       end;
       closetext(f)
     end
@@ -4772,7 +4775,7 @@ begin
                         if dotrcsrc then
                           if dodbgsrc then begin
                             writeln;
-                            prtsrc(srclin-1, srclin+1, false);
+                            prtsrc(nil, srclin-1, srclin+1, false);
                             writeln
                           end else writeln('Source line executed: ', q:1);
                         sourcemark := true
@@ -5045,7 +5048,7 @@ var ad: address;
 begin
   wrtnewline; writeln;
   if dodbgsrc and (curmod <> nil) then 
-    prtsrc(srclin-1, srclin+1,false) { do source level }
+    prtsrc(nil, srclin-1, srclin+1,false) { do source level }
   else begin { machine level }
     write('pc: '); wrthex(output, pc, maxdigh, true); 
     write(' sp: '); wrthex(output, sp, maxdigh, true);
@@ -5108,7 +5111,7 @@ begin
     writeln;
     if dodbgsrc and (curmod <> nil) then begin
       line := addr2line(pc); { get equivalent line }
-      prtsrc(line-1, line+1, false) { do source level }
+      prtsrc(nil, line-1, line+1, false) { do source level }
     end else begin { machine level }
       ad := pc; lstinsa(ad)
     end;
@@ -5185,6 +5188,20 @@ begin p := dbc.p; skpspc(dbc); fbp := nil;
     getsym(dbc); bp := blklst;
     while bp <> nil do begin
       if strequvf(bp^.name, sn) then begin fbp := bp; bp := nil end;
+      if bp <> nil then bp := bp^.next
+    end;
+    if fbp = nil then dbc.p := p
+  end
+end;
+
+procedure fndmnm(var fbp: pblock);
+var bp: pblock;
+begin p := dbc.p; skpspc(dbc); fbp := nil;
+  if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
+    getsym(dbc); bp := blklst;
+    while bp <> nil do begin
+      if strequvf(bp^.name, sn) and (bp^.btyp in [btprog, btmod]) then 
+        begin fbp := bp; bp := nil end;
       if bp <> nil then bp := bp^.next
     end;
     if fbp = nil then dbc.p := p
@@ -6177,10 +6194,10 @@ begin
 end;
 
 procedure dbgins;
-var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp: pblock; syp: psymbol; 
-    si,ei: integer; sim: boolean; enum: boolean; s,e,pcs,eps: address;
-    r: integer; fl: integer; lz: boolean; eres: expres; first: boolean;
-    deffld: boolean;
+var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock; 
+    syp: psymbol; si,ei: integer; sim: boolean; enum: boolean; 
+    s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; 
+    eres: expres; first: boolean; deffld: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1;
@@ -6247,14 +6264,20 @@ begin
   end else if (cn = 'b         ') or 
               (cn = 'tp        ') then begin 
     { place breakpoint/tracepoint source }
-    fndrot(bp); { see if routine name }
-    if bp <> nil then s := bp^.bstart
+    fndmnm(bp); { find if module specified }
+    bp2 := nil;
+    if bp = nil then begin { none found } 
+      fndrot(bp2); { see if routine name }
+      if bp2 = nil then begin { set from current module }
+        setcur; bp := curmod;
+        if bp = nil then error(emodmba)
+      end 
+    end;
+    if bp2 <> nil then s := bp^.bstart
     else begin { not a routine, get line no }     
       expr(l); if l > maxsrc then error(einvsln);
-      setcur;
-      if curmod = nil then error(emodmba);
-      if curmod^.lintrk^[l] < 0 then error(einvsln);
-      s := curmod^.lintrk^[l]
+      if bp^.lintrk^[l] < 0 then error(einvsln);
+      s := bp^.lintrk^[l]
     end; 
     i := 1;
     while store[s] = mrkins do begin { walk over source line markers }
@@ -6314,6 +6337,9 @@ begin
     end
   end else if (cn = 'l         ') or
               (cn = 'lc        ') then begin { list source }
+    fndmnm(bp); { find if module specified }
+    if bp = nil then { none found } 
+      begin setcur; if curmod = nil then error(emodmba); bp := curmod end;
     s := 0; e := maxsrc;
     skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i end;
     skpspc(dbc);
@@ -6321,7 +6347,7 @@ begin
       begin nxtchr(dbc); expr(i); e := s+i-1 end
     else if not chkend(dbc) then begin expr(i); e := i end;
     wrtnewline; writeln;
-    prtsrc(s, e, cn = 'lc        ');
+    prtsrc(bp, s, e, cn = 'lc        ');
     writeln
   end else if (cn = 's         ') or
               (cn = 'ss        ') then begin { step source line }
@@ -6461,7 +6487,7 @@ begin
     while i > 0 do begin
       if anstbl[i] <= 0 then i := 0
       else begin 
-        prtsrc(anstbl[i], anstbl[i], false); i := lstana(i); 
+        prtsrc(nil, anstbl[i], anstbl[i], false); i := lstana(i); 
         if i = lstana(aniptr) then i := 0 
       end
     end;
@@ -6575,55 +6601,55 @@ begin
     wrtnewline; writeln;
     writeln('Commands:');
     writeln;
-    writeln('h|help         Help (this command)');
-    writeln('l   [s[ e|:l]  List source lines');
-    writeln('lc  [s[ e|:l]  List source and machine lines coordinated');
-    writeln('li  [s[ e|:l]  List machine instructions');
-    writeln('p   v          Print expression');
-    writeln('d   [s[ e|:l]  Dump memory');
-    writeln('e   a v[ v]... Enter byte values to memory address');
-    writeln('st  d v        Set program variable');
-    writeln('pg             Print all globals');
-    writeln('pl  [n]        print locals for current/number of enclosing ',
+    writeln('h|help             Help (this command)');
+    writeln('l   [m] [s[ e|:l]  List source lines');
+    writeln('lc  [s[ e|:l]      List source and machine lines coordinated');
+    writeln('li  [s[ e|:l]      List machine instructions');
+    writeln('p   v              Print expression');
+    writeln('d   [s[ e|:l]      Dump memory');
+    writeln('e   a v[ v]...     Enter byte values to memory address');
+    writeln('st  d v            Set program variable');
+    writeln('pg                 Print all globals');
+    writeln('pl  [n]            print locals for current/number of enclosing ',
             'blocks');
-    writeln('pp  [n]        print parameters for current/number of enclosing ',
+    writeln('pp  [n]            print parameters for current/number of enclosing ',
             'blocks');
-    writeln('ds             Dump storage parameters');
-    writeln('dd  [n]        Dump display frames');
-    writeln('df  [n]        Dump frames formatted (call trace)');
-    writeln('b   a          Place breakpoint at source line number/routine');
-    writeln('tp  a          Place tracepoint at source line number/routine');
-    writeln('bi  a          Place breakpoint at instruction');
-    writeln('tpi a          Place tracepoint at instruction');
-    writeln('c   [a]        Clear breakpoint/all breakpoints');
-    writeln('lb             List active breakpoints');
-    writeln('w   a          Watch variable');
-    writeln('lw             List watch table');
-    writeln('cw  [n]        Clear watch table entry/all watch entries');
-    writeln('lia            List instruction analyzer buffer');
-    writeln('lsa            List source analyzer buffer');
-    writeln('s   [n]        Step next source line execution');
-    writeln('ss  [n]        Step next source line execution silently');
-    writeln('si  [n]        Step instructions');
-    writeln('sis [n]        Step instructions silently');
-    writeln('hs             Report heap space');
-    writeln('pc  [a]        Set/print pc contents');
-    writeln('sp  [a]        Set/print sp contents');
-    writeln('mp  [a]        Set/print mp contents');
-    writeln('np  [a]        Set/print np contents');
-    writeln('ti             Turn instruction tracing on');
-    writeln('nti            Turn instruction tracing off');
-    writeln('tr             Turn system routine tracing on');
-    writeln('ntr            Turn system routine tracing off');
-    writeln('ts             Turn source line tracing on');
-    writeln('nts            Turn source line tracing off');
-    writeln('spf            Turn on source level profiling');
-    writeln('nspf           Turn off source level profiling');
-    writeln('an             Turn on analyzer mode');
-    writeln('nan            Turn off analyzer mode');
-    writeln('r              Run program from current pc');
-    writeln('ps             Print current registers and instruction');
-    writeln('q              Quit interpreter');
+    writeln('ds                 Dump storage parameters');
+    writeln('dd  [n]            Dump display frames');
+    writeln('df  [n]            Dump frames formatted (call trace)');
+    writeln('b   [m] a          Place breakpoint at source line number/routine');
+    writeln('tp  [m] a          Place tracepoint at source line number/routine');
+    writeln('bi  a              Place breakpoint at instruction');
+    writeln('tpi a              Place tracepoint at instruction');
+    writeln('c   [a]            Clear breakpoint/all breakpoints');
+    writeln('lb                 List active breakpoints');
+    writeln('w   a              Watch variable');
+    writeln('lw                 List watch table');
+    writeln('cw  [n]            Clear watch table entry/all watch entries');
+    writeln('lia                List instruction analyzer buffer');
+    writeln('lsa                List source analyzer buffer');
+    writeln('s   [n]            Step next source line execution');
+    writeln('ss  [n]            Step next source line execution silently');
+    writeln('si  [n]            Step instructions');
+    writeln('sis [n]            Step instructions silently');
+    writeln('hs                 Report heap space');
+    writeln('pc  [a]            Set/print pc contents');
+    writeln('sp  [a]            Set/print sp contents');
+    writeln('mp  [a]            Set/print mp contents');
+    writeln('np  [a]            Set/print np contents');
+    writeln('ti                 Turn instruction tracing on');
+    writeln('nti                Turn instruction tracing off');
+    writeln('tr                 Turn system routine tracing on');
+    writeln('ntr                Turn system routine tracing off');
+    writeln('ts                 Turn source line tracing on');
+    writeln('nts                Turn source line tracing off');
+    writeln('spf                Turn on source level profiling');
+    writeln('nspf               Turn off source level profiling');
+    writeln('an                 Turn on analyzer mode');
+    writeln('nan                Turn off analyzer mode');
+    writeln('r                  Run program from current pc');
+    writeln('ps                 Print current registers and instruction');
+    writeln('q                  Quit interpreter');
     writeln
   end
   { these are internal debugger commands } 
@@ -6880,7 +6906,7 @@ begin (* main *)
     stopwatch := true; { set stop on watch match }
     watchmatch := false; { set no watch was matched }
     sinins;
-    { if breakpoint hit, back up pc and go debugger }
+    { if breakpoint hit, go debugger }
     if breakins or (stopins and dodebug) or watchmatch then begin
       if stopins then 
         begin wrtnewline; writeln; writeln('*** Stop instruction hit') end; 
