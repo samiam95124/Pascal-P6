@@ -1917,10 +1917,16 @@ end;
     else
       begin
         repeat lcp1 := lcp;
-          if strequvv(lcp^.name, fcp^.name) then 
+          if strequvv(lcp^.name, fcp^.name) then begin 
             (*name conflict, follow right link*)
-            begin error(101); lcp := lcp^.rlink; lleft := false end
-          else
+            if incstk <> nil then begin
+              writeln; write('*** Duplicate in uses/joins: '); 
+              writevp(output, fcp^.name);
+              writeln
+            end; 
+            error(101); 
+            lcp := lcp^.rlink; lleft := false
+          end else
             if strltnvv(lcp^.name, fcp^.name) then
               begin lcp := lcp^.rlink; lleft := false end
             else begin lcp := lcp^.llink; lleft := true end
@@ -6523,7 +6529,7 @@ end;
           if llcp = nil then begin
             { a header file was never defined in a var statement }
             writeln(output);
-            writeln('**** Error: Undeclared external file ''',
+            writeln('*** Error: Undeclared external file ''',
                            fextfilep^.filename:8, '''');
             toterr := toterr+1;
             llcp := uvarptr
@@ -6532,7 +6538,7 @@ end;
             if (llcp^.idtype^.form<>files) and (llcp^.idtype <> intptr) and
                (llcp^.idtype <> realptr) then
               begin writeln(output);
-                writeln('**** Error: Undeclared external file ''',
+                writeln('*** Error: Undeclared external file ''',
                                fextfilep^.filename:8, '''');
                 toterr := toterr+1
               end
