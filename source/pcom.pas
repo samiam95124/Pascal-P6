@@ -1917,7 +1917,8 @@ end;
     else
       begin
         repeat lcp1 := lcp;
-          if strequvv(lcp^.name, fcp^.name) then (*name conflict, follow right link*)
+          if strequvv(lcp^.name, fcp^.name) then 
+            (*name conflict, follow right link*)
             begin error(101); lcp := lcp^.rlink; lleft := false end
           else
             if strltnvv(lcp^.name, fcp^.name) then
@@ -6704,6 +6705,14 @@ end;
       fp := fl; fl := fl^.next; putstrs(fp^.mn); dispose(fp)
     end
   end;
+  
+  procedure cancelfwd(fcp: ctp);
+  begin
+    if fcp <> nil then begin
+      if fcp^.klass in [proc, func] then fcp^.forwdecl := false;
+      cancelfwd(fcp^.llink); cancelfwd(fcp^.rlink)
+    end
+  end; 
     
   procedure module(fsys:setofsys); forward;
     
@@ -6726,8 +6735,8 @@ end;
           openinput(ff);
           if ff then begin
             ch := ' '; eol := true; prcode := false; list := false;
-            insymbol; module(blockbegsys+statbegsys-[casesy]);
-            closeinput
+            insymbol; module(blockbegsys+statbegsys-[casesy]); 
+            cancelfwd(display[top].fname); closeinput
           end;
           ch := chs; eol := eols;prcode := prcodes; list := lists; gc := gcs; 
           nammod := nammods; curmod := curmods; entname := entnames
