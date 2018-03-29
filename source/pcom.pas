@@ -342,9 +342,7 @@ type                                                        (*describing:*)
                                            actual: (forwdecl, externl: boolean);
                                            formal: ()))
                    end;
-
-
-     disprange = 0..displimit;
+     
      where = (blck,crec,vrec,rec);
 
                                                             (*expressions*)
@@ -383,6 +381,22 @@ type                                                        (*describing:*)
                    refer:   boolean  { was referred to }
             end;
 
+     disprange = 0..displimit;
+     disprec = record                      (*=blck:   id is variable id*)
+                 fname: ctp; flabel: lbp;  (*=crec:   id is field id in record with*)
+                 fconst: csp; fstruct: stp;
+                 packing: boolean;         { used for with derived from packed }
+                 packcom: boolean;         { used for with derived from packed }
+                 ptrref: boolean;          { used for with derived from pointer }
+                 modnam: strvsp;           { module name for block (if exists) }
+                 case occur: where of      (*   constant address*)
+                   crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
+                          cdspl: addrrange);(*   variable address*)
+                   vrec: (vdspl: addrrange);
+                   blck: (bname: ctp);     { block id }
+                   rec: ()
+               end;                        (* --> procedure withstatement*)
+               
      { external file tracking entries }
      extfilep = ^filerec;
      filerec = record filename:idstr; nextfile:extfilep end;
@@ -486,23 +500,13 @@ var
     level: levrange;                (*current static level*)
     disx,                           (*level of last id searched by searchid*)
     top: disprange;                 (*top of display*)
+    ptop: disprange;                { top of pile }
 
     display:                        (*where:   means:*)
-      array [disprange] of
-        packed record               (*=blck:   id is variable id*)
-          fname: ctp; flabel: lbp;  (*=crec:   id is field id in record with*)
-          fconst: csp; fstruct: stp;
-          packing: boolean;         { used for with derived from packed }
-          packcom: boolean;         { used for with derived from packed }
-          ptrref: boolean;          { used for with derived from pointer }
-          case occur: where of      (*   constant address*)
-            crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
-                  cdspl: addrrange);(*   variable address*)
-            vrec: (vdspl: addrrange);
-            blck: (bname: ctp);     { block id }
-            rec: ()
-        end;                        (* --> procedure withstatement*)
-
+      array [disprange] of disprec;
+      
+    pile:                           { pile of joined/class contexts } 
+      array [disprange] of disprec;
 
                                     (*error messages:*)
                                     (*****************)
@@ -729,7 +733,9 @@ var
     while display[l].fstruct <> nil do begin
       { remove top from list }
       lsp := display[l].fstruct; display[l].fstruct := lsp^.next; putsub(lsp)
-    end
+    end;
+    { dispose of module name }
+    putstrs(display[l].modnam)
   end; { putdsp }
 
   { scrub all display levels until given }
@@ -1418,7 +1424,7 @@ end;
     226: write('Type of variable is not exception');
     227: write('Type too complex to track');
 
-    250: write('Too many nestedscopes of identifiers');
+    250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
     252: write('Too many forward references of procedure entries');
     253: write('Procedure too long');
@@ -1435,6 +1441,7 @@ end;
     264: write('External file not found');
     265: write('Filename too long');
     266: write('''private'' has no meaning here');
+    267: write('Too many nested module joins');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -3366,6 +3373,9 @@ end;
                                   fconst := nil;
                                   fstruct := nil;
                                   packing := false;
+                                  packcom := false;
+                                  ptrref := false;
+                                  modnam := nil;
                                   occur := rec
                             end
                         end
@@ -3698,8 +3708,8 @@ end;
                 if forw then fname := lcp^.pflist
                 else fname := nil;
                 flabel := nil; fconst := nil; fstruct := nil; packing := false;
-                occur := blck;
-                bname := lcp
+                packcom := false; ptrref := false; modnam := nil;
+                occur := blck; bname := lcp
               end
           end
         else error(250);
@@ -6342,7 +6352,8 @@ end;
                       fstruct := nil;
                       packing := gattr.packing;
                       packcom := gattr.packcom;
-                      ptrref := gattr.ptrref
+                      ptrref := gattr.ptrref;
+                      modnam := nil
                     end;
                   if gattr.access = drct then
                     with display[top] do
@@ -6725,14 +6736,14 @@ end;
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
       lists: boolean; nammods: strvsp; gcs: addrrange; curmods: modtyp;
-      entnames: integer;
+      entnames: integer; sym: symbol;
   function schnam(fp: filptr): boolean;
   begin schnam := false;
     while fp <> nil do 
       begin if fp^.fn = id then schnam := true; fp := fp^.next end
   end;
   begin
-    insymbol; { skip uses/joins }
+    sys := sy; insymbol; { skip uses/joins }
     repeat { modules }
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin 
@@ -6747,7 +6758,18 @@ end;
           ch := chs; eol := eols;prcode := prcodes; list := lists; gc := gcs; 
           nammod := nammods; curmod := curmods; entname := entnames
         end;
-        insymbol { skip id }
+        insymbol; { skip id }
+        if sym = joinssy then begin { post process joins level }
+          if ptop >= displimit then error(267)
+          else begin
+            pile[ptop] := display[top]; { copy out definitions from display }
+            ptop := ptop+1;
+            { clear display for next }
+            with display[top] do
+              begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
+                    packing := false; occur := blck; bname := nil end
+          end
+        end
       end;
       sys := sy;
       if sy = comma then insymbol
@@ -6768,6 +6790,7 @@ end;
       begin insymbol; 
         if sy <> ident then error(2) else begin
           strassvf(nammod, id); { place module name }
+          strassvf(display[top].modnam, id);
           if prcode then begin
             writeln(prr, 'i');
             if curmod = mtprogram then 
@@ -6819,7 +6842,11 @@ end;
           end;
         if sy = semicolon then insymbol
       end else error(3);
-    if (sy = usessy) or (sy = joinssy) then usesjoins; { process uses/joins }
+    { must process joins first so that the module (1) display level is clean.
+      Otherwise this could create a situation where joins rely on other 
+      modules }
+    if sy = joinssy then usesjoins; { process joins }
+    if sy = usessy then usesjoins; { process uses }
     declare(fsys,period,nil);
     if not inpriv then body(fsys,nil);
     if curmod = mtmodule then begin
@@ -7666,15 +7693,17 @@ begin
 
   (*enter standard names and standard types:*)
   (******************************************)
-  level := 0; top := 0;
+  level := 0; top := 0; ptop := 0;
   with display[0] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; occur := blck; bname := nil end;
+          packing := false; packcom := false; ptrref := false; modnam := nil;
+          occur := blck; bname := nil end;
   enterstdtypes; stdnames; entstdnames; enterundecl;
   top := 1; level := 1;
   with display[1] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; occur := blck; bname := nil end;
+          packing := false; packcom := false; ptrref := false; modnam := nil;
+          occur := blck; bname := nil end;
 
   (*compile:*)
   (**********)

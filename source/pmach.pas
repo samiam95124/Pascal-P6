@@ -2564,12 +2564,11 @@ end;(*callsp*)
 procedure sinins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
-    a1,a2,a3: address; pcs: address;
+    a1,a2,a3: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
   
   { fetch instruction from byte store }
-  pcs := pc; { save starting pc }
   getop;
 
   (*execute*)
