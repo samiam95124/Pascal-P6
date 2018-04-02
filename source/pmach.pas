@@ -1139,7 +1139,7 @@ begin
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
   i := 1;
   while not eolncommand and not eofcommand and 
-        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+        (bufcommand in ['a'..'z',  'A'..'Z', '_', '0'..'9']) do begin
     if i = fillen then errorv(FilenameTooLong);
     fne[i] := bufcommand;
     getcommand;
@@ -1156,7 +1156,7 @@ begin
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
   i := 1;
   while not eolncommand and not eofcommand and 
-        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+        (bufcommand in ['a'..'z',  'A'..'Z', '_', '0'..'9']) do begin
     if i = fillen then errorv(FileNameTooLong);
     fne[i] := bufcommand;
     getcommand;
@@ -2454,7 +2454,8 @@ begin (*callsp*)
                           else begin
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)
-                          end
+                          end;
+                          filbuff[fn] := true
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
@@ -2481,10 +2482,10 @@ begin (*callsp*)
                          assignbin(bfiltable[fn], fl1) 
                        end;
            47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad]; 
-                         closetext(filtable[fn])
+                         closetext(filtable[fn]); filstate[fn] := fclosed
                        end;
            57 (*clsb*): begin popadr(ad); valfil(ad); fn := store[ad]; 
-                         closebin(bfiltable[fn])
+                         closebin(bfiltable[fn]); filstate[fn] := fclosed
                        end;
            48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad];
                          if i < 1 then errore(InvalidFilePosition); 

@@ -1724,7 +1724,7 @@ begin
 
 end;
 
-{ end of accessor functions
+{ end of accessor functions }
 
 (*--------------------------------------------------------------------*)
 
@@ -3929,7 +3929,8 @@ begin (*callsp*)
                           else begin
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)
-                          end
+                          end;
+                          filbuff[fn] := true { validate buffer }
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
@@ -3956,10 +3957,10 @@ begin (*callsp*)
                          assignbin(bfiltable[fn], fl1) 
                        end;
            47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad]; 
-                         closetext(filtable[fn])
+                         closetext(filtable[fn]); filstate[fn] := fclosed
                        end;
            57 (*clsb*): begin popadr(ad); valfil(ad); fn := store[ad]; 
-                         closebin(bfiltable[fn])
+                         closebin(bfiltable[fn]); filstate[fn] := fclosed
                        end;
            48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad];
                          if i < 1 then errore(InvalidFilePosition); 
