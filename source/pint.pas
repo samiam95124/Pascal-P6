@@ -3885,19 +3885,16 @@ begin (*callsp*)
                             for i := 1 to l do begin
                               store[ad1+i-1] := store[ad+fileidsize+i-1]; 
                               putdef(ad1+i-1, true)
-                            end else begin
-                              if eof(bfiltable[fn]) then
-                                errore(EndOfFile);
+                            end else
                               for i := 1 to l do begin
+                                if eof(bfiltable[fn]) then
+                                  errore(EndOfFile);
                                 read(bfiltable[fn], store[ad1]);
                                 putdef(ad1, true);
                                 ad1 := ad1+1
                               end
-                            end
                       end;
            33(*rsb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if filstate[fn] = fclosed then
-                             errore(FileNotOpen);
                            filstate[fn] := fread;
                            reset(bfiltable[fn]);
                            filbuff[fn] := false

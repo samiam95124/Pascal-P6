@@ -184,14 +184,6 @@ const
         In the new unified code/data space scheme, 0 and 1 are always invalid
         addresses, since the startup code is at least that long. }
       nilval      =        1;  { value of 'nil' }
-      { beginning of code, offset by program preamble:
-
-        2:    mst
-        6/10: cup
-        1:    stp
-
-      }
-      begincode   =        14   {13};
 
       { Mark element offsets
 
@@ -1921,6 +1913,7 @@ procedure callsp;
    
    procedure reads(fn: fileno; ad: address; l: integer; w: integer; 
                    fld: boolean);
+   var c: char;
    function chkbuf: char;
    begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf; 
@@ -2040,8 +2033,7 @@ begin (*callsp*)
            0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad]; getfn(fn)
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if fn <= commandfn then case fn of
-                              
+                           if fn <= commandfn then case fn of                              
                               outputfn: putfile(output, ad, fn); 
                               prrfn: putfile(prr, ad, fn);
                               errorfn: putfile(output, ad, fn); 
@@ -2410,19 +2402,16 @@ begin (*callsp*)
                             for i := 1 to l do begin
                               store[ad1+i-1] := store[ad+fileidsize+i-1]; 
                               putdef(ad1+i-1, true)
-                            end else begin
-                              if eof(bfiltable[fn]) then
-                                errore(EndOfFile);
+                            end else
                               for i := 1 to l do begin
+                                if eof(bfiltable[fn]) then
+                                  errore(EndOfFile);
                                 read(bfiltable[fn], store[ad1]);
                                 putdef(ad1, true);
                                 ad1 := ad1+1
                               end
-                            end
                       end;
            33(*rsb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                           if filstate[fn] = fclosed then
-                             errore(FileNotOpen);
                            filstate[fn] := fread;
                            reset(bfiltable[fn]);
                            filbuff[fn] := false
