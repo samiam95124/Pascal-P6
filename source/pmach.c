@@ -3,7 +3,7 @@
 *                           Portable Pascal compiler                           *
 *                           ************************                           *
 *                                                                              *
-*                                 Pascal P5                                    *
+*                                 Pascal P6                                    *
 *                                                                              *
 *                                 ETH May 76                                   *
 *                                                                              *
@@ -988,10 +988,10 @@ void load(FILE* fp)
 {
     address ad, ad2;
     int i, l, cs, csc, b;
-    char c;
+    int c;
 
     ad = 0; l = 1;
-    while (c = getc(fp) != EOF && l > 0) {
+    while ((c = fgetc(fp)) != EOF && l > 0) {
         if (c != ':') errorl();
         fscanf(fp, "%2x%16x", &l, &i); ad2 = i;
         if (ad != ad2 && l > 0) errorl();
@@ -2041,6 +2041,7 @@ void sinins()
 
     if (pc >= pctop) errorv(PCOUTOFRANGE);
 
+printf("sinins: @%08x:%02x/%03d\n", pc, store[pc], store[pc]);
     /* fetch instruction from byte store */
     getop();
 
@@ -2576,7 +2577,7 @@ void main (int argc, char *argv[])
 
     /* construct bit equivalence table */
     i = 1;
-    for (bai = 0; bai <= 7; bai++) /* bitmsk[bai] = i; i = i*2; */
+    for (bai = 0; bai <= 7; bai++) { bitmsk[bai] = i; i = i*2; }
 
     for (sdi = 0; sdi <= MAXDEF; sdi++)
       storedef[sdi] = 0; /* clear storage defined flags */
@@ -2594,7 +2595,7 @@ void main (int argc, char *argv[])
     }
     filstate[PRDFN] = fsread;
 
-    filtable[PRRFN] = fopen("prr", "r");
+    filtable[PRRFN] = fopen("prr", "w");
     if (!filtable[PRRFN]) {
         printf("*** Cannot open file prr\n");
         finish(1);
