@@ -1939,6 +1939,7 @@ procedure callsp;
    end;(*reads*)
    
    procedure readsp(fn: fileno; ad: address; l: integer);
+   var c: char;
    begin
      while (l > 0) and not eolnfn(fn) do begin
        if eoffn(fn) then errore(EndOfFile);
