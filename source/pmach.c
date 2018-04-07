@@ -828,17 +828,17 @@ void assignexternal(filnum fn, char hfn[])
 
 */
 
-int getint(address a) { chkdef(a); return ((int)store[a]); }
+int getint(address a) { chkdef(a); return (*((int*)(store+a))); }
 void putint(address a, int x) { *((int*)(store+a)) = x; putdef(a, TRUE); }
-float getrel(address a) { chkdef(a); return ((float)store[a]); }
+float getrel(address a) { chkdef(a); return (*((float*)(store+a))); }
 void putrel(address a, float f) { *((float*)(store+a)) = f; putdef(a, TRUE); }
-boolean getbol(address a) { chkdef(a); return ((boolean)store[a]); }
-void putbol(address a, boolean b) { *((float*)(store+a)) = b; putdef(a, TRUE); }
-char getchr(address a) { chkdef(a); return ((char)store[a]); }
-void putchr(address a, char c) { *((char*)(store+a)) = c; putdef(a, TRUE); }
+boolean getbol(address a) { chkdef(a); return (store[a]); }
+void putbol(address a, boolean b) { store[a] = b; putdef(a, TRUE); }
+char getchr(address a) { chkdef(a); return (store[a]); }
+void putchr(address a, char c) { store[a] = c; putdef(a, TRUE); }
 byte getbyt(address a) { chkdef(a); return (store[a]); }
 void putbyt(address a, byte b) { store[a] = b; putdef(a, TRUE); }
-address getadr(address a) { chkdef(a); return ((address)store[a]); }
+address getadr(address a) { chkdef(a); return (*((address*)(store+a))); }
 void putadr(address a, address ad) { *((address*)(store+a)) = ad;
                                      putdef(a, TRUE); }
 
@@ -1605,19 +1605,22 @@ void callsp(void)
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "%*.*s", w, l,
-                                              (char*)ad1); break;
+                                              (char*)(store+ad1)); break;
                        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l,
-                                           (char*)ad1); break;
-                       case ERRORFN: fprintf(stderr, "%*.*s", w, l, (char*)ad1);
+                                           (char*)(store+ad1)); break;
+                       case ERRORFN: fprintf(stderr, "%*.*s", w, l,
+                                             (char*)(store+ad1));
                                      break;
-                       case LISTFN: fprintf(stdout, "%*.*s", w, l, (char*)ad1);
+                       case LISTFN: fprintf(stdout, "%*.*s", w, l,
+                                            (char*)(store+ad1));
                                     break;
                        case PRDFN: case INPUTFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                     } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*s", w, l, (char*)ad1);
-                    };
+                         fprintf(filtable[fn], "%*.*s", w, l,
+                                 (char*)(store+ad1));
+                    }
                     break;
     case 65 /*wrsp*/: popint(&l); popadr(&ad1); popadr(&ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
@@ -2039,9 +2042,10 @@ void sinins()
     address ad,ad1,ad2,ad3; boolean b; int i,j,k,i1,i2; char c, c1; int i3,i4;
     float r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
 
+/*printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
+       pc, sp, mp, store[pc], store[pc]);*/
     if (pc >= pctop) errorv(PCOUTOFRANGE);
 
-printf("sinins: @%08x:%02x/%03d\n", pc, store[pc], store[pc]);
     /* fetch instruction from byte store */
     getop();
 
@@ -2129,7 +2133,7 @@ printf("sinins: @%08x:%02x/%03d\n", pc, store[pc], store[pc]);
                  getp();
                  ad = sp; /* save mark base */
                  /* allocate mark */
-                 for (j = 1; j <= MARKSIZE % INTSIZE; j++) pshint(0);
+                 for (j = 0; j < MARKSIZE/INTSIZE; j++) pshint(0);
                  putadr(ad+MARKSL, base(p)); /* sl */
                  /* the length of this element is ptrsize */
                  putadr(ad+MARKDL, mp); /* dl */
