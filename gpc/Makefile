@@ -4,18 +4,22 @@
 # Makes the main compiler interpreter set.
 #
 PC=gpc
-CFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
+PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
+CFLAGS=
 
-all: pcom pint pmach
+all: pcom pint pmach cmach
 
 pcom: source/pcom.pas
-	$(PC) $(CFLAGS) -o bin/pcom source/pcom.pas
+	$(PC) $(PFLAGS) -o bin/pcom source/pcom.pas
 	
 pint: source/pint.pas
-	$(PC) $(CFLAGS) -o bin/pint source/pint.pas
+	$(PC) $(PFLAGS) -o bin/pint source/pint.pas
 
 pmach: source/pmach.pas
-	$(PC) $(CFLAGS) -o bin/pmach source/pmach.pas
+	$(PC) $(PFLAGS) -o bin/pmach source/pmach.pas
+
+cmach: source/cmach.c
+	$(CC) $(CFLAGS) -o bin/cmach source/cmach.c
 	
 clean:
 	rm -f bin/pcom bin/pint 
