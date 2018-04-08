@@ -630,6 +630,19 @@ begin
   wrtnum(tf, v, 16, f, lz)
 end;
 
+procedure dmpmem(s, e: address);
+var c: integer;
+begin
+    c := 0;
+    while s <= e do begin
+        if c = 0 then begin wrtnum(output, s, 16, 8, true); write(': ') end;
+        wrtnum(output, store[s], 16, 2, true); write(' '); c := c+1; s := s+1;
+        if c = 16 then begin writeln; c := 0 end
+    end;
+    if c <> 0 then writeln;
+    writeln
+end;
+
 procedure errors(a: address; l: address);
 begin writeln; write('*** Runtime error'); 
       if srclin > 0 then write(' [', srclin:1, ']');
@@ -1805,7 +1818,7 @@ end;
 procedure lstins(var ad: address);
 
 var ads: address;
-    op: instyp; p : lvltyp; q, q1 : address;  (*instruction register*)
+    op: instyp; p : lvltyp; q, q1 : integer;  (*instruction register*)
 
 begin
 

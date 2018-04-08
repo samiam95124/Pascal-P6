@@ -534,6 +534,21 @@ char c1;
 address ad;
 int bai;
 
+void dmpmem(address s, address e)
+{
+    int c;
+
+    c = 0;
+    while (s <= e) {
+        if (!c) printf("%08X: ", s);
+        printf("%02X ", store[s]); c++;
+        s++;
+        if (c == 16) { printf("\n"); c = 0; }
+    }
+    if (c) printf("\n");
+    printf("\n");
+}
+
 /*--------------------------------------------------------------------*/
 
 /* Low level error check and handling */
@@ -830,8 +845,8 @@ void assignexternal(filnum fn, char hfn[])
 
 int getint(address a) { chkdef(a); return (*((int*)(store+a))); }
 void putint(address a, int x) { *((int*)(store+a)) = x; putdef(a, TRUE); }
-float getrel(address a) { chkdef(a); return (*((float*)(store+a))); }
-void putrel(address a, float f) { *((float*)(store+a)) = f; putdef(a, TRUE); }
+double getrel(address a) { chkdef(a); return (*((double*)(store+a))); }
+void putrel(address a, double f) { *((double*)(store+a)) = f; putdef(a, TRUE); }
 boolean getbol(address a) { chkdef(a); return (store[a]); }
 void putbol(address a, boolean b) { store[a] = b; putdef(a, TRUE); }
 char getchr(address a) { chkdef(a); return (store[a]); }
@@ -892,8 +907,8 @@ void swpstk(address l)
 
 void popint(int* i) { *i = getint(sp); sp = sp+INTSIZE; }
 void pshint(int i) { sp = sp-INTSIZE; putint(sp, i); }
-void poprel(float* r) { *r = getrel(sp); sp = sp+REALSIZE; }
-void pshrel(float r) { sp = sp-REALSIZE; putrel(sp, r); }
+void poprel(double* r) { *r = getrel(sp); sp = sp+REALSIZE; }
+void pshrel(double r) { sp = sp-REALSIZE; putrel(sp, r); }
 void popset(settype s) { getset(sp, s); sp = sp+SETSIZE; }
 void pshset(settype s) { sp = sp-SETSIZE; putset(sp, s); }
 void popadr(address* a) { *a = getadr(sp); sp = sp+ADRSIZE; }
@@ -1352,10 +1367,10 @@ void readi(filnum fn, int *i, int* w, boolean fld)
 }
 
 /* find power of ten */
-float pwrten(int e)
+double pwrten(int e)
 {
-    float t; /* accumulator */
-    float p; /* current power */
+    double t; /* accumulator */
+    double p; /* current power */
 
    p = 1.0e+1; /* set 1st power */
    t = 1.0; /* initalize result */
@@ -1367,7 +1382,7 @@ float pwrten(int e)
    return (t);
 }
 
-void readr(filnum fn, float* r, int w, boolean fld)
+void readr(filnum fn, double* r, int w, boolean fld)
 {
     int i; /* integer holding */
     int e; /* exponent */
@@ -1529,7 +1544,7 @@ void callsp(void)
     char c;
     boolean b;
     address ad,ad1,ad2;
-    float r, r1;
+    double r, r1;
     filnum fn;
     int mn,mx;
     filnam fl1, fl2;
@@ -1538,6 +1553,9 @@ void callsp(void)
     boolean fld;
     FILE* fp;
 
+/*
+printf("\ncallsp: q: %d\n", q);
+*/
     if (q > MAXSP) errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
 
     switch (q) {
@@ -1665,12 +1683,12 @@ void callsp(void)
                      valfil(ad); fn = store[ad];
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: writei(stdout, i, w, rd, lz);
-                          case PRRFN: writei(filtable[PRRFN], i, w, rd, lz);
-                          case ERRORFN: writei(stderr, i, w, rd, lz);
-                          case LISTFN: writei(stdout, i, w, rd, lz);
+                          case OUTPUTFN: writei(stdout, i, w, rd, lz); break;
+                          case PRRFN: writei(filtable[PRRFN], i, w, rd, lz); break;
+                          case ERRORFN: writei(stderr, i, w, rd, lz); break;
+                          case LISTFN: writei(stdout, i, w, rd, lz); break;
                           case PRDFN: case INPUTFN:
-                          case COMMANDFN: errore(WRITEONREADONLYFILE);
+                          case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
                          writei(filtable[fn], i, w, rd, lz);
@@ -1695,12 +1713,12 @@ void callsp(void)
                      pshadr(ad); valfil(ad); fn = store[ad];
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*c", w, c);
-                          case PRRFN: fprintf(filtable[PRRFN], "%*c", w, c);
-                          case ERRORFN: fprintf(stderr, "%*c", w, c);
-                          case LISTFN: fprintf(stdout, "%*c", w, c);
+                          case OUTPUTFN: fprintf(stdout, "%*c", w, c); break;
+                          case PRRFN: fprintf(filtable[PRRFN], "%*c", w, c); break;
+                          case ERRORFN: fprintf(stderr, "%*c", w, c); break;
+                          case LISTFN: fprintf(stdout, "%*c", w, c); break;
                           case PRDFN: case INPUTFN:
-                          case COMMANDFN: errore(WRITEONREADONLYFILE);
+                          case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
                          fprintf(filtable[fn], "%*c", w, c);
@@ -2040,10 +2058,13 @@ void sinins()
 
 {
     address ad,ad1,ad2,ad3; boolean b; int i,j,k,i1,i2; char c, c1; int i3,i4;
-    float r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
+    double r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
 
-/*printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
-       pc, sp, mp, store[pc], store[pc]);*/
+/*
+printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
+       pc, sp, mp, store[pc], store[pc]);
+*/
+
     if (pc >= pctop) errorv(PCOUTOFRANGE);
 
     /* fetch instruction from byte store */
@@ -2276,7 +2297,7 @@ void sinins()
                          pshint(!b && (store[a1] < store[a2])); break;
 
     case 23 /*ujp*/: getq(); pc = q; break;
-    case 24 /*fjp*/: getq(); popint(&i); if (i = 0) pc = q; break;
+    case 24 /*fjp*/: getq(); popint(&i); if (i == 0) pc = q; break;
     case 25 /*xjp*/: getq(); popint(&i1); pc = i1*UJPLEN+q; break;
 
     case 95 /*chka*/:
@@ -2362,7 +2383,7 @@ void sinins()
     case 37 /*ngr*/: poprel(&r1); pshrel(-r1); break;
     case 38 /*sqi*/: popint(&i1);
                 if (DOCHKOVF) if (i1 != 0)
-                  if (abs(i1) > INT_MAX % abs(i1)) errore(INTEGERVALUEOVERFLOW);
+                  if (abs(i1) > INT_MAX/abs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
     case 39 /*sqr*/: poprel(&r1); pshrel(r1*r1); break;
     case 40 /*abi*/: popint(&i1); pshint(abs(i1)); break;
@@ -2403,7 +2424,7 @@ void sinins()
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
     case 52 /*mpr*/: poprel(&r2); poprel(&r1); pshrel(r1*r2); break;
-    case 53 /*dvi*/: popint(&i2); popint(&i1); break;
+    case 53 /*dvi*/: popint(&i2); popint(&i1);
                       if (DOCHKOVF) if (i2 == 0) errore(ZERODIVIDE);
                       pshint(i1/i2); break;
     case 54 /*dvr*/: poprel(&r2); poprel(&r1);
@@ -2479,7 +2500,7 @@ void sinins()
 
     case 118 /*swp*/: getq(); swpstk(q); break;
 
-    case 119 /*tjp*/: getq(); popint(&i); if (i == 0) pc = q; break;
+    case 119 /*tjp*/: getq(); popint(&i); if (i != 0) pc = q; break;
 
     case 120 /*lip*/: getp(); getq(); ad = base(p) + q;
                    ad1 = getadr(ad); ad2 = getadr(ad+1*PTRSIZE);

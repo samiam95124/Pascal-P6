@@ -59,7 +59,7 @@ for %%x in (%*) do (
     	echo Compiling %%~x...
     	if "!pmach!"=="1" (
     	
-    		echo {$e+} > temp
+    		echo|set /p="{$e+}" > temp
     		cat temp %%~x.pas > prd
     		rm temp
     		
@@ -95,7 +95,7 @@ if "%pmach%"=="1" (
 ) else if "%cmach%"=="1" (
 
 	mv prr prd
-	pmach
+	cmach
 	
 )
 :stop

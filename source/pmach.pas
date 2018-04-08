@@ -509,6 +509,19 @@ begin sgn := false;
    for i := f downto 1 do write(tf, digits[i])
 end;
 
+procedure dmpmem(s, e: address);
+var c: integer;
+begin
+    c := 0;
+    while s <= e do begin
+        if c = 0 then begin wrtnum(output, s, 16, 8, true); write(': ') end;
+        wrtnum(output, store[s], 16, 2, true); write(' '); c := c+1; s := s+1;
+        if c = 16 then begin writeln; c := 0 end
+    end;
+    if c <> 0 then writeln;
+    writeln
+end;
+
 { Low level error check and handling }
 
 procedure errors(a: address; l: address);
@@ -3132,7 +3145,7 @@ begin (* main *)
 
   writeln('loading program');
   load; (* assembles and stores code *)
-  
+
   { initalize file state }
   for i := 1 to maxfil do filstate[i] := fclosed;
   
