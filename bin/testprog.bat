@@ -4,7 +4,7 @@ rem Test a single program run
 rem
 rem Execution:
 rem
-rem testprog <file> [mach]
+rem testprog [--pmach|--cmach]... <file>
 rem
 rem Tests the compile and run of a single program.
 rem
@@ -15,61 +15,121 @@ rem <file>.cmp - Used to compare the <file>.lst program to, should
 rem              contain an older, fully checked version of <file>.lst.
 rem <file>.dif will contain the differences in output of the run.
 rem
-rem The "mach" parameter changes the run to a mach engine run. 
+rem --pmach	Generate mach code and run the result through pmach.
+rem --cmach	Generate mach code and run the result through cmach.
 rem 
+setlocal EnableDelayedExpansion
+set pmach=0
+set pmachoption=
+set cmach=0
+set cmachoption=
+set progfile=
+for %%x in (%*) do (
 
-rem
-rem Check there is a parameter
-rem
-if not "%1"=="" goto paramok
-echo *** Error: Missing parameter
-goto stop
-:paramok
-
-rem
-rem Check the source file exists
-rem
-if exist %1.pas goto :sourcefileexist
-echo *** Error: Source file %1.pas does not exist
-goto stop
-:sourcefileexist
-
-rem
-rem Check the input file exists
-rem
-if exist %1.inp goto :inputfileexist
-echo *** Error: Input file %1.inp does not exist
-goto stop
-:inputfileexist
-
-rem
-rem Check the result compile file exists
-rem
-if exist %1.cmp goto :comparefileexist
-echo *** Error: Compare file %1.cmp does not exist
-goto stop
-:comparefileexist
+    if "%%~x"=="--pmach" (
+    
+    	set pmach=1
+    	set pmachoption=--pmach
+    	
+   	) else if "%%~x"=="--cmach" (
+   	
+   		set cmach=1
+   		set cmachoption=--cmach
+   		
+   	) else if "%%~x"=="--help" (
+   	
+		echo.
+		echo Compile with P6 using GPC
+		echo.
+		echo Execute with:
+		echo.
+		echo p6 ^<sourcefile^> [--pmach^|--cmach] [^<sourcefile^>]...
+		echo.
+		echo where ^<sourcefile^> is the name of the source file without
+		echo extention. The Pascal input file^(s^) are compiled and run
+		echo as a group. Any compiler errors are output to the screen.
+		echo Input and output to and from the running program are from
+		echo and to the console.
+		echo.
+		echo The flags are one of:
+		echo.
+		echo --pmach	Generate mach code and run the result through pmach.
+		echo --cmach	Generate mach code and run the result through cmach.
+		echo.
+		echo The intermediate code is placed in ^<file^>.p6.
+		echo.
+		goto stop
+		
+    ) else if not "%%~x"=="" (
+    
+		if not exist "%%~x.pas" (
+  
+        	echo %%~x.pas does not exist
+        	goto stop
+      
+    	)
+    	echo Compiling %%~x...
+    	call compile !pmachoption! !cmachoption! %%~x
+    	if errorlevel 1 (
+    	
+    	    echo *** Compile file %%~x failed
+    		goto stop
+    	
+    	) else (
+    	
+    		rem
+    		rem Collect module sections to single intermediate
+    		rem
+    		cat %%~x.p6 >> temp.p6
+    		
+    	)
+    	rem
+    	rem Set the main run program as the last one
+    	rem
+    	set progfile=%%~x
+    					
+   	) 
+   	
+)
 
 rem
 rem Compile and run the program
 rem
-echo Compile and run %1
-call compile %1 %2
-rem echo Error return after compile: %errorlevel%
-rem
-rem Proceed to run and compare only if compile suceeded
-rem
-if not errorlevel 1 (
+if %progfile%=="" (
 
-    call run %1 %2
+	echo *** No program file was specified
+	goto stop
+	
+)
+
+rem
+rem Move final collected intermediate to target.
+rem Note that even the main file will have its intermediate added to the last.
+rem
+mv temp.p6 %progfile%.p6
+if not exist "%progfile%.inp" (
+
+	echo %progfile%.inp does not exist
+	goto stop
+
+)
+if not exist "%progfile%.cmp" (
+
+	echo %progfile%..cmp does not exist
+	goto stop
+
+)
+echo Running %progfile%...
+call run %pmachoption% %cmachoption% %progfile%
+if not errorlevel 1 (
 
     rem
     rem Check output matches the compare file
     rem
-    call diffnole %1.lst %1.cmp > %1.dif
-    dir %1.dif > %1.tmp
-    grep ".dif" %1.tmp
-    rm -f %1.tmp
+    call diffnole %progfile%.lst %progfile%.cmp > %progfile%.dif
+    dir %progfile%.dif > %progfile%.tmp
+    grep ".dif" %progfile%.tmp
+    rm -f %progfile%.tmp
 
 )
 

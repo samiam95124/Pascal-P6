@@ -4,7 +4,6 @@ rem Difference without line endings
 rem
 rem Same as diff, but ignores the DOS/Unix line ending differences.
 rem
-
 if "%1" == "" (
 
     echo *** Error: Missing parameter 1
