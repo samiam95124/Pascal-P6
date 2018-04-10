@@ -105,11 +105,13 @@ mv temp.p6 prd
 pint
 if "%pmach%"=="1" (
 
+    cp prr %progfile%.p6o
 	mv prr prd
 	pmach
 	
 ) else if "%cmach%"=="1" (
 
+    cp prr %progfile%.p6o
 	mv prr prd
 	cmach
 	

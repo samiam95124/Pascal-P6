@@ -555,7 +555,10 @@ void dmpmem(address s, address e)
 
 void finish(int e)
 {
-    for (i = 1; i < MAXFIL; i++) if (filstate[i] != fsclosed) fclose(filtable[i]);
+    for (i = 1; i < MAXFIL; i++) if (filstate[i] != fsclosed) {
+        fclose(filtable[i]);
+        if (!filanamtab[i]) remove(filnamtab[i]);
+    }
     printf("\n");
     if (e) printf("Program aborted\n");
     printf("program complete\n");
@@ -924,7 +927,7 @@ void sset(settype s, int b)
     int i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
-    s[b/8] = 1<<b%8;
+    s[b/8] |= 1<<b%8;
 }
 
 void rset(settype s, int b1, int b2)
@@ -934,7 +937,7 @@ void rset(settype s, int b1, int b2)
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     if (b1 > b2) { i = b1; b1 = b2; b2 = i; }
-    for (i = b1; i <= b2; i++) s[i/8] = 1<<i%8;
+    for (i = b1; i <= b2; i++) s[i/8] |= 1<<i%8;
 }
 
 void suni(settype s1, settype s2)
@@ -964,7 +967,7 @@ void sdif(settype s1, settype s2)
 boolean sisin(int i, settype s)
 
 {
-    !!(s[i/8] & 1<<i%8);
+    return (!!(s[i/8] & 1<<i%8));
 }
 
 /* throw an exception by vector */
@@ -1484,7 +1487,7 @@ void filllz(FILE* f, int n)
 /* Write integer */
 void writei(FILE* f, int w, int fl, int r, int lz)
 {
-    int c, p, i, d, ds;
+    int i, d, ds;
     char digit[MAXDBF];
     boolean sgn;
 
@@ -1493,7 +1496,7 @@ void writei(FILE* f, int w, int fl, int r, int lz)
         if (r != 10) errore(NONDECIMALRADIXOFNEGATIVE) ;
     } else sgn = FALSE;
     for (i = 0; i < MAXDBF; i++) digit[i] = ' ';
-    i = MAXDBF==1; d = 0;
+    i = MAXDBF-1; d = 0;
     do {
         if (w % r < 10) digit[i] = w % r+'0';
         else digit[i] = w % r -10 +'a';
@@ -1504,7 +1507,7 @@ void writei(FILE* f, int w, int fl, int r, int lz)
     if (fl > 0 && fl > ds)
       if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", fl-ds, ' ');
     if (sgn) fputc('-', f);
-    for (i = MAXDBF-d+1; i <= MAXDBF; i++) fputc(digit[i], f);
+    for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
     if (fl < 1 && abs(fl) > ds) fprintf(f, "%*c", abs(fl)-ds, ' ');
 }
 
@@ -1522,8 +1525,11 @@ void resetfn(filnum fn, boolean bin)
 {
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
+    if (filstate[fn] != fsclosed)
+        if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
+    if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
+        errore(FILEOPENFAIL);
     filstate[fn] = fsread;
-    if (!fopen(filnamtab[fn], bin?"rb":"r")) errore(FILEOPENFAIL);
     filbuff[fn] = FALSE;
 }
 
@@ -1531,8 +1537,11 @@ void rewritefn(filnum fn, boolean bin)
 {
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
+    if (filstate[fn] != fsclosed)
+        if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
+    if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
+        errore(FILEOPENFAIL);
     filstate[fn] = fswrite;
-    if (!fopen(filnamtab[fn], bin?"wb":"w")) errore(FILEOPENFAIL);
     filbuff[fn] = FALSE;
 }
 
@@ -2369,7 +2378,7 @@ printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
                     if (INT_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
     case 31 /*sbr*/: poprel(&r2); poprel(&r1); pshrel(r1-r2); break;
-    case 32 /*sgs*/: popint(&i1); sset(s1, i); pshset(s1); break;
+    case 32 /*sgs*/: popint(&i1); sset(s1, i1); pshset(s1); break;
     case 33 /*flt*/: popint(&i1); pshrel(i1); break;
 
     /* note that flo implies the tos is float as well */

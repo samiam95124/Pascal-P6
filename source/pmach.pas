@@ -2001,7 +2001,7 @@ procedure callsp;
    
    procedure writei(var f: text; w: integer; fl: integer; r: integer; 
                     lz: boolean);
-   var c: integer; p: integer; digit: array [1..maxdbf] of char; i: integer;
+   var digit: array [1..maxdbf] of char; i: integer;
        sgn: boolean; d, ds: integer;
    procedure filllz(n: integer); 
    begin while n > 0 do begin write(f, '0'); n := n-1 end 
