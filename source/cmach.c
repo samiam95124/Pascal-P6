@@ -847,18 +847,32 @@ void assignexternal(filnum fn, char hfn[])
 */
 
 int getint(address a) { chkdef(a); return (*((int*)(store+a))); }
-void putint(address a, int x) { *((int*)(store+a)) = x; putdef(a, TRUE); }
+void putint(address a, int x)
+{
+    int i;
+
+    *((int*)(store+a)) = x; for (i = 0; i < INTSIZE; i++) putdef(a+i, TRUE);
+}
 double getrel(address a) { chkdef(a); return (*((double*)(store+a))); }
-void putrel(address a, double f) { *((double*)(store+a)) = f; putdef(a, TRUE); }
+void putrel(address a, double f)
+{
+    int i;
+
+    *((double*)(store+a)) = f; for (i = 0; i < REALSIZE; i++) putdef(a+i, TRUE);
+}
 boolean getbol(address a) { chkdef(a); return (store[a]); }
 void putbol(address a, boolean b) { store[a] = b; putdef(a, TRUE); }
-char getchr(address a) { chkdef(a); return (store[a]); }
-void putchr(address a, char c) { store[a] = c; putdef(a, TRUE); }
+unsigned char getchr(address a) { chkdef(a); return (store[a]); }
+void putchr(address a, unsigned char c) { store[a] = c; putdef(a, TRUE); }
 byte getbyt(address a) { chkdef(a); return (store[a]); }
 void putbyt(address a, byte b) { store[a] = b; putdef(a, TRUE); }
 address getadr(address a) { chkdef(a); return (*((address*)(store+a))); }
-void putadr(address a, address ad) { *((address*)(store+a)) = ad;
-                                     putdef(a, TRUE); }
+void putadr(address a, address ad)
+{
+    int i;
+
+    *((address*)(store+a)) = ad; for (i = 0; i < ADRSIZE; i++) putdef(a+i, TRUE);
+}
 
 void getset(address a, settype s)
 
@@ -874,8 +888,7 @@ void putset(address a, settype s)
 {
    int i;
 
-   for (i = 0; i < SETSIZE; i++) store[a+i] = s[i];
-   putdef(a, TRUE);
+   for (i = 0; i < SETSIZE; i++) { store[a+i] = s[i]; putdef(a+i, TRUE); }
 }
 
 /* Swap pointer on top with second on stack. The size of the second is given. */
@@ -1562,9 +1575,11 @@ void callsp(void)
     boolean fld;
     FILE* fp;
 
-/*
-printf("\ncallsp: q: %d\n", q);
-*/
+    /* system routine call trace diagnostic */
+    /*
+    printf("callsp: q: %d\n", q);
+    */
+
     if (q > MAXSP) errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
 
     switch (q) {
@@ -1948,7 +1963,7 @@ printf("\ncallsp: q: %d\n", q);
                    fn = store[ad];
                    /* load buffer only if in read mode, and buffer is
                      empty */
-                   if (filstate[fn] = fsread && !filbuff[fn]) {
+                   if (filstate[fn] == fsread && !filbuff[fn]) {
                        for (j = 0; j < i; j++) {
                          read(filtable[fn], store[ad+FILEIDSIZE+j]);
                          putdef(ad+FILEIDSIZE+j, TRUE);
@@ -2069,10 +2084,11 @@ void sinins()
     address ad,ad1,ad2,ad3; boolean b; int i,j,k,i1,i2; char c, c1; int i3,i4;
     double r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
 
-/*
-printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
-       pc, sp, mp, store[pc], store[pc]);
-*/
+    /* instruction execution trace diagnostic */
+    /*
+    printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
+           pc, sp, mp, store[pc], store[pc]);
+     */
 
     if (pc >= pctop) errorv(PCOUTOFRANGE);
 
@@ -2347,12 +2363,12 @@ printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
                     errore(VALUEOUTOFRANGE);
                   break;
 
-    case 187 /* cks */: pshint(0);
+    case 187 /* cks */: pshint(0); break;
     case 175 /* ckvi */:
     case 203 /* ckvx */:
     case 179 /* ckvb */:
     case 180 /* ckvc */: getq(); popint(&i2); popint(&i1);
-                    pshint(i1); pshint(i1 = q || i2 != 0);
+                    pshint(i1); pshint(i1 == q || i2 != 0);
                     break;;
     case 188 /* cke */: popint(&i2); popint(&i1);
                     if (i2 == 0) errorv(VARIANTNOTACTIVE);
