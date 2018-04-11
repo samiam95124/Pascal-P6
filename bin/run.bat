@@ -6,7 +6,7 @@ rem Runs a Pascal intermediate in batch mode.
 rem
 rem Execution:
 rem
-rem run <file> [mach|pint] [inp]
+rem run <file> [--pmach|--cmach] [<inpfile>] <file>
 rem
 rem <file> is the filename without extention.
 rem
@@ -23,10 +23,14 @@ rem
 rem --pmach	Generate mach code and run the result through pmach.
 rem --cmach	Generate mach code and run the result through cmach.
 rem
+rem If the <inpfile> appears, it will be concatenated to the intermediate or
+rem code file to be read by the target program.
+rem
 setlocal EnableDelayedExpansion
 set pmach=0
 set cmach=0
 set progfile=
+set inpfile=
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -66,6 +70,7 @@ for %%x in (%*) do (
 		
     ) else if not "%%~x"=="" (
     
+    	set inpfile=!progfile!
     	set progfile=%%~x
     					
    	)
@@ -98,21 +103,21 @@ if "%pmach%"=="1" (
 
     cp %progfile%.p6 prd
     pint
-    cat prr %3 > %progfile%.p6o
-    cp %progfile%.p6o prd
+    mv prr %progfile%.p6o
+    cat %progfile%.p6o %inpfile% > prd
     pmach < %progfile%.inp > %progfile%.lst 2>&1
     
 ) else if "%cmach%"=="1" (
 
     cp %progfile%.p6 prd
     pint
-    cat prr > %progfile%.p6o
-    cp %progfile%.p6o prd
+    mv prr %progfile%.p6o
+    cat %progfile%.p6o %inpfile% > prd
     cmach < %progfile%.inp > %progfile%.lst 2>&1
     
 ) else (
 
-    cat %progfile%.p6 > prd
+    cat %progfile%.p6 %inpfile% > prd
     pint < %progfile%.inp > %progfile%.lst 2>&1
     
 )

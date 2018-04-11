@@ -34,15 +34,7 @@ rem
 rem Now run pasint on pint, which runs the test program.
 rem
 echo Running pasint on pint to execute test program
-if "%1"=="" (
-
-    call run p2\pasint int p2\roman.p2
-    
-) else (
-
-    call run p2\pasint %1 p2\roman.p2
-    
-)
+call run %1 p2\roman.p2 p2\pasint
 rem
 rem Copy the result listing back to roman.lst, again for neatness
 rem

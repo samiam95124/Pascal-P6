@@ -8,15 +8,7 @@ call compile sample_programs\pascals %1
 rem
 rem Run that with the input file appended to the intermediate/object
 rem
-if "%1"=="" (
-
-    call run sample_programs\pascals int sample_programs\pascals.inp
-    
-) else (
-
-    call run sample_programs\pascals %1 sample_programs\pascals.inp
-    
-)
+call run %1 sample_programs\pascals.inp sample_programs\pascals
 rem
 rem Compare to reference
 call diffnole sample_programs\pascals.lst sample_programs\pascals.cmp > sample_programs\pascals.dif

@@ -106,7 +106,7 @@ cat standard_tests\iso7185pat.dif >> temp1
 rem
 rem Run previous versions of the system and Pascal-S
 rem
-call testpascals %2
+call testpascals %pmachoption% %cmachoption%
 wc -l sample_programs\pascals.dif >> temp1
 call testp2 %2
 wc -l p2\roman.dif >> temp1
@@ -135,8 +135,16 @@ if "%full%"=="1" (
 rem
 rem Print collected status
 rem
+echo.
+echo Copy report to commits
+echo Cut here -----------------------------------------------------------
+date /t
+time /t
 cat temp1
 rm temp1
+call chkfiles
+echo Cut here -----------------------------------------------------------
+echo.
 
 rem
 rem Terminate program

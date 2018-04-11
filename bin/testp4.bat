@@ -34,15 +34,7 @@ rem
 rem Now run pint(p4) on pint(p5), which runs the test program.
 rem
 echo Running pint(p4) on pint(p5) to execute test program
-if "%1"=="" (
-
-    call run p4\pint int p4\standardp.p4
-    
-) else (
-
-    call run p4\pint %1 p4\standardp.p4
-    
-)
+call run %1 p4\standardp.p4 p4\pint 
 rem
 rem Copy the result listing back to standardp.lst, again for neatness
 rem
