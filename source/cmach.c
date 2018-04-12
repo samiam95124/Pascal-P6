@@ -441,7 +441,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define UJPLEN       5    /* length of ujp instruction (used for case jumps) */
 #define FILLEN       2000 /* maximum length of filenames */
-#define REALEF       8    /* real extra field in floating format -1.e+000 */
+#define REALEF       9    /* real extra field in floating format -1.0e+000 */
 
 /* check flags: these turn on runtime checks */
 #define DOCHKOVF TRUE /* check arithmetic overflow */
@@ -974,7 +974,7 @@ void sdif(settype s1, settype s2)
 {
     int i;
 
-    for (i = 0; i < SETSIZE; i++) s1[i] = ~s1[i] & s2[i];
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & ~s2[i];
 }
 
 boolean sisin(int i, settype s)
@@ -1057,7 +1057,7 @@ void compare(boolean* b, address* a1, address* a2)
     i = 0; *b = TRUE;
     while (*b && i<q) {
         chkdef(*a1+i); chkdef(*a2+i);
-        if (store[*a1+i] = store[*a2+i]) i = i+1;
+        if (store[*a1+i] == store[*a2+i]) i = i+1;
         else *b = FALSE;
     }
     if (i == q) i = i-1; /* point at last location */
@@ -1525,7 +1525,17 @@ void writei(FILE* f, int w, int fl, int r, int lz)
 }
 
 void writeb(FILE* f, boolean b, int w)
-{ if (b) fprintf(f, "%*s", w, "true"); else fprintf(f, "%*s", w, "false"); }
+{
+    int l;
+
+    if (b) {
+        l = 4; if (l > w) l = w; /* limit string to field */
+        fprintf(f, "%*.*s", w, l, "true");
+    } else {
+        l = 5; if (l > w) l = w; /* limit string to field */
+        fprintf(f, "%*.*s", w, l, "false");
+    }
+}
 
 void putfile(FILE* f, address ad, filnum fn)
 {
@@ -1645,6 +1655,7 @@ void callsp(void)
     case 6 /*wrs*/: popint(&l); popint(&w); popadr(&ad1);
                     popadr(&ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
+                    if (l > w) l = w; /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "%*.*s", w, l,
                                               (char*)(store+ad1)); break;
@@ -1721,16 +1732,18 @@ void callsp(void)
     case 9 /*wrr*/: popint(&w); poprel(&r); popadr(&ad); pshadr(ad);
                      valfil(ad); fn = store[ad];
                      if (w < 1) errore(INVALIDFIELDSPECIFICATION);
+                     if (w < REALEF) w = REALEF; /* set minimum width */
+                     l = w-REALEF+1; /* assign leftover to fractional digits w/o sign */
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*.*e", w, w-REALEF, r); break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*.*e", w, w-REALEF, r); break;
-                          case ERRORFN: fprintf(stderr, "%*.*e", w, w-REALEF, r); break;
-                          case LISTFN: fprintf(stdout, "%*.*e", w, w-REALEF, r); break;
+                          case OUTPUTFN: fprintf(stdout, "%*.*e", w, l, r); break;
+                          case PRRFN: fprintf(filtable[PRRFN], "%*.*e", w, l, r); break;
+                          case ERRORFN: fprintf(stderr, "%*.*e", w, l, r); break;
+                          case LISTFN: fprintf(stdout, "%*.*e", w, l, r); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE);
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*e", w, w-REALEF, r);
+                         fprintf(filtable[fn], "%*.*e", w, l, r);
                      };
                      break;
     case 10/*wrc*/: popint(&w); popint(&i); c = i; popadr(&ad);
@@ -2310,7 +2323,7 @@ void sinins()
     case 164 /* leqs */: popset(s2); popset(s1); pshint(s1<=s2); break;
     case 166 /* leqm */: getq(); popadr(&a2); popadr(&a1);
                          compare(&b, &a1, &a2);
-                         pshint(!b || (store[a1] <= store[a2])); break;
+                         pshint(b || (store[a1] <= store[a2])); break;
 
     case 169 /* lesb */:
     case 171 /* lesc */:
@@ -2412,7 +2425,7 @@ void sinins()
                 pshint(i1*i1); break;
     case 39 /*sqr*/: poprel(&r1); pshrel(r1*r1); break;
     case 40 /*abi*/: popint(&i1); pshint(abs(i1)); break;
-    case 41 /*abr*/: poprel(&r1); pshrel(abs(r1)); break;
+    case 41 /*abr*/: poprel(&r1); pshrel(fabs(r1)); break;
     case 42 /*notb*/: popint(&i1); b1 = i1 != 0; pshint(!b1); break;
     case 205 /*noti*/: popint(&i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
