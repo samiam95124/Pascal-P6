@@ -934,8 +934,16 @@ void pshadr(address a) { sp = sp-ADRSIZE; putadr(sp, a); }
 
 /* set operations */
 
-void sset(settype s, int b)
+/* print set, diagnostic */
+void prtset(settype s)
+{
+    int i;
 
+    for (i = 0; i < SETSIZE; i++)
+        if (!!(s[i/8] & 1<<i%8)) printf("1"); else printf("0");
+}
+
+void sset(settype s, int b)
 {
     int i;
 
@@ -944,7 +952,6 @@ void sset(settype s, int b)
 }
 
 void rset(settype s, int b1, int b2)
-
 {
     int i;
 
@@ -954,7 +961,6 @@ void rset(settype s, int b1, int b2)
 }
 
 void suni(settype s1, settype s2)
-
 {
     int i;
 
@@ -962,7 +968,6 @@ void suni(settype s1, settype s2)
 }
 
 void sint(settype s1, settype s2)
-
 {
     int i;
 
@@ -970,7 +975,6 @@ void sint(settype s1, settype s2)
 }
 
 void sdif(settype s1, settype s2)
-
 {
     int i;
 
@@ -978,9 +982,25 @@ void sdif(settype s1, settype s2)
 }
 
 boolean sisin(int i, settype s)
-
 {
     return (!!(s[i/8] & 1<<i%8));
+}
+
+boolean sequ(settype s1, settype s2)
+{
+    int i;
+
+    for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
+    return (TRUE);
+}
+
+boolean sinc(settype s1, settype s2)
+{
+    int i;
+
+    for (i = 0; i < SETSIZE; i++)
+        if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
+    return (TRUE);
 }
 
 /* throw an exception by vector */
@@ -2285,7 +2305,7 @@ void sinins()
     case 141 /* equc */:
     case 137 /* equi */: popint(&i2); popint(&i1); pshint(i1==i2); break;
     case 138 /* equr */: poprel(&r2); poprel(&r1); pshint(r1==r2); break;
-    case 140 /* equs */: popset(s2); popset(s1); pshint(s1==s2); break;
+    case 140 /* equs */: popset(s2); popset(s1); pshint(sequ(s1,s2)); break;
     case 142 /* equm */: getq(); popadr(&a2); popadr(&a1);
                          compare(&b, &a1, &a2); pshint(b); break;
 
@@ -2294,7 +2314,7 @@ void sinins()
     case 147 /* neqc */:
     case 143 /* neqi */: popint(&i2); popint(&i1); pshint(i1!=i2); break;
     case 144 /* neqr */: poprel(&r2); poprel(&r1); pshint(r1!=r2); break;
-    case 146 /* neqs */: popset(s2); popset(s1); pshint(s1!=s2); break;
+    case 146 /* neqs */: popset(s2); popset(s1); pshint(!sequ(s1,s2)); break;
     case 148 /* neqm */: getq(); popadr(&a2); popadr(&a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
 
@@ -2302,7 +2322,7 @@ void sinins()
     case 153 /* geqc */:
     case 149 /* geqi */: popint(&i2); popint(&i1); pshint(i1>=i2); break;
     case 150 /* geqr */: poprel(&r2); poprel(&r1); pshint(r1>=r2); break;
-    case 152 /* geqs */: popset(s2); popset(s1); pshint(s1>=s2); break;
+    case 152 /* geqs */: popset(s2); popset(s1); pshint(sinc(s1,s2)); break;
     case 154 /* geqm */: getq(); popadr(&a2); popadr(&a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
@@ -2320,7 +2340,7 @@ void sinins()
     case 165 /* leqc */:
     case 161 /* leqi */: popint(&i2); popint(&i1); pshint(i1<=i2); break;
     case 162 /* leqr */: poprel(&r2); poprel(&r1); pshint(r1<=r2); break;
-    case 164 /* leqs */: popset(s2); popset(s1); pshint(s1<=s2); break;
+    case 164 /* leqs */: popset(s2); popset(s1); pshint(sinc(s2,s1)); break;
     case 166 /* leqm */: getq(); popadr(&a2); popadr(&a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
