@@ -1364,12 +1364,12 @@ boolean eolnfn(filnum fn)
     boolean eoln;
 
     if (fn <= COMMANDFN) switch (fn) {
-        case INPUTFN:   eoln = chkeolnfn(stdin, INPUTFN);
-        case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN);
-        case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN);
+        case INPUTFN:   eoln = chkeolnfn(stdin, INPUTFN); break;
+        case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN); break;
+        case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN); break;
         case ERRORFN: case OUTPUTFN:
-        case LISTFN:    errore(FILEMODEINCORRECT);;
-        case COMMANDFN: eoln = eolncommand();
+        case LISTFN:    errore(FILEMODEINCORRECT); break;
+        case COMMANDFN: eoln = eolncommand(); break;
     } else {
         if (filstate[fn] == fsclosed) errore(FILENOTOPEN);
         eoln = chkeolnfn(filtable[fn], fn);
@@ -2735,6 +2735,13 @@ void main (int argc, char *argv[])
 #ifndef GPC
     fclose(fp);
 #endif
+
+    /* set status of standard files */
+    filstate[INPUTFN] = fsread;
+    filstate[OUTPUTFN] = fswrite;
+    filstate[ERRORFN] = fswrite;
+    filstate[LISTFN] = fswrite;
+    filstate[COMMANDFN] = fsread;
 
     /* get the command line */
     getcommandline(argc, argv, cmdlin, &cmdlen);
