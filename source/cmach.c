@@ -528,6 +528,8 @@ filnam filnamtab[MAXFIL+1]; /* assigned name of files */
 boolean filanamtab[MAXFIL+1]; /* name has been assigned flags */
 filsts filstate[MAXFIL+1]; /* file state holding */
 boolean filbuff[MAXFIL+1]; /* file buffer full status */
+boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
+boolean filbof[MAXFIL+1]; /* beginning of file */
 
 int i;
 char c1;
@@ -1254,19 +1256,18 @@ boolean isfree(address blk)
 
 /* system routine call */
 
-void readline(FILE* f)
-{
-    int c;
-
-    do { c = fgetc(f); } while (c != EOF && c != '\n');
-    if (c == EOF) errore(ENDOFFILE);
-}
-
 boolean eoffile(FILE* fp)
 { int c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == EOF); }
 
 boolean eolnfile(FILE* fp)
 { int c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == '\n'); }
+
+char chkfile(FILE* fp)
+{
+    int c;
+    c = fgetc(fp); if (c != EOF) ungetc(c, fp);
+    return ((c=='\n'||c==EOF)?' ':c);
+}
 
 int filelength(FILE* fp)
 {
@@ -1278,46 +1279,60 @@ int filelength(FILE* fp)
     return (p);
 }
 
-boolean eoffns(filnum fn)
-{
-    boolean eoft;
-
-    if (filstate[fn] == fswrite)
-        eoft = ftell(filtable[fn]) >= filelength(filtable[fn]);
-    else if (filstate[fn] == fsread) eoft = eoffile(filtable[fn]);
-    else errore(FILENOTOPEN);
-}
-
 char buffn(filnum fn)
 {
     int c;
 
     if (fn <= COMMANDFN) switch(fn) {
-        case INPUTFN:   c = fgetc(stdin); ungetc(c, stdin); break;
-        case PRDFN:     c = fgetc(filtable[PRDFN]); ungetc(c, filtable[PRDFN]);
-                        break;
+        case INPUTFN:   c = chkfile(stdin); break;
+        case PRDFN:     c = chkfile(filtable[PRDFN]); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
         case LISTFN:    errore(READONWRITEONLYFILE); break;
         case COMMANDFN: c = bufcommand(); break;
     } else {
         if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
-        c = fgetc(filtable[fn]); ungetc(c, filtable[fn]);
+        c = chkfile(filtable[fn]);
     }
 
     return (c);
 }
 
+void getfneoln(FILE* fp, filnum fn)
+{
+    int c;
+
+    c = fgetc(fp);
+    if (c == EOF && !fileoln[fn]) fileoln[fn] = TRUE;
+    else fileoln[fn] = c == '\n';
+    if (c != EOF) filbof[fn] = FALSE;
+}
 void getfn(filnum fn)
 {
     if (fn <= COMMANDFN) switch (fn) {
-        case INPUTFN:   fgetc(stdin); break;
-        case PRDFN:     fgetc(filtable[PRDFN]); break;
+        case INPUTFN:   getfneoln(stdin, INPUTFN); break;
+        case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
         case LISTFN:    errore(READONWRITEONLYFILE); break;
         case COMMANDFN: getcommand(); break;
     } else {
         if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
-        fgetc(filtable[fn]);
+        getfneoln(filtable[fn], fn);
+    }
+}
+
+boolean chkeoffn(FILE* fp, filnum fn)
+{
+    if (fn == INPUTFN) {
+        if ((eoffile(fp) && fileoln[fn]) || filbof[fn]) return (TRUE);
+        else return (FALSE);
+    } else {
+        if (filstate[fn] == fswrite)
+            return ftell(filtable[fn]) >= filelength(filtable[fn]);
+        else if (filstate[fn] == fsread) {
+            if ((eoffile(filtable[fn]) && fileoln[fn]) || filbof[fn])
+                return (TRUE);
+            else return (FALSE);
+        } else errore(FILENOTOPEN);
     }
 }
 
@@ -1326,16 +1341,22 @@ boolean eoffn(filnum fn)
     boolean eof;
 
     if (fn <= COMMANDFN) switch (fn) {
-        case INPUTFN:   eof = eoffile(stdin); break;
+        case INPUTFN:   eof = chkeoffn(stdin, INPUTFN); break;
         case OUTPUTFN:  eof = TRUE; break;
-        case PRDFN:     eof = eoffns(PRDFN); break;
-        case PRRFN:     eof = eoffns(PRRFN); break;
+        case PRDFN:     eof = chkeoffn(filtable[PRDFN], PRDFN); break;
+        case PRRFN:     eof = chkeoffn(filtable[PRRFN], PRRFN); break;
         case ERRORFN:   eof = TRUE; break;
         case LISTFN:    eof = TRUE; break;
         case COMMANDFN: eof = eofcommand(); break;
-    } else eof = eoffns(fn);
+    } else eof = chkeoffn(filtable[fn], fn);
 
     return (eof);
+}
+
+boolean chkeolnfn(FILE* fp, filnum fn)
+{
+    if ((eoffile(fp) && !fileoln[fn]) && !filbof[fn]) return (TRUE);
+    else return (eolnfile(fp));
 }
 
 boolean eolnfn(filnum fn)
@@ -1343,18 +1364,27 @@ boolean eolnfn(filnum fn)
     boolean eoln;
 
     if (fn <= COMMANDFN) switch (fn) {
-        case INPUTFN:   eoln = eolnfile(stdin);
-        case PRDFN:     eoln = eolnfile(filtable[PRDFN]);
-        case PRRFN:     eoln = eolnfile(filtable[PRRFN]);
+        case INPUTFN:   eoln = chkeolnfn(stdin, INPUTFN);
+        case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN);
+        case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN);
         case ERRORFN: case OUTPUTFN:
         case LISTFN:    errore(FILEMODEINCORRECT);;
         case COMMANDFN: eoln = eolncommand();
     } else {
         if (filstate[fn] == fsclosed) errore(FILENOTOPEN);
-        eoln = eolnfile(filtable[fn]);
+        eoln = chkeolnfn(filtable[fn], fn);
     }
 
     return (eoln);
+}
+
+void readline(filnum fn)
+{
+    while (!eolnfn(fn)) {
+        if (eoffn(fn)) errore(ENDOFFILE);
+        getfn(fn);
+    }
+    if (eolnfn(fn)) getfn(fn);
 }
 
 char chkbuf(filnum fn, int w)
@@ -1574,6 +1604,8 @@ void resetfn(filnum fn, boolean bin)
         errore(FILEOPENFAIL);
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
+    fileoln[fn] = FALSE;
+    filbof[fn] = FALSE;
 }
 
 void rewritefn(filnum fn, boolean bin)
@@ -1630,14 +1662,14 @@ void callsp(void)
                     break;
     case 3 /*rln*/: popadr(&ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
-                       case INPUTFN: readline(stdin); break;
-                       case PRDFN: readline(filtable[PRDFN]); break;
+                       case INPUTFN: readline(INPUTFN); break;
+                       case PRDFN: readline(PRDFN); break;
                        case OUTPUTFN: prrfn: errorfn:
                        case LISTFN: errore(READONWRITEONLYFILE); break;
                        case COMMANDFN: readlncommand(); break;
                     } else {
                          if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
-                         readline(filtable[fn]);
+                         readline(fn);
                     }
                     break;
     case 4 /*new*/: popadr(&ad1); newspc(ad1, &ad);
@@ -1946,7 +1978,7 @@ void callsp(void)
     case 31/*wbb*/: popint(&i); popadr(&ad); pshadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < BOOLSIZE; i++)
-                         fputc(store[sp+i-1], filtable[fn]);
+                         fputc(store[sp+i], filtable[fn]);
                      popint(&i);
                      break;
     case 32/*rbf*/: popint(&l); popadr(&ad1); popadr(&ad); pshadr(ad);
@@ -1998,7 +2030,7 @@ void callsp(void)
                      empty */
                    if (filstate[fn] == fsread && !filbuff[fn]) {
                        for (j = 0; j < i; j++) {
-                         read(filtable[fn], store[ad+FILEIDSIZE+j]);
+                         store[ad+FILEIDSIZE+j] = fgetc(filtable[fn]);
                          putdef(ad+FILEIDSIZE+j, TRUE);
                        }
                    }
