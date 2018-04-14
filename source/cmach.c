@@ -1044,7 +1044,7 @@ void load(FILE* fp)
     int c;
 
     ad = 0; l = 1;
-    while ((c = fgetc(fp)) != EOF && l > 0) {
+    while (l > 0 && (c = fgetc(fp)) != EOF) {
         if (c != ':') errorl();
         fscanf(fp, "%2x%16x", &l, &i); ad2 = i;
         if (ad != ad2 && l > 0) errorl();
@@ -2709,6 +2709,9 @@ void main (int argc, char *argv[])
         finish(1);
     }
     filstate[PRDFN] = fsread;
+    filbuff[PRDFN] = FALSE;
+    fileoln[PRDFN] = FALSE;
+    filbof[PRDFN] = FALSE;
 
     filtable[PRRFN] = fopen("prr", "w");
     if (!filtable[PRRFN]) {
@@ -2716,6 +2719,7 @@ void main (int argc, char *argv[])
         finish(1);
     }
     filstate[PRRFN] = fswrite;
+    filbuff[PRRFN] = FALSE;
 
     fp = filtable[PRDFN]; /* set load file as prd */
 #else

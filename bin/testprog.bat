@@ -19,7 +19,6 @@ rem --pmach          Generate mach code and run the result through pmach.
 rem --cmach	         Generate mach code and run the result through cmach.
 rem --cmpfile <file> Use filename following option for compare file
 rem 
-echo testprog: command line: %*
 setlocal EnableDelayedExpansion
 set pmach=0
 set pmachoption=
