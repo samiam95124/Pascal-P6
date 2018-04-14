@@ -1,6 +1,6 @@
-P6 Pascal interpreter vs. 0.1.x
+P6 Pascal mach interpreter vs. 0.1.x
 
-Assembling/loading program
+loading program
 Running program
 
 *******************************************************************************
@@ -22,14 +22,14 @@ Integer default output field
 Real default output field
          1111111111222222222233333333334
 1234567890123456789012345678901234567890
- 1.200000000000000e+00
+ 1.20000000000000e+000
 Note that the exponent character 'e' or 'E' is implementation
 defined as well as the number of exponent digits
 Boolean default output field
          1111111111222222222233333333334
 1234567890123456789012345678901234567890
-False
- True
+false
+ true
 Note that the upper or lower case state of the characters in
 'true' and 'false' are implementation defined
 Char default output field
@@ -72,22 +72,22 @@ Integer7:   42 s/b 42
 Integer8:   1849 s/b 1849
 Integer9:   N s/b N
 Integer10:  43 s/b 43
-Integer11:   True s/b true
-Integer12:  False s/b false
-Integer13:   True s/b true
-Integer14:  False s/b false
-Integer15:   True s/b true
-Integer16:  False s/b false
-Integer17:   True s/b true
-Integer18:  False s/b false
-Integer19:   True s/b true
-Integer20:  False s/b false
-Integer21:   True s/b true
-Integer22:   True s/b true
-Integer23:  False s/b false
-Integer24:   True s/b true
-Integer25:   True s/b true
-Integer26:  False s/b false
+Integer11:   true s/b true
+Integer12:  false s/b false
+Integer13:   true s/b true
+Integer14:  false s/b false
+Integer15:   true s/b true
+Integer16:  false s/b false
+Integer17:   true s/b true
+Integer18:  false s/b false
+Integer19:   true s/b true
+Integer20:  false s/b false
+Integer21:   true s/b true
+Integer22:   true s/b true
+Integer23:  false s/b false
+Integer24:   true s/b true
+Integer25:   true s/b true
+Integer26:  false s/b false
 Integer27:  546 s/b 546
 Integer28:  90 s/b 90
 Integer29:  22 s/b 22
@@ -100,22 +100,22 @@ Integer35:  49 s/b 49
 Integer36:  A s/b A
 Integer37:  65 s/b 65
 Integer38:  768 s/b 768
-Integer39:   True s/b true
-Integer40:  False s/b false
-Integer41:   True s/b true
-Integer42:  False s/b false
-Integer43:   True s/b true
-Integer44:  False s/b false
-Integer45:   True s/b true
-Integer46:  False s/b false
-Integer47:   True s/b true
-Integer48:  False s/b false
-Integer49:   True s/b true
-Integer50:   True s/b true
-Integer51:  False s/b false
-Integer52:   True s/b true
-Integer53:   True s/b true
-Integer54:  False s/b false
+Integer39:   true s/b true
+Integer40:  false s/b false
+Integer41:   true s/b true
+Integer42:  false s/b false
+Integer43:   true s/b true
+Integer44:  false s/b false
+Integer45:   true s/b true
+Integer46:  false s/b false
+Integer47:   true s/b true
+Integer48:  false s/b false
+Integer49:   true s/b true
+Integer50:   true s/b true
+Integer51:  false s/b false
+Integer52:   true s/b true
+Integer53:   true s/b true
+Integer54:  false s/b false
 Integer55:  6 s/b 6
 Integer56:  6 s/b 6
 Integer57:  -12 s/b -12
@@ -132,30 +132,30 @@ Integer67:  2 s/b 2
 Integer68:  -13 s/b -13
 Integer69:  -33 s/b -33
 Integer70: 196 s/b 196
-Integer71:  False s/b false
-Integer72:   True s/b true
-Integer73:   True s/b true
-Integer74:  False s/b false
-Integer75:   True s/b true
-Integer76:  False s/b false
-Integer77:   True s/b true
-Integer78:   True s/b true
-Integer79:  False s/b false
-Integer80:  False s/b false
-Integer81:   True s/b true
-Integer82:   True s/b true
-Integer83:  False s/b false
-Integer84:  False s/b false
-Integer85:   True s/b true
-Integer86:   True s/b true
-Integer87:   True s/b true
-Integer88:  False s/b false
-Integer89:  False s/b false
-Integer90:   True s/b true
-Integer91:   True s/b true
-Integer92:   True s/b true
-Integer93:  False s/b false
-Integer94:  False s/b false
+Integer71:  false s/b false
+Integer72:   true s/b true
+Integer73:   true s/b true
+Integer74:  false s/b false
+Integer75:   true s/b true
+Integer76:  false s/b false
+Integer77:   true s/b true
+Integer78:   true s/b true
+Integer79:  false s/b false
+Integer80:  false s/b false
+Integer81:   true s/b true
+Integer82:   true s/b true
+Integer83:  false s/b false
+Integer84:  false s/b false
+Integer85:   true s/b true
+Integer86:   true s/b true
+Integer87:   true s/b true
+Integer88:  false s/b false
+Integer89:  false s/b false
+Integer90:   true s/b true
+Integer91:   true s/b true
+Integer92:   true s/b true
+Integer93:  false s/b false
+Integer94:  false s/b false
 Integer95:  14 s/b 14
 Integer96:  0 s/b 0
 Integer97:  0 s/b 0
@@ -178,30 +178,30 @@ Integer113: 0 s/b 0
 Integer114: -2 s/b -2
 Integer115: 64 s/b 64
 Integer116: -55 s/b -55
-Integer117: False s/b false
-Integer118:  True s/b true
-Integer119:  True s/b true
-Integer120: False s/b false
-Integer121:  True s/b true
-Integer122: False s/b false
-Integer123:  True s/b true
-Integer124:  True s/b true
-Integer125: False s/b false
-Integer126: False s/b false
-Integer127:  True s/b true
-Integer128:  True s/b true
-Integer129: False s/b false
-Integer130: False s/b false
-Integer131:  True s/b true
-Integer132:  True s/b true
-Integer133:  True s/b true
-Integer134: False s/b false
-Integer135: False s/b false
-Integer136:  True s/b true
-Integer137:  True s/b true
-Integer138:  True s/b true
-Integer139: False s/b false
-Integer140: False s/b false
+Integer117: false s/b false
+Integer118:  true s/b true
+Integer119:  true s/b true
+Integer120: false s/b false
+Integer121:  true s/b true
+Integer122: false s/b false
+Integer123:  true s/b true
+Integer124:  true s/b true
+Integer125: false s/b false
+Integer126: false s/b false
+Integer127:  true s/b true
+Integer128:  true s/b true
+Integer129: false s/b false
+Integer130: false s/b false
+Integer131:  true s/b true
+Integer132:  true s/b true
+Integer133:  true s/b true
+Integer134: false s/b false
+Integer135: false s/b false
+Integer136:  true s/b true
+Integer137:  true s/b true
+Integer138:  true s/b true
+Integer139: false s/b false
+Integer140: false s/b false
 Integer141: 6 s/b 6
 Integer142: -52 s/b -52
 Integer143: 52 s/b 52
@@ -220,22 +220,22 @@ Subrange6:   44 s/b 44
 Subrange7:   42 s/b 42
 Subrange8:   N s/b N
 Subrange9:   43 s/b 43
-Subrange10:   True s/b true
-Subrange11:  False s/b false
-Subrange12:   True s/b true
-Subrange13:  False s/b false
-Subrange14:   True s/b true
-Subrange15:  False s/b false
-Subrange16:   True s/b true
-Subrange17:  False s/b false
-Subrange18:   True s/b true
-Subrange19:  False s/b false
-Subrange20:   True s/b true
-Subrange21:   True s/b true
-Subrange22:  False s/b false
-Subrange23:   True s/b true
-Subrange24:   True s/b true
-Subrange25:  False s/b false
+Subrange10:   true s/b true
+Subrange11:  false s/b false
+Subrange12:   true s/b true
+Subrange13:  false s/b false
+Subrange14:   true s/b true
+Subrange15:  false s/b false
+Subrange16:   true s/b true
+Subrange17:  false s/b false
+Subrange18:   true s/b true
+Subrange19:  false s/b false
+Subrange20:   true s/b true
+Subrange21:   true s/b true
+Subrange22:  false s/b false
+Subrange23:   true s/b true
+Subrange24:   true s/b true
+Subrange25:  false s/b false
 Subrange26:  6 s/b 6
 Subrange27:  6 s/b 6
 Subrange28:  -12 s/b -12
@@ -251,30 +251,30 @@ Subrange37:  -1 s/b -1
 Subrange38:  2 s/b 2
 Subrange39:  -13 s/b -13
 Subrange40:  -33 s/b -33
-Subrange41:  False s/b false
-Subrange42:   True s/b true
-Subrange43:   True s/b true
-Subrange44:  False s/b false
-Subrange45:   True s/b true
-Subrange46:  False s/b false
-Subrange47:   True s/b true
-Subrange48:   True s/b true
-Subrange49:  False s/b false
-Subrange50:  False s/b false
-Subrange51:   True s/b true
-Subrange52:   True s/b true
-Subrange53:  False s/b false
-Subrange54:  False s/b false
-Subrange55:   True s/b true
-Subrange56:   True s/b true
-Subrange57:   True s/b true
-Subrange58:  False s/b false
-Subrange59:  False s/b false
-Subrange60:   True s/b true
-Subrange61:   True s/b true
-Subrange62:   True s/b true
-Subrange63:  False s/b false
-Subrange64:  False s/b false
+Subrange41:  false s/b false
+Subrange42:   true s/b true
+Subrange43:   true s/b true
+Subrange44:  false s/b false
+Subrange45:   true s/b true
+Subrange46:  false s/b false
+Subrange47:   true s/b true
+Subrange48:   true s/b true
+Subrange49:  false s/b false
+Subrange50:  false s/b false
+Subrange51:   true s/b true
+Subrange52:   true s/b true
+Subrange53:  false s/b false
+Subrange54:  false s/b false
+Subrange55:   true s/b true
+Subrange56:   true s/b true
+Subrange57:   true s/b true
+Subrange58:  false s/b false
+Subrange59:  false s/b false
+Subrange60:   true s/b true
+Subrange61:   true s/b true
+Subrange62:   true s/b true
+Subrange63:  false s/b false
+Subrange64:  false s/b false
 Subrange65:  14 s/b 14
 
 ******************* Characters*******************
@@ -284,35 +284,35 @@ Character2:   h s/b h
 Character3:   f s/b f
 Character4:   103 s/b 103
 Character5:   u s/b u
-Character6:    True s/b true
-Character7:   False s/b false
-Character8:    True s/b true
-Character9:   False s/b false
-Character10:   True s/b true
-Character11:  False s/b false
-Character12:   True s/b true
-Character13:  False s/b false
-Character14:   True s/b true
-Character15:   True s/b true
-Character16:  False s/b false
-Character17:   True s/b true
-Character18:   True s/b true
-Character19:  False s/b false
+Character6:    true s/b true
+Character7:   false s/b false
+Character8:    true s/b true
+Character9:   false s/b false
+Character10:   true s/b true
+Character11:  false s/b false
+Character12:   true s/b true
+Character13:  false s/b false
+Character14:   true s/b true
+Character15:   true s/b true
+Character16:  false s/b false
+Character17:   true s/b true
+Character18:   true s/b true
+Character19:  false s/b false
 Character20:  porker    porker    parker     s/b porker    porker    parker
-Character21:   True s/b true
-Character22:  False s/b false
-Character23:   True s/b true
-Character24:  False s/b false
-Character25:   True s/b true
-Character26:  False s/b false
-Character27:   True s/b true
-Character28:  False s/b false
-Character29:   True s/b true
-Character30:   True s/b true
-Character40:  False s/b false
-Character41:   True s/b true
-Character42:   True s/b true
-Character43:  False s/b false
+Character21:   true s/b true
+Character22:  false s/b false
+Character23:   true s/b true
+Character24:  false s/b false
+Character25:   true s/b true
+Character26:  false s/b false
+Character27:   true s/b true
+Character28:  false s/b false
+Character29:   true s/b true
+Character30:   true s/b true
+Character40:  false s/b false
+Character41:   true s/b true
+Character42:   true s/b true
+Character43:  false s/b false
 Character44:  abcdefghijklmnopqrstuvwxyz s/b abcdefghijklmnopqrstuvwxyz
 Character45:  zyxwvutsrqponmlkjihgfedcba s/b zyxwvutsrqponmlkjihgfedcba
 Character46:  25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 
@@ -349,34 +349,34 @@ Character52:  b s/b b
 Character53:  y s/b y
 Character54:  99 s/b 99
 Character55:  g s/b g
-Character56:   True s/b true
-Character57:  False s/b false
-Character58:   True s/b true
-Character59:  False s/b false
-Character60:   True s/b true
-Character61:  False s/b false
-Character62:   True s/b true
-Character63:  False s/b false
-Character64:   True s/b true
-Character65:   True s/b true
-Character66:  False s/b false
-Character67:   True s/b true
-Character68:   True s/b true
-Character69:  False s/b false
-Character70:   True s/b true
-Character71:  False s/b false
-Character72:   True s/b true
-Character73:  False s/b false
-Character74:   True s/b true
-Character75:  False s/b false
-Character76:   True s/b true
-Character77:  False s/b false
-Character78:   True s/b true
-Character79:   True s/b true
-Character80:  False s/b false
-Character81:   True s/b true
-Character82:   True s/b true
-Character83:  False s/b false
+Character56:   true s/b true
+Character57:  false s/b false
+Character58:   true s/b true
+Character59:  false s/b false
+Character60:   true s/b true
+Character61:  false s/b false
+Character62:   true s/b true
+Character63:  false s/b false
+Character64:   true s/b true
+Character65:   true s/b true
+Character66:  false s/b false
+Character67:   true s/b true
+Character68:   true s/b true
+Character69:  false s/b false
+Character70:   true s/b true
+Character71:  false s/b false
+Character72:   true s/b true
+Character73:  false s/b false
+Character74:   true s/b true
+Character75:  false s/b false
+Character76:   true s/b true
+Character77:  false s/b false
+Character78:   true s/b true
+Character79:   true s/b true
+Character80:  false s/b false
+Character81:   true s/b true
+Character82:   true s/b true
+Character83:  false s/b false
 Character84:  this is a string s/b this is a string
 Character85:  v s/b v
 Character86:  
@@ -414,61 +414,61 @@ h
 
 ******************* Booleans *******************
 
-Boolean1:    True False s/b true false
-Boolean2:    True s/b true
-Boolean3:   False s/b false
+Boolean1:    true false s/b true false
+Boolean2:    true s/b true
+Boolean3:   false s/b false
 Boolean4:   0 s/b 0
 Boolean5:   1 s/b 1
-Boolean6:    True s/b true
-Boolean7:    True s/b true
-Boolean8:   False s/b false
-Boolean9:    True s/b true
-Boolean10:  False s/b false
-Boolean11:   True s/b true
-Boolean12:  False s/b false
-Boolean13:   True s/b true
-Boolean14:  False s/b false
-Boolean15:   True s/b true
-Boolean16:   True s/b true
-Boolean17:  False s/b false
-Boolean18:   True s/b true
-Boolean19:   True s/b true
-Boolean20:  False s/b false
-Boolean21:  False  True s/b false true
-Boolean22:   True False s/b true false
-Boolean23:   True s/b true
-Boolean24:  False s/b false
-Boolean25:   True False s/b true false
-Boolean26:   True s/b true
-Boolean27:  False s/b false
+Boolean6:    true s/b true
+Boolean7:    true s/b true
+Boolean8:   false s/b false
+Boolean9:    true s/b true
+Boolean10:  false s/b false
+Boolean11:   true s/b true
+Boolean12:  false s/b false
+Boolean13:   true s/b true
+Boolean14:  false s/b false
+Boolean15:   true s/b true
+Boolean16:   true s/b true
+Boolean17:  false s/b false
+Boolean18:   true s/b true
+Boolean19:   true s/b true
+Boolean20:  false s/b false
+Boolean21:  false  true s/b false true
+Boolean22:   true false s/b true false
+Boolean23:   true s/b true
+Boolean24:  false s/b false
+Boolean25:   true false s/b true false
+Boolean26:   true s/b true
+Boolean27:  false s/b false
 Boolean28:  0 s/b 0
 Boolean29:  1 s/b 1
-Boolean30:   True s/b true
-Boolean31:   True s/b true
-Boolean32:  False s/b false
-Boolean33:   True s/b true
-Boolean34:  False s/b false
-Boolean35:   True s/b true
-Boolean36:  False s/b false
-Boolean37:   True s/b true
-Boolean38:  False s/b false
-Boolean39:   True s/b true
-Boolean40:   True s/b true
-Boolean41:  False s/b false
-Boolean42:   True s/b true
-Boolean43:   True s/b true
-Boolean44:  False s/b false
+Boolean30:   true s/b true
+Boolean31:   true s/b true
+Boolean32:  false s/b false
+Boolean33:   true s/b true
+Boolean34:  false s/b false
+Boolean35:   true s/b true
+Boolean36:  false s/b false
+Boolean37:   true s/b true
+Boolean38:  false s/b false
+Boolean39:   true s/b true
+Boolean40:   true s/b true
+Boolean41:  false s/b false
+Boolean42:   true s/b true
+Boolean43:   true s/b true
+Boolean44:  false s/b false
 Boolean45:
-     False
-    False
-   False
-  False
- False
-False
-Fals
-Fal
-Fa
-F
+     false
+    false
+   false
+  false
+ false
+false
+fals
+fal
+fa
+f
 Boolean45: s/b:
      false
     false
@@ -481,16 +481,16 @@ fal
 fa
 f
 Boolean46:
-      True
-     True
-    True
-   True
-  True
- True
-True
-Tru
-Tr
-T
+      true
+     true
+    true
+   true
+  true
+ true
+true
+tru
+tr
+t
 Boolean46: s/b:
       true
      true
@@ -505,80 +505,80 @@ t
 
 ******************* Scalar *******************
 
-Scalar1:    True s/b true
-Scalar2:    True s/b true
+Scalar1:    true s/b true
+Scalar2:    true s/b true
 Scalar3:   0 s/b 0
 Scalar4:   2 s/b 2
-Scalar5:    True s/b true
-Scalar6:    True s/b true
-Scalar7:   False s/b false
-Scalar8:    True s/b true
-Scalar9:   False s/b false
-Scalar10:   True s/b true
-Scalar11:  False s/b false
-Scalar12:   True s/b true
-Scalar13:  False s/b false
-Scalar14:   True s/b true
-Scalar15:   True s/b true
-Scalar16:  False s/b false
-Scalar17:   True s/b true
-Scalar18:   True s/b true
-Scalar19:  False s/b false
+Scalar5:    true s/b true
+Scalar6:    true s/b true
+Scalar7:   false s/b false
+Scalar8:    true s/b true
+Scalar9:   false s/b false
+Scalar10:   true s/b true
+Scalar11:  false s/b false
+Scalar12:   true s/b true
+Scalar13:  false s/b false
+Scalar14:   true s/b true
+Scalar15:   true s/b true
+Scalar16:  false s/b false
+Scalar17:   true s/b true
+Scalar18:   true s/b true
+Scalar19:  false s/b false
 Scalar20:  0 1 2 3 4 5 6 s/b 0 1 2 3 4 5 6
 Scalar21:  6 5 4 3 2 1 0 s/b 6 5 4 3 2 1 0
-Scalar20:    True s/b true
-Scalar21:    True s/b true
+Scalar20:    true s/b true
+Scalar21:    true s/b true
 Scalar22:   2 s/b 2
 Scalar23:   6 s/b 6
-Scalar24:    True s/b true
-Scalar25:    True s/b true
-Scalar26:   False s/b false
-Scalar27:    True s/b true
-Scalar28:   False s/b false
-Scalar29:   True s/b true
-Scalar30:  False s/b false
-Scalar31:   True s/b true
-Scalar32:  False s/b false
-Scalar33:   True s/b true
-Scalar34:   True s/b true
-Scalar35:  False s/b false
-Scalar36:   True s/b true
-Scalar37:   True s/b true
-Scalar38:  False s/b false
+Scalar24:    true s/b true
+Scalar25:    true s/b true
+Scalar26:   false s/b false
+Scalar27:    true s/b true
+Scalar28:   false s/b false
+Scalar29:   true s/b true
+Scalar30:  false s/b false
+Scalar31:   true s/b true
+Scalar32:  false s/b false
+Scalar33:   true s/b true
+Scalar34:   true s/b true
+Scalar35:  false s/b false
+Scalar36:   true s/b true
+Scalar37:   true s/b true
+Scalar38:  false s/b false
 
 ******************* Reals ******************************
 
-Real1:    1.55400000e+00 s/b  1.554000e+00
-Real2:    3.34000000e-03 s/b  3.340000e-03
-Real3:    3.34000000e-24 s/b  3.340000e-24
-Real4:    4.00000000e-45 s/b  4.000000e-45
-Real5:   -5.56500000e+00 s/b -5.565000e+00
-Real6:   -9.44000000e-03 s/b -9.440000e-03
-Real7:   -6.36400000e+29 s/b -6.364000e+29
-Real8:   -2.00000000e-14 s/b -2.000000e-14
+Real1:    1.5540000e+000 s/b  1.554000e+00
+Real2:    3.3400000e-003 s/b  3.340000e-03
+Real3:    3.3400000e-024 s/b  3.340000e-24
+Real4:    4.0000000e-045 s/b  4.000000e-45
+Real5:   -5.5650000e+000 s/b -5.565000e+00
+Real6:   -9.4400000e-003 s/b -9.440000e-03
+Real7:   -6.3640000e+029 s/b -6.364000e+29
+Real8:   -2.0000000e-014 s/b -2.000000e-14
 Real9:
          11111111112222222222333333333344444444445
 12345678901234567890123456789012345678901234567890
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.2e+00
- 1.23e+00
- 1.235e+00
- 1.2346e+00
- 1.23457e+00
- 1.234568e+00
- 1.2345679e+00
- 1.23456789e+00
- 1.234567890e+00
- 1.2345678901e+00
- 1.23456789012e+00
- 1.234567890123e+00
- 1.2345678901235e+00
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.2e+000
+ 1.23e+000
+ 1.235e+000
+ 1.2346e+000
+ 1.23457e+000
+ 1.234568e+000
+ 1.2345679e+000
+ 1.23456789e+000
+ 1.234567890e+000
+ 1.2345678901e+000
+ 1.23456789012e+000
+ 1.234567890123e+000
 s/b (note precision dropoff at right):
  1.2e+000
  1.2e+000
@@ -618,11 +618,11 @@ Real10:
 13.2345678901235
 14.23456789012346
 15.234567890123456
-16.2345678901234578
-17.23456789012345780
-18.234567890123457801
-19.2345678901234578007
-20.23456789012345780066
+16.2345678901234580
+17.23456789012345800
+18.234567890123458000
+19.2345678901234580000
+20.23456789012345800000
 s/b (note precision dropoff at right):
 1.2
 2.23
@@ -644,153 +644,153 @@ s/b (note precision dropoff at right):
 18.234567890123456789
 19.2345678901234567890
 20.23456789012345678901
-Real11:   1.41890000e+03 s/b  1.418900e+03
-Rea112:   5.48440000e+02 s/b  5.484399e+02
-Real13:   4.28122694e+05 s/b  4.281227e+05
-Real14:   2.26011534e+00 s/b  2.260115e+00
-Real15:   True s/b true
-Real16:  False s/b false
-Real17:   True s/b true
-Real18:  False s/b false
-Real19:   True s/b true
-Real20:  False s/b false
-Real21:   True s/b true
-Real22:  False s/b false
-Real23:   True s/b true
-Real24:   True s/b true
-Real25:  False s/b false
-Real26:   True s/b true
-Real27:   True s/b true
-Real28:  False s/b false
-Real29:   4.35230000e+02 s/b  4.35230e+02
-Real30:   1.89425153e+05 s/b  1.89425e+05
-Real31:   3.13635138e+01 s/b  3.13635e+01
-Real32:  -3.44305942e-01 s/b -3.44290e-01
-Real33:   1.56849870e+00 s/b  1.56850e+00
-Real34:   1.41100187e+00 s/b  1.41100e+00
-Real35:   6.07587463e+00 s/b  6.07587e+00
+Real11:   1.4189000e+003 s/b  1.418900e+03
+Rea112:   5.4844000e+002 s/b  5.484399e+02
+Real13:   4.2812269e+005 s/b  4.281227e+05
+Real14:   2.2601153e+000 s/b  2.260115e+00
+Real15:   true s/b true
+Real16:  false s/b false
+Real17:   true s/b true
+Real18:  false s/b false
+Real19:   true s/b true
+Real20:  false s/b false
+Real21:   true s/b true
+Real22:  false s/b false
+Real23:   true s/b true
+Real24:   true s/b true
+Real25:  false s/b false
+Real26:   true s/b true
+Real27:   true s/b true
+Real28:  false s/b false
+Real29:   4.3523000e+002 s/b  4.35230e+02
+Real30:   1.8942515e+005 s/b  1.89425e+05
+Real31:   3.1363514e+001 s/b  3.13635e+01
+Real32:  -3.4430594e-001 s/b -3.44290e-01
+Real33:   1.5684987e+000 s/b  1.56850e+00
+Real34:   1.4110019e+000 s/b  1.41100e+00
+Real35:   6.0758746e+000 s/b  6.07587e+00
 Real36:  435 s/b 435
 Real37:  984 s/b 984
 Real38:  435 s/b 435
-Real39:   1.27805200e+03 s/b  1.278052e+03
-Real40:   2.38946000e+02 s/b  2.389460e+02
-Real41:   1.04720175e+05 s/b  1.047202e+05
-Real42:   7.25959751e-03 s/b  7.259598e-03
-Real43:   True s/b true
-Real44:  False s/b false
-Real45:   True s/b true
-Real46:  False s/b false
-Real47:   True s/b true
-Real48:  False s/b false
-Real49:   True s/b true
-Real50:  False s/b false
-Real51:   True s/b true
-Real52:   True s/b true
-Real53:  False s/b false
-Real54:   True s/b true
-Real55:   True s/b true
-Real56:  False s/b false
-Real57:   3.49300000e+01 s/b  3.493000e+01
-Real58:   5.47560000e+00 s/b  5.475600e+00
-Real59:   9.72333276e+01 s/b  9.723333e+01
-Real60:   3.31147273e-01 s/b  3.311461e-01
-Real61:   1.56788258e+00 s/b  1.567883e+00
-Real62:   1.39375285e+00 s/b  1.393753e+00
-Real63:   4.42148770e+00 s/b  4.421488e+00
+Real39:   1.2780520e+003 s/b  1.278052e+03
+Real40:   2.3894600e+002 s/b  2.389460e+02
+Real41:   1.0472018e+005 s/b  1.047202e+05
+Real42:   7.2595975e-003 s/b  7.259598e-03
+Real43:   true s/b true
+Real44:  false s/b false
+Real45:   true s/b true
+Real46:  false s/b false
+Real47:   true s/b true
+Real48:  false s/b false
+Real49:   true s/b true
+Real50:  false s/b false
+Real51:   true s/b true
+Real52:   true s/b true
+Real53:  false s/b false
+Real54:   true s/b true
+Real55:   true s/b true
+Real56:  false s/b false
+Real57:   3.4930000e+001 s/b  3.493000e+01
+Real58:   5.4756000e+000 s/b  5.475600e+00
+Real59:   9.7233328e+001 s/b  9.723333e+01
+Real60:   3.3114727e-001 s/b  3.311461e-01
+Real61:   1.5678826e+000 s/b  1.567883e+00
+Real62:   1.3937528e+000 s/b  1.393753e+00
+Real63:   4.4214877e+000 s/b  4.421488e+00
 Real64:  24 s/b 24
 Real65:  75 s/b 75
 Real66:  83 s/b 83
-Real67:   4.33300000e+01 s/b  4.333000e+01
-Real68:   3.00340000e+02 s/b  3.003400e+02
-Real69:   3.00340000e+02 s/b  3.003400e+02
-Real70:  -6.59998000e+03 s/b -6.599980e+03
-Real71:  -8.36872000e+03 s/b -8.368720e+03
-Real72:   1.76874000e+03 s/b  1.768740e+03
-Real73:  -8.66906000e+03 s/b -8.669061e+03
-Real74:  -6.90032000e+03 s/b -6.900320e+03
-Real75:  -7.59559268e+05 s/b -7.595593e+05
-Real76:  -7.59559268e+05 s/b -7.595593e+05
-Real77:   5.60526458e+06 s/b  5.605265e+06
-Real78:  -1.40907110e+00 s/b -1.409071e+00
-Real79:  -7.37962766e+00 s/b -7.379627e+00
-Real80:   1.03984200e+01 s/b  1.039842e+01
-Real81:   True s/b true
-Real82:  False s/b false
-Real83:   True s/b true
-Real84:  False s/b false
-Real85:   True s/b true
-Real86:   True s/b true
-Real87:  False s/b false
-Real88:  False s/b false
-Real89:   True s/b true
-Real90:   True s/b true
-Real91:  False s/b false
-Real92:  False s/b false
-Real93:   True s/b true
-Real94:   True s/b true
-Real95:   True s/b true
-Real96:  False s/b false
-Real97:  False s/b false
-Real98:   True s/b true
-Real99:   True s/b true
-Real100:  True s/b true
-Real101: False s/b false
-Real102: False s/b false
-Real103:  7.34200000e+02 s/b  7.34200e+02
-Real104:  5.39049640e+05 s/b  5.39050e+05
-Real105: -4.34832062e-01 s/b -4.34850e-01
-Real106: -1.56943430e+00 s/b -1.56943e+00
-Real107:  6.80566323e-01 s/b  6.80566e-01
+Real67:   4.3330000e+001 s/b  4.333000e+01
+Real68:   3.0034000e+002 s/b  3.003400e+02
+Real69:   3.0034000e+002 s/b  3.003400e+02
+Real70:  -6.5999800e+003 s/b -6.599980e+03
+Real71:  -8.3687200e+003 s/b -8.368720e+03
+Real72:   1.7687400e+003 s/b  1.768740e+03
+Real73:  -8.6690600e+003 s/b -8.669061e+03
+Real74:  -6.9003200e+003 s/b -6.900320e+03
+Real75:  -7.5955927e+005 s/b -7.595593e+05
+Real76:  -7.5955927e+005 s/b -7.595593e+05
+Real77:   5.6052646e+006 s/b  5.605265e+06
+Real78:  -1.4090711e+000 s/b -1.409071e+00
+Real79:  -7.3796277e+000 s/b -7.379627e+00
+Real80:   1.0398420e+001 s/b  1.039842e+01
+Real81:   true s/b true
+Real82:  false s/b false
+Real83:   true s/b true
+Real84:  false s/b false
+Real85:   true s/b true
+Real86:   true s/b true
+Real87:  false s/b false
+Real88:  false s/b false
+Real89:   true s/b true
+Real90:   true s/b true
+Real91:  false s/b false
+Real92:  false s/b false
+Real93:   true s/b true
+Real94:   true s/b true
+Real95:   true s/b true
+Real96:  false s/b false
+Real97:  false s/b false
+Real98:   true s/b true
+Real99:   true s/b true
+Real100:  true s/b true
+Real101: false s/b false
+Real102: false s/b false
+Real103:  7.3420000e+002 s/b  7.34200e+02
+Real104:  5.3904964e+005 s/b  5.39050e+05
+Real105: -4.3483206e-001 s/b -4.34850e-01
+Real106: -1.5694343e+000 s/b -1.56943e+00
+Real107:  6.8056632e-001 s/b  6.80566e-01
 Real108:            -734 s/b -734
 Real109:           -7635 s/b -7635
 Real110:            -734 s/b -734
-Real111:  1.51000000e+01 s/b  1.510000e+01
-Real112:  4.51330000e+01 s/b  4.513300e+01
-Real113: -3.86400000e+01 s/b -3.864000e+01
-Real114: -3.65810000e+01 s/b -3.658100e+01
-Real115:  3.55480000e+01 s/b  3.554800e+01
-Real116: -4.93984000e+01 s/b -4.939840e+01
-Real117: -4.40010000e+01 s/b -4.400100e+01
-Real118: -2.64122320e+01 s/b -2.641223e+01
-Real119: -1.48904140e+02 s/b -1.489041e+02
-Real120:  5.58563248e+02 s/b  5.585632e+02
-Real121: -5.22015662e+00 s/b -5.220157e+00
-Real122: -1.77216253e+01 s/b -1.772163e+01
-Real123:  4.27458238e+00 s/b  4.274582e+00
-Real124:  True s/b true
-Real125: False s/b false
-Real126:  True s/b true
-Real127: False s/b false
-Real128:  True s/b true
-Real129:  True s/b true
-Real130: False s/b false
-Real131: False s/b false
-Real132:  True s/b true
-Real133:  True s/b true
-Real134: False s/b false
-Real135: False s/b false
-Real136:  True s/b true
-Real137:  True s/b true
-Real138:  True s/b true
-Real139: False s/b false
-Real140: False s/b false
-Real141:  True s/b true
-Real142:  True s/b true
-Real143:  True s/b true
-Real144: False s/b false
-Real145: False s/b false
-Real146:  6.82300000e+00 s/b  6.823000e+00
-Real147   1.21257168e+05 s/b  1.212572e+05
-Real148:  9.42124497e-01 s/b  9.421146e-01
-Real149: -1.57067710e+00 s/b -1.570677e+00
-Real150:  4.17153925e-01 s/b  4.171539e-01
+Real111:  1.5100000e+001 s/b  1.510000e+01
+Real112:  4.5133000e+001 s/b  4.513300e+01
+Real113: -3.8640000e+001 s/b -3.864000e+01
+Real114: -3.6581000e+001 s/b -3.658100e+01
+Real115:  3.5548000e+001 s/b  3.554800e+01
+Real116: -4.9398400e+001 s/b -4.939840e+01
+Real117: -4.4001000e+001 s/b -4.400100e+01
+Real118: -2.6412232e+001 s/b -2.641223e+01
+Real119: -1.4890414e+002 s/b -1.489041e+02
+Real120:  5.5856325e+002 s/b  5.585632e+02
+Real121: -5.2201566e+000 s/b -5.220157e+00
+Real122: -1.7721625e+001 s/b -1.772163e+01
+Real123:  4.2745824e+000 s/b  4.274582e+00
+Real124:  true s/b true
+Real125: false s/b false
+Real126:  true s/b true
+Real127: false s/b false
+Real128:  true s/b true
+Real129:  true s/b true
+Real130: false s/b false
+Real131: false s/b false
+Real132:  true s/b true
+Real133:  true s/b true
+Real134: false s/b false
+Real135: false s/b false
+Real136:  true s/b true
+Real137:  true s/b true
+Real138:  true s/b true
+Real139: false s/b false
+Real140: false s/b false
+Real141:  true s/b true
+Real142:  true s/b true
+Real143:  true s/b true
+Real144: false s/b false
+Real145: false s/b false
+Real146:  6.8230000e+000 s/b  6.823000e+00
+Real147   1.2125717e+005 s/b  1.212572e+05
+Real148:  9.4212450e-001 s/b  9.421146e-01
+Real149: -1.5706771e+000 s/b -1.570677e+00
+Real150:  4.1715393e-001 s/b  4.171539e-01
 Real151: -33 s/b -33
 Real152: -843 s/b -843
 Real153: -6244 s/b -6244
-Real154: -8.42200000e+01 s/b -8.422000e+01
-Real155:  8.42200000e+01 s/b  8.422000e+01
-Real156:  -4.33300000e+01 s/b -4.333000e+01
-Real157:  8.42200000e+01 s/b  8.422000e+01
+Real154: -8.4220000e+001 s/b -8.422000e+01
+Real155:  8.4220000e+001 s/b  8.422000e+01
+Real156:  -4.3330000e+001 s/b -4.333000e+01
+Real157:  8.4220000e+001 s/b  8.422000e+01
 
 ******************* sets ******************************
 
@@ -798,71 +798,71 @@ Set1:  10101010101010101010 s/b 10101010101010101010
 Set2:  1101110001 s/b 1101110001
 Set3:  0100010000 s/b 0100010000
 Set4:  0100001000 s/b 0100001000
-Set5:  False s/b false
-Set6:   True s/b true
-Set7:   True s/b true
-Set8:  False s/b false
-Set9:   True s/b true
-Set10:  True s/b true
-Set11: False s/b false
-Set12:  True s/b true
-Set13:  True s/b true
-Set14: False s/b false
+Set5:  false s/b false
+Set6:   true s/b true
+Set7:   true s/b true
+Set8:  false s/b false
+Set9:   true s/b true
+Set10:  true s/b true
+Set11: false s/b false
+Set12:  true s/b true
+Set13:  true s/b true
+Set14: false s/b false
 Set15: 0101010000 s/b 0101010000
-Set16:  True s/b true
+Set16:  true s/b true
 Set17: a_c_e_g_i_k_m_o_q_s_ s/b a_c_e_g_i_k_m_o_q_s_
 Set18: a_cd_fg___ s/b a_cd_fg___
 Set19: a______h__ s/b a______h__
 Set20: _b_______j s/b _b_______j
-Set21: False s/b false
-Set22:  True s/b true
-Set23:  True s/b true
-Set24: False s/b false
-Set25:  True s/b true
-Set26:  True s/b true
-Set27: False s/b false
-Set28:  True s/b true
-Set29:  True s/b true
-Set30: False s/b false
+Set21: false s/b false
+Set22:  true s/b true
+Set23:  true s/b true
+Set24: false s/b false
+Set25:  true s/b true
+Set26:  true s/b true
+Set27: false s/b false
+Set28:  true s/b true
+Set29:  true s/b true
+Set30: false s/b false
 Set31: a___e_____ s/b a___e_____
 Set32: 0101010101 s/b 0101010101
 Set33: 1101110001 s/b 1101110001
 Set34: 0100010000 s/b 0100010000
 Set35: 0100001000 s/b 0100001000
-Set36: False s/b false
-Set37:  True s/b true
-Set38:  True s/b true
-Set39: False s/b false
-Set40:  True s/b true
-Set41:  True s/b true
-Set42: False s/b false
-Set43:  True s/b true
-Set44:  True s/b true
-Set45: False s/b false
+Set36: false s/b false
+Set37:  true s/b true
+Set38:  true s/b true
+Set39: false s/b false
+Set40:  true s/b true
+Set41:  true s/b true
+Set42: false s/b false
+Set43:  true s/b true
+Set44:  true s/b true
+Set45: false s/b false
 Set46: 0110000000 s/b 0110000000
 Set47: 01 s/b 01
 Set48: 11 s/b 11
 Set49: 10 s/b 10
 Set50: 10 s/b 10
-Set51: False s/b false
-Set52:  True s/b true
-Set53:  True s/b true
-Set54: False s/b false
-Set55:  True s/b true
-Set56:  True s/b true
-Set57: False s/b false
-Set58:  True s/b true
-Set59:  True s/b true
-Set60: False s/b false
+Set51: false s/b false
+Set52:  true s/b true
+Set53:  true s/b true
+Set54: false s/b false
+Set55:  true s/b true
+Set56:  true s/b true
+Set57: false s/b false
+Set58:  true s/b true
+Set59:  true s/b true
+Set60: false s/b false
 Set61: 11 s/b 11
-set62:  True s/b true
+set62:  true s/b true
 set63: 1000000001 s/b 1000000001
 
 ******************* Pointers ******************************
 
 Pointer1:   4594 s/b 4594
-Pointer2:    True s/b  true
-Pointer3:   False s/b false
+Pointer2:    true s/b  true
+Pointer3:   false s/b false
 Pointer4:   p s/b p
 Pointer5:   5 s/b 5
 Pointer6:   3 s/b 3
@@ -873,12 +873,12 @@ Pointer10:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
 Pointer11:   7234 y s/b 7234 y
 Pointer12:   _b_d____ij s/b _b_d____ij
 Pointer13:  3732 s/b 3732
-Pointer14:   True s/b  true
-Pointer15:  False s/b false
-Pointer16:   True s/b true
-Pointer17:  False s/b false
-Pointer18:  False s/b false
-Pointer19:   True s/b  true
+Pointer14:   true s/b  true
+Pointer15:  false s/b false
+Pointer16:   true s/b true
+Pointer17:  false s/b false
+Pointer18:  false s/b false
+Pointer19:   true s/b  true
 Pointer20:  done s/b done
 Pointer21:  Pointer22:  done s/b done
 Pointer23:  done s/b done
@@ -937,9 +937,9 @@ Array1:   20 19 18 17 16 15 14 13 12 11  s/b 20 19 18 17 16 15 14 13 12 11
 Array2:   20 19 18 17 16 15 14 13 12 11  s/b 20 19 18 17 16 15 14 13 12 11
 Array3:   20 19 18 17 16 15 14 13 12 11  s/b 20 19 18 17 16 15 14 13 12 11
 Array4:   20 19 18 17 16 15 14 13 12 11  s/b 20 19 18 17 16 15 14 13 12 11
-Array5:   False  True False  True False  True False  True False  True 
+Array5:   false  true false  true false  true false  true false  true 
     s/b:   false  true false  true false  true false  true false  true
-Array6:   False  True False  True False  True False  True False  True 
+Array6:   false  true false  true false  true false  true false  true 
     s/b:   false  true false  true false  true false  true false  true
 Array7:   20.12 19.12 18.12 17.12 16.12 15.12 14.12 13.12 12.12 11.12 
     s/b:   20.12 19.12 18.12 17.12 16.12 15.12 14.12 13.12 12.12 11.12
@@ -1047,7 +1047,7 @@ Array43:
 ******************* records ******************************
 
 Record1:   
-64 False j 1 3 12  4.54512000e-29 what ? who
+64 false j 1 3 12  4.5451200e-029 what ? who
 21 22 23 24 25 26 27 28 29 30 
 2324 y
 _bcde___i_
@@ -1059,7 +1059,7 @@ s/b:
 _bcde___i_
 8454
 Record2:   
-64 False j 1 3 12  4.54512000e-29 what ? who
+64 false j 1 3 12  4.5451200e-029 what ? who
 21 22 23 24 25 26 27 28 29 30 
 2324 y
 _bcde___i_
@@ -1071,7 +1071,7 @@ s/b:
 _bcde___i_
 8454
 Record3:   873 0 235 427 s/b 873 0 235 427
-Record4:   873 1  True 427 s/b 873 1  true 427
+Record4:   873 1  true 427 s/b 873 1  true 427
 Record5:   873 2 f 427 s/b 873 2 f 427
 Record6:   873 3 8 427 s/b 873 3 8 427
 Record7:   873 4 3 427 s/b 873 4 3 427
@@ -1085,13 +1085,13 @@ Record13:  873 10 _i_gfedcb_ 427
       s/b:  873 10 _i_gfedcb_ 427
 Record14:  873 11 2394 427 s/b 873 11 2394 427
 Record15:  10 2343 s/b 10 2343
-Record16:  19  True s/b 19  true
-Record17:   True 2343 s/b  true 2343
-Record18:  False  True s/b false  true
+Record16:  19  true s/b 19  true
+Record17:   true 2343 s/b  true 2343
+Record18:  false  true s/b false  true
 Record19:  2 2343 s/b 2 2343
-Record20:  7  True s/b 7  true
+Record20:  7  true s/b 7  true
 Record21:  3 2343 s/b 3 2343
-Record22:  4  True s/b 4  true
+Record22:  4  true s/b 4  true
 Record23:  42 s/b 42
 Record24:  1 2 3 4 5 6 7 8 9 10 s/b 1 2 3 4 5 6 7 8 9 10
 Record25:  10 9 8 7 6 5 4 3 2 1 s/b 10 9 8 7 6 5 4 3 2 1
@@ -1103,9 +1103,9 @@ Record28:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
 
 File1:   11 12 13 14 15 16 17 18 19 20 s/b 11 12 13 14 15 16 17 18 19 20
 File2:   11 12 13 14 15 16 17 18 19 20 s/b 11 12 13 14 15 16 17 18 19 20
-File3:    True False  True False  True False  True False  True False 
+File3:    true false  true false  true false  true false  true false 
    s/b:    true false  true false  true false  true false  true false
-File4:    True False  True False  True False  True False  True False 
+File4:    true false  true false  true false  true false  true false 
    s/b:    true false  true false  true false  true false  true false
 File5:   a b c d e f g h i j s/b a b c d e f g h i j
 File6:   a b c d e f g h i j s/b a b c d e f g h i j
@@ -1114,13 +1114,13 @@ File8:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File9:
 7384
 8342
- True
-False
+ true
+false
 m
 q
- 1.23456780e+00
+ 1.2345678e+000
 1.2345678
- 5.68943210e+01
+ 5.6894321e+001
 0.93837632
 hi there !
 hi th
@@ -1144,10 +1144,10 @@ file10:
 8342
 m
 q
- 1.23456780e+00
- 1.23456780e+00
- 5.68943210e+01
- 9.38376320e-01
+ 1.2345678e+000
+ 1.2345678e+000
+ 5.6894321e+001
+ 9.3837632e-001
 s/b:
 7384
 8342
@@ -1163,16 +1163,16 @@ file12:
 'too much<eoln> too soon<eoln> ' s/b 'too much<eoln> too soon<eoln> '
 File13:   11 12 13 14 15 16 17 18 19 20 s/b 11 12 13 14 15 16 17 18 19 20
 File14:   11 12 13 14 15 16 17 18 19 20 s/b 11 12 13 14 15 16 17 18 19 20
-File15:    True False  True False  True False  True False  True False 
+File15:    true false  true false  true false  true false  true false 
    s/b:    true false  true false  true false  true false  true false
-File16:    True False  True False  True False  True False  True False 
+File16:    true false  true false  true false  true false  true false 
    s/b:    true false  true false  true false  true false  true false
 File17:   a b c d e f g h i j s/b a b c d e f g h i j
 File18:   a b c d e f g h i j s/b a b c d e f g h i j
 File19:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File20:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File21:   50 s/b 50
-File22:    True s/b true
+File22:    true s/b true
 
 ************ Procedures and functions ******************
 
@@ -1185,14 +1185,14 @@ ProcedureFunction5:   35 s/b 35
 ProcedureFunction6:   10 9 8 6 5 4 3 2 1 78
 s/b:   10 9 8 6 5 4 3 2 1 78
 ProcedureFunction7:
-93  True k 7 4 10  3.14140000e+00 hello, guy
+93  true k 7 4 10  3.1414000e+000 hello, guy
 11 12 13 14 15 16 17 18 19 20 
-64 False j 1 3 12  4.54512000e-29 what ? who
+64 false j 1 3 12  4.5451200e-029 what ? who
 21 22 23 24 25 26 27 28 29 30 
 2324 y
 _bcde___i_
 8454
-23487 n False
+23487 n false
 help me123
 abcd___h__
 734

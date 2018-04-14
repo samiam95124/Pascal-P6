@@ -101,7 +101,15 @@ wc -l sample_programs\basics.dif >> temp1
 rem
 rem Now run the ISO7185pat compliance test
 rem
-call testprog !pmachoption! !cmachoption! standard_tests\iso7185pat %2
+if "%cmach%"=="1" (
+
+	call testprog !pmachoption! !cmachoption! --cmpfile standard_tests\iso7185patc standard_tests\iso7185pat
+	
+) else (
+
+	call testprog !pmachoption! !cmachoption! standard_tests\iso7185pat
+	
+)
 cat standard_tests\iso7185pat.dif >> temp1
 rem
 rem Run previous versions of the system and Pascal-S

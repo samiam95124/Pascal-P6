@@ -15,15 +15,19 @@ rem <file>.cmp - Used to compare the <file>.lst program to, should
 rem              contain an older, fully checked version of <file>.lst.
 rem <file>.dif will contain the differences in output of the run.
 rem
-rem --pmach	Generate mach code and run the result through pmach.
-rem --cmach	Generate mach code and run the result through cmach.
+rem --pmach          Generate mach code and run the result through pmach.
+rem --cmach	         Generate mach code and run the result through cmach.
+rem --cmpfile <file> Use filename following option for compare file
 rem 
+echo testprog: command line: %*
 setlocal EnableDelayedExpansion
 set pmach=0
 set pmachoption=
 set cmach=0
 set cmachoption=
 set progfile=
+set cmpnext=0
+set cmpfile=
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -35,6 +39,10 @@ for %%x in (%*) do (
    	
    		set cmach=1
    		set cmachoption=--cmach
+   		
+   	) else if "%%~x"=="--cmpfile" (
+   	
+   		set cmpnext=1
    		
    	) else if "%%~x"=="--help" (
    	
@@ -62,31 +70,40 @@ for %%x in (%*) do (
 		
     ) else if not "%%~x"=="" (
     
-		if not exist "%%~x.pas" (
+        if "!cmpnext!"=="1" (
+        
+        	set cmpfile=%%~x
+        	set cmpnext=0
+        	
+        ) else (
+         
+			if not exist "%%~x.pas" (
   
-        	echo %%~x.pas does not exist
-        	goto stop
-      
-    	)
-    	echo Compiling %%~x...
-    	call compile !pmachoption! !cmachoption! %%~x
-    	if errorlevel 1 (
-    	
-    	    echo *** Compile file %%~x failed
-    		goto stop
-    	
-    	) else (
-    	
+            	echo %%~x.pas does not exist
+            	goto stop
+        
+    		)
+    		echo Compiling %%~x...
+    		call compile !pmachoption! !cmachoption! %%~x
+    		if errorlevel 1 (
+    		
+    		    echo *** Compile file %%~x failed
+    			goto stop
+    		
+    		) else (
+    		
+    			rem
+    			rem Collect module sections to single intermediate
+    			rem
+    			cat %%~x.p6 >> temp.p6
+    			
+    		)
     		rem
-    		rem Collect module sections to single intermediate
+    		rem Set the main run program as the last one
     		rem
-    		cat %%~x.p6 >> temp.p6
+    		set progfile=%%~x
     		
     	)
-    	rem
-    	rem Set the main run program as the last one
-    	rem
-    	set progfile=%%~x
     					
    	) 
    	
@@ -95,10 +112,19 @@ for %%x in (%*) do (
 rem
 rem Compile and run the program
 rem
-if %progfile%=="" (
+if "%progfile%"=="" (
 
 	echo *** No program file was specified
 	goto stop
+	
+)
+
+rem
+rem set default compare file
+rem
+if "%cmpfile%"=="" (
+
+	set cmpfile=%progfile%
 	
 )
 
@@ -113,9 +139,9 @@ if not exist "%progfile%.inp" (
 	goto stop
 
 )
-if not exist "%progfile%.cmp" (
+if not exist "%cmpfile%.cmp" (
 
-	echo %progfile%..cmp does not exist
+	echo %cmpfile%.cmp does not exist
 	goto stop
 
 )
@@ -126,7 +152,7 @@ if not errorlevel 1 (
     rem
     rem Check output matches the compare file
     rem
-    call diffnole %progfile%.lst %progfile%.cmp > %progfile%.dif
+    call diffnole %progfile%.lst %cmpfile%.cmp > %progfile%.dif
     dir %progfile%.dif > %progfile%.tmp
     grep ".dif" %progfile%.tmp
     rm -f %progfile%.tmp

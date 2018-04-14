@@ -1417,7 +1417,7 @@ begin
    { formats, input (compiler) and output }
    writeln('Real1:   ', 1.554:15, ' s/b  1.554000e+00');
    writeln('Real2:   ', 0.00334:15, ' s/b  3.340000e-03');
-   writeln('Real3:   ', 0.00334e-21:15, ' s/b  3.34000e-24');
+   writeln('Real3:   ', 0.00334e-21:15, ' s/b  3.340000e-24');
    writeln('Real4:   ', 4e-45:15, ' s/b  4.000000e-45');
    writeln('Real5:   ', -5.565:15, ' s/b -5.565000e+00');
    writeln('Real6:   ', -0.00944:15, ' s/b -9.440000e-03');
