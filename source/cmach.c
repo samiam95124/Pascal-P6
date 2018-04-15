@@ -121,7 +121,9 @@
  * header file as the literal name of the file.
  *
  */
+#ifndef GPC
 #define GPC 1
+#endif
 /*
  * Machine word size
  *
@@ -2706,7 +2708,7 @@ void main (int argc, char *argv[])
     for (sdi = 0; sdi <= MAXDEF; sdi++)
       storedef[sdi] = 0; /* clear storage defined flags */
 
-#ifdef GPC
+#if GPC == 1
     /*
      * For GPC, we open the PRD and PRR files in advance. In Pascaline mode, we
      * treat all header files the same, which is to open as parameters from the
@@ -2732,16 +2734,18 @@ void main (int argc, char *argv[])
 
     fp = filtable[PRDFN]; /* set load file as prd */
 #else
-    if (*argc < 2) {
+#ifndef PACKAGE
+    if (argc < 2) {
         printf("*** Usage: pmach <codefile> [<params>]...\n");
         finish(1);
     }
-    fp = fopen(**argv, "r");
+    fp = fopen(*argv, "r");
     if (!fp) {
         printf("*** Cannot open file %s\n", **argv);
         finish(1);
     }
     *argv++; *argc--; /* skip that parameter */
+#endif
 #endif
 #ifndef PACKAGE
     printf("loading program\n");
@@ -2753,9 +2757,6 @@ void main (int argc, char *argv[])
 #endif
     if (store[0] == 0) /* there is already a program in store */
         load(fp); /* assembles and stores code */
-#ifndef GPC
-    fclose(fp);
-#endif
 
     /* set status of standard files */
     filstate[INPUTFN] = fsread;

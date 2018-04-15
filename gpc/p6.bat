@@ -4,7 +4,7 @@ rem Compile and run with P6 using GPC
 rem
 rem Execute with:
 rem
-rem p6 <sourcefile> [flags] [<sourcefile>]...
+rem p6 [flags] [<sourcefile>]...
 rem
 rem Where <sourcefile> is the name of the source file without
 rem extention. The Pascal input file(s) are compiled and run
@@ -14,8 +14,9 @@ rem and to the console.
 rem
 rem The flags are one of:
 rem
-rem --pmach	Generate mach code and run the result through pmach.
-rem --cmach	Generate mach code and run the result through cmach.
+rem --pmach	  Generate mach code and run the result through pmach.
+rem --cmach	  Generate mach code and run the result through cmach.
+rem --package Generate a packaged application and run.
 rem
 rem The intermediate code is placed in <file>.p6.
 rem
@@ -45,7 +46,7 @@ for %%x in (%*) do (
 		echo.
 		echo Execute with:
 		echo.
-		echo p6 ^<sourcefile^> [--pmach^|--cmach] [^<sourcefile^>]...
+		echo p6 [--pmach^|--cmach] [^<sourcefile^>]...
 		echo.
 		echo where ^<sourcefile^> is the name of the source file without
 		echo extention. The Pascal input file^(s^) are compiled and run
@@ -130,16 +131,13 @@ if "%pmach%"=="1" (
 	
 ) else if "%package%"=="1" (
 
-echo Packaging %progfile%
 	mv temp.p6 prd
 	pint
     cp prr %progfile%.p6o
 	mv %progfile%.p6o prd
 	genobj
 	cp prr program_code.c
-echo compile target
 	gcc -DPACKAGE -I. -o %progfile% source/cmach.c
-echo run target
 	%progfile%
 	
 ) else (
@@ -153,5 +151,5 @@ rem
 rem Terminate program
 rem
 :stop
-rem rm -f prd
-rem rm -f prr
+rm -f prd
+rm -f prr
