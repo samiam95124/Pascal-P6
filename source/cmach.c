@@ -503,7 +503,13 @@ address pctop;   /* top of code store */
 address gbtop;   /* top of globals, size of globals */
 instyp op; lvltyp p; address q;  /*instruction register*/
 address q1; /* extra parameter */
-byte store[MAXSTR]; /* complete program storage */
+byte store[MAXSTR] /* complete program storage */
+/* package mode fills the program store, sets pctop and executes the prepackaged
+   program. */
+#ifdef PACKAGE
+#include "program_code.c"
+#endif
+;
 byte storedef[MAXDEF]; /* defined bits */
 int sdi; /* index for that */
 /* mp  points to {ning of a data segment
@@ -563,7 +569,9 @@ void finish(int e)
     }
     printf("\n");
     if (e) printf("Program aborted\n");
+#ifndef PACKAGE
     printf("program complete\n");
+#endif
     exit(e);
 }
 
@@ -2676,6 +2684,7 @@ void main (int argc, char *argv[])
 
 {
     FILE* fp;
+    address i;
 
     printf("P6 Pascal mach interpreter vs. %d.%d", MAJORVER, MINORVER);
     if (EXPERIMENT) printf(".x");
@@ -2734,8 +2743,16 @@ void main (int argc, char *argv[])
     }
     *argv++; *argc--; /* skip that parameter */
 #endif
+#ifndef PACKAGE
     printf("loading program\n");
-    load(fp); /* assembles and stores code */
+#endif
+
+#ifdef PCTOP
+    pctop = PCTOP;
+    for (i = 0; i < PCTOP; i++) putdef(i, TRUE);
+#endif
+    if (store[0] == 0) /* there is already a program in store */
+        load(fp); /* assembles and stores code */
 #ifndef GPC
     fclose(fp);
 #endif
@@ -2755,8 +2772,10 @@ void main (int argc, char *argv[])
     pc = 0; sp = MAXTOP; np = -1; mp = MAXTOP; ep = 5; srclin = 1;
     expadr = 0; expstk = 0; expmrk = 0;
 
+#ifndef PACKAGE
     printf("Running program\n");
     printf("\n");
+#endif
     do {
         stopins = FALSE; /* set no stop flag */
         sinins();

@@ -23,6 +23,7 @@ setlocal EnableDelayedExpansion
 set pmach=0
 set cmach=0
 set progfile=
+set package=0
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -32,6 +33,10 @@ for %%x in (%*) do (
    	) else if "%%~x"=="--cmach" (
    	
    		set cmach=1
+   		
+    ) else if "%%~x"=="--package" (
+   		
+   		set package=1
    		
    	) else if "%%~x"=="--help" (
    	
@@ -78,6 +83,12 @@ for %%x in (%*) do (
     		cat temp %%~x.pas > prd
     		rm temp
     	
+    	) else if "!package!"=="1" (
+
+    		echo|set /p="{$e+}" > temp
+    		cat temp %%~x.pas > prd
+    		rm temp
+    	
     	) else (
     	
     		cp %%~x.pas prd
@@ -101,25 +112,46 @@ if "%progfile%"=="" (
 rem
 rem Run combined file
 rem
-mv temp.p6 prd
-pint
 if "%pmach%"=="1" (
 
+	mv temp.p6 prd
+	pint
     cp prr %progfile%.p6o
 	mv prr prd
 	pmach
 	
 ) else if "%cmach%"=="1" (
 
+	mv temp.p6 prd
+	pint
     cp prr %progfile%.p6o
 	mv prr prd
 	cmach
 	
+) else if "%package%"=="1" (
+
+echo Packaging %progfile%
+	mv temp.p6 prd
+	pint
+    cp prr %progfile%.p6o
+	mv %progfile%.p6o prd
+	genobj
+	cp prr program_code.c
+echo compile target
+	gcc -DPACKAGE -I. -o %progfile% source/cmach.c
+echo run target
+	%progfile%
+	
+) else (
+
+	mv temp.p6 prd
+	pint
+
 )
 
 rem
 rem Terminate program
 rem
 :stop
-rm -f prd
-rm -f prr
+rem rm -f prd
+rem rm -f prr

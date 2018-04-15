@@ -7,7 +7,7 @@ PC=gpc
 PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
 
-all: pcom pint pmach cmach
+all: pcom pint pmach cmach genobj
 
 pcom: source/pcom.pas
 	$(PC) $(PFLAGS) -o bin/pcom source/pcom.pas
@@ -20,6 +20,9 @@ pmach: source/pmach.pas
 
 cmach: source/cmach.c
 	$(CC) $(CFLAGS) -o bin/cmach source/cmach.c
+
+genobj: source/genobj.pas
+	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas
 	
 clean:
 	rm -f bin/pcom bin/pint 
