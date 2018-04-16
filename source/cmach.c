@@ -108,10 +108,10 @@
 *                                                                              *
 * Speeds:                                                                      *
 *                                                                              *
-* Packaged mode, DOCHKDEF and DOSRCLIN both off: 1.340s on fbench.             *
+* Packaged mode, DOCHKDEF and DOSRCLIN both off: 1.147s on fbench.             *
 * GPC direct compile of fbench: 0.184s                                         *
 *                                                                              *
-* Thus the interpreted versio is 7.2 times slower, and about the 10 times      *
+* Thus the interpreted version is 6.2 times slower, and is under the 10 times  *
 * slower "rule of thumb" I have observed with interpreters.                    *
 *                                                                              *
 *******************************************************************************/
@@ -949,14 +949,14 @@ void swpstk(address l)
 
 */
 
-void popint(int* i) { *i = getint(sp); sp = sp+INTSIZE; }
-void pshint(int i) { sp = sp-INTSIZE; putint(sp, i); }
-void poprel(double* r) { *r = getrel(sp); sp = sp+REALSIZE; }
-void pshrel(double r) { sp = sp-REALSIZE; putrel(sp, r); }
-void popset(settype s) { getset(sp, s); sp = sp+SETSIZE; }
-void pshset(settype s) { sp = sp-SETSIZE; putset(sp, s); }
-void popadr(address* a) { *a = getadr(sp); sp = sp+ADRSIZE; }
-void pshadr(address a) { sp = sp-ADRSIZE; putadr(sp, a); }
+#define popint(i) do { i = getint(sp); sp = sp+INTSIZE; } while(0)
+#define pshint(i) do { sp = sp-INTSIZE; putint(sp, i); } while(0)
+#define poprel(r) do { r = getrel(sp); sp = sp+REALSIZE; } while(0)
+#define pshrel(r) do { sp = sp-REALSIZE; putrel(sp, r); } while(0)
+#define popset(s) do { getset(sp, s); sp = sp+SETSIZE; } while(0)
+#define pshset(s) do { sp = sp-SETSIZE; putset(sp, s); } while(0)
+#define popadr(a) do { a = getadr(sp); sp = sp+ADRSIZE; } while(0)
+#define pshadr(a) do { sp = sp-ADRSIZE; putadr(sp, a); } while(0)
 
 /*--------------------------------------------------------------------*/
 
@@ -1037,7 +1037,7 @@ void errore(int ei)
     address ad;
 
     if (expadr == 0) errorm(pctop+ei); /* no surrounding frame, throw system */
-    mp = expmrk; sp = expstk; pc = expadr; popadr(&ad); pshadr(pctop+ei);
+    mp = expmrk; sp = expstk; pc = expadr; popadr(ad); pshadr(pctop+ei);
     ep = getadr(mp+MARKET); /* get the mark ep */
 }
 
@@ -1149,14 +1149,14 @@ void valfilrm(address fa) /* validate file read mode */
     if (filstate[store[fa]] != fsread) errore(FILEMODEINCORRECT);
 }
 
-void getop(void) /* get opcode */
-{ op = store[pc]; pc = pc+1; }
-void getp(void) /* get p parameter */
-{ p = store[pc]; pc = pc+1; }
-void getq(void) /* get q parameter */
-{ q = getadr(pc); pc = pc+ADRSIZE; }
-void getq1(void) /* get q1 parameter */
-{ q1 = getadr(pc); pc = pc+ADRSIZE; }
+/* get opcode */
+#define getop() do { op = store[pc]; pc = pc+1; } while(0)
+/* get p parameter */
+#define getp() do { p = store[pc]; pc = pc+1; } while(0)
+/* get q parameter */
+#define getq() do { q = getadr(pc); pc = pc+ADRSIZE; } while(0)
+/* get q1 parameter */
+#define getq1() do { q1 = getadr(pc); pc = pc+ADRSIZE; } while(0)
 
 /*
 
@@ -1672,8 +1672,8 @@ void callsp(void)
 
     switch (q) {
 
-    case 0 /*get*/: popadr(&ad); valfil(ad); fn = store[ad]; getfn(fn); break;
-    case 1 /*put*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 0 /*get*/: popadr(ad); valfil(ad); fn = store[ad]; getfn(fn); break;
+    case 1 /*put*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: putfile(stdout, ad, fn); break;
                        case PRRFN: putfile(filtable[PRRFN], ad, fn); break;
@@ -1686,7 +1686,7 @@ void callsp(void)
                          putfile(filtable[fn], ad, fn);
                     }
                     break;
-    case 3 /*rln*/: popadr(&ad); pshadr(ad); valfil(ad); fn = store[ad];
+    case 3 /*rln*/: popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case INPUTFN: readline(INPUTFN); break;
                        case PRDFN: readline(PRDFN); break;
@@ -1698,26 +1698,26 @@ void callsp(void)
                          readline(fn);
                     }
                     break;
-    case 4 /*new*/: popadr(&ad1); newspc(ad1, &ad);
+    case 4 /*new*/: popadr(ad1); newspc(ad1, &ad);
                     /*top of stack gives the length in units of storage */
-                    popadr(&ad1); putadr(ad1, ad);
+                    popadr(ad1); putadr(ad1, ad);
                     break;
     case 39 /*nwl*/: /* size of record, size of f const list */
-                     popadr(&ad1); popint(&i);
+                     popadr(ad1); popint(i);
                      /* alloc record, size of list, number in list */
                      newspc(ad1+(i+1)*INTSIZE, &ad);
                      ad1 = ad+i*INTSIZE; putint(ad1, i+ADRSIZE+1);
                      k = i; /* save n tags for later */
                      while (k > 0)
                      {
-                        ad1 = ad1-INTSIZE; popint(&j);
+                        ad1 = ad1-INTSIZE; popint(j);
                         putint(ad1, j); k = k-1;
                      }
                      /* get pointer to dest var, place base above taglist and
                         list of fixed consts */
-                     popadr(&ad1); putadr(ad1, ad+(i+1)*INTSIZE);
+                     popadr(ad1); putadr(ad1, ad+(i+1)*INTSIZE);
                      break;
-    case 5 /*wln*/: popadr(&ad); pshadr(ad); valfil(ad); fn = store[ad];
+    case 5 /*wln*/: popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "\n"); break;
                        case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
@@ -1730,8 +1730,8 @@ void callsp(void)
                        fprintf(filtable[fn], "\n");
                     }
                     break;
-    case 6 /*wrs*/: popint(&l); popint(&w); popadr(&ad1);
-                    popadr(&ad); pshadr(ad); valfil(ad); fn = store[ad];
+    case 6 /*wrs*/: popint(l); popint(w); popadr(ad1);
+                    popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > w) l = w; /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
@@ -1753,7 +1753,7 @@ void callsp(void)
                                  (char*)(store+ad1));
                     }
                     break;
-    case 65 /*wrsp*/: popint(&l); popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 65 /*wrsp*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (fn <= COMMANDFN) switch (fn) {
@@ -1768,16 +1768,16 @@ void callsp(void)
                       writestrp(filtable[fn], ad1, l);
                     }
                     break;
-    case 41 /*eof*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 41 /*eof*/: popadr(ad); valfil(ad); fn = store[ad];
                     pshint(eoffn(fn));
                     break;
     case 42 /*efb*/:
-                 popadr(&ad); valfilrm(ad); fn = store[ad];
+                 popadr(ad); valfilrm(ad); fn = store[ad];
                  if (filstate[fn] == fswrite) pshint(TRUE);
                  else if (filstate[fn] == fsread)
                    pshint(eoffile(filtable[fn]) && !filbuff[fn]);
                  break;
-    case 7 /*eln*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 7 /*eln*/: popadr(ad); valfil(ad); fn = store[ad];
                     pshint(eolnfn(fn));
                     break;
     case 8 /*wri*/:
@@ -1787,7 +1787,7 @@ void callsp(void)
     case 66 /*wiz*/:
     case 67 /*wizh*/:
     case 68 /*wizo*/:
-    case 69 /*wizb*/: popint(&w); popint(&i); popadr(&ad); pshadr(ad);
+    case 69 /*wizb*/: popint(w); popint(i); popadr(ad); pshadr(ad);
                      rd = 10;
                      if (q == 62 || q == 67) rd = 16;
                      else if (q == 63 || q == 68) rd = 8;
@@ -1807,7 +1807,7 @@ void callsp(void)
                          writei(filtable[fn], i, w, rd, lz);
                      }
                      break;
-    case 9 /*wrr*/: popint(&w); poprel(&r); popadr(&ad); pshadr(ad);
+    case 9 /*wrr*/: popint(w); poprel(r); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad];
                      if (w < 1) errore(INVALIDFIELDSPECIFICATION);
                      if (w < REALEF) w = REALEF; /* set minimum width */
@@ -1824,7 +1824,7 @@ void callsp(void)
                          fprintf(filtable[fn], "%*.*e", w, l, r);
                      };
                      break;
-    case 10/*wrc*/: popint(&w); popint(&i); c = i; popadr(&ad);
+    case 10/*wrc*/: popint(w); popint(i); c = i; popadr(ad);
                      pshadr(ad); valfil(ad); fn = store[ad];
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
@@ -1840,51 +1840,51 @@ void callsp(void)
                      }
                      break;
     case 11/*rdi*/:
-    case 72/*rdif*/: w = INT_MAX; fld = q == 72; if (fld) popint(&w);
-                     popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 72/*rdif*/: w = INT_MAX; fld = q == 72; if (fld) popint(w);
+                     popadr(ad1); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld);
                      putint(ad1, i);
                      break;
     case 37/*rib*/:
-    case 71/*ribf*/: w = INT_MAX; fld = q == 71; popint(&mx); popint(&mn);
-                    if (fld) popint(&w); popadr(&ad1); popadr(&ad);
+    case 71/*ribf*/: w = INT_MAX; fld = q == 71; popint(mx); popint(mn);
+                    if (fld) popint(w); popadr(ad1); popadr(ad);
                     pshadr(ad); valfil(ad); fn = store[ad];
                     readi(fn, &i, &w, fld);
                     if (i < mn || i > mx) errore(VALUEOUTOFRANGE);
                     putint(ad1, i);
                     break;
     case 12/*rdr*/:
-    case 73/*rdrf*/: w = INT_MAX; fld = q == 73; if (fld) popint(&w);
-                    popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 73/*rdrf*/: w = INT_MAX; fld = q == 73; if (fld) popint(w);
+                    popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     readr(fn, &r, w, fld); putrel(ad1, r);
                     break;
     case 13/*rdc*/:
-    case 75/*rdcf*/: w = INT_MAX; fld = q == 75; if (fld) popint(&w);
-                    popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 75/*rdcf*/: w = INT_MAX; fld = q == 75; if (fld) popint(w);
+                    popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     readc(fn, &c, w, fld); putchr(ad1, c);
                     break;
     case 38/*rcb*/:
-    case 74/*rcbf*/: w = INT_MAX; fld = q == 74; popint(&mx); popint(&mn);
-                     if (fld) popint(&w); popadr(&ad1); popadr(&ad);
+    case 74/*rcbf*/: w = INT_MAX; fld = q == 74; popint(mx); popint(mn);
+                     if (fld) popint(w); popadr(ad1); popadr(ad);
                      pshadr(ad); valfil(ad);
                      fn = store[ad];
                      readc(fn, &c, w, fld);
                      if (c < mn || c > mx) errore(VALUEOUTOFRANGE);
                      putchr(ad1, c);
                      break;
-    case 14/*sin*/: poprel(&r1); pshrel(sin(r1)); break;
-    case 15/*cos*/: poprel(&r1); pshrel(cos(r1)); break;
-    case 16/*exp*/: poprel(&r1); pshrel(exp(r1)); break;
-    case 17/*log*/: poprel(&r1); if (r1 <= 0) errore(INVALIDARGUMENTTOLN);
+    case 14/*sin*/: poprel(r1); pshrel(sin(r1)); break;
+    case 15/*cos*/: poprel(r1); pshrel(cos(r1)); break;
+    case 16/*exp*/: poprel(r1); pshrel(exp(r1)); break;
+    case 17/*log*/: poprel(r1); if (r1 <= 0) errore(INVALIDARGUMENTTOLN);
                     pshrel(log(r1)); break;
-    case 18/*sqt*/: poprel(&r1); if (r1 < 0) errore(INVALIDARGUMENTTOSQRT);
+    case 18/*sqt*/: poprel(r1); if (r1 < 0) errore(INVALIDARGUMENTTOSQRT);
                     pshrel(sqrt(r1)); break;
-    case 19/*atn*/: poprel(&r1); pshrel(atan(r1)); break;
+    case 19/*atn*/: poprel(r1); pshrel(atan(r1)); break;
     /* placeholder for "mark" */
     case 20/*sav*/: errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
-    case 21/*pag*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 21/*pag*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                          case OUTPUTFN: fprintf(stdout, "\f"); break;
                          case PRRFN: fprintf(filtable[PRRFN], "\f"); break;
@@ -1897,7 +1897,7 @@ void callsp(void)
                          fprintf(filtable[fn], "\f");
                     }
                     break;
-    case 22/*rsf*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 22/*rsf*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                          case PRDFN: resetfn(PRDFN, FALSE); break;
                          case PRRFN: errore(CANNOTRESETWRITEONLYFILE); break;
@@ -1906,7 +1906,7 @@ void callsp(void)
                            errore(CANNOTRESETORREWRITESTANDARDFILE); break;
                     } else resetfn(fn, FALSE);
                     break;
-    case 23/*rwf*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 23/*rwf*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                          case PRRFN: rewritefn(PRRFN, FALSE); break;
                          case PRDFN: errore(CANNOTREWRITEREADONLYFILE); break;
@@ -1915,7 +1915,7 @@ void callsp(void)
                            errore(CANNOTRESETORREWRITESTANDARDFILE); break;
                     } else rewritefn(fn, FALSE);
                     break;
-    case 24/*wrb*/: popint(&w); popint(&i); b = i != 0; popadr(&ad);
+    case 24/*wrb*/: popint(w); popint(i); b = i != 0; popadr(ad);
                      pshadr(ad); valfil(ad); fn = store[ad];
                      if (w < 1) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
@@ -1930,7 +1930,7 @@ void callsp(void)
                          writeb(filtable[fn], b, w);
                      }
                      break;
-    case 25/*wrf*/: popint(&f); popint(&w); poprel(&r); popadr(&ad); pshadr(ad);
+    case 25/*wrf*/: popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad];
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (f < 1) errore(INVALIDFRACTIONSPECIFICATION);
@@ -1949,8 +1949,8 @@ void callsp(void)
                          fprintf(filtable[fn], "%*.*f", w, f, r);
                      }
                      break;
-    case 26/*dsp*/: popadr(&ad1); popadr(&ad); dspspc(ad1, ad); break;
-    case 40/*dsl*/: popadr(&ad1); popint(&i); /* get size of record and n tags */
+    case 26/*dsp*/: popadr(ad1); popadr(ad); dspspc(ad1, ad); break;
+    case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
                     ad = getadr(sp+i*INTSIZE); /* get rec addr */
                     /* under us is either the number of tags or the length of the block, if it
                       was freed. Either way, it is >= adrsize if not free */
@@ -1969,45 +1969,45 @@ void callsp(void)
                         ad = ad-INTSIZE; ad2 = ad2+INTSIZE; k = k-1;
                     }
                     dspspc(ad1+(i+1)*INTSIZE, ad+INTSIZE);
-                    while (i > 0) { popint(&j); i = i-1; };
-                    popadr(&ad);
+                    while (i > 0) { popint(j); i = i-1; };
+                    popadr(ad);
                     break;
-    case 27/*wbf*/: popint(&l); popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 27/*wbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                     valfilwm(ad); fn = store[ad];
                     for (i = 0; i < l; i++) {
                        chkdef(ad1); fputc(store[ad1], filtable[fn]);
                        ad1 = ad1+1;
                     }
                     break;
-    case 28/*wbi*/: popint(&i); popadr(&ad); pshadr(ad); pshint(i);
+    case 28/*wbi*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < INTSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
-                     popint(&i);
+                     popint(i);
                      break;
-    case 45/*wbx*/: popint(&i); popadr(&ad); pshadr(ad); pshint(i);
+    case 45/*wbx*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
-                     fputc(store[sp], filtable[fn]); popint(&i);
+                     fputc(store[sp], filtable[fn]); popint(i);
                      break;
-    case 29/*wbr*/: poprel(&r); popadr(&ad); pshadr(ad); pshrel(r);
+    case 29/*wbr*/: poprel(r); popadr(ad); pshadr(ad); pshrel(r);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < REALSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
-                     poprel(&r);
+                     poprel(r);
                      break;
-    case 30/*wbc*/: popint(&i); c = i; popadr(&ad); pshadr(ad); pshint(i);
+    case 30/*wbc*/: popint(i); c = i; popadr(ad); pshadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < CHARSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
-                     popint(&i);
+                     popint(i);
                      break;
-    case 31/*wbb*/: popint(&i); popadr(&ad); pshadr(ad); pshint(i);
+    case 31/*wbb*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < BOOLSIZE; i++)
                          fputc(store[sp+i], filtable[fn]);
-                     popint(&i);
+                     popint(i);
                      break;
-    case 32/*rbf*/: popint(&l); popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 32/*rbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                      valfilrm(ad); fn = store[ad];
                      if (filbuff[fn]) /* buffer data exists */
                        for (i = 0; i < l; i++) {
@@ -2022,25 +2022,25 @@ void callsp(void)
                          ad1 = ad1+1;
                        }
                      break;
-    case 33/*rsb*/: popadr(&ad); valfil(ad); fn = store[ad]; resetfn(fn, TRUE);
+    case 33/*rsb*/: popadr(ad); valfil(ad); fn = store[ad]; resetfn(fn, TRUE);
                     break;
-    case 34/*rwb*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 34/*rwb*/: popadr(ad); valfil(ad); fn = store[ad];
                     rewritefn(fn, TRUE); break;
-    case 35/*gbf*/: popint(&i); popadr(&ad); valfilrm(ad);
+    case 35/*gbf*/: popint(i); popadr(ad); valfilrm(ad);
                     fn = store[ad];
                     if (filbuff[fn]) filbuff[fn] = FALSE;
                     else
                       for (j = 0; j < i; j++)
                          store[ad+FILEIDSIZE+j] = fgetc(filtable[fn]);
                     break;
-    case 36/*pbf*/: popint(&i); popadr(&ad); valfilwm(ad);
+    case 36/*pbf*/: popint(i); popadr(ad); valfilwm(ad);
                  fn = store[ad];
                  if (!filbuff[fn]) errore(FILEBUFFERVARIABLEUNDEFINED);
                  for (j = 0; j < i; j++)
                    fputc(store[ad+FILEIDSIZE+j], filtable[fn]);
                  filbuff[fn] = FALSE;
                  break;
-    case 43 /*fbv*/: popadr(&ad); pshadr(ad); valfil(ad);
+    case 43 /*fbv*/: popadr(ad); pshadr(ad); valfil(ad);
                    fn = store[ad];
                    if (fn == INPUTFN) putchr(ad+FILEIDSIZE, buffn(INPUTFN));
                    else if (fn == PRDFN) putchr(ad+FILEIDSIZE, buffn(PRDFN));
@@ -2050,7 +2050,7 @@ void callsp(void)
                    }
                    filbuff[fn] = TRUE;
                    break;
-    case 44 /*fvb*/: popint(&i); popadr(&ad); pshadr(ad); valfil(ad);
+    case 44 /*fvb*/: popint(i); popadr(ad); pshadr(ad); valfil(ad);
                    fn = store[ad];
                    /* load buffer only if in read mode, and buffer is
                      empty */
@@ -2064,7 +2064,7 @@ void callsp(void)
                    break;
     /* extended Pascaline file handlers */
     case 46 /*asst*/:
-    case 56 /*assb*/: popint(&i); popadr(&ad1); popadr(&ad); valfil(ad);
+    case 56 /*assb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
                   fn = store[ad];
                   for (j = 0; j < i; j++) {
                     if (j >= FILLEN) errore(FILENAMETOOLONG);
@@ -2075,93 +2075,93 @@ void callsp(void)
                   filanamtab[fn] = TRUE; /* set name assigned */
                   break;
     case 47 /*clst*/:
-    case 57 /*clsb*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 57 /*clsb*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                 /* if the file is temp, remove now */
                 if (!filanamtab[fn]) remove(filnamtab[fn]);
                 filanamtab[fn] = FALSE; /* break any name association */
                 break;
-    case 48 /*pos*/: popint(&i); popadr(&ad); valfil(ad); fn = store[ad];
+    case 48 /*pos*/: popint(i); popadr(ad); valfil(ad); fn = store[ad];
                 if (i < 1) errore(INVALIDFILEPOSITION);
                 if (fseek(filtable[fn], i-1, SEEK_SET)) errore(FILEPOSITIONFAIL);
                 break;
-    case 49 /*upd*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 49 /*upd*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
                 else {
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
                 }
                 break;
-    case 50 /*appt*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 50 /*appt*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
                 else {
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "w")) errore(FILEOPENFAIL);
                 }
                 break;
-    case 58 /*appb*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 58 /*appb*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
                 else {
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
                 }
                 break;
-    case 51 /*del*/: popint(&i); popadr(&ad1);
+    case 51 /*del*/: popint(i); popadr(ad1);
                   for (j = 0; j < i; i++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   i = remove(fl1); if (i) errorv(FILEDELETEFAIL);
                   break;
-    case 52 /*chg*/: popint(&i); popadr(&ad1); popint(&l); popadr(&ad);
+    case 52 /*chg*/: popint(i); popadr(ad1); popint(l); popadr(ad);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   for (j = 0; j < l; j++) fl2[j] = store[ad+j]; fl2[j] = 0;
                   if (rename(fl1, fl2)) errorv(FILENAMECHANGEFAIL);
                   break;
-    case 53 /*len*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 53 /*len*/: popadr(ad); valfil(ad); fn = store[ad];
                 pshint(filelength(filtable[fn]));
                 break;
-    case 54 /*loc*/: popadr(&ad); valfil(ad); fn = store[ad];
+    case 54 /*loc*/: popadr(ad); valfil(ad); fn = store[ad];
                   if (i = ftell(filtable[fn]) < 0) errorv(FILEPOSITIONFAIL);
                   pshint(i+1);
                   break;
-    case 55 /*exs*/: popint(&i); popadr(&ad1);
+    case 55 /*exs*/: popint(i); popadr(ad1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   if (fp = fopen(fl1, "r")) fclose(fp);
                   pshint(!!fp);
                   break;
     case 59 /*hlt*/: finish(1); break;
-    case 60 /*ast*/: popint(&i);
+    case 60 /*ast*/: popint(i);
                   if (i == 0) errorv(PROGRAMCODEASSERTION);
                  break;
-    case 61 /*asts*/: popint(&i); popadr(&ad); popint(&j);
+    case 61 /*asts*/: popint(i); popadr(ad); popint(j);
                   if (j == 0) errors(ad, i);
                   break;
     case 70/*rds*/:
-    case 76/*rdsf*/: w = INT_MAX; fld = q == 76; popint(&i);
-                  if (fld) popint(&w); popadr(&ad1); popadr(&ad);
+    case 76/*rdsf*/: w = INT_MAX; fld = q == 76; popint(i);
+                  if (fld) popint(w); popadr(ad1); popadr(ad);
                   pshadr(ad); valfil(ad); fn = store[ad];
                   reads(fn, ad1, i, w, fld);
                   break;
-    case 77/*rdsp*/: popint(&i); popadr(&ad1); popadr(&ad); pshadr(ad);
+    case 77/*rdsp*/: popint(i); popadr(ad1); popadr(ad); pshadr(ad);
                   valfil(ad); fn = store[ad];
                   readsp(fn, ad1, i);
                   break;
-    case 78/*aeft*/: popint(&i); popadr(&ad1); popadr(&ad); valfil(ad);
+    case 78/*aeft*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
                   fn = store[ad]; clrfn(fl1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
                   assignexternal(fn, fl1);
                   break;
-    case 79/*aefb*/: popint(&i); popadr(&ad1); popadr(&ad); valfil(ad);
+    case 79/*aefb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
                   fn = store[ad]; clrfn(fl1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
                   assignexternal(fn, fl1);
                   break;
-    case 80/*rdie*/: w = INT_MAX; popint(&i); popadr(&ad1); popadr(&ad);
+    case 80/*rdie*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
                   readi(COMMANDFN, &i, &w, FALSE); putint(ad, i);
                   break;
-    case 81/*rdre*/: w = INT_MAX; popint(&i); popadr(&ad1); popadr(&ad);
+    case 81/*rdre*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
                   readr(COMMANDFN, &r, w, FALSE); putrel(ad, r);
                   break;
-    case 2/*thw*/: popadr(&ad1); mp = expmrk; sp = expstk;
-                  pc = expadr; popadr(&ad2); pshadr(ad1);
+    case 2/*thw*/: popadr(ad1); mp = expmrk; sp = expstk;
+                  pc = expadr; popadr(ad2); pshadr(ad1);
                   ep = getadr(mp+MARKET); /* get the mark ep */
                   /* release to search vectors */
                   break;
@@ -2206,35 +2206,35 @@ void sinins()
     case 68  /*ldob*/: getq(); pshint(getbol(q)); break;
     case 69  /*ldoc*/: getq(); pshint(getchr(q)); break;
 
-    case 2   /*stri*/: getp(); getq(); popint(&i); putint(base(p)+q, i); break;
-    case 195 /*strx*/: getp(); getq(); popint(&i); putbyt(base(p)+q, i); break;
-    case 70  /*stra*/: getp(); getq(); popadr(&ad); putadr(base(p)+q, ad); break;
-    case 71  /*strr*/: getp(); getq(); poprel(&r1); putrel(base(p)+q, r1); break;
+    case 2   /*stri*/: getp(); getq(); popint(i); putint(base(p)+q, i); break;
+    case 195 /*strx*/: getp(); getq(); popint(i); putbyt(base(p)+q, i); break;
+    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(base(p)+q, ad); break;
+    case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(base(p)+q, r1); break;
     case 72  /*strs*/: getp(); getq(); popset(s1); putset(base(p)+q, s1); break;
-    case 73  /*strb*/: getp(); getq(); popint(&i1); b1 = i1 != 0;
+    case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
                        putbol(base(p)+q, b1); break;
-    case 74  /*strc*/: getp(); getq(); popint(&i1); c1 = i1;
+    case 74  /*strc*/: getp(); getq(); popint(i1); c1 = i1;
                          putchr(base(p)+q, c1); break;
 
-    case 3   /*sroi*/: getq(); popint(&i); putint(q, i); break;
-    case 196 /*srox*/: getq(); popint(&i); putbyt(q, i); break;
-    case 75  /*sroa*/: getq(); popadr(&ad); putadr(q, ad); break;
-    case 76  /*sror*/: getq(); poprel(&r1); putrel(q, r1); break;
+    case 3   /*sroi*/: getq(); popint(i); putint(q, i); break;
+    case 196 /*srox*/: getq(); popint(i); putbyt(q, i); break;
+    case 75  /*sroa*/: getq(); popadr(ad); putadr(q, ad); break;
+    case 76  /*sror*/: getq(); poprel(r1); putrel(q, r1); break;
     case 77  /*sros*/: getq(); popset(s1); putset(q, s1); break;
-    case 78  /*srob*/: getq(); popint(&i1); b1 = i1 != 0; putbol(q, b1); break;
-    case 79  /*sroc*/: getq(); popint(&i1); c1 = i1; putchr(q, c1); break;
+    case 78  /*srob*/: getq(); popint(i1); b1 = i1 != 0; putbol(q, b1); break;
+    case 79  /*sroc*/: getq(); popint(i1); c1 = i1; putchr(q, c1); break;
 
     case 4 /*lda*/: getp(); getq(); pshadr(base(p)+q); break;
     case 5 /*lao*/: getq(); pshadr(q); break;
 
-    case 6   /*stoi*/: popint(&i); popadr(&ad); putint(ad, i); break;
-    case 197 /*stox*/: popint(&i); popadr(&ad); putbyt(ad, i); break;
-    case 80  /*stoa*/: popadr(&ad1); popadr(&ad); putadr(ad, ad1); break;
-    case 81  /*stor*/: poprel(&r1); popadr(&ad); putrel(ad, r1); break;
-    case 82  /*stos*/: popset(s1); popadr(&ad); putset(ad, s1); break;
-    case 83  /*stob*/: popint(&i1); b1 = i1 != 0; popadr(&ad); putbol(ad, b1);
+    case 6   /*stoi*/: popint(i); popadr(ad); putint(ad, i); break;
+    case 197 /*stox*/: popint(i); popadr(ad); putbyt(ad, i); break;
+    case 80  /*stoa*/: popadr(ad1); popadr(ad); putadr(ad, ad1); break;
+    case 81  /*stor*/: poprel(r1); popadr(ad); putrel(ad, r1); break;
+    case 82  /*stos*/: popset(s1); popadr(ad); putset(ad, s1); break;
+    case 83  /*stob*/: popint(i1); b1 = i1 != 0; popadr(ad); putbol(ad, b1);
                        break;
-    case 84  /*stoc*/: popint(&i1); c1 = i1; popadr(&ad); putchr(ad, c1);
+    case 84  /*stoc*/: popint(i1); c1 = i1; popadr(ad); putchr(ad, c1);
                        break;
 
     case 127 /*ldcc*/: pshint(getchr(pc)); pc = pc+1; break;
@@ -2244,24 +2244,24 @@ void sinins()
     case 124 /*ldcr*/: getq(); pshrel(getrel(q)); break;
     case 7   /*ldcs*/: getq(); getset(q, s1); pshset(s1); break;
 
-    case 9   /*indi*/: getq(); popadr(&ad); pshint(getint(ad+q)); break;
-    case 198 /*indx*/: getq(); popadr(&ad); pshint(getbyt(ad+q)); break;
-    case 85  /*inda*/: getq(); popadr(&ad); ad1 = getadr(ad+q); pshadr(ad1); break;
-    case 86  /*indr*/: getq(); popadr(&ad); pshrel(getrel(ad+q)); break;
-    case 87  /*inds*/: getq(); popadr(&ad); getset(ad+q, s1); pshset(s1); break;
-    case 88  /*indb*/: getq(); popadr(&ad); pshint(getbol(ad+q)); break;
-    case 89  /*indc*/: getq(); popadr(&ad); pshint(getchr(ad+q)); break;
+    case 9   /*indi*/: getq(); popadr(ad); pshint(getint(ad+q)); break;
+    case 198 /*indx*/: getq(); popadr(ad); pshint(getbyt(ad+q)); break;
+    case 85  /*inda*/: getq(); popadr(ad); ad1 = getadr(ad+q); pshadr(ad1); break;
+    case 86  /*indr*/: getq(); popadr(ad); pshrel(getrel(ad+q)); break;
+    case 87  /*inds*/: getq(); popadr(ad); getset(ad+q, s1); pshset(s1); break;
+    case 88  /*indb*/: getq(); popadr(ad); pshint(getbol(ad+q)); break;
+    case 89  /*indc*/: getq(); popadr(ad); pshint(getchr(ad+q)); break;
 
     case 93 /*incb*/:
     case 94 /*incc*/:
     case 201 /*incx*/:
-    case 10 /*inci*/: getq(); popint(&i1);
+    case 10 /*inci*/: getq(); popint(i1);
                    if (DOCHKOVF) if (i1<0 == q<0)
                       if (INT_MAX-abs(i1) < abs(q))
                         errore(INTEGERVALUEOVERFLOW);
                    pshint(i1+q);
                    break;
-    case 90 /*inca*/: getq(); popadr(&a1); pshadr(a1+q); break;
+    case 90 /*inca*/: getq(); popadr(a1); pshadr(a1+q); break;
 
     case 11 /*mst*/: /*p=level of calling procedure minus level of called
                        procedure + 1;  set dl and sl, decrement sp*/
@@ -2356,68 +2356,68 @@ void sinins()
 
     case 15 /*csp*/: q = store[pc]; pc = pc+1; callsp(); break;
 
-    case 16 /*ixa*/: getq(); popint(&i); popadr(&a1); pshadr(q*i+a1); break;
+    case 16 /*ixa*/: getq(); popint(i); popadr(a1); pshadr(q*i+a1); break;
 
-    case 17  /* equa */: popadr(&a2); popadr(&a1); pshint(a1==a2); break;
+    case 17  /* equa */: popadr(a2); popadr(a1); pshint(a1==a2); break;
     case 139 /* equb */:
     case 141 /* equc */:
-    case 137 /* equi */: popint(&i2); popint(&i1); pshint(i1==i2); break;
-    case 138 /* equr */: poprel(&r2); poprel(&r1); pshint(r1==r2); break;
+    case 137 /* equi */: popint(i2); popint(i1); pshint(i1==i2); break;
+    case 138 /* equr */: poprel(r2); poprel(r1); pshint(r1==r2); break;
     case 140 /* equs */: popset(s2); popset(s1); pshint(sequ(s1,s2)); break;
-    case 142 /* equm */: getq(); popadr(&a2); popadr(&a1);
+    case 142 /* equm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(b); break;
 
-    case 18  /* neqa */: popadr(&a2); popadr(&a1); pshint(a1!=a2); break;
+    case 18  /* neqa */: popadr(a2); popadr(a1); pshint(a1!=a2); break;
     case 145 /* neqb */:
     case 147 /* neqc */:
-    case 143 /* neqi */: popint(&i2); popint(&i1); pshint(i1!=i2); break;
-    case 144 /* neqr */: poprel(&r2); poprel(&r1); pshint(r1!=r2); break;
+    case 143 /* neqi */: popint(i2); popint(i1); pshint(i1!=i2); break;
+    case 144 /* neqr */: poprel(r2); poprel(r1); pshint(r1!=r2); break;
     case 146 /* neqs */: popset(s2); popset(s1); pshint(!sequ(s1,s2)); break;
-    case 148 /* neqm */: getq(); popadr(&a2); popadr(&a1);
+    case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
 
     case 151 /* geqb */:
     case 153 /* geqc */:
-    case 149 /* geqi */: popint(&i2); popint(&i1); pshint(i1>=i2); break;
-    case 150 /* geqr */: poprel(&r2); poprel(&r1); pshint(r1>=r2); break;
+    case 149 /* geqi */: popint(i2); popint(i1); pshint(i1>=i2); break;
+    case 150 /* geqr */: poprel(r2); poprel(r1); pshint(r1>=r2); break;
     case 152 /* geqs */: popset(s2); popset(s1); pshint(sinc(s1,s2)); break;
-    case 154 /* geqm */: getq(); popadr(&a2); popadr(&a1);
+    case 154 /* geqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
 
     case 157 /* grtb */:
     case 159 /* grtc */:
-    case 155 /* grti */: popint(&i2); popint(&i1); pshint(i1>i2); break;
-    case 156 /* grtr */: poprel(&r2); poprel(&r1); pshint(r1>r2); break;
+    case 155 /* grti */: popint(i2); popint(i1); pshint(i1>i2); break;
+    case 156 /* grtr */: poprel(r2); poprel(r1); pshint(r1>r2); break;
     case 158 /* grts */: errorv(SETINCLUSION); break;
-    case 160 /* grtm */: getq(); popadr(&a2); popadr(&a1);
+    case 160 /* grtm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] > store[a2])); break;
 
     case 163 /* leqb */:
     case 165 /* leqc */:
-    case 161 /* leqi */: popint(&i2); popint(&i1); pshint(i1<=i2); break;
-    case 162 /* leqr */: poprel(&r2); poprel(&r1); pshint(r1<=r2); break;
+    case 161 /* leqi */: popint(i2); popint(i1); pshint(i1<=i2); break;
+    case 162 /* leqr */: poprel(r2); poprel(r1); pshint(r1<=r2); break;
     case 164 /* leqs */: popset(s2); popset(s1); pshint(sinc(s2,s1)); break;
-    case 166 /* leqm */: getq(); popadr(&a2); popadr(&a1);
+    case 166 /* leqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
 
     case 169 /* lesb */:
     case 171 /* lesc */:
-    case 167 /* lesi */: popint(&i2); popint(&i1); pshint(i1<i2); break;
-    case 168 /* lesr */: poprel(&r2); poprel(&r1); pshint(r1<r2); break;
+    case 167 /* lesi */: popint(i2); popint(i1); pshint(i1<i2); break;
+    case 168 /* lesr */: poprel(r2); poprel(r1); pshint(r1<r2); break;
     case 170 /* less */: errorv(SETINCLUSION); break;
-    case 172 /* lesm */: getq(); popadr(&a2); popadr(&a1);
+    case 172 /* lesm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] < store[a2])); break;
 
     case 23 /*ujp*/: getq(); pc = q; break;
-    case 24 /*fjp*/: getq(); popint(&i); if (i == 0) pc = q; break;
-    case 25 /*xjp*/: getq(); popint(&i1); pc = i1*UJPLEN+q; break;
+    case 24 /*fjp*/: getq(); popint(i); if (i == 0) pc = q; break;
+    case 25 /*xjp*/: getq(); popint(i1); pc = i1*UJPLEN+q; break;
 
     case 95 /*chka*/:
-    case 190 /*ckla*/: getq(); popadr(&a1); pshadr(a1);
+    case 190 /*ckla*/: getq(); popadr(a1); pshadr(a1);
                        /*     0 = assign pointer including nil
                          Not 0 = assign pointer from heap address */
                        if (a1 == 0)
@@ -2449,7 +2449,7 @@ void sinins()
     case 98 /*chkb*/:
     case 99 /*chkc*/:
     case 199 /* chkx */:
-    case 26 /*chki*/: getq(); popint(&i1); pshint(i1);
+    case 26 /*chki*/: getq(); popint(i1); pshint(i1);
                   if (i1 < getint(q) || i1 > getint(q+INTSIZE))
                     errore(VALUEOUTOFRANGE);
                   break;
@@ -2458,69 +2458,69 @@ void sinins()
     case 175 /* ckvi */:
     case 203 /* ckvx */:
     case 179 /* ckvb */:
-    case 180 /* ckvc */: getq(); popint(&i2); popint(&i1);
+    case 180 /* ckvc */: getq(); popint(i2); popint(i1);
                     pshint(i1); pshint(i1 == q || i2 != 0);
                     break;;
-    case 188 /* cke */: popint(&i2); popint(&i1);
+    case 188 /* cke */: popint(i2); popint(i1);
                     if (i2 == 0) errorv(VARIANTNOTACTIVE);
                     break;
 
     /* all the dups are defined, but not all used */
     case 185 /* dupb */:
     case 186 /* dupc */:
-    case 181 /* dupi */: popint(&i1); pshint(i1); pshint(i1); break;
-    case 182 /* dupa */: popadr(&a1); pshadr(a1); pshadr(a1); break;
-    case 183 /* dupr */: poprel(&r1); pshrel(r1); pshrel(r1); break;
+    case 181 /* dupi */: popint(i1); pshint(i1); pshint(i1); break;
+    case 182 /* dupa */: popadr(a1); pshadr(a1); pshadr(a1); break;
+    case 183 /* dupr */: poprel(r1); pshrel(r1); pshrel(r1); break;
     case 184 /* dups */: popset(s1); pshset(s1); pshset(s1); break;
 
-    case 189 /* inv */: popadr(&ad); putdef(ad, FALSE); break;
+    case 189 /* inv */: popadr(ad); putdef(ad, FALSE); break;
 
-    case 28 /*adi*/: popint(&i2); popint(&i1);
+    case 28 /*adi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 == i2<0)
                     if (INT_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1+i2); break;
-    case 29 /*adr*/: poprel(&r2); poprel(&r1); pshrel(r1+r2); break;
-    case 30 /*sbi*/: popint(&i2); popint(&i1);
+    case 29 /*adr*/: poprel(r2); poprel(r1); pshrel(r1+r2); break;
+    case 30 /*sbi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 != i2<0)
                     if (INT_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
-    case 31 /*sbr*/: poprel(&r2); poprel(&r1); pshrel(r1-r2); break;
-    case 32 /*sgs*/: popint(&i1); sset(s1, i1); pshset(s1); break;
-    case 33 /*flt*/: popint(&i1); pshrel(i1); break;
+    case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
+    case 32 /*sgs*/: popint(i1); sset(s1, i1); pshset(s1); break;
+    case 33 /*flt*/: popint(i1); pshrel(i1); break;
 
     /* note that flo implies the tos is float as well */
-    case 34 /*flo*/: poprel(&r1); popint(&i1); pshrel(i1); pshrel(r1); break;
+    case 34 /*flo*/: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
 
-    case 35 /*trc*/: poprel(&r1);
+    case 35 /*trc*/: poprel(r1);
                   if (DOCHKOVF) if (r1 < -INT_MAX || r1 > INT_MAX)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(trunc(r1)); break;
-    case 36 /*ngi*/: popint(&i1); pshint(-i1); break;
-    case 37 /*ngr*/: poprel(&r1); pshrel(-r1); break;
-    case 38 /*sqi*/: popint(&i1);
+    case 36 /*ngi*/: popint(i1); pshint(-i1); break;
+    case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
+    case 38 /*sqi*/: popint(i1);
                 if (DOCHKOVF) if (i1 != 0)
                   if (abs(i1) > INT_MAX/abs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
-    case 39 /*sqr*/: poprel(&r1); pshrel(r1*r1); break;
-    case 40 /*abi*/: popint(&i1); pshint(abs(i1)); break;
-    case 41 /*abr*/: poprel(&r1); pshrel(fabs(r1)); break;
-    case 42 /*notb*/: popint(&i1); b1 = i1 != 0; pshint(!b1); break;
-    case 205 /*noti*/: popint(&i1);
+    case 39 /*sqr*/: poprel(r1); pshrel(r1*r1); break;
+    case 40 /*abi*/: popint(i1); pshint(abs(i1)); break;
+    case 41 /*abr*/: poprel(r1); pshrel(fabs(r1)); break;
+    case 42 /*notb*/: popint(i1); b1 = i1 != 0; pshint(!b1); break;
+    case 205 /*noti*/: popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(~i1); break;
-    case 43 /*and*/: popint(&i2);
+    case 43 /*and*/: popint(i2);
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
-                      popint(&i1);
+                      popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 & i2); break;
-    case 44 /*ior*/: popint(&i2);
+    case 44 /*ior*/: popint(i2);
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
-                      popint(&i1);
+                      popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 | i2); break;
-    case 206 /*xor*/: popint(&i2); b2 = i2 != 0;
+    case 206 /*xor*/: popint(i2); b2 = i2 != 0;
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
-                      popint(&i1); b1 = i1 != 0;
+                      popint(i1); b1 = i1 != 0;
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       pshint(i1 ^ i2); break;
     case 45 /*dif*/: popset(s2); popset(s1); sdif(s1, s2); pshset(s1);
@@ -2529,24 +2529,24 @@ void sinins()
                      break;
     case 47 /*uni*/: popset(s2); popset(s1); suni(s1, s2); pshset(s1);
                      break;
-    case 48 /*inn*/: popset(s1); popint(&i1); pshint(sisin(i1, s1)); break;
-    case 49 /*mod*/: popint(&i2); popint(&i1);
+    case 48 /*inn*/: popset(s1); popint(i1); pshint(sisin(i1, s1)); break;
+    case 49 /*mod*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
                   pshint(i1 % i2); break;
-    case 50 /*odd*/: popint(&i1); pshint(i1&1); break;
-    case 51 /*mpi*/: popint(&i2); popint(&i1);
+    case 50 /*odd*/: popint(i1); pshint(i1&1); break;
+    case 51 /*mpi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1 != 0 && i2 != 0)
                     if (abs(i1) > INT_MAX / abs(i2))
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
-    case 52 /*mpr*/: poprel(&r2); poprel(&r1); pshrel(r1*r2); break;
-    case 53 /*dvi*/: popint(&i2); popint(&i1);
+    case 52 /*mpr*/: poprel(r2); poprel(r1); pshrel(r1*r2); break;
+    case 53 /*dvi*/: popint(i2); popint(i1);
                       if (DOCHKOVF) if (i2 == 0) errore(ZERODIVIDE);
                       pshint(i1/i2); break;
-    case 54 /*dvr*/: poprel(&r2); poprel(&r1);
+    case 54 /*dvr*/: poprel(r2); poprel(r1);
                       if (DOCHKOVF) if (r2 == 0.0) errore(ZERODIVIDE);
                       pshrel(r1/r2); break;
-    case 55 /*mov*/: getq(); popint(&i2); popint(&i1);
+    case 55 /*mov*/: getq(); popint(i2); popint(i1);
                  for (i3 = 0; i3 <= q-1; i3++)
                    { store[i1+i3] = store[i2+i3];
                          putdef(i1+i3, getdef(i2+i3)); };
@@ -2557,7 +2557,7 @@ void sinins()
     case 103 /*decb*/:
     case 104 /*decc*/:
     case 202 /*decx*/:
-    case 57  /*deci*/: getq(); popint(&i1);
+    case 57  /*deci*/: getq(); popint(i1);
                     if (DOCHKOVF) if (i1<0 != q<0)
                       if (INT_MAX-abs(i1) < abs(q))
                         errore(INTEGERVALUEOVERFLOW);
@@ -2573,11 +2573,11 @@ void sinins()
     case 60 /*chr*/: break; /* chr is a no-op */
 
     case 61 /*ujc*/: errorv(INVALIDCASE); break;
-    case 62 /*rnd*/: poprel(&r1);
+    case 62 /*rnd*/: poprel(r1);
                   if (DOCHKOVF) if (r1 < -(INT_MAX+0.5) || r1 > INT_MAX+0.5)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(round(r1)); break;
-    case 63 /*pck*/: getq(); getq1(); popadr(&a3); popadr(&a2); popadr(&a1);
+    case 63 /*pck*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
                  if (a2+q > q1) errore(PACKELEMENTSOUTOFBOUNDS);
                  for (i4 = 0; i4 <= q-1; i4++) { chkdef(a1+a2);
                     store[a3+i4] = store[a1+a2];
@@ -2585,7 +2585,7 @@ void sinins()
                     a2 = a2+1;
                  }
                  break;
-    case 64 /*upk*/: getq(); getq1(); popadr(&a3); popadr(&a2); popadr(&a1);
+    case 64 /*upk*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
                  if (a3+q > q1) errore(UNPACKELEMENTSOUTOFBOUNDS);
                  for (i4 = 0; i4 <= q-1; i4++) { chkdef(a1+i4);
                     store[a2+a3] = store[a1+i4];
@@ -2593,7 +2593,7 @@ void sinins()
                     a3 = a3+1;
                  } break;
 
-    case 110 /*rgs*/: popint(&i2); popint(&i1); rset(s1, i1, i2); pshset(s1);
+    case 110 /*rgs*/: popint(i2); popint(i1); rset(s1, i1, i2); pshset(s1);
                       break;
     case 112 /*ipj*/: getp(); getq(); pc = q;
                  mp = base(p); /* index the mark to restore */
@@ -2601,7 +2601,7 @@ void sinins()
                  sp = getadr(mp+MARKSB); /* get the stack bottom */
                  ep = getadr(mp+MARKET); /* get the mark ep */
                  break;
-    case 113 /*cip*/: getp(); popadr(&ad);
+    case 113 /*cip*/: getp(); popadr(ad);
                 mp = sp+(p+MARKSIZE);
                 /* replace next link mp with the one for the target */
                 putadr(mp+MARKSL, getadr(ad+1*PTRSIZE));
@@ -2616,14 +2616,14 @@ void sinins()
 
     case 118 /*swp*/: getq(); swpstk(q); break;
 
-    case 119 /*tjp*/: getq(); popint(&i); if (i != 0) pc = q; break;
+    case 119 /*tjp*/: getq(); popint(i); if (i != 0) pc = q; break;
 
     case 120 /*lip*/: getp(); getq(); ad = base(p) + q;
                    ad1 = getadr(ad); ad2 = getadr(ad+1*PTRSIZE);
                    pshadr(ad2); pshadr(ad1);
                    break;
 
-    case 191 /*cta*/: getq(); getq1(); popint(&i); popadr(&ad); pshadr(ad);
+    case 191 /*cta*/: getq(); getq1(); popint(i); popadr(ad); pshadr(ad);
                        pshint(i); ad = ad-q-INTSIZE; ad1 = getadr(ad);
                        if (ad1 < INTSIZE)
                          errorv(SYSTEMERROR);
@@ -2636,7 +2636,7 @@ void sinins()
                       break;
 
     /* ivt has issues */
-    case 192 /*ivt*/: getq(); getq1(); popint(&i); popadr(&ad);
+    case 192 /*ivt*/: getq(); getq1(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (FALSE && DOCHKDEF) {
                         b = getdef(ad);
@@ -2658,25 +2658,25 @@ void sinins()
                    /* place new exception frame */
                    expadr = q; expstk = sp; expmrk = mp;
                    break;
-    case 208 /*ede*/: popadr(&a1); /* dispose vector */
+    case 208 /*ede*/: popadr(a1); /* dispose vector */
                    /* restore previous exception frame */
-                   popadr(&expmrk); popadr(&expstk); popadr(&expadr);
+                   popadr(expmrk); popadr(expstk); popadr(expadr);
                    break;
-    case 209 /*mse*/: popadr(&a1);
+    case 209 /*mse*/: popadr(a1);
                    /* restore previous exception frame */
-                   popadr(&expmrk); popadr(&expstk); popadr(&expadr);
+                   popadr(expmrk); popadr(expstk); popadr(expadr);
                    /* if there is no surrounding frame, handle fixed */
                    if (expadr == 0) errorm(a1);
                    else { /* throw to new frame */
                      mp = expmrk; sp = expstk; pc = expadr;
-                     popadr(&a2); pshadr(a1);
+                     popadr(a2); pshadr(a1);
                      ep = getadr(mp+MARKET); /* get the mark ep */
                      /* release to search vectors */
                    }
                    break;
-    case 8 /*cjp*/: getq(); getq1(); popint(&i1); pshint(i1);
+    case 8 /*cjp*/: getq(); getq1(); popint(i1); pshint(i1);
                   if (i1 >= getint(q) && i1 <= getint(q+INTSIZE))
-                    { pc = q1; popint(&i1); }
+                    { pc = q1; popint(i1); }
                   break;
     case 20 /*lnp*/: getq(); np = q; gbtop = np; ad = pctop;
                   /* clear global memory and set undefined */
@@ -2684,7 +2684,7 @@ void sinins()
                     { store[ad] = 0; putdef(ad, FALSE); ad = ad+1; }
                   break;
     case 21 /*cal*/: getq(); pshadr(pc); pc = q; break;
-    case 22 /*ret*/: popadr(&pc); break;
+    case 22 /*ret*/: popadr(pc); break;
     case 19 /*brk*/: break; /* breaks are no-ops here */
 
     /* illegal instructions */
