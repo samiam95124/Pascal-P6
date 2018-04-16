@@ -60,8 +60,9 @@ for %%x in (%*) do (
 		echo.
 		echo The flags are one of:
 		echo.
-		echo --pmach	Generate mach code and run the result through pmach.
-		echo --cmach	Generate mach code and run the result through cmach.
+		echo --pmach	      Generate mach code and run the result through pmach.
+		echo --cmach	      Generate mach code and run the result through cmach.
+		echo --cmpfile ^<file^> Use filename following option for compare file.
 		echo.
 		echo The intermediate code is placed in ^<file^>.p6.
 		echo.

@@ -106,12 +106,26 @@
 *                                                                              *
 * This version translated to C from pmach.pas [saf]                            *
 *                                                                              *
+* Speeds:                                                                      *
+*                                                                              *
+* Packaged mode, DOCHKDEF and DOSRCLIN both off: 1.340s on fbench.             *
+* GPC direct compile of fbench: 0.184s                                         *
+*                                                                              *
+* Thus the interpreted versio is 7.2 times slower, and about the 10 times      *
+* slower "rule of thumb" I have observed with interpreters.                    *
+*                                                                              *
 *******************************************************************************/
 
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+
+/*******************************************************************************
+
+                                     KNOBS
+
+*******************************************************************************/
 
 /*
  * Enable GPC compatability mode
@@ -133,6 +147,39 @@
 
 #define WRDSIZ32 1
 /* #define WRDSIZ64 0 */
+
+/* Check flags: these turn on runtime checks
+ *
+ * These flags can be overridden by compiler define set
+ */
+#ifndef DOCHKOVF
+#define DOCHKOVF TRUE /* check arithmetic overflow */
+#endif
+
+#ifndef DOSRCLIN
+#define DOSRCLIN TRUE /* add source line sets to code */
+#endif
+
+#ifndef DORECYCL
+#define DORECYCL TRUE /* obey heap space recycle requests */
+#endif
+
+/* invoke a special recycle mode that creates single word entries on
+  recycle of any object, breaking off and recycling the rest. Once
+  allocated, each entry exists forever, and accesses to it can be
+  checked. */
+#ifndef DOCHKRPT
+#define DOCHKRPT FALSE /* check reuse of freed entry (automatically
+                           invokes dorecycl = false */
+#endif
+
+#ifndef DOCHKDEF
+#define DOCHKDEF TRUE /* check undefined accesses */
+#endif
+
+#ifndef ISO7185
+#define ISO7185 FALSE /* iso7185 standard flag */
+#endif
 
 /*******************************************************************************
 
@@ -445,21 +492,6 @@ table is all you should need to adapt to any byte addressable machine.
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       9    /* real extra field in floating format -1.0e+000 */
 
-/* check flags: these turn on runtime checks */
-#define DOCHKOVF TRUE /* check arithmetic overflow */
-
-/* debug flags: turn these on for various dumps and traces */
-#define DOSRCLIN TRUE /* add source line sets to code */
-#define DORECYCL TRUE /* obey heap space recycle requests */
-/* invoke a special recycle mode that creates single word entries on
-  recycle of any object, breaking off and recycling the rest. Once
-  allocated, each entry exists forever, and accesses to it can be
-  checked. */
-#define DOCHKRPT FALSE /* check reuse of freed entry (automatically
-                           invokes dorecycl = false */
-#define DOCHKDEF TRUE /* check undefined accesses */
-#define ISO7185 FALSE /* iso7185 standard flag */
-
 /* version numbers */
 
 #define MAJORVER 0
@@ -711,40 +743,33 @@ void errorm(address ea)
 }
 
 /* get bit from defined array */
-
-boolean getdef(address a)
-
-{
-    byte b; boolean r;
-
-    if (DOCHKDEF) { b = storedef[a / 8]; r = b / bitmsk[a % 8]&1; }
-    else r = TRUE; /* always set defined */
-    return(r);
-}
+#if DOCHKDEF
+#define getdef(a) (!!((storedef[(a)/8])&(1<<(a)%8)))
+#else
+#define getdef(a) TRUE
+#endif
 
 /* put bit to defined array */
+#if DOCHKDEF
+#define putdef(a, b) (b?((storedef[(a)/8]) |= \
+        (1<<(a)%8)):((storedef[(a)/8]) &= ~(1<<(a)%8)))
+#else
+#define putdef(a, b) FALSE
+#endif
 
-void putdef(address a, boolean b)
+/* put swath of bits to defined array */
+#if DOCHKDEF
+#define putswt(s, e, b) { int i; for (i = s; i <= e; i++) putdef(i, b); }
+#else
+#define putswt(s, e, b) do {} while(0)
+#endif
 
-{
-    byte sb; boolean r;
-
-    if (DOCHKDEF) {
-      sb = storedef[a/8]; /* get byte */
-      /* test bit as is */
-      r = sb / bitmsk[a % 8]&1;
-      if (r != b) {
-        if (b) sb = sb+bitmsk[a%8];
-        else sb = sb-bitmsk[a%8];
-        storedef[a/8] = sb;
-      }
-    }
-}
-
-void chkdef(address a)
-{
-   if (DOCHKDEF) if (!getdef(a)) errorv(UNDEFINEDLOCATIONACCESS);
-}
+/* check location defined and error */
+#if DOCHKDEF
+#define chkdef(a) (getdef(a)?0:errorv(UNDEFINEDLOCATIONACCESS))
+#else
+#define chkdef(a) FALSE
+#endif
 
 /* Command line processing */
 
@@ -858,33 +883,23 @@ void assignexternal(filnum fn, char hfn[])
 
 */
 
-int getint(address a) { chkdef(a); return (*((int*)(store+a))); }
-void putint(address a, int x)
-{
-    int i;
+#define getint(a) (chkdef(a), (*((int*)(store+(a)))))
+#define putint(a, x) { *((int*)(store+(a))) = x; putswt(a, (a)+INTSIZE-1, TRUE); }
 
-    *((int*)(store+a)) = x; for (i = 0; i < INTSIZE; i++) putdef(a+i, TRUE);
-}
-double getrel(address a) { chkdef(a); return (*((double*)(store+a))); }
-void putrel(address a, double f)
-{
-    int i;
+#define getrel(a) (chkdef(a), *((double*)(store+(a))))
+#define putrel(a, f) do { *((double*)(store+(a))) = f; putswt(a, (a)+REALSIZE-1, TRUE); } while(0)
 
-    *((double*)(store+a)) = f; for (i = 0; i < REALSIZE; i++) putdef(a+i, TRUE);
-}
-boolean getbol(address a) { chkdef(a); return (store[a]); }
-void putbol(address a, boolean b) { store[a] = b; putdef(a, TRUE); }
-unsigned char getchr(address a) { chkdef(a); return (store[a]); }
-void putchr(address a, unsigned char c) { store[a] = c; putdef(a, TRUE); }
-byte getbyt(address a) { chkdef(a); return (store[a]); }
-void putbyt(address a, byte b) { store[a] = b; putdef(a, TRUE); }
-address getadr(address a) { chkdef(a); return (*((address*)(store+a))); }
-void putadr(address a, address ad)
-{
-    int i;
+#define getbol(a) (chkdef(a), store[a])
+#define putbol(a, b) do { store[a] = b; putdef(a, TRUE); } while(0)
 
-    *((address*)(store+a)) = ad; for (i = 0; i < ADRSIZE; i++) putdef(a+i, TRUE);
-}
+#define getchr(a) (chkdef(a), store[a])
+#define putchr(a, c) do { store[a] = c; putdef(a, TRUE); } while(0)
+
+#define getbyt(a) (chkdef(a), store[a])
+#define putbyt(a, b) do { store[a] = b; putdef(a, TRUE); } while(0)
+
+#define getadr(a) (chkdef(a), (*((address*)(store+(a)))))
+#define putadr(a, ad) do { *((address*)(store+(a))) = ad; putswt(a, (a)+ADRSIZE-1, TRUE); } while(0)
 
 void getset(address a, settype s)
 
@@ -900,7 +915,8 @@ void putset(address a, settype s)
 {
    int i;
 
-   for (i = 0; i < SETSIZE; i++) { store[a+i] = s[i]; putdef(a+i, TRUE); }
+   for (i = 0; i < SETSIZE; i++) store[a+i] = s[i];
+   putswt(a, a+SETSIZE-1, TRUE);
 }
 
 /* Swap pointer on top with second on stack. The size of the second is given. */
@@ -2163,7 +2179,7 @@ void sinins()
     /*
     printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
            pc, sp, mp, store[pc], store[pc]);
-     */
+    */
 
     if (pc >= pctop) errorv(PCOUTOFRANGE);
 
