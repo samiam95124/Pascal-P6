@@ -105,6 +105,32 @@
 * from pint, whose only job is to interpret the code. It loads from prd in     *
 * binary deck form, then interprets the code.                                  *
 *                                                                              *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+*                                   LICENSE                                    *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+* This software is unlicensed and exists in the public domain. It has:         *
+*                                                                              *
+* 1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH    *
+*    Zurich.                                                                   *
+*                                                                              *
+* 2. Has been freely distributed since 1976 with only charges for printing and *
+*    shipping costs.                                                           *
+*                                                                              *
+* 3. Has been used as the basis for many projects, both paid and free, by      *
+*    other authors.                                                            *
+*                                                                              *
+* I, Scott Franco, have extensively expanded the original software. I certify  *
+* that all my changes and additions to it are also public domain.              *
+*                                                                              *
+* I respectfully request that this notice accompany the software even if it is *
+* further modified.                                                            *
+*                                                                              *
+* If you receive a copy of this software without this notice, I suggest you    *
+* obtain the original. It has been modified.                                   *
+*                                                                              *
 *******************************************************************************}
 
 program pmach(input,output,prd,prr

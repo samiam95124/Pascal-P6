@@ -1,20 +1,52 @@
 {$L-}
-{******************************************************************************
-*                                                                             *
-*                              BASIC VS 0.1                                   *
-*                                                                             *
-*                            8/94 S. A. MOORE                                 *
-*                                                                             *
-* Implements the full basic language. Provides a full line oriented edit      *
-* system, or accepts external text. The full documentation is found           *
-* separately. Also see the "basics" or tiny basic companion.                  *
-* Basic is implemented as a tolken based interpreter. Each line is full       *
-* scan level tolkenized and stored, and may be listed from that form. The     *
-* only information lost in this conversion is case, leading and trailing      *
-* zeros, and some real number formatting (reals may be reformatted to a       *
-* standard representation).                                                   *
-*                                                                             *
-******************************************************************************}
+{*******************************************************************************
+*                                                                              *
+*                              BASIC VS 0.1                                    *
+*                                                                              *
+*                            8/94 S. A. MOORE                                  *
+*                                                                              *
+* Implements the full basic language. Provides a full line oriented edit       *
+* system, or accepts external text. The full documentation is found            *
+* separately. Also see the "basics" or tiny basic companion.                   *
+* Basic is implemented as a tolken based interpreter. Each line is full        *
+* scan level tolkenized and stored, and may be listed from that form. The      *
+* only information lost in this conversion is case, leading and trailing       *
+* zeros, and some real number formatting (reals may be reformatted to a        *
+* standard representation).                                                    *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+*                              LICENSE                                         *
+*                                                                              *
+* ---------------------------------------------------------------------------- *
+*                                                                              *
+* Copyright (c) 1994, Scott A. Moore/Franco                                    *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+*     * Redistributions of source code must retain the above copyright         *
+*       notice, this list of conditions and the following disclaimer.          *
+*     * Redistributions in binary form must reproduce the above copyright      *
+*       notice, this list of conditions and the following disclaimer in the    *
+*       documentation and/or other materials provided with the distribution.   *
+*     * Neither the name of the <organization> nor the                         *
+*       names of its contributors may be used to endorse or promote products   *
+*       derived from this software without specific prior written permission.  *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY       *
+* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES   *
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; *
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND  *
+* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT   *
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF     *
+* THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.            *
+*                                                                              *
+*******************************************************************************}
 
 program basic(input, output);
 
