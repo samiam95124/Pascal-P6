@@ -101,6 +101,7 @@ if not exist "%progfile%.inp" (
 
 if "%pmach%"=="1" (
 
+    echo Running with pmach
     cp %progfile%.p6 prd
     pint
     mv prr %progfile%.p6o
@@ -109,6 +110,7 @@ if "%pmach%"=="1" (
     
 ) else if "%cmach%"=="1" (
 
+    echo Running with cmach 
     cp %progfile%.p6 prd
     pint
     mv prr %progfile%.p6o
@@ -117,6 +119,7 @@ if "%pmach%"=="1" (
     
 ) else (
 
+	echo Running with pint
     cat %progfile%.p6 %inpfile% > prd
     pint < %progfile%.inp > %progfile%.lst 2>&1
     

@@ -7,12 +7,10 @@ rem
 rem regress [--full|--short|--pmach|--cmach]...
 rem
 rem Run the compiler through a few typical programs
-rem to a "gold" standard file
+rem to a "gold" standard file. Each mode is cycled through in sequence.
 rem
 rem The flags are one of:
 rem
-rem --pmach	Generate mach code and run the result through pmach.
-rem --cmach	Generate mach code and run the result through cmach.
 rem --full  Run full test sequence.
 rem --short Run short test sequence.
 rem
@@ -23,17 +21,7 @@ set cmachoption=
 set full=0
 for %%x in (%*) do (
 
-    if "%%~x"=="--pmach" (
-    
-    	set pmach=1
-    	set pmachoption=--pmach
-    	
-   	) else if "%%~x"=="--cmach" (
-   	
-   		set cmach=1
-   		set cmachoption=--cmach
-   	
-   	) else if "%%~x"=="--full" (
+   	if "%%~x"=="--full" (
    	
    		set full=1
    			
@@ -51,7 +39,7 @@ for %%x in (%*) do (
 		echo regress [--full^|--short^|--pmach^|--cmach]...
 		echo.
 		echo Run the compiler through a few typical programs
-		echo to a "gold" standard file
+		echo to a "gold" standard file. Each mode is cycled through in sequence.
 		echo.
 		echo The flags are one of:
 		echo.
@@ -78,47 +66,76 @@ for %%x in (%*) do (
 )
 echo Regression Summary > temp1
 echo Line counts should be 0 for pass >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\hello
+set option=
+echo pint run >> temp1
+call :do_regress
+set option=--pmach
+echo pmach run >> temp1
+call :do_regress
+set option=--cmach
+echo cmach run >> temp1
+call :do_regress
+
+rem
+rem Print collected status
+rem
+echo.
+echo Copy report to commits
+echo Cut here 
+echo -----------------------------------------------------------
+date /t
+time /t
+cat temp1
+rm temp1
+call chkfiles
+echo -----------------------------------------------------------
+echo Cut here
+echo.
+
+goto stop
+
+:do_regress
+call testprog %option% sample_programs\hello
 wc -l sample_programs\hello.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\roman
+call testprog %option% sample_programs\roman
 wc -l sample_programs\roman.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\match
+call testprog %option% sample_programs\match
 wc -l sample_programs\match.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\startrek
+call testprog %option% sample_programs\startrek
 wc -l sample_programs\startrek.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\basics
+call testprog %option% sample_programs\basics
 wc -l sample_programs\basics.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\drystone
+call testprog %option% sample_programs\drystone
 wc -l sample_programs\drystone.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\fbench
+call testprog %option% sample_programs\fbench
 wc -l sample_programs\fbench.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\prime
+call testprog %option% sample_programs\prime
 wc -l sample_programs\prime.dif >> temp1
-call testprog !pmachoption! !cmachoption! sample_programs\qsort
+call testprog %option% sample_programs\qsort
 wc -l sample_programs\qsort.dif >> temp1
-call testprog !pmachoption! !cmachoption! basic\basic
+call testprog %option% basic\basic
 wc -l sample_programs\basics.dif >> temp1
 rem
 rem Now run the ISO7185pat compliance test
 rem
-if "%cmach%"=="1" (
+if "%option%"=="--cmach" (
 
-	call testprog !pmachoption! !cmachoption! --cmpfile standard_tests\iso7185patc standard_tests\iso7185pat
+	call testprog %option% --cmpfile standard_tests\iso7185patc standard_tests\iso7185pat
 	
 ) else (
 
-	call testprog !pmachoption! !cmachoption! standard_tests\iso7185pat
+	call testprog %option% standard_tests\iso7185pat
 	
 )
 cat standard_tests\iso7185pat.dif >> temp1
 rem
 rem Run previous versions of the system and Pascal-S
 rem
-call testpascals %pmachoption% %cmachoption%
+call testpascals %option%
 wc -l sample_programs\pascals.dif >> temp1
-call testp2 %2
+call testp2 %option%
 wc -l p2\roman.dif >> temp1
-call testp4 %2
+call testp4 %option%
 wc -l p4\standardp.dif >> temp1
 if "%full%"=="1" (
 
@@ -126,33 +143,20 @@ if "%full%"=="1" (
     rem
     rem Run rejection test
     rem
-    call runprt %2
+    call runprt %option%
 
     echo Running self compile...
     rem
     rem Run pcom self compile (note this runs on P5 only)
     rem
-    call cpcoms %2
+    call cpcoms %option%
     rem
     rem Run pint self compile (note this runs on P5 only)
     rem
-    call cpints %2
+    call cpints %option%
     
 )
-
-rem
-rem Print collected status
-rem
-echo.
-echo Copy report to commits
-echo Cut here -----------------------------------------------------------
-date /t
-time /t
-cat temp1
-rm temp1
-call chkfiles
-echo Cut here -----------------------------------------------------------
-echo.
+exit /b
 
 rem
 rem Terminate program
