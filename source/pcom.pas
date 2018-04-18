@@ -4,7 +4,7 @@
 *                     Portable Pascal assembler/interpreter                    *
 *                     *************************************                    *
 *                                                                              *
-*                                 Pascal P5                                    *
+*                                 Pascal P6                                    *
 *                                                                              *
 *                                 ETH May 76                                   *
 *                                                                              *
@@ -31,50 +31,40 @@
 * Kruislaan 413, 1098 SJ Amsterdam, NL                                         *
 * Steven.Pemberton@cwi.nl                                                      *
 *                                                                              *
-* Adaption from P4 to P5 by:                                                   *
+* Adaption from P5 to P6 by:                                                   *
 *                                                                              *
-*    Scott A. Moore                                                            *
+*    Scott A. Franco                                                           *
 *    samiam@moorecad.com                                                       *
 *                                                                              *
 *    The comments marked with brackets are mine [sam]                          *
 *                                                                              *
-* Note that the previous version of P4 added some type specified instructions  *
-* that used to be unified, typeless instructions.                              *
+* Please see accompanying documentation concerning this software.              *
 *                                                                              *
-* P5 errors added:                                                             *
+* ---------------------------------------------------------------------------- *
 *                                                                              *
-* 182 identifier too long                                                      *
-* 183 For index variable must be local to this block                           *
-* 184 Interprocedure goto does not reference outter block of destination       *
-* 185 Goto references deeper nested statement                                  *
-* 186 Label referenced by goto at lesser statement level                       *
-* 187 Goto references label in different nested statement                      *
-* 188 Label referenced by goto in different nested statement                   *
-* 189 Parameter lists of formal and actual parameters not congruous.           *
+*                                   LICENSE                                    *
 *                                                                              *
-* P5 instructions modified:                                                    *
+* ---------------------------------------------------------------------------- *
 *                                                                              *
-* lca'string'       '                                                          *
+* This software is unlicensed and exists in the public domain. It has:         *
 *                                                                              *
-* was changed to                                                               *
+* 1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH    *
+*    Zurich.                                                                   *
 *                                                                              *
-* lca 'string'''                                                               *
+* 2. Has been freely distributed since 1976 with only charges for printing and *
+*    shipping costs.                                                           *
 *                                                                              *
-* That is, lca has a space before the opening quote, no longer pads to the     *
-* right, and represents single quotes with a quote image. pint converts quote  *
-* images back to single quotes, and pads out strings to their full length.     *
+* 3. Has been used as the basis for many projects, both paid and free, by      *
+*    other authors.                                                            *
 *                                                                              *
-* In addition, the way files work was extensively modified. Original P5 could  *
-* not represent files as full1y expressed variables, such as within an array   *
-* or record, and were effectively treated as constants. To treat them as true  *
-* variable accesses, the stacking order of the file in all file subroutines    *
-* was changed so that the file is on the bottom. This matches the source       *
-* order of the file in write(f, ...) or read(f, ...). Also, the file           *
-* operations now leave the file on the stack for the duration of a write or    *
-* read, then dump them using a specific new instruction "dmp". This allows     *
-* multiparameter writes and reads to be effectively a chain of single          *
-* operations using one file reference. Finally, files were tied to the type    *
-* ending 'a', because files are now full variable references.                  *
+* I, Scott Franco, have extensively expanded the original software. I certify  *
+* that all my changes and additions to it are also public domain.              *
+*                                                                              *
+* I respectfully request that this notice accompany the software even if it is *
+* further modified.                                                            *
+*                                                                              *
+* If you receive a copy of this software without this notice, I suggest you    *
+* obtain the original. It has been modified.                                   *
 *                                                                              *
 *******************************************************************************}
 
@@ -697,7 +687,7 @@ var
   end;
 
   { scrub display level }
-  procedure putdsp(l: disprange);
+  procedure putdsp(var dr: disprec);
      var llp: lbp; lvp: csp; lsp: stp;
      { release substructure }
      procedure putsub(p: stp);
@@ -720,22 +710,22 @@ var
         putstc(p) { release head entry }
      end;
   begin { putdsp }
-    putnams(display[l].fname); { dispose of identifier tree }
+    putnams(dr.fname); { dispose of identifier tree }
     { dispose of label list }
-    while display[l].flabel <> nil do begin
-      llp := display[l].flabel; display[l].flabel := llp^.nextlab; putlab(llp)
+    while dr.flabel <> nil do begin
+      llp := dr.flabel; dr.flabel := llp^.nextlab; putlab(llp)
     end;
     { dispose of constant list }
-    while display[l].fconst <> nil do begin
-      lvp := display[l].fconst; display[l].fconst := lvp^.next; putcst(lvp)
+    while dr.fconst <> nil do begin
+      lvp := dr.fconst; dr.fconst := lvp^.next; putcst(lvp)
     end;
     { dispose of structure list }
-    while display[l].fstruct <> nil do begin
+    while dr.fstruct <> nil do begin
       { remove top from list }
-      lsp := display[l].fstruct; display[l].fstruct := lsp^.next; putsub(lsp)
+      lsp := dr.fstruct; dr.fstruct := lsp^.next; putsub(lsp)
     end;
     { dispose of module name }
-    putstrs(display[l].modnam)
+    putstrs(dr.modnam)
   end; { putdsp }
 
   { scrub all display levels until given }
@@ -748,8 +738,15 @@ var
     end;
     t := top;
     while t > l do begin
-      putdsp(t); t := t-1
+      putdsp(display[t]); t := t-1
     end
+  end;
+  
+  { scrub the pile }
+  procedure putpile;
+  var t: disprange;
+  begin
+    if ptop > 0 then for t := ptop-1 downto 0 do putdsp(pile[t])
   end;
 
   { get external file entry }
@@ -1991,9 +1988,20 @@ end;
 
   procedure searchid(fidcls: setofids; var fcp: ctp);
     label 1;
-    var lcp: ctp;
+    var lcp: ctp; pn, fpn: disprange; pdf: boolean;
   begin
     searchidne(fidcls, lcp); { perform no error search }
+    if lcp = nil then begin
+      { search module leader in the pile }
+      pdf := false; 
+      if ptop > 0 then for pn := ptop-1 downto 0 do 
+        if strequvf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
+      if pdf then begin { module name was found }
+        insymbol; if sy <> period then error(21) else insymbol;
+        if sy <> ident then error(2)
+        else searchsection(pile[fpn].fname,lcp) { now search that module }
+      end 
+    end;    
     if lcp <> nil then begin lcp^.refer := true; goto 1 end; { found }
     (*search not successful
      --> procedure simpletype*)
@@ -2013,7 +2021,7 @@ end;
               else lcp := ufctptr;
 1:  fcp := lcp
   end (*searchid*) ;
-
+  
   procedure getbounds(fsp: stp; var fmin,fmax: integer);
     (*get internal bounds of subrange or scalar type*)
     (*assume fsp<>intptr and fsp<>realptr*)
@@ -5487,17 +5495,21 @@ end;
                                 if (lcp^.idtype^.form <> scalar) and
                                    (lcp^.idtype^.form <> subrange) then 
                                 error(223);
-                              if sy <> lparent then error(9);
-                              insymbol; expression(fsys + [rparent], false);
-                              load;
-                              if sy = rparent then insymbol else error(4);
-                              if gattr.typtr <> nil then
-                                if (gattr.typtr^.form <> scalar) and 
-                                   (gattr.typtr^.form <> subrange) then 
-                                   error(224);
-                              { bounds check to target type }
-                              checkbnds(lcp^.idtype);
-                              gattr.typtr := lcp^.idtype { retype } 
+                              { if simple underfined error and no () trailer,
+                                then assume it is just an undefined id }
+                              if (lcp <> utypptr) or (sy = lparent) then begin
+                                if sy <> lparent then error(9);
+                                insymbol; expression(fsys + [rparent], false);
+                                load;
+                                if sy = rparent then insymbol else error(4);
+                                if gattr.typtr <> nil then
+                                  if (gattr.typtr^.form <> scalar) and 
+                                     (gattr.typtr^.form <> subrange) then 
+                                     error(224);
+                                { bounds check to target type }
+                                checkbnds(lcp^.idtype);
+                                gattr.typtr := lcp^.idtype { retype }
+                              end 
                             end else
                               begin selector(fsys,lcp,false);
                                 if threaten and (lcp^.klass = vars) then with lcp^ do begin
@@ -6383,7 +6395,7 @@ end;
         while lcnt1 > 0 do begin
            { don't recycle the record context }
            display[top].fname := nil;
-           putdsp(top); { purge }
+           putdsp(display[top]); { purge }
            top := top-1; lcnt1 := lcnt1-1; { count off }
         end;
         lc := llc;
@@ -6735,15 +6747,15 @@ end;
     
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
-      lists: boolean; nammods: strvsp; gcs: addrrange; curmods: modtyp;
-      entnames: integer; sym: symbol;
+      lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange; 
+      curmods: modtyp; entnames: integer; sym: symbol;
   function schnam(fp: filptr): boolean;
   begin schnam := false;
     while fp <> nil do 
       begin if fp^.fn = id then schnam := true; fp := fp^.next end
   end;
   begin
-    sys := sy; insymbol; { skip uses/joins }
+    sym := sy; insymbol; { skip uses/joins }
     repeat { modules }
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin 
@@ -6752,7 +6764,10 @@ end;
           openinput(ff);
           if ff then begin
             ch := ' '; eol := true; prcode := false; list := false;
-            insymbol; module(blockbegsys+statbegsys-[casesy]); 
+            insymbol; modnams := display[top].modnam; 
+            display[top].modnam := nil;
+            module(blockbegsys+statbegsys-[casesy]);
+            thismod := display[top].modnam; display[top].modnam := modnams; 
             cancelfwd(display[top].fname); closeinput
           end;
           ch := chs; eol := eols;prcode := prcodes; list := lists; gc := gcs; 
@@ -6763,13 +6778,15 @@ end;
           if ptop >= displimit then error(267)
           else begin
             pile[ptop] := display[top]; { copy out definitions from display }
+            pile[ptop].modnam := thismod; { put back module name }
             ptop := ptop+1;
             { clear display for next }
             with display[top] do
               begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-                    packing := false; occur := blck; bname := nil end
+                    packing := false; packcom := false; ptrref := false; 
+                    occur := blck; bname := nil end
           end
-        end
+        end else putstrs(thismod)
       end;
       sys := sy;
       if sy = comma then insymbol
@@ -7733,8 +7750,11 @@ begin
   outline;
 
   { dispose of levels 0 and 1 }
-  putdsp(1);
-  putdsp(0);
+  putdsp(display[1]);
+  putdsp(display[0]);
+  
+  { dispose of the pile }
+  putpile;
 
   { remove undeclared ids }
   exitundecl;
