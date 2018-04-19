@@ -421,6 +421,12 @@ var
     kk: 1..maxids;                  (*nr of chars in last identifier*)
     ch: char;                       (*last character*)
     eol: boolean;                   (*end of line flag*)
+    
+    { pushback system, last and next variables }
+    lsy: symbol; lop: operatort; lval: valu; llgth: integer;
+    lid: idstr; lkk: 1..maxids;
+    nsy: symbol; nop: operatort; nval: valu; nlgth: integer;
+    nid: idstr; nkk: 1..maxids; nvalid: boolean;
 
                                     (*counters:*)
                                     (***********)
@@ -505,7 +511,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..505
+                      nmr: 1..506
                end;
 
 
@@ -536,7 +542,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..505] of boolean; { error occurence tracking }
+    errtbl: array [1..506] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -564,7 +570,7 @@ var
     stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..505; { index for error number tracking array }
+    i: 1..506; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -1439,6 +1445,7 @@ end;
     265: write('Filename too long');
     266: write('''private'' has no meaning here');
     267: write('Too many nested module joins');
+    268: write('Qualified identifier not found');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -1453,7 +1460,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505: write('Compiler internal error');
+    504,505,506: write('Compiler internal error');
     end
   end;
 
@@ -1489,7 +1496,7 @@ end;
   procedure insymbol;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
-    label 1;
+    label 1, 2;
     var i,j,k,v,r,p: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
@@ -1634,6 +1641,14 @@ end;
     end;
 
   begin (*insymbol*)
+    { copy current to last scanner block }
+    lsy := sy; lop := op; lval := val; llgth := lgth; lid := id; lkk := kk;
+    if nvalid then begin { there is a lookahead }
+      { copy next to current }
+      sy := nsy; op := nop; val := nval; lgth := nlgth; id := nid; kk := nkk;
+      nvalid := false; { set no next now }
+      goto 2 { skip getting next tolken }
+    end;
     outline;
   1:
     { Skip both spaces and controls. This allows arbitrary formatting characters
@@ -1906,8 +1921,19 @@ end;
       end;
       writeln
 
-    end
+    end;
+    2:;
   end (*insymbol*) ;
+  
+  procedure pushback;
+  begin
+    if nvalid then error(506); { multiple pushbacks }
+    { put current tolken to future }
+    nsy := sy; nop := op; nval := val; nlgth := lgth; nid := id; nkk := kk;
+    { get current from last }
+    sy := lsy; op := lop; val := lval; lgth := llgth; id := lid; kk := lkk;
+    nvalid := true { set there is a next tolken }
+  end;
 
   procedure enterid(fcp: ctp);
     (*enter id pointed at by fcp into the name-table,
@@ -1953,30 +1979,33 @@ end;
 1:  fcp1 := fcp
   end (*searchsection*) ;
 
-  procedure searchidnenm(fidcls: setofids; var fcp: ctp; var mm: boolean);
-    label 1;
-    var lcp: ctp;
-        disxl: disprange;
+  procedure schsecidnenm(lcp: ctp; fidcls: setofids; var fcp: ctp; 
+                         var mm: boolean);
+  label 1;
   begin
     mm := false;
+    while lcp <> nil do begin
+      if strequvf(lcp^.name, id) then
+        if lcp^.klass in fidcls then goto 1
+        else begin mm := true; lcp := lcp^.rlink end
+        else
+          if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
+          else lcp := lcp^.llink
+    end;
+    1: fcp := lcp
+  end (*searchidne*) ;
+
+  procedure searchidnenm(fidcls: setofids; var fcp: ctp; var mm: boolean);
+    label 1;
+    var disxl: disprange;
+  begin
+    mm := false; disx := 0;
     for disxl := top downto 0 do
-      begin lcp := display[disxl].fname;
-        while lcp <> nil do begin
-          if strequvf(lcp^.name, id) then
-            if lcp^.klass in fidcls then begin disx := disxl; goto 1 end
-            else
-              begin mm := true;
-                lcp := lcp^.rlink
-              end
-          else
-            if strltnvf(lcp^.name, id) then
-              lcp := lcp^.rlink
-            else lcp := lcp^.llink
-        end
+      begin 
+        schsecidnenm(display[disxl].fname, fidcls, fcp, mm);
+        if fcp <> nil then begin disx := disxl; goto 1 end
       end;
-      disx := 0;
-      lcp := nil; { make sure this is not found }
-1:  fcp := lcp
+    1:;
   end (*searchidne*) ;
 
   procedure searchidne(fidcls: setofids; var fcp: ctp);
@@ -1986,6 +2015,13 @@ end;
     if mm then error(103)
   end (*searchidne*) ;
 
+  procedure schsecidne(lcp: ctp; fidcls: setofids; var fcp: ctp);
+    var mm: boolean;
+  begin
+    schsecidnenm(lcp, fidcls, fcp, mm);
+    if mm then error(103)
+  end (*searchidne*) ;
+  
   procedure searchid(fidcls: setofids; var fcp: ctp);
     label 1;
     var lcp: ctp; pn, fpn: disprange; pdf: boolean;
@@ -1999,8 +2035,9 @@ end;
       if pdf then begin { module name was found }
         insymbol; if sy <> period then error(21) else insymbol;
         if sy <> ident then error(2)
-        else searchsection(pile[fpn].fname,lcp) { now search that module }
-      end 
+        else schsecidne(pile[fpn].fname,fidcls,lcp); { search qualifed name }
+        if lcp = nil then error(268) { not found }
+      end
     end;    
     if lcp <> nil then begin lcp^.refer := true; goto 1 end; { found }
     (*search not successful
@@ -2379,7 +2416,7 @@ end;
         if strequvf(llp^.labid, id) then begin
           fllp := llp; { set entry found }
           llp := nil { stop }        
-        end
+        end else llp := llp^.nextlab { next in list }
       end else if not isid and (llp^.labval = val.ival) then begin { found }
         fllp := llp; { set entry found }
         llp := nil { stop }
@@ -4256,8 +4293,7 @@ end;
     end (*genfjp*) ;
 
     procedure statement(fsys: setofsys);
-      var lcp: ctp; llp: lbp; ids: idstr; syn: symbol; sk: boolean; 
-          kks: 1..maxids;
+      var lcp: ctp; llp: lbp; 
 
       procedure expression(fsys: setofsys; threaten: boolean); forward;
 
@@ -6474,44 +6510,38 @@ end;
       end (*trystatement*) ;
 
     begin (*statement*)
-      if (sy = intconst) or (sy = ident) then (*label*)
-        begin sk := false;
+      if (sy = intconst) or (sy = ident) then begin (*label*)
           { and here is why Wirth didn't include symbolic labels in Pascal.
             We are ambiguous with assigns and calls, so must look ahead for 
             the ':' }
-          if sy = ident then 
-            begin ids := id; kks := kk; insymbol; sk := true; syn := sy; 
-                  id := ids; kk := kks; sy := ident end;
-          if (syn = colon) or (sy = intconst) then begin
-            searchlabel(llp, level, sy = ident); { search label }
-            if llp <> nil then with llp^ do begin { found }
-              if defined then error(165); { multidefined label }
-              bact := true; { set in active block now }
-              slevel := stalvl; { establish statement level }
-              defined := true; { set defined }
-              if ipcref and (stalvl > 1) then
-                error(184) { intraprocedure goto does not reference outter block }
-              else if minlvl < stalvl then
-                { Label referenced by goto at lesser statement level or 
-                  differently nested statement }
-                error(186);
-              putlabel(labname); { output label to intermediate }
-            end else begin { not found }
-              error(167); { undeclared label }
-              newlabel(llp, false) { create a dummy level }
-            end;
-            if sk then sy := syn else insymbol;
-            if sy = colon then insymbol else error(5);
-            sk := false
-          end
-        end;
+        searchlabel(llp, level, sy = ident); { search label }
+        insymbol; { look ahead }
+        if sy = colon then begin { process as label }
+           insymbol; { skip ':' }
+           if llp <> nil then with llp^ do begin { found }
+             if defined then error(165); { multidefined label }
+             bact := true; { set in active block now }
+             slevel := stalvl; { establish statement level }
+             defined := true; { set defined }
+             if ipcref and (stalvl > 1) then
+               error(184) { intraprocedure goto does not reference outter block }
+             else if minlvl < stalvl then
+               { Label referenced by goto at lesser statement level or 
+                 differently nested statement }
+               error(186);
+             putlabel(labname) { output label to intermediate }
+           end else begin { not found }
+             error(167); { undeclared label }
+             newlabel(llp, false) { create a dummy level }
+           end
+        end else pushback { back to ident }
+      end;
       if not (sy in fsys + statbegsys + [ident,resultsy]) then
         begin error(6); skip(fsys) end;
       if sy in statbegsys + [ident,resultsy] then
         begin
           case sy of
-            ident:    begin searchid([vars,field,func,proc],lcp); 
-                        if sk then sy := syn else insymbol;
+            ident:    begin searchid([vars,field,func,proc],lcp); insymbol;
                         if lcp^.klass = proc then call(fsys,lcp)
                         else assignment(lcp, false)
                       end;
@@ -7743,6 +7773,7 @@ begin
   end;
   writeln(prr);
 
+  nvalid := false; { set no lookahead }
   insymbol;
   module(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }
