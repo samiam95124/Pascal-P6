@@ -188,7 +188,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;  { number of standard procedures/functions }
-   maxins     = 90;  { maximum number of instructions }
+   maxins     = 92;  { maximum number of instructions }
    maxids     = 250; { maximum characters in id string (basically, a full line) }
    maxstd     = 74;  { number of standard identifiers }
    maxres     = 66;  { number of reserved words }
@@ -309,6 +309,9 @@ type                                                        (*describing:*)
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
                      priv: boolean end;
      partyp = (ptval, ptvar, ptview, ptout);
+     { procedure function attribute }
+     fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride,
+               fpaoperator);
      identifier = record
                    snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
@@ -324,7 +327,8 @@ type                                                        (*describing:*)
                              varsaddr: addrrange; varssize: addrrange);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    asgn: boolean; { assigned }
-                                   pext: boolean; pmod: filptr;
+                                   pext: boolean; pmod: filptr; pfattr: fpattr;
+                                   pfvaddr: addrrange;
                                    case pfdeckind: declkind of
                               standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
@@ -525,7 +529,7 @@ var
                                     (***********************)
 
     constbegsys,simptypebegsys,typebegsys,blockbegsys,selectsys,facbegsys,
-    statbegsys,typedels: setofsys;
+    statbegsys,typedels,pfbegsys: setofsys;
     chartp : array[char] of chtp;
     rw:  array [1..maxres(*nr. of res. words*)] of restr;
     rsy: array [1..maxres(*nr. of res. words*)] of symbol;
@@ -1426,6 +1430,8 @@ end;
     225: write('In constant range first value must be less than or equal to second');
     226: write('Type of variable is not exception');
     227: write('Type too complex to track');
+    228: write('Cannot apply ''virtual'' attribute to nested procedure or function');
+    229: write('Cannot apply ''override'' attribute to nested procedure or function');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -2546,13 +2552,13 @@ end;
           end
       end;
     ic := ic + 1
-  end (*gen1*) ;
+  end (*gen1s*) ;
   
   procedure gen1(fop: oprange; fp2: integer);
   begin
     gen1s(fop, fp2, nil)
   end;
-
+  
   procedure gen2(fop: oprange; fp1,fp2: integer);
     var k : integer;
   begin
@@ -2611,7 +2617,9 @@ end;
                      mesl(cdxs[cdx[fop]][6])
                    end
               end
-            end
+            end;
+          92: begin write(prr, ' '); prtlabel(fp1); writeln(prr, ' ', fp2:1) 
+              end
         end
       end;
     ic := ic + 1
@@ -3740,8 +3748,7 @@ end;
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1: ctp; lsp: stp;
           forw: boolean; oldtop: disprange;
-          llc: stkoff; lbname: integer;
-          plst: boolean;
+          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -3984,9 +3991,16 @@ end;
     end;
 
     begin (*procdeclaration*)
-      if fsy = staticsy then begin { 'static' leader parsed }
-        { static attribute ignored here }
-        chkstd; 
+      { parse and skip any attribute }
+      fpat := fpanone;
+      if fsy in [overloadsy,staticsy,virtualsy,overridesy,operatorsy] then begin
+        chkstd;
+        case fsy of { attribute }
+          overloadsy: fpat := fpaoverload;
+          staticsy: fpat := fpastatic;
+          virtualsy: begin fpat := fpavirtual; if top > 1 then error(228) end;
+          overridesy: begin fpat := fpaoverride; if top > 1 then error(229) end
+        end;
         if (sy <> procsy) and (sy <> funcsy) then error(209)
         else fsy := sy; insymbol
       end;
@@ -4013,7 +4027,8 @@ end;
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   if fsy = procsy then klass := proc
                   else begin klass := func; asgn := false end; 
-                  pext := incstk <> nil; pmod := incstk; refer := false
+                  pext := incstk <> nil; pmod := incstk; refer := false; 
+                  pfattr := fpat; pfvaddr := gc; gc := gc+adrsize;
                 end;
               enterid(lcp)
             end
@@ -4095,11 +4110,11 @@ end;
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;
               if iso7185 then begin { handle according to standard }
-                if not (sy in [beginsy,procsy,funcsy,staticsy]) then
+                if not (sy in [beginsy]+pfbegsys) then
                   begin error(6); skip(fsys) end
               end else begin
-                if not (sy in [labelsy,constsy,typesy,varsy,beginsy,procsy,
-                               funcsy,staticsy]) then
+                if not (sy in 
+                        [labelsy,constsy,typesy,varsy,beginsy]+pfbegsys) then
                   begin error(6); skip(fsys) end
               end
             end
@@ -4133,12 +4148,11 @@ end;
             begin insymbol; typedeclaration end;
           if sy = varsy then
             begin insymbol; vardeclaration end;
-          while sy in [procsy,funcsy,staticsy] do
+          while sy in pfbegsys do
             begin lsy := sy; insymbol; procdeclaration(lsy) end
         end
       until inpriv or iso7185 or (sy = beginsy) or eofinp or
-            not (sy in [privatesy,labelsy,constsy,typesy,varsy,procsy,funcsy,
-                        staticsy]);
+            not (sy in [privatesy,labelsy,constsy,typesy,varsy]+pfbegsys);
       if (sy <> beginsy) and not inpriv then
         begin error(18); skip(fsys) end
     until (sy in statbegsys) or eofinp or inpriv;
@@ -5402,7 +5416,9 @@ end;
                 begin
                   if externl then gen1(30(*csp*),pfname)
                   else begin
-                    gencupent(46(*cup*),locpar,pfname,fcp);
+                    if pfattr = fpavirtual then
+                      gen1(91(*cuv*),pfvaddr)
+                    else gencupent(46(*cup*),locpar,pfname,fcp);
                     if fcp^.klass = func then begin
                       { add size of function result back to stack }
                       lsize := fcp^.idtype^.size;
@@ -6634,6 +6650,19 @@ end;
       end;
       id := saveid
     end;
+    
+    procedure initvirt;
+    procedure schvirt(lcp: ctp);
+    begin
+      if lcp <> nil then begin
+        if lcp^.klass in [proc,func] then if lcp^.pfattr = fpavirtual then
+          gen2(92(*suv*),lcp^.pfname,lcp^.pfvaddr);
+        schvirt(lcp^.llink); schvirt(lcp^.rlink)
+      end
+    end;
+    begin
+      schvirt(display[top].fname)
+    end;
           
   begin (*body*)
     stalvl := 0; { clear statement nesting level }
@@ -6674,7 +6703,10 @@ end;
       end;
     lcmin := lc;
     addlvl;
-    if level = 1 then externalheader; { process external header files }
+    if level = 1 then begin { perform module setup tasks }
+      externalheader; { process external header files }
+      initvirt { process virtual procedure/function sets }
+    end;
     if sy = beginsy then insymbol else error(17);
     repeat
       repeat statement(fsys + [semicolon,endsy])
@@ -7356,6 +7388,8 @@ end;
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
     statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy,
                    trysy];
+    pfbegsys := [procsy,funcsy,overloadsy,staticsy,virtualsy,overridesy,
+                 operatorsy];
   end (*initsets*) ;
 
   procedure inittables;
@@ -7488,7 +7522,7 @@ end;
       mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
       mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
-      mn[89] :=' cal'; mn[90] :=' ret';
+      mn[89] :=' cal'; mn[90] :=' ret'; mn[91] :=' cuv'; mn[92] :=' suv';
 
     end (*instrmnemonics*) ;
 
@@ -7606,7 +7640,8 @@ end;
       cdx[84] := -adrsize;             cdx[85] := +adrsize;
       cdx[86] := 0;                    cdx[87] := 0;
       cdx[88] := 0;                    cdx[89] := 0;
-      cdx[90] := 0;
+      cdx[90] := 0;                    cdx[91] := 0;
+      cdx[92] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
