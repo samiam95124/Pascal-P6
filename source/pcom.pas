@@ -328,7 +328,8 @@ type                                                        (*describing:*)
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    asgn: boolean; { assigned }
                                    pext: boolean; pmod: filptr; pfattr: fpattr;
-                                   pfvaddr: addrrange;
+                                   pfvaddr: addrrange; pfvid: ctp; 
+                                   grpnxt, grppar: ctp;
                                    case pfdeckind: declkind of
                               standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
@@ -664,11 +665,17 @@ var
   procedure putnam(p: ctp);
   var p1: ctp;
   begin
-     if (p^.klass = proc) or (p^.klass = func) then
+     if (p^.klass = proc) or (p^.klass = func) then begin
         while p^.pflist <> nil do begin
-        { scavenge the parameter list }
-        p1 := p^.pflist; p^.pflist := p1^.next;
-        putnam(p1) { release }
+          { scavenge the parameter list }
+          p1 := p^.pflist; p^.pflist := p1^.next;
+          putnam(p1) { release }
+        end;
+        while p^.grpnxt <> nil do begin
+          { scavenge the group list }
+          p1 := p^.grpnxt; p^.grpnxt := p1^.grpnxt;
+          putnam(p1) { release }
+        end;
      end;
      putstrs(p^.name); { release name string }
      dispose(p); { release entry }
@@ -990,7 +997,7 @@ var
      end;
      if a <> nil then c := a^.str[q];
      strchr := c
-   end;
+  end;
 
   { put character to variable length string }
 
@@ -1012,7 +1019,18 @@ var
         i := i+1
      end;
      p^.str[q] := c
-   end;
+  end;
+   
+  { concatenate reserved word fixed to variable length string, including 
+    allocation }
+  procedure strcatvr(var a: strvsp; b: restr);
+  var i, j, l: integer;
+  begin l := reslen;
+    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+    if b[l] = ' ' then l := 0;
+    j := lenpv(a); j := j+1;
+    for i := 1 to l do begin strchrass(a, j, b[i]); j := j+1 end
+  end;
 
 (*-------------------------------------------------------------------------*)
 
@@ -1432,6 +1450,9 @@ end;
     227: write('Type too complex to track');
     228: write('Cannot apply ''virtual'' attribute to nested procedure or function');
     229: write('Cannot apply ''override'' attribute to nested procedure or function');
+    230: write('Cannot override virtual from same module, must be external');
+    231: write('No virtual found to override');
+    232: write('Cannot overload virtual procedure or function');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1477,9 +1498,7 @@ end;
       { This diagnostic is here because error buffers error numbers til the end
         of line, and sometimes you need to know exactly where they occurred. }
 
-      {
       writeln; writeln('error: ', ferrnr:1);
-      }
     
       errtbl[ferrnr] := true; { track this error }
       if errinx >= 9 then
@@ -2545,7 +2564,7 @@ end;
             else if fop = 42 then writeln(prr,chr(fp2))
             else if fop = 67 then writeln(prr,fp2:4)
             else if chkext(symptr) then 
-              begin prtflabel(symptr); writeln(prr) end
+              begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
             else writeln(prr,fp2:12);
             if fop = 42 then mes(0)
             else mes(fop)
@@ -2617,9 +2636,7 @@ end;
                      mesl(cdxs[cdx[fop]][6])
                    end
               end
-            end;
-          92: begin write(prr, ' '); prtlabel(fp1); writeln(prr, ' ', fp2:1) 
-              end
+            end
         end
       end;
     ic := ic + 1
@@ -2744,6 +2761,18 @@ end;
       end;
     ic := ic + 1; mes(68)
   end (*genlpa*);
+  
+  procedure gensuv(fp1, fp2: integer; sym: ctp);
+  begin
+    if prcode then begin
+      putic; write(prr,mn[92(*suv*)]:4);
+      write(prr, ' '); prtlabel(fp1); 
+      if chkext(sym) then 
+        begin write(prr, ' '); prtflabel(sym); writeln(prr) end
+      else writeln(prr, ' ', fp2:1)
+    end;
+    ic := ic + 1; mes(92)
+  end;
 
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
@@ -3746,9 +3775,10 @@ end;
     end (*vardeclaration*) ;
 
     procedure procdeclaration(fsy: symbol);
-      var oldlev: 0..maxlevel; lcp,lcp1: ctp; lsp: stp;
-          forw: boolean; oldtop: disprange;
+      var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
+          forw,virt,ovrl: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
+          i: integer;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -3802,7 +3832,8 @@ end;
                             pflev := level (*beware of parameter procedures*);
                             klass:=proc;pfdeckind:=declared;
                             pfkind:=formal; pfaddr := lc; pext := false; 
-                            pmod := nil; keep := true
+                            pmod := nil; keep := true; pfattr := fpanone;
+                            grpnxt := nil; grppar := nil; pfvid := nil
                           end;
                         enterid(lcp);
                         lcp1 := lcp;
@@ -3830,7 +3861,8 @@ end;
                                 pflev := level (*beware param funcs*);
                                 klass:=func;pfdeckind:=declared;
                                 pfkind:=formal; pfaddr:=lc; pext := false; 
-                                pmod := nil; keep := true
+                                pmod := nil; keep := true; pfattr := fpanone;
+                                grpnxt := nil; grppar := nil; pfvid := nil
                               end;
                             enterid(lcp);
                             lcp1 := lcp;
@@ -4004,19 +4036,31 @@ end;
         if (sy <> procsy) and (sy <> funcsy) then error(209)
         else fsy := sy; insymbol
       end;
-      llc := lc; lc := lcaftermarkstack; forw := false;
+      llc := lc; lc := lcaftermarkstack; forw := false; virt := false; 
+      ovrl := false;
       if sy = ident then
         begin searchsection(display[top].fname,lcp); (*decide whether forw.*)
           if lcp <> nil then
             begin
-              if lcp^.klass = proc then
-                forw := lcp^.forwdecl and(fsy=procsy)and(lcp^.pfkind=actual)
-              else
-                if lcp^.klass = func then
-                  forw:=lcp^.forwdecl and(fsy=funcsy)and(lcp^.pfkind=actual)
-                else forw := false;
-              if not forw then error(160)
-            end;
+              if lcp^.klass = proc then begin
+                forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
+                virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                        (fsy=procsy)and(lcp^.pfkind=actual);
+                ovrl := (fsy=procsy) and (lcp^.pfkind=actual) and 
+                        (fpat = fpaoverload)
+              end else if lcp^.klass = func then begin
+                  forw:=lcp^.forwdecl and (fsy=funcsy) and (lcp^.pfkind=actual);
+                  virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                          (fsy=funcsy)and(lcp^.pfkind=actual);
+                  ovrl := (fsy=procsy) and (lcp^.pfkind=actual) and 
+                          (fpat = fpaoverload)
+              end else forw := false;
+              if not forw and not virt then error(160);
+              if virt and not chkext(lcp) then error (230);
+              if ovrl and (lcp^.pfattr = fpavirtual) then error(232);
+            end
+          else if fpat = fpaoverride then error(231);
+          lcp1 := lcp; { save original }
           if not forw then
             begin
               if fsy = procsy then new(lcp,proc,declared,actual)
@@ -4028,9 +4072,29 @@ end;
                   if fsy = procsy then klass := proc
                   else begin klass := func; asgn := false end; 
                   pext := incstk <> nil; pmod := incstk; refer := false; 
-                  pfattr := fpat; pfvaddr := gc; gc := gc+adrsize;
+                  pfattr := fpat; grpnxt := nil; grppar := nil;
+                  if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
+                    if pfattr = fpavirtual then begin
+                      { have to create a label for far references to virtual }
+                      new(lcp2,vars); ininam(lcp2);
+                      with lcp2^ do begin
+                        strassvf(name, id); strcatvr(name, '__virtvec');
+                        idtype := nilptr; vkind := actual;
+                        next := nil; vlev := 0; vaddr := gc; klass := vars;
+                        threat := false; forcnt := 0; part := ptval; hdr := false; 
+                        vext := incstk <> nil; vmod := incstk
+                      end;
+                      enterid(lcp2); lcp^.pfvid := lcp2;
+                      wrtsym(lcp2, 'g')
+                    end;
+                    pfvaddr := gc; gc := gc+adrsize 
+                  end
                 end;
-              enterid(lcp)
+              if virt or ovrl then 
+                { just insert to group list for this proc/func } 
+                begin lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp; 
+                      lcp^.grppar := lcp1 end
+              else enterid(lcp)
             end
           else
             begin lcp1 := lcp^.pflist;
@@ -5417,7 +5481,7 @@ end;
                   if externl then gen1(30(*csp*),pfname)
                   else begin
                     if pfattr = fpavirtual then
-                      gen1(91(*cuv*),pfvaddr)
+                      gen1s(91(*cuv*),fcp^.pfvid^.vaddr,fcp^.pfvid)
                     else gencupent(46(*cup*),locpar,pfname,fcp);
                     if fcp^.klass = func then begin
                       { add size of function result back to stack }
@@ -6653,10 +6717,25 @@ end;
     
     procedure initvirt;
     procedure schvirt(lcp: ctp);
+    var lcp1,lcp2: ctp;
     begin
       if lcp <> nil then begin
-        if lcp^.klass in [proc,func] then if lcp^.pfattr = fpavirtual then
-          gen2(92(*suv*),lcp^.pfname,lcp^.pfvaddr);
+        if lcp^.klass in [proc,func] then begin
+          if not chkext(lcp) then begin
+            if (lcp^.pfattr = fpavirtual) then
+              gensuv(lcp^.pfname,lcp^.pfvaddr,lcp)
+            else if lcp^.pfattr = fpaoverride then begin
+              lcp1 := lcp^.grppar; { link parent }
+              lcp2 := lcp1^.pfvid; { get vector symbol }
+              { copy old vector to store }
+              gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
+              gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
+              { place new vector }
+              gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+            end
+          end;
+          schvirt(lcp^.grpnxt);
+        end;
         schvirt(lcp^.llink); schvirt(lcp^.rlink)
       end
     end;
@@ -7382,14 +7461,13 @@ end;
     simptypebegsys := [lparent,addop,intconst,realconst,stringconst,ident];
     typebegsys:=[arrow,packedsy,arraysy,recordsy,setsy,filesy]+simptypebegsys;
     typedels := [arraysy,recordsy,setsy,filesy];
-    blockbegsys := [privatesy,labelsy,constsy,typesy,varsy,procsy,funcsy,staticsy,
-                    beginsy];
+    pfbegsys := [procsy,funcsy,overloadsy,staticsy,virtualsy,overridesy,
+                 operatorsy];
+    blockbegsys := [privatesy,labelsy,constsy,typesy,varsy,beginsy]+pfbegsys;
     selectsys := [arrow,period,lbrack];
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
     statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy,
                    trysy];
-    pfbegsys := [procsy,funcsy,overloadsy,staticsy,virtualsy,overridesy,
-                 operatorsy];
   end (*initsets*) ;
 
   procedure inittables;

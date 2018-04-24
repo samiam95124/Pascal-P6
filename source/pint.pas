@@ -1864,7 +1864,7 @@ begin
    wrthex(output, op, 2, true);
    write(' ', instr[op]:10, '  ');
    if insp[op] then begin
-
+   
       wrthex(output, p, 2, true);
       if insq[op] > 0 then 
         begin write(','); wrthex(output, q, inthex, true) end;
@@ -2003,7 +2003,7 @@ procedure load;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;
-         instr[ 27]:='---       '; insp[ 27] := false; insq[ 27] := 0;
+         instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;
          instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;
@@ -2067,7 +2067,7 @@ procedure load;
          instr[ 88]:='indb      '; insp[ 88] := false; insq[ 88] := intsize;
          instr[ 89]:='indc      '; insp[ 89] := false; insq[ 89] := intsize;
          instr[ 90]:='inca      '; insp[ 90] := false; insq[ 90] := intsize;
-         instr[ 91]:='---       '; insp[ 91] := false; insq[ 91] := intsize;
+         instr[ 91]:='suv       '; insp[ 91] := false; insq[ 91] := intsize*2;
          instr[ 92]:='---       '; insp[ 92] := false; insq[ 92] := intsize;
          instr[ 93]:='incb      '; insp[ 93] := false; insq[ 93] := intsize;
          instr[ 94]:='incc      '; insp[ 94] := false; insq[ 94] := intsize;
@@ -2283,11 +2283,11 @@ procedure load;
                 while not endlist do begin
                       ad := curr;
                       op := store[ad]; { get instruction }
-                      q := getadr(ad+1+ord(insp[op]));
+                      q := getadr(ad);
                       succ:= q; { get target address from that }
                       q:= labelvalue; { place new target address }
                       ad := curr;
-                      putadr(ad+1+ord(insp[op]), q);
+                      putadr(ad, q);
                       if succ=-1 then endlist:= true
                                  else curr:= succ
                  end
@@ -2367,7 +2367,7 @@ procedure load;
    end;
    
    procedure flabrlc;
-   var ad,q: address; op: instyp; flp: flabelp; c: char;
+   var ad: address; op: instyp; flp: flabelp; c: char;
    function symref(lsp: strvsp): address;
    var mods, syms: filnam; i,x: 1..fillen; bp, fbp: pblock; sp, fsp: psymbol;
    begin
@@ -2408,7 +2408,7 @@ procedure load;
      while flablst <> nil do begin { empty far label list }
        flp := flablst; flablst := flablst^.next;
        ad := flp^.val; op := store[ad]; 
-       q := ad+1+ord(insp[op]); putadr(q, symref(flp^.ref));
+       putadr(ad, symref(flp^.ref));
        dispose(flp) 
      end
    end;
@@ -2716,9 +2716,14 @@ procedure load;
                                              storeq
                                        end;
 
-          12(*cup*): begin read(prd,p); labelsearch; storeop;
-                           storep; storeq
-                     end;
+          12(*cup*): begin read(prd,p); storeop; storep; labelsearch; storeq end;
+                     
+          91(*suv*): begin storeop; labelsearch; storeq;
+                     while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+                     if prd^ = 'l' then begin getnxt; labelsearch end 
+                     else read(prd,q); 
+                     if q > exceptiontop then q := q+gbloff;
+                     putgblfix; storeq end;
 
           11,113(*mst,cip*): begin read(prd,p); storeop; storep end;
 
@@ -2735,13 +2740,14 @@ procedure load;
           175, 176, 177, 178, 179, 180, 201, 202, 
           203: begin read(prd,q); storeop; storeq end;
           
-          (*ldo,sro,lao*)
+          (*ldo,sro,lao,cuv*)
           1, 194, 65, 66, 67, 68, 69,
-          3,196,75,76,77,78,79, 
-          5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          3,196,75,76,77,78,79,27, 
+          5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch); 
+                   storeop;
                    if prd^ = 'l' then begin getnxt; labelsearch end 
                    else read(prd,q);
-                   if q > exceptiontop then q := q+gbloff; storeop;
+                   if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
           (*pck,upk,cta,ivt*)
@@ -2752,10 +2758,10 @@ procedure load;
           23,24,25,119,207,21,
 
           (*ents,ente*)
-          13, 173: begin labelsearch; storeop; storeq end;
+          13, 173: begin storeop; labelsearch; storeq end;
 
           (*ipj,lpa*)
-          112,114: begin read(prd,p); labelsearch; storeop; storep; storeq end;
+          112,114: begin read(prd,p); storeop; storep; labelsearch; storeq end;
 
           15 (*csp*): begin skpspc; getname;
                            while name<>sptable[q] do
@@ -2828,12 +2834,11 @@ procedure load;
                      end;
 
            26, 95, 97, 98, 99, 190, 199,8 (*chk,cjp*): begin
-                         read(prd,lb,ub);
+                         read(prd,lb,ub); storeop;
                          { cjp is compare with jump }
                          if op = 8 then begin labelsearch; q1 := q end;
                          if (op = 95) or (op = 190) then begin
-                           q := lb;
-                           storeop; storeq
+                           q := lb; storeq
                          end else begin
                            cp := cp-intsize;
                            alignd(intal, cp);
@@ -2842,7 +2847,7 @@ procedure load;
                            cp := cp-intsize;
                            if cp <= 0 then errorl('constant table overflow  ');
                            putint(cp, lb); q := cp;
-                           storeop; putcstfix; storeq
+                           putcstfix; storeq
                          end;
                          if op = 8 then storeq1
                        end;
@@ -4426,6 +4431,15 @@ begin
                  putadr(mp+markra, pc); { place ra }
                  pc := q
                 end;
+                
+    27 (*cuv*): begin (*q=entry point*)
+                 getq;
+                 mp := sp+(p+marksize); { mp to base of mark }
+                 putadr(mp+markra, pc); { place ra }
+                 pc := getadr(q)
+                end;
+                
+    91 (*suv*): begin getq; getq1; putadr(q1, q) end;
 
     13 (*ents*): begin getq; ad := mp+q; (*q = length of dataseg*)
                     if ad <= np then begin
@@ -4855,11 +4869,10 @@ begin
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-    27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
-    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217,
-    218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
-    232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245,
-    246, 247, 248, 249, 250, 251, 252, 253, 254,
+     92,  96, 100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178,
+    210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224,
+    225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+    240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
