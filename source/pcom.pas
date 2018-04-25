@@ -516,7 +516,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..506
+                      nmr: 1..507
                end;
 
 
@@ -547,7 +547,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..506] of boolean; { error occurence tracking }
+    errtbl: array [1..507] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -575,7 +575,7 @@ var
     stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..506; { index for error number tracking array }
+    i: 1..507; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -1453,6 +1453,9 @@ end;
     230: write('Cannot override virtual from same module, must be external');
     231: write('No virtual found to override');
     232: write('Cannot overload virtual procedure or function');
+    233: write('Inherited not applied to user procedure/function call');
+    234: write('Inherited applied to non-virtual procedure/function');
+    235: write('Override not defined for inherited call');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1487,7 +1490,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506: write('Compiler internal error');
+    504,505,506,507: write('Compiler internal error');
     end
   end;
 
@@ -4371,7 +4374,7 @@ end;
     end (*genfjp*) ;
 
     procedure statement(fsys: setofsys);
-      var lcp: ctp; llp: lbp; 
+      var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure expression(fsys: setofsys; threaten: boolean); forward;
 
@@ -4626,7 +4629,7 @@ end;
           end (*while*)
       end (*selector*) ;
 
-      procedure call(fsys: setofsys; fcp: ctp);
+      procedure call(fsys: setofsys; fcp: ctp; inherit: boolean);
         var lkey: keyrng;
 
         procedure variable(fsys: setofsys; threaten: boolean);
@@ -5371,7 +5374,7 @@ end;
           gen1(30(*csp*),85(*thw*));
         end;
 
-        procedure callnonstandard(fcp: ctp);
+        procedure callnonstandard(fcp: ctp; inherit: boolean);
           var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
               locpar, llc: addrrange; varp: boolean; lsize: addrrange;
 
@@ -5480,9 +5483,17 @@ end;
                 begin
                   if externl then gen1(30(*csp*),pfname)
                   else begin
-                    if pfattr = fpavirtual then
-                      gen1s(91(*cuv*),fcp^.pfvid^.vaddr,fcp^.pfvid)
-                    else gencupent(46(*cup*),locpar,pfname,fcp);
+                    if pfattr = fpavirtual then begin
+                      if inherit then begin lcp := fcp^.grpnxt;
+                        if lcp = nil then error(235);
+                        if lcp^.pfattr <> fpaoverride then error(507);
+                        { inherited calls will never be far }
+                        gen1(91(*cuv*),lcp^.pfvaddr)
+                      end else gen1s(91(*cuv*),fcp^.pfvid^.vaddr,fcp^.pfvid)
+                    end else begin
+                      if inherit then error(234);
+                      gencupent(46(*cup*),locpar,pfname,fcp)
+                    end;
                     if fcp^.klass = func then begin
                       { add size of function result back to stack }
                       lsize := fcp^.idtype^.size;
@@ -5508,7 +5519,7 @@ end;
 
       begin (*call*)
         if fcp^.pfdeckind = standard then
-          begin lkey := fcp^.key;
+          begin lkey := fcp^.key; if inherit then error(233);
             if fcp^.klass = proc then
               begin
                 if not(lkey in [5,6,11,12,17,29]) then
@@ -5560,7 +5571,7 @@ end;
                   if sy = rparent then insymbol else error(4)
               end;
           end (*standard procedures and functions*)
-        else callnonstandard(fcp)
+        else callnonstandard(fcp,inherit)
       end (*call*) ;
 
       procedure expression{(fsys: setofsys; threaten: boolean)};
@@ -5573,23 +5584,27 @@ end;
             var lattr: attr; lop: operatort;
 
             procedure factor(fsys: setofsys; threaten: boolean);
-              var lcp: ctp; lvp: csp; varpart: boolean;
-                  cstpart: setty; lsp: stp;
-                  tattr, rattr: attr;
-                  test: boolean;
+              var lcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
+                  cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
             begin
               if not (sy in facbegsys) then
                 begin error(58); skip(fsys + facbegsys);
                   gattr.typtr := nil
                 end;
               while sy in facbegsys do
-                begin
-                  case sy of
+                begin inherit := false;
+                  if sy = inheritedsy then begin insymbol; inherit := true;
+                    if not (sy in facbegsys) then
+                    begin error(58); skip(fsys + facbegsys); 
+                          gattr.typtr := nil end;
+                    if sy <> ident then error(233);
+                  end;
+                  if sy in facbegsys then case sy of
             (*id*)    ident:
                       begin searchid([types,konst,vars,field,func],lcp);
                         insymbol;
                         if lcp^.klass = func then
-                          begin call(fsys,lcp);
+                          begin call(fsys,lcp, inherit);
                             with gattr do
                               begin kind := expr;
                                 if typtr <> nil then
@@ -5597,7 +5612,7 @@ end;
                                     typtr := typtr^.rangetype
                               end
                           end
-                        else
+                        else begin if inherit then error(233);
                           if lcp^.klass = konst then
                             with gattr, lcp^ do
                               begin typtr := idtype; kind := cst;
@@ -5636,6 +5651,7 @@ end;
                                 if gattr.typtr<>nil then(*elim.subr.types to*)
                                   with gattr,typtr^ do(*simplify later tests*)
                               end
+                        end
                       end;
             (*cst*)   intconst:
                       begin
@@ -6616,14 +6632,21 @@ end;
            end
         end else pushback { back to ident }
       end;
-      if not (sy in fsys + statbegsys + [ident,resultsy]) then
+      if not (sy in fsys + statbegsys + [ident,resultsy,inheritedsy]) then
         begin error(6); skip(fsys) end;
-      if sy in statbegsys + [ident,resultsy] then
+      inherit := false;
+      if sy in statbegsys + [ident,resultsy,inheritedsy] then
         begin
           case sy of
-            ident:    begin searchid([vars,field,func,proc],lcp); insymbol;
-                        if lcp^.klass = proc then call(fsys,lcp)
-                        else assignment(lcp, false)
+            inheritedsy,
+            ident:    begin 
+                        if sy = inheritedsy then 
+                          begin insymbol; inherit := true end;
+                        searchid([vars,field,func,proc],lcp); insymbol;
+                        if lcp^.klass = proc then call(fsys,lcp,inherit)
+                        else begin if inherit then error(233);
+                          assignment(lcp, false)
+                        end
                       end;
             beginsy:  begin insymbol; compoundstatement end;
             gotosy:   begin insymbol; gotostatement end;
@@ -7465,7 +7488,8 @@ end;
                  operatorsy];
     blockbegsys := [privatesy,labelsy,constsy,typesy,varsy,beginsy]+pfbegsys;
     selectsys := [arrow,period,lbrack];
-    facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy];
+    facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy,
+                  inheritedsy];
     statbegsys := [beginsy,gotosy,ifsy,whilesy,repeatsy,forsy,withsy,casesy,
                    trysy];
   end (*initsets*) ;
