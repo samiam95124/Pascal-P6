@@ -1,4 +1,4 @@
-(*$c+,t+,d-,l-*)
+(*$c+,t-,d-,l-*)
 {*******************************************************************************
 *                                                                              *
 *                     Portable Pascal assembler/interpreter                    *
@@ -266,7 +266,7 @@ type                                                        (*describing:*)
                                                            (*****************)
      levrange = 0..maxlevel; addrrange = -maxaddr..maxaddr; stkoff = -maxaddr..0;
      structform = (scalar,subrange,pointer,power,arrays,records,files,
-                   tagfld,variant,except);
+                   tagfld,variant,exceptf);
      declkind = (standard,declared);
      stp = ^ structure;
      ctp = ^ identifier;
@@ -289,7 +289,7 @@ type                                                        (*describing:*)
                      tagfld:   (tagfieldp: ctp; fstvar: stp);
                      variant:  (nxtvar,subvar,caslst: stp; varfld: ctp; 
                                 varval: valu);
-                     except:   ()
+                     exceptf:  ()
                    end;
 
                                                             (*names*)
@@ -1112,7 +1112,8 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !  
-  errorv(FunctionNotImplemented)
+  writeln; writeln('*** assigntext function not implemented in ISO 7185');
+  goto 99
   ! ISO7185 end }
 
   { Pascaline start !
@@ -1132,7 +1133,8 @@ procedure closetext(var f: text);
 
 begin
   { ISO7185 start !
-  errorv(263) 
+  writeln; writeln('*** closetext function not implemented in ISO 7185');
+  goto 99
   ! ISO7185 end }
   
   { Pascaline start !
@@ -1156,7 +1158,8 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start !
-  errorv(FunctionNotImplemented)
+  writeln; writeln('*** existsfile function not implemented in ISO 7185');
+  goto 99;
   existsfile := true
   ! ISO7185 end }
   
@@ -2145,7 +2148,7 @@ end;
           files:    alignquot := fileal;
           arrays:   alignquot := alignquot(aeltype);
           records:  alignquot := recal;
-          except:   alignquot := exceptal;
+          exceptf:  alignquot := exceptal;
           variant,tagfld: error(501)
         end
   end (*alignquot*);
@@ -2203,7 +2206,7 @@ end;
               files:    markstp(filtype);
               tagfld:   markstp(fstvar);
               variant:  begin markstp(nxtvar); markstp(subvar) end;
-              except:   ;
+              exceptf:  ;
               end (*case*)
             end (*with*)
       end (*markstp*);
@@ -2286,7 +2289,7 @@ end;
                           writeln(' ',varval.ival);
                           followstp(nxtvar); followstp(subvar)
                         end;
-              except:  begin writeln('except':intdig) end
+              exceptf:  begin writeln('except':intdig) end
               end (*case*)
             end (*if marked*)
     end (*followstp*);
@@ -2518,7 +2521,7 @@ end;
            subrange: ss := mestn(rangetype);
            pointer,
            files,
-           except:   ss := 5;
+           exceptf:  ss := 5;
            power:    ss := 6;
            records,arrays: ss := 7;
            tagfld,variant: error(501)
@@ -2664,7 +2667,7 @@ end;
                    else gentypindicator(rangetype);
          pointer,
          files,
-         except:   write(prr,'a');
+         exceptf:  write(prr,'a');
          power:    write(prr,'s');
          records,arrays: write(prr,'m');
          tagfld,variant: error(503)
@@ -2820,7 +2823,7 @@ end;
       files:    f := true;
       tagfld:   ;
       variant:  ;
-      except:   ;
+      exceptf:  ;
     end;
     filecomponent := f
   end;
@@ -3599,7 +3602,7 @@ end;
 
     { write shorthand type }
     procedure wrttyp(var f: text; tp: stp);
-    const maxtrk = 2000;
+    const maxtrk = 4000;
     var cp: ctp; typtrk: array [1..maxtrk] of stp; i, cti: integer; 
         err: boolean;
     
@@ -3705,7 +3708,7 @@ end;
                    wrtchr(')') end; 
         files: begin wrtchr('f'); wrttypsub(filtype) end;
         variant: wrtchr('?');
-        except: wrtchr('e')
+        exceptf: wrtchr('e')
       end else wrtchr('?')
     end;
     
@@ -5369,7 +5372,7 @@ end;
         begin chkstd;
           variable(fsys+[rparent], false); loadaddress;
           if gattr.typtr <> nil then begin
-            if gattr.typtr^.form <> except then error(226);
+            if gattr.typtr^.form <> exceptf then error(226);
           end;
           gen1(30(*csp*),85(*thw*));
         end;
@@ -6571,7 +6574,7 @@ end;
                   else begin error(155); typtr := nil end
                 end;                
               if lcp^.idtype <> nil then 
-                if lcp^.idtype^.form <> except then error(226);
+                if lcp^.idtype^.form <> exceptf then error(226);
               insymbol;
               gen0t(76(*dup*),nilptr);{ make copy of original vector }
               gattr := lattr; loadaddress; { load compare vector }
@@ -6907,7 +6910,7 @@ end;
     end
   end; 
     
-  procedure module(fsys:setofsys); forward;
+  procedure modulep(fsys:setofsys); forward;
     
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; chs: char; eols: boolean;
@@ -6930,7 +6933,7 @@ end;
             ch := ' '; eol := true; prcode := false; list := false;
             insymbol; modnams := display[top].modnam; 
             display[top].modnam := nil;
-            module(blockbegsys+statbegsys-[casesy]);
+            modulep(blockbegsys+statbegsys-[casesy]);
             thismod := display[top].modnam; display[top].modnam := modnams; 
             cancelfwd(display[top].fname); closeinput
           end;
@@ -6958,7 +6961,7 @@ end;
     if sy = semicolon then insymbol else error(14)
   end;
     
-  procedure module{(fsys:setofsys)};
+  procedure modulep{(fsys:setofsys)};
     var extfp:extfilep; segsize: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname); 
@@ -7069,7 +7072,7 @@ end;
     if errinx <> 0 then
       begin list := false; endofline end;
     putstrs(nammod) { release module name }
-  end (*module*) ;
+  end (*modulep*) ;
 
   procedure stdnames;
   begin
@@ -7142,9 +7145,9 @@ end;
     with textptr^ do
       begin filtype := charptr; size := filesize+charsize; form := files;
             packing := false end;
-    new(exceptptr,except); pshstc(exceptptr);                  (*exception*)
+    new(exceptptr,exceptf); pshstc(exceptptr);                 (*exception*)
     with exceptptr^ do
-      begin size := exceptsize; form := except; packing := false end;
+      begin size := exceptsize; form := exceptf; packing := false end;
     
   end (*enterstdtypes*) ;
 
@@ -7912,7 +7915,7 @@ begin
 
   nvalid := false; { set no lookahead }
   insymbol;
-  module(blockbegsys+statbegsys-[casesy]);
+  modulep(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }
   putinp(incstk); putinp(inclst);
   outline;
