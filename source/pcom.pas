@@ -1111,14 +1111,14 @@ var s: string(fillen);
     i, l: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !  
+  { ISO7185 start -  
   writeln; writeln('*** assigntext function not implemented in ISO 7185');
   goto 99
-  ! ISO7185 end }
+  - ISO7185 end }
 
-  { Pascaline start !
+  { Pascaline start -
   assign(f, fn);
-  ! Pascaline end }
+  - Pascaline end }
 
   {$gnu-pascal} 
   l := fillen;
@@ -1132,14 +1132,14 @@ end;
 procedure closetext(var f: text);
 
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   writeln; writeln('*** closetext function not implemented in ISO 7185');
   goto 99
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   close(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   close(f)
@@ -1157,15 +1157,15 @@ var s: string(fillen);
     i, l, r, fd: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   writeln; writeln('*** existsfile function not implemented in ISO 7185');
   goto 99;
   existsfile := true
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   existsfile := exists(fn);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   l := fillen;

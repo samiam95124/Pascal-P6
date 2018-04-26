@@ -920,13 +920,13 @@ var s: string(fillen);
     i, l: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !  
+  { ISO7185 start -  
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
 
-  { Pascaline start !
+  { Pascaline start -
   assign(f, fn);
-  ! Pascaline end }
+  - Pascaline end }
 
   {$gnu-pascal} 
   l := fillen;
@@ -943,13 +943,13 @@ var s: string(fillen);
     i, l: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start ! 
+  { ISO7185 start - 
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   assign(f, fn);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   l := fillen;
@@ -963,13 +963,13 @@ end;
 procedure closetext(var f: text);
 
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   close(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   close(f)
@@ -979,13 +979,13 @@ end;
 procedure closebin(var f: bytfil);
 
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
+  - ISO7185 end }
 
-  { Pascaline start !
+  { Pascaline start -
   close(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   close(f)
@@ -994,14 +994,14 @@ end;
 
 function lengthbin(var f: bytfil): integer;
 begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
+  { ISO7185 start -
+  errorv(FunctionNotImplemented);
   lengthbin := 1
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   lengthbin := length(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   if empty(f) then
@@ -1013,14 +1013,14 @@ end;
 
 function locationbin(var f: bytfil): integer;
 begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
+  { ISO7185 start -
+  errorv(FunctionNotImplemented); 
   locationbin := 1
-  ! ISO7185 end } 
+  - ISO7185 end } 
 
-  { Pascaline start !
+  { Pascaline start -
   location := location(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal} 
   locationbin := position(f);
@@ -1029,13 +1029,13 @@ end;
 
 procedure positionbin(var f: bytfil; p: integer);
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   position(f, p);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   seek(f, p-1);
@@ -1044,13 +1044,13 @@ end;
 
 procedure updatebin(var f: bytfil);
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
 
-  { Pascaline start !
+  { Pascaline start -
   update(f);
-  ! Pascaline end }
+  - Pascaline end }
     
   {$gnu-pascal}
   append(f);
@@ -1060,13 +1060,13 @@ end;
 
 procedure appendtext(var f: text);
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   append(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   append(f);
@@ -1075,13 +1075,13 @@ end;
 
 procedure appendbin(var f: bytfil);
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
+  - ISO7185 end }
 
-  { Pascaline start !
+  { Pascaline start -
   append(f);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   append(f);
@@ -1099,14 +1099,14 @@ var s: string(fillen);
     i, l, r, fd: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
+  { ISO7185 start -
+  errorv(FunctionNotImplemented);
   existsfile := true
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   existsfile := exists(fn);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   l := fillen;
@@ -1128,13 +1128,13 @@ var s: string(fillen);
     i, l, r: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   delete(fn);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   l := fillen;
@@ -1155,13 +1155,13 @@ var ss,sd: string(fillen);
     i, l, r: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   change(fnd, fns);
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   l := fillen;
@@ -1186,16 +1186,16 @@ begin
   cb[i] := c; i := i+1
 end;
 begin
-  { ISO7185 start !
+  { ISO7185 start -
   errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+  - ISO7185 end }
   
-  { Pascaline start !
+  { Pascaline start -
   for i := 1 to maxcmd do cb[i] := ' '; i := 1;
   i := 1; 
   while not eoln(command) do begin read(command, c); putcmd(c) end;
   l := i-1;
-  ! Pascaline end }
+  - Pascaline end }
   
   {$gnu-pascal}
   for i := 1 to maxcmd do cb[i] := ' '; i := 1;
