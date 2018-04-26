@@ -1504,7 +1504,9 @@ end;
       { This diagnostic is here because error buffers error numbers til the end
         of line, and sometimes you need to know exactly where they occurred. }
 
+      {
       writeln; writeln('error: ', ferrnr:1);
+      }
     
       errtbl[ferrnr] := true; { track this error }
       if errinx >= 9 then
@@ -6865,15 +6867,15 @@ end;
   end (*body*) ;
 
   procedure openinput(var ff: boolean);
-  var fp: filptr; i, x: integer;
-  begin ff := true;
+  var fp: filptr; i, x: integer; es: packed array [1..4] of char;
+  begin ff := true; es := extsrc;
     { have not previously parsed this module }
     new(fp); 
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false;
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
       if i > fillen-4-1 then error(265);
-      for x := 1 to 4 do begin i := i+1; fn[i] := extsrc[x] end;
+      for x := 1 to 4 do begin i := i+1; fn[i] := es[x] end;
       if not existsfile(fn) then begin
         error(264);
         incstk := incstk^.next;
