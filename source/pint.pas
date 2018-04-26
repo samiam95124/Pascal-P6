@@ -1178,7 +1178,7 @@ begin
 end;
 
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum);
-var i: cmdinx;
+var i, j: cmdinx;
     x, p: integer;
 procedure putcmd(c: char);
 begin
@@ -1187,18 +1187,19 @@ begin
 end;
 begin
   { ISO7185 start -
-  errorv(FunctionNotImplemented)
+  for j := 1 to maxcmd do cb[j] := ' '; j := 1;
+  l := 0
   - ISO7185 end }
   
   { Pascaline start -
-  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
+  for j := 1 to maxcmd do cb[j] := ' '; j := 1;
   i := 1; 
   while not eoln(command) do begin read(command, c); putcmd(c) end;
   l := i-1;
   - Pascaline end }
   
   {$gnu-pascal}
-  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
+  for j := 1 to maxcmd do cb[j] := ' '; j := 1;
   for p := 1 to paramcount do begin
     for x := 1 to length(paramstr(p)) do putcmd(paramstr(p)[x]); 
     if p < paramcount then putcmd(' ')
