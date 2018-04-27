@@ -7283,9 +7283,9 @@ end;
     entstdintcst(55, crdptr, maxint);                          (*maxcrd*)
     entstdintcst(57, crdptr, maxint);                          (*maxlcrd*)
     entstdintcst(68, charptr, ordmaxchar);                     (*maxlcrd*)
-    entstdrlcst(60, realptr, 1.7976931348623157e308);          (*maxreal*)
-    entstdrlcst(61, realptr, 1.7976931348623157e308);          (*maxsreal*)
-    entstdrlcst(62, realptr, 1.7976931348623157e308);          (*maxlreal*)
+    entstdrlcst(60, realptr, 1.797693134862314e308);           (*maxreal*)
+    entstdrlcst(61, realptr, 1.797693134862314e308);           (*maxsreal*)
+    entstdrlcst(62, realptr, 1.797693134862314e308);           (*maxlreal*)
     
     entstdprocfunc(proc, 5,  1,  nil);     { get }
     entstdprocfunc(proc, 6,  2,  nil);     { put }

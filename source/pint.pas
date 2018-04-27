@@ -385,7 +385,7 @@ const
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       ujplen      = 5;    { length of ujp instruction (used for case jumps) }
-      fillen      = 2000; { maximum length of filenames }
+      fillen      = 4000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
       brkins      = 19;   { breakpoint instruction no. }
       mrkins      = 174;  { source line marker instruction executed }
