@@ -2796,7 +2796,7 @@ end;
         else getbounds(fsp^.inxtype,fmin,fmax);
         if comptypes(fsp^.aeltype,charptr) and (fmin = 1) then stringt := true
       end
-  end (*stringt*) ;
+  end (*stringt*);
   
   { check structure is, or contains, a file }
   function filecomponent(fsp: stp): boolean;
@@ -4761,7 +4761,7 @@ end;
                     end else begin
                       expression(fsys + [comma,rparent], false);
                       if gattr.typtr <> nil then
-                        if gattr.typtr <> intptr then error(116);
+                        if basetype(gattr.typtr) <> intptr then error(116);
                       load; fld := true 
                     end
                   end;
@@ -4901,7 +4901,7 @@ end;
                       begin chkstd; ledz := true; insymbol end;
                     expression(fsys + [comma,colon,rparent], false);
                     if gattr.typtr <> nil then
-                      if gattr.typtr <> intptr then error(116);
+                      if basetype(gattr.typtr) <> intptr then error(116);
                     load; 
                   end;
                   default := false
@@ -4911,7 +4911,7 @@ end;
                 begin insymbol; 
                   expression(fsys + [comma,rparent], false);
                   if gattr.typtr <> nil then
-                    if gattr.typtr <> intptr then error(116);
+                    if basetype(gattr.typtr) <> intptr then error(116);
                   if lsp <> realptr then error(124);
                   load; default1 := false
                 end else default1 := true;
