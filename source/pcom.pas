@@ -1111,7 +1111,8 @@ var s: string(fillen);
     i, l: integer;
 {$classic-pascal-level-0}
 begin
-  { ISO7185 start -  
+  { ISO7185 start - 
+  fn := fn; reset(f); 
   writeln; writeln('*** assigntext function not implemented in ISO 7185');
   goto 99
   - ISO7185 end }
@@ -1133,6 +1134,7 @@ procedure closetext(var f: text);
 
 begin
   { ISO7185 start -
+  reset(f);
   writeln; writeln('*** closetext function not implemented in ISO 7185');
   goto 99
   - ISO7185 end }
@@ -1158,6 +1160,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start -
+  fn := fn;
   writeln; writeln('*** existsfile function not implemented in ISO 7185');
   goto 99;
   existsfile := true
@@ -1530,7 +1533,7 @@ end;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
     label 1, 2;
-    var i,j,k,v,r,p: integer;
+    var i,j,k,v,r: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
         iscmte: boolean;
@@ -3000,8 +3003,7 @@ end;
   end (*constterm*) ;
 
   procedure constexpr{(fsys: setofsys; var fsp: stp; var fvalu: valu)};
-  var sign: (none,pos,neg); lvp,svp: csp; i: 2..strglgth; lv: valu;
-      lop: operatort; lsp: stp;
+  var sign: (none,pos,neg); lvp,svp: csp; lv: valu; lop: operatort; lsp: stp;
   begin sign := none; svp := nil;
     if (sy = addop) and (op in [plus,minus]) then
               begin if op = plus then sign := pos else sign := neg;
@@ -3057,11 +3059,11 @@ end;
       if lvp <> nil then fvalu.valp := lvp; { place result }
       if lsp = realptr then fsp := realptr { mixed types = real }
     end
-  end (*constant*) ;
+  end (*constexpr*) ;
     
   procedure body(fsys: setofsys; fprocp: ctp); forward;
 
-  procedure declare(fsys: setofsys; fsy: symbol; fprocp: ctp);
+  procedure declare(fsys: setofsys);
     var lsy: symbol;
 
     { resolve all pointer references in the forward list }
@@ -3095,7 +3097,7 @@ end;
           test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
-        var lsp,lsp1: stp; lcp,lcp1,lcp2: ctp; ttop: disprange;
+        var lsp,lsp1: stp; lcp,lcp1: ctp; ttop: disprange;
             lcnt: integer; lvalu: valu;
       begin fsize := 1;
         if not (sy in simptypebegsys) then
@@ -3605,8 +3607,7 @@ end;
     { write shorthand type }
     procedure wrttyp(var f: text; tp: stp);
     const maxtrk = 4000;
-    var cp: ctp; typtrk: array [1..maxtrk] of stp; i, cti: integer; 
-        err: boolean;
+    var typtrk: array [1..maxtrk] of stp; cti: integer; err: boolean;
     
     procedure wrttypsub(tp: stp);
     var x, y, fi: integer;
@@ -3661,7 +3662,6 @@ end;
 
     { enums are backwards, so print thus }
     procedure wrtenm(ep: ctp; i: integer);
-    var x: integer;
     begin
       if ep <> nil then begin
         wrtenm(ep^.next, i+1); 
@@ -3786,7 +3786,6 @@ end;
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
           forw,virt,ovrl: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
-          i: integer;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -4177,7 +4176,7 @@ end;
           { output parameter symbols }
           lcp1 := lcp^.pflist;
           while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
-          declare(fsys,semicolon,lcp);
+          declare(fsys);
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;
@@ -4240,8 +4239,6 @@ end;
         fp: extfilep;
         test: boolean;
         printed: boolean;
-        lattr: attr;
-        fid: stp;
         lsize: addrrange;
         stalvl: integer; { statement nesting level }
 
@@ -4287,7 +4284,6 @@ end;
     end (*checkbnds*);
     
     procedure load;
-    var fsp: stp;
     begin
       with gattr do
         if typtr <> nil then
@@ -5288,7 +5284,7 @@ end;
         end;
         
         procedure deleteprocedure;
-        var len: addrrange; lattr: attr;
+        var len: addrrange;
         begin chkstd;
           expression(fsys + [rparent], false); loadaddress;  
           if not stringt(gattr.typtr) then error(208);
@@ -7033,7 +7029,7 @@ end;
       modules }
     if sy = joinssy then usesjoins; { process joins }
     if sy = usessy then usesjoins; { process uses }
-    declare(fsys,period,nil);
+    declare(fsys);
     if not inpriv then body(fsys,nil);
     if curmod = mtmodule then begin
       if sy = semicolon then begin
@@ -7197,7 +7193,6 @@ end;
   end;
   
   procedure entstdhdr(sn: stdrng);
-  var lvp: csp;
   begin
     new(cp,vars); ininam(cp); 
     with cp^ do
@@ -7211,7 +7206,6 @@ end;
   end;
   
   procedure entstdexp(en: expstr);
-  var lvp: csp;
   begin
     new(cp,vars); ininam(cp); 
     with cp^ do
