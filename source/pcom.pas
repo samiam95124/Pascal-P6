@@ -1700,7 +1700,7 @@ end;
     else
     case chartp[ch] of
       letter:
-        begin k := 0; ferr := true;
+        begin k := 0; ferr := true; for i := 1 to maxids do id[i] := ' ';
           repeat
             if k < maxids then
              begin k := k + 1; id[k] := ch end
@@ -7160,7 +7160,9 @@ end;
     with cp^ do
       begin strassvr(name, na[sn]); idtype := idt;
         pflist := nil; next := nil; key := kn;
-        klass := idc; pfdeckind := standard
+        klass := idc; pfdeckind := standard; pfaddr := 0; pext := false;
+        pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := nil;
+        pfvid := nil
       end; enterid(cp)
   end;
   
@@ -7267,7 +7269,9 @@ end;
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin strassvr(name, na[i]); idtype := realptr; pflist := cp;
             forwdecl := false; externl := true; pflev := 0; pfname := i - 12;
-            klass := func; pfdeckind := declared; pfkind := actual
+            klass := func; pfdeckind := declared; pfkind := actual;
+            pfaddr := 0; pext := false; pmod := nil; pfattr := fpanone; 
+            grpnxt := nil; grppar := nil; pfvid := nil            
           end;
         enterid(cp1)
       end;
@@ -7910,6 +7914,8 @@ begin
   writeln(prr);
 
   nvalid := false; { set no lookahead }
+  { init for lookahead }
+  sy := ident; op := mul; lgth := 0; kk := 1; ch := ' '; eol := false;
   insymbol;
   modulep(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }
