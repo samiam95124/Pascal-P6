@@ -3837,7 +3837,7 @@ end;
                         with lcp^ do
                           begin strassvf(name, id); idtype := nil; next := lcp1;
                             pflev := level (*beware of parameter procedures*);
-                            klass:=proc;pfdeckind:=declared;
+                            klass:=proc; pfdeckind:=declared; pflist := nil;
                             pfkind:=formal; pfaddr := lc; pext := false; 
                             pmod := nil; keep := true; pfattr := fpanone;
                             grpnxt := nil; grppar := nil; pfvid := nil
@@ -3866,7 +3866,7 @@ end;
                             with lcp^ do
                               begin strassvf(name, id); idtype := nil; next := lcp1;
                                 pflev := level (*beware param funcs*);
-                                klass:=func;pfdeckind:=declared;
+                                klass:=func;pfdeckind:=declared; pflist := nil;
                                 pfkind:=formal; pfaddr:=lc; pext := false; 
                                 pmod := nil; keep := true; pfattr := fpanone;
                                 grpnxt := nil; grppar := nil; pfvid := nil
@@ -4077,7 +4077,8 @@ end;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   if fsy = procsy then klass := proc
-                  else begin klass := func; asgn := false end; 
+                  else begin klass := func; 
+                  pflist := nil; asgn := false end; 
                   pext := incstk <> nil; pmod := incstk; refer := false; 
                   pfattr := fpat; grpnxt := nil; grppar := nil;
                   if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
@@ -7162,7 +7163,7 @@ end;
         pflist := nil; next := nil; key := kn;
         klass := idc; pfdeckind := standard; pfaddr := 0; pext := false;
         pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := nil;
-        pfvid := nil
+        pfvid := nil; pflist := nil
       end; enterid(cp)
   end;
   
@@ -7269,9 +7270,9 @@ end;
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin strassvr(name, na[i]); idtype := realptr; pflist := cp;
             forwdecl := false; externl := true; pflev := 0; pfname := i - 12;
-            klass := func; pfdeckind := declared; pfkind := actual;
-            pfaddr := 0; pext := false; pmod := nil; pfattr := fpanone; 
-            grpnxt := nil; grppar := nil; pfvid := nil            
+            klass := func; pflist := nil; pfdeckind := declared; 
+            pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
+            pfattr := fpanone; grpnxt := nil; grppar := nil; pfvid := nil            
           end;
         enterid(cp1)
       end;
@@ -7426,13 +7427,15 @@ end;
     with uprcptr^ do
       begin strassvr(name, '         '); idtype := nil; forwdecl := false;
         next := nil; externl := false; pflev := 0; genlabel(pfname);
-        klass := proc; pflist := nil; pfdeckind := declared; pfkind := actual
+        klass := proc; pflist := nil; pfdeckind := declared; pfkind := actual;
+        pmod := nil; grpnxt := nil; grppar := nil; pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin strassvr(name, '         '); idtype := nil; next := nil;
         forwdecl := false; externl := false; pflev := 0; genlabel(pfname);
-        klass := func; pflist := nil; pfdeckind := declared; pfkind := actual
+        klass := func; pflist := nil; pfdeckind := declared; pfkind := actual;
+        pmod := nil; grpnxt := nil; grppar := nil; pfvid := nil
       end
   end (*enterundecl*) ;
 
