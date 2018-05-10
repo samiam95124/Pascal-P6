@@ -18,6 +18,8 @@ rem
 rem --pmach          Generate mach code and run the result through pmach.
 rem --cmach	         Generate mach code and run the result through cmach.
 rem --cmpfile <file> Use filename following option for compare file
+rem --noerrmsg       Do not output failure message on compile, the .err file is
+rem                  sufficient. 
 rem 
 setlocal EnableDelayedExpansion
 set pmach=0
@@ -27,6 +29,7 @@ set cmachoption=
 set progfile=
 set cmpnext=0
 set cmpfile=
+set noerrmsg=0
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -42,6 +45,10 @@ for %%x in (%*) do (
    	) else if "%%~x"=="--cmpfile" (
    	
    		set cmpnext=1
+   		
+   	) else if "%%~x"=="--noerrmsg" (
+   	
+   		set noerrmsg=1
    		
    	) else if "%%~x"=="--help" (
    	
@@ -87,7 +94,11 @@ for %%x in (%*) do (
     		call compile !pmachoption! !cmachoption! %%~x
     		if errorlevel 1 (
     		
-    		    echo *** Compile file %%~x failed
+    		    if "!noerrmsg!"=="0" (
+    		    
+    		    	echo *** Compile file %%~x failed
+    				
+    			)
     			goto stop
     		
     		) else (

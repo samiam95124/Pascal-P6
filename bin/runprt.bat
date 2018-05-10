@@ -15,7 +15,7 @@ echo Running tests
 set List=standard_tests\iso7185prt*.pas
 for /f "delims=" %%a in ('dir /b "%List%"') do (
 
-    call testprog standard_tests\%%~na
+    call testprog --noerrmsg standard_tests\%%~na
 
 )
 
