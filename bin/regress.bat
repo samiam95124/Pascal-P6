@@ -147,11 +147,11 @@ if "%full%"=="1" (
 
     echo Running self compile...
     rem
-    rem Run pcom self compile (note this runs on P5 only)
+    rem Run pcom self compile (note this runs on P5/P6 only)
     rem
     call cpcoms %option%
     rem
-    rem Run pint self compile (note this runs on P5 only)
+    rem Run pint self compile (note this runs on P5/P6 only)
     rem
     call cpints %option%
     

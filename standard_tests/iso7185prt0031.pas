@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 31: Reverse order between const and type

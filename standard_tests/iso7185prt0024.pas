@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 24: Reverse order between label and const

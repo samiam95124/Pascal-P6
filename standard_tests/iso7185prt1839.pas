@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 1839: Write with invalid fields

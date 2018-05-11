@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 1850: Unreferenced variable
