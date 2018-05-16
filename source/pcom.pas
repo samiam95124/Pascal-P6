@@ -4549,6 +4549,7 @@ end;
                             gen1(36(*ixa*),lsize)
                           end
                       end
+                  else gattr.typtr := nil
                 until sy <> comma;
                 if sy = rbrack then insymbol else error(12)
               end (*if sy = lbrack*)
@@ -6059,6 +6060,7 @@ end;
                if forcnt > 0 then error(195);
                if part = ptview then error(200)
             end;
+            tagasc := false;
             if gattr.kind = varbl then tagasc := gattr.tagfield and debug;
             lattr2 := gattr; { save access before load }
             if gattr.typtr <> nil then
@@ -7918,7 +7920,7 @@ begin
 
   nvalid := false; { set no lookahead }
   { init for lookahead }
-  sy := ident; op := mul; lgth := 0; kk := 1; ch := ' '; eol := false;
+  sy := ident; op := mul; lgth := 0; kk := 1; ch := ' ';
   insymbol;
   modulep(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }
