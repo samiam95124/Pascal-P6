@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 40: Reverse order between type and var

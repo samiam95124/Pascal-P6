@@ -348,36 +348,37 @@ const
       InvalidDivisorToMod                = 84;
       PackElementsOutOfBounds            = 85;
       UnpackElementsOutOfBounds          = 86;
-      exceptiontop                       = 86;
+      CannotResetClosedTempFile          = 87;
+      exceptiontop                       = 87;
       
       { Exceptions that can't be caught.
         Note that these don't have associated exception variables. }
       
-      UndefinedLocationAccess            = 87;
-      FunctionNotImplemented             = 88;
-      InvalidInISO7185Mode               = 89;
-      HeapFormatInvalid                  = 90;
-      DisposeOfUninitalizedPointer       = 91;
-      DisposeOfNilPointer                = 92;
-      BadPointerValue                    = 93;
-      BlockAlreadyFreed                  = 94;
-      InvalidStandardProcedureOrFunction = 95;
-      InvalidInstruction                 = 96;
-      NewDisposeTagsMismatch             = 97;
-      PCOutOfRange                       = 98;
-      StoreOverflow                      = 99;
-      StackBalance                       = 100;
-      SetInclusion                       = 101;
-      UninitializedPointer               = 102;
-      DereferenceOfNilPointer            = 103;
-      PointerUsedAfterDispose            = 104;
-      VariantNotActive                   = 105;
-      InvalidCase                        = 106;
-      SystemError                        = 107;
-      ChangeToAllocatedTagfield          = 108;
-      UnhandledException                 = 109;
-      ProgramCodeAssertion               = 110;
-      privexceptiontop                   = 110;
+      UndefinedLocationAccess            = 88;
+      FunctionNotImplemented             = 89;
+      InvalidInISO7185Mode               = 90;
+      HeapFormatInvalid                  = 91;
+      DisposeOfUninitalizedPointer       = 92;
+      DisposeOfNilPointer                = 93;
+      BadPointerValue                    = 94;
+      BlockAlreadyFreed                  = 95;
+      InvalidStandardProcedureOrFunction = 96;
+      InvalidInstruction                 = 97;
+      NewDisposeTagsMismatch             = 98;
+      PCOutOfRange                       = 99;
+      StoreOverflow                      = 100;
+      StackBalance                       = 101;
+      SetInclusion                       = 102;
+      UninitializedPointer               = 103;
+      DereferenceOfNilPointer            = 104;
+      PointerUsedAfterDispose            = 105;
+      VariantNotActive                   = 106;
+      InvalidCase                        = 107;
+      SystemError                        = 108;
+      ChangeToAllocatedTagfield          = 109;
+      UnhandledException                 = 110;
+      ProgramCodeAssertion               = 111;
+      privexceptiontop                   = 111;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -563,6 +564,8 @@ var   pc          : address;   (*program address register*)
       filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
+      { file name has been assigned }
+      filanamtab  : array [1..maxfil] of boolean;
       
       strcnt      : integer; { string allocation count }
       blkstk      : pblock; { stack of symbol blocks }
@@ -769,7 +772,8 @@ begin writeln; write('*** Runtime error');
     BooleanOperatorOfNegative:          writeln('Boolean operator of negative');        
     InvalidDivisorToMod:                writeln('Invalid divisor to mod');              
     PackElementsOutOfBounds:            writeln('Pack elements out of bounds');          
-    UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');        
+    UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');
+    CannotResetClosedTempFile:          writeln('Cannot reset closed temp file');
                       
     { Exceptions that can't be intercepted }
     UndefinedLocationAccess:            writeln('Undefined location access');
@@ -3801,6 +3805,9 @@ begin (*callsp*)
                                   errore(CannotResetOrRewriteStandardFile)
                               end
                            else begin
+                                if (filstate[fn] = fclosed) and 
+                                   not filanamtab[fn] then
+                                  errore(CannotResetClosedTempFile);
                                 filstate[fn] := fread;
                                 reset(filtable[fn]);
                                 filbuff[fn] := false
@@ -3940,6 +3947,9 @@ begin (*callsp*)
                               end
                       end;
            33(*rsb*): begin popadr(ad); valfil(ad); fn := store[ad];
+                           if (filstate[fn] = fclosed) and 
+                              not filanamtab[fn] then
+                             errore(CannotResetClosedTempFile);
                            filstate[fn] := fread;
                            reset(bfiltable[fn]);
                            filbuff[fn] := false
@@ -3991,12 +4001,14 @@ begin (*callsp*)
            46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assigntext(filtable[fn], fl1) 
+                         assigntext(filtable[fn], fl1);
+                         filanamtab[fn] := true 
                        end;
            56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1); 
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
-                         assignbin(bfiltable[fn], fl1) 
+                         assignbin(bfiltable[fn], fl1); 
+                         filanamtab[fn] := true
                        end;
            47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad]; 
                          closetext(filtable[fn]); filstate[fn] := fclosed
@@ -6937,7 +6949,8 @@ begin (* main *)
   end;
 
   { initalize file state }
-  for i := 1 to maxfil do filstate[i] := fclosed;
+  for i := 1 to maxfil do 
+    begin filstate[i] := fclosed; filanamtab[i] := false end;
     
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;

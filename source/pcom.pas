@@ -7400,7 +7400,8 @@ end;
     entstdexp('BooleanOperatorOfNegative       ');  
     entstdexp('InvalidDivisorToMod             ');  
     entstdexp('PackElementsOutOfBounds         ');  
-    entstdexp('UnpackElementsOutOfBounds       ');  
+    entstdexp('UnpackElementsOutOfBounds       '); 
+    entstdexp('CannotResetClosedTempFile       '); 
   end (*entstdnames*) ;
 
   procedure enterundecl;

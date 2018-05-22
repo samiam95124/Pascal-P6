@@ -1,3 +1,4 @@
+{$s+}
 {
 
 PRT test 54: Reverse order between var and procedure
