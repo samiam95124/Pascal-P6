@@ -1,9 +1,9 @@
-P6 Pascal interpreter vs. 1.3.x
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
 
 
-*** Runtime error [17]: Arithmetic overflow      
+*** Runtime error [17]: Integer value overflow
 
 program complete

@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -10,21 +9,15 @@ P6 Pascal compiler vs. 1.3.x
      7      -32 program iso7185prt0109; 
      8      -32  
      9      -32 begin 
-    10        3  
-    11        3    1=1 then 
-    11   ****      ^167^5,6
-    12        5  
-    13        5 end. 
-label           1 unreferenced
-                     
-    13   ****      ^168
+    10        8  
+    11        8    1=1 then 
+    11   ****       ^6
+    12        8  
+    13        8 end. 
 
-Errors in program: 4
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  5  ':' expected
   6  Illegal symbol
-167  Undeclared label
-168  Undefined label
 

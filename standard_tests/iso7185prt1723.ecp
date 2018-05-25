@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,10 +14,10 @@ P6 Pascal compiler vs. 1.3.x
     12      -32 var a: ^integer; 
     13      -32  
     14      -32 begin 
-    15        3  
-    16        3    a := nil; 
-    17        8    dispose(a) 
-    18       11  
-    19       11 end. 
+    15        8  
+    16        8    a := nil; 
+    17       11    dispose(a) 
+    18       14  
+    19       14 end. 
 
 Errors in program: 0

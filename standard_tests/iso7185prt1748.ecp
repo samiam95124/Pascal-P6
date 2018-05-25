@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,15 +14,15 @@ P6 Pascal compiler vs. 1.3.x
     12      -32 function a: integer; 
     13      -32  
     14      -32 begin 
-    15        3  
-    16        3 end; 
-    17        6  
-    18        6 begin 
+    15        8  
+    16        8 end; 
+    17        9  
+    18        9 begin 
     18   ****       ^193
-    19        6  
-    20        6    write(a) 
-    21       14  
-    22       14 end. 
+    19       11  
+    20       11    write(a) 
+    21       17  
+    22       17 end. 
 
 Errors in program: 1
 

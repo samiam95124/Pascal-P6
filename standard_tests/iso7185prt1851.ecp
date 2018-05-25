@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -23,13 +22,13 @@ P6 Pascal compiler vs. 1.3.x
     20      -32     c: char; 
     21      -32  
     22      -32 begin 
-    23        3  
-    24        3    r.b := true; 
-    25        9    r.i := 1; 
-    26       15    r.b := false; 
-    27       19    writeln('before error'); 
-    28       27    c := r.c 
-    29       31  
-    30       31 end. 
+    23        8  
+    24        8    r.b := true; 
+    25       12    r.i := 1; 
+    26       18    r.b := false; 
+    27       22    writeln('before error'); 
+    28       30    c := r.c 
+    29       34  
+    30       34 end. 
 
 Errors in program: 0

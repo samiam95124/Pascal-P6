@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,14 +16,14 @@ P6 Pascal compiler vs. 1.3.x
     14      -32     b: real; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    { assign maximum value of integer } 
-    19        3    b := maxint; 
-    20        8    { now move it completely out of range in floating point only } 
-    21        8    b := b+10.0; 
-    22       12    { now the assignment is invalid } 
-    23       12    a := round(b) 
-    24       14  
-    25       14 end. 
+    17        8  
+    18        8    { assign maximum value of integer } 
+    19        8    b := maxint; 
+    20       11    { now move it completely out of range in floating point only } 
+    21       11    b := b+10.0; 
+    22       15    { now the assignment is invalid } 
+    23       15    a := round(b) 
+    24       17  
+    25       17 end. 
 
 Errors in program: 0

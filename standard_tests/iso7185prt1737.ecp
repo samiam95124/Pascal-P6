@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -18,10 +17,10 @@ P6 Pascal compiler vs. 1.3.x
     15      -32     b: char; 
     16      -32  
     17      -32 begin 
-    18        3  
-    19        3    a := -1; 
-    20        8    b := chr(a) 
-    21       10  
-    22       10 end. 
+    18        8  
+    19        8    a := -1; 
+    20       11    b := chr(a) 
+    21       13  
+    22       13 end. 
 
 Errors in program: 0

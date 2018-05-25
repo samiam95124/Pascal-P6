@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,12 +16,12 @@ P6 Pascal compiler vs. 1.3.x
     14      -32     b: integer; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    rewrite(a); 
-    19        7    writeln(a, '      five       '); 
-    20       14    reset(a); 
-    21       16    read(a, b) 
-    22       21  
-    23       21 end. 
+    17        8  
+    18        8    rewrite(a); 
+    19       10    writeln(a, '      five       '); 
+    20       17    reset(a); 
+    21       19    read(a, b) 
+    22       24  
+    23       24 end. 
 
 Errors in program: 0

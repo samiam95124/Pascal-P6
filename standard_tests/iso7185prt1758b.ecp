@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -22,10 +21,10 @@ P6 Pascal compiler vs. 1.3.x
     19      -32 var a: real; 
     20      -32  
     21      -32 begin 
-    22        3  
-    23        3    a := 1.0; 
-    24        7    write(a: 1: 0) 
-    25       13  
-    26       13 end. 
+    22        8  
+    23        8    a := 1.0; 
+    24       10    write(a: 1: 0) 
+    25       16  
+    26       16 end. 
 
 Errors in program: 0

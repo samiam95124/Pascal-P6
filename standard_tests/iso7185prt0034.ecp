@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -13,10 +12,10 @@ P6 Pascal compiler vs. 1.3.x
      9   ****       ^2
     10      -32  
     11      -32 begin 
-    12        3  
-    13        3    writeln(two) 
-    14       10  
-    15       10 end. 
+    12        8  
+    13        8    writeln(two) 
+    14       13  
+    15       13 end. 
 
 Errors in program: 1
 

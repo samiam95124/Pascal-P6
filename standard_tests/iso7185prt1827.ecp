@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -23,10 +22,10 @@ P6 Pascal compiler vs. 1.3.x
     19   ****                   ^190
     20      -32  
     21      -32 begin 
-    22        3  
-    23        3    rewrite(f) 
-    24        7  
-    25        7 end. 
+    22        8  
+    23        8    rewrite(f) 
+    24       10  
+    25       10 end. 
 
 Errors in program: 1
 

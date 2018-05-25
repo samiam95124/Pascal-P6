@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,10 +16,10 @@ P6 Pascal compiler vs. 1.3.x
     14      -32     i: integer; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    for i := 1 to 20 do a[i] := i; 
-    19       32    pack(a, 15, b) 
-    20       40  
-    21       40 end. 
+    17        8  
+    18        8    for i := 1 to 20 do a[i] := i; 
+    19       35    pack(a, 15, b) 
+    20       43  
+    21       43 end. 
 
 Errors in program: 0

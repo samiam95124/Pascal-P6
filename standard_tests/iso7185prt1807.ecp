@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -18,25 +17,25 @@ P6 Pascal compiler vs. 1.3.x
     15      -32 procedure a; 
     16      -32  
     17      -32 begin 
-    18        3  
-    19        3    read(f, i) 
-    20        9  
-    21        9 end; 
-    22       11  
-    23       11 begin 
-    24       11  
-    25       11    rewrite(f); 
-    26       15    write(f, 10); 
-    27       19    reset(f); 
-    28       21    for i := 1 to 10 do begin 
+    18        8  
+    19        8    read(f, i) 
+    20       12  
+    21       12 end; 
+    22       14  
+    23       14 begin 
+    24       16  
+    25       16    rewrite(f); 
+    26       18    write(f, 10); 
+    27       22    reset(f); 
+    28       24    for i := 1 to 10 do begin 
     28   ****          ^195
-    29       31  
-    30       31       write(i:1, ' ') 
-    31       39  
-    32       39    end; 
-    33       50    a 
-    34       50  
-    35       50 end. 
+    29       34  
+    30       34       write(i:1, ' ') 
+    31       42  
+    32       42    end; 
+    33       53    a 
+    34       53  
+    35       53 end. 
 
 Errors in program: 1
 

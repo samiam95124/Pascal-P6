@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -10,22 +9,18 @@ P6 Pascal compiler vs. 1.3.x
      7      -32 program iso7185prt0050(output); 
      8      -32  
      9      -32 funktion x: integer; begin end; 
-     9   ****          ^18                    ^6
-    10        3  
-    11        3 begin 
-    11   ****       ^21
-    12        3  
-    13        3    writeln(x) 
-    13   ****              ^104
-    14        6  
-    15        6 end. 
+     9   ****          ^18                    ^21
+    10        0  
+    11        0 begin 
+    12        0  
+    13        0    writeln(x) 
+    14        0  
+    15        0 end. 
 
-Errors in program: 4
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
  18  Error in declaration part
  21  '.' expected
-104  Identifier not declared
 

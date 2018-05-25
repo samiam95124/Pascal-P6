@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,18 +16,18 @@ P6 Pascal compiler vs. 1.3.x
     14      -32 var i: integer; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    for i := 1 to 10 do 
-    19       15       if i < 0 then goto 1; 
-    20       30  
-    21       30    for i := 1 to 10 do begin 
-    22       40  
-    23       40       1: writeln(i) 
-    23   ****         ^186
-    24       45  
-    25       45    end; 
-    26       57  
-    27       57 end. 
+    17        8  
+    18        8    for i := 1 to 10 do 
+    19       18       if i < 0 then goto 1; 
+    20       33  
+    21       33    for i := 1 to 10 do begin 
+    22       43  
+    23       43       1: writeln(i) 
+    23   ****                  ^186
+    24       48  
+    25       48    end; 
+    26       60  
+    27       60 end. 
 
 Errors in program: 1
 

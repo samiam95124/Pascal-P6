@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,13 +14,13 @@ P6 Pascal compiler vs. 1.3.x
     12      -32     b: integer; 
     13      -32  
     14      -32 begin 
-    15        3  
-    16        3    { note I do this in integer because 0.0 in float is posibly inacurate, ie.,  
-    17        3      not 0 } 
-    18        3    a := 1; 
-    19        7    b := 0; 
-    20        9    a := round(a/b); 
-    21       16  
-    22       16 end. 
+    15        8  
+    16        8    { note I do this in integer because 0.0 in float is posibly inacurate, ie.,  
+    17        8      not 0 } 
+    18        8    a := 1; 
+    19       10    b := 0; 
+    20       12    a := round(a/b); 
+    21       19  
+    22       19 end. 
 
 Errors in program: 0

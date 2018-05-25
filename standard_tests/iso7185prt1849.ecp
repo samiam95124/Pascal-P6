@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -30,17 +29,17 @@ P6 Pascal compiler vs. 1.3.x
     27      -32 procedure a(var b: boolean); 
     28      -36  
     29      -36 begin 
-    30        3  
-    31        3    b := true 
-    32        6  
-    33        6 end; 
-    34       10  
-    35       10 begin 
-    36       10  
-    37       10    a(r.r.d.b) 
+    30        8  
+    31        8    b := true 
+    32        9  
+    33        9 end; 
+    34       13  
+    35       13 begin 
+    36       15  
+    37       15    a(r.r.d.b) 
     37   ****               ^197
-    38       14  
-    39       14 end. 
+    38       17  
+    39       17 end. 
 
 Errors in program: 1
 

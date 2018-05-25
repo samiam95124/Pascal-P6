@@ -1,24 +1,27 @@
-P6 Pascal compiler vs. 1.3.x
+P6 Pascal compiler vs. 0.1.x
 
-
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 15: Non-numeric label 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0015; 
-     8      -32  
-     9      -32 label one; 
-     9   ****           ^15,6
-    10      -32  
-    11      -32 begin 
-    12        3 end. 
+     1      -32 {$s+} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 15: Non-numeric label 
+     5      -32  
+     6      -32 } 
+     7      -32  
+     8      -32 program iso7185prt0015; 
+     9      -32  
+    10      -32 label one; 
+    10   ****           ^397
+    11      -32  
+    12      -32 begin 
+    13        8 end. 
+label           0 unreferenced
+                     
+    13   ****      ^168
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
- 15  Integer expected
+168  Undefined label
+397  Feature not valid in ISO 7185 Pascal
 

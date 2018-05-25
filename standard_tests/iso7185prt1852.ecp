@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -16,9 +15,9 @@ P6 Pascal compiler vs. 1.3.x
     13      -32  
     14      -32  
     15      -32 begin 
-    16        3  
-    17        3    for i := 0 to 10 do writeln('i: ', i) 
-    18       25  
-    19       25 end. 
+    16        8  
+    17        8    for i := 0 to 10 do writeln('i: ', i) 
+    18       28  
+    19       28 end. 
 
 Errors in program: 0

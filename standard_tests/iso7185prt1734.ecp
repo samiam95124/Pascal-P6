@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,10 +14,10 @@ P6 Pascal compiler vs. 1.3.x
     12      -32     b: real; 
     13      -32  
     14      -32 begin 
-    15        3  
-    16        3    a := -1; 
-    17        8    b := sqrt(a) 
-    18       10  
-    19       10 end. 
+    15        8  
+    16        8    a := -1; 
+    17       11    b := sqrt(a) 
+    18       13  
+    19       13 end. 
 
 Errors in program: 0

@@ -1,9 +1,9 @@
-P6 Pascal interpreter vs. 1.3.x
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
 
 
-*** Runtime error [17]: Width cannot be < 1      
+*** Runtime error [18]: Invalid field specification
 
 program complete

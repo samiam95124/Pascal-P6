@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,10 +16,10 @@ P6 Pascal compiler vs. 1.3.x
     14      -32  
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    a := nil; 
-    19        8    b := a^ 
-    20       10  
-    21       10 end. 
+    17        8  
+    18        8    a := nil; 
+    19       11    b := a^ 
+    20       13  
+    21       13 end. 
 
 Errors in program: 0

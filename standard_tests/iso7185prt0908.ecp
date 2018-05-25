@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -10,11 +9,11 @@ P6 Pascal compiler vs. 1.3.x
      7      -32 program iso7185prt0908(output); 
      8      -32  
      9      -32 begin 
-    10        3  
-    11        3      
-    12        3    write(42 
-    13        5  
-    14        5 end. 
+    10        8  
+    11        8      
+    12        8    write(42 
+    13        8  
+    14        8 end. 
     14   ****     ^4
 
 Errors in program: 1

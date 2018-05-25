@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,15 +14,15 @@ P6 Pascal compiler vs. 1.3.x
     12      -32 var a: file of integer; 
     13      -32  
     14      -32 begin 
-    15        3  
-    16        3    rewrite(a); 
-    17        7    a^ := 1; 
-    18       13    put(a); 
-    19       16    reset(a); 
-    20       18    { This could fail on the write to the file buffer variable } 
-    21       18    a^ := 1; 
-    22       24    put(a) 
-    23       27  
-    24       27 end. 
+    15        8  
+    16        8    rewrite(a); 
+    17       10    a^ := 1; 
+    18       16    put(a); 
+    19       19    reset(a); 
+    20       21    { This could fail on the write to the file buffer variable } 
+    21       21    a^ := 1; 
+    22       27    put(a) 
+    23       30  
+    24       30 end. 
 
 Errors in program: 0

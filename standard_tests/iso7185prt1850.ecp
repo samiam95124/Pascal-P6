@@ -1,22 +1,22 @@
-P6 Pascal compiler vs. 1.3.x
+P6 Pascal compiler vs. 0.1.x
 
-
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1850: Unreferenced variable 
-     4      -32  
-     5      -32    Variable without reference in program. Note that this is technically not an 
-     6      -32    error. Its just a compiler quality test if it can detect this. 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1850; 
-    11      -32  
-    12      -32 var i: integer; 
-    13      -32  
-    14      -32 begin 
-    15        3  
-    16        3 end. 
+     1      -32 {$s+} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1850: Unreferenced variable 
+     5      -32  
+     6      -32    Variable without reference in program. Note that this is technically not an 
+     7      -32    error. Its just a compiler quality test if it can detect this. 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1850; 
+    12      -32  
+    13      -32 var i: integer; 
+    14      -32  
+    15      -32 begin 
+    16        8  
+    17        8 end. 
 i          unreferenced
 
 

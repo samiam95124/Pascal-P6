@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -10,19 +9,17 @@ P6 Pascal compiler vs. 1.3.x
      7      -32 program iso7185prt0508; 
      8      -32  
      9      -32 var a: array of integer; 
-     9   ****                 ^11,1,12
+     9   ****                 ^50
     10      -32  
     11      -32 begin 
-    12        3  
-    13        3    a[1] := 1 
-    14        8  
-    15        8 end. 
+    12        8  
+    13        8    a[1] := 1 
+    14       13  
+    15       13 end. 
 
-Errors in program: 3
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  1  Error in simple type
- 11  '[' expected
- 12  ']' expected
+ 50  Error in constant
 

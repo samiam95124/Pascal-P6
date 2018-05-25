@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -13,10 +12,10 @@ P6 Pascal compiler vs. 1.3.x
     10      -32     b: integer; 
     11      -32  
     12      -32 begin 
-    13        3  
-    14        3    a := b/ 
-    15        6  
-    16        6 end. 
+    13        8  
+    14        8    a := b/ 
+    15        9  
+    16        9 end. 
     16   ****     ^58
 
 Errors in program: 1

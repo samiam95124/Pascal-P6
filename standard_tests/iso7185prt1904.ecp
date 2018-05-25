@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,15 +16,13 @@ P6 Pascal compiler vs. 1.3.x
     14      -32 var b: myBoolean; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    b := myTrue; 
-    19        8    if b then 
+    17        8  
+    18        8    b := myTrue; 
+    19       11    if b then 
     19   ****              ^144
-    20       10       writeln('error not detected'); 
-    21       18  
-    22       18 end. 
-myFalse    unreferenced
-
+    20       13       writeln('error not detected'); 
+    21       21  
+    22       21 end. 
 
 Errors in program: 1
 

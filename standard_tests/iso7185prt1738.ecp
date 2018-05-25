@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -16,10 +15,10 @@ P6 Pascal compiler vs. 1.3.x
     13      -32 var a: integer; 
     14      -32  
     15      -32 begin 
-    16        3  
-    17        3    a := maxint; 
-    18        7    a := succ(a) 
-    19        9  
-    20        9 end. 
+    16        8  
+    17        8    a := maxint; 
+    18       10    a := succ(a) 
+    19       12  
+    20       12 end. 
 
 Errors in program: 0

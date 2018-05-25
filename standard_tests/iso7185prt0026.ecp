@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,10 +14,10 @@ P6 Pascal compiler vs. 1.3.x
     11      -32 var i: integer; 
     12      -32  
     13      -32 begin 
-    14        3  
-    15        3    writeln(i) 
-    16        6  
-    17        6 end. 
+    14        8  
+    15        8    writeln(i) 
+    16        9  
+    17        9 end. 
 
 Errors in program: 2
 

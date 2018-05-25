@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -15,14 +14,14 @@ P6 Pascal compiler vs. 1.3.x
     11   ****                   ^2,7,5
     12      -32  
     13      -32 begin 
-    14        3 end; 
-    15        6  
-    16        6 begin 
-    17        6  
-    18        6    a(b) 
+    14        8 end; 
+    15        9  
+    16        9 begin 
+    17       11  
+    18       11    a(b) 
     18   ****       ^126
-    19        9  
-    20        9 end. 
+    19       12  
+    20       12 end. 
 
 Errors in program: 4
 

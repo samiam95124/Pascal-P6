@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -30,10 +29,10 @@ P6 Pascal compiler vs. 1.3.x
     27      -32 var e: ^a; 
     28      -32  
     29      -32 begin 
-    30        3  
-    31        3    new(e, true, one); 
-    32       11    dispose(e, false) 
-    33       16  
-    34       16 end. 
+    30        8  
+    31        8    new(e, true, one); 
+    32       14    dispose(e, false) 
+    33       19  
+    34       19 end. 
 
 Errors in program: 0

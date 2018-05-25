@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -12,12 +11,12 @@ P6 Pascal compiler vs. 1.3.x
      9      -32 var a: integer; 
     10      -32  
     11      -32 begin 
-    12        3  
-    13        3    { somewhat ambiguous, could be "e" as identifier } 
-    14        3    a := e+5 
+    12        8  
+    13        8    { somewhat ambiguous, could be "e" as identifier } 
+    14        8    a := e+5 
     14   ****           ^104
-    15        5  
-    16        5 end. 
+    15        9  
+    16        9 end. 
 
 Errors in program: 1
 

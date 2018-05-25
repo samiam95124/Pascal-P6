@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -17,11 +16,11 @@ P6 Pascal compiler vs. 1.3.x
     14      -32 var a: integer; 
     15      -32  
     16      -32 begin 
-    17        3  
-    18        3    for a := 1 to true do writeln('hi') 
+    17        8  
+    18        8    for a := 1 to true do writeln('hi') 
     18   ****                          ^145
-    19       14  
-    20       14 end. 
+    19       17  
+    20       17 end. 
 
 Errors in program: 1
 

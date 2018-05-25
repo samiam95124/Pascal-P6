@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -19,15 +18,15 @@ P6 Pascal compiler vs. 1.3.x
     16      -32 procedure b(c: a); 
     17      -64  
     18      -64 begin 
-    19        3  
-    20        3    c := [3,6] 
-    21        5  
-    22        5 end; 
-    23        9  
-    24        9 begin 
-    25        9  
-    26        9    b([1, 2]) 
-    27       14  
-    28       14 end. 
+    19        8  
+    20        8    c := [3,6] 
+    21        8  
+    22        8 end; 
+    23       12  
+    24       12 begin 
+    25       14  
+    26       14    b([1, 2]) 
+    27       17  
+    28       17 end. 
 
 Errors in program: 0

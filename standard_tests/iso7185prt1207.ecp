@@ -1,5 +1,4 @@
-P6 Pascal compiler vs. 1.3.x
-
+P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
@@ -12,12 +11,10 @@ P6 Pascal compiler vs. 1.3.x
      9      -32 var a, b: boolean; 
     10      -32  
     11      -32 begin 
-    12        3  
-    13        3    a := a or   
-    14        6  
-    15        6 end. 
-b          unreferenced
-
+    12        8  
+    13        8    a := a or   
+    14        9  
+    15        9 end. 
     15   ****     ^58
 
 Errors in program: 1
