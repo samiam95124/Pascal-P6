@@ -3960,8 +3960,10 @@ end;
                                         llc := llc+lsize;
                                         { if the type is structured, and is
                                           a view parameter, promote to formal }
-                                        if (lsp^.form <= power) and 
-                                           (part = ptview) then vkind := formal
+                                        if lsp <> nil then
+                                          if (lsp^.form <= power) and 
+                                             (part = ptview) then 
+                                            vkind := formal
                                       end;
                                     lcp2 := lcp2^.next
                                   end;
