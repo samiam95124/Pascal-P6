@@ -6385,7 +6385,7 @@ end;
             typ: stp;
       begin lcp := nil; llc := lc;
         with lattr do
-          begin typtr := nil; kind := varbl;
+          begin symptr := nil; typtr := nil; kind := varbl;
             access := drct; vlevel := level; dplmt := 0; packing := false
           end;
         typind := 'i'; (* default to integer [sam] *)
