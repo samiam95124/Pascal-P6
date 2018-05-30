@@ -238,7 +238,8 @@ const
       {elide}maxtop      = 16777216;{noelide}  { maximum size of addressing for program/var+1 }
       {remove maxstr     =  2000000; remove}  { maximum size of addressing for program/var }
       {remove maxtop     =  2000001; remove}  { maximum size of addressing for program/var+1 }
-      maxdef      = 2097152; { maxstr / 8 for defined bits }
+      {elide}maxdef      = 2097152;{noelide} { maxstr / 8 for defined bits }
+      {remove maxdef      = 250000; remove} { maxstr /8 for defined bits }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxast      = 100;     { maximum size of assert message }
@@ -2631,7 +2632,12 @@ procedure load;
                                 errorl('No offset found          ');
                               sgn := ch = '-'; if ch = '-' then getnxt;
                               ad := 0; while ch in ['0'..'9'] do 
-                                begin ad := ad*10+ord(ch)-ord('0'); getnxt end;
+                                begin 
+                                  if ad <= maxstr div 10 then
+                                    ad := ad*10+ord(ch)-ord('0')
+                                  else errorl('Symbol offset > max      ');
+                                  getnxt 
+                                end;
                               if sgn then ad := -ad;
                               sp^.off := ad; getsds;
                               strassvf(sp^.digest, sn);
@@ -5559,7 +5565,7 @@ begin
 end;
 
 procedure skptyp{(var pc: parctl)};
-var s,e: integer; c: char; enum: boolean;
+var s,e: integer; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
