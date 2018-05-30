@@ -6,6 +6,9 @@ rem First, change elide patterns to remove prd and prr file statements.
 rem The modified file goes in pintm.pas (pint modified).
 rem
 sed -e 's/{elide}/{/g' -e 's/{noelide}/}/g' -e 's/{remove//g' -e 's/remove}//g' source\pint.pas > pintm.pas
+sed -e 's/{$gnu-pascal}/{ GPC start -/g' -e 's/{$classic-pascal-level-0}/- GPC end }/g' pintm.pas > temp
+sed -e 's/{ Pascaline start }/{ Pascaline start -/g' -e 's/{ Pascaline end }/- Pascaline end }/g' temp > temp2
+sed -e 's/{ ISO7185 start -/{ ISO7185 start }/g' -e 's/- ISO7185 end }/{ ISO7185 end }/g' temp2 > pintm.pas
 rem
 rem Compile the final target, the PAT
 rem
@@ -23,9 +26,9 @@ rem Add the final target program (the pat) to the end of pint.
 rem This means that the version of pint will read and interpret
 rem this.
 rem
-cat pintm.p5 standard_tests\iso7185pat.p5 > tmp.p5
-del pintm.p5
-ren tmp.p5 pintm.p5
+cat pintm.p6 standard_tests\iso7185pat.p6 > tmp.p6
+del pintm.p6
+ren tmp.p6 pintm.p6
 rem
 rem Create null input file
 rem

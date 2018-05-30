@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l-*)
+(*$c+,t-,d-,l+,r+,f+*)
 {*******************************************************************************
 *                                                                              *
 *                           Portable Pascal compiler                           *
@@ -925,6 +925,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start -  
+  fn := fn; reset(f);
   errorv(FunctionNotImplemented)
   - ISO7185 end }
 
@@ -948,6 +949,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start - 
+  fn := fn; reset(f);
   errorv(FunctionNotImplemented)
   - ISO7185 end }
   
@@ -968,6 +970,7 @@ procedure closetext(var f: text);
 
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented) 
   - ISO7185 end }
   
@@ -984,6 +987,7 @@ procedure closebin(var f: bytfil);
 
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented) 
   - ISO7185 end }
 
@@ -999,6 +1003,7 @@ end;
 function lengthbin(var f: bytfil): integer;
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented);
   lengthbin := 1
   - ISO7185 end }
@@ -1018,6 +1023,7 @@ end;
 function locationbin(var f: bytfil): integer;
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented); 
   locationbin := 1
   - ISO7185 end } 
@@ -1034,6 +1040,7 @@ end;
 procedure positionbin(var f: bytfil; p: integer);
 begin
   { ISO7185 start -
+  reset(f); p := p;
   errorv(FunctionNotImplemented) 
   - ISO7185 end }
   
@@ -1049,6 +1056,7 @@ end;
 procedure updatebin(var f: bytfil);
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented)
   - ISO7185 end }
 
@@ -1065,6 +1073,7 @@ end;
 procedure appendtext(var f: text);
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented)
   - ISO7185 end }
   
@@ -1080,6 +1089,7 @@ end;
 procedure appendbin(var f: bytfil);
 begin
   { ISO7185 start -
+  reset(f);
   errorv(FunctionNotImplemented) 
   - ISO7185 end }
 
@@ -1104,6 +1114,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start -
+  fn := fn;
   errorv(FunctionNotImplemented);
   existsfile := true
   - ISO7185 end }
@@ -1133,6 +1144,7 @@ var s: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start -
+  fn := fn;
   errorv(FunctionNotImplemented)
   - ISO7185 end }
   
@@ -1160,6 +1172,8 @@ var ss,sd: string(fillen);
 {$classic-pascal-level-0}
 begin
   { ISO7185 start -
+  fnd := fnd;
+  fns := fns;
   errorv(FunctionNotImplemented)
   - ISO7185 end }
   
@@ -1183,7 +1197,9 @@ end;
 
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum);
 var i, j: cmdinx;
+    {$gnu-pascal}
     x, p: integer;
+    {$classic-pascal-level-0}
 procedure putcmd(c: char);
 begin
   if i >= maxcmd-1 then errore(CommandLineTooLong);
@@ -1191,6 +1207,7 @@ begin
 end;
 begin
   { ISO7185 start -
+  i := 1; putcmd(' ');
   for j := 1 to maxcmd do cb[j] := ' '; j := 1;
   l := 0
   - ISO7185 end }
@@ -1320,6 +1337,7 @@ begin cmdpos := maxcmd end;
 procedure assignexternaltext(var f: text; var fn: filnam);
 var fne: filnam; i: integer;
 begin
+  fn := fn;
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -1337,6 +1355,7 @@ end;
 procedure assignexternalbin(var f: bytfil; var fn: filnam);
 var fne: filnam; i: integer;
 begin
+  fn := fn;
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -2431,7 +2450,7 @@ procedure load;
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
-          i,j: integer;
+          i: integer;
           ext: packed array [1..4] of char;
           bp: pblock;
           sp: psymbol;
@@ -2658,7 +2677,6 @@ procedure load;
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
-          t: integer; { [sam] temp for compiler bug }
 
       procedure lookup(x: labelrg); (* search in label table*)
       begin case labeltab[x].st of
@@ -2687,7 +2705,7 @@ procedure load;
       
       procedure putgblfix;
       begin
-        if gblfixi = maxgblfx then errorl('Too many globals in pgm');
+        if gblfixi = maxgblfx then errorl('Too many globals in pgm  ');
         gblfixi := gblfixi+1; gblfixtab[gblfixi] := pc
       end; 
       
@@ -3112,8 +3130,7 @@ end;
 { coalesce space in heap }
 
 procedure cscspc;
-var done: boolean;
-    ad, ad1, l, l1: address;
+var ad, ad1, l, l1: address;
 begin
    { first, colapse all free blocks at the heap top }
    l := 0; 
@@ -3195,8 +3212,7 @@ end;
 { system routine call}
 
 procedure callsp;
-   var line: boolean;
-       i, j, k, w, l, f: integer;
+   var i, j, k, w, l, f: integer;
        c: char;
        b: boolean;
        ad,ad1,ad2: address;
@@ -3472,11 +3488,6 @@ procedure callsp;
      end else write(f, c:w)
    end;
 
-   procedure getfile(var f: text);
-   begin if eof(f) then errore(EndOfFile);
-         get(f);
-   end;(*getfile*)
-
    procedure putfile(var f: text; var ad: address; fn: fileno);
    begin if not filbuff[fn] then errore(FileBufferVariableUndefined);
          f^:= getchr(ad+fileidsize); put(f);
@@ -3485,7 +3496,7 @@ procedure callsp;
    
    procedure writei(var f: text; w: integer; fl: integer; r: integer; 
                     lz: boolean);
-   var c: integer; p: integer; digit: array [1..maxdbf] of char; i: integer;
+   var digit: array [1..maxdbf] of char; i: integer;
        sgn: boolean; d, ds: integer;
    procedure filllz(n: integer); 
    begin while n > 0 do begin write(f, '0'); n := n-1 end 
@@ -4223,7 +4234,7 @@ begin
 end;
 
 procedure sinins;
-var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
+var ad,ad1,ad2: address; b: boolean; i,j,i1,i2 : integer; c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
     a1,a2,a3: address; pcs: address;
 begin
@@ -4910,7 +4921,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                        rtstrg: (sc: strvsp; l: integer);
               end;
                
-var dbc: parctl; cn: alfa; dbgend: boolean; s,e: address; i,x,l,p: integer;
+var dbc: parctl; cn: alfa; dbgend: boolean; i,x,l,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
     fw: wthnum; undef: boolean; c: char;
@@ -5006,12 +5017,6 @@ end;
 procedure skpspc(var pc: parctl);
 begin
   while (chkchr(pc) = ' ') and not chkend(pc) do nxtchr(pc)
-end;
-
-procedure expect(var pc: parctl; c: char);
-begin
-  if chkchr(pc) <> c then error(esyntax);
-  nxtchr(pc)
 end;
 
 procedure texpect(var pc: parctl; c: char);
@@ -5199,7 +5204,7 @@ end;
 
 { find active symbol }
 procedure symadr(var fs: psymbol; var ma: address);
-var bp: pblock; cpc: address;
+var cpc: address;
 procedure fndsym;
 var bp: pblock; sp: psymbol;
 begin
@@ -5369,7 +5374,7 @@ end;
 
 { skip over, don't print, type }
 procedure skptyp{(var pc: parctl)};
-var s,e: integer; c: char; enum: boolean;
+var s,e: integer; enum: boolean;
 begin
   case chkchr(pc) of
     'i','b','c','n', 'p', 'e': nxtchr(pc);
@@ -5392,7 +5397,7 @@ procedure setpar(var pc: parctl; td: strvsp; p: integer);
 begin pc.b := td; pc.l := lenpv(td); pc.p := p end;
 
 procedure wrtset(var st: settype; var tdc: parctl);
-var s, e, i, ss, se: integer; enum: boolean; first: boolean;
+var s, e, ss, se: integer; enum: boolean; first: boolean;
 
 procedure wrtval(i: integer);
 begin
@@ -5436,7 +5441,7 @@ end;
 
 { crosscheck simple types }
 procedure valsim(var v: expres; tdc: parctl);
-var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
+var s, e: integer; enum: boolean;                   
 begin
   case chkchr(tdc) of { type }
     'i','p','b','c','x': if v.t <> rtint then error(etypmis);
@@ -5455,7 +5460,7 @@ end;
 { print simple value }
 procedure prtsim(var v: expres; var tdc: parctl; r: integer; fl: integer;
                  deffld: boolean; lz: boolean);
-var i, s, e: integer; sns: filnam; snsl: 1..fillen; enum: boolean;                   
+var i, s, e: integer; enum: boolean;                   
 begin
   valsim(v, tdc); { validate value matches type }
   case chkchr(tdc) of { type }
@@ -5493,9 +5498,9 @@ procedure prttyp(var ad: address; td: strvsp; var p: integer; byt: boolean;
                  r: integer; fl: integer; deffld: boolean; lz: boolean; 
                  indent: integer);
 const ispc = 2;
-var i,x: integer; b: boolean; c: char; s, e: integer; l: integer;
-    sn, sns: filnam; snl, snsl: 1..fillen; first: boolean; enum: boolean;
-    ad2, ad3: address; tdc, stdc: parctl; ps: integer; st: settype; v: expres;
+var i: integer; s, e: integer;
+    enum: boolean;
+    ad2, ad3: address; tdc, stdc: parctl; ps: integer; v: expres;
     subc: boolean;
     
 procedure newline;
@@ -5536,7 +5541,7 @@ var cplx: boolean;
 procedure skptyp(var pc: parctl); forward;
 
 procedure skiplist(var pc: parctl);
-var c: char; i: integer;
+var i: integer;
 begin
   texpect(pc, '(');
   while chkchr(pc) <> ')' do begin
@@ -5684,7 +5689,7 @@ function siztyp(var tdc: parctl): integer;
 var sz: integer; enum: boolean; s, e: integer;
 
 function sizlst: integer;
-var i, x: integer; c: char; sz, sz2, mxsz: integer;
+var i: integer; c: char; sz, sz2, mxsz: integer;
 begin
   sz := 0;
   texpect(tdc, '('); 
@@ -5731,7 +5736,7 @@ end;
 
 { process variable reference }
 procedure vartyp(var sp: psymbol; var ad: address; var p: integer);
-var tdc: parctl; fnd, act: boolean; foff: address; ad2, ad3: address;
+var tdc: parctl; fnd, act: boolean; foff: address; ad2: address;
     enum: boolean; s, e: integer; sz: integer; ma: address; i: integer;
     fp: integer; ps: integer; bp: pblock;
 
@@ -5874,7 +5879,7 @@ var l: expres; f: real; ldc, rdc: parctl; c: char; lsp: psymbol;
 procedure factor(var sp: psymbol; var ad: address; var p: integer; 
                  var r: expres; var simple: boolean; var undef: boolean);
 var tdc: parctl; enum: boolean; s, e, i, ps, ev, sgn: integer; f: real; c: char;
-    st: settype; l: expres; first: boolean; ldc, rdc: parctl;
+    st: settype; first: boolean; ldc, rdc: parctl;
 
 function pwrten(e: integer): real;
 var t: real; { accumulator }
@@ -6056,15 +6061,15 @@ begin { term }
       if (l.t = rtreal) and (r.t = rtreal) then 
         begin f := l.r*r.r; r.t := rtreal; r.r := f end
       else error(einvcop)
-    end else if matop('div  ', true) then begin 
+    end else if matop('div ', true) then begin 
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
       r.i := l.i div r.i
-    end else if matop('mod  ', true) then begin 
+    end else if matop('mod ', true) then begin 
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
       r.i := l.i mod r.i
-    end else if matop('and  ', true) then begin
+    end else if matop('and ', true) then begin
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right; 
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
       l.i := band(l.i,r.i) 
@@ -6260,7 +6265,7 @@ procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock; 
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean; 
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; 
-    eres: expres; first: boolean; deffld: boolean;
+    eres: expres; deffld: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1;
