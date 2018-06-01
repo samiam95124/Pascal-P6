@@ -1,9 +1,9 @@
-P5 Pascal interpreter vs. 1.2
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
 
-P5 Pascal interpreter vs. 1.2
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
@@ -58,11 +58,12 @@ Control10: one two three four five six seven eight nine-ten nine-ten
 Control10: s/b one two three four five six seven eight nine-ten nine-ten
 Control11: start stop s/b start stop
 Control12: start stop s/b start stop
-Control13: start   1  2  3  4  5  6  7  8  9 10 s/b   1  2  3  4  5  6  7  8  9 10
-Control14: start  10  9  8  7  6  5  4  3  2  1 s/b  10  9  8  7  6  5  4  3  2  1
-Control15: start  0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
-Control16: start  9 8 7 6 5 4 3 2 1 0 s/b 9 8 7 6 5 4 3 2 1 0
-Control17: start good start s/b good
+Control13: start   1  2  3  4  5  6  7  8  9 10 s/b start  1  2  3  4  5  6  7  8  9 10
+Control14: start  10  9  8  7  6  5  4  3  2  1 s/b start 10  9  8  7  6  5  4  3  2  1
+Control15: start  0 1 2 3 4 5 6 7 8 9 s/b start 0 1 2 3 4 5 6 7 8 9
+Control16: start  9 8 7 6 5 4 3 2 1 0 s/b start 9 8 7 6 5 4 3 2 1 0
+Control17: start good start s/b start good
+Control18: start stop s/b start stop
 
 ******************* Integers *******************
 
@@ -357,7 +358,7 @@ Character56:   True s/b true
 Character57:  False s/b false
 Character58:   True s/b true
 Character59:  False s/b false
-Character50:   True s/b true
+Character60:   True s/b true
 Character61:  False s/b false
 Character62:   True s/b true
 Character63:  False s/b false
@@ -530,33 +531,33 @@ Scalar18:   True s/b true
 Scalar19:  False s/b false
 Scalar20:  0 1 2 3 4 5 6 s/b 0 1 2 3 4 5 6
 Scalar21:  6 5 4 3 2 1 0 s/b 6 5 4 3 2 1 0
-Scalar1:    True s/b true
-Scalar2:    True s/b true
-Scalar3:   2 s/b 2
-Scalar4:   6 s/b 6
-Scalar5:    True s/b true
-Scalar6:    True s/b true
-Scalar7:   False s/b false
-Scalar8:    True s/b true
-Scalar9:   False s/b false
-Scalar10:   True s/b true
-Scalar11:  False s/b false
-Scalar12:   True s/b true
-Scalar13:  False s/b false
-Scalar14:   True s/b true
-Scalar15:   True s/b true
-Scalar16:  False s/b false
-Scalar17:   True s/b true
-Scalar18:   True s/b true
-Scalar19:  False s/b false
+Scalar20:    True s/b true
+Scalar21:    True s/b true
+Scalar22:   2 s/b 2
+Scalar23:   6 s/b 6
+Scalar24:    True s/b true
+Scalar25:    True s/b true
+Scalar26:   False s/b false
+Scalar27:    True s/b true
+Scalar28:   False s/b false
+Scalar29:   True s/b true
+Scalar30:  False s/b false
+Scalar31:   True s/b true
+Scalar32:  False s/b false
+Scalar33:   True s/b true
+Scalar34:   True s/b true
+Scalar35:  False s/b false
+Scalar36:   True s/b true
+Scalar37:   True s/b true
+Scalar38:  False s/b false
 
 ******************* Reals ******************************
 
 Real1:    1.55400000e+00 s/b  1.554000e+00
 Real2:    3.34000000e-03 s/b  3.340000e-03
-Real3:    3.34000000e-24 s/b  3.34000e-24
+Real3:    3.34000000e-24 s/b  3.340000e-24
 Real4:    4.00000000e-45 s/b  4.000000e-45
-Real5:   -5.56500000e+00 s/b -5.565000e+03
+Real5:   -5.56500000e+00 s/b -5.565000e+00
 Real6:   -9.44000000e-03 s/b -9.440000e-03
 Real7:   -6.36400000e+29 s/b -6.364000e+29
 Real8:   -2.00000000e-14 s/b -2.000000e-14
@@ -813,52 +814,54 @@ Set12:  True s/b true
 Set13:  True s/b true
 Set14: False s/b false
 Set15: 0101010000 s/b 0101010000
-Set16: a_c_e_g_i_k_m_o_q_s_ s/b a_c_e_g_i_k_m_o_q_s_
-Set17: a_cd_fg___ s/b a_cd_fg___
-Set18: a______h__ s/b a______h__
-Set19: _b_______j s/b _b_______j
-Set20: False s/b false
-Set21:  True s/b true
+Set16:  True s/b true
+Set17: a_c_e_g_i_k_m_o_q_s_ s/b a_c_e_g_i_k_m_o_q_s_
+Set18: a_cd_fg___ s/b a_cd_fg___
+Set19: a______h__ s/b a______h__
+Set20: _b_______j s/b _b_______j
+Set21: False s/b false
 Set22:  True s/b true
-Set23: False s/b false
-Set24:  True s/b true
+Set23:  True s/b true
+Set24: False s/b false
 Set25:  True s/b true
-Set26: False s/b false
-Set27:  True s/b true
+Set26:  True s/b true
+Set27: False s/b false
 Set28:  True s/b true
-Set29: False s/b false
-Set30: a___e_____ s/b a___e_____
-Set31: 0101010101 s/b 0101010101
-Set32: 1101110001 s/b 1101110001
-Set33: 0100010000 s/b 0100010000
-Set34: 0100001000 s/b 0100001000
-Set35: False s/b false
-Set36:  True s/b true
+Set29:  True s/b true
+Set30: False s/b false
+Set31: a___e_____ s/b a___e_____
+Set32: 0101010101 s/b 0101010101
+Set33: 1101110001 s/b 1101110001
+Set34: 0100010000 s/b 0100010000
+Set35: 0100001000 s/b 0100001000
+Set36: False s/b false
 Set37:  True s/b true
-Set38: False s/b false
-Set39:  True s/b true
+Set38:  True s/b true
+Set39: False s/b false
 Set40:  True s/b true
-Set41: False s/b false
-Set42:  True s/b true
+Set41:  True s/b true
+Set42: False s/b false
 Set43:  True s/b true
-Set44: False s/b false
-Set45: 0110000000 s/b 0110000000
-Set46: 01 s/b 01
-Set47: 11 s/b 11
-Set48: 10 s/b 10
+Set44:  True s/b true
+Set45: False s/b false
+Set46: 0110000000 s/b 0110000000
+Set47: 01 s/b 01
+Set48: 11 s/b 11
 Set49: 10 s/b 10
-Set50: False s/b false
-Set51:  True s/b true
+Set50: 10 s/b 10
+Set51: False s/b false
 Set52:  True s/b true
-Set53: False s/b false
-Set54:  True s/b true
+Set53:  True s/b true
+Set54: False s/b false
 Set55:  True s/b true
-Set56: False s/b false
-Set57:  True s/b true
+Set56:  True s/b true
+Set57: False s/b false
 Set58:  True s/b true
-Set59: False s/b false
-Set60: 11 s/b 11
-set61:  True s/b true
+Set59:  True s/b true
+Set60: False s/b false
+Set61: 11 s/b 11
+set62:  True s/b true
+set63: 1000000001 s/b 1000000001
 
 ******************* Pointers ******************************
 
@@ -1094,11 +1097,12 @@ Record19:  2 2343 s/b 2 2343
 Record20:  7  True s/b 7  true
 Record21:  3 2343 s/b 3 2343
 Record22:  4  True s/b 4  true
-Record23:  1 2 3 4 5 6 7 8 9 10 s/b 1 2 3 4 5 6 7 8 9 10
-Record24:  10 9 8 7 6 5 4 3 2 1 s/b 10 9 8 7 6 5 4 3 2 1
-Record25:  10 9 8 7 6 5 4 3 2 76 s/b 10 9 8 7 6 5 4 3 2 76
-Record26:  1 g s/b 1 g
-Record27:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
+Record23:  42 s/b 42
+Record24:  1 2 3 4 5 6 7 8 9 10 s/b 1 2 3 4 5 6 7 8 9 10
+Record25:  10 9 8 7 6 5 4 3 2 1 s/b 10 9 8 7 6 5 4 3 2 1
+Record26:  10 9 8 7 6 5 4 3 2 76 s/b 10 9 8 7 6 5 4 3 2 76
+Record27:  1 g s/b 1 g
+Record28:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
 
 ******************* files ******************************
 
@@ -1157,7 +1161,7 @@ q
  1.2345678000e+00
  1.2345678000e+00
  5.6894321000e+01
- 9.3837632000e+01
+ 9.3837632000e-01
 file11:
 'how now<eoln> brown cow<eoln> ' s/b 'how now<eoln> brown cow<eoln> '
 file12:
@@ -1172,7 +1176,7 @@ File17:   a b c d e f g h i j s/b a b c d e f g h i j
 File18:   a b c d e f g h i j s/b a b c d e f g h i j
 File19:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
 File20:   0 1 2 3 4 5 6 7 8 9 s/b 0 1 2 3 4 5 6 7 8 9
-File21:    s/b 50
+File21:   50 s/b 50
 File22:    True s/b true
 
 ************ Procedures and functions ******************
@@ -1181,7 +1185,7 @@ ProcedureFunction1:   45 89 s/b 45 89
 ProcedureFunction2:   46 s/b 46
 ProcedureFunction3:   total junk s/b total junk
 ProcedureFunction4:   tota? junk s/b tota? junk
-total junk s/b total junk
+                      total junk s/b total junk
 ProcedureFunction5:   35 s/b 35
 ProcedureFunction6:   10 9 8 6 5 4 3 2 1 78
 s/b:   10 9 8 6 5 4 3 2 1 78
@@ -1200,7 +1204,7 @@ abcd___h__
 s/b:
 93  true k 7 4 10  3.14140000e+00 hello, guy
 11 12 13 14 15 16 17 18 19 20
-64 false j 1 3 12  4.54500000e-29 what ? who
+64 false j 1 3 12  4.54512000e-29 what ? who
 21 22 23 24 25 26 27 28 29 30
 2324 y
 _bcde___i_

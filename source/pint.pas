@@ -2817,8 +2817,8 @@ procedure load;
                                 end;
 
                            124: begin read(prd,r);
-                                      cp := cp-realsize;
                                       aligndc(realal, cp);
+                                      cp := cp-realsize;
                                       if cp <= 0 then
                                          errorl('constant table overflow  ');
                                       putrel(cp, r); q := cp;
@@ -2858,8 +2858,8 @@ procedure load;
                                    while ch<>')' do
                                    begin read(prd,s1); getnxt; s := s + [s1]
                                    end;
-                                   cp := cp-setsize;
                                    aligndc(setal, cp);
+                                   cp := cp-setsize;
                                    if cp <= 0 then
                                       errorl('constant table overflow  ');
                                    putset(cp, s);
@@ -2876,8 +2876,8 @@ procedure load;
                          if (op = 95) or (op = 190) then begin
                            q := lb; storeq
                          end else begin
+                           aligndc(setal, cp);
                            cp := cp-intsize;
-                           aligndc(intal, cp);
                            if cp <= 0 then errorl('constant table overflow  ');
                            putint(cp, ub);
                            cp := cp-intsize;
