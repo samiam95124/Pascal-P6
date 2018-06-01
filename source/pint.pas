@@ -1931,6 +1931,13 @@ begin
   flcs := flc; alignu(algn, flc); for ad := flcs to flc-1 do putbyt(ad, 0)
 end;   
 
+{ align downwards with space clear }
+procedure aligndc(algn: address; var flc: address);
+var flcs,ad: address;
+begin
+  flcs := flc; alignd(algn, flc); for ad := flc to flcs-1 do putbyt(ad, 0)
+end;
+
 { clear filename string }
 
 procedure clrfn(var fn: filnam);
@@ -2811,7 +2818,7 @@ procedure load;
 
                            124: begin read(prd,r);
                                       cp := cp-realsize;
-                                      alignd(realal, cp);
+                                      aligndc(realal, cp);
                                       if cp <= 0 then
                                          errorl('constant table overflow  ');
                                       putrel(cp, r); q := cp;
@@ -2852,7 +2859,7 @@ procedure load;
                                    begin read(prd,s1); getnxt; s := s + [s1]
                                    end;
                                    cp := cp-setsize;
-                                   alignd(setal, cp);
+                                   aligndc(setal, cp);
                                    if cp <= 0 then
                                       errorl('constant table overflow  ');
                                    putset(cp, s);
@@ -2870,7 +2877,7 @@ procedure load;
                            q := lb; storeq
                          end else begin
                            cp := cp-intsize;
-                           alignd(intal, cp);
+                           aligndc(intal, cp);
                            if cp <= 0 then errorl('constant table overflow  ');
                            putint(cp, ub);
                            cp := cp-intsize;
@@ -6836,7 +6843,7 @@ procedure maktyp(var sp: psymbol; c: char);
 begin
   new(sp); 
   with sp^ do begin
-    next := nil; name := nil; styp := stglobal; off := 0; 
+    next := nil; name := nil; styp := stglobal; off := 0; digest := nil;
     strchrass(digest, 1, c);
   end
 end; 
@@ -6916,6 +6923,7 @@ begin (* main *)
   ansptr := 1;
   newline := true; { set on new line }
   gbsiz := 0;
+  curmod := nil; { set no module active }
   maktyp(boolsym, 'b'); { create standard types }
   maktyp(realsym, 'n');
   maktyp(intsym, 'i');
