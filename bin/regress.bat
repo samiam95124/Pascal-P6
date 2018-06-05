@@ -140,20 +140,27 @@ wc -l p4\standardp.dif >> temp1
 if "%full%"=="1" (
 
     echo Running PRT...
+    echo PRT run >> temp1
     rem
     rem Run rejection test
     rem
     call runprt %option%
+    wc -l standard_tests/iso7185prt.dif >> temp1
 
     echo Running self compile...
     rem
     rem Run pcom self compile (note this runs on P5/P6 only)
     rem
+    echo pcom self compile >> temp1
     call cpcoms %option%
+    wc -l pcomm.dif >> temp1
+    
     rem
     rem Run pint self compile (note this runs on P5/P6 only)
     rem
+    echo pint self compile >> temp1
     call cpints %option%
+    wc -l standard_tests/iso7185pats.dif >> temp1
     
 )
 exit /b
