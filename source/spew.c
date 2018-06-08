@@ -282,6 +282,8 @@ void anaerr(void)
             printf("Compiler crashed: see spewtest.pas and spewtest.err for "
                    "details.\n");
             printf("Line: %d char: %d\n\n", lincnt, chrcnt);
+            printf("\n");
+            exit(1);
 
         }
 
