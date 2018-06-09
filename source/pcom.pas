@@ -4076,7 +4076,7 @@ end;
               if fsy = procsy then new(lcp,proc,declared,actual)
               else new(lcp,func,declared,actual); ininam(lcp);
               with lcp^ do
-                begin strassvf(name, id); idtype := nil;
+                begin strassvf(name, id); idtype := nil; next := nil;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   if fsy = procsy then klass := proc
