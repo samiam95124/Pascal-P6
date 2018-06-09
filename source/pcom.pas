@@ -3355,6 +3355,7 @@ end;
       end (*fieldlist*) ;
 
     begin (*typ*)
+      lsp := nil;
       if not (sy in typebegsys) then
          begin error(10); skip(fsys + typebegsys) end;
       if sy in typebegsys then
