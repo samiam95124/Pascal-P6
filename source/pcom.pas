@@ -2127,9 +2127,14 @@ end;
   
   function basetype(fsp: stp): stp;
     { remove any subrange types }
+  function issub(fsp: stp): boolean;
+  begin
+     if fsp <> nil then issub := fsp^.form = subrange
+     else issub := false
+  end;
   begin
     if fsp <> nil then
-      while fsp^.form = subrange do
+      while issub(fsp) do
         fsp := fsp^.rangetype;
     basetype := fsp
   end;
@@ -2701,7 +2706,7 @@ end;
         writeln(prr)
       end;
     ic := ic + 1; mest(fop, fsp)
-  end (*gen1t*);
+  end (*gen1ts*);
   
   procedure gen1t(fop: oprange; fp2: integer; fsp: stp);
   begin
