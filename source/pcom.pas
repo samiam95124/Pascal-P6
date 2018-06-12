@@ -3098,7 +3098,7 @@ end;
 
     procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
       var lsp,lsp1,lsp2: stp; oldtop: disprange; lcp: ctp;
-          lsize,displ: addrrange; lmin,lmax: integer;
+          lsize,displ: addrrange; lmin,lmax, t: integer;
           test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
@@ -3184,7 +3184,11 @@ end;
                       if rangetype <> nil then
                         if rangetype = realptr then error(399)
                         else
-                          if min.ival > max.ival then error(102)
+                          if min.ival > max.ival then 
+                            begin error(102); 
+                              { swap to fix and suppress further errors }
+                              t := min.ival; min.ival := max.ival; max.ival := t 
+                            end
               end;
             fsp := lsp;
             if not (sy in fsys) then
