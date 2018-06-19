@@ -257,7 +257,7 @@ type                                                        (*describing:*)
                          strg: (slgth: 0..strglgth; sval: strvsp)
                        end;
 
-     valu = record case {intval:} boolean of  (*intval never set nor tested*)
+     valu = record case intval: boolean of
                      true:  (ival: integer);
                      false: (valp: csp)
                    end;
@@ -1740,6 +1740,7 @@ end;
               nextch
             until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
                   (r < 16) or iso7185);
+            val.intval := true;
             val.ival := v; 
             sy := intconst;
             if ((ch = '.') and (bufinp <> '.') and (bufinp <> ')')) or
@@ -1777,6 +1778,7 @@ end;
                 new(lvp,reel); pshcst(lvp); sy:= realconst;
                 lvp^.cclass := reel;
                 with lvp^ do lvp^.rval := rv;
+                val.intval := false;
                 val.valp := lvp
               end
           end else { convert radix to symbol }
@@ -1834,8 +1836,12 @@ end;
             end;
             i := i+1 { pass escaped char or forced char }
           end; 
-          if lgth = 1 then val.ival := ord(string[1])
-          else
+          if lgth = 1 then begin
+            { this is an artifact of the original code. If the string is a
+              single character, we store it as an integer even though the
+              symbol stays a string }
+            val.intval := true; val.ival := ord(string[1])
+          end else
             begin
               if lgth = 0 then error(205);
               new(lvp,strg); pshcst(lvp);
@@ -1844,6 +1850,7 @@ end;
                 begin error(399); lgth := strglgth end;
               with lvp^ do
                 begin slgth := lgth; strassvc(sval, string, strglgth) end;
+              val.intval := false;
               val.valp := lvp
             end
         end;
@@ -2905,7 +2912,7 @@ end;
   
   procedure constfactor(fsys: setofsys; var fsp: stp; var fvalu: valu);
     var lsp: stp; lcp: ctp;
-  begin lsp := nil; fvalu.ival := 0;
+  begin lsp := nil; fvalu.intval := true; fvalu.ival := 0;
     if not(sy in constbegsys) then
       begin error(50); skip(fsys+constbegsys) end;
     if sy in constbegsys then
@@ -2916,14 +2923,16 @@ end;
           lsp := fsp
         end else if sy = notsy then begin chkstd;
           insymbol; constfactor(fsys+[rparent], fsp, fvalu);
-          if fvalu.ival < 0 then error(213)
-          else if (fsp <> intptr) and (fsp <> boolptr) then error(134)
+          if (fsp <> intptr) and (fsp <> boolptr) then error(134)
+          else if fvalu.ival < 0 then error(213)
           else fvalu.ival := bnot(fvalu.ival);
           { not boolean does not quite work here }
           if fsp = boolptr then fvalu.ival := band(fvalu.ival, 1);
           lsp := fsp
         end else if sy = stringconst then
           begin
+            { note: this is a bit redundant since insymbol does this 
+              conversion }
             if lgth = 1 then lsp := charptr
             else
               begin
@@ -3123,7 +3132,8 @@ end;
                     begin new(lcp,konst); ininam(lcp);
                       with lcp^ do
                         begin strassvf(name, id); idtype := lsp; next := lcp1;
-                          values.ival := lcnt; klass := konst
+                          values.intval := true; values.ival := lcnt; 
+                          klass := konst
                         end;
                       enterid(lcp);
                       lcnt := lcnt + 1;
@@ -3150,11 +3160,18 @@ end;
                           begin form := subrange; rangetype := idtype; 
                             if stringt(rangetype) then
                               begin error(148); rangetype := nil end;
-                            min := values; size := intsize; packing := false
+                            if rangetype = realptr then 
+                              begin error(109); rangetype := nil end;
+                            if not values.intval then 
+                              begin min.intval := true; min.ival := 1 end
+                            else min := values;
+                            size := intsize; packing := false
                           end;
                         if sy = range then insymbol else error(5);
                         constexpr(fsys,lsp1,lvalu);
-                        lsp^.max := lvalu;
+                        if not lvalu.intval then 
+                          begin lsp^.max.intval := true; lsp^.max.ival := 1 end 
+                        else lsp^.max := lvalu;
                         if lsp^.rangetype <> lsp1 then error(107);
                         if isbyte(lsp) then lsp^.size := 1
                       end
@@ -3169,11 +3186,17 @@ end;
                     constexpr(fsys + [range],lsp1,lvalu);
                     if stringt(lsp1) then
                       begin error(148); lsp1 := nil end;
-                    with lsp^ do
-                      begin rangetype:=lsp1; min:=lvalu; size:=intsize end;
+                    if lsp1 = realptr then begin error(109); lsp1 := nil end;
+                    with lsp^ do begin
+                      rangetype:=lsp1; 
+                      if lvalu.intval then min:=lvalu else 
+                        begin min.intval := true; min.ival := 1 end;
+                      size:=intsize 
+                    end;
                     if sy = range then insymbol else error(5);
                     constexpr(fsys,lsp1,lvalu);
-                    lsp^.max := lvalu;
+                    if lvalu.intval then lsp^.max := lvalu
+                    else begin lsp^.max.intval := true; lsp^.max.ival := 1 end;
                     if lsp^.rangetype <> lsp1 then error(107);
                     if isbyte(lsp) then lsp^.size := 1;
                     fsize := lsp^.size
@@ -3311,6 +3334,11 @@ end;
                     if not comptypes(lsp^.tagfieldp^.idtype,lsp3)then error(111);
                     if not comptypes(lsp^.tagfieldp^.idtype,lsp4)then error(111);
                   end;
+                  { fix up for error processing }
+                  if not lvalu.intval then 
+                    begin lvalu.intval := true; lvalu.ival := 1 end;
+                  if not rvalu.intval then 
+                    begin rvalu.intval := true; rvalu.ival := 1 end;
                   if lvalu.ival > rvalu.ival then error(225);
                   repeat { case range }
                     new(lsp3,variant); pshstc(lsp3);
@@ -3412,6 +3440,8 @@ end;
                         lsp1 := lsp;
                         constexpr(fsys+[comma,ofsy],lsp2,lvalu);
                         if lsp2 <> nil then if lsp2 <> intptr then error(15);
+                        if not lvalu.intval then 
+                          begin lvalu.intval := true; lvalu.ival := 1 end;
                         lsp1^.size := lsize;
                         { build subrange type based on 1..n }
                         new(lsp2,subrange); pshstc(lsp2);
@@ -5113,6 +5143,8 @@ end;
           tagrec := taggedrec(lsp);
           while sy = comma do
             begin insymbol;constexpr(fsys + [comma,rparent],lsp1,lval);
+              if not lval.intval then 
+                    begin lval.intval := true; lval.ival := 1 end;
               varts := varts + 1; lsp2 := lsp1;
               (*check to insert here: is constant in tagfieldtype range*)
               if lsp = nil then error(158)
@@ -5833,11 +5865,13 @@ end;
                           begin new(lvp,pset); pshcst(lvp);
                             lvp^.cclass := pset;
                             lvp^.pval := cstpart;
+                            gattr.cval.intval := false;
                             gattr.cval.valp := lvp
                           end
                       end;
             (*nil*)   nilsy: with gattr do
                                begin typtr := nilptr; kind := cst;
+                                     cval.intval := true;
                                      cval.ival := nilval;
                                      insymbol
                                end
@@ -6233,10 +6267,14 @@ end;
           if not(sy in [semicolon,endsy,elsesy]) then
             begin
               repeat constexpr(fsys + [comma,colon,range],lsp1,lvals);
+                if not lvals.intval then 
+                    begin lvals.intval := true; lvals.ival := 1 end;
                 lvale := lvals;
                 if sy = range then begin
                   chkstd; insymbol; 
                   constexpr(fsys + [comma,colon],lsp2,lvale);
+                  if not lvale.intval then 
+                    begin lvale.intval := true; lvale.ival := 1 end;
                   if lvale.ival < lvals.ival then error(225)
                 end;
                 if lsp <> nil then
@@ -7132,7 +7170,8 @@ end;
     new(crdptr,scalar,standard); pshstc(crdptr);               (*cardinal*)
     with crdptr^ do
       begin size := intsize; form := subrange; rangetype := intptr; 
-            min.ival := 0; max.ival := maxint; packing := false end;
+            min.intval := true; min.ival := 0; 
+            max.intval := true; max.ival := maxint; packing := false end;
     new(realptr,scalar,standard); pshstc(realptr);             (*real*)
     with realptr^ do
       begin size := realsize; form := scalar; scalkind := standard; 
@@ -7194,7 +7233,7 @@ end;
     new(cp,konst); ininam(cp);
     with cp^ do
       begin strassvr(name, na[sn]); idtype := idt; next := nil; 
-        values.ival := i; klass := konst end;
+        values.intval := true; values.ival := i; klass := konst end;
     enterid(cp)
   end;
   
@@ -7256,7 +7295,8 @@ end;
       begin new(cp,konst); ininam(cp);                        (*false,true*)
         with cp^ do
           begin strassvr(name, na[i]); idtype := boolptr;
-            next := cp1; values.ival := i - 1; klass := konst
+            next := cp1; values.intval := true; values.ival := i - 1; 
+            klass := konst
           end;
         enterid(cp); cp1 := cp
       end;
@@ -7424,7 +7464,7 @@ end;
     new(ucstptr,konst); ininam(ucstptr);
     with ucstptr^ do
       begin strassvr(name, '         '); idtype := nil; next := nil;
-        klass := konst; values.ival := 0
+        klass := konst; values.intval := true; values.ival := 0
       end;
     new(uvarptr,vars); ininam(uvarptr);
     with uvarptr^ do
