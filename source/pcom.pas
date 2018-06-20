@@ -5543,7 +5543,8 @@ end;
                     end;
                     if fcp^.klass = func then begin
                       { add size of function result back to stack }
-                      lsize := fcp^.idtype^.size;
+                      lsize := 1; 
+                      if fcp^.idtype <> nil then lsize := fcp^.idtype^.size;
                       alignu(parmptr,lsize);
                       mesl(-lsize)
                     end
