@@ -38,12 +38,19 @@
 #define ALTCHR '~' /* alternate test character */
 #define ERRNO  10  /* number of top count errors to log (must be even) */
 #define MAXLEN 250 /* maximum line length to process */
+#define MAXLIN 20000 /* maximum number of source lines */
 
-int lincnt; /* line we are testing on */
-int chrcnt; /* character of testing line */
+int lincnt;  /* line we are testing on */
+int chrcnt;  /* character of testing line */
 int lincnts; /* save for line */
 int chrcnts; /* save for chr */
-int  done; /* done with testing flag */
+int totlin;  /* total lines in file */
+int totchr;  /* total characters in file */
+int done;    /* done with testing flag */
+int single;  /* single fault mode */
+int random;  /* random/linear fault mode */
+int limit;   /* limit of iterations to perform */
+
 /* top error log, stores the top 10 errors by total spew or number of output
    errors */
 typedef struct {
@@ -54,6 +61,66 @@ typedef struct {
 
 } errrec;
 errrec errlog[10];
+char srcnam[250]; /* name of source file */
+int chrlin[MAXLIN]; /* number of characters in each line */
+
+/*******************************************************************************
+
+Find random number
+
+Find random number between 0 and N.
+
+*******************************************************************************/
+
+int randn(int limit)
+
+{
+
+    return limit*rand()/RAND_MAX;
+
+}
+
+/*******************************************************************************
+
+Count characters and lines in file
+
+Counts the lines and characters in a source file. The character count does not
+include end of line characters. Also fills out the characters per line array.
+
+*******************************************************************************/
+
+int countchar(/* source filename */ char* sn)
+
+{
+
+    int c;     /* character buffer */
+    int cc;    /* characters in this line */
+    FILE* sfp; /* source file */
+
+    totlin = 0; /* clear line and character */
+    totchr = 0;
+    sfp = fopen(sn, "r");
+    if (!sfp) {
+
+        fprintf(stderr, "*** Cannot open source file %s\n", sn);
+        exit(1);
+
+    }
+    cc = 0;
+    while ((c = fgetc(sfp)) != EOF) {
+
+        if (c == '\n') {
+
+            totlin++; /* count lines */
+            chrlin[totlin] = cc; /* set character count for this line */
+            cc = 0; /* clear character count */
+
+        } else { totchr++; cc++; } /* count characters */
+
+    }
+    fclose(sfp); /* close files */
+
+}
 
 /*******************************************************************************
 
@@ -143,7 +210,7 @@ void createtemp(/* alternate character */ char ac,
 
     }
     /* check test counter off end of file */
-    done = lincnt >= lc;
+    done = !found;
 
 }
 
@@ -336,10 +403,19 @@ void main(/* Input argument count */ int argc,
 {
 
     int ei;
+    int ai;
+    int fnd;
 
     printf("\n");
     printf("Spew test vs. 1.0\n");
     printf("\n");
+
+    single = 0; /* set multiple faults */
+    random = 0; /* set linear fault mode */
+    limit = INT_MAX; /* set maximum iterations */
+    lincnt = 1; /* set 1st line and character */
+    chrcnt = 1;
+
     /* clear error logging array */
     for (ei = 0; ei < ERRNO; ei++) {
 
@@ -348,23 +424,115 @@ void main(/* Input argument count */ int argc,
         errlog[ei].errchr = 0; /* clear character number */
 
     }
-    if (argc != 2) {
+    ai = 1; /* set 1st argument */
+    fnd = 1; /* set option found */
+    while (argc > 1 && fnd) { /* process options */
+
+        fnd = 0; /* set no option found */
+        if (!strcmp(argv[ai], "--help") || !strcmp(argv[ai], "-h")) {
+
+            ai++; /* next argument */
+            argc--;
+            printf("\n");
+            printf("Spew test: Test random faults in Pascal compile file\n");
+            printf("\n");
+            printf("spew [<option>]... file\n");
+            printf("\n");
+            printf("Options:\n");
+            printf("\n");
+            printf("--help or -h               Help (this message)\n");
+            printf("--line or -l <lineno>      Set single fault line number (default 1)\n");
+            printf("--char or -c <charno>      Set single fault character number (default 1)\n");
+            printf("--random or -r             Set random fault mode (default is linear)\n");
+            printf("--iterations or -i <limit> Set max number of iterations to perform\n");
+            printf("\n");
+            printf("Note either --line or --char places spew into single fault mode.\n");
+            printf("The default limit is the file length for linear mode.\n");
+            printf("\n");
+            fnd = 1; /* set option found */
+
+        } else if (!strcmp(argv[ai], "--line") || !strcmp(argv[ai], "-l")) {
+
+            ai++; /* next argument */
+            argc--;
+            if (argc <= 1) {
+
+                fprintf(stderr, "Parameter expected\n");
+                exit(1);
+
+            }
+            lincnt = atoi(argv[ai]); /* get line no */
+            single = 1; /* set single fault mode */
+            ai++; /* next argument */
+            argc--;
+            fnd = 1; /* set option found */
+
+        } else if (!strcmp(argv[ai], "--char") || !strcmp(argv[ai], "-c")) {
+
+            ai++; /* next argument */
+            argc--;
+            if (argc <= 1) {
+
+                fprintf(stderr, "Parameter expected\n");
+                exit(1);
+
+            }
+            chrcnt = atoi(argv[ai]); /* get line no */
+            single = 1; /* set single fault mode */
+            ai++; /* next argument */
+            argc--;
+            fnd = 1; /* set option found */
+
+        } else if (!strcmp(argv[ai], "--random") || !strcmp(argv[ai], "-r")) {
+
+            ai++; /* next argument */
+            argc--;
+            random = 1; /* set random mode */
+            fnd = 1; /* set option found */
+
+        } else if (!strcmp(argv[ai], "--interations") || !strcmp(argv[ai], "-i")) {
+
+            ai++; /* next argument */
+            argc--;
+            if (argc <= 1) {
+
+                fprintf(stderr, "Parameter expected\n");
+                exit(1);
+
+            }
+            limit = atoi(argv[ai]); /* get iteration limit */
+            ai++; /* next argument */
+            argc--;
+            fnd = 1; /* set option found */
+
+        }
+
+    }
+    if (argc < 2) {
 
         fprintf(stderr, "No source filename specified\n");
         exit(1);
 
     }
-    printf("Testing with: %s\n", argv[1]);
-    lincnt = 1; /* set 1st line and character */
-    chrcnt = 1;
+    strcpy(srcnam, argv[ai]);
+    printf("Testing with: %s\n", srcnam);
+    countchar(srcnam); /* count characers and lines in file */
     done = 0; /* set not done */
     do { /* run test */
 
+        if (random) do {
+
+            /* set random line and character */
+            lincnt = randn(totlin)+1;
+            chrcnt = randn(chrlin[lincnt])+1;
+
+        } while (!chrlin[lincnt]);
         printf("Testing: Line: %d Char: %d\n", lincnt, chrcnt);
-        testparse(ALTCHR, argv[1]); /* with alternate character */
+        testparse(ALTCHR, srcnam); /* with alternate character */
 
-    } while (!done); /* until end of source file reached */
-
+    } while (!done && --limit > 0 && !single); /* until end of source file
+                                                  reached, or limit, or single
+                                                  mode */
     srterr(); /* sort the error log */
     /* print out error log */
     printf("\n");
@@ -383,7 +551,7 @@ void main(/* Input argument count */ int argc,
 
         lincnt = errlog[0].errlin; /* set line */
         chrcnt = errlog[0].errchr; /* set character */
-        createtemp(ALTCHR, argv[1]); /* reproduce the file */
+        createtemp(ALTCHR, srcnam); /* reproduce the file */
         printf("The maximum error case has been reproduced in spewtest.pas\n");
         printf("\n");
 
