@@ -339,6 +339,27 @@ void anaerr(void)
 
                 }
 
+                /* check various fatal conditions */
+                if (!strncmp(linbuf, "*** Error: ", 11) ||
+                    !strncmp(linbuf, "399  Feature not implemented", 28) ||
+                    !strncmp(linbuf, "500  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "501  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "502  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "503  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "504  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "505  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "506  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "507  Compiler internal error", 28)) {
+
+                    printf("\n");
+                    printf("Error requires attention: see spewtest.pas and "
+                           "spewtest.err for details.\n");
+                    printf("Line: %d char: %d\n\n", lincnt, chrcnt);
+                    printf("\n");
+                    exit(1);
+
+                }
+
             }
 
         } while (r); /* until EOF */

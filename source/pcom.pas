@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l-*)
+(*$c+,t-,d+,l-*)
 {*******************************************************************************
 *                                                                              *
 *                     Portable Pascal assembler/interpreter                    *
@@ -7169,7 +7169,7 @@ end;
     with intptr^ do
       begin size := intsize; form := scalar; scalkind := standard; 
             packing := false end;
-    new(crdptr,scalar,standard); pshstc(crdptr);               (*cardinal*)
+    new(crdptr,subrange); pshstc(crdptr);                      (*cardinal*)
     with crdptr^ do
       begin size := intsize; form := subrange; rangetype := intptr; 
             min.intval := true; min.ival := 0; 
@@ -7245,8 +7245,8 @@ end;
     new(cp,konst); ininam(cp); new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
     lvp^.rval := r;
     with cp^ do
-      begin strassvr(name, na[sn]); idtype := idt; next := nil; 
-        values.valp := lvp; klass := konst end;
+      begin strassvr(name, na[sn]); idtype := idt; next := nil;
+        klass := konst; values.intval := false; values.valp := lvp end;
     enterid(cp)
   end;
   

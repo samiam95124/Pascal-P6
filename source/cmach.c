@@ -1195,6 +1195,27 @@ void valfilrm(address fa) /* validate file read mode */
 
 */
 
+/* dump block structure on heap */
+
+void dmpblk(void)
+{
+    address l, blk, c;
+
+    printf("\n");
+    printf("Blocks in heap:\n");
+    printf("\n");
+    c = 1;
+    blk = gbtop; /* set to bottom of heap */
+    while (blk < np) { /* search blocks in heap */
+        l = getadr(blk); /* get length */
+        printf("%d: Addr: %08x Len: %08x Occ: %d\n", c, blk, abs(l), l < 0);
+        c++;
+        if (abs(l) < HEAPAL || abs(l) > np) errorv(HEAPFORMATINVALID);
+        blk = blk+abs(l); /* go next block */
+    }
+    printf("\n");
+}
+
 /* find free block using length */
 
 void fndfre(address len, address* blk)
@@ -2277,7 +2298,6 @@ void sinins()
     case 87  /*inds*/: getq(); popadr(ad); getset(ad+q, s1); pshset(s1); break;
     case 88  /*indb*/: getq(); popadr(ad); pshint(getbol(ad+q)); break;
     case 89  /*indc*/: getq(); popadr(ad); pshint(getchr(ad+q)); break;
-
     case 93 /*incb*/:
     case 94 /*incc*/:
     case 201 /*incx*/:
