@@ -4435,7 +4435,7 @@ end;
 
       procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
       var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer; 
-          id: stp;
+          id: stp; lastptr: boolean;
       function schblk(fcp: ctp): boolean;
       var i: disprange; f: boolean;
       begin
@@ -4476,6 +4476,7 @@ end;
       end
       end;
       begin { selector }
+        lastptr := false; { set last index op not ptr }
         with fcp^, gattr do
           begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
             packcom := false; tagfield := false; ptrref := false;
@@ -4594,7 +4595,8 @@ end;
                       end
                   else gattr.typtr := nil
                 until sy <> comma;
-                if sy = rbrack then insymbol else error(12)
+                if sy = rbrack then insymbol else error(12);
+                lastptr := false { set not pointer op }
               end (*if sy = lbrack*)
             else
       (*.*)   if sy = period then
@@ -4626,6 +4628,8 @@ end;
                                     if gattr.tagfield then
                                       gattr.vartagoff := lcp^.varsaddr-fldaddr;
                                     gattr.varssize := lcp^.varssize;
+                                    { only set ptr offset ref if last was ptr }
+                                    gattr.ptrref := lastptr;
                                     case access of
                                       drct:   dplmt := dplmt + fldaddr;
                                       indrct: idplmt := idplmt + fldaddr;
@@ -4636,7 +4640,8 @@ end;
                           insymbol
                         end (*sy = ident*)
                       else error(2)
-                    end (*with gattr*)
+                    end; (*with gattr*)
+                  lastptr := false { set last not ptr op }
                 end (*if sy = period*)
               else
       (*^*)     begin
@@ -4668,7 +4673,8 @@ end;
                            gen1t(34(*inc*),fileidsize,gattr.typtr);
                            typtr := filtype;
                         end else error(141);
-                  insymbol
+                  insymbol;
+                  lastptr := true { set last was ptr op }
                 end;
             if not (sy in fsys + selectsys) then
               begin error(6); skip(fsys + selectsys) end
