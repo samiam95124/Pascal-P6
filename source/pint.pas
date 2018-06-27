@@ -3905,7 +3905,7 @@ begin (*callsp*)
                              errorv(BlockAlreadyFreed);
                            if i <> getint(ad-intsize)-adrsize-1 then
                              errorv(NewDisposeTagsMismatch);
-                           ad := ad-intsize; ad2 := sp;
+                           ad := ad-intsize*2; ad2 := sp;
                            { ad = top of tags in dynamic, ad2 = top of tags in
                              stack }
                            k := i;

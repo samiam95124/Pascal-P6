@@ -2005,7 +2005,7 @@ void callsp(void)
                         errorv(BLOCKALREADYFREED);
                     if (i != getint(ad-INTSIZE)-ADRSIZE-1)
                         errorv(NEWDISPOSETAGSMISMATCH);
-                    ad = ad-INTSIZE; ad2 = sp;
+                    ad = ad-INTSIZE*2; ad2 = sp;
                     /* ad = top of tags in dynamic, ad2 = top of tags in
                       stack */
                     k = i;
