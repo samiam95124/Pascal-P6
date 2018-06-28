@@ -161,6 +161,22 @@ type
                { end }
 
             end;
+     recvb = record
+     
+                i: integer;
+                case b: boolean of
+              
+                   true: (c: char);
+                   false: (
+                 
+                      case q: boolean of
+                    
+                         true: (r: real);
+                         false: (n: boolean)
+                       
+                   )
+                       
+             end;
      arrr = array [1..10] of recs;
      vart = (vti, vtb, vtc, vte, vtes, vts, vtr, vtst, vta, vtrc, vtstc, vtp);
      intalias = integer;
@@ -362,6 +378,7 @@ var
 
            end;
     rpa:   ^rec;
+    rpb:   ^recvb;
     ara:   arrr;
     fi:    file of integer;
     pfi:   packed file of integer;
@@ -2786,6 +2803,15 @@ begin
    for i := 1 to 10 do with ara[i] do a := i+10;
    for i := 10 downto 1 do with ara[i] do write(a:1, ' ');
    writeln('s/b 20 19 18 17 16 15 14 13 12 11');
+   write('Record29: ');
+   new(rpb, false, true);
+   rpb^.i := 42;
+   rpb^.b := false;
+   rpb^.q := true;
+   rpb^.r := 12.34;
+   write(rpb^.i:1, ' ', rpb^.b, ' ', rpb^.q, ' ', rpb^.r);
+   writeln(' s/b 42 False True 1.234000000000000e+01');
+   dispose(rpb, false, true);
 
 {******************************************************************************
 
