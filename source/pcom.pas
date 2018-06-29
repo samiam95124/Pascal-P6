@@ -629,7 +629,12 @@ var
   begin
      { recycle string if present }
      if p^.cclass = strg then putstrs(p^.sval);
-     dispose(p); { release entry }
+     { release entry }
+     case p^.cclass of
+       reel: dispose(p, reel);
+       pset: dispose(p, pset);
+       strg: dispose(p, strg)
+     end;
      cspcnt := cspcnt-1 { remove from count }
   end;
 
@@ -647,7 +652,20 @@ var
   { recycle structure entry }
   procedure putstc(p: stp);
   begin
-     dispose(p); { release entry }
+     { release entry }
+     case p^.form of
+       scalar:   if p^.scalkind = declared then dispose(p, scalar, declared)
+                                           else dispose(p, scalar, standard);
+       subrange: dispose(p, subrange);
+       pointer:  dispose(p, pointer);
+       power:    dispose(p, power);
+       arrays:   dispose(p, arrays);
+       records:  dispose(p, records);
+       files:    dispose(p, files);
+       tagfld:   dispose(p, tagfld);
+       variant:  dispose(p, variant);
+       exceptf:  dispose(p, exceptf)
+     end;
      stpcnt := stpcnt-1
   end;
 
@@ -678,7 +696,21 @@ var
         end;
      end;
      putstrs(p^.name); { release name string }
-     dispose(p); { release entry }
+     { release entry according to class }    
+     case p^.klass of
+       types: dispose(p, types);
+       konst: dispose(p, konst);
+       vars:  dispose(p, vars);
+       field: dispose(p, field);
+       proc: if p^.pfdeckind = standard then dispose(p, proc, standard)
+                                        else if p^.pfkind = actual then 
+                                            dispose(p, proc, declared, actual)
+                                          else dispose(p, proc, declared, formal);
+       func: if p^.pfdeckind = standard then dispose(p, func, standard)
+                                        else if p^.pfkind = actual then 
+                                            dispose(p, func, declared, actual)
+                                          else dispose(p, func, declared, formal)
+     end;
      ctpcnt := ctpcnt-1 { remove from count }
   end;
   
