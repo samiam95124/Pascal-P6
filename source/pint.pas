@@ -3123,7 +3123,7 @@ begin
   blk := gbtop; { set to bottom of heap }
   while blk < np do begin { search blocks in heap }
      l := getadr(blk); { get length }
-     if (abs(l) < heapal) or (abs(l) > np) then errorv(HeapFormatInvalid);
+     if (abs(l) < heapal) or (blk+abs(l) > np) then errorv(HeapFormatInvalid);
      if l >= len+adrsize then begin b := blk; blk := np end { found }
      else blk := blk+abs(l) { go next block }
   end;

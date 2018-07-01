@@ -199,6 +199,20 @@
                            invokes dorecycl = false */
 #endif
 
+/*
+ * Companion flag to DOCHKRPT: break returned blocks as occupied. not free.
+ * This means that The entire disposed block will be kept out of circulation,
+ * but the first word will be kept as a "disposed block" marker.
+ *
+ * This helps catch errors when references exist within blocks. This could
+ * happen for several reasons, for example a with reference, a var reference,
+ * or similar cached pointer. Thus this flag modifies DOCHKRPT to leave returned
+ * space totally unused.
+ */
+#ifndef DONORECPAR
+#define DONORECPAR FALSE /* do not recycle part of returned entries */
+#endif
+
 #ifndef DOCHKDEF
 #define DOCHKDEF TRUE /* check undefined accesses */
 #endif
@@ -1226,7 +1240,7 @@ void fndfre(address len, address* blk)
     *blk = gbtop; /* set to bottom of heap */
     while (*blk < np) { /* search blocks in heap */
         l = getadr(*blk); /* get length */
-        if (abs(l) < HEAPAL || abs(l) > np) errorv(HEAPFORMATINVALID);
+        if (abs(l) < HEAPAL || *blk+abs(l) > np) errorv(HEAPFORMATINVALID);
         if (l >= len+ADRSIZE) { b = *blk; *blk = np; } /* found */
         else *blk = *blk+abs(l); /* go next block */
     }
@@ -1308,15 +1322,20 @@ void dspspc(address len, address blk)
    else if (blk < gbtop || blk >= np) errorv(BADPOINTERVALUE);
    ad = blk-ADRSIZE; /* index header */
    if (getadr(ad) >= 0) errorv(BLOCKALREADYFREED);
-   if (DORECYCL && !DOCHKRPT) { /* obey recycling requests */
+   if (DORECYCL && !DOCHKRPT && !DONORECPAR) { /* obey recycling requests */
         putadr(ad, abs(getadr(ad))); /* set block free */
         cscspc(); /* coalesce free space */
-   } else if (DOCHKRPT) { /* perform special recycle */
+   } else if (DOCHKRPT || DONORECPAR) { /* perform special recycle */
         /* check can break off top block */
         len = abs(getadr(ad)); /* get length */
-        if (len >= ADRSIZE*2) putadr(ad+ADRSIZE, abs(getadr(ad))-ADRSIZE);
-            /* the "marker" is a block with a single address. Since it can't
-               hold more than that, it will never be reused */
+        if (len >= ADRSIZE*2) {
+
+            if (DONORECPAR) putadr(ad+ADRSIZE, -(abs(getadr(ad))-ADRSIZE));
+            else putadr(ad+ADRSIZE, abs(getadr(ad))-ADRSIZE);
+
+        }
+        /* the "marker" is a block with a single address. Since it can't
+           hold more than that, it will never be reused */
         putadr(ad, ADRSIZE); /* indicate freed but fixed block */
     }
 }
