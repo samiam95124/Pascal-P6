@@ -3884,6 +3884,16 @@ end;
           lcs: addrrange;
           test: boolean;
           dummy: boolean;
+      procedure joinlists;
+      begin
+        { we missed the type for this id list, meaning the types are nil. Add 
+          the new list as is for error recovery }
+        lcp3 := lcp2; { save sublist head }
+        { find sublist end }
+        while lcp2 <> nil do begin lcp := lcp2; lcp2 := lcp2^.next end;
+        { join lists }
+        lcp^.next := lcp1; lcp1 := lcp3
+      end;
       begin
         plst := false;
         if forw then begin { isolate duplicated list in level }
@@ -3993,7 +4003,7 @@ end;
                                   vkind := lkind; next := lcp2; vlev := level;
                                   keep := true; refer := false; threat := false;
                                   forcnt := 0; part := pt; hdr := false; 
-                                  vext := false; vmod := nil
+                                  vext := false; vmod := nil; vaddr := 0
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -4042,17 +4052,11 @@ end;
                                 lcp^.next := lcp1; lcp1 := lcp3;
                                 insymbol
                               end
-                            else begin error(2);
-                              { set any id list to tear down }
-                              while lcp2 <> nil do begin lcp2^.keep := false; lcp2 := lcp2^.next end
-                            end;
+                            else begin error(2); joinlists end;
                             if not (sy in fsys + [semicolon,rparent]) then
                               begin error(7);skip(fsys+[semicolon,rparent])end
                           end
-                        else begin error(5);
-                          { set any id list to tear down }
-                          while lcp2 <> nil do begin lcp2^.keep := false; lcp2 := lcp2^.next end
-                        end
+                        else begin error(5); joinlists end
                       end;
                   end;
                 if sy = semicolon then
