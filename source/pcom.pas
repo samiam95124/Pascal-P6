@@ -7631,6 +7631,7 @@ end;
     end (*reswords*) ;
 
     procedure symbols;
+    var i: integer;
     begin
       rsy[ 1] := ifsy;       rsy[ 2] := dosy;       rsy[ 3] := ofsy;
       rsy[ 4] := tosy;       rsy[ 5] := relop;      rsy[ 6] := addop;
@@ -7655,6 +7656,7 @@ end;
       rsy[61] := operatorsy; rsy[62] := outsy;       rsy[63] := propertysy; 
       rsy[64] := channelsy;  rsy[65] := streamsy;    rsy[66] := addop;    
       
+      for i := ordminchar to ordmaxchar do ssy[chr(i)] := othersy;
       ssy['+'] := addop ;   ssy['-'] := addop;    ssy['*'] := mulop;
       ssy['/'] := mulop ;   ssy['('] := lparent;  ssy[')'] := rparent;
       ssy['$'] := othersy ; ssy['='] := relop;    ssy[' '] := othersy;
@@ -7662,6 +7664,7 @@ end;
       ssy['['] := lbrack ;  ssy[']'] := rbrack;   ssy[':'] := colon;
       ssy['^'] := arrow ;   ssy['<'] := relop;    ssy['>'] := relop;
       ssy[';'] := semicolon; ssy['@'] := arrow;   ssy['#'] := numsy;
+      ssy['}'] := othersy;
     end (*symbols*) ;
 
     procedure rators;
