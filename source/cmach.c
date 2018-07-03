@@ -2497,7 +2497,7 @@ void sinins()
                           /* outside heap space (which could have
                             contracted!) */
                           errorv(BADPOINTERVALUE);
-                       else if (DOCHKRPT && a1 != NILVAL) {
+                       else if ((DOCHKRPT || DONORECPAR) && a1 != NILVAL) {
                          /* perform use of freed space check */
                          if (isfree(a1))
                            /* attempt to dereference or assign a freed

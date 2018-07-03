@@ -523,6 +523,10 @@ var   pc          : address;   (*program address register*)
         checked. }
       dochkrpt: boolean; { check reuse of freed entry (automatically
                            invokes dorecycl = false }
+      donorecpar: boolean; { companion flag to dochkrpt: break returned blocks
+                             as occupied, not free. This essentially converts
+                             disposed blocks to flagged but dead entries that
+                             generate errors on use. }
       dochkdef: boolean; { check undefined accesses }
       dosrcprf: boolean; { do source level profiling }
       dochkcov: boolean; { do code coverage }
@@ -2533,6 +2537,7 @@ procedure load;
                                   'n': dorecycl := option[ch1];
                                   'o': dochkovf := option[ch1];
                                   'p': dochkrpt := option[ch1];
+                                  'm': donorecpar := option[ch1];
                                   'q': dochkdef := option[ch1];
                                   's': iso7185  := option[ch1];
                                   'w': dodebug  := option[ch1];
@@ -2540,9 +2545,9 @@ procedure load;
                                   'f': dodbgsrc := option[ch1];
                                   'e': dodckout := option[ch1];
                                   'b':; 'c':; 'd':; 'l':; 't':; 'u':;
-                                  'v':; 'x':; 'y':; 'z':; 'm':; 'a':;
-                                  'k':; 'i':; 'j':;
-                                  { unused: m,a,i,e }
+                                  'v':; 'x':; 'y':; 'z':; 'a':; 'k':;
+                                  'i':; 'j':;
+                                  { unused: a,i,e }
                                 end
                               until not (ch in ['a'..'z']);
                               getlin
@@ -3202,13 +3207,17 @@ begin
    else if (blk < gbtop) or (blk >= np) then errorv(BadPointerValue);
    ad := blk-adrsize; { index header }
    if getadr(ad) >= 0 then errorv(BlockAlreadyFreed);
-   if dorecycl and not dochkrpt then begin { obey recycling requests }
+   if dorecycl and not dochkrpt and not donorecpar then begin 
+      { obey recycling requests }
       putadr(ad, abs(getadr(ad))); { set block free }
       cscspc { coalesce free space }
-   end else if dochkrpt then begin { perform special recycle }
+   end else if dochkrpt or donorecpar then begin { perform special recycle }
       { check can break off top block }
       len := abs(getadr(ad)); { get length }
-      if len >= adrsize*2 then putadr(ad+adrsize, abs(getadr(ad))-adrsize);
+      if len >= adrsize*2 then begin
+        if donorecpar then putadr(ad+adrsize, -(abs(getadr(ad))-adrsize))
+        else putadr(ad+adrsize, abs(getadr(ad))-adrsize);
+      end;
       { the "marker" is a block with a single address. Since it can't
         hold more than that, it will never be reused }
       putadr(ad, adrsize) { indicate freed but fixed block }
@@ -4633,7 +4642,8 @@ begin
                           { outside heap space (which could have
                             contracted!) }
                           errorv(BadPointerValue)
-                       else if dochkrpt and (a1 <> nilval) then begin
+                       else if (dochkrpt or donorecpar) and 
+                               (a1 <> nilval) then begin
                          { perform use of freed space check }
                          if isfree(a1) then
                            { attempt to dereference or assign a freed
@@ -5823,7 +5833,7 @@ begin { vartyp }
       ad2 := getadr(ad);
       if ad2 = 0 then error(eptrnas);
       if ad2 = nilval then error(eptrnil);
-      if dochkrpt and isfree(ad2) then error(eptrdis);
+      if (dochkrpt or donorecpar) and isfree(ad2) then error(eptrdis);
       ad := ad2;
       { Pointers either give a full subtype or cycle back in the digest.
         Cycles have an offset number into the digest. }
@@ -6905,6 +6915,7 @@ begin (* main *)
   dotrcsrc := false; { trace source line executions (requires dosrclin) }
   dorecycl := true;  { obey heap space recycle requests }
   dochkrpt := false;  { check reuse of freed entry (automatically) }
+  donorecpar := false; { check reuse, but leave whole block unused }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
   dodebug := false;  { no debug }

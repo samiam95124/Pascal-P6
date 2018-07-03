@@ -449,6 +449,10 @@ var   pc          : address;   (*program address register*)
         checked. }
       dochkrpt: boolean; { check reuse of freed entry (automatically
                            invokes dorecycl = false }
+      donorecpar: boolean; { companion flag to dochkrpt: break returned blocks
+                             as occupied, not free. This essentially converts
+                             disposed blocks to flagged but dead entries that
+                             generate errors on use. }
       dochkdef: boolean; { check undefined accesses }
       
       { I don't know how we are going to use iso7185 flag in mach. There is
@@ -1712,13 +1716,17 @@ begin
    else if (blk < gbtop) or (blk >= np) then errorv(BadPointerValue);
    ad := blk-adrsize; { index header }
    if getadr(ad) >= 0 then errorv(BlockAlreadyFreed);
-   if dorecycl and not dochkrpt then begin { obey recycling requests }
+   if dorecycl and not dochkrpt and not donorecpar then begin 
+      { obey recycling requests }
       putadr(ad, abs(getadr(ad))); { set block free }
       cscspc { coalesce free space }
-   end else if dochkrpt then begin { perform special recycle }
+   end else if dochkrpt or donorecpar then begin { perform special recycle }
       { check can break off top block }
       len := abs(getadr(ad)); { get length }
-      if len >= adrsize*2 then putadr(ad+adrsize, abs(getadr(ad))-adrsize);
+      if len >= adrsize*2 then begin
+        if donorecpar then putadr(ad+adrsize, -(abs(getadr(ad))-adrsize))
+        else putadr(ad+adrsize, abs(getadr(ad))-adrsize);
+      end;
       { the "marker" is a block with a single address. Since it can't
         hold more than that, it will never be reused }
       putadr(ad, adrsize) { indicate freed but fixed block }
@@ -2857,7 +2865,8 @@ begin
                           { outside heap space (which could have
                             contracted!) }
                           errorv(BadPointerValue)
-                       else if dochkrpt and (a1 <> nilval) then begin
+                       else if (dochkrpt or donorecpar) and 
+                               (a1 <> nilval) then begin
                          { perform use of freed space check }
                          if isfree(a1) then
                            { attempt to dereference or assign a freed
@@ -3150,6 +3159,7 @@ begin (* main *)
   dosrclin := true;  { add source line sets to code }
   dorecycl := true;  { obey heap space recycle requests }
   dochkrpt := false;  { check reuse of freed entry (automatically) }
+  donorecpar := false; { check reuse, but leave whole block unused }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
 
