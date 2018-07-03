@@ -349,7 +349,8 @@ void anaerr(void)
                     !strncmp(linbuf, "504  Compiler internal error", 28) ||
                     !strncmp(linbuf, "505  Compiler internal error", 28) ||
                     !strncmp(linbuf, "506  Compiler internal error", 28) ||
-                    !strncmp(linbuf, "507  Compiler internal error", 28)) {
+                    !strncmp(linbuf, "507  Compiler internal error", 28) ||
+                    !strncmp(linbuf, "508  Compiler internal error", 28)) {
 
                     printf("\n");
                     printf("Error requires attention: see spewtest.pas and "

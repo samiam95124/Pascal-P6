@@ -516,7 +516,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..507
+                      nmr: 1..508
                end;
 
 
@@ -547,7 +547,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..507] of boolean; { error occurence tracking }
+    errtbl: array [1..508] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -575,7 +575,7 @@ var
     stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..507; { index for error number tracking array }
+    i: 1..508; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -1348,6 +1348,8 @@ end;
     22:  write('Integer or identifier expected');
     23:  write('''except'' expected');
     24:  write('''on'' or ''except'' expected');
+    25:  write('Illegal source character');
+    26:  write('String constant too long');
 
     50:  write('Error in constant');
     51:  write(''':='' expected');
@@ -1494,6 +1496,7 @@ end;
     233: write('Inherited not applied to user procedure/function call');
     234: write('Inherited applied to non-virtual procedure/function');
     235: write('Override not defined for inherited call');
+    236: write('Type error in write');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1524,11 +1527,12 @@ end;
 
     397: write('Feature not valid in ISO 7185 Pascal');
     398: write('Implementation restriction');
+    { as of the implementation of full ISO 7185, this error is no longer used }
     399: write('Feature not implemented');
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507: write('Compiler internal error');
+    504,505,506,507,508: write('Compiler internal error');
     end
   end;
 
@@ -1727,7 +1731,7 @@ end;
     until not test;
     if chartp[ch] = illegal then
       begin sy := othersy; op := noop;
-        error(399); nextch
+        error(25); nextch
       end
     else
     case chartp[ch] of
@@ -1879,7 +1883,7 @@ end;
               new(lvp,strg); pshcst(lvp);
               lvp^.cclass:=strg;
               if lgth > strglgth then
-                begin error(399); lgth := strglgth end;
+                begin error(26); lgth := strglgth end;
               with lvp^ do
                 begin slgth := lgth; strassvc(sval, string, strglgth) end;
               val.intval := false;
@@ -3237,7 +3241,7 @@ end;
                   with lsp^ do
                     if form = subrange then
                       if rangetype <> nil then
-                        if rangetype = realptr then error(399)
+                        if rangetype = realptr then error(109)
                         else
                           if min.ival > max.ival then 
                             begin error(102); 
@@ -3343,8 +3347,8 @@ end;
                       if (lcp^.name <> nil) or chkudtf then
                         displ := displ+lsp1^.size;
                       if (lsp1^.form <= subrange) or stringt(lsp1) then
-                        begin if comptypes(realptr,lsp1) then error(109)
-                          else if stringt(lsp1) then error(399);
+                        begin if comptypes(realptr,lsp1) then error(159)
+                          else if stringt(lsp1) then error(159);
                           lcp^.idtype := lsp1; lsp^.tagfieldp := lcp;
                         end
                       else error(110);
@@ -4880,7 +4884,7 @@ end;
                             if fld then gen1(30(*csp*),79(*rdsf*))
                             else if spad then gen1(30(*csp*),80(*rdsp*))
                             else gen1(30(*csp*),73(*rds*))
-                          end else error(399)
+                          end else error(153)
                     else error(116);
                 end else begin { binary file }
                   if not comptypes(gattr.typtr,lsp^.filtype) then error(129);
@@ -5036,7 +5040,7 @@ end;
                     else
                       if lsp <> nil then
                         begin
-                          if lsp^.form = scalar then error(399)
+                          if lsp^.form = scalar then error(236)
                           else
                             if stringt(lsp) then
                               begin len := lsp^.size div charmax;
@@ -5633,7 +5637,7 @@ end;
                   29:     haltprocedure;
                   30:     assertprocedure;
                   31:     throwprocedure;
-                  10,13:  error(399)
+                  10,13:  error(508)
                 end;
                 if not(lkey in [5,6,11,12,17,29]) then
                   if sy = rparent then insymbol else error(4)
