@@ -344,7 +344,7 @@ void anaerr(void)
                 }
 
                 /* check various fatal conditions */
-                if (!strncmp(linbuf, "*** Error: ", 11) ||
+                if (!strncmp(linbuf, "*** Error: Compiler internal error", 34) ||
                     !strncmp(linbuf, "399  Feature not implemented", 28) ||
                     !strncmp(linbuf, "500  Compiler internal error", 28) ||
                     !strncmp(linbuf, "501  Compiler internal error", 28) ||
