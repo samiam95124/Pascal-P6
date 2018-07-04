@@ -471,8 +471,11 @@ void main(/* Input argument count */ int argc,
             printf("--char or -c <charno>      Set single fault character number (default 1)\n");
             printf("--random or -r             Set random fault mode (default is linear)\n");
             printf("--iterations or -i <limit> Set max number of iterations to perform\n");
+            printf("--proceed or -p            Override single fault mode and proceed\n");
             printf("\n");
             printf("Note either --line or --char places spew into single fault mode.\n");
+            printf("Single fault can be overriden with --proceed or -p, but that must appear\n");
+            printf("AFTER line and/or character set options.\n");
             printf("The default limit is the file length for linear mode.\n");
             printf("\n");
             fnd = 1; /* set option found */
@@ -507,6 +510,13 @@ void main(/* Input argument count */ int argc,
             single = 1; /* set single fault mode */
             ai++; /* next argument */
             argc--;
+            fnd = 1; /* set option found */
+
+        } else if (!strcmp(argv[ai], "--proceed") || !strcmp(argv[ai], "-p")) {
+
+            ai++; /* next argument */
+            argc--;
+            single = 0; /* set multiple fault mode */
             fnd = 1; /* set option found */
 
         } else if (!strcmp(argv[ai], "--random") || !strcmp(argv[ai], "-r")) {
