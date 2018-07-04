@@ -138,7 +138,7 @@ void createtemp(/* alternate character */ char ac,
 
 {
 
-    int c;     /* character buffer */
+    int c, nc; /* character buffer */
     int lc;    /* line counter */
     int cc;    /* character counter */
     int found; /* found replacement position */
@@ -172,18 +172,22 @@ void createtemp(/* alternate character */ char ac,
 
         do { /* read source line */
 
-            c = getc(sfp); /* get next source file character */
+            nc = c = getc(sfp); /* get next source file character */
             if (c != EOF) {
 
                 /* if we are at the test location, replace the character with the
                    alternate */
-                if (lc == lincnt && cc == chrcnt && c != '\n') {
+                if (lc == lincnt && cc == chrcnt) {
 
-                    c = ac; /* replace character */
+                    /*
+                     * Note if the line is empty, we have nothing to replace.
+                     * Just flag it done and move on.
+                     */
+                    if (c != '\n') nc = ac; /* replace character */
                     found = 1; /* flag replacement occurred */
 
                 }
-                putc(c, dfp); /* output to temp file */
+                putc(nc, dfp); /* output to temp file */
                 if (c != '\n') cc = cc+1; /* count characters */
 
             }
