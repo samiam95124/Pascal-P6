@@ -3889,18 +3889,18 @@ end;
           test: boolean;
           dummy: boolean;
       procedure joinlists;
-      var lcp, lcp1: ctp;
+      var lcp, lcp3: ctp;
       begin
         { we missed the type for this id list, meaning the types are nil. Add 
           the new list as is for error recovery }
         if lcp2 <> nil then begin
-          lcp1 := lcp2; { save sublist head }
+          lcp3 := lcp2; { save sublist head }
           { find sublist end }
           lcp := nil;
           while lcp2 <> nil do begin lcp := lcp2; lcp2 := lcp2^.next end;
           { join lists }
           lcp^.next := lcp1; 
-          lcp1 := lcp1
+          lcp1 := lcp3
         end
       end;
       begin
