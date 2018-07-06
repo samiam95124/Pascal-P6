@@ -4126,7 +4126,8 @@ end;
           overloadsy: fpat := fpaoverload;
           staticsy: fpat := fpastatic;
           virtualsy: begin fpat := fpavirtual; if top > 1 then error(228) end;
-          overridesy: begin fpat := fpaoverride; if top > 1 then error(229) end
+          overridesy: begin fpat := fpaoverride; if top > 1 then error(229) end;
+          operatorsy: error(399)
         end;
         if (sy <> procsy) and (sy <> funcsy) then error(209)
         else fsy := sy; insymbol
