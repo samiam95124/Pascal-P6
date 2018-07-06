@@ -3064,9 +3064,10 @@ end;
       if (fsp <> intptr) and (fsp <> realptr) then error(106);
       if sign = neg then { must flip sign }
         if fsp = intptr then fvalu.ival := -fvalu.ival
-        else begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
-          lvp^.rval := -fvalu.valp^.rval; fvalu.valp := lvp; svp := lvp;
-        end
+        else if fsp = realptr then begin new(lvp,reel); pshcst(lvp); 
+          lvp^.cclass := reel; lvp^.rval := -fvalu.valp^.rval; 
+          fvalu.valp := lvp; svp := lvp;
+        end else begin fvalu.intval := true; fvalu.ival := 0 end
     end;
     while (sy = addop) and (op in [plus,minus,orop,xorop]) do begin
       chkstd; lv := fvalu; lsp := fsp; lop := op; insymbol;
