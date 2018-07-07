@@ -1524,6 +1524,7 @@ end;
     303: write('Value to be assigned is out of bounds');
     304: write('Element expression out of range');
     305: write('Cannot use non-decimal with real format');
+    306: write('Integer overflow');
 
     397: write('Feature not valid in ISO 7185 Pascal');
     398: write('Implementation restriction');
@@ -3016,9 +3017,12 @@ end;
          (lop = rdiv) then 
         begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel end;
       case lop of { operator }
-        { * } mul: if (lsp = intptr) and (fsp = intptr) then
-                      fvalu.ival := lv.ival*fvalu.ival
-                    else if (lsp = realptr) and (fsp = realptr) then
+        { * } mul: if (lsp = intptr) and (fsp = intptr) then begin
+                     if (lv.ival <> 0) and (fvalu.ival <> 0) then
+                       if abs(lv.ival) > maxint div abs(fvalu.ival) then
+                         begin error(306); fvalu.ival := 0 end
+                      else fvalu.ival := lv.ival*fvalu.ival
+                    end else if (lsp = realptr) and (fsp = realptr) then
                       lvp^.rval := lv.valp^.rval*fvalu.valp^.rval
                     else if (lsp = realptr) and (fsp = intptr) then
                       lvp^.rval := lv.valp^.rval*fvalu.ival
@@ -3071,23 +3075,29 @@ end;
     end;
     while (sy = addop) and (op in [plus,minus,orop,xorop]) do begin
       chkstd; lv := fvalu; lsp := fsp; lop := op; insymbol;
-      constterm(fsys+[addop], fsp, fvalu); 
+      constterm(fsys+[addop], fsp, fvalu);
       lvp := nil;
       if (lop in [plus,minus]) and ((lsp = realptr) or (fsp = realptr)) then 
         begin new(lvp,reel); pshcst(lvp); lvp^.cclass := reel end;
       case lop of { operator }
-        { + } plus: if (lsp = intptr) and (fsp = intptr) then
-                      fvalu.ival := lv.ival+fvalu.ival
-                    else if (lsp = realptr) and (fsp = realptr) then
+        { + } plus: if (lsp = intptr) and (fsp = intptr) then begin
+                      if (lv.ival<0) = (fvalu.ival<0) then 
+                        if maxint-abs(lv.ival) < abs(fvalu.ival) then
+                          begin error(306); fvalu.ival := 0 end
+                        else fvalu.ival := lv.ival+fvalu.ival
+                    end else if (lsp = realptr) and (fsp = realptr) then
                       lvp^.rval := lv.valp^.rval+fvalu.valp^.rval
                     else if (lsp = realptr) and (fsp = intptr) then
                       lvp^.rval := lv.valp^.rval+fvalu.ival
                     else if (lsp = intptr) and (fsp = realptr) then
                       lvp^.rval := lv.ival+fvalu.valp^.rval
                     else error(134);
-        { - } minus: if (lsp = intptr) and (fsp = intptr) then
-                       fvalu.ival := lv.ival-fvalu.ival
-                     else if (lsp = realptr) and (fsp = realptr) then
+        { - } minus: if (lsp = intptr) and (fsp = intptr) then begin
+                       if (lv.ival<0) <> (fvalu.ival>0) then 
+                         if maxint-abs(lv.ival) < abs(fvalu.ival) then
+                           begin error(306); fvalu.ival := 0 end
+                       else fvalu.ival := lv.ival-fvalu.ival
+                     end else if (lsp = realptr) and (fsp = realptr) then
                        lvp^.rval := lv.valp^.rval-fvalu.valp^.rval
                      else if (lsp = realptr) and (fsp = intptr) then
                        lvp^.rval := lv.valp^.rval-fvalu.ival
