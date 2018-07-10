@@ -4847,12 +4847,14 @@ begin
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
                          if getadr(ad+(q1-1)*intsize) <> i then
-                           errorv(ChangeToAllocatedTagfield);
+                           { this check does not work, see ticket #13 }
+                           {errorv(ChangeToAllocatedTagfield)};
                        end
                  end;
 
     192 (*ivt*): begin getq; getq1; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
+                      { this instruction does not work, see ticket #13 }
                       if false and dochkdef then begin
                         b := getdef(ad);
                         if b then b := i <> getint(ad);
