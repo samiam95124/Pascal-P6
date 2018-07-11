@@ -2646,7 +2646,7 @@ end;
         case fop of
           45,50,54,56,74,62,63,81,82: 
             begin
-              writeln(prr,' ',fp1:3,fp2:8);
+              writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
             end;
           47,48,49,52,53,55:
@@ -2763,7 +2763,7 @@ end;
       begin putic;
         write(prr,mn[fop]: 4);
         gentypindicator(fsp);
-        writeln(prr,' ', fp1:3+5*ord(abs(fp1)>99),fp2:11);
+        writeln(prr,' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
       end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen2t*);
@@ -2779,7 +2779,7 @@ end;
   begin
    if prcode then
       begin putic; 
-        write(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),fp2:11,
+        write(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11,
                     ' '); prtlabel(fp3); writeln(prr) 
       end;
     ic := ic + 1; mes(fop)
