@@ -50,6 +50,7 @@ int done;    /* done with testing flag */
 int single;  /* single fault mode */
 int random;  /* random/linear fault mode */
 int limit;   /* limit of iterations to perform */
+int again;   /* start again mode (repeat) */
 
 /* top error log, stores the top 10 errors by total spew or number of output
    errors */
@@ -89,7 +90,7 @@ include end of line characters. Also fills out the characters per line array.
 
 *******************************************************************************/
 
-int countchar(/* source filename */ char* sn)
+void countchar(/* source filename */ char* sn)
 
 {
 
@@ -119,6 +120,67 @@ int countchar(/* source filename */ char* sn)
 
     }
     fclose(sfp); /* close files */
+
+}
+
+/*******************************************************************************
+
+Find fault position
+
+Finds the existing fault position in spewtest.pas. Uses that to set the line and
+character position.
+
+*******************************************************************************/
+
+void findfault(void)
+
+{
+
+    int c;
+    FILE* sfp; /* source file */
+    int found; /* fault was found */
+    int linpos;
+    int chrpos;
+
+    linpos = 1; /* clear line and character */
+    chrpos = 1;
+    sfp = fopen("spewtest.pas", "r");
+    if (!sfp) {
+
+        fprintf(stderr, "*** Cannot open source file spewtest.pas\n");
+        exit(1);
+
+    }
+    found = 0;
+    while ((c = fgetc(sfp)) != EOF && !found) {
+
+        if (c == ALTCHR) {
+
+printf("Found line: %d char: %d\n", linpos, chrpos);
+            /*
+             * Found fault character, and again mode is on, set the line and
+             * character count.
+             */
+             lincnt = linpos;
+             chrcnt = chrpos;
+             found = 1;
+
+        }
+        if (c == '\n') {
+
+            linpos++; /* count lines */
+            chrpos = 1; /* clear character count */
+
+        } else chrpos++; /* count characters */
+
+    }
+    fclose(sfp); /* close files */
+    if (!found) {
+
+        fprintf(stderr, "*** No fault was found in spewtest.pas\n");
+        exit(1);
+
+    }
 
 }
 
@@ -438,6 +500,7 @@ void main(/* Input argument count */ int argc,
 
     single = 0; /* set multiple faults */
     random = 0; /* set linear fault mode */
+    again = 0; /* set no again mode */
     limit = INT_MAX; /* set maximum iterations */
     lincnt = 1; /* set 1st line and character */
     chrcnt = 1;
@@ -472,11 +535,14 @@ void main(/* Input argument count */ int argc,
             printf("--random or -r             Set random fault mode (default is linear)\n");
             printf("--iterations or -i <limit> Set max number of iterations to perform\n");
             printf("--proceed or -p            Override single fault mode and proceed\n");
+            printf("--again or -a              Run same file again (recover position)\n");
             printf("\n");
             printf("Note either --line or --char places spew into single fault mode.\n");
             printf("Single fault can be overriden with --proceed or -p, but that must appear\n");
             printf("AFTER line and/or character set options.\n");
             printf("The default limit is the file length for linear mode.\n");
+            printf("Again mode recovers previous position from spewtest.pas and starts\n");
+            printf("from that point.\n");
             printf("\n");
             fnd = 1; /* set option found */
 
@@ -526,6 +592,13 @@ void main(/* Input argument count */ int argc,
             random = 1; /* set random mode */
             fnd = 1; /* set option found */
 
+        } else if (!strcmp(argv[ai], "--again") || !strcmp(argv[ai], "-a")) {
+
+            ai++; /* next argument */
+            argc--;
+            again = 1; /* set again (repeat) mode */
+            fnd = 1; /* set option found */
+
         } else if (!strcmp(argv[ai], "--interations") || !strcmp(argv[ai], "-i")) {
 
             ai++; /* next argument */
@@ -552,7 +625,8 @@ void main(/* Input argument count */ int argc,
     }
     strcpy(srcnam, argv[ai]);
     printf("Testing with: %s\n", srcnam);
-    countchar(srcnam); /* count characers and lines in file */
+    countchar(srcnam); /* count characters and lines in file, recover previous position */
+    if (again) findfault(); /* if again mode find old fault position */
     done = 0; /* set not done */
     do { /* run test */
 
