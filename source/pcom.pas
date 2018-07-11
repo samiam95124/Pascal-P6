@@ -3532,7 +3532,6 @@ end;
                         begin lsp2 := aeltype; aeltype := lsp;
                           if inxtype <> nil then
                             begin getbounds(inxtype,lmin,lmax);
-                              alignu(lsp,lsize);
                               lsize := lsize*(lmax - lmin + 1);
                               size := lsize
                             end
