@@ -3336,6 +3336,7 @@ end;
                     varlb := varlab; tagfield := true; taglvl := lvl;
                     varsaddr := 0; varssize := 0
                   end;
+                lsp^.tagfieldp := lcp;
                 insymbol;
                 if sy = colon then begin
                   enterid(lcp); insymbol;
@@ -3360,7 +3361,7 @@ end;
                       if (lsp1^.form <= subrange) or stringt(lsp1) then
                         begin if comptypes(realptr,lsp1) then error(159)
                           else if stringt(lsp1) then error(159);
-                          lcp^.idtype := lsp1; lsp^.tagfieldp := lcp;
+                          lcp^.idtype := lsp1
                         end
                       else error(110);
                     end

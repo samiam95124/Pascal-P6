@@ -3921,7 +3921,7 @@ begin (*callsp*)
                            while k > 0 do
                              begin
                                if getint(ad) <> getint(ad2) then
-                                 errorv(NewDisposeTagsMismatch);
+                                 {errorv(NewDisposeTagsMismatch)};
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
                            dspspc(ad1+(i+1)*intsize, ad+intsize);
