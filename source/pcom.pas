@@ -1497,6 +1497,7 @@ end;
     234: write('Inherited applied to non-virtual procedure/function');
     235: write('Override not defined for inherited call');
     236: write('Type error in write');
+    237: write('Array size too large');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3154,7 +3155,7 @@ end;
 
     procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
       var lsp,lsp1,lsp2: stp; oldtop: disprange; lcp: ctp;
-          lsize,displ: addrrange; lmin,lmax, t: integer;
+          lsize,displ: addrrange; lmin,lmax, t, span: integer;
           test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
@@ -3533,7 +3534,10 @@ end;
                         begin lsp2 := aeltype; aeltype := lsp;
                           if inxtype <> nil then
                             begin getbounds(inxtype,lmin,lmax);
-                              lsize := lsize*(lmax - lmin + 1);
+                              span := lmax-lmin+1;
+                              if lsize > maxint div span then 
+                                begin error(237); lsize := 1 end
+                              else lsize := lsize*span;
                               size := lsize
                             end
                         end;
