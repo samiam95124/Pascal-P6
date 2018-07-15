@@ -3251,15 +3251,16 @@ end;
                   end;
                 if lsp <> nil then
                   with lsp^ do
-                    if form = subrange then
+                    if form = subrange then begin
                       if rangetype <> nil then
-                        if rangetype = realptr then error(109)
-                        else
-                          if min.ival > max.ival then 
-                            begin error(102); 
-                              { swap to fix and suppress further errors }
-                              t := min.ival; min.ival := max.ival; max.ival := t 
-                            end
+                        if rangetype = realptr then 
+                          begin error(109); rangetype := intptr end;
+                      if min.ival > max.ival then 
+                        begin error(102); 
+                          { swap to fix and suppress further errors }
+                          t := min.ival; min.ival := max.ival; max.ival := t 
+                        end
+                    end
               end;
             fsp := lsp;
             if not (sy in fsys) then
