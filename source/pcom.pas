@@ -1498,6 +1498,7 @@ end;
     235: write('Override not defined for inherited call');
     236: write('Type error in write');
     237: write('Array size too large');
+    238: write('Invalid array length, must be >= 1');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -3492,6 +3493,8 @@ end;
                         if lsp2 <> nil then if lsp2 <> intptr then error(15);
                         if not lvalu.intval then 
                           begin lvalu.intval := true; lvalu.ival := 1 end;
+                        if lvalu.ival <= 0 then 
+                          begin error(238); lvalu.ival := 1 end;
                         lsp1^.size := lsize;
                         { build subrange type based on 1..n }
                         new(lsp2,subrange); pshstc(lsp2);
