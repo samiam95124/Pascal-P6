@@ -5914,7 +5914,7 @@ end;
                                       lsp^.elset := gattr.typtr;
                                       gattr.typtr := lsp
                                     end
-                                  else error(137);
+                                  else begin error(137); gattr.typtr := nil end;
                               test := sy <> comma;
                               if not test then insymbol
                             until test;
