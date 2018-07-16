@@ -516,7 +516,7 @@ var
     errlist:
       array [1..10] of
         packed record pos: integer;
-                      nmr: 1..508
+                      nmr: 1..509
                end;
 
 
@@ -547,7 +547,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..508] of boolean; { error occurence tracking }
+    errtbl: array [1..509] of boolean; { error occurence tracking }
     toterr: integer; { total errors in program }
     stackbot, topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -575,7 +575,7 @@ var
     stpsnm: integer;
 
     f: boolean; { flag for if error number list entries were printed }
-    i: 1..508; { index for error number tracking array }
+    i: 1..509; { index for error number tracking array }
     c: char;
 
 (*-------------------------------------------------------------------------*)
@@ -1535,7 +1535,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508: write('Compiler internal error');
+    504,505,506,507,508, 509: write('Compiler internal error');
     end
   end;
 
@@ -3539,6 +3539,7 @@ end;
                           if inxtype <> nil then
                             begin getbounds(inxtype,lmin,lmax);
                               span := lmax-lmin+1;
+                              if span < 1 then error(509);
                               if lsize > maxint div span then 
                                 begin error(237); lsize := 1 end
                               else lsize := lsize*span;
