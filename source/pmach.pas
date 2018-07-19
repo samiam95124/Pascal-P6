@@ -3066,7 +3066,7 @@ begin
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
                          if getadr(ad+(q1-1)*intsize) <> i then
-                           errorv(ChangeToAllocatedTagfield);
+                           {errorv(ChangeToAllocatedTagfield);}
                        end
                  end;
 

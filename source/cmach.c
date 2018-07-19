@@ -2696,7 +2696,7 @@ void sinins()
                        if (ad1 >= q1) {
                          ad = ad-ad1*INTSIZE;
                          if (getadr(ad+(q1-1)*INTSIZE) != i)
-                           errorv(CHANGETOALLOCATEDTAGFIELD);
+                           /*errorv(CHANGETOALLOCATEDTAGFIELD)*/;
                        }
                       break;
 
