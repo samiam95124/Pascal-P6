@@ -3467,15 +3467,17 @@ end;
             displ := maxsize;
             lsp^.fstvar := lsp1;
             lsp^.varts := 0;
-            if varcmx > 0 then lsp^.varts := varcmx;
-            { output LVN table }
-            if prcode then begin
-              write(prr, 'v ');
-              genlabel(lcp^.vartl); prtlabel(lcp^.vartl); 
-              write(prr, ' ', lsp^.varts:1); 
-              for varcn := 0 to lsp^.varts-1 do 
-                write(prr, ' ', lsp^.vart^[varcn]:1);
-              writeln(prr)
+            if lcp <> nil then begin
+              if varcmx > 0 then lsp^.varts := varcmx;
+              { output LVN table }
+              if prcode then begin
+                write(prr, 'v ');
+                genlabel(lcp^.vartl); prtlabel(lcp^.vartl); 
+                write(prr, ' ', lsp^.varts:1); 
+                for varcn := 0 to lsp^.varts-1 do 
+                  write(prr, ' ', lsp^.vart^[varcn]:1);
+                writeln(prr)
+              end
             end
           end
         else frecvar := nil
