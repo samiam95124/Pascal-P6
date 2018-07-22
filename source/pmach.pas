@@ -406,7 +406,7 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-      address     = -maxtop..maxtop; { address }
+      address     = integer; { address }
 
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;

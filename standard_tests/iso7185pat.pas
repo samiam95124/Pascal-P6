@@ -177,6 +177,16 @@ type
                    )
                        
              end;
+     recvc = record
+
+              case vt: subr of
+
+                 10, 11, 12, 13, 14, 15: (vi: integer);
+                 16, 17, 18, 19, 20: (vb: boolean)
+
+              { end }
+
+           end;
      arrr = array [1..10] of recs;
      vart = (vti, vtb, vtc, vte, vtes, vts, vtr, vtst, vta, vtrc, vtstc, vtp);
      intalias = integer;
@@ -379,6 +389,7 @@ var
            end;
     rpa:   ^rec;
     rpb:   ^recvb;
+    rpc:   ^recvc;
     ara:   arrr;
     fi:    file of integer;
     pfi:   packed file of integer;
@@ -2812,6 +2823,14 @@ begin
    write(rpb^.i:1, ' ', rpb^.b, ' ', rpb^.q, ' ', rpb^.r);
    writeln(' s/b 42 False True 1.234000000000000e+01');
    dispose(rpb, false, true);
+   write('Record30: ');
+   new(rpc, 10);
+   rpc^.vt := 10;
+   rpc^.vi := 185;
+   rpc^.vt := 14;
+   write(rpc^.vi:1);
+   writeln(' s/b 185');
+   dispose(rpc, 15);
 
 {******************************************************************************
 
