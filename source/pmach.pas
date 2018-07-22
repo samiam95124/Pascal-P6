@@ -423,7 +423,7 @@ var   pc          : address;   (*program address register*)
       pctop       : address;   { top of code store }
       gbtop       : address;   { top of globals, size of globals }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1: address; { extra parameter }
+      q1,q2: address; { extra parameters }
       store       : packed array [0..maxstr] of byte; { complete program storage }
       storedef    : packed array [0..maxdef] of byte; { defined bits }
       sdi         : 0..maxdef; { index for that }
@@ -1613,6 +1613,14 @@ procedure getq1; { get q1 parameter }
 begin
 
    q1 := getadr(pc); pc := pc+adrsize
+
+end;
+
+procedure getq2; { get q2 parameter }
+
+begin
+
+   q2 := getadr(pc); pc := pc+adrsize
 
 end;
 
@@ -3058,23 +3066,26 @@ begin
                    pshadr(ad2); pshadr(ad1); 
                  end;
 
-    191 (*cta*): begin getq; getq1; popint(i); popadr(ad); pshadr(ad);
+    191 (*cta*): begin getq; getq1; getq2; popint(i); popadr(ad); pshadr(ad);
                        pshint(i); ad := ad-q-intsize; ad1 := getadr(ad);
                        if ad1 < intsize then
                          errorv(SystemError);
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
-                         if getadr(ad+(q1-1)*intsize) <> i then
-                           {errorv(ChangeToAllocatedTagfield);}
+                         if getadr(ad+(q1-1)*intsize) <> 
+                            getint(q2+(i+1)*intsize) then
+                           errorv(ChangeToAllocatedTagfield);
                        end
                  end;
 
-    192 (*ivt*): begin getq; getq1; popint(i); popadr(ad);
+    192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if false and dochkdef then begin
+                      if dochkdef then begin
                         b := getdef(ad);
-                        if b then b := i <> getint(ad);
+                        if b then 
+                          b := getint(q2+(i+1)*intsize) <> 
+                               getint(q2+(getint(ad)+1)*intsize);
                         if b then begin
                           ad := ad+q;
                           for j := 1 to q1 do

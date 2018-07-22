@@ -576,7 +576,7 @@ address pc;      /*program address register*/
 address pctop;   /* top of code store */
 address gbtop;   /* top of globals, size of globals */
 instyp op; lvltyp p; address q;  /*instruction register*/
-address q1; /* extra parameter */
+address q1,q2; /* extra parameters */
 byte store[MAXSTR] /* complete program storage */
 /* package mode fills the program store, sets pctop and executes the prepackaged
    program. */
@@ -1197,6 +1197,8 @@ void valfilrm(address fa) /* validate file read mode */
 #define getq() do { q = getadr(pc); pc = pc+ADRSIZE; } while(0)
 /* get q1 parameter */
 #define getq1() do { q1 = getadr(pc); pc = pc+ADRSIZE; } while(0)
+/* get q2 parameter */
+#define getq2() do { q2 = getadr(pc); pc = pc+ADRSIZE; } while(0)
 
 /*
 
@@ -2688,24 +2690,25 @@ void sinins()
                    pshadr(ad2); pshadr(ad1);
                    break;
 
-    case 191 /*cta*/: getq(); getq1(); popint(i); popadr(ad); pshadr(ad);
+    case 191 /*cta*/: getq(); getq1(); getq2(); popint(i); popadr(ad); pshadr(ad);
                        pshint(i); ad = ad-q-INTSIZE; ad1 = getadr(ad);
                        if (ad1 < INTSIZE)
                          errorv(SYSTEMERROR);
                        ad1 = ad1-ADRSIZE-1;
                        if (ad1 >= q1) {
                          ad = ad-ad1*INTSIZE;
-                         if (getadr(ad+(q1-1)*INTSIZE) != i)
-                           /*errorv(CHANGETOALLOCATEDTAGFIELD)*/;
+                         if (getadr(ad+(q1-1)*INTSIZE) != getint(q2+(i+1)*INTSIZE))
+                           errorv(CHANGETOALLOCATEDTAGFIELD);
                        }
                       break;
 
-    /* ivt has issues */
-    case 192 /*ivt*/: getq(); getq1(); popint(i); popadr(ad);
+    case 192 /*ivt*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if (FALSE && DOCHKDEF) {
+                      if (DOCHKDEF) {
                         b = getdef(ad);
-                        if (b) b = i == getint(ad);
+                        if (b)
+                          b = getint(q2+i*INTSIZE) !=
+                              getint(q2+(getint(ad)+1)*INTSIZE);
                         if (b) {
                           ad = ad+q;
                           for (j = 1; j <= q1; j++)

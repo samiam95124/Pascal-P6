@@ -202,7 +202,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc      = '.pas'; { extention for source file }
-   maxftl     = 510; { maximum fatal error }
+   maxftl     = 511; { maximum fatal error }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -330,7 +330,8 @@ type                                                        (*describing:*)
                              hdr: boolean; vext: boolean; vmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
-                             varsaddr: addrrange; varssize: addrrange);
+                             varsaddr: addrrange; varssize: addrrange;
+                             vartl: integer);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    asgn: boolean; { assigned }
                                    pext: boolean; pmod: filptr; pfattr: fpattr;
@@ -357,7 +358,7 @@ type                                                        (*describing:*)
                 varbl: (packing: boolean; packcom: boolean;
                         tagfield: boolean; taglvl: integer; varnt: stp;
                         ptrref: boolean; vartagoff: addrrange;
-                        varssize: addrrange;
+                        varssize: addrrange; vartl: integer;
                         case access: vaccess of
                           drct: (vlevel: levrange; dplmt: addrrange);
                           indrct: (idplmt: addrrange);
@@ -1542,7 +1543,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510: write('Compiler internal error');
+    504,505,506,507,508,509,510,511: write('Compiler internal error');
     end
   end;
 
@@ -2710,6 +2711,15 @@ end;
       end;
     ic := ic + 1
   end (*gen2*) ;
+  
+  procedure genctaivt(fop: oprange; fp1,fp2,fp3: integer);
+  begin if fp3 < 0 then error(511);
+    if prcode then
+      begin putic; write(prr,mn[fop]:4); write(prr,' ',fp1:3,' ',fp2:8,' ');
+            mes(fop); putlabel(fp3)
+      end;
+    ic := ic + 1
+  end (*gen2*) ;
 
   procedure gentypindicator(fsp: stp);
   begin
@@ -3333,7 +3343,7 @@ end;
             with lsp^ do
               begin tagfieldp := nil; fstvar := nil; form:=tagfld; 
                     packing := false; new(vart); 
-                    for varcn := 1 to varmax do vart^[varcn] := 0 
+                    for varcn := 0 to varmax do vart^[varcn] := 0 
               end;
             varln := 1; varcof := false; varcmx := 0;
             frecvar := lsp;
@@ -3457,7 +3467,16 @@ end;
             displ := maxsize;
             lsp^.fstvar := lsp1;
             lsp^.varts := 0;
-            if varcmx > 0 then lsp^.varts := varcmx-1;
+            if varcmx > 0 then lsp^.varts := varcmx;
+            { output LVN table }
+            if prcode then begin
+              write(prr, 'v ');
+              genlabel(lcp^.vartl); prtlabel(lcp^.vartl); 
+              write(prr, ' ', lsp^.varts:1); 
+              for varcn := 0 to lsp^.varts-1 do 
+                write(prr, ' ', lsp^.vart^[varcn]:1);
+              writeln(prr)
+            end
           end
         else frecvar := nil
       end (*fieldlist*) ;
@@ -4565,7 +4584,7 @@ end;
         lastptr := false; { set last index op not ptr }
         with fcp^, gattr do
           begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
-            packcom := false; tagfield := false; ptrref := false;
+            packcom := false; tagfield := false; ptrref := false; vartl := -1;
             case klass of
               vars: begin symptr := fcp;
                   if typtr <> nil then packing := typtr^.packing;
@@ -4590,6 +4609,7 @@ end;
                   if gattr.tagfield then
                     gattr.vartagoff := fcp^.varsaddr-fldaddr;
                   gattr.varssize := fcp^.varssize;
+                  gattr.vartl := fcp^.vartl;
                   if occur = crec then
                     begin access := drct; vlevel := clev;
                       dplmt := cdspl + fldaddr
@@ -4668,7 +4688,8 @@ end;
                         with gattr do
                           begin typtr := aeltype; kind := varbl;
                             access := indrct; idplmt := 0; packing := false;
-                            packcom := false; tagfield := false; ptrref := false
+                            packcom := false; tagfield := false; ptrref := false;
+                            vartl := -1;
                           end;
                         if gattr.typtr <> nil then
                           begin
@@ -4716,6 +4737,7 @@ end;
                                     gattr.varssize := lcp^.varssize;
                                     { only set ptr offset ref if last was ptr }
                                     gattr.ptrref := lastptr;
+                                    gattr.vartl := lcp^.vartl;
                                     case access of
                                       drct:   dplmt := dplmt + fldaddr;
                                       indrct: idplmt := idplmt + fldaddr;
@@ -4743,7 +4765,7 @@ end;
                           with gattr do
                             begin kind := varbl; access := indrct; idplmt := 0;
                               packing := false; packcom := false; 
-                              tagfield := false; ptrref := true;
+                              tagfield := false; ptrref := true; vartl := -1
                             end
                         end
                       else
@@ -6227,9 +6249,9 @@ end;
                       if access = indrct then
                         if debug and tagfield and ptrref then
                           { check tag assignment to pointer record }
-                          gen2(81(*cta*),idplmt,taglvl);
+                          genctaivt(81(*cta*),idplmt,taglvl,vartl);
                       if debug and tagfield then 
-                        gen2(82(*ivt*),vartagoff,varssize)
+                        genctaivt(82(*ivt*),vartagoff,varssize,vartl)
                     end;
                   { if tag checking, bypass normal store }
                   if tagasc then

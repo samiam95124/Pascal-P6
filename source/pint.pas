@@ -485,7 +485,7 @@ var   pc          : address;   (*program address register*)
       gbtop, gbsiz: address;   { top of globals, size of globals }
       gbset       : boolean;   { global size was set }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1: address; { extra parameter }
+      q1, q2: address; { extra parameters }
       store       : packed array [0..maxstr] of byte; { complete program storage }
       storedef    : packed array [0..maxdef] of byte; { defined bits }
       storecov    : packed array [0..maxdef] of byte; { coverage bits }
@@ -2203,8 +2203,8 @@ procedure load;
          instr[188]:='cke       '; insp[188] := false; insq[188] := 0;
          instr[189]:='inv       '; insp[189] := false; insq[189] := 0;
          instr[190]:='ckla      '; insp[190] := false; insq[190] := intsize;
-         instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*2;
-         instr[192]:='ivt       '; insp[192] := false; insq[192] := intsize*2;
+         instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*3;
+         instr[192]:='ivt       '; insp[192] := false; insq[192] := intsize*3;
          instr[193]:='lodx      '; insp[193] := true;  insq[193] := intsize;
          instr[194]:='ldox      '; insp[194] := false; insq[194] := intsize;
          instr[195]:='strx      '; insp[195] := true;  insq[195] := intsize;
@@ -2462,7 +2462,7 @@ procedure load;
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
-          i: integer;
+          i,l: integer;
           ext: packed array [1..4] of char;
           bp: pblock;
           sp: psymbol;
@@ -2490,7 +2490,7 @@ procedure load;
             begin if eof(prd) then errorl('unexpected eof on input  ');
                   getnxt;(* first character of line*)
                   if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                                 'e', 's', 'f']) then
+                                 'e', 's', 'f','v']) then
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
@@ -2663,6 +2663,22 @@ procedure load;
                        'f': begin { faults (errors) }
                               read(prd,i); errsinprg := errsinprg+i; getlin
                             end;
+                       'v': begin { variant logical table }
+                              getnxt; skpspc;
+                              if ch <> 'l' then 
+                                errorl('Label format error       ');
+                              getnxt; parlab(x,ls);
+                              if ls <> nil then 
+                                errorl('Invalid intermediate     ');
+                              getnxt;
+                              read(prd,l); cp := cp-(l*intsize+intsize); 
+                              ad := cp; putint(ad, l); ad := ad+intsize;
+                              while not eoln(prd) do begin
+                                read(prd,i); putint(ad, i); ad := ad+intsize;
+                              end;
+                              labelvalue:=cp;
+                              update(x)
+                            end;
                   end;
             end
    end; (*generate*)
@@ -2791,9 +2807,13 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*pck,upk,cta,ivt*)
-          63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
+          (*pck,upk*)
+          63, 64: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
+                                  
+          (*cta,ivt*)
+          191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
+                                  storeq1; labelsearch; putcstfix; storeq end;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
           23,24,25,119,207,21,
@@ -3087,6 +3107,14 @@ procedure getq1; { get q1 parameter }
 begin
 
    q1 := getadr(pc); pc := pc+adrsize
+
+end;
+
+procedure getq2; { get q2 parameter }
+
+begin
+
+   q2 := getadr(pc); pc := pc+adrsize
 
 end;
 
@@ -4839,25 +4867,26 @@ begin
                    pshadr(ad2); pshadr(ad1); 
                  end;
 
-    191 (*cta*): begin getq; getq1; popint(i); popadr(ad); pshadr(ad);
+    191 (*cta*): begin getq; getq1; getq2; popint(i); popadr(ad); pshadr(ad);
                        pshint(i); ad := ad-q-intsize; ad1 := getadr(ad);
                        if ad1 < intsize then
                          errorv(SystemError);
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
-                         if getadr(ad+(q1-1)*intsize) <> i then
-                           { this check does not work, see ticket #13 }
-                           {errorv(ChangeToAllocatedTagfield)};
+                         if getadr(ad+(q1-1)*intsize) <> 
+                            getint(q2+(i+1)*intsize) then
+                           errorv(ChangeToAllocatedTagfield);
                        end
                  end;
 
-    192 (*ivt*): begin getq; getq1; popint(i); popadr(ad);
+    192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      { this instruction does not work, see ticket #13 }
-                      if false and dochkdef then begin
+                      if dochkdef then begin
                         b := getdef(ad);
-                        if b then b := i <> getint(ad);
+                        if b then 
+                          b := getint(q2+(i+1)*intsize) <> 
+                               getint(q2+(getint(ad)+1)*intsize);
                         if b then begin
                           ad := ad+q;
                           for j := 1 to q1 do
