@@ -9,7 +9,7 @@ P6 Pascal compiler vs. 0.1.x
      7      -32 program iso7185prt0508; 
      8      -32  
      9      -32 var a: array of integer; 
-     9   ****                 ^50
+     9   ****                 ^50,238
     10      -32  
     11      -32 begin 
     12        8  
@@ -17,9 +17,10 @@ P6 Pascal compiler vs. 0.1.x
     14       13  
     15       13 end. 
 
-Errors in program: 1
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
  50  Error in constant
+238  Invalid array length, must be >= 1
 

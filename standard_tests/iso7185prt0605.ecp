@@ -21,14 +21,12 @@ P6 Pascal compiler vs. 0.1.x
     18       11 begin 
     19       13  
     20       13    a(1,2) 
-    20   ****       ^126^126
     21       14  
     22       14 end. 
 
-Errors in program: 3
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
   2  Identifier expected
-126  Number of parameters does not agree with declaration
 

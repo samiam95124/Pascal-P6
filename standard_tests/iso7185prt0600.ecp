@@ -19,15 +19,13 @@ integer    unreferenced
     14        9 begin 
     15       11  
     16       11    a(1) 
-    16   ****       ^126
     17       12  
     18       12 end. 
 
-Errors in program: 4
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   5  ':' expected
   7  Error in parameter list
-126  Number of parameters does not agree with declaration
 

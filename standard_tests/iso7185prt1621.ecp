@@ -11,14 +11,13 @@ P6 Pascal compiler vs. 0.1.x
      9      -32 begin 
     10        8  
     11        8    } 
+    11   ****      ^6
     12        8  
     13        8 end. 
-    13   ****     ^104,51
 
-Errors in program: 2
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
- 51  ':=' expected
-104  Identifier not declared
+  6  Illegal symbol
 

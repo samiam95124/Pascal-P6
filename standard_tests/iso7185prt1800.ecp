@@ -1,26 +1,27 @@
 P6 Pascal compiler vs. 0.1.x
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1800: Access to dynamic variable after dispose. 
-     4      -32  
-     5      -32     ISO 7185 6.6.5.3 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1800; 
-    10      -32  
-    11      -32 var p, p2: ^char; 
-    12      -32  
-    13      -32 begin 
-    14        8  
-    15        8    new(p); 
-    16       11    { on P5, this is required otherwise disposing of the single variable will 
-    17       11      cause all space to be removed } 
-    18       11    new(p2); 
-    19       14    dispose(p); 
-    20       17    p^ := 'a' 
-    21       19  
-    22       19 end. 
+     1      -32 {$m} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1800: Access to dynamic variable after dispose. 
+     5      -32  
+     6      -32     ISO 7185 6.6.5.3 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1800; 
+    11      -32  
+    12      -32 var p, p2: ^char; 
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8    new(p); 
+    17       11    { on P5, this is required otherwise disposing of the single variable will 
+    18       11      cause all space to be removed } 
+    19       11    new(p2); 
+    20       14    dispose(p); 
+    21       17    p^ := 'a' 
+    22       19  
+    23       19 end. 
 
 Errors in program: 0

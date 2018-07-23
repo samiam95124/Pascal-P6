@@ -11,15 +11,17 @@ P6 Pascal compiler vs. 0.1.x
      9      -32 begin 
     10        8  
     11        8    { hi there (* george *) again... } 
-    11   ****                                    ^104,59
+    11   ****                                    ^104,59^2,6
     12        8  
     13        8 end. 
     13   ****     ^51
 
-Errors in program: 3
+Errors in program: 5
 
 Error numbers in listing:
 -------------------------
+  2  Identifier expected
+  6  Illegal symbol
  51  ':=' expected
  59  Error in variable
 104  Identifier not declared
