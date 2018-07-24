@@ -2353,6 +2353,15 @@ void sinins()
                  pc = q;
                  break;
 
+    case 27 /*cuv*/: /*q=entry point*/
+                 getq();
+                 mp = sp+(p+MARKSIZE); /* mp to base of mark */
+                 putadr(mp+MARKRA, pc); /* place ra */
+                 pc = getadr(q);
+                 break;
+
+    case 91 /*suv*/: getq(); getq1(); putadr(q1, q); break;
+
     case 13 /*ents*/: getq(); ad = mp+q; /*q = length of dataseg*/
                     if (ad <= np) errorv(STOREOVERFLOW);
                     /* clear allocated memory and set undefined */
@@ -2756,14 +2765,15 @@ void sinins()
                   break;
     case 21 /*cal*/: getq(); pshadr(pc); pc = q; break;
     case 22 /*ret*/: popadr(pc); break;
+    case 92 /*vbs*/: getq(); popadr(ad); break;
+    case 96 /*vbe*/: break;
     case 19 /*brk*/: break; /* breaks are no-ops here */
 
     /* illegal instructions */
-    /* 27,  91,  92,  96, 100, 101, 102, 111, 115, 116, 121, 122, 133, 135,
-      176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220,
-      221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,
-      235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
-      249, 250, 251, 252, 253, 254, 255*/
+    /* 100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
+       212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
+       227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
+       242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255*/
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

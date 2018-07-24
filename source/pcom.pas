@@ -188,7 +188,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 92;   { maximum number of instructions }
+   maxins     = 94;   { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -6973,6 +6973,11 @@ end;
                     begin
                       llc1 := llc1 - idtype^.size;
                       alignd(parmptr,llc1);
+                      { establish var block }
+                      if vkind = formal then begin
+                        gen2(50(*lda*),0,vaddr);
+                        gen1(93(*vbs*),idtype^.size)
+                      end
                     end;
               lcp := lcp^.next;
             end;
@@ -7012,6 +7017,14 @@ end;
         error(504); { stack should have wound to zero }
     if fprocp <> nil then
       begin
+        { output var block ends for each var parameter }
+        lcp := fprocp^.pflist;
+        while lcp <> nil do
+          with lcp^ do begin
+            if klass = vars then
+              if vkind = formal then gen0(94(*vbe*));
+            lcp := next
+          end;
         if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
         else gen0t(42(*ret*),basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
@@ -7809,6 +7822,7 @@ end;
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
       mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
       mn[89] :=' cal'; mn[90] :=' ret'; mn[91] :=' cuv'; mn[92] :=' suv';
+      mn[93] :=' vbs'; mn[94] :=' vbe';
 
     end (*instrmnemonics*) ;
 
@@ -7927,7 +7941,8 @@ end;
       cdx[86] := 0;                    cdx[87] := 0;
       cdx[88] := 0;                    cdx[89] := 0;
       cdx[90] := 0;                    cdx[91] := 0;
-      cdx[92] := 0;
+      cdx[92] := 0;                    cdx[93] := +intsize;
+      cdx[94] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

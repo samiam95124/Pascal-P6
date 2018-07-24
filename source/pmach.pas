@@ -2717,6 +2717,15 @@ begin
                  putadr(mp+markra, pc); { place ra }
                  pc := q
                 end;
+                
+    27 (*cuv*): begin (*q=entry point*)
+                 getq;
+                 mp := sp+(p+marksize); { mp to base of mark }
+                 putadr(mp+markra, pc); { place ra }
+                 pc := getadr(q)
+                end;
+                
+    91 (*suv*): begin getq; getq1; putadr(q1, q) end;
 
     13 (*ents*): begin getq; ad := mp+q; (*q = length of dataseg*)
                     if ad <= np then begin
@@ -3073,6 +3082,8 @@ begin
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
+                         if (i < 0) or (i > getint(q2)) then
+                           errorv(ValueOutOfRange);
                          if getadr(ad+(q1-1)*intsize) <> 
                             getint(q2+(i+1)*intsize) then
                            errorv(ChangeToAllocatedTagfield);
@@ -3081,6 +3092,8 @@ begin
 
     192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
+                      if (i < 0) or (i > getint(q2)) then
+                           errorv(ValueOutOfRange);
                       if dochkdef then begin
                         b := getdef(ad);
                         if b then 
@@ -3129,15 +3142,16 @@ begin
                     begin store[ad] := 0; putdef(ad, false); ad := ad+1 end
                 end;
     21 (*cal*): begin getq; pshadr(pc); pc := q end;
-    22 (*ret*): popadr(pc);                
+    22 (*ret*): popadr(pc);  
+    92 (*vbs*): begin getq; popadr(ad) end;
+    96 (*vbe*): ;              
     19 (*brk*): ; { breaks are no-ops here }
 
     { illegal instructions }
-    27,  91,  92,  96,  100, 101, 102, 111, 115, 116, 121,
-    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217,
-    218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231,
-    232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245,
-    246, 247, 248, 249, 250, 251, 252, 253, 254,
+    100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
+    212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
+    227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
+    242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

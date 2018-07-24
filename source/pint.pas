@@ -2104,11 +2104,11 @@ procedure load;
          instr[ 89]:='indc      '; insp[ 89] := false; insq[ 89] := intsize;
          instr[ 90]:='inca      '; insp[ 90] := false; insq[ 90] := intsize;
          instr[ 91]:='suv       '; insp[ 91] := false; insq[ 91] := intsize*2;
-         instr[ 92]:='---       '; insp[ 92] := false; insq[ 92] := intsize;
+         instr[ 92]:='vbs       '; insp[ 92] := false; insq[ 92] := intsize;
          instr[ 93]:='incb      '; insp[ 93] := false; insq[ 93] := intsize;
          instr[ 94]:='incc      '; insp[ 94] := false; insq[ 94] := intsize;
          instr[ 95]:='chka      '; insp[ 95] := false; insq[ 95] := intsize;
-         instr[ 96]:='---       '; insp[ 96] := false; insq[ 96] := intsize;
+         instr[ 96]:='vbe       '; insp[ 96] := false; insq[ 96] := 0;
          instr[ 97]:='chks      '; insp[ 97] := false; insq[ 97] := intsize;
          instr[ 98]:='chkb      '; insp[ 98] := false; insq[ 98] := intsize;
          instr[ 99]:='chkc      '; insp[ 99] := false; insq[ 99] := intsize;
@@ -2790,12 +2790,12 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv*)
+          (*ind,inc,dec,ckv,vbs*)
           198, 9, 85, 86, 87, 88, 89,
           10, 90, 93, 94,
           57, 103, 104,
           175, 176, 177, 178, 179, 180, 201, 202, 
-          203: begin read(prd,q); storeop; storeq end;
+          203,92: begin read(prd,q); storeop; storeq end;
           
           (*ldo,sro,lao,cuv*)
           1, 194, 65, 66, 67, 68, 69,
@@ -2963,8 +2963,8 @@ procedure load;
           48,49,50,51,52,53,54,60,62,110,
           205,206,208,209,
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal }
-          181, 182, 183, 184, 185, 186,187,188,189,22: storeop;
+          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
+          181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
@@ -4948,13 +4948,15 @@ begin
                 end;
     21 (*cal*): begin getq; pshadr(pc); pc := q end;
     22 (*ret*): popadr(pc);
+    92 (*vbs*): begin getq; popadr(ad) end;
+    96 (*vbe*): ;
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-     92,  96, 100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178,
-    210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224,
-    225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-    240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
+    212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
+    227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
+    242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
