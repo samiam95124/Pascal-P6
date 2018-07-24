@@ -3082,7 +3082,7 @@ begin
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
-                         if (i < 0) or (i > getint(q2)) then
+                         if (i < 0) or (i >= getint(q2)) then
                            errorv(ValueOutOfRange);
                          if getadr(ad+(q1-1)*intsize) <> 
                             getint(q2+(i+1)*intsize) then
@@ -3092,7 +3092,7 @@ begin
 
     192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if (i < 0) or (i > getint(q2)) then
+                      if (i < 0) or (i >= getint(q2)) then
                            errorv(ValueOutOfRange);
                       if dochkdef then begin
                         b := getdef(ad);

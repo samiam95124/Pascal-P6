@@ -379,7 +379,9 @@ const
       ChangeToAllocatedTagfield          = 109;
       UnhandledException                 = 110;
       ProgramCodeAssertion               = 111;
-      privexceptiontop                   = 111;
+      VarListEmpty                       = 112;
+      privexceptiontop                   = 112;
+      
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -478,7 +480,13 @@ type
       { watch symbol/type table entry }
       wthrec       = record sp: psymbol; p: integer end;
       { parser control record }
-      parctl       = record b: strvsp; l, p: integer end;  
+      parctl       = record b: strvsp; l, p: integer end;
+      { VAR reference block }
+      varptr       = ^varblk;
+      varblk       = record 
+                       next: varptr; { next entry }
+                       s, e: address { start and end address of block }
+                     end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -590,6 +598,8 @@ var   pc          : address;   (*program address register*)
       tmpsym      : psymbol; { list of expression temp symbols }
       maxpow10    : integer; { maximum power of 10 }
       curmod      : pblock; { currently active block }
+      varlst      : varptr; { active var block pushdown stack }
+      varfre      : varptr; { free var block entries }
 
       i           : integer;
       c1          : char;
@@ -805,6 +815,7 @@ begin writeln; write('*** Runtime error');
     ChangeToAllocatedTagfield:          writeln('Change to allocated tag field');  
     UnhandledException:                 writeln('Unhandled exception');   
     ProgramCodeAssertion:               writeln('Program code assertion');
+    VarListEmpty:                       writeln('VAR block list empty');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -4283,6 +4294,30 @@ begin
   if not newline then begin writeln; newline := true end
 end;
 
+procedure varenter(s, e: address);
+var vp: varptr;
+begin
+  if varfre <> nil then begin vp := varfre; varfre := vp^.next end
+  else new(vp);
+  vp^.s := s; vp^.e := e; vp^.next := varlst; varlst := vp
+end;
+
+procedure varexit;
+var vp: varptr;
+begin
+  if varlst = nil then errorv(VarListEmpty);
+  vp := varlst; varlst := vp^.next; vp^.next := varfre; varfre := vp
+end;
+
+function varlap(s, e: address): boolean;
+var vp: varptr; f: boolean;
+begin
+  vp := varlst; f := false;
+  while (vp <> nil) and not f do 
+    begin f := (vp^.e >= s) and (vp^.s <= e); vp := vp^.next end;
+  varlap := f
+end;
+
 procedure sinins;
 var ad,ad1,ad2: address; b: boolean; i,j,i1,i2 : integer; c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
@@ -4874,7 +4909,7 @@ begin
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
                          ad := ad-ad1*intsize;
-                         if (i < 0) or (i > getint(q2)) then
+                         if (i < 0) or (i >= getint(q2)) then
                            errorv(ValueOutOfRange);
                          if getadr(ad+(q1-1)*intsize) <> 
                             getint(q2+(i+1)*intsize) then
@@ -4884,7 +4919,7 @@ begin
 
     192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if (i < 0) or (i > getint(q2)) then 
+                      if (i < 0) or (i >= getint(q2)) then 
                         errorv(ValueOutOfRange);
                       if dochkdef then begin
                         b := getdef(ad);
@@ -4948,8 +4983,8 @@ begin
                 end;
     21 (*cal*): begin getq; pshadr(pc); pc := q end;
     22 (*ret*): popadr(pc);
-    92 (*vbs*): begin getq; popadr(ad) end;
-    96 (*vbe*): ;
+    92 (*vbs*): begin getq; popadr(ad); varenter(ad, ad+q-1) end;
+    96 (*vbe*): varexit;
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
@@ -6972,6 +7007,8 @@ begin (* main *)
   newline := true; { set on new line }
   gbsiz := 0;
   curmod := nil; { set no module active }
+  varlst := nil; { set no VAR block entries }
+  varfre := nil;
   maktyp(boolsym, 'b'); { create standard types }
   maktyp(realsym, 'n');
   maktyp(intsym, 'i');

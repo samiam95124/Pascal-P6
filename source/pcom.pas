@@ -3430,7 +3430,7 @@ end;
                     lsp1 := lsp3; lsp2 := lsp3;
                     lvalu.ival := lvalu.ival+1 { next range value }
                   until lvalu.ival > rvalu.ival; { range is complete }
-                  if lvalu.ival > varcmx then varcmx := lvalu.ival;
+                  if lvalu.ival-1 > varcmx then varcmx := lvalu.ival-1;
                   if lvalu.ival > varmax then 
                     { errors supressed for multiple overflows in list }
                     begin if not varcof then error(239); varcof := true end;
@@ -3468,7 +3468,7 @@ end;
             lsp^.fstvar := lsp1;
             lsp^.varts := 0;
             if lcp <> nil then begin
-              if varcmx > 0 then lsp^.varts := varcmx;
+              if varcmx >= 0 then lsp^.varts := varcmx+1;
               { output LVN table }
               if prcode then begin
                 write(prr, 'v ');
@@ -6957,7 +6957,7 @@ end;
           with lcp^ do
             begin
               if klass = vars then
-                if idtype <> nil then
+                if idtype <> nil then begin
                   if idtype^.form > power then
                     begin
                       llc1 := llc1 - ptrsize;
@@ -6973,12 +6973,13 @@ end;
                     begin
                       llc1 := llc1 - idtype^.size;
                       alignd(parmptr,llc1);
-                      { establish var block }
-                      if vkind = formal then begin
-                        gen2(50(*lda*),0,vaddr);
-                        gen1(93(*vbs*),idtype^.size)
-                      end
                     end;
+                  if vkind = formal then begin
+                    { establish var block }
+                    gen2(50(*lda*),0,vaddr);
+                    gen1(93(*vbs*),idtype^.size)
+                  end
+                end;
               lcp := lcp^.next;
             end;
       end;

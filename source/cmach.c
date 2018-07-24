@@ -2706,7 +2706,7 @@ void sinins()
                        ad1 = ad1-ADRSIZE-1;
                        if (ad1 >= q1) {
                          ad = ad-ad1*INTSIZE;
-                         if (i < 0 || i > getint(q2))
+                         if (i < 0 || i >= getint(q2))
                            errorv(VALUEOUTOFRANGE);
                          if (getadr(ad+(q1-1)*INTSIZE) != getint(q2+(i+1)*INTSIZE))
                            errorv(CHANGETOALLOCATEDTAGFIELD);
@@ -2715,7 +2715,7 @@ void sinins()
 
     case 192 /*ivt*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if (i < 0 || i > getint(q2)) errorv(VALUEOUTOFRANGE);
+                      if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
                       if (DOCHKDEF) {
                         b = getdef(ad);
                         if (b)
