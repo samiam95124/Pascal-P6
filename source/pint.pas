@@ -540,6 +540,7 @@ var   pc          : address;   (*program address register*)
       dochkcov: boolean; { do code coverage }
       doanalys: boolean; { do analyze }
       dodckout: boolean; { do output code deck }
+      dochkvbk: boolean; { do check VAR blocks }
       
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -2555,10 +2556,11 @@ procedure load;
                                   'r': dodbgflt := option[ch1];
                                   'f': dodbgsrc := option[ch1];
                                   'e': dodckout := option[ch1];
+                                  'i': dochkvbk := option[ch1];
                                   'b':; 'c':; 'd':; 'l':; 't':; 'u':;
                                   'v':; 'x':; 'y':; 'z':; 'a':; 'k':;
-                                  'i':; 'j':;
-                                  { unused: a,i,e }
+                                  'j':;
+                                  { unused: a,i }
                                 end
                               until not (ch in ['a'..'z']);
                               getlin
@@ -6997,6 +6999,7 @@ begin (* main *)
   dochkcov := false; { don't do code coverage }
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
+  dochkvbk := false; { don't check variable blocks }
 
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }

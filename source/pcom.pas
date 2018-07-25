@@ -466,15 +466,13 @@ var
     doprtryc: boolean;              { -- z: dump recycling tracker counts }
     doprtlab: boolean;              { -- b: print labels }
     dodmpdsp: boolean;              { -- y: dump the display }
+    chkvbk: boolean;                { -- i: check VAR block violations } 
     
     { switches passed through to pint }
 
     { -- o: check arithmetic overflow }
-    { -- a: dump instructions after assembly }
     { -- g: dump label definitions }
     { -- f: dump storage area specs }
-    { -- e: trace routine executions }
-    { -- i: trace instruction executions }
     { -- m: perform post-mortem dump on error }
     { -- h: add source line sets to code }
     { -- j: trace source line executions (requires dosrclin) }
@@ -1639,6 +1637,7 @@ end;
         else if ch1 = 'z' then switch(doprtryc)
         else if ch1 = 'b' then switch(doprtlab)
         else if ch1 = 'y' then switch(dodmpdsp)
+        else if ch1 = 'i' then switch(chkvbk)
         else if ch1 in ['a'..'z'] then
           switch(dummy) { pass through unknown options }
         else begin 
@@ -6974,7 +6973,7 @@ end;
                       llc1 := llc1 - idtype^.size;
                       alignd(parmptr,llc1);
                     end;
-                  if vkind = formal then begin
+                  if chkvbk and (vkind = formal) then begin
                     { establish var block }
                     gen2(50(*lda*),0,vaddr);
                     gen1(93(*vbs*),idtype^.size)
@@ -7023,7 +7022,7 @@ end;
         while lcp <> nil do
           with lcp^ do begin
             if klass = vars then
-              if vkind = formal then gen0(94(*vbe*));
+              if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
         if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
@@ -7647,6 +7646,7 @@ end;
     chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
     chkudtc := true; option['u'] := true; option['s'] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
+    chkvbk := false;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;
