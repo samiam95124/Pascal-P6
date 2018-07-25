@@ -188,7 +188,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 94;   { maximum number of instructions }
+   maxins     = 95;   { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -2711,7 +2711,7 @@ end;
     ic := ic + 1
   end (*gen2*) ;
   
-  procedure genctaivt(fop: oprange; fp1,fp2,fp3: integer);
+  procedure genctaivtcvb(fop: oprange; fp1,fp2,fp3: integer);
   begin if fp3 < 0 then error(511);
     if prcode then
       begin putic; write(prr,mn[fop]:4); write(prr,' ',fp1:3,' ',fp2:8,' ');
@@ -6250,9 +6250,11 @@ end;
                       if access = indrct then
                         if debug and tagfield and ptrref then
                           { check tag assignment to pointer record }
-                          genctaivt(81(*cta*),idplmt,taglvl,vartl);
+                          genctaivtcvb(81(*cta*),idplmt,taglvl,vartl);
+                      if chkvbk and tagfield then 
+                        genctaivtcvb(95(*cvb*),vartagoff,varssize,vartl);
                       if debug and tagfield then 
-                        genctaivt(82(*ivt*),vartagoff,varssize,vartl)
+                        genctaivtcvb(82(*ivt*),vartagoff,varssize,vartl)
                     end;
                   { if tag checking, bypass normal store }
                   if tagasc then
@@ -6975,7 +6977,7 @@ end;
                     end;
                   if chkvbk and (vkind = formal) then begin
                     { establish var block }
-                    gen2(50(*lda*),0,vaddr);
+                    gen2t(54(*lod*),0,llc1,nilptr);
                     gen1(93(*vbs*),idtype^.size)
                   end
                 end;
@@ -7823,7 +7825,7 @@ end;
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
       mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
       mn[89] :=' cal'; mn[90] :=' ret'; mn[91] :=' cuv'; mn[92] :=' suv';
-      mn[93] :=' vbs'; mn[94] :=' vbe';
+      mn[93] :=' vbs'; mn[94] :=' vbe'; mn[95] :=' cvb';
 
     end (*instrmnemonics*) ;
 
@@ -7943,7 +7945,7 @@ end;
       cdx[88] := 0;                    cdx[89] := 0;
       cdx[90] := 0;                    cdx[91] := 0;
       cdx[92] := 0;                    cdx[93] := +intsize;
-      cdx[94] := 0;
+      cdx[94] := 0;                    cdx[95] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

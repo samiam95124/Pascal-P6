@@ -380,7 +380,8 @@ const
       UnhandledException                 = 110;
       ProgramCodeAssertion               = 111;
       VarListEmpty                       = 112;
-      privexceptiontop                   = 112;
+      ChangeToVarReferencedVariant       = 113;
+      privexceptiontop                   = 113;
       
 
       stringlgth  = 1000; { longest string length we can buffer }
@@ -817,6 +818,7 @@ begin writeln; write('*** Runtime error');
     UnhandledException:                 writeln('Unhandled exception');   
     ProgramCodeAssertion:               writeln('Program code assertion');
     VarListEmpty:                       writeln('VAR block list empty');
+    ChangeToVarReferencedVariant:       writeln('Change to VAR referenced variant');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -2124,7 +2126,7 @@ procedure load;
          instr[ 97]:='chks      '; insp[ 97] := false; insq[ 97] := intsize;
          instr[ 98]:='chkb      '; insp[ 98] := false; insq[ 98] := intsize;
          instr[ 99]:='chkc      '; insp[ 99] := false; insq[ 99] := intsize;
-         instr[100]:='---       '; insp[100] := false; insq[100] := intsize;
+         instr[100]:='cvb       '; insp[100] := false; insq[100] := intsize*3;
          instr[101]:='---       '; insp[101] := false; insq[101] := intsize;
          instr[102]:='---       '; insp[102] := false; insq[102] := intsize;
          instr[103]:='decb      '; insp[103] := false; insq[103] := intsize;
@@ -2824,8 +2826,8 @@ procedure load;
           63, 64: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
                                   
-          (*cta,ivt*)
-          191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
+          (*cta,ivt,cvb*)
+          191, 192, 100: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1; labelsearch; putcstfix; storeq end;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
@@ -4315,8 +4317,11 @@ function varlap(s, e: address): boolean;
 var vp: varptr; f: boolean;
 begin
   vp := varlst; f := false;
-  while (vp <> nil) and not f do 
-    begin f := (vp^.e >= s) and (vp^.s <= e); vp := vp^.next end;
+  while (vp <> nil) and not f do begin
+    f := (vp^.e >= s) and (vp^.s <= e);
+    vp := vp^.next 
+  end;
+  
   varlap := f
 end;
 
@@ -4935,6 +4940,21 @@ begin
                         end
                       end
                 end;
+                
+    100 (*cvb*): begin getq; getq1; getq2; popint(i); popadr(ad);
+                      pshadr(ad); pshint(i);
+                      if (i < 0) or (i >= getint(q2)) then 
+                        errorv(ValueOutOfRange);
+                      b := getdef(ad);
+                      if b then 
+                        b := getint(q2+(i+1)*intsize) <> 
+                             getint(q2+(getint(ad)+1)*intsize);
+                      if b then begin 
+                        ad := ad+q; 
+                        if varlap(ad, ad+q1-1) then 
+                          errorv(ChangeToVarReferencedVariant); 
+                      end
+                end;
 
     174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin); 
                         if dosrcprf then begin setcur;
@@ -4990,10 +5010,10 @@ begin
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-    100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
-    212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
-    227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
-    242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
+    213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
+    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
+    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

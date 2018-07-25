@@ -495,35 +495,38 @@ table is all you should need to adapt to any byte addressable machine.
 #define INVALIDDIVISORTOMOD                 84
 #define PACKELEMENTSOUTOFBOUNDS             85
 #define UNPACKELEMENTSOUTOFBOUNDS           86
-#define EXCEPTIONTOP                        86
+#define CANNOTRESETCLOSEDTEMPFILE           87
+#define EXCEPTIONTOP                        87
 
 /* Exceptions that can't be caught.
   Note that these don't have associated exception variables. */
 
-#define UNDEFINEDLOCATIONACCESS             87
-#define FUNCTIONNOTIMPLEMENTED              88
-#define INVALIDINISO7185MODE                89
-#define HEAPFORMATINVALID                   90
-#define DISPOSEOFUNINITALIZEDPOINTER        91
-#define DISPOSEOFNILPOINTER                 92
-#define BADPOINTERVALUE                     93
-#define BLOCKALREADYFREED                   94
-#define INVALIDSTANDARDPROCEDUREORFUNCTION  95
-#define INVALIDINSTRUCTION                  96
-#define NEWDISPOSETAGSMISMATCH              97
-#define PCOUTOFRANGE                        98
-#define STOREOVERFLOW                       99
-#define STACKBALANCE                        100
-#define SETINCLUSION                        101
-#define UNINITIALIZEDPOINTER                102
-#define DEREFERENCEOFNILPOINTER             103
-#define POINTERUSEDAFTERDISPOSE             104
-#define VARIANTNOTACTIVE                    105
-#define INVALIDCASE                         106
-#define SYSTEMERROR                         107
-#define CHANGETOALLOCATEDTAGFIELD           108
-#define UNHANDLEDEXCEPTION                  109
-#define PROGRAMCODEASSERTION                110
+#define UNDEFINEDLOCATIONACCESS             88
+#define FUNCTIONNOTIMPLEMENTED              89
+#define INVALIDINISO7185MODE                90
+#define HEAPFORMATINVALID                   91
+#define DISPOSEOFUNINITALIZEDPOINTER        92
+#define DISPOSEOFNILPOINTER                 93
+#define BADPOINTERVALUE                     94
+#define BLOCKALREADYFREED                   95
+#define INVALIDSTANDARDPROCEDUREORFUNCTION  96
+#define INVALIDINSTRUCTION                  97
+#define NEWDISPOSETAGSMISMATCH              98
+#define PCOUTOFRANGE                        99
+#define STOREOVERFLOW                       100
+#define STACKBALANCE                        101
+#define SETINCLUSION                        102
+#define UNINITIALIZEDPOINTER                103
+#define DEREFERENCEOFNILPOINTER             104
+#define POINTERUSEDAFTERDISPOSE             105
+#define VARIANTNOTACTIVE                    106
+#define INVALIDCASE                         107
+#define SYSTEMERROR                         108
+#define CHANGETOALLOCATEDTAGFIELD           109
+#define UNHANDLEDEXCEPTION                  110
+#define PROGRAMCODEASSERTION                111
+#define VARLISTEMPTY                        112
+#define CHANGETOVARREFERENCEDVARIANT        113
 
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -569,6 +572,12 @@ typedef enum {
 typedef int cmdinx;            /* index for command line buffer */
 typedef int cmdnum;            /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
+/* VAR reference block */
+typedef struct _varblk *varptr;
+typedef struct _varblk {
+    varptr next;  /* next entry */
+    address s, e; /* start and end address of block */
+} varblk;
 
 /**************************** Global Variables ********************************/
 
@@ -610,6 +619,8 @@ filsts filstate[MAXFIL+1]; /* file state holding */
 boolean filbuff[MAXFIL+1]; /* file buffer full status */
 boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 boolean filbof[MAXFIL+1]; /* beginning of file */
+varptr varlst; /* active var block pushdown stack */
+varptr varfre; /* free var block entries */
 
 int i;
 char c1;
@@ -744,6 +755,7 @@ void errorv(address ea)
     case INVALIDDIVISORTOMOD:                printf("Invalid divisor to mod\n"); break;
     case PACKELEMENTSOUTOFBOUNDS:            printf("Pack elements out of bounds\n"); break;
     case UNPACKELEMENTSOUTOFBOUNDS:          printf("Unpack elements out of bounds\n"); break;
+    case CANNOTRESETCLOSEDTEMPFILE:          printf("Cannot reset closed temp file\n"); break;
 
     /* Exceptions that can't be intercepted */
     case UNDEFINEDLOCATIONACCESS:            printf("Undefined location access\n"); break;
@@ -770,6 +782,8 @@ void errorv(address ea)
     case CHANGETOALLOCATEDTAGFIELD:          printf("Change to allocated tag field\n"); break;
     case UNHANDLEDEXCEPTION:                 printf("Unhandled exception\n"); break;
     case PROGRAMCODEASSERTION:               printf("Program code assertion\n"); break;
+    case VARLISTEMPTY:                       printf("VAR block list empty\n");
+    case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n");
   }
   finish(1);
 }
@@ -2237,6 +2251,38 @@ void callsp(void)
     } /*case q*/
 } /*callsp*/
 
+void varenter(address s, address e)
+
+{
+    varptr vp;
+
+    if (varfre) { vp = varfre; varfre = vp->next; }
+    else vp = (varptr) malloc(sizeof(varblk));
+    vp->s = s; vp->e = e; vp->next = varlst; varlst = vp;
+}
+
+void varexit(void)
+{
+    varptr vp;
+
+    if (!varlst) errorv(VARLISTEMPTY);
+    vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
+}
+
+int varlap(address s, address e)
+{
+    varptr vp;
+    int f;
+
+    vp = varlst; f = FALSE;
+    while (vp && !f) {
+        f = (vp->e >= s && vp->s <= e);
+        vp = vp->next;
+    }
+
+    return (f);
+}
+
 void sinins()
 
 {
@@ -2729,6 +2775,20 @@ void sinins()
                       }
                       break;
 
+    case 100 /*cvb*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
+                      pshadr(ad); pshint(i);
+                      if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
+                      b = getdef(ad);
+                      if (b)
+                        b = getint(q2+i*INTSIZE) !=
+                            getint(q2+(getint(ad)+1)*INTSIZE);
+                      if (b) {
+                        ad = ad+q;
+                        if (varlap(ad, ad+q1-1))
+                            errorv(CHANGETOVARREFERENCEDVARIANT);
+                      }
+                      break;
+
     case 174 /*mrkl*/: getq(); srclin = q; break;
 
     case 207 /*bge*/: getq();
@@ -2765,15 +2825,15 @@ void sinins()
                   break;
     case 21 /*cal*/: getq(); pshadr(pc); pc = q; break;
     case 22 /*ret*/: popadr(pc); break;
-    case 92 /*vbs*/: getq(); popadr(ad); break;
-    case 96 /*vbe*/: break;
+    case 92 /*vbs*/: getq(); popadr(ad); varenter(ad, ad+q-1); break;
+    case 96 /*vbe*/: varexit(); break;
     case 19 /*brk*/: break; /* breaks are no-ops here */
 
     /* illegal instructions */
-    /* 100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
-       212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
-       227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
-       242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255*/
+    /* 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
+       213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
+       228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
+       243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255*/
     default: errorv(INVALIDINSTRUCTION); break;
 
   }
@@ -2789,6 +2849,9 @@ void main (int argc, char *argv[])
     if (EXPERIMENT) printf(".x");
     printf("\n");
     printf("\n");
+
+    varlst = NULL; /* set no VAR block entries */
+    varfre = NULL;
 
     argc--; argv++; /* discard the program parameter */
 

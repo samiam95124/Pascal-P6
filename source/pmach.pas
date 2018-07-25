@@ -351,35 +351,38 @@ const
       InvalidDivisorToMod                = 84;
       PackElementsOutOfBounds            = 85;
       UnpackElementsOutOfBounds          = 86;
-      exceptiontop                       = 86;
+      CannotResetClosedTempFile          = 87;
+      exceptiontop                       = 87;
       
       { Exceptions that can't be caught.
         Note that these don't have associated exception variables. }
       
-      UndefinedLocationAccess            = 87;
-      FunctionNotImplemented             = 88;
-      InvalidInISO7185Mode               = 89;
-      HeapFormatInvalid                  = 90;
-      DisposeOfUninitalizedPointer       = 91;
-      DisposeOfNilPointer                = 92;
-      BadPointerValue                    = 93;
-      BlockAlreadyFreed                  = 94;
-      InvalidStandardProcedureOrFunction = 95;
-      InvalidInstruction                 = 96;
-      NewDisposeTagsMismatch             = 97;
-      PCOutOfRange                       = 98;
-      StoreOverflow                      = 99;
-      StackBalance                       = 100;
-      SetInclusion                       = 101;
-      UninitializedPointer               = 102;
-      DereferenceOfNilPointer            = 103;
-      PointerUsedAfterDispose            = 104;
-      VariantNotActive                   = 105;
-      InvalidCase                        = 106;
-      SystemError                        = 107;
-      ChangeToAllocatedTagfield          = 108;
-      UnhandledException                 = 109;
-      ProgramCodeAssertion               = 110;
+      UndefinedLocationAccess            = 88;
+      FunctionNotImplemented             = 89;
+      InvalidInISO7185Mode               = 90;
+      HeapFormatInvalid                  = 91;
+      DisposeOfUninitalizedPointer       = 92;
+      DisposeOfNilPointer                = 93;
+      BadPointerValue                    = 94;
+      BlockAlreadyFreed                  = 95;
+      InvalidStandardProcedureOrFunction = 96;
+      InvalidInstruction                 = 97;
+      NewDisposeTagsMismatch             = 98;
+      PCOutOfRange                       = 99;
+      StoreOverflow                      = 100;
+      StackBalance                       = 101;
+      SetInclusion                       = 102;
+      UninitializedPointer               = 103;
+      DereferenceOfNilPointer            = 104;
+      PointerUsedAfterDispose            = 105;
+      VariantNotActive                   = 106;
+      InvalidCase                        = 107;
+      SystemError                        = 108;
+      ChangeToAllocatedTagfield          = 109;
+      UnhandledException                 = 110;
+      ProgramCodeAssertion               = 111;
+      VarListEmpty                       = 112;
+      ChangeToVarReferencedVariant       = 113;
 
       maxsp       = 81;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
@@ -418,6 +421,12 @@ type
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
+      { VAR reference block }
+      varptr       = ^varblk;
+      varblk       = record 
+                       next: varptr; { next entry }
+                       s, e: address { start and end address of block }
+                     end;
 
 var   pc          : address;   (*program address register*)
       pctop       : address;   { top of code store }
@@ -475,6 +484,10 @@ var   pc          : address;   (*program address register*)
       filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
+      { file name has been assigned }
+      filanamtab  : array [1..maxfil] of boolean;
+      varlst      : varptr; { active var block pushdown stack }
+      varfre      : varptr; { free var block entries }
       
       i           : integer;
       c1          : char;
@@ -653,7 +666,8 @@ begin writeln; write('*** Runtime error');
     BooleanOperatorOfNegative:          writeln('Boolean operator of negative');        
     InvalidDivisorToMod:                writeln('Invalid divisor to mod');              
     PackElementsOutOfBounds:            writeln('Pack elements out of bounds');          
-    UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');        
+    UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');
+    CannotResetClosedTempFile:          writeln('Cannot reset closed temp file');        
                       
     { Exceptions that can't be intercepted }
     UndefinedLocationAccess:            writeln('Undefined location access');
@@ -680,6 +694,8 @@ begin writeln; write('*** Runtime error');
     ChangeToAllocatedTagfield:          writeln('Change to allocated tag field');  
     UnhandledException:                 writeln('Unhandled exception');   
     ProgramCodeAssertion:               writeln('Program code assertion');
+    VarListEmpty:                       writeln('VAR block list empty');
+    ChangeToVarReferencedVariant:       writeln('Change to VAR referenced variant');
   end;
   goto 1
 end;
@@ -2335,6 +2351,9 @@ begin (*callsp*)
                                   errore(CannotResetOrRewriteStandardFile)
                               end
                            else begin
+                                if (filstate[fn] = fclosed) and 
+                                   not filanamtab[fn] then
+                                  errore(CannotResetClosedTempFile);
                                 filstate[fn] := fread;
                                 reset(filtable[fn]);
                                 filbuff[fn] := false
@@ -2468,6 +2487,9 @@ begin (*callsp*)
                               end
                       end;
            33(*rsb*): begin popadr(ad); valfil(ad); fn := store[ad];
+                           if (filstate[fn] = fclosed) and 
+                              not filanamtab[fn] then
+                             errore(CannotResetClosedTempFile);
                            filstate[fn] := fread;
                            reset(bfiltable[fn]);
                            filbuff[fn] := false
@@ -2519,12 +2541,14 @@ begin (*callsp*)
            46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assigntext(filtable[fn], fl1) 
+                         assigntext(filtable[fn], fl1); 
+                         filanamtab[fn] := true
                        end;
            56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1); 
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
-                         assignbin(bfiltable[fn], fl1) 
+                         assignbin(bfiltable[fn], fl1); 
+                         filanamtab[fn] := true
                        end;
            47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad]; 
                          closetext(filtable[fn]); filstate[fn] := fclosed
@@ -2606,6 +2630,33 @@ begin (*callsp*)
                        
       end;(*case q*)
 end;(*callsp*)
+
+procedure varenter(s, e: address);
+var vp: varptr;
+begin
+  if varfre <> nil then begin vp := varfre; varfre := vp^.next end
+  else new(vp);
+  vp^.s := s; vp^.e := e; vp^.next := varlst; varlst := vp
+end;
+
+procedure varexit;
+var vp: varptr;
+begin
+  if varlst = nil then errorv(VarListEmpty);
+  vp := varlst; varlst := vp^.next; vp^.next := varfre; varfre := vp
+end;
+
+function varlap(s, e: address): boolean;
+var vp: varptr; f: boolean;
+begin
+  vp := varlst; f := false;
+  while (vp <> nil) and not f do begin
+    f := (vp^.e >= s) and (vp^.s <= e);
+    vp := vp^.next 
+  end;
+  
+  varlap := f
+end;
 
 procedure sinins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
@@ -3106,6 +3157,21 @@ begin
                         end
                       end
                 end;
+                
+    100 (*cvb*): begin getq; getq1; getq2; popint(i); popadr(ad);
+                      pshadr(ad); pshint(i);
+                      if (i < 0) or (i >= getint(q2)) then 
+                        errorv(ValueOutOfRange);
+                      b := getdef(ad);
+                      if b then 
+                        b := getint(q2+(i+1)*intsize) <> 
+                             getint(q2+(getint(ad)+1)*intsize);
+                      if b then begin 
+                        ad := ad+q; 
+                        if varlap(ad, ad+q1-1) then 
+                          errorv(ChangeToVarReferencedVariant); 
+                      end
+                end;
 
     174 (*mrkl*): begin getq; srclin := q end;
        
@@ -3143,15 +3209,15 @@ begin
                 end;
     21 (*cal*): begin getq; pshadr(pc); pc := q end;
     22 (*ret*): popadr(pc);  
-    92 (*vbs*): begin getq; popadr(ad) end;
-    96 (*vbe*): ;              
+    92 (*vbs*): begin getq; popadr(ad); varenter(ad, ad+q-1) end;
+    96 (*vbe*): varexit;
     19 (*brk*): ; { breaks are no-ops here }
 
     { illegal instructions }
-    100, 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211,
-    212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226,
-    227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
-    242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
+    213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
+    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
+    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
@@ -3187,6 +3253,8 @@ begin (* main *)
   donorecpar := false; { check reuse, but leave whole block unused }
   dochkdef := true;  { check undefined accesses }
   iso7185 := false;  { iso7185 standard mode }
+  varlst := nil; { set no VAR block entries }
+  varfre := nil;
 
   { get the command line }
   getcommandline(cmdlin, cmdlen);
@@ -3208,7 +3276,8 @@ begin (* main *)
   load; (* assembles and stores code *)
 
   { initalize file state }
-  for i := 1 to maxfil do filstate[i] := fclosed;
+  for i := 1 to maxfil do 
+    begin filstate[i] := fclosed; filanamtab[i] := false end;
   
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
