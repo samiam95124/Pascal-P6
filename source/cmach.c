@@ -527,6 +527,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define PROGRAMCODEASSERTION                111
 #define VARLISTEMPTY                        112
 #define CHANGETOVARREFERENCEDVARIANT        113
+#define DISPOSEOFVARREFERENCEDBLOCK         114
+#define VARREFERENCEDFILEBUFFERMODIFIED     115
 
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -784,6 +786,8 @@ void errorv(address ea)
     case PROGRAMCODEASSERTION:               printf("Program code assertion\n"); break;
     case VARLISTEMPTY:                       printf("VAR block list empty\n"); break;
     case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n"); break;
+    case DISPOSEOFVARREFERENCEDBLOCK:        printf("Dispose of VAR referenced block\n"); break;
+    case VARREFERENCEDFILEBUFFERMODIFIED:    printf("VAR referenced file buffer modified\n"); break;
   }
   finish(1);
 }
@@ -1141,6 +1145,38 @@ void load(FILE* fp)
 /*------------------------------------------------------------------------*/
 
 /* runtime handlers */
+
+void varenter(address s, address e)
+
+{
+    varptr vp;
+
+    if (varfre) { vp = varfre; varfre = vp->next; }
+    else vp = (varptr) malloc(sizeof(varblk));
+    vp->s = s; vp->e = e; vp->next = varlst; varlst = vp;
+}
+
+void varexit(void)
+{
+    varptr vp;
+
+    if (!varlst) errorv(VARLISTEMPTY);
+    vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
+}
+
+int varlap(address s, address e)
+{
+    varptr vp;
+    int f;
+
+    vp = varlst; f = FALSE;
+    while (vp && !f) {
+        f = (vp->e >= s && vp->s <= e);
+        vp = vp->next;
+    }
+
+    return (f);
+}
 
 address base(int ld)
 {
@@ -1754,7 +1790,10 @@ void callsp(void)
 
     switch (q) {
 
-    case 0 /*get*/: popadr(ad); valfil(ad); fn = store[ad]; getfn(fn); break;
+    case 0 /*get*/: popadr(ad); valfil(ad); fn = store[ad];
+                    if (varlap(ad+FILEIDSIZE, ad+FILEIDSIZE))
+                          errorv(VARREFERENCEDFILEBUFFERMODIFIED);
+                    getfn(fn); break;
     case 1 /*put*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: putfile(stdout, ad, fn); break;
@@ -2031,7 +2070,10 @@ void callsp(void)
                          fprintf(filtable[fn], "%*.*f", w, f, r);
                      }
                      break;
-    case 26/*dsp*/: popadr(ad1); popadr(ad); dspspc(ad1, ad); break;
+    case 26/*dsp*/: popadr(ad1); popadr(ad);
+                    if (varlap(ad, ad+ad1-1))
+                      errorv(DISPOSEOFVARREFERENCEDBLOCK);
+                    dspspc(ad1, ad); break;
     case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
                     ad = getadr(sp+i*INTSIZE); /* get rec addr */
                     /* under us is either the number of tags or the length of the block, if it
@@ -2050,7 +2092,10 @@ void callsp(void)
                             errorv(NEWDISPOSETAGSMISMATCH);
                         ad = ad-INTSIZE; ad2 = ad2+INTSIZE; k = k-1;
                     }
-                    dspspc(ad1+(i+1)*INTSIZE, ad+INTSIZE);
+                    ad = ad+INTSIZE; ad1 = ad1+(i+1)*INTSIZE;
+                    if (varlap(ad, ad+ad1-1))
+                      errorv(DISPOSEOFVARREFERENCEDBLOCK);
+                    dspspc(ad1, ad);
                     while (i > 0) { popint(j); i = i-1; };
                     popadr(ad);
                     break;
@@ -2110,6 +2155,8 @@ void callsp(void)
                     rewritefn(fn, TRUE); break;
     case 35/*gbf*/: popint(i); popadr(ad); valfilrm(ad);
                     fn = store[ad];
+                    if (varlap(ad+FILEIDSIZE, ad+FILEIDSIZE+i-1))
+                        errorv(VARREFERENCEDFILEBUFFERMODIFIED);
                     if (filbuff[fn]) filbuff[fn] = FALSE;
                     else
                       for (j = 0; j < i; j++)
@@ -2250,38 +2297,6 @@ void callsp(void)
 
     } /*case q*/
 } /*callsp*/
-
-void varenter(address s, address e)
-
-{
-    varptr vp;
-
-    if (varfre) { vp = varfre; varfre = vp->next; }
-    else vp = (varptr) malloc(sizeof(varblk));
-    vp->s = s; vp->e = e; vp->next = varlst; varlst = vp;
-}
-
-void varexit(void)
-{
-    varptr vp;
-
-    if (!varlst) errorv(VARLISTEMPTY);
-    vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
-}
-
-int varlap(address s, address e)
-{
-    varptr vp;
-    int f;
-
-    vp = varlst; f = FALSE;
-    while (vp && !f) {
-        f = (vp->e >= s && vp->s <= e);
-        vp = vp->next;
-    }
-
-    return (f);
-}
 
 void sinins()
 

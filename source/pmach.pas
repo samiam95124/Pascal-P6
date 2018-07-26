@@ -383,6 +383,8 @@ const
       ProgramCodeAssertion               = 111;
       VarListEmpty                       = 112;
       ChangeToVarReferencedVariant       = 113;
+      DisposeOfVarReferencedBlock        = 114;
+      VarReferencedFileBufferModified    = 115;
 
       maxsp       = 81;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
@@ -696,6 +698,8 @@ begin writeln; write('*** Runtime error');
     ProgramCodeAssertion:               writeln('Program code assertion');
     VarListEmpty:                       writeln('VAR block list empty');
     ChangeToVarReferencedVariant:       writeln('Change to VAR referenced variant');
+    DisposeOfVarReferencedBlock:        writeln('Dispose of VAR referenced block');
+    VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
   end;
   goto 1
 end;
@@ -1543,6 +1547,33 @@ end; (*load*)
 
 { runtime handlers }
 
+procedure varenter(s, e: address);
+var vp: varptr;
+begin
+  if varfre <> nil then begin vp := varfre; varfre := vp^.next end
+  else new(vp);
+  vp^.s := s; vp^.e := e; vp^.next := varlst; varlst := vp
+end;
+
+procedure varexit;
+var vp: varptr;
+begin
+  if varlst = nil then errorv(VarListEmpty);
+  vp := varlst; varlst := vp^.next; vp^.next := varfre; varfre := vp
+end;
+
+function varlap(s, e: address): boolean;
+var vp: varptr; f: boolean;
+begin
+  vp := varlst; f := false;
+  while (vp <> nil) and not f do begin
+    f := (vp^.e >= s) and (vp^.s <= e);
+    vp := vp^.next 
+  end;
+  
+  varlap := f
+end;
+
 function base(ld :integer):address;
    var ad :address;
 begin ad := mp;
@@ -2102,7 +2133,10 @@ begin (*callsp*)
       if q > maxsp then errorv(InvalidStandardProcedureOrFunction);
 
       case q of
-           0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad]; getfn(fn)
+           0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad];
+                        if varlap(ad+fileidsize, ad+fileidsize) then
+                          errorv(VarReferencedFileBufferModified); 
+                        getfn(fn)
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of                              
@@ -2410,7 +2444,10 @@ begin (*callsp*)
                             end
                       end;
            26(*dsp*): begin
-                           popadr(ad1); popadr(ad); dspspc(ad1, ad)
+                           popadr(ad1); popadr(ad); 
+                           if varlap(ad, ad+ad1-1) then 
+                             errorv(DisposeOfVarReferencedBlock);
+                           dspspc(ad1, ad)
                       end;
            40(*dsl*): begin
                            popadr(ad1); popint(i); { get size of record and n tags }
@@ -2431,7 +2468,10 @@ begin (*callsp*)
                                  errorv(NewDisposeTagsMismatch);
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
-                           dspspc(ad1+(i+1)*intsize, ad+intsize);
+                           ad := ad+intsize; ad1 := ad1+(i+1)*intsize;
+                           if varlap(ad, ad+ad1-1) then
+                             errorv(DisposeOfVarReferencedBlock);
+                           dspspc(ad1, ad);
                            while i > 0 do begin popint(j); i := i-1 end;
                            popadr(ad)
                       end;
@@ -2501,6 +2541,8 @@ begin (*callsp*)
                       end;
            35(*gbf*): begin popint(i); popadr(ad); valfilrm(ad);
                            fn := store[ad];
+                           if varlap(ad+fileidsize, ad+fileidsize+i-1) then
+                             errorv(VarReferencedFileBufferModified);
                            if filbuff[fn] then filbuff[fn] := false
                            else
                              for j := 1 to i do
@@ -2630,33 +2672,6 @@ begin (*callsp*)
                        
       end;(*case q*)
 end;(*callsp*)
-
-procedure varenter(s, e: address);
-var vp: varptr;
-begin
-  if varfre <> nil then begin vp := varfre; varfre := vp^.next end
-  else new(vp);
-  vp^.s := s; vp^.e := e; vp^.next := varlst; varlst := vp
-end;
-
-procedure varexit;
-var vp: varptr;
-begin
-  if varlst = nil then errorv(VarListEmpty);
-  vp := varlst; varlst := vp^.next; vp^.next := varfre; varfre := vp
-end;
-
-function varlap(s, e: address): boolean;
-var vp: varptr; f: boolean;
-begin
-  vp := varlst; f := false;
-  while (vp <> nil) and not f do begin
-    f := (vp^.e >= s) and (vp^.s <= e);
-    vp := vp^.next 
-  end;
-  
-  varlap := f
-end;
 
 procedure sinins;
 var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
