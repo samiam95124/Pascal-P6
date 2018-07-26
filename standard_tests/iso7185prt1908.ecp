@@ -1,0 +1,33 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1908: Use real value as case constant 
+     4      -32  
+     5      -32     A real value is used as a case constant. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1908(output); 
+    10      -32  
+    11      -32 var i: integer; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    i := 1; 
+    16       10    case i of 
+    17       12     
+    18       12       1.1: writeln('one'); 
+    18   ****            ^147
+    19       20       2: writeln('two') 
+    20       26        
+    21       26    end 
+    22       34  
+    23       34 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+147  Label type incompatible with selecting expression
+

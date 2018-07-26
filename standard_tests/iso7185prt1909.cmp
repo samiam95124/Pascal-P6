@@ -1,0 +1,9 @@
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+The result is: 
+*** Runtime error [19]: Value out of range
+
+program complete

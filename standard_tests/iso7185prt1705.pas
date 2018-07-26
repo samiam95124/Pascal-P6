@@ -1,3 +1,4 @@
+{$i}
 {
 
 PRT test 1705: It is an error to remove from its pointer-type the
@@ -17,7 +18,7 @@ procedure b(var c: integer);
 begin
 
    c := 1;
-   a := nil
+   dispose(a)
 
 end;
 

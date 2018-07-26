@@ -782,8 +782,8 @@ void errorv(address ea)
     case CHANGETOALLOCATEDTAGFIELD:          printf("Change to allocated tag field\n"); break;
     case UNHANDLEDEXCEPTION:                 printf("Unhandled exception\n"); break;
     case PROGRAMCODEASSERTION:               printf("Program code assertion\n"); break;
-    case VARLISTEMPTY:                       printf("VAR block list empty\n");
-    case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n");
+    case VARLISTEMPTY:                       printf("VAR block list empty\n"); break;
+    case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n"); break;
   }
   finish(1);
 }
