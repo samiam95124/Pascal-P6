@@ -4556,7 +4556,33 @@ end;
         if lcp^.klass = field then begin
           vp := lcp^.varnt; vl := lcp^.varlb;
           if (vp <> nil) and (vl <> nil) then 
-            if vl^.name <> nil then begin { is a variant }
+            if (vl^.name <> nil) or chkudtf then begin { is a variant }
+            if chkudtf and (vl^.name = nil) and (vp <> nil) then begin
+              { tagfield is unnamed and checking is on, force tagfield
+                assignment }
+              gattrs := gattr;
+              with gattr, vl^ do begin
+                typtr := idtype;
+                case access of
+                  drct:   dplmt := dplmt + fldaddr;
+                  indrct: begin
+                            idplmt := idplmt + fldaddr;
+                            gen0t(76(*dup*),nilptr)
+                          end;
+                  inxd:   error(406)
+                end;
+                loadaddress;
+                gen2(51(*ldc*),1,vp^.varval.ival);
+                if chkvbk then
+                  genctaivtcvb(95(*cvb*),vl^.varsaddr-fldaddr,vl^.varssize,
+                               vl^.vartl);
+                if debug then
+                  genctaivtcvb(82(*ivt*),vl^.varsaddr-fldaddr,vl^.varssize,
+                               vl^.vartl);
+                gen0t(26(*sto*),basetype(idtype));
+              end;
+              gattr := gattrs
+            end;
             gattrs := gattr;
             with gattr, vl^ do begin
               typtr := idtype;
@@ -7646,7 +7672,7 @@ end;
     prtables := false; option['t'] := false; list := true; option['l'] := true;
     prcode := true; option['c'] := true; debug := true; option['d'] := true;
     chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
-    chkudtc := true; option['u'] := true; option['s'] := false; iso7185 := false;
+    chkudtc := false; option['u'] := false; option['s'] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false;
     dp := true; errinx := 0;

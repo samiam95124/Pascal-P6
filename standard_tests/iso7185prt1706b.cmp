@@ -1,0 +1,9 @@
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+
+*** Runtime error [19]: VAR referenced file buffer modified
+
+program complete

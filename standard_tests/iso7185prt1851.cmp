@@ -1,10 +1,10 @@
-P6 Pascal interpreter vs. 1.2
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
 
 before error
 
-*** Runtime error [30]: Undefined location access
+*** Runtime error [28]: Undefined location access
 
 program complete
