@@ -208,6 +208,8 @@ Integer143: 52 s/b 52
 Integer144: -768 s/b -768
 Integer145: 52 s/b 52
 Integer146: 0 s/b 0
+Integer147: 42 s/b 42
+Integer148: 1 2 3 4 5 6 7 8 9 10 11 12 13 s/b 1 2 3 4 5 6 7 8 9 10 11 12 13
 
 ******************* Subranges *******************
 
@@ -395,7 +397,7 @@ hell
 hel
 he
 h
-Character86:  s/b:
+Character87:  s/b:
    hello, world
   hello, world
  hello, world 
@@ -411,6 +413,26 @@ hell
 hel
 he
 h
+Character88: 
+ True  True  True  True  True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true
+Character89:
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true
+Character90:
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true
 
 ******************* Booleans *******************
 
@@ -1216,5 +1238,6 @@ ProcedureFunction10:   62 76 s/b 62 76
 ProcedureFunction11:   52 s/b 52
 ProcedureFunction12:   a s/b a
 ProcedureFunction13:   37 s/b 37
+ProcedureFunction14:   36 s/b 36
 
 program complete

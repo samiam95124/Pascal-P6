@@ -9,7 +9,7 @@ PAT test 1: Alternate keywords
    
 }
 
-program iso7185pat0001
+program iso7185pat0001;
 
 procedure pascaline;
 
@@ -69,8 +69,6 @@ var
    class:          integer;
    constructor:    integer;
    destructor:     integer;
-   do:             integer;
-   export:         integer;
    exports:        integer;
    external:       integer;
    far:            integer;
@@ -80,7 +78,6 @@ var
    forward:        integer;
    implementation: integer;
    import:         integer;
-   in:             integer;
    inherited:      integer;
    initialization: integer;
    interface:      integer;
@@ -102,13 +99,11 @@ var
    public:         integer;
    published:      integer;
    qualified:      integer;
-   loop:           integer;
    resident:       integer;
    restricted:     integer;
    segment:        integer;
    shl:            integer;
    shr:            integer;
-   unit:           integer;
    uses:           integer;
    value:          integer;
    view:           integer;
@@ -150,7 +145,6 @@ var
    initialization:  integer;
    is:	            integer;
    library:	        integer;
-   on:	            integer;
    out:	            integer;
    property:	    integer;
    raise:	        integer;

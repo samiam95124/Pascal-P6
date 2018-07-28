@@ -46,6 +46,10 @@
 * number of total open files. If this occurs, turn the constant "testfile"    *
 * below to "false". This will cause the temporary files test to be skipped.   *
 *                                                                             *
+* 3. The test assumes that both upper and lower case characters are           *
+* available, both in source and in the text files that are processed. The     *
+* ISO 7185 standard does not technically require this.                        *
+*                                                                             *
 * The following sections need to be completed:                                *
 *                                                                             *
 * 1. Buffer variables. The full suite of handing tests need to be applied to  *
@@ -438,6 +442,21 @@ var
     rcast: record case rcastt: boolean of true: (); false: () end;
     pi1, pi2: ^integer;
     intaliasv: intalias;
+    iso7185pat: integer;
+    MyOwnInteger: integer;
+    myvar: integer;
+    myvarmyvar: integer;
+    myvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
+    myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar: integer;
 
 procedure junk1(z, q : integer);
 
@@ -484,7 +503,7 @@ procedure junk6;
 
 begin
 
-   goto 9999
+   goto 09999
 
 end;
 
@@ -677,6 +696,91 @@ begin
   random := rndseq div (maxint div (hi-low+1))+low
 end {of random};
 
+function junk21: integer;
+
+var
+  true:    1..10;
+  false:   1..10;
+  real:    1..10;
+  integer: 1..10;
+  boolean: 1..10;
+  text:    1..10;
+  abs:     1..10;
+  sqr:     1..10;
+  sqrt:    1..10;
+  sin:     1..10;
+  cos:     1..10;
+  arctan:  1..10;
+  ln:      1..10;
+  exp:     1..10;
+  trunc:   1..10;
+  round:   1..10;
+  ord:     1..10;
+  chr:     1..10;
+  succ:    1..10;
+  pred:    1..10;
+  odd:     1..10;
+  eoln:    1..10;
+  eof:     1..10;
+  read:    1..10;
+  readln:  1..10;
+  write:   1..10;
+  writeln: 1..10;
+  rewrite: 1..10;
+  reset:   1..10;
+  put:     1..10;
+  get:     1..10;
+  page:    1..10;
+  new:     1..10;
+  dispose: 1..10;
+  pack:    1..10;
+  unpack:  1..10;
+
+begin
+
+  true    := 1;    
+  false   := 1;   
+  real    := 1;  
+  integer := 1;  
+  boolean := 1; 
+  text    := 1;    
+  abs     := 1;     
+  sqr     := 1;     
+  sqrt    := 1;    
+  sin     := 1;     
+  cos     := 1;     
+  arctan  := 1;  
+  ln      := 1;      
+  exp     := 1;     
+  trunc   := 1;   
+  round   := 1;   
+  ord     := 1;     
+  chr     := 1;     
+  succ    := 1;    
+  pred    := 1;    
+  odd     := 1;     
+  eoln    := 1;    
+  eof     := 1;     
+  read    := 1;    
+  readln  := 1;  
+  write   := 1;   
+  writeln := 1; 
+  rewrite := 1; 
+  reset   := 1;   
+  put     := 1;     
+  get     := 1;     
+  page    := 1;    
+  new     := 1;     
+  dispose := 1; 
+  pack    := 1;    
+  unpack  := 1;  
+  
+  junk21 := true+false+real+integer+boolean+text+abs+sqr+sqrt+sin+cos+arctan+ln+
+            exp+trunc+round+ord+chr+succ+pred+odd+eoln+eof+read+readln+write+
+            writeln+rewrite+reset+put+get+page+new+dispose+pack+unpack 
+
+end;
+
 begin
 
    write('****************************************************************');
@@ -784,17 +888,17 @@ begin
    writeln('s/b 10 9 8 7 6 5 4 3 2 1');
    write('Control3: ');
    i := 1;
-   while i <=10 do begin write(i:1, ' '); i := i + 1 end;
+   while i <=10{comment}do begin write(i:1, ' '); i := i + 1 end;
    writeln('s/b 1 2 3 4 5 6 7 8 9 10');
    write('Control4: ');
    i := 1; repeat write(i:1, ' '); i := i + 1 until i > 10;
    writeln('s/b 1 2 3 4 5 6 7 8 9 10');
    write('Control5: ');
-   i := 1;
+   i := 1;{comment*)
    0: write(i:1, ' '); i := i + 1; if i <= 10 then goto 0;
    writeln('s/b 1 2 3 4 5 6 7 8 9 10');
-   write('Control6: ');
-   if true then write('yes') else write('no');
+   write('Control6: ');(*comment}
+   if true then write('yes') else{comment}write('no');
    writeln(' s/b yes');
    write('Control7: ');
    if false then write('no') else write('yes');
@@ -804,7 +908,7 @@ begin
    writeln(' s/b yes stop');
    write('Control9: ');
    if false then write('no '); write('stop');
-   writeln(' s/b stop');
+   writeln(' s/b stop');(*)comment*)
    write('Control10: ');
    for i := 1 to 10 do
       case i of
@@ -852,13 +956,13 @@ begin
    { wide spread of case statements }
    write('Control17: start ');
    i := 10000;
-   case i of
+   case i of{comment{comment}
       1: write('*** bad ***');
       10000: write('good')
    end;
    writeln(' start s/b start good');
    write('Control18: start ');
-   repeat
+   repeat(*comment(*comment*)
       goto 004;
       write('!! BAD !!');
       4: writeln('stop s/b start stop');
@@ -909,9 +1013,9 @@ begin
    write('Integer27:  '); i := 546; writeln(i:1, ' s/b 546');
    writeln('Integer28:  ', 56 + 34:1, ' s/b 90');
    writeln('Integer29:  ', 56 - 34:1, ' s/b 22');
-   writeln('Integer30:  ', 56 * 34:1, ' s/b 1904');
+   writeln('Integer30:  ', 056 * 34:1, ' s/b 1904');
    writeln('Integer31:  ', 56 div 34:1, ' s/b 1');
-   writeln('Integer32:  ', 56 mod 34:1, ' s/b 22');
+   writeln('Integer32:  ', 00000056 mod 34:1, ' s/b 22');
    writeln('Integer33:  ', succ(5):1, ' s/b 6');
    writeln('Integer34:  ', pred(5):1, ' s/b 4');
    writeln('Integer35:  ', sqr(7):1, ' s/b 49');
@@ -1038,6 +1142,38 @@ begin
    writeln('Integer144: ', tsncst2:1, ' s/b -768');
    writeln('Integer145: ', tsncst3:1, ' s/b 52');
    writeln('Integer146: ', maxint+mmaxint:1, ' s/b 0');
+   
+   { other integer }
+   myowninteger := 42;
+   writeln('Integer147: ', mYowNintegeR:1, ' s/b 42');
+   myvar := 1;
+   myvarmyvar := 2;
+   myvarmyvarmyvar := 3;
+   myvarmyvarmyvarmyvar := 4;
+   myvarmyvarmyvarmyvarmyvar := 5;
+   myvarmyvarmyvarmyvarmyvarmyvar := 6;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvar := 7;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 8;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 9;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 10;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 11;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 12;
+   myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar := 13;
+   writeln('Integer148: ', 
+      myvar:1, ' ',
+      myvarmyvar:1, ' ',
+      myvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1, ' ',
+      myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar:1,
+      ' s/b 1 2 3 4 5 6 7 8 9 10 11 12 13');
 
 {******************************************************************************
 
@@ -1264,7 +1400,7 @@ begin
    writeln('Character85:  ', ccst, ' s/b v');
    writeln('Character86:  ');
    for i := 15 downto 1 do writeln('hello, world': i);
-   writeln('Character86:  s/b:');
+   writeln('Character87:  s/b:');
    writeln('   hello, world');
    writeln('  hello, world');
    writeln(' hello, world ');
@@ -1280,6 +1416,83 @@ begin
    writeln('hel');
    writeln('he');
    writeln('h');
+   
+   { ordering }
+   writeln('Character88: ');
+   write(succ('0') = '1', ' ');
+   write(succ('1') = '2', ' ');
+   write(succ('2') = '3', ' ');
+   write(succ('3') = '4', ' ');
+   write(succ('4') = '5', ' ');
+   write(succ('5') = '6', ' ');
+   write(succ('6') = '7', ' ');
+   write(succ('7') = '8', ' ');
+   writeln(succ('8') = '9', ' ');
+   writeln('s/b');
+   writeln(' true  true  true  true  true  true  true  true  true');
+   
+   { Note it is possible for only one case to be present, but likely this whole
+     test would fail if that were true }
+   writeln('Character89:');
+   write('a' < 'b', ' ');
+   write('b' < 'c', ' ');
+   write('c' < 'd', ' ');
+   write('d' < 'e', ' ');
+   write('e' < 'f', ' ');
+   write('f' < 'g', ' ');
+   write('g' < 'h', ' ');
+   write('h' < 'i', ' ');
+   write('i' < 'j', ' ');
+   writeln('j' < 'k', ' ');
+   write('k' < 'l', ' ');
+   write('l' < 'm', ' ');
+   write('m' < 'n', ' ');
+   write('n' < 'o', ' ');
+   write('o' < 'p', ' ');
+   write('p' < 'q', ' ');
+   write('q' < 'r', ' ');
+   write('r' < 's', ' ');
+   write('s' < 't', ' ');
+   writeln('t' < 'u', ' ');
+   write('u' < 'v', ' ');
+   write('v' < 'w', ' ');
+   write('w' < 'x', ' ');
+   write('x' < 'y', ' ');
+   writeln('y' < 'z', ' ');
+   writeln('s/b');
+   writeln(' true  true  true  true  true  true  true  true  true  true');
+   writeln(' true  true  true  true  true  true  true  true  true  true');
+   writeln(' true  true  true  true  true');
+   writeln('Character90:');
+   write('A' < 'B', ' ');
+   write('B' < 'C', ' ');
+   write('C' < 'D', ' ');
+   write('D' < 'E', ' ');
+   write('E' < 'F', ' ');
+   write('F' < 'G', ' ');
+   write('G' < 'H', ' ');
+   write('H' < 'I', ' ');
+   write('I' < 'J', ' ');
+   writeln('J' < 'K', ' ');
+   write('K' < 'L', ' ');
+   write('L' < 'M', ' ');
+   write('M' < 'N', ' ');
+   write('N' < 'O', ' ');
+   write('O' < 'P', ' ');
+   write('P' < 'Q', ' ');
+   write('Q' < 'R', ' ');
+   write('R' < 'S', ' ');
+   write('S' < 'T', ' ');
+   writeln('T' < 'U', ' ');
+   write('U' < 'V', ' ');
+   write('V' < 'W', ' ');
+   write('W' < 'X', ' ');
+   write('X' < 'Y', ' ');
+   writeln('Y' < 'Z', ' ');
+   writeln('s/b');
+   writeln(' true  true  true  true  true  true  true  true  true  true');
+   writeln(' true  true  true  true  true  true  true  true  true  true');
+   writeln(' true  true  true  true  true');
 
 {******************************************************************************
 
@@ -1449,7 +1662,7 @@ begin
    writeln('Real4:   ', 4e-45:15, ' s/b  4.000000e-45');
    writeln('Real5:   ', -5.565:15, ' s/b -5.565000e+00');
    writeln('Real6:   ', -0.00944:15, ' s/b -9.440000e-03');
-   writeln('Real7:   ', -0.006364E+32:15, ' s/b -6.364000e+29');
+   writeln('Real7:   ', -0.006364E32:15, ' s/b -6.364000e+29');
    writeln('Real8:   ', -2e-14:15, ' s/b -2.000000e-14');
    writeln('Real9:');
    writeln('         11111111112222222222333333333344444444445');
@@ -3163,5 +3376,7 @@ end;
    writeln(' s/b a');
    write('ProcedureFunction13:   ');
    writeln(junk20:1, ' s/b 37');
+   write('ProcedureFunction14:   ');
+   writeln(junk21:1, ' s/b 36');
 
 end.
