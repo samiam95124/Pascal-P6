@@ -1,0 +1,33 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 {$s} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1760: Alphanumeric label. 
+     5      -32  
+     6      -32                Attempt to use alphanumeric label instead of number. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1760(output); 
+    11      -32  
+    12      -32 label skip; 
+    12   ****            ^397
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8    goto skip; 
+    16   ****              ^397
+    17        9  
+    18        9    writeln('*** Should not execute this'); 
+    19       17     
+    20       17    skip: writeln('At label'); 
+    21       25  
+    22       25 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+397  Feature not valid in ISO 7185 Pascal
+

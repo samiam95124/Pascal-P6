@@ -7674,7 +7674,7 @@ end;
     chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
     chkudtc := false; option['u'] := false; option['s'] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
-    chkvbk := false;
+    chkvbk := false; option['i'] := false;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil;
     lc := lcaftermarkstack; gc := 0;

@@ -1,0 +1,27 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1914: Adjoining symbols. 
+     4      -32  
+     5      -32     Number directly adjoining a symbol. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1914(output); 
+    10      -32  
+    11      -32 var myvar: integer; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    writeln('The result is: ', 42myvar); 
+    15   ****                                       ^6
+    16       19  
+    17       19 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+

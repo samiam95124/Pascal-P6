@@ -1,0 +1,30 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1762: Invalid string index subrange. 
+     4      -32  
+     5      -32     String index starts with 0. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1762(output); 
+    10      -32  
+    11      -32 var s: packed array [0..10] of char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    s := 'h          '; 
+    15   ****                        ^129
+    16       10    writeln('The string is: ''', s, ''''); 
+    16   ****                                    ^116
+    17       22  
+    18       22 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+116  Error in type of standard procedure parameter
+129  Type conflict of operands
+

@@ -1,0 +1,27 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1911: nil as tolken 
+     4      -32  
+     5      -32     In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
+     6      -32     as defined in ISO 7185. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1911(output); 
+    11      -32  
+    12      -32 var nil: integer; 
+    12   ****         ^2,6
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  2  Identifier expected
+  6  Illegal symbol
+

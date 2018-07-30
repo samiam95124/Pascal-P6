@@ -1,0 +1,30 @@
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1912: '..' and ':' equivalence 
+     4      -32  
+     5      -32     Pascal-P2 regarded '..' and ':' as equivalent. This should not be possible 
+     6      -32     under ISO 7185. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1912(output); 
+    11      -32  
+    12      -32 var r: 1:10; 
+    12   ****           ^6 ^5,50,107,102
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8 end. 
+
+Errors in program: 5
+
+Error numbers in listing:
+-------------------------
+  5  ':' expected
+  6  Illegal symbol
+ 50  Error in constant
+102  Low bound exceeds highbound
+107  Incompatible subrange types
+
