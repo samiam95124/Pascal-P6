@@ -2862,9 +2862,10 @@ end;
         if fsp^.packing then begin
         { if the index is nil, either the array is a string constant or the
           index type was in error. Either way, we call it a string }
-        if fsp^.inxtype = nil then fmin := 1
+        if fsp^.inxtype = nil then begin fmin := 1; fmax := fsp^.size end
         else getbounds(fsp^.inxtype,fmin,fmax);
-        if comptypes(fsp^.aeltype,charptr) and (fmin = 1) then stringt := true
+        if comptypes(fsp^.aeltype,charptr) and (fmin = 1) and (fmax > 1) then 
+          stringt := true
       end
   end (*stringt*);
   
