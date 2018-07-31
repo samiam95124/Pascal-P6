@@ -2864,8 +2864,7 @@ end;
           index type was in error. Either way, we call it a string }
         if fsp^.inxtype = nil then begin fmin := 1; fmax := fsp^.size end
         else getbounds(fsp^.inxtype,fmin,fmax);
-        if comptypes(fsp^.aeltype,charptr) and (fmin = 1) and (fmax > 1) then 
-          stringt := true
+        stringt := (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1) 
       end
   end (*stringt*);
   
