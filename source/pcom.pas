@@ -1505,6 +1505,8 @@ end;
     237: write('Array size too large');
     238: write('Invalid array length, must be >= 1');
     239: write('Variant case exceeds allowable range');
+    240: write('System header file already referenced');
+    241: write('Header parameter already included');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -7173,6 +7175,14 @@ end;
     if sy = semicolon then insymbol else error(14)
   end;
     
+  function searchext: boolean;
+  var fp: extfilep; f: boolean;
+  begin f := false; fp := fextfilep;
+    while fp <> nil do 
+      begin if id = fp^.filename then f := true; fp := fp^.nextfile end;
+    searchext := f
+  end;
+  
   procedure modulep{(fsys:setofsys)};
     var extfp:extfilep; segsize: integer;
   begin
@@ -7215,18 +7225,26 @@ end;
           begin
             repeat insymbol;
               if sy = ident then
-                begin getfil(extfp);
+                begin getfil(extfp); if searchext then error(241);
                   with extfp^ do
                     begin filename := id; nextfile := fextfilep end;
                   fextfilep := extfp;
                   { check 'input' or 'output' appears in header for defaults }
-                  if strequri('input    ', id) then inputptr^.hdr := true
-                  else if strequri('output   ', id) then outputptr^.hdr := true
-                  else if strequri('prd      ', id) then prdptr^.hdr := true
-                  else if strequri('prr      ', id) then prrptr^.hdr := true
-                  else if strequri('error    ', id) then errorptr^.hdr := true
-                  else if strequri('list     ', id) then listptr^.hdr := true
-                  else if strequri('command  ', id) then commandptr^.hdr := true;
+                  if strequri('input    ', id) then begin
+                    if inputptr^.hdr then error(240); inputptr^.hdr := true
+                  end else if strequri('output   ', id) then begin
+                    if outputptr^.hdr then error(240); outputptr^.hdr := true
+                  end else if strequri('prd      ', id) then begin
+                    if prdptr^.hdr then error(240); prdptr^.hdr := true
+                  end else if strequri('prr      ', id) then begin
+                    if prrptr^.hdr then error(240); prrptr^.hdr := true
+                  end else if strequri('error    ', id) then begin 
+                    if errorptr^.hdr then error(240); errorptr^.hdr := true
+                  end else if strequri('list     ', id) then begin
+                    if listptr^.hdr then error(240); listptr^.hdr := true
+                  end else if strequri('command  ', id) then begin
+                    if commandptr^.hdr then error(240); commandptr^.hdr := true
+                  end;
                   insymbol;
                   if not ( sy in [comma,rparent] ) then error(20)
                 end
