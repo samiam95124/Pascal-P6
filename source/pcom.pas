@@ -1505,8 +1505,7 @@ end;
     237: write('Array size too large');
     238: write('Invalid array length, must be >= 1');
     239: write('Variant case exceeds allowable range');
-    240: write('System header file already referenced');
-    241: write('Header parameter already included');
+    240: write('Header parameter already included');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1889,18 +1888,19 @@ end;
               single character, we store it as an integer even though the
               symbol stays a string }
             val.intval := true; val.ival := ord(string[1])
-          end else
-            begin
-              if lgth = 0 then error(205);
-              new(lvp,strg); pshcst(lvp);
-              lvp^.cclass:=strg;
-              if lgth > strglgth then
-                begin error(26); lgth := strglgth end;
-              with lvp^ do
-                begin slgth := lgth; strassvc(sval, string, strglgth) end;
-              val.intval := false;
-              val.valp := lvp
-            end
+          end else if lgth = 0 then begin
+            { can't let zero length propagate up, we change to space }
+            error(205); val.intval := true; val.ival := ord(' '); lgth := 1
+          end else begin
+            new(lvp,strg); pshcst(lvp);
+            lvp^.cclass:=strg;
+            if lgth > strglgth then
+              begin error(26); lgth := strglgth end;
+            with lvp^ do
+              begin slgth := lgth; strassvc(sval, string, strglgth) end;
+            val.intval := false;
+            val.valp := lvp
+          end
         end;
       chcolon:
         begin op := noop; nextch;
@@ -7225,26 +7225,18 @@ end;
           begin
             repeat insymbol;
               if sy = ident then
-                begin getfil(extfp); if searchext then error(241);
+                begin getfil(extfp); if searchext then error(240);
                   with extfp^ do
                     begin filename := id; nextfile := fextfilep end;
                   fextfilep := extfp;
                   { check 'input' or 'output' appears in header for defaults }
-                  if strequri('input    ', id) then begin
-                    if inputptr^.hdr then error(240); inputptr^.hdr := true
-                  end else if strequri('output   ', id) then begin
-                    if outputptr^.hdr then error(240); outputptr^.hdr := true
-                  end else if strequri('prd      ', id) then begin
-                    if prdptr^.hdr then error(240); prdptr^.hdr := true
-                  end else if strequri('prr      ', id) then begin
-                    if prrptr^.hdr then error(240); prrptr^.hdr := true
-                  end else if strequri('error    ', id) then begin 
-                    if errorptr^.hdr then error(240); errorptr^.hdr := true
-                  end else if strequri('list     ', id) then begin
-                    if listptr^.hdr then error(240); listptr^.hdr := true
-                  end else if strequri('command  ', id) then begin
-                    if commandptr^.hdr then error(240); commandptr^.hdr := true
-                  end;
+                  if strequri('input    ', id) then inputptr^.hdr := true
+                  else if strequri('output   ', id) then outputptr^.hdr := true
+                  else if strequri('prd      ', id) then prdptr^.hdr := true
+                  else if strequri('prr      ', id) then prrptr^.hdr := true
+                  else if strequri('error    ', id) then errorptr^.hdr := true
+                  else if strequri('list     ', id) then listptr^.hdr := true
+                  else if strequri('command  ', id) then commandptr^.hdr := true;
                   insymbol;
                   if not ( sy in [comma,rparent] ) then error(20)
                 end

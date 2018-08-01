@@ -2,27 +2,27 @@ P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
-     3      -32 PRT test 1757: It is an error if the buffer-variable is undefined immediately 
-     4      -32                prior to any use of read. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.9.1 
+     3      -32 PRT test 1767: Repeated header file 
+     4      -32  
+     5      -32     Tests for a duplicated header file. The ISO 7185 standard states that header 
+     6      -32     parameters must be distinct. 
      7      -32  
-     8      -32                Other than eof being true, I don't know of another undefined 
-     9      -32                buffer variable condition. 
-    10      -32  
-    11      -32 } 
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1767(output,output); 
+    10   ****                                      ^241,240
+    11      -32  
     12      -32  
-    13      -32 program iso7185prt1757; 
-    14      -32  
-    15      -32 var a: file of integer; 
-    16      -32     b: integer; 
-    17      -32  
-    18      -32 begin 
-    19        8  
-    20        8    rewrite(a); 
-    21       10    reset(a); 
-    22       12    read(a, b) 
-    23       16  
-    24       16 end. 
+    13      -32 begin 
+    14        8  
+    15        8    writeln('Test runs') 
+    16       14  
+    17       14 end. 
 
-Errors in program: 0
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+240  System header file already referenced
+241  Header parameter already included
+
