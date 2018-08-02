@@ -2,27 +2,24 @@ P6 Pascal compiler vs. 0.1.x
 
      1      -32 { 
      2      -32  
-     3      -32 PRT test 1757: It is an error if the buffer-variable is undefined immediately 
-     4      -32                prior to any use of read. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.9.1 
-     7      -32  
-     8      -32                Other than eof being true, I don't know of another undefined 
-     9      -32                buffer variable condition. 
+     3      -32 PRT test 1913: Adjoining symbols. 
+     4      -32  
+     5      -32     Number directly adjoining a keyword. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1913(output); 
     10      -32  
-    11      -32 } 
-    12      -32  
-    13      -32 program iso7185prt1757; 
-    14      -32  
-    15      -32 var a: file of integer; 
-    16      -32     b: integer; 
-    17      -32  
-    18      -32 begin 
-    19        8  
-    20        8    rewrite(a); 
-    21       10    reset(a); 
-    22       12    read(a, b) 
-    23       16  
-    24       16 end. 
+    11      -32 begin 
+    12        8  
+    13        8    writeln('The result is: ', 42div 4); 
+    13   ****                                  ^241
+    14       21  
+    15       21 end. 
 
-Errors in program: 0
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+241  Invalid tolken separator
+

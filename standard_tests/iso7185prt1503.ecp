@@ -13,14 +13,15 @@ P6 Pascal compiler vs. 0.1.x
     11      -32 begin 
     12        8  
     13        8    a := 1d5 
-    13   ****             ^6,104
+    13   ****           ^241^6,104
     14        8  
     15        8 end. 
 
-Errors in program: 2
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6  Illegal symbol
 104  Identifier not declared
+241  Invalid tolken separator
 
