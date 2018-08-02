@@ -10,7 +10,7 @@ P6 Pascal compiler vs. 0.1.x
      8      -32 } 
      9      -32  
     10      -32 program iso7185prt1767(output,output); 
-    10   ****                                      ^241,240
+    10   ****                                      ^240
     11      -32  
     12      -32  
     13      -32 begin 
@@ -19,10 +19,9 @@ P6 Pascal compiler vs. 0.1.x
     16       14  
     17       14 end. 
 
-Errors in program: 2
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-240  System header file already referenced
-241  Header parameter already included
+240  Header parameter already included
 
