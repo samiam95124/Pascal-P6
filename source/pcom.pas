@@ -1506,6 +1506,7 @@ end;
     238: write('Invalid array length, must be >= 1');
     239: write('Variant case exceeds allowable range');
     240: write('Header parameter already included');
+    241: write('Invalid tolken separator');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1787,6 +1788,9 @@ end;
               nextch
             until (chartp[ch] <> number) and ((chartp[ch] <> letter) or 
                   (r < 16) or iso7185);
+            { separator must be non-alpha numeric or 'e' with decimal radix }
+            if ((chartp[ch] = letter) and not ((lcase(ch) = 'e') and (r = 10))) or 
+               (chartp[ch] = number) then error(241);  
             val.intval := true;
             val.ival := v; 
             sy := intconst;
