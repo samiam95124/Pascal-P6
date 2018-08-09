@@ -702,7 +702,6 @@ var
   true:    1..10;
   false:   1..10;
   real:    1..10;
-  integer: 1..10;
   boolean: 1..10;
   text:    1..10;
   abs:     1..10;
@@ -741,7 +740,6 @@ begin
   true    := 1;    
   false   := 1;   
   real    := 1;  
-  integer := 1;  
   boolean := 1; 
   text    := 1;    
   abs     := 1;     
@@ -775,7 +773,7 @@ begin
   pack    := 1;    
   unpack  := 1;  
   
-  junk21 := true+false+real+integer+boolean+text+abs+sqr+sqrt+sin+cos+arctan+ln+
+  junk21 := true+false+real+boolean+text+abs+sqr+sqrt+sin+cos+arctan+ln+
             exp+trunc+round+ord+chr+succ+pred+odd+eoln+eof+read+readln+write+
             writeln+rewrite+reset+put+get+page+new+dispose+pack+unpack 
 
@@ -3377,6 +3375,6 @@ end;
    write('ProcedureFunction13:   ');
    writeln(junk20:1, ' s/b 37');
    write('ProcedureFunction14:   ');
-   writeln(junk21:1, ' s/b 36');
+   writeln(junk21:1, ' s/b 35');
 
 end.

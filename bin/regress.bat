@@ -101,18 +101,19 @@ call testprog %option% sample_programs\roman
 wc -l sample_programs\roman.dif >> temp1
 call testprog %option% sample_programs\match
 wc -l sample_programs\match.dif >> temp1
-call testprog %option% sample_programs\startrek
-wc -l sample_programs\startrek.dif >> temp1
-call testprog %option% sample_programs\basics
-wc -l sample_programs\basics.dif >> temp1
-call testprog %option% sample_programs\drystone
-wc -l sample_programs\drystone.dif >> temp1
-call testprog %option% sample_programs\fbench
-wc -l sample_programs\fbench.dif >> temp1
 call testprog %option% sample_programs\prime
 wc -l sample_programs\prime.dif >> temp1
 call testprog %option% sample_programs\qsort
 wc -l sample_programs\qsort.dif >> temp1
+call testprog %option% sample_programs\fbench
+wc -l sample_programs\fbench.dif >> temp1
+call testprog %option% sample_programs\drystone
+wc -l sample_programs\drystone.dif >> temp1
+call testprog %option% sample_programs\startrek
+wc -l sample_programs\startrek.dif >> temp1
+call testprog %option% sample_programs\basics
+wc -l sample_programs\basics.dif >> temp1
+
 call testprog %option% basic\basic
 wc -l sample_programs\basics.dif >> temp1
 rem
