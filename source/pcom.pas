@@ -2999,9 +2999,8 @@ end;
               begin
                 new(lsp,arrays); pshstc(lsp);
                 with lsp^ do
-                  begin aeltype := charptr; inxtype := nil;
-                     size := lgth*charsize; form := arrays;
-                     packing := true
+                  begin form := arrays; aeltype := charptr; inxtype := nil;
+                     size := lgth*charsize; packing := true
                   end
               end;
             fvalu := val; insymbol
@@ -3194,17 +3193,17 @@ end;
                 while display[top].occur <> blck do top := top - 1;
                 new(lsp,scalar,declared); pshstc(lsp);
                 with lsp^ do
-                  begin size := intsize; form := scalar;
-                    scalkind := declared; packing := false
+                  begin form := scalar; size := intsize; scalkind := declared; 
+                    packing := false
                   end;
                 lcp1 := nil; lcnt := 0;
                 repeat insymbol;
                   if sy = ident then
                     begin new(lcp,konst); ininam(lcp);
                       with lcp^ do
-                        begin strassvf(name, id); idtype := lsp; next := lcp1;
-                          values.intval := true; values.ival := lcnt; 
-                          klass := konst
+                        begin klass := konst; strassvf(name, id); idtype := lsp;
+                          next := lcp1; values.intval := true; 
+                          values.ival := lcnt; 
                         end;
                       enterid(lcp);
                       lcnt := lcnt + 1;
@@ -3308,8 +3307,8 @@ end;
                 begin new(lcp,field); ininam(lcp); 
                   if fstlab = nil then fstlab := lcp;
                   with lcp^ do
-                    begin strassvf(name, id); idtype := nil; next := nxt;
-                      klass := field; varnt := vartyp; varlb := varlab;
+                    begin klass := field; strassvf(name, id); idtype := nil;
+                      next := nxt; varnt := vartyp; varlb := varlab;
                       tagfield := false; taglvl := lvl; varsaddr := 0;
                       varssize := 0
                     end;
@@ -3346,7 +3345,7 @@ end;
         if sy = casesy then
           begin new(lsp,tagfld); pshstc(lsp);
             with lsp^ do
-              begin tagfieldp := nil; fstvar := nil; form:=tagfld; 
+              begin form := tagfld; tagfieldp := nil; fstvar := nil;  
                     packing := false; new(vart); 
                     for varcn := 0 to varmax do vart^[varcn] := 0 
               end;
@@ -3360,7 +3359,7 @@ end;
                 { now set up as field id }
                 new(lcp,field); ininam(lcp);
                 with lcp^ do
-                  begin strassvf(name, id); idtype := nil; klass:=field;
+                  begin klass:=field; strassvf(name, id); idtype := nil; 
                     next := nil; fldaddr := displ; varnt := vartyp;
                     varlb := varlab; tagfield := true; taglvl := lvl;
                     varsaddr := 0; varssize := 0
@@ -3418,10 +3417,11 @@ end;
                     begin rvalu.intval := true; rvalu.ival := 1 end;
                   if lvalu.ival > rvalu.ival then error(225);
                   repeat { case range }
-                    new(lsp3,variant); pshstc(lsp3); lsp3^.varln := varln;
+                    new(lsp3,variant); pshstc(lsp3); 
                     with lsp3^ do
-                      begin nxtvar := lsp1; subvar := lsp2; varval := lvalu;
-                            caslst := lsp2; form := variant; packing := false
+                      begin form := variant; lsp3^.varln := varln; 
+                            nxtvar := lsp1; subvar := lsp2; varval := lvalu;
+                            caslst := lsp2;  packing := false
                       end;
                     if (lvalu.ival >= 0) and (lvalu.ival <= varmax) then 
                       lsp^.vart^[lvalu.ival] := varln; { set case to logical }
@@ -3499,15 +3499,15 @@ end;
     (*^*)     if sy = arrow then
               begin new(lsp,pointer); pshstc(lsp); fsp := lsp;
                 with lsp^ do
-                  begin eltype := nil; size := ptrsize; form:=pointer; 
+                  begin form:=pointer; eltype := nil; size := ptrsize;  
                         packing := false end;
                 insymbol;
                 if sy = ident then
                   begin { forward reference everything }
                     new(lcp,types); ininam(lcp);
                     with lcp^ do
-                      begin strassvf(name,id); idtype := lsp;
-                        next := fwptr; klass := types
+                      begin klass := types; strassvf(name,id); idtype := lsp;
+                        next := fwptr; 
                       end;
                     fwptr := lcp;
                     insymbol;
@@ -3532,7 +3532,7 @@ end;
                       lsp1 := nil;
                       repeat new(lsp,arrays); pshstc(lsp);
                         with lsp^ do
-                          begin aeltype := lsp1; inxtype := nil; form:=arrays;
+                          begin form:=arrays; aeltype := lsp1; inxtype := nil; 
                                 packing := ispacked end;
                         lsp1 := lsp;
                         constexpr(fsys+[comma,ofsy],lsp2,lvalu);
@@ -3545,8 +3545,8 @@ end;
                         { build subrange type based on 1..n }
                         new(lsp2,subrange); pshstc(lsp2);
                           with lsp2^ do
-                            begin rangetype := intptr; min.ival := 1; 
-                                  max := lvalu end;
+                            begin form := subrange; rangetype := intptr; 
+                                  min.ival := 1; max := lvalu end;
                         lsp^.inxtype := lsp2;
                         test := sy <> comma;
                         if not test then insymbol
@@ -3556,7 +3556,7 @@ end;
                       lsp1 := nil;
                       repeat new(lsp,arrays); pshstc(lsp);
                         with lsp^ do
-                          begin aeltype := lsp1; inxtype := nil; form:=arrays;
+                          begin form:=arrays; aeltype := lsp1; inxtype := nil; 
                                 packing := ispacked end;
                         lsp1 := lsp;
                         simpletype(fsys + [comma,rbrack,ofsy],lsp2,lsize);
@@ -3618,9 +3618,9 @@ end;
                       fieldlist(fsys-[semicolon]+[endsy],lsp1,nil,nil,1,lcp);
                       new(lsp,records);
                       with lsp^ do
-                        begin fstfld := display[top].fname;
+                        begin form := records; fstfld := display[top].fname;
                           display[top].fname := nil;
-                          recvar := lsp1; size := displ; form := records;
+                          recvar := lsp1; size := displ; 
                           packing := ispacked;
                           recyc := display[top].fstruct;
                           display[top].fstruct := nil
@@ -3650,7 +3650,7 @@ end;
                               end;
                         new(lsp,power); pshstc(lsp);
                         with lsp^ do
-                          begin elset:=lsp1; size:=setsize; form:=power;
+                          begin form:=power; elset:=lsp1; size:=setsize; 
                                 packing := ispacked; matchpack := true end;
                       end
                     else
@@ -3661,8 +3661,8 @@ end;
                             if filecomponent(lsp1) then error(190);
                             new(lsp,files); pshstc(lsp);
                             with lsp^ do
-                              begin filtype := lsp1; size := filesize+lsize;
-                                form := files; packing := ispacked
+                              begin form := files; filtype := lsp1; 
+                                 size := filesize+lsize; packing := ispacked
                               end
                           end
                     else fsp := nil;
@@ -3703,7 +3703,7 @@ end;
       while sy = ident do
         begin new(lcp,konst); ininam(lcp);
           with lcp^ do
-            begin strassvf(name, id); idtype := nil; next := nil; klass:=konst;
+            begin klass:=konst; strassvf(name, id); idtype := nil; next := nil; 
               refer := false
             end;
           insymbol;
@@ -3728,7 +3728,7 @@ end;
       while sy = ident do
         begin new(lcp,types); ininam(lcp);
           with lcp^ do
-            begin strassvf(name, id); idtype := nil; klass := types;
+            begin klass := types; strassvf(name, id); idtype := nil; 
               refer := false
             end;
           insymbol;
@@ -3882,7 +3882,7 @@ end;
           if sy = ident then
             begin new(lcp,vars); ininam(lcp);
               with lcp^ do
-               begin strassvf(name, id); next := nxt; klass := vars;
+               begin klass := vars; strassvf(name, id); next := nxt; 
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; threat := false; forcnt := 0; part := ptval;
                   hdr := false; vext := incstk <> nil; vmod := incstk
@@ -3992,9 +3992,10 @@ end;
                         lc := lc-ptrsize*2; { mp and addr }
                         alignd(parmptr,lc);
                         with lcp^ do
-                          begin strassvf(name, id); idtype := nil; next := lcp1;
+                          begin klass:=proc; strassvf(name, id); idtype := nil;
+                            next := lcp1; 
                             pflev := level (*beware of parameter procedures*);
-                            klass:=proc; pfdeckind:=declared; pflist := nil;
+                            pfdeckind:=declared; pflist := nil;
                             pfkind:=formal; pfaddr := lc; pext := false; 
                             pmod := nil; keep := true; pfattr := fpanone;
                             grpnxt := nil; grppar := nil; pfvid := nil
@@ -4021,9 +4022,10 @@ end;
                             lc := lc-ptrsize*2; { mp and addr }
                             alignd(parmptr,lc);
                             with lcp^ do
-                              begin strassvf(name, id); idtype := nil; next := lcp1;
+                              begin klass:=func; strassvf(name, id); 
+                                idtype := nil; next := lcp1;
                                 pflev := level (*beware param funcs*);
-                                klass:=func;pfdeckind:=declared; pflist := nil;
+                                pfdeckind:=declared; pflist := nil;
                                 pfkind:=formal; pfaddr:=lc; pext := false; 
                                 pmod := nil; keep := true; pfattr := fpanone;
                                 grpnxt := nil; grppar := nil; pfvid := nil
@@ -4074,11 +4076,12 @@ end;
                           if sy = ident then
                             begin new(lcp,vars); ininam(lcp);
                               with lcp^ do
-                                begin strassvf(name,id); idtype:=nil; klass:=vars;
-                                  vkind := lkind; next := lcp2; vlev := level;
-                                  keep := true; refer := false; threat := false;
-                                  forcnt := 0; part := pt; hdr := false; 
-                                  vext := false; vmod := nil; vaddr := 0
+                                begin klass:=vars; strassvf(name,id); 
+                                  idtype:=nil; vkind := lkind; next := lcp2;
+                                  vlev := level; keep := true; refer := false; 
+                                  threat := false; forcnt := 0; part := pt; 
+                                  hdr := false; vext := false; vmod := nil; 
+                                  vaddr := 0
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -4227,11 +4230,11 @@ end;
               if fsy = procsy then new(lcp,proc,declared,actual)
               else new(lcp,func,declared,actual); ininam(lcp);
               with lcp^ do
-                begin strassvf(name, id); idtype := nil; next := nil;
+                begin if fsy = procsy then klass := proc else klass := func; 
+                  strassvf(name, id); idtype := nil; next := nil;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
-                  if fsy = procsy then klass := proc
-                  else klass := func; 
+                  
                   pflist := nil; asgn := false; 
                   pext := incstk <> nil; pmod := incstk; refer := false; 
                   pfattr := fpat; grpnxt := nil; grppar := nil;
@@ -4239,12 +4242,12 @@ end;
                     if pfattr = fpavirtual then begin
                       { have to create a label for far references to virtual }
                       new(lcp2,vars); ininam(lcp2);
-                      with lcp2^ do begin
+                      with lcp2^ do begin klass := vars;
                         strassvf(name, id); strcatvr(name, '__virtvec');
-                        idtype := nilptr; vkind := actual;
-                        next := nil; vlev := 0; vaddr := gc; klass := vars;
-                        threat := false; forcnt := 0; part := ptval; hdr := false; 
-                        vext := incstk <> nil; vmod := incstk
+                        idtype := nilptr; vkind := actual; next := nil; 
+                        vlev := 0; vaddr := gc; threat := false; forcnt := 0;
+                        part := ptval; hdr := false; vext := incstk <> nil; 
+                        vmod := incstk
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
                       wrtsym(lcp2, 'g')
@@ -5875,7 +5878,7 @@ end;
                             else
                               begin new(lsp,arrays); pshstc(lsp);
                                 with lsp^ do
-                                  begin aeltype := charptr; form:=arrays;
+                                  begin form:=arrays; aeltype := charptr; 
                                     packing := true;
                                     inxtype := nil; size := lgth*charsize
                                   end;
@@ -5901,7 +5904,7 @@ end;
                       begin insymbol; cstpart := [ ]; varpart := false;
                         new(lsp,power); pshstc(lsp);
                         with lsp^ do
-                          begin elset:=nil;size:=setsize;form:=power;
+                          begin form:=power; elset:=nil;size:=setsize;
                                 packing := false; matchpack := false end;
                         if sy = rbrack then
                           begin
@@ -7346,41 +7349,41 @@ end;
 
     new(intptr,scalar,standard); pshstc(intptr);               (*integer*)
     with intptr^ do
-      begin size := intsize; form := scalar; scalkind := standard; 
+      begin form := scalar; size := intsize; scalkind := standard; 
             packing := false end;
     new(crdptr,subrange); pshstc(crdptr);                      (*cardinal*)
     with crdptr^ do
-      begin size := intsize; form := subrange; rangetype := intptr; 
+      begin form := subrange; size := intsize; rangetype := intptr; 
             min.intval := true; min.ival := 0; 
             max.intval := true; max.ival := maxint; packing := false end;
     new(realptr,scalar,standard); pshstc(realptr);             (*real*)
     with realptr^ do
-      begin size := realsize; form := scalar; scalkind := standard; 
+      begin form := scalar; size := realsize; scalkind := standard; 
             packing := false end;
     new(charptr,scalar,standard); pshstc(charptr);             (*char*)
     with charptr^ do
-      begin size := charsize; form := scalar; scalkind := standard;
+      begin form := scalar; size := charsize; scalkind := standard;
             packing := false end;
     new(boolptr,scalar,declared); pshstc(boolptr);             (*boolean*)
     with boolptr^ do
-      begin size := boolsize; form := scalar; scalkind := declared;
+      begin form := scalar; size := boolsize; scalkind := declared;
             packing := false end;
     new(nilptr,pointer); pshstc(nilptr);                       (*nil*)
     with nilptr^ do
-      begin eltype := nil; size := ptrsize; form := pointer;
+      begin form := pointer; eltype := nil; size := ptrsize; 
             packing := false end;
     (*for alignment of parameters*)
     new(parmptr,scalar,standard); pshstc(parmptr);
     with parmptr^ do
-      begin size := parmsize; form := scalar; scalkind := standard;
+      begin form := scalar; size := parmsize; scalkind := standard;
             packing := false end ;
     new(textptr,files); pshstc(textptr);                       (*text*)
     with textptr^ do
-      begin filtype := charptr; size := filesize+charsize; form := files;
+      begin form := files; filtype := charptr; size := filesize+charsize; 
             packing := false end;
     new(exceptptr,exceptf); pshstc(exceptptr);                 (*exception*)
     with exceptptr^ do
-      begin size := exceptsize; form := exceptf; packing := false end;
+      begin form := exceptf; size := exceptsize; packing := false end;
     
   end (*enterstdtypes*) ;
 
@@ -7393,9 +7396,9 @@ end;
     else new(cp,func,standard);
     ininam(cp);
     with cp^ do
-      begin strassvr(name, na[sn]); idtype := idt;
+      begin klass := idc; strassvr(name, na[sn]); idtype := idt;
         pflist := nil; next := nil; key := kn;
-        klass := idc; pfdeckind := standard; pfaddr := 0; pext := false;
+        pfdeckind := standard; pfaddr := 0; pext := false;
         pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := nil;
         pfvid := nil; pflist := nil
       end; enterid(cp)
@@ -7405,7 +7408,7 @@ end;
   begin
     new(cp,types); ininam(cp);
     with cp^ do
-      begin strassvr(name, na[sn]); idtype := idt; klass := types end;
+      begin klass := types; strassvr(name, na[sn]); idtype := idt end;
     enterid(cp)
   end;
   
@@ -7413,8 +7416,8 @@ end;
   begin
     new(cp,konst); ininam(cp);
     with cp^ do
-      begin strassvr(name, na[sn]); idtype := idt; next := nil; 
-        values.intval := true; values.ival := i; klass := konst end;
+      begin klass := konst; strassvr(name, na[sn]); idtype := idt; next := nil; 
+        values.intval := true; values.ival := i end;
     enterid(cp)
   end;
   
@@ -7424,8 +7427,8 @@ end;
     new(cp,konst); ininam(cp); new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
     lvp^.rval := r;
     with cp^ do
-      begin strassvr(name, na[sn]); idtype := idt; next := nil;
-        klass := konst; values.intval := false; values.valp := lvp end;
+      begin klass := konst; strassvr(name, na[sn]); idtype := idt; next := nil;
+        values.intval := false; values.valp := lvp end;
     enterid(cp)
   end;
   
@@ -7433,7 +7436,7 @@ end;
   begin
     new(cp,vars); ininam(cp); 
     with cp^ do
-    begin strassvr(name, na[sn]); idtype := textptr; klass := vars;
+    begin klass := vars; strassvr(name, na[sn]); idtype := textptr; 
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
@@ -7446,7 +7449,7 @@ end;
   begin
     new(cp,vars); ininam(cp); 
     with cp^ do
-    begin strassve(name, en); idtype := exceptptr; klass := vars;
+    begin klass := vars; strassve(name, en); idtype := exceptptr; 
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
@@ -7475,9 +7478,8 @@ end;
     for i := 1 to 2 do
       begin new(cp,konst); ininam(cp);                        (*false,true*)
         with cp^ do
-          begin strassvr(name, na[i]); idtype := boolptr;
+          begin klass := konst; strassvr(name, na[i]); idtype := boolptr;
             next := cp1; values.intval := true; values.ival := i - 1; 
-            klass := konst
           end;
         enterid(cp); cp1 := cp
       end;
@@ -7496,16 +7498,16 @@ end;
       begin
         new(cp,vars); ininam(cp);                                (*parameter of predeclared functions*)
         with cp^ do
-          begin strassvr(name, '         '); idtype := realptr; klass := vars;
+          begin klass := vars; strassvr(name, '         '); idtype := realptr; 
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
             threat := false; forcnt := 0; part := ptval; hdr := false; 
             vext := false; vmod := nil
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
-          begin strassvr(name, na[i]); idtype := realptr; pflist := cp;
-            forwdecl := false; externl := true; pflev := 0; pfname := i - 12;
-            klass := func; pfdeckind := declared; pfkind := actual;
+          begin klass := func; strassvr(name, na[i]); idtype := realptr; 
+            pflist := cp; forwdecl := false; externl := true; pflev := 0;
+            pfname := i - 12; pfdeckind := declared; pfkind := actual;
             pfaddr := 0; pext := false; pmod := nil; pfattr := fpanone; 
             grpnxt := nil; grppar := nil; pfvid := nil            
           end;
@@ -7641,37 +7643,39 @@ end;
   begin
     new(utypptr,types); ininam(utypptr);
     with utypptr^ do
-      begin strassvr(name, '         '); idtype := nil; klass := types end;
+      begin klass := types; strassvr(name, '         '); idtype := nil end;
     new(ucstptr,konst); ininam(ucstptr);
     with ucstptr^ do
-      begin strassvr(name, '         '); idtype := nil; next := nil;
-        klass := konst; values.intval := true; values.ival := 0
+      begin klass := konst; strassvr(name, '         '); idtype := nil; 
+        next := nil; values.intval := true; values.ival := 0
       end;
     new(uvarptr,vars); ininam(uvarptr);
     with uvarptr^ do
-      begin strassvr(name, '         '); idtype := nil; vkind := actual;
-        next := nil; vlev := 0; vaddr := 0; klass := vars;
+      begin klass := vars; strassvr(name, '         '); idtype := nil; 
+        vkind := actual; next := nil; vlev := 0; vaddr := 0; 
         threat := false; forcnt := 0; part := ptval; hdr := false; 
         vext := false; vmod := nil
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
-      begin strassvr(name, '         '); idtype := nil; next := nil; fldaddr := 0;
-        klass := field
+      begin klass := field; strassvr(name, '         '); idtype := nil; 
+        next := nil; fldaddr := 0;
       end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
-      begin strassvr(name, '         '); idtype := nil; forwdecl := false;
-        next := nil; externl := false; pflev := 0; genlabel(pfname);
-        klass := proc; pflist := nil; pfdeckind := declared; pfkind := actual;
-        pmod := nil; grpnxt := nil; grppar := nil; pfvid := nil
+      begin klass := proc; strassvr(name, '         '); idtype := nil; 
+        forwdecl := false; next := nil; externl := false; pflev := 0; 
+        genlabel(pfname); pflist := nil; pfdeckind := declared; 
+        pfkind := actual; pmod := nil; grpnxt := nil; grppar := nil; 
+        pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
-      begin strassvr(name, '         '); idtype := nil; next := nil;
-        forwdecl := false; externl := false; pflev := 0; genlabel(pfname);
-        klass := func; pflist := nil; pfdeckind := declared; pfkind := actual;
-        pmod := nil; grpnxt := nil; grppar := nil; pfvid := nil
+      begin klass := func; strassvr(name, '         '); idtype := nil; 
+        next := nil; forwdecl := false; externl := false; pflev := 0; 
+        genlabel(pfname); pflist := nil; pfdeckind := declared; 
+        pfkind := actual; pmod := nil; grpnxt := nil; grppar := nil; 
+        pfvid := nil
       end
   end (*enterundecl*) ;
 
