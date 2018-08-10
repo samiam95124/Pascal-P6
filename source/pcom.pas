@@ -3295,7 +3295,7 @@ end;
                           varlab: ctp; lvl: integer; var fstlab: ctp);
         var lcp,lcp1,lcp2,nxt,nxt1: ctp; lsp,lsp1,lsp2,lsp3,lsp4: stp;
             minsize,maxsize,lsize: addrrange; lvalu,rvalu: valu;
-            test: boolean; mm: boolean; varln, varcn, varcmx: varinx;
+            test: boolean; mm: boolean; varlnm, varcn, varcmx: varinx;
             varcof: boolean;
       begin nxt1 := nil; lsp := nil; fstlab := nil;
         if not (sy in (fsys+[ident,casesy])) then
@@ -3308,9 +3308,9 @@ end;
                   if fstlab = nil then fstlab := lcp;
                   with lcp^ do
                     begin klass := field; strassvf(name, id); idtype := nil;
-                      next := nxt; varnt := vartyp; varlb := varlab;
-                      tagfield := false; taglvl := lvl; varsaddr := 0;
-                      varssize := 0
+                      next := nxt; fldaddr := 0; varnt := vartyp; 
+                      varlb := varlab; tagfield := false; taglvl := lvl; 
+                      varsaddr := 0; varssize := 0; vartl := -1
                     end;
                   nxt := lcp;
                   enterid(lcp);
@@ -3349,7 +3349,7 @@ end;
                     packing := false; new(vart); 
                     for varcn := 0 to varmax do vart^[varcn] := 0 
               end;
-            varln := 1; varcof := false; varcmx := 0;
+            varlnm := 1; varcof := false; varcmx := 0;
             frecvar := lsp;
             insymbol;
             if sy = ident then
@@ -3362,7 +3362,7 @@ end;
                   begin klass:=field; strassvf(name, id); idtype := nil; 
                     next := nil; fldaddr := displ; varnt := vartyp;
                     varlb := varlab; tagfield := true; taglvl := lvl;
-                    varsaddr := 0; varssize := 0
+                    varsaddr := 0; varssize := 0; vartl := -1
                   end;
                 lsp^.tagfieldp := lcp;
                 insymbol;
@@ -3419,12 +3419,12 @@ end;
                   repeat { case range }
                     new(lsp3,variant); pshstc(lsp3); 
                     with lsp3^ do
-                      begin form := variant; lsp3^.varln := varln; 
+                      begin form := variant; varln := varlnm; 
                             nxtvar := lsp1; subvar := lsp2; varval := lvalu;
                             caslst := lsp2;  packing := false
                       end;
                     if (lvalu.ival >= 0) and (lvalu.ival <= varmax) then 
-                      lsp^.vart^[lvalu.ival] := varln; { set case to logical }
+                      lsp^.vart^[lvalu.ival] := varlnm; { set case to logical }
                     lsp4 := lsp1;
                     while lsp4 <> nil do
                       with lsp4^ do
@@ -3462,7 +3462,7 @@ end;
                   end
                 else error(4);
               end;
-              varln := varln+1;
+              varlnm := varlnm+1;
               test := sy <> semicolon;
               if not test then
                 begin displ := minsize;
@@ -7659,7 +7659,9 @@ end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
       begin klass := field; strassvr(name, '         '); idtype := nil; 
-        next := nil; fldaddr := 0;
+        next := nil; fldaddr := 0; varnt := nil; varlb := nil; 
+        tagfield := false; taglvl := 0; varsaddr := 0; 
+        varssize := 0; vartl := -1
       end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
