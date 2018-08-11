@@ -64,58 +64,51 @@ for %%x in (%*) do (
 	)
 
 )
-echo Regression Summary > temp1
-echo Line counts should be 0 for pass >> temp1
+echo Regression Summary > regress_report.txt
+echo Line counts should be 0 for pass >> regress_report.txt
 set option=
-echo pint run >> temp1
+echo pint run >> regress_report.txt
 call :do_regress
 set option=--pmach
-echo pmach run >> temp1
+echo pmach run >> regress_report.txt
 call :do_regress
 set option=--cmach
-echo cmach run >> temp1
+echo cmach run >> regress_report.txt
 call :do_regress
 
 rem
 rem Print collected status
 rem
 echo.
-echo Copy report to commits
-echo Cut here 
-echo -----------------------------------------------------------
-date /t
-time /t
-cat temp1
-rm temp1
-call chkfiles
-echo -----------------------------------------------------------
-echo Cut here
+date /t >> regress_report.txt
+time /t >> regress_report.txt
+call chkfiles >> regress_report.txt
+cat regress_report.txt
 echo.
 
 goto stop
 
 :do_regress
 call testprog %option% sample_programs\hello
-wc -l sample_programs\hello.dif >> temp1
+wc -l sample_programs\hello.dif >> regress_report.txt
 call testprog %option% sample_programs\roman
-wc -l sample_programs\roman.dif >> temp1
+wc -l sample_programs\roman.dif >> regress_report.txt
 call testprog %option% sample_programs\match
-wc -l sample_programs\match.dif >> temp1
+wc -l sample_programs\match.dif >> regress_report.txt
 call testprog %option% sample_programs\prime
-wc -l sample_programs\prime.dif >> temp1
+wc -l sample_programs\prime.dif >> regress_report.txt
 call testprog %option% sample_programs\qsort
-wc -l sample_programs\qsort.dif >> temp1
+wc -l sample_programs\qsort.dif >> regress_report.txt
 call testprog %option% sample_programs\fbench
-wc -l sample_programs\fbench.dif >> temp1
+wc -l sample_programs\fbench.dif >> regress_report.txt
 call testprog %option% sample_programs\drystone
-wc -l sample_programs\drystone.dif >> temp1
+wc -l sample_programs\drystone.dif >> regress_report.txt
 call testprog %option% sample_programs\startrek
-wc -l sample_programs\startrek.dif >> temp1
+wc -l sample_programs\startrek.dif >> regress_report.txt
 call testprog %option% sample_programs\basics
-wc -l sample_programs\basics.dif >> temp1
-
+wc -l sample_programs\basics.dif >> regress_report.txt
 call testprog %option% basic\basic
-wc -l sample_programs\basics.dif >> temp1
+wc -l basic\basic.dif >> regress_report.txt
 rem
 rem Now run the ISO7185pat compliance test
 rem
@@ -128,40 +121,40 @@ if "%option%"=="--cmach" (
 	call testprog %option% standard_tests\iso7185pat
 	
 )
-cat standard_tests\iso7185pat.dif >> temp1
+wc -l standard_tests\iso7185pat.dif >> regress_report.txt
 rem
 rem Run previous versions of the system and Pascal-S
 rem
 call testpascals %option%
-wc -l sample_programs\pascals.dif >> temp1
+wc -l sample_programs\pascals.dif >> regress_report.txt
 call testp2 %option%
-wc -l p2\roman.dif >> temp1
+wc -l p2\roman.dif >> regress_report.txt
 call testp4 %option%
-wc -l p4\standardp.dif >> temp1
+wc -l p4\standardp.dif >> regress_report.txt
 if "%full%"=="1" (
 
     echo Running PRT...
-    echo PRT run >> temp1
+    echo PRT run >> regress_report.txt
     rem
     rem Run rejection test
     rem
     call runprt %option%
-    wc -l standard_tests/iso7185prt.dif >> temp1
+    wc -l standard_tests/iso7185prt.dif >> regress_report.txt
 
     echo Running self compile...
     rem
     rem Run pcom self compile (note this runs on P5/P6 only)
     rem
-    echo pcom self compile >> temp1
+    echo pcom self compile >> regress_report.txt
     call cpcoms %option%
-    wc -l pcomm.dif >> temp1
+    wc -l pcomm.dif >> regress_report.txt
     
     rem
     rem Run pint self compile (note this runs on P5/P6 only)
     rem
-    echo pint self compile >> temp1
+    echo pint self compile >> regress_report.txt
     call cpints %option%
-    wc -l standard_tests/iso7185pats.dif >> temp1
+    wc -l standard_tests/iso7185pats.dif >> regress_report.txt
     
 )
 exit /b
