@@ -1825,9 +1825,10 @@ void callsp(void)
                     break;
     case 39 /*nwl*/: /* size of record, size of f const list */
                      popadr(ad1); popint(i);
+                     l = 0; if (i == 0 && DONORECPAR) l = 1;
                      /* alloc record, size of list, number in list */
-                     newspc(ad1+(i+1)*INTSIZE, &ad);
-                     ad1 = ad+i*INTSIZE; putint(ad1, i+ADRSIZE+1);
+                     newspc(ad1+(i+l+1)*INTSIZE, &ad);
+                     ad1 = ad+(i+l)*INTSIZE; putint(ad1, i+ADRSIZE+1);
                      k = i; /* save n tags for later */
                      while (k > 0)
                      {
@@ -1836,7 +1837,7 @@ void callsp(void)
                      }
                      /* get pointer to dest var, place base above taglist and
                         list of fixed consts */
-                     popadr(ad1); putadr(ad1, ad+(i+1)*INTSIZE);
+                     popadr(ad1); putadr(ad1, ad+(i+l+1)*INTSIZE);
                      break;
     case 5 /*wln*/: popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
@@ -2075,7 +2076,10 @@ void callsp(void)
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
                     dspspc(ad1, ad); break;
     case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
+                    /* add padding for zero tag case */
+                    l = 0; if (i == 0 && DONORECPAR) l = 1;
                     ad = getadr(sp+i*INTSIZE); /* get rec addr */
+                    j = i; /* save tag count */
                     /* under us is either the number of tags or the length of the block, if it
                       was freed. Either way, it is >= adrsize if not free */
                     if (getint(ad-INTSIZE) <= ADRSIZE)
@@ -2093,11 +2097,20 @@ void callsp(void)
                         ad = ad-INTSIZE; ad2 = ad2+INTSIZE; k = k-1;
                     }
                     ad = ad+INTSIZE; ad1 = ad1+(i+1)*INTSIZE;
+                    /* ajust for dummy */
+                    ad = ad-(l*INTSIZE); ad1 = ad1+(l*INTSIZE);
                     if (varlap(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
                     dspspc(ad1, ad);
                     while (i > 0) { popint(j); i = i-1; };
                     popadr(ad);
+                    if (DONORECPAR) {
+                        /* This flag means we are going to keep the entry, even
+                         * after disposal. We place a dummy tag below the
+                         * pointer just to indicate the space was freed.
+                         */
+                         putadr(ad-ADRSIZE, ADRSIZE);
+                    }
                     break;
     case 27/*wbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                     valfilwm(ad); fn = store[ad];

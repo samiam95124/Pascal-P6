@@ -2177,8 +2177,10 @@ begin (*callsp*)
                             popadr(ad1); putadr(ad1, ad)
                       end;
            39 (*nwl*): begin popadr(ad1); popint(i); { size of record, size of f const list }
-                            newspc(ad1+(i+1)*intsize, ad); { alloc record, size of list, number in list }
-                            ad1 := ad+i*intsize; putint(ad1, i+adrsize+1);
+                            l := 0; if (i = 0) and donorecpar then l := 1;
+                            { alloc record, size of list, number in list }
+                            newspc(ad1+(i+l+1)*intsize, ad); 
+                            ad1 := ad+(i+l)*intsize; putint(ad1, i+adrsize+1);
                             k := i; { save n tags for later }
                             while k > 0 do
                               begin ad1 := ad1-intsize; popint(j);
@@ -2186,7 +2188,7 @@ begin (*callsp*)
                               end;
                             { get pointer to dest var, place base above taglist and
                               list of fixed consts }
-                            popadr(ad1); putadr(ad1, ad+(i+1)*intsize)
+                            popadr(ad1); putadr(ad1, ad+(i+l+1)*intsize)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
@@ -2451,6 +2453,8 @@ begin (*callsp*)
                       end;
            40(*dsl*): begin
                            popadr(ad1); popint(i); { get size of record and n tags }
+                           { add padding for zero tag case }
+                           l := 0; if (i = 0) and donorecpar then l := 1; 
                            ad := getadr(sp+i*intsize); { get rec addr }
                            { under us is either the number of tags or the length of the block, if it
                              was freed. Either way, it is >= adrsize if not free }
@@ -2469,11 +2473,19 @@ begin (*callsp*)
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
                            ad := ad+intsize; ad1 := ad1+(i+1)*intsize;
+                           { ajust for dummy }
+                           ad := ad-(l*intsize); ad1 := ad1+(l*intsize);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
                            dspspc(ad1, ad);
                            while i > 0 do begin popint(j); i := i-1 end;
-                           popadr(ad)
+                           popadr(ad);
+                           if donorecpar then 
+                             { This flag means we are going to keep the entry, 
+                               even after disposal. We place a dummy tag below
+                               the pointer just to indicate the space was 
+                               freed. }
+                             putadr(ad-adrsize, adrsize)
                       end;
            27(*wbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                            valfilwm(ad); fn := store[ad];
