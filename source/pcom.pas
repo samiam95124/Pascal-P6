@@ -2509,8 +2509,8 @@ end;
   procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
   var fllp: lbp; { found label entry }
       lv: integer;
-  begin
-    if val.intval then lv := val.ival else lv := -1;
+  begin lv := -1;
+    if not isid then if val.intval then lv := val.ival;
     fllp := nil; { set no label found }
     llp := display[level].flabel; { index top of label list }
     while llp <> nil do begin { traverse }
