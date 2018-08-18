@@ -202,7 +202,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc      = '.pas'; { extention for source file }
-   maxftl     = 513; { maximum fatal error }
+   maxftl     = 511; { maximum fatal error }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -730,15 +730,6 @@ var
        alias: dispose(p, alias)
      end;
      ctpcnt := ctpcnt-1 { remove from count }
-  end;
-  
-  { recycle identifier list }
-  procedure putnamlst(p: ctp);
-  var p1: ctp;
-  begin
-    while p <> nil do begin
-       p1 := p; p := p^.next; putnam(p1) { release }
-    end
   end;
   
   { recycle identifier tree }
@@ -1557,7 +1548,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510,511,512,513: write('Compiler internal error');
+    504,505,506,507,508,509,510,511: write('Compiler internal error');
     end
   end;
 
@@ -2134,7 +2125,7 @@ end;
     if mm then error(103)
   end (*searchidne*) ;
   
-  procedure searchid(fidcls: setofids; var fcp: ctp; keepa: boolean);
+  procedure searchid(fidcls: setofids; var fcp: ctp);
     var lcp, lcp1: ctp; pn, fpn: disprange; pdf: boolean;
   begin
     searchidne(fidcls, lcp); { perform no error search }
@@ -2155,7 +2146,7 @@ end;
       if (disx <> top) and (display[top].define) then begin
         { downlevel, create an alias and link to bottom }
         new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias; 
-        lcp1^.name := lcp^.name; lcp1^.keep := keepa; lcp1^.actid := lcp;
+        lcp1^.name := lcp^.name; lcp1^.actid := lcp;
         enterid(lcp1)
       end 
     end else begin (*search not successful
@@ -3036,7 +3027,7 @@ end;
         else
           begin
             if sy = ident then
-              begin searchid([konst],lcp,false);
+              begin searchid([konst],lcp);
                 with lcp^ do
                   begin lsp := idtype; fvalu := values end;
                 insymbol;
@@ -3250,7 +3241,7 @@ end;
             else
               begin
                 if sy = ident then
-                  begin searchid([types,konst],lcp,false);
+                  begin searchid([types,konst],lcp);
                     insymbol;
                     if lcp^.klass = konst then
                       begin new(lsp,subrange); pshstc(lsp);
@@ -3396,7 +3387,7 @@ end;
                 insymbol;
                 if sy = colon then begin
                   enterid(lcp); insymbol;
-                  if sy = ident then begin searchid([types],lcp1,false); insymbol end
+                  if sy = ident then begin searchid([types],lcp1); insymbol end
                   else begin error(2); skip(fsys + [ofsy,lparent]); lcp1 := nil end
                 end else begin
                    if lcp1 = nil then begin error(104); lcp1 := usclrptr end;
@@ -4075,7 +4066,7 @@ end;
                         if sy = colon then
                           begin insymbol;
                             if sy = ident then
-                              begin searchid([types],lcp2,false);
+                              begin searchid([types],lcp2);
                                 lsp := lcp2^.idtype;
                                 lcp^.idtype := lsp;
                                 if lsp <> nil then
@@ -4128,7 +4119,7 @@ end;
                         if sy = colon then
                           begin insymbol;
                             if sy = ident then
-                              begin searchid([types],lcp,true);
+                              begin searchid([types],lcp);
                                 lsp := lcp^.idtype; lsize := ptrsize;
                                 if lsp <> nil then
                                   if lkind=actual then begin
@@ -4330,7 +4321,7 @@ end;
             begin insymbol;
               if sy = ident then
                 begin if forw and iso7185 then error(122);
-                  searchid([types],lcp1,true);
+                  searchid([types],lcp1);
                   lsp := lcp1^.idtype;
                   if forw then begin
                     if not comptypes(lcp^.idtype, lsp) then error(216)
@@ -4865,7 +4856,7 @@ end;
           var lcp: ctp;
         begin
           if sy = ident then
-            begin searchid([vars,field],lcp,false); insymbol end
+            begin searchid([vars,field],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
           if threaten and (lcp^.klass = vars) then with lcp^ do begin
             if vlev < level then threat := true;
@@ -5639,9 +5630,9 @@ end;
                       begin error(2); skip(fsys + [comma,rparent]) end
                     else if nxt <> nil then
                       begin
-                        if nxt^.klass = proc then searchid([proc],lcp,false)
+                        if nxt^.klass = proc then searchid([proc],lcp)
                         else
-                          begin searchid([func],lcp,false);
+                          begin searchid([func],lcp);
                             { compare result types }
                             if not comptypes(lcp^.idtype,nxt^.idtype) then
                               error(128)
@@ -5835,7 +5826,7 @@ end;
                   end;
                   if sy in facbegsys then case sy of
             (*id*)    ident:
-                      begin searchid([types,konst,vars,field,func],lcp,false);
+                      begin searchid([types,konst,vars,field,func],lcp);
                         insymbol;
                         if lcp^.klass = func then
                           begin call(fsys,lcp, inherit);
@@ -6633,7 +6624,7 @@ end;
           end;
         typind := 'i'; (* default to integer [sam] *)
         if sy = ident then
-          begin searchid([vars],lcp,false);
+          begin searchid([vars],lcp);
             with lcp^, lattr do
               begin typtr := idtype; kind := varbl; packing := false;
                 if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
@@ -6730,7 +6721,7 @@ end;
       begin lcnt1 := 0; llc := lc;
         repeat
           if sy = ident then
-            begin searchid([vars,field],lcp,false); insymbol end
+            begin searchid([vars,field],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
           selector(fsys + [comma,dosy],lcp,false);
           if gattr.typtr <> nil then
@@ -6808,7 +6799,7 @@ end;
           genlabel(onendlbl);
           repeat
             if sy = ident then begin
-              searchid([vars],lcp,false); 
+              searchid([vars],lcp); 
               with lcp^, lattr do
                 begin typtr := idtype; kind := varbl; packing := false;
                   if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
@@ -6892,7 +6883,7 @@ end;
             ident:    begin 
                         if sy = inheritedsy then 
                           begin insymbol; inherit := true end;
-                        searchid([vars,field,func,proc],lcp,false); insymbol;
+                        searchid([vars,field,func,proc],lcp); insymbol;
                         if lcp^.klass = proc then call(fsys,lcp,inherit)
                         else begin if inherit then error(233);
                           assignment(lcp, false)
