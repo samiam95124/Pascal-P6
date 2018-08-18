@@ -202,7 +202,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc      = '.pas'; { extention for source file }
-   maxftl     = 511; { maximum fatal error }
+   maxftl     = 513; { maximum fatal error }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -301,7 +301,7 @@ type                                                        (*describing:*)
                                                             (*names*)
                                                             (*******)
 
-     idclass = (types,konst,vars,field,proc,func);
+     idclass = (types,konst,vars,field,proc,func,alias);
      setofids = set of idclass;
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
@@ -321,7 +321,8 @@ type                                                        (*describing:*)
      identifier = record
                    snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
-                   idtype: stp; next: ctp; keep: boolean; refer: boolean;
+                   idtype: stp; next: ctp; keep: boolean; 
+                   refer: boolean;
                    case klass: idclass of
                      types: ();
                      konst: (values: valu);
@@ -342,7 +343,8 @@ type                                                        (*describing:*)
                               declared: (pflev: levrange; pfname: integer;
                                           case pfkind: idkind of
                                            actual: (forwdecl, externl: boolean);
-                                           formal: ()))
+                                           formal: ()));
+                     alias: (actid: ctp; { actual id })
                    end;
      
      where = (blck,crec,vrec,rec);
@@ -390,6 +392,7 @@ type                                                        (*describing:*)
                  packing: boolean;         { used for with derived from packed }
                  packcom: boolean;         { used for with derived from packed }
                  ptrref: boolean;          { used for with derived from pointer }
+                 define: boolean;          { is this a defining block? }
                  modnam: strvsp;           { module name for block (if exists) }
                  case occur: where of      (*   constant address*)
                    crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
@@ -419,7 +422,7 @@ type                                                        (*describing:*)
 var
 
     { !!! remove this statement for self compile }
-    {elide}prd,prr: text;{noelide}       { output code file }
+    {elide} prd,prr: text; {noelide}       { output code file }
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -678,30 +681,39 @@ var
   procedure ininam(p: ctp);
   begin
      ctpcnt := ctpcnt+1; { count entry }
-     p^.keep := false; { clear keepme flag }
-     p^.refer := false; { clear referred flag }
+     { clear fixed entries }
+     p^.idtype := nil; p^.keep := false; p^.refer := false;
+     p^.name := nil; p^.llink := nil; p^.rlink := nil; p^.next := nil;
      ctpsnm := ctpsnm+1; { identify entry in dumps }
      p^.snm := ctpsnm
   end;
-  
+
+  procedure putnam(p: ctp); forward;
+
+  { recycle parameter list }
+  procedure putparlst(p: ctp);
+  var p1: ctp;
+  begin
+    while p <> nil do begin
+      p1 := p; p := p^.next;
+      putnam(p1) { release }
+    end
+  end;
+
   { recycle identifier entry }
-  procedure putnam(p: ctp);
+  procedure putnam{(p: ctp)};
   var p1: ctp;
   begin
      if (p^.klass = proc) or (p^.klass = func) then begin
-        while p^.pflist <> nil do begin
-          { scavenge the parameter list }
-          p1 := p^.pflist; p^.pflist := p1^.next;
-          putnam(p1) { release }
-        end;
+        putparlst(p^.pflist); p^.pflist := nil;
         while p^.grpnxt <> nil do begin
           { scavenge the group list }
           p1 := p^.grpnxt; p^.grpnxt := p1^.grpnxt;
           putnam(p1) { release }
-        end;
+        end
      end;
-     putstrs(p^.name); { release name string }
-     { release entry according to class }    
+     if p^.klass <> alias then putstrs(p^.name); { release name string }
+     { release entry according to class }  
      case p^.klass of
        types: dispose(p, types);
        konst: dispose(p, konst);
@@ -714,7 +726,8 @@ var
        func: if p^.pfdeckind = standard then dispose(p, func, standard)
                                         else if p^.pfkind = actual then 
                                             dispose(p, func, declared, actual)
-                                          else dispose(p, func, declared, formal)
+                                          else dispose(p, func, declared, formal);
+       alias: dispose(p, alias)
      end;
      ctpcnt := ctpcnt-1 { remove from count }
   end;
@@ -1507,6 +1520,7 @@ end;
     239: write('Variant case exceeds allowable range');
     240: write('Header parameter already included');
     241: write('Invalid tolken separator');
+    242: write('Identifier referenced before defining point');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1543,7 +1557,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510,511: write('Compiler internal error');
+    504,505,506,507,508,509,510,511,512,513: write('Compiler internal error');
     end
   end;
 
@@ -2049,7 +2063,8 @@ end;
               writevp(output, fcp^.name);
               writeln
             end; 
-            error(101); 
+            { give appropriate error }
+            if lcp^.klass = alias then error(242) else error(101); 
             lcp := lcp^.rlink; lleft := false
           end else
             if strltnvv(lcp^.name, fcp^.name) then
@@ -2071,23 +2086,25 @@ end;
       if strequvf(fcp^.name, id) then goto 1
       else if strltnvf(fcp^.name, id) then fcp := fcp^.rlink
         else fcp := fcp^.llink;
-1:  fcp1 := fcp
+1:  if fcp <> nil then 
+      if fcp^.klass = alias then fcp := fcp^.actid;
+    fcp1 := fcp
   end (*searchsection*) ;
 
   procedure schsecidnenm(lcp: ctp; fidcls: setofids; var fcp: ctp; 
                          var mm: boolean);
-  label 1;
+  var lcp1: ctp;
   begin
-    mm := false;
+    mm := false; fcp := nil;
     while lcp <> nil do begin
-      if strequvf(lcp^.name, id) then
-        if lcp^.klass in fidcls then goto 1
+      if strequvf(lcp^.name, id) then begin
+        lcp1 := lcp; if lcp1^.klass = alias then lcp1 := lcp1^.actid;
+        if lcp1^.klass in fidcls then begin fcp := lcp1; lcp := nil end
         else begin mm := true; lcp := lcp^.rlink end
-        else
-          if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
-          else lcp := lcp^.llink
-    end;
-    1: fcp := lcp
+      end else
+        if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
+        else lcp := lcp^.llink
+    end
   end (*searchidne*) ;
 
   procedure searchidnenm(fidcls: setofids; var fcp: ctp; var mm: boolean);
@@ -2117,9 +2134,8 @@ end;
     if mm then error(103)
   end (*searchidne*) ;
   
-  procedure searchid(fidcls: setofids; var fcp: ctp);
-    label 1;
-    var lcp: ctp; pn, fpn: disprange; pdf: boolean;
+  procedure searchid(fidcls: setofids; var fcp: ctp; keepa: boolean);
+    var lcp, lcp1: ctp; pn, fpn: disprange; pdf: boolean;
   begin
     searchidne(fidcls, lcp); { perform no error search }
     if lcp = nil then begin
@@ -2134,9 +2150,16 @@ end;
         if lcp = nil then error(268) { not found }
       end
     end;    
-    if lcp <> nil then begin lcp^.refer := true; goto 1 end; { found }
-    (*search not successful
-     --> procedure simpletype*)
+    if lcp <> nil then begin { found }
+      lcp^.refer := true;
+      if (disx <> top) and (display[top].define) then begin
+        { downlevel, create an alias and link to bottom }
+        new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias; 
+        lcp1^.name := lcp^.name; lcp1^.keep := keepa; lcp1^.actid := lcp;
+        enterid(lcp1)
+      end 
+    end else begin (*search not successful
+      --> procedure simpletype*)
       error(104);
       (*to avoid returning nil, reference an entry
        for an undeclared id of appropriate class
@@ -2150,8 +2173,9 @@ end;
             if konst in fidcls then lcp := ucstptr
             else
               if proc in fidcls then lcp := uprcptr
-              else lcp := ufctptr;
-1:  fcp := lcp
+              else lcp := ufctptr
+    end;
+    fcp := lcp
   end (*searchid*) ;
   
   procedure getbounds(fsp: stp; var fmin,fmax: integer);
@@ -2435,7 +2459,8 @@ end;
                              end
                            else write('formal':intdig)
                          end
-                     end
+                     end;
+              alias: begin write('alias':intdig, ' '); wrtctp(actid); end;  
             end (*case*);
             writeln;
             followctp(llink); followctp(rlink);
@@ -2447,15 +2472,15 @@ end;
     writeln(output); writeln(output); writeln(output);
     if fb then lim := 0
     else begin lim := top; write(' local') end;
-    writeln(' tables:'); writeln(output);
+    writeln(' tables:', top:1, '-', lim:1, ':'); writeln(output);
     writeln('C: ', 'Entry #':intdig, ' ', 'Id':intdig, ' ', 'llink':intdig, ' ',
             'rlink':intdig, ' ', 'Typ':intdig, ' ', 'Class':intdig);
     writeln('S: ', 'Entry #':intdig, ' ', 'Size':intdig, ' ', 'Form ':intdig);
     write('===============================================================');
     writeln('==========================');
     marker;
-    for i := top downto lim do
-      followctp(display[i].fname);
+    for i := top downto lim do 
+      begin writeln('Level: ', i:1); followctp(display[i].fname) end;
     writeln(output);
     if not eol then write(' ':chcnt+16)
   end (*printtables*);
@@ -2466,8 +2491,9 @@ end;
       if p <> nil then begin
         chkrefs(p^.llink, w); { check left }
         chkrefs(p^.rlink, w); { check right }
-        if not p^.refer then begin if not w then writeln;
-          writev(output, p^.name, 10); writeln(' unreferenced'); w := true
+        if not p^.refer and (p^.klass <> alias) then begin 
+          if not w then writeln; writev(output, p^.name, 10); 
+          writeln(' unreferenced'); w := true
         end
       end
     end
@@ -3010,7 +3036,7 @@ end;
         else
           begin
             if sy = ident then
-              begin searchid([konst],lcp);
+              begin searchid([konst],lcp,false);
                 with lcp^ do
                   begin lsp := idtype; fvalu := values end;
                 insymbol;
@@ -3224,7 +3250,7 @@ end;
             else
               begin
                 if sy = ident then
-                  begin searchid([types,konst],lcp);
+                  begin searchid([types,konst],lcp,false);
                     insymbol;
                     if lcp^.klass = konst then
                       begin new(lsp,subrange); pshstc(lsp);
@@ -3370,7 +3396,7 @@ end;
                 insymbol;
                 if sy = colon then begin
                   enterid(lcp); insymbol;
-                  if sy = ident then begin searchid([types],lcp1); insymbol end
+                  if sy = ident then begin searchid([types],lcp1,false); insymbol end
                   else begin error(2); skip(fsys + [ofsy,lparent]); lcp1 := nil end
                 end else begin
                    if lcp1 = nil then begin error(104); lcp1 := usclrptr end;
@@ -3611,6 +3637,7 @@ end;
                                   packing := false;
                                   packcom := false;
                                   ptrref := false;
+                                  define := false;
                                   modnam := nil;
                                   occur := rec
                             end
@@ -3941,8 +3968,10 @@ end;
                 if forw then fname := lcp^.pflist
                 else fname := nil;
                 flabel := nil; fconst := nil; fstruct := nil; packing := false;
-                packcom := false; ptrref := false; modnam := nil;
-                occur := blck; bname := lcp
+                packcom := false; ptrref := false;
+                { use the defining point status of the parent block } 
+                define := display[top-1].define; 
+                modnam := nil; occur := blck; bname := lcp
               end
           end
         else error(250);
@@ -4046,7 +4075,7 @@ end;
                         if sy = colon then
                           begin insymbol;
                             if sy = ident then
-                              begin searchid([types],lcp2);
+                              begin searchid([types],lcp2,false);
                                 lsp := lcp2^.idtype;
                                 lcp^.idtype := lsp;
                                 if lsp <> nil then
@@ -4099,9 +4128,8 @@ end;
                         if sy = colon then
                           begin insymbol;
                             if sy = ident then
-                              begin searchid([types],lcp);
-                                lsp := lcp^.idtype;
-                                lsize := ptrsize;
+                              begin searchid([types],lcp,true);
+                                lsp := lcp^.idtype; lsize := ptrsize;
                                 if lsp <> nil then
                                   if lkind=actual then begin
                                     if lsp^.form<=power then lsize := lsp^.size
@@ -4236,7 +4264,6 @@ end;
                   strassvf(name, id); idtype := nil; next := nil;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
-                  
                   pflist := nil; asgn := false; 
                   pext := incstk <> nil; pmod := incstk; refer := false; 
                   pfattr := fpat; grpnxt := nil; grppar := nil;
@@ -4281,13 +4308,15 @@ end;
           if fsy = procsy then lcp := uprcptr else lcp := ufctptr
         end;
       oldlev := level; oldtop := top;
-      pushlvl(forw, lcp);
+      { procedure/functions have an odd defining status. The parameter list does
+        not have defining points, but the rest of the routine definition does. }
+      pushlvl(forw, lcp); display[top].define := false;
       if fsy = procsy then
         begin parameterlist([semicolon],lcp1,plst);
           if not forw then lcp^.pflist := lcp1
           else begin
             if plst then compparam(lcp^.pflist, lcp1);
-            putnamlst(lcp1) { redeclare, dispose of copy }
+            putparlst(lcp1) { redeclare, dispose of copy }
           end
         end
       else
@@ -4295,13 +4324,13 @@ end;
           if not forw then lcp^.pflist := lcp1 
           else begin
             if plst then compparam(lcp^.pflist, lcp1);
-            putnamlst(lcp1); { redeclare, dispose of copy }
+            putparlst(lcp1); { redeclare, dispose of copy }
           end;
           if sy = colon then
             begin insymbol;
               if sy = ident then
                 begin if forw and iso7185 then error(122);
-                  searchid([types],lcp1);
+                  searchid([types],lcp1,true);
                   lsp := lcp1^.idtype;
                   if forw then begin
                     if not comptypes(lcp^.idtype, lsp) then error(216)
@@ -4336,6 +4365,8 @@ end;
           { output parameter symbols }
           lcp1 := lcp^.pflist;
           while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
+          { now we change to a block with defining points }
+          display[top].define := true;
           declare(fsys);
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
@@ -4834,7 +4865,7 @@ end;
           var lcp: ctp;
         begin
           if sy = ident then
-            begin searchid([vars,field],lcp); insymbol end
+            begin searchid([vars,field],lcp,false); insymbol end
           else begin error(2); lcp := uvarptr end;
           if threaten and (lcp^.klass = vars) then with lcp^ do begin
             if vlev < level then threat := true;
@@ -5608,9 +5639,9 @@ end;
                       begin error(2); skip(fsys + [comma,rparent]) end
                     else if nxt <> nil then
                       begin
-                        if nxt^.klass = proc then searchid([proc],lcp)
+                        if nxt^.klass = proc then searchid([proc],lcp,false)
                         else
-                          begin searchid([func],lcp);
+                          begin searchid([func],lcp,false);
                             { compare result types }
                             if not comptypes(lcp^.idtype,nxt^.idtype) then
                               error(128)
@@ -5804,7 +5835,7 @@ end;
                   end;
                   if sy in facbegsys then case sy of
             (*id*)    ident:
-                      begin searchid([types,konst,vars,field,func],lcp);
+                      begin searchid([types,konst,vars,field,func],lcp,false);
                         insymbol;
                         if lcp^.klass = func then
                           begin call(fsys,lcp, inherit);
@@ -6602,7 +6633,7 @@ end;
           end;
         typind := 'i'; (* default to integer [sam] *)
         if sy = ident then
-          begin searchid([vars],lcp);
+          begin searchid([vars],lcp,false);
             with lcp^, lattr do
               begin typtr := idtype; kind := varbl; packing := false;
                 if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
@@ -6699,7 +6730,7 @@ end;
       begin lcnt1 := 0; llc := lc;
         repeat
           if sy = ident then
-            begin searchid([vars,field],lcp); insymbol end
+            begin searchid([vars,field],lcp,false); insymbol end
           else begin error(2); lcp := uvarptr end;
           selector(fsys + [comma,dosy],lcp,false);
           if gattr.typtr <> nil then
@@ -6715,6 +6746,7 @@ end;
                       packing := gattr.packing;
                       packcom := gattr.packcom;
                       ptrref := gattr.ptrref;
+                      define := false;
                       modnam := nil
                     end;
                   if gattr.access = drct then
@@ -6776,7 +6808,7 @@ end;
           genlabel(onendlbl);
           repeat
             if sy = ident then begin
-              searchid([vars],lcp); 
+              searchid([vars],lcp,false); 
               with lcp^, lattr do
                 begin typtr := idtype; kind := varbl; packing := false;
                   if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
@@ -6860,7 +6892,7 @@ end;
             ident:    begin 
                         if sy = inheritedsy then 
                           begin insymbol; inherit := true end;
-                        searchid([vars,field,func,proc],lcp); insymbol;
+                        searchid([vars,field,func,proc],lcp,false); insymbol;
                         if lcp^.klass = proc then call(fsys,lcp,inherit)
                         else begin if inherit then error(233);
                           assignment(lcp, false)
@@ -7058,7 +7090,7 @@ end;
     printed := false; 
     if (fprocp <> nil) or iso7185 then chkrefs(display[top].fname, printed);
     if toterr = 0 then
-      if (topnew <> 0) and prcode then 
+      if (topnew <> 0) and prcode then
         error(504); { stack should have wound to zero }
     if fprocp <> nil then
       begin
@@ -7180,7 +7212,7 @@ end;
             with display[top] do
               begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
                     packing := false; packcom := false; ptrref := false; 
-                    occur := blck; bname := nil end
+                    define := true; occur := blck; bname := nil end
           end
         end else putstrs(thismod)
       end;
@@ -8136,20 +8168,20 @@ begin
   level := 0; top := 0; ptop := 0;
   with display[0] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; packcom := false; ptrref := false; modnam := nil;
-          occur := blck; bname := nil end;
+          packing := false; packcom := false; ptrref := false; define := true;
+          modnam := nil; occur := blck; bname := nil end;
   enterstdtypes; stdnames; entstdnames; enterundecl;
   top := 1; level := 1;
   with display[1] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; packcom := false; ptrref := false; modnam := nil;
-          occur := blck; bname := nil end;
+          packing := false; packcom := false; ptrref := false; define := true;
+          modnam := nil; occur := blck; bname := nil end;
 
   (*compile:*)
   (**********)
 
   { !!! remove these statements for self compile }
-  {elide}reset(prd); rewrite(prr);{noelide} { open output file }
+  {elide} reset(prd); rewrite(prr); {noelide} { open output file }
  
   { write generator comment }
   writeln(prr, 'i');

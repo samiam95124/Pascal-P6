@@ -11,8 +11,6 @@ procedure sort(l, r: index);
 var i, j: index; 
     x, w: char;
 
-z: integer;
-
 begin
 
     i := l;
