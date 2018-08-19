@@ -2,44 +2,117 @@
 #
 # Compile file in batch mode using GPC Pascal.
 #
-# Runs a compile with the input and output coming from/
-# going to files.
+# Runs a compile with the input and output coming from/going to files.
 #
 # Execution:
 #
-# Compile <file>
+# Compile [--pmach|--cmach] <file>
 #
 # <file> is the filename without extention.
 #
 # The files are:
 #
 # <file>.pas - The Pascal source file
-# <file>.p5  - The intermediate file produced
+# <file>.p6  - The intermediate file produced
 # <file>.err - The errors output from the compiler
 #
 # Note that the l+ option must be specified to get a full
 # listing in the .err file (or just a lack of l-).
 #
+# The flags are one of:
+#
+# --pmach	Generate mach code and run the result through pmach.
+# --cmach	Generate mach code and run the result through cmach.
+#
+pmach=0
+cmach=0
+progfile=""
 
-if [ -z "$1" ]
-then
-   echo "*** Error: Missing parameter"
-   exit 1
+for param in "$@" 
+do
+
+    if [ "$param" = "--pmach" ]; then
+	
+        pmach=1
+        
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+      
+    elif [ "$param" = "--help" ]; then
+    
+        echo ""
+        echo "Compile file in batch mode using GPC Pascal."
+		echo ""
+		echo "Runs a compile with the input and output coming from/going to files."
+		echo ""
+		echo "Execution:"
+		echo ""
+		echo "Compile [--pmach|--cmach] <file>"
+		echo ""
+		echo "<file> is the filename without extention."
+		echo ""
+		echo "The files are:"
+		echo ""
+		echo "<file>.pas - The Pascal source file."
+		echo "<file>.p6  - The intermediate file produced."
+		echo "<file>.err - The errors output from the compiler."
+		echo ""
+		echo "Note that the l+ option must be specified to get a full"
+		echo "listing in the .err file \(or just a lack of l-\)."
+		echo ""
+		echo "The flags are one of:"
+		echo ""
+		echo "--pmach	Generate mach code and run the result through pmach."
+		echo "--cmach	Generate mach code and run the result through cmach."
+		echo ""
+		exit 0
+		
+	else
+	
+		if [ ! -f "$param.pas" ]; then
+		
+			echo "$param.pas does not exist"
+			exit 1
+			
+		fi
+		progfile="$param"
+		
+    fi
+    
+done
+
+if [ -z "$progfile" ]; then
+
+	echo "*** Error: No compile file specified"
+	exit 1
+	
 fi
 
-if [ ! -f $1.pas ]
-then
-   echo "*** Error: Missing $1.pas file"
-   exit 1
+if [ "$pmach" = "1" ]; then
+
+	echo "{\$e+}" > temp
+	cat temp $progfile.pas > prd
+	rm temp
+	
+elif [ "$cmach" = "1" ]; then
+
+    echo "{\$e+}" > temp
+	cat temp $progfile.pas > prd
+	rm temp
+	
+else
+
+	cp $progfile.pas prd
+	
 fi
 
-cp $1.pas prd
-pcom > $1.err
+pcom > $progfile.err
 #
 # The status of the compile is not returned, so convert a non-zero
 # error message to fail status
 #
-grep -q "Errors in program: 0" $1.err
+grep -q "Errors in program: 0" $progfile.err
 rc=$?
 if [[ $rc != 0 ]] ; then
 
@@ -47,7 +120,7 @@ if [[ $rc != 0 ]] ; then
         
 fi
 #
-# Move the prr file to <file.p5>
+# Move the prr file to <file.p6>
 #
-rm -f $1.p5
-mv prr $1.p5
+rm -f $progfile.p6
+mv prr $progfile.p6

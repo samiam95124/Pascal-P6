@@ -3267,7 +3267,7 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  write('P6 Pascal mach interpreter vs. ', majorver:1, '.', minorver:1);
+  write('P6 Pascal pmach interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   writeln;

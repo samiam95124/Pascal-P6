@@ -6,37 +6,129 @@
 #
 # Execution:
 #
-# run <file>
+# run <file> [pmach|cmach|pint] [<inpfile>] <file>
 #
 # <file> is the filename without extention.
 #
 # The files are:
 #
-# <file>.pint  - The intermediate file
+# <file>.p6  - The intermediate file
 # <file>.out - The prr file produced
 # <file>.inp - The input file to the program
 # <file>.lst - The output file from the program
+# <file>.p6o - The object deck for mach, if selected
+#
+# The flags are one of:
+#
+# --pmach Generate mach code and run the result through pmach.
+# --cmach Generate mach code and run the result through cmach.
+# --pint  Generate mach code and run the result through pint (default).
 #
 
-if [ -z "$1" ]
-then
-   echo "*** Error: Missing parameter"
-   exit 1
+pmach=0
+cmach=0
+progfile=""
+inpfile=""
+
+for param in "$@" 
+do
+
+    if [ "$param" = "--pmach" ]; then
+	
+        pmach=1
+        
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+      
+    elif [ "$param" = "--help" ]; then
+
+		echo ""  
+		echo "Run a Pascal file in batch mode using GPC Pascal"
+		echo ""
+		echo "Runs a Pascal intermediate in batch mode."
+		echo ""
+		echo "Execution:"
+		echo ""
+		echo "run <file> [pmach|cmach|pint] [<inpfile>] <file>"
+		echo ""
+		echo "<file> is the filename without extention."
+		echo ""
+		echo "The files are:"
+		echo ""
+		echo "<file>.p6  - The intermediate file"
+		echo "<file>.out - The prr file produced"
+		echo "<file>.inp - The input file to the program"
+		echo "<file>.lst - The output file from the program"
+		echo "<file>.p6o - The object deck for mach, if selected"
+		echo ""
+		echo "The flags are one of:"
+		echo ""
+		echo "--pmach Generate mach code and run the result through pmach."
+		echo "--cmach Generate mach code and run the result through cmach."
+		echo "--pint  Generate mach code and run the result through pint (default)."
+		echo ""
+		echo "If the <inpfile> appears, it will be concatenated to the intermediate or"
+        echo "code file to be read by the target program."
+        echo ""
+		goto stop
+		
+	else
+	
+		inpfile="$progfile"
+		progfile="$param"
+		
+    fi
+    
+done
+
+if [ -z "$progfile" ]; then
+
+	echo "*** Error: No compile file specified"
+	exit 1
+	
 fi
 
-if [ ! -f $1.pint ]
-then
-   echo "*** Error: Missing $1.pint file"
-   exit 1
+if [ ! -f "$param.p6" ]; then
+	
+	echo "$param.p6 does not exist"
+	exit 1
+			
+fi
+if [ ! -f "$param.inp" ]; then
+		
+	echo "$param.inp does not exist"
+	exit 1
+			
 fi
 
-if [ ! -f $1.inp ]
-then
-   echo "*** Error: Missing $1.inp file"
-   exit 1
+if [ "$pmach" = "1" ]; then
+
+	echo Running with pmach
+    cp $progfile.p6 prd
+    pint > temp
+    mv prr $progfile.p6o
+    cat $progfile.p6o $inpfile > prd
+    pmach < $progfile.inp &> $progfile.lst
+    rm temp
+    
+elif [ "$cmach" = "1" ]; then
+
+	echo Running with cmach
+    cp $progfile.p6 prd
+    pint > temp
+    mv prr $progfile.p6o
+    cat $progfile.p6o $inpfile > prd
+    cmach < $progfile.inp &> $progfile.lst
+    rm temp
+    
+else
+
+	echo Running with pint
+    cat $progfile.p6 $inpfile > prd
+    pint < $progfile.inp &> $progfile.lst
+    
 fi
 
-cp $1.pint prd 
-pint < $1.inp &> $1.lst
-rm -f $1
-mv prd $1.out
+rm -f $progfile.out
+mv prr $progfile.out

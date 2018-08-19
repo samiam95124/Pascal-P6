@@ -6,7 +6,7 @@ rem Runs a Pascal intermediate in batch mode.
 rem
 rem Execution:
 rem
-rem run <file> [--pmach|--cmach] [<inpfile>] <file>
+rem run <file> [pmach|cmach|pint] [<inpfile>] <file>
 rem
 rem <file> is the filename without extention.
 rem
@@ -22,15 +22,18 @@ rem The flags are one of:
 rem
 rem --pmach	Generate mach code and run the result through pmach.
 rem --cmach	Generate mach code and run the result through cmach.
+rem --pint  Generate mach code and run the result through pint.
 rem
 rem If the <inpfile> appears, it will be concatenated to the intermediate or
 rem code file to be read by the target program.
 rem
+
 setlocal EnableDelayedExpansion
 set pmach=0
 set cmach=0
 set progfile=
 set inpfile=
+
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -43,13 +46,14 @@ for %%x in (%*) do (
    		
    	) else if "%%~x"=="--help" (
 
+		echo.
 		echo Run a Pascal file in batch mode using GPC Pascal
 		echo.
 		echo Runs a Pascal intermediate in batch mode.
 		echo.
 		echo Execution:
 		echo.
-		echo run ^<file^> [mach^|pint] [inp]
+		echo run ^<file^> [pmach^|cmach^|pint] [^<inpfile^>] ^<file^>
 		echo.
 		echo ^<file^> is the filename without extention.
 		echo.
@@ -63,9 +67,13 @@ for %%x in (%*) do (
 		echo.
 		echo The flags are one of:
 		echo.
-		echo --pmach	Generate mach code and run the result through pmach.
-		echo --cmach	Generate mach code and run the result through cmach.
+		echo --pmach Generate mach code and run the result through pmach.
+		echo --cmach Generate mach code and run the result through cmach.
+		echo --pint  Generate mach code and run the result through pint ^(default^).
 		echo.
+		echo If the <inpfile> appears, it will be concatenated to the intermediate or
+        echo code file to be read by the target program.
+        echo.
 		goto stop
 		
     ) else if not "%%~x"=="" (
@@ -103,19 +111,21 @@ if "%pmach%"=="1" (
 
     echo Running with pmach
     cp %progfile%.p6 prd
-    pint
+    pint > temp
     mv prr %progfile%.p6o
     cat %progfile%.p6o %inpfile% > prd
     pmach < %progfile%.inp > %progfile%.lst 2>&1
+    rm temp
     
 ) else if "%cmach%"=="1" (
 
     echo Running with cmach 
     cp %progfile%.p6 prd
-    pint
+    pint > temp
     mv prr %progfile%.p6o
     cat %progfile%.p6o %inpfile% > prd
     cmach < %progfile%.inp > %progfile%.lst 2>&1
+    rm temp
     
 ) else (
 
@@ -124,7 +134,8 @@ if "%pmach%"=="1" (
     pint < %progfile%.inp > %progfile%.lst 2>&1
     
 )
-if exist "%progfile%" rm %progfile%.out
+
+rm -f %progfile%.out
 mv prr %progfile%.out
 chmod +w %progfile%.out
 rem

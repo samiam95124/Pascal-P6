@@ -2873,7 +2873,7 @@ void main (int argc, char *argv[])
     FILE* fp;
     address i;
 
-    printf("P6 Pascal mach interpreter vs. %d.%d", MAJORVER, MINORVER);
+    printf("P6 Pascal cmach interpreter vs. %d.%d", MAJORVER, MINORVER);
     if (EXPERIMENT) printf(".x");
     printf("\n");
     printf("\n");
