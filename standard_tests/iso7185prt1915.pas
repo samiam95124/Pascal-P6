@@ -6,7 +6,7 @@ PRT test 1915: Reference to outer block defintion before local definition.
 
 }
 
-program iso7185prt1762;
+program iso7185prt1762(output);
 
 const one = 1;
 
@@ -16,7 +16,13 @@ const two = one;
       one = 2;
       
 begin
+
+  writeln(one, two)
+  
 end;
 
 begin
+
+   writeln(one)
+   
 end.

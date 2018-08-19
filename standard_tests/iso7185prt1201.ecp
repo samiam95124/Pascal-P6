@@ -15,12 +15,11 @@ P6 Pascal compiler vs. 0.1.x
     13        8    a := -   
     14        8  
     15        8 end. 
-    15   ****     ^58,134
+    15   ****     ^58
 
-Errors in program: 2
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
  58  Error in factor
-134  Illegal type of operand(s)
 

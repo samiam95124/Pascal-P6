@@ -16,6 +16,9 @@ procedure x;
 const one = one;
 
 begin
+
+   write(one)
+   
 end;
 
 begin

@@ -6,461 +6,476 @@ Pascal Rejection test run for iso7185prt
 
 Tests for which no compile or runtime error was flagged: **********************
 
-standard_tests/iso7185prt1702b.err
-standard_tests/iso7185prt1702c.err
-standard_tests/iso7185prt1702d.err
-standard_tests/iso7185prt1705.err
-standard_tests/iso7185prt1706.err
 standard_tests/iso7185prt1834.err
 standard_tests/iso7185prt1850.err
+standard_tests/iso7185prt1918.err
 
 Compile output differences: **********************
 
-  0 standard_tests/iso7185prt0001.ecd
-  0 standard_tests/iso7185prt0002.ecd
-  0 standard_tests/iso7185prt0003.ecd
-  0 standard_tests/iso7185prt0006.ecd
-  0 standard_tests/iso7185prt0007.ecd
-  0 standard_tests/iso7185prt0008.ecd
-  0 standard_tests/iso7185prt0009.ecd
-  0 standard_tests/iso7185prt0010.ecd
-  0 standard_tests/iso7185prt0011.ecd
-  0 standard_tests/iso7185prt0012.ecd
-  0 standard_tests/iso7185prt0013.ecd
-  0 standard_tests/iso7185prt0014.ecd
-  0 standard_tests/iso7185prt0015.ecd
-  0 standard_tests/iso7185prt0016.ecd
-  0 standard_tests/iso7185prt0017.ecd
-  0 standard_tests/iso7185prt0018.ecd
-  0 standard_tests/iso7185prt0019.ecd
-  0 standard_tests/iso7185prt0020.ecd
-  0 standard_tests/iso7185prt0021.ecd
-  0 standard_tests/iso7185prt0022.ecd
-  0 standard_tests/iso7185prt0023.ecd
-  0 standard_tests/iso7185prt0024.ecd
-  0 standard_tests/iso7185prt0025.ecd
-  0 standard_tests/iso7185prt0026.ecd
-  0 standard_tests/iso7185prt0027.ecd
-  0 standard_tests/iso7185prt0028.ecd
-  0 standard_tests/iso7185prt0029.ecd
-  0 standard_tests/iso7185prt0030.ecd
-  0 standard_tests/iso7185prt0031.ecd
-  0 standard_tests/iso7185prt0032.ecd
-  0 standard_tests/iso7185prt0033.ecd
-  0 standard_tests/iso7185prt0034.ecd
-  0 standard_tests/iso7185prt0035.ecd
-  0 standard_tests/iso7185prt0036.ecd
-  0 standard_tests/iso7185prt0037.ecd
-  0 standard_tests/iso7185prt0038.ecd
-  0 standard_tests/iso7185prt0039.ecd
-  0 standard_tests/iso7185prt0040.ecd
-  0 standard_tests/iso7185prt0041.ecd
-  0 standard_tests/iso7185prt0042.ecd
-  0 standard_tests/iso7185prt0043.ecd
-  0 standard_tests/iso7185prt0044.ecd
-  0 standard_tests/iso7185prt0045.ecd
-  0 standard_tests/iso7185prt0046.ecd
-  0 standard_tests/iso7185prt0047.ecd
-  0 standard_tests/iso7185prt0048.ecd
-  0 standard_tests/iso7185prt0049.ecd
-  0 standard_tests/iso7185prt0050.ecd
-  0 standard_tests/iso7185prt0051.ecd
-  0 standard_tests/iso7185prt0052.ecd
-  0 standard_tests/iso7185prt0053.ecd
-  0 standard_tests/iso7185prt0054.ecd
-  0 standard_tests/iso7185prt0055.ecd
-  0 standard_tests/iso7185prt0056.ecd
-  0 standard_tests/iso7185prt0057.ecd
-  0 standard_tests/iso7185prt0100.ecd
-  0 standard_tests/iso7185prt0101.ecd
-  0 standard_tests/iso7185prt0102.ecd
-  0 standard_tests/iso7185prt0103.ecd
-  0 standard_tests/iso7185prt0104.ecd
-  0 standard_tests/iso7185prt0105.ecd
-  0 standard_tests/iso7185prt0106.ecd
-  0 standard_tests/iso7185prt0107.ecd
-  0 standard_tests/iso7185prt0108.ecd
-  0 standard_tests/iso7185prt0109.ecd
-  0 standard_tests/iso7185prt0110.ecd
-  0 standard_tests/iso7185prt0111.ecd
-  0 standard_tests/iso7185prt0112.ecd
-  0 standard_tests/iso7185prt0113.ecd
-  0 standard_tests/iso7185prt0114.ecd
-  0 standard_tests/iso7185prt0115.ecd
-  0 standard_tests/iso7185prt0116.ecd
-  0 standard_tests/iso7185prt0117.ecd
-  0 standard_tests/iso7185prt0118.ecd
-  0 standard_tests/iso7185prt0119.ecd
-  0 standard_tests/iso7185prt0120.ecd
-  0 standard_tests/iso7185prt0121.ecd
-  0 standard_tests/iso7185prt0122.ecd
-  0 standard_tests/iso7185prt0123.ecd
-  0 standard_tests/iso7185prt0124.ecd
-  0 standard_tests/iso7185prt0125.ecd
-  0 standard_tests/iso7185prt0126.ecd
-  0 standard_tests/iso7185prt0127.ecd
-  0 standard_tests/iso7185prt0128.ecd
-  0 standard_tests/iso7185prt0129.ecd
-  0 standard_tests/iso7185prt0130.ecd
-  0 standard_tests/iso7185prt0131.ecd
-  0 standard_tests/iso7185prt0132.ecd
-  0 standard_tests/iso7185prt0133.ecd
-  0 standard_tests/iso7185prt0134.ecd
-  0 standard_tests/iso7185prt0135.ecd
-  0 standard_tests/iso7185prt0136.ecd
-  0 standard_tests/iso7185prt0137.ecd
-  0 standard_tests/iso7185prt0138.ecd
-  0 standard_tests/iso7185prt0139.ecd
-  0 standard_tests/iso7185prt0140.ecd
-  0 standard_tests/iso7185prt0141.ecd
-  0 standard_tests/iso7185prt0142.ecd
-  0 standard_tests/iso7185prt0143.ecd
-  0 standard_tests/iso7185prt0144.ecd
-  0 standard_tests/iso7185prt0145.ecd
-  0 standard_tests/iso7185prt0146.ecd
-  0 standard_tests/iso7185prt0147.ecd
-  0 standard_tests/iso7185prt0148.ecd
-  0 standard_tests/iso7185prt0149.ecd
-  0 standard_tests/iso7185prt0150.ecd
-  0 standard_tests/iso7185prt0151.ecd
-  0 standard_tests/iso7185prt0152.ecd
-  0 standard_tests/iso7185prt0153.ecd
-  0 standard_tests/iso7185prt0154.ecd
-  0 standard_tests/iso7185prt0155.ecd
-  0 standard_tests/iso7185prt0156.ecd
-  0 standard_tests/iso7185prt0157.ecd
-  0 standard_tests/iso7185prt0200.ecd
-  0 standard_tests/iso7185prt0201.ecd
-  0 standard_tests/iso7185prt0202.ecd
-  0 standard_tests/iso7185prt0203.ecd
-  0 standard_tests/iso7185prt0204.ecd
-  0 standard_tests/iso7185prt0205.ecd
-  0 standard_tests/iso7185prt0206.ecd
-  0 standard_tests/iso7185prt0207.ecd
-  0 standard_tests/iso7185prt0208.ecd
-  0 standard_tests/iso7185prt0209.ecd
-  0 standard_tests/iso7185prt0210.ecd
-  0 standard_tests/iso7185prt0211.ecd
-  0 standard_tests/iso7185prt0212.ecd
-  0 standard_tests/iso7185prt0213.ecd
-  0 standard_tests/iso7185prt0214.ecd
-  0 standard_tests/iso7185prt0215.ecd
-  0 standard_tests/iso7185prt0216.ecd
-  0 standard_tests/iso7185prt0217.ecd
-  0 standard_tests/iso7185prt0218.ecd
-  0 standard_tests/iso7185prt0219.ecd
-  0 standard_tests/iso7185prt0220.ecd
-  0 standard_tests/iso7185prt0221.ecd
-  0 standard_tests/iso7185prt0222.ecd
-  0 standard_tests/iso7185prt0300.ecd
-  0 standard_tests/iso7185prt0301.ecd
-  0 standard_tests/iso7185prt0302.ecd
-  0 standard_tests/iso7185prt0303.ecd
-  0 standard_tests/iso7185prt0304.ecd
-  0 standard_tests/iso7185prt0305.ecd
-  0 standard_tests/iso7185prt0306.ecd
-  0 standard_tests/iso7185prt0400.ecd
-  0 standard_tests/iso7185prt0401.ecd
-  0 standard_tests/iso7185prt0402.ecd
-  0 standard_tests/iso7185prt0403.ecd
-  0 standard_tests/iso7185prt0404.ecd
-  0 standard_tests/iso7185prt0405.ecd
-  0 standard_tests/iso7185prt0406.ecd
-  0 standard_tests/iso7185prt0407.ecd
-  0 standard_tests/iso7185prt0408.ecd
-  0 standard_tests/iso7185prt0500.ecd
-  0 standard_tests/iso7185prt0501.ecd
-  0 standard_tests/iso7185prt0502.ecd
-  0 standard_tests/iso7185prt0503.ecd
-  0 standard_tests/iso7185prt0504.ecd
-  6 standard_tests/iso7185prt0505.ecd
-  6 standard_tests/iso7185prt0506.ecd
-  0 standard_tests/iso7185prt0507.ecd
-  0 standard_tests/iso7185prt0508.ecd
-  0 standard_tests/iso7185prt0509.ecd
-  0 standard_tests/iso7185prt0510.ecd
-  0 standard_tests/iso7185prt0511.ecd
-  0 standard_tests/iso7185prt0512.ecd
-  0 standard_tests/iso7185prt0513.ecd
-  0 standard_tests/iso7185prt0514.ecd
-  0 standard_tests/iso7185prt0515.ecd
-  0 standard_tests/iso7185prt0516.ecd
-  0 standard_tests/iso7185prt0517.ecd
-  0 standard_tests/iso7185prt0518.ecd
-  0 standard_tests/iso7185prt0519.ecd
-  0 standard_tests/iso7185prt0520.ecd
-  0 standard_tests/iso7185prt0521.ecd
-  0 standard_tests/iso7185prt0522.ecd
-  0 standard_tests/iso7185prt0600.ecd
-  0 standard_tests/iso7185prt0601.ecd
-  0 standard_tests/iso7185prt0602.ecd
-  0 standard_tests/iso7185prt0603.ecd
-  0 standard_tests/iso7185prt0604.ecd
-  0 standard_tests/iso7185prt0605.ecd
-  0 standard_tests/iso7185prt0606.ecd
-  0 standard_tests/iso7185prt0607.ecd
-  0 standard_tests/iso7185prt0608.ecd
-  0 standard_tests/iso7185prt0700.ecd
-  0 standard_tests/iso7185prt0701.ecd
-  0 standard_tests/iso7185prt0702.ecd
-  0 standard_tests/iso7185prt0703.ecd
-  0 standard_tests/iso7185prt0704.ecd
-  0 standard_tests/iso7185prt0705.ecd
-  0 standard_tests/iso7185prt0706.ecd
-  0 standard_tests/iso7185prt0707.ecd
-  0 standard_tests/iso7185prt0708.ecd
-  0 standard_tests/iso7185prt0709.ecd
-  0 standard_tests/iso7185prt0710.ecd
-  0 standard_tests/iso7185prt0711.ecd
-  0 standard_tests/iso7185prt0712.ecd
-  0 standard_tests/iso7185prt0713.ecd
-  0 standard_tests/iso7185prt0714.ecd
-  0 standard_tests/iso7185prt0715.ecd
-  0 standard_tests/iso7185prt0716.ecd
-  0 standard_tests/iso7185prt0717.ecd
-  0 standard_tests/iso7185prt0800.ecd
-  0 standard_tests/iso7185prt0801.ecd
-  0 standard_tests/iso7185prt0802.ecd
-  0 standard_tests/iso7185prt0803.ecd
-  0 standard_tests/iso7185prt0804.ecd
-  0 standard_tests/iso7185prt0805.ecd
-  0 standard_tests/iso7185prt0900.ecd
-  0 standard_tests/iso7185prt0901.ecd
-  0 standard_tests/iso7185prt0902.ecd
-  0 standard_tests/iso7185prt0903.ecd
-  0 standard_tests/iso7185prt0904.ecd
-  0 standard_tests/iso7185prt0905.ecd
-  0 standard_tests/iso7185prt0906.ecd
-  0 standard_tests/iso7185prt0907.ecd
-  0 standard_tests/iso7185prt0908.ecd
-  0 standard_tests/iso7185prt1000.ecd
-  0 standard_tests/iso7185prt1001.ecd
-  0 standard_tests/iso7185prt1002.ecd
-  0 standard_tests/iso7185prt1003.ecd
-  0 standard_tests/iso7185prt1004.ecd
-  0 standard_tests/iso7185prt1006.ecd
-  0 standard_tests/iso7185prt1007.ecd
-  0 standard_tests/iso7185prt1008.ecd
-  0 standard_tests/iso7185prt1009.ecd
-  0 standard_tests/iso7185prt1010.ecd
-  0 standard_tests/iso7185prt1100.ecd
-  0 standard_tests/iso7185prt1101.ecd
-  0 standard_tests/iso7185prt1102.ecd
-  0 standard_tests/iso7185prt1103.ecd
-  0 standard_tests/iso7185prt1104.ecd
-  0 standard_tests/iso7185prt1105.ecd
-  0 standard_tests/iso7185prt1106.ecd
-  0 standard_tests/iso7185prt1107.ecd
-  0 standard_tests/iso7185prt1108.ecd
-  0 standard_tests/iso7185prt1109.ecd
-  0 standard_tests/iso7185prt1200.ecd
-  0 standard_tests/iso7185prt1201.ecd
-  0 standard_tests/iso7185prt1203.ecd
-  0 standard_tests/iso7185prt1205.ecd
-  0 standard_tests/iso7185prt1206.ecd
-  0 standard_tests/iso7185prt1207.ecd
-  0 standard_tests/iso7185prt1300.ecd
-  0 standard_tests/iso7185prt1400.ecd
-  0 standard_tests/iso7185prt1401.ecd
-  0 standard_tests/iso7185prt1402.ecd
-  0 standard_tests/iso7185prt1403.ecd
-  0 standard_tests/iso7185prt1404.ecd
-  0 standard_tests/iso7185prt1405.ecd
-  0 standard_tests/iso7185prt1406.ecd
-  0 standard_tests/iso7185prt1407.ecd
-  0 standard_tests/iso7185prt1500.ecd
-  0 standard_tests/iso7185prt1501.ecd
-  0 standard_tests/iso7185prt1502.ecd
-  0 standard_tests/iso7185prt1503.ecd
-  0 standard_tests/iso7185prt1504.ecd
-  0 standard_tests/iso7185prt1505.ecd
-  0 standard_tests/iso7185prt1506.ecd
-  0 standard_tests/iso7185prt1507.ecd
-  0 standard_tests/iso7185prt1508.ecd
-  0 standard_tests/iso7185prt1600.ecd
-  0 standard_tests/iso7185prt1620.ecd
-  0 standard_tests/iso7185prt1621.ecd
-  0 standard_tests/iso7185prt1622.ecd
-  0 standard_tests/iso7185prt1701.ecd
-  0 standard_tests/iso7185prt1702A.ecd
-  0 standard_tests/iso7185prt1702b.ecd
-  0 standard_tests/iso7185prt1702c.ecd
-  0 standard_tests/iso7185prt1702d.ecd
-  0 standard_tests/iso7185prt1703.ecd
-  0 standard_tests/iso7185prt1704.ecd
-  0 standard_tests/iso7185prt1705.ecd
-  0 standard_tests/iso7185prt1706.ecd
-  0 standard_tests/iso7185prt1707a.ecd
-  0 standard_tests/iso7185prt1707b.ecd
-  0 standard_tests/iso7185prt1708.ecd
-  0 standard_tests/iso7185prt1709.ecd
-  0 standard_tests/iso7185prt1710.ecd
-  0 standard_tests/iso7185prt1712.ecd
-  0 standard_tests/iso7185prt1713.ecd
-  0 standard_tests/iso7185prt1714.ecd
-  0 standard_tests/iso7185prt1715.ecd
-  0 standard_tests/iso7185prt1716.ecd
-  0 standard_tests/iso7185prt1717.ecd
-  0 standard_tests/iso7185prt1718.ecd
-  0 standard_tests/iso7185prt1719.ecd
-  0 standard_tests/iso7185prt1720.ecd
-  0 standard_tests/iso7185prt1721.ecd
-  0 standard_tests/iso7185prt1722.ecd
-  0 standard_tests/iso7185prt1723.ecd
-  0 standard_tests/iso7185prt1724.ecd
-  0 standard_tests/iso7185prt1726.ecd
-  0 standard_tests/iso7185prt1727.ecd
-  0 standard_tests/iso7185prt1728.ecd
-  0 standard_tests/iso7185prt1729.ecd
-  0 standard_tests/iso7185prt1730.ecd
-  0 standard_tests/iso7185prt1731.ecd
-  0 standard_tests/iso7185prt1732.ecd
-  0 standard_tests/iso7185prt1733.ecd
-  0 standard_tests/iso7185prt1734.ecd
-  0 standard_tests/iso7185prt1735.ecd
-  0 standard_tests/iso7185prt1736.ecd
-  0 standard_tests/iso7185prt1737.ecd
-  0 standard_tests/iso7185prt1738.ecd
-  0 standard_tests/iso7185prt1739.ecd
-  0 standard_tests/iso7185prt1740.ecd
-  0 standard_tests/iso7185prt1741.ecd
-  0 standard_tests/iso7185prt1743.ecd
-  0 standard_tests/iso7185prt1744.ecd
-  0 standard_tests/iso7185prt1745.ecd
-  0 standard_tests/iso7185prt1746A.ecd
-  0 standard_tests/iso7185prt1746b.ecd
-  0 standard_tests/iso7185prt1748.ecd
-  0 standard_tests/iso7185prt1749.ecd
-  0 standard_tests/iso7185prt1750.ecd
-  0 standard_tests/iso7185prt1751.ecd
-  0 standard_tests/iso7185prt1752.ecd
-  0 standard_tests/iso7185prt1753.ecd
-  0 standard_tests/iso7185prt1754.ecd
-  0 standard_tests/iso7185prt1755.ecd
-  0 standard_tests/iso7185prt1756.ecd
-  0 standard_tests/iso7185prt1757.ecd
-  0 standard_tests/iso7185prt1758a.ecd
-  0 standard_tests/iso7185prt1758b.ecd
-  0 standard_tests/iso7185prt1800.ecd
-  0 standard_tests/iso7185prt1801.ecd
-  0 standard_tests/iso7185prt1802.ecd
-  0 standard_tests/iso7185prt1803.ecd
-  0 standard_tests/iso7185prt1804.ecd
-  0 standard_tests/iso7185prt1805.ecd
-  0 standard_tests/iso7185prt1806.ecd
-  0 standard_tests/iso7185prt1807.ecd
-  0 standard_tests/iso7185prt1808.ecd
-  0 standard_tests/iso7185prt1809.ecd
-  0 standard_tests/iso7185prt1810.ecd
-  0 standard_tests/iso7185prt1811.ecd
-  0 standard_tests/iso7185prt1820.ecd
-  0 standard_tests/iso7185prt1821.ecd
-  0 standard_tests/iso7185prt1822.ecd
-  0 standard_tests/iso7185prt1823.ecd
-  0 standard_tests/iso7185prt1824.ecd
-  0 standard_tests/iso7185prt1825.ecd
-  0 standard_tests/iso7185prt1826.ecd
-  0 standard_tests/iso7185prt1827.ecd
-  0 standard_tests/iso7185prt1828.ecd
-  0 standard_tests/iso7185prt1829.ecd
-  0 standard_tests/iso7185prt1830.ecd
-  0 standard_tests/iso7185prt1831.ecd
-  0 standard_tests/iso7185prt1832.ecd
-  0 standard_tests/iso7185prt1833.ecd
-  0 standard_tests/iso7185prt1834.ecd
-  0 standard_tests/iso7185prt1835.ecd
-  0 standard_tests/iso7185prt1836.ecd
-  0 standard_tests/iso7185prt1837.ecd
-  0 standard_tests/iso7185prt1838.ecd
-  0 standard_tests/iso7185prt1839.ecd
-  0 standard_tests/iso7185prt1840.ecd
-  0 standard_tests/iso7185prt1841.ecd
-  0 standard_tests/iso7185prt1842.ecd
-  0 standard_tests/iso7185prt1843.ecd
-  0 standard_tests/iso7185prt1844.ecd
-  0 standard_tests/iso7185prt1845.ecd
-  0 standard_tests/iso7185prt1846.ecd
-  0 standard_tests/iso7185prt1847.ecd
-  0 standard_tests/iso7185prt1848.ecd
-  0 standard_tests/iso7185prt1849.ecd
-  0 standard_tests/iso7185prt1850.ecd
-  0 standard_tests/iso7185prt1851.ecd
-  0 standard_tests/iso7185prt1852.ecd
-  0 standard_tests/iso7185prt1900.ecd
-  0 standard_tests/iso7185prt1901.ecd
-  0 standard_tests/iso7185prt1902.ecd
-  0 standard_tests/iso7185prt1903.ecd
-  0 standard_tests/iso7185prt1904.ecd
-  0 standard_tests/iso7185prt1905.ecd
-  0 standard_tests/iso7185prt1906.ecd
-  0 standard_tests/iso7185prt1907a.ecd
-  0 standard_tests/iso7185prt1907b.ecd
-  0 standard_tests/iso7185prt1908.ecd
-  0 standard_tests/iso7185prt1909.ecd
- 12 total
+   0 standard_tests/iso7185prt0001.ecd
+   0 standard_tests/iso7185prt0002.ecd
+   0 standard_tests/iso7185prt0003.ecd
+   0 standard_tests/iso7185prt0006.ecd
+   0 standard_tests/iso7185prt0007.ecd
+   0 standard_tests/iso7185prt0008.ecd
+   0 standard_tests/iso7185prt0009.ecd
+   0 standard_tests/iso7185prt0010.ecd
+   0 standard_tests/iso7185prt0011.ecd
+   0 standard_tests/iso7185prt0012.ecd
+   0 standard_tests/iso7185prt0013.ecd
+   0 standard_tests/iso7185prt0014.ecd
+   0 standard_tests/iso7185prt0015.ecd
+   0 standard_tests/iso7185prt0016.ecd
+   0 standard_tests/iso7185prt0017.ecd
+   0 standard_tests/iso7185prt0018.ecd
+   0 standard_tests/iso7185prt0019.ecd
+   0 standard_tests/iso7185prt0020.ecd
+   0 standard_tests/iso7185prt0021.ecd
+   0 standard_tests/iso7185prt0022.ecd
+   0 standard_tests/iso7185prt0023.ecd
+   0 standard_tests/iso7185prt0024.ecd
+   0 standard_tests/iso7185prt0025.ecd
+   0 standard_tests/iso7185prt0026.ecd
+   0 standard_tests/iso7185prt0027.ecd
+   0 standard_tests/iso7185prt0028.ecd
+   0 standard_tests/iso7185prt0029.ecd
+   0 standard_tests/iso7185prt0030.ecd
+   0 standard_tests/iso7185prt0031.ecd
+   0 standard_tests/iso7185prt0032.ecd
+   0 standard_tests/iso7185prt0033.ecd
+   0 standard_tests/iso7185prt0034.ecd
+   0 standard_tests/iso7185prt0035.ecd
+   0 standard_tests/iso7185prt0036.ecd
+   0 standard_tests/iso7185prt0037.ecd
+   0 standard_tests/iso7185prt0038.ecd
+   0 standard_tests/iso7185prt0039.ecd
+   0 standard_tests/iso7185prt0040.ecd
+   0 standard_tests/iso7185prt0041.ecd
+   0 standard_tests/iso7185prt0042.ecd
+   0 standard_tests/iso7185prt0043.ecd
+   0 standard_tests/iso7185prt0044.ecd
+   0 standard_tests/iso7185prt0045.ecd
+   0 standard_tests/iso7185prt0046.ecd
+   0 standard_tests/iso7185prt0047.ecd
+   0 standard_tests/iso7185prt0048.ecd
+   0 standard_tests/iso7185prt0049.ecd
+   0 standard_tests/iso7185prt0050.ecd
+   0 standard_tests/iso7185prt0051.ecd
+   0 standard_tests/iso7185prt0052.ecd
+   0 standard_tests/iso7185prt0053.ecd
+   0 standard_tests/iso7185prt0054.ecd
+   0 standard_tests/iso7185prt0055.ecd
+   0 standard_tests/iso7185prt0056.ecd
+   0 standard_tests/iso7185prt0057.ecd
+   0 standard_tests/iso7185prt0100.ecd
+   0 standard_tests/iso7185prt0101.ecd
+   0 standard_tests/iso7185prt0102.ecd
+   0 standard_tests/iso7185prt0103.ecd
+   0 standard_tests/iso7185prt0104.ecd
+   0 standard_tests/iso7185prt0105.ecd
+   0 standard_tests/iso7185prt0106.ecd
+   0 standard_tests/iso7185prt0107.ecd
+   0 standard_tests/iso7185prt0108.ecd
+   0 standard_tests/iso7185prt0109.ecd
+   0 standard_tests/iso7185prt0110.ecd
+   0 standard_tests/iso7185prt0111.ecd
+   0 standard_tests/iso7185prt0112.ecd
+   0 standard_tests/iso7185prt0113.ecd
+   0 standard_tests/iso7185prt0114.ecd
+   0 standard_tests/iso7185prt0115.ecd
+   0 standard_tests/iso7185prt0116.ecd
+   0 standard_tests/iso7185prt0117.ecd
+   0 standard_tests/iso7185prt0118.ecd
+   0 standard_tests/iso7185prt0119.ecd
+   0 standard_tests/iso7185prt0120.ecd
+   0 standard_tests/iso7185prt0121.ecd
+   0 standard_tests/iso7185prt0122.ecd
+   0 standard_tests/iso7185prt0123.ecd
+   0 standard_tests/iso7185prt0124.ecd
+   0 standard_tests/iso7185prt0125.ecd
+   0 standard_tests/iso7185prt0126.ecd
+   0 standard_tests/iso7185prt0127.ecd
+   0 standard_tests/iso7185prt0128.ecd
+   0 standard_tests/iso7185prt0129.ecd
+   0 standard_tests/iso7185prt0130.ecd
+   0 standard_tests/iso7185prt0131.ecd
+   0 standard_tests/iso7185prt0132.ecd
+   0 standard_tests/iso7185prt0133.ecd
+   0 standard_tests/iso7185prt0134.ecd
+   0 standard_tests/iso7185prt0135.ecd
+   0 standard_tests/iso7185prt0136.ecd
+   0 standard_tests/iso7185prt0137.ecd
+   0 standard_tests/iso7185prt0138.ecd
+   0 standard_tests/iso7185prt0139.ecd
+   0 standard_tests/iso7185prt0140.ecd
+   0 standard_tests/iso7185prt0141.ecd
+   0 standard_tests/iso7185prt0142.ecd
+   0 standard_tests/iso7185prt0143.ecd
+   0 standard_tests/iso7185prt0144.ecd
+   0 standard_tests/iso7185prt0145.ecd
+   0 standard_tests/iso7185prt0146.ecd
+   0 standard_tests/iso7185prt0147.ecd
+   0 standard_tests/iso7185prt0148.ecd
+   0 standard_tests/iso7185prt0149.ecd
+   0 standard_tests/iso7185prt0150.ecd
+   0 standard_tests/iso7185prt0151.ecd
+   0 standard_tests/iso7185prt0152.ecd
+   0 standard_tests/iso7185prt0153.ecd
+   0 standard_tests/iso7185prt0154.ecd
+   0 standard_tests/iso7185prt0155.ecd
+   0 standard_tests/iso7185prt0156.ecd
+   0 standard_tests/iso7185prt0157.ecd
+   0 standard_tests/iso7185prt0200.ecd
+   0 standard_tests/iso7185prt0201.ecd
+   0 standard_tests/iso7185prt0202.ecd
+   0 standard_tests/iso7185prt0203.ecd
+   0 standard_tests/iso7185prt0204.ecd
+   0 standard_tests/iso7185prt0205.ecd
+   0 standard_tests/iso7185prt0206.ecd
+   0 standard_tests/iso7185prt0207.ecd
+   0 standard_tests/iso7185prt0208.ecd
+   0 standard_tests/iso7185prt0209.ecd
+   0 standard_tests/iso7185prt0210.ecd
+   0 standard_tests/iso7185prt0211.ecd
+   0 standard_tests/iso7185prt0212.ecd
+   0 standard_tests/iso7185prt0213.ecd
+   0 standard_tests/iso7185prt0214.ecd
+   0 standard_tests/iso7185prt0215.ecd
+   0 standard_tests/iso7185prt0216.ecd
+   0 standard_tests/iso7185prt0217.ecd
+   0 standard_tests/iso7185prt0218.ecd
+   0 standard_tests/iso7185prt0219.ecd
+   0 standard_tests/iso7185prt0220.ecd
+   0 standard_tests/iso7185prt0221.ecd
+   0 standard_tests/iso7185prt0222.ecd
+   0 standard_tests/iso7185prt0300.ecd
+   0 standard_tests/iso7185prt0301.ecd
+   0 standard_tests/iso7185prt0302.ecd
+   0 standard_tests/iso7185prt0303.ecd
+   0 standard_tests/iso7185prt0304.ecd
+   0 standard_tests/iso7185prt0305.ecd
+   0 standard_tests/iso7185prt0306.ecd
+   0 standard_tests/iso7185prt0400.ecd
+   0 standard_tests/iso7185prt0401.ecd
+   0 standard_tests/iso7185prt0402.ecd
+   0 standard_tests/iso7185prt0403.ecd
+   0 standard_tests/iso7185prt0404.ecd
+   0 standard_tests/iso7185prt0405.ecd
+   0 standard_tests/iso7185prt0406.ecd
+   0 standard_tests/iso7185prt0407.ecd
+   0 standard_tests/iso7185prt0408.ecd
+   0 standard_tests/iso7185prt0500.ecd
+   0 standard_tests/iso7185prt0501.ecd
+   0 standard_tests/iso7185prt0502.ecd
+   0 standard_tests/iso7185prt0503.ecd
+   0 standard_tests/iso7185prt0504.ecd
+   0 standard_tests/iso7185prt0505.ecd
+   0 standard_tests/iso7185prt0506.ecd
+   0 standard_tests/iso7185prt0507.ecd
+   0 standard_tests/iso7185prt0508.ecd
+   0 standard_tests/iso7185prt0509.ecd
+   0 standard_tests/iso7185prt0510.ecd
+   0 standard_tests/iso7185prt0511.ecd
+   0 standard_tests/iso7185prt0512.ecd
+   0 standard_tests/iso7185prt0513.ecd
+   0 standard_tests/iso7185prt0514.ecd
+   0 standard_tests/iso7185prt0515.ecd
+   0 standard_tests/iso7185prt0516.ecd
+   0 standard_tests/iso7185prt0517.ecd
+   0 standard_tests/iso7185prt0518.ecd
+   0 standard_tests/iso7185prt0519.ecd
+   0 standard_tests/iso7185prt0520.ecd
+   0 standard_tests/iso7185prt0521.ecd
+   0 standard_tests/iso7185prt0522.ecd
+   0 standard_tests/iso7185prt0600.ecd
+   0 standard_tests/iso7185prt0601.ecd
+   0 standard_tests/iso7185prt0602.ecd
+   0 standard_tests/iso7185prt0603.ecd
+   0 standard_tests/iso7185prt0604.ecd
+   0 standard_tests/iso7185prt0605.ecd
+   0 standard_tests/iso7185prt0606.ecd
+   0 standard_tests/iso7185prt0607.ecd
+   0 standard_tests/iso7185prt0608.ecd
+   0 standard_tests/iso7185prt0700.ecd
+   0 standard_tests/iso7185prt0701.ecd
+   0 standard_tests/iso7185prt0702.ecd
+   0 standard_tests/iso7185prt0703.ecd
+   0 standard_tests/iso7185prt0704.ecd
+   0 standard_tests/iso7185prt0705.ecd
+   0 standard_tests/iso7185prt0706.ecd
+   0 standard_tests/iso7185prt0707.ecd
+   0 standard_tests/iso7185prt0708.ecd
+   0 standard_tests/iso7185prt0709.ecd
+   0 standard_tests/iso7185prt0710.ecd
+   0 standard_tests/iso7185prt0711.ecd
+   0 standard_tests/iso7185prt0712.ecd
+   0 standard_tests/iso7185prt0713.ecd
+   0 standard_tests/iso7185prt0714.ecd
+   0 standard_tests/iso7185prt0715.ecd
+   0 standard_tests/iso7185prt0716.ecd
+   0 standard_tests/iso7185prt0717.ecd
+   0 standard_tests/iso7185prt0800.ecd
+   0 standard_tests/iso7185prt0801.ecd
+   0 standard_tests/iso7185prt0802.ecd
+   0 standard_tests/iso7185prt0803.ecd
+   0 standard_tests/iso7185prt0804.ecd
+   0 standard_tests/iso7185prt0805.ecd
+   0 standard_tests/iso7185prt0900.ecd
+   0 standard_tests/iso7185prt0901.ecd
+   0 standard_tests/iso7185prt0902.ecd
+   0 standard_tests/iso7185prt0903.ecd
+   0 standard_tests/iso7185prt0904.ecd
+   0 standard_tests/iso7185prt0905.ecd
+   0 standard_tests/iso7185prt0906.ecd
+   0 standard_tests/iso7185prt0907.ecd
+   0 standard_tests/iso7185prt0908.ecd
+   0 standard_tests/iso7185prt1000.ecd
+   0 standard_tests/iso7185prt1001.ecd
+   0 standard_tests/iso7185prt1002.ecd
+   0 standard_tests/iso7185prt1003.ecd
+   0 standard_tests/iso7185prt1004.ecd
+   0 standard_tests/iso7185prt1006.ecd
+   0 standard_tests/iso7185prt1007.ecd
+   0 standard_tests/iso7185prt1008.ecd
+   0 standard_tests/iso7185prt1009.ecd
+   0 standard_tests/iso7185prt1010.ecd
+   0 standard_tests/iso7185prt1100.ecd
+   0 standard_tests/iso7185prt1101.ecd
+   0 standard_tests/iso7185prt1102.ecd
+   0 standard_tests/iso7185prt1103.ecd
+   0 standard_tests/iso7185prt1104.ecd
+   0 standard_tests/iso7185prt1105.ecd
+   0 standard_tests/iso7185prt1106.ecd
+   0 standard_tests/iso7185prt1107.ecd
+   0 standard_tests/iso7185prt1108.ecd
+   0 standard_tests/iso7185prt1109.ecd
+   0 standard_tests/iso7185prt1200.ecd
+   0 standard_tests/iso7185prt1201.ecd
+   0 standard_tests/iso7185prt1203.ecd
+   0 standard_tests/iso7185prt1205.ecd
+   0 standard_tests/iso7185prt1206.ecd
+   0 standard_tests/iso7185prt1207.ecd
+   0 standard_tests/iso7185prt1300.ecd
+   0 standard_tests/iso7185prt1400.ecd
+   0 standard_tests/iso7185prt1401.ecd
+   0 standard_tests/iso7185prt1402.ecd
+   0 standard_tests/iso7185prt1403.ecd
+   0 standard_tests/iso7185prt1404.ecd
+   0 standard_tests/iso7185prt1405.ecd
+   0 standard_tests/iso7185prt1406.ecd
+   0 standard_tests/iso7185prt1407.ecd
+   0 standard_tests/iso7185prt1500.ecd
+   0 standard_tests/iso7185prt1501.ecd
+   0 standard_tests/iso7185prt1502.ecd
+   0 standard_tests/iso7185prt1503.ecd
+   0 standard_tests/iso7185prt1504.ecd
+   0 standard_tests/iso7185prt1505.ecd
+   0 standard_tests/iso7185prt1506.ecd
+   0 standard_tests/iso7185prt1507.ecd
+   0 standard_tests/iso7185prt1508.ecd
+   0 standard_tests/iso7185prt1600.ecd
+   0 standard_tests/iso7185prt1620.ecd
+   0 standard_tests/iso7185prt1621.ecd
+   0 standard_tests/iso7185prt1622.ecd
+   0 standard_tests/iso7185prt1701.ecd
+   0 standard_tests/iso7185prt1702A.ecd
+   0 standard_tests/iso7185prt1702b.ecd
+   0 standard_tests/iso7185prt1702c.ecd
+   0 standard_tests/iso7185prt1702d.ecd
+   0 standard_tests/iso7185prt1703.ecd
+   0 standard_tests/iso7185prt1704.ecd
+   0 standard_tests/iso7185prt1705.ecd
+   0 standard_tests/iso7185prt1706a.ecd
+   0 standard_tests/iso7185prt1706b.ecd
+   0 standard_tests/iso7185prt1707a.ecd
+   0 standard_tests/iso7185prt1707b.ecd
+   0 standard_tests/iso7185prt1708.ecd
+   0 standard_tests/iso7185prt1709.ecd
+   0 standard_tests/iso7185prt1710.ecd
+   0 standard_tests/iso7185prt1712.ecd
+   0 standard_tests/iso7185prt1713.ecd
+   0 standard_tests/iso7185prt1714.ecd
+   0 standard_tests/iso7185prt1715.ecd
+   0 standard_tests/iso7185prt1716.ecd
+   0 standard_tests/iso7185prt1717.ecd
+   0 standard_tests/iso7185prt1718.ecd
+   0 standard_tests/iso7185prt1719.ecd
+   0 standard_tests/iso7185prt1720.ecd
+   0 standard_tests/iso7185prt1721.ecd
+   0 standard_tests/iso7185prt1722.ecd
+   0 standard_tests/iso7185prt1723.ecd
+   0 standard_tests/iso7185prt1724.ecd
+   0 standard_tests/iso7185prt1726.ecd
+   0 standard_tests/iso7185prt1727.ecd
+   0 standard_tests/iso7185prt1728.ecd
+   0 standard_tests/iso7185prt1729.ecd
+   0 standard_tests/iso7185prt1730.ecd
+   0 standard_tests/iso7185prt1731.ecd
+   0 standard_tests/iso7185prt1732.ecd
+   0 standard_tests/iso7185prt1733.ecd
+   0 standard_tests/iso7185prt1734.ecd
+   0 standard_tests/iso7185prt1735.ecd
+   0 standard_tests/iso7185prt1736.ecd
+   0 standard_tests/iso7185prt1737.ecd
+   0 standard_tests/iso7185prt1738.ecd
+   0 standard_tests/iso7185prt1739.ecd
+   0 standard_tests/iso7185prt1740.ecd
+   0 standard_tests/iso7185prt1741.ecd
+   0 standard_tests/iso7185prt1743.ecd
+   0 standard_tests/iso7185prt1744.ecd
+   0 standard_tests/iso7185prt1745.ecd
+   0 standard_tests/iso7185prt1746A.ecd
+   0 standard_tests/iso7185prt1746b.ecd
+   0 standard_tests/iso7185prt1748.ecd
+   0 standard_tests/iso7185prt1749.ecd
+   0 standard_tests/iso7185prt1750.ecd
+   0 standard_tests/iso7185prt1751.ecd
+   0 standard_tests/iso7185prt1752.ecd
+   0 standard_tests/iso7185prt1753.ecd
+   0 standard_tests/iso7185prt1754.ecd
+   0 standard_tests/iso7185prt1755.ecd
+   0 standard_tests/iso7185prt1756.ecd
+   0 standard_tests/iso7185prt1757.ecd
+   0 standard_tests/iso7185prt1758a.ecd
+   0 standard_tests/iso7185prt1758b.ecd
+   0 standard_tests/iso7185prt1759.ecd
+   0 standard_tests/iso7185prt1760.ecd
+   0 standard_tests/iso7185prt1761.ecd
+   0 standard_tests/iso7185prt1762.ecd
+   0 standard_tests/iso7185prt1763.ecd
+   0 standard_tests/iso7185prt1764.ecd
+   0 standard_tests/iso7185prt1765.ecd
+   0 standard_tests/iso7185prt1767.ecd
+   0 standard_tests/iso7185prt1800.ecd
+   0 standard_tests/iso7185prt1801.ecd
+   0 standard_tests/iso7185prt1802.ecd
+   0 standard_tests/iso7185prt1803.ecd
+   0 standard_tests/iso7185prt1804.ecd
+   0 standard_tests/iso7185prt1805.ecd
+   0 standard_tests/iso7185prt1806.ecd
+   0 standard_tests/iso7185prt1807.ecd
+   0 standard_tests/iso7185prt1808.ecd
+   0 standard_tests/iso7185prt1809.ecd
+   0 standard_tests/iso7185prt1810.ecd
+   0 standard_tests/iso7185prt1811.ecd
+   0 standard_tests/iso7185prt1820.ecd
+   0 standard_tests/iso7185prt1821.ecd
+   0 standard_tests/iso7185prt1822.ecd
+   0 standard_tests/iso7185prt1823.ecd
+   0 standard_tests/iso7185prt1824.ecd
+   0 standard_tests/iso7185prt1825.ecd
+   0 standard_tests/iso7185prt1826.ecd
+   0 standard_tests/iso7185prt1827.ecd
+   0 standard_tests/iso7185prt1828.ecd
+   0 standard_tests/iso7185prt1829.ecd
+   0 standard_tests/iso7185prt1830.ecd
+   0 standard_tests/iso7185prt1831.ecd
+   0 standard_tests/iso7185prt1832.ecd
+   0 standard_tests/iso7185prt1833.ecd
+   0 standard_tests/iso7185prt1834.ecd
+   0 standard_tests/iso7185prt1835.ecd
+   0 standard_tests/iso7185prt1836.ecd
+   0 standard_tests/iso7185prt1837.ecd
+   0 standard_tests/iso7185prt1838.ecd
+   0 standard_tests/iso7185prt1839.ecd
+   0 standard_tests/iso7185prt1840.ecd
+   0 standard_tests/iso7185prt1841.ecd
+   0 standard_tests/iso7185prt1842.ecd
+   0 standard_tests/iso7185prt1843.ecd
+   0 standard_tests/iso7185prt1844.ecd
+   0 standard_tests/iso7185prt1845.ecd
+   0 standard_tests/iso7185prt1846.ecd
+   0 standard_tests/iso7185prt1847.ecd
+   0 standard_tests/iso7185prt1848.ecd
+   0 standard_tests/iso7185prt1849.ecd
+   0 standard_tests/iso7185prt1850.ecd
+   0 standard_tests/iso7185prt1851.ecd
+   0 standard_tests/iso7185prt1852.ecd
+   0 standard_tests/iso7185prt1900.ecd
+   0 standard_tests/iso7185prt1901.ecd
+   0 standard_tests/iso7185prt1902.ecd
+   0 standard_tests/iso7185prt1903.ecd
+   0 standard_tests/iso7185prt1904.ecd
+   0 standard_tests/iso7185prt1905.ecd
+   0 standard_tests/iso7185prt1906.ecd
+   0 standard_tests/iso7185prt1907a.ecd
+   0 standard_tests/iso7185prt1907b.ecd
+   0 standard_tests/iso7185prt1908.ecd
+   0 standard_tests/iso7185prt1909.ecd
+   0 standard_tests/iso7185prt1911.ecd
+   0 standard_tests/iso7185prt1912.ecd
+   0 standard_tests/iso7185prt1913.ecd
+   0 standard_tests/iso7185prt1914.ecd
+   0 standard_tests/iso7185prt1915.ecd
+   0 standard_tests/iso7185prt1916.ecd
+   0 standard_tests/iso7185prt1917.ecd
+  49 standard_tests/iso7185prt1918.ecd
+  49 total
 
 Run output differences: **********************
 
-  0 standard_tests/iso7185prt1702A.dif
-  8 standard_tests/iso7185prt1702b.dif
-  8 standard_tests/iso7185prt1702c.dif
-  9 standard_tests/iso7185prt1702d.dif
-  0 standard_tests/iso7185prt1703.dif
-  0 standard_tests/iso7185prt1704.dif
-  8 standard_tests/iso7185prt1705.dif
-  8 standard_tests/iso7185prt1706.dif
-  0 standard_tests/iso7185prt1708.dif
-  0 standard_tests/iso7185prt1709.dif
-  0 standard_tests/iso7185prt1710.dif
-  0 standard_tests/iso7185prt1712.dif
-  0 standard_tests/iso7185prt1713.dif
-  0 standard_tests/iso7185prt1714.dif
-  0 standard_tests/iso7185prt1715.dif
-  0 standard_tests/iso7185prt1716.dif
-  0 standard_tests/iso7185prt1719.dif
-  0 standard_tests/iso7185prt1720.dif
-  0 standard_tests/iso7185prt1721.dif
-  0 standard_tests/iso7185prt1722.dif
-  0 standard_tests/iso7185prt1723.dif
-  0 standard_tests/iso7185prt1724.dif
-  0 standard_tests/iso7185prt1727.dif
-  0 standard_tests/iso7185prt1728.dif
-  0 standard_tests/iso7185prt1730.dif
-  0 standard_tests/iso7185prt1731.dif
-  0 standard_tests/iso7185prt1732.dif
-  0 standard_tests/iso7185prt1733.dif
-  0 standard_tests/iso7185prt1734.dif
-  0 standard_tests/iso7185prt1735.dif
-  0 standard_tests/iso7185prt1736.dif
-  0 standard_tests/iso7185prt1737.dif
-  0 standard_tests/iso7185prt1738.dif
-  0 standard_tests/iso7185prt1739.dif
-  0 standard_tests/iso7185prt1740.dif
-  0 standard_tests/iso7185prt1741.dif
-  0 standard_tests/iso7185prt1743.dif
-  0 standard_tests/iso7185prt1744.dif
-  0 standard_tests/iso7185prt1745.dif
-  0 standard_tests/iso7185prt1746A.dif
-  0 standard_tests/iso7185prt1746b.dif
-  0 standard_tests/iso7185prt1750.dif
-  0 standard_tests/iso7185prt1751.dif
-  0 standard_tests/iso7185prt1754.dif
-  0 standard_tests/iso7185prt1755.dif
-  0 standard_tests/iso7185prt1756.dif
-  0 standard_tests/iso7185prt1757.dif
-  0 standard_tests/iso7185prt1758a.dif
-  0 standard_tests/iso7185prt1758b.dif
-  0 standard_tests/iso7185prt1800.dif
-  0 standard_tests/iso7185prt1811.dif
-  0 standard_tests/iso7185prt1828.dif
-  0 standard_tests/iso7185prt1834.dif
-  0 standard_tests/iso7185prt1839.dif
-  0 standard_tests/iso7185prt1840.dif
-  0 standard_tests/iso7185prt1850.dif
-  4 standard_tests/iso7185prt1851.dif
-  0 standard_tests/iso7185prt1852.dif
-  0 standard_tests/iso7185prt1909.dif
- 45 total
+ 0 standard_tests/iso7185prt1702A.dif
+ 0 standard_tests/iso7185prt1702b.dif
+ 0 standard_tests/iso7185prt1702c.dif
+ 0 standard_tests/iso7185prt1702d.dif
+ 0 standard_tests/iso7185prt1703.dif
+ 0 standard_tests/iso7185prt1704.dif
+ 0 standard_tests/iso7185prt1705.dif
+ 0 standard_tests/iso7185prt1706a.dif
+ 0 standard_tests/iso7185prt1706b.dif
+ 0 standard_tests/iso7185prt1708.dif
+ 0 standard_tests/iso7185prt1709.dif
+ 0 standard_tests/iso7185prt1710.dif
+ 0 standard_tests/iso7185prt1712.dif
+ 0 standard_tests/iso7185prt1713.dif
+ 0 standard_tests/iso7185prt1714.dif
+ 0 standard_tests/iso7185prt1715.dif
+ 0 standard_tests/iso7185prt1716.dif
+ 0 standard_tests/iso7185prt1719.dif
+ 0 standard_tests/iso7185prt1720.dif
+ 0 standard_tests/iso7185prt1721.dif
+ 0 standard_tests/iso7185prt1722.dif
+ 0 standard_tests/iso7185prt1723.dif
+ 0 standard_tests/iso7185prt1724.dif
+ 0 standard_tests/iso7185prt1727.dif
+ 0 standard_tests/iso7185prt1728.dif
+ 0 standard_tests/iso7185prt1730.dif
+ 0 standard_tests/iso7185prt1731.dif
+ 0 standard_tests/iso7185prt1732.dif
+ 0 standard_tests/iso7185prt1733.dif
+ 0 standard_tests/iso7185prt1734.dif
+ 0 standard_tests/iso7185prt1735.dif
+ 0 standard_tests/iso7185prt1736.dif
+ 0 standard_tests/iso7185prt1737.dif
+ 0 standard_tests/iso7185prt1738.dif
+ 0 standard_tests/iso7185prt1739.dif
+ 0 standard_tests/iso7185prt1740.dif
+ 0 standard_tests/iso7185prt1741.dif
+ 0 standard_tests/iso7185prt1743.dif
+ 0 standard_tests/iso7185prt1744.dif
+ 0 standard_tests/iso7185prt1745.dif
+ 0 standard_tests/iso7185prt1746A.dif
+ 0 standard_tests/iso7185prt1746b.dif
+ 0 standard_tests/iso7185prt1750.dif
+ 0 standard_tests/iso7185prt1751.dif
+ 0 standard_tests/iso7185prt1754.dif
+ 0 standard_tests/iso7185prt1755.dif
+ 0 standard_tests/iso7185prt1756.dif
+ 0 standard_tests/iso7185prt1757.dif
+ 0 standard_tests/iso7185prt1758a.dif
+ 0 standard_tests/iso7185prt1758b.dif
+ 0 standard_tests/iso7185prt1800.dif
+ 0 standard_tests/iso7185prt1811.dif
+ 0 standard_tests/iso7185prt1828.dif
+ 0 standard_tests/iso7185prt1834.dif
+ 0 standard_tests/iso7185prt1839.dif
+ 0 standard_tests/iso7185prt1840.dif
+ 0 standard_tests/iso7185prt1850.dif
+ 0 standard_tests/iso7185prt1851.dif
+ 0 standard_tests/iso7185prt1852.dif
+ 0 standard_tests/iso7185prt1909.dif
+ 5 standard_tests/iso7185prt1918.dif
+ 5 total
 
 *******************************************************************************
 
@@ -1648,16 +1663,17 @@ P6 Pascal compiler vs. 0.1.x
      7      -32  
      8      -32 program iso7185prt0040(output); 
      9      -32  
-    10      -32 var   one: integer; 
+    10      -32 var   one: boolean; 
     11      -32  
     12      -32 type  integer = char; 
     12   ****      ^18
     13      -32  
     14      -32 begin 
     15        8  
-    16        8    writeln(one) 
-    17       13  
-    18       13 end. 
+    16        8    one := true; 
+    17       11    writeln(one) 
+    18       16  
+    19       16 end. 
 integer    unreferenced
 
 
@@ -8436,14 +8452,13 @@ P6 Pascal compiler vs. 0.1.x
     13        8    a := -   
     14        8  
     15        8 end. 
-    15   ****     ^58,134
+    15   ****     ^58
 
-Errors in program: 2
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
  58  Error in factor
-134  Illegal type of operand(s)
 
 
 
@@ -8977,16 +8992,17 @@ P6 Pascal compiler vs. 0.1.x
     11      -32 begin 
     12        8  
     13        8    a := 1d5 
-    13   ****             ^6,104
+    13   ****           ^241^6,104
     14        8  
     15        8 end. 
 
-Errors in program: 2
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6  Illegal symbol
 104  Identifier not declared
+241  Invalid tolken separator
 
 
 
@@ -9381,52 +9397,53 @@ Compile:
 
 P6 Pascal compiler vs. 0.1.x
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     4      -32                each reference and access to each component of the variant. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.5.3.3 
-     7      -32  
-     8      -32                There are four possible cases for active variants: 
-     9      -32  
-    10      -32                   A: Reference to discriminated variant. 
-    11      -32                   B: Change to the tagfield of a discriminated variant with 
-    12      -32                      an outstanding reference. 
-    13      -32                   C: Read of an undiscriminated variant after a write. 
-    14      -32                   D: Write of an undiscriminated variant with outstanding 
-    15      -32                      reference. 
-    16      -32  
-    17      -32                This is case B. 
-    18      -32 } 
-    19      -32  
-    20      -32 program iso7185prt1702(output); 
-    21      -32  
-    22      -32 var a: record case val: boolean of 
-    23      -32  
-    24      -32           true: (i: integer); 
-    25      -32           false: (c: char); 
-    26      -32  
-    27      -32        end; 
-    28      -32  
-    29      -32 procedure b(var i: integer); 
-    30      -36  
-    31      -36 begin 
-    32        8  
-    33        8    { Outstanding references are dificult to track. The error should occur 
-    34        8      when the variant is changed, but could also be differed to the time the bad 
-    35        8      variant is assigned. } 
-    36        8    a.val := false; 
-    37       12    i := 1 
-    38       13  
-    39       13 end; 
-    40       16  
-    41       16 begin 
-    42       18  
-    43       18    a.val := true; 
-    44       22    b(a.i) 
-    45       28  
-    46       28 end. 
+     1      -32 {$i} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     5      -32                each reference and access to each component of the variant. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.5.3.3 
+     8      -32  
+     9      -32                There are four possible cases for active variants: 
+    10      -32  
+    11      -32                   A: Reference to discriminated variant. 
+    12      -32                   B: Change to the tagfield of a discriminated variant with 
+    13      -32                      an outstanding reference. 
+    14      -32                   C: Read of an undiscriminated variant after a write. 
+    15      -32                   D: Write of an undiscriminated variant with outstanding 
+    16      -32                      reference. 
+    17      -32  
+    18      -32                This is case B. 
+    19      -32 } 
+    20      -32  
+    21      -32 program iso7185prt1702(output); 
+    22      -32  
+    23      -32 var a: record case val: boolean of 
+    24      -32  
+    25      -32           true: (i: integer); 
+    26      -32           false: (c: char); 
+    27      -32  
+    28      -32        end; 
+    29      -32  
+    30      -32 procedure b(var i: integer); 
+    31      -36  
+    32      -36 begin 
+    33       10  
+    34       10    { Outstanding references are dificult to track. The error should occur 
+    35       10      when the variant is changed, but could also be differed to the time the bad 
+    36       10      variant is assigned. } 
+    37       10    a.val := false; 
+    38       15    i := 1 
+    39       16  
+    40       16 end; 
+    41       20  
+    42       20 begin 
+    43       22  
+    44       22    a.val := true; 
+    45       27    b(a.i) 
+    46       33  
+    47       33 end. 
 
 Errors in program: 0
 
@@ -9437,6 +9454,8 @@ P6 Pascal interpreter vs. 0.1.x
 Assembling/loading program
 Running program
 
+
+*** Runtime error [37]: Change to VAR referenced variant
 
 program complete
 
@@ -9446,80 +9465,24 @@ Compile:
 
 P6 Pascal compiler vs. 0.1.x
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     4      -32                each reference and access to each component of the variant. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.5.3.3 
-     7      -32  
-     8      -32                There are four possible cases for active variants: 
-     9      -32  
-    10      -32                   A: Reference to discriminated variant. 
-    11      -32                   B: Change to the tagfield of a discriminated variant with 
-    12      -32                      an outstanding reference. 
-    13      -32                   C: Read of an undiscriminated variant after a write. 
-    14      -32                   D: Write of an undiscriminated variant with outstanding 
-    15      -32                      reference. 
-    16      -32  
-    17      -32                This is case C. 
-    18      -32 } 
-    19      -32  
-    20      -32 program iso7185prt1702(output); 
-    21      -32  
-    22      -32 var a: record case boolean of 
-    23      -32  
-    24      -32           true: (i: integer); 
-    25      -32           false: (c: char); 
-    26      -32  
-    27      -32        end; 
-    28      -32     c: char; 
-    29      -32  
-    30      -32 begin 
-    31        8  
-    32        8    { This could fail if the compiler allocates tagfields even on undiscriminated 
-    33        8      variants and writes to the tagfield on a write to member. } 
-    34        8    a.i := 1; 
-    35       10    c := a.c 
-    36       10  
-    37       10 end. 
-
-Errors in program: 0
-
-Run: 
-
-P6 Pascal interpreter vs. 0.1.x
-
-Assembling/loading program
-Running program
-
-
-program complete
-
-Listing for standard_tests\iso7185prt1702d *************************************
-
-Compile: 
-
-P6 Pascal compiler vs. 0.1.x
-
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     4      -32                each reference and access to each component of the variant. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.5.3.3 
-     7      -32  
-     8      -32                There are four possible cases for active variants: 
-     9      -32  
-    10      -32                   A: Reference to discriminated variant. 
-    11      -32                   B: Change to the tagfield of a discriminated variant with 
-    12      -32                      an outstanding reference. 
-    13      -32                   C: Read of an undiscriminated variant after a write. 
-    14      -32                   D: Write of an undiscriminated variant with outstanding 
-    15      -32                      reference. 
-    16      -32  
-    17      -32                This is case D. 
-    18      -32  
+     1      -32 {$u} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     5      -32                each reference and access to each component of the variant. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.5.3.3 
+     8      -32  
+     9      -32                There are four possible cases for active variants: 
+    10      -32  
+    11      -32                   A: Reference to discriminated variant. 
+    12      -32                   B: Change to the tagfield of a discriminated variant with 
+    13      -32                      an outstanding reference. 
+    14      -32                   C: Read of an undiscriminated variant after a write. 
+    15      -32                   D: Write of an undiscriminated variant with outstanding 
+    16      -32                      reference. 
+    17      -32  
+    18      -32                This is case C. 
     19      -32 } 
     20      -32  
     21      -32 program iso7185prt1702(output); 
@@ -9530,25 +9493,16 @@ P6 Pascal compiler vs. 0.1.x
     26      -32           false: (c: char); 
     27      -32  
     28      -32        end; 
-    29      -32  
-    30      -32 procedure b(var i: integer); 
-    31      -36  
-    32      -36 begin 
-    33        8  
-    34        8    { change the undiscriminated variant, then print the refered variable to be 
-    35        8      sure the compiler sees it. This would rely on the compiler both allocating 
-    36        8      a tagfield, and automatically assigning it on write. } 
-    37        8    a.c := 'c'; 
-    38       11    writeln('i: ', i) 
-    39       21  
-    40       21 end; 
-    41       24  
-    42       24 begin 
-    43       26  
-    44       26    a.i := 1; 
-    45       28    b(a.i) 
-    46       30  
-    47       30 end. 
+    29      -32     c: char; 
+    30      -32  
+    31      -32 begin 
+    32        8  
+    33        8    { This could fail if the compiler allocates tagfields even on undiscriminated 
+    34        8      variants and writes to the tagfield on a write to member. } 
+    35        8    a.i := 1; 
+    36       18    c := a.c 
+    37       26  
+    38       26 end. 
 
 Errors in program: 0
 
@@ -9559,7 +9513,77 @@ P6 Pascal interpreter vs. 0.1.x
 Assembling/loading program
 Running program
 
-i:          99
+
+*** Runtime error [36]: Undefined location access
+
+program complete
+
+Listing for standard_tests\iso7185prt1702d *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 {$u,i} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     5      -32                each reference and access to each component of the variant. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.5.3.3 
+     8      -32  
+     9      -32                There are four possible cases for active variants: 
+    10      -32  
+    11      -32                   A: Reference to discriminated variant. 
+    12      -32                   B: Change to the tagfield of a discriminated variant with 
+    13      -32                      an outstanding reference. 
+    14      -32                   C: Read of an undiscriminated variant after a write. 
+    15      -32                   D: Write of an undiscriminated variant with outstanding 
+    16      -32                      reference. 
+    17      -32  
+    18      -32                This is case D. 
+    19      -32  
+    20      -32 } 
+    21      -32  
+    22      -32 program iso7185prt1702(output); 
+    23      -32  
+    24      -32 var a: record case boolean of 
+    25      -32  
+    26      -32           true: (i: integer); 
+    27      -32           false: (c: char); 
+    28      -32  
+    29      -32        end; 
+    30      -32  
+    31      -32 procedure b(var i: integer); 
+    32      -36  
+    33      -36 begin 
+    34       10  
+    35       10    { change the undiscriminated variant, then print the refered variable to be 
+    36       10      sure the compiler sees it. This would rely on the compiler both allocating 
+    37       10      a tagfield, and automatically assigning it on write. } 
+    38       10    a.c := 'c'; 
+    39       22    writeln('i: ', i) 
+    40       32  
+    41       32 end; 
+    42       36  
+    43       36 begin 
+    44       38  
+    45       38    a.i := 1; 
+    46       49    b(a.i) 
+    47       60  
+    48       60 end. 
+
+Errors in program: 0
+
+Run: 
+
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+
+*** Runtime error [38]: Change to VAR referenced variant
 
 program complete
 
@@ -9651,37 +9675,38 @@ Compile:
 
 P6 Pascal compiler vs. 0.1.x
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1705: It is an error to remove from its pointer-type the 
-     4      -32                identifying-value of an identified-variable when a reference to 
-     5      -32                the identified-variable exists. 
-     6      -32  
-     7      -32                ISO 7185 reference: 6.5.4 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1705(output); 
-    12      -32  
-    13      -32 var a: ^integer; 
-    14      -32  
-    15      -32 procedure b(var c: integer); 
-    16      -36  
-    17      -36 begin 
-    18        8  
-    19        8    c := 1; 
-    20       11    a := nil 
-    21       11  
-    22       11 end; 
-    23       15  
-    24       15 begin 
-    25       17  
-    26       17    { allocate integer value and pass that as reference, then change the value 
-    27       17      of the pointer } 
-    28       17    new(a); 
-    29       20    b(a^) 
-    30       23  
-    31       23 end. 
+     1      -32 {$i} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1705: It is an error to remove from its pointer-type the 
+     5      -32                identifying-value of an identified-variable when a reference to 
+     6      -32                the identified-variable exists. 
+     7      -32  
+     8      -32                ISO 7185 reference: 6.5.4 
+     9      -32  
+    10      -32 } 
+    11      -32  
+    12      -32 program iso7185prt1705(output); 
+    13      -32  
+    14      -32 var a: ^integer; 
+    15      -32  
+    16      -32 procedure b(var c: integer); 
+    17      -36  
+    18      -36 begin 
+    19       10  
+    20       10    c := 1; 
+    21       13    dispose(a) 
+    22       16  
+    23       16 end; 
+    24       18  
+    25       18 begin 
+    26       20  
+    27       20    { allocate integer value and pass that as reference, then change the value 
+    28       20      of the pointer } 
+    29       20    new(a); 
+    30       23    b(a^) 
+    31       26  
+    32       26 end. 
 
 Errors in program: 0
 
@@ -9693,35 +9718,39 @@ Assembling/loading program
 Running program
 
 
+*** Runtime error [21]: Dispose of VAR referenced block
+
 program complete
 
-Listing for standard_tests\iso7185prt1706 *************************************
+Listing for standard_tests\iso7185prt1706a *************************************
 
 Compile: 
 
 P6 Pascal compiler vs. 0.1.x
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1706: It is an error to alter the value of a file-variable f when a 
-     4      -32                reference to the buffer-variable f^ exists. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.5.5 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1706(output); 
-    11      -32  
-    12      -32 var a: file of integer; 
-    13      -32  
-    14      -32 procedure b(var c: integer); 
-    15      -36  
-    16      -36 begin 
-    17        8  
-    18        8    c := 1; 
-    19       11    get(a); 
-    20       14  
-    21       14 end; 
+     1      -32 {$i} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1706a: It is an error to alter the value of a file-variable f when a 
+     5      -32                 reference to the buffer-variable f^ exists. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.5.5 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1706a(output); 
+    12      -32  
+    13      -32 var a: file of integer; 
+    14      -32  
+    15      -32 procedure b(var c: integer); 
+    16      -36  
+    17      -36 begin 
+    18       10  
+    19       10    get(a); 
+    20       13  
+    21       13 end; 
+c          unreferenced
+
     22       15  
     23       15 begin 
     24       17  
@@ -9742,6 +9771,62 @@ P6 Pascal interpreter vs. 0.1.x
 Assembling/loading program
 Running program
 
+
+*** Runtime error [19]: VAR referenced file buffer modified
+
+program complete
+
+Listing for standard_tests\iso7185prt1706b *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 {$i} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1706: It is an error to alter the value of a file-variable f when a 
+     5      -32                reference to the buffer-variable f^ exists. 
+     6      -32  
+     7      -32                ISO 7185 reference: 6.5.5 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1706(output); 
+    12      -32  
+    13      -32 var a: text; 
+    14      -32  
+    15      -32 procedure b(var c: char); 
+    16      -36  
+    17      -36 begin 
+    18       10  
+    19       10    get(a); 
+    20       12  
+    21       12 end; 
+c          unreferenced
+
+    22       14  
+    23       14 begin 
+    24       16  
+    25       16    rewrite(a); 
+    26       18    a^ := 'x'; 
+    27       24    put(a); 
+    28       26    reset(a); 
+    29       28    b(a^) 
+    30       32  
+    31       32 end. 
+
+Errors in program: 0
+
+Run: 
+
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+
+*** Runtime error [19]: VAR referenced file buffer modified
 
 program complete
 
@@ -11902,6 +11987,296 @@ Running program
 
 program complete
 
+Listing for standard_tests\iso7185prt1759 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1759: Label "apparent value" not in the range 0 to 9999. 
+     4      -32  
+     5      -32                ISO 7185 reference: 6.1.6 
+     6      -32  
+     7      -32                The numeric value of a label must be within 0 to 9999. 
+     8      -32  
+     9      -32 } 
+    10      -32  
+    11      -32 program iso7185prt1759(output); 
+    12      -32  
+    13      -32 label 10000; 
+    13   ****             ^261
+    14      -32  
+    15      -32 begin 
+    16        8  
+    17        8    goto 10000; 
+    18        9  
+    19        9    writeln('*** Should not execute this'); 
+    20       17     
+    21       17    10000: writeln('At label'); 
+    22       25  
+    23       25 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+261  Label beyond valid integral value (>9999)
+
+
+
+Listing for standard_tests\iso7185prt1760 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 {$s} 
+     2      -32 { 
+     3      -32  
+     4      -32 PRT test 1760: Alphanumeric label. 
+     5      -32  
+     6      -32                Attempt to use alphanumeric label instead of number. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1760(output); 
+    11      -32  
+    12      -32 label skip; 
+    12   ****            ^397
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8    goto skip; 
+    16   ****              ^397
+    17        9  
+    18        9    writeln('*** Should not execute this'); 
+    19       17     
+    20       17    skip: writeln('At label'); 
+    21       25  
+    22       25 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+397  Feature not valid in ISO 7185 Pascal
+
+
+
+Listing for standard_tests\iso7185prt1761 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1761: Assign different length strings. 
+     4      -32  
+     5      -32                Assigns a string with different length than the destination. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1761; 
+    10      -32  
+    11      -32 var a: packed array [1..10] of char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    a := 'h          ' 
+    16        9  
+    17        9 end. 
+    17   ****     ^129
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+129  Type conflict of operands
+
+
+
+Listing for standard_tests\iso7185prt1762 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1762: Invalid string index subrange. 
+     4      -32  
+     5      -32     String index starts with 0. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1762(output); 
+    10      -32  
+    11      -32 var s: packed array [0..10] of char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    s := 'h          '; 
+    15   ****                        ^129
+    16       10    writeln('The string is: ''', s, ''''); 
+    16   ****                                    ^116
+    17       22  
+    18       22 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+116  Error in type of standard procedure parameter
+129  Type conflict of operands
+
+
+
+Listing for standard_tests\iso7185prt1763 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1763: Invalid string index subrange. 
+     4      -32  
+     5      -32     String index only one character. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1763(output); 
+    10      -32  
+    11      -32 var s: packed array [1..1] of char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    s := 'h'; 
+    15   ****              ^129
+    16       10    writeln('The string is: ''', s, ''''); 
+    16   ****                                    ^116
+    17       22  
+    18       22 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+116  Error in type of standard procedure parameter
+129  Type conflict of operands
+
+
+
+Listing for standard_tests\iso7185prt1764 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1764: String not packed. 
+     4      -32  
+     5      -32     String lacks packed modifier. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1764(output); 
+    10      -32  
+    11      -32 var s: array [1..10] of char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    s := 'hello, you'; 
+    15   ****                       ^129
+    16       10    writeln('The string is: ''', s, ''''); 
+    16   ****                                    ^116
+    17       22  
+    18       22 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+116  Error in type of standard procedure parameter
+129  Type conflict of operands
+
+
+
+Listing for standard_tests\iso7185prt1765 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1765: String not based on char. 
+     4      -32  
+     5      -32     String based on subrange of char, not char itself. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1765(output); 
+    10      -32  
+    11      -32 type mychar = 'a'..'z'; 
+    12      -32  
+    13      -32 var s: packed array [1..10] of mychar; 
+    14      -32  
+    15      -32 begin 
+    16        8  
+    17        8    s := 'hello you '; 
+    17   ****                       ^129
+    18       10    writeln('The string is: ''', s, ''''); 
+    18   ****                                    ^116
+    19       22  
+    20       22 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+116  Error in type of standard procedure parameter
+129  Type conflict of operands
+
+
+
+Listing for standard_tests\iso7185prt1767 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1767: Repeated header file 
+     4      -32  
+     5      -32     Tests for a duplicated header file. The ISO 7185 standard states that header 
+     6      -32     parameters must be distinct. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1767(output,output); 
+    10   ****                                      ^240
+    11      -32  
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    writeln('Test runs') 
+    16       14  
+    17       14 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+240  Header parameter already included
+
+
+
 Listing for standard_tests\iso7185prt1800 *************************************
 
 Compile: 
@@ -13317,8 +13692,8 @@ P6 Pascal compiler vs. 0.1.x
     12        8  
     13        8    writeln('') 
     13   ****               ^205
-    14       14  
-    15       14 end. 
+    14       13  
+    15       13 end. 
 
 Errors in program: 1
 
@@ -14230,5 +14605,312 @@ Running program
 
 The result is: 
 *** Runtime error [19]: Value out of range
+
+program complete
+
+Listing for standard_tests\iso7185prt1911 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1911: nil as tolken 
+     4      -32  
+     5      -32     In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
+     6      -32     as defined in ISO 7185. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1911(output); 
+    11      -32  
+    12      -32 var nil: integer; 
+    12   ****         ^2,6
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  2  Identifier expected
+  6  Illegal symbol
+
+
+
+Listing for standard_tests\iso7185prt1912 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1912: '..' and ':' equivalence 
+     4      -32  
+     5      -32     Pascal-P2 regarded '..' and ':' as equivalent. This should not be possible 
+     6      -32     under ISO 7185. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1912(output); 
+    11      -32  
+    12      -32 var r: 1:10; 
+    12   ****           ^6 ^5,50,107,102
+    13      -32  
+    14      -32 begin 
+    15        8  
+    16        8 end. 
+
+Errors in program: 5
+
+Error numbers in listing:
+-------------------------
+  5  ':' expected
+  6  Illegal symbol
+ 50  Error in constant
+102  Low bound exceeds highbound
+107  Incompatible subrange types
+
+
+
+Listing for standard_tests\iso7185prt1913 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1913: Adjoining symbols. 
+     4      -32  
+     5      -32     Number directly adjoining a keyword. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1913(output); 
+    10      -32  
+    11      -32 begin 
+    12        8  
+    13        8    writeln('The result is: ', 42div 4); 
+    13   ****                                  ^241
+    14       21  
+    15       21 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+241  Invalid tolken separator
+
+
+
+Listing for standard_tests\iso7185prt1914 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1914: Adjoining symbols. 
+     4      -32  
+     5      -32     Number directly adjoining a symbol. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1914(output); 
+    10      -32  
+    11      -32 var myvar: integer; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    writeln('The result is: ', 42myvar); 
+    15   ****                                  ^241 ^6
+    16       19  
+    17       19 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6  Illegal symbol
+241  Invalid tolken separator
+
+
+
+Listing for standard_tests\iso7185prt1915 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1915: Reference to outer block defintion before local definition. 
+     4      -32  
+     5      -32     Use of an outer block definine before a definition in the same block. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1762(output); 
+    10      -32  
+    11      -32 const one = 1; 
+    12      -32  
+    13      -32 procedure x; 
+    14      -32  
+    15      -32 const two = one; 
+    16      -32       one = 2; 
+    16   ****                ^242
+    17      -32        
+    18      -32 begin 
+    19        8  
+    20        8   writeln(one, two) 
+    21       16    
+    22       16 end; 
+one        unreferenced
+
+    23       19  
+    24       19 begin 
+    25       21  
+    26       21    writeln(one) 
+    27       26     
+    28       26 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+242  Identifier referenced before defining point
+
+
+
+Listing for standard_tests\iso7185prt1916 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1916: Inappropriate application of sign. 
+     4      -32  
+     5      -32     Use of sign on char value. 
+     6      -32  
+     7      -32 } 
+     8      -32  
+     9      -32 program iso7185prt1916(output); 
+    10      -32  
+    11      -32 var c: char; 
+    12      -32  
+    13      -32 begin 
+    14        8  
+    15        8    c := 'a'; 
+    16       11    writeln('Value is: ', +c) 
+    16   ****                              ^134
+    17       17     
+    18       17 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+134  Illegal type of operand(s)
+
+
+
+Listing for standard_tests\iso7185prt1917 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1917: Redefinition of same constant. 
+     4      -32  
+     5      -32     Defining a constant as itself is both a reference and a defining point, thus 
+     6      -32     it is inherently illegal. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1917(output); 
+    11      -32  
+    12      -32 const one = 1; 
+    13      -32  
+    14      -32 procedure x; 
+    15      -32  
+    16      -32 const one = one; 
+    16   ****                  ^242
+    17      -32  
+    18      -32 begin 
+    19        8  
+    20        8    write(one) 
+    21       13     
+    22       13 end; 
+one        unreferenced
+
+    23       15  
+    24       15 begin 
+    25       17  
+    26       17    writeln('Value is: ', one) 
+    27       26     
+    28       26 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+242  Identifier referenced before defining point
+
+
+
+Listing for standard_tests\iso7185prt1918 *************************************
+
+Compile: 
+
+P6 Pascal compiler vs. 0.1.x
+
+     1      -32 { 
+     2      -32  
+     3      -32 PRT test 1918: Function assignment present but not executed. 
+     4      -32  
+     5      -32     Tests the case where a function assignment exists, but is not executed due 
+     6      -32     to being inside a conditional. 
+     7      -32  
+     8      -32 } 
+     9      -32  
+    10      -32 program iso7185prt1918(output); 
+    11      -32  
+    12      -32 function x: integer; 
+    13      -32  
+    14      -32 var y: integer; 
+    15      -36  
+    16      -36 begin 
+    17        8  
+    18        8    y := 1; 
+    19       10    if y > 1 then x := 2 
+    20       14     
+    21       14 end; 
+    22       17  
+    23       17 begin 
+    24       19  
+    25       19    writeln('Value is: ', x) 
+    26       29     
+    27       29 end. 
+
+Errors in program: 0
+
+Run: 
+
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+Value is:           0
 
 program complete

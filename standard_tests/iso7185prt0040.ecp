@@ -9,16 +9,17 @@ P6 Pascal compiler vs. 0.1.x
      7      -32  
      8      -32 program iso7185prt0040(output); 
      9      -32  
-    10      -32 var   one: integer; 
+    10      -32 var   one: boolean; 
     11      -32  
     12      -32 type  integer = char; 
     12   ****      ^18
     13      -32  
     14      -32 begin 
     15        8  
-    16        8    writeln(one) 
-    17       13  
-    18       13 end. 
+    16        8    one := true; 
+    17       11    writeln(one) 
+    18       16  
+    19       16 end. 
 integer    unreferenced
 
 
