@@ -53,25 +53,26 @@ for %%x in (%*) do (
    	) else if "%%~x"=="--help" (
    	
 		echo.
-		echo Compile with P6 using GPC
+		echo Test a single program run
 		echo.
-		echo Execute with:
+		echo Execution:
 		echo.
-		echo p6 ^<sourcefile^> [--pmach^|--cmach] [^<sourcefile^>]...
+		echo testprog [--pmach^|--cmach]... ^<file^>
 		echo.
-		echo where ^<sourcefile^> is the name of the source file without
-		echo extention. The Pascal input file^(s^) are compiled and run
-		echo as a group. Any compiler errors are output to the screen.
-		echo Input and output to and from the running program are from
-		echo and to the console.
+		echo Tests the compile and run of a single program.
 		echo.
-		echo The flags are one of:
+		echo To do this, there must be the files:
 		echo.
-		echo --pmach	      Generate mach code and run the result through pmach.
-		echo --cmach	      Generate mach code and run the result through cmach.
+		echo ^<file^>.inp - Contains all input to the program
+		echo ^<file^>.cmp - Used to compare the ^<file^>.lst program to, should
+		echo              contain an older, fully checked version of ^<file^>.lst.
+		echo ^<file^>.dif - Will contain the differences in output of the run.
+		echo.
+		echo --pmach            Generate mach code and run the result through pmach.
+		echo --cmach	        Generate mach code and run the result through cmach.
 		echo --cmpfile ^<file^> Use filename following option for compare file.
-		echo.
-		echo The intermediate code is placed in ^<file^>.p6.
+		echo --noerrmsg         Do not output failure message on compile, the .err file is
+		echo                    sufficient. 
 		echo.
 		goto stop
 		
