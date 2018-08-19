@@ -1,4 +1,4 @@
-P5 Pascal interpreter vs. 1.2.x
+P6 Pascal interpreter vs. 0.1.x
 
 Assembling/loading program
 Running program
@@ -208,6 +208,8 @@ Integer143: 52 s/b 52
 Integer144: -768 s/b -768
 Integer145: 52 s/b 52
 Integer146: 0 s/b 0
+Integer147: 42 s/b 42
+Integer148: 1 2 3 4 5 6 7 8 9 10 11 12 13 s/b 1 2 3 4 5 6 7 8 9 10 11 12 13
 
 ******************* Subranges *******************
 
@@ -395,7 +397,7 @@ hell
 hel
 he
 h
-Character86:  s/b:
+Character87:  s/b:
    hello, world
   hello, world
  hello, world 
@@ -411,6 +413,26 @@ hell
 hel
 he
 h
+Character88: 
+ True  True  True  True  True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true
+Character89:
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true
+Character90:
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True  True  True  True  True  True 
+ True  True  True  True  True 
+s/b
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true  true  true  true  true  true
+ true  true  true  true  true
 
 ******************* Booleans *******************
 
@@ -550,7 +572,7 @@ Scalar38:  False s/b false
 
 Real1:    1.55400000e+00 s/b  1.554000e+00
 Real2:    3.34000000e-03 s/b  3.340000e-03
-Real3:    3.34000000e-24 s/b  3.34000e-24
+Real3:    3.34000000e-24 s/b  3.340000e-24
 Real4:    4.00000000e-45 s/b  4.000000e-45
 Real5:   -5.56500000e+00 s/b -5.565000e+00
 Real6:   -9.44000000e-03 s/b -9.440000e-03
@@ -1098,6 +1120,8 @@ Record25:  10 9 8 7 6 5 4 3 2 1 s/b 10 9 8 7 6 5 4 3 2 1
 Record26:  10 9 8 7 6 5 4 3 2 76 s/b 10 9 8 7 6 5 4 3 2 76
 Record27:  1 g s/b 1 g
 Record28:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
+Record29: 42 False  True  1.234000000000000e+01 s/b 42 False True 1.234000000000000e+01
+Record30: 185 s/b 185
 
 ******************* files ******************************
 
@@ -1214,5 +1238,6 @@ ProcedureFunction10:   62 76 s/b 62 76
 ProcedureFunction11:   52 s/b 52
 ProcedureFunction12:   a s/b a
 ProcedureFunction13:   37 s/b 37
+ProcedureFunction14:   35 s/b 35
 
 program complete
