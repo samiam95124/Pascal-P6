@@ -48,7 +48,7 @@ int totlin;  /* total lines in file */
 int totchr;  /* total characters in file */
 int done;    /* done with testing flag */
 int single;  /* single fault mode */
-int random;  /* random/linear fault mode */
+int randomm;  /* random/linear fault mode */
 int limit;   /* limit of iterations to perform */
 int again;   /* start again mode (repeat) */
 
@@ -499,7 +499,7 @@ void main(/* Input argument count */ int argc,
     printf("\n");
 
     single = 0; /* set multiple faults */
-    random = 0; /* set linear fault mode */
+    randomm = 0; /* set linear fault mode */
     again = 0; /* set no again mode */
     limit = INT_MAX; /* set maximum iterations */
     lincnt = 1; /* set 1st line and character */
@@ -589,7 +589,7 @@ void main(/* Input argument count */ int argc,
 
             ai++; /* next argument */
             argc--;
-            random = 1; /* set random mode */
+            randomm = 1; /* set random mode */
             fnd = 1; /* set option found */
 
         } else if (!strcmp(argv[ai], "--again") || !strcmp(argv[ai], "-a")) {
@@ -630,7 +630,7 @@ void main(/* Input argument count */ int argc,
     done = 0; /* set not done */
     do { /* run test */
 
-        if (random) do {
+        if (randomm) do {
 
             /* set random line and character */
             lincnt = randn(totlin)+1;
