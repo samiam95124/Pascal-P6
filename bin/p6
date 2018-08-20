@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Compile with P5 using GPC Pascal
+# Compile with p6 using GPC Pascal
 #
 # Execute with:
 #
@@ -36,8 +36,8 @@ echo Compiling and running $1
 echo
 cp $1.pas prd
 pcom < $1.pas
-mv prr $1.pint
-cp $1.pint prd
+mv prr $1.p6
+cp $1.p6 prd
 pint
 rm prd
 rm prr

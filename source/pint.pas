@@ -555,7 +555,7 @@ var   pc          : address;   (*program address register*)
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
-      insq        : array[instyp] of 0..16; { length of q parameter }
+      insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
       cmdlin      : cmdbuf; { command line }
@@ -1242,6 +1242,7 @@ begin
   - Pascaline end }
   
   {$gnu-pascal}
+  i := 1;
   for j := 1 to maxcmd do cb[j] := ' '; j := 1;
   for p := 1 to paramcount do begin
     for x := 1 to length(paramstr(p)) do putcmd(paramstr(p)[x]); 
@@ -2281,7 +2282,7 @@ procedure load;
          sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
-         
+
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
          cp := maxtop; { set constants pointer to top of storage }
@@ -2294,7 +2295,6 @@ procedure load;
          gbset := false; { global size not set }
          gbloff := 0; { set global offset }
          flablst := nil; { clear far label list }
-         
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -7025,7 +7025,6 @@ begin (* main *)
   while i > 0 do begin maxdig := maxdig+1; i := i div 10 end;
 
   for c1 := 'a' to 'z' do option[c1] := false;
-  
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dodmplab := false; { dump label definitions }
@@ -7046,7 +7045,6 @@ begin (* main *)
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
-
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
@@ -7063,28 +7061,24 @@ begin (* main *)
   maktyp(intsym, 'i');
   maktyp(charsym, 'c');
   maxpow10 := 1; while maxpow10 < maxint div 10 do maxpow10 := maxpow10*10;
-  
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
-  
   for bi := 1 to maxbrk do brktbl[bi].sa := -1; { clear breakpoint table }
   for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }
   { clear instruction analyzer table }
   for ai := 1 to maxana do anitbl[ai] := -1; 
   { clear source analyzer table }
   for ai := 1 to maxana do anstbl[ai] := 0;
-        
   { !!! remove this next statement for self compile }
   {elide}reset(prd);{noelide}
-  
+
   { !!! remove this next statement for self compile }
   {elide}rewrite(prr);{noelide}
 
   { construct bit equivalence table }
   i := 1;
   for bai := 0 to 7 do begin bitmsk[bai] := i; i := i*2 end;
-  
   for sdi := 0 to maxdef do storedef[sdi] := 0; { clear storage defined flags }
   for sdi := 0 to maxdef do storecov[sdi] := 0; { clear coverage bits }
 

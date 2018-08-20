@@ -19,7 +19,7 @@ pmach: source/pmach.pas
 	$(PC) $(PFLAGS) -o bin/pmach source/pmach.pas
 
 cmach: source/cmach.c
-	$(CC) $(CFLAGS) -o bin/cmach source/cmach.c
+	$(CC) $(CFLAGS) -o bin/cmach source/cmach.c -lm
 
 genobj: source/genobj.pas
 	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas
