@@ -1,9 +1,9 @@
 #!/bin/bash
 ################################################################################
 #
-# Configure scipt for Pascal-P5
+# Configure scipt for Pascal-p6
 #
-# Sets up the complete Pascal-P5 project.
+# Sets up the complete Pascal-p6 project.
 #
 ################################################################################
 
@@ -79,10 +79,10 @@ do
     if [ $var = "--help" ]
     then
 
-        echo "Configure program for Pascal-P5"
+        echo "Configure program for Pascal-p6"
         echo
         echo "--gpc:       Select GPC as target compiler"
-        echo "--p5c:       Select p5c as target compiler"
+        echo "--p6c:       Select p6c as target compiler"
         echo "--ip_pascal: Select IP Pascal as target compiler"
         echo "--32:        Select 32 bit target"
         echo "--64:        Select 64 bit target"
@@ -94,10 +94,10 @@ do
 
         compiler="gpc"
 
-    elif [ $var = "--p5c" ]
+    elif [ $var = "--p6c" ]
     then
 
-        compiler="p5c"
+        compiler="p6c"
 
     elif [ $var = "--ip_pascal" ]
     then
@@ -119,10 +119,10 @@ do
 done
 
 
-if [ $compiler = "p5c" ]; then
-    checkexists "$P5CDIR/$compiler" > /dev/null
+if [ $compiler = "p6c" ]; then
+    checkexists "$p6CDIR/$compiler" > /dev/null
     if [[ $rc != 0 ]] ; then
-        echo "p5c not found - has environment variable P5CDIR been set?"
+        echo "p6c not found - has environment variable p6CDIR been set?"
         compiler=""
         # fatal this for now
         exit 1
@@ -143,7 +143,7 @@ then    gpc -v 2> temp
     rc=$?
     if [[ $rc != 0 ]] ; then
 
-        echo "*** Warning, Pascal-P5 is only validated to work with gpc version 20070904"
+        echo "*** Warning, Pascal-p6 is only validated to work with gpc version 20070904"
 
     fi
     grep "build=x86_64" temp > /dev/null
@@ -163,11 +163,11 @@ then
    # Set up for IP Pascal
    #
    echo "Set up for IP Pascal"
-   cp ip_pascal/p5.bat      bin/p5.bat
+   cp ip_pascal/p6.bat      bin/p6.bat
    cp ip_pascal/compile.bat bin/compile.bat
    cp ip_pascal/run.bat     bin/run.bat
 
-   cp ip_pascal/p5          bin/p5
+   cp ip_pascal/p6          bin/p6
    cp ip_pascal/compile     bin/compile
    cp ip_pascal/run         bin/run
 
@@ -182,18 +182,18 @@ then
    #
    #unixeol
 
-elif [ $compiler = "gpc" ] || [ $compiler = "p5c" ]
+elif [ $compiler = "gpc" ] || [ $compiler = "p6c" ]
 then
 
    #
    # Set up for chosen Pascal compiler
    #
    echo "Set up for $compiler"
-   cp $compiler/p5.bat      bin/p5.bat
+   cp $compiler/p6.bat      bin/p6.bat
    cp $compiler/compile.bat bin/compile.bat
    cp $compiler/run.bat     bin/run.bat
 
-   cp $compiler/p5          bin/p5
+   cp $compiler/p6          bin/p6
    cp $compiler/compile     bin/compile
    cp $compiler/run         bin/run
 
@@ -218,7 +218,7 @@ else
    echo "*** compilers"
    echo
    echo "IP Pascal  - use \"ip_pascal\""
-   echo "P5C Pascal - use \"P5C\""
+   echo "p6C Pascal - use \"p6C\""
    echo "GPC Pascal - use \"GPC\""
 
 fi
