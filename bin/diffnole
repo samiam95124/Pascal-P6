@@ -40,7 +40,7 @@ cp $2 tmp2
 flip -u -b tmp1
 flip -u -b tmp2
 # ignore lines with compiler/interpreter vs number
-diff -I 'P5 Pascal .*er vs.' tmp1 tmp2
+diff -I 'P. Pascal .*er vs.' -I 'loading program' tmp1 tmp2
 rm tmp1
 rm tmp2
 

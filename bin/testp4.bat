@@ -57,6 +57,7 @@ rem
 rem Show the file, so if the length is zero, it compared ok.
 rem
 echo Resulting diff file length should be zero for pass
-dir p4\standardp.dif
+wc -l p4\standardp.dif
+
 del p4\pcom.inp
 del p4\pint.inp

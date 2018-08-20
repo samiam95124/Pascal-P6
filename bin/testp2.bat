@@ -48,6 +48,7 @@ rem
 rem Show the file, so if the length is zero, it compared ok.
 rem
 echo Resulting diff file length should be zero for pass
-dir p2\roman.dif
+wc -l p2\roman.dif
+
 del p2\pcomp.inp
 del p2\pasint.inp

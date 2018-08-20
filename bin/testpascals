@@ -2,28 +2,19 @@
 #
 # Script to test pascals
 #
-echo -n compiling pascals ...
+# Compile pascals
 #
-compile sample_programs/pascals
+compile sample_programs/pascals $1
 #
-# Prepare a prd deck that has the pascals intermediate first, followed by the
-# program to run.
+# Run that with the input file appended to the intermediate/object
 #
-cat sample_programs/pascals.pint sample_programs/roman.pas > sample_programs/tmp.pint
-rm sample_programs/pascals.pint
-cp sample_programs/tmp.pint sample_programs/pascals.pint > tmp
-rm sample_programs/tmp.pint
+run $1 sample_programs/pascals.inp sample_programs/pascals
 #
-echo -n running ...
+# Compare to reference
 #
-run sample_programs/pascals
-#
-echo -n compare to reference ...
 diffnole sample_programs/pascals.lst sample_programs/pascals.cmp > sample_programs/pascals.dif
 #
-## pass if diff file is empty
-if test -s pascals.dif; then
-    echo FAIL
-else
-    echo PASS
-fi
+# Show the file, so if the length is zero, it compared ok.
+#
+echo "Resulting diff file length should be zero for pass"
+wc -l sample_programs/pascals.dif

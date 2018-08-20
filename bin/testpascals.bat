@@ -16,4 +16,4 @@ rem
 rem Show the file, so if the length is zero, it compared ok.
 rem
 echo Resulting diff file length should be zero for pass
-dir sample_programs\pascals.dif
+wc -l sample_programs\pascals.dif

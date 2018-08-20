@@ -1,13 +1,10 @@
 #!/bin/bash
 #
-# test p2 compile and run
+# Script to test p2 compile and run
 #
-
-echo
-echo -n testing p2 ...
-
-#Compiling pcomp to intermediate code
-echo compiling p2/pcomp ...
+# Compile P2
+#
+echo "Compiling pcomp to intermediate code"
 compile p2/pcomp $1
 cat p2/pcomp.err
 #
@@ -23,20 +20,12 @@ cp p2/pcomp.out p2/roman.p2
 #
 # Compile pasint to intermediate code
 #
-echo -n Compiling pasint ...
+echo Compiling pasint to intermediate
 compile p2/pasint $1
 #
 # Add the final target program to the end of pasint.
 # This means that the version of pint will read and interpret
 # this.
-#
-# For those of you having fun reading this, yes, the next statement accurately
-# describes what is going on: we are concatenating and running two different
-# intermediate codes together in completely different formats!
-#
-cat p2/pasint.pint p2/roman.p2 > tmp.pint
-rm -f p2/pasint.pint
-mv tmp.pint p2/pasint.pint
 #
 # Create null input file
 #
@@ -44,8 +33,8 @@ echo > p2/pasint.inp
 #
 # Now run pasint on pint, which runs the test program.
 #
-echo -n Running pasint on pint ...
-run p2/pasint $1
+echo Running pasint on pint to execute test program
+run $1 p2/roman.p2 p2/pasint
 #
 # Copy the result listing back to roman.lst, again for neatness
 #
@@ -53,15 +42,13 @@ cp p2/pasint.lst p2/roman.lst
 #
 # Now compare with reference
 #
-echo -n checking ...
+echo Comparing PAT result to reference
 diffnole p2/roman.lst p2/roman.cmp > p2/roman.dif
 #
-## pass if diff file is empty
-if test -s p2/roman.dif; then
-    echo FAIL
-else
-    echo PASS
-fi
+# Show the file, so if the length is zero, it compared ok.
+#
+echo Resulting diff file length should be zero for pass
+wc -l p2/roman.dif
 
 rm -f p2/pcomp.inp
 rm -f p2/pasint.inp

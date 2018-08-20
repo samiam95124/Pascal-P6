@@ -45,9 +45,9 @@ do
         cmach=1
         cmachoption="--cmach"
       
-    elif [ "$param" = "--cmpfil" ]; then
+    elif [ "$param" = "--cmpfile" ]; then
     
-    	cmpnxt=1
+    	cmpnext=1
     	
     elif [ "$param" = "--noerrmsg" ]; then
     
@@ -84,8 +84,8 @@ do
         if [ "$cmpnext" = "1" ] 
         then
         
-        	set cmpfile=%%~x
-        	set cmpnext=0
+        	cmpfile=$param
+        	cmpnext=0
         	
         else
          
