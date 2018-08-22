@@ -17,6 +17,7 @@ function replaceinfile {
     replace inthex $1
     replace ptrsize $1
     replace adrsize $1
+    replace stackal $1
     replace stackelsize $1
     replace marksize $1
     replace begincode $1

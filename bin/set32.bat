@@ -16,6 +16,7 @@ rem echo Will execute: replaceinfile %1
     call :replace inthex %1
     call :replace ptrsize %1
     call :replace adrsize %1
+    call :replace stackal %1
     call :replace stackelsize %1
     call :replace marksize %1
     call :replace begincode %1
