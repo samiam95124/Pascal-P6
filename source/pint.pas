@@ -201,6 +201,8 @@ const
       ordminchar  =        0;
       maxresult   = realsize;        { maximum size of function result }
       marksize    =       32   {56}; { maxresult+6*ptrsize }
+      ujplen      =       5    {9};  { length of ujp instruction (used for case
+                                       jumps) }
       { Value of nil is 1 because this allows checks for pointers that were
         initialized, which would be zero (since we clear all space to zero).
         In the new unified code/data space scheme, 0 and 1 are always invalid
@@ -390,7 +392,6 @@ const
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
-      ujplen      = 5;    { length of ujp instruction (used for case jumps) }
       fillen      = 4000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
       brkins      = 19;   { breakpoint instruction no. }

@@ -28,6 +28,7 @@ function replaceinfile {
     replace marksb $1
     replace market $1
     replace markra $1
+    replace ujplen $1
 
 }
 

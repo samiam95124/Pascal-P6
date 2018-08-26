@@ -27,6 +27,7 @@ rem echo Will execute: replaceinfile %1
     call :replace marksb %1
     call :replace market %1
     call :replace markra %1
+    call :replace ujplen %1
 
 exit /b
 

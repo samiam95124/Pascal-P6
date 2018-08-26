@@ -136,6 +136,8 @@ const
       ordminchar  =        0;
       maxresult   = realsize;        { maximum size of function result }
       marksize    =       32   {56}; { maxresult+6*ptrsize }
+      ujplen      =       5    {9};  { length of ujp instruction (used for case
+                                       jumps) }
       { Value of nil is 1 because this allows checks for pointers that were
         initialized, which would be zero (since we clear all space to zero).
         In the new unified code/data space scheme, 0 and 1 are always invalid
