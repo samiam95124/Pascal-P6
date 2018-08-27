@@ -4618,14 +4618,17 @@ begin
                    mp := getadr(mp+markdl)  { get dl }
                  end;
     { For characters and booleans, need to clean 8 bit results because
-      only the lower 8 bits were stored to. }
+      only the lower 8 bits were stored to. For return values, we set 
+      maxresult according to the largest result, usually real. Then
+      we need adjustment for if the basic stack unit of int/ptr is less than 
+      this. }
     130 (*retc*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
-                   putint(mp+markfv+maxresult div 2, 
-                          ord(getchr(mp+markfv+maxresult div 2)));
                    { set stack below function result }
-                   sp := mp+markfv+maxresult div 2; 
+                   sp := mp+markfv; 
+                   if stackelsize < maxresult then sp := sp+maxresult div 2;
+                   putint(sp, ord(getchr(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
@@ -4633,10 +4636,10 @@ begin
     131 (*retb*): begin evict(ep, mp);
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
-                   putint(mp+markfv+maxresult div 2, 
-                          ord(getbol(mp+markfv+maxresult div 2)));
                    { set stack below function result }
-                   sp := mp+markfv+maxresult div 2;
+                   sp := mp+markfv; 
+                   if stackelsize < maxresult then sp := sp+maxresult div 2;
+                   putint(sp, ord(getbol(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
@@ -4646,7 +4649,8 @@ begin
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    { set stack below function result }
-                   sp := mp+markfv+maxresult div 2;
+                   sp := mp+markfv;
+                   if stackelsize < maxresult then sp := sp+maxresult div 2;
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
@@ -4663,7 +4667,8 @@ begin
                    if sp <> getadr(mp+marksb) then 
                      errorv(StackBalance);
                    { set stack below function result }  
-                   sp := mp+markfv+maxresult div 2;
+                   sp := mp+markfv;
+                   if stackelsize < maxresult then sp := sp+maxresult div 2;
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
