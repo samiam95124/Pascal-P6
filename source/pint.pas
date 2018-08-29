@@ -1609,12 +1609,10 @@ var r: record case boolean of
     i: 1..intsize;
 
 begin
-
    if dochkdef then chkdef(a);
    for i := 1 to intsize do r.b[i] := store[a+i-1];
 
    getint := r.i
-
 end;
 
 procedure putint(a: address; x: integer);
@@ -2139,9 +2137,9 @@ procedure load;
          instr[ 97]:='chks      '; insp[ 97] := false; insq[ 97] := intsize;
          instr[ 98]:='chkb      '; insp[ 98] := false; insq[ 98] := intsize;
          instr[ 99]:='chkc      '; insp[ 99] := false; insq[ 99] := intsize;
-         instr[100]:='cvb       '; insp[100] := false; insq[100] := intsize*3;
-         instr[101]:='---       '; insp[101] := false; insq[101] := intsize;
-         instr[102]:='---       '; insp[102] := false; insq[102] := intsize;
+         instr[100]:='cvbi      '; insp[100] := false; insq[100] := intsize*3;
+         instr[101]:='ivtx      '; insp[101] := false; insq[101] := intsize*3;
+         instr[102]:='ivtb      '; insp[102] := false; insq[102] := intsize*3;
          instr[103]:='decb      '; insp[103] := false; insq[103] := intsize;
          instr[104]:='decc      '; insp[104] := false; insq[104] := intsize;
          instr[105]:='loda      '; insp[105] := true;  insq[105] := intsize;
@@ -2150,17 +2148,17 @@ procedure load;
          instr[108]:='lodb      '; insp[108] := true;  insq[108] := intsize;
          instr[109]:='lodc      '; insp[109] := true;  insq[109] := intsize;
          instr[110]:='rgs       '; insp[110] := false; insq[110] := 0;
-         instr[111]:='---       '; insp[111] := false; insq[111] := 0;
+         instr[111]:='ivtc      '; insp[111] := false; insq[111] := intsize*3;
          instr[112]:='ipj       '; insp[112] := true;  insq[112] := intsize;
          instr[113]:='cip       '; insp[113] := true;  insq[113] := 0;
          instr[114]:='lpa       '; insp[114] := true;  insq[114] := intsize;
-         instr[115]:='---       '; insp[115] := false; insq[115] := 0;
-         instr[116]:='---       '; insp[116] := false; insq[116] := 0;
+         instr[115]:='cvbx      '; insp[115] := false; insq[115] := intsize*3;
+         instr[116]:='cvbb      '; insp[116] := false; insq[116] := intsize*3;
          instr[117]:='dmp       '; insp[117] := false; insq[117] := intsize;
          instr[118]:='swp       '; insp[118] := false; insq[118] := intsize;
          instr[119]:='tjp       '; insp[119] := false; insq[119] := intsize;
          instr[120]:='lip       '; insp[120] := true;  insq[120] := intsize;
-         instr[121]:='---       '; insp[121] := false; insq[121] := 0;
+         instr[121]:='cvbc      '; insp[121] := false; insq[121] := intsize*3;
          instr[122]:='---       '; insp[122] := false; insq[122] := 0;
          instr[123]:='ldci      '; insp[123] := false; insq[123] := intsize;
          instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;
@@ -2231,7 +2229,7 @@ procedure load;
          instr[189]:='inv       '; insp[189] := false; insq[189] := 0;
          instr[190]:='ckla      '; insp[190] := false; insq[190] := intsize;
          instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*3;
-         instr[192]:='ivt       '; insp[192] := false; insq[192] := intsize*3;
+         instr[192]:='ivti      '; insp[192] := false; insq[192] := intsize*3;
          instr[193]:='lodx      '; insp[193] := true;  insq[193] := intsize;
          instr[194]:='ldox      '; insp[194] := false; insq[194] := intsize;
          instr[195]:='strx      '; insp[195] := true;  insq[195] := intsize;
@@ -2839,8 +2837,10 @@ procedure load;
                                   storeq1 end;
                                   
           (*cta,ivt,cvb*)
-          191, 192, 100: begin read(prd,q); read(prd,q1); storeop; storeq;
-                                  storeq1; labelsearch; putcstfix; storeq end;
+          191, 192, 100,101,102,111,115,116,121: begin 
+            read(prd,q); read(prd,q1); storeop; storeq; storeq1; labelsearch; 
+            putcstfix; storeq 
+          end;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
           23,24,25,119,207,21,
@@ -4964,15 +4964,20 @@ begin
                        end
                  end;
 
-    192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
+    192 (*ivti*),
+    101 (*ivtx*),
+    102 (*ivtb*),
+    111 (*ivtc*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0) or (i >= getint(q2)) then 
                         errorv(ValueOutOfRange);
                       if dochkdef then begin
                         b := getdef(ad);
-                        if b then 
+                        if b then begin
+                          if op = 192 then j := getint(ad) else j := getbyt(ad);
                           b := getint(q2+(i+1)*intsize) <> 
-                               getint(q2+(getint(ad)+1)*intsize);
+                               getint(q2+(j+1)*intsize);
+                        end;
                         if b then begin
                           ad := ad+q;
                           for j := 1 to q1 do
@@ -4981,14 +4986,19 @@ begin
                       end
                 end;
                 
-    100 (*cvb*): begin getq; getq1; getq2; popint(i); popadr(ad);
+    100 (*cvbi*),
+    115 (*cvbx*),
+    116 (*cvbb*),
+    121 (*cvbc*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0) or (i >= getint(q2)) then 
                         errorv(ValueOutOfRange);
                       b := getdef(ad);
-                      if b then 
+                      if b then begin
+                        if op = 100 then j := getint(ad) else j := getbyt(ad);
                         b := getint(q2+(i+1)*intsize) <> 
-                             getint(q2+(getint(ad)+1)*intsize);
+                             getint(q2+(j+1)*intsize)
+                      end;
                       if b then begin 
                         ad := ad+q; 
                         if varlap(ad, ad+q1-1) then 
@@ -5050,10 +5060,10 @@ begin
     19 (*brk*): begin breakins := true; pc := pcs end;
 
     { illegal instructions }
-    101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
-    213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
-    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
-    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
+    219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
+    234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
+    249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

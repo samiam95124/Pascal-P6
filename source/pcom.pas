@@ -2737,15 +2737,6 @@ end;
       end;
     ic := ic + 1
   end (*gen2*) ;
-  
-  procedure genctaivtcvb(fop: oprange; fp1,fp2,fp3: integer);
-  begin if fp3 < 0 then error(511);
-    if prcode then
-      begin putic; write(prr,mn[fop]:4); write(prr,' ',fp1:3,' ',fp2:8,' ');
-            mes(fop); putlabel(fp3)
-      end;
-    ic := ic + 1
-  end (*gen2*) ;
 
   procedure gentypindicator(fsp: stp);
   begin
@@ -2879,6 +2870,17 @@ end;
     ic := ic + 1; mes(92)
   end;
 
+  procedure genctaivtcvb(fop: oprange; fp1,fp2,fp3: integer; fsp: stp);
+  begin if fp3 < 0 then error(511);
+    if prcode then
+      begin putic; write(prr,mn[fop]:4); 
+            if fop <> 81(*cta*) then gentypindicator(fsp); 
+            write(prr,' ',fp1:3,' ',fp2:8,' ');
+            mes(fop); putlabel(fp3)
+      end;
+    ic := ic + 1
+  end (*gen2*) ;
+  
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
   function stringt(fsp: stp) : boolean;
@@ -4610,10 +4612,10 @@ end;
                 gen2(51(*ldc*),1,vp^.varval.ival);
                 if chkvbk then
                   genctaivtcvb(95(*cvb*),vl^.varsaddr-fldaddr,vl^.varssize,
-                               vl^.vartl);
+                               vl^.vartl,vl^.idtype);
                 if debug then
                   genctaivtcvb(82(*ivt*),vl^.varsaddr-fldaddr,vl^.varssize,
-                               vl^.vartl);
+                               vl^.vartl,vl^.idtype);
                 gen0t(26(*sto*),basetype(idtype));
               end;
               gattr := gattrs
@@ -6317,11 +6319,14 @@ end;
                       if access = indrct then
                         if debug and tagfield and ptrref then
                           { check tag assignment to pointer record }
-                          genctaivtcvb(81(*cta*),idplmt,taglvl,vartl);
+                          genctaivtcvb(81(*cta*),idplmt,taglvl,vartl,
+                                       lattr2.typtr);
                       if chkvbk and tagfield then 
-                        genctaivtcvb(95(*cvb*),vartagoff,varssize,vartl);
-                      if debug and tagfield then 
-                        genctaivtcvb(82(*ivt*),vartagoff,varssize,vartl)
+                        genctaivtcvb(95(*cvb*),vartagoff,varssize,vartl,
+                                     lattr2.typtr);
+                      if debug and tagfield then
+                        genctaivtcvb(82(*ivt*),vartagoff,varssize,vartl,
+                                     lattr2.typtr)
                     end;
                   { if tag checking, bypass normal store }
                   if tagasc then
