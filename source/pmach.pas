@@ -490,6 +490,14 @@ var   pc          : address;   (*program address register*)
       filanamtab  : array [1..maxfil] of boolean;
       varlst      : varptr; { active var block pushdown stack }
       varfre      : varptr; { free var block entries }
+      maxpow10    : integer; { maximum power of 10 }
+      decdig      : integer; { digits in unsigned decimal }
+      maxpow16    : integer; { maximum power of 16 }
+      hexdig      : integer; { digits in unsigned hex }
+      maxpow8     : integer; { maximum power of 8 }
+      octdig      : integer; { digits in unsigned octal }
+      maxpow2     : integer; { maximum power of 2 }
+      bindig      : integer; { digits in unsigned binary }
       
       i           : integer;
       c1          : char;
@@ -499,7 +507,7 @@ var   pc          : address;   (*program address register*)
 (*--------------------------------------------------------------------*)
 
 procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
-const digmax = 32;
+const digmax = 64; { maximum total digits }
 var p,i,x,d,t,n: integer; sgn: boolean;
     digits: packed array [1..digmax] of char;
 function digit(d: integer): char;
@@ -511,29 +519,30 @@ begin
 end;
 begin sgn := false;
    if (r = 10) and (v < 0) then begin sgn := true; v := -v; lz := false end;
-   if r = 16 then n := 8
-   else if r = 10 then n := 10
-   else if r = 8 then n := 11
-   else n := 32;
+   if r = 16 then n := hexdig
+   else if r = 10 then n := decdig
+   else if r = 8 then n := octdig
+   else n := bindig;
    for i := 1 to digmax do digits[i] := '0';
    { adjust signed radix }
    if (r = 16) and (v < 0) then begin
      v := v+1+maxint; { convert number to 31 bit unsigned }
-     t := v div 268435456{ $1000_0000}+8; { extract high digit }
-     digits[8] := digit(t); { place high digit }
-     v := v mod 268435456{ $1000_0000}; { remove digit }
-     n := 7 { set number of digits-1 }
+     t := v div maxpow16+8; { extract high digit w/sign }
+     digits[hexdig] := digit(t); { place high digit }
+     v := v mod maxpow16; { remove digit }
+     n := hexdig-1 { set number of digits-1 }
    end else if (r = 8) and (v < 0) then begin
      v := v+1+maxint; { convert number to 31 bit unsigned }
-     t := v div 1073741824{ &10_000_000_000}+2; { extract high digit }
-     digits[11] := digit(t); { place high digit }
-     v := v mod 1073741824{ $10_000_000_000}; { remove digit }
-     n := 10 { set number of digits-1 }
+     if (bindig mod 3) = 2 then { top is either 2 bits or 1 }
+       t := v div maxpow8+4 { extract high digit w/sign }
+     else t := 1; { it is sign }
+     digits[octdig] := digit(t); { place high digit }
+     v := v mod maxpow8; { remove digit }
+     n := octdig-1 { set number of digits-1 }
    end else if (r = 2) and (v < 0) then begin
      v := v+1+maxint; { convert number to 31 bit unsigned }
-     t := v div 268435456{ $1000_0000}+8; { extract high digit }
-     digits[32] := '1'; { place high digit }
-     n := 31 { set number of digits-1 }
+     digits[bindig] := '1'; { place high digit (sign) }
+     n := bindig-1 { set number of digits-1 }
    end;
    p := 1;
    for i := 1 to n do begin
@@ -3250,6 +3259,12 @@ begin
   end
 end;
 
+procedure fndpow(var m: integer; p: integer; var d: integer);
+begin
+  m := 1; d := 1;
+  while m < maxint div p do begin m := m*p; d := d+1 end
+end;
+
 begin (* main *)
 
   { Suppress unreferenced errors. }
@@ -3282,6 +3297,10 @@ begin (* main *)
   iso7185 := false;  { iso7185 standard mode }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
+  fndpow(maxpow10, 10, decdig);
+  fndpow(maxpow16, 16, hexdig);
+  fndpow(maxpow8, 8, octdig);
+  fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
 
   { get the command line }
   getcommandline(cmdlin, cmdlen);
