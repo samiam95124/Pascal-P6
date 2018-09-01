@@ -283,6 +283,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define ORDMINCHAR          0
 #define MAXRESULT    REALSIZE   /* maximum size of function result */
 #define MARKSIZE           32   /* maxresult+6*ptrsize */
+#define UJPLEN              5   /* length of ujp instruction (used for case
+                                   jumps) */
 
 /* Value of nil is 1 because this allows checks for pointers that were
   initialized, which would be zero (since we clear all space to zero).
@@ -348,6 +350,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define ORDMINCHAR          0
 #define MAXRESULT    REALSIZE  /* maximum size of function result */
 #define MARKSIZE           56  /* maxresult+6*ptrsize */
+#define UJPLEN              9  /* length of ujp instruction (used for case
+                                  jumps) */
 
 /* Value of nil is 1 because this allows checks for pointers that were
   initialized, which would be zero (since we clear all space to zero).
@@ -533,7 +537,6 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
-#define UJPLEN       5    /* length of ujp instruction (used for case jumps) */
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       9    /* real extra field in floating format -1.0e+000 */
 
