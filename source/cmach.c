@@ -2795,14 +2795,19 @@ void sinins()
                        }
                       break;
 
-    case 192 /*ivt*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
+    case 192 /*ivti*/:
+    case 101 /*ivtx*/:
+    case 102 /*ivtb*/:
+    case 111 /*ivtc*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
                       if (DOCHKDEF) {
                         b = getdef(ad);
-                        if (b)
-                          b = getint(q2+i*INTSIZE) !=
-                              getint(q2+(getint(ad)+1)*INTSIZE);
+                        if (b) {
+                          if (op == 192) j = getint(ad); else j = getbyt(ad);
+                          b = getint(q2+(i+1)*INTSIZE) !=
+                              getint(q2+(j+1)*INTSIZE);
+                        }
                         if (b) {
                           ad = ad+q;
                           for (j = 1; j <= q1; j++)
@@ -2811,13 +2816,18 @@ void sinins()
                       }
                       break;
 
-    case 100 /*cvb*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
+    case 100 /*cvbi*/:
+    case 115 /*cvbx*/:
+    case 116 /*cvbb*/:
+    case 121 /*cvbc*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
                       b = getdef(ad);
-                      if (b)
-                        b = getint(q2+i*INTSIZE) !=
-                            getint(q2+(getint(ad)+1)*INTSIZE);
+                      if (b) {
+                        if (op == 100) j = getint(ad); else j = getbyt(ad);
+                        b = getint(q2+(i+1)*INTSIZE) !=
+                            getint(q2+(j+1)*INTSIZE);
+                      }
                       if (b) {
                         ad = ad+q;
                         if (varlap(ad, ad+q1-1))
@@ -2866,10 +2876,10 @@ void sinins()
     case 19 /*brk*/: break; /* breaks are no-ops here */
 
     /* illegal instructions */
-    /* 101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
-       213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
-       228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
-       243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255*/
+    /* 122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
+       219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
+       234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
+       249, 250, 251, 252, 253, 254, 255*/
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

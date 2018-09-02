@@ -3184,15 +3184,20 @@ begin
                        end
                  end;
 
-    192 (*ivt*): begin getq; getq1; getq2; popint(i); popadr(ad);
+    192 (*ivti*),
+    101 (*ivtx*),
+    102 (*ivtb*),
+    111 (*ivtc*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      if (i < 0) or (i >= getint(q2)) then
-                           errorv(ValueOutOfRange);
+                      if (i < 0) or (i >= getint(q2)) then 
+                        errorv(ValueOutOfRange);
                       if dochkdef then begin
                         b := getdef(ad);
-                        if b then 
+                        if b then begin
+                          if op = 192 then j := getint(ad) else j := getbyt(ad);
                           b := getint(q2+(i+1)*intsize) <> 
-                               getint(q2+(getint(ad)+1)*intsize);
+                               getint(q2+(j+1)*intsize);
+                        end;
                         if b then begin
                           ad := ad+q;
                           for j := 1 to q1 do
@@ -3201,14 +3206,19 @@ begin
                       end
                 end;
                 
-    100 (*cvb*): begin getq; getq1; getq2; popint(i); popadr(ad);
+    100 (*cvbi*),
+    115 (*cvbx*),
+    116 (*cvbb*),
+    121 (*cvbc*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0) or (i >= getint(q2)) then 
                         errorv(ValueOutOfRange);
                       b := getdef(ad);
-                      if b then 
+                      if b then begin
+                        if op = 100 then j := getint(ad) else j := getbyt(ad);
                         b := getint(q2+(i+1)*intsize) <> 
-                             getint(q2+(getint(ad)+1)*intsize);
+                             getint(q2+(j+1)*intsize)
+                      end;
                       if b then begin 
                         ad := ad+q; 
                         if varlap(ad, ad+q1-1) then 
@@ -3257,10 +3267,10 @@ begin
     19 (*brk*): ; { breaks are no-ops here }
 
     { illegal instructions }
-    101, 102, 111, 115, 116, 121, 122, 133, 135, 176, 177, 178, 210, 211, 212,
-    213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
-    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
-    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
+    219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
+    234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
+    249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
