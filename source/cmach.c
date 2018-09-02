@@ -2461,23 +2461,26 @@ void sinins()
                    mp = getadr(mp+MARKDL); /* get dl */
                    break;
     /* For characters and booleans, need to clean 8 bit results because
-      only the lower 8 bits were stored to. */
+      only the lower 8 bits were stored to. For return values, we set
+      maxresult according to the largest result, usually real. Then
+      we need adjustment for if the basic stack unit of int/ptr is less than
+      this. */
     case 130 /*retc*/:
                    if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   putint(mp+MARKFV+MAXRESULT/2,
-                          getchr(mp+MARKFV+MAXRESULT/2));
                    /* set stack below function result */
-                   sp = mp+MARKFV+MAXRESULT / 2;
+                   sp = mp+MARKFV;
+                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
+                   putint(sp, getchr(sp));
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
                    break;
     case 131 /*retb*/:
                    if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   putint(mp+MARKFV+MAXRESULT/2,
-                          getbol(mp+MARKFV+MAXRESULT/2));
                    /* set stack below function result */
-                   sp = mp+MARKFV+MAXRESULT / 2;
+                   sp = mp+MARKFV;
+                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
+                   putint(sp, getbol(sp));
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
@@ -2486,7 +2489,8 @@ void sinins()
     case 204 /*retx*/:
                    if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
                    /* set stack below function result */
-                   sp = mp+MARKFV+MAXRESULT / 2;
+                   sp = mp+MARKFV;
+                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
@@ -2501,7 +2505,8 @@ void sinins()
     case 132  /*reta*/:
                    if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
                    /* set stack below function result */
-                   sp = mp+MARKFV+MAXRESULT / 2;
+                   sp = mp+MARKFV;
+                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
