@@ -146,6 +146,8 @@
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
 
 /*******************************************************************************
 
@@ -1675,7 +1677,7 @@ void readsp(filnum fn, address ad,  int l)
 
   while (l > 0 && !eolnfn(fn)) {
     if (eoffn(fn)) errore(ENDOFFILE);
-    read(filtable[fn], c); putchr(ad, c); ad = ad+1; l = l-1;
+    c = fgetc(filtable[fn]); putchr(ad, c); ad = ad+1; l = l-1;
   }
   while (l > 0) { putchr(ad, ' '); ad = ad+1; l = l-1; }
 }

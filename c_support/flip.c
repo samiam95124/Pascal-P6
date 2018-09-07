@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-main(int argc, char *argv[])
+void main(int argc, char *argv[])
 
 {
 
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
         if (pstdout) dfp = stdout; /* send to standard output */
         else if ((dfp = fopen("flip_temp", "wb")) == NULL) {
 
-            printf("flip: Can't open output file\n", *argv);
+            printf("flip: Can't open output file %s\n", *argv);
             exit(1);
 
         }
