@@ -90,7 +90,7 @@ var gamma: integer;
 BEGIN
   gamma := a*(rndseq mod (m div a))-(m mod a)*(rndseq div (m div a));
   if gamma > 0 then rndseq := gamma else rndseq := gamma+m;
-  random := rndseq div (maxint div (hi-low+1))+low
+  random := rndseq div (m div (hi-low+1))+low
 END {of random};
 
 FUNCTION distance (pos1x, pos1y : sectrange; pos2 : sectxy) : INTEGER;
