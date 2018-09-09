@@ -147,8 +147,8 @@ end; (* prtkey *)
 begin (* prtlin *)
 
    j := 80;
-   while (str[j] = ' ') and (j > 0) do j := j - 1;
-   j := j + 1;
+   while (str[j] = ' ') and (j > 1) do j := j - 1;
+   if str[j] <> ' ' then j := j + 1;
    i := 1;
    while i < j do begin
 
@@ -1206,7 +1206,7 @@ begin (* stat *)
                    end;
 
          cprint:   begin
-
+         
                       if not chksend and not chknxt(';') then
                          repeat (* list items *)
 

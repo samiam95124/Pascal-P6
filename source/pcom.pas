@@ -3423,9 +3423,9 @@ end;
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
                     lsize := maxresult; if id <> nil then lsize := id^.size;
-                    if lsize < maxresult then
+                    if (lsize < maxresult) and (stackelsize < maxresult) then
                       (*impl. relat. addr. of fct. result*)
-                      dplmt := markfv+trunc(maxresult/2)
+                      dplmt := markfv+maxresult div 2
                     else
                       dplmt := markfv   (*impl. relat. addr. of fct. result*)
                   end
