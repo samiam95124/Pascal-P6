@@ -655,7 +655,7 @@ void dmpmem(address s, address e)
 
 void finish(int e)
 {
-    for (i = 1; i < MAXFIL; i++) if (filstate[i] != fsclosed) {
+    for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed) {
         fclose(filtable[i]);
         if (!filanamtab[i]) remove(filnamtab[i]);
     }
