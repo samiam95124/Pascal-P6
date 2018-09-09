@@ -190,7 +190,7 @@ const
       fileidsize  =        1;        { size of the lfn only }
       exceptsize  =        1;        { size of exception variable }
       exceptal    =        1;      
-      stackal     =        4;        { alignment of stack }
+      stackal     =        4   {8};  { alignment of stack }
       stackelsize =        4   {8};  { stack element size }
       maxsize     =       32;        { this is the largest type that can be on
                                        the stack }
@@ -227,13 +227,13 @@ const
         -32: Return address
 
       }
-      markfv      =        -8   {0};  { function value }
-      marksl      =        -12  {8};  { static link }
-      markdl      =        -16  {16}; { dynamic link }
-      markep      =        -20  {24}; { (old) maximum frame size }
-      marksb      =        -24  {32}; { stack bottom }
-      market      =        -28  {40}; { current ep }
-      markra      =        -32  {48}; { return address }
+      markfv      =        -8   {-8};  { function value }
+      marksl      =        -12  {-16}; { static link }
+      markdl      =        -16  {-24}; { dynamic link }
+      markep      =        -20  {-32}; { (old) maximum frame size }
+      marksb      =        -24  {-40}; { stack bottom }
+      market      =        -28  {-48}; { current ep }
+      markra      =        -32  {-56}; { return address }
 
       { ******************* end of pcom and pint common parameters *********** }
 
@@ -1442,7 +1442,7 @@ begin
    r.a := ad;
    for i := 1 to adrsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
-
+     
 end;
 
 { Swap pointer on top with second on stack. The size of the second is given. }
@@ -2703,9 +2703,19 @@ var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
   
+  { uncomment for instruction trace }
+  {
+  wrtnum(output, pc, 16, maxdigh, true);
+  write('/');
+  wrtnum(output, sp, 16, maxdigh, true);
+  write(' ');
+  wrtnum(output, getbyt(pc), 16, 2, true);
+  writeln;
+  }
+
   { fetch instruction from byte store }
   getop;
-
+  
   (*execute*)
 
   case op of

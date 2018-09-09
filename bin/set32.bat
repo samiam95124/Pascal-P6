@@ -5,6 +5,7 @@ rem
 
 call :replaceinfile source\pcom.pas
 call :replaceinfile source\pint.pas
+call :replaceinfile source\pmach.pas
 
 exit /b
 

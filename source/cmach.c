@@ -174,7 +174,7 @@
  */
 
 #define WRDSIZ32 1
-/* #define WRDSIZ64 0 */
+/* #define WRDSIZ64 1 */
 
 /* Check flags: these turn on runtime checks
  *
@@ -337,7 +337,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define FILEIDSIZE          1  /* size of the lfn only */
 #define EXCEPTSIZE          1  /* size of exception variable */
 #define EXCEPTAL            1
-#define STACKAL             4  /* alignment of stack */
+#define STACKAL             8  /* alignment of stack */
 #define STACKELSIZE         8  /* stack element size */
 #define MAXSIZE            32  /* this is the largest type that can be on the
                                   stack */
@@ -374,13 +374,13 @@ table is all you should need to adapt to any byte addressable machine.
   -32: Return address
 
 */
-#define MARKFV              0  /* function value */
-#define MARKSL              8  /* static link */
-#define MARKDL              16 /* dynamic link */
-#define MARKEP              24 /* (old) maximum frame size */
-#define MARKSB              32 /* stack bottom */
-#define MARKET              40 /* current ep */
-#define MARKRA              48 /* return address */
+#define MARKFV              -8  /* function value */
+#define MARKSL              -16  /* static link */
+#define MARKDL              -24 /* dynamic link */
+#define MARKEP              -32 /* (old) maximum frame size */
+#define MARKSB              -40 /* stack bottom */
+#define MARKET              -48 /* current ep */
+#define MARKRA              -56 /* return address */
 #endif
 
 /* ******************* } of pcom and pint common parameters *********** */
