@@ -173,8 +173,8 @@
  *
  */
 
-/* #define WRDSIZ32 1 */
-#define WRDSIZ64 1
+#define WRDSIZ32 1
+/* #define WRDSIZ64 1 */
 
 /* Check flags: these turn on runtime checks
  *
@@ -1418,7 +1418,7 @@ char chkfile(FILE* fp)
     return ((c=='\n'||c==EOF)?' ':c);
 }
 
-long filelength(FILE* fp)
+long lengthfile(FILE* fp)
 {
     long s, p;
 
@@ -1476,7 +1476,7 @@ boolean chkeoffn(FILE* fp, filnum fn)
         else return (FALSE);
     } else {
         if (filstate[fn] == fswrite)
-            return ftell(filtable[fn]) >= filelength(filtable[fn]);
+            return ftell(filtable[fn]) >= lengthfile(filtable[fn]);
         else if (filstate[fn] == fsread) {
             if ((eoffile(filtable[fn]) && fileoln[fn]) || filbof[fn])
                 return (TRUE);
@@ -2263,7 +2263,7 @@ void callsp(void)
                   if (rename(fl1, fl2)) errorv(FILENAMECHANGEFAIL);
                   break;
     case 53 /*len*/: popadr(ad); valfil(ad); fn = store[ad];
-                pshint(filelength(filtable[fn]));
+                pshint(lengthfile(filtable[fn]));
                 break;
     case 54 /*loc*/: popadr(ad); valfil(ad); fn = store[ad];
                   if (i = ftell(filtable[fn]) < 0) errorv(FILEPOSITIONFAIL);
