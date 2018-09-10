@@ -173,8 +173,8 @@
  *
  */
 
-#define WRDSIZ32 1
-/* #define WRDSIZ64 1 */
+/* #define WRDSIZ32 1 */
+#define WRDSIZ64 1
 
 /* Check flags: these turn on runtime checks
  *
@@ -561,23 +561,23 @@ table is all you should need to adapt to any byte addressable machine.
   and 2gb of total addressing. This could be 4gb if we get rid of the
   need for negatives. */
 typedef unsigned char byte;    /* 8-bit byte */
-typedef int boolean;           /* true/false */
+typedef long boolean;           /* true/false */
 typedef byte lvltyp;           /* procedure/function level */
 typedef byte instyp;           /* instruction */
-typedef int address;           /* address */
+typedef long address;           /* address */
 
 typedef char beta[25];         /* error message */
 typedef byte settype[SETSIZE]; /* standard set */
 
-typedef int filnum;            /* logical file number */
+typedef long filnum;            /* logical file number */
 typedef char filnam[FILLEN];   /* filename strings */
 typedef enum {
   fsclosed,
   fsread,
   fswrite
 } filsts;                      /* file states */
-typedef int cmdinx;            /* index for command line buffer */
-typedef int cmdnum;            /* length of command line buffer */
+typedef long cmdinx;            /* index for command line buffer */
+typedef long cmdnum;            /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
 /* VAR reference block */
 typedef struct _varblk *varptr;
@@ -601,7 +601,7 @@ byte store[MAXSTR] /* complete program storage */
 #endif
 ;
 byte storedef[MAXDEF]; /* defined bits */
-int sdi; /* index for that */
+long sdi; /* index for that */
 /* mp  points to {ning of a data segment
    sp  points to top of the stack
    ep  points to the maximum extent of the stack
@@ -613,7 +613,7 @@ address expmrk; /* exception address of mp at handlers */
 
 byte bitmsk[8]; /* bits in byte */
 
-int     srclin;  /* current source line executing */
+long     srclin;  /* current source line executing */
 cmdbuf  cmdlin;  /* command line */
 cmdnum  cmdlen;  /* length of command line */
 cmdinx  cmdpos;  /* current position in command line */
@@ -629,18 +629,18 @@ boolean filbof[MAXFIL+1]; /* beginning of file */
 varptr varlst; /* active var block pushdown stack */
 varptr varfre; /* free var block entries */
 
-int i;
+long i;
 char c1;
 address ad;
-int bai;
+long bai;
 
 void dmpmem(address s, address e)
 {
-    int c;
+    long c;
 
     c = 0;
     while (s <= e) {
-        if (!c) printf("%08X: ", s);
+        if (!c) printf("%08lX: ", s);
         printf("%02X ", store[s]); c++;
         s++;
         if (c == 16) { printf("\n"); c = 0; }
@@ -653,7 +653,7 @@ void dmpmem(address s, address e)
 
 /* Low level error check and handling */
 
-void finish(int e)
+void finish(long e)
 {
     for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed) {
         fclose(filtable[i]);
@@ -669,7 +669,7 @@ void finish(int e)
 
 void errors(address a, address l)
 { printf("\n*** Runtime error\n");
-      if (srclin > 0) printf(" [%d]: ", srclin);
+      if (srclin > 0) printf(" [%ld]: ", srclin);
       if (l > MAXAST) l = MAXAST;
       while (l > 0) { printf("%c", store[a]); a = a+1; l = l-1; }
       finish(1);
@@ -685,7 +685,7 @@ void errors(address a, address l)
 /* handle exception vector */
 void errorv(address ea)
 { printf("\n*** Runtime error");
-  if (srclin > 0) printf(" [%d]: ", srclin);
+  if (srclin > 0) printf(" [%ld]: ", srclin);
   switch (ea) {
 
     /* Exceptions that can be intercepted */
@@ -822,7 +822,7 @@ void errorm(address ea)
 
 /* put swath of bits to defined array */
 #if DOCHKDEF
-#define putswt(s, e, b) { int i; for (i = s; i <= e; i++) putdef(i, b); }
+#define putswt(s, e, b) { long i; for (i = s; i <= e; i++) putdef(i, b); }
 #else
 #define putswt(s, e, b) do {} while(0)
 #endif
@@ -836,10 +836,10 @@ void errorm(address ea)
 
 /* Command line processing */
 
-void getcommandline(int argc, char* argv[], cmdbuf cb, cmdnum* l)
+void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
 {
     cmdinx i;
-    int x;
+    long x;
     char *p;
 
     for (i = 0; i < MAXCMD; i++) cb[i] = ' '; i = 0;
@@ -914,7 +914,7 @@ void readlncommand(void)
 
 void assignexternal(filnum fn, char hfn[])
 {
-    int i;
+    long i;
 
     for (i = 0; i < FILLEN; i++) { filnamtab[fn][i] = ' '; }
     /* skip leading spaces */
@@ -946,8 +946,8 @@ void assignexternal(filnum fn, char hfn[])
 
 */
 
-#define getint(a) (chkdef(a), (*((int*)(store+(a)))))
-#define putint(a, x) { *((int*)(store+(a))) = x; putswt(a, (a)+INTSIZE-1, TRUE); }
+#define getint(a) (chkdef(a), (*((long*)(store+(a)))))
+#define putint(a, x) { *((long*)(store+(a))) = x; putswt(a, (a)+INTSIZE-1, TRUE); }
 
 #define getrel(a) (chkdef(a), *((double*)(store+(a))))
 #define putrel(a, f) do { *((double*)(store+(a))) = f; putswt(a, (a)+REALSIZE-1, TRUE); } while(0)
@@ -967,7 +967,7 @@ void assignexternal(filnum fn, char hfn[])
 void getset(address a, settype s)
 
 {
-    int i;
+    long i;
 
     chkdef(a);
     for (i = 0; i < SETSIZE; i++) s[i] = store[a+i];
@@ -976,7 +976,7 @@ void getset(address a, settype s)
 void putset(address a, settype s)
 
 {
-   int i;
+   long i;
 
    for (i = 0; i < SETSIZE; i++) store[a+i] = s[i];
    putswt(a, a+SETSIZE-1, TRUE);
@@ -989,7 +989,7 @@ void swpstk(address l)
 {
     byte sb[MAXSIZE];
     address p;
-    int i;
+    long i;
 
    /* get the top pointer */
    p = getadr(sp);
@@ -1028,23 +1028,23 @@ void swpstk(address l)
 /* print set, diagnostic */
 void prtset(settype s)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++)
         if (!!(s[i/8] & 1<<i%8)) printf("1"); else printf("0");
 }
 
-void sset(settype s, int b)
+void sset(settype s, long b)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     s[b/8] |= 1<<b%8;
 }
 
-void rset(settype s, int b1, int b2)
+void rset(settype s, long b1, long b2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) s[i] = 0;
     if (b1 > b2) { i = b1; b1 = b2; b2 = i; }
@@ -1053,33 +1053,33 @@ void rset(settype s, int b1, int b2)
 
 void suni(settype s1, settype s2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
 }
 
 void sint(settype s1, settype s2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
 }
 
 void sdif(settype s1, settype s2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & ~s2[i];
 }
 
-boolean sisin(int i, settype s)
+boolean sisin(long i, settype s)
 {
     return (!!(s[i/8] & 1<<i%8));
 }
 
 boolean sequ(settype s1, settype s2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
     return (TRUE);
@@ -1087,7 +1087,7 @@ boolean sequ(settype s1, settype s2)
 
 boolean sinc(settype s1, settype s2)
 {
-    int i;
+    long i;
 
     for (i = 0; i < SETSIZE; i++)
         if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
@@ -1095,7 +1095,7 @@ boolean sinc(settype s1, settype s2)
 }
 
 /* throw an exception by vector */
-void errore(int ei)
+void errore(long ei)
 {
     address ad;
 
@@ -1108,7 +1108,7 @@ void errore(int ei)
 
 void alignu(address algn, address* flc)
 {
-    int l;
+    long l;
     l = *flc-1;
     *flc = l+algn-(algn+l)%algn;
 } /*align*/
@@ -1116,7 +1116,7 @@ void alignu(address algn, address* flc)
 /* clear filename string */
 
 void clrfn(filnam fn)
-{ int i; for (i = 0; i < FILLEN; i++) fn[i] = ' '; }
+{ long i; for (i = 0; i < FILLEN; i++) fn[i] = ' '; }
 
 /*--------------------------------------------------------------------*/
 
@@ -1129,20 +1129,20 @@ void load(FILE* fp)
 
 {
     address ad, ad2;
-    int i, l, cs, csc, b;
-    int c;
+    long i, l, cs, csc, b;
+    long c;
 
     ad = 0; l = 1;
     while (l > 0 && (c = fgetc(fp)) != EOF) {
         if (c != ':') errorl();
-        fscanf(fp, "%2x%16x", &l, &i); ad2 = i;
+        fscanf(fp, "%2lx%16lx", &l, &i); ad2 = i;
         if (ad != ad2 && l > 0) errorl();
         cs = 0;
         for (i = 1; i <= l; i++) {
-            fscanf(fp, "%2x", &b); putbyt(ad, b); cs = (cs+b)%256;
+            fscanf(fp, "%2lx", &b); putbyt(ad, b); cs = (cs+b)%256;
             ad = ad+1;
         };
-        fscanf(fp, "%2x\n", &csc); if (cs != csc) errorl();
+        fscanf(fp, "%2lx\n", &csc); if (cs != csc) errorl();
     }
     pctop = ad;
 } /*load*/
@@ -1169,10 +1169,10 @@ void varexit(void)
     vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
 }
 
-int varlap(address s, address e)
+long varlap(address s, address e)
 {
     varptr vp;
-    int f;
+    long f;
 
     vp = varlst; f = FALSE;
     while (vp && !f) {
@@ -1183,7 +1183,7 @@ int varlap(address s, address e)
     return (f);
 }
 
-address base(int ld)
+address base(long ld)
 {
     address ad;
 
@@ -1195,7 +1195,7 @@ address base(int ld)
 void compare(boolean* b, address* a1, address* a2)
 /*comparing is only correct if result by comparing integers will be*/
 {
-    int i;
+    long i;
 
     i = 0; *b = TRUE;
     while (*b && i<q) {
@@ -1209,7 +1209,7 @@ void compare(boolean* b, address* a1, address* a2)
 
 void valfil(address fa) /* attach file to file entry */
 {
-    int i,ff;
+    long i,ff;
 
     if (store[fa] == 0) { /* no file */
         if (fa == pctop+INPUTOFF) ff = INPUTFN;
@@ -1279,10 +1279,10 @@ void dmpblk(void)
     blk = gbtop; /* set to bottom of heap */
     while (blk < np) { /* search blocks in heap */
         l = getadr(blk); /* get length */
-        printf("%d: Addr: %08x Len: %08x Occ: %d\n", c, blk, abs(l), l < 0);
+        printf("%ld: Addr: %08lx Len: %08lx Occ: %d\n", c, blk, labs(l), l < 0);
         c++;
-        if (abs(l) < HEAPAL || abs(l) > np) errorv(HEAPFORMATINVALID);
-        blk = blk+abs(l); /* go next block */
+        if (labs(l) < HEAPAL || abs(l) > np) errorv(HEAPFORMATINVALID);
+        blk = blk+labs(l); /* go next block */
     }
     printf("\n");
 }
@@ -1406,21 +1406,21 @@ boolean isfree(address blk)
 /* system routine call */
 
 boolean eoffile(FILE* fp)
-{ int c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == EOF); }
+{ long c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == EOF); }
 
 boolean eolnfile(FILE* fp)
-{ int c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == '\n'); }
+{ long c; c = fgetc(fp); if (c != EOF) ungetc(c, fp); return (c == '\n'); }
 
 char chkfile(FILE* fp)
 {
-    int c;
+    long c;
     c = fgetc(fp); if (c != EOF) ungetc(c, fp);
     return ((c=='\n'||c==EOF)?' ':c);
 }
 
-int filelength(FILE* fp)
+long filelength(FILE* fp)
 {
-    int s, p;
+    long s, p;
 
     s = ftell(fp); fseek(fp, 0, SEEK_END);
     p = ftell(fp); fseek(fp, s, SEEK_SET);
@@ -1430,7 +1430,7 @@ int filelength(FILE* fp)
 
 char buffn(filnum fn)
 {
-    int c;
+    long c;
 
     if (fn <= COMMANDFN) switch(fn) {
         case INPUTFN:   c = chkfile(stdin); break;
@@ -1448,7 +1448,7 @@ char buffn(filnum fn)
 
 void getfneoln(FILE* fp, filnum fn)
 {
-    int c;
+    long c;
 
     c = fgetc(fp);
     if (c == EOF && !fileoln[fn]) fileoln[fn] = TRUE;
@@ -1536,13 +1536,13 @@ void readline(filnum fn)
     if (eolnfn(fn)) getfn(fn);
 }
 
-char chkbuf(filnum fn, int w)
+char chkbuf(filnum fn, long w)
 { if (w > 0) return buffn(fn); else return(' '); }
 
-boolean chkend(filnum fn, int w)
+boolean chkend(filnum fn, long w)
 { return (w = 0 || eoffn(fn)); }
 
-void getbuf(filnum fn, int* w)
+void getbuf(filnum fn, long* w)
 {
   if (*w > 0) {
     if (eoffn(fn)) errore(ENDOFFILE);
@@ -1550,10 +1550,10 @@ void getbuf(filnum fn, int* w)
   }
 }
 
-void readi(filnum fn, int *i, int* w, boolean fld)
+void readi(filnum fn, long *i, long* w, boolean fld)
 {
-    int s;
-    int d;
+    long s;
+    long d;
 
    s = +1; /* set sign */
    /* skip leading spaces */
@@ -1582,7 +1582,7 @@ void readi(filnum fn, int *i, int* w, boolean fld)
 }
 
 /* find power of ten */
-double pwrten(int e)
+double pwrten(long e)
 {
     double t; /* accumulator */
     double p; /* current power */
@@ -1597,11 +1597,11 @@ double pwrten(int e)
    return (t);
 }
 
-void readr(filnum fn, double* r, int w, boolean fld)
+void readr(filnum fn, double* r, long w, boolean fld)
 {
-    int i; /* integer holding */
-    int e; /* exponent */
-    int d; /* digit */
+    long i; /* integer holding */
+    long e; /* exponent */
+    long d; /* digit */
     boolean s; /* sign */
 
    e = 0; /* clear exponent */
@@ -1648,7 +1648,7 @@ void readr(filnum fn, double* r, int w, boolean fld)
    }
 }
 
-void readc(filnum fn, char* c, int w, boolean fld)
+void readc(filnum fn, char* c, long w, boolean fld)
 {
    *c = chkbuf(fn, w); getbuf(fn, &w);
    /* if fielded, validate the rest of the field is blank */
@@ -1658,9 +1658,9 @@ void readc(filnum fn, char* c, int w, boolean fld)
    }
 } /*readc*/
 
-void reads(filnum fn, address ad, int l, int w, boolean fld)
+void reads(filnum fn, address ad, long l, long w, boolean fld)
 {
-  int c;
+  long c;
   while (l > 0) {
     c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
   }
@@ -1671,7 +1671,7 @@ void reads(filnum fn, address ad, int l, int w, boolean fld)
   }
 } /*reads*/
 
-void readsp(filnum fn, address ad,  int l)
+void readsp(filnum fn, address ad,  long l)
 {
   char c;
 
@@ -1682,9 +1682,9 @@ void readsp(filnum fn, address ad,  int l)
   while (l > 0) { putchr(ad, ' '); ad = ad+1; l = l-1; }
 }
 
-void writestrp(FILE* f, address ad, int l)
+void writestrp(FILE* f, address ad, long l)
 {
-    int i;
+    long i;
     address ad1;
 
     ad1 = ad+l-1; /* find end */
@@ -1693,13 +1693,13 @@ void writestrp(FILE* f, address ad, int l)
     for (i = 0; i < l; i++) fprintf(f, "%c", getchr(ad+i));
 }
 
-void filllz(FILE* f, int n)
+void filllz(FILE* f, long n)
 { while (n > 0) { fputc('0', f); n--; } }
 
 /* Write integer */
-void writei(FILE* f, int w, int fl, int r, int lz)
+void writei(FILE* f, long w, long fl, long r, long lz)
 {
-    int i, d, ds;
+    long i, d, ds;
     char digit[MAXDBF];
     boolean sgn;
 
@@ -1717,22 +1717,22 @@ void writei(FILE* f, int w, int fl, int r, int lz)
     if (sgn) ds = d+1; else ds = d; /* add sign */
     if (ds > abs(fl)) if (fl < 0) fl = -ds; else fl = ds;
     if (fl > 0 && fl > ds)
-      if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", fl-ds, ' ');
+      if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' ');
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
-    if (fl < 1 && abs(fl) > ds) fprintf(f, "%*c", abs(fl)-ds, ' ');
+    if (fl < 1 && abs(fl) > ds) fprintf(f, "%*c", (int)(abs(fl)-ds), ' ');
 }
 
-void writeb(FILE* f, boolean b, int w)
+void writeb(FILE* f, boolean b, long w)
 {
-    int l;
+    long l;
 
     if (b) {
         l = 4; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", w, l, "true");
+        fprintf(f, "%*.*s", (int)w, (int)l, "true");
     } else {
         l = 5; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", w, l, "false");
+        fprintf(f, "%*.*s", (int)w, (int)l, "false");
     }
 }
 
@@ -1773,22 +1773,22 @@ void callsp(void)
 
 {
     boolean line;
-    int i, j, k, w, l, f;
+    long i, j, k, w, l, f;
     char c;
     boolean b;
     address ad,ad1,ad2;
     double r, r1;
     filnum fn;
-    int mn,mx;
+    long mn,mx;
     filnam fl1, fl2;
-    int rd;
+    long rd;
     boolean lz;
     boolean fld;
     FILE* fp;
 
     /* system routine call trace diagnostic */
     /*
-    printf("callsp: q: %d\n", q);
+    printf("callsp: q: %ld\n", q);
     */
 
     if (q > MAXSP) errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
@@ -1862,21 +1862,21 @@ void callsp(void)
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > w) l = w; /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
-                       case OUTPUTFN: fprintf(stdout, "%*.*s", w, l,
+                       case OUTPUTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
                                               (char*)(store+ad1)); break;
-                       case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l,
+                       case PRRFN: fprintf(filtable[PRRFN], "%*.*s", (int)w, (int)l,
                                            (char*)(store+ad1)); break;
-                       case ERRORFN: fprintf(stderr, "%*.*s", w, l,
+                       case ERRORFN: fprintf(stderr, "%*.*s", (int)w, (int)l,
                                              (char*)(store+ad1));
                                      break;
-                       case LISTFN: fprintf(stdout, "%*.*s", w, l,
+                       case LISTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
                                             (char*)(store+ad1));
                                     break;
                        case PRDFN: case INPUTFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                     } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*s", w, l,
+                         fprintf(filtable[fn], "%*.*s", (int)w, (int)l,
                                  (char*)(store+ad1));
                     }
                     break;
@@ -1940,30 +1940,30 @@ void callsp(void)
                      if (w < REALEF) w = REALEF; /* set minimum width */
                      l = w-REALEF+1; /* assign leftover to fractional digits w/o sign */
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*.*e", w, l, r); break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*.*e", w, l, r); break;
-                          case ERRORFN: fprintf(stderr, "%*.*e", w, l, r); break;
-                          case LISTFN: fprintf(stdout, "%*.*e", w, l, r); break;
+                          case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, (int)l, r); break;
+                          case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); break;
+                          case ERRORFN: fprintf(stderr, "%*.*e", (int)w, (int)l, r); break;
+                          case LISTFN: fprintf(stdout, "%*.*e", (int)w, (int)l, r); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE);
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*e", w, l, r);
+                         fprintf(filtable[fn], "%*.*e", (int)w, (int)l, r);
                      };
                      break;
     case 10/*wrc*/: popint(w); popint(i); c = i; popadr(ad);
                      pshadr(ad); valfil(ad); fn = store[ad];
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*c", w, c); break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*c", w, c); break;
-                          case ERRORFN: fprintf(stderr, "%*c", w, c); break;
-                          case LISTFN: fprintf(stdout, "%*c", w, c); break;
+                          case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
+                          case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
+                          case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
+                          case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*c", w, c);
+                         fprintf(filtable[fn], "%*c", (int)w, c);
                      }
                      break;
     case 11/*rdi*/:
@@ -2062,18 +2062,18 @@ void callsp(void)
                      if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                      if (f < 1) errore(INVALIDFRACTIONSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*.*f", w, f, r);
+                          case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r);
                                          break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*.*f", w, f, r);
+                          case PRRFN: fprintf(filtable[PRRFN], "%*.*f", (int)w, (int)f, r);
                                       break;
-                          case ERRORFN: fprintf(stderr, "%*.*f", w, f, r);
+                          case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)f, r);
                                         break;
-                          case LISTFN: fprintf(stdout, "%*.*f", w, f, r); break;
+                          case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                      } else {
                          if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*f", w, f, r);
+                         fprintf(filtable[fn], "%*.*f", (int)w, (int)f, r);
                      }
                      break;
     case 26/*dsp*/: popadr(ad1); popadr(ad);
@@ -2319,7 +2319,7 @@ void callsp(void)
 void sinins()
 
 {
-    address ad,ad1,ad2,ad3; boolean b; int i,j,k,i1,i2; char c, c1; int i3,i4;
+    address ad,ad1,ad2,ad3; boolean b; long i,j,k,i1,i2; char c, c1; long i3,i4;
     double r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
 
     /* instruction execution trace diagnostic */
@@ -2887,7 +2887,7 @@ void sinins()
   }
 }
 
-void main (int argc, char *argv[])
+void main (long argc, char *argv[])
 
 {
     FILE* fp;
