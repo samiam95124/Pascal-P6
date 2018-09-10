@@ -7,6 +7,12 @@ call :replaceinfile source\pcom.pas
 call :replaceinfile source\pint.pas
 call :replaceinfile source\pmach.pas
 
+rem
+rem Replace 32 with 64 bit macro in C
+rem
+sed "s/^#define WRDSIZ32 1/\/\* #define WRDSIZ32 1 \*\//" source\cmach.c > temp
+sed "s/^\/\* #define WRDSIZ64 1 \*\//#define WRDSIZ64 1/" < temp > source\cmach.c
+
 exit /b
 
 : replaceinfile

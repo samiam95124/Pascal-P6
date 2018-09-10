@@ -35,3 +35,5 @@ function replaceinfile {
 replaceinfile source/pcom.pas
 replaceinfile source/pint.pas
 replaceinfile source/pmach.pas
+sed "s/^#define WRDSIZ32 1/\/\* #define WRDSIZ32 1 \*\//" source/cmach.c > temp
+sed "s/^\/\* #define WRDSIZ64 1 \*\//#define WRDSIZ64 1/" < temp > source/cmach.c

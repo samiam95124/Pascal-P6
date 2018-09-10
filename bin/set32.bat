@@ -6,6 +6,8 @@ rem
 call :replaceinfile source\pcom.pas
 call :replaceinfile source\pint.pas
 call :replaceinfile source\pmach.pas
+sed "s/^#define WRDSIZ64 1/\/\* #define WRDSIZ64 1 \*\//" source\cmach.c > temp
+sed "s/^\/\* #define WRDSIZ32 1 \*\//#define WRDSIZ32 1/" < temp > source\cmach.c
 
 exit /b
 
