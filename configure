@@ -199,8 +199,12 @@ then
 
    cp $compiler/Makefile    .
 
-   cp $compiler/standard_tests/iso7185pat.cmp standard_tests
-   cp $compiler/standard_tests/iso7185pats.cmp standard_tests
+   cp $compiler/standard_tests/bit$bits/iso7185pat.cmp standard_tests
+   cp $compiler/standard_tests/bit$bits/iso7185patc.cmp standard_tests
+   cp $compiler/standard_tests/bit$bits/iso7185pats.cmp standard_tests
+   
+   cp $compiler/p4/bit$bits/standardp.cmp p4
+   cp $compiler/p4/bit$bits/standardpc.cmp p4
 
    #
    # GPC has been problematic for line endings. This changes them

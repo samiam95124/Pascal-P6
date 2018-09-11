@@ -212,8 +212,9 @@ if "%compiler%" == "ip_pascal" (
 
     cp ip_pascal\Makefile    .
 
-    cp ip_pascal\standard_tests/iso7185pat.cmp standard_tests
-    cp ip_pascal\standard_tests/iso7185pats.cmp standard_tests
+    cp ip_pascal/standard_tests/bit%bits%/iso7185pat.cmp standard_tests
+    cp ip_pascal/standard_tests/bit%bits%/iso7185patc.cmp standard_tests
+    cp ip_pascal/standard_tests/bit%bits%/iso7185pats.cmp standard_tests
 
     rem
     rem IP Pascal does not care about line endings, but returning to DOS mode
@@ -240,8 +241,12 @@ if "%compiler%" == "gpc" (
 
     cp gpc/Makefile    .
 
-    cp gpc/standard_tests/iso7185pat.cmp standard_tests
-    cp gpc/standard_tests/iso7185pats.cmp standard_tests
+    cp gpc/standard_tests/bit%bits%/iso7185pat.cmp standard_tests
+    cp gpc/standard_tests/bit%bits%/iso7185patc.cmp standard_tests
+    cp gpc/standard_tests/bit%bits%/iso7185pats.cmp standard_tests
+    
+    cp gpc/p4/bit%bits%/standardp.cmp p4
+    cp gpc/p4/bit%bits%/standardpc.cmp p4
 
     rem
     rem GPC needs Unix line endings in both the Unix and cygwin
