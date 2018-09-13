@@ -1,9 +1,9 @@
 @echo off
 rem ################################################################################
 rem #
-rem # Configure scipt for Pascal-P5
+rem # Configure scipt for Pascal-P6
 rem #
-rem # Sets up the complete Pascal-P5 project.
+rem # Sets up the complete Pascal-P6 project.
 rem #
 rem ################################################################################
 
@@ -130,7 +130,7 @@ fpc -iV 2> temp
 grep "3.0.4" temp > temp2
 if %errorlevel% neq 0 (
 
-    echo *** Warning, Pascal-P5 is only validated to work with FPC version 3.0.4
+    echo *** Warning, Pascal-P6 is only validated to work with FPC version 3.0.4
 
 )
     
@@ -145,7 +145,7 @@ for %%x in (%*) do (
 
 	if "%%x" == "--help" (
 
-        echo "Configure program for Pascal-P5"
+        echo "Configure program for Pascal-P6"
         echo
         echo "--gpc:       Select GPC as target compiler"
         echo "--ip_pascal: Select IP Pascal as target compiler"
@@ -202,11 +202,11 @@ if "%compiler%" == "ip_pascal" (
     rem
     rem Set up for IP Pascal
     rem
-    cp ip_pascal\p5.bat      bin\p5.bat
+    cp ip_pascal\P6.bat      bin\P6.bat
     cp ip_pascal\compile.bat bin\compile.bat
     cp ip_pascal\run.bat     bin\run.bat
 
-    cp ip_pascal\p5          bin\p5
+    cp ip_pascal\P6          bin\P6
     cp ip_pascal\compile     bin\compile
     cp ip_pascal\run         bin\run
 
@@ -231,11 +231,11 @@ if "%compiler%" == "gpc" (
     rem
     rem Set up for GPC Pascal
     rem
-    cp gpc\p5.bat      bin\p5.bat
+    cp gpc\P6.bat      bin\P6.bat
     cp gpc\compile.bat bin\compile.bat
     cp gpc\run.bat     bin\run.bat
 
-    cp gpc\p5          bin\p5
+    cp gpc\P6          bin\P6
     cp gpc\compile     bin\compile
     cp gpc\run         bin\run
 
@@ -263,11 +263,11 @@ if "%compiler%" == "fpc" (
     rem
     rem Set up for FPC Pascal
     rem
-    cp fpc\p5.bat      bin\p5.bat
+    cp fpc\P6.bat      bin\P6.bat
     cp fpc\compile.bat bin\compile.bat
     cp fpc\run.bat     bin\run.bat
 
-    cp fpc\p5          bin\p5
+    cp fpc\P6          bin\P6
     cp fpc\compile     bin\compile
     cp fpc\run         bin\run
 
