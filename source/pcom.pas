@@ -68,6 +68,22 @@
 *                                                                              *
 *******************************************************************************}
 
+{ Set default configuration flags. This gives proper behavior even if no
+  preprocessor flags are passed in. 
+  
+  The defaults are:
+  WRDSIZ32       - 32 bit compiler.
+  ISO7185_PASCAL - uses ISO 7185 standard language only.
+  PASCALINE      - uses the Pascaline standard language.
+}
+#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#define WRDSIZ32 1
+#endif
+
+#if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
+#define ISO7185_PASCAL
+#endif
+
 program pcom(output,prd,prr);
 
 label 99; { terminate immediately }
@@ -100,70 +116,13 @@ const
 
       }
 
-      { type               #32 #64 }
-      intsize     =        4   {8};  { size of integer }
-      intal       =        4;        { alignment of integer }
-      intdig      =        11  {20}; { number of decimal digits in integer }
-      inthex      =        8   {16}; { number of hex digits of integer }
-      realsize    =        8;        { size of real }
-      realal      =        4;        { alignment of real }
-      charsize    =        1;        { size of char }
-      charal      =        1;        { alignment of char }
-      charmax     =        1;
-      boolsize    =        1;        { size of boolean }
-      boolal      =        1;        { alignment of boolean }
-      ptrsize     =        4   {8};  { size of pointer }
-      adrsize     =        4   {8};  { size of address }
-      adral       =        4;        { alignment of address }
-      setsize     =       32;        { size of set }
-      setal       =        1;        { alignment of set }
-      filesize    =        1;        { required runtime space for file (lfn) }
-      fileidsize  =        1;        { size of the lfn only }
-      exceptsize  =        1;        { size of exception variable }
-      exceptal    =        1;
-      stackal     =        4   {8};  { alignment of stack }
-      stackelsize =        4   {8};  { stack element size }
-      maxsize     =       32;        { this is the largest type that can be on
-                                       the stack }
-      { Heap alignment should be either the natural word alignment of the
-        machine, or the largest object needing alignment that will be allocated.
-        It can also be used to enforce minimum block allocation policy. }
-      heapal      =        4;        { alignment for each heap arena }
-      gbsal       =        4;        { globals area alignment }
-      sethigh     =      255;        { Sets are 256 values }
-      setlow      =        0;
-      ordmaxchar  =      255;        { Characters are 8 bit ISO/IEC 8859-1 }
-      ordminchar  =        0;
-      maxresult   = realsize;        { maximum size of function result }
-      marksize    =       32   {56}; { maxresult+6*ptrsize }
-      ujplen      =       5    {9};  { length of ujp instruction (used for case
-                                       jumps) }
-      { Value of nil is 1 because this allows checks for pointers that were
-        initialized, which would be zero (since we clear all space to zero).
-        In the new unified code/data space scheme, 0 and 1 are always invalid
-        addresses, since the startup code is at least that long. }
-      nilval      =        1;  { value of 'nil' }
-
-      { Mark element offsets
-
-        Mark format is:
-
-        -8:  Function return value, 64 bits, enables a full real result.
-        -12:  Static link.
-        -16: Dynamic link.
-        -20: Saved EP from previous frame.
-        -24: Stack bottom after locals allocate. Used for interprocdural gotos.
-        -28: EP from current frame. Used for interprocedural gotos.
-        -32: Return address
-
-      }
-      markfv      =        -8   {-8};  { function value }
-      marksl      =        -12  {-16};  { static link }
-      markdl      =        -16  {-24}; { dynamic link }
-      markep      =        -20  {-32}; { (old) maximum frame size }
-      marksb      =        -24  {-40}; { stack bottom }
-      market      =        -28  {-48}; { current ep }
-      markra      =        -32  {-56}; { return address }
+#ifdef WRDSIZ32
+#include "mpb32.inc"
+#endif
+      
+#ifdef WRDSIZ64
+#include "mpb64.inc"
+#endif
       
       { ******************* end of pcom and pint common parameters *********** }
 
@@ -203,8 +162,9 @@ const
    varmax     = 1000; { maximum number of logical variants to track }
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
-   extsrc      = '.pas'; { extention for source file }
+   extsrc     = '.pas'; { extention for source file }
    maxftl     = 511; { maximum fatal error }
+   maxcmd     = 250; { size of command line buffer }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -216,7 +176,13 @@ const
    majorver   = 0; { major version number }
    minorver   = 1; { minor version number }
    experiment = true; { is version experimental? }
-
+   
+   { standard exceptions. Used for extension routines, this is a subset. }
+   CommandLineTooLong      = 1;
+   FunctionNotImplemented  = 2;
+   FileDeleteFail          = 3;
+   FileNameChangeFail      = 4;
+   
 type                                                        (*describing:*)
                                                             (*************)
 
@@ -419,13 +385,20 @@ type                                                        (*describing:*)
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
      modtyp = (mtprogram, mtmodule); { type of current module }
+     byte = 0..255; { 8-bit byte }
+     bytfil = packed file of byte; { untyped file of bytes }
+     cmdinx = 1..maxcmd; { index for command line buffer }
+     cmdnum = 0..maxcmd; { length of command line buffer }
+     cmdbuf = packed array [cmdinx] of char; { buffer for command line }
       
 (*-------------------------------------------------------------------------*)
 
 var
 
     { !!! remove this statement for self compile }
-    {elide} prd,prr: text; {noelide}       { output code file }
+#ifndef SELF_COMPILE
+    prd,prr: text;                  { output code file }
+#endif
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -1133,98 +1106,38 @@ end;
 
 (*--------------------------------------------------------------------*)
 
-{ 
-
-Language extension routines. These routines allow specification of semantic
-functions beyond the base ISO 7185 specification. 
-
-Each alternate set of routine contents are marked as:
-
-XXX equivalence start
-...
-XXX equivalence end
-
-Where "equivalence" is the language standard, like ISO7185, GPC, FPC, etc.
-These represent the code for that option. A script can be used to select or
-unselect those contents.
+{ Language extension routines }
   
-}
-  
-procedure assigntext(var f: text; var fn: filnam);
-{$gnu-pascal}
-var s: string(fillen);
-    i, l: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start - 
-  fn := fn; reset(f); 
-  writeln; writeln('*** assigntext function not implemented in ISO 7185');
+{ support I/O errors from extension library }
+
+procedure errore(e: integer);
+begin writeln; write('*** I/O error: ');
+  case e of
+    FileDeleteFail:                     writeln('File delete fail');
+    FileNameChangeFail:                 writeln('File name change fail');
+    CommandLineTooLong:                 writeln('Command line too long');
+    FunctionNotImplemented:             writeln('Function not implemented');
+  end;
   goto 99
-  - ISO7185 end }
-
-  { Pascaline start -
-  assign(f, fn);
-  - Pascaline end }
-
-  {$gnu-pascal} 
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  assign(f, s);
-  {$classic-pascal-level-0}
 end;
 
-procedure closetext(var f: text);
+procedure errorv(v: integer);
 
 begin
-  { ISO7185 start -
-  reset(f);
-  writeln; writeln('*** closetext function not implemented in ISO 7185');
-  goto 99
-  - ISO7185 end }
-  
-  { Pascaline start -
-  close(f);
-  - Pascaline end }
-  
-  {$gnu-pascal} 
-  close(f)
-  {$classic-pascal-level-0}
+  errore(v)
 end;
 
-{$gnu-pascal}
-function open(fn: Cstring; f: integer): integer; external name 'open';
-function c_close(fd: integer): integer; external name 'close';
-{$classic-pascal-level-0}
+#ifdef GNU_PASCAL
+#include "extend_gnu_pascal.inc"
+#endif
 
-function existsfile(var fn: filnam): boolean;
-{$gnu-pascal}
-var s: string(fillen);
-    i, l, r, fd: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start -
-  fn := fn;
-  writeln; writeln('*** existsfile function not implemented in ISO 7185');
-  goto 99;
-  existsfile := true
-  - ISO7185 end }
-  
-  { Pascaline start -
-  existsfile := exists(fn);
-  - Pascaline end }
-  
-  {$gnu-pascal}
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  fd := open(s, 0);
-  if fd > 0 then r := c_close(fd);
-  existsfile := fd >= 0
-  {$classic-pascal-level-0}
-end;
+#ifdef ISO7185_PASCAL
+#include "extend_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "extend_pascaline.inc"
+#endif
 
 (*-------------------------------------------------------------------------*)
 
@@ -8215,7 +8128,9 @@ begin
   (**********)
 
   { !!! remove these statements for self compile }
-  {elide} reset(prd); rewrite(prr); {noelide} { open output file }
+#ifndef SELF_COMPILE
+  reset(prd); rewrite(prr); { open output file }
+#endif
  
   { write generator comment }
   writeln(prr, 'i');

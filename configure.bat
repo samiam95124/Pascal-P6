@@ -239,14 +239,14 @@ if "%compiler%" == "gpc" (
     cp gpc\compile     bin\compile
     cp gpc\run         bin\run
 
-    cp gpc/Makefile    .
+    cp gpc/bit%bits%/Makefile    .
 
-    cp gpc/standard_tests/bit%bits%/iso7185pat.cmp standard_tests
-    cp gpc/standard_tests/bit%bits%/iso7185patc.cmp standard_tests
-    cp gpc/standard_tests/bit%bits%/iso7185pats.cmp standard_tests
+    cp gpc/bit%bits%/standard_tests/iso7185pat.cmp standard_tests
+    cp gpc/bit%bits%/standard_tests/iso7185patc.cmp standard_tests
+    cp gpc/bit%bits%/standard_tests/iso7185pats.cmp standard_tests
     
-    cp gpc/p4/bit%bits%/standardp.cmp p4
-    cp gpc/p4/bit%bits%/standardpc.cmp p4
+    cp gpc/bit%bits%/p4/standardp.cmp p4
+    cp gpc/bit%bits%/p4/standardpc.cmp p4
 
     rem
     rem GPC needs Unix line endings in both the Unix and cygwin
@@ -286,21 +286,6 @@ if "%compiler%" == "fpc" (
 
 )
 
-rem
-rem Set bit length
-rem
-:setbits
-if "%bits%" == "32" (
-
-    echo Setting for 32 bit target
-    set32
-
-)
-if "%bits%" == "64" (
-
-    echo Setting for 64 bit target
-    set64
-
-)
+echo Bit length %bits%
 
 echo Configure completed!

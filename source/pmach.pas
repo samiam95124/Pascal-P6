@@ -133,6 +133,17 @@
 *                                                                              *
 *******************************************************************************}
 
+{ Set default configuration flags. This gives proper behavior even if no
+  preprocessor flags are passed in. 
+  
+  The defaults are:
+  WRDSIZ32       - 32 bit compiler.
+  ISO7185_PASCAL - uses ISO 7185 standard language only.
+}
+#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#define WRDSIZ32 1
+#endif
+
 program pmach(input,output,prd,prr
               { Pascaline start !
               ,command
@@ -169,71 +180,13 @@ const
 
       }
 
-      { type               #32 #64 }
-      intsize     =        4   {8};  { size of integer }
-      intal       =        4;        { alignment of integer }
-      intdig      =        11  {20}; { number of decimal digits in integer }
-      inthex      =        8   {16}; { number of hex digits of integer }
-      realsize    =        8;        { size of real }
-      realal      =        4;        { alignment of real }
-      charsize    =        1;        { size of char }
-      charal      =        1;        { alignment of char }
-      charmax     =        1;
-      boolsize    =        1;        { size of boolean }
-      boolal      =        1;        { alignment of boolean }
-      ptrsize     =        4   {8};  { size of pointer }
-      adrsize     =        4   {8};  { size of address }
-      adral       =        4;        { alignment of address }
-      setsize     =       32;        { size of set }
-      setal       =        1;        { alignment of set }
-      filesize    =        1;        { required runtime space for file (lfn) }
-      fileidsize  =        1;        { size of the lfn only }
-      exceptsize  =        1;        { size of exception variable }
-      exceptal    =        1;      
-      stackal     =        4   {8};  { alignment of stack }
-      stackelsize =        4   {8};  { stack element size }
-      maxsize     =       32;        { this is the largest type that can be on
-                                       the stack }
-      { Heap alignment should be either the natural word alignment of the
-        machine, or the largest object needing alignment that will be allocated.
-        It can also be used to enforce minimum block allocation policy. }
-      heapal      =        4;        { alignment for each heap arena }
-      gbsal       =        4;        { globals area alignment }
-      sethigh     =      255;        { Sets are 256 values }
-      setlow      =        0;
-      ordmaxchar  =      255;        { Characters are 8 bit ISO/IEC 8859-1 }
-      ordminchar  =        0;
-      maxresult   = realsize;        { maximum size of function result }
-      marksize    =       32   {56}; { maxresult+6*ptrsize }
-      ujplen      =        5   {9};  { length of ujp instruction (used for case
-                                       jumps) }
+#ifdef WRDSIZ32
+#include "mpb32.inc"
+#endif
       
-      { Value of nil is 1 because this allows checks for pointers that were
-        initialized, which would be zero (since we clear all space to zero).
-        In the new unified code/data space scheme, 0 and 1 are always invalid
-        addresses, since the startup code is at least that long. }
-      nilval      =        1;  { value of 'nil' }
-
-      { Mark element offsets
-
-        Mark format is:
-
-        -8:  Function return value, 64 bits, enables a full real result.
-        -12: Static link.
-        -16: Dynamic link.
-        -20: Saved EP from previous frame.
-        -24: Stack bottom after locals allocate. Used for interprocdural gotos.
-        -28: EP from current frame. Used for interprocedural gotos.
-        -32: Return address
-
-      }
-      markfv      =        -8   {-8};  { function value }
-      marksl      =        -12  {-16}; { static link }
-      markdl      =        -16  {-24}; { dynamic link }
-      markep      =        -20  {-32}; { (old) maximum frame size }
-      marksb      =        -24  {-40}; { stack bottom }
-      market      =        -28  {-48}; { current ep }
-      markra      =        -32  {-56}; { return address }
+#ifdef WRDSIZ64
+#include "mpb64.inc"
+#endif
 
       { ******************* end of pcom and pint common parameters *********** }
 
@@ -241,11 +194,16 @@ const
 
       { !!! Need to use the small size memory to self compile, otherwise, by
         definition, pint cannot fit into its own memory. }
-      {elide}maxstr      = 16777215;{noelide}  { maximum size of addressing for program/var }
-      {elide}maxtop      = 16777216;{noelide}  { maximum size of addressing for program/var+1 }
-      {remove maxstr     =  2000000; remove}  { maximum size of addressing for program/var }
-      {remove maxtop     =  2000001; remove}  { maximum size of addressing for program/var+1 }
-      maxdef      = 2097152; { maxstr / 8 for defined bits }
+#ifndef SELF_COMPILE
+      maxstr      = 16777215;  { maximum size of addressing for program/var }
+      maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
+      maxdef      = 2097152;   { maxstr / 8 for defined bits }
+#else
+      maxstr     =  2000000;   { maximum size of addressing for program/var }
+      maxtop     =  2000001;   { maximum size of addressing for program/var+1 }
+      maxdef      = 250000;    { maxstr /8 for defined bits }
+#endif      
+      
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxast      = 100;     { maximum size of assert message }
@@ -473,7 +431,9 @@ var   pc          : address;   (*program address register*)
       iso7185: boolean; { iso7185 standard flag }
       
       { !!! remove this next statement for self compile }
-      {elide}prd,prr     : text;{noelide}(*prd for read only, prr for write only *)
+#ifndef SELF_COMPILE
+      prd,prr     : text; (*prd for read only, prr for write only *)
+#endif
 
       srclin      : integer; { current source line executing }
       cmdlin      : cmdbuf; { command line }
@@ -776,321 +736,19 @@ end;
 
 (*--------------------------------------------------------------------*)
 
-{ 
-
-Language extension routines. These routines allow specification of semantic
-functions beyond the base ISO 7185 specification. 
-
-There are two kinds of files, and both need to be represented here:
-text files and binary files. Binary files are files of bytes, and everything
-besides text is broken down into bytes and transferred via byte files. 
-Note that several functions don't have text equivalents, like length,
-location, position and update. 
-
-Each alternate set of routine contents are marked as:
-
-XXX equivalence start
-...
-XXX equivalence end
-
-Where "equivalence" is the language standard, like ISO7185, GPC, FPC, etc.
-These represent the code for that option. A script can be used to select or
-unselect those contents.
+{ Language extension routines }
   
-}
-  
-procedure assigntext(var f: text; var fn: filnam);
-{$gnu-pascal}
-var s: string(fillen);
-    i, l: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start !  
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
+#ifdef GNU_PASCAL
+#include "extend_gnu_pascal.inc"
+#endif
 
-  { Pascaline start !
-  assign(f, fn);
-  ! Pascaline end }
+#ifdef ISO7185_PASCAL
+#include "extend_iso7185_pascal.inc"
+#endif
 
-  {$gnu-pascal} 
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  assign(f, s);
-  {$classic-pascal-level-0}
-end;
-
-procedure assignbin(var f: bytfil; var fn: filnam);
-{$gnu-pascal}
-var s: string(fillen);
-    i, l: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start ! 
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  assign(f, fn);
-  ! Pascaline end }
-  
-  {$gnu-pascal} 
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  assign(f, s);
-  {$classic-pascal-level-0}
-end;
-
-procedure closetext(var f: text);
-
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  close(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal} 
-  close(f)
-  {$classic-pascal-level-0}
-end;
-
-procedure closebin(var f: bytfil);
-
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
-
-  { Pascaline start !
-  close(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal} 
-  close(f)
-  {$classic-pascal-level-0}
-end;
-
-function lengthbin(var f: bytfil): integer;
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  lengthbin := 1
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  lengthbin := length(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal} 
-  if empty(f) then
-    lengthbin := 0
-  else
-    lengthbin := LastPosition (f) + 1;
-  {$classic-pascal-level-0}
-end;
-
-function locationbin(var f: bytfil): integer;
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
-  locationbin := 1
-  ! ISO7185 end } 
-
-  { Pascaline start !
-  location := location(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal} 
-  locationbin := position(f);
-  {$classic-pascal-level-0}
-end;
-
-procedure positionbin(var f: bytfil; p: integer);
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  position(f, p);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  seek(f, p-1);
-  {$classic-pascal-level-0}
-end;
-
-procedure updatebin(var f: bytfil);
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-
-  { Pascaline start !
-  update(f);
-  ! Pascaline end }
-    
-  {$gnu-pascal}
-  append(f);
-  seek(f, 0);
-  {$classic-pascal-level-0}
-end;
-
-procedure appendtext(var f: text);
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  append(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  append(f);
-  {$classic-pascal-level-0}
-end;
-
-procedure appendbin(var f: bytfil);
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented) 
-  ! ISO7185 end }
-
-  { Pascaline start !
-  append(f);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  append(f);
-  {$classic-pascal-level-0}
-end;
-
-{$gnu-pascal}
-function open(fn: Cstring; f: integer): integer; external name 'open';
-function c_close(fd: integer): integer; external name 'close';
-{$classic-pascal-level-0}
-
-function existsfile(var fn: filnam): boolean;
-{$gnu-pascal}
-var s: string(fillen);
-    i, l, r, fd: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  existsfile := true
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  existsfile := exists(fn);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  fd := open(s, 0);
-  if fd > 0 then r := c_close(fd);
-  existsfile := fd >= 0
-  {$classic-pascal-level-0}
-end;
-
-{$gnu-pascal}
-function remove(fn: Cstring): integer; external name 'remove';
-{$classic-pascal-level-0}
-procedure deletefile(var fn: filnam);
-{$gnu-pascal}
-var s: string(fillen);
-    i, l, r: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  delete(fn);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  l := fillen;
-  while (fn[l] = ' ') and (l > 1) do l := l-1;
-  s := '';
-  for i := 1 to l do s := s+fn[i];
-  r := remove(s);
-  if r <> 0 then errore(FileDeleteFail);
-  {$classic-pascal-level-0}
-end;
-
-{$gnu-pascal}
-function rename(fns, fnd: Cstring): integer; external name 'rename';
-{$classic-pascal-level-0}
-procedure changefile(var fnd, fns: filnam);
-{$gnu-pascal}
-var ss,sd: string(fillen);
-    i, l, r: integer;
-{$classic-pascal-level-0}
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  change(fnd, fns);
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  l := fillen;
-  while (fns[l] = ' ') and (l > 1) do l := l-1;
-  ss := '';
-  for i := 1 to l do ss := ss+fns[i];
-  l := fillen;
-  while (fnd[l] = ' ') and (l > 1) do l := l-1;
-  sd := '';
-  for i := 1 to l do sd := sd+fnd[i];
-  r := rename(ss,sd);
-  if r <> 0 then errore(FileNameChangeFail)
-  {$classic-pascal-level-0}
-end;
-
-procedure getcommandline(var cb: cmdbuf; var l: cmdnum);
-var i: cmdinx;
-    x, p: integer;
-procedure putcmd(c: char);
-begin
-  if i >= maxcmd-1 then errore(CommandLineTooLong);
-  cb[i] := c; i := i+1
-end;
-begin
-  { ISO7185 start !
-  errorv(FunctionNotImplemented)
-  ! ISO7185 end }
-  
-  { Pascaline start !
-  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
-  i := 1; 
-  while not eoln(command) do begin read(command, c); putcmd(c) end;
-  l := i-1;
-  ! Pascaline end }
-  
-  {$gnu-pascal}
-  for i := 1 to maxcmd do cb[i] := ' '; i := 1;
-  for p := 1 to paramcount do begin
-    for x := 1 to length(paramstr(p)) do putcmd(paramstr(p)[x]); 
-    if p < paramcount then putcmd(' ')
-  end;
-  l := i-1
-  {$classic-pascal-level-0}
-end;
+#ifdef PASCALINE
+#include "extend_pascaline.inc"
+#endif
 
 (*-------------------------------------------------------------------------*)
 
@@ -3334,10 +2992,14 @@ begin (* main *)
   cmdpos := 1;
   
   { !!! remove this next statement for self compile }
-  {elide}reset(prd);{noelide}
+#ifndef SELF_COMPILE
+  reset(prd);
+#endif
   
   { !!! remove this next statement for self compile }
-  {elide}rewrite(prr);{noelide}
+#ifndef SELF_COMPILE
+  rewrite(prr);
+#endif
 
   { construct bit equivalence table }
   i := 1;

@@ -1,12 +1,12 @@
 #
-# Makefile for Pascal-p6
+# Makefile for Pascal-p5
 #
 # Makes the main compiler interpreter set.
 #
 PC=gpc
 PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
-CPPFLAGS=-DWRDSIZ64
+CPPFLAGS=-DWRDSIZ32
 
 all: pcom pint pmach cmach genobj spew
 

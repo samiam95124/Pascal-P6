@@ -155,6 +155,17 @@
 
 *******************************************************************************/
 
+/* Set default configuration flags. This gives proper behavior even if no
+  preprocessor flags are passed in.
+
+  The defaults are:
+  WRDSIZ32       - 32 bit compiler.
+  ISO7185_PASCAL - uses ISO 7185 standard language only.
+*/
+#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+/* #define WRDSIZ32 1 */
+#endif
+
 /*
  * Enable GPC compatability mode
  *
@@ -166,15 +177,6 @@
 #ifndef GPC
 #define GPC 1
 #endif
-/*
- * Machine word size
- *
- * Supported sizes are 32 and 64.
- *
- */
-
-#define WRDSIZ32 1
-/* #define WRDSIZ64 1 */
 
 /* Check flags: these turn on runtime checks
  *

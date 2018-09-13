@@ -197,14 +197,14 @@ then
    cp $compiler/compile     bin/compile
    cp $compiler/run         bin/run
 
-   cp $compiler/Makefile    .
+   cp $compiler/bit$bits/Makefile    .
 
-   cp $compiler/standard_tests/bit$bits/iso7185pat.cmp standard_tests
-   cp $compiler/standard_tests/bit$bits/iso7185patc.cmp standard_tests
-   cp $compiler/standard_tests/bit$bits/iso7185pats.cmp standard_tests
+   cp $compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
+   cp $compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
+   cp $compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
    
-   cp $compiler/p4/bit$bits/standardp.cmp p4
-   cp $compiler/p4/bit$bits/standardpc.cmp p4
+   cp $compiler/bit$bits/p4/standardp.cmp p4
+   cp $compiler/bit$bits/p4/standardpc.cmp p4
 
    #
    # GPC has been problematic for line endings. This changes them
@@ -227,20 +227,6 @@ else
 
 fi
 
-#
-# Set according to number of bits
-#
-if [ $bits = "32" ]
-then
-
-    echo "Setting for 32 bit target"
-    set32
-
-else
-
-    echo "Setting for 64 bit target"
-    set64
-
-fi
+echo "Bit length $bits"
 
 echo "Configure completed!"

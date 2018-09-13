@@ -13,8 +13,8 @@ Running program
 
 The following are implementation defined characteristics
 
-Maxint: 2147483647
-Bit length of integer without sign bit appears to be: 31
+Maxint: 9223372036854775807
+Bit length of integer without sign bit appears to be: 63
 Integer default output field
          1111111111222222222233333333334
 1234567890123456789012345678901234567890
