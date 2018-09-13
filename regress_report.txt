@@ -1,53 +1,3 @@
-<<<<<<< HEAD
-Regression Summary
-Line counts should be 0 for pass
-pint run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-pmach run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-cmach run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-Wed Sep 12 09:43:59 PDT 2018
-=======
 Regression Summary 
 Line counts should be 0 for pass 
 pint run 
@@ -95,12 +45,12 @@ cmach run
 0 sample_programs\pascals.dif
 0 p2\roman.dif
 0 p4\standardp.dif
-Tue 09/11/2018 
-08:02 AM
+Thu 09/13/2018 
+06:08 AM
 Source files
-2ee777ba7b3d30e8659b302fedf8f0d3 *-
+863726840fed9b780927bbefd000c419 *-
 batch files
-e0fc3deb264bce413b222049d1a8b8f4 *-
+2abac07affeb95d158b163545e1a09d0 *-
 P2 files
 a0e0dde6ebcbb1088cdd56a761d9f4c2 *-
 p4 files
@@ -110,5 +60,4 @@ Sample program test files
 standard test files
 2bbefe647038bd0f6e9a0da840e36236 *-
 other files
-491a1cd670a70ee7e89745161f7c0995 *-
->>>>>>> ba758bf9ece53bee16ee6849ff18084fb1fcc1a1
+eef7f4215cc4faef08ce72fe1dc25c9e *-
