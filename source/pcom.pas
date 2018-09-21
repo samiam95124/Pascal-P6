@@ -1,4 +1,3 @@
-(*$c+,t-,d+,l-*)
 {*******************************************************************************
 *                                                                              *
 *                     Portable Pascal assembler/interpreter                    *
@@ -149,7 +148,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 95;   { maximum number of instructions }
+   maxins     = 97;   { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -297,7 +296,7 @@ type                                                        (*describing:*)
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp; 
-                             hdr: boolean; vext: boolean; vmod: filptr);
+                             hdr: boolean; vext: boolean; vmod: filptr); 
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -353,6 +352,13 @@ type                                                        (*describing:*)
                    bact:    boolean; { containing block is active }
                    refer:   boolean  { was referred to }
             end;
+            
+     { initializer code strip labels }
+     inilbp = ^inilab;
+     inilab = record
+                next: inilbp; { next entry }
+                lab:  integer { local label }
+              end;
 
      disprange = 0..displimit;
      disprec = record                      (*=blck:   id is variable id*)
@@ -363,6 +369,7 @@ type                                                        (*describing:*)
                  ptrref: boolean;          { used for with derived from pointer }
                  define: boolean;          { is this a defining block? }
                  modnam: strvsp;           { module name for block (if exists) }
+                 inilst: inilbp;           { initializer list }
                  case occur: where of      (*   constant address*)
                    crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
                           cdspl: addrrange);(*   variable address*)
@@ -1430,6 +1437,7 @@ end;
     240: write('Header parameter already included');
     241: write('Invalid tolken separator');
     242: write('Identifier referenced before defining point');
+    243: write('Initializer expression must be integer');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1450,6 +1458,10 @@ end;
     266: write('''private'' has no meaning here');
     267: write('Too many nested module joins');
     268: write('Qualified identifier not found');
+    269: write('Number of initializers for parameterised declaration do not ',
+               'match');
+    270: write('Container array type specified without initializer(s)');
+    271: write('Number of initializers does not match container array levels');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -2726,12 +2738,12 @@ end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen2t*);
 
-  procedure genujpxjp(fop: oprange; fp2: integer);
+  procedure genujpxjpcal(fop: oprange; fp2: integer);
   begin
    if prcode then
       begin putic; write(prr,mn[fop]:4, ' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
-  end (*genujpxjp*);
+  end (*genujpxjpcal*);
   
   procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
   begin
@@ -5391,6 +5403,7 @@ end;
                                   ptrref := false;
                                   define := false;
                                   modnam := nil;
+                                  inilst := nil;
                                   occur := rec
                             end
                         end
@@ -5625,6 +5638,7 @@ end;
                  end;
         power: begin wrtchr('s'); wrttypsub(elset) end;
         arrays: begin wrtchr('a'); wrttypsub(inxtype); wrttypsub(aeltype) end;
+        arrayc: begin wrtchr('v'); wrttypsub(abstype) end;
         records: begin wrtchr('r'); wrtchr('('); wrtrfd(fstfld); 
                    if recvar <> nil then if recvar^.form = tagfld then
                      begin wrtchr(','); wrtrfd(recvar^.tagfieldp);
@@ -5656,17 +5670,25 @@ end;
     
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
-          test: boolean;
+          test: boolean; maxpar, curpar: integer; cc: integer; ilp: inilbp;
+    function containers(lsp: stp): integer;
+    var cc: integer;
+    begin cc := 0;
+      if lsp <> nil then 
+        while lsp^.form = arrayc do begin lsp := lsp^.abstype; cc := cc+1 end;
+      containers := cc
+    end;
     begin nxt := nil;
-      repeat
-        repeat
+      repeat { id:type group }
+        maxpar := 0;
+        repeat {ids }
           if sy = ident then
-            begin new(lcp,vars); ininam(lcp);
+            begin new(lcp,vars); ininam(lcp); curpar := 0;
               with lcp^ do
                begin klass := vars; strassvf(name, id); next := nxt; 
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; threat := false; forcnt := 0; part := ptval;
-                  hdr := false; vext := incstk <> nil; vmod := incstk
+                  hdr := false; vext := incstk <> nil; vmod := incstk;
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -5675,24 +5697,44 @@ end;
           else error(2);
           if (sy = lparent) and not iso7185 then begin
             { parameterized type specification }
+            if nxt <> nil then begin { gen code strip label }
+              new(ilp); ilp^.next := display[top].inilst; 
+              display[top].inilst := ilp; genlabel(ilp^.lab); 
+              putlabel(ilp^.lab) 
+            end;
             insymbol;
             repeat
-              expression(fsys+[comma,rparent], false);
-              if not (sy in [comma,lparent]) then 
+              expression(fsys+[comma,rparent], false); load; curpar := curpar+1;
+              if gattr.typtr <> nil then
+                    if basetype(gattr.typtr) <> intptr then error(243);
+              if not (sy in [comma,rparent]) then 
                 begin error(27); 
-                      skip(fsys+[comma,lparent,colon,semicolon]+typedels) end;
-                test := sy <> lparent;
-                if not test then insymbol
-              until test
+                      skip(fsys+[comma,rparent,colon,semicolon]+typedels) end;
+              test := sy <> comma;
+              if not test then insymbol
+            until test;
+            if sy = rparent then insymbol else error(4)
           end;
+          if (maxpar <> 0) and (curpar <> maxpar) then error(269);
+          if curpar > maxpar then maxpar := curpar;
           if not (sy in fsys + [comma,colon] + typedels) then
             begin error(6); skip(fsys+[comma,colon,semicolon]+typedels) end;
           test := sy <> comma;
           if not test then insymbol
         until test;
+        { At this point, initializers, if they exist, are on stack in groups 
+          according to the id they belong to, and maxpar indicates how many per
+          id. This must be so because we don't know the type or location of the
+          assocated variable yet. }
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon] + typedels,lsp,lsize);
+        cc := containers(lsp); { find # containers }
+        if cc > 0 then
+          { change variable from size of base to pointer+template for containers }
+          lsize := ptrsize+cc*intsize;
         resolvep; { resolve pointer defs before symbol generate }
+        if (lsp^.form = arrayc) and (maxpar = 0) then error(270)
+        else if maxpar <> containers(lsp) then error(271);
         while nxt <> nil do
           with nxt^ do
             begin
@@ -5705,7 +5747,22 @@ end;
               { mark symbol }
               if prcode then
                 if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
-              nxt := next
+              nxt := next;
+              if maxpar > 0 then begin
+                { process init to each id in reverse }
+                gen2(51(*ldc*),1,maxpar); { load init count }
+                gen2(51(*ldc*),1,lsize); { load base size }
+                { load variable address }
+                if level <= 1 then gen1(37(*lao*),vaddr)
+                else gen2(50(*lda*),level-vlev,vaddr);
+                if level <= 1 then 
+                  gen0(97(*vip*)) { issue vector init ptr instruction }
+                else 
+                  gen0(96(*vis*)); { issue vector init stack instruction }
+                gen0(90(*ret*)); { issue code strip return }
+                { remove initializers, count, var addr }
+                mesl(maxpar*intsize+intsize+intsize+adrsize)
+              end
             end;
         if sy = semicolon then
           begin insymbol;
@@ -5735,7 +5792,7 @@ end;
                 packcom := false; ptrref := false;
                 { use the defining point status of the parent block } 
                 define := display[top-1].define; 
-                modnam := nil; occur := blck; bname := lcp
+                modnam := nil; inilst := nil; occur := blck; bname := lcp
               end
           end
         else error(250);
@@ -5876,7 +5933,7 @@ end;
                                   vlev := level; keep := true; refer := false; 
                                   threat := false; forcnt := 0; part := pt; 
                                   hdr := false; vext := false; vmod := nil; 
-                                  vaddr := 0
+                                  vaddr := 0;
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -6040,7 +6097,7 @@ end;
                         idtype := nilptr; vkind := actual; next := nil; 
                         vlev := 0; vaddr := gc; threat := false; forcnt := 0;
                         part := ptval; hdr := false; vext := incstk <> nil; 
-                        vmod := incstk
+                        vmod := incstk;
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
                       wrtsym(lcp2, 'g')
@@ -6196,6 +6253,7 @@ end;
         printed: boolean;
         lsize: addrrange;
         stalvl: integer; { statement nesting level }
+        ilp: inilbp;
 
     { add statement level }
     procedure addlvl;
@@ -6295,7 +6353,7 @@ end;
                                end;
                                store(lattr)
                              end;
-                    arrays,
+                    arrays, arrayc,
                     records: gen1(40(*mov*),lattr.typtr^.size);
                     files: error(146)
                   end;
@@ -6329,7 +6387,7 @@ end;
                 { establish the minimum statement level a goto appeared at }
                 if minlvl > stalvl then minlvl := stalvl;
                 if ttop = ttop1 then
-                  genujpxjp(57(*ujp*),labname)
+                  genujpxjpcal(57(*ujp*),labname)
                 else begin { interprocedural goto }
                   genipj(66(*ipj*),level-vlevel,labname);
                   ipcref := true
@@ -6370,7 +6428,7 @@ end;
         statement(fsys + [elsesy]);
         sublvl;
         if sy = elsesy then
-          begin genlabel(lcix2); genujpxjp(57(*ujp*),lcix2);
+          begin genlabel(lcix2); genujpxjpcal(57(*ujp*),lcix2);
             putlabel(lcix1);
             insymbol;
             addlvl;
@@ -6400,7 +6458,7 @@ end;
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end
           else if not comptypes(lsp,intptr) then gen0t(58(*ord*),lsp);
-        genujpxjp(57(*ujp*),lcix);
+        genujpxjpcal(57(*ujp*),lcix);
         mesl(+intsize); { remove selector from stack }
         if sy = ofsy then insymbol else error(8);
         fstptr := nil; genlabel(laddr);
@@ -6449,7 +6507,7 @@ end;
                 statement(fsys + [semicolon]);
                 sublvl
               until not (sy in statbegsys);
-              if lpt3 <> nil then genujpxjp(57(*ujp*),laddr);
+              if lpt3 <> nil then genujpxjpcal(57(*ujp*),laddr);
             end;
           test := sy <> semicolon;
           if not test then insymbol
@@ -6462,7 +6520,7 @@ end;
           addlvl;
           statement(fsys + [semicolon]);
           sublvl;
-          genujpxjp(57(*ujp*),laddr);
+          genujpxjpcal(57(*ujp*),laddr);
           if sy = semicolon then insymbol
         end;
         putlabel(lcix);
@@ -6484,24 +6542,24 @@ end;
                     gen0t(76(*dup*),intptr); 
                     gen2(51(*ldc*),1,lmin);
                     gen2(53(*les*),ord('i'),0);
-                    genujpxjp(73(*tjp*),lelse2); 
+                    genujpxjpcal(73(*tjp*),lelse2); 
                     gen0t(76(*dup*),intptr);
                     gen2(51(*ldc*),1,lmax); 
                     gen2(49(*grt*),ord('i'),0);
-                    genujpxjp(73(*tjp*),lelse2);
+                    genujpxjpcal(73(*tjp*),lelse2);
                   end else gen2t(45(*chk*),lmin,lmax,intptr);
                   gen2(51(*ldc*),1,lmin); gen0(21(*sbi*)); genlabel(lcix);
-                  genujpxjp(44(*xjp*),lcix); putlabel(lcix);
+                  genujpxjpcal(44(*xjp*),lcix); putlabel(lcix);
                   repeat
                     with fstptr^ do
                       begin
                         while cslabs > lmin do begin
-                           if lelse > 0 then genujpxjp(57(*ujp*),lelse)
+                           if lelse > 0 then genujpxjpcal(57(*ujp*),lelse)
                            else gen0(60(*ujc error*));
                            lmin := lmin+1
                         end;
                         for i := cslabs to cslabe do
-                          genujpxjp(57(*ujp*),csstart);
+                          genujpxjpcal(57(*ujp*),csstart);
                         lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
                         putcas(lpt1);
                       end
@@ -6515,7 +6573,7 @@ end;
                       putcas(lpt1);
                     end
                   until fstptr = nil;
-                  if lelse > 0 then genujpxjp(57(*ujp*),lelse2);
+                  if lelse > 0 then genujpxjpcal(57(*ujp*),lelse2);
                   mesl(+intsize) { remove selector from stack }
                 end;
                 putlabel(laddr)
@@ -6564,7 +6622,7 @@ end;
         addlvl;
         statement(fsys);
         sublvl;
-        genujpxjp(57(*ujp*),laddr); putlabel(lcix)
+        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix)
       end (*whilestatement*) ;
 
       procedure forstatement;
@@ -6648,7 +6706,7 @@ end;
                 else error(145)
           end
         else begin error(55); skip(fsys + [dosy]) end;
-        genlabel(lcix); genujpxjp(33(*fjp*),lcix);
+        genlabel(lcix); genujpxjpcal(33(*fjp*),lcix);
         if sy = dosy then insymbol else error(54);
         addlvl;
         statement(fsys);
@@ -6658,14 +6716,14 @@ end;
           gen0t(58(*ord*),gattr.typtr);
         gen2t(54(*lod*),0,lcs-intsize*2,intptr);
         gen2(47(*equ*),ord(typind),1);
-        genujpxjp(73(*tjp*),lcix);
+        genujpxjpcal(73(*tjp*),lcix);
         gattr := lattr; load;
         if lsy=tosy then gen1t(34(*inc*),1,gattr.typtr)
         else  gen1t(31(*dec*),1,gattr.typtr);
         if debug and (lattr.typtr <> nil) then 
           checkbnds(lattr.typtr);
         store(lattr);
-        genujpxjp(57(*ujp*),laddr); putlabel(lcix);
+        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix);
         gattr := lattr; loadaddress; gen0(79(*inv*));
         lc := llc;
         if lcp <> nil then lcp^.forcnt := lcp^.forcnt-1
@@ -6694,7 +6752,8 @@ end;
                       packcom := gattr.packcom;
                       ptrref := gattr.ptrref;
                       define := false;
-                      modnam := nil
+                      modnam := nil;
+                      inilst := nil;
                     end;
                   if gattr.access = drct then
                     with display[top] do
@@ -6734,7 +6793,7 @@ end;
       var test: boolean; lcp: ctp; lattr: attr;
           endlbl, noexplbl, bgnexplbl, onendlbl,onstalbl: integer;
       begin genlabel(endlbl); genlabel(noexplbl); genlabel(bgnexplbl);
-        genujpxjp(84(*bge*),bgnexplbl);
+        genujpxjpcal(84(*bge*),bgnexplbl);
         addlvl;
         repeat
           statement(fsys + [semicolon,onsy,exceptsy,elsesy]);
@@ -6748,7 +6807,7 @@ end;
             until not (sy in statbegsys);
           end;
         sublvl;
-        genujpxjp(57(*ujp*),noexplbl);
+        genujpxjpcal(57(*ujp*),noexplbl);
         putlabel(bgnexplbl);
         if (sy <> onsy) and (sy <> exceptsy) then error(24);
         while sy = onsy do begin insymbol; genlabel(onstalbl); 
@@ -6773,24 +6832,24 @@ end;
               gen0t(76(*dup*),nilptr);{ make copy of original vector }
               gattr := lattr; loadaddress; { load compare vector }
               gen2(47(*equ*),ord('a'),lsize);
-              genujpxjp(73(*tjp*),onstalbl);
+              genujpxjpcal(73(*tjp*),onstalbl);
             end else begin error(2); skip(fsys+[onsy,exceptsy,elsesy]) end;
             test := sy <> comma;
             if not test then insymbol
           until test;
-          genujpxjp(57(*ujp*),onendlbl);
+          genujpxjpcal(57(*ujp*),onendlbl);
           if sy = exceptsy then insymbol else 
             begin error(23); skip(fsys+[onsy,exceptsy,elsesy]) end;
           putlabel(onstalbl);
           addlvl;
           statement(fsys+[exceptsy]);
           sublvl;
-          genujpxjp(57(*ujp*),endlbl);
+          genujpxjpcal(57(*ujp*),endlbl);
           putlabel(onendlbl)
         end;
         if sy = exceptsy then begin addlvl; 
           insymbol; statement(fsys+[elsesy]); sublvl; 
-          genujpxjp(57(*ujp*),endlbl)
+          genujpxjpcal(57(*ujp*),endlbl)
         end;
         gen0(86(*mse*));
         putlabel(noexplbl);
@@ -7012,6 +7071,11 @@ end;
       externalheader; { process external header files }
       initvirt { process virtual procedure/function sets }
     end;
+    { call initializer code strips }
+    while display[top].inilst <> nil do begin
+      ilp := display[top].inilst; display[top].inilst := ilp^.next;
+      genujpxjpcal(89(*cal*),ilp^.lab); dispose(ilp)
+    end;
     if sy = beginsy then insymbol else error(17);
     repeat
       repeat statement(fsys + [semicolon,endsy])
@@ -7209,7 +7273,7 @@ end;
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
-            genujpxjp(89(*cal*),nxtname); 
+            genujpxjpcal(89(*cal*),nxtname); 
             gen1(41(*mst*),0); gencupent(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
@@ -7421,7 +7485,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil
+      vmod := nil;
     end;
     enterid(cp)
   end;
@@ -7434,7 +7498,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil
+      vmod := nil;
     end;
     enterid(cp)
   end;
@@ -7482,7 +7546,7 @@ end;
           begin klass := vars; strassvr(name, '         '); idtype := realptr; 
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
             threat := false; forcnt := 0; part := ptval; hdr := false; 
-            vext := false; vmod := nil
+            vext := false; vmod := nil;
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -7635,7 +7699,7 @@ end;
       begin klass := vars; strassvr(name, '         '); idtype := nil; 
         vkind := actual; next := nil; vlev := 0; vaddr := 0; 
         threat := false; forcnt := 0; part := ptval; hdr := false; 
-        vext := false; vmod := nil
+        vext := false; vmod := nil;
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
@@ -7858,7 +7922,8 @@ end;
       mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
       mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
       mn[89] :=' cal'; mn[90] :=' ret'; mn[91] :=' cuv'; mn[92] :=' suv';
-      mn[93] :=' vbs'; mn[94] :=' vbe'; mn[95] :=' cvb';
+      mn[93] :=' vbs'; mn[94] :=' vbe'; mn[95] :=' cvb'; mn[96] :=' vis';
+      mn[97] :=' vip';
 
     end (*instrmnemonics*) ;
 
@@ -7979,6 +8044,7 @@ end;
       cdx[90] := 0;                    cdx[91] := 0;
       cdx[92] := 0;                    cdx[93] := +intsize;
       cdx[94] := 0;                    cdx[95] := 0;
+      cdx[96] := 0;                    cdx[97] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
@@ -8116,13 +8182,13 @@ begin
   with display[0] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
           packing := false; packcom := false; ptrref := false; define := true;
-          modnam := nil; occur := blck; bname := nil end;
+          modnam := nil; inilst := nil; occur := blck; bname := nil end;
   enterstdtypes; stdnames; entstdnames; enterundecl;
   top := 1; level := 1;
   with display[1] do
     begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
           packing := false; packcom := false; ptrref := false; define := true;
-          modnam := nil; occur := blck; bname := nil end;
+          modnam := nil; inilst := nil; occur := blck; bname := nil end;
 
   (*compile:*)
   (**********)
