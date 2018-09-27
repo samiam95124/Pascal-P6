@@ -148,7 +148,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 97;   { maximum number of instructions }
+   maxins     = 102;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -2614,7 +2614,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82: 
+          45,50,54,56,74,62,63,81,82,101,102: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -2865,9 +2865,15 @@ end;
     end;
     filecomponent := f
   end;
-    
+  
+  function arrayt(fsp: stp): boolean;
+  begin
+    arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
+  end;
+  
   function comptypes{(fsp1,fsp2: stp) : boolean};
     (*decide whether structures pointed at by fsp1 and fsp2 are compatible*)
+    var ty1, ty2: stp;
   begin
     comptypes := false; { set default is false }
     { remove any subranges }
@@ -2877,7 +2883,8 @@ end;
     if fsp1 = fsp2 then comptypes := true
     else
       if (fsp1 <> nil) and (fsp2 <> nil) then
-        if fsp1^.form = fsp2^.form then
+        { if the structure forms are the same, or they are both array types }
+        if (fsp1^.form = fsp2^.form) or (arrayt(fsp1) = arrayt(fsp2)) then
           case fsp1^.form of
             scalar: ;
             { Subranges are compatible if either type is a subrange of the
@@ -2896,9 +2903,25 @@ end;
                                    not fsp1^.matchpack or
                                    not fsp2^.matchpack)) or
                                 (fsp1^.elset = nil) or (fsp2^.elset = nil);
-            { Arrays are compatible if they are string types and equal in size }
-            arrays: comptypes := stringt(fsp1) and stringt(fsp2) and
-                                 (fsp1^.size = fsp2^.size );
+            { Arrays are compatible if they are string types and equal in size,
+              or are one or both containers, equally packed, and with equal
+              base types }
+            arrays,
+            arrayc: begin
+              if ((fsp1^.form = arrayc) or (fsp2^.form = arrayc)) and
+                 (fsp1^.packing = fsp2^.packing) then begin
+                { one or both are containers and have same packing status }
+                if fsp1^.form = arrays then ty1 := fsp1^.aeltype 
+                else ty1 := fsp1^.abstype;
+                if fsp2^.form = arrays then ty2 := fsp2^.aeltype 
+                else ty2 := fsp2^.abstype;
+                comptypes := ty1 = ty2 { compatible if bases are equal }
+              end else
+                { note containers have no size to compare, but will test as 
+                  compatible arrays before this string test is applied }
+                comptypes := stringt(fsp1) and stringt(fsp2) and 
+                             (fsp1^.size = fsp2^.size );
+            end;
             { Pointers, must either be the same type or aliases of the same
               type, or one must be nil. The nil pointer is indicated by a nil
               base type, which is identical to a base type in error. Either
@@ -3123,6 +3146,27 @@ end;
               end
     end
   end (*checkbnds*);
+  
+  { find number of containers }
+  function containers(lsp: stp): integer;
+  var cc: integer;
+  begin cc := 0;
+    while lsp <> nil do
+      if lsp^.form = arrayc then begin lsp := lsp^.abstype; cc := cc+1 end
+      else lsp := nil;
+    containers := cc
+  end;
+  
+  { find base size of container series }
+  function containerbase(lsp: stp): integer;
+  var cc: integer; bp: stp;
+  begin cc := 0; bp := nil;
+    while lsp <> nil do
+      if lsp^.form = arrayc then begin lsp := lsp^.abstype; cc := cc+1 end
+      else begin bp := lsp; lsp := nil end;
+    if bp = nil then containerbase := 0
+    else containerbase := bp^.size
+  end;
     
   procedure load;
   begin
@@ -3187,6 +3231,12 @@ end;
                      inxd:   error(404)
                    end;
             expr:  error(405)
+          end;
+          if typtr^.form = arrayc then begin 
+            { it's a container, load a complex pointer based on that }
+            gen0(98(*lcp*));
+            { if level is at bottom, simplify the template }
+            if containers(typtr) = 1 then gen1t(35(*ind*),0,nilptr)
           end;
           kind := varbl; access := indrct; idplmt := 0; packing := false;
           symptr := nil { break variable association }
@@ -3733,15 +3783,18 @@ end;
           { file was not loaded, we load and swap so that it ends up
             on the bottom.}
           gen1(37(*lao*),outputptr^.vaddr);
-          if lsp <> nil then
+          if lsp <> nil then begin
             if lsp^.form <= subrange then begin
-            if lsp^.size < stackelsize then
-              { size of 2nd is minimum stack }
-              gen1(72(*swp*),stackelsize) 
-            else
-              gen1(72(*swp*),lsp^.size) { size of 2nd is operand }
-          end else
-            gen1(72(*swp*),ptrsize); { size of 2nd is pointer }
+              if lsp^.size < stackelsize then
+                { size of 2nd is minimum stack }
+                gen1(72(*swp*),stackelsize) 
+              else
+                gen1(72(*swp*),lsp^.size) { size of 2nd is operand }
+            end else
+              { 2nd is pointer, either simple or complex }
+              if lsp^.form = arrayc then gen1(72(*swp*),ptrsize*2)
+              else gen1(72(*swp*),ptrsize);
+          end;
           deffil := false
         end;
         if txt then begin
@@ -3817,15 +3870,25 @@ end;
                     begin
                       if lsp^.form = scalar then error(236)
                       else
-                        if stringt(lsp) then
-                          begin len := lsp^.size div charmax;
-                            if default then
-                                  gen2(51(*ldc*),1,len);
-                            gen2(51(*ldc*),1,len);
-                            if spad then gen1(30(*csp*),68(*wrsp*))
-                            else gen1(30(*csp*),10(*wrs*))
-                          end
-                        else error(116)
+                        if stringt(lsp) then begin
+                          { the formulation of string is a bit unfortunate for
+                            containers because the length of string is at the
+                            end/tos. }
+                          if lsp^.form = arrayc then begin { complex }
+                            { if fielded, have to bring the template length to
+                              to the top }
+                            if not default then gen1(72(*swp*),stackelsize)
+                            { otherwise just make a copy of the template 
+                              length }
+                            else gen0t(76(*dup*),nilptr)
+                          end else begin { standard array }
+                            len := lsp^.size div charmax;
+                            if default then gen2(51(*ldc*),1,len);
+                            gen2(51(*ldc*),1,len)
+                          end;
+                          if spad then gen1(30(*csp*),68(*wrsp*))
+                          else gen1(30(*csp*),10(*wrs*))
+                        end else error(116)
                     end
         end else begin { binary file }
           if not comptypes(lsp1^.filtype,lsp) then error(129);
@@ -3862,7 +3925,7 @@ end;
       if llkey = 12 then (*writeln*)
         gen1(30(*csp*),22(*wln*));
       { remove the file pointer from stack }
-      gen1(71(*dmp*),ptrsize);
+      gen1(71(*dmp*),ptrsize)
     end (*write*) ;
 
     procedure packprocedure;
@@ -5671,13 +5734,6 @@ end;
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
           test: boolean; maxpar, curpar: integer; cc: integer; ilp: inilbp;
-    function containers(lsp: stp): integer;
-    var cc: integer;
-    begin cc := 0;
-      if lsp <> nil then 
-        while lsp^.form = arrayc do begin lsp := lsp^.abstype; cc := cc+1 end;
-      containers := cc
-    end;
     begin nxt := nil;
       repeat { id:type group }
         maxpar := 0;
@@ -6290,7 +6346,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean;
+        var lattr, lattr2: attr; tagasc: boolean; cc: integer;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -6353,7 +6409,40 @@ end;
                                end;
                                store(lattr)
                              end;
-                    arrays, arrayc,
+                    arrays, arrayc: begin
+                      if (lattr.typtr^.form = arrayc) or 
+                         (gattr.typtr^.form = arrayc) then begin 
+                        { one or both are containers, find the index level }
+                        if lattr.typtr^.form = arrayc then 
+                          cc := containers(lattr.typtr)
+                        else
+                          cc := containers(gattr.typtr);
+                        if gattr.typtr^.form = arrays then begin 
+                          { right is fixed } 
+                          if cc = 1 then
+                            { load simple template }
+                            gen2(51(*ldc*),1,gattr.typtr^.size)
+                          else { *** load complex template. These are stored 
+                                     with fixed arrays. ***}
+                        end else if lattr.typtr^.form = arrays then begin
+                          { left is fixed }
+                          if cc = 1 then
+                            { load simple template }
+                            gen2(51(*ldc*),1,lattr.typtr^.size)
+                          else { *** load complex template. These are stored 
+                                     with fixed arrays. ***}
+                          gen1(72(*swp*),ptrsize*2) { swap under right side }           
+                        end;
+                        { compare templates }
+                        if cc = 1 then gen0(99(*cps*)) { simple compare }
+                        else gen1(100(*cpc*),cc); { complex compare }
+                        { assign complex pointer }
+                        if cc = 1 then gen2(101(*aps*),cc,containerbase(gattr.typtr))
+                        else gen2(102(*apc*),cc,containerbase(gattr.typtr))
+                      end else
+                        { standard array assign }
+                        gen1(40(*mov*),lattr.typtr^.size)
+                    end;
                     records: gen1(40(*mov*),lattr.typtr^.size);
                     files: error(146)
                   end;
@@ -7897,33 +7986,34 @@ end;
     procedure instrmnemonics;
     begin
       { ??? memnemonics are placeholders }
-      mn[ 0] :=' abi'; mn[ 1] :=' abr'; mn[ 2] :=' adi'; mn[ 3] :=' adr';
-      mn[ 4] :=' and'; mn[ 5] :=' dif'; mn[ 6] :=' dvi'; mn[ 7] :=' dvr';
-      mn[ 8] :=' ???'; mn[ 9] :=' flo'; mn[10] :=' flt'; mn[11] :=' inn';
-      mn[12] :=' int'; mn[13] :=' ior'; mn[14] :=' mod'; mn[15] :=' mpi';
-      mn[16] :=' mpr'; mn[17] :=' ngi'; mn[18] :=' ngr'; mn[19] :=' not';
-      mn[20] :=' odd'; mn[21] :=' sbi'; mn[22] :=' sbr'; mn[23] :=' sgs';
-      mn[24] :=' sqi'; mn[25] :=' sqr'; mn[26] :=' sto'; mn[27] :=' trc';
-      mn[28] :=' uni'; mn[29] :=' stp'; mn[30] :=' csp'; mn[31] :=' dec';
-      mn[32] :=' ent'; mn[33] :=' fjp'; mn[34] :=' inc'; mn[35] :=' ind';
-      mn[36] :=' ixa'; mn[37] :=' lao'; mn[38] :=' lca'; mn[39] :=' ldo';
-      mn[40] :=' mov'; mn[41] :=' mst'; mn[42] :=' ret'; mn[43] :=' sro';
-      mn[44] :=' xjp'; mn[45] :=' chk'; mn[46] :=' cup'; mn[47] :=' equ';
-      mn[48] :=' geq'; mn[49] :=' grt'; mn[50] :=' lda'; mn[51] :=' ldc';
-      mn[52] :=' leq'; mn[53] :=' les'; mn[54] :=' lod'; mn[55] :=' neq';
-      mn[56] :=' str'; mn[57] :=' ujp'; mn[58] :=' ord'; mn[59] :=' chr';
-      mn[60] :=' ujc';
+      mn[  0] :=' abi'; mn[  1] :=' abr'; mn[  2] :=' adi'; mn[  3] :=' adr';
+      mn[  4] :=' and'; mn[  5] :=' dif'; mn[  6] :=' dvi'; mn[  7] :=' dvr';
+      mn[  8] :=' ???'; mn[  9] :=' flo'; mn[ 10] :=' flt'; mn[ 11] :=' inn';
+      mn[ 12] :=' int'; mn[ 13] :=' ior'; mn[ 14] :=' mod'; mn[ 15] :=' mpi';
+      mn[ 16] :=' mpr'; mn[ 17] :=' ngi'; mn[ 18] :=' ngr'; mn[ 19] :=' not';
+      mn[ 20] :=' odd'; mn[ 21] :=' sbi'; mn[ 22] :=' sbr'; mn[ 23] :=' sgs';
+      mn[ 24] :=' sqi'; mn[ 25] :=' sqr'; mn[ 26] :=' sto'; mn[ 27] :=' trc';
+      mn[ 28] :=' uni'; mn[ 29] :=' stp'; mn[ 30] :=' csp'; mn[ 31] :=' dec';
+      mn[ 32] :=' ent'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
+      mn[ 36] :=' ixa'; mn[ 37] :=' lao'; mn[ 38] :=' lca'; mn[ 39] :=' ldo';
+      mn[ 40] :=' mov'; mn[ 41] :=' mst'; mn[ 42] :=' ret'; mn[ 43] :=' sro';
+      mn[ 44] :=' xjp'; mn[ 45] :=' chk'; mn[ 46] :=' cup'; mn[ 47] :=' equ';
+      mn[ 48] :=' geq'; mn[ 49] :=' grt'; mn[ 50] :=' lda'; mn[ 51] :=' ldc';
+      mn[ 52] :=' leq'; mn[ 53] :=' les'; mn[ 54] :=' lod'; mn[ 55] :=' neq';
+      mn[ 56] :=' str'; mn[ 57] :=' ujp'; mn[ 58] :=' ord'; mn[ 59] :=' chr';
+      mn[ 60] :=' ujc';                                         
       { new instruction memonics for p5/p6 }
-      mn[61] :=' rnd'; mn[62] :=' pck'; mn[63] :=' upk'; mn[64] :=' rgs';
-      mn[65] :=' ???'; mn[66] :=' ipj'; mn[67] :=' cip'; mn[68] :=' lpa';
-      mn[69] :=' ???'; mn[70] :=' ???'; mn[71] :=' dmp'; mn[72] :=' swp';
-      mn[73] :=' tjp'; mn[74] :=' lip'; mn[75] :=' ckv'; mn[76] :=' dup';
-      mn[77] :=' cke'; mn[78] :=' cks'; mn[79] :=' inv'; mn[80] :=' ckl';
-      mn[81] :=' cta'; mn[82] :=' ivt'; mn[83] :=' xor'; mn[84] :=' bge';
-      mn[85] :=' ede'; mn[86] :=' mse'; mn[87] :=' cjp'; mn[88] :=' lnp';
-      mn[89] :=' cal'; mn[90] :=' ret'; mn[91] :=' cuv'; mn[92] :=' suv';
-      mn[93] :=' vbs'; mn[94] :=' vbe'; mn[95] :=' cvb'; mn[96] :=' vis';
-      mn[97] :=' vip';
+      mn[ 61] :=' rnd'; mn[ 62] :=' pck'; mn[ 63] :=' upk'; mn[ 64] :=' rgs';
+      mn[ 65] :=' ???'; mn[ 66] :=' ipj'; mn[ 67] :=' cip'; mn[ 68] :=' lpa';
+      mn[ 69] :=' ???'; mn[ 70] :=' ???'; mn[ 71] :=' dmp'; mn[ 72] :=' swp';
+      mn[ 73] :=' tjp'; mn[ 74] :=' lip'; mn[ 75] :=' ckv'; mn[ 76] :=' dup';
+      mn[ 77] :=' cke'; mn[ 78] :=' cks'; mn[ 79] :=' inv'; mn[ 80] :=' ckl';
+      mn[ 81] :=' cta'; mn[ 82] :=' ivt'; mn[ 83] :=' xor'; mn[ 84] :=' bge';
+      mn[ 85] :=' ede'; mn[ 86] :=' mse'; mn[ 87] :=' cjp'; mn[ 88] :=' lnp';
+      mn[ 89] :=' cal'; mn[ 90] :=' ret'; mn[ 91] :=' cuv'; mn[ 92] :=' suv';
+      mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
+      mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
+      mn[101] :=' aps'; mn[102] :=' apc';
 
     end (*instrmnemonics*) ;
 
@@ -7996,55 +8086,58 @@ end;
       { [sam] if your sizes are not even multiples of
         stackelsize, you are going to need to compensate this.
         entries marked with * go to secondary table }
-      cdx[ 0] :=  0;                   cdx[ 1] :=  0;                 
-      cdx[ 2] := +intsize;             cdx[ 3] := +realsize;
-      cdx[ 4] := +intsize;             cdx[ 5] := +setsize;           
-      cdx[ 6] := +intsize;             cdx[ 7] := +realsize;
-      cdx[ 8] :=  0;                   cdx[ 9] := +intsize-realsize; 
-      cdx[10] :=  -realsize+intsize;   cdx[11] := +setsize;
-      cdx[12] := +setsize;             cdx[13] := +intsize; 
-      cdx[14] := +intsize;             cdx[15] := +intsize;
-      cdx[16] := +realsize;            cdx[17] :=  0; 
-      cdx[18] :=  0;                   cdx[19] :=  2{*};
-      cdx[20] :=  0;                   cdx[21] := +intsize; 
-      cdx[22] := +realsize;            cdx[23] := +intsize-setsize;
-      cdx[24] :=  0;                   cdx[25] :=  0; 
-      cdx[26] := 1{*};                 cdx[27] := +realsize-intsize;
-      cdx[28] := +setsize;             cdx[29] :=  0; 
-      cdx[30] :=  0;                   cdx[31] :=  2{*};
-      cdx[32] :=  0;                   cdx[33] := +intsize; 
-      cdx[34] :=  2{*};                cdx[35] :=  3{*};
-      cdx[36] := +intsize;             cdx[37] := -adrsize; 
-      cdx[38] := -adrsize;             cdx[39] :=  4{*};
-      cdx[40] := +adrsize*2;           cdx[41] :=  0; 
-      cdx[42] :=  2{*};                cdx[43] :=  5{*};
-      cdx[44] := +intsize;             cdx[45] :=  2{*}; 
-      cdx[46] :=  0;                   cdx[47] :=  6{*};
-      cdx[48] :=  6{*};                cdx[49] :=  6{*}; 
-      cdx[50] := -adrsize;             cdx[51] :=  4{*};
-      cdx[52] :=  6{*};                cdx[53] :=  6{*}; 
-      cdx[54] :=  4{*};                cdx[55] :=  6{*};
-      cdx[56] :=  5{*};                cdx[57] :=  0; 
-      cdx[58] :=  2{*};                cdx[59] :=  0;
-      cdx[60] :=  0;                   cdx[61] :=  +realsize-intsize; 
-      cdx[62] := +adrsize*3;           cdx[63] := +adrsize*3;
-      cdx[64] := +intsize*2-setsize;   cdx[65] :=  0; 
-      cdx[66] :=  0;                   cdx[67] := +ptrsize;
-      cdx[68] := -adrsize*2;           cdx[69] :=  0; 
-      cdx[70] :=  0;                   cdx[71] := +ptrsize;
-      cdx[72] :=  0;                   cdx[73] := +intsize; 
-      cdx[74] := -adrsize*2;           cdx[75] :=  2{*};
-      cdx[76] :=  4{*};                cdx[77] :=  +intsize*2;
-      cdx[78] := -intsize;             cdx[79] :=  +adrsize;
-      cdx[80] :=  2{*};                cdx[81] :=  0;
-      cdx[82] :=  0;                   cdx[83] := +intsize;
-      cdx[84] := -adrsize;             cdx[85] := +adrsize;
-      cdx[86] := 0;                    cdx[87] := 0;
-      cdx[88] := 0;                    cdx[89] := 0;
-      cdx[90] := 0;                    cdx[91] := 0;
-      cdx[92] := 0;                    cdx[93] := +intsize;
-      cdx[94] := 0;                    cdx[95] := 0;
-      cdx[96] := 0;                    cdx[97] := 0;
+      cdx[  0] :=  0;                   cdx[  1] :=  0;                 
+      cdx[  2] := +intsize;             cdx[  3] := +realsize;
+      cdx[  4] := +intsize;             cdx[  5] := +setsize;           
+      cdx[  6] := +intsize;             cdx[  7] := +realsize;
+      cdx[  8] :=  0;                   cdx[  9] := +intsize-realsize; 
+      cdx[ 10] :=  -realsize+intsize;   cdx[ 11] := +setsize;
+      cdx[ 12] := +setsize;             cdx[ 13] := +intsize; 
+      cdx[ 14] := +intsize;             cdx[ 15] := +intsize;
+      cdx[ 16] := +realsize;            cdx[ 17] :=  0; 
+      cdx[ 18] :=  0;                   cdx[ 19] :=  2{*};
+      cdx[ 20] :=  0;                   cdx[ 21] := +intsize; 
+      cdx[ 22] := +realsize;            cdx[ 23] := +intsize-setsize;
+      cdx[ 24] :=  0;                   cdx[ 25] :=  0; 
+      cdx[ 26] := 1{*};                 cdx[ 27] := +realsize-intsize;
+      cdx[ 28] := +setsize;             cdx[ 29] :=  0; 
+      cdx[ 30] :=  0;                   cdx[ 31] :=  2{*};
+      cdx[ 32] :=  0;                   cdx[ 33] := +intsize; 
+      cdx[ 34] :=  2{*};                cdx[ 35] :=  3{*};
+      cdx[ 36] := +intsize;             cdx[ 37] := -adrsize; 
+      cdx[ 38] := -adrsize;             cdx[ 39] :=  4{*};
+      cdx[ 40] := +adrsize*2;           cdx[ 41] :=  0; 
+      cdx[ 42] :=  2{*};                cdx[ 43] :=  5{*};
+      cdx[ 44] := +intsize;             cdx[ 45] :=  2{*}; 
+      cdx[ 46] :=  0;                   cdx[ 47] :=  6{*};
+      cdx[ 48] :=  6{*};                cdx[ 49] :=  6{*}; 
+      cdx[ 50] := -adrsize;             cdx[ 51] :=  4{*};
+      cdx[ 52] :=  6{*};                cdx[ 53] :=  6{*}; 
+      cdx[ 54] :=  4{*};                cdx[ 55] :=  6{*};
+      cdx[ 56] :=  5{*};                cdx[ 57] :=  0; 
+      cdx[ 58] :=  2{*};                cdx[ 59] :=  0;
+      cdx[ 60] :=  0;                   cdx[ 61] :=  +realsize-intsize; 
+      cdx[ 62] := +adrsize*3;           cdx[ 63] := +adrsize*3;
+      cdx[ 64] := +intsize*2-setsize;   cdx[ 65] :=  0; 
+      cdx[ 66] :=  0;                   cdx[ 67] := +ptrsize;
+      cdx[ 68] := -adrsize*2;           cdx[ 69] :=  0; 
+      cdx[ 70] :=  0;                   cdx[ 71] := +ptrsize;
+      cdx[ 72] :=  0;                   cdx[ 73] := +intsize; 
+      cdx[ 74] := -adrsize*2;           cdx[ 75] :=  2{*};
+      cdx[ 76] :=  4{*};                cdx[ 77] :=  +intsize*2;
+      cdx[ 78] := -intsize;             cdx[ 79] :=  +adrsize;
+      cdx[ 80] :=  2{*};                cdx[ 81] :=  0;
+      cdx[ 82] :=  0;                   cdx[ 83] := +intsize;
+      cdx[ 84] := -adrsize;             cdx[ 85] := +adrsize;
+      cdx[ 86] := 0;                    cdx[ 87] := 0;
+      cdx[ 88] := 0;                    cdx[ 89] := 0;
+      cdx[ 90] := 0;                    cdx[ 91] := 0;
+      cdx[ 92] := 0;                    cdx[ 93] := +intsize;
+      cdx[ 94] := 0;                    cdx[ 95] := 0;
+      cdx[ 96] := 0;                    cdx[ 97] := 0;
+      cdx[ 98] := -adrsize;             cdx[ 99] := 0;
+      cdx[100] := 0;                    cdx[101] := +ptrsize*4;
+      cdx[102] := +ptrsize*4;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
