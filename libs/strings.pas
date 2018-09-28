@@ -55,7 +55,7 @@
 * copy overwrites any destination string without returning any disposing      *
 * of a previous string.                                                       *
 *                                                                             *
-* Naming conventions:                                                         *
+* NAMING CONVENTIONS:                                                         *
 *                                                                             *
 * There are three basic types of strings, and any of the parameters of a      *
 * routine could be any type. These are fixed, pointer and padded. Fixed       *
@@ -74,7 +74,7 @@
 * "value" is appended. Routines that place numbers in strings or output them  *
 * can appear with formatting field lengths, indicated by an appended "f".     *
 *                                                                             *
-* History:                                                                    *
+* HISTORY:                                                                    *
 *                                                                             *
 * Strlib was created in 1996 as one of the first modules after the I80386     *
 * implementations. It was overhauled and greatly expanded in 2004 with the    *
@@ -83,9 +83,49 @@
 * functions were expanded. In addition, a string temp management system was   *
 * incorporated, which allowed dynamic strings to appear as function results.  *
 *                                                                             *
+* STANDARD:                                                                   *
+*                                                                             *
+* This source complies with the Pascaline standard language.                  *
+*                                                                             *
+* FORMATTING:                                                                 *
+*                                                                             *
+* The formatting here is compliant with prefix based automatic formatting and *
+* documenting tools. It maintains the source within 80 characters.            *
+*                                                                             *
+* TO DO:                                                                      *
+*                                                                             *
+* 1. The Pascaline documented object interface needs to be implemented.       *
+*                                                                             *
+* 2. It has been proposed to add regular expressions to the search.           *
+*                                                                             *
 ******************************************************************************}
 
-module strings(input, output);
+module strings(input, output, error);
+
+var
+
+{ No string block is active }            NoStringBlock,
+{ No room in outermost block }           OuterBlockFull,
+{ Current string block is full }         CurrentBlockFull,
+{ String passed is nil }                 StringNil,
+{ String was too large for destination } StringDestinationOverflow,
+{ Sring index out of range }             IndexOutOfRange,
+{ Repeat cont was negative }             NegativeRepeatCount,
+{ Word array index was out of range }    WordIndexOutOfRange,
+{ String was too large for destination } StringReadOverflow,
+{ Format too large for destination }     FormatTooLarge,
+{ field specified is invalid }           InvalidFieldSpecification,
+{ Radix was negative }                   NegativeValueNondecimal,
+{ Number overflows space provided in 
+  format string }                        NumberOverflowsFormat,
+{ Negative sign not placed in format }   NegativeNotPlaced,
+{ Invalid real number }                  InvalidRealNumber,
+{ Invalid fraction specification }       InvalidFractionSpecification,
+{ Invalid radix }                        InvalidRadix,
+{ Invalid integer format }               InvalidIntegerFormat,
+{ Number too large }                     NumberTooLarge,
+{ Integer too large }                    IntegerTooLarge,
+{ Invalid real format }                  InvalidRealFormat: exception;
 
 function lcase(c: char): char; forward;
 overload function lcase(view s: pstring): pstring; forward;
@@ -322,10 +362,9 @@ overload function substcall(s: pstring; m: pstring; view r: string): pstring;
 overload function substcall(s: pstring; m: pstring; r: pstring): pstring;
    forward;
 
-{ need global replace/search, regular expressions }
-
 private
 
+{ *** This set of caluculations, should be automated as done in pint.pas *** }
 const maxpwr = 1000000000; { maximum power of 10 that fits into integer }
       maxhdg = 8;          { maximum number of hex digits in integer }
       maxdig = 11;         { maximum number of digits to hold integer (with 
@@ -345,33 +384,31 @@ type stkptr = ^strtrk; { string tracking pointer }
 
 var strstk: stkptr; { string blocks tracking stack }
     strfre: stkptr; { string blocks free list }
-
+
+
 {******************************************************************************
 
 Process string library error
 
-Outputs an error message using the special syslib function, then halts.
+Outputs an error message to the error output file, and then halts. This may
+need to be either directed towards a custom error file or handler, since we
+make two assumptions here:
+
+1. That the error is output as a single line before program termination.
+
+2. That the system may add its own preamble.
 
 ******************************************************************************}
 
 procedure error(view s: string);
 
-var i:     integer; { index for string }
-    pream: packed array [1..8] of char; { preamble string }
-    p:     pstring; { pointer to string }
-
 begin
 
-   pream := 'Strlib: '; { set preamble }
-   new(p, max(s)+8); { get string to hold }
-   for i := 1 to 8 do p^[i] := pream[i]; { copy preamble }
-   for i := 1 to max(s) do p^[i+8] := s[i]; { copy string }
-   ss_wrterr(p^); { output string }
-   dispose(p); { release storage }
-   halt { end the run }
+   { write error string to error output with preamble }
+   writeln(error, 'Strlib: ', s);
 
 end;
-
+
 {******************************************************************************
 
 Open new string tracking level
@@ -399,7 +436,7 @@ begin
    for i := 1 to maxstr do sp^.strings[i] := nil { clear string holders }
 
 end;
-
+
 {******************************************************************************
 
 Export string from tracking level
@@ -414,14 +451,14 @@ var i: 1..maxstr; { index for strings }
 
 begin
 
-   if strstk = nil then error('No active string block');
+   if strstk = nil then throw(NoStringBlock);
    { search for string in block }
    for i := 1 to maxstr do 
       { remove completely if found }
       if strstk^.strings[i] = p then strstk^.strings[i] := nil
 
 end;
-
+
 {******************************************************************************
 
 Move string to outter tracking block
@@ -446,13 +483,13 @@ begin
       { find lowest number free string entry }
       for i := maxstr downto 1 do 
          if strstk^.next^.strings[i] = nil then fs := i;
-      if fs = 0 then error('Upper string level is full');
+      if fs = 0 then throw(OuterBlockFull);
       strstk^.next^.strings[fs] := p { record new string }
 
    end
 
 end;
-
+
 {******************************************************************************
 
 Close string tracking level
@@ -468,7 +505,7 @@ var sp: stkptr;    { stack block pointer }
 
 begin
 
-   if strstk = nil then error('No active string block');
+   if strstk = nil then throw(NoStringBlock);
    { dispose of all active strings in block }
    for i := 1 to maxstr do 
       if strstk^.strings[i] <> nil then dispose(strstk^.strings[i]);
@@ -479,7 +516,7 @@ begin
    strstk := sp
 
 end;
-
+
 {******************************************************************************
 
 Allocate new string
@@ -502,13 +539,13 @@ begin
       fs := 0; { clear free string index }
       { find lowest number free string entry }
       for i := maxstr downto 1 do if strstk^.strings[i] = nil then fs := i;
-      if fs = 0 then error('Current string level is full');
+      if fs = 0 then throw(CurrentBlockFull);
       strstk^.strings[fs] := p { record new string }
 
    end
 
 end;
-
+
 {******************************************************************************
 
 Find lower case
@@ -540,7 +577,7 @@ var p: pstring;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
    p := copy(s^); { copy source to temp }
    lcases(p^); { convert that to lcase }
    
@@ -570,7 +607,7 @@ begin
    for i := 1 to max(s) do s[i] := lcase(s[i])
 
 end;
-
+
 {******************************************************************************
 
 Find upper case
@@ -602,7 +639,7 @@ var p: pstring;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
    p := copy(s^); { copy source to temp }
    ucases(p^); { convert that to ucase }
    
@@ -632,7 +669,7 @@ begin
    for i := 1 to max(s) do s[i] := ucase(s[i])
 
 end;
-
+
 {******************************************************************************
 
 Clear string
@@ -654,7 +691,7 @@ begin
    for i := 1 to max(s) do s[i] := ' ' { clear string }
 
 end;
-
+
 {******************************************************************************
 
 Find string length padded
@@ -689,11 +726,11 @@ overload function len(view s: pstring): integer;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
    len := max(s^)
 
 end;
-
+
 {******************************************************************************
 
 Copy string
@@ -719,7 +756,7 @@ begin
 
    ls := len(s); { calculate this only once }
    if ls > max(d) then { string too large }
-      error('String too large for destination');
+      throw(StringDestinationOverflow);
    for i := 1 to ls do d[i] := s[i]; { copy string into place }
    for i := ls+1 to max(d) do d[i] := ' ' { fill remainder }
 
@@ -753,7 +790,7 @@ overload function copy(view s: pstring) { source }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    copy := copy(s^) { return result }
 
@@ -768,7 +805,7 @@ begin
    copy(d^, s) { copy string padded }
 
 end;
-
+
 {******************************************************************************
 
 Concatenate strings
@@ -798,7 +835,7 @@ begin
    ls := len(s); { calculate this only once }
    ld := len(d);
    if ls+ls > max(d) then { strings too long }
-      error('String too long for destination');
+      throw(StringDestinationOverflow);
    for i := 1 to ls do d[i+ld] := s[i] { copy string into place }
 
 end;
@@ -823,7 +860,7 @@ overload function cat(s1, s2: pstring): pstring;
 
 begin
 
-   if (s1 = nil) or (s2 = nil) then error('String is nil');
+   if (s1 = nil) or (s2 = nil) then throw(StringNil);
    cat := cat(s1^, s2^); { concatenate to result }
 
 end;
@@ -832,7 +869,7 @@ overload function cat(view s1: string; s2: pstring): pstring;
 
 begin
 
-   if s2 = nil then error('String is nil');
+   if s2 = nil then throw(StringNil);
    cat := cat(s1, s2^); { concatenate to result }
 
 end;
@@ -841,11 +878,11 @@ overload function cat(s1: pstring; view s2: string): pstring;
 
 begin
 
-   if s1 = nil then error('String is nil');
+   if s1 = nil then throw(StringNil);
    cat := cat(s1^, s2); { concatenate to result }
 
 end;
-
+
 {******************************************************************************
 
 Compare strings
@@ -875,7 +912,7 @@ overload function compc(d: pstring; { destination }
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    compc := compc(d^, s^) { return result }
 
@@ -887,7 +924,7 @@ overload function compc(view d: string; { destination }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    compc := compc(d, s^) { return result }
 
@@ -899,12 +936,12 @@ overload function compc(     d: pstring; { destination }
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    compc := compc(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Compare strings padded
@@ -934,7 +971,7 @@ begin
    compcp := r { return match status }
 
 end;
-
+
 {******************************************************************************
 
 Compare strings caseless
@@ -968,7 +1005,7 @@ overload function comp(d, s: pstring) { destination }
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    comp := comp(d^, s^) { return result }
 
@@ -980,7 +1017,7 @@ overload function comp(view d: string; { destination }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    comp := comp(d, s^) { return result }
 
@@ -992,12 +1029,12 @@ overload function comp(     d: pstring; { destination }
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    comp := comp(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Compare strings caseless padded
@@ -1028,7 +1065,7 @@ begin
    compp := r { return match status }
 
 end;
-
+
 {******************************************************************************
 
 Compare string greater case sensitive
@@ -1072,7 +1109,7 @@ overload function gtrc(d, s: pstring) { destination }
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    gtrc := gtrc(d^, s^) { return result }
 
@@ -1084,7 +1121,7 @@ overload function gtrc(view d: string; { destination }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    gtrc := gtrc(d, s^) { return result }
 
@@ -1096,12 +1133,12 @@ overload function gtrc(     d: pstring; { destination }
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    gtrc := gtrc(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Compare string greater case sensitive padded
@@ -1142,7 +1179,7 @@ begin
    gtrcp := r { return match status }
 
 end;
-
+
 {******************************************************************************
 
 Compare string greater caseless
@@ -1186,7 +1223,7 @@ overload function gtr(d, s: pstring) { destination }
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    gtr := gtr(d^, s^) { return result }
 
@@ -1198,7 +1235,7 @@ overload function gtr(view d: string; { destination }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    gtr := gtr(d, s^) { return result }
 
@@ -1210,12 +1247,12 @@ overload function gtr(     d: pstring; { destination }
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    gtr := gtr(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Compare string greater caseless padded
@@ -1256,7 +1293,7 @@ begin
    gtrp := r { return match status }
 
 end;
-
+
 {******************************************************************************
 
 Find string index case sensitive
@@ -1307,7 +1344,7 @@ overload function indexc(d, s: pstring): integer;
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    indexc := indexc(d^, s^) { return result }
 
@@ -1317,7 +1354,7 @@ overload function indexc(view d: string; s: pstring): integer;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    indexc := indexc(d, s^) { return result }
 
@@ -1327,12 +1364,12 @@ overload function indexc(d: pstring; view s: string): integer;
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    indexc := indexc(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Find string index padded case sensitive
@@ -1381,7 +1418,7 @@ begin
    indexcp := i { return result }
 
 end;
-
+
 {******************************************************************************
 
 Find string index caseless
@@ -1433,7 +1470,7 @@ overload function index(d, s: pstring): integer;
 
 begin
 
-   if (d = nil) or (s = nil) then error('String is nil');
+   if (d = nil) or (s = nil) then throw(StringNil);
 
    index := index(d^, s^) { return result }
 
@@ -1443,7 +1480,7 @@ overload function index(view d: string; s: pstring): integer;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    index := index(d, s^) { return result }
 
@@ -1453,12 +1490,12 @@ overload function index(d: pstring; view s: string): integer;
 
 begin
 
-   if d = nil then error('String is nil');
+   if d = nil then throw(StringNil);
 
    index := index(d^, s) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Find string index caseless padded
@@ -1508,7 +1545,7 @@ begin
    indexp := i { return result }
 
 end;
-
+
 {******************************************************************************
 
 Extract substring
@@ -1537,9 +1574,9 @@ begin
 
       ln := len(s); { find length of source }
       if (l > ln) or (r > ln) then { index out of range }
-         error('Index out of range');
+         throw(IndexOutOfRange);
       if r-l+1 > max(d) then { too large for result }
-         error('String to large for destination');
+         throw(StringDestinationOverflow);
       for i := l to r do d[i-l+1] := s[i]; { transfer string contents }
       for i := r-l+1+1 to max(d) do d[i] := ' ' { clear remainder }
 
@@ -1561,7 +1598,7 @@ begin
 
       newstr(d, r-l+1); { allocate destination }
       if (l > max(s)) or (r > max(s)) then { index out of range }
-         error('Index out of range');
+         throw(IndexOutOfRange);
       for i := l to r do d^[i-l+1] := s[i] { transfer string contents }
 
    end;
@@ -1576,11 +1613,11 @@ overload function extract(view s:    pstring; { source }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
    extract := extract(s^, l, r); { perform extract to temp }
 
 end;
-
+
 {******************************************************************************
 
 Insert string
@@ -1607,9 +1644,9 @@ begin
    ld := len(d); { find lengths }
    ls := len(s);
    { check combined string larger than destination }
-   if ld+ls > max(d) then error('String to large for destination');
+   if ld+ls > max(d) then throw(StringDestinationOverflow);
    { check any part of destination off end of destination }
-   if p+ls > max(d) then error('Index out of range');
+   if p+ls > max(d) then throw(IndexOutOfRange);
    { move destination string up }
    for i := ld+ls downto p+ls do d[i] := d[i-ls];
    { move source into place }
@@ -1643,7 +1680,7 @@ overload function insert(sa, sb: pstring; p: integer): pstring;
 
 begin
 
-   if (sa = nil) or (sb = nil) then error('String is nil');
+   if (sa = nil) or (sb = nil) then throw(StringNil);
    insert := insert(sa^, sb^, p); { return insert }
 
 end; 
@@ -1652,7 +1689,7 @@ overload function insert(view sa: string; sb: pstring; p: integer): pstring;
 
 begin
 
-   if sb = nil then error('String is nil');
+   if sb = nil then throw(StringNil);
    insert := insert(sa, sb^, p); { insert to temp }
 
 end; 
@@ -1661,11 +1698,11 @@ overload function insert(sa: pstring; view sb: string; p: integer): pstring;
 
 begin
 
-   if sa = nil then error('String is nil');
+   if sa = nil then throw(StringNil);
    insert := insert(sa^, sb, p); { insert to temp }
 
 end; 
-
+
 {******************************************************************************
 
 Substitute string
@@ -1731,7 +1768,7 @@ overload function subst(view s: string; view m: string; r: pstring): pstring;
 
 begin 
 
-   if r = nil then error('String is nil'); 
+   if r = nil then throw(StringNil); 
 
    subst := subst(s, m, r^)
 
@@ -1741,7 +1778,7 @@ overload function subst(view s: string; m: pstring; view r: string): pstring;
 
 begin 
 
-   if m = nil then error('String is nil'); 
+   if m = nil then throw(StringNil); 
 
    subst := subst(s, m^, r)
 
@@ -1751,7 +1788,7 @@ overload function subst(view s: string; m: pstring; r: pstring): pstring;
 
 begin 
 
-   if (m = nil) or (r = nil) then error('String is nil'); 
+   if (m = nil) or (r = nil) then throw(StringNil); 
 
    subst := subst(s, m^, r^)
 
@@ -1761,7 +1798,7 @@ overload function subst(s: pstring; view m: string; view r: string): pstring;
 
 begin 
 
-   if s = nil then error('String is nil'); 
+   if s = nil then throw(StringNil); 
 
    subst := subst(s^, m, r)
 
@@ -1771,7 +1808,7 @@ overload function subst(s: pstring; view m: string; r: pstring): pstring;
 
 begin 
 
-   if (s = nil) or (r = nil) then error('String is nil'); 
+   if (s = nil) or (r = nil) then throw(StringNil); 
 
    subst := subst(s^, m, r^)
 
@@ -1781,7 +1818,7 @@ overload function subst(s: pstring; m: pstring; view r: string): pstring;
 
 begin 
 
-   if (s = nil) or (m = nil) then error('String is nil'); 
+   if (s = nil) or (m = nil) then throw(StringNil); 
 
    subst := subst(s^, m^, r)
 
@@ -1791,7 +1828,7 @@ overload function subst(s: pstring; m: pstring; r: pstring): pstring;
 
 begin 
 
-   if (s = nil) or (m = nil) or (r = nil) then error('String is nil'); 
+   if (s = nil) or (m = nil) or (r = nil) then throw(StringNil); 
 
    subst := subst(s^, m^, r^)
 
@@ -1854,7 +1891,7 @@ overload function substc(view s: string; view m: string; r: pstring): pstring;
 
 begin 
 
-   if r = nil then error('String is nil'); 
+   if r = nil then throw(StringNil); 
 
    substc := substc(s, m, r^)
 
@@ -1864,7 +1901,7 @@ overload function substc(view s: string; m: pstring; view r: string): pstring;
 
 begin 
 
-   if m = nil then error('String is nil'); 
+   if m = nil then throw(StringNil); 
 
    substc := substc(s, m^, r)
 
@@ -1874,7 +1911,7 @@ overload function substc(view s: string; m: pstring; r: pstring): pstring;
 
 begin 
 
-   if (m = nil) or (r = nil) then error('String is nil'); 
+   if (m = nil) or (r = nil) then throw(StringNil); 
 
    substc := substc(s, m^, r^)
 
@@ -1884,7 +1921,7 @@ overload function substc(s: pstring; view m: string; view r: string): pstring;
 
 begin 
 
-   if s = nil then error('String is nil'); 
+   if s = nil then throw(StringNil); 
 
    substc := substc(s^, m, r)
 
@@ -1894,7 +1931,7 @@ overload function substc(s: pstring; view m: string; r: pstring): pstring;
 
 begin 
 
-   if (s = nil) or (r = nil) then error('String is nil'); 
+   if (s = nil) or (r = nil) then throw(StringNil); 
 
    substc := substc(s^, m, r^)
 
@@ -1904,7 +1941,7 @@ overload function substc(s: pstring; m: pstring; view r: string): pstring;
 
 begin 
 
-   if (s = nil) or (m = nil) then error('String is nil'); 
+   if (s = nil) or (m = nil) then throw(StringNil); 
 
    substc := substc(s^, m^, r)
 
@@ -1914,7 +1951,7 @@ overload function substc(s: pstring; m: pstring; r: pstring): pstring;
 
 begin 
 
-   if (s = nil) or (m = nil) or (r = nil) then error('String is nil'); 
+   if (s = nil) or (m = nil) or (r = nil) then throw(StringNil); 
 
    substc := substc(s^, m^, r^)
 
@@ -2034,7 +2071,7 @@ overload function substall(view s: string; view m: string; r: pstring): pstring;
 
 begin
 
-   if r = nil then error('String is nil');
+   if r = nil then throw(StringNil);
 
    substall := substall(s, m, r^) { return result }
 
@@ -2044,7 +2081,7 @@ overload function substall(view s: string; m: pstring; view r: string): pstring;
 
 begin
 
-   if m = nil then error('String is nil');
+   if m = nil then throw(StringNil);
 
    substall := substall(s, m^, r) { return result }
 
@@ -2054,7 +2091,7 @@ overload function substall(view s: string; m: pstring; r: pstring): pstring;
 
 begin
 
-   if (m = nil) or (r = nil) then error('String is nil');
+   if (m = nil) or (r = nil) then throw(StringNil);
 
    substall := substall(s, m^, r^) { return result }
 
@@ -2064,7 +2101,7 @@ overload function substall(s: pstring; view m: string; view r: string): pstring;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    substall := substall(s^, m, r) { return result }
 
@@ -2074,7 +2111,7 @@ overload function substall(s: pstring; view m: string; r: pstring): pstring;
 
 begin
 
-   if (s = nil) or (r = nil) then error('String is nil');
+   if (s = nil) or (r = nil) then throw(StringNil);
 
    substall := substall(s^, m, r^) { return result }
 
@@ -2084,7 +2121,7 @@ overload function substall(s: pstring; m: pstring; view r: string): pstring;
 
 begin
 
-   if (s = nil) or (m = nil) then error('String is nil');
+   if (s = nil) or (m = nil) then throw(StringNil);
 
    substall := substall(s^, m^, r) { return result }
 
@@ -2094,7 +2131,7 @@ overload function substall(s: pstring; m: pstring; r: pstring): pstring;
 
 begin
 
-   if (s = nil) or (m = nil) or (r = nil) then error('String is nil');
+   if (s = nil) or (m = nil) or (r = nil) then throw(StringNil);
 
    substall := substall(s^, m^, r^) { return result }
 
@@ -2215,7 +2252,7 @@ overload function substcall(view s: string; view m: string; r: pstring): pstring
 
 begin
 
-   if r = nil then error('String is nil');
+   if r = nil then throw(StringNil);
 
    substcall := substcall(s, m, r^) { return result }
 
@@ -2225,7 +2262,7 @@ overload function substcall(view s: string; m: pstring; view r: string): pstring
 
 begin
 
-   if m = nil then error('String is nil');
+   if m = nil then throw(StringNil);
 
    substcall := substcall(s, m^, r) { return result }
 
@@ -2235,7 +2272,7 @@ overload function substcall(view s: string; m: pstring; r: pstring): pstring;
 
 begin
 
-   if (m = nil) or (r = nil) then error('String is nil');
+   if (m = nil) or (r = nil) then throw(StringNil);
 
    substcall := substcall(s, m^, r^) { return result }
 
@@ -2245,7 +2282,7 @@ overload function substcall(s: pstring; view m: string; view r: string): pstring
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    substcall := substall(s^, m, r) { return result }
 
@@ -2255,7 +2292,7 @@ overload function substcall(s: pstring; view m: string; r: pstring): pstring;
 
 begin
 
-   if (s = nil) or (r = nil) then error('String is nil');
+   if (s = nil) or (r = nil) then throw(StringNil);
 
    substcall := substcall(s^, m, r^) { return result }
 
@@ -2265,7 +2302,7 @@ overload function substcall(s: pstring; m: pstring; view r: string): pstring;
 
 begin
 
-   if (s = nil) or (m = nil) then error('String is nil');
+   if (s = nil) or (m = nil) then throw(StringNil);
 
    substcall := substcall(s^, m^, r) { return result }
 
@@ -2275,12 +2312,12 @@ overload function substcall(s: pstring; m: pstring; r: pstring): pstring;
 
 begin
 
-   if (s = nil) or (m = nil) or (r = nil) then error('String is nil');
+   if (s = nil) or (m = nil) or (r = nil) then throw(StringNil);
 
    substcall := substcall(s^, m^, r^) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Repeat string
@@ -2305,7 +2342,7 @@ var x, i: integer; { string indexes }
 
 begin
 
-   if r < 0 then error('Negative repeat count');
+   if r < 0 then throw(NegativeRepeatCount);
    newstr(d, max(s)*r); { allocate destiantion }
    if max(s) > 0 then begin { output has length }
 
@@ -2334,7 +2371,7 @@ overload function rep(s: pstring;  { source string }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    rep := rep(s^, r)
 
@@ -2355,7 +2392,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Trim leading and trailing spaces
@@ -2400,7 +2437,7 @@ overload function trim(s: pstring): pstring;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    trim := trim(s^)  { return result }
 
@@ -2422,7 +2459,7 @@ begin
       while si <= l do begin { move string characters }
 
          { check destination overrun }
-         if di > max(d) then error('String to large for destination');
+         if di > max(d) then throw(StringDestinationOverflow);
          d[di] := s[si]; { move single }
          si := si+1; { next }
          di := di+1
@@ -2439,7 +2476,7 @@ begin
    end else clears(d) { input empty, clear result as well }
 
 end;
-
+
 {******************************************************************************
 
 Count number of words
@@ -2483,12 +2520,12 @@ overload function words(s: pstring): integer;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    words := words(s^)
 
 end;
-
+
 {******************************************************************************
 
 Extract words
@@ -2604,7 +2641,7 @@ begin
    end;
    { check valid words are specified }
    if (l < 1) or (l > tw) or (r < 1) or (r > tw) or (l > r) then
-      error('Word index out of range');
+      throw(WordIndexOutOfRange);
    newstr(d, tc); { allocate a string for result }
    si := 1; { set 1st character source }
    di := 1; { set 1st character destination }
@@ -2629,7 +2666,7 @@ overload function extwords(s: pstring; l, r: integer): pstring;
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    extwords := extwords(s^, l, r)
 
@@ -2709,7 +2746,7 @@ begin
    end;
    { check valid words are specified }
    if (l < 1) or (l > tw) or (r < 1) or (r > tw)  or (l > r) then
-      error('Word index out of range');
+      throw(WordIndexOutOfRange);
    si := 1; { set 1st character source }
    di := 1; { set 1st character destination }
    for i := 1 to l-1 do skpwrd; { skip words to left of l }
@@ -2732,7 +2769,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Read string from file
@@ -2836,7 +2873,7 @@ var ovf: boolean;
 begin
 
    reads(f, s, ovf); { read string }
-   if ovf then error('String as read is too large')
+   if ovf then throw(StringReadOverflow)
 
 end;
 
@@ -2848,7 +2885,7 @@ var ovf: boolean;
 begin
 
    reads(f, s, ovf); { read string }
-   if ovf then error('String as read is too large')
+   if ovf then throw(StringReadOverflow)
 
 end;
 
@@ -2885,7 +2922,7 @@ begin
    reads(input, s)
 
 end;
-
+
 {******************************************************************************
 
 Place number in string
@@ -2971,7 +3008,7 @@ procedure plcchr(c: char);
 
 begin
 
-   if si > max(s) then error('Format too large for string');
+   if si > max(s) then throw(FormatTooLarge);
    s[si] := c; { place character }
    si := si+1 { next }
 
@@ -2981,8 +3018,8 @@ begin
 
    clears(s); { clear result }
    if f < 1 then { bad field }
-      error('Invalid field specification');
-   if (r <> 10) and (n < 0) then error('Negative value as non-decmimal');
+      throw(InvalidFieldSpecification);
+   if (r <> 10) and (n < 0) then throw(NegativeValueNondecimal);
    nums(os, n, r); { find number in ASCII }
    lhs := len(os); { set length of result }
    if lhs > f then f := lhs; { print minimum digits }
@@ -3062,12 +3099,12 @@ begin
          end;
          '-': if pi < 1 then s[pf] := ' ' { knock out sign }
               else if buff[pi] in digit then 
-                 error('Number does not fit within format specified')
+                 throw(NumberOverflowsFormat)
               else pi := pi-1; { back up over sign }
          '+': if pi > 0 then begin
 
             if buff[pi] in digit then 
-               error('Number does not fit within format specified');
+               throw(NumberOverflowsFormat);
             { if sign is negative, change, otherwise leave '+' }
             if buff[pi] = '-' then begin
 
@@ -3133,13 +3170,13 @@ begin
    end;
    if pi > 0 then begin
 
-      if buff[pi] in ['0'..'9'] then error('Number too large for format');
-      if buff[pi] = '-' then error('Negative sign not placed in format')
+      if buff[pi] in ['0'..'9'] then throw(NumberOverflowsFormat);
+      if buff[pi] = '-' then throw(NegativeNotPlaced)
 
    end
 
 end;
-
+
 {******************************************************************************
 
 Place integer in string
@@ -3258,7 +3295,7 @@ begin
    ints := s { return result }
 
 end;
-
+
 {******************************************************************************
 
 Place real in string
@@ -3314,7 +3351,7 @@ procedure plcchr(c: char);
 
 begin
 
-   if si > max(s) then error('Format too large for string');
+   if si > max(s) then throw(FormatTooLarge);
    s[si] := c; { place character }
    si := si+1 { next }
 
@@ -3336,7 +3373,7 @@ begin
 
    clears(s); { clear result }
    if f < 1 then { bad field }
-      error('Invalid field specification');
+      throw(InvalidFieldSpecification);
    si := 1; { set 1st output character }
    f := f-8; { find field remaining after essential places }
    if r = 0.0 then begin
@@ -3354,7 +3391,7 @@ begin
       while (abs(r) >= 10.0) and (e <= 308) do begin r := r/10.0; e := e+1 end;
       { check invalid exponent }
       if abs(e) > 308 then { invalid }
-         error('Invalid real number');
+         throw(InvalidRealNumber);
       if r < 0 then plcchr('-') else plcchr(' '); { output sign }
       { move to maximum representable digit in integer }
       p := maxpwr div 10; { set maximum power (that fits in integer) }
@@ -3450,7 +3487,7 @@ procedure plcchr(c: char);
 
 begin
 
-   if si > max(s) then error('Format too large for string');
+   if si > max(s) then throw(FormatTooLarge);
    s[si] := c; { place character }
    si := si+1 { next }
 
@@ -3472,9 +3509,9 @@ begin
 
    clears(s); { clear result }
    if fl < 1 then { bad field }
-      error('Invalid field specification');
+      throw(InvalidFieldSpecification);
    if fr < 1 then { bad field }
-      error('Invalid fraction specification');
+      throw(InvalidFractionSpecification);
    si := 1; { set 1st output character }
    i := trunc(r); { find "whole" part of real }
    { find number of digits in whole part }
@@ -3707,9 +3744,9 @@ begin
 
    end;
    { check didn't use all digits of integer (fraction digits left out is ok) }
-   if intp > 0 then error('Number too large for format');
+   if intp > 0 then throw(NumberOverflowsFormat);
    { check sign was negative, and not placed }
-   if sign and not sgnout then error('Negative sign was not placed');
+   if sign and not sgnout then throw(NegativeNotPlaced)
 
 end;
 
@@ -3725,7 +3762,7 @@ begin
    reals := s { return result }
 
 end;
-
+
 {******************************************************************************
 
 Output real "economy" format
@@ -3765,7 +3802,7 @@ procedure plcchr(c: char);
 
 begin
 
-   if si > max(s) then error('Format too large for string');
+   if si > max(s) then throw(FormatTooLarge);
    s[si] := c; { place character }
    si := si+1 { next }
 
@@ -3801,7 +3838,7 @@ end;
 begin
 
    if f < 1 then { bad field }
-      error('Invalid field specification');
+      throw(InvalidFieldSpecification);
    openstring; { start string temp level }
    p1 := reals(r); { place real in buffer }
    { find sign }
@@ -3912,7 +3949,7 @@ begin
    reales := s { return result }
    
 end;
-
+
 {******************************************************************************
 
 Place hex value in string
@@ -4000,7 +4037,7 @@ begin
    hexs := s { return result }
 
 end;
-
+
 {******************************************************************************
 
 Place octal value in string
@@ -4088,7 +4125,7 @@ begin
    octs := s { return result }
 
 end;
-
+
 {******************************************************************************
 
 Place binary value in string
@@ -4176,7 +4213,7 @@ begin
    bins := s { return result }
 
 end;
-
+
 {******************************************************************************
 
 Write decimal value
@@ -4282,7 +4319,7 @@ begin
    writere(output, r, 1)
 
 end;
-
+
 {******************************************************************************
 
 Write hex value
@@ -4367,7 +4404,7 @@ begin
    writeh(output, i, fmt) { output }
 
 end;
-
+
 {******************************************************************************
 
 Write octal value
@@ -4452,7 +4489,7 @@ begin
    writeo(output, i, fmt) { output }
 
 end;
-
+
 {******************************************************************************
 
 Write binary value
@@ -4537,7 +4574,7 @@ begin
    writeb(output, i, fmt) { output }
 
 end;
-
+
 {******************************************************************************
 
 Get number from string
@@ -4615,9 +4652,9 @@ begin
    else if r = 8 then digit := ['0'..'7'] { octal }
    else if r = 10 then digit := ['0'..'9'] { hexadecimal }
    else if r = 16 then digit := ['0'..'9', 'a'..'f', 'A'..'F'] { hexadecimal }
-   else error('Invalid radix'); { bad radix }
+   else throw(InvalidRadix); { bad radix }
    if not (chkchr in digit) then { invalid integer }
-      error('Invalid integer format');
+      throw(InvalidIntegerFormat);
    i := 0; { clear result }
    ovf := false; { set no overflow }
    while chkchr in digit do begin { read digits }
@@ -4633,12 +4670,12 @@ begin
    i := i*sgn; { set sign of result }
    skpspc; { skip any trailing spaces }
    if not endstr then { trailing garbage }
-      error('Invalid integer format');
+      throw(InvalidIntegerFormat);
 
    numv := i { return result }
 
 end;
-
+
 {******************************************************************************
 
 Get decimal integer from string
@@ -4655,7 +4692,7 @@ var ovf: boolean; { overflow flag }
 begin
 
    intv := numv(s, 10, ovf); { return result }
-   if ovf then error('Number too large')
+   if ovf then throw(NumberTooLarge)
 
 end;
 
@@ -4674,7 +4711,7 @@ overload function intv(s: pstring) { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    intv := intv(s^) { return result }
 
@@ -4686,12 +4723,12 @@ overload function intv(    s:   pstring; { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    intv := intv(s^, ovf) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Get hexadecimal from string
@@ -4708,7 +4745,7 @@ var ovf: boolean; { overflow flag }
 begin
 
    hexv := numv(s, 16, ovf); { return result }
-   if ovf then error('Number too large')
+   if ovf then throw(NumberTooLarge)
 
 end;
 
@@ -4727,7 +4764,7 @@ overload function hexv(s: pstring) { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    hexv := hexv(s^) { return result }
 
@@ -4739,12 +4776,12 @@ overload function hexv(    s:   pstring; { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    hexv := hexv(s^, ovf) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Get octal from string
@@ -4761,7 +4798,7 @@ var ovf: boolean; { overflow flag }
 begin
 
    octv := numv(s, 8, ovf); { return result }
-   if ovf then error('Number too large')
+   if ovf then throw(NumberTooLarge)
 
 end;
 
@@ -4780,7 +4817,7 @@ overload function octv(s: pstring) { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    octv := octv(s^) { return result }
 
@@ -4792,12 +4829,12 @@ overload function octv(    s:   pstring; { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    octv := octv(s^, ovf) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Get binary from string
@@ -4814,7 +4851,7 @@ var ovf: boolean; { overflow flag }
 begin
 
    binv := numv(s, 2, ovf); { return result }
-   if ovf then error('Number too large')
+   if ovf then throw(NumberTooLarge)
 
 end;
 
@@ -4833,7 +4870,7 @@ overload function binv(s: pstring) { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    binv := binv(s^) { return result }
 
@@ -4845,12 +4882,12 @@ overload function binv(    s:   pstring; { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    binv := binv(s^, ovf) { return result }
 
 end;
-
+
 {******************************************************************************
 
 Get real from string
@@ -4927,7 +4964,7 @@ begin
 
    end;
    if not (chkchr in ['0'..'9']) then { invalid integer }
-      error('Invalid integer format');
+      throw(InvalidIntegerFormat);
    i := 0; { clear result }
    while chkchr in ['0'..'9'] do begin { read digits }
 
@@ -4935,7 +4972,7 @@ begin
       { check for overflow }
       if (i > maxint div 10) or 
          ((i = maxint div 10) and (v > maxint mod 10)) then
-         error('Integer too large');
+         throw(IntegerTooLarge);
       i := i*10+v; { add in next value }
       getchr { next digit }
 
@@ -4956,7 +4993,7 @@ begin
 
          getchr; { skip '.' }
          if not (chkchr in ['0'..'9']) then
-            error('Invalid real format');
+            throw(InvalidRealFormat);
          p := 1.0; { initalize power }
          while chkchr in ['0'..'9'] do begin { parse digits }
 
@@ -4972,7 +5009,7 @@ begin
 
          getchr; { skip 'e' }
          if not (chkchr in ['0'..'9', '+', '-']) then
-            error('Invalid real format');
+            throw(InvalidRealFormat);
          getint(i); { get exponent }
          { find with exponent }
          if i < 0 then r := r/pwrten(i) else r := r*pwrten(i)
@@ -4982,7 +5019,7 @@ begin
    end;
    skpspc; { skip any trailing spaces }
    if not endstr then { trailing garbage }
-      error('Invalid real format');
+      throw(InvalidRealFormat);
 
    realv := r { return result }
 
@@ -4993,15 +5030,49 @@ overload function realv(s: pstring) { string containing integer }
 
 begin
 
-   if s = nil then error('String is nil');
+   if s = nil then throw(StringNil);
 
    realv := realv(s^) { return result }
 
 end;
-
-begin
+
+begin { init }
 
    strstk := nil; { clear string block tracking stack }
    strfre := nil { clear string block free stack }
+
+end;
+
+begin { deinit }
+
+   { handle exceptions in modules }
+   on NoStringBlock except                error('No string block is active')          
+   on OuterBlockFull except               error('No room in outermost block')         
+   on CurrentBlockFull except             error('Current string block is full')         
+   on StringNil except                    error('String passed is nil')                 
+   on StringDestinationOverflow except    
+      error('String was too large for destination') 
+   on IndexOutOfRange except              error('String index out of range')             
+   on NegativeRepeatCount except          error('Repeat cont was negative')             
+   on WordIndexOutOfRange except          
+      error('Word array index was out of range')    
+   on StringReadOverflow except           
+      error('String was too large for destination') 
+   on FormatTooLarge except               
+      error('Format too large for destination')     
+   on InvalidFieldSpecification except    error('field specified is invalid')           
+   on NegativeValueNondecimal except      error('Radix was negative')                   
+   on NumberOverflowsFormat except        
+      error('Number overflows space provided in format string');                        
+   on NegativeNotPlaced except            
+      error('Negative sign not placed in format')   
+   on InvalidRealNumber except            error('Invalid real number')                  
+   on InvalidFractionSpecification except 
+      error('Invalid fraction specification')       
+   on InvalidRadix except                 error('Invalid radix')                        
+   on InvalidIntegerFormat except         error('Invalid integer format')               
+   on NumberTooLarge except               error('Number too large')                     
+   on IntegerTooLarge except              error('Integer too large')                    
+   on InvalidRealFormat except            error('Invalid real format')                  
 
 end.
