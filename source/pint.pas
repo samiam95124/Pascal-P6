@@ -1860,7 +1860,7 @@ procedure load;
          instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;
          instr[176]:='cps       '; insp[176] := false; insq[176] := 0;
          instr[177]:='cpc       '; insp[177] := false; insq[177] := intsize;
-         instr[178]:='---       '; insp[178] := false; insq[178] := intsize;
+         instr[178]:='aps       '; insp[178] := false; insq[178] := intsize;
          instr[179]:='ckvb      '; insp[179] := false; insq[179] := intsize;
          instr[180]:='ckvc      '; insp[180] := false; insq[180] := intsize;
          instr[181]:='dupi      '; insp[181] := false; insq[181] := 0;
@@ -1892,6 +1892,7 @@ procedure load;
          instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
          instr[208]:='ede       '; insp[208] := false; insq[208] := 0;
          instr[209]:='mse       '; insp[209] := false; insq[209] := 0;
+         instr[210]:='apc       '; insp[210] := false; insq[210] := intsize*2;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2460,7 +2461,7 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
           179, 180, 201, 202,203,
           92: begin read(prd,q); storeop; storeq end;
@@ -2475,8 +2476,8 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*pck,upk,vis,vip*)
-          63, 64,122,133: begin read(prd,q); read(prd,q1); storeop; storeq;
+          (*pck,upk,vis,vip,apc*)
+          63, 64,122,133,210: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -4710,7 +4711,7 @@ begin
                    else begin newspc(q, ad2); putadr(ad1, ad2) end
                  end;
     135 (*lcp*): begin popadr(ad); pshadr(getadr(ad)); 
-                       pshadr(getadr(ad+ptrsize)) end;
+                       pshadr(ad+ptrsize) end;
     176 (*cps*): begin popint(i1); popadr(ad1); popint(i2); popadr(ad2);
                        pshadr(ad2); pshint(i2); pshadr(ad1); pshint(i1);
                        if i1 <> i2 then errorv(ContainerMismatch) end;
@@ -4722,12 +4723,25 @@ begin
                          ad1 := ad1+ptrsize; ad3 := ad3+ptrsize
                        end
                  end;
+    178 (*aps*): begin getq; popadr(ad); popadr(ad1); popadr(i1); 
+                       popadr(ad);
+                       for i := 0 to i1+q-1 do begin
+                         store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
+                       end
+                 end;
+    210 (*apc*): begin getq; getq1; popadr(ad); popadr(ad1); popadr(ad2);
+                       popadr(ad);
+                       for i := 1 to q do 
+                         begin q1 := q1+getint(ad2); ad2 := ad2+intsize end;
+                       for i := 0 to q1-1 do begin
+                         store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
+                       end
+                 end;
 
     { illegal instructions }
-    178, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221,
-    222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236,
-    237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,
-    252, 253, 254,
+    211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225,
+    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
+    241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

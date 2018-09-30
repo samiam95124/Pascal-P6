@@ -2614,7 +2614,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,101,102: 
+          45,50,54,56,74,62,63,81,82,96,97,102: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -6436,7 +6436,7 @@ end;
                         if cc = 1 then gen0(99(*cps*)) { simple compare }
                         else gen1(100(*cpc*),cc); { complex compare }
                         { assign complex pointer }
-                        if cc = 1 then gen2(101(*aps*),cc,containerbase(gattr.typtr))
+                        if cc = 1 then gen1(101(*aps*),containerbase(gattr.typtr))
                         else gen2(102(*apc*),cc,containerbase(gattr.typtr))
                       end else
                         { standard array assign }
