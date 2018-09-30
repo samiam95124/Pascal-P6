@@ -2614,7 +2614,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,101,102: 
+          45,50,54,56,74,62,63,81,82,96,97,101,102: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -5805,19 +5805,18 @@ end;
                 if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
               nxt := next;
               if maxpar > 0 then begin
-                { process init to each id in reverse }
-                gen2(51(*ldc*),1,maxpar); { load init count }
-                gen2(51(*ldc*),1,lsize); { load base size }
                 { load variable address }
                 if level <= 1 then gen1(37(*lao*),vaddr)
                 else gen2(50(*lda*),level-vlev,vaddr);
                 if level <= 1 then 
-                  gen0(97(*vip*)) { issue vector init ptr instruction }
+                  { issue vector init ptr instruction }
+                  gen2(97(*vip*),containerbase(lsp),maxpar) 
                 else 
-                  gen0(96(*vis*)); { issue vector init stack instruction }
+                  { issue vector init stack instruction }
+                  gen2(96(*vis*),containerbase(lsp),maxpar);
                 gen0(90(*ret*)); { issue code strip return }
                 { remove initializers, count, var addr }
-                mesl(maxpar*intsize+intsize+intsize+adrsize)
+                mesl(maxpar*intsize+adrsize)
               end
             end;
         if sy = semicolon then

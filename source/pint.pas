@@ -347,7 +347,8 @@ const
       ChangeToVarReferencedVariant       = 113;
       DisposeOfVarReferencedBlock        = 114;
       VarReferencedFileBufferModified    = 115;
-      privexceptiontop                   = 115;
+      ContainerMismatch                  = 116;
+      privexceptiontop                   = 116;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -795,6 +796,7 @@ begin writeln; write('*** Runtime error');
     ChangeToVarReferencedVariant:       writeln('Change to VAR referenced variant');
     DisposeOfVarReferencedBlock:        writeln('Dispose of VAR referenced block');
     VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
+    ContainerMismatch:                  writeln('Container length(s) do not match');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -1802,7 +1804,7 @@ procedure load;
          instr[119]:='tjp       '; insp[119] := false; insq[119] := intsize;
          instr[120]:='lip       '; insp[120] := true;  insq[120] := intsize;
          instr[121]:='cvbc      '; insp[121] := false; insq[121] := intsize*3;
-         instr[122]:='---       '; insp[122] := false; insq[122] := 0;
+         instr[122]:='vis       '; insp[122] := false; insq[122] := intsize*2;
          instr[123]:='ldci      '; insp[123] := false; insq[123] := intsize;
          instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
@@ -1813,9 +1815,9 @@ procedure load;
          instr[130]:='retc      '; insp[130] := false; insq[130] := 0;
          instr[131]:='retb      '; insp[131] := false; insq[131] := 0;
          instr[132]:='reta      '; insp[132] := false; insq[132] := 0;
-         instr[133]:='---       '; insp[133] := false; insq[133] := 0;
+         instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
-         instr[135]:='---       '; insp[135] := false; insq[135] := 0;
+         instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
          instr[136]:='ordc      '; insp[136] := false; insq[136] := 0;
          instr[137]:='equi      '; insp[137] := false; insq[137] := 0;
          instr[138]:='equr      '; insp[138] := false; insq[138] := 0;
@@ -1856,8 +1858,8 @@ procedure load;
          instr[173]:='ente      '; insp[173] := false; insq[173] := intsize;
          instr[174]:='mrkl*     '; insp[174] := false; insq[174] := intsize;
          instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;
-         instr[176]:='---       '; insp[176] := false; insq[176] := intsize;
-         instr[177]:='---       '; insp[177] := false; insq[177] := intsize;
+         instr[176]:='cps       '; insp[176] := false; insq[176] := 0;
+         instr[177]:='cpc       '; insp[177] := false; insq[177] := intsize;
          instr[178]:='---       '; insp[178] := false; insq[178] := intsize;
          instr[179]:='ckvb      '; insp[179] := false; insq[179] := intsize;
          instr[180]:='ckvc      '; insp[180] := false; insq[180] := intsize;
@@ -2458,12 +2460,10 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs*)
-          198, 9, 85, 86, 87, 88, 89,
-          10, 90, 93, 94,
-          57, 103, 104,
-          175, 176, 177, 178, 179, 180, 201, 202, 
-          203,92: begin read(prd,q); storeop; storeq end;
+          (*ind,inc,dec,ckv,vbs,cpc*)
+          198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
+          179, 180, 201, 202,203,
+          92: begin read(prd,q); storeop; storeq end;
           
           (*ldo,sro,lao,cuv*)
           1, 194, 65, 66, 67, 68, 69,
@@ -2475,8 +2475,8 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*pck,upk*)
-          63, 64: begin read(prd,q); read(prd,q1); storeop; storeq;
+          (*pck,upk,vis,vip*)
+          63, 64,122,133: begin read(prd,q); read(prd,q1); storeop; storeq;
                                   storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -2622,16 +2622,16 @@ procedure load;
           161, 162, 163, 164, 165,
           167, 168, 169, 170, 171,
 
-          59, 133, 134, 135, 136, 200, (*ord*)
+          59, 134, 136, 200, (*ord*)
 
           6, 80, 81, 82, 83, 84, 197, (*sto*)
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
-            rnd,rgs,fbv,fvb,ede,mse }
+            rnd,rgs,fbv,fvb,ede,mse,lcp }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,
+          205,206,208,209,135,176,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4004,7 +4004,7 @@ begin
 end;
 
 procedure sinins;
-var ad,ad1,ad2: address; b: boolean; i,j,i1,i2 : integer; c1: char;
+var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,i1,i2 : integer; c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
     a1,a2,a3: address; pcs: address;
 begin
@@ -4701,12 +4701,33 @@ begin
     92 (*vbs*): begin getq; popadr(ad); varenter(ad, ad+q-1) end;
     96 (*vbe*): varexit;
     19 (*brk*): begin breakins := true; pc := pcs end;
+    122 (*vis*),
+    133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q1*intsize;
+                   for i := 1 to q1 do begin
+                     popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q := q+i1;
+                   end;
+                   if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
+                   else begin newspc(q, ad2); putadr(ad1, ad2) end
+                 end;
+    135 (*lcp*): begin popadr(ad); pshadr(getadr(ad)); 
+                       pshadr(getadr(ad+ptrsize)) end;
+    176 (*cps*): begin popint(i1); popadr(ad1); popint(i2); popadr(ad2);
+                       pshadr(ad2); pshint(i2); pshadr(ad1); pshint(i1);
+                       if i1 <> i2 then errorv(ContainerMismatch) end;
+    177 (*cpc*): begin getq; popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
+                       pshadr(ad4); pshadr(ad3); pshadr(ad2); pshadr(ad1);
+                       for i := 1 to q do begin
+                         if getint(ad1) <> getint(ad3) then 
+                           errorv(ContainerMismatch);
+                         ad1 := ad1+ptrsize; ad3 := ad3+ptrsize
+                       end
+                 end;
 
     { illegal instructions }
-    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
-    219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
-    234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
-    249, 250, 251, 252, 253, 254,
+    178, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221,
+    222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236,
+    237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,
+    252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
