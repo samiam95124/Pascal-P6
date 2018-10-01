@@ -148,7 +148,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 102;  { maximum number of instructions }
+   maxins     = 104;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -328,7 +328,7 @@ type                                                        (*describing:*)
                 varbl: (packing: boolean; packcom: boolean;
                         tagfield: boolean; taglvl: integer; varnt: stp;
                         ptrref: boolean; vartagoff: addrrange;
-                        varssize: addrrange; vartl: integer;
+                        varssize: addrrange; vartl: integer; pickup: boolean;
                         case access: vaccess of
                           drct: (vlevel: levrange; dplmt: addrrange);
                           indrct: (idplmt: addrrange);
@@ -2614,7 +2614,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,102: 
+          45,50,54,56,74,62,63,81,82,96,97,102,104: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -3232,7 +3232,7 @@ end;
                    end;
             expr:  error(405)
           end;
-          if typtr^.form = arrayc then begin 
+          if (typtr^.form = arrayc) and pickup then begin 
             { it's a container, load a complex pointer based on that }
             gen0(98(*lcp*));
             { if level is at bottom, simplify the template }
@@ -3271,7 +3271,7 @@ end;
 
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer; 
-      id: stp; lastptr: boolean;
+      id: stp; lastptr: boolean; cc: integer;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
   begin
@@ -3342,6 +3342,7 @@ end;
     with fcp^, gattr do
       begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
         packcom := false; tagfield := false; ptrref := false; vartl := -1;
+        pickup := true;
         case klass of
           vars: begin symptr := fcp;
               if typtr <> nil then packing := typtr^.packing;
@@ -3416,8 +3417,7 @@ end;
             repeat lattr := gattr;
               with lattr do
                 if typtr <> nil then begin
-                  if typtr^.form <> arrays then
-                    begin error(138); typtr := nil end
+                  if not arrayt(typtr) then begin error(138); typtr := nil end
                 end;
               loadaddress;
               insymbol; expression(fsys + [comma,rbrack], false);
@@ -3429,7 +3429,10 @@ end;
               if lattr.typtr <> nil then
                 with lattr.typtr^ do
                   begin
-                    if comptypes(inxtype,gattr.typtr) then
+                    if form = arrayc then begin
+                      { note containers merge index and bounds check }
+                      if gattr.typtr <> intptr then error(139)
+                    end else if comptypes(inxtype,gattr.typtr) then
                       begin
                         if inxtype <> nil then
                           begin getbounds(inxtype,lmin,lmax);
@@ -3443,18 +3446,29 @@ end;
                       end
                     else error(139);
                     with gattr do
-                      begin typtr := aeltype; kind := varbl;
+                      begin 
+                        if lattr.typtr^.form = arrays then typtr := aeltype
+                        else typtr := abstype;
+                        kind := varbl;
                         access := indrct; idplmt := 0; packing := false;
                         packcom := false; tagfield := false; ptrref := false;
-                        vartl := -1;
+                        vartl := -1; pickup := false
                       end;
                     if gattr.typtr <> nil then
                       begin
                         gattr.packcom := lattr.packing;
                         gattr.packing :=
                           lattr.packing or gattr.typtr^.packing;
-                        lsize := gattr.typtr^.size;
-                        gen1(36(*ixa*),lsize)
+                        lsize := gattr.typtr^.size; { get base size }
+                        cc := containers(lattr.typtr);
+                        if lattr.typtr^.form = arrays then gen1(36(*ixa*),lsize)
+                        else if cc = 1 then 
+                          gen1(103(*cxs*),lsize) { simple container index }
+                        else begin { complex container index }
+                          gen2(104(*cxc*),cc,containerbase(gattr.typtr));
+                          { if level is at bottom, simplify the template }
+                          if cc = 2 then gen1t(35(*ind*),0,nilptr)
+                        end
                       end
                   end
               else gattr.typtr := nil
@@ -3495,6 +3509,7 @@ end;
                                 { only set ptr offset ref if last was ptr }
                                 gattr.ptrref := lastptr;
                                 gattr.vartl := lcp^.vartl;
+                                gattr.pickup := false;
                                 case access of
                                   drct:   dplmt := dplmt + fldaddr;
                                   indrct: idplmt := idplmt + fldaddr;
@@ -3522,7 +3537,8 @@ end;
                       with gattr do
                         begin kind := varbl; access := indrct; idplmt := 0;
                           packing := false; packcom := false; 
-                          tagfield := false; ptrref := true; vartl := -1
+                          tagfield := false; ptrref := true; vartl := -1;
+                          pickup := false
                         end
                     end
                   else
@@ -8012,7 +8028,7 @@ end;
       mn[ 89] :=' cal'; mn[ 90] :=' ret'; mn[ 91] :=' cuv'; mn[ 92] :=' suv';
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
-      mn[101] :=' aps'; mn[102] :=' apc';
+      mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
 
     end (*instrmnemonics*) ;
 
@@ -8136,7 +8152,8 @@ end;
       cdx[ 96] := 0;                    cdx[ 97] := 0;
       cdx[ 98] := -adrsize;             cdx[ 99] := 0;
       cdx[100] := 0;                    cdx[101] := +ptrsize*4;
-      cdx[102] := +ptrsize*4;
+      cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
+      cdx[104] := +intsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
