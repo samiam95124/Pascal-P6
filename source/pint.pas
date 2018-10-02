@@ -1,6 +1,38 @@
 (*$c+,t-,d-,l-*)
 {*******************************************************************************
 *                                                                              *
+*                         PASCAL-P6 PORTABLE INTERPRETER                       *
+*                                                                              *
+* LICENSING:                                                                   *
+*                                                                              *
+* Copyright (c) 1996, 2018, Scott A. Franco                                    *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+* 1. Redistributions of source code must retain the above copyright notice,    *
+*    this list of conditions and the following disclaimer.                     *
+* 2. Redistributions in binary form must reproduce the above copyright         *
+*    notice, this list of conditions and the following disclaimer in the       *
+*    documentation and/or other materials provided with the distribution.      *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE     *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR          *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF         *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS     *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN      *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
+* POSSIBILITY OF SUCH DAMAGE.                                                  *
+*                                                                              *
+* The views and conclusions contained in the software and documentation are    *
+* those of the authors and should not be interpreted as representing official  *
+* policies, either expressed or implied, of the Pascal-P6 project.             *
+*                                                                              *
 *                           Portable Pascal compiler                           *
 *                           ************************                           *
 *                                                                              *
@@ -107,7 +139,11 @@
 *                                                                              *
 * ---------------------------------------------------------------------------- *
 *                                                                              *
-* This software is unlicensed and exists in the public domain. It has:         *
+* This software is based on, and represents an enhanced version, of Pascal-P5, *
+* which is itself based on Pascal-P4, and was enhanced from that version       *
+* substantially.                                                               *
+*                                                                              *
+* Pascal-P4 is unlicensed and exists in the public domain. It has:             *
 *                                                                              *
 * 1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH    *
 *    Zurich.                                                                   *
@@ -118,14 +154,9 @@
 * 3. Has been used as the basis for many projects, both paid and free, by      *
 *    other authors.                                                            *
 *                                                                              *
-* I, Scott Franco, have extensively expanded the original software. I certify  *
-* that all my changes and additions to it are also public domain.              *
-*                                                                              *
-* I respectfully request that this notice accompany the software even if it is *
-* further modified.                                                            *
-*                                                                              *
-* If you receive a copy of this software without this notice, I suggest you    *
-* obtain the original. It has been modified.                                   *
+* I, Scott Franco, have extensively expanded the original software. The        *
+* the changes made by me are held in copyright by me and released under the    *
+* BSD "2-clause" license, the least restrictive open source license available. *
 *                                                                              *
 *******************************************************************************}
 
@@ -2162,7 +2193,7 @@ procedure load;
             begin if eof(prd) then errorl('unexpected eof on input  ');
                   getnxt;(* first character of line*)
                   if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                                 'e', 's', 'f','v']) then
+                                 'e', 's', 'f','v','t']) then
                     errorl('unexpected line start    ');
                   case ch of
                        'i': getlin; { comment }
@@ -2348,6 +2379,21 @@ procedure load;
                               ad := cp; putint(ad, l); ad := ad+intsize;
                               while not eoln(prd) do begin
                                 read(prd,i); putint(ad, i); ad := ad+intsize;
+                              end;
+                              labelvalue:=cp;
+                              update(x)
+                            end;
+                       't': begin { fixed template }
+                              getnxt; skpspc;
+                              if ch <> 'l' then 
+                                errorl('Label format error       ');
+                              getnxt; parlab(x,ls);
+                              if ls <> nil then 
+                                errorl('Invalid intermediate     ');
+                              getnxt;
+                              read(prd,l); ad := cp; cp := cp-(l*intsize); 
+                              while not eoln(prd) do begin
+                                read(prd,i); ad := ad-intsize; putint(ad, i)
                               end;
                               labelvalue:=cp;
                               update(x)

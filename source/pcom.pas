@@ -255,7 +255,7 @@ type                                                        (*describing:*)
                      subrange: (rangetype: stp; min,max: valu);
                      pointer:  (eltype: stp);
                      power:    (elset: stp; matchpack: boolean);
-                     arrays:   (aeltype,inxtype: stp);
+                     arrays:   (aeltype,inxtype: stp; tmpl: integer);
                      arrayc:   (abstype: stp);
                      records:  (fstfld: ctp; recvar: stp; recyc: stp);
                      files:    (filtype: stp);
@@ -2951,6 +2951,30 @@ end;
         if not (sy in fsys) then insymbol
       end
   end (*skip*) ;
+  
+  { output fixed array template }
+  procedure arrtmp(sp: stp);
+  var tp: stp; lc: integer; l, h: integer;
+  begin
+    if prcode and (sp <> nil) then begin
+      { check fixed array type }
+      if sp^.form = arrays then begin
+        { count levels }
+        lc := 0;
+        tp := sp; while tp <> nil do
+          if tp^.form = arrays then begin lc := lc+1; tp := tp^.aeltype end
+          else tp := nil;
+        write(prr, 't ');
+        genlabel(sp^.tmpl); prtlabel(sp^.tmpl); 
+        write(prr, ' ', lc:1);
+        while sp <> nil do
+          if sp^.form = arrays then begin getbounds(sp^.inxtype, l, h);
+            write(prr, ' ', h-l+1:1); lc := lc+1; sp := sp^.aeltype 
+          end else sp := nil;
+        writeln(prr)
+      end
+    end
+  end;
       
   procedure constexpr(fsys: setofsys; var fsp: stp; var fvalu: valu); forward;
   
@@ -2983,8 +3007,9 @@ end;
                 new(lsp,arrays); pshstc(lsp);
                 with lsp^ do
                   begin form := arrays; aeltype := charptr; inxtype := nil;
-                     size := lgth*charsize; packing := true
-                  end
+                    size := lgth*charsize; packing := true
+                  end;
+                arrtmp(lsp) { output fixed template }
               end;
             fvalu := val; insymbol
           end
@@ -4632,6 +4657,7 @@ end;
                                 packing := true;
                                 inxtype := nil; size := lgth*charsize
                               end;
+                            arrtmp(lsp); { output fixed template }
                             typtr := lsp
                           end;
                         kind := cst; cval := val
@@ -5458,7 +5484,8 @@ end;
                               begin error(237); lsize := 1 end
                             else lsize := lsize*span;
                             size := lsize
-                          end
+                          end;
+                          arrtmp(lsp1) { output fixed template }
                         end else 
                           { note containers are only one deep, and have no size } 
                           begin lsp2 := abstype; abstype := lsp; size := 0 end
