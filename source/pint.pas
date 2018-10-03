@@ -4770,6 +4770,7 @@ begin
                          if getint(ad1) <> getint(ad3) then 
                            errorv(ContainerMismatch);
                          ad1 := ad1+ptrsize; ad3 := ad3+ptrsize
+
                        end
                  end;
     178 (*aps*): begin getq; popadr(ad); popadr(ad1); popadr(i1); 
@@ -4781,7 +4782,7 @@ begin
     210 (*apc*): begin getq; getq1; popadr(ad); popadr(ad1); popadr(ad2);
                        popadr(ad);
                        for i := 1 to q do 
-                         begin q1 := q1+getint(ad2); ad2 := ad2+intsize end;
+                         begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                        for i := 0 to q1-1 do begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
                        end
@@ -4791,8 +4792,8 @@ begin
                        pshadr(ad+(i-1)*q)
                  end;
     212 (*cxc*): begin getq; getq1; popint(i); popint(ad1); popadr(ad);
-                       ad2 := ad1;
-                       for j := 1 to q do
+                       ad2 := ad1+ptrsize;
+                       for j := 1 to q-1 do
                          begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                        if (i < 1) or (i > getint(ad1)) then 
                          errore(ValueOutOfRange);

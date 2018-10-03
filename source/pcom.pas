@@ -2915,7 +2915,8 @@ end;
                 else ty1 := fsp1^.abstype;
                 if fsp2^.form = arrays then ty2 := fsp2^.aeltype 
                 else ty2 := fsp2^.abstype;
-                comptypes := ty1 = ty2 { compatible if bases are equal }
+                { compatible if bases are compatible }
+                comptypes := comptypes(ty1, ty2)
               end else
                 { note containers have no size to compare, but will test as 
                   compatible arrays before this string test is applied }
