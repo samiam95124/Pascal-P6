@@ -2193,11 +2193,11 @@ procedure load;
       while again do
             begin if eof(prd) then errorl('unexpected eof on input  ');
                   getnxt;(* first character of line*)
-                  if not (ch in ['i', 'l', 'q', ' ', ':', 'o', 'g', 'b',
+                  if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b',
                                  'e', 's', 'f','v','t']) then
                     errorl('unexpected line start    ');
                   case ch of
-                       'i': getlin; { comment }
+                       '!': getlin; { comment }
                        'l': begin getnxt; parlab(x,ls);
                                   if ls <> nil then 
                                     errorl('Invalid intermediate     ');
