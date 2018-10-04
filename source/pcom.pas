@@ -1462,6 +1462,7 @@ end;
                'match');
     270: write('Container array type specified without initializer(s)');
     271: write('Number of initializers does not match container array levels');
+    272: write('Cannot declare container array in fixed context');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -5212,6 +5213,7 @@ end;
             until test;
             if sy = colon then insymbol else error(5);
             typ(fsys + [casesy,semicolon],lsp,lsize);
+            if lsp^.form = arrayc then error(272);
             while nxt <> nxt1 do
               with nxt^ do
                 begin alignu(lsp,displ);
@@ -5476,7 +5478,8 @@ end;
                     typ(fsys,lsp,lsize);
                     repeat
                       with lsp1^ do begin
-                        if lsp1^.form = arrays then begin 
+                        if lsp1^.form = arrays then begin
+                          if lsp^.form = arrayc then error(272);
                           lsp2 := aeltype; aeltype := lsp;
                           if inxtype <> nil then begin
                             getbounds(inxtype,lmin,lmax);
