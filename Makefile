@@ -32,7 +32,6 @@ spew: source/spew.c
 	$(CC) $(CFLAGS) -o bin/spew source/spew.c
 	
 clean:
-	rm -f bin/pcom bin/pint 
 	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete
 	find . -name "*.lst" -type f -delete
