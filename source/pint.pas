@@ -1926,6 +1926,7 @@ procedure load;
          instr[210]:='apc       '; insp[210] := false; insq[210] := intsize*2;
          instr[211]:='cxs       '; insp[211] := false; insq[211] := intsize;
          instr[212]:='cxc       '; insp[212] := false; insq[212] := intsize*2;
+         instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2391,9 +2392,9 @@ procedure load;
                               if ls <> nil then 
                                 errorl('Invalid intermediate     ');
                               getnxt;
-                              read(prd,l); ad := cp; cp := cp-(l*intsize); 
+                              read(prd,l); cp := cp-(l*intsize); ad := cp;
                               while not eoln(prd) do begin
-                                read(prd,i); ad := ad-intsize; putint(ad, i)
+                                read(prd,i); putint(ad, i); ad := ad+intsize;
                               end;
                               labelvalue:=cp;
                               update(x)
@@ -2533,6 +2534,9 @@ procedure load;
             read(prd,q); read(prd,q1); storeop; storeq; storeq1; labelsearch; 
             putcstfix; storeq 
           end;
+          
+          (*lft*)
+          213: begin storeop; labelsearch; putcstfix; storeq end;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
           23,24,25,119,207,21,
@@ -4770,7 +4774,6 @@ begin
                          if getint(ad1) <> getint(ad3) then 
                            errorv(ContainerMismatch);
                          ad1 := ad1+ptrsize; ad3 := ad3+ptrsize
-
                        end
                  end;
     178 (*aps*): begin getq; popadr(ad); popadr(ad1); popadr(i1); 
@@ -4799,11 +4802,12 @@ begin
                          errore(ValueOutOfRange);
                        pshadr(ad+(i-1)*q1); pshadr(ad1+ptrsize)
                  end;
+    213 (*lft*): begin getq; pshadr(q) end;
 
     { illegal instructions }
-    213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
-    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
-    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228,
+    229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243,
+    244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

@@ -148,7 +148,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 104;  { maximum number of instructions }
+   maxins     = 105;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 74;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -2593,6 +2593,7 @@ end;
                end
             else if fop = 42 then writeln(prr,chr(fp2))
             else if fop = 67 then writeln(prr,fp2:4)
+            else if fop = 105 then begin write(prr, ' '); putlabel(fp2) end
             else if chkext(symptr) then 
               begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
             else writeln(prr,fp2:12);
@@ -6465,15 +6466,15 @@ end;
                           if cc = 1 then
                             { load simple template }
                             gen2(51(*ldc*),1,gattr.typtr^.size)
-                          else { *** load complex template. These are stored 
-                                     with fixed arrays. ***}
+                          { load complex fixed template }
+                          else gen1(105(*lft*),gattr.typtr^.tmpl) 
                         end else if lattr.typtr^.form = arrays then begin
                           { left is fixed }
                           if cc = 1 then
                             { load simple template }
                             gen2(51(*ldc*),1,lattr.typtr^.size)
-                          else { *** load complex template. These are stored 
-                                     with fixed arrays. ***}
+                          { load complex fixed template }
+                          else gen1(105(*lft*),gattr.typtr^.tmpl);
                           gen1(72(*swp*),ptrsize*2) { swap under right side }           
                         end;
                         { compare templates }
@@ -8057,6 +8058,7 @@ end;
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
+      mn[105] :=' lft';
 
     end (*instrmnemonics*) ;
 
@@ -8181,7 +8183,7 @@ end;
       cdx[ 98] := -adrsize;             cdx[ 99] := 0;
       cdx[100] := 0;                    cdx[101] := +ptrsize*4;
       cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
-      cdx[104] := +intsize;
+      cdx[104] := +intsize;             cdx[105] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
