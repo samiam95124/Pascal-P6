@@ -1,5 +1,37 @@
 {*******************************************************************************
 *                                                                              *
+*                         PASCAL-P6 PORTABLE INTERPRETER                       *
+*                                                                              *
+* LICENSING:                                                                   *
+*                                                                              *
+* Copyright (c) 1996, 2018, Scott A. Franco                                    *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+* 1. Redistributions of source code must retain the above copyright notice,    *
+*    this list of conditions and the following disclaimer.                     *
+* 2. Redistributions in binary form must reproduce the above copyright         *
+*    notice, this list of conditions and the following disclaimer in the       *
+*    documentation and/or other materials provided with the distribution.      *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE     *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR          *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF         *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS     *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN      *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
+* POSSIBILITY OF SUCH DAMAGE.                                                  *
+*                                                                              *
+* The views and conclusions contained in the software and documentation are    *
+* those of the authors and should not be interpreted as representing official  *
+* policies, either expressed or implied, of the Pascal-P6 project.             *
+*                                                                              *
 *                     Portable Pascal assembler/interpreter                    *
 *                     *************************************                    *
 *                                                                              *
@@ -45,7 +77,11 @@
 *                                                                              *
 * ---------------------------------------------------------------------------- *
 *                                                                              *
-* This software is unlicensed and exists in the public domain. It has:         *
+* This software is based on, and represents an enhanced version, of Pascal-P5, *
+* which is itself based on Pascal-P4, and was enhanced from that version       *
+* substantially.                                                               *
+*                                                                              *
+* Pascal-P4 is unlicensed and exists in the public domain. It has:             *
 *                                                                              *
 * 1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH    *
 *    Zurich.                                                                   *
@@ -56,14 +92,9 @@
 * 3. Has been used as the basis for many projects, both paid and free, by      *
 *    other authors.                                                            *
 *                                                                              *
-* I, Scott Franco, have extensively expanded the original software. I certify  *
-* that all my changes and additions to it are also public domain.              *
-*                                                                              *
-* I respectfully request that this notice accompany the software even if it is *
-* further modified.                                                            *
-*                                                                              *
-* If you receive a copy of this software without this notice, I suggest you    *
-* obtain the original. It has been modified.                                   *
+* I, Scott Franco, have extensively expanded the original software. The        *
+* the changes made by me are held in copyright by me and released under the    *
+* BSD "2-clause" license, the least restrictive open source license available. *
 *                                                                              *
 *******************************************************************************}
 
@@ -148,9 +179,9 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 105;  { maximum number of instructions }
+   maxins     = 106;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
-   maxstd     = 74;   { number of standard identifiers }
+   maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
@@ -277,7 +308,7 @@ type                                                        (*describing:*)
      expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
-     keyrng = 1..31; { range of standard call keys }
+     keyrng = 1..32; { range of standard call keys }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
@@ -1463,6 +1494,7 @@ end;
     270: write('Container array type specified without initializer(s)');
     271: write('Number of initializers does not match container array levels');
     272: write('Cannot declare container array in fixed context');
+    273: write('Must be container array');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -4349,7 +4381,24 @@ end;
       if gattr.typtr <> nil then begin
         if gattr.typtr^.form <> exceptf then error(226);
       end;
-      gen1(30(*csp*),85(*thw*));
+      gen1(30(*csp*),85(*thw*))
+    end;
+    
+    procedure maxfunction;
+      var lattr: attr;
+    begin chkstd;
+      if sy = lparent then insymbol else error(9);
+      variable(fsys+[rparent], false); loadaddress;
+      if gattr.typtr <> nil then
+        if gattr.typtr^.form <> arrayc then error(273);
+      lattr := gattr;
+      if sy = comma then begin insymbol;
+        expression(fsys + [rparent], false); load;
+        if gattr.typtr <> nil then if gattr.typtr <> intptr then error(125)
+      end else gen2(51(*ldc*),1,1); { default level 1 }
+      gen1(106(*max*),containers(lattr.typtr));
+      if sy = rparent then insymbol else error(4);
+      gattr.typtr := intptr
     end;
 
     procedure callnonstandard(fcp: ctp; inherit: boolean);
@@ -4521,6 +4570,7 @@ end;
               29:     haltprocedure;
               30:     assertprocedure;
               31:     throwprocedure;
+
               10,13:  error(508)
             end;
             if not(lkey in [5,6,11,12,17,29]) then
@@ -4545,6 +4595,7 @@ end;
               9,10:  eofeolnfunction;
               21,22: lengthlocationfunction;
               26:    existsfunction;
+              32:    maxfunction;
             end;
             if (lkey <= 8) or (lkey = 16) then
               if sy = rparent then insymbol else error(4)
@@ -7517,9 +7568,7 @@ end;
     na[64] := 'real     '; na[65] := 'char     '; na[66] := 'boolean  ';
     na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
     na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
-    na[73] := 'exception'; na[74] := 'throw    ';
-    
-
+    na[73] := 'exception'; na[74] := 'throw    '; na[75] := 'max      ';
 
   end (*stdnames*) ;
 
@@ -7742,6 +7791,7 @@ end;
     entstdprocfunc(proc, 51, 29, nil);     { halt }
     entstdprocfunc(proc, 69, 30, nil);     { assert }
     entstdprocfunc(proc, 74, 31, nil);     { throw }
+    entstdprocfunc(func, 75, 32, intptr);  { max }
     
     { standard exceptions }
     entstdexp('ValueOutOfRange                 ');
@@ -8061,7 +8111,7 @@ end;
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
-      mn[105] :=' lft';
+      mn[105] :=' lft'; mn[106] :=' max';
 
     end (*instrmnemonics*) ;
 
@@ -8187,6 +8237,7 @@ end;
       cdx[100] := 0;                    cdx[101] := +ptrsize*4;
       cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
       cdx[104] := +intsize;             cdx[105] := -adrsize;
+      cdx[106] := +ptrsize*2;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

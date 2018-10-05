@@ -379,7 +379,8 @@ const
       DisposeOfVarReferencedBlock        = 114;
       VarReferencedFileBufferModified    = 115;
       ContainerMismatch                  = 116;
-      privexceptiontop                   = 116;
+      InvalidContainerLevel              = 117;
+      privexceptiontop                   = 117;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -828,6 +829,7 @@ begin writeln; write('*** Runtime error');
     DisposeOfVarReferencedBlock:        writeln('Dispose of VAR referenced block');
     VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
     ContainerMismatch:                  writeln('Container length(s) do not match');
+    InvalidContainerLevel:              writeln('InvalidContainerLevel');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -1927,6 +1929,7 @@ procedure load;
          instr[211]:='cxs       '; insp[211] := false; insq[211] := intsize;
          instr[212]:='cxc       '; insp[212] := false; insq[212] := intsize*2;
          instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;
+         instr[214]:='max       '; insp[214] := false; insq[214] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2484,7 +2487,6 @@ procedure load;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
-       
       case op of  (* get parameters p,q *)
 
           (*lod,str,lda,lip*)
@@ -2510,9 +2512,9 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
-          179, 180, 201, 202,203,211,
+          179, 180, 201, 202,203,211,214,
           92: begin read(prd,q); storeop; storeq end;
           
           (*ldo,sro,lao,cuv*)
@@ -4803,11 +4805,19 @@ begin
                        pshadr(ad+(i-1)*q1); pshadr(ad1+ptrsize)
                  end;
     213 (*lft*): begin getq; pshadr(q) end;
+    214 (*max*): begin getq; popint(i); 
+                       if q > 1 then popadr(ad) else popint(i1);
+                       popadr(ad1);
+                       if (i < 1) or (i > q) then errorv(InvalidContainerLevel);
+                       if q = 1 then i := i1
+                       else i := getint(ad+(q-i)*intsize);
+                       pshint(i)
+                 end;
 
     { illegal instructions }
-    214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228,
-    229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243,
-    244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
+    230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
+    245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
