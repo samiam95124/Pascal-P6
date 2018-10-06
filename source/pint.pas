@@ -1931,6 +1931,15 @@ procedure load;
          instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;
          instr[214]:='max       '; insp[214] := false; insq[214] := intsize;
 
+         instr[215]:='equv      '; insp[215] := false; insq[215] := 0;
+         instr[216]:='neqv      '; insp[216] := false; insq[216] := 0;
+         instr[217]:='lesv      '; insp[217] := false; insq[217] := 0;
+         instr[218]:='grtv      '; insp[218] := false; insq[218] := 0;
+         instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;
+         instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;
+
+
+
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
          sptable[ 4]:='new       ';     sptable[ 5]:='wln       ';
@@ -2683,10 +2692,10 @@ procedure load;
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
-            rnd,rgs,fbv,fvb,ede,mse,lcp }
+            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,
+          205,206,208,209,135,176,215,216,217,218,219,220,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4376,59 +4385,76 @@ begin
 
     16 (*ixa*): begin getq; popint(i); popadr(a1); pshadr(q*i+a1) end;
 
-    17  { equa }: begin popadr(a2); popadr(a1); pshint(ord(a1=a2)) end;
-    139 { equb },
-    141 { equc },
-    137 { equi }: begin popint(i2); popint(i1); pshint(ord(i1=i2)) end;
-    138 { equr }: begin poprel(r2); poprel(r1); pshint(ord(r1=r2)) end;
-    140 { equs }: begin popset(s2); popset(s1); pshint(ord(s1=s2)) end;
-    142 { equm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2); 
+    17  (*equa*): begin popadr(a2); popadr(a1); pshint(ord(a1=a2)) end;
+    139 (*equb*),
+    141 (*equc*),
+    137 (*equi*): begin popint(i2); popint(i1); pshint(ord(i1=i2)) end;
+    138 (*equr*): begin poprel(r2); poprel(r1); pshint(ord(r1=r2)) end;
+    140 (*equs*): begin popset(s2); popset(s1); pshint(ord(s1=s2)) end;
+    142 (*equm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2); 
                         pshint(ord(b)) end;
+    215 (*equv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); pshint(ord(b)) end;
 
-    18  { neqa }: begin popadr(a2); popadr(a1); pshint(ord(a1<>a2)) end;
-    145 { neqb },
-    147 { neqc },
-    143 { neqi }: begin popint(i2); popint(i1); pshint(ord(i1<>i2)) end;
-    144 { neqr }: begin poprel(r2); poprel(r1); pshint(ord(r1<>r2)) end;
-    146 { neqs }: begin popset(s2); popset(s1); pshint(ord(s1<>s2)) end;
-    148 { neqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
+    18  (*neqa*): begin popadr(a2); popadr(a1); pshint(ord(a1<>a2)) end;
+    145 (*neqb*),
+    147 (*neqc*),
+    143 (*neqi*): begin popint(i2); popint(i1); pshint(ord(i1<>i2)) end;
+    144 (*neqr*): begin poprel(r2); poprel(r1); pshint(ord(r1<>r2)) end;
+    146 (*neqs*): begin popset(s2); popset(s1); pshint(ord(s1<>s2)) end;
+    148 (*neqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b)) end;
+    216 (*neqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); pshint(ord(not b)) end;
 
-    151 { geqb },
-    153 { geqc },
-    149 { geqi }: begin popint(i2); popint(i1); pshint(ord(i1>=i2)) end;
-    150 { geqr }: begin poprel(r2); poprel(r1); pshint(ord(r1>=r2)) end;
-    152 { geqs }: begin popset(s2); popset(s1); pshint(ord(s1>=s2)) end;
-    154 { geqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
+    151 (*geqb*),
+    153 (*geqc*),
+    149 (*geqi*): begin popint(i2); popint(i1); pshint(ord(i1>=i2)) end;
+    150 (*geqr*): begin poprel(r2); poprel(r1); pshint(ord(r1>=r2)) end;
+    152 (*geqs*): begin popset(s2); popset(s1); pshint(ord(s1>=s2)) end;
+    154 (*geqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] >= store[a2])))
                   end;
+    220 (*geqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); 
+                        pshint(ord(b or (store[a1] >= store[a2]))) end;
 
-    157 { grtb },
-    159 { grtc },
-    155 { grti }: begin popint(i2); popint(i1); pshint(ord(i1>i2)) end;
-    156 { grtr }: begin poprel(r2); poprel(r1); pshint(ord(r1>r2)) end;
-    158 { grts }: errorv(SetInclusion);
-    160 { grtm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
+    157 (*grtb*),
+    159 (*grtc*),
+    155 (*grti*): begin popint(i2); popint(i1); pshint(ord(i1>i2)) end;
+    156 (*grtr*): begin poprel(r2); poprel(r1); pshint(ord(r1>r2)) end;
+    158 (*grts*): errorv(SetInclusion);
+    160 (*grtm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] > store[a2])))
                   end;
+    218 (*grtv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); 
+                        pshint(ord(not b and (store[a1] > store[a2]))) end;
+    
 
-    163 { leqb },
-    165 { leqc },
-    161 { leqi }: begin popint(i2); popint(i1); pshint(ord(i1<=i2)) end;
-    162 { leqr }: begin poprel(r2); poprel(r1); pshint(ord(r1<=r2)) end;
-    164 { leqs }: begin popset(s2); popset(s1); pshint(ord(s1<=s2)) end;
-    166 { leqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
+    163 (*leqb*),
+    165 (*leqc*),
+    161 (*leqi*): begin popint(i2); popint(i1); pshint(ord(i1<=i2)) end;
+    162 (*leqr*): begin poprel(r2); poprel(r1); pshint(ord(r1<=r2)) end;
+    164 (*leqs*): begin popset(s2); popset(s1); pshint(ord(s1<=s2)) end;
+    166 (*leqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] <= store[a2])))
                   end;
+    219 (*leqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); 
+                        pshint(ord(b or (store[a1] <= store[a2]))) end;
 
-    169 { lesb },
-    171 { lesc },
-    167 { lesi }: begin popint(i2); popint(i1); pshint(ord(i1<i2)) end;
-    168 { lesr }: begin poprel(r2); poprel(r1); pshint(ord(r1<r2)) end;
-    170 { less }: errorv(SetInclusion);
-    172 { lesm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
+    169 (*lesb*),
+    171 (*lesc*),
+    167 (*lesi*): begin popint(i2); popint(i1); pshint(ord(i1<i2)) end;
+    168 (*lesr*): begin poprel(r2); poprel(r1); pshint(ord(r1<r2)) end;
+    170 (*less*): errorv(SetInclusion);
+    172 (*lesm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] < store[a2])))
                   end;
+    217 (*lesv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+                        compare(b, a1, a2); 
+                        pshint(ord(not b and (store[a1] < store[a2]))) end;
 
     23 (*ujp*): begin getq; pc := q end;
     24 (*fjp*): begin getq; popint(i); if i = 0 then pc := q end;
@@ -4815,9 +4841,9 @@ begin
                  end;
 
     { illegal instructions }
-    215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
-    230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
-    245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235,
+    236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250,
+    251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

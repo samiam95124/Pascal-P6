@@ -1,5 +1,37 @@
 /*******************************************************************************
 *                                                                              *
+*                         PASCAL-P6 PORTABLE INTERPRETER                       *
+*                                                                              *
+* LICENSING:                                                                   *
+*                                                                              *
+* Copyright (c) 1996, 2018, Scott A. Franco                                    *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+* 1. Redistributions of source code must retain the above copyright notice,    *
+*    this list of conditions and the following disclaimer.                     *
+* 2. Redistributions in binary form must reproduce the above copyright         *
+*    notice, this list of conditions and the following disclaimer in the       *
+*    documentation and/or other materials provided with the distribution.      *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE     *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR          *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF         *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS     *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN      *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
+* POSSIBILITY OF SUCH DAMAGE.                                                  *
+*                                                                              *
+* The views and conclusions contained in the software and documentation are    *
+* those of the authors and should not be interpreted as representing official  *
+* policies, either expressed or implied, of the Pascal-P6 project.             *
+*                                                                              *
 *                           Portable Pascal compiler                           *
 *                           ************************                           *
 *                                                                              *
@@ -113,32 +145,6 @@
 *                                                                              *
 * Thus the interpreted version is 6.2 times slower, and is under the 10 times  *
 * slower "rule of thumb" I have observed with interpreters.                    *
-*                                                                              *
-* ---------------------------------------------------------------------------- *
-*                                                                              *
-*                                   LICENSE                                    *
-*                                                                              *
-* ---------------------------------------------------------------------------- *
-*                                                                              *
-* This software is unlicensed and exists in the public domain. It has:         *
-*                                                                              *
-* 1. Been acknowledged as public domain by the author, Niklaus Wirth at ETH    *
-*    Zurich.                                                                   *
-*                                                                              *
-* 2. Has been freely distributed since 1976 with only charges for printing and *
-*    shipping costs.                                                           *
-*                                                                              *
-* 3. Has been used as the basis for many projects, both paid and free, by      *
-*    other authors.                                                            *
-*                                                                              *
-* I, Scott Franco, have extensively expanded the original software. I certify  *
-* that all my changes and additions to it are also public domain.              *
-*                                                                              *
-* I respectfully request that this notice accompany the software even if it is *
-* further modified.                                                            *
-*                                                                              *
-* If you receive a copy of this software without this notice, I suggest you    *
-* obtain the original. It has been modified.                                   *
 *                                                                              *
 *******************************************************************************/
 

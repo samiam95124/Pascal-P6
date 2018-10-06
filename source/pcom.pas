@@ -563,7 +563,7 @@ var
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     cdx: array [0..maxins] of integer;
-    cdxs: array [1..6, 1..7] of integer;
+    cdxs: array [1..6, 1..8] of integer;
     pdx: array [1..maxsp] of integer;
     ordint: array [char] of integer;
 
@@ -2664,7 +2664,8 @@ end;
                 'c': mesl(cdxs[cdx[fop]][4]);
                 'a': mesl(cdxs[cdx[fop]][5]);
                 's': mesl(cdxs[cdx[fop]][6]);
-                'm': mesl(cdxs[cdx[fop]][7])
+                'm': mesl(cdxs[cdx[fop]][7]);
+                'v': mesl(cdxs[cdx[fop]][8]);
               end
             end;
           51:
@@ -3315,7 +3316,41 @@ end;
           inxd:   error(402)
         end
   end (*store*) ;
-    
+  
+  { rationalize binary container operator }
+  procedure containerop(var lattr: attr);
+  var cc: integer;
+  begin
+    { check one or both operands is container }
+    if (lattr.typtr^.form = arrayc) or 
+       (gattr.typtr^.form = arrayc) then begin 
+      { one or both are containers, find the index level }
+      if lattr.typtr^.form = arrayc then 
+        cc := containers(lattr.typtr)
+      else
+        cc := containers(gattr.typtr);
+      if gattr.typtr^.form = arrays then begin 
+        { right is fixed } 
+        if cc = 1 then
+          { load simple template }
+          gen2(51(*ldc*),1,gattr.typtr^.size)
+        { load complex fixed template }
+        else gen1(105(*lft*),gattr.typtr^.tmpl)
+      end else if lattr.typtr^.form = arrays then begin
+        { left is fixed }
+        if cc = 1 then
+          { load simple template }
+          gen2(51(*ldc*),1,lattr.typtr^.size)
+        { load complex fixed template }
+        else gen1(105(*lft*),lattr.typtr^.tmpl);
+        gen1(72(*swp*),ptrsize*2) { swap under right side }           
+      end;
+      { compare templates }
+      if cc = 1 then gen0(99(*cps*)) { simple compare }
+      else gen1(100(*cpc*),cc); { complex compare }
+    end
+  end;
+                        
   procedure expression(fsys: setofsys; threaten: boolean); forward;
 
   function taggedrec(fsp: stp): boolean;
@@ -5055,11 +5090,14 @@ end;
                       begin if lop in [ltop,gtop] then error(132);
                         typind := 's'
                       end;
-                    arrays:
+                    arrays, arrayc:
                       begin
                         if not stringt(lattr.typtr)
                           then error(134);
-                        typind := 'm'
+                        if (lattr.typtr^.form = arrayc) or 
+                           (gattr.typtr^.form = arrayc) then typind := 'v'
+                        else typind := 'm';
+                        containerop(lattr) { rationalize binary container }
                       end;
                     records:
                       begin
@@ -6444,7 +6482,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean; cc: integer;
+        var lattr, lattr2: attr; tagasc: boolean;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -6508,35 +6546,14 @@ end;
                                store(lattr)
                              end;
                     arrays, arrayc: begin
+                      containerop(lattr); { rationalize binary container op }
                       if (lattr.typtr^.form = arrayc) or 
                          (gattr.typtr^.form = arrayc) then begin 
-                        { one or both are containers, find the index level }
-                        if lattr.typtr^.form = arrayc then 
-                          cc := containers(lattr.typtr)
-                        else
-                          cc := containers(gattr.typtr);
-                        if gattr.typtr^.form = arrays then begin 
-                          { right is fixed } 
-                          if cc = 1 then
-                            { load simple template }
-                            gen2(51(*ldc*),1,gattr.typtr^.size)
-                          { load complex fixed template }
-                          else gen1(105(*lft*),gattr.typtr^.tmpl)
-                        end else if lattr.typtr^.form = arrays then begin
-                          { left is fixed }
-                          if cc = 1 then
-                            { load simple template }
-                            gen2(51(*ldc*),1,lattr.typtr^.size)
-                          { load complex fixed template }
-                          else gen1(105(*lft*),lattr.typtr^.tmpl);
-                          gen1(72(*swp*),ptrsize*2) { swap under right side }           
-                        end;
-                        { compare templates }
-                        if cc = 1 then gen0(99(*cps*)) { simple compare }
-                        else gen1(100(*cpc*),cc); { complex compare }
                         { assign complex pointer }
-                        if cc = 1 then gen1(101(*aps*),containerbase(gattr.typtr))
-                        else gen2(102(*apc*),cc,containerbase(gattr.typtr))
+                        if containers(lattr.typtr) = 1 then 
+                          gen1(101(*aps*),containerbase(gattr.typtr))
+                        else gen2(102(*apc*),containers(lattr.typtr),
+                                  containerbase(gattr.typtr))
                       end else
                         { standard array assign }
                         gen1(40(*mov*),lattr.typtr^.size)
@@ -8247,6 +8264,7 @@ end;
       cdxs[1][5] := +(adrsize+adrsize);  { stoa }
       cdxs[1][6] := +(adrsize+setsize);  { stos }
       cdxs[1][7] := 0;
+      cdxs[1][8] := 0;
       
       cdxs[2][1] := 0; { deci/inci/ordi/chki/reti/noti }   
       cdxs[2][2] := 0; { chkr/retr }
@@ -8255,6 +8273,7 @@ end;
       cdxs[2][5] := 0; { chka/reta/ckl }
       cdxs[2][6] := 0; { chks }
       cdxs[2][7] := 0;
+      cdxs[2][8] := 0;
       
       cdxs[3][1] := +adrsize-intsize;  { indi }
       cdxs[3][2] := +adrsize-realsize; { indr }
@@ -8263,6 +8282,7 @@ end;
       cdxs[3][5] := +adrsize-adrsize;  { inda }
       cdxs[3][6] := +adrsize-setsize;  { inds }
       cdxs[3][7] := 0;
+      cdxs[3][8] := 0;
 
       cdxs[4][1] := -intsize;  { ldoi/ldc/lodi/dupi }
       cdxs[4][2] := -realsize; { ldor/ldc/lodr/dupr }
@@ -8271,6 +8291,7 @@ end;
       cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/dupa }
       cdxs[4][6] := -setsize;  { ldos/ldc/lods/dups }
       cdxs[4][7] := 0;
+      cdxs[4][8] := 0;
       
       cdxs[5][1] := +intsize;  { sroi/stri }
       cdxs[5][2] := +realsize; { sror/strr }
@@ -8279,6 +8300,7 @@ end;
       cdxs[5][5] := +adrsize;  { sroa/stra }
       cdxs[5][6] := +setsize;  { sros/strs }
       cdxs[5][7] := 0;
+      cdxs[5][8] := 0;
       
       { note that all of the comparisions share the same table }
       cdxs[6][1] := +(intsize+intsize)-intsize; { equi/neqi/geqi/grti/leqi/lesi }
@@ -8288,6 +8310,7 @@ end;
       cdxs[6][5] := +(adrsize+intsize)-adrsize; { equa/neqa/geqa/grta/leqa/lesa }
       cdxs[6][6] := +(setsize+setsize)-intsize; { equs/neqs/geqs/grts/leqs/less }
       cdxs[6][7] := +(adrsize+adrsize)-intsize; { equm/neqm/geqm/grtm/leqm/lesm }
+      cdxs[6][8] := +(adrsize*2+adrsize*2)-intsize; { equv/neqv/geqv/grtv/leqv/lesv }
       
       pdx[ 1] := +adrsize;             pdx[ 2] := +adrsize; 
       pdx[ 3] := +adrsize;             pdx[ 4] := +adrsize;

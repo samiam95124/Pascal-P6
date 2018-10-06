@@ -56,4 +56,6 @@ clean:
 	find . -name "*.p4" -type f -delete
 	find . -name "*.p5" -type f -delete
 	find . -name "*.p6" -type f -delete
-	find . -name "*.p6o" -type f -delete	
+	find . -name "*.p6o" -type f -delete
+	find . -name "*.mpp.pas" -type f -delete
+	
