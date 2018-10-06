@@ -327,7 +327,8 @@ type                                                        (*describing:*)
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp; 
-                             hdr: boolean; vext: boolean; vmod: filptr); 
+                             hdr: boolean; vext: boolean; vmod: filptr; 
+                             inilab: integer; ininxt: ctp); 
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -384,13 +385,6 @@ type                                                        (*describing:*)
                    refer:   boolean  { was referred to }
             end;
             
-     { initializer code strip labels }
-     inilbp = ^inilab;
-     inilab = record
-                next: inilbp; { next entry }
-                lab:  integer { local label }
-              end;
-
      disprange = 0..displimit;
      disprec = record                      (*=blck:   id is variable id*)
                  fname: ctp; flabel: lbp;  (*=crec:   id is field id in record with*)
@@ -400,7 +394,7 @@ type                                                        (*describing:*)
                  ptrref: boolean;          { used for with derived from pointer }
                  define: boolean;          { is this a defining block? }
                  modnam: strvsp;           { module name for block (if exists) }
-                 inilst: inilbp;           { initializer list }
+                 inilst: ctp;              { initializer list }
                  case occur: where of      (*   constant address*)
                    crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
                           cdspl: addrrange);(*   variable address*)
@@ -5870,18 +5864,20 @@ end;
     
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
-          test: boolean; maxpar, curpar: integer; cc: integer; ilp: inilbp;
+          test: boolean; maxpar, curpar: integer; cc: integer;
     begin nxt := nil;
       repeat { id:type group }
         maxpar := 0;
         repeat {ids }
+          lcp := nil;
           if sy = ident then
             begin new(lcp,vars); ininam(lcp); curpar := 0;
               with lcp^ do
                begin klass := vars; strassvf(name, id); next := nxt; 
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; threat := false; forcnt := 0; part := ptval;
-                  hdr := false; vext := incstk <> nil; vmod := incstk;
+                  hdr := false; vext := incstk <> nil; vmod := incstk; 
+                  inilab := -1; ininxt := nil;
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -5891,9 +5887,8 @@ end;
           if (sy = lparent) and not iso7185 then begin
             { parameterized type specification }
             if nxt <> nil then begin { gen code strip label }
-              new(ilp); ilp^.next := display[top].inilst; 
-              display[top].inilst := ilp; genlabel(ilp^.lab); 
-              putlabel(ilp^.lab) 
+              lcp^.ininxt := display[top].inilst; display[top].inilst := lcp;
+              genlabel(lcp^.inilab); putlabel(lcp^.inilab) 
             end;
             insymbol;
             repeat
@@ -6125,7 +6120,7 @@ end;
                                   vlev := level; keep := true; refer := false; 
                                   threat := false; forcnt := 0; part := pt; 
                                   hdr := false; vext := false; vmod := nil; 
-                                  vaddr := 0;
+                                  vaddr := 0; inilab := -1; ininxt := nil;
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -6289,7 +6284,7 @@ end;
                         idtype := nilptr; vkind := actual; next := nil; 
                         vlev := 0; vaddr := gc; threat := false; forcnt := 0;
                         part := ptval; hdr := false; vext := incstk <> nil; 
-                        vmod := incstk;
+                        vmod := incstk; inilab := -1; ininxt := nil;
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
                       wrtsym(lcp2, 'g')
@@ -6445,7 +6440,7 @@ end;
         printed: boolean;
         lsize: addrrange;
         stalvl: integer; { statement nesting level }
-        ilp: inilbp;
+        ilp: ctp;
 
     { add statement level }
     procedure addlvl;
@@ -7276,10 +7271,9 @@ end;
       initvirt { process virtual procedure/function sets }
     end;
     { call initializer code strips }
-    while display[top].inilst <> nil do begin
-      ilp := display[top].inilst; display[top].inilst := ilp^.next;
-      genujpxjpcal(89(*cal*),ilp^.lab); dispose(ilp)
-    end;
+    ilp := display[top].inilst;
+    while ilp <> nil do 
+      begin genujpxjpcal(89(*cal*),ilp^.inilab); ilp := ilp^.ininxt end;
     if sy = beginsy then insymbol else error(17);
     repeat
       repeat statement(fsys + [semicolon,endsy])
@@ -7687,7 +7681,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil;
+      vmod := nil; inilab := -1; ininxt := nil;
     end;
     enterid(cp)
   end;
@@ -7700,7 +7694,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil;
+      vmod := nil; inilab := -1; ininxt := nil;
     end;
     enterid(cp)
   end;
@@ -7748,7 +7742,7 @@ end;
           begin klass := vars; strassvr(name, '         '); idtype := realptr; 
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
             threat := false; forcnt := 0; part := ptval; hdr := false; 
-            vext := false; vmod := nil;
+            vext := false; vmod := nil; inilab := -1; ininxt := nil;
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -7902,7 +7896,7 @@ end;
       begin klass := vars; strassvr(name, '         '); idtype := nil; 
         vkind := actual; next := nil; vlev := 0; vaddr := 0; 
         threat := false; forcnt := 0; part := ptval; hdr := false; 
-        vext := false; vmod := nil;
+        vext := false; vmod := nil; inilab := -1; ininxt := nil;
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
