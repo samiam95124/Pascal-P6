@@ -1930,15 +1930,13 @@ procedure load;
          instr[212]:='cxc       '; insp[212] := false; insq[212] := intsize*2;
          instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;
          instr[214]:='max       '; insp[214] := false; insq[214] := intsize;
-
          instr[215]:='equv      '; insp[215] := false; insq[215] := 0;
          instr[216]:='neqv      '; insp[216] := false; insq[216] := 0;
          instr[217]:='lesv      '; insp[217] := false; insq[217] := 0;
          instr[218]:='grtv      '; insp[218] := false; insq[218] := 0;
          instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;
          instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;
-
-
+         instr[221]:='vdp       '; insp[221] := false; insq[221] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2692,10 +2690,10 @@ procedure load;
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
-            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv }
+            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4839,11 +4837,12 @@ begin
                        else i := getint(ad+(q-i)*intsize);
                        pshint(i)
                  end;
+    221 (*vdp*): begin popadr(ad); dspspc(0, getadr(ad)) end;
 
     { illegal instructions }
-    221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235,
-    236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250,
-    251, 252, 253, 254,
+    222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236,
+    237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,
+    252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

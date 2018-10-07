@@ -179,7 +179,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 106;  { maximum number of instructions }
+   maxins     = 107;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -7281,6 +7281,14 @@ end;
       test := sy <> semicolon;
       if not test then insymbol
     until test;
+    { deinitialize containers }
+    if level = 1 then begin
+      ilp := display[top].inilst;
+      while ilp <> nil do begin 
+        gen1(37(*lao*),ilp^.vaddr);
+        gen0(107(*vdp*));
+        ilp := ilp^.ininxt end
+    end;
     sublvl;
     if sy = endsy then insymbol else error(13);
     llp := display[top].flabel; (*test for undefined and unreferenced labels*)
@@ -8122,7 +8130,7 @@ end;
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
-      mn[105] :=' lft'; mn[106] :=' max';
+      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp';
 
     end (*instrmnemonics*) ;
 
@@ -8248,7 +8256,7 @@ end;
       cdx[100] := 0;                    cdx[101] := +ptrsize*4;
       cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
       cdx[104] := +intsize;             cdx[105] := -adrsize;
-      cdx[106] := +ptrsize*2;
+      cdx[106] := +ptrsize*2;           cdx[107] := +ptrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
