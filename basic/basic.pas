@@ -1,18 +1,7 @@
 {$L-}
 {*******************************************************************************
 *                                                                              *
-*                              BASIC VS 0.1                                    *
-*                                                                              *
-*                            8/94 S. A. MOORE                                  *
-*                                                                              *
-* Implements the full basic language. Provides a full line oriented edit       *
-* system, or accepts external text. The full documentation is found            *
-* separately. Also see the "basics" or tiny basic companion.                   *
-* Basic is implemented as a tolken based interpreter. Each line is full        *
-* scan level tolkenized and stored, and may be listed from that form. The      *
-* only information lost in this conversion is case, leading and trailing       *
-* zeros, and some real number formatting (reals may be reformatted to a        *
-* standard representation).                                                    *
+*                             BASIC INTERPRETER                                *
 *                                                                              *
 * ---------------------------------------------------------------------------- *
 *                                                                              *
@@ -20,7 +9,7 @@
 *                                                                              *
 * ---------------------------------------------------------------------------- *
 *                                                                              *
-* Copyright (c) 1994, Scott A. Moore/Franco                                    *
+* Copyright (c) 1994 2018, Scott A. Franco                                     *
 * All rights reserved.                                                         *
 *                                                                              *
 * Redistribution and use in source and binary forms, with or without           *
@@ -45,6 +34,15 @@
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT   *
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF     *
 * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.            *
+*                                                                              *
+* Implements the full basic language. Provides a full line oriented edit       *
+* system, or accepts external text. The full documentation is found            *
+* separately. Also see the "basics" or tiny basic companion.                   *
+* Basic is implemented as a tolken based interpreter. Each line is full        *
+* scan level tolkenized and stored, and may be listed from that form. The      *
+* only information lost in this conversion is case, leading and trailing       *
+* zeros, and some real number formatting (reals may be reformatted to a        *
+* standard representation).                                                    *
 *                                                                              *
 *******************************************************************************}
 

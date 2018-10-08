@@ -14,6 +14,10 @@ pcom: source/pcom.pas
 	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
 	
+pcom_immerr: source/pcom.pas
+	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL -DIMM_ERR
+	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
+	
 pint: source/pint.pas 
 	pascpp source/pint $(CPPFLAGS) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint source/pint.mpp.pas

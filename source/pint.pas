@@ -4491,32 +4491,32 @@ begin
                  end;
     98 (*chkb*),
     99 (*chkc*),
-    199 { chkx },
+    199 (*chkx*),
     26 (*chki*): begin getq; popint(i1); pshint(i1);
                   if (i1 < getint(q)) or (i1 > getint(q+intsize)) then
                   errore(ValueOutOfRange)
                 end;
 
-    187 { cks }: pshint(0);
-    175 { ckvi },
-    203 { ckvx },
-    179 { ckvb },
-    180 { ckvc }: begin getq; popint(i2); popint(i1);
+    187 (*cks*): pshint(0);
+    175 (*ckvi*),
+    203 (*ckvx*),
+    179 (*ckvb*),
+    180 (*ckvc*): begin getq; popint(i2); popint(i1);
                     pshint(i1); pshint(ord((i1 = q) or (i2 <> 0)));
                   end;
-    188 { cke }: begin popint(i2); popint(i1);
+    188 (*cke*): begin popint(i2); popint(i1);
                     if i2 = 0 then errorv(VariantNotActive)
                   end;
 
     { all the dups are defined, but not all used }
-    185 { dupb },
-    186 { dupc },
-    181 { dupi }: begin popint(i1); pshint(i1); pshint(i1) end;
-    182 { dupa }: begin popadr(a1); pshadr(a1); pshadr(a1) end;
-    183 { dupr }: begin poprel(r1); pshrel(r1); pshrel(r1) end;
-    184 { dups }: begin popset(s1); pshset(s1); pshset(s1) end;
+    185 (*dupb*),
+    186 (*dupc*),
+    181 (*dupi*): begin popint(i1); pshint(i1); pshint(i1) end;
+    182 (*dupa*): begin popadr(a1); pshadr(a1); pshadr(a1) end;
+    183 (*dupr*): begin poprel(r1); pshrel(r1); pshrel(r1) end;
+    184 (*dups*): begin popset(s1); pshset(s1); pshset(s1) end;
 
-    189 { inv }: begin popadr(stoad);
+    189 (*inv*): begin popadr(stoad);
                        if iswatch(stoad) and stopwatch then 
                          begin pshadr(stoad); watchmatch := true end
                        else putdef(stoad, false) 
@@ -4788,50 +4788,48 @@ begin
                    if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
                    else begin newspc(q, ad2); putadr(ad1, ad2) end
                  end;
-    135 (*lcp*): begin popadr(ad); pshadr(getadr(ad)); 
-                       pshadr(ad+ptrsize) end;
-    176 (*cps*): begin popint(i1); popadr(ad1); popint(i2); popadr(ad2);
-                       pshadr(ad2); pshint(i2); pshadr(ad1); pshint(i1);
+    135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end; 
+    176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
+                       pshint(i2); pshadr(ad2); pshint(i1); pshadr(ad1);
                        if i1 <> i2 then errorv(ContainerMismatch)
                  end;
     177 (*cpc*): begin getq; popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
                        pshadr(ad4); pshadr(ad3); pshadr(ad2); pshadr(ad1);
                        for i := 1 to q do begin
-                         if getint(ad1) <> getint(ad3) then 
+                         if getint(ad2) <> getint(ad4) then 
                            errorv(ContainerMismatch);
-                         ad1 := ad1+ptrsize; ad3 := ad3+ptrsize
+                         ad2 := ad2+ptrsize; ad4 := ad4+ptrsize
                        end
                  end;
-    178 (*aps*): begin getq; popadr(ad); popadr(ad1); popadr(i1); 
-                       popadr(ad);
-                       for i := 0 to i1+q-1 do begin
+
+    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popadr(i1); 
+                       for i := 0 to i1*q-1 do begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
                        end
                  end;
-    210 (*apc*): begin getq; getq1; popadr(ad); popadr(ad1); popadr(ad2);
-                       popadr(ad);
+    210 (*apc*): begin getq; getq1; popadr(ad1); popadr(ad); popadr(ad); 
+                       popadr(ad2);
                        for i := 1 to q do 
                          begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                        for i := 0 to q1-1 do begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
                        end
                  end;
-    211 (*cxs*): begin getq; popint(i); popint(i1); popadr(ad); 
+    211 (*cxs*): begin getq; popint(i); popadr(ad); popint(i1);
                        if (i < 1) or (i > i1) then errore(ValueOutOfRange);
                        pshadr(ad+(i-1)*q)
                  end;
-    212 (*cxc*): begin getq; getq1; popint(i); popint(ad1); popadr(ad);
+    212 (*cxc*): begin getq; getq1; popint(i); popadr(ad); popint(ad1);
                        ad2 := ad1+ptrsize;
-                       for j := 1 to q-1 do
+                       for j := 1 to q do
                          begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                        if (i < 1) or (i > getint(ad1)) then 
                          errore(ValueOutOfRange);
-                       pshadr(ad+(i-1)*q1); pshadr(ad1+ptrsize)
+                       pshadr(ad1+ptrsize); pshadr(ad+(i-1)*q1) 
                  end;
-    213 (*lft*): begin getq; pshadr(q) end;
-    214 (*max*): begin getq; popint(i); 
+    213 (*lft*): begin getq; popadr(ad); pshadr(q); pshadr(ad) end;
+    214 (*max*): begin getq; popint(i); popadr(ad1); 
                        if q > 1 then popadr(ad) else popint(i1);
-                       popadr(ad1);
                        if (i < 1) or (i > q) then errorv(InvalidContainerLevel);
                        if q = 1 then i := i1
                        else i := getint(ad+(q-i)*intsize);

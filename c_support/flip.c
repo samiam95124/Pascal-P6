@@ -1,41 +1,72 @@
 /*******************************************************************************
-*
-*                 CONVERT LINE ENDINGS BETWEEN UNIX AND DOS
-*
-* Converts line endings from dos format to Unix, or Unix to dos.
-*
-* Format:
-*
-* flip [-udbc] [file] ...
-*
-* The options are:
-*
-*    u     Generate Unix mode line endings.
-*    d,m   Generate DOS mode line endings.
-*    b     Force convertion on binary file (default is do not convert).
-*    c     Send output to standard output instead of converting in place.
-*
-* This is the same utilitiy that comes with several versions of Unix.
-*
-* Note that we use a universal line ending recognizer, that sees any of the
-* following line endings as valid:
-*
-* crlf
-* lfcr
-* cf
-* lf
-*
-* Thus, it will convert anything to the desired line ending, and is a no-op
-* if the file is already in that format.
-*
-* This is the WAY LINE ENDINGS SHOULD BE RECOGNIZED IN *** ANY *** PROGRAM.
-* Copy this code and USE IT. Type your input files binary and provide your OWN
-* line ending recognizer instead of the braindead one standard with libc.
-* Think for yourself, use the force. Peace.
-*
-* Unlike the original flip utility there is no automatic sensing of system type.
-* It defaults to Unix line endings. The lesson here is don't use the default.
-*
+*                                                                              *
+*                 CONVERT LINE ENDINGS BETWEEN UNIX AND DOS                    *
+*                                                                              *
+* LICENSING:                                                                   *
+*                                                                              *
+* Copyright (c) 2018, Scott A. Franco                                          *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+* 1. Redistributions of source code must retain the above copyright notice,    *
+*    this list of conditions and the following disclaimer.                     *
+* 2. Redistributions in binary form must reproduce the above copyright         *
+*    notice, this list of conditions and the following disclaimer in the       *
+*    documentation and/or other materials provided with the distribution.      *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE     *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR          *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF         *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS     *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN      *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
+* POSSIBILITY OF SUCH DAMAGE.                                                  *
+*                                                                              *
+* The views and conclusions contained in the software and documentation are    *
+* those of the authors and should not be interpreted as representing official  *
+* policies, either expressed or implied, of the Pascal-P6 project.             *
+*                                                                              *
+* Converts line endings from dos format to Unix, or Unix to dos.               *
+*                                                                              *
+* Format:                                                                      *
+*                                                                              *
+* flip [-udbc] [file] ...                                                      *
+*                                                                              *
+* The options are:                                                             *
+*                                                                              *
+*    u     Generate Unix mode line endings.                                    *
+*    d,m   Generate DOS mode line endings.                                     *
+*    b     Force conversion on binary file (default is do not convert).        *
+*    c     Send output to standard output instead of converting in place.      *
+*                                                                              *
+* This is the same utility that comes with several versions of Unix.           *
+*                                                                              *
+* Note that we use a universal line ending recognizer, that sees any of the    *
+* following line endings as valid:                                             *
+*                                                                              *
+* crlf                                                                         *
+* lfcr                                                                         *
+* cf                                                                           *
+* lf                                                                           *
+*                                                                              *
+* Thus, it will convert anything to the desired line ending, and is a no-op    *
+* if the file is already in that format.                                       *
+*                                                                              *
+* This is the WAY LINE ENDINGS SHOULD BE RECOGNIZED IN *** ANY *** PROGRAM.    *
+* Copy this code and USE IT. Type your input files binary and provide your OWN *
+* line ending recognizer instead of the braindead one standard with libc.      *
+* Think for yourself, use the force. Peace.                                    *
+*                                                                              *
+* Unlike the original flip utility there is no automatic sensing of system     *
+* type. * It defaults to Unix line endings. The lesson here is don't use the   *
+* default.                                                                     *
+*                                                                              *
 *******************************************************************************/
 
 #include <stdio.h>

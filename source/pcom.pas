@@ -1516,9 +1516,9 @@ end;
       { This diagnostic is here because error buffers error numbers til the end
         of line, and sometimes you need to know exactly where they occurred. }
 
-      {
+#ifdef IMM_ERR
       writeln; writeln('error: ', ferrnr:1);
-      }
+#endif
     
       errtbl[ferrnr] := true; { track this error }
       if errinx >= 9 then
@@ -3360,7 +3360,7 @@ end;
 
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer; 
-      id: stp; lastptr: boolean; cc: integer;
+      id: stp; lastptr: boolean; cc: integer; ct: boolean;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
   begin
@@ -3440,7 +3440,12 @@ end;
                   dplmt := vaddr
                 end
               else
-                begin gen2t(54(*lod*),level-vlev,vaddr,nilptr);
+                begin
+                  { if container, just load the address of it, the complex 
+                    pointer is loaded when the address is loaded }
+                  ct := false; if typtr <> nil then ct := typtr^.form = arrayc;
+                  if ct then gen2(50(*lda*),level-vlevel,vaddr) 
+                  else gen2t(54(*lod*),level-vlev,vaddr,nilptr);
                   access := indrct; idplmt := 0
                 end;
             end;
@@ -4517,7 +4522,9 @@ end;
                                 begin if gattr.packcom then error(197);
                                   if gattr.tagfield then error(198);
                                   loadaddress;
-                                  locpar := locpar+ptrsize;
+                                  if lsp^.form = arrayc then 
+                                    locpar := locpar+ptrsize*2
+                                  else locpar := locpar+ptrsize;
                                   alignu(parmptr,locpar);
                                 end
                               else error(154);
@@ -6137,7 +6144,9 @@ end;
                           begin insymbol;
                             if sy = ident then
                               begin searchid([types],lcp);
-                                lsp := lcp^.idtype; lsize := ptrsize;
+                                lsp := lcp^.idtype; 
+                                if lsp^.form = arrayc then lsize := ptrsize*2
+                                else lsize := ptrsize;
                                 if lsp <> nil then
                                   if lkind=actual then begin
                                     if lsp^.form<=power then lsize := lsp^.size
@@ -6156,7 +6165,7 @@ end;
                                       begin idtype := lsp;
                                         vaddr := llc;
                                         llc := llc+lsize;
-                                        { if the type is structured, and is
+                                        { if the type is not structured, and is
                                           a view parameter, promote to formal }
                                         if lsp <> nil then
                                           if (lsp^.form <= power) and 
