@@ -179,7 +179,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 107;  { maximum number of instructions }
+   maxins     = 108;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3291,7 +3291,7 @@ end;
             { it's a container, load a complex pointer based on that }
             gen0(98(*lcp*));
             { if level is at bottom, simplify the template }
-            if containers(typtr) = 1 then gen1t(35(*ind*),0,nilptr)
+            if containers(typtr) = 1 then gen0(108(*scp*))
           end;
           kind := varbl; access := indrct; idplmt := 0; packing := false;
           symptr := nil { break variable association }
@@ -8139,7 +8139,7 @@ end;
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
-      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp';
+      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; mn[108] :=' scp';
 
     end (*instrmnemonics*) ;
 
@@ -8266,6 +8266,7 @@ end;
       cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
       cdx[104] := +intsize;             cdx[105] := -adrsize;
       cdx[106] := +ptrsize*2;           cdx[107] := +ptrsize;
+      cdx[108] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

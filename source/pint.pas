@@ -1937,6 +1937,7 @@ procedure load;
          instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;
          instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;
          instr[221]:='vdp       '; insp[221] := false; insq[221] := 0;
+         instr[222]:='scp       '; insp[222] := false; insq[222] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2690,10 +2691,10 @@ procedure load;
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
-            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp }
+            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp,scp }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,221,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,222,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4836,11 +4837,12 @@ begin
                        pshint(i)
                  end;
     221 (*vdp*): begin popadr(ad); dspspc(0, getadr(ad)) end;
+    222 (*scp*): begin popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad) end;
 
     { illegal instructions }
-    222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236,
-    237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251,
-    252, 253, 254,
+    223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 
+    238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 
+    253, 254,
     255: errorv(InvalidInstruction)
 
   end
