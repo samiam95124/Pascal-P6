@@ -3325,11 +3325,13 @@ end;
         cc := containers(gattr.typtr);
       if gattr.typtr^.form = arrays then begin 
         { right is fixed } 
-        if cc = 1 then
+        if cc = 1 then begin
           { load simple template }
-          gen2(51(*ldc*),1,gattr.typtr^.size)
-        { load complex fixed template }
-        else gen1(105(*lft*),gattr.typtr^.tmpl)
+          gen2(51(*ldc*),1,gattr.typtr^.size);
+          gen1(72(*swp*),stackelsize)
+        end else 
+          { load complex fixed template }
+          gen1(105(*lft*),gattr.typtr^.tmpl)
       end else if lattr.typtr^.form = arrays then begin
         { left is fixed }
         if cc = 1 then
@@ -3561,7 +3563,7 @@ end;
                         else begin { complex container index }
                           gen2(104(*cxc*),cc,containerbase(gattr.typtr));
                           { if level is at bottom, simplify the template }
-                          if cc = 2 then gen1t(35(*ind*),0,nilptr)
+                          if cc = 2 then gen0(108(*scp*))
                         end
                       end
                   end
@@ -3916,6 +3918,12 @@ end;
           if (r <> 10) and (lsp <> intptr) then error(214);
           spad := false; { set no padded string }
           ledz := false; { set no leading zero }
+          { if string and not container, convert to complex }
+          if stringt(lsp) and not (lsp^.form = arrayc) then begin
+            len := lsp^.size div charmax;
+            gen2(51(*ldc*),1,len); { load len }
+            gen1(72(*swp*),stackelsize) { swap ptr and len }
+          end;
           if sy = colon then
             begin insymbol; 
               if (sy = mulop) and (op = mul) then begin
@@ -3981,20 +3989,17 @@ end;
                       if lsp^.form = scalar then error(236)
                       else
                         if stringt(lsp) then begin
-                          { the formulation of string is a bit unfortunate for
-                            containers because the length of string is at the
-                            end/tos. }
                           if lsp^.form = arrayc then begin { complex }
-                            { if fielded, have to bring the template length to
-                              to the top }
-                            if not default then gen1(72(*swp*),stackelsize)
-                            { otherwise just make a copy of the template 
-                              length }
-                            else gen0t(76(*dup*),nilptr)
+                            if default then begin
+                              { no field, need to duplicate len to make the 
+                                field }
+                              gen1(72(*swp*),stackelsize); { swap ptr and len }
+                              gen0t(76(*dup*),nilptr); { make copy len }
+                              gen1(72(*swp*),stackelsize*2); { back in order }
+                            end
                           end else begin { standard array }
                             len := lsp^.size div charmax;
-                            if default then gen2(51(*ldc*),1,len);
-                            gen2(51(*ldc*),1,len)
+                            if default then gen2(51(*ldc*),1,len)
                           end;
                           if spad then gen1(30(*csp*),68(*wrsp*))
                           else gen1(30(*csp*),10(*wrs*))

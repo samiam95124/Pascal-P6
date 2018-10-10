@@ -1865,7 +1865,7 @@ void callsp(void)
                        fprintf(filtable[fn], "\n");
                     }
                     break;
-    case 6 /*wrs*/: popint(l); popint(w); popadr(ad1);
+    case 6 /*wrs*/: popint(w); popadr(ad1); popint(l);
                     popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > w) l = w; /* limit string to field */
@@ -1888,7 +1888,7 @@ void callsp(void)
                                  (char*)(store+ad1));
                     }
                     break;
-    case 65 /*wrsp*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+    case 65 /*wrsp*/: popint(w); popadr(ad1); popint(l); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (fn <= COMMANDFN) switch (fn) {

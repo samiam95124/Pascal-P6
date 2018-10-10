@@ -1904,7 +1904,7 @@ begin (*callsp*)
                                 writeln(filtable[fn])
                            end
                       end;
-           6 (*wrs*): begin popint(l); popint(w); popadr(ad1);
+           6 (*wrs*): begin popint(w); popadr(ad1); popint(l); 
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
@@ -1921,8 +1921,8 @@ begin (*callsp*)
                                 writestr(filtable[fn], ad1, w, l)
                            end;
                       end;
-           65 (*wrsp*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
-                           valfil(ad); fn := store[ad];
+           65 (*wrsp*): begin popint(w); popadr(ad1); popint(l); 
+                           popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of

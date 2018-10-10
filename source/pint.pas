@@ -3430,7 +3430,7 @@ begin (*callsp*)
                                 writeln(filtable[fn])
                            end
                       end;
-           6 (*wrs*): begin popint(l); popint(w); popadr(ad1);
+           6 (*wrs*): begin popint(w); popadr(ad1); popint(l); 
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
@@ -3450,8 +3450,8 @@ begin (*callsp*)
                                 writestr(filtable[fn], ad1, w, l)
                            end;
                       end;
-           65 (*wrsp*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
-                           valfil(ad); fn := store[ad];
+           65 (*wrsp*): begin popint(w); popadr(ad1); popint(l); 
+                           popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
@@ -4820,9 +4820,9 @@ begin
                        if (i < 1) or (i > i1) then errore(ValueOutOfRange);
                        pshadr(ad+(i-1)*q)
                  end;
-    212 (*cxc*): begin getq; getq1; popint(i); popadr(ad); popint(ad1);
+    212 (*cxc*): begin getq; getq1; popint(i); popadr(ad); popadr(ad1);
                        ad2 := ad1+ptrsize;
-                       for j := 1 to q do
+                       for j := 1 to q-1 do
                          begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                        if (i < 1) or (i > getint(ad1)) then 
                          errore(ValueOutOfRange);
