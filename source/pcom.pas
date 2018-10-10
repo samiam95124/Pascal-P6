@@ -5954,10 +5954,10 @@ end;
                 else gen2(50(*lda*),level-vlev,vaddr);
                 if level <= 1 then 
                   { issue vector init ptr instruction }
-                  gen2(97(*vip*),containerbase(lsp),maxpar) 
+                  gen2(97(*vip*),maxpar,containerbase(lsp)) 
                 else 
                   { issue vector init stack instruction }
-                  gen2(96(*vis*),containerbase(lsp),maxpar);
+                  gen2(96(*vis*),maxpar,containerbase(lsp));
                 gen0(90(*ret*)); { issue code strip return }
                 { remove initializers, count, var addr }
                 mesl(maxpar*intsize+adrsize)

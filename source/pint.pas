@@ -4782,12 +4782,12 @@ begin
     96 (*vbe*): varexit;
     19 (*brk*): begin breakins := true; pc := pcs end;
     122 (*vis*),
-    133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q1*intsize;
-                   for i := 1 to q1 do begin
-                     popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q := q+i1;
+    133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q*intsize;
+                   for i := 1 to q do begin
+                     popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q1 := q1*i1;
                    end;
                    if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
-                   else begin newspc(q, ad2); putadr(ad1, ad2) end
+                   else begin newspc(q1, ad2); putadr(ad1, ad2) end
                  end;
     135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end; 
     176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
