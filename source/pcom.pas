@@ -3446,7 +3446,7 @@ end;
                   { if container, just load the address of it, the complex 
                     pointer is loaded when the address is loaded }
                   ct := false; if typtr <> nil then ct := typtr^.form = arrayc;
-                  if ct then gen2(50(*lda*),level-vlevel,vaddr) 
+                  if ct then gen2(50(*lda*),level-vlev,vaddr) 
                   else gen2t(54(*lod*),level-vlev,vaddr,nilptr);
                   access := indrct; idplmt := 0
                 end;
