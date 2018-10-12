@@ -4517,7 +4517,9 @@ end;
                               else
                                 begin
                                   loadaddress;
-                                  locpar := locpar+ptrsize;
+                                  if lsp^.form = arrayc then 
+                                    locpar := locpar+ptrsize*2
+                                  else locpar := locpar+ptrsize;
                                   alignu(parmptr,locpar)
                                 end;
                                 if not comptypes(lsp,gattr.typtr) then
@@ -6212,7 +6214,8 @@ end;
                       { if value variable, and structured, we make a copy to
                         play with. However, structured is treated as var if
                         it is view, since that is protected }
-                      if (vkind=actual) and (idtype^.form>power) then
+                      if (vkind=actual) and (idtype^.form>power) and 
+                         (idtype^.form <> arrayc) then
                         begin
                           lc := lc-idtype^.size;
                           alignd(idtype,lc);
