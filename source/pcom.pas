@@ -179,7 +179,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 108;  { maximum number of instructions }
+   maxins     = 111;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -328,7 +328,7 @@ type                                                        (*describing:*)
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp; 
                              hdr: boolean; vext: boolean; vmod: filptr; 
-                             inilab: integer; ininxt: ctp); 
+                             inilab: integer; ininxt: ctp; dblptr: boolean); 
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -361,6 +361,7 @@ type                                                        (*describing:*)
                         tagfield: boolean; taglvl: integer; varnt: stp;
                         ptrref: boolean; vartagoff: addrrange;
                         varssize: addrrange; vartl: integer; pickup: boolean;
+                        dblptr: boolean;
                         case access: vaccess of
                           drct: (vlevel: levrange; dplmt: addrrange);
                           indrct: (idplmt: addrrange);
@@ -2642,7 +2643,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,102,104: 
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -3289,9 +3290,11 @@ end;
           end;
           if (typtr^.form = arrayc) and pickup then begin 
             { it's a container, load a complex pointer based on that }
-            gen0(98(*lcp*));
-            { if level is at bottom, simplify the template }
-            if containers(typtr) = 1 then gen0(108(*scp*))
+            if dblptr then gen0(111(*ldp*)) else begin
+              gen0(98(*lcp*));
+              { if level is at bottom, simplify the template }
+              if containers(typtr) = 1 then gen0(108(*spc*))
+            end
           end;
           kind := varbl; access := indrct; idplmt := 0; packing := false;
           symptr := nil { break variable association }
@@ -3433,10 +3436,11 @@ end;
     with fcp^, gattr do
       begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
         packcom := false; tagfield := false; ptrref := false; vartl := -1;
-        pickup := true;
+        pickup := true; dblptr := false;
         case klass of
           vars: begin symptr := fcp;
-              if typtr <> nil then packing := typtr^.packing;
+              if typtr <> nil then 
+                begin packing := typtr^.packing; dblptr := fcp^.dblptr end;
               if vkind = actual then
                 begin access := drct; vlevel := vlev;
                   dplmt := vaddr
@@ -3548,7 +3552,7 @@ end;
                         kind := varbl;
                         access := indrct; idplmt := 0; packing := false;
                         packcom := false; tagfield := false; ptrref := false;
-                        vartl := -1; pickup := false
+                        vartl := -1; pickup := false; dblptr := false;
                       end;
                     if gattr.typtr <> nil then
                       begin
@@ -3563,7 +3567,7 @@ end;
                         else begin { complex container index }
                           gen2(104(*cxc*),cc,containerbase(gattr.typtr));
                           { if level is at bottom, simplify the template }
-                          if cc = 2 then gen0(108(*scp*))
+                          if cc = 2 then gen0(108(*spc*))
                         end
                       end
                   end
@@ -3605,7 +3609,8 @@ end;
                                 { only set ptr offset ref if last was ptr }
                                 gattr.ptrref := lastptr;
                                 gattr.vartl := lcp^.vartl;
-                                gattr.pickup := false;
+                                gattr.pickup := false; 
+                                gattr.dblptr := false;
                                 case access of
                                   drct:   dplmt := dplmt + fldaddr;
                                   indrct: idplmt := idplmt + fldaddr;
@@ -3634,7 +3639,7 @@ end;
                         begin kind := varbl; access := indrct; idplmt := 0;
                           packing := false; packcom := false; 
                           tagfield := false; ptrref := true; vartl := -1;
-                          pickup := false
+                          pickup := false; dblptr := false;
                         end
                     end
                   else
@@ -5891,7 +5896,7 @@ end;
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; threat := false; forcnt := 0; part := ptval;
                   hdr := false; vext := incstk <> nil; vmod := incstk; 
-                  inilab := -1; ininxt := nil;
+                  inilab := -1; ininxt := nil; dblptr := false;
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -6134,7 +6139,8 @@ end;
                                   vlev := level; keep := true; refer := false; 
                                   threat := false; forcnt := 0; part := pt; 
                                   hdr := false; vext := false; vmod := nil; 
-                                  vaddr := 0; inilab := -1; ininxt := nil;
+                                  vaddr := 0; inilab := -1; ininxt := nil; 
+                                  dblptr := true;
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -6301,7 +6307,8 @@ end;
                         idtype := nilptr; vkind := actual; next := nil; 
                         vlev := 0; vaddr := gc; threat := false; forcnt := 0;
                         part := ptval; hdr := false; vext := incstk <> nil; 
-                        vmod := incstk; inilab := -1; ininxt := nil;
+                        vmod := incstk; inilab := -1; ininxt := nil; 
+                        dblptr := false;
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
                       wrtsym(lcp2, 'g')
@@ -7258,10 +7265,21 @@ end;
                 if idtype <> nil then begin
                   if idtype^.form > power then
                     begin
-                      llc1 := llc1 - ptrsize;
+                      if idtype^.form = arrayc then llc1 := llc1 - ptrsize*2
+                      else llc1 := llc1 - ptrsize;
                       alignd(parmptr,llc1);
                       if vkind = actual then
-                        begin
+                        if idtype^.form = arrayc then begin
+                          { Container array. These are not preallocated, so we
+                            have to create a copy on stack. }
+                          gen2(50(*lda*),0,llc1); { index the pointer }
+                          gen0(111(*ldp*)); { load complex pointer }
+                          { copy complex to stack }
+                          gen2(109(*ccs*),containers(idtype),containerbase(idtype));
+                          gen2(50(*lda*),0,vaddr); { load dest addr }
+                          gen1(72(*swp*),stackelsize*2); { swap that under cp }
+                          gen0(110(*scp*)) { store complex pointer }
+                        end else begin
                           gen2(50(*lda*),0,vaddr);
                           gen2t(54(*lod*),0,llc1,nilptr);
                           gen1(40(*mov*),idtype^.size);
@@ -7706,7 +7724,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil; inilab := -1; ininxt := nil;
+      vmod := nil; inilab := -1; ininxt := nil; dblptr := false;
     end;
     enterid(cp)
   end;
@@ -7719,7 +7737,7 @@ end;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
       threat := false; forcnt := 0; part := ptval; hdr := false; vext := false; 
-      vmod := nil; inilab := -1; ininxt := nil;
+      vmod := nil; inilab := -1; ininxt := nil; dblptr := false;
     end;
     enterid(cp)
   end;
@@ -7768,6 +7786,7 @@ end;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
             threat := false; forcnt := 0; part := ptval; hdr := false; 
             vext := false; vmod := nil; inilab := -1; ininxt := nil;
+            dblptr := false;
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -7921,7 +7940,8 @@ end;
       begin klass := vars; strassvr(name, '         '); idtype := nil; 
         vkind := actual; next := nil; vlev := 0; vaddr := 0; 
         threat := false; forcnt := 0; part := ptval; hdr := false; 
-        vext := false; vmod := nil; inilab := -1; ininxt := nil;
+        vext := false; vmod := nil; inilab := -1; ininxt := nil; 
+        dblptr := false;
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
@@ -8147,7 +8167,8 @@ end;
       mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
-      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; mn[108] :=' scp';
+      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; mn[108] :=' spc';
+      mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp';
 
     end (*instrmnemonics*) ;
 
@@ -8274,7 +8295,8 @@ end;
       cdx[102] := +ptrsize*4;           cdx[103] := +intsize+ptrsize;
       cdx[104] := +intsize;             cdx[105] := -adrsize;
       cdx[106] := +ptrsize*2;           cdx[107] := +ptrsize;
-      cdx[108] := 0;
+      cdx[108] := 0;                    cdx[109] := 0;
+      cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

@@ -1937,7 +1937,10 @@ procedure load;
          instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;
          instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;
          instr[221]:='vdp       '; insp[221] := false; insq[221] := 0;
-         instr[222]:='scp       '; insp[222] := false; insq[222] := 0;
+         instr[222]:='spc       '; insp[222] := false; insq[222] := 0;
+         instr[223]:='ccs       '; insp[223] := false; insq[223] := intsize*2;
+         instr[224]:='scp       '; insp[224] := false; insq[224] := 0;
+         instr[225]:='ldp       '; insp[225] := false; insq[225] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2535,8 +2538,8 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*pck,upk,vis,vip,apc,cxc*)
-          63, 64,122,133,210,212: begin read(prd,q); read(prd,q1); storeop; 
+          (*pck,upk,vis,vip,apc,cxc,ccs*)
+          63, 64,122,133,210,212,223: begin read(prd,q); read(prd,q1); storeop; 
                                         storeq; storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -2691,10 +2694,11 @@ procedure load;
 
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
-            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp,scp }
+            rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp,spc,
+            ccs,scp,ldp }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,221,222,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4316,8 +4320,6 @@ begin
                   (*q = max space required on stack*)
                   
     14  (*retp*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    sp := mp;
                    pc := getadr(mp+markra); { get ra }
                    ep := getadr(mp+markep); { get old ep }
@@ -4329,8 +4331,6 @@ begin
       we need adjustment for if the basic stack unit of int/ptr is less than 
       this. }
     130 (*retc*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }
                    sp := mp+markfv; 
                    if stackelsize < maxresult then sp := sp+maxresult div 2;
@@ -4340,8 +4340,6 @@ begin
                    mp := getadr(mp+markdl)
                  end;
     131 (*retb*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }
                    sp := mp+markfv; 
                    if stackelsize < maxresult then sp := sp+maxresult div 2;
@@ -4352,8 +4350,6 @@ begin
                  end;
     128 (*reti*),
     204 (*retx*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }
                    sp := mp+markfv;
                    if stackelsize < maxresult then sp := sp+maxresult div 2;
@@ -4362,16 +4358,12 @@ begin
                    mp := getadr(mp+markdl)
                  end;
     129 (*retr*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    sp := mp+markfv; { set stack below function result }
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
     132  (*reta*): begin evict(ep, mp);
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }  
                    sp := mp+markfv;
                    if stackelsize < maxresult then sp := sp+maxresult div 2;
@@ -4837,12 +4829,25 @@ begin
                        pshint(i)
                  end;
     221 (*vdp*): begin popadr(ad); dspspc(0, getadr(ad)) end;
-    222 (*scp*): begin popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad) end;
+    222 (*spc*): begin popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad) end;
+    223 (*ccs*): begin getq; getq1; popadr(ad); popadr(ad1); ad3 := ad1;
+                       if q = 1 then q1 := q1*ad1
+                       else for i := 1 to q do 
+                         begin q1 := q1*getint(ad3); ad3 := ad3+intsize end;
+                       ad2 := sp-q1; alignd(stackelsize, ad2); sp := ad2;
+                       for i := 0 to q1-1 do begin
+                         store[ad2+i] := store[ad+i]; putdef(ad2+i, getdef(ad+i));
+                       end;
+                       pshadr(ad1); pshadr(ad2)
+                 end;
+    224 (*scp*): begin popadr(ad); popadr(ad1); popadr(ad2); putadr(ad2, ad); 
+                       putadr(ad2+ptrsize, ad1) end;
+    225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize)); 
+                       pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 
-    238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 
-    253, 254,
+    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
+    241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
