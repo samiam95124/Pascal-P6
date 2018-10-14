@@ -4432,7 +4432,7 @@ end;
       var lattr: attr;
     begin chkstd;
       if sy = lparent then insymbol else error(9);
-      variable(fsys+[rparent], false); loadaddress;
+      variable(fsys+[rparent,comma], false); loadaddress;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> arrayc then error(273);
       lattr := gattr;
