@@ -2898,7 +2898,8 @@ end;
   
   function arrayt(fsp: stp): boolean;
   begin
-    arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
+    if fsp = nil then arrayt := false
+    else arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
   end;
   
   function comptypes{(fsp1,fsp2: stp) : boolean};
@@ -3860,6 +3861,7 @@ end;
           r: integer; { radix of print }
           spad: boolean; { write space padded string }
           ledz: boolean; { use leading zeros }
+          cpx: boolean; { is complex pointer }
     begin llkey := lkey; txt := true; deffil := true; byt := false;
       if sy = lparent then
       begin insymbol; chkhdr;
@@ -3924,7 +3926,8 @@ end;
           spad := false; { set no padded string }
           ledz := false; { set no leading zero }
           { if string and not container, convert to complex }
-          if stringt(lsp) and not (lsp^.form = arrayc) then begin
+          if lsp <> nil then
+            if stringt(lsp) and not (lsp^.form = arrayc) then begin
             len := lsp^.size div charmax;
             gen2(51(*ldc*),1,len); { load len }
             gen1(72(*swp*),stackelsize) { swap ptr and len }
@@ -3994,7 +3997,9 @@ end;
                       if lsp^.form = scalar then error(236)
                       else
                         if stringt(lsp) then begin
-                          if lsp^.form = arrayc then begin { complex }
+                          if lsp = nil then cpx := false
+                          else cpx := lsp^.form = arrayc;
+                          if cpx then begin { complex }
                             if default then begin
                               { no field, need to duplicate len to make the 
                                 field }
