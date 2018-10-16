@@ -4453,7 +4453,6 @@ end;
     procedure callnonstandard(fcp: ctp; inherit: boolean);
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
-
     procedure compparam(pla, plb: ctp);
     begin
       while (pla <> nil) and (plb <> nil) do begin
@@ -4462,7 +4461,39 @@ end;
       end;
       if (pla <> nil) or (plb <> nil) then error(189)
     end;
-
+    procedure fixpar(lsp: stp);
+      var cc: integer;
+    begin
+      if lsp <> nil then begin
+        if (gattr.typtr^.form = arrays) and (lsp^.form = arrayc) then begin
+          { fixed into container }
+          cc := containers(lsp);
+          if cc = 1 then begin
+            { load simple template }
+            gen2(51(*ldc*),1,gattr.typtr^.size);
+            gen1(72(*swp*),stackelsize)
+          end else 
+            { load complex fixed template }
+            gen1(105(*lft*),gattr.typtr^.tmpl)
+        end else if (gattr.typtr^.form = arrayc) and 
+                    (lsp^.form = arrays) then begin
+          { container into fixed, load template for fixed side }
+          cc := containers(gattr.typtr);
+          if cc = 1 then begin
+            { load simple template }
+            gen2(51(*ldc*),1,lsp^.size);
+            gen1(72(*swp*),stackelsize)
+          end else 
+            { load complex fixed template }
+            gen1(105(*lft*),lsp^.tmpl);
+          { compare templates }
+          if cc = 1 then gen0(99(*cps*)) { simple compare }
+          else gen1(100(*cpc*),cc); { complex compare }
+          { discard the templates }
+          gen1(71(*dmp*),ptrsize*4);
+        end
+      end
+    end;
     begin locpar := 0;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
@@ -4503,7 +4534,8 @@ end;
               end (*if lb*)
             else
               begin varp := false;
-                if nxt <> nil then varp := nxt^.vkind = formal;
+                { override variable status for view parameter }
+                if nxt <> nil then varp := (nxt^.vkind = formal) and not (nxt^.part = ptview);
                 if varp then variable(fsys + [comma,rparent], varp)
                 else expression(fsys + [comma,rparent], varp);
                 if gattr.typtr <> nil then
@@ -4512,7 +4544,7 @@ end;
                       begin lsp := nxt^.idtype;
                         if lsp <> nil then
                           begin
-                            if (nxt^.vkind = actual) then begin
+                            if (nxt^.vkind = actual) or (nxt^.part = ptview) then begin
                               if lsp^.form <= power then
                                 begin load;
                                   if debug then checkbnds(lsp);
@@ -4526,7 +4558,7 @@ end;
                                 end
                               else
                                 begin
-                                  loadaddress;
+                                  loadaddress; fixpar(lsp);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -4538,7 +4570,7 @@ end;
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
                                   if gattr.tagfield then error(198);
-                                  loadaddress;
+                                  loadaddress; fixpar(lsp);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -4547,7 +4579,6 @@ end;
                               else error(154);
                               if lsp <> gattr.typtr then error(199)
                             end
-
                           end
                       end
                   end
@@ -6183,10 +6214,10 @@ end;
                                       begin idtype := lsp;
                                         vaddr := llc;
                                         llc := llc+lsize;
-                                        { if the type is not structured, and is
+                                        { if the type is structured, and is
                                           a view parameter, promote to formal }
                                         if lsp <> nil then
-                                          if (lsp^.form <= power) and 
+                                          if (lsp^.form >= power) and 
                                              (part = ptview) then 
                                             vkind := formal
                                       end;
