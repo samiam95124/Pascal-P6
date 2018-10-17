@@ -2626,6 +2626,7 @@ end;
               begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
             else writeln(prr,fp2:12);
             if fop = 42 then mes(0)
+            else if fop = 71 then mesl(fp2) 
             else mes(fop)
           end
       end;
@@ -4482,15 +4483,19 @@ end;
           if cc = 1 then begin
             { load simple template }
             gen2(51(*ldc*),1,lsp^.size);
-            gen1(72(*swp*),stackelsize)
-          end else 
+            gen2(51(*ldc*),4,0) { load dummy address }
+          end else begin
             { load complex fixed template }
+            gen2(51(*ldc*),4,0); { load dummy address }
             gen1(105(*lft*),lsp^.tmpl);
+          end;
           { compare templates }
           if cc = 1 then gen0(99(*cps*)) { simple compare }
           else gen1(100(*cpc*),cc); { complex compare }
           { discard the templates }
-          gen1(71(*dmp*),ptrsize*4);
+          gen1(71(*dmp*),ptrsize*2);
+          gen1(72(*swp*),ptrsize);
+          gen1(71(*dmp*),ptrsize)
         end
       end
     end;
