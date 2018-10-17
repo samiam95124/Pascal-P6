@@ -2148,6 +2148,13 @@ end;
               if fconst <> nil then
                 fmax := fconst^.values.ival
   end (*getbounds*) ;
+  
+  { get span of type }
+  function span(fsp: stp): integer;
+  var fmin, fmax: integer;
+  begin
+    getbounds(fsp, fmin, fmax); span := fmax-fmin+1
+  end;
 
   function isbyte(fsp: stp): boolean;
     { check structure is byte }
@@ -3332,7 +3339,7 @@ end;
         { right is fixed } 
         if cc = 1 then begin
           { load simple template }
-          gen2(51(*ldc*),1,gattr.typtr^.size);
+          gen2(51(*ldc*),1,span(gattr.typtr^.inxtype));
           gen1(72(*swp*),stackelsize)
         end else 
           { load complex fixed template }
@@ -3341,10 +3348,10 @@ end;
         { left is fixed }
         if cc = 1 then
           { load simple template }
-          gen2(51(*ldc*),1,lattr.typtr^.size)
+          gen2(51(*ldc*),1,span(lattr.typtr^.inxtype))
         { load complex fixed template }
         else gen1(105(*lft*),lattr.typtr^.tmpl);
-        gen1(72(*swp*),ptrsize*2) { swap under right side }           
+        gen1(72(*swp*),ptrsize*3) { swap under right side and fix addr }           
       end;
       { compare templates }
       if cc = 1 then gen0(99(*cps*)) { simple compare }
@@ -4471,7 +4478,7 @@ end;
           cc := containers(lsp);
           if cc = 1 then begin
             { load simple template }
-            gen2(51(*ldc*),1,gattr.typtr^.size);
+            gen2(51(*ldc*),1,span(gattr.typtr^.inxtype));
             gen1(72(*swp*),stackelsize)
           end else 
             { load complex fixed template }
@@ -4482,7 +4489,7 @@ end;
           cc := containers(gattr.typtr);
           if cc = 1 then begin
             { load simple template }
-            gen2(51(*ldc*),1,lsp^.size);
+            gen2(51(*ldc*),1,span(lsp^.inxtype));
             gen2(51(*ldc*),4,0) { load dummy address }
           end else begin
             { load complex fixed template }
