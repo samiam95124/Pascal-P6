@@ -4138,7 +4138,8 @@ end;
     procedure newdisposeprocedure(disp: boolean);
       label 1;
       var lsp,lsp1,lsp2,lsp3: stp; varts: integer;
-          lsize: addrrange; lval: valu; tagc: integer; tagrec: boolean;
+          lsize: addrrange; lval: valu; tagc: integer; tagrec: boolean; 
+          ct: boolean; cc,pc: integer;
     begin
       if disp then begin 
         expression(fsys + [comma, rparent], false);
@@ -4147,63 +4148,88 @@ end;
         variable(fsys + [comma,rparent], false); 
         loadaddress
       end;
-      lsp := nil; varts := 0; lsize := 0; tagc := 0; tagrec := false;
-      if gattr.typtr <> nil then
-        with gattr.typtr^ do
-          if form = pointer then
-            begin
-              if eltype <> nil then
-                begin lsize := eltype^.size;
-                  if eltype^.form = records then lsp := eltype^.recvar
-                end
-            end
-          else error(116);
-      tagrec := taggedrec(lsp);
-      while sy = comma do
-        begin insymbol;constexpr(fsys + [comma,rparent],lsp1,lval);
-          if not lval.intval then 
-                begin lval.intval := true; lval.ival := 1 end;
-          varts := varts + 1; lsp2 := lsp1;
-          (*check to insert here: is constant in tagfieldtype range*)
-          if lsp = nil then error(158)
-          else
-            if lsp^.form <> tagfld then error(162)
-            else
-              if lsp^.tagfieldp <> nil then
-                if stringt(lsp1) or (lsp1 = realptr) then error(159)
-                else
-                  if comptypes(lsp^.tagfieldp^.idtype,lsp1) then
-                    begin
-                      lsp3 := lsp; lsp1 := lsp^.fstvar;
-                      while lsp1 <> nil do
-                        with lsp1^ do
-                          if varval.ival = lval.ival then
-                            begin lsize := size; lsp := subvar;
-                              if debug then begin
-                                if lsp3^.vart = nil then error(510);
-                                if lsp2=charptr then
-                                  gen2(51(*ldc*),6,lsp3^.vart^[varval.ival])
-                                else 
-                                  gen2(51(*ldc*),1,lsp3^.vart^[varval.ival])
-                              end;
-                              tagc := tagc+1;
-                              goto 1
-                            end
-                          else lsp1 := nxtvar;
-                      lsize := lsp^.size; lsp := nil;
-                    end
-                  else error(116);
-    1:  end (*while*) ;
-      if debug and tagrec then gen2(51(*ldc*),1,tagc);
-      gen2(51(*ldc*),1,lsize);
-      if debug and tagrec then begin
-        if lkey = 9 then gen1(30(*csp*),42(*nwl*))
-        else gen1(30(*csp*),43(*dsl*));
-        mesl(tagc*intsize)
+      ct := false; 
+      if gattr.typtr <> nil then 
+        if gattr.typtr^.form = pointer then
+          if gattr.typtr^.eltype <> nil then
+            ct := gattr.typtr^.eltype^.form = arrayc;
+      if ct then begin { container array }
+        if disp then gen0(107(*vdp*))
+        else begin lsp := gattr.typtr^.eltype;
+          cc := containers(lsp); { find no. containers }
+          pc := 0;
+          while sy = comma do begin insymbol; 
+            expression(fsys+[comma,rparent], false); load;
+            if gattr.typtr <> nil then 
+              if basetype(gattr.typtr) <> intptr then error(243);
+            pc := pc+1;
+            gen1(72(*swp*),ptrsize) { keep the var address on top }
+          end;
+          if pc <> cc then error(269);
+          { issue vector init ptr instruction }
+          gen2(97(*vip*),pc,containerbase(lsp));
+          { remove initializers, var addr }
+          mesl(pc*intsize+adrsize)
+        end
       end else begin
-        if lkey = 9 then gen1(30(*csp*),12(*new*))
-        else gen1(30(*csp*),29(*dsp*))
-      end;
+        lsp := nil; varts := 0; lsize := 0; tagc := 0; tagrec := false;
+        if gattr.typtr <> nil then
+          with gattr.typtr^ do
+            if form = pointer then
+              begin
+                if eltype <> nil then
+                  begin lsize := eltype^.size;
+                    if eltype^.form = records then lsp := eltype^.recvar
+                  end
+              end
+            else error(116);
+        tagrec := taggedrec(lsp);
+        while sy = comma do
+          begin insymbol;constexpr(fsys + [comma,rparent],lsp1,lval);
+            if not lval.intval then 
+                  begin lval.intval := true; lval.ival := 1 end;
+            varts := varts + 1; lsp2 := lsp1;
+            (*check to insert here: is constant in tagfieldtype range*)
+            if lsp = nil then error(158)
+            else
+              if lsp^.form <> tagfld then error(162)
+              else
+                if lsp^.tagfieldp <> nil then
+                  if stringt(lsp1) or (lsp1 = realptr) then error(159)
+                  else
+                    if comptypes(lsp^.tagfieldp^.idtype,lsp1) then
+                      begin
+                        lsp3 := lsp; lsp1 := lsp^.fstvar;
+                        while lsp1 <> nil do
+                          with lsp1^ do
+                            if varval.ival = lval.ival then
+                              begin lsize := size; lsp := subvar;
+                                if debug then begin
+                                  if lsp3^.vart = nil then error(510);
+                                  if lsp2=charptr then
+                                    gen2(51(*ldc*),6,lsp3^.vart^[varval.ival])
+                                  else 
+                                    gen2(51(*ldc*),1,lsp3^.vart^[varval.ival])
+                                end;
+                                tagc := tagc+1;
+                                goto 1
+                              end
+                            else lsp1 := nxtvar;
+                        lsize := lsp^.size; lsp := nil;
+                      end
+                    else error(116);
+      1:  end (*while*) ;
+        if debug and tagrec then gen2(51(*ldc*),1,tagc);
+        gen2(51(*ldc*),1,lsize);
+        if debug and tagrec then begin
+          if lkey = 9 then gen1(30(*csp*),42(*nwl*))
+          else gen1(30(*csp*),43(*dsl*));
+          mesl(tagc*intsize)
+        end else begin
+          if lkey = 9 then gen1(30(*csp*),12(*new*))
+          else gen1(30(*csp*),29(*dsp*))
+        end
+      end
     end (*newdisposeprocedure*) ;
 
     procedure absfunction;
@@ -6014,7 +6040,7 @@ end;
                   { issue vector init stack instruction }
                   gen2(96(*vis*),maxpar,containerbase(lsp));
                 gen0(90(*ret*)); { issue code strip return }
-                { remove initializers, count, var addr }
+                { remove initializers, var addr }
                 mesl(maxpar*intsize+adrsize)
               end
             end;
