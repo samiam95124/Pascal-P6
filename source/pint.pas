@@ -1941,6 +1941,8 @@ procedure load;
          instr[223]:='ccs       '; insp[223] := false; insq[223] := intsize*2;
          instr[224]:='scp       '; insp[224] := false; insq[224] := 0;
          instr[225]:='ldp       '; insp[225] := false; insq[225] := 0;
+         instr[226]:='vin       '; insp[226] := false; insq[226] := intsize*2;
+         instr[227]:='vdd       '; insp[227] := false; insq[227] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2538,8 +2540,8 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*pck,upk,vis,vip,apc,cxc,ccs*)
-          63, 64,122,133,210,212,223: begin read(prd,q); read(prd,q1); storeop; 
+          (*pck,upk,vis,vip,apc,cxc,ccs,vin*)
+          63, 64,122,133,210,212,223,226: begin read(prd,q); read(prd,q1); storeop; 
                                         storeq; storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -2695,10 +2697,10 @@ procedure load;
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
             rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp,spc,
-            ccs,scp,ldp }
+            ccs,scp,ldp,vdd }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4775,11 +4777,18 @@ begin
     19 (*brk*): begin breakins := true; pc := pcs end;
     122 (*vis*),
     133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q*intsize;
-                   for i := 1 to q do begin
+                   for i := 1 to q do begin 
                      popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q1 := q1*i1;
                    end;
                    if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
                    else begin newspc(q1, ad2); putadr(ad1, ad2) end
+                 end;
+    226 (*vin*): begin getq; getq1; popadr(ad); ad2 := sp; 
+                   for i := 1 to q do 
+                     begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
+                   newspc(q1+q*intsize, ad2); putadr(ad, ad2);
+                   for i := 1 to q do 
+                     begin popint(i1); putint(ad2, i1); ad2 := ad2+intsize;end
                  end;
     135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end; 
     176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
@@ -4828,7 +4837,8 @@ begin
                        else i := getint(ad+(q-i)*intsize);
                        pshint(i)
                  end;
-    221 (*vdp*): begin popadr(ad); dspspc(0, getadr(ad)) end;
+    221 (*vdp*),
+    227 (*vdd*): begin popadr(ad); dspspc(0, ad) end;
     222 (*spc*): begin popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad) end;
     223 (*ccs*): begin getq; getq1; popadr(ad); popadr(ad1); ad3 := ad1;
                        if q = 1 then q1 := q1*ad1
@@ -4846,7 +4856,7 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
+    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
     241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 

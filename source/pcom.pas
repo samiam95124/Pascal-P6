@@ -179,7 +179,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 111;  { maximum number of instructions }
+   maxins     = 113;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -193,7 +193,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
-   maxftl     = 511; { maximum fatal error }
+   maxftl     = 512; { maximum fatal error }
    maxcmd     = 250; { size of command line buffer }
 
    { default field sizes for write }
@@ -1506,7 +1506,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510,511: write('Compiler internal error');
+    504,505,506,507,508,509,510,511,512: write('Compiler internal error');
     end
   end;
 
@@ -2155,6 +2155,18 @@ end;
   begin
     getbounds(fsp, fmin, fmax); span := fmax-fmin+1
   end;
+  
+  { get span of array index }
+  function spana(fsp: stp): integer;
+  begin
+    if fsp <> nil then begin
+      if fsp^.form <> arrays then error(512);
+      { if the index type is nil, assume string and take the array size as the 
+        span }
+      if fsp^.inxtype = nil then spana := fsp^.size
+      else spana := span(fsp^.inxtype)
+    end
+  end;
 
   function isbyte(fsp: stp): boolean;
     { check structure is byte }
@@ -2651,7 +2663,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,102,104,109: 
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -3245,18 +3257,18 @@ end;
                        if typtr=charptr then
                          gen2(51(*ldc*),6,cval.ival)
                        else gen2(51(*ldc*),1,cval.ival)
+                 else
+                   if typtr = nilptr then gen2(51(*ldc*),4,0)
                    else
-                     if typtr = nilptr then gen2(51(*ldc*),4,0)
+                     if cstptrix >= cstoccmax then error(254)
                      else
-                       if cstptrix >= cstoccmax then error(254)
-                       else
-                         begin cstptrix := cstptrix + 1;
-                           cstptr[cstptrix] := cval.valp;
-                           if typtr = realptr then
-                             gen2(51(*ldc*),2,cstptrix)
-                           else
-                             gen2(51(*ldc*),5,cstptrix)
-                         end;
+                       begin cstptrix := cstptrix + 1;
+                         cstptr[cstptrix] := cval.valp;
+                         if typtr = realptr then
+                           gen2(51(*ldc*),2,cstptrix)
+                         else
+                           gen2(51(*ldc*),5,cstptrix)
+                       end;
             varbl: case access of
                      drct:   if vlevel<=1 then 
                                gen1ts(39(*ldo*),dplmt,typtr,symptr)
@@ -3339,7 +3351,7 @@ end;
         { right is fixed } 
         if cc = 1 then begin
           { load simple template }
-          gen2(51(*ldc*),1,span(gattr.typtr^.inxtype));
+          gen2(51(*ldc*),1,spana(gattr.typtr));
           gen1(72(*swp*),stackelsize)
         end else 
           { load complex fixed template }
@@ -3348,7 +3360,7 @@ end;
         { left is fixed }
         if cc = 1 then
           { load simple template }
-          gen2(51(*ldc*),1,span(lattr.typtr^.inxtype))
+          gen2(51(*ldc*),1,spana(lattr.typtr))
         { load complex fixed template }
         else gen1(105(*lft*),lattr.typtr^.tmpl);
         gen1(72(*swp*),ptrsize*3) { swap under right side and fix addr }           
@@ -3638,7 +3650,17 @@ end;
               if gattr.typtr <> nil then
                 with gattr,typtr^ do
                   if form = pointer then
-                    begin load; typtr := eltype;
+                    begin load;
+                      if eltype^.form = arrayc then begin
+                        { it's a container, load a complex pointer based on 
+                          that }
+                        gen0t(76(*dup*),nilptr); { copy that }
+                        { index data }
+                        gen1t(34(*inc*),containers(eltype)*intsize,nilptr);
+                        { if level is at bottom, simplify the template }
+                        if containers(eltype) = 1 then gen0(108(*spc*))
+                      end;
+                      typtr := eltype;
                       if debug then begin
                          if taggedrec(eltype) then
                            gen2t(80(*ckl*),1,maxaddr,nilptr)
@@ -4154,7 +4176,7 @@ end;
           if gattr.typtr^.eltype <> nil then
             ct := gattr.typtr^.eltype^.form = arrayc;
       if ct then begin { container array }
-        if disp then gen0(107(*vdp*))
+        if disp then gen0(113(*vdd*))
         else begin lsp := gattr.typtr^.eltype;
           cc := containers(lsp); { find no. containers }
           pc := 0;
@@ -4166,8 +4188,8 @@ end;
             gen1(72(*swp*),ptrsize) { keep the var address on top }
           end;
           if pc <> cc then error(269);
-          { issue vector init ptr instruction }
-          gen2(97(*vip*),pc,containerbase(lsp));
+          { issue vector init dynamic instruction }
+          gen2(112(*vin*),pc,containerbase(lsp));
           { remove initializers, var addr }
           mesl(pc*intsize+adrsize)
         end
@@ -4504,7 +4526,7 @@ end;
           cc := containers(lsp);
           if cc = 1 then begin
             { load simple template }
-            gen2(51(*ldc*),1,span(gattr.typtr^.inxtype));
+            gen2(51(*ldc*),1,spana(gattr.typtr));
             gen1(72(*swp*),stackelsize)
           end else 
             { load complex fixed template }
@@ -4515,7 +4537,7 @@ end;
           cc := containers(gattr.typtr);
           if cc = 1 then begin
             { load simple template }
-            gen2(51(*ldc*),1,span(lsp^.inxtype));
+            gen2(51(*ldc*),1,span(lsp));
             gen2(51(*ldc*),4,0) { load dummy address }
           end else begin
             { load complex fixed template }
@@ -5227,7 +5249,7 @@ end;
         searchidnenm([types], lcp2, mm);
         if lcp2 <> nil then begin
           lcp1^.idtype^.eltype := lcp2^.idtype;
-          lcp2^.refer := true
+          lcp2^.refer := true;
         end else begin
           if fe then begin error(117); writeln(output) end;
           write('*** undefined type-id forward reference: ');
@@ -8242,7 +8264,8 @@ end;
       mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
       mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
       mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; mn[108] :=' spc';
-      mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp';
+      mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; mn[112] :=' vin';
+      mn[113] :=' vdd';
 
     end (*instrmnemonics*) ;
 
@@ -8371,6 +8394,7 @@ end;
       cdx[106] := +ptrsize*2;           cdx[107] := +ptrsize;
       cdx[108] := 0;                    cdx[109] := 0;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
+      cdx[112] := 0;                    cdx[113] := +ptrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
