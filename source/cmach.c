@@ -543,6 +543,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define CHANGETOVARREFERENCEDVARIANT        113
 #define DISPOSEOFVARREFERENCEDBLOCK         114
 #define VARREFERENCEDFILEBUFFERMODIFIED     115
+#define CONTAINERMISMATCH                   116
+#define INVALIDCONTAINERLEVEL               117
 
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -801,6 +803,8 @@ void errorv(address ea)
     case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n"); break;
     case DISPOSEOFVARREFERENCEDBLOCK:        printf("Dispose of VAR referenced block\n"); break;
     case VARREFERENCEDFILEBUFFERMODIFIED:    printf("VAR referenced file buffer modified\n"); break;
+    case CONTAINERMISMATCH:                  printf("Container length(s) do not match\n"); break;
+    case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
   }
   finish(1);
 }
@@ -1119,6 +1123,15 @@ void alignu(address algn, address* flc)
     long l;
     l = *flc-1;
     *flc = l+algn-(algn+l)%algn;
+} /*align*/
+
+/* align address, upwards */
+
+void alignd(address algn, address* flc)
+{
+    long l;
+    l = *flc+1;
+    *flc = l-algn+(algn-l)%algn;
 } /*align*/
 
 /* clear filename string */
@@ -2327,7 +2340,7 @@ void callsp(void)
 void sinins()
 
 {
-    address ad,ad1,ad2,ad3; boolean b; long i,j,k,i1,i2; char c, c1; long i3,i4;
+    address ad,ad1,ad2,ad3,ad4; boolean b; long i,j,k,i1,i2; char c, c1; long i3,i4;
     double r1,r2; boolean b1,b2; settype s1,s2; address a1,a2,a3;
 
     /* instruction execution trace diagnostic */
@@ -2884,12 +2897,89 @@ void sinins()
     case 92 /*vbs*/: getq(); popadr(ad); varenter(ad, ad+q-1); break;
     case 96 /*vbe*/: varexit(); break;
     case 19 /*brk*/: break; /* breaks are no-ops here */
+    case 122 /*vis*/:
+    case 133 /*vip*/: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
+                   for (i = 1; i <= q; i++) {
+                     popint(i1); putint(ad1, i1); ad1 = ad1-INTSIZE; q1 = q1*i1;
+                   }
+                   if (op == 122) { sp = sp-q; putadr(ad1, sp); }
+                   else { newspc(q1, &ad2); putadr(ad1, ad2); }
+                   break;
+    case 226 /*vin*/: getq(); getq1(); popadr(ad); ad2 = sp;
+                   for (i = 1; i <= q; i++)
+                     { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; }
+                   newspc(q1+q*INTSIZE, &ad2); putadr(ad, ad2);
+                   for (i = 1; i <= q; i++)
+                     { popint(i1); putint(ad2, i1); ad2 = ad2+INTSIZE; }
+                   break;
+    case 135 /*lcp*/: popadr(ad); pshadr(ad+PTRSIZE); pshadr(getadr(ad)); break;
+    case 176 /*cps*/: popadr(ad1); popint(i1); popadr(ad2); popint(i2);
+                       pshint(i2); pshadr(ad2); pshint(i1); pshadr(ad1);
+                       if (i1 != i2) errorv(CONTAINERMISMATCH);
+                      break;
+    case 177 /*cpc*/: getq(); popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
+                       pshadr(ad4); pshadr(ad3); pshadr(ad2); pshadr(ad1);
+                       for (i = 1; i <= q; i++) {
+                         if (getint(ad2) != getint(ad4))
+                           errorv(CONTAINERMISMATCH);
+                         ad2 = ad2+PTRSIZE; ad4 = ad4+PTRSIZE;
+                       }
+                      break;
+
+    case 178 /*aps*/: getq(); popadr(ad1); popadr(ad); popadr(ad); popadr(i1);
+                       for (i = 0; i <= i1*q-1; i++) {
+                         store[ad+i] = store[ad1+i]; putdef(ad+i, getdef(ad1+i));
+                       }
+                      break;
+    case 210 /*apc*/: getq(); getq1(); popadr(ad1); popadr(ad); popadr(ad);
+                       popadr(ad2);
+                       for (i = 1; i <= q; i++)
+                         { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; };
+                       for (i = 0; i <= q1-1; i++) {
+                         store[ad+i] = store[ad1+i]; putdef(ad+i, getdef(ad1+i));
+                       }
+                      break;
+    case 211 /*cxs*/: getq(); popint(i); popadr(ad); popint(i1);
+                       if (i < 1 || i > i1) errore(VALUEOUTOFRANGE);
+                       pshadr(ad+(i-1)*q);
+                      break;
+    case 212 /*cxc*/: getq(); getq1(); popint(i); popadr(ad); popadr(ad1);
+                       ad2 = ad1+PTRSIZE;
+                       for (j = 1; j <= q-1; j++)
+                         { q1 = q1*getint(ad2); ad2 = ad2+INTSIZE; }
+                       if (i < 1 || i > getint(ad1))
+                         errore(VALUEOUTOFRANGE);
+                       pshadr(ad1+PTRSIZE); pshadr(ad+(i-1)*q1);
+                       break;
+    case 213 /*lft*/: getq(); popadr(ad); pshadr(q); pshadr(ad); break;
+    case 214 /*max*/: getq(); popint(i); popadr(ad1);
+                       if (q > 1) popadr(ad); else popint(i1);
+                       if (i < 1 || i > q) errorv(INVALIDCONTAINERLEVEL);
+                       if (q == 1) i = i1;
+                       else i = getint(ad+(q-i)*INTSIZE);
+                       pshint(i);
+                      break;
+    case 221 /*vdp*/:
+    case 227 /*vdd*/: popadr(ad); dspspc(0, ad); break;
+    case 222 /*spc*/: popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad); break;
+    case 223 /*ccs*/: getq(); getq1(); popadr(ad); popadr(ad1); ad3 = ad1;
+                       if (q == 1) q1 = q1*ad1;
+                       else for (i = 1; i <= q; i++)
+                         { q1 = q1*getint(ad3); ad3 = ad3+INTSIZE; }
+                       ad2 = sp-q1; alignd(STACKELSIZE, &ad2); sp = ad2;
+                       for (i = 0; i <= q1-1; i++) {
+                         store[ad2+i] = store[ad+i]; putdef(ad2+i, getdef(ad+i));
+                       };
+                       pshadr(ad1); pshadr(ad2);
+                     break;
+    case 224 /*scp*/: popadr(ad); popadr(ad1); popadr(ad2); putadr(ad2, ad);
+                       putadr(ad2+PTRSIZE, ad1); break;
+    case 225 /*ldp*/: popadr(ad); pshadr(getadr(ad+PTRSIZE));
+                       pshadr(getadr(ad)); break;
 
     /* illegal instructions */
-    /* 122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
-       219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
-       234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
-       249, 250, 251, 252, 253, 254, 255*/
+    /* 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
+       242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

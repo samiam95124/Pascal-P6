@@ -377,6 +377,8 @@ const
       ChangeToVarReferencedVariant       = 113;
       DisposeOfVarReferencedBlock        = 114;
       VarReferencedFileBufferModified    = 115;
+      ContainerMismatch                  = 116;
+      InvalidContainerLevel              = 117;
 
       maxsp       = 81;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
@@ -702,6 +704,8 @@ begin writeln; write('*** Runtime error');
     ChangeToVarReferencedVariant:       writeln('Change to VAR referenced variant');
     DisposeOfVarReferencedBlock:        writeln('Dispose of VAR referenced block');
     VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
+    ContainerMismatch:                  writeln('Container length(s) do not match');
+    InvalidContainerLevel:              writeln('InvalidContainerLevel');
   end;
   goto 1
 end;
@@ -1191,6 +1195,15 @@ procedure alignu(algn: address; var flc: address);
 begin
   l := flc-1;
   flc := l + algn  -  (algn+l) mod algn
+end (*align*);
+
+{ align address, downwards }
+
+procedure alignd(algn: address; var flc: address);
+  var l: integer;
+begin
+  l := flc+1;
+  flc := l - algn  +  (algn-l) mod algn
 end (*align*);
 
 { clear filename string }
@@ -2386,7 +2399,7 @@ begin (*callsp*)
 end;(*callsp*)
 
 procedure sinins;
-var ad,ad1,ad2,ad3: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
+var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
     a1,a2,a3: address;
 begin
@@ -2964,12 +2977,89 @@ begin
     92 (*vbs*): begin getq; popadr(ad); varenter(ad, ad+q-1) end;
     96 (*vbe*): varexit;
     19 (*brk*): ; { breaks are no-ops here }
+    122 (*vis*),
+    133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q*intsize;
+                   for i := 1 to q do begin 
+                     popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q1 := q1*i1;
+                   end;
+                   if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
+                   else begin newspc(q1, ad2); putadr(ad1, ad2) end
+                 end;
+    226 (*vin*): begin getq; getq1; popadr(ad); ad2 := sp; 
+                   for i := 1 to q do 
+                     begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
+                   newspc(q1+q*intsize, ad2); putadr(ad, ad2);
+                   for i := 1 to q do 
+                     begin popint(i1); putint(ad2, i1); ad2 := ad2+intsize;end
+                 end;
+    135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end; 
+    176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
+                       pshint(i2); pshadr(ad2); pshint(i1); pshadr(ad1);
+                       if i1 <> i2 then errorv(ContainerMismatch)
+                 end;
+    177 (*cpc*): begin getq; popadr(ad1); popadr(ad2); popadr(ad3); popadr(ad4);
+                       pshadr(ad4); pshadr(ad3); pshadr(ad2); pshadr(ad1);
+                       for i := 1 to q do begin
+                         if getint(ad2) <> getint(ad4) then 
+                           errorv(ContainerMismatch);
+                         ad2 := ad2+ptrsize; ad4 := ad4+ptrsize
+                       end
+                 end;
+
+    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popadr(i1); 
+                       for i := 0 to i1*q-1 do begin
+                         store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
+                       end
+                 end;
+    210 (*apc*): begin getq; getq1; popadr(ad1); popadr(ad); popadr(ad); 
+                       popadr(ad2);
+                       for i := 1 to q do 
+                         begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
+                       for i := 0 to q1-1 do begin
+                         store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
+                       end
+                 end;
+    211 (*cxs*): begin getq; popint(i); popadr(ad); popint(i1);
+                       if (i < 1) or (i > i1) then errore(ValueOutOfRange);
+                       pshadr(ad+(i-1)*q)
+                 end;
+    212 (*cxc*): begin getq; getq1; popint(i); popadr(ad); popadr(ad1);
+                       ad2 := ad1+ptrsize;
+                       for j := 1 to q-1 do
+                         begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
+                       if (i < 1) or (i > getint(ad1)) then 
+                         errore(ValueOutOfRange);
+                       pshadr(ad1+ptrsize); pshadr(ad+(i-1)*q1) 
+                 end;
+    213 (*lft*): begin getq; popadr(ad); pshadr(q); pshadr(ad) end;
+    214 (*max*): begin getq; popint(i); popadr(ad1); 
+                       if q > 1 then popadr(ad) else popint(i1);
+                       if (i < 1) or (i > q) then errorv(InvalidContainerLevel);
+                       if q = 1 then i := i1
+                       else i := getint(ad+(q-i)*intsize);
+                       pshint(i)
+                 end;
+    221 (*vdp*),
+    227 (*vdd*): begin popadr(ad); dspspc(0, ad) end;
+    222 (*spc*): begin popadr(ad); popadr(ad1); pshint(getint(ad1)); pshadr(ad) end;
+    223 (*ccs*): begin getq; getq1; popadr(ad); popadr(ad1); ad3 := ad1;
+                       if q = 1 then q1 := q1*ad1
+                       else for i := 1 to q do 
+                         begin q1 := q1*getint(ad3); ad3 := ad3+intsize end;
+                       ad2 := sp-q1; alignd(stackelsize, ad2); sp := ad2;
+                       for i := 0 to q1-1 do begin
+                         store[ad2+i] := store[ad+i]; putdef(ad2+i, getdef(ad+i));
+                       end;
+                       pshadr(ad1); pshadr(ad2)
+                 end;
+    224 (*scp*): begin popadr(ad); popadr(ad1); popadr(ad2); putadr(ad2, ad); 
+                       putadr(ad2+ptrsize, ad1) end;
+    225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize)); 
+                       pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    122, 133, 135, 176, 177, 178, 210, 211, 212, 213, 214, 215, 216, 217, 218,
-    219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233,
-    234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248,
-    249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 
+    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
