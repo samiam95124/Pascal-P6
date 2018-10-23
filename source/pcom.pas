@@ -484,8 +484,8 @@ var
 
     { -- o: check arithmetic overflow }
     { -- g: dump label definitions }
-    { -- f: dump storage area specs }
-    { -- m: perform post-mortem dump on error }
+    { -- f: perform source level debugging }
+    { -- m: break heap returned blocks as occupied }
     { -- h: add source line sets to code }
     { -- j: trace source line executions (requires dosrclin) }
     { -- k: dump heap space after execution }

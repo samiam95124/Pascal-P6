@@ -2261,14 +2261,12 @@ procedure load;
                                   'q': dochkdef := option[ch1];
                                   's': iso7185  := option[ch1];
                                   'w': dodebug  := option[ch1];
-                                  'r': dodbgflt := option[ch1];
+                                  'a': dodbgflt := option[ch1];
                                   'f': dodbgsrc := option[ch1];
                                   'e': dodckout := option[ch1];
                                   'i': dochkvbk := option[ch1];
-                                  'b':; 'c':; 'd':; 'l':; 't':; 'u':;
-                                  'v':; 'x':; 'y':; 'z':; 'a':; 'k':;
-                                  'j':;
-                                  { unused: a,i }
+                                  'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':; 
+                                  'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
                                 end
                               until not (ch in ['a'..'z']);
                               getlin
