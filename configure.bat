@@ -231,22 +231,22 @@ if "%compiler%" == "gpc" (
     rem
     rem Set up for GPC Pascal
     rem
-    cp gpc\P6.bat      bin\P6.bat
-    cp gpc\compile.bat bin\compile.bat
-    cp gpc\run.bat     bin\run.bat
+    cp %compiler%\p6.bat      bin\p6.bat
+    cp %compiler%\compile.bat bin\compile.bat
+    cp %compiler%\run.bat     bin\run.bat
 
-    cp gpc\P6          bin\P6
-    cp gpc\compile     bin\compile
-    cp gpc\run         bin\run
+    cp %compiler%\p6          bin\p6
+    cp %compiler%\compile     bin\compile
+    cp %compiler%\run         bin\run
 
-    cp gpc/bit%bits%/Makefile    .
+    cp %compiler%\bit%bits%/Makefile    .
 
-    cp gpc/bit%bits%/standard_tests/iso7185pat.cmp standard_tests
-    cp gpc/bit%bits%/standard_tests/iso7185patc.cmp standard_tests
-    cp gpc/bit%bits%/standard_tests/iso7185pats.cmp standard_tests
+    cp %compiler%\bit%bits%/standard_tests/iso7185pat.cmp standard_tests
+    cp %compiler%\bit%bits%/standard_tests/iso7185patc.cmp standard_tests
+    cp %compiler%\bit%bits%/standard_tests/iso7185pats.cmp standard_tests
     
-    cp gpc/bit%bits%/p4/standardp.cmp p4
-    cp gpc/bit%bits%/p4/standardpc.cmp p4
+    cp %compiler%\bit%bits%/p4/standardp.cmp p4
+    cp %compiler%\bit%bits%/p4/standardpc.cmp p4
 
     rem
     rem GPC needs Unix line endings in both the Unix and cygwin

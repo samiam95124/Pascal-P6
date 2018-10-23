@@ -1,5 +1,5 @@
 #
-# Makefile for Pascal-p5
+# Makefile for Pascal-p6
 #
 # Makes the main compiler interpreter set.
 #
@@ -12,6 +12,10 @@ all: pcom pint pmach cmach genobj spew
 
 pcom: source/pcom.pas
 	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
+	
+pcom_immerr: source/pcom.pas
+	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
 	
 pint: source/pint.pas 
@@ -57,4 +61,6 @@ clean:
 	find . -name "*.p4" -type f -delete
 	find . -name "*.p5" -type f -delete
 	find . -name "*.p6" -type f -delete
-	find . -name "*.p6o" -type f -delete	
+	find . -name "*.p6o" -type f -delete
+	find . -name "*.mpp.pas" -type f -delete
+	
