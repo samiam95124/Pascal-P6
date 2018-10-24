@@ -30,6 +30,8 @@ set progfile=
 set cmpnext=0
 set cmpfile=
 set noerrmsg=0
+rm -f temp.p6
+
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -107,7 +109,16 @@ for %%x in (%*) do (
     			rem
     			rem Collect module sections to single intermediate
     			rem
-    			cat %%~x.p6 >> temp.p6
+    			if exist temp.p6 (
+    	
+    	            copy temp.p6+%%~x.p6 temp
+    	
+    	        ) else (
+    	
+    	            cp %%~x.p6 temp
+    	
+    	        )
+    	        mv temp temp.p6
     			
     		)
     		rem

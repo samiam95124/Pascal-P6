@@ -2396,7 +2396,8 @@ procedure load;
                                 read(prd,i); putint(ad, i); ad := ad+intsize;
                               end;
                               labelvalue:=cp;
-                              update(x)
+                              update(x);
+                              getlin
                             end;
                        't': begin { fixed template }
                               getnxt; skpspc;
@@ -2411,7 +2412,8 @@ procedure load;
                                 read(prd,i); putint(ad, i); ad := ad+intsize;
                               end;
                               labelvalue:=cp;
-                              update(x)
+                              update(x);
+                              getlin
                             end;
                   end;
             end

@@ -113,7 +113,15 @@ if "%pmach%"=="1" (
     cp %progfile%.p6 prd
     pint > temp
     mv prr %progfile%.p6o
-    cat %progfile%.p6o %inpfile% > prd
+    if "%inpfile%"=="" (
+	
+		cp %progfile%.p6o prd
+		
+    ) else (
+    
+        copy %progfile%.p6o+%inpfile% prd
+        
+    )
     pmach < %progfile%.inp > %progfile%.lst 2>&1
     rm temp
     
@@ -123,14 +131,30 @@ if "%pmach%"=="1" (
     cp %progfile%.p6 prd
     pint > temp
     mv prr %progfile%.p6o
-    cat %progfile%.p6o %inpfile% > prd
+    if "%inpfile%"=="" (
+	
+		cp %progfile%.p6o prd
+		
+    ) else (
+    
+        copy %progfile%.p6o+%inpfile% prd
+        
+    )
     cmach < %progfile%.inp > %progfile%.lst 2>&1
     rm temp
     
 ) else (
 
 	echo Running with pint
-    cat %progfile%.p6 %inpfile% > prd
+	if "%inpfile%"=="" (
+	
+		cp %progfile%.p6 prd
+		
+    ) else (
+    
+        copy %progfile%.p6+%inpfile% prd
+        
+    )
     pint < %progfile%.inp > %progfile%.lst 2>&1
     
 )

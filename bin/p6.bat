@@ -25,6 +25,8 @@ set pmach=0
 set cmach=0
 set progfile=
 set package=0
+rm -f temp.p6
+
 for %%x in (%*) do (
 
     if "%%~x"=="--pmach" (
@@ -75,19 +77,19 @@ for %%x in (%*) do (
     	if "!pmach!"=="1" (
     	
     		echo|set /p="{$e+}" > temp
-    		cat temp %%~x.pas > prd
+    		copy temp+%%~x.pas prd
     		rm temp
     		
     	) else if "!cmach!"=="1" (
 
     		echo|set /p="{$e+}" > temp
-    		cat temp %%~x.pas > prd
+    		copy temp+%%~x.pas prd
     		rm temp
     	
     	) else if "!package!"=="1" (
 
     		echo|set /p="{$e+}" > temp
-    		cat temp %%~x.pas > prd
+    		copy temp+%%~x.pas prd
     		rm temp
     	
     	) else (
@@ -97,11 +99,21 @@ for %%x in (%*) do (
     	)
     	pcom
     	mv prr %%~x.p6
-    	cat %%~x.p6 >> temp.p6
+    	if exist temp.p6 (
+    	
+    	   copy temp.p6+%%~x.p6 temp
+    	
+    	) else (
+    	
+    	    cp %%~x.p6 temp
+    	
+    	)
+    	mv temp temp.p6
     	set progfile=%%~x
     					
    	) 
 )
+echo after loop
 
 if "%progfile%"=="" (
 
