@@ -113,7 +113,6 @@ for %%x in (%*) do (
     					
    	) 
 )
-echo after loop
 
 if "%progfile%"=="" (
 

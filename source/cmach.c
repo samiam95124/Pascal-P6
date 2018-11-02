@@ -169,7 +169,7 @@
   ISO7185_PASCAL - uses ISO 7185 standard language only.
 */
 #if !defined(WRDSIZ32) && !defined(WRDSIZ64)
-/* #define WRDSIZ32 1 */
+#define WRDSIZ32 1
 #endif
 
 /*

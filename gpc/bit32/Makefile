@@ -64,3 +64,28 @@ clean:
 	find . -name "*.p6o" -type f -delete
 	find . -name "*.mpp.pas" -type f -delete
 	
+help:
+	@echo
+	@echo Make targets:
+	@echo
+	@echo All	Make all binaries
+	@echo
+	@echo pcom	Make pcom, the Pascal compiler.
+	@echo
+	@echo pcom_immerr	Make pcom with print error immediate option. This causes
+	@echo               errors to be printed immediately instead of waiting to
+	@echo               collect an entire line. This is for debugging.
+	@echo
+	@echo pint          Make pint, the interpreter/debugger.
+	@echo
+	@echo pmach         Make pmach, the stand-alone interpreter.
+	@echo
+	@echo cmach         Make cmach, the stand-alone interpreter written in C.
+	@echo
+	@echo genobj        Make genobj, the binary deck to C file generator.
+	@echo
+	@echo spew          Make spew, a fault generator test program.
+	@echo
+	@echo clean         Clean intermediate/temp files from tree.
+	@echo
+    

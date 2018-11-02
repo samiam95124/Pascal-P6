@@ -127,16 +127,16 @@ const
 
       The configurations are as follows:
 
-      type                  #bits 32  #bits 64
+      type                  #bits 16  #bits 32  #bits 64
       ===========================================================
-      integer               32        64
-      real                  64        64
+      integer               16        32        64
+      real                  32        64        64
       char                  8         8
       boolean               8         8
       set                   256       256
-      pointers              32        64
-      marks                 32        64
-      File logical number   8         8
+      pointers              16        32        64
+      marks                 16        32        64 (bytes)
+      File logical number   8         8         8
 
       Both endian types are supported. There is no alignment needed, but you
       may wish to use alignment to tune the runtime speed.
@@ -145,6 +145,10 @@ const
       table is all you should need to adapt to any byte addressable machine.
 
       }
+
+#ifdef WRDSIZ16
+#include "mpb16.inc"
+#endif
 
 #ifdef WRDSIZ32
 #include "mpb32.inc"
@@ -193,7 +197,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
-   maxftl     = 512; { maximum fatal error }
+   maxftl     = 515; { maximum fatal error }
    maxcmd     = 250; { size of command line buffer }
 
    { default field sizes for write }
@@ -300,7 +304,7 @@ type                                                        (*describing:*)
                                                             (*names*)
                                                             (*******)
 
-     idclass = (types,konst,vars,field,proc,func,alias);
+     idclass = (types,konst,fixed,vars,field,proc,func,alias);
      setofids = set of idclass;
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
@@ -329,6 +333,7 @@ type                                                        (*describing:*)
                              threat: boolean; forcnt: integer; part: partyp; 
                              hdr: boolean; vext: boolean; vmod: filptr; 
                              inilab: integer; ininxt: ctp; dblptr: boolean); 
+                     fixed: (floc: integer);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -728,6 +733,7 @@ var
        types: dispose(p, types);
        konst: dispose(p, konst);
        vars:  dispose(p, vars);
+       fixed: dispose(p, fixed);
        field: dispose(p, field);
        proc: if p^.pfdeckind = standard then dispose(p, proc, standard)
                                         else if p^.pfkind = actual then 
@@ -1036,7 +1042,6 @@ var
   end;
 
   { get character from variable length string }
-
   function strchr(a: strvsp; x: integer): char;
   var c: char; i: integer; q: integer;
   begin
@@ -1310,6 +1315,8 @@ end;
     25:  write('Illegal source character');
     26:  write('String constant too long');
     27:  write(''','' or '')'' expected');
+    28:  write('''array'' expected');
+    29:  write(''','' or ''end'' expected');
 
     50:  write('Error in constant');
     51:  write(''':='' expected');
@@ -1464,6 +1471,11 @@ end;
     241: write('Invalid tolken separator');
     242: write('Identifier referenced before defining point');
     243: write('Initializer expression must be integer');
+    244: write('Type incorrect for fixed');
+    245: write('Initializer incompatible with fixed element');
+    246: write('Initializer out of range of fixed element type');
+    247: write('Incorrect number of initializers for type');
+    248: write('Fixed cannot contain variant record');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -1506,7 +1518,7 @@ end;
 
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510,511,512: write('Compiler internal error');
+    504,505,506,507,508,509,510,511,512,513,514,515: write('Compiler internal error');
     end
   end;
 
@@ -3031,7 +3043,7 @@ end;
   procedure constexpr(fsys: setofsys; var fsp: stp; var fvalu: valu); forward;
   
   procedure constfactor(fsys: setofsys; var fsp: stp; var fvalu: valu);
-    var lsp: stp; lcp: ctp;
+    var lsp: stp; lcp: ctp; lvp: csp; test: boolean; lv: valu; i: integer;
   begin lsp := nil; fvalu.intval := true; fvalu.ival := 0;
     if not(sy in constbegsys) then
       begin error(50); skip(fsys+constbegsys) end;
@@ -3065,7 +3077,25 @@ end;
               end;
             fvalu := val; insymbol
           end
-        else
+        else if sy = lbrack then begin
+          { set }
+          insymbol;
+          new(lvp,pset); pshcst(lvp); lvp^.cclass := pset; lvp^.pval := [];
+          repeat
+            constexpr(fsys+[rbrack,comma], fsp, fvalu);
+            if not fvalu.intval then error(134);
+            if sy = range then begin
+              insymbol; lv := fvalu;
+              constexpr(fsys+[rbrack,comma], fsp, fvalu);
+              if not fvalu.intval then error(134);
+              for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
+            end else lvp^.pval := lvp^.pval+[fvalu.ival];
+            test := sy <> comma;
+            if not test then insymbol
+          until test;
+          if sy = rbrack then insymbol else error(12);
+          fvalu.intval := false; fvalu.valp := lvp
+        end else
           begin
             if sy = ident then
               begin searchid([konst],lcp);
@@ -6075,6 +6105,155 @@ end;
       until (sy <> ident) and not (sy in typedels);
       resolvep
     end (*vardeclaration*) ;
+    
+    procedure fixeddeclaration;
+      var lcp: ctp; lsp: stp; lsize: addrrange;
+          test: boolean; v: integer; d: boolean; dummy: stp; fvalu: valu;
+    procedure fixeditem(fsys: setofsys; lsp: stp; size: integer; var v: integer; var d: boolean);
+      var fvalu: valu; lsp1: stp; c:char; lcp: ctp; i, min, max: integer; 
+          test: boolean;
+    begin v := 0; d := false;
+      if lsp <> nil then begin
+        case lsp^.form of
+          scalar: if lsp^.scalkind = declared then begin
+                    { enumerated type }
+                    if sy = ident then begin
+                      searchid([konst],lcp);
+                      if not comptypes(lsp, lcp^.idtype) then error(245);
+                      if lcp^.values.intval then begin
+                        if lsp = boolptr then 
+                          writeln(prr, 'c b ', lcp^.values.ival:1)
+                        else if size = 1 then 
+                          writeln(prr, 'c x ', lcp^.values.ival:1)
+                        else writeln(prr, 'c i ', lcp^.values.ival:1);
+                        v := lcp^.values.ival; d := true
+                      end else error(513);
+                      insymbol
+                    end else error(2)
+                  end else begin
+                    { get value to satisfy entry }
+                    constexpr(fsys,lsp1,fvalu);
+                    if lsp1 <> nil then 
+                      if (lsp = realptr) and (lsp1 = intptr) then begin
+                        { integer to real, convert }
+                        if not fvalu.intval then error(515)
+                        else writeln(prr, 'c r ', fvalu.ival:1)
+                      end else if comptypes(lsp, lsp1) then begin
+                        { constants possible are i: integer, r: real, 
+                          p: (power) set, s: string (including set), c: char,
+                          b: boolean, x: byte integer }
+                        if lsp = charptr then begin
+                          if fvalu.intval then begin
+                            write(prr, 'c c ', fvalu.ival:1);
+                            v := fvalu.ival; d := true
+                          end
+                        end else if fvalu.intval then begin
+                          if size = 1 then 
+                            write(prr, 'c x ', fvalu.ival:1)
+                          else write(prr, 'c i ', fvalu.ival:1);
+                          v := fvalu.ival; d := true
+                        end else if fvalu.valp^.cclass = reel then 
+                                   write(prr, 'c r ', fvalu.valp^.rval:23);
+                        writeln(prr)
+                      end else error(245)
+                  end;
+          subrange: begin fixeditem(fsys,lsp^.rangetype,lsp^.size,v,d);
+                      if d then 
+                        if (v < lsp^.min.ival) or (v > lsp^.min.ival) then 
+                          error(246)
+                    end;
+          power: begin { get value to satisfy entry }
+                   constexpr(fsys,lsp1,fvalu);
+                   if comptypes(lsp, lsp1) then begin
+                     write(prr, 'c p (');
+                     for i := setlow to sethigh do 
+                       if i in fvalu.valp^.pval then write(prr,i:1, ' ');
+                     writeln(prr, ')')
+                   end else error(245)
+                 end;
+          arrays: begin getbounds(lsp^.inxtype, min, max);
+                    if (sy = stringconst) and stringt(lsp) then begin
+                      { string constant matches array }
+                      if strglgth <> max then error(245);
+                      write(prr, 'c ');
+                      write(prr, 's ''');
+                      writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
+                      write(prr, '''')
+                    end else begin
+                      { iterate array elements }
+                      i := min; if sy = arraysy then insymbol else error(28);
+                      repeat
+                        fixeditem(fsys+[comma,endsy],lsp^.aeltype, lsp^.aeltype^.size, v, d);
+                        i := i+1;
+                        if not (sy in [comma,endsy]) then
+                          begin error(29); skip(fsys+[comma,endsy]+typedels) end;
+                        test := sy <> comma;
+                        if not test then insymbol
+                      until test;
+                      if i-1 <> max then error(247);
+                      if sy = endsy then insymbol else error(13)
+                    end
+                  end;
+          records: begin lcp := lsp^.fstfld; 
+                     if lsp^.recvar <> nil then error(248); 
+                     if sy = recordsy then insymbol else error(28);
+                     i := 1; max := 1;
+                     repeat
+{ *** Need to do something about record element alignments. In
+      fact, all constant tables need to be aligned because we don't know the address.
+}
+                       if lcp = nil then
+                         { ran out of data items, dummy parse a constant }
+                         constexpr(fsys+[comma,endsy],dummy,fvalu)
+                       else fixeditem(fsys+[comma,endsy],lcp^.idtype, 
+                                      lcp^.idtype^.size, v, d);
+                       max := max+1;
+                       if lcp <> nil then begin lcp := lcp^.next; i := i+1 end;
+                       if not (sy in [comma,endsy]) then
+                         begin error(29); skip(fsys+[comma,endsy]+typedels) end;
+                       test := sy <> comma;
+                       if not test then insymbol
+                     until test;
+                     if i <> max then error(247);
+                     if sy = endsy then insymbol else error(13)
+                   end;
+          pointer, arrayc, files, tagfld, variant,exceptf: error(244);
+        end
+      end
+    end;
+    begin
+      repeat { id:type group }
+        lcp := nil;
+        if sy = ident then
+          begin new(lcp,fixed); ininam(lcp);
+            with lcp^ do
+             begin klass := fixed; strassvf(name, id);
+               idtype := nil end;
+            enterid(lcp);
+            insymbol;
+          end
+        else error(2);
+        if not (sy in fsys + [colon] + typedels) then
+          begin error(6); skip(fsys+[comma,colon,semicolon]+typedels) end;
+        if sy = colon then insymbol else error(5);
+        typ(fsys + [semicolon,relop] + typedels,lsp,lsize);
+        if (sy = relop) and (op = eqop) then begin 
+          insymbol;
+          { start fixed constants }
+          write(prr, 'n ');
+          genlabel(lcp^.floc); prtlabel(lcp^.floc); 
+          writeln(prr, ' ', lsize:1);
+          fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d);
+          writeln(prr, 'x')
+        end else error(16);
+        if sy = semicolon then
+          begin insymbol;
+            if not (sy in fsys + [ident]) then
+              begin error(6); skip(fsys + [ident]) end
+          end
+        else error(14)
+      until (sy <> ident) and not (sy in typedels)
+    end (*fixeddeclaration*) ;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
@@ -6536,6 +6715,8 @@ end;
             begin insymbol; constdeclaration end;
           if sy = typesy then
             begin insymbol; typedeclaration end;
+          if sy = fixedsy then
+            begin insymbol; fixeddeclaration end;
           if sy = varsy then
             begin insymbol; vardeclaration end;
           while sy in pfbegsys do
@@ -8112,13 +8293,13 @@ end;
 
   procedure initsets;
   begin
-    constbegsys := [lparent,notsy,intconst,realconst,stringconst,ident];
+    constbegsys := [lparent,notsy,intconst,realconst,stringconst,ident,lbrack];
     simptypebegsys := [lparent,addop,intconst,realconst,stringconst,ident];
     typebegsys:=[arrow,packedsy,arraysy,recordsy,setsy,filesy]+simptypebegsys;
     typedels := [arraysy,recordsy,setsy,filesy];
     pfbegsys := [procsy,funcsy,overloadsy,staticsy,virtualsy,overridesy,
                  operatorsy];
-    blockbegsys := [privatesy,labelsy,constsy,typesy,varsy,beginsy]+pfbegsys;
+    blockbegsys := [privatesy,labelsy,constsy,typesy,fixedsy,varsy,beginsy]+pfbegsys;
     selectsys := [arrow,period,lbrack];
     facbegsys := [intconst,realconst,stringconst,ident,lparent,lbrack,notsy,nilsy,
                   inheritedsy];
