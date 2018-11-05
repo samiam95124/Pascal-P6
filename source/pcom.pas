@@ -333,7 +333,7 @@ type                                                        (*describing:*)
                              threat: boolean; forcnt: integer; part: partyp; 
                              hdr: boolean; vext: boolean; vmod: filptr; 
                              inilab: integer; ininxt: ctp; dblptr: boolean); 
-                     fixed: (floc: integer);
+                     fixed: (floc: integer; fext: boolean; fmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -2127,7 +2127,7 @@ end;
        --> procedure enterundecl*)
       if types in fidcls then lcp := utypptr
       else
-        if vars in fidcls then lcp := uvarptr
+        if (vars in fidcls) or (fixed in fidcls) then lcp := uvarptr
         else
           if field in fidcls then lcp := ufldptr
           else
@@ -2418,6 +2418,10 @@ end;
                        if vext then write('external':intdig) else write(' ':intdig);
                        if vext then write(vmod^.fn:intdig) else write(' ':intdig)
                      end;
+              fixed: begin write('fixed':intdig, ' ');
+                       if fext then write('external':intdig) else write(' ':intdig);
+                       if fext then write(vmod^.fn:intdig) else write(' ':intdig)
+                     end;
               field: begin write('field':intdig,' '); wrtctp(next); write(' ');
                            write(fldaddr:intdig,' '); wrtstp(varnt); write(' ');
                            wrtctp(varlb); write(' ');
@@ -2489,9 +2493,15 @@ end;
   begin chkext := false;
     if fcp <> nil then begin
       if fcp^.klass = vars then chkext := fcp^.vext
+      else if fcp^.klass = fixed then chkext := fcp^.fext
       else if (fcp^.klass = proc) or (fcp^.klass = func) then 
         chkext := fcp^.pext
     end
+  end;
+  
+  function chkfix(fcp: ctp): boolean;
+  begin chkfix := false;
+    if fcp <> nil then chkfix := fcp^.klass = fixed
   end;
 
   procedure genlabel(var nxtlab: integer);
@@ -2507,7 +2517,8 @@ end;
   procedure prtflabel(fcp: ctp);
   begin
     write(prr, 'l '); 
-    if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn) 
+    if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
+    else if fcp^.klass = fixed then writevp(prr, fcp^.fmod^.mn)
     else writevp(prr, fcp^.pmod^.mn); 
     write(prr, '.'); 
     writevp(prr, fcp^.name)
@@ -2778,7 +2789,9 @@ end;
         write(prr,mn[fop]:4);
         gentypindicator(fsp);
         write(prr, ' ');
-        if chkext(symptr) then prtflabel(symptr) else write(prr,fp2:11);
+        if chkext(symptr) then prtflabel(symptr) 
+        else if chkfix(symptr) then prtlabel(symptr^.floc)
+        else write(prr,fp2:11);
         writeln(prr)
       end;
     ic := ic + 1; mest(fop, fsp)
@@ -3505,6 +3518,10 @@ end;
                   else gen2t(54(*lod*),level-vlev,vaddr,nilptr);
                   access := indrct; idplmt := 0
                 end;
+            end;
+          fixed: begin symptr := fcp;
+              if typtr <> nil then packing := typtr^.packing;
+              access := drct; vlevel := 0; dplmt := 0
             end;
           field:
             with display[disx] do begin
@@ -4805,7 +4822,7 @@ end;
               end;
               if sy in facbegsys then case sy of
         (*id*)    ident:
-                  begin searchid([types,konst,vars,field,func],lcp);
+                  begin searchid([types,konst,vars,fixed,field,func],lcp);
                     insymbol;
                     if lcp^.klass = func then
                       begin call(fsys,lcp, inherit);
@@ -6228,7 +6245,8 @@ end;
           begin new(lcp,fixed); ininam(lcp);
             with lcp^ do
              begin klass := fixed; strassvf(name, id);
-               idtype := nil end;
+               idtype := nil; floc := -1; fext := incstk <> nil; fmod := incstk
+             end;
             enterid(lcp);
             insymbol;
           end
@@ -6237,6 +6255,7 @@ end;
           begin error(6); skip(fsys+[comma,colon,semicolon]+typedels) end;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon,relop] + typedels,lsp,lsize);
+        if lcp <> nil then lcp^.idtype := lsp;
         if (sy = relop) and (op = eqop) then begin 
           insymbol;
           { start fixed constants }
