@@ -183,7 +183,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 113;  { maximum number of instructions }
+   maxins     = 114;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3313,9 +3313,10 @@ end;
                            gen2(51(*ldc*),5,cstptrix)
                        end;
             varbl: case access of
-                     drct:   if vlevel<=1 then 
-                               gen1ts(39(*ldo*),dplmt,typtr,symptr)
-                             else gen2t(54(*lod*),level-vlevel,dplmt,typtr);
+                     drct:   if vlevel<=1 then begin
+                               if chkfix(symptr) then gen1ts(8(*ltc*),dplmt,typtr,symptr) 
+                               else gen1ts(39(*ldo*),dplmt,typtr,symptr)
+                             end else gen2t(54(*lod*),level-vlevel,dplmt,typtr);
                      indrct: gen1t(35(*ind*),idplmt,typtr);
                      inxd:   error(400)
                    end;
@@ -3344,8 +3345,11 @@ end;
                        end
                    else error(403);
             varbl: case access of
-                     drct:   if vlevel <= 1 then gen1s(37(*lao*),dplmt,symptr)
-                             else gen2(50(*lda*),level-vlevel,dplmt);
+                     drct:   if vlevel <= 1 then begin
+                               if chkfix(symptr) then 
+                                 gen1s(114(*lto*),dplmt,symptr)
+                               else gen1s(37(*lao*),dplmt,symptr)
+                             end else gen2(50(*lda*),level-vlevel,dplmt);
                      indrct: if idplmt <> 0 then
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
@@ -6216,9 +6220,6 @@ end;
                      if sy = recordsy then insymbol else error(28);
                      i := 1; max := 1;
                      repeat
-{ *** Need to do something about record element alignments. In
-      fact, all constant tables need to be aligned because we don't know the address.
-}
                        if lcp = nil then
                          { ran out of data items, dummy parse a constant }
                          constexpr(fsys+[comma,endsy],dummy,fvalu)
@@ -8434,10 +8435,9 @@ end;
 
     procedure instrmnemonics;
     begin
-      { ??? memnemonics are placeholders }
       mn[  0] :=' abi'; mn[  1] :=' abr'; mn[  2] :=' adi'; mn[  3] :=' adr';
       mn[  4] :=' and'; mn[  5] :=' dif'; mn[  6] :=' dvi'; mn[  7] :=' dvr';
-      mn[  8] :=' ???'; mn[  9] :=' flo'; mn[ 10] :=' flt'; mn[ 11] :=' inn';
+      mn[  8] :=' ltc'; mn[  9] :=' flo'; mn[ 10] :=' flt'; mn[ 11] :=' inn';
       mn[ 12] :=' int'; mn[ 13] :=' ior'; mn[ 14] :=' mod'; mn[ 15] :=' mpi';
       mn[ 16] :=' mpr'; mn[ 17] :=' ngi'; mn[ 18] :=' ngr'; mn[ 19] :=' not';
       mn[ 20] :=' odd'; mn[ 21] :=' sbi'; mn[ 22] :=' sbr'; mn[ 23] :=' sgs';
@@ -8450,22 +8450,20 @@ end;
       mn[ 48] :=' geq'; mn[ 49] :=' grt'; mn[ 50] :=' lda'; mn[ 51] :=' ldc';
       mn[ 52] :=' leq'; mn[ 53] :=' les'; mn[ 54] :=' lod'; mn[ 55] :=' neq';
       mn[ 56] :=' str'; mn[ 57] :=' ujp'; mn[ 58] :=' ord'; mn[ 59] :=' chr';
-      mn[ 60] :=' ujc';                                         
-      { new instruction memonics for p5/p6 }
-      mn[ 61] :=' rnd'; mn[ 62] :=' pck'; mn[ 63] :=' upk'; mn[ 64] :=' rgs';
-      mn[ 65] :=' ???'; mn[ 66] :=' ipj'; mn[ 67] :=' cip'; mn[ 68] :=' lpa';
-      mn[ 69] :=' ???'; mn[ 70] :=' ???'; mn[ 71] :=' dmp'; mn[ 72] :=' swp';
-      mn[ 73] :=' tjp'; mn[ 74] :=' lip'; mn[ 75] :=' ckv'; mn[ 76] :=' dup';
-      mn[ 77] :=' cke'; mn[ 78] :=' cks'; mn[ 79] :=' inv'; mn[ 80] :=' ckl';
-      mn[ 81] :=' cta'; mn[ 82] :=' ivt'; mn[ 83] :=' xor'; mn[ 84] :=' bge';
-      mn[ 85] :=' ede'; mn[ 86] :=' mse'; mn[ 87] :=' cjp'; mn[ 88] :=' lnp';
-      mn[ 89] :=' cal'; mn[ 90] :=' ret'; mn[ 91] :=' cuv'; mn[ 92] :=' suv';
-      mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; mn[ 96] :=' vis';
-      mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; mn[100] :=' cpc';
-      mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; mn[104] :=' cxc';
-      mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; mn[108] :=' spc';
-      mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; mn[112] :=' vin';
-      mn[113] :=' vdd';
+      mn[ 60] :=' ujc'; mn[ 61] :=' rnd'; mn[ 62] :=' pck'; mn[ 63] :=' upk'; 
+      mn[ 64] :=' rgs'; mn[ 65] :=' ???'; mn[ 66] :=' ipj'; mn[ 67] :=' cip'; 
+      mn[ 68] :=' lpa'; mn[ 69] :=' ???'; mn[ 70] :=' ???'; mn[ 71] :=' dmp'; 
+      mn[ 72] :=' swp'; mn[ 73] :=' tjp'; mn[ 74] :=' lip'; mn[ 75] :=' ckv'; 
+      mn[ 76] :=' dup'; mn[ 77] :=' cke'; mn[ 78] :=' cks'; mn[ 79] :=' inv'; 
+      mn[ 80] :=' ckl'; mn[ 81] :=' cta'; mn[ 82] :=' ivt'; mn[ 83] :=' xor'; 
+      mn[ 84] :=' bge'; mn[ 85] :=' ede'; mn[ 86] :=' mse'; mn[ 87] :=' cjp'; 
+      mn[ 88] :=' lnp'; mn[ 89] :=' cal'; mn[ 90] :=' ret'; mn[ 91] :=' cuv'; 
+      mn[ 92] :=' suv'; mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb'; 
+      mn[ 96] :=' vis'; mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps'; 
+      mn[100] :=' cpc'; mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; 
+      mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
+      mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
+      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto';
 
     end (*instrmnemonics*) ;
 
@@ -8542,7 +8540,7 @@ end;
       cdx[  2] := +intsize;             cdx[  3] := +realsize;
       cdx[  4] := +intsize;             cdx[  5] := +setsize;           
       cdx[  6] := +intsize;             cdx[  7] := +realsize;
-      cdx[  8] :=  0;                   cdx[  9] := +intsize-realsize; 
+      cdx[  8] :=  4{*};                cdx[  9] := +intsize-realsize; 
       cdx[ 10] :=  -realsize+intsize;   cdx[ 11] := +setsize;
       cdx[ 12] := +setsize;             cdx[ 13] := +intsize; 
       cdx[ 14] := +intsize;             cdx[ 15] := +intsize;
@@ -8595,6 +8593,7 @@ end;
       cdx[108] := 0;                    cdx[109] := 0;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
+      cdx[114] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
@@ -8624,12 +8623,12 @@ end;
       cdxs[3][7] := 0;
       cdxs[3][8] := 0;
 
-      cdxs[4][1] := -intsize;  { ldoi/ldc/lodi/dupi }
-      cdxs[4][2] := -realsize; { ldor/ldc/lodr/dupr }
-      cdxs[4][3] := -intsize;  { ldob/ldc/lodb/dupb }
-      cdxs[4][4] := -intsize;  { ldoc/ldc/lodc/dupc }
-      cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/dupa }
-      cdxs[4][6] := -setsize;  { ldos/ldc/lods/dups }
+      cdxs[4][1] := -intsize;  { ldoi/ldc/lodi/dupi/ltc }
+      cdxs[4][2] := -realsize; { ldor/ldc/lodr/dupr/ltc }
+      cdxs[4][3] := -intsize;  { ldob/ldc/lodb/dupb/ltc }
+      cdxs[4][4] := -intsize;  { ldoc/ldc/lodc/dupc/ltc }
+      cdxs[4][5] := -adrsize;  { ldoa/ldc/loda/dupa/ltc }
+      cdxs[4][6] := -setsize;  { ldos/ldc/lods/dups/ltc }
       cdxs[4][7] := 0;
       cdxs[4][8] := 0;
       

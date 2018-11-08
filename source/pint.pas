@@ -1714,10 +1714,6 @@ procedure load;
               their use in the intermediate file, since only alpha
               characters are allowed as opcode labels.
 
-           2. "---" entries are no longer used, but left here to keep the
-              original instruction numbers from P4. They could be safely
-              assigned to other instructions if the space is needed.
-
          }
          instr[  0]:='lodi      '; insp[  0] := true;  insq[  0] := intsize;
          instr[  1]:='ldoi      '; insp[  1] := false; insq[  1] := intsize;
@@ -1947,6 +1943,14 @@ procedure load;
          instr[225]:='ldp       '; insp[225] := false; insq[225] := 0;
          instr[226]:='vin       '; insp[226] := false; insq[226] := intsize*2;
          instr[227]:='vdd       '; insp[227] := false; insq[227] := 0;
+         { ltc and lto are aliases to ldo and lao instructions }
+         instr[228]:='ltci      '; insp[228] := false; insq[228] := intsize;
+         instr[229]:='ltcr      '; insp[229] := false; insq[229] := intsize;
+         instr[230]:='ltcs      '; insp[230] := false; insq[230] := intsize;
+         instr[231]:='ltcb      '; insp[231] := false; insq[231] := intsize;
+         instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;
+         instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
+         instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2193,6 +2197,10 @@ procedure load;
           ad: address;
           sgn: boolean;
           ls: strvsp;
+          csttab: boolean;
+          cstadr: address;
+          r: real;
+          s: settype;
           
    procedure gblrlc;
    var sp: psymbol;
@@ -2209,218 +2217,293 @@ procedure load;
    end;
 
    begin (*generate*)
-      again := true;
-      while again do
-            begin if eof(prd) then errorl('unexpected eof on input  ');
-                  getnxt;(* first character of line*)
-                  if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                                 'e', 's', 'f','v','t']) then
-                    errorl('unexpected line start    ');
-                  case ch of
-                       '!': getlin; { comment }
-                       'l': begin getnxt; parlab(x,ls);
-                                  if ls <> nil then 
-                                    errorl('Invalid intermediate     ');
-                                  getnxt;
-                                  if ch='=' then read(prd,labelvalue)
-                                            else labelvalue:= pc;
-                                  update(x); getlin
-                            end;
-                       'q': begin again := false; getlin end;
-                       ' ': begin getnxt; 
-                                  while not eoln(prd) and (ch = ' ') do getnxt;
-                                  if not eoln(prd) and (ch <> ' ') then assemble
-                                  else getlin 
-                            end;
-                       ':': begin { source line }
-                               read(prd,x); { get source line number }
-                               { place in line tracking }
-                               if curmod <> nil then curmod^.lintrk^[x] := pc; 
-                               if dosrclin then begin
-                                  { pass source line register instruction }
-                                  store[pc] := 174; putdef(pc, true); pc := pc+1;
-                                  putint(pc, x); pc := pc+intsize
-                               end;
-                               { skip the rest of the line, which would be the
-                                 contents of the source line if included }
-                               while not eoln(prd) do
-                                  read(prd, c); { get next character }
-                               getlin { source line }
-                            end;
-                       'o': begin { option }
-                              getnxt;
-                              while not eoln(prd) and (ch = ' ') do getnxt;
-                              repeat
-                                if not (ch in ['a'..'z']) then 
-                                  errorl('No valid option found    ');
-                                ch1 := ch; getnxt;
-                                option[ch1] := ch = '+'; getnxt;
-                                case ch1 of
-                                  'g': dodmplab := option[ch1];
-                                  'h': dosrclin := option[ch1];
-                                  'n': dorecycl := option[ch1];
-                                  'o': dochkovf := option[ch1];
-                                  'p': dochkrpt := option[ch1];
-                                  'm': donorecpar := option[ch1];
-                                  'q': dochkdef := option[ch1];
-                                  's': iso7185  := option[ch1];
-                                  'w': dodebug  := option[ch1];
-                                  'a': dodbgflt := option[ch1];
-                                  'f': dodbgsrc := option[ch1];
-                                  'e': dodckout := option[ch1];
-                                  'i': dochkvbk := option[ch1];
-                                  'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':; 
-                                  'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
-                                end
-                              until not (ch in ['a'..'z']);
-                              getlin
-                            end;
-                       'g': begin read(prd,i); 
-                                  { if not program, adjust so files and 
-                                    exceptions from all other modules merge into
-                                    program }
-                                  if not isprog then i := i-exceptiontop;
-                                  gblrlc; gbset := true;
-                                  gbloff := gbloff+i; gbsiz := gbsiz+i; 
-                                  getlin end;
-                       'b': begin
-                              getnxt; skpspc;
-                              if not (ch in ['p', 'm', 'r', 'f']) then
-                                errorl('Block type is invalid    ');
-                              ch1 := ch; { save block type }
-                              getnxt; skpspc; getlab;
-                              new(bp); strassvf(bp^.name, sn); 
-                              bp^.symbols := nil;
-                              bp^.incnxt := nil;
-                              case ch1 of { block type }
-                                'p': bp^.btyp := btprog;
-                                'm': bp^.btyp := btmod;
-                                'r': bp^.btyp := btproc;
-                                'f': bp^.btyp := btfunc
-                              end;
-                              bp^.bend := -1;
-                              if blkstk <> nil then begin 
-                                { process block inclusions }
-                                bp^.incnxt := blkstk^.incnxt; { insert to list }
-                                blkstk^.incnxt := bp
-                              end;
-                              { put onto block stack }
-                              bp^.next := blkstk; blkstk := bp;
-                              bp^.fname := nil;
-                              { check module }
-                              if bp^.btyp in [btprog, btmod] then begin
-                                { create line track data for module }
-                                new(bp^.lintrk); new(bp^.linprf);
-                                { clear source line tracking }
-                                for i := 1 to maxsrc do 
-                                  bp^.lintrk^[i] := -1; 
-                                { clear line profiling }
-                                for i := 1 to maxsrc do bp^.linprf^[i] := 0;
-                                { has to have room for extention }
-                                if snl >= fillen-4 then 
-                                  errorl('Block name too long      ');
-                                { add file extension }
-                                ext := extsrc;
-                                for i := 1 to 4 do begin
-                                  sn[snl+1] := ext[i]; snl := snl+1 
-                                end;
-                                { place as source file }
-                                strassvf(bp^.fname, sn);
-                                curmod := bp { set this block current }
-                              end;
-                              blkstk^.bestart := pc; { set enclosure start }
-                              blkstk^.bstart := pc; { set start address }
-                              getlin
-                            end;
-                       'e': begin { end block }
-                              getnxt; skpspc;
-                              if not (ch in ['p', 'm', 'r', 'f']) then
-                                errorl('Block type is invalid    ');
-                              if ch in ['p','m'] then begin { end module }
-                                clrlab; { clear near labels }
-                                { if this module active, clear it }
-                                if curmod = blkstk then curmod := nil
-                              end;
-                              if blkstk = nil then 
-                                errorl('No block to end          ');
-                              { mark block non-inclusive }
-                              blkstk^.bend := pc;
-                              bp := blkstk; { remove from block stack }
-                              blkstk := blkstk^.next;
-                              bp^.next := blklst; { put to discard list }
-                              blklst := bp;
-                              if blkstk <> nil then blkstk^.bstart := pc;
-                              getlin
-                            end;
-                       's': begin { symbol }
-                              getnxt; getlab;
-                              new(sp); strassvf(sp^.name, sn); 
-                              skpspc; 
-                              if not (ch in ['g', 'l','p']) then
-                                errorl('Symbol type is invalid   ');
-                              if ch = 'g' then sp^.styp := stglobal
-                              else if ch = 'p' then sp^.styp := stparam 
-                              else sp^.styp := stlocal;
-                              getnxt;
-                              skpspc;
-                              if not (ch in ['0'..'9','-']) then 
-                                errorl('No offset found          ');
-                              sgn := ch = '-'; if ch = '-' then getnxt;
-                              ad := 0; while ch in ['0'..'9'] do 
-                                begin 
-                                  if ad <= maxstr div 10 then
-                                    ad := ad*10+ord(ch)-ord('0')
-                                  else errorl('Symbol offset > max      ');
-                                  getnxt 
-                                end;
-                              if sgn then ad := -ad;
-                              sp^.off := ad; getsds;
-                              strassvf(sp^.digest, sn);
-                              if blkstk = nil then 
-                                errorl('Symbol not in block      ');
-                              { place in block symbol list }
-                              sp^.next := blkstk^.symbols; 
-                              blkstk^.symbols := sp;
-                              getlin
-                            end;
-                       'f': begin { faults (errors) }
-                              read(prd,i); errsinprg := errsinprg+i; getlin
-                            end;
-                       'v': begin { variant logical table }
-                              getnxt; skpspc;
-                              if ch <> 'l' then 
-                                errorl('Label format error       ');
-                              getnxt; parlab(x,ls);
-                              if ls <> nil then 
-                                errorl('Invalid intermediate     ');
-                              getnxt;
-                              read(prd,l); cp := cp-(l*intsize+intsize); 
-                              ad := cp; putint(ad, l); ad := ad+intsize;
-                              while not eoln(prd) do begin
-                                read(prd,i); putint(ad, i); ad := ad+intsize;
-                              end;
-                              labelvalue:=cp;
-                              update(x);
-                              getlin
-                            end;
-                       't': begin { fixed template }
-                              getnxt; skpspc;
-                              if ch <> 'l' then 
-                                errorl('Label format error       ');
-                              getnxt; parlab(x,ls);
-                              if ls <> nil then 
-                                errorl('Invalid intermediate     ');
-                              getnxt;
-                              read(prd,l); cp := cp-(l*intsize); ad := cp;
-                              while not eoln(prd) do begin
-                                read(prd,i); putint(ad, i); ad := ad+intsize;
-                              end;
-                              labelvalue:=cp;
-                              update(x);
-                              getlin
-                            end;
+     again := true; csttab := false;
+     while again do begin 
+       if eof(prd) then errorl('unexpected eof on input  ');
+       getnxt;(* first character of line*)
+       if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b',
+                      'e', 's', 'f','v','t','n','c','x']) then
+         errorl('unexpected line start    ');
+       case ch of
+         '!': getlin; { comment }
+         'l': begin getnxt; parlab(x,ls);
+                    if ls <> nil then 
+                      errorl('Invalid intermediate     ');
+                    getnxt;
+                    if ch='=' then read(prd,labelvalue)
+                              else labelvalue:= pc;
+                    update(x); getlin
+              end;
+         'q': begin again := false; getlin end;
+         ' ': begin getnxt; 
+                    while not eoln(prd) and (ch = ' ') do getnxt;
+                    if not eoln(prd) and (ch <> ' ') then assemble
+                    else getlin 
+              end;
+         ':': begin { source line }
+                 read(prd,x); { get source line number }
+                 { place in line tracking }
+                 if curmod <> nil then curmod^.lintrk^[x] := pc; 
+                 if dosrclin then begin
+                    { pass source line register instruction }
+                    store[pc] := 174; putdef(pc, true); pc := pc+1;
+                    putint(pc, x); pc := pc+intsize
+                 end;
+                 { skip the rest of the line, which would be the
+                   contents of the source line if included }
+                 while not eoln(prd) do
+                    read(prd, c); { get next character }
+                 getlin { source line }
+              end;
+         'o': begin { option }
+                getnxt;
+                while not eoln(prd) and (ch = ' ') do getnxt;
+                repeat
+                  if not (ch in ['a'..'z']) then 
+                    errorl('No valid option found    ');
+                  ch1 := ch; getnxt;
+                  option[ch1] := ch = '+'; getnxt;
+                  case ch1 of
+                    'g': dodmplab := option[ch1];
+                    'h': dosrclin := option[ch1];
+                    'n': dorecycl := option[ch1];
+                    'o': dochkovf := option[ch1];
+                    'p': dochkrpt := option[ch1];
+                    'm': donorecpar := option[ch1];
+                    'q': dochkdef := option[ch1];
+                    's': iso7185  := option[ch1];
+                    'w': dodebug  := option[ch1];
+                    'a': dodbgflt := option[ch1];
+                    'f': dodbgsrc := option[ch1];
+                    'e': dodckout := option[ch1];
+                    'i': dochkvbk := option[ch1];
+                    'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':; 
+                    'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
+                  end
+                until not (ch in ['a'..'z']);
+                getlin
+              end;
+         'g': begin read(prd,i); 
+                    { if not program, adjust so files and 
+                      exceptions from all other modules merge into
+                      program }
+                    if not isprog then i := i-exceptiontop;
+                    gblrlc; gbset := true;
+                    gbloff := gbloff+i; gbsiz := gbsiz+i; 
+                    getlin end;
+         'b': begin
+                getnxt; skpspc;
+                if not (ch in ['p', 'm', 'r', 'f']) then
+                  errorl('Block type is invalid    ');
+                ch1 := ch; { save block type }
+                getnxt; skpspc; getlab;
+                new(bp); strassvf(bp^.name, sn); 
+                bp^.symbols := nil;
+                bp^.incnxt := nil;
+                case ch1 of { block type }
+                  'p': bp^.btyp := btprog;
+                  'm': bp^.btyp := btmod;
+                  'r': bp^.btyp := btproc;
+                  'f': bp^.btyp := btfunc
+                end;
+                bp^.bend := -1;
+                if blkstk <> nil then begin 
+                  { process block inclusions }
+                  bp^.incnxt := blkstk^.incnxt; { insert to list }
+                  blkstk^.incnxt := bp
+                end;
+                { put onto block stack }
+                bp^.next := blkstk; blkstk := bp;
+                bp^.fname := nil;
+                { check module }
+                if bp^.btyp in [btprog, btmod] then begin
+                  { create line track data for module }
+                  new(bp^.lintrk); new(bp^.linprf);
+                  { clear source line tracking }
+                  for i := 1 to maxsrc do 
+                    bp^.lintrk^[i] := -1; 
+                  { clear line profiling }
+                  for i := 1 to maxsrc do bp^.linprf^[i] := 0;
+                  { has to have room for extention }
+                  if snl >= fillen-4 then 
+                    errorl('Block name too long      ');
+                  { add file extension }
+                  ext := extsrc;
+                  for i := 1 to 4 do begin
+                    sn[snl+1] := ext[i]; snl := snl+1 
                   end;
-            end
+                  { place as source file }
+                  strassvf(bp^.fname, sn);
+                  curmod := bp { set this block current }
+                end;
+                blkstk^.bestart := pc; { set enclosure start }
+                blkstk^.bstart := pc; { set start address }
+                getlin
+              end;
+         'e': begin { end block }
+                getnxt; skpspc;
+                if not (ch in ['p', 'm', 'r', 'f']) then
+                  errorl('Block type is invalid    ');
+                if ch in ['p','m'] then begin { end module }
+                  clrlab; { clear near labels }
+                  { if this module active, clear it }
+                  if curmod = blkstk then curmod := nil
+                end;
+                if blkstk = nil then 
+                  errorl('No block to end          ');
+                { mark block non-inclusive }
+                blkstk^.bend := pc;
+                bp := blkstk; { remove from block stack }
+                blkstk := blkstk^.next;
+                bp^.next := blklst; { put to discard list }
+                blklst := bp;
+                if blkstk <> nil then blkstk^.bstart := pc;
+                getlin
+              end;
+         's': begin { symbol }
+                getnxt; getlab;
+                new(sp); strassvf(sp^.name, sn); 
+                skpspc; 
+                if not (ch in ['g', 'l','p']) then
+                  errorl('Symbol type is invalid   ');
+                if ch = 'g' then sp^.styp := stglobal
+                else if ch = 'p' then sp^.styp := stparam 
+                else sp^.styp := stlocal;
+                getnxt;
+                skpspc;
+                if not (ch in ['0'..'9','-']) then 
+                  errorl('No offset found          ');
+                sgn := ch = '-'; if ch = '-' then getnxt;
+                ad := 0; while ch in ['0'..'9'] do 
+                  begin 
+                    if ad <= maxstr div 10 then
+                      ad := ad*10+ord(ch)-ord('0')
+                    else errorl('Symbol offset > max      ');
+                    getnxt 
+                  end;
+                if sgn then ad := -ad;
+                sp^.off := ad; getsds;
+                strassvf(sp^.digest, sn);
+                if blkstk = nil then 
+                  errorl('Symbol not in block      ');
+                { place in block symbol list }
+                sp^.next := blkstk^.symbols; 
+                blkstk^.symbols := sp;
+                getlin
+              end;
+         'f': begin { faults (errors) }
+                read(prd,i); errsinprg := errsinprg+i; getlin
+              end;
+         'v': begin { variant logical table }
+                getnxt; skpspc;
+                if ch <> 'l' then 
+                  errorl('Label format error       ');
+                getnxt; parlab(x,ls);
+                if ls <> nil then 
+                  errorl('Invalid intermediate     ');
+                getnxt;
+                read(prd,l); cp := cp-(l*intsize+intsize); 
+                ad := cp; putint(ad, l); ad := ad+intsize;
+                while not eoln(prd) do begin
+                  read(prd,i); putint(ad, i); ad := ad+intsize;
+                end;
+                labelvalue:=cp;
+                update(x);
+                getlin
+              end;
+         't': begin { fixed template }
+                getnxt; skpspc;
+                if ch <> 'l' then 
+                  errorl('Label format error       ');
+                getnxt; parlab(x,ls);
+                if ls <> nil then 
+                  errorl('Invalid intermediate     ');
+                getnxt;
+                read(prd,l); cp := cp-(l*intsize); ad := cp;
+                while not eoln(prd) do begin
+                  read(prd,i); putint(ad, i); ad := ad+intsize;
+                end;
+                labelvalue:=cp;
+                update(x);
+                getlin
+              end;
+         'n': begin { start constant table }
+                if csttab then 
+                  errorl('Already in constant table'); 
+                csttab := true; { flag in table }
+                getnxt; skpspc;
+                if ch <> 'l' then 
+                  errorl('Label format error       ');
+                getnxt; parlab(x,ls);
+                if ls <> nil then 
+                  errorl('Invalid intermediate     ');
+                getnxt;
+                { Note the constant table must start on maximium 
+                  natural alignment to match it's structure type.
+                  We use stackal for that. }
+                read(prd,l); cp := cp-l; alignd(stackal, cp);
+                cstadr := cp; labelvalue:=cstadr; update(x);
+                getlin
+                { note mixed constants with other operands is 
+                  neither encouraged nor forbidden }
+              end;
+         'x': begin
+                if not csttab then
+                  errorl('No constant table active ');
+                csttab := false;
+                getlin
+              end;
+         'c': begin
+                getnxt; skpspc;
+                if not (ch in ['i','r','p','s','c','b','x'])
+                  then errorl('Invalid const table type ');
+                case ch of { constant type }
+                  'i': begin 
+                         getnxt; read(prd,i); alignu(intal, cstadr); 
+                         putint(cstadr,i); cstadr := cstadr+intsize 
+                       end; 
+                  'r': begin 
+                         getnxt; read(prd,r); alignu(realal, cstadr); 
+                         putrel(cstadr,r); cstadr := cstadr+realsize 
+                       end; 
+                  'p': begin
+                         getnxt; 
+                         if ch <> '(' then errorl('''('' expected for set   ');
+                         s := [ ];  getnxt;
+                         while ch<>')' do 
+                           begin read(prd,i); getnxt; s := s + [i] end;
+                         alignu(setal, cstadr);
+                         putset(cstadr,s); cstadr := cstadr+setsize
+                       end;
+                  's': begin
+                         getnxt;
+                         if ch <> '''' then errorl('quote expected for string');
+                         getnxt; alignu(charal, cstadr);
+                         while ch<>'''' do
+                           begin putchr(cstadr, ch); getnxt; 
+                                 cstadr := cstadr+charsize end
+                       end;
+                  'c': begin
+                         getnxt;
+                         { chars are output as values }
+                         read(prd,i); alignu(charal, cstadr);
+                         putchr(cstadr,chr(i)); cstadr := cstadr+charsize
+                       end;
+                  'b': begin
+                         getnxt;
+                         { booleans are output as values }
+                         read(prd,i); alignu(boolal, cstadr);
+                         putbyt(cstadr,i); cstadr := cstadr+boolsize
+                       end;
+                  'x': begin
+                         getnxt; read(prd,i); 
+                         putbyt(cstadr,i); cstadr := cstadr+1 
+                       end; 
+                end;
+                getlin
+              end
+       end;
+     end
    end; (*generate*)
 
    procedure storeop;
@@ -2543,6 +2626,23 @@ procedure load;
                    else read(prd,q);
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
+                   
+          (*ltc,lto*)
+          228,229,230,231,232,233,
+          234: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+                 case op of
+                   { ltc is ldo but with constant area addressing }
+                   228: op := 1;
+                   229: op := 66;
+                   230: op := 67;
+                   231: op := 68;
+                   232: op := 69;
+                   233: op := 194
+                 end;
+                 storeop;
+                 if prd^ <> 'l' then errorl('Instr must have label    ');
+                 getnxt; labelsearch; putcstfix; storeq
+               end;
 
           (*pck,upk,vis,vip,apc,cxc,ccs,vin*)
           63, 64,122,133,210,212,223,226: begin read(prd,q); read(prd,q1); storeop; 
