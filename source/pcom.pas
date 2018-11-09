@@ -3316,8 +3316,19 @@ end;
                        end;
             varbl: case access of
                      drct:   if vlevel<=1 then begin
-                               if chkfix(symptr) then gen1ts(8(*ltc*),dplmt,typtr,symptr) 
-                               else gen1ts(39(*ldo*),dplmt,typtr,symptr)
+                               if (chkext(symptr) or chkfix(symptr)) and 
+                                  (dplmt <> 0) then begin
+                                 { labeled base with offset, need to change
+                                   to address load with offset }
+                                 if chkfix(symptr) then 
+                                   gen1s(114(*lto*),dplmt,symptr)
+                                 else gen1s(37(*lao*),dplmt,symptr);
+                                 gen1t(35(*ind*),dplmt,typtr);
+                               end else begin
+                                 if chkfix(symptr) then 
+                                   gen1ts(8(*ltc*),dplmt,typtr,symptr) 
+                                 else gen1ts(39(*ldo*),dplmt,typtr,symptr)
+                               end
                              end else gen2t(54(*lod*),level-vlevel,dplmt,typtr);
                      indrct: gen1t(35(*ind*),idplmt,typtr);
                      inxd:   error(400)
@@ -3350,7 +3361,12 @@ end;
                      drct:   if vlevel <= 1 then begin
                                if chkfix(symptr) then 
                                  gen1s(114(*lto*),dplmt,symptr)
-                               else gen1s(37(*lao*),dplmt,symptr)
+                               else gen1s(37(*lao*),dplmt,symptr);
+                               { if there is an offset left in the address,
+                                 apply it now }
+                               if (chkext(symptr) or chkfix(symptr)) and 
+                                  (dplmt <> 0) then 
+                                  gen1t(34(*inc*),idplmt,nilptr);
                              end else gen2(50(*lda*),level-vlevel,dplmt);
                      indrct: if idplmt <> 0 then
                                gen1t(34(*inc*),idplmt,nilptr);
