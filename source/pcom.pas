@@ -7638,7 +7638,7 @@ end;
     if level = 1 then begin
       ilp := display[top].inilst;
       while ilp <> nil do begin 
-        gen1(37(*lao*),ilp^.vaddr);
+        gen1t(39(*ldo*),ilp^.vaddr,nilptr);
         gen0(107(*vdp*));
         ilp := ilp^.ininxt end
     end;
