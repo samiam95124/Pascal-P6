@@ -2666,6 +2666,8 @@ end;
             else if fop = 105 then begin write(prr, ' '); putlabel(fp2) end
             else if chkext(symptr) then 
               begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
+            else if chkfix(symptr) then
+              begin write(prr, ' '); prtlabel(symptr^.floc); writeln(prr) end
             else writeln(prr,fp2:12);
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2) 
@@ -3094,8 +3096,8 @@ end;
           { set }
           insymbol;
           new(lvp,pset); pshcst(lvp); lvp^.cclass := pset; lvp^.pval := [];
-          repeat
-            constexpr(fsys+[rbrack,comma], fsp, fvalu);
+          if sy <> rbrack then repeat
+            constexpr(fsys+[rbrack,comma,range], fsp, fvalu);
             if not fvalu.intval then error(134);
             if sy = range then begin
               insymbol; lv := fvalu;
@@ -6188,18 +6190,21 @@ end;
                    if comptypes(lsp, lsp1) then begin
                      write(prr, 'c p (');
                      for i := setlow to sethigh do 
-                       if i in fvalu.valp^.pval then write(prr,i:1, ' ');
+                       if i in fvalu.valp^.pval then write(prr,' ',i:1);
                      writeln(prr, ')')
                    end else error(245)
                  end;
           arrays: begin getbounds(lsp^.inxtype, min, max);
                     if (sy = stringconst) and stringt(lsp) then begin
-                      { string constant matches array }
-                      if strglgth <> max then error(245);
-                      write(prr, 'c ');
-                      write(prr, 's ''');
-                      writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
-                      write(prr, '''')
+                      constexpr(fsys,lsp1,fvalu);
+                      if comptypes(lsp, lsp1) then begin
+                        { string constant matches array }
+                        if fvalu.valp^.slgth <> max then error(245);
+                        write(prr, 'c ');
+                        write(prr, 's ''');
+                        writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
+                        writeln(prr, '''')
+                      end else error(245)
                     end else begin
                       { iterate array elements }
                       i := min; if sy = arraysy then insymbol else error(28);

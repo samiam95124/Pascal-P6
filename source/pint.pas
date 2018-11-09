@@ -2467,16 +2467,16 @@ procedure load;
                          putrel(cstadr,r); cstadr := cstadr+realsize 
                        end; 
                   'p': begin
-                         getnxt; 
+                         getnxt; skpspc;
                          if ch <> '(' then errorl('''('' expected for set   ');
-                         s := [ ];  getnxt;
+                         s := [ ]; getnxt;
                          while ch<>')' do 
                            begin read(prd,i); getnxt; s := s + [i] end;
                          alignu(setal, cstadr);
                          putset(cstadr,s); cstadr := cstadr+setsize
                        end;
                   's': begin
-                         getnxt;
+                         getnxt; skpspc;
                          if ch <> '''' then errorl('quote expected for string');
                          getnxt; alignu(charal, cstadr);
                          while ch<>'''' do
@@ -2637,7 +2637,8 @@ procedure load;
                    230: op := 67;
                    231: op := 68;
                    232: op := 69;
-                   233: op := 194
+                   233: op := 194;
+                   234: op := 5;
                  end;
                  storeop;
                  if prd^ <> 'l' then errorl('Instr must have label    ');
