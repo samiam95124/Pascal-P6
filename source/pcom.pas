@@ -317,6 +317,9 @@ type                                                        (*describing:*)
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
                      priv: boolean end;
+     { fixed container length entries }
+     fcletyp = ^fclety;
+     fclety = record next: fcletyp; len: integer end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride,
@@ -333,7 +336,8 @@ type                                                        (*describing:*)
                              threat: boolean; forcnt: integer; part: partyp; 
                              hdr: boolean; vext: boolean; vmod: filptr; 
                              inilab: integer; ininxt: ctp; dblptr: boolean); 
-                     fixed: (floc: integer; fext: boolean; fmod: filptr);
+                     fixed: (floc: integer; fext: boolean; fmod: filptr; 
+                             fcl: fcletyp);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -591,6 +595,7 @@ var
     lbpcnt: integer; { label counts }
     filcnt: integer; { file tracking counts }
     cipcnt: integer; { case entry tracking counts }
+    fclcnt: integer; { fixed container length counts }
     
     { serial numbers to label structure and identifier entries for dumps }
     ctpsnm: integer;
@@ -691,6 +696,20 @@ var
      end;
      stpcnt := stpcnt-1
   end;
+  
+  { get fixed container length entry }
+  procedure getfcl(var p: fcletyp);
+  begin
+     new(p); { get new entry }
+     fclcnt := fclcnt+1 { count entry }
+  end;
+
+  { recycle fixed container length entry }
+  procedure putfcl(p: fcletyp);
+  begin
+     dispose(p); { release entry }
+     fclcnt := fclcnt-1 { count entry }
+  end;
 
   { initialize and register identifier entry }
   procedure ininam(p: ctp);
@@ -717,7 +736,7 @@ var
 
   { recycle identifier entry }
   procedure putnam{(p: ctp)};
-  var p1: ctp;
+  var p1: ctp; fclp: fcletyp;
   begin
      if (p^.klass = proc) or (p^.klass = func) then begin
         putparlst(p^.pflist); p^.pflist := nil;
@@ -733,7 +752,11 @@ var
        types: dispose(p, types);
        konst: dispose(p, konst);
        vars:  dispose(p, vars);
-       fixed: dispose(p, fixed);
+       fixed: begin 
+                while p^.fcl <> nil do 
+                  begin fclp := p^.fcl; p^.fcl := fclp^.next; putfcl(fclp) end; 
+                dispose(p, fixed)
+              end;
        field: dispose(p, field);
        proc: if p^.pfdeckind = standard then dispose(p, proc, standard)
                                         else if p^.pfkind = actual then 
@@ -1476,6 +1499,7 @@ end;
     246: write('Initializer out of range of fixed element type');
     247: write('Incorrect number of initializers for type');
     248: write('Fixed cannot contain variant record');
+    249: write('Number of initializers for container do not match');
 
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
@@ -6147,10 +6171,11 @@ end;
     
     procedure fixeddeclaration;
       var lcp: ctp; lsp: stp; lsize: addrrange;
-          test: boolean; v: integer; d: boolean; dummy: stp; fvalu: valu;
-    procedure fixeditem(fsys: setofsys; lsp: stp; size: integer; var v: integer; var d: boolean);
+          test: boolean; v: integer; d: boolean; dummy: stp; fvalu: valu; fclp, nfclp: fcletyp;
+    procedure fixeditem(fsys: setofsys; lsp: stp; size: integer; var v: integer; 
+                        var d: boolean; var fclp: fcletyp);
       var fvalu: valu; lsp1: stp; c:char; lcp: ctp; i, min, max: integer; 
-          test: boolean;
+          test: boolean; thisfclp: fcletyp;
     begin v := 0; d := false;
       if lsp <> nil then begin
         case lsp^.form of
@@ -6196,7 +6221,7 @@ end;
                         writeln(prr)
                       end else error(245)
                   end;
-          subrange: begin fixeditem(fsys,lsp^.rangetype,lsp^.size,v,d);
+          subrange: begin fixeditem(fsys,lsp^.rangetype,lsp^.size,v,d,thisfclp);
                       if d then 
                         if (v < lsp^.min.ival) or (v > lsp^.min.ival) then 
                           error(246)
@@ -6225,7 +6250,8 @@ end;
                       { iterate array elements }
                       i := min; if sy = arraysy then insymbol else error(28);
                       repeat
-                        fixeditem(fsys+[comma,endsy],lsp^.aeltype, lsp^.aeltype^.size, v, d);
+                        fixeditem(fsys+[comma,endsy],lsp^.aeltype, 
+                                  lsp^.aeltype^.size, v, d, thisfclp);
                         i := i+1;
                         if not (sy in [comma,endsy]) then
                           begin error(29); skip(fsys+[comma,endsy]+typedels) end;
@@ -6233,6 +6259,40 @@ end;
                         if not test then insymbol
                       until test;
                       if i-1 <> max then error(247);
+                      if sy = endsy then insymbol else error(13)
+                    end
+                  end;
+          arrayc: begin min := 1;
+                    { containers count their own length }
+                    if (sy = stringconst) and stringt(lsp) then begin
+                      constexpr(fsys,lsp1,fvalu);
+                      if comptypes(lsp, lsp1) then begin
+                        { string constant matches array }
+                        if fvalu.valp^.slgth <> max then error(245);
+                        write(prr, 'c ');
+                        write(prr, 's ''');
+                        writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
+                        writeln(prr, '''')
+                      end else error(245)
+                    end else begin
+                      { iterate array elements }
+                      i := min; thisfclp := nil; 
+                      if sy = arraysy then insymbol else error(28);
+                      repeat
+                        fixeditem(fsys+[comma,endsy],lsp^.abstype, 
+                                  lsp^.abstype^.size, v, d, thisfclp);
+                        i := i+1;
+                        if not (sy in [comma,endsy]) then
+                          begin error(29); skip(fsys+[comma,endsy]+typedels) end;
+                        test := sy <> comma;
+                        if not test then insymbol
+                      until test;
+                      if fclp <> nil then begin
+                        if i-1 <> fclp^.len then error(249)
+                      end else begin
+                          getfcl(fclp); fclp^.next := lcp^.fcl; 
+                          lcp^.fcl := fclp; fclp^.len := i-1
+                      end;
                       if sy = endsy then insymbol else error(13)
                     end
                   end;
@@ -6245,7 +6305,7 @@ end;
                          { ran out of data items, dummy parse a constant }
                          constexpr(fsys+[comma,endsy],dummy,fvalu)
                        else fixeditem(fsys+[comma,endsy],lcp^.idtype, 
-                                      lcp^.idtype^.size, v, d);
+                                      lcp^.idtype^.size, v, d, thisfclp);
                        max := max+1;
                        if lcp <> nil then begin lcp := lcp^.next; i := i+1 end;
                        if not (sy in [comma,endsy]) then
@@ -6256,7 +6316,7 @@ end;
                      if i <> max then error(247);
                      if sy = endsy then insymbol else error(13)
                    end;
-          pointer, arrayc, files, tagfld, variant,exceptf: error(244);
+          pointer, files, tagfld, variant,exceptf: error(244);
         end
       end
     end;
@@ -6267,7 +6327,8 @@ end;
           begin new(lcp,fixed); ininam(lcp);
             with lcp^ do
              begin klass := fixed; strassvf(name, id);
-               idtype := nil; floc := -1; fext := incstk <> nil; fmod := incstk
+               idtype := nil; floc := -1; fext := incstk <> nil; fmod := incstk;
+               fcl := nil
              end;
             enterid(lcp);
             insymbol;
@@ -6282,11 +6343,21 @@ end;
           insymbol;
           { start fixed constants }
           write(prr, 'n ');
-          genlabel(lcp^.floc); prtlabel(lcp^.floc); 
+          if lcp <> nil then begin genlabel(lcp^.floc); prtlabel(lcp^.floc) end; 
           writeln(prr, ' ', lsize:1);
-          fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d);
+          fclp := nil;
+          fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d, fclp);
           writeln(prr, 'x')
         end else error(16);
+        if lcp <> nil then if lcp^.fcl <> nil then begin
+          { reverse container length list }
+          nfclp := nil;
+          while lcp^.fcl <> nil do begin
+            fclp := lcp^.fcl; lcp^.fcl := fclp^.next; fclp^.next := nfclp; 
+            nfclp := fclp
+          end;
+          lcp^.fcl := nfclp
+        end;
         if sy = semicolon then
           begin insymbol;
             if not (sy in fsys + [ident]) then
@@ -8326,6 +8397,7 @@ end;
     lbpcnt := 0; { label counts }
     filcnt := 0; { file tracking counts }
     cipcnt := 0; { case entry tracking counts }
+    fclcnt := 0; { fixed container length counts }
     
     { clear id counts }
     ctpsnm := 0;
@@ -8828,13 +8900,14 @@ begin
     writeln;
     writeln('Recycling tracking counts:');
     writeln;
-    writeln('string quants:              ', strcnt:1);
-    writeln('constants:                  ', cspcnt:1);
-    writeln('structures:                 ', stpcnt:1);
-    writeln('identifiers:                ', ctpcnt:1);
-    writeln('label counts:               ', lbpcnt:1);
-    writeln('file tracking counts:       ', filcnt:1);
-    writeln('case entry tracking counts: ', cipcnt:1);
+    writeln('string quants:                 ', strcnt:1);
+    writeln('constants:                     ', cspcnt:1);
+    writeln('structures:                    ', stpcnt:1);
+    writeln('identifiers:                   ', ctpcnt:1);
+    writeln('label counts:                  ', lbpcnt:1);
+    writeln('file tracking counts:          ', filcnt:1);
+    writeln('case entry tracking counts:    ', cipcnt:1);
+    writeln('Fixed container length counts: ', fclcnt:1);
     writeln;
 
   end;
@@ -8865,6 +8938,9 @@ begin
   if cipcnt <> 0 then
      writeln('*** Error: Compiler internal error: case recycle balance: ',
              cipcnt:1);
+  if fclcnt <> 0 then
+     writeln('*** Error: Compiler internal error: fixed container length ',
+             'recycle balance: ', fclcnt:1);
 
   99:
 
