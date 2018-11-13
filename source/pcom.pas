@@ -183,7 +183,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 114;  { maximum number of instructions }
+   maxins     = 115;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -359,7 +359,7 @@ type                                                        (*describing:*)
      attrkind = (cst,varbl,expr);
      vaccess = (drct,indrct,inxd);
 
-     attr = record symptr: ctp; typtr: stp;
+     attr = record symptr: ctp; typtr: stp; spv: boolean;
               case kind: attrkind of
                 cst:   (cval: valu);
                 varbl: (packing: boolean; packcom: boolean;
@@ -1516,7 +1516,8 @@ end;
     { as of the implementation of full ISO 7185, this error is no longer used }
     399: write('Feature not implemented');
 
-    400,401,402,403,404,405,406,407,
+    { * marks spared compiler errors }
+    400,401,402,403,404,{*}405,406,407,
     500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515: write('Compiler internal error');
     end
@@ -3372,7 +3373,10 @@ end;
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            expr:  error(405)
+            { Expression means onstack. We can address this by addressing the
+              stack, then we flag the variable as on stack, which indicates
+              to clean it up later. }
+            expr:  begin gen0(115(*lsa*)); spv := true end
           end;
           if (typtr^.form = arrayc) and pickup then begin 
             { it's a container, load a complex pointer based on that }
@@ -3520,9 +3524,9 @@ end;
   begin { selector }
     lastptr := false; { set last index op not ptr }
     with fcp^, gattr do
-      begin symptr := nil; typtr := idtype; kind := varbl; packing := false;
-        packcom := false; tagfield := false; ptrref := false; vartl := -1;
-        pickup := true; dblptr := false;
+      begin symptr := nil; typtr := idtype; spv := false; kind := varbl; 
+        packing := false; packcom := false; tagfield := false; ptrref := false; 
+        vartl := -1; pickup := true; dblptr := false;
         case klass of
           vars: begin symptr := fcp;
               if typtr <> nil then 
@@ -6684,7 +6688,7 @@ end;
                     if not comptypes(lcp^.idtype, lsp) then error(216)
                   end else lcp^.idtype := lsp;
                   if lsp <> nil then
-                    if not (lsp^.form in [scalar,subrange,pointer]) then
+                    if not (lsp^.form in [scalar,subrange,pointer]) and iso7185 then
                       begin error(120); lcp^.idtype := nil end;
                   insymbol
                 end
@@ -6891,11 +6895,18 @@ end;
                           gen1(101(*aps*),containerbase(gattr.typtr))
                         else gen2(102(*apc*),containers(lattr.typtr),
                                   containerbase(gattr.typtr))
-                      end else
+                      end else begin
                         { standard array assign }
-                        gen1(40(*mov*),lattr.typtr^.size)
+                        gen1(40(*mov*),lattr.typtr^.size);
+                        { if right came from expr, need to clean off stack }
+                        if gattr.spv then gen1(71(*dmp*),gattr.typtr^.size)
+                      end
                     end;
-                    records: gen1(40(*mov*),lattr.typtr^.size);
+                    records: begin
+                      gen1(40(*mov*),lattr.typtr^.size);
+                      { if right came from expr, need to clean off stack }
+                      if gattr.spv then gen1(71(*dmp*),gattr.typtr^.size)
+                    end;
                     files: error(146)
                   end;
                 end else error(129)
@@ -7673,6 +7684,8 @@ end;
             lcp := next
           end;
         if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
+        else if fprocp^.idtype^.form in [records, arrays] then
+          gen1t(42(*ret*),fprocp^.idtype^.size,basetype(fprocp^.idtype))
         else gen0t(42(*ret*),basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
@@ -8484,7 +8497,7 @@ end;
       mn[100] :=' cpc'; mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; 
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
-      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto';
+      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' lsa';
 
     end (*instrmnemonics*) ;
 
@@ -8614,7 +8627,7 @@ end;
       cdx[108] := 0;                    cdx[109] := 0;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
-      cdx[114] := -adrsize;
+      cdx[114] := -adrsize;             cdx[115] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

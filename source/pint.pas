@@ -1951,6 +1951,8 @@ procedure load;
          instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
+         instr[235]:='lsa       '; insp[235] := false; insq[235] := 0;
+         instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2785,7 +2787,7 @@ procedure load;
                          storeop; putcstfix; storeq
                        end;
 
-          14, 128, 129, 130, 131, 132, 204, (*ret*)
+          14, 128, 129, 130, 131, 132, 204, 236, (*ret*)
 
           { equ,neq,geq,grt,leq,les with no parameter }
           17, 137, 138, 139, 140, 141,
@@ -2805,7 +2807,7 @@ procedure load;
             ccs,scp,ldp,vdd }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,235,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4306,6 +4308,7 @@ begin
 
     4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
     5 (*lao*): begin getq; pshadr(q) end;
+    235 (*lsa*): pshadr(sp);
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
@@ -4464,6 +4467,7 @@ begin
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
+    236 (*rets*),
     129 (*retr*): begin evict(ep, mp);
                    sp := mp+markfv; { set stack below function result }
                    pc := getadr(mp+markra);
@@ -4961,8 +4965,8 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 
-    241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 237, 238, 239, 240, 241, 242, 243, 244,
+    245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
