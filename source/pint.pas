@@ -1726,7 +1726,7 @@ procedure load;
          instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
-         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
+         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize;
          instr[ 12]:='cup       '; insp[ 12] := true;  insq[ 12] := intsize;
          instr[ 13]:='ents      '; insp[ 13] := false; insq[ 13] := intsize;
          instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := 0;
@@ -2591,9 +2591,9 @@ procedure load;
       if op = maxins then errorl('illegal instruction      ');
       case op of  (* get parameters p,q *)
 
-          (*lod,str,lda,lip*)
+          (*lod,str,lda,lip,mst*)
           0, 193, 105, 106, 107, 108, 109, 195,
-          2, 70, 71, 72, 73, 74,4,120: begin read(prd,p,q); storeop; storep;
+          2, 70, 71, 72, 73, 74,4,120,11: begin read(prd,p,q); storeop; storep;
                                              storeq
                                        end;
 
@@ -2606,7 +2606,7 @@ procedure load;
                      if q > exceptiontop then q := q+gbloff;
                      putgblfix; storeq end;
 
-          11,113(*mst,cip*): begin read(prd,p); storeop; storep end;
+          113(*cip*): begin read(prd,p); storeop; storep end;
 
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
           142, 148, 154, 160, 166, 172,
@@ -4384,9 +4384,11 @@ begin
                         procedure + 1;  set dl and sl, decrement sp*)
                  (* then length of this element is
                     max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp;
+                 getp; getq;
+                 { allocate function result as zeros }
+                 for j := 1 to q div intsize do pshint(0);
                  ad := sp; { save mark base }
-                 { allocate mark }
+                 { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
                  putadr(ad+marksl, base(p)); { sl }
                  (* the length of this element is ptrsize *)
@@ -4429,21 +4431,11 @@ begin
                   end;
                   (*q = max space required on stack*)
                   
-    14  (*retp*): begin evict(ep, mp);
-                   sp := mp;
-                   pc := getadr(mp+markra); { get ra }
-                   ep := getadr(mp+markep); { get old ep }
-                   mp := getadr(mp+markdl)  { get dl }
-                 end;
     { For characters and booleans, need to clean 8 bit results because
-      only the lower 8 bits were stored to. For return values, we set 
-      maxresult according to the largest result, usually real. Then
-      we need adjustment for if the basic stack unit of int/ptr is less than 
-      this. }
+      only the lower 8 bits were stored to. }
     130 (*retc*): begin evict(ep, mp);
                    { set stack below function result }
-                   sp := mp+markfv; 
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
+                   sp := mp; 
                    putint(sp, ord(getchr(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
@@ -4451,33 +4443,20 @@ begin
                  end;
     131 (*retb*): begin evict(ep, mp);
                    { set stack below function result }
-                   sp := mp+markfv; 
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
+                   sp := mp; 
                    putint(sp, ord(getbol(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
+    14  (*retp*),
     128 (*reti*),
-    204 (*retx*): begin evict(ep, mp);
-                   { set stack below function result }
-                   sp := mp+markfv;
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
-                 end;
+    204 (*retx*),
     236 (*rets*),
-    129 (*retr*): begin evict(ep, mp);
-                   sp := mp+markfv; { set stack below function result }
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
-                 end;
-    132  (*reta*): begin evict(ep, mp);
-                   { set stack below function result }  
-                   sp := mp+markfv;
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
+    129 (*retr*),
+    132 (*reta*): begin evict(ep, mp);
+                   { set stack below function result, if any }  
+                   sp := mp;
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
@@ -6942,8 +6921,6 @@ begin (* main *)
   if codemax = 0 then;    
   if filesize = 0 then;   
   if intdig = 0 then;     
-  if markfv = 0 then;     
-  if maxresult = 0 then;  
   if ordminchar = 0 then; 
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 

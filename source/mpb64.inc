@@ -33,8 +33,7 @@
       setlow      =        0;
       ordmaxchar  =      255;   { Characters are 8 bit ISO/IEC 8859-1 }
       ordminchar  =        0;
-      maxresult   = realsize;   { maximum size of function result }
-      marksize    =       56;   { maxresult+6*ptrsize }
+      marksize    =       48;   { 6*ptrsize }
       ujplen      =       9;    { length of ujp instruction (used for case
                                   jumps) }
       { Value of nil is 1 because this allows checks for pointers that were
@@ -47,19 +46,17 @@
 
         Mark format is:
 
-        -8:  Function return value, 64 bits, enables a full real result.
-        -12:  Static link.
+        -8:  Static link.
         -16: Dynamic link.
-        -20: Saved EP from previous frame.
-        -24: Stack bottom after locals allocate. Used for interprocdural gotos.
-        -28: EP from current frame. Used for interprocedural gotos.
-        -32: Return address
+        -24: Saved EP from previous frame.
+        -32: Stack bottom after locals allocate. Used for interprocdural gotos.
+        -40: EP from current frame. Used for interprocedural gotos.
+        -48: Return address
 
       }
-      markfv      =        -8;  { function value }
-      marksl      =        -16; { static link }
-      markdl      =        -24; { dynamic link }
-      markep      =        -32; { (old) maximum frame size }
-      marksb      =        -40; { stack bottom }
-      market      =        -48; { current ep }
-      markra      =        -56; { return address }
+      marksl      =        -8; { static link }
+      markdl      =        -16; { dynamic link }
+      markep      =        -24; { (old) maximum frame size }
+      marksb      =        -32; { stack bottom }
+      market      =        -40; { current ep }
+      markra      =        -48; { return address }

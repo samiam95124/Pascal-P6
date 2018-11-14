@@ -359,7 +359,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define ORDMAXCHAR        255  /* Characters are 8 bit ISO/IEC 8859-1 */
 #define ORDMINCHAR          0
 #define MAXRESULT    REALSIZE  /* maximum size of function result */
-#define MARKSIZE           56  /* maxresult+6*ptrsize */
+#define MARKSIZE           48  /* maxresult+6*ptrsize */
 #define UJPLEN              9  /* length of ujp instruction (used for case
                                   jumps) */
 
@@ -373,22 +373,20 @@ table is all you should need to adapt to any byte addressable machine.
 
   Mark format is:
 
-  -8:  Function return value, 64 bits, enables a full real result.
-  -12: Static link.
+  -8: Static link.
   -16: Dynamic link.
-  -20: Saved EP from previous frame.
-  -24: Stack bottom after locals allocate. Used for interprocdural gotos.
-  -28: EP from current frame. Used for interprocedural gotos.
-  -32: Return address
+  -24: Saved EP from previous frame.
+  -32: Stack bottom after locals allocate. Used for interprocdural gotos.
+  -40: EP from current frame. Used for interprocedural gotos.
+  -48: Return address
 
 */
-#define MARKFV              -8  /* function value */
-#define MARKSL              -16  /* static link */
-#define MARKDL              -24 /* dynamic link */
-#define MARKEP              -32 /* (old) maximum frame size */
-#define MARKSB              -40 /* stack bottom */
-#define MARKET              -48 /* current ep */
-#define MARKRA              -56 /* return address */
+#define MARKSL              -8  /* static link */
+#define MARKDL              -16 /* dynamic link */
+#define MARKEP              -24 /* (old) maximum frame size */
+#define MARKSB              -32 /* stack bottom */
+#define MARKET              -40 /* current ep */
+#define MARKRA              -48 /* return address */
 #endif
 
 /* ******************* } of pcom and pint common parameters *********** */
@@ -2434,9 +2432,11 @@ void sinins()
                        procedure + 1;  set dl and sl, decrement sp*/
                      /* then length of this element is
                         max(intsize,realsize,boolsize,charsize,ptrsize */
-                 getp();
+                 getp(); getq();
+                 /* allocate function result as zeros */
+                 for (j = 0; j < q/INTSIZE; j++) pshint(0);
                  ad = sp; /* save mark base */
-                 /* allocate mark */
+                 /* allocate mark as zeros */
                  for (j = 0; j < MARKSIZE/INTSIZE; j++) pshint(0);
                  putadr(ad+MARKSL, base(p)); /* sl */
                  /* the length of this element is ptrsize */
@@ -2476,60 +2476,32 @@ void sinins()
                     break;
                     /*q = max space required on stack*/
 
-    case 14  /*retp*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   sp = mp;
-                   pc = getadr(mp+MARKRA); /* get ra */
-                   ep = getadr(mp+MARKEP); /* get old ep */
-                   mp = getadr(mp+MARKDL); /* get dl */
-                   break;
     /* For characters and booleans, need to clean 8 bit results because
-      only the lower 8 bits were stored to. For return values, we set
-      maxresult according to the largest result, usually real. Then
-      we need adjustment for if the basic stack unit of int/ptr is less than
-      this. */
+      only the lower 8 bits were stored to. */
     case 130 /*retc*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
                    /* set stack below function result */
-                   sp = mp+MARKFV;
-                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
+                   sp = mp;
                    putint(sp, getchr(sp));
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
                    break;
     case 131 /*retb*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
                    /* set stack below function result */
-                   sp = mp+MARKFV;
-                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
+                   sp = mp;
                    putint(sp, getbol(sp));
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
                    break;
+    case 14  /*retp*/:
     case 128 /*reti*/:
     case 204 /*retx*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   /* set stack below function result */
-                   sp = mp+MARKFV;
-                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
-                   pc = getadr(mp+MARKRA);
-                   ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
-                   break;
+    case 236 /*rets*/:
     case 129 /*retr*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   sp = mp+MARKFV; /* set stack below function result */
-                   pc = getadr(mp+MARKRA);
-                   ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
-                   break;
     case 132  /*reta*/:
-                   if (sp != getadr(mp+MARKSB)) errorv(STACKBALANCE);
-                   /* set stack below function result */
-                   sp = mp+MARKFV;
-                   if (STACKELSIZE < MAXRESULT) sp = sp+MAXRESULT/2;
+                   /* set stack below function result, if any */
+                   sp = mp;
                    pc = getadr(mp+MARKRA);
                    ep = getadr(mp+MARKEP);
                    mp = getadr(mp+MARKDL);
@@ -2978,7 +2950,7 @@ void sinins()
                        pshadr(getadr(ad)); break;
 
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
+    /* 228, 229, 230, 231, 232, 233, 234, 235, 237, 238, 239, 240, 241,
        242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

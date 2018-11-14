@@ -2689,7 +2689,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112: 
+          41,45,50,54,56,74,62,63,81,82,96,97,102,104,109,112: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -3592,12 +3592,8 @@ end;
                       against the fact that int/ptr results fit in
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
-                    lsize := maxresult; if id <> nil then lsize := id^.size;
-                    if (lsize < maxresult) and (stackelsize < maxresult) then
-                      (*impl. relat. addr. of fct. result*)
-                      dplmt := markfv+maxresult div 2
-                    else
-                      dplmt := markfv   (*impl. relat. addr. of fct. result*)
+                    lsize := parmsize; if id <> nil then lsize := id^.size;
+                    dplmt := 0   (*impl. relat. addr. of fct. result*)
                   end
               end
         end (*case*)
@@ -4628,11 +4624,18 @@ end;
       end
     end;
     begin locpar := 0;
+      { find function result size }
+      lsize := 0; 
+      if fcp^.klass = func then begin
+          lsize := fcp^.idtype^.size;
+          alignu(parmptr,lsize);
+      end;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
+          { I don't know why these are dups }
           if pfkind = actual then begin { it's a system call }
-            if not externl then gen1(41(*mst*),level-pflev)
-          end else gen1(41(*mst*),level-pflev) { its an indirect }
+            if not externl then gen2(41(*mst*),level-pflev,lsize)
+          end else gen2(41(*mst*),level-pflev,lsize) { its an indirect }
         end;
       if sy = lparent then
         begin llc := lc;
@@ -4738,13 +4741,7 @@ end;
                   if inherit then error(234);
                   gencupent(46(*cup*),locpar,pfname,fcp)
                 end;
-                if fcp^.klass = func then begin
-                  { add size of function result back to stack }
-                  lsize := 1; 
-                  if fcp^.idtype <> nil then lsize := fcp^.idtype^.size;
-                  alignu(parmptr,lsize);
-                  mesl(-lsize)
-                end
+                mesl(-lsize)
               end
             end
         end
@@ -4752,12 +4749,7 @@ end;
         gen2(50(*lda*),level-fcp^.pflev,fcp^.pfaddr);
         gen1(67(*cip*),locpar);
         mesl(locpar); { remove stack parameters }
-        if fcp^.klass = func then begin
-          { add size of function result back to stack }
-          lsize := fcp^.idtype^.size;
-          alignu(parmptr,lsize);
-          mesl(-lsize)
-        end
+        mesl(-lsize)
       end;
       gattr.typtr := fcp^.idtype
     end (*callnonstandard*) ;
@@ -7841,12 +7833,12 @@ end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
-          gen1(41(*mst*),0); gencupent(46(*cup*),0,entname,nil);
+          gen2(41(*mst*),0,0); gencupent(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname); 
-            gen1(41(*mst*),0); gencupent(46(*cup*),0,extname,nil)
+            gen2(41(*mst*),0,0); gencupent(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
@@ -8748,9 +8740,7 @@ begin
   if markdl = 0 then;    
   if markra = 0 then;    
   if marksb = 0 then;    
-  if markfv = 0 then;    
   if marksl = 0 then;    
-  if maxresult = 0 then; 
   if maxsize = 0 then;   
 
   (*initialize*)

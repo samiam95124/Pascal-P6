@@ -2500,9 +2500,11 @@ begin
                         procedure + 1;  set dl and sl, decrement sp*)
                  (* then length of this element is
                     max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp;
+                 getp; getq;
+                 { allocate function result as zeros }
+                 for j := 1 to q div intsize do pshint(0);
                  ad := sp; { save mark base }
-                 { allocate mark }
+                 { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
                  putadr(ad+marksl, base(p)); { sl }
                  (* the length of this element is ptrsize *)
@@ -2544,72 +2546,38 @@ begin
                     putadr(mp+market, ep) { place current ep }
                   end;
                   (*q = max space required on stack*)
-                  
-    14  (*retp*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
-                   sp := mp;
-                   pc := getadr(mp+markra); { get ra }
-                   ep := getadr(mp+markep); { get old ep }
-                   mp := getadr(mp+markdl)  { get dl }
-                 end;
+               
     { For characters and booleans, need to clean 8 bit results because
-      only the lower 8 bits were stored to. For return values, we set 
-      maxresult according to the largest result, usually real. Then
-      we need adjustment for if the basic stack unit of int/ptr is less than 
-      this. }
+      only the lower 8 bits were stored to. }
     130 (*retc*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }
-                   sp := mp+markfv; 
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
-                   putint(sp, ord(getchr(sp)));   
+                   sp := mp; 
+                   putint(sp, ord(getchr(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
     131 (*retb*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
                    { set stack below function result }
-                   sp := mp+markfv; 
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
-                   putint(sp, ord(getbol(sp)));                     
+                   sp := mp; 
+                   putint(sp, ord(getbol(sp)));
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
                  end;
+    14  (*retp*),
     128 (*reti*),
-    204 (*retx*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
-                   { set stack below function result }
-                   sp := mp+markfv;
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;                     
+    204 (*retx*),
+    236 (*rets*),
+    129 (*retr*),
+    132 (*reta*): begin
+                   { set stack below function result, if any }  
+                   sp := mp;
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
-                 end;
-    129 (*retr*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
-                   sp := mp+markfv; { set stack below function result }
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
-                 end;
-    132  (*reta*): begin
-                   if sp <> getadr(mp+marksb) then 
-                     errorv(StackBalance);
-                   { set stack below function result } 
-                   sp := mp+markfv;
-                   if stackelsize < maxresult then sp := sp+maxresult div 2;
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
-                 end;
-
+                 end;          
+               
     15 (*csp*): begin q := store[pc]; pc := pc+1; callsp end;
 
     16 (*ixa*): begin getq; popint(i); popadr(a1); pshadr(q*i+a1) end;
@@ -3058,8 +3026,8 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 
-    243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 235, 237, 238, 239, 240, 241, 242, 243,
+    244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
@@ -3082,8 +3050,6 @@ begin (* main *)
   if codemax = 0 then;    
   if filesize = 0 then;   
   if intdig = 0 then;     
-  if markfv = 0 then;     
-  if maxresult = 0 then;  
   if ordminchar = 0 then; 
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
