@@ -183,7 +183,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 115;  { maximum number of instructions }
+   maxins     = 114;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3392,6 +3392,7 @@ end;
   end (*loadaddress*) ;
 
   procedure store(var fattr: attr);
+    var lsize: addrrange;
   begin
     with fattr do
       if typtr <> nil then
@@ -3399,7 +3400,13 @@ end;
           drct:   if vlevel <= 1 then gen1ts(43(*sro*),dplmt,typtr,symptr)
                   else gen2t(56(*str*),level-vlevel,dplmt,typtr);
           indrct: if idplmt <> 0 then error(401)
-                  else gen0t(26(*sto*),typtr);
+                  else if typtr^.form in [records,arrays] then begin
+                    lsize := typtr^.size;
+                    alignu(parmptr,lsize);
+                    gen2t(26(*sto*),typtr^.size, lsize,typtr);
+                    mesl(adrsize+lsize)
+                  end else 
+                    gen0t(26(*sto*),typtr);
           inxd:   error(402)
         end
   end (*store*) ;
@@ -6815,7 +6822,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean;
+        var lattr, lattr2: attr; tagasc: boolean; lsize: addrrange;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -6836,7 +6843,8 @@ end;
             lattr := gattr;
             insymbol; expression(fsys, false);
             if gattr.typtr <> nil then
-              if gattr.typtr^.form <= power then load
+              { process expression rights as load }
+              if (gattr.typtr^.form <= power) or (gattr.kind = expr) then load
               else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               begin
@@ -6887,11 +6895,11 @@ end;
                           gen1(101(*aps*),containerbase(gattr.typtr))
                         else gen2(102(*apc*),containers(lattr.typtr),
                                   containerbase(gattr.typtr))
-                      end else begin
-                        { standard array assign }
-                        gen1(40(*mov*),lattr.typtr^.size);
-                        { if right came from expr, need to clean off stack }
-                        if gattr.spv then gen1(71(*dmp*),gattr.typtr^.size)
+                      end else begin { standard array assign }
+                        { onstack from expr }
+                        if gattr.kind = expr then store(lattr)
+                        { addressed }
+                        else gen1(40(*mov*),lattr.typtr^.size)
                       end
                     end;
                     records: begin
@@ -8489,7 +8497,7 @@ end;
       mn[100] :=' cpc'; mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; 
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
-      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' lsa';
+      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; 
 
     end (*instrmnemonics*) ;
 
@@ -8619,7 +8627,7 @@ end;
       cdx[108] := 0;                    cdx[109] := 0;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
-      cdx[114] := -adrsize;             cdx[115] := -adrsize;
+      cdx[114] := -adrsize;             
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

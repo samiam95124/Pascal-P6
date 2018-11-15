@@ -1951,8 +1951,9 @@ procedure load;
          instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
-         instr[235]:='lsa       '; insp[235] := false; insq[235] := 0;
+         instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
          instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
+         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2614,9 +2615,9 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
-          179, 180, 201, 202,203,211,214,
+          179, 180, 201, 202,203,211,214,237,
           92: begin read(prd,q); storeop; storeq end;
           
           (*ldo,sro,lao,cuv*)
@@ -2647,8 +2648,8 @@ procedure load;
                  getnxt; labelsearch; putcstfix; storeq
                end;
 
-          (*pck,upk,vis,vip,apc,cxc,ccs,vin*)
-          63, 64,122,133,210,212,223,226: begin read(prd,q); read(prd,q1); storeop; 
+          (*pck,upk,vis,vip,apc,cxc,ccs,vin,stom*)
+          63, 64,122,133,210,212,223,226,235: begin read(prd,q); read(prd,q1); storeop; 
                                         storeq; storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -2807,7 +2808,7 @@ procedure load;
             ccs,scp,ldp,vdd }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
-          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,235,
+          205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -4308,7 +4309,6 @@ begin
 
     4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
     5 (*lao*): begin getq; pshadr(q) end;
-    235 (*lsa*): pshadr(sp);
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then 
@@ -4351,6 +4351,12 @@ begin
                           begin watchmatch := true; pc := pcs; pshadr(stoad); 
                                 pshint(i) end
                         else putchr(stoad, c1) 
+                  end;
+    235 (*stom*): begin getq; getq1; ad1 := getadr(sp+q1); ad2 := sp;
+                    for i := 0 to q-1 do begin
+                      store[ad1+i] := store[ad2+i]; putdef(ad1+i, getdef(ad2+i))
+                    end;
+                    sp := sp+q1+adrsize
                   end;
 
     127 (*ldcc*): begin pshint(ord(getchr(pc))); pc := pc+1 end;
@@ -4455,6 +4461,14 @@ begin
     236 (*rets*),
     129 (*retr*),
     132 (*reta*): begin evict(ep, mp);
+                   { set stack below function result, if any }  
+                   sp := mp;
+                   pc := getadr(mp+markra);
+                   ep := getadr(mp+markep);
+                   mp := getadr(mp+markdl)
+                 end;
+                 
+    237 (*retm*): begin evict(ep, mp); getq; { we don't use q }
                    { set stack below function result, if any }  
                    sp := mp;
                    pc := getadr(mp+markra);
@@ -4944,8 +4958,8 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 237, 238, 239, 240, 241, 242, 243, 244,
-    245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 238, 239, 240, 241, 242, 243, 244, 245, 
+    246, 247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
