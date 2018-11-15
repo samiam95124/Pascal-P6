@@ -1347,7 +1347,7 @@ end;
     117: write('Unsatisfied forward reference');
     118: write('Forward reference type identifier in variable declaration');
     119: write('Forward declared; repetition of parameter list not allowed');
-    120: write('Function result type must be scalar, subrange or point');
+    120: write('Function result type must be scalar, subrange or pointer');
     121: write('File value parameter, or parameter containing file, not allowed');
     122: write('Forward declared function; repetition of result type not allowed');
     123: write('Missing result type in function declaration');
@@ -1502,6 +1502,8 @@ end;
     271: write('Number of initializers does not match container array levels');
     272: write('Cannot declare container array in fixed context');
     273: write('Must be container array');
+    274: write('Function result type must be scalar, subrange, pointer, set, ',
+               'array or record');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -6687,8 +6689,14 @@ end;
                     if not comptypes(lcp^.idtype, lsp) then error(216)
                   end else lcp^.idtype := lsp;
                   if lsp <> nil then
-                    if not (lsp^.form in [scalar,subrange,pointer]) and iso7185 then
-                      begin error(120); lcp^.idtype := nil end;
+                    if iso7185 then begin
+                      if not (lsp^.form in [scalar,subrange,pointer]) then
+                        begin error(120); lcp^.idtype := nil end
+                    end else begin
+                      if not (lsp^.form in [scalar,subrange,pointer,power,
+                                            arrays]) then
+                        begin error(274); lcp^.idtype := nil end
+                    end;
                   insymbol
                 end
               else begin error(2); skip(fsys + [semicolon]) end
@@ -6903,9 +6911,10 @@ end;
                       end
                     end;
                     records: begin
-                      gen1(40(*mov*),lattr.typtr^.size);
-                      { if right came from expr, need to clean off stack }
-                      if gattr.spv then gen1(71(*dmp*),gattr.typtr^.size)
+                      { onstack from expr }
+                      if gattr.kind = expr then store(lattr)
+                      { addressed }
+                      else gen1(40(*mov*),lattr.typtr^.size);
                     end;
                     files: error(146)
                   end;
