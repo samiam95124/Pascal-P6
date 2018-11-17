@@ -707,7 +707,8 @@ var
      ctpcnt := ctpcnt+1; { count entry }
      { clear fixed entries }
      p^.idtype := nil; p^.keep := false; p^.refer := false;
-     p^.name := nil; p^.llink := nil; p^.rlink := nil; p^.next := nil;
+     p^.name := nil; p^.llink := nil; p^.rlink := nil; p^.next := nil; 
+     p^.cbb := nil;
      ctpsnm := ctpsnm+1; { identify entry in dumps }
      p^.snm := ctpsnm
   end;
@@ -4814,7 +4815,7 @@ end;
       { clean any copyback buffers out of list }
       nxt := fcp^.pflist;
       while nxt <> nil do 
-        begin putcbb(nxt^.cbb); nxt^.cbb := nil; nxt := nxt^.next end      
+        begin putcbb(nxt^.cbb); nxt^.cbb := nil; nxt := nxt^.next end
     end (*callnonstandard*) ;
 
   begin (*call*)
@@ -6748,7 +6749,7 @@ end;
                         begin error(120); lcp^.idtype := nil end
                     end else begin
                       if not (lsp^.form in [scalar,subrange,pointer,power,
-                                            arrays]) then
+                                            arrays,records]) then
                         begin error(274); lcp^.idtype := nil end
                     end;
                   insymbol
