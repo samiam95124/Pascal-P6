@@ -183,7 +183,7 @@ const
    recal      = stackal;
    maxaddr    =  maxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 114;  { maximum number of instructions }
+   maxins     = 115;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 75;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -304,6 +304,14 @@ type                                                        (*describing:*)
                                                             (*names*)
                                                             (*******)
 
+     { copyback buffers }
+     cbbufp =^cbbuf;
+     cbbuf = record next: cbbufp; { next link }
+               addr: addrrange;   { global address of buffer }
+               id: ctp;           { parameter occupying buffer }
+               size: addrrange    { size of variable in buffer }
+             end;
+
      idclass = (types,konst,fixed,vars,field,proc,func,alias);
      setofids = set of idclass;
      idkind = (actual,formal);
@@ -325,7 +333,7 @@ type                                                        (*describing:*)
                    snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean; 
-                   refer: boolean;
+                   refer: boolean; cbb: cbbufp;
                    case klass: idclass of
                      types: ();
                      konst: (values: valu);
@@ -582,6 +590,7 @@ var
     nammod: strvsp; { name of current module }
     incstk: filptr; { stack of included files }
     inclst: filptr; { discard list for includes }
+    cbblst: cbbufp; { copyback buffer entry list }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -849,6 +858,33 @@ var
   begin
      dispose(p); { release entry }
      cipcnt := cipcnt-1 { count entry }
+  end;
+  
+  { get copyback buffer }
+  procedure getcbb(var p: cbbufp; id: ctp);
+    var lp, fp: cbbufp;
+  begin p := nil;
+    if id <> nil then if id^.idtype <> nil then begin
+      lp := cbblst; fp := nil;
+      { find a matching buffer }
+      while lp <> nil do begin
+        if (lp^.id = nil) and (lp^.size = id^.idtype^.size) then fp := lp;
+        lp := lp^.next
+      end;
+      if fp = nil then begin { no existing buffer, or all occupied, get new }
+        new(fp); fp^.next := lp; lp := fp; fp^.addr := gc; 
+        gc := gc+id^.idtype^.size
+      end;
+      fp^.id := id;
+      fp^.size := id^.idtype^.size;
+      p := fp
+    end
+  end;
+  
+  { release copyback buffer }
+  procedure putcbb(p: cbbufp);
+  begin
+    if p <> nil then p^.id := nil
   end;
 
 (*-------------------------------------------------------------------------*)
@@ -1519,7 +1555,7 @@ end;
     399: write('Feature not implemented');
 
     { * marks spared compiler errors }
-    400,401,402,403,404,{*}405,406,407,
+    400,401,402,403,404,405,406,407,
     500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515: write('Compiler internal error');
     end
@@ -2691,7 +2727,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          41,45,50,54,56,74,62,63,81,82,96,97,102,104,109,112: 
+          41,45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -3375,10 +3411,7 @@ end;
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            { Expression means onstack. We can address this by addressing the
-              stack, then we flag the variable as on stack, which indicates
-              to clean it up later. }
-            expr:  begin gen0(115(*lsa*)); spv := true end
+            expr:  error(405);
           end;
           if (typtr^.form = arrayc) and pickup then begin 
             { it's a container, load a complex pointer based on that }
@@ -4632,6 +4665,19 @@ end;
         end
       end
     end;
+    procedure cpy2adr;
+      var lsize: addrrange;
+    begin
+      if nxt <> nil then begin
+        lsize := gattr.typtr^.size;
+        alignu(parmptr,lsize);
+        getcbb(nxt^.cbb, nxt); { get a buffer }
+        gen1(37(*lao*),nxt^.cbb^.addr); { load address }
+        { store to that }
+        gen2(115(*ctb*),gattr.typtr^.size,lsize);
+        mesl(lsize)
+      end
+    end;
     begin locpar := 0;
       { find function result size }
       lsize := 0; 
@@ -4703,7 +4749,9 @@ end;
                                 end
                               else
                                 begin
-                                  loadaddress; fixpar(lsp);
+                                  if gattr.kind = expr then cpy2adr
+                                  else loadaddress; 
+                                  fixpar(lsp);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -4715,7 +4763,9 @@ end;
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
                                   if gattr.tagfield then error(198);
-                                  loadaddress; fixpar(lsp);
+                                  if gattr.kind = expr then cpy2adr
+                                  else loadaddress; 
+                                  fixpar(lsp);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -4760,7 +4810,11 @@ end;
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
       end;
-      gattr.typtr := fcp^.idtype
+      gattr.typtr := fcp^.idtype;
+      { clean any copyback buffers out of list }
+      nxt := fcp^.pflist;
+      while nxt <> nil do 
+        begin putcbb(nxt^.cbb); nxt^.cbb := nil; nxt := nxt^.next end      
     end (*callnonstandard*) ;
 
   begin (*call*)
@@ -8333,7 +8387,7 @@ end;
     lc := lcaftermarkstack; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0; 
-    incstk := nil; inclst := nil;
+    incstk := nil; inclst := nil; cbblst := nil;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
@@ -8506,7 +8560,7 @@ end;
       mn[100] :=' cpc'; mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs'; 
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
-      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; 
+      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
 
     end (*instrmnemonics*) ;
 
@@ -8636,7 +8690,7 @@ end;
       cdx[108] := 0;                    cdx[109] := 0;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
-      cdx[114] := -adrsize;             
+      cdx[114] := -adrsize;             cdx[115] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

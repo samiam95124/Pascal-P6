@@ -8,13 +8,10 @@ pint run
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
+1 sample_programs/pascals.dif
+16 p2/roman.dif
+980 p4/standardp.dif
 pmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -23,13 +20,10 @@ pmach run
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
+1 sample_programs/pascals.dif
+16 p2/roman.dif
+980 p4/standardp.dif
 cmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -38,11 +32,8 @@ cmach run
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-Thu Nov 15 14:45:18 PST 2018
+1 sample_programs/pascals.dif
+18 p2/roman.dif
+982 p4/standardp.dif
+Fri Nov 16 16:27:05 PST 2018

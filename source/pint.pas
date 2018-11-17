@@ -1954,6 +1954,7 @@ procedure load;
          instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
          instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
          instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
+         instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2648,8 +2649,8 @@ procedure load;
                  getnxt; labelsearch; putcstfix; storeq
                end;
 
-          (*pck,upk,vis,vip,apc,cxc,ccs,vin,stom*)
-          63, 64,122,133,210,212,223,226,235: begin read(prd,q); read(prd,q1); storeop; 
+          (*pck,upk,vis,vip,apc,cxc,ccs,vin,stom,ctb*)
+          63, 64,122,133,210,212,223,226,235,238: begin read(prd,q); read(prd,q1); storeop; 
                                         storeq; storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -4358,6 +4359,12 @@ begin
                     end;
                     sp := sp+q1+adrsize
                   end;
+    238 (*ctb*): begin getq; getq1; popadr(ad1); ad2 := sp;
+                    for i := 0 to q-1 do begin
+                      store[ad1+i] := store[ad2+i]; putdef(ad1+i, getdef(ad2+i))
+                    end;
+                    sp := sp+q1; pshadr(ad1)
+                  end;
 
     127 (*ldcc*): begin pshint(ord(getchr(pc))); pc := pc+1 end;
     126 (*ldcb*): begin pshint(ord(getbol(pc))); pc := pc+1 end;
@@ -4958,8 +4965,8 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 238, 239, 240, 241, 242, 243, 244, 245, 
-    246, 247, 248, 249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246, 
+    247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
