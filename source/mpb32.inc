@@ -1,5 +1,6 @@
 
       { 32 bit Machine Parameter Block (MPB) }
+      lendian     =     true;   { endian mode }
       intsize     =        4;   { size of integer }
       intal       =        4;   { alignment of integer }
       intdig      =        11;  { number of decimal digits in integer }

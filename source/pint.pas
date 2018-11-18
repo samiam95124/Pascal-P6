@@ -546,6 +546,7 @@ var   pc          : address;   (*program address register*)
       
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
+      flipend: boolean; { endian mode is opposing }
 
       debugstart: boolean; { we have started debug mode }
 
@@ -1280,6 +1281,24 @@ end;
 
 }
 
+{ check running on a little endian processor }
+
+function litend: boolean;
+
+var r: record case boolean of
+
+         true: (i: integer);
+         false: (b: byte);
+          
+       end;
+       
+begin
+
+   r.i := 1;
+   litend := r.b <> 0
+   
+end;
+
 function getint(a: address): integer;
 
 var r: record case boolean of
@@ -1292,7 +1311,8 @@ var r: record case boolean of
 
 begin
    if dochkdef then chkdef(a);
-   for i := 1 to intsize do r.b[i] := store[a+i-1];
+   if flipend then for i := intsize downto 1 do r.b[i] := store[a+(intsize-i)]
+   else for i := 1 to intsize do r.b[i] := store[a+i-1];
 
    getint := r.i
 end;
@@ -1310,7 +1330,9 @@ var r: record case boolean of
 begin
 
    r.i := x;
-   for i := 1 to intsize do
+   if flipend then for i := intsize downto 1 do
+     begin store[a+(intsize-i)] := r.b[i]; putdef(a+(intsize-i), true) end
+   else for i := 1 to intsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
 
 end;
@@ -1328,7 +1350,8 @@ var r: record case boolean of
 begin
 
    if dochkdef then chkdef(a);
-   for i := 1 to realsize do r.b[i] := store[a+i-1];
+   if flipend then for i := realsize downto 1 do r.b[i] := store[a+(realsize-i)]
+   else for i := 1 to realsize do r.b[i] := store[a+i-1];
    getrel := r.r
 
 end;
@@ -1346,7 +1369,9 @@ var r: record case boolean of
 begin
 
    r.r := f;
-   for i := 1 to realsize do
+   if flipend then for i := realsize downto 1 do
+     begin store[a+(realsize-i)] := r.b[i]; putdef(a+(realsize-i), true) end
+   else for i := 1 to realsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
 
 end;
@@ -1454,7 +1479,9 @@ var r: record case boolean of
 begin
 
    if dochkdef then chkdef(a);
-   for i := 1 to adrsize do r.b[i] := store[a+i-1];
+   if flipend then for i := adrsize downto 1 do r.b[i] := store[a+(adrsize-i)]
+   else for i := 1 to adrsize do r.b[i] := store[a+i-1];
+   
    getadr := r.a
 
 end;
@@ -1472,7 +1499,9 @@ var r: record case boolean of
 begin
 
    r.a := ad;
-   for i := 1 to adrsize do
+   if flipend then for i := adrsize downto 1 do
+     begin store[a+(adrsize-i)] := r.b[i]; putdef(a+(adrsize-i), true) end
+   else for i := 1 to adrsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
 
 end;
@@ -6987,6 +7016,9 @@ begin (* main *)
   curmod := nil; { set no module active }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
+  { endian flip status is set if the host processor and the target disagree on
+    endian mode }
+  flipend := litend <> lendian;
   maktyp(boolsym, 'b'); { create standard types }
   maktyp(realsym, 'n');
   maktyp(intsym, 'i');
