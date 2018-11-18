@@ -2403,6 +2403,19 @@ void sinins()
     case 84  /*stoc*/: popint(i1); c1 = i1; popadr(ad); putchr(ad, c1);
                        break;
 
+    case 235 /*stom*/: getq(); getq1(); ad1 = getadr(sp+q1); ad2 = sp;
+                    for (i = 0; i < q; i++) {
+                      store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
+                    }
+                    sp = sp+q1+ADRSIZE;
+                    break;
+    case 238 /*ctb*/: getq(); getq1(); popadr(ad1); ad2 = sp;
+                    for (i = 0; i < q; i++) {
+                      store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
+                    }
+                    sp = sp+q1; pshadr(ad1);
+                    break;
+
     case 127 /*ldcc*/: pshint(getchr(pc)); pc = pc+1; break;
     case 126 /*ldcb*/: pshint(getbol(pc)); pc = pc+1; break;
     case 123 /*ldci*/: i = getint(pc); pc = pc+INTSIZE; pshint(i); break;
@@ -2500,6 +2513,14 @@ void sinins()
     case 236 /*rets*/:
     case 129 /*retr*/:
     case 132  /*reta*/:
+                   /* set stack below function result, if any */
+                   sp = mp;
+                   pc = getadr(mp+MARKRA);
+                   ep = getadr(mp+MARKEP);
+                   mp = getadr(mp+MARKDL);
+                   break;
+
+    case 237 /*retm*/: getq(); /* we don't use q */
                    /* set stack below function result, if any */
                    sp = mp;
                    pc = getadr(mp+MARKRA);
@@ -2950,8 +2971,8 @@ void sinins()
                        pshadr(getadr(ad)); break;
 
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 235, 237, 238, 239, 240, 241,
-       242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 */
+    /* 228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246,
+       247, 248, 249, 250, 251, 252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

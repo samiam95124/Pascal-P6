@@ -2469,6 +2469,19 @@ begin
     84  (*stoc*): begin popint(i1); c1 := chr(i1); popadr(ad); putchr(ad, c1) 
                   end;
 
+    235 (*stom*): begin getq; getq1; ad1 := getadr(sp+q1); ad2 := sp;
+                    for i := 0 to q-1 do begin
+                      store[ad1+i] := store[ad2+i]; putdef(ad1+i, getdef(ad2+i))
+                    end;
+                    sp := sp+q1+adrsize
+                  end;
+    238 (*ctb*): begin getq; getq1; popadr(ad1); ad2 := sp;
+                    for i := 0 to q-1 do begin
+                      store[ad1+i] := store[ad2+i]; putdef(ad1+i, getdef(ad2+i))
+                    end;
+                    sp := sp+q1; pshadr(ad1)
+                  end;
+
     127 (*ldcc*): begin pshint(ord(getchr(pc))); pc := pc+1 end;
     126 (*ldcb*): begin pshint(ord(getbol(pc))); pc := pc+1 end;
     123 (*ldci*): begin i := getint(pc); pc := pc+intsize; pshint(i) end;
@@ -2576,7 +2589,15 @@ begin
                    pc := getadr(mp+markra);
                    ep := getadr(mp+markep);
                    mp := getadr(mp+markdl)
-                 end;          
+                 end;  
+                 
+    237 (*retm*): begin getq; { we don't use q }
+                   { set stack below function result, if any }  
+                   sp := mp;
+                   pc := getadr(mp+markra);
+                   ep := getadr(mp+markep);
+                   mp := getadr(mp+markdl)
+                 end;
                
     15 (*csp*): begin q := store[pc]; pc := pc+1; callsp end;
 
@@ -3026,8 +3047,8 @@ begin
                        pshadr(getadr(ad)) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 235, 237, 238, 239, 240, 241, 242, 243,
-    244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
+    228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246,
+    247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
