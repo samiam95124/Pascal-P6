@@ -167,7 +167,7 @@
   WRDSIZ32       - 32 bit compiler.
   ISO7185_PASCAL - uses ISO 7185 standard language only.
 }
-#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
 #define WRDSIZ32 1
 #endif
 
@@ -184,6 +184,10 @@ program pint(input,output,prd,prr
 label 1;
 
 const
+
+#if defined(WRDSIZ16) && defined(GNU_PASCAL)
+      maxint = 32767;
+#endif
 
       { ************************************************************************
 
@@ -226,13 +230,19 @@ const
       { ******************* end of pcom and pint common parameters *********** }
 
       { internal constants }
-
+      
       { !!! Need to use the small size memory to self compile, otherwise, by
         definition, pint cannot fit into its own memory. }
 #ifndef SELF_COMPILE
+#ifdef WRDSIZ16
+      maxstr      = 31999;  { maximum size of addressing for program/var }
+      maxtop      = 32000;  { maximum size of addressing for program/var+1 }
+      maxdef      = 4000;   { maxstr / 8 for defined bits }
+#else
       maxstr      = 16777215;  { maximum size of addressing for program/var }
       maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
       maxdef      = 2097152;   { maxstr / 8 for defined bits }
+#endif
 #else
       maxstr     =  2000000;   { maximum size of addressing for program/var }
       maxtop     =  2000001;   { maximum size of addressing for program/var+1 }
@@ -411,6 +421,18 @@ const
       experiment = true; { is version experimental? }
 
 type
+
+#if defined(WRDSIZ16) && defined(GNU_PASCAL)
+      /* for GNU 16 bit mode, use both 16 bit defines and redefine integer and
+         real size to match */
+      { Allow GNU Pascal extensions }
+      {$gnu-pascal}
+      integer = shortint;
+      real = shortreal;
+      { Restore to ISO 7185 Pascal language }
+      {$classic-pascal-level-0}
+#endif
+
       { These equates define the instruction layout. I have choosen a 32 bit
         layout for the instructions defined by (4 bit) digit:
 
@@ -668,7 +690,7 @@ begin sgn := false;
    for i := 1 to n do begin
       d := v div p mod r; { extract digit }
       digits[i] := digit(d); { place }
-      p := p*r
+      if i < n then p := p*r
    end;
    i := digmax; 
    while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }

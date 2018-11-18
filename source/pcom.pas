@@ -106,7 +106,7 @@
   ISO7185_PASCAL - uses ISO 7185 standard language only.
   PASCALINE      - uses the Pascaline standard language.
 }
-#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
 #define WRDSIZ32 1
 #endif
 

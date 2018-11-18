@@ -7,6 +7,7 @@ PC=gpc
 PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
 CPPFLAGS=-DWRDSIZ64
+#CPPFLAGS=-DWRDSIZ16
 
 all: pcom pint pmach cmach genobj spew
 

@@ -4,9 +4,10 @@
 
 ******************************************************************************}
 
+      lendian     =     true;   { endian mode }
       intsize     =        2;   { size of integer }
       intal       =        2;   { alignment of integer }
-      intdig      =        6;  { number of decimal digits in integer }
+      intdig      =        6;   { number of decimal digits in integer }
       inthex      =        4;   { number of hex digits of integer }
       realsize    =        4;   { size of real }
       realal      =        4;   { alignment of real }
@@ -37,8 +38,7 @@
       setlow      =        0;
       ordmaxchar  =      255;   { Characters are 8 bit ISO/IEC 8859-1 }
       ordminchar  =        0;
-      maxresult   = realsize;   { maximum size of function result }
-      marksize    =       16;   { maxresult+6*ptrsize }
+      marksize    =       12;   { 6*ptrsize }
       ujplen      =       5;    { length of ujp instruction (used for case
                                   jumps) }
       { Value of nil is 1 because this allows checks for pointers that were
@@ -51,19 +51,17 @@
 
         Mark format is:
 
-        -8:  Function return value, 64 bits, enables a full real result.
-        -6:  Static link.
-        -8: Dynamic link.
-        -10: Saved EP from previous frame.
-        -12: Stack bottom after locals allocate. Used for interprocdural gotos.
-        -14: EP from current frame. Used for interprocedural gotos.
-        -16: Return address
+        -2:  Static link.
+        -4: Dynamic link.
+        -6: Saved EP from previous frame.
+        -8: Stack bottom after locals allocate. Used for interprocdural gotos.
+        -10: EP from current frame. Used for interprocedural gotos.
+        -12: Return address
 
       }
-      markfv      =        -4;  { function value }
-      marksl      =        -6; { static link }
-      markdl      =        -8; { dynamic link }
-      markep      =        -10; { (old) maximum frame size }
-      marksb      =        -12; { stack bottom }
-      market      =        -14; { current ep }
-      markra      =        -16; { return address }
+      marksl      =        -2; { static link }
+      markdl      =        -4; { dynamic link }
+      markep      =        -6; { (old) maximum frame size }
+      marksb      =        -8; { stack bottom }
+      market      =        -10; { current ep }
+      markra      =        -12; { return address }
