@@ -427,12 +427,16 @@ type
          real size to match */
       { Allow GNU Pascal extensions }
       {$gnu-pascal}
-      integer = shortint;
-      real = shortreal;
+      pminteger = shortint;
+      pmreal = shortreal;
       { Restore to ISO 7185 Pascal language }
       {$classic-pascal-level-0}
+#else
+      { define the internally used types }
+      pminteger = integer;
+      pmreal = real;
 #endif
-
+      
       { These equates define the instruction layout. I have choosen a 32 bit
         layout for the instructions defined by (4 bit) digit:
 
@@ -445,7 +449,7 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-      address     = integer; { address }
+      address     = -maxstr..maxtop; { address }
 
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;
@@ -1325,11 +1329,12 @@ function getint(a: address): integer;
 
 var r: record case boolean of
 
-          true:  (i: integer);
+          true:  (i: pminteger);
           false: (b: packed array [1..intsize] of byte);
 
        end;
     i: 1..intsize;
+    
 
 begin
    if dochkdef then chkdef(a);
@@ -1343,7 +1348,7 @@ procedure putint(a: address; x: integer);
 
 var r: record case boolean of
 
-          true:  (i: integer);
+          true:  (i: pminteger);
           false: (b: packed array [1..intsize] of byte);
 
        end;
@@ -1363,7 +1368,7 @@ function getrel(a: address): real;
 
 var r: record case boolean of
 
-          true:  (r: real);
+          true:  (r: pmreal);
           false: (b: packed array [1..realsize] of byte);
 
        end;
@@ -1382,7 +1387,7 @@ procedure putrel(a: address; f: real);
 
 var r: record case boolean of
 
-          true:  (r: real);
+          true:  (r: pmreal);
           false: (b: packed array [1..realsize] of byte);
 
        end;
@@ -4546,7 +4551,7 @@ begin
     140 (*equs*): begin popset(s2); popset(s1); pshint(ord(s1=s2)) end;
     142 (*equm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2); 
                         pshint(ord(b)) end;
-    215 (*equv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    215 (*equv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); pshint(ord(b)) end;
 
     18  (*neqa*): begin popadr(a2); popadr(a1); pshint(ord(a1<>a2)) end;
@@ -4557,7 +4562,7 @@ begin
     146 (*neqs*): begin popset(s2); popset(s1); pshint(ord(s1<>s2)) end;
     148 (*neqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b)) end;
-    216 (*neqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    216 (*neqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); pshint(ord(not b)) end;
 
     151 (*geqb*),
@@ -4568,7 +4573,7 @@ begin
     154 (*geqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] >= store[a2])))
                   end;
-    220 (*geqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    220 (*geqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); 
                         pshint(ord(b or (store[a1] >= store[a2]))) end;
 
@@ -4580,7 +4585,7 @@ begin
     160 (*grtm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] > store[a2])))
                   end;
-    218 (*grtv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    218 (*grtv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); 
                         pshint(ord(not b and (store[a1] > store[a2]))) end;
     
@@ -4593,7 +4598,7 @@ begin
     166 (*leqm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] <= store[a2])))
                   end;
-    219 (*leqv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    219 (*leqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); 
                         pshint(ord(b or (store[a1] <= store[a2]))) end;
 
@@ -4605,7 +4610,7 @@ begin
     172 (*lesm*): begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] < store[a2])))
                   end;
-    217 (*lesv*): begin popint(q); popadr(a2); popint(i1); popadr(a1); 
+    217 (*lesv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1); 
                         compare(b, a1, a2); 
                         pshint(ord(not b and (store[a1] < store[a2]))) end;
 
@@ -4964,7 +4969,7 @@ begin
                        end
                  end;
 
-    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popadr(i1); 
+    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popint(i1); 
                        for i := 0 to i1*q-1 do begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
                        end
