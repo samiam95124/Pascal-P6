@@ -110,6 +110,10 @@
 #define WRDSIZ32 1
 #endif
 
+#if !defined(LENDIAN) && !defined(BENDIAN)
+#define LENDIAN
+#endif
+
 #if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
 #define ISO7185_PASCAL
 #endif

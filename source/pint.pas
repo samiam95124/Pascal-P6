@@ -171,6 +171,10 @@
 #define WRDSIZ32 1
 #endif
 
+#if !defined(LENDIAN) && !defined(BENDIAN)
+#define LENDIAN
+#endif
+
 #if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
 #define ISO7185_PASCAL
 #endif
@@ -451,8 +455,13 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
+#if defined(WRDSIZ16) && defined(GNU_PASCAL)
+      { GPC does not automatically size subranges, so we need to pick up sizing
+        from the special definitions above }
+      address     = pminteger;
+#else
       address     = -maxstr..maxtop; { address }
-
+#endif
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }

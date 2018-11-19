@@ -1,6 +1,14 @@
+{******************************************************************************
 
-      { 64 bit Machine Parameter block (MPB) }
+64 bit Machine Parameter block (MPB)
+
+******************************************************************************}
+
+#ifdef LENDIAN
       lendian     =     true;   { endian mode }
+#else
+      lendian     =    false;   { endian mode }
+#endif
       intsize     =        8;   { size of integer }
       intal       =        4;   { alignment of integer }
       intdig      =        20;  { number of decimal digits in integer }

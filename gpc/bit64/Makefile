@@ -3,31 +3,79 @@
 #
 # Makes the main compiler interpreter set.
 #
+# The generated executables are named according to:
+#
+# bin16le
+#
+# where 16 is the bit size of the target, and le is the endian mode.
+# The current bit lengths are:
+# 
+# 16
+# 32
+# 64
+#
+# Note that 16 bits actually covers both 8 bit and 16 bit processors, since 
+# 8 bit processors usually have 16 bit addressing, regardless of their basic
+# word size.
+#
+# The endian modes are:
+#
+# le - Little endian.
+# be - Big endian.
+#
+# The make process will create all of the combinations that are possible given
+# the current host processor. Not all combinations make sense. For example, 
+# pcom, the compiler front end, has no endian mode, and its output decks are
+# universal for all endian targets.
+#
+# After all possible bit and endian modes are generated, the versions  of the
+# executable that match the current host are copied to their executable names,
+# but without the bit or endian endings. Thus it is not necessary to 
+# specifically state the characteristics of the host.
+#
 PC=gpc
 PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
-CPPFLAGS=-DWRDSIZ64
+CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DGNU_PASCAL
+CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
+CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DGNU_PASCAL
+CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 
 all: pcom pint pmach cmach genobj spew
 
 pcom: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS64LE)
+	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS16LE)
+	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
+	cp bin/pcom64 bin/pcom
 	
 pcom_immerr: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS) -DGNU_PASCAL -DIMM_ERR
-	$(PC) $(PFLAGS) -o bin/pcom source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS64LE) -DIMM_ERR
+	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS16LE) -DIMM_ERR
+	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
+	cp bin/pcom64 bin/pcom
 	
 pint: source/pint.pas 
-	pascpp source/pint $(CPPFLAGS) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS64LE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS64BE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint64be source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas
+	cp bin/pint64le bin/pint
 
 pmach: source/pmach.pas
 	pascpp source/pmach $(CPPFLAGS) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pmach source/pmach.mpp.pas
+	$(PC) $(PFLAGS) -o bin/pmach64le source/pmach.mpp.pas
+	cp bin/pmach64le bin/pmach
 
 cmach: source/cmach.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o bin/cmach source/cmach.c -lm
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach.c -lm
+	cp bin/cmach64le bin/cmach
 
 genobj: source/genobj.pas
 	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas

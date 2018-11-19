@@ -4,7 +4,11 @@
 
 ******************************************************************************}
 
+#ifdef LENDIAN
       lendian     =     true;   { endian mode }
+#else
+      lendian     =    false;   { endian mode }
+#endif
       intsize     =        2;   { size of integer }
       intal       =        2;   { alignment of integer }
       intdig      =        6;   { number of decimal digits in integer }
