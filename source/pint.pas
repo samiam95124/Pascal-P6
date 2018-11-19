@@ -186,7 +186,9 @@ label 1;
 const
 
 #if defined(WRDSIZ16) && defined(GNU_PASCAL)
-      maxint = 32767;
+      pmmaxint = 32767;
+#else
+      pmmaxint = maxint;
 #endif
 
       { ************************************************************************
@@ -3294,8 +3296,8 @@ procedure callsp;
       i := 0; { clear initial value }
       while (chkbuf in ['0'..'9']) do begin { parse digit }
         d := ord(chkbuf)-ord('0');
-        if (i > maxint div 10) or 
-           ((i = maxint div 10) and (d > maxint mod 10)) then 
+        if (i > pmmaxint div 10) or 
+           ((i = pmmaxint div 10) and (d > pmmaxint mod 10)) then 
           errore(IntegerValueOverFlow);
         i := i*10+d; { add in new digit }
         getbuf
@@ -3727,13 +3729,13 @@ begin (*callsp*)
                             end
                       end;
            11(*rdi*),
-           72(*rdif*): begin w := maxint; fld := q = 72; if fld then popint(w);
+           72(*rdif*): begin w := pmmaxint; fld := q = 72; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
                            valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
                            putint(ad1, i);
                       end;
            37(*rib*),
-           71(*ribf*): begin w := maxint; fld := q = 71; popint(mx); popint(mn); 
+           71(*ribf*): begin w := pmmaxint; fld := q = 71; popint(mx); popint(mn); 
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
                            readi(fn, i, w, fld); 
@@ -3742,19 +3744,19 @@ begin (*callsp*)
                            putint(ad1, i);
                       end;
            12(*rdr*),
-           73(*rdrf*): begin w := maxint; fld := q = 73; if fld then popint(w);
+           73(*rdrf*): begin w := pmmaxint; fld := q = 73; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
                            valfil(ad); fn := store[ad];
                            readr(fn, r, w, fld); putrel(ad1, r)
                       end;
            13(*rdc*),
-           75(*rdcf*): begin w := maxint; fld := q = 75; if fld then popint(w);
+           75(*rdcf*): begin w := pmmaxint; fld := q = 75; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad); 
                            valfil(ad); fn := store[ad];
                            readc(fn, c, w, fld); putchr(ad1, c)
                       end;
            38(*rcb*),
-           74(*rcbf*): begin w := maxint; fld := q = 74; popint(mx); popint(mn); 
+           74(*rcbf*): begin w := pmmaxint; fld := q = 74; popint(mx); popint(mn); 
                             if fld then popint(w); popadr(ad1); popadr(ad);
                             pshadr(ad); valfil(ad);
                             fn := store[ad];
@@ -4072,7 +4074,7 @@ begin (*callsp*)
                          if j = 0 then errors(ad, i);
                        end;
            70(*rds*),
-           76(*rdsf*): begin w := maxint; fld := q = 76; popint(i); 
+           76(*rdsf*): begin w := pmmaxint; fld := q = 76; popint(i); 
                          if fld then popint(w); popadr(ad1); popadr(ad); 
                          pshadr(ad); valfil(ad); fn := store[ad];
                          reads(fn, ad1, i, w, fld);
@@ -4091,10 +4093,10 @@ begin (*callsp*)
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          assignexternalbin(bfiltable[fn], fl1) 
                        end;
-           80(*rdie*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
+           80(*rdie*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad); 
                          readi(commandfn, i, w, false); putint(ad, i);
                        end;
-           81(*rdre*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
+           81(*rdre*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad); 
                          readr(commandfn, r, w, false); putrel(ad, r);
                        end;
            2(*thw*):   begin popadr(ad1); mp := expmrk; sp := expstk; 
@@ -4443,7 +4445,7 @@ begin
     201 (*incx*),
     10 (*inci*): begin getq; popint(i1);
                    if dochkovf then if (i1<0) = (q<0) then
-                      if maxint-abs(i1) < abs(q) then
+                      if pmmaxint-abs(i1) < abs(q) then
                         errore(IntegerValueOverflow);
                    pshint(i1+q)
                    end;
@@ -4684,13 +4686,13 @@ begin
 
     28 (*adi*): begin popint(i2); popint(i1);
                   if dochkovf then if (i1<0) = (i2<0) then
-                    if maxint-abs(i1) < abs(i2) then
+                    if pmmaxint-abs(i1) < abs(i2) then
                       errore(IntegerValueOverflow);
                 pshint(i1+i2) end;
     29 (*adr*): begin poprel(r2); poprel(r1); pshrel(r1+r2) end;
     30 (*sbi*): begin popint(i2); popint(i1);
                   if dochkovf then if (i1<0) <> (i2<0) then
-                    if maxint-abs(i1) < abs(i2) then
+                    if pmmaxint-abs(i1) < abs(i2) then
                       errore(IntegerValueOverflow);
                 pshint(i1-i2) end;
     31 (*sbr*): begin poprel(r2); poprel(r1); pshrel(r1-r2) end;
@@ -4701,14 +4703,14 @@ begin
     34 (*flo*): begin poprel(r1); popint(i1); pshrel(i1); pshrel(r1) end;
 
     35 (*trc*): begin poprel(r1);
-                  if dochkovf then if (r1 < -maxint) or (r1 > maxint) then
+                  if dochkovf then if (r1 < -pmmaxint) or (r1 > pmmaxint) then
                     errore(RealArgumentTooLarge);
                   pshint(trunc(r1)) end;
     36 (*ngi*): begin popint(i1); pshint(-i1) end;
     37 (*ngr*): begin poprel(r1); pshrel(-r1) end;
     38 (*sqi*): begin popint(i1);
                 if dochkovf then if i1 <> 0 then
-                  if abs(i1) > maxint div abs(i1) then
+                  if abs(i1) > pmmaxint div abs(i1) then
                     errore(IntegerValueOverflow);
                 pshint(sqr(i1)) end;
     39 (*sqr*): begin poprel(r1); pshrel(sqr(r1)) end;
@@ -4744,7 +4746,7 @@ begin
     50 (*odd*): begin popint(i1); pshint(ord(odd(i1))) end;
     51 (*mpi*): begin popint(i2); popint(i1);
                   if dochkovf then if (i1 <> 0) and (i2 <> 0) then
-                    if abs(i1) > maxint div abs(i2) then
+                    if abs(i1) > pmmaxint div abs(i2) then
                       errore(IntegerValueOverflow);
                   pshint(i1*i2) end;
     52 (*mpr*): begin poprel(r2); poprel(r1); pshrel(r1*r2) end;
@@ -4767,7 +4769,7 @@ begin
     202 (*decx*),
     57  (*deci*): begin getq; popint(i1);
                     if dochkovf then if (i1<0) <> (q<0) then
-                      if maxint-abs(i1) < abs(q) then
+                      if pmmaxint-abs(i1) < abs(q) then
                         errore(IntegerValueOverflow);
                     pshint(i1-q) end;
 
@@ -4782,7 +4784,7 @@ begin
 
     61 (*ujc*): errorv(InvalidCase);
     62 (*rnd*): begin poprel(r1);
-                  if dochkovf then if (r1 < -(maxint+0.5)) or (r1 > maxint+0.5) then
+                  if dochkovf then if (r1 < -(pmmaxint+0.5)) or (r1 > pmmaxint+0.5) then
                     errore(RealArgumentTooLarge);
                   pshint(round(r1)) end;
     63 (*pck*): begin getq; getq1; popadr(a3); popadr(a2); popadr(a1);
@@ -4891,7 +4893,7 @@ begin
     174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin); 
                         if dosrcprf then begin setcur;
                           if curmod <> nil then 
-                            if curmod^.linprf^[q] < maxint then 
+                            if curmod^.linprf^[q] < pmmaxint then 
                               curmod^.linprf^[q] := curmod^.linprf^[q]+1;
                         end;
                         if dotrcsrc then
