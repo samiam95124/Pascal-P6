@@ -435,12 +435,14 @@ type
       {$gnu-pascal}
       pminteger = shortint;
       pmreal = shortreal;
+      pmaddress = shortint;
       { Restore to ISO 7185 Pascal language }
       {$classic-pascal-level-0}
 #else
       { define the internally used types }
       pminteger = integer;
       pmreal = real;
+      pmaddress = -maxstr..maxtop;
 #endif
       
       { These equates define the instruction layout. I have choosen a 32 bit
@@ -455,13 +457,7 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-#if defined(WRDSIZ16) && defined(GNU_PASCAL)
-      { GPC does not automatically size subranges, so we need to pick up sizing
-        from the special definitions above }
-      address     = pminteger;
-#else
       address     = -maxstr..maxtop; { address }
-#endif
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }
@@ -1508,7 +1504,7 @@ function getadr(a: address): address;
 
 var r: record case boolean of
 
-          true:  (a: address);
+          true:  (a: pmaddress);
           false: (b: packed array [1..adrsize] of byte);
 
        end;
@@ -1528,7 +1524,7 @@ procedure putadr(a: address; ad: address);
 
 var r: record case boolean of
 
-          true:  (a: address);
+          true:  (a: pmaddress);
           false: (b: packed array [1..adrsize] of byte);
 
        end;
