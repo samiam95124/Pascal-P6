@@ -51,6 +51,7 @@
         In the new unified code/data space scheme, 0 and 1 are always invalid
         addresses, since the startup code is at least that long. }
       nilval      =        1;   { value of 'nil' }
+      pmmaxint = 2147483647; { value of maxint on target machine }
 
       { Mark element offsets
 

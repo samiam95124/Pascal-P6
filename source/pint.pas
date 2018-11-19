@@ -189,12 +189,6 @@ label 1;
 
 const
 
-#if defined(WRDSIZ16) && defined(GNU_PASCAL)
-      pmmaxint = 32767;
-#else
-      pmmaxint = maxint;
-#endif
-
       { ************************************************************************
 
       Program object sizes and characteristics, sync with pint. These define

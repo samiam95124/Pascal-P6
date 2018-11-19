@@ -185,7 +185,7 @@ const
    parmal     = stackal;
    parmsize   = stackelsize;
    recal      = stackal;
-   maxaddr    =  maxint;
+   maxaddr    =  pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
    maxins     = 115;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
@@ -1801,7 +1801,7 @@ end;
             v := 0;
             repeat 
               if ch <> '_' then
-                if v <= maxint div r then 
+                if v <= pmmaxint div r then 
                   v := v*r+ordint[ch] 
                 else begin error(203); v := 0 end;
               nextch
@@ -2198,7 +2198,7 @@ end;
             end
           else
             if fsp = intptr then
-              begin fmin := -maxint; fmax := maxint
+              begin fmin := -pmmaxint; fmax := pmmaxint
               end
             else
               if fconst <> nil then
@@ -2606,7 +2606,7 @@ end;
             if labval > 9999 then error(261);
             genlabel(lbname); defined := false; nextlab := flabel; 
             labname := lbname; vlevel := level; slevel := 0; 
-            ipcref := false; minlvl := maxint; bact := false; 
+            ipcref := false; minlvl := pmmaxint; bact := false; 
             refer := false
           end;
         flabel := llp
@@ -3191,7 +3191,7 @@ end;
       case lop of { operator }
         { * } mul: if (lsp = intptr) and (fsp = intptr) then begin
                      if (lv.ival <> 0) and (fvalu.ival <> 0) then
-                       if abs(lv.ival) > maxint div abs(fvalu.ival) then
+                       if abs(lv.ival) > pmmaxint div abs(fvalu.ival) then
                          begin error(306); fvalu.ival := 0 end
                       else fvalu.ival := lv.ival*fvalu.ival
                     end else if (lsp = realptr) and (fsp = realptr) then
@@ -3254,7 +3254,7 @@ end;
       case lop of { operator }
         { + } plus: if (lsp = intptr) and (fsp = intptr) then begin
                       if (lv.ival<0) = (fvalu.ival<0) then 
-                        if maxint-abs(lv.ival) < abs(fvalu.ival) then
+                        if pmmaxint-abs(lv.ival) < abs(fvalu.ival) then
                           begin error(306); fvalu.ival := 0 end
                         else fvalu.ival := lv.ival+fvalu.ival
                     end else if (lsp = realptr) and (fsp = realptr) then
@@ -3266,7 +3266,7 @@ end;
                     else error(134);
         { - } minus: if (lsp = intptr) and (fsp = intptr) then begin
                        if (lv.ival<0) <> (fvalu.ival>0) then 
-                         if maxint-abs(lv.ival) < abs(fvalu.ival) then
+                         if pmmaxint-abs(lv.ival) < abs(fvalu.ival) then
                            begin error(306); fvalu.ival := 0 end
                        else fvalu.ival := lv.ival-fvalu.ival
                      end else if (lsp = realptr) and (fsp = realptr) then
@@ -5816,7 +5816,7 @@ end;
                             getbounds(inxtype,lmin,lmax);
                             span := lmax-lmin+1;
                             if span < 1 then error(509);
-                            if lsize > maxint div span then 
+                            if lsize > pmmaxint div span then 
                               begin error(237); lsize := 1 end
                             else lsize := lsize*span;
                             size := lsize
@@ -8038,7 +8038,7 @@ end;
     with crdptr^ do
       begin form := subrange; size := intsize; rangetype := intptr; 
             min.intval := true; min.ival := 0; 
-            max.intval := true; max.ival := maxint; packing := false end;
+            max.intval := true; max.ival := pmmaxint; packing := false end;
     new(realptr,scalar,standard); pshstc(realptr);             (*real*)
     with realptr^ do
       begin form := scalar; size := realsize; scalkind := standard; 
@@ -8198,10 +8198,10 @@ end;
         enterid(cp1)
       end;
 
-    entstdintcst(36, intptr, maxint);                          (*maxint*)
-    entstdintcst(53, intptr, maxint);                          (*maxlint*)
-    entstdintcst(55, crdptr, maxint);                          (*maxcrd*)
-    entstdintcst(57, crdptr, maxint);                          (*maxlcrd*)
+    entstdintcst(36, intptr, pmmaxint);                          (*maxint*)
+    entstdintcst(53, intptr, pmmaxint);                          (*maxlint*)
+    entstdintcst(55, crdptr, pmmaxint);                          (*maxcrd*)
+    entstdintcst(57, crdptr, pmmaxint);                          (*maxlcrd*)
     entstdintcst(68, charptr, ordmaxchar);                     (*maxlcrd*)
     entstdrlcst(60, realptr, 1.797693134862314e308);           (*maxreal*)
     entstdrlcst(61, realptr, 1.797693134862314e308);           (*maxsreal*)
