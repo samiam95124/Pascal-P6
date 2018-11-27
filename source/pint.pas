@@ -2650,13 +2650,13 @@ procedure load;
       if op = maxins then errorl('illegal instruction      ');
       case op of  (* get parameters p,q *)
 
-          (*lod,str,lda,lip,mst*)
+          (*lod,str,lda,lip*)
           0, 193, 105, 106, 107, 108, 109, 195,
-          2, 70, 71, 72, 73, 74,4,120,11: begin read(prd,p,q); storeop; storep;
+          2, 70, 71, 72, 73, 74,4,120: begin read(prd,p,q); storeop; storep;
                                              storeq
                                        end;
 
-          12(*cup*): begin read(prd,p); storeop; storep; labelsearch; storeq end;
+          12,11(*cup,mst*): begin read(prd,p); storeop; storep; labelsearch; storeq end;
                      
           91(*suv*): begin storeop; labelsearch; storeq;
                      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);

@@ -1517,7 +1517,7 @@ end;
     246: write('Initializer out of range of fixed element type');
     247: write('Incorrect number of initializers for type');
     248: write('Fixed cannot contain variant record');
-
+    249: write('New overload ambiguous with previous');
     250: write('Too many nested scopes of identifiers');
     251: write('Too many nested procedures and/or functions');
     252: write('Too many forward references of procedure entries');
@@ -1545,6 +1545,8 @@ end;
     273: write('Must be container array');
     274: write('Function result type must be scalar, subrange, pointer, set, ',
                'array or record');
+    275: write('Number of parameters does not agree with declaration of any ',
+               'overload');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -2547,6 +2549,28 @@ end;
   begin chkfix := false;
     if fcp <> nil then chkfix := fcp^.klass = fixed
   end;
+  
+  { id contains a procedure in overload list }
+  function isovlproc(fcp: ctp): boolean;
+  begin isovlproc := false;
+    if fcp <> nil then
+      if fcp^.klass in [proc, func] then
+        while fcp <> nil do begin
+          if fcp^.klass = proc then isovlproc := true;
+          fcp := fcp^.grpnxt
+        end
+  end;
+  
+  { id contains a function in overload list }
+  function isovlfunc(fcp: ctp): boolean;
+  begin isovlfunc := false;
+    if fcp <> nil then
+      if fcp^.klass in [proc, func] then
+        while fcp <> nil do begin
+          if fcp^.klass = func then isovlfunc := true;
+          fcp := fcp^.grpnxt
+        end
+  end;
 
   procedure genlabel(var nxtlab: integer);
   begin intlabel := intlabel + 1;
@@ -2732,7 +2756,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          41,45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115: 
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -2936,7 +2960,54 @@ end;
     ic := ic + 1
   end (*gen2*) ;
   
+  procedure genmst(lev: levrange; lb: integer);
+  begin
+    if prcode then begin
+      putic; write(prr,mn[41(*mst*)]:4); write(prr,lev:12, ' '); prtlabel(lb); 
+      writeln(prr)
+    end
+  end;
+  
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
+
+  { check integer or subrange of }
+  function intt(fsp: stp): boolean;
+    var t: stp;
+  begin intt := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = intptr then intt := true
+    end
+  end;
+  
+  { check real }
+  function realt(fsp: stp): boolean;
+  begin realt := false;
+    if fsp <> nil then
+      if fsp = realptr then realt := true
+  end;
+      
+  { the type test for character includes very broad definitions of char, 
+    including packed character arrays of 1 length, and even packed character
+    array containers, because they could be length 1 }
+    
+  function chart(fsp: stp): boolean;
+    var t: stp; fmin, fmax: integer;
+  begin chart := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = charptr then chart := true
+      else if (t^.form = arrays) and t^.packing then begin
+        if (t^.inxtype = nil) and (t^.size = 1) then chart := true
+        else if chart(t^.aeltype) and intt(t^.inxtype) then begin
+          getbounds(t^.inxtype,fmin,fmax);
+          if (fmin = 1) and (fmax = 1) then chart := true
+        end
+      end else if (t^.form = arrayc) and t^.packing then begin
+        if chart(t^.abstype) then chart := true 
+      end
+    end
+  end;
 
   function stringt(fsp: stp) : boolean;
   var fmin, fmax: integer;
@@ -2949,7 +3020,8 @@ end;
         if fsp^.form = arrays then begin
           if fsp^.inxtype = nil then begin fmin := 1; fmax := fsp^.size end
           else getbounds(fsp^.inxtype,fmin,fmax);
-          stringt := (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
+          stringt := 
+            (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
         end else stringt := fsp^.abstype = charptr
       end
   end (*stringt*);
@@ -3810,7 +3882,7 @@ end;
       end (*while*)
   end (*selector*) ;
 
-  procedure call(fsys: setofsys; fcp: ctp; inherit: boolean);
+  procedure call(fsys: setofsys; fcp: ctp; inherit: boolean; isfunc: boolean);
     var lkey: keyrng;
 
     procedure variable(fsys: setofsys; threaten: boolean);
@@ -4625,6 +4697,7 @@ end;
     procedure callnonstandard(fcp: ctp; inherit: boolean);
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
+          frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
     procedure compparam(pla, plb: ctp);
     begin
       while (pla <> nil) and (plb <> nil) do begin
@@ -4683,25 +4756,66 @@ end;
         mesl(lsize)
       end
     end;
-    begin locpar := 0;
-      { find function result size }
-      lsize := 0; 
-      if fcp^.klass = func then begin
-          lsize := fcp^.idtype^.size;
-          alignu(parmptr,lsize);
+    { This overload does not match, sequence to the next, same parameter.
+      Set sets fcp -> new proc/func, nxt -> next parameter in new list. }
+    procedure nxtprc;
+      var pc: integer; fcpn, fcpf: ctp; 
+      function cmptyp(id1, id2: ctp): boolean;
+      begin cmptyp := false;
+        if (id1 <> nil) and (id2 <> nil) then 
+          cmptyp := comptypes(id1^.idtype, id2^.idtype)
       end;
+      { compare parameter lists until current }
+      function cmplst(pl1, pl2: ctp): boolean;
+        var pc: integer; pll1, pll2: ctp;
+      begin cmplst := false; pc := 1;
+        while (pc < prcnt) and cmptyp(pl1, pl2) do begin 
+          pll1 := pl1; pll2 := pl2;
+          if pl1 <> nil then pl1 := pl1^.next; 
+          if pl2 <> nil then pl2 := pl2^.next; 
+          pc := pc+1 
+        end;
+        { compare last entry }
+        if (pll1 <> nil) and (pll2 <> nil) then cmplst := cmptyp(pll1, pll2)
+        else cmplst := (pll1 = nil) and (pll2 = nil) { reached end of both lists }
+      end;
+    begin pc := 1;
+      fcpn := fcp^.grpnxt; { go next proc/func, which may not exist }
+      fcpf := nil; { set none found }
+      while fcpn <> nil do begin { search next for match }
+        if (isfunc and (fcpn^.klass = func)) or (not isfunc and (fcpn^.klass = proc)) then 
+          if cmplst(fcp^.pflist, fcpn^.pflist) then 
+            begin fcpf := fcpn; fcpn := nil end
+          else fcpn := fcpn^.grpnxt { next group proc/func }
+        else fcpn := fcpn^.grpnxt
+      end;
+      fcp := fcpf; { set found/not found }
+      if fcp <> nil then begin { recover parameter position in new list }
+        nxt := fcp^.pflist;
+        while (pc < prcnt) do begin if nxt <> nil then nxt := nxt^.next; pc := pc+1 end
+      end
+    end;
+    begin fcps := fcp; locpar := 0; genlabel(frlab); prcnt := 1; ovrl := fcp^.grpnxt <> nil;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
-          { I don't know why these are dups }
+          { I don't know why these are dups, guess is a badly formed far call }
           if pfkind = actual then begin { it's a system call }
-            if not externl then gen2(41(*mst*),level-pflev,lsize)
-          end else gen2(41(*mst*),level-pflev,lsize) { its an indirect }
+            if not externl then genmst(level-pflev,frlab)
+          end else genmst(level-pflev,frlab) { its an indirect }
         end;
       if sy = lparent then
         begin llc := lc;
           repeat lb := false; (*decide whether proc/func must be passed*)
-            if nxt = nil then error(126)
-            else lb := nxt^.klass in [proc,func];
+            if nxt = nil then begin
+              { out of parameters, try to find another overload }
+              nxtprc;
+              if nxt = nil then begin 
+                { dispatch error according to overload status } 
+                if ovrl then error(275) else error(126);
+                fcp := fcps
+              end
+            end;
+            if nxt <> nil then lb := nxt^.klass in [proc,func];
             insymbol;
             if lb then   (*pass function or procedure*)
               begin
@@ -4783,13 +4897,24 @@ end;
                       end
                   end
               end;
-            if nxt <> nil then nxt := nxt^.next
+            if nxt <> nil then begin nxt := nxt^.next; prcnt := prcnt+1 end
           until sy <> comma;
           lc := llc;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*);
+      { not out of proto parameters, sequence until we are or there are no 
+        candidate overloads }
+      while (nxt <> nil) and (fcp <> nil) do nxtprc;
+      if fcp = nil then fcp := fcps;
+      { find function result size }
+      lsize := 0; 
+      if fcp^.klass = func then begin
+          lsize := fcp^.idtype^.size;
+          alignu(parmptr,lsize);
+      end;
+      if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
       if lkind = actual then
-        begin if nxt <> nil then error(126);
+        begin if nxt <> nil then if ovrl then error(275) else error(126);
           with fcp^ do
             begin
               if externl then gen1(30(*csp*),pfname)
@@ -4910,8 +5035,8 @@ end;
         (*id*)    ident:
                   begin searchid([types,konst,vars,fixed,field,func],lcp);
                     insymbol;
-                    if lcp^.klass = func then
-                      begin call(fsys,lcp, inherit);
+                    if isovlfunc(lcp) then
+                      begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
                             if typtr <> nil then
@@ -6363,7 +6488,7 @@ end;
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
           forw,virt,ovrl: boolean; oldtop: disprange;
-          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
+          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr; e: boolean;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -6625,6 +6750,26 @@ end;
       end;
       if (pla <> nil) or (plb <> nil) then error(216)
     end;
+    
+    { for overloading, same as strict compparam(), but includes read = integer
+      and string = char }
+    function compparamovl(pla, plb: ctp): boolean;
+      var f: boolean; t1, t2: stp;
+    begin f := true;
+      while (pla <> nil) and (plb <> nil) do begin
+        if not comptypes(pla^.idtype,plb^.idtype) then begin
+          { incompatible, but check special cases }
+          t1 := basetype(pla^.idtype);
+          t2 := basetype(plb^.idtype);
+          if not ((intt(t1) and realt(t2)) or
+                 (realt(t1) and intt(t2)) or
+                 (chart(t1) and chart(t2))) then f := false
+        end;
+        pla := pla^.next; plb := plb^.next
+      end;
+      if (pla <> nil) or (plb <> nil) then f := false;
+      compparamovl := f
+    end;
 
     begin (*procdeclaration*)
       { parse and skip any attribute }
@@ -6644,9 +6789,10 @@ end;
       llc := lc; lc := lcaftermarkstack; forw := false; virt := false; 
       ovrl := false;
       if sy = ident then
-        begin searchsection(display[top].fname,lcp); (*decide whether forw.*)
+        begin searchsection(display[top].fname,lcp); { find previous definition }
           if lcp <> nil then
             begin
+              { set flags according to attribute }
               if lcp^.klass = proc then begin
                 forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
                 virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
@@ -6660,13 +6806,13 @@ end;
                   ovrl := (fsy=procsy) and (lcp^.pfkind=actual) and 
                           (fpat = fpaoverload)
               end else forw := false;
-              if not forw and not virt then error(160);
+              if not forw and not virt and not ovrl then error(160);
               if virt and not chkext(lcp) then error (230);
               if ovrl and (lcp^.pfattr = fpavirtual) then error(232);
             end
           else if fpat = fpaoverride then error(231);
           lcp1 := lcp; { save original }
-          if not forw then
+          if not forw then { create a new proc/func entry }
             begin
               if fsy = procsy then new(lcp,proc,declared,actual)
               else new(lcp,func,declared,actual); ininam(lcp);
@@ -6723,18 +6869,32 @@ end;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
       pushlvl(forw, lcp); display[top].define := false;
-      if fsy = procsy then
+      if fsy = procsy then { proc }
         begin parameterlist([semicolon],lcp1,plst);
-          if not forw then lcp^.pflist := lcp1
-          else begin
+          if not forw then begin
+            lcp^.pflist := lcp1;
+            if ovrl then begin { compare against overload group }
+              lcp2 := lcp^.grppar; { index top of overload group }
+              e := false;
+              while lcp2 <> nil do begin
+                if lcp2 <> lcp then
+                  if compparamovl(lcp^.pflist, lcp2^.pflist) then begin
+                    error(249);
+                    e := true
+                  end;
+                lcp2 := lcp2^.grpnxt
+              end
+            end
+          end else begin
             if plst then compparam(lcp^.pflist, lcp1);
             putparlst(lcp1) { redeclare, dispose of copy }
           end
         end
-      else
+      else { func }
         begin parameterlist([semicolon,colon],lcp1,plst);
-          if not forw then lcp^.pflist := lcp1 
-          else begin
+          if not forw then begin
+            lcp^.pflist := lcp1 
+          end else begin
             if plst then compparam(lcp^.pflist, lcp1);
             putparlst(lcp1); { redeclare, dispose of copy }
           end;
@@ -7519,7 +7679,7 @@ end;
                         if sy = inheritedsy then 
                           begin insymbol; inherit := true end;
                         searchid([vars,field,func,proc],lcp); insymbol;
-                        if lcp^.klass = proc then call(fsys,lcp,inherit)
+                        if isovlproc(lcp) then call(fsys,lcp,inherit,false)
                         else begin if inherit then error(233);
                           assignment(lcp, false)
                         end
@@ -7882,7 +8042,7 @@ end;
   end;
   
   procedure modulep{(fsys:setofsys)};
-    var extfp:extfilep; segsize, stackbot: integer;
+    var extfp:extfilep; segsize, stackbot: integer; frlab: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname); 
     genlabel(extname); genlabel(nxtname);
@@ -7909,12 +8069,13 @@ end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
-          gen2(41(*mst*),0,0); gencupent(46(*cup*),0,entname,nil);
+          genlabel(frlab); prtlabel(frlab); writeln(prr,'=',0:1);
+          genmst(0,frlab); gencupent(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname); 
-            gen2(41(*mst*),0,0); gencupent(46(*cup*),0,extname,nil)
+            genmst(0,frlab); gencupent(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
