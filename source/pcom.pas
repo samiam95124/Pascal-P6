@@ -1547,6 +1547,7 @@ end;
                'array or record');
     275: write('Number of parameters does not agree with declaration of any ',
                'overload');
+    276: write('Different overload parameters converge with different modes');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -6771,6 +6772,26 @@ end;
       compparamovl := f
     end;
 
+    { check parameter lists converge with different modes } 
+    function conpar(pla, plb: ctp): boolean;
+      var f: boolean; t1, t2: stp;
+    { find bidirectionally assignment compatible }
+    function comp(t1, t2: stp): boolean;
+    begin comp := false;
+      if comptypes(t1, t2) then comp := true
+      else if (intt(t1) and realt(t2)) or (realt(t1) and intt(t2)) or
+              (chart(t1) and chart(t2)) then comp := true
+    end;
+    begin f := false;
+      while (pla <> nil) and (plb <> nil) do begin
+        if comp(pla^.idtype,plb^.idtype) then
+          if pla^.part <> plb^.part then begin f := true; pla := nil end
+          else begin pla := pla^.next; plb := plb^.next end
+        else pla := nil
+      end;
+      conpar := f
+    end;
+
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
@@ -6879,7 +6900,11 @@ end;
               while lcp2 <> nil do begin
                 if lcp2 <> lcp then
                   if compparamovl(lcp^.pflist, lcp2^.pflist) then begin
-                    error(249);
+                    if not e then error(249);
+                    e := true
+                  end;
+                  if conpar(lcp^.pflist, lcp2^.pflist) then begin
+                    if not e then error(276);
                     e := true
                   end;
                 lcp2 := lcp2^.grpnxt
