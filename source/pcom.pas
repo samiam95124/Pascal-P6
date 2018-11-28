@@ -6705,7 +6705,7 @@ end;
                   end;
                 if sy = semicolon then
                   begin insymbol;
-                    if not (sy in fsys + [ident,varsy,procsy,funcsy]) then
+                    if not (sy in fsys + [ident,varsy,procsy,funcsy,viewsy,outsy]) then
                       begin error(7); skip(fsys + [ident,rparent]) end
                   end
               end (*while*) ;
