@@ -4699,6 +4699,7 @@ end;
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
+          test: boolean;
     procedure compparam(pla, plb: ctp);
     begin
       while (pla <> nil) and (plb <> nil) do begin
@@ -4805,7 +4806,7 @@ end;
           end else genmst(level-pflev,frlab) { its an indirect }
         end;
       if sy = lparent then
-        begin llc := lc;
+        begin llc := lc; insymbol;
           repeat lb := false; (*decide whether proc/func must be passed*)
             if nxt = nil then begin
               { out of parameters, try to find another overload }
@@ -4817,7 +4818,6 @@ end;
               end
             end;
             if nxt <> nil then lb := nxt^.klass in [proc,func];
-            insymbol;
             if lb then   (*pass function or procedure*)
               begin
                 if sy <> ident then
@@ -4898,8 +4898,10 @@ end;
                       end
                   end
               end;
-            if nxt <> nil then begin nxt := nxt^.next; prcnt := prcnt+1 end
-          until sy <> comma;
+            if nxt <> nil then begin nxt := nxt^.next; prcnt := prcnt+1 end;
+            test := sy <> comma;
+            if sy = comma then insymbol;
+          until test;
           lc := llc;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*);
