@@ -1548,6 +1548,7 @@ end;
     275: write('Number of parameters does not agree with declaration of any ',
                'overload');
     276: write('Different overload parameters converge with different modes');
+    277: write('No overload found to match parameter');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -2572,7 +2573,7 @@ end;
           fcp := fcp^.grpnxt
         end
   end;
-
+  
   procedure genlabel(var nxtlab: integer);
   begin intlabel := intlabel + 1;
     nxtlab := intlabel
@@ -3138,6 +3139,28 @@ end;
             else comptypes := false
       else comptypes := true { one of the types is in error }
   end (*comptypes*) ;
+
+  function cmpparlst(pla, plb: ctp): boolean; forward;
+  
+  { compare two parameters }
+  function cmppar(pa, pb: ctp): boolean; 
+  begin cmppar := false;
+    if (pa <> nil) and (pb <> nil) then
+      if (pa^.klass in [proc,func]) or (pb^.klass in [proc,func]) then begin
+        if cmpparlst(pa^.pflist, pb^.pflist) 
+          then cmppar := comptypes(pa^.idtype,pb^.idtype)
+      end else cmppar := comptypes(pa^.idtype,pb^.idtype)
+  end;
+    
+  { compare parameter lists }
+  function cmpparlst{(pla, plb: ctp): boolean};
+  begin cmpparlst := true;
+    while (pla <> nil) and (plb <> nil) do begin
+      if not cmppar(pla,plb) then cmpparlst := false;
+      pla := pla^.next; plb := plb^.next
+    end;
+    if (pla <> nil) or (plb <> nil) then cmpparlst := false
+  end;
 
   procedure skip(fsys: setofsys);
   (*skip input string until relevant symbol found*)
@@ -4699,15 +4722,7 @@ end;
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
-          test: boolean;
-    procedure compparam(pla, plb: ctp);
-    begin
-      while (pla <> nil) and (plb <> nil) do begin
-        if not comptypes(pla^.idtype,plb^.idtype) then error(189);
-        pla := pla^.next; plb := plb^.next
-      end;
-      if (pla <> nil) or (plb <> nil) then error(189)
-    end;
+          test: boolean; match: boolean;
     procedure fixpar(lsp: stp);
       var cc: integer;
     begin
@@ -4762,23 +4777,19 @@ end;
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. }
     procedure nxtprc;
       var pc: integer; fcpn, fcpf: ctp; 
-      function cmptyp(id1, id2: ctp): boolean;
-      begin cmptyp := false;
-        if (id1 <> nil) and (id2 <> nil) then 
-          cmptyp := comptypes(id1^.idtype, id2^.idtype)
-      end;
       { compare parameter lists until current }
       function cmplst(pl1, pl2: ctp): boolean;
         var pc: integer; pll1, pll2: ctp;
       begin cmplst := false; pc := 1;
-        while (pc < prcnt) and cmptyp(pl1, pl2) do begin 
+        pll1 := nil; pll2 := nil;
+        while (pc < prcnt) and cmppar(pl1, pl2) do begin 
           pll1 := pl1; pll2 := pl2;
           if pl1 <> nil then pl1 := pl1^.next; 
           if pl2 <> nil then pl2 := pl2^.next; 
           pc := pc+1 
         end;
         { compare last entry }
-        if (pll1 <> nil) and (pll2 <> nil) then cmplst := cmptyp(pll1, pll2)
+        if (pll1 <> nil) and (pll2 <> nil) then cmplst := cmppar(pll1, pll2)
         else cmplst := (pll1 = nil) and (pll2 = nil) { reached end of both lists }
       end;
     begin pc := 1;
@@ -4817,6 +4828,27 @@ end;
                 fcp := fcps
               end
             end;
+            if (sy = ident) and (fcp^.grpnxt <> nil) then begin 
+              { next is id, and proc/func is overload, try proc/func parameter }
+              match := false;
+              searchid([proc,func],lcp);
+              { Search matching overload. For proc/func parameters, we allow all
+                features of the target to match, including function result. }
+              repeat
+                if nxt^.klass = proc then begin
+                  if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
+                end else if nxt^.klass = func then begin
+                  if cmpparlst(nxt^.pflist, lcp^.pflist) then
+                    if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                end;
+                if not match then nxtprc { no match get next overload }
+              until match or (fcp = nil);
+              if fcp = nil then begin
+                error(277);
+                fcp := fcps
+              end
+            end;
+            { match same thing for all procs/funcs }
             if nxt <> nil then lb := nxt^.klass in [proc,func];
             if lb then   (*pass function or procedure*)
               begin
@@ -4834,7 +4866,7 @@ end;
                     { compare parameter lists }
                     if (nxt^.klass in [proc,func]) and
                        (lcp^.klass in [proc,func]) then
-                      compparam(nxt^.pflist, lcp^.pflist);
+                      if not cmpparlst(nxt^.pflist, lcp^.pflist) then error(189);
                     if lcp^.pfkind = actual then genlpa(lcp^.pfname,level-lcp^.pflev)
                     else gen2(74(*lip*),level-lcp^.pflev,lcp^.pfaddr);
                     locpar := locpar+ptrsize*2;
@@ -6745,22 +6777,13 @@ end;
       end
     end (*parameterlist*) ;
 
-    procedure compparam(pla, plb: ctp);
-    begin
-      while (pla <> nil) and (plb <> nil) do begin
-        if not comptypes(pla^.idtype,plb^.idtype) then error(216);
-        pla := pla^.next; plb := plb^.next
-      end;
-      if (pla <> nil) or (plb <> nil) then error(216)
-    end;
-    
-    { for overloading, same as strict compparam(), but includes read = integer
+    { for overloading, same as strict cmpparlst(), but includes read = integer
       and string = char }
     function compparamovl(pla, plb: ctp): boolean;
       var f: boolean; t1, t2: stp;
     begin f := true;
       while (pla <> nil) and (plb <> nil) do begin
-        if not comptypes(pla^.idtype,plb^.idtype) then begin
+        if not cmppar(pla,plb) then begin
           { incompatible, but check special cases }
           t1 := basetype(pla^.idtype);
           t2 := basetype(plb^.idtype);
@@ -6913,7 +6936,7 @@ end;
               end
             end
           end else begin
-            if plst then compparam(lcp^.pflist, lcp1);
+            if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
             putparlst(lcp1) { redeclare, dispose of copy }
           end
         end
@@ -6922,7 +6945,7 @@ end;
           if not forw then begin
             lcp^.pflist := lcp1 
           end else begin
-            if plst then compparam(lcp^.pflist, lcp1);
+            if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
             putparlst(lcp1); { redeclare, dispose of copy }
           end;
           if sy = colon then
