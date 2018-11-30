@@ -1423,7 +1423,7 @@ end;
     152: write('No such field in this record');
     153: write('Type error in read');
     154: write('Actual parameter must be a variable');
-    155: write('Control variable must ~ot be declared on intermediate');
+    155: write('Control variable must not be declared on intermediate');
     156: write('Multidefined case label');
     157: write('Too many cases in case statement');
     158: write('Missing corresponding variant declaration');
@@ -1549,6 +1549,7 @@ end;
                'overload');
     276: write('Different overload parameters converge with different modes');
     277: write('No overload found to match parameter');
+    278: write('Must be variable reference');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -4879,8 +4880,8 @@ end;
               begin varp := false;
                 { override variable status for view parameter }
                 if nxt <> nil then varp := (nxt^.vkind = formal) and not (nxt^.part = ptview);
-                if varp then variable(fsys + [comma,rparent], varp)
-                else expression(fsys + [comma,rparent], varp);
+                expression(fsys + [comma,rparent], varp);
+                if varp and (gattr.kind <> varbl) then error(278); 
                 if gattr.typtr <> nil then
                   begin
                     if nxt <> nil then
