@@ -4723,7 +4723,7 @@ end;
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
-          test: boolean; match: boolean;
+          test: boolean; match: boolean; e: boolean; mm: boolean;
     procedure fixpar(lsp: stp);
       var cc: integer;
     begin
@@ -4829,24 +4829,25 @@ end;
                 fcp := fcps
               end
             end;
+            e := false;
             if (sy = ident) and (fcp^.grpnxt <> nil) then begin 
               { next is id, and proc/func is overload, try proc/func parameter }
               match := false;
-              searchid([proc,func],lcp);
-              { Search matching overload. For proc/func parameters, we allow all
-                features of the target to match, including function result. }
-              repeat
-                if nxt^.klass = proc then begin
-                  if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
-                end else if nxt^.klass = func then begin
-                  if cmpparlst(nxt^.pflist, lcp^.pflist) then
-                    if comptypes(lcp^.idtype,nxt^.idtype) then match := true
-                end;
-                if not match then nxtprc { no match get next overload }
-              until match or (fcp = nil);
-              if fcp = nil then begin
-                error(277);
-                fcp := fcps
+              searchidnenm([proc,func],lcp,mm);
+              if lcp <> nil then if lcp^.klass in [proc,func] then begin
+                { Search matching overload. For proc/func parameters, we allow 
+                  all features of the target to match, including function 
+                  result. }
+                repeat
+                  if nxt^.klass = proc then begin
+                    if cmpparlst(nxt^.pflist, lcp^.pflist) then match := true
+                  end else if nxt^.klass = func then begin
+                    if cmpparlst(nxt^.pflist, lcp^.pflist) then
+                      if comptypes(lcp^.idtype,nxt^.idtype) then match := true
+                  end;
+                  if not match then nxtprc { no match get next overload }
+                until match or (fcp = nil);
+                if fcp = nil then begin error(277); e := true; fcp := fcps end
               end
             end;
             { match same thing for all procs/funcs }
@@ -4862,12 +4863,13 @@ end;
                       begin searchid([func],lcp);
                         { compare result types }
                         if not comptypes(lcp^.idtype,nxt^.idtype) then
-                          error(128)
+                          if not e then error(128)
                       end;
                     { compare parameter lists }
                     if (nxt^.klass in [proc,func]) and
                        (lcp^.klass in [proc,func]) then
-                      if not cmpparlst(nxt^.pflist, lcp^.pflist) then error(189);
+                      if not cmpparlst(nxt^.pflist, lcp^.pflist) then 
+                        if not e then error(189);
                     if lcp^.pfkind = actual then genlpa(lcp^.pfname,level-lcp^.pflev)
                     else gen2(74(*lip*),level-lcp^.pflev,lcp^.pfaddr);
                     locpar := locpar+ptrsize*2;
@@ -4878,9 +4880,21 @@ end;
               end (*if lb*)
             else
               begin varp := false;
+                expression(fsys + [comma,rparent], varp);
+                { find the appropriate overload }
+                match := false;
+                repeat
+                  if (nxt <> nil) and (gattr.typtr <> nil) then 
+                    if nxt^.idtype <> nil then begin
+                      if comptypes(nxt^.idtype, gattr.typtr) then match := true
+                      else if comptypes(realptr,nxt^.idtype) and 
+                              (gattr.typtr = intptr) then match := true
+                    end;
+                    if not match then nxtprc { no match get next overload }
+                until match or (fcp = nil);
+                if fcp = nil then begin error(277); e := true; fcp := fcps end;
                 { override variable status for view parameter }
                 if nxt <> nil then varp := (nxt^.vkind = formal) and not (nxt^.part = ptview);
-                expression(fsys + [comma,rparent], varp);
                 if varp and (gattr.kind <> varbl) then error(278); 
                 if gattr.typtr <> nil then
                   begin
@@ -4911,7 +4925,7 @@ end;
                                   alignu(parmptr,locpar)
                                 end;
                                 if not comptypes(lsp,gattr.typtr) then
-                                  error(142)
+                                  if not e then error(142)
                             end else begin
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
@@ -4925,7 +4939,8 @@ end;
                                   alignu(parmptr,locpar);
                                 end
                               else error(154);
-                              if lsp <> gattr.typtr then error(199)
+                              if lsp <> gattr.typtr then 
+                                if not e then error(199)
                             end
                           end
                       end
