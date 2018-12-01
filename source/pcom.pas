@@ -189,7 +189,7 @@ const
    maxsp      = 85;   { number of standard procedures/functions }
    maxins     = 115;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
-   maxstd     = 75;   { number of standard identifiers }
+   maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
@@ -519,7 +519,9 @@ var
     parmptr,
     intptr,crdptr,realptr,charptr,
     boolptr,nilptr,textptr,
-    exceptptr: stp;                 (*pointers to entries of standard ids*)
+    exceptptr,stringptr,pstringptr,
+    byteptr,vectorptr,matrixptr,
+    abyteptr: stp;                  (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
     fwptr: ctp;                     (*head of chain of forw decl type ids*)
@@ -8249,6 +8251,8 @@ end;
     na[67] := 'text     '; na[68] := 'maxchr   '; na[69] := 'assert   ';
     na[70] := 'error    '; na[71] := 'list     '; na[72] := 'command  ';
     na[73] := 'exception'; na[74] := 'throw    '; na[75] := 'max      ';
+    na[76] := 'string   '; na[77] := 'pstring  '; na[78] := 'byte     ';
+    na[79] := 'vector   '; na[80] := 'matrix   '; na[81] := 'abyte    ';
 
   end (*stdnames*) ;
 
@@ -8294,6 +8298,31 @@ end;
     new(exceptptr,exceptf); pshstc(exceptptr);                 (*exception*)
     with exceptptr^ do
       begin form := exceptf; size := exceptsize; packing := false end;
+      
+    { common types }
+    new(stringptr,arrayc); pshstc(stringptr);                  (*string*)
+    with stringptr^ do
+      begin form := arrayc; size := 0; packing := true; abstype := charptr end;
+    new(pstringptr,pointer); pshstc(pstringptr);               (*string pointer*)
+    with pstringptr^ do
+      begin form := pointer; size := ptrsize; packing := false; 
+            eltype := stringptr end;
+    new(byteptr,subrange); pshstc(byteptr);
+    with byteptr^ do
+      begin form := subrange; size := 1; packing := false; rangetype := intptr;
+            min.intval := true; min.ival := 0; max.intval := true; 
+            max.ival := 255 end;
+    new(abyteptr,arrayc); pshstc(abyteptr);                    (*byte array*)
+    with abyteptr^ do
+      begin form := arrayc; size := 0; packing := false; abstype := byteptr end;        
+    new(vectorptr,arrayc); pshstc(vectorptr);                  (*vector*)
+    with vectorptr^ do
+      begin form := arrayc; size := 0; packing := false; abstype := intptr end;
+    new(matrixptr,arrayc); pshstc(matrixptr);                  (*matrix*)
+    with matrixptr^ do
+      begin form := arrayc; size := 0; packing := false; 
+            abstype := vectorptr end;  
+        
     
   end (*enterstdtypes*) ;
 
@@ -8383,6 +8412,13 @@ end;
     usclrptr := cp; { save to satisfy broken tags }
     entstdtyp(67, textptr);                                   (*text*)
     entstdtyp(73, exceptptr);                                 (*exception*)
+    entstdtyp(76, stringptr);                                 (*string*)
+    entstdtyp(77, pstringptr);                                (*pointer to string*)
+    entstdtyp(78, byteptr);                                   (*byte*)
+    entstdtyp(79, vectorptr);                                 (*vector*)
+    entstdtyp(80, matrixptr);                                 (*matrix*)
+    entstdtyp(81, abyteptr);                                  (*array of bytes*)
+    
 
     cp1 := nil;
     for i := 1 to 2 do
