@@ -331,8 +331,7 @@ type                                                        (*describing:*)
                      priv: boolean end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
-     fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride,
-               fpaoperator);
+     fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
      identifier = record
                    snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
@@ -413,6 +412,7 @@ type                                                        (*describing:*)
                  define: boolean;          { is this a defining block? }
                  modnam: strvsp;           { module name for block (if exists) }
                  inilst: ctp;              { initializer list }
+                 oprprc: array [operatort] of ctp; { operator functions }
                  case occur: where of      (*   constant address*)
                    crec: (clev: levrange;  (*=vrec:   id is field id in record with*)
                           cdspl: addrrange);(*   variable address*)
@@ -776,9 +776,28 @@ var
     end
   end;
 
+  { initialize display record }
+  procedure inidsp(var dr: disprec);
+    var oi: operatort;
+  begin
+    with dr do begin
+      fname := nil;
+      flabel := nil;
+      fconst := nil;
+      fstruct := nil;
+      packing := false;
+      packcom := false;
+      ptrref := false;
+      define := false;
+      modnam := nil;
+      inilst := nil;
+      for oi := mul to xorop do oprprc[oi] := nil
+    end
+  end;
+  
   { scrub display level }
   procedure putdsp(var dr: disprec);
-     var llp: lbp; lvp: csp; lsp: stp;
+     var llp: lbp; lvp: csp; lsp: stp; oi: operatort;
      { release substructure }
      procedure putsub(p: stp);
         var p1: stp;
@@ -815,7 +834,9 @@ var
       lsp := dr.fstruct; dr.fstruct := lsp^.next; putsub(lsp)
     end;
     { dispose of module name }
-    putstrs(dr.modnam)
+    putstrs(dr.modnam);
+    for oi := mul to xorop do 
+      if dr.oprprc[oi] <> nil then putnam(dr.oprprc[oi]);
   end; { putdsp }
 
   { scrub all display levels until given }
@@ -1552,6 +1573,9 @@ end;
     276: write('Different overload parameters converge with different modes');
     277: write('No overload found to match parameter');
     278: write('Must be variable reference');
+    279: write('''procedure'', ''function'' or ''operator'' expected');
+    280: write('Attribute has no meaning used on operator overload');
+    281: write('Expression/assignment operator expected');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -6012,20 +6036,8 @@ end;
                     begin insymbol;
                       oldtop := top;
                       if top < displimit then
-                        begin top := top + 1;
-                          with display[top] do
-                            begin fname := nil;
-                                  flabel := nil;
-                                  fconst := nil;
-                                  fstruct := nil;
-                                  packing := false;
-                                  packcom := false;
-                                  ptrref := false;
-                                  define := false;
-                                  modnam := nil;
-                                  inilst := nil;
-                                  occur := rec
-                            end
+                        begin top := top + 1; inidsp(display[top]); 
+                              display[top].occur := rec
                         end
                       else error(250);
                       displ := 0;
@@ -6542,6 +6554,7 @@ end;
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
           forw,virt,ovrl: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr; e: boolean;
+          ops: restr;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -6549,14 +6562,11 @@ end;
         if top < displimit then
           begin top := top + 1;
             with display[top] do
-              begin
-                if forw then fname := lcp^.pflist
-                else fname := nil;
-                flabel := nil; fconst := nil; fstruct := nil; packing := false;
-                packcom := false; ptrref := false;
+              begin inidsp(display[top]);
+                if forw then fname := lcp^.pflist;
                 { use the defining point status of the parent block } 
                 define := display[top-1].define; 
-                modnam := nil; inilst := nil; occur := blck; bname := lcp
+                occur := blck; bname := lcp
               end
           end
         else error(250);
@@ -6838,22 +6848,29 @@ end;
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
-      if fsy in [overloadsy,staticsy,virtualsy,overridesy,operatorsy] then begin
+      if fsy in [overloadsy,staticsy,virtualsy,overridesy] then begin
         chkstd;
         case fsy of { attribute }
           overloadsy: fpat := fpaoverload;
           staticsy: fpat := fpastatic;
           virtualsy: begin fpat := fpavirtual; if top > 1 then error(228) end;
           overridesy: begin fpat := fpaoverride; if top > 1 then error(229) end;
-          operatorsy: error(399)
         end;
-        if (sy <> procsy) and (sy <> funcsy) then error(209)
+        if (sy <> procsy) and (sy <> funcsy) and (sy <> operatorsy) then 
+          if iso7185 then error(209) else error(279)
         else fsy := sy; insymbol
       end;
       llc := lc; lc := lcaftermarkstack; forw := false; virt := false; 
       ovrl := false;
-      if sy = ident then
-        begin searchsection(display[top].fname,lcp); { find previous definition }
+      if (sy = ident) or (fsy = operatorsy) then 
+        begin
+          if fsy = operatorsy then begin { process operator definition }
+            if not (sy in [mulop,addop,relop]) then 
+              begin error(281); skip(fsys+[mulop,addop,relop,lparent,semicolon]) end
+            else lcp := display[top].oprprc[op]; { pick up an operator leader }
+            if fpat <> fpanone then error(280)
+          end else 
+            searchsection(display[top].fname,lcp); { find previous definition }
           if lcp <> nil then
             begin
               { set flags according to attribute }
@@ -6879,10 +6896,25 @@ end;
           if not forw then { create a new proc/func entry }
             begin
               if fsy = procsy then new(lcp,proc,declared,actual)
-              else new(lcp,func,declared,actual); ininam(lcp);
+              else { func/opr } new(lcp,func,declared,actual); ininam(lcp);
               with lcp^ do
                 begin if fsy = procsy then klass := proc else klass := func; 
-                  strassvf(name, id); idtype := nil; next := nil;
+                  if fsy = operatorsy then begin
+                    { Synth a label based on the operator. This is done for
+                      downstream diagnostics. }
+                    case op of { operator }
+                      mul:   ops := '*        '; rdiv:  ops := '/        '; 
+                      andop: ops := 'and      '; idiv:  ops := 'div      ';
+                      imod:  ops := 'div      '; plus:  ops := '+        ';
+                      minus: ops := '-        '; orop:  ops := 'or       ';
+                      ltop:  ops := '<        '; leop:  ops := '<=       ';
+                      geop:  ops := '>        '; gtop:  ops := '>=       ';
+                      neop:  ops := '<>       '; eqop:  ops := '=        ';
+                      inop:  ops := 'in       '; xorop: ops := 'xor      '; 
+                    end;
+                    strassvr(name, ops)
+                  end else strassvf(name, id); 
+                  idtype := nil; next := nil;
                   externl := false; pflev := level; genlabel(lbname);
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   pflist := nil; asgn := false; 
@@ -6910,7 +6942,13 @@ end;
                 { just insert to group list for this proc/func } 
                 begin lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp; 
                       lcp^.grppar := lcp1 end
-              else enterid(lcp)
+              else if fsy = operatorsy then begin
+                if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
+                else begin { already an operator this level, insert into group }
+                  lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
+                  lcp^.grppar := lcp1
+                end
+              end else enterid(lcp)
             end
           else
             begin lcp1 := lcp^.pflist;
@@ -6933,64 +6971,57 @@ end;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
       pushlvl(forw, lcp); display[top].define := false;
-      if fsy = procsy then { proc }
-        begin parameterlist([semicolon],lcp1,plst);
-          if not forw then begin
-            lcp^.pflist := lcp1;
-            if ovrl then begin { compare against overload group }
-              lcp2 := lcp^.grppar; { index top of overload group }
-              e := false;
-              while lcp2 <> nil do begin
-                if lcp2 <> lcp then
-                  if compparamovl(lcp^.pflist, lcp2^.pflist) then begin
-                    if not e then error(249);
-                    e := true
-                  end;
-                  if conpar(lcp^.pflist, lcp2^.pflist) then begin
-                    if not e then error(276);
-                    e := true
-                  end;
-                lcp2 := lcp2^.grpnxt
-              end
+      begin 
+        if fsy = procsy then parameterlist([semicolon],lcp1,plst)
+        else parameterlist([semicolon,colon],lcp1,plst);
+        if not forw then begin
+          lcp^.pflist := lcp1;
+          if ovrl then begin { compare against overload group }
+            lcp2 := lcp^.grppar; { index top of overload group }
+            e := false;
+            while lcp2 <> nil do begin
+              if lcp2 <> lcp then
+                if compparamovl(lcp^.pflist, lcp2^.pflist) then begin
+                  if not e then error(249);
+                  e := true
+                end;
+                if conpar(lcp^.pflist, lcp2^.pflist) then begin
+                  if not e then error(276);
+                  e := true
+                end;
+              lcp2 := lcp2^.grpnxt
             end
-          end else begin
-            if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
-            putparlst(lcp1) { redeclare, dispose of copy }
           end
+        end else begin
+          if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
+          putparlst(lcp1) { redeclare, dispose of copy }
         end
-      else { func }
-        begin parameterlist([semicolon,colon],lcp1,plst);
-          if not forw then begin
-            lcp^.pflist := lcp1 
-          end else begin
-            if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
-            putparlst(lcp1); { redeclare, dispose of copy }
-          end;
-          if sy = colon then
-            begin insymbol;
-              if sy = ident then
-                begin if forw and iso7185 then error(122);
-                  searchid([types],lcp1);
-                  lsp := lcp1^.idtype;
-                  if forw then begin
-                    if not comptypes(lcp^.idtype, lsp) then error(216)
-                  end else lcp^.idtype := lsp;
-                  if lsp <> nil then
-                    if iso7185 then begin
-                      if not (lsp^.form in [scalar,subrange,pointer]) then
-                        begin error(120); lcp^.idtype := nil end
-                    end else begin
-                      if not (lsp^.form in [scalar,subrange,pointer,power,
-                                            arrays,records]) then
-                        begin error(274); lcp^.idtype := nil end
-                    end;
-                  insymbol
-                end
-              else begin error(2); skip(fsys + [semicolon]) end
-            end
-          else
-            if not forw or plst then error(123)
-        end;
+      end;
+      if (fsy = funcsy) or (fsy = operatorsy) then { function }  
+        if sy = colon then
+          begin insymbol;
+            if sy = ident then
+              begin if forw and iso7185 then error(122);
+                searchid([types],lcp1);
+                lsp := lcp1^.idtype;
+                if forw then begin
+                  if not comptypes(lcp^.idtype, lsp) then error(216)
+                end else lcp^.idtype := lsp;
+                if lsp <> nil then
+                  if iso7185 then begin
+                    if not (lsp^.form in [scalar,subrange,pointer]) then
+                      begin error(120); lcp^.idtype := nil end
+                  end else begin
+                    if not (lsp^.form in [scalar,subrange,pointer,power,
+                                          arrays,records]) then
+                      begin error(274); lcp^.idtype := nil end
+                  end;
+                insymbol
+              end
+            else begin error(2); skip(fsys + [semicolon]) end
+          end
+        else
+          if not forw or plst then error(123);
       if sy = semicolon then insymbol else error(14);
       if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy)  then
         begin
@@ -7591,17 +7622,10 @@ end;
               if top < displimit then
                 begin top := top + 1; lcnt1 := lcnt1 + 1;
                   with display[top] do
-                    begin fname := gattr.typtr^.fstfld;
-                      flabel := nil;
-                      flabel := nil;
-                      fconst := nil;
-                      fstruct := nil;
+                    begin inidsp(display[top]); fname := gattr.typtr^.fstfld;
                       packing := gattr.packing;
                       packcom := gattr.packcom;
-                      ptrref := gattr.ptrref;
-                      define := false;
-                      modnam := nil;
-                      inilst := nil;
+                      ptrref := gattr.ptrref
                     end;
                   if gattr.access = drct then
                     with display[top] do
@@ -9098,15 +9122,11 @@ begin
   (******************************************)
   level := 0; top := 0; ptop := 0;
   with display[0] do
-    begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; packcom := false; ptrref := false; define := true;
-          modnam := nil; inilst := nil; occur := blck; bname := nil end;
+    begin inidsp(display[0]); define := true; occur := blck; bname := nil end;
   enterstdtypes; stdnames; entstdnames; enterundecl;
   top := 1; level := 1;
   with display[1] do
-    begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-          packing := false; packcom := false; ptrref := false; define := true;
-          modnam := nil; inilst := nil; occur := blck; bname := nil end;
+    begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
 
   (*compile:*)
   (**********)

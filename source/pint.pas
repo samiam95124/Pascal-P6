@@ -2151,6 +2151,19 @@ procedure load;
      snl := snl-1
    end;
    
+   procedure getlabe;
+   var i: 1..fillen;
+   begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
+     if not (ch in ['a'..'z','A'..'Z','_','*','/','+','-','<','=','>']) then 
+       errorl('Symbols format error     ');
+     while ch in ['a'..'z','A'..'Z','0'..'9','_','*','/','+','-','<','=','>'] do
+       begin
+       if snl >= fillen then errorl('Symbols format error     ');
+       sn[snl] := ch; getnxt; snl := snl+1
+     end;
+     snl := snl-1
+   end;
+   
    procedure getsds;
    var i: 1..fillen;
    begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
@@ -2357,7 +2370,7 @@ procedure load;
                 if not (ch in ['p', 'm', 'r', 'f']) then
                   errorl('Block type is invalid    ');
                 ch1 := ch; { save block type }
-                getnxt; skpspc; getlab;
+                getnxt; skpspc; getlabe;
                 new(bp); strassvf(bp^.name, sn); 
                 bp^.symbols := nil;
                 bp^.incnxt := nil;
