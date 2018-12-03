@@ -6552,9 +6552,9 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
-          forw,virt,ovrl: boolean; oldtop: disprange;
+          forw,virt,ovrl: boolean; oldtop, dt: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr; e: boolean;
-          ops: restr;
+          ops: restr; opt: operatort;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
       begin
@@ -6845,6 +6845,26 @@ end;
       conpar := f
     end;
 
+    { check overload proc/funcs against each other, first list is group }
+    procedure chkovlpar(lcp1, lcp2: ctp);
+      var e: boolean;
+    begin
+      e := false;
+      while lcp1 <> nil do begin
+        if lcp1 <> lcp2 then begin
+          if compparamovl(lcp2^.pflist, lcp1^.pflist) then begin
+            if not e then error(249);
+            e := true
+          end;
+          if conpar(lcp2^.pflist, lcp1^.pflist) then begin
+            if not e then error(276);
+            e := true
+          end;
+        end;  
+        lcp1 := lcp1^.grpnxt
+      end
+    end;
+
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
@@ -6868,7 +6888,8 @@ end;
             if not (sy in [mulop,addop,relop]) then 
               begin error(281); skip(fsys+[mulop,addop,relop,lparent,semicolon]) end
             else lcp := display[top].oprprc[op]; { pick up an operator leader }
-            if fpat <> fpanone then error(280)
+            if fpat <> fpanone then error(280);
+            opt := op { save operator for later }
           end else 
             searchsection(display[top].fname,lcp); { find previous definition }
           if lcp <> nil then
@@ -6887,7 +6908,8 @@ end;
                   ovrl := (fsy=procsy) and (lcp^.pfkind=actual) and 
                           (fpat = fpaoverload)
               end else forw := false;
-              if not forw and not virt and not ovrl then error(160);
+              if not forw and not virt and not ovrl and 
+                 (fsy <> operatorsy) then error(160);
               if virt and not chkext(lcp) then error (230);
               if ovrl and (lcp^.pfattr = fpavirtual) then error(232);
             end
@@ -6978,18 +7000,11 @@ end;
           lcp^.pflist := lcp1;
           if ovrl then begin { compare against overload group }
             lcp2 := lcp^.grppar; { index top of overload group }
-            e := false;
-            while lcp2 <> nil do begin
-              if lcp2 <> lcp then
-                if compparamovl(lcp^.pflist, lcp2^.pflist) then begin
-                  if not e then error(249);
-                  e := true
-                end;
-                if conpar(lcp^.pflist, lcp2^.pflist) then begin
-                  if not e then error(276);
-                  e := true
-                end;
-              lcp2 := lcp2^.grpnxt
+            chkovlpar(lcp2, lcp)
+          end else if fsy = operatorsy then begin { compare all operator levels }
+            for dt := top downto 0 do begin
+              if display[dt].oprprc[opt] <> nil then 
+                chkovlpar(display[dt].oprprc[opt], lcp)
             end
           end
         end else begin
