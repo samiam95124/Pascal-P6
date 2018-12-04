@@ -1576,6 +1576,10 @@ end;
     279: write('''procedure'', ''function'' or ''operator'' expected');
     280: write('Attribute has no meaning used on operator overload');
     281: write('Expression/assignment operator expected');
+    282: write('Overload operator is ambiguous with system operator');
+    283: write('New operator overload ambiguous with previous');
+    284: write('Different operator overload parameters converge with ',
+               'different modes');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -3019,7 +3023,6 @@ end;
   { the type test for character includes very broad definitions of char, 
     including packed character arrays of 1 length, and even packed character
     array containers, because they could be length 1 }
-    
   function chart(fsp: stp): boolean;
     var t: stp; fmin, fmax: integer;
   begin chart := false;
@@ -3035,6 +3038,16 @@ end;
       end else if (t^.form = arrayc) and t^.packing then begin
         if chart(t^.abstype) then chart := true 
       end
+    end
+  end;
+  
+  { check boolean }
+  function bolt(fsp: stp): boolean;
+    var t: stp;
+  begin bolt := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = boolptr then bolt := true
     end
   end;
 
@@ -3088,10 +3101,41 @@ end;
     filecomponent := f
   end;
   
+  { check array type, fixed or container }
   function arrayt(fsp: stp): boolean;
   begin
     if fsp = nil then arrayt := false
     else arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
+  end;
+  
+  { check set type }
+  function sett(fsp: stp): boolean;
+  begin
+    if fsp = nil then sett := false
+    else sett := fsp^.form = power
+  end;
+  
+  { check pointer }
+  
+  function ptrt(fsp: stp): boolean;
+  begin
+    if fsp = nil then ptrt := false
+    else ptrt := fsp^.form = pointer
+  end;
+  
+  { check simple type }
+  function simt(fsp: stp): boolean;
+  begin
+    if fsp = nil then simt := false
+    else simt := (fsp^.form = scalar) or (fsp^.form = subrange)
+  end;
+  
+  { check ordinal type }
+  function ordt(fsp: stp): boolean;
+  begin
+    if fsp = nil then ordt := false
+    else ordt := ((fsp^.form = scalar) or (fsp^.form = subrange)) and 
+                 not realt(fsp)
   end;
   
   function comptypes{(fsp1,fsp2: stp) : boolean};
@@ -6853,15 +6897,93 @@ end;
       while lcp1 <> nil do begin
         if lcp1 <> lcp2 then begin
           if compparamovl(lcp2^.pflist, lcp1^.pflist) then begin
-            if not e then error(249);
+            if not e then if fsy = operatorsy then error(283)
+                          else error(249);
             e := true
           end;
           if conpar(lcp2^.pflist, lcp1^.pflist) then begin
-            if not e then error(276);
+            if not e then if fsy = operatorsy then error(284)
+                          else error(276);
             e := true
           end;
         end;  
         lcp1 := lcp1^.grpnxt
+      end
+    end;
+    
+    { check operator overload against system definitions }
+    procedure chkovlsys(opt: operatort; lcp: ctp);
+      var e: boolean;
+      procedure markerr;
+      begin
+        if not e then error(282);
+        e := true
+      end;
+      function parnum: integer;
+        var pn: integer; lcp1: ctp;
+      begin
+        pn := 0; lcp1 := lcp^.pflist;
+        while lcp1 <> nil do begin pn := pn+1; lcp1 := lcp1^.next end;
+        parnum := pn 
+      end;
+      function partyp(pn: integer): stp;
+        var lcp1: ctp;
+      begin
+        lcp1 := lcp^.pflist;
+        while (pn > 1) and (lcp1 <> nil) do begin lcp1 := lcp1^.next; pn := pn-1 end;
+        if lcp1 = nil then partyp := nil else partyp := lcp1^.idtype
+      end;
+      procedure chksirl;
+      begin
+        if parnum = 1 then
+          if intt(partyp(1)) or realt(partyp(1)) then markerr
+      end;
+      procedure chkdirl;
+      begin
+        if parnum = 2 then
+          if (intt(partyp(1)) or realt(partyp(1))) and 
+             (intt(partyp(2)) or realt(partyp(2))) then markerr
+      end;
+      procedure chkdset;
+      begin
+        if parnum = 2 then
+          if sett(partyp(1)) and sett(partyp(2)) then markerr
+      end;
+      procedure chkdptr;
+      begin
+        if parnum = 2 then
+          if ptrt(partyp(1)) and ptrt(partyp(2)) then markerr
+      end;
+      procedure chkdstr;
+      begin
+        if parnum = 2 then
+          if stringt(partyp(1)) and stringt(partyp(2)) then markerr
+      end;
+      procedure chkdbol;
+      begin
+        if parnum = 2 then
+          if bolt(partyp(1)) and bolt(partyp(2)) then markerr
+      end;
+      procedure chkdsim;
+      begin
+        if parnum = 2 then
+          if simt(partyp(1)) and simt(partyp(2)) then markerr
+      end;
+      procedure chkdin;
+      begin
+        if parnum = 2 then
+          if ordt(partyp(1)) and ordt(partyp(2)) then markerr
+      end;
+    begin e := false;
+      case opt of { operator }
+        mul: begin chkdirl; chkdset end;
+        rdiv,idiv,imod: chkdirl;
+        plus,minus: begin chksirl; chkdirl; chkdset end;
+        andop,orop,xorop: begin chkdbol; chkdirl end;
+        ltop,leop,geop,gtop,neop,eqop: 
+          begin chkdsim; chkdptr; chkdstr; chkdset end;
+        inop: chkdin;
+        noop:;
       end
     end;
 
@@ -7002,6 +7124,7 @@ end;
             lcp2 := lcp^.grppar; { index top of overload group }
             chkovlpar(lcp2, lcp)
           end else if fsy = operatorsy then begin { compare all operator levels }
+            chkovlsys(opt, lcp); { check against system operators }
             for dt := top downto 0 do begin
               if display[dt].oprprc[opt] <> nil then 
                 chkovlpar(display[dt].oprprc[opt], lcp)
