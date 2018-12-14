@@ -187,7 +187,7 @@ const
    recal      = stackal;
    maxaddr    =  pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 115;  { maximum number of instructions }
+   maxins     = 117;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -2789,7 +2789,7 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
-          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115: 
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               mes(fop)
@@ -5093,7 +5093,7 @@ end;
               29:     haltprocedure;
               30:     assertprocedure;
               31:     throwprocedure;
-
+    
               10,13:  error(508)
             end;
             if not(lkey in [5,6,11,12,17,29]) then
@@ -5126,10 +5126,80 @@ end;
       end (*standard procedures and functions*)
     else callnonstandard(fcp,inherit)
   end (*call*) ;
+  
+  { call operator type with 2 parameters }
+  procedure callop2(opr: operatort; var lattr: attr);
+    var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
+        lsize: addrrange; locpar: addrrange;
+    function parnum(fcp: ctp): integer;
+      var pn: integer;
+    begin
+      pn := 0; fcp := fcp^.pflist;
+      while fcp <> nil do begin pn := pn+1; fcp := fcp^.next end;
+      parnum := pn 
+    end;
+    function partyp(fcp: ctp; pn: integer): stp;
+    begin fcp := fcp^.pflist;
+      while (pn > 1) and (fcp <> nil) do begin fcp := fcp^.next; pn := pn-1 end;
+      if fcp = nil then partyp := nil else partyp := fcp^.idtype
+    end;
+    { compare parameter type to actual type }
+    function cmptyp(pt, at: stp): boolean;
+    begin cmptyp := false;
+      if comptypes(pt, at) then cmptyp := true
+      else if realt(pt) and intt(at) then cmptyp := true
+    end;
+  begin
+    dt := top; { search top down }
+    repeat
+      while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
+      fcp := display[dt].oprprc[opr];
+      fcpf := nil; { set not found }
+      pn := 1;
+      while fcp <> nil do begin
+        if parnum(fcp) = 2 then
+          if cmptyp(partyp(fcp, 1), lattr.typtr) then
+            if cmptyp(partyp(fcp, 2), gattr.typtr) then fcpf := fcp;
+        fcp := fcp^.grpnxt
+      end;
+      if dt > 0 then dt := dt-1
+    until (fcpf <> nil) or (dt = 0);
+    fcp := fcpf;
+    if fcp = nil then begin error(134); gattr.typtr:=nil end 
+    else begin
+      genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+      { find parameters size }
+      locpar := lattr.typtr^.size;
+      alignu(parmptr,locpar);
+      locpar := locpar+gattr.typtr^.size;
+      alignu(parmptr,locpar);
+      { find function result size }
+      lsize := fcp^.idtype^.size;
+      alignu(parmptr,lsize);
+      { generate a stack hoist of parameters. Basically the common math on stack
+        not formatted the same way as function calls, so we hoist the parameters
+        over the mark, call and then drop the function result downwards. }
+      gen2(116(*cpp*),lsize,locpar);
+      if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
+      gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+      gen2(117(*cpr*),lsize,locpar);
+      mesl(-lsize);
+      gattr.typtr := fcp^.idtype
+    end
+  end;
 
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
 
+    { check any overloads exist for given operator }
+    function isopr(opt: operatort): boolean;
+      var dt: disprange;
+    begin isopr := false;
+      dt := top;
+      while (dt > 0) and (display[dt].oprprc[opt] = nil) do dt := dt-1;
+      isopr := display[dt].oprprc[opt] <> nil
+    end;
+        
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; signed, hassign: boolean;
 
@@ -5472,21 +5542,38 @@ end;
                   gen0(2(*adi*))
                 else
                   begin
-                    if lattr.typtr = intptr then
-                      begin gen0(9(*flo*));
-                        lattr.typtr := realptr
-                      end
-                    else
-                      if gattr.typtr = intptr then
-                        begin gen0(10(*flt*));
-                          gattr.typtr := realptr
-                        end;
+                    if iso7185 or 
+                       (intt(lattr.typtr) or realt(lattr.typtr)) and
+                       (intt(gattr.typtr) or realt(gattr.typtr)) then
+                      { convert either integer to real }
+                      if lattr.typtr = intptr then
+                        begin gen0(9(*flo*));
+                          lattr.typtr := realptr
+                        end
+                      else
+                        if gattr.typtr = intptr then
+                          begin gen0(10(*flt*));
+                            gattr.typtr := realptr
+                          end;
                     if (lattr.typtr = realptr)and(gattr.typtr = realptr)
                       then gen0(3(*adr*))
-                    else if(lattr.typtr^.form=power)
-                           and comptypes(lattr.typtr,gattr.typtr) then
+                    else if (lattr.typtr^.form=power)
+                            and comptypes(lattr.typtr,gattr.typtr) then
                            gen0(28(*uni*))
-                         else begin error(134); gattr.typtr:=nil end
+                    else begin
+                      if not iso7185 then begin
+                        { check for operator overload }
+                        if isopr(plus) then begin { process the overload }
+                          callop2(plus, lattr);
+                          with gattr do
+                            begin kind := expr;
+                              if typtr <> nil then
+                            if typtr^.form=subrange then
+                            typtr := typtr^.rangetype
+                          end
+                        end else begin error(134); gattr.typtr:=nil end
+                      end else begin error(134); gattr.typtr:=nil end 
+                    end
                   end;
     (*-*)       minus:
                 if (lattr.typtr = intptr)and(gattr.typtr = intptr) then
@@ -8991,6 +9078,7 @@ end;
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
       mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
+      mn[116] :=' cpp'; mn[117] :=' cpr';
 
     end (*instrmnemonics*) ;
 
@@ -9121,6 +9209,7 @@ end;
       cdx[110] := +ptrsize*3;           cdx[111] := -adrsize;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
       cdx[114] := -adrsize;             cdx[115] := 0;
+      cdx[116] := 0;                    cdx[117] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

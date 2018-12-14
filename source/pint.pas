@@ -2012,6 +2012,9 @@ procedure load;
          instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
          instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
+         instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
+         instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
+         
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2719,8 +2722,8 @@ procedure load;
                  getnxt; labelsearch; putcstfix; storeq
                end;
 
-          (*pck,upk,vis,vip,apc,cxc,ccs,vin,stom,ctb*)
-          63, 64,122,133,210,212,223,226,235,238: begin read(prd,q); read(prd,q1); storeop; 
+          (*pck,upk,vis,vip,apc,cxc,ccs,vin,stom,ctb,cpp,cpr*)
+          63, 64,122,133,210,212,223,226,235,238,239,240: begin read(prd,q); read(prd,q1); storeop; 
                                         storeq; storeq1 end;
                                   
           (*cta,ivt,cvb*)
@@ -5033,9 +5036,22 @@ begin
                        putadr(ad2+ptrsize, ad1) end;
     225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize)); 
                        pshadr(getadr(ad)) end;
+    239 (*cpp*): begin getq; getq1; ad := sp+marksize+q; sp := sp-q1; ad1 := sp;
+                       for i := 1 to q1 do begin
+                         store[ad1] := store[ad]; putdef(ad1, getdef(ad)); 
+                         ad := ad+1; ad1 := ad1+1 
+                       end
+                 end;
+    240 (*cpr*): begin getq; getq1; ad := sp+q+q1; ad1 := sp+q;
+                       for i := 1 to q do begin
+                         ad := ad-1; ad1 := ad1-1;
+                         store[ad] := store[ad1]; putdef(ad, getdef(ad1)) 
+                       end;
+                       sp := sp+q1
+                 end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246, 
+    228, 229, 230, 231, 232, 233, 234, 241, 242, 243, 244, 245, 246, 
     247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
