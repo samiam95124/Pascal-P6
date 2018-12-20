@@ -2686,6 +2686,24 @@ end;
       llp := llp^.nextlab { next in list }
     end
   end;
+  
+  procedure prtform(sp: stp);
+  begin
+    if sp = nil then write('<nil>')
+    else case sp^.form of
+      scalar:   write('scalar');
+      subrange: write('subrange');
+      pointer:  write('pointer');
+      power:    write('set');
+      arrays:   write('fixed array');
+      arrayc:   write('container array');
+      records:  write('record');
+      files:    write('file');
+      tagfld:   write('tagfield');
+      variant:  write('record variant');
+      exceptf:  write('exception');
+    end
+  end;
 
   procedure mesl(i: integer);
   begin topnew := topnew + i;
@@ -3977,6 +3995,44 @@ end;
       end (*while*)
   end (*selector*) ;
 
+  procedure fixpar(fsp,asp: stp);
+    var cc: integer;
+  begin
+    if fsp <> nil then begin
+      if (asp^.form = arrays) and (fsp^.form = arrayc) then begin
+        { fixed into container }
+        cc := containers(fsp);
+        if cc = 1 then begin
+          { load simple template }
+          gen2(51(*ldc*),1,spana(asp));
+          gen1(72(*swp*),stackelsize)
+        end else 
+          { load complex fixed template }
+          gen1(105(*lft*),asp^.tmpl)
+      end else if (asp^.form = arrayc) and 
+                  (fsp^.form = arrays) then begin
+        { container into fixed, load template for fixed side }
+        cc := containers(asp);
+        if cc = 1 then begin
+          { load simple template }
+          gen2(51(*ldc*),1,span(fsp));
+          gen2(51(*ldc*),4,0) { load dummy address }
+        end else begin
+          { load complex fixed template }
+          gen2(51(*ldc*),4,0); { load dummy address }
+          gen1(105(*lft*),fsp^.tmpl);
+        end;
+        { compare templates }
+        if cc = 1 then gen0(99(*cps*)) { simple compare }
+        else gen1(100(*cpc*),cc); { complex compare }
+        { discard the templates }
+        gen1(71(*dmp*),ptrsize*2);
+        gen1(72(*swp*),ptrsize);
+        gen1(71(*dmp*),ptrsize)
+      end
+    end
+  end;
+    
   procedure call(fsys: setofsys; fcp: ctp; inherit: boolean; isfunc: boolean);
     var lkey: keyrng;
 
@@ -4794,43 +4850,6 @@ end;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
-    procedure fixpar(lsp: stp);
-      var cc: integer;
-    begin
-      if lsp <> nil then begin
-        if (gattr.typtr^.form = arrays) and (lsp^.form = arrayc) then begin
-          { fixed into container }
-          cc := containers(lsp);
-          if cc = 1 then begin
-            { load simple template }
-            gen2(51(*ldc*),1,spana(gattr.typtr));
-            gen1(72(*swp*),stackelsize)
-          end else 
-            { load complex fixed template }
-            gen1(105(*lft*),gattr.typtr^.tmpl)
-        end else if (gattr.typtr^.form = arrayc) and 
-                    (lsp^.form = arrays) then begin
-          { container into fixed, load template for fixed side }
-          cc := containers(gattr.typtr);
-          if cc = 1 then begin
-            { load simple template }
-            gen2(51(*ldc*),1,span(lsp));
-            gen2(51(*ldc*),4,0) { load dummy address }
-          end else begin
-            { load complex fixed template }
-            gen2(51(*ldc*),4,0); { load dummy address }
-            gen1(105(*lft*),lsp^.tmpl);
-          end;
-          { compare templates }
-          if cc = 1 then gen0(99(*cps*)) { simple compare }
-          else gen1(100(*cpc*),cc); { complex compare }
-          { discard the templates }
-          gen1(71(*dmp*),ptrsize*2);
-          gen1(72(*swp*),ptrsize);
-          gen1(71(*dmp*),ptrsize)
-        end
-      end
-    end;
     procedure cpy2adr;
       var lsize: addrrange;
     begin
@@ -4988,7 +5007,7 @@ end;
                                 begin
                                   if gattr.kind = expr then cpy2adr
                                   else loadaddress; 
-                                  fixpar(lsp);
+                                  fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -5002,7 +5021,7 @@ end;
                                   if gattr.tagfield then error(198);
                                   if gattr.kind = expr then cpy2adr
                                   else loadaddress; 
-                                  fixpar(lsp);
+                                  fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then 
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
@@ -5130,7 +5149,8 @@ end;
   { call operator type with 2 parameters }
   procedure callop2(opr: operatort; var lattr: attr);
     var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
-        lsize: addrrange; locpar: addrrange;
+        lsize: addrrange; locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
+        lsp, rsp: stp;
     function parnum(fcp: ctp): integer;
       var pn: integer;
     begin
@@ -5148,6 +5168,27 @@ end;
     begin cmptyp := false;
       if comptypes(pt, at) then cmptyp := true
       else if realt(pt) and intt(at) then cmptyp := true
+    end;
+    { check actual type can be coerced into formal }
+    function fungible(fsp,asp: stp): boolean;
+    begin fungible := false;
+      if (fsp <> nil) and (asp <> nil) then begin
+        if realt(fsp) and intt(asp) then fungible := true
+        else if ((fsp^.form = arrayc) and (asp^.form = arrays)) or
+                ((fsp^.form = arrays) and (asp^.form = arrayc)) then 
+          fungible := true
+      end
+    end;
+    function psize(sp: stp): addrrange;
+      var ps: addrrange;
+    begin ps := 0;
+      if sp <> nil then begin
+        if sp^.form = arrayc then ps := ptrsize*2
+        else if sp^.form <= power then ps := sp^.size 
+        else ps := ptrsize;
+        alignu(parmptr, ps)
+      end;
+      psize := ps
     end;
   begin
     dt := top; { search top down }
@@ -5167,22 +5208,36 @@ end;
     fcp := fcpf;
     if fcp = nil then begin error(134); gattr.typtr:=nil end 
     else begin
+      lsp := partyp(fcp, 1); rsp := partyp(fcp, 2);
       genlabel(frlab); genmst(level-fcp^.pflev,frlab);
-      { find parameters size }
-      locpar := lattr.typtr^.size;
-      alignu(parmptr,locpar);
-      locpar := locpar+gattr.typtr^.size;
-      alignu(parmptr,locpar);
+      { find uncoerced parameters size }
+      lpls := psize(lattr.typtr); lprs := psize(gattr.typtr); 
+      locpars := lpls+lprs;
+      { find final parameters size }
+      lpl := psize(lsp); lpr := psize(rsp); locpar := lpl+lpr;
       { find function result size }
       lsize := fcp^.idtype^.size;
       alignu(parmptr,lsize);
       { generate a stack hoist of parameters. Basically the common math on stack
         not formatted the same way as function calls, so we hoist the parameters
         over the mark, call and then drop the function result downwards. }
-      gen2(116(*cpp*),lsize,locpar);
+      if fungible(lsp, lattr.typtr) or 
+         fungible(rsp, gattr.typtr) then begin
+        { bring the parameters up and convert them one by one } 
+        gen2(116(*cpp*),lsize+lprs,lpls); { get left }
+        { do coercions }
+        if realt(lsp) and intt(lattr.typtr) then
+          begin gen0(10(*flt*)); lattr.typtr := realptr end;
+        fixpar(lsp,lattr.typtr);
+        gen2(116(*cpp*),lsize+lpl,lprs); { get right }
+        { do coercions }
+        if realt(rsp) and intt(gattr.typtr) then
+          begin gen0(10(*flt*)); gattr.typtr := realptr end;
+        fixpar(rsp,gattr.typtr);
+      end else gen2(116(*cpp*),lsize,locpar); { get both params }
       if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
       gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
-      gen2(117(*cpr*),lsize,locpar);
+      gen2(117(*cpr*),lsize,locpars);
       mesl(-lsize);
       gattr.typtr := fcp^.idtype
     end
@@ -5533,8 +5588,13 @@ end;
              begin error(134); gattr.typtr := nil end
       end;
       while sy = addop do
-        begin load; lattr := gattr; lop := op;
-          insymbol; term(fsys + [addop], threaten); load;
+        begin 
+          if gattr.typtr <> nil then 
+            if gattr.typtr^.form <= power then load else loadaddress; 
+          lattr := gattr; lop := op;
+          insymbol; term(fsys + [addop], threaten); 
+          if gattr.typtr <> nil then 
+            if gattr.typtr^.form <= power then load else loadaddress; 
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
     (*+*)       plus:
