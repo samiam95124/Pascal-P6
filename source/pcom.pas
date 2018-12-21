@@ -1580,6 +1580,8 @@ end;
     283: write('New operator overload ambiguous with previous');
     284: write('Different operator overload parameters converge with ',
                'different modes');
+    285: write('Parameter type not allowed in operator overload parameter ');
+    286: write('Parameter mode not allowed in operator overload parameter ');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -6763,7 +6765,7 @@ end;
         else error(250);
       end;
 
-      procedure parameterlist(fsy: setofsys; var fpar: ctp; var plst: boolean);
+      procedure parameterlist(fsy: setofsys; var fpar: ctp; var plst: boolean; opr: boolean);
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
           llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
@@ -6803,7 +6805,7 @@ end;
               begin
                 if sy = procsy then
                   begin
-                    insymbol; lcp := nil;
+                    insymbol; lcp := nil; if opr then error(285);
                     if sy = ident then
                       begin new(lcp,proc,declared,formal); ininam(lcp);
                         lc := lc-ptrsize*2; { mp and addr }
@@ -6823,7 +6825,7 @@ end;
                       end
                     else error(2);
                     oldlev := level; oldtop := top; pushlvl(false, lcp);
-                    lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy); 
+                    lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy, false); 
                     lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                     if not (sy in fsys+[semicolon,rparent]) then
                       begin error(7);skip(fsys+[semicolon,rparent]) end;
@@ -6832,7 +6834,7 @@ end;
                 else
                   begin
                     if sy = funcsy then
-                      begin lcp2 := nil;
+                      begin lcp2 := nil; if opr then error(285);
                         insymbol;
                         if sy = ident then
                           begin new(lcp,func,declared,formal); ininam(lcp);
@@ -6854,7 +6856,7 @@ end;
                         else error(2);
                         oldlev := level; oldtop := top; pushlvl(false, lcp);
                         lcs := lc; 
-                        parameterlist([colon,semicolon,rparent],lcp2,dummy); 
+                        parameterlist([colon,semicolon,rparent],lcp2,dummy, false); 
                         lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                         if not (sy in fsys+[colon]) then
                           begin error(7);skip(fsys+[comma,semicolon,rparent]) end;
@@ -6882,6 +6884,8 @@ end;
                         if sy = varsy then pt := ptvar
                         else if sy = viewsy then pt := ptview
                         else if sy = outsy then pt := ptout;
+                        if opr and (pt <> ptval) and (pt <> ptview) then 
+                          error(286);
                         if (sy = varsy) or (sy = outsy) then
                           begin lkind := formal; insymbol end
                         else begin lkind := actual; 
@@ -7263,8 +7267,8 @@ end;
         not have defining points, but the rest of the routine definition does. }
       pushlvl(forw, lcp); display[top].define := false;
       begin 
-        if fsy = procsy then parameterlist([semicolon],lcp1,plst)
-        else parameterlist([semicolon,colon],lcp1,plst);
+        if fsy = procsy then parameterlist([semicolon],lcp1,plst, fsy = operatorsy)
+        else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy);
         if not forw then begin
           lcp^.pflist := lcp1;
           if ovrl then begin { compare against overload group }
