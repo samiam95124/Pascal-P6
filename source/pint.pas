@@ -2014,7 +2014,7 @@ procedure load;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
-         
+         instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2689,9 +2689,9 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm,lsa*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
-          179, 180, 201, 202,203,211,214,237,
+          179, 180, 201, 202,203,211,214,237,241,
           92: begin read(prd,q); storeop; storeq end;
           
           (*ldo,sro,lao,cuv*)
@@ -5049,9 +5049,11 @@ begin
                        end;
                        sp := sp+q1
                  end;
+                 
+    241 (*lsa*): begin getq; pshadr(sp+q) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 241, 242, 243, 244, 245, 246, 
+    228, 229, 230, 231, 232, 233, 234, 242, 243, 244, 245, 246, 
     247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 

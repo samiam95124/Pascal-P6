@@ -187,7 +187,7 @@ const
    recal      = stackal;
    maxaddr    =  pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 117;  { maximum number of instructions }
+   maxins     = 118;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -2812,7 +2812,9 @@ end;
           45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117: 
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
-              mes(fop)
+              if fop = 116 then mesl(-fp2)
+              else if fop = 117 then mesl(fp2)
+              else mes(fop)
             end;
           47,48,49,52,53,55:
             begin write(prr,chr(fp1));
@@ -5223,15 +5225,17 @@ end;
       { generate a stack hoist of parameters. Basically the common math on stack
         not formatted the same way as function calls, so we hoist the parameters
         over the mark, call and then drop the function result downwards. }
-      if fungible(lsp, lattr.typtr) or 
-         fungible(rsp, gattr.typtr) then begin
+      if fungible(lsp, lattr.typtr) or (lattr.kind = expr) or 
+         fungible(rsp, gattr.typtr) or (lattr.kind = expr) then begin
         { bring the parameters up and convert them one by one } 
-        gen2(116(*cpp*),lsize+lprs,lpls); { get left }
+        if lattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lprs)
+        else gen2(116(*cpp*),lsize+lprs,lpls);
         { do coercions }
         if realt(lsp) and intt(lattr.typtr) then
           begin gen0(10(*flt*)); lattr.typtr := realptr end;
         fixpar(lsp,lattr.typtr);
-        gen2(116(*cpp*),lsize+lpl,lprs); { get right }
+        if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lpl)
+        else gen2(116(*cpp*),lsize+lpl,lprs); { get right }
         { do coercions }
         if realt(rsp) and intt(gattr.typtr) then
           begin gen0(10(*flt*)); gattr.typtr := realptr end;
@@ -5240,7 +5244,6 @@ end;
       if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
       gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
       gen2(117(*cpr*),lsize,locpars);
-      mesl(-lsize);
       gattr.typtr := fcp^.idtype
     end
   end;
@@ -5591,12 +5594,14 @@ end;
       end;
       while sy = addop do
         begin 
-          if gattr.typtr <> nil then 
-            if gattr.typtr^.form <= power then load else loadaddress; 
+          if gattr.kind <> expr then
+            if gattr.typtr <> nil then 
+              if gattr.typtr^.form <= power then load else loadaddress; 
           lattr := gattr; lop := op;
-          insymbol; term(fsys + [addop], threaten); 
-          if gattr.typtr <> nil then 
-            if gattr.typtr^.form <= power then load else loadaddress; 
+          insymbol; term(fsys + [addop], threaten);
+          if gattr.kind <> expr then
+            if gattr.typtr <> nil then 
+              if gattr.typtr^.form <= power then load else loadaddress; 
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
     (*+*)       plus:
@@ -9142,7 +9147,7 @@ end;
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp'; 
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp'; 
       mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
-      mn[116] :=' cpp'; mn[117] :=' cpr';
+      mn[116] :=' cpp'; mn[117] :=' cpr'; mn[118] :=' lsa';
 
     end (*instrmnemonics*) ;
 
@@ -9274,6 +9279,7 @@ end;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
       cdx[114] := -adrsize;             cdx[115] := 0;
       cdx[116] := 0;                    cdx[117] := 0;
+      cdx[118] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
