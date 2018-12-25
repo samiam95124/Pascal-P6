@@ -2813,7 +2813,7 @@ end;
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
               if fop = 116 then mesl(-fp2)
-              else if fop = 117 then mesl(fp2)
+              else if fop = 117 then mesl(fp2-fp1)
               else mes(fop)
             end;
           47,48,49,52,53,55:
@@ -5639,20 +5639,28 @@ end;
                             if typtr^.form=subrange then
                             typtr := typtr^.rangetype
                           end
-                        end else begin error(134); gattr.typtr:=nil end
-                      end else begin error(134); gattr.typtr:=nil end 
+                        end else begin error(134); gattr.typtr := nil end
+                      end else begin error(134); gattr.typtr := nil end 
                     end
                   end;
-    (*or*)      orop:
+    (*or,xor*)  orop, xorop:
                 if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
                    ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
-                    not iso7185) then gen0(13(*ior*))
-                else begin error(134); gattr.typtr := nil end;
-    (*xor*)     xorop:
-                if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
-                   ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
-                    not iso7185) then gen0(83(*ixor*))
-                else begin error(134); gattr.typtr := nil end
+                    not iso7185) then begin
+                  if lop = orop then gen0(13(*ior*)) else gen0(83(*ixor*))
+                end else begin 
+                  if not iso7185 then begin
+                    { check for operator overload }
+                    if isopr(lop) then begin { process the overload }
+                      callop2(lop, lattr);
+                      with gattr do begin
+                        kind := expr;
+                        if typtr <> nil then
+                          if typtr^.form=subrange then typtr := typtr^.rangetype
+                      end
+                    end else begin error(134); gattr.typtr := nil end
+                  end else begin error(134); gattr.typtr := nil end 
+                end;
             end (*case*)
           else gattr.typtr := nil
         end (*while*)
@@ -8957,7 +8965,7 @@ end;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
     
-    for i := 1 to 500 do errtbl[i] := false; { initialize error tracking }
+    for i := 1 to maxftl do errtbl[i] := false; { initialize error tracking }
     toterr := 0; { clear error count }
     { clear the recycling tracking counters }
     strcnt := 0; { strings }
@@ -9450,7 +9458,7 @@ begin
   writeln('Errors in program: ', toterr:1);
   { output error report as required }
   f := true;
-  for i := 1 to 500 do if errtbl[i] then begin
+  for i := 1 to maxftl do if errtbl[i] then begin
     if f then begin
       writeln;
       writeln('Error numbers in listing:');
