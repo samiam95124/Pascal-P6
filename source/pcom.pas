@@ -5604,10 +5604,10 @@ end;
               if gattr.typtr^.form <= power then load else loadaddress; 
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
-    (*+*)       plus:
-                if (lattr.typtr = intptr)and(gattr.typtr = intptr) then
-                  gen0(2(*adi*))
-                else
+    (*+,-*)     plus,minus:
+                if (lattr.typtr = intptr)and(gattr.typtr = intptr) then begin
+                  if lop = plus then gen0(2(*adi*)) else gen0(21(*sbi*))
+                end else
                   begin
                     if iso7185 or 
                        (intt(lattr.typtr) or realt(lattr.typtr)) and
@@ -5622,16 +5622,17 @@ end;
                           begin gen0(10(*flt*));
                             gattr.typtr := realptr
                           end;
-                    if (lattr.typtr = realptr)and(gattr.typtr = realptr)
-                      then gen0(3(*adr*))
-                    else if (lattr.typtr^.form=power)
-                            and comptypes(lattr.typtr,gattr.typtr) then
-                           gen0(28(*uni*))
-                    else begin
+                    if (lattr.typtr = realptr) and 
+                       (gattr.typtr = realptr) then begin
+                      if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
+                    end else if (lattr.typtr^.form=power) and
+                                comptypes(lattr.typtr,gattr.typtr) then begin
+                      if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
+                    end else begin
                       if not iso7185 then begin
                         { check for operator overload }
-                        if isopr(plus) then begin { process the overload }
-                          callop2(plus, lattr);
+                        if isopr(lop) then begin { process the overload }
+                          callop2(lop, lattr);
                           with gattr do
                             begin kind := expr;
                               if typtr <> nil then
@@ -5641,28 +5642,6 @@ end;
                         end else begin error(134); gattr.typtr:=nil end
                       end else begin error(134); gattr.typtr:=nil end 
                     end
-                  end;
-    (*-*)       minus:
-                if (lattr.typtr = intptr)and(gattr.typtr = intptr) then
-                  gen0(21(*sbi*))
-                else
-                  begin
-                    if lattr.typtr = intptr then
-                      begin gen0(9(*flo*));
-                        lattr.typtr := realptr
-                      end
-                    else
-                      if gattr.typtr = intptr then
-                        begin gen0(10(*flt*));
-                          gattr.typtr := realptr
-                        end;
-                    if (lattr.typtr = realptr)and(gattr.typtr = realptr)
-                      then gen0(22(*sbr*))
-                    else
-                      if (lattr.typtr^.form = power)
-                        and comptypes(lattr.typtr,gattr.typtr) then
-                        gen0(5(*dif*))
-                      else begin error(134); gattr.typtr := nil end
                   end;
     (*or*)      orop:
                 if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
