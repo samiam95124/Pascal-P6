@@ -5537,8 +5537,15 @@ end;
       begin (*term*)
         factor(fsys + [mulop], threaten);
         while sy = mulop do
-          begin load; lattr := gattr; lop := op;
-            insymbol; factor(fsys + [mulop], threaten); load;
+          begin 
+            if gattr.kind <> expr then
+              if gattr.typtr <> nil then 
+                if gattr.typtr^.form <= power then load else loadaddress;
+            lattr := gattr; lop := op;
+            insymbol; factor(fsys + [mulop], threaten); 
+            if gattr.kind <> expr then
+              if gattr.typtr <> nil then 
+                if gattr.typtr^.form <= power then load else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               case lop of
       (***)     mul:  if (lattr.typtr=intptr) and (gattr.typtr=intptr)
