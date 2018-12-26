@@ -5259,7 +5259,22 @@ end;
       while (dt > 0) and (display[dt].oprprc[opt] = nil) do dt := dt-1;
       isopr := display[dt].oprprc[opt] <> nil
     end;
-        
+    
+    procedure binopr(op: operatort; lattr: attr);
+    begin
+      if not iso7185 then begin
+        { check for operator overload }
+        if isopr(lop) then begin { process the overload }
+          callop2(lop, lattr);
+          with gattr do begin
+            kind := expr;
+            if typtr <> nil then
+              if typtr^.form=subrange then typtr := typtr^.rangetype
+          end
+        end else begin error(134); gattr.typtr := nil end
+      end else begin error(134); gattr.typtr := nil end
+    end;
+    
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; signed, hassign: boolean;
 
@@ -5648,19 +5663,7 @@ end;
                    ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
                     not iso7185) then begin
                   if lop = orop then gen0(13(*ior*)) else gen0(83(*ixor*))
-                end else begin 
-                  if not iso7185 then begin
-                    { check for operator overload }
-                    if isopr(lop) then begin { process the overload }
-                      callop2(lop, lattr);
-                      with gattr do begin
-                        kind := expr;
-                        if typtr <> nil then
-                          if typtr^.form=subrange then typtr := typtr^.rangetype
-                      end
-                    end else begin error(134); gattr.typtr := nil end
-                  end else begin error(134); gattr.typtr := nil end 
-                end;
+                end else binopr(lop, lattr);
             end (*case*)
           else gattr.typtr := nil
         end (*while*)
