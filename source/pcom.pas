@@ -5261,7 +5261,7 @@ end;
     end;
     
     { process binary operator overload check }
-    procedure binopr(op: operatort; lattr: attr);
+    procedure binopr(op: operatort; lattr: attr; e: integer);
     begin
       if not iso7185 then begin
         { check for operator overload }
@@ -5570,7 +5570,7 @@ end;
                           else if (lattr.typtr^.form=power) and 
                                   comptypes(lattr.typtr,gattr.typtr) then
                             gen0(12(*int*))
-                          else binopr(lop, lattr)
+                          else binopr(lop, lattr, 134)
                         end;
       (* / *)   rdiv: begin
                         if iso7185 or 
@@ -5588,18 +5588,18 @@ end;
                         end;
                         if (lattr.typtr = realptr) and
                            (gattr.typtr=realptr)then gen0(7(*dvr*))
-                        else binopr(lop, lattr)
+                        else binopr(lop, lattr, 134)
                       end;
       (*div*)   idiv: if (lattr.typtr = intptr)
                         and (gattr.typtr = intptr) then gen0(6(*dvi*))
-                      else binopr(lop, lattr);
+                      else binopr(lop, lattr, 134);
       (*mod*)   imod: if (lattr.typtr = intptr)
                         and (gattr.typtr = intptr) then gen0(14(*mod*))
-                      else binopr(lop, lattr);
+                      else binopr(lop, lattr, 134);
       (*and*)   andop:if ((lattr.typtr = boolptr) and (gattr.typtr = boolptr)) or
                          ((lattr.typtr=intptr) and (gattr.typtr=intptr) and
                           not iso7185) then gen0(4(*and*))
-                      else binopr(lop, lattr);
+                      else binopr(lop, lattr, 134);
               end (*case*)
             else gattr.typtr := nil
           end (*while*)
@@ -5659,14 +5659,14 @@ end;
                     end else if (lattr.typtr^.form=power) and
                                 comptypes(lattr.typtr,gattr.typtr) then begin
                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
-                    end else binopr(lop, lattr)
+                    end else binopr(lop, lattr, 134)
                   end;
     (*or,xor*)  orop, xorop:
                 if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
                    ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
                     not iso7185) then begin
                   if lop = orop then gen0(13(*ior*)) else gen0(83(*ixor*))
-                end else binopr(lop, lattr);
+                end else binopr(lop, lattr, 134);
             end (*case*)
           else gattr.typtr := nil
         end (*while*)
@@ -5696,18 +5696,23 @@ end;
             else begin error(130); gattr.typtr := nil end
           else
             begin
-              if lattr.typtr <> gattr.typtr then
-                if lattr.typtr = intptr then
-                  begin gen0(9(*flo*));
-                    lattr.typtr := realptr
-                  end
-                else
-                  if gattr.typtr = intptr then
-                    begin gen0(10(*flt*));
-                      gattr.typtr := realptr
-                    end;
+              if iso7185 or 
+                 (intt(lattr.typtr) or realt(lattr.typtr)) and
+                 (intt(gattr.typtr) or realt(gattr.typtr)) then
+                { convert either integer to real }
+                if lattr.typtr <> gattr.typtr then
+                  if lattr.typtr = intptr then
+                    begin gen0(9(*flo*));
+                      lattr.typtr := realptr
+                    end
+                  else
+                    if gattr.typtr = intptr then
+                      begin gen0(10(*flt*));
+                        gattr.typtr := realptr
+                      end;
               if comptypes(lattr.typtr,gattr.typtr) then
                 begin lsize := lattr.typtr^.size;
+                  typind := ' ';
                   case lattr.typtr^.form of
                     scalar:
                       if lattr.typtr = realptr then typind := 'r'
@@ -5717,32 +5722,23 @@ end;
                           if lattr.typtr = charptr then typind := 'c'
                           else typind := 'i';
                     pointer:
-                      begin
-                        if lop in [ltop,leop,gtop,geop] then error(131);
-                        typind := 'a'
-                      end;
-                    power:
-                      begin if lop in [ltop,gtop] then error(132);
-                        typind := 's'
-                      end;
+                        if lop in [ltop,leop,gtop,geop] then 
+                          binopr(lop, lattr, 131)
+                        else typind := 'a';
+                    power: if lop in [ltop,gtop] then binopr(lop, lattr, 132)
+                           else typind := 's';
                     arrays, arrayc:
-                      begin
-                        if not stringt(lattr.typtr)
-                          then error(134);
-                        if (lattr.typtr^.form = arrayc) or 
-                           (gattr.typtr^.form = arrayc) then typind := 'v'
-                        else typind := 'm';
-                        containerop(lattr) { rationalize binary container }
-                      end;
-                    records:
-                      begin
-                        error(134);
-                        typind := 'm'
-                      end;
-                    files:
-                      begin error(133); typind := 'f' end
+                        if not stringt(lattr.typtr) then binopr(lop, lattr, 134)
+                        else begin
+                          if (lattr.typtr^.form = arrayc) or 
+                             (gattr.typtr^.form = arrayc) then typind := 'v'
+                          else typind := 'm';
+                          containerop(lattr) { rationalize binary container }
+                        end;
+                    records: binopr(lop, lattr, 134);
+                    files: binopr(lop, lattr, 133);
                   end;
-                  case lop of
+                  if typind <> ' ' then case lop of
                     ltop: gen2(53(*les*),ord(typind),lsize);
                     leop: gen2(52(*leq*),ord(typind),lsize);
                     gtop: gen2(49(*grt*),ord(typind),lsize);
@@ -5751,7 +5747,7 @@ end;
                     eqop: gen2(47(*equ*),ord(typind),lsize)
                   end
                 end
-              else error(129)
+              else binopr(lop, lattr, 129)
             end;
         gattr.typtr := boolptr; gattr.kind := expr
       end (*sy = relop*)
