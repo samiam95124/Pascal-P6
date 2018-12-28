@@ -5150,29 +5150,91 @@ end;
     else callnonstandard(fcp,inherit)
   end (*call*) ;
   
+  function parnum(fcp: ctp): integer;
+    var pn: integer;
+  begin
+    pn := 0; fcp := fcp^.pflist;
+    while fcp <> nil do begin pn := pn+1; fcp := fcp^.next end;
+    parnum := pn 
+  end;
+  
+  function partype(fcp: ctp; pn: integer): stp;
+  begin fcp := fcp^.pflist;
+    while (pn > 1) and (fcp <> nil) do begin fcp := fcp^.next; pn := pn-1 end;
+    if fcp = nil then partype := nil else partype := fcp^.idtype
+  end;
+    
+  function psize(sp: stp): addrrange;
+  var ps: addrrange;
+  begin ps := 0;
+    if sp <> nil then begin
+      if sp^.form = arrayc then ps := ptrsize*2
+      else if sp^.form <= power then ps := sp^.size 
+      else ps := ptrsize;
+      alignu(parmptr, ps)
+    end;
+    psize := ps
+  end;
+    
+  { compare parameter type to actual type }
+  function cmptyp(pt, at: stp): boolean;
+  begin cmptyp := false;
+    if comptypes(pt, at) then cmptyp := true
+    else if realt(pt) and intt(at) then cmptyp := true
+  end;
+    
+  { call operator type with 1 parameter }
+  procedure callop1(opr: operatort);
+    var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
+        lsize: addrrange; locpar, locpars, lp, lps: addrrange; 
+        sp: stp;
+  begin
+    dt := top; { search top down }
+    repeat
+      while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
+      fcp := display[dt].oprprc[opr];
+      fcpf := nil; { set not found }
+      pn := 1;
+      while fcp <> nil do begin
+        if parnum(fcp) = 1 then
+          if cmptyp(partype(fcp, 1), gattr.typtr) then fcpf := fcp;
+        fcp := fcp^.grpnxt
+      end;
+      if dt > 0 then dt := dt-1
+    until (fcpf <> nil) or (dt = 0);
+    fcp := fcpf;
+    if fcp = nil then begin error(134); gattr.typtr:=nil end 
+    else begin
+      sp := partype(fcp, 1);
+      genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+      { find uncoerced parameters size }
+      locpars := psize(gattr.typtr); 
+      { find final parameters size }
+      locpar := psize(sp);
+      { find function result size }
+      lsize := fcp^.idtype^.size;
+      alignu(parmptr,lsize);
+      { generate a stack hoist of parameters. Basically the common math on stack
+        not formatted the same way as function calls, so we hoist the parameters
+        over the mark, call and then drop the function result downwards. }
+      if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lp)
+      else gen2(116(*cpp*),lsize,lps); { get parameter }
+      { do coercions }
+      if realt(sp) and intt(gattr.typtr) then
+        begin gen0(10(*flt*)); gattr.typtr := realptr end;
+      fixpar(sp,gattr.typtr);
+      if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
+      gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+      gen2(117(*cpr*),lsize,locpars);
+      gattr.typtr := fcp^.idtype
+    end
+  end;
+  
   { call operator type with 2 parameters }
   procedure callop2(opr: operatort; var lattr: attr);
     var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
         lsize: addrrange; locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
         lsp, rsp: stp;
-    function parnum(fcp: ctp): integer;
-      var pn: integer;
-    begin
-      pn := 0; fcp := fcp^.pflist;
-      while fcp <> nil do begin pn := pn+1; fcp := fcp^.next end;
-      parnum := pn 
-    end;
-    function partyp(fcp: ctp; pn: integer): stp;
-    begin fcp := fcp^.pflist;
-      while (pn > 1) and (fcp <> nil) do begin fcp := fcp^.next; pn := pn-1 end;
-      if fcp = nil then partyp := nil else partyp := fcp^.idtype
-    end;
-    { compare parameter type to actual type }
-    function cmptyp(pt, at: stp): boolean;
-    begin cmptyp := false;
-      if comptypes(pt, at) then cmptyp := true
-      else if realt(pt) and intt(at) then cmptyp := true
-    end;
     { check actual type can be coerced into formal }
     function fungible(fsp,asp: stp): boolean;
     begin fungible := false;
@@ -5183,17 +5245,6 @@ end;
           fungible := true
       end
     end;
-    function psize(sp: stp): addrrange;
-      var ps: addrrange;
-    begin ps := 0;
-      if sp <> nil then begin
-        if sp^.form = arrayc then ps := ptrsize*2
-        else if sp^.form <= power then ps := sp^.size 
-        else ps := ptrsize;
-        alignu(parmptr, ps)
-      end;
-      psize := ps
-    end;
   begin
     dt := top; { search top down }
     repeat
@@ -5203,8 +5254,8 @@ end;
       pn := 1;
       while fcp <> nil do begin
         if parnum(fcp) = 2 then
-          if cmptyp(partyp(fcp, 1), lattr.typtr) then
-            if cmptyp(partyp(fcp, 2), gattr.typtr) then fcpf := fcp;
+          if cmptyp(partype(fcp, 1), lattr.typtr) then
+            if cmptyp(partype(fcp, 2), gattr.typtr) then fcpf := fcp;
         fcp := fcp^.grpnxt
       end;
       if dt > 0 then dt := dt-1
@@ -5212,7 +5263,7 @@ end;
     fcp := fcpf;
     if fcp = nil then begin error(134); gattr.typtr:=nil end 
     else begin
-      lsp := partyp(fcp, 1); rsp := partyp(fcp, 2);
+      lsp := partype(fcp, 1); rsp := partype(fcp, 2);
       genlabel(frlab); genmst(level-fcp^.pflev,frlab);
       { find uncoerced parameters size }
       lpls := psize(lattr.typtr); lprs := psize(gattr.typtr); 
@@ -5226,7 +5277,7 @@ end;
         not formatted the same way as function calls, so we hoist the parameters
         over the mark, call and then drop the function result downwards. }
       if fungible(lsp, lattr.typtr) or (lattr.kind = expr) or 
-         fungible(rsp, gattr.typtr) or (lattr.kind = expr) then begin
+         fungible(rsp, gattr.typtr) or (gattr.kind = expr) then begin
         { bring the parameters up and convert them one by one } 
         if lattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lprs)
         else gen2(116(*cpp*),lsize+lprs,lpls);
@@ -5260,6 +5311,22 @@ end;
       isopr := display[dt].oprprc[opt] <> nil
     end;
     
+    { process unary operator overload check }
+    procedure unopr(op: operatort; e: integer);
+    begin
+      if not iso7185 then begin
+        { check for operator overload }
+        if isopr(op) then begin { process the overload }
+          callop1(op);
+          with gattr do begin
+            kind := expr;
+            if typtr <> nil then
+              if typtr^.form=subrange then typtr := typtr^.rangetype
+          end
+        end else begin error(134); gattr.typtr := nil end
+      end else begin error(134); gattr.typtr := nil end
+    end;
+    
     { process binary operator overload check }
     procedure binopr(op: operatort; lattr: attr; e: integer);
     begin
@@ -5277,7 +5344,8 @@ end;
     end;
     
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
-      var lattr: attr; lop: operatort; signed, hassign: boolean;
+      var lattr: attr; lop: operatort;
+          fsy: symbol; fop: operatort;
 
       procedure term(fsys: setofsys; threaten: boolean);
         var lattr: attr; lop: operatort;
@@ -5606,22 +5674,22 @@ end;
       end (*term*) ;
 
     begin (*simpleexpression*)
-      signed := false; hassign := false;
-      if (sy = addop) and (op in [plus,minus]) then
-        begin signed := op = minus; hassign := true; insymbol end;
+      fsy := sy; fop := op;
+      if (sy = addop) and (op in [plus,minus]) then insymbol;
       term(fsys + [addop], threaten);
-      if signed then
-        begin load;
+      if (fsy = addop) and (fop in [plus, minus]) then begin
+        if gattr.kind <> expr then
+            if gattr.typtr <> nil then 
+              if gattr.typtr^.form <= power then load else loadaddress;
+        if fop = minus then begin
           if gattr.typtr = intptr then gen0(17(*ngi*))
           else
             if gattr.typtr = realptr then gen0(18(*ngr*))
-            else if gattr.typtr <> nil then
-              begin error(134); gattr.typtr := nil end
+              else if gattr.typtr <> nil then unopr(fop, 134)
+        end else begin
+          if (gattr.typtr <> intptr) and 
+             (gattr.typtr <> realptr) then unopr(fop, 134)
         end
-      else if hassign then begin
-        if (gattr.typtr <> intptr) and (gattr.typtr <> realptr) and
-           (gattr.typtr <> nil) then
-             begin error(134); gattr.typtr := nil end
       end;
       while sy = addop do
         begin 
