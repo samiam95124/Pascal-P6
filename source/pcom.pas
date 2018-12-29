@@ -239,7 +239,7 @@ type                                                        (*describing:*)
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
                hexsy,octsy,binsy,numsy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                  neop,eqop,inop,noop,xorop);
+                  neop,eqop,inop,noop,xorop,notop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
@@ -791,7 +791,7 @@ var
       define := false;
       modnam := nil;
       inilst := nil;
-      for oi := mul to xorop do oprprc[oi] := nil
+      for oi := mul to notop do oprprc[oi] := nil
     end
   end;
   
@@ -1824,7 +1824,7 @@ end;
                   { if in ISO 7185 mode and keyword is extended, then revert it
                     to label. Note that forward and external get demoted to
                     "word symbols" in ISO 7185 }
-                  if iso7185 and ((sy >= forwardsy) or (op >= xorop)) then
+                  if iso7185 and ((sy >= forwardsy) or (op >= notop)) then
                     begin sy := ident; op := noop end 
                 end;
       end;
@@ -5217,8 +5217,8 @@ end;
       { generate a stack hoist of parameters. Basically the common math on stack
         not formatted the same way as function calls, so we hoist the parameters
         over the mark, call and then drop the function result downwards. }
-      if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lp)
-      else gen2(116(*cpp*),lsize,lps); { get parameter }
+      if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize)
+      else gen2(116(*cpp*),lsize,locpars); { get parameter }
       { do coercions }
       if realt(sp) and intt(gattr.typtr) then
         begin gen0(10(*flt*)); gattr.typtr := realptr end;
@@ -5461,11 +5461,13 @@ end;
                   end;
         (*not*)   notsy:
                   begin insymbol; factor(fsys, false);
-                    load; gen0t(19(*not*),gattr.typtr);
-                    if gattr.typtr <> nil then
-                      if (gattr.typtr <> boolptr) and 
-                        ((gattr.typtr <> intptr) or iso7185) then
-                        begin error(135); gattr.typtr := nil end;
+                    if gattr.kind <> expr then
+                      if gattr.typtr <> nil then 
+                        if gattr.typtr^.form <= power then load else loadaddress;
+                    if (gattr.typtr = boolptr) or 
+                       ((gattr.typtr = intptr) and not iso7185) then
+                      gen0t(19(*not*),gattr.typtr)
+                    else unopr(notop, 135)
                   end;
         (*[*)     lbrack:
                   begin insymbol; cstpart := [ ]; varpart := false;
