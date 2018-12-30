@@ -239,7 +239,7 @@ type                                                        (*describing:*)
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
                hexsy,octsy,binsy,numsy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                  neop,eqop,inop,noop,xorop,notop);
+                  neop,eqop,inop,noop,xorop,drfop,inxop,notop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
@@ -3137,8 +3137,7 @@ end;
     else sett := fsp^.form = power
   end;
   
-  { check pointer }
-  
+  { check pointer type }
   function ptrt(fsp: stp): boolean;
   begin
     if fsp = nil then ptrt := false
@@ -3158,6 +3157,13 @@ end;
     if fsp = nil then ordt := false
     else ordt := ((fsp^.form = scalar) or (fsp^.form = subrange)) and 
                  not realt(fsp)
+  end;
+  
+  { check file type }
+  function filet(fsp: stp): boolean;
+  begin
+    if fsp = nil then filet := false
+    else filet := fsp^.form = files
   end;
   
   function comptypes{(fsp1,fsp2: stp) : boolean};
@@ -3677,7 +3683,18 @@ end;
   end;
                         
   procedure expression(fsys: setofsys; threaten: boolean); forward;
+  
+  procedure callop1(opr: operatort); forward;
 
+  { check any overloads exist for given operator }
+  function isopr(opt: operatort): boolean;
+    var dt: disprange;
+  begin isopr := false;
+    dt := top;
+    while (dt > 0) and (display[dt].oprprc[opt] = nil) do dt := dt-1;
+    isopr := display[dt].oprprc[opt] <> nil
+  end;
+    
   function taggedrec(fsp: stp): boolean;
   var b: boolean;
   begin b := false;
@@ -3990,7 +4007,23 @@ end;
                        { index buffer }
                        gen1t(34(*inc*),fileidsize,gattr.typtr);
                        typtr := filtype;
-                    end else error(141);
+                    end else begin
+                      if iso7185 then error(141)
+                      else if isopr(drfop) then begin { there is an overload }
+                        if gattr.kind <> expr then
+                          if gattr.typtr <> nil then 
+                            if gattr.typtr^.form <= power then load else loadaddress;
+                        callop1(drfop);
+                        with gattr do begin
+                          kind := expr;
+                          if typtr <> nil then
+                            if typtr^.form=subrange then typtr := typtr^.rangetype;
+                          access := drct; idplmt := 0; packing := false; 
+                          packcom := false; tagfield := false; ptrref := true; 
+                          vartl := -1; pickup := false; dblptr := false;
+                        end
+                      end else error(141)
+                    end;
               insymbol;
               lastptr := true { set last was ptr op }
             end;
@@ -5184,7 +5217,7 @@ end;
   end;
     
   { call operator type with 1 parameter }
-  procedure callop1(opr: operatort);
+  procedure callop1{(opr: operatort)};
     var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
         lsize: addrrange; locpar, locpars, lp, lps: addrrange; 
         sp: stp;
@@ -5302,15 +5335,6 @@ end;
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
 
-    { check any overloads exist for given operator }
-    function isopr(opt: operatort): boolean;
-      var dt: disprange;
-    begin isopr := false;
-      dt := top;
-      while (dt > 0) and (display[dt].oprprc[opt] = nil) do dt := dt-1;
-      isopr := display[dt].oprprc[opt] <> nil
-    end;
-    
     { process unary operator overload check }
     procedure unopr(op: operatort; e: integer);
     begin
@@ -7189,11 +7213,17 @@ end;
         if parnum = 2 then
           if ordt(partyp(1)) and ordt(partyp(2)) then markerr
       end;
+      procedure chkspf;
+      begin
+        if parnum = 1 then
+          if ptrt(partyp(1)) or filet(partyp(1)) then markerr
+      end;
     begin e := false;
       case opt of { operator }
         mul: begin chkdirl; chkdset end;
         rdiv,idiv,imod: chkdirl;
         plus,minus,notop: begin chksirl; chkdirl; chkdset end;
+        drfop: chkspf;
         andop,orop,xorop: begin chkdbol; chkdirl end;
         ltop,leop,geop,gtop,neop,eqop: 
           begin chkdsim; chkdptr; chkdstr; chkdset end;
@@ -7222,9 +7252,12 @@ end;
       if (sy = ident) or (fsy = operatorsy) then 
         begin
           if fsy = operatorsy then begin { process operator definition }
-            if not (sy in [mulop,addop,relop,notsy]) then 
-              begin error(281); skip(fsys+[mulop,addop,relop,notsy,lparent,semicolon]) end
+            if not (sy in [mulop,addop,relop,notsy,arrow]) then 
+              begin error(281); 
+                skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon]) 
+              end
             else begin if sy = notsy then op := notop; 
+              if sy = arrow then op := drfop; 
               lcp := display[top].oprprc[op] { pick up an operator leader }
             end;
             if fpat <> fpanone then error(280);
@@ -7273,7 +7306,7 @@ end;
                       geop:  ops := '>        '; gtop:  ops := '>=       ';
                       neop:  ops := '<>       '; eqop:  ops := '=        ';
                       inop:  ops := 'in       '; xorop: ops := 'xor      ';
-                      notop: ops := 'not      ';
+                      notop: ops := 'not      '; drfop: ops := '^        ';
                     end;
                     strassvr(name, ops)
                   end else strassvf(name, id); 
