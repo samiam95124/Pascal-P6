@@ -835,7 +835,7 @@ var
     end;
     { dispose of module name }
     putstrs(dr.modnam);
-    for oi := mul to xorop do 
+    for oi := mul to notop do 
       if dr.oprprc[oi] <> nil then putnam(dr.oprprc[oi]);
   end; { putdsp }
 
@@ -7193,7 +7193,7 @@ end;
       case opt of { operator }
         mul: begin chkdirl; chkdset end;
         rdiv,idiv,imod: chkdirl;
-        plus,minus: begin chksirl; chkdirl; chkdset end;
+        plus,minus,notop: begin chksirl; chkdirl; chkdset end;
         andop,orop,xorop: begin chkdbol; chkdirl end;
         ltop,leop,geop,gtop,neop,eqop: 
           begin chkdsim; chkdptr; chkdstr; chkdset end;
@@ -7222,9 +7222,11 @@ end;
       if (sy = ident) or (fsy = operatorsy) then 
         begin
           if fsy = operatorsy then begin { process operator definition }
-            if not (sy in [mulop,addop,relop]) then 
-              begin error(281); skip(fsys+[mulop,addop,relop,lparent,semicolon]) end
-            else lcp := display[top].oprprc[op]; { pick up an operator leader }
+            if not (sy in [mulop,addop,relop,notsy]) then 
+              begin error(281); skip(fsys+[mulop,addop,relop,notsy,lparent,semicolon]) end
+            else begin if sy = notsy then op := notop; 
+              lcp := display[top].oprprc[op] { pick up an operator leader }
+            end;
             if fpat <> fpanone then error(280);
             opt := op { save operator for later }
           end else 
@@ -7255,7 +7257,8 @@ end;
           if not forw then { create a new proc/func entry }
             begin
               if fsy = procsy then new(lcp,proc,declared,actual)
-              else { func/opr } new(lcp,func,declared,actual); ininam(lcp);
+              else { func/opr } new(lcp,func,declared,actual); 
+              ininam(lcp);
               with lcp^ do
                 begin if fsy = procsy then klass := proc else klass := func; 
                   if fsy = operatorsy then begin
@@ -7269,7 +7272,8 @@ end;
                       ltop:  ops := '<        '; leop:  ops := '<=       ';
                       geop:  ops := '>        '; gtop:  ops := '>=       ';
                       neop:  ops := '<>       '; eqop:  ops := '=        ';
-                      inop:  ops := 'in       '; xorop: ops := 'xor      '; 
+                      inop:  ops := 'in       '; xorop: ops := 'xor      ';
+                      notop: ops := 'not      ';
                     end;
                     strassvr(name, ops)
                   end else strassvf(name, id); 
