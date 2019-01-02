@@ -5271,8 +5271,10 @@ end;
       { generate a stack hoist of parameters. Basically the common math on stack
         not formatted the same way as function calls, so we hoist the parameters
         over the mark, call and then drop the function result downwards. }
-      if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize)
-      else gen2(116(*cpp*),lsize,locpars); { get parameter }
+      if gattr.typtr <> nil then
+          if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
+            gen1(118(*lsa*),marksize+lsize)
+          else gen2(116(*cpp*),lsize,locpars);  
       { do coercions }
       if realt(sp) and intt(gattr.typtr) then
         begin gen0(10(*flt*)); gattr.typtr := realptr end;
