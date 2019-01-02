@@ -3685,6 +3685,8 @@ end;
   procedure expression(fsys: setofsys; threaten: boolean); forward;
   
   procedure callop1(opr: operatort); forward;
+  
+  procedure callop2(opr: operatort; var lattr: attr); forward;
 
   { check any overloads exist for given operator }
   function isopr(opt: operatort): boolean;
@@ -3858,63 +3860,82 @@ end;
   (*[*) if sy = lbrack then
           begin gattr.ptrref := false;
             repeat lattr := gattr;
-              with lattr do
-                if typtr <> nil then begin
-                  if not arrayt(typtr) then begin error(138); typtr := nil end
-                end;
-              loadaddress;
+              if gattr.kind <> expr then
+                if gattr.typtr <> nil then 
+                  if gattr.typtr^.form <= power then load else loadaddress;
               insymbol; expression(fsys + [comma,rbrack], false);
-              load;
+              if gattr.kind <> expr then
+                if gattr.typtr <> nil then 
+                  if gattr.typtr^.form <= power then load else loadaddress;
               if gattr.typtr <> nil then
-                if gattr.typtr^.form<>scalar then error(113)
-                else if not comptypes(gattr.typtr,intptr) then
-                       gen0t(58(*ord*),gattr.typtr);
-              if lattr.typtr <> nil then
-                with lattr.typtr^ do
-                  begin
-                    if form = arrayc then begin
-                      { note containers merge index and bounds check }
-                      if gattr.typtr <> intptr then error(139)
-                    end else if comptypes(inxtype,gattr.typtr) then
-                      begin
-                        if inxtype <> nil then
-                          begin getbounds(inxtype,lmin,lmax);
-                            if debug then
-                              gen2t(45(*chk*),lmin,lmax,intptr);
-                            if lmin>0 then gen1t(31(*dec*),lmin,intptr)
-                            else if lmin<0 then
-                              gen1t(34(*inc*),-lmin,intptr);
-                            (*or simply gen1(31,lmin)*)
-                          end
-                      end
-                    else error(139);
-                    with gattr do
-                      begin 
-                        if lattr.typtr^.form = arrays then typtr := aeltype
-                        else typtr := abstype;
-                        kind := varbl;
-                        access := indrct; idplmt := 0; packing := false;
-                        packcom := false; tagfield := false; ptrref := false;
-                        vartl := -1; pickup := false; dblptr := false;
-                      end;
-                    if gattr.typtr <> nil then
-                      begin
-                        gattr.packcom := lattr.packing;
-                        gattr.packing :=
-                          lattr.packing or gattr.typtr^.packing;
-                        lsize := gattr.typtr^.size; { get base size }
-                        cc := containers(lattr.typtr);
-                        if lattr.typtr^.form = arrays then gen1(36(*ixa*),lsize)
-                        else if cc = 1 then 
-                          gen1(103(*cxs*),lsize) { simple container index }
-                        else begin { complex container index }
-                          gen2(104(*cxc*),cc,containerbase(gattr.typtr));
-                          { if level is at bottom, simplify the template }
-                          if cc = 2 then gen0(108(*spc*))
+                if (not arrayt(lattr.typtr) or (gattr.typtr^.form <> scalar)) and 
+                   isopr(inxop) and not iso7185 then begin
+                { possible operator overload }
+                callop2(inxop, lattr);
+                with gattr do begin
+                  kind := expr;
+                  if typtr <> nil then
+                    if typtr^.form=subrange then typtr := typtr^.rangetype;
+                  access := drct; idplmt := 0; packing := false; 
+                  packcom := false; tagfield := false; ptrref := true; 
+                  vartl := -1; pickup := false; dblptr := false
+                end
+              end else begin
+                with lattr do
+                  if typtr <> nil then begin
+                    if not arrayt(typtr) then begin error(138); typtr := nil end
+                  end;
+                if gattr.typtr <> nil then
+                  if gattr.typtr^.form<>scalar then error(113)
+                  else if not comptypes(gattr.typtr,intptr) then
+                         gen0t(58(*ord*),gattr.typtr);
+                if lattr.typtr <> nil then
+                  with lattr.typtr^ do
+                    begin
+                      if form = arrayc then begin
+                        { note containers merge index and bounds check }
+                        if gattr.typtr <> intptr then error(139)
+                      end else if comptypes(inxtype,gattr.typtr) then
+                        begin
+                          if inxtype <> nil then
+                            begin getbounds(inxtype,lmin,lmax);
+                              if debug then
+                                gen2t(45(*chk*),lmin,lmax,intptr);
+                              if lmin>0 then gen1t(31(*dec*),lmin,intptr)
+                              else if lmin<0 then
+                                gen1t(34(*inc*),-lmin,intptr);
+                              (*or simply gen1(31,lmin)*)
+                            end
                         end
-                      end
-                  end
-              else gattr.typtr := nil
+                      else error(139);
+                      with gattr do
+                        begin 
+                          if lattr.typtr^.form = arrays then typtr := aeltype
+                          else typtr := abstype;
+                          kind := varbl;
+                          access := indrct; idplmt := 0; packing := false;
+                          packcom := false; tagfield := false; ptrref := false;
+                          vartl := -1; pickup := false; dblptr := false;
+                        end;
+                      if gattr.typtr <> nil then
+                        begin
+                          gattr.packcom := lattr.packing;
+                          gattr.packing :=
+                            lattr.packing or gattr.typtr^.packing;
+                          lsize := gattr.typtr^.size; { get base size }
+                          cc := containers(lattr.typtr);
+                          if lattr.typtr^.form = arrays then gen1(36(*ixa*),lsize)
+                          else if cc = 1 then 
+                            gen1(103(*cxs*),lsize) { simple container index }
+                          else begin { complex container index }
+                            gen2(104(*cxc*),cc,containerbase(gattr.typtr));
+                            { if level is at bottom, simplify the template }
+                            if cc = 2 then gen0(108(*spc*))
+                          end
+                        end
+                    end
+                else gattr.typtr := nil
+              end
             until sy <> comma;
             if sy = rbrack then insymbol else error(12);
             lastptr := false { set not pointer op }
@@ -5264,7 +5285,7 @@ end;
   end;
   
   { call operator type with 2 parameters }
-  procedure callop2(opr: operatort; var lattr: attr);
+  procedure callop2{(opr: operatort; var lattr: attr)};
     var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
         lsize: addrrange; locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
         lsp, rsp: stp;
@@ -5311,15 +5332,19 @@ end;
         over the mark, call and then drop the function result downwards. }
       if fungible(lsp, lattr.typtr) or (lattr.kind = expr) or 
          fungible(rsp, gattr.typtr) or (gattr.kind = expr) then begin
-        { bring the parameters up and convert them one by one } 
-        if lattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lprs)
-        else gen2(116(*cpp*),lsize+lprs,lpls);
+        { bring the parameters up and convert them one by one }
+        if lattr.typtr <> nil then
+          if (lattr.kind = expr) and (lattr.typtr^.form > power) then 
+            gen1(118(*lsa*),marksize+lsize+lprs)
+          else gen2(116(*cpp*),lsize+lprs,lpls);
         { do coercions }
         if realt(lsp) and intt(lattr.typtr) then
           begin gen0(10(*flt*)); lattr.typtr := realptr end;
         fixpar(lsp,lattr.typtr);
-        if gattr.kind = expr then gen1(118(*lsa*),marksize+lsize+lpl)
-        else gen2(116(*cpp*),lsize+lpl,lprs); { get right }
+        if gattr.typtr <> nil then
+          if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
+            gen1(118(*lsa*),marksize+lsize+lpl)
+          else gen2(116(*cpp*),lsize+lpl,lprs);
         { do coercions }
         if realt(rsp) and intt(gattr.typtr) then
           begin gen0(10(*flt*)); gattr.typtr := realptr end;
@@ -7218,6 +7243,15 @@ end;
         if parnum = 1 then
           if ptrt(partyp(1)) or filet(partyp(1)) then markerr
       end;
+      procedure chkdinx;
+        var pt: stp;
+      begin
+        if parnum = 2 then begin
+          pt := partyp(2);
+          if pt <> nil then
+            if arrayt(partyp(1)) and (pt^.form = scalar) then markerr
+        end
+      end;
     begin e := false;
       case opt of { operator }
         mul: begin chkdirl; chkdset end;
@@ -7228,6 +7262,7 @@ end;
         ltop,leop,geop,gtop,neop,eqop: 
           begin chkdsim; chkdptr; chkdstr; chkdset end;
         inop: chkdin;
+        inxop: chkdinx;
         noop:;
       end
     end;
@@ -7252,12 +7287,16 @@ end;
       if (sy = ident) or (fsy = operatorsy) then 
         begin
           if fsy = operatorsy then begin { process operator definition }
-            if not (sy in [mulop,addop,relop,notsy,arrow]) then 
+            if not (sy in [mulop,addop,relop,notsy,arrow,lbrack]) then 
               begin error(281); 
                 skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon]) 
               end
-            else begin if sy = notsy then op := notop; 
-              if sy = arrow then op := drfop; 
+            else begin 
+              if sy = notsy then op := notop 
+              else if sy = arrow then op := drfop
+              else if sy = lbrack then 
+                begin
+                insymbol; if sy <> rbrack then error(12); op := inxop end;
               lcp := display[top].oprprc[op] { pick up an operator leader }
             end;
             if fpat <> fpanone then error(280);
@@ -7307,6 +7346,7 @@ end;
                       neop:  ops := '<>       '; eqop:  ops := '=        ';
                       inop:  ops := 'in       '; xorop: ops := 'xor      ';
                       notop: ops := 'not      '; drfop: ops := '^        ';
+                      inxop: ops := '[]       ';
                     end;
                     strassvr(name, ops)
                   end else strassvf(name, id); 
