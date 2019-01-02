@@ -1582,6 +1582,7 @@ end;
                'different modes');
     285: write('Parameter type not allowed in operator overload parameter ');
     286: write('Parameter mode not allowed in operator overload parameter ');
+    287: write('Variable reference is not addressable');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -7584,6 +7585,7 @@ end;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
+            if gattr.kind = expr then error(287);
             { if function result, set assigned }
             if fcp^.klass = func then fcp^.asgn := true
             else if fcp^.klass = vars then with fcp^ do begin
@@ -7597,7 +7599,7 @@ end;
             if gattr.typtr <> nil then
               if (gattr.access<>drct) or (gattr.typtr^.form>power) or
                  tagasc then { if tag checking, force address load }
-                loadaddress;
+                if gattr.kind <> expr then loadaddress;
             lattr := gattr;
             insymbol; expression(fsys, false);
             if gattr.typtr <> nil then
@@ -8049,6 +8051,7 @@ end;
             begin searchid([vars,field],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
           selector(fsys + [comma,dosy],lcp,false);
+          if gattr.kind = expr then error(287);
           if gattr.typtr <> nil then
             if gattr.typtr^.form = records then
               if top < displimit then
