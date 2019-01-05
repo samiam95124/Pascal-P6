@@ -7178,98 +7178,6 @@ end;
         lcp1 := lcp1^.grpnxt
       end
     end;
-    
-    { check operator overload against system definitions }
-    procedure chkovlsys(opt: operatort; lcp: ctp);
-      var e: boolean;
-      procedure markerr;
-      begin
-        if not e then error(282);
-        e := true
-      end;
-      function parnum: integer;
-        var pn: integer; lcp1: ctp;
-      begin
-        pn := 0; lcp1 := lcp^.pflist;
-        while lcp1 <> nil do begin pn := pn+1; lcp1 := lcp1^.next end;
-        parnum := pn 
-      end;
-      function partyp(pn: integer): stp;
-        var lcp1: ctp;
-      begin
-        lcp1 := lcp^.pflist;
-        while (pn > 1) and (lcp1 <> nil) do begin lcp1 := lcp1^.next; pn := pn-1 end;
-        if lcp1 = nil then partyp := nil else partyp := lcp1^.idtype
-      end;
-      procedure chksirl;
-      begin
-        if parnum = 1 then
-          if intt(partyp(1)) or realt(partyp(1)) then markerr
-      end;
-      procedure chkdirl;
-      begin
-        if parnum = 2 then
-          if (intt(partyp(1)) or realt(partyp(1))) and 
-             (intt(partyp(2)) or realt(partyp(2))) then markerr
-      end;
-      procedure chkdset;
-      begin
-        if parnum = 2 then
-          if sett(partyp(1)) and sett(partyp(2)) then markerr
-      end;
-      procedure chkdptr;
-      begin
-        if parnum = 2 then
-          if ptrt(partyp(1)) and ptrt(partyp(2)) then markerr
-      end;
-      procedure chkdstr;
-      begin
-        if parnum = 2 then
-          if stringt(partyp(1)) and stringt(partyp(2)) then markerr
-      end;
-      procedure chkdbol;
-      begin
-        if parnum = 2 then
-          if bolt(partyp(1)) and bolt(partyp(2)) then markerr
-      end;
-      procedure chkdsim;
-      begin
-        if parnum = 2 then
-          if simt(partyp(1)) and simt(partyp(2)) then markerr
-      end;
-      procedure chkdin;
-      begin
-        if parnum = 2 then
-          if ordt(partyp(1)) and ordt(partyp(2)) then markerr
-      end;
-      procedure chkspf;
-      begin
-        if parnum = 1 then
-          if ptrt(partyp(1)) or filet(partyp(1)) then markerr
-      end;
-      procedure chkdinx;
-        var pt: stp;
-      begin
-        if parnum = 2 then begin
-          pt := partyp(2);
-          if pt <> nil then
-            if arrayt(partyp(1)) and (pt^.form = scalar) then markerr
-        end
-      end;
-    begin e := false;
-      case opt of { operator }
-        mul: begin chkdirl; chkdset end;
-        rdiv,idiv,imod: chkdirl;
-        plus,minus,notop: begin chksirl; chkdirl; chkdset end;
-        drfop: chkspf;
-        andop,orop,xorop: begin chkdbol; chkdirl end;
-        ltop,leop,geop,gtop,neop,eqop: 
-          begin chkdsim; chkdptr; chkdstr; chkdset end;
-        inop: chkdin;
-        inxop: chkdinx;
-        noop:;
-      end
-    end;
 
     begin (*procdeclaration*)
       { parse and skip any attribute }
@@ -7416,15 +7324,9 @@ end;
         else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy);
         if not forw then begin
           lcp^.pflist := lcp1;
-          if ovrl then begin { compare against overload group }
+          if ovrl or (fsy = operatorsy) then begin { compare against overload group }
             lcp2 := lcp^.grppar; { index top of overload group }
             chkovlpar(lcp2, lcp)
-          end else if fsy = operatorsy then begin { compare all operator levels }
-            chkovlsys(opt, lcp); { check against system operators }
-            for dt := top downto 0 do begin
-              if display[dt].oprprc[opt] <> nil then 
-                chkovlpar(display[dt].oprprc[opt], lcp)
-            end
           end
         end else begin
           if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
