@@ -4106,7 +4106,8 @@ end;
         if forcnt > 0 then error(195);
         if part = ptview then error(200)
       end;
-      selector(fsys,lcp, false)
+      selector(fsys,lcp, false);
+      if gattr.kind = expr then error(287)
     end (*variable*) ;
     
     procedure chkhdr;
