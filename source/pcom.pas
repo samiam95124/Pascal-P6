@@ -3180,7 +3180,7 @@ end;
     else
       if (fsp1 <> nil) and (fsp2 <> nil) then
         { if the structure forms are the same, or they are both array types }
-        if (fsp1^.form = fsp2^.form) or (arrayt(fsp1) = arrayt(fsp2)) then
+        if (fsp1^.form = fsp2^.form) or (arrayt(fsp1) and arrayt(fsp2)) then
           case fsp1^.form of
             scalar: ;
             { Subranges are compatible if either type is a subrange of the
@@ -3680,6 +3680,48 @@ end;
       { compare templates }
       if cc = 1 then gen0(99(*cps*)) { simple compare }
       else gen1(100(*cpc*),cc); { complex compare }
+    end
+  end;
+  
+  function parnum(fcp: ctp): integer;
+    var pn: integer;
+  begin
+    pn := 0; fcp := fcp^.pflist;
+    while fcp <> nil do begin pn := pn+1; fcp := fcp^.next end;
+    parnum := pn 
+  end;
+  
+  function partype(fcp: ctp; pn: integer): stp;
+  begin fcp := fcp^.pflist;
+    while (pn > 1) and (fcp <> nil) do begin fcp := fcp^.next; pn := pn-1 end;
+    if fcp = nil then partype := nil else partype := fcp^.idtype
+  end;
+    
+  { compare parameter type to actual type }
+  function cmptyp(pt, at: stp): boolean;
+  begin cmptyp := false;
+    if comptypes(pt, at) then cmptyp := true
+    else if realt(pt) and intt(at) then cmptyp := true
+  end;
+  
+  { find matching binary operator overload }
+  procedure fndopr2(opr: operatort; var lattr: attr; var fcp: ctp);
+    var dt: disprange; fcp2: ctp;
+  begin fcp := nil;
+    if not iso7185 then begin
+      dt := top; { search top down }
+      repeat
+        while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
+        fcp2 := display[dt].oprprc[opr];
+        fcp := nil; { set not found }
+        while fcp2 <> nil do begin
+          if parnum(fcp2) = 2 then
+            if cmptyp(partype(fcp2, 1), lattr.typtr) then
+              if cmptyp(partype(fcp2, 2), gattr.typtr) then fcp := fcp2;
+          fcp2 := fcp2^.grpnxt
+        end;
+        if dt > 0 then dt := dt-1
+      until (fcp <> nil) or (dt = 0)
     end
   end;
                         
@@ -5206,20 +5248,6 @@ end;
     else callnonstandard(fcp,inherit)
   end (*call*) ;
   
-  function parnum(fcp: ctp): integer;
-    var pn: integer;
-  begin
-    pn := 0; fcp := fcp^.pflist;
-    while fcp <> nil do begin pn := pn+1; fcp := fcp^.next end;
-    parnum := pn 
-  end;
-  
-  function partype(fcp: ctp; pn: integer): stp;
-  begin fcp := fcp^.pflist;
-    while (pn > 1) and (fcp <> nil) do begin fcp := fcp^.next; pn := pn-1 end;
-    if fcp = nil then partype := nil else partype := fcp^.idtype
-  end;
-    
   function psize(sp: stp): addrrange;
   var ps: addrrange;
   begin ps := 0;
@@ -5230,13 +5258,6 @@ end;
       alignu(parmptr, ps)
     end;
     psize := ps
-  end;
-    
-  { compare parameter type to actual type }
-  function cmptyp(pt, at: stp): boolean;
-  begin cmptyp := false;
-    if comptypes(pt, at) then cmptyp := true
-    else if realt(pt) and intt(at) then cmptyp := true
   end;
     
   { call operator type with 1 parameter }
@@ -5397,8 +5418,7 @@ end;
     end;
     
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
-      var lattr: attr; lop: operatort;
-          fsy: symbol; fop: operatort;
+      var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
 
       procedure term(fsys: setofsys; threaten: boolean);
         var lattr: attr; lop: operatort;
@@ -5758,14 +5778,11 @@ end;
               if gattr.typtr^.form <= power then load else loadaddress; 
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
-    (*+,-*)     plus,minus:
-                if (lattr.typtr = intptr) and (gattr.typtr = intptr) then begin
-                  if lop = plus then gen0(2(*adi*)) else gen0(21(*sbi*))
-                end else
-                  begin
-                    if iso7185 or 
-                       (intt(lattr.typtr) or realt(lattr.typtr)) and
-                       (intt(gattr.typtr) or realt(gattr.typtr)) then
+    (*+,-*)     plus,minus: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(lop, lattr) else begin
+                    if (lattr.typtr = intptr) and (gattr.typtr = intptr) then begin
+                      if lop = plus then gen0(2(*adi*)) else gen0(21(*sbi*))
+                    end else begin
                       { convert either integer to real }
                       if lattr.typtr = intptr then
                         begin gen0(9(*flo*));
@@ -5776,14 +5793,16 @@ end;
                           begin gen0(10(*flt*));
                             gattr.typtr := realptr
                           end;
-                    if (lattr.typtr = realptr) and 
-                       (gattr.typtr = realptr) then begin
-                      if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
-                    end else if (lattr.typtr^.form=power) and
-                                comptypes(lattr.typtr,gattr.typtr) then begin
-                      if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
-                    end else binopr(lop, lattr, 134)
-                  end;
+                      if (lattr.typtr = realptr) and 
+                         (gattr.typtr = realptr) then begin
+                        if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
+                      end else if (lattr.typtr^.form=power) and
+                                  comptypes(lattr.typtr,gattr.typtr) then begin
+                        if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
+                      end else begin error(134); gattr.typtr:=nil end
+                    end
+                  end
+                end;
     (*or,xor*)  orop, xorop:
                 if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
                    ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
