@@ -3729,7 +3729,7 @@ end;
   
   procedure callop1(opr: operatort); forward;
   
-  procedure callop2(opr: operatort; var lattr: attr); forward;
+  procedure callop2(fcp: ctp; var lattr: attr); forward;
 
   { check any overloads exist for given operator }
   function isopr(opt: operatort): boolean;
@@ -3752,7 +3752,7 @@ end;
   end;
 
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
-  var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer; 
+  var lattr: attr; lcp,fcp2: ctp; lsize: addrrange; lmin,lmax: integer; 
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
@@ -3914,7 +3914,9 @@ end;
                 if (not arrayt(lattr.typtr) or (gattr.typtr^.form <> scalar)) and 
                    isopr(inxop) and not iso7185 then begin
                 { possible operator overload }
-                callop2(inxop, lattr);
+                fndopr2(inxop, lattr, fcp2); 
+                if fcp2 = nil then begin error(134); gattr.typtr := nil end
+                else callop2(fcp2, lattr);
                 with gattr do begin
                   kind := expr;
                   if typtr <> nil then
@@ -5310,8 +5312,8 @@ end;
   end;
   
   { call operator type with 2 parameters }
-  procedure callop2{(opr: operatort; var lattr: attr)};
-    var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
+  procedure callop2{(fcp: ctp; var lattr: attr)};
+    var fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
         lsize: addrrange; locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
         lsp, rsp: stp;
     { check actual type can be coerced into formal }
@@ -5325,65 +5327,47 @@ end;
       end
     end;
   begin
-    dt := top; { search top down }
-    repeat
-      while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
-      fcp := display[dt].oprprc[opr];
-      fcpf := nil; { set not found }
-      pn := 1;
-      while fcp <> nil do begin
-        if parnum(fcp) = 2 then
-          if cmptyp(partype(fcp, 1), lattr.typtr) then
-            if cmptyp(partype(fcp, 2), gattr.typtr) then fcpf := fcp;
-        fcp := fcp^.grpnxt
-      end;
-      if dt > 0 then dt := dt-1
-    until (fcpf <> nil) or (dt = 0);
-    fcp := fcpf;
-    if fcp = nil then begin error(134); gattr.typtr:=nil end 
-    else begin
-      lsp := partype(fcp, 1); rsp := partype(fcp, 2);
-      genlabel(frlab); genmst(level-fcp^.pflev,frlab);
-      { find uncoerced parameters size }
-      lpls := psize(lattr.typtr); lprs := psize(gattr.typtr); 
-      locpars := lpls+lprs;
-      { find final parameters size }
-      lpl := psize(lsp); lpr := psize(rsp); locpar := lpl+lpr;
-      { find function result size }
-      lsize := fcp^.idtype^.size;
-      alignu(parmptr,lsize);
-      { generate a stack hoist of parameters. Basically the common math on stack
-        not formatted the same way as function calls, so we hoist the parameters
-        over the mark, call and then drop the function result downwards. }
-      if fungible(lsp, lattr.typtr) or (lattr.kind = expr) or 
-         fungible(rsp, gattr.typtr) or (gattr.kind = expr) then begin
-        { bring the parameters up and convert them one by one }
-        if lattr.typtr <> nil then
-          if (lattr.kind = expr) and (lattr.typtr^.form > power) then 
-            gen1(118(*lsa*),marksize+lsize+lprs)
-          else gen2(116(*cpp*),lsize+lprs,lpls);
-        { do coercions }
-        if realt(lsp) and intt(lattr.typtr) then
-          begin gen0(10(*flt*)); lattr.typtr := realptr end;
-        fixpar(lsp,lattr.typtr);
-        if gattr.typtr <> nil then
-          if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
-            gen1(118(*lsa*),marksize+lsize+lpl)
-          else gen2(116(*cpp*),lsize+lpl,lprs);
-        { do coercions }
-        if realt(rsp) and intt(gattr.typtr) then
-          begin gen0(10(*flt*)); gattr.typtr := realptr end;
-        fixpar(rsp,gattr.typtr);
-      end else gen2(116(*cpp*),lsize,locpar); { get both params }
-      if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-      gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
-      gen2(117(*cpr*),lsize,locpars);
-      gattr.typtr := fcp^.idtype
-    end
+    lsp := partype(fcp, 1); rsp := partype(fcp, 2);
+    genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+    { find uncoerced parameters size }
+    lpls := psize(lattr.typtr); lprs := psize(gattr.typtr); 
+    locpars := lpls+lprs;
+    { find final parameters size }
+    lpl := psize(lsp); lpr := psize(rsp); locpar := lpl+lpr;
+    { find function result size }
+    lsize := fcp^.idtype^.size;
+    alignu(parmptr,lsize);
+    { generate a stack hoist of parameters. Basically the common math on stack
+      not formatted the same way as function calls, so we hoist the parameters
+      over the mark, call and then drop the function result downwards. }
+    if fungible(lsp, lattr.typtr) or (lattr.kind = expr) or 
+       fungible(rsp, gattr.typtr) or (gattr.kind = expr) then begin
+      { bring the parameters up and convert them one by one }
+      if lattr.typtr <> nil then
+        if (lattr.kind = expr) and (lattr.typtr^.form > power) then 
+          gen1(118(*lsa*),marksize+lsize+lprs)
+        else gen2(116(*cpp*),lsize+lprs,lpls);
+      { do coercions }
+      if realt(lsp) and intt(lattr.typtr) then
+        begin gen0(10(*flt*)); lattr.typtr := realptr end;
+      fixpar(lsp,lattr.typtr);
+      if gattr.typtr <> nil then
+        if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
+          gen1(118(*lsa*),marksize+lsize+lpl)
+        else gen2(116(*cpp*),lsize+lpl,lprs);
+      { do coercions }
+      if realt(rsp) and intt(gattr.typtr) then
+        begin gen0(10(*flt*)); gattr.typtr := realptr end;
+      fixpar(rsp,gattr.typtr);
+    end else gen2(116(*cpp*),lsize,locpar); { get both params }
+    if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
+    gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+    gen2(117(*cpr*),lsize,locpars);
+    gattr.typtr := fcp^.idtype
   end;
   
   procedure expression{(fsys: setofsys; threaten: boolean)};
-    var lattr: attr; lop: operatort; typind: char; lsize: addrrange;
+    var lattr: attr; lop: operatort; typind: char; lsize: addrrange; fcp: ctp;
 
     { process unary operator overload check }
     procedure unopr(op: operatort; e: integer);
@@ -5401,27 +5385,11 @@ end;
       end else begin error(134); gattr.typtr := nil end
     end;
     
-    { process binary operator overload check }
-    procedure binopr(op: operatort; lattr: attr; e: integer);
-    begin
-      if not iso7185 then begin
-        { check for operator overload }
-        if isopr(op) then begin { process the overload }
-          callop2(op, lattr);
-          with gattr do begin
-            kind := expr;
-            if typtr <> nil then
-              if typtr^.form=subrange then typtr := typtr^.rangetype
-          end
-        end else begin error(134); gattr.typtr := nil end
-      end else begin error(134); gattr.typtr := nil end
-    end;
-    
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
 
       procedure term(fsys: setofsys; threaten: boolean);
-        var lattr: attr; lop: operatort;
+        var lattr: attr; lop: operatort; fcp: ctp;
 
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
@@ -5691,14 +5659,13 @@ end;
                 if gattr.typtr^.form <= power then load else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               case lop of
-      (***)     mul:  if (lattr.typtr=intptr) and (gattr.typtr=intptr)
-                      then gen0(15(*mpi*))
-                      else
-                        begin
-                          if iso7185 or 
-                             (intt(lattr.typtr) or realt(lattr.typtr)) and
-                             (intt(gattr.typtr) or realt(gattr.typtr)) then
-                             { convert either integer to real }
+      (***)     mul: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(fcp, lattr) else begin  
+                    if (lattr.typtr=intptr) and (gattr.typtr=intptr)
+                        then gen0(15(*mpi*))
+                        else
+                          begin
+                            { convert either integer to real }
                             if lattr.typtr = intptr then
                               begin gen0(9(*flo*));
                                 lattr.typtr := realptr
@@ -5708,41 +5675,49 @@ end;
                                 begin gen0(10(*flt*));
                                   gattr.typtr := realptr
                                 end;
-                          if (lattr.typtr = realptr) and
-                             (gattr.typtr=realptr) then gen0(16(*mpr*))
-                          else if (lattr.typtr^.form=power) and 
-                                  comptypes(lattr.typtr,gattr.typtr) then
-                            gen0(12(*int*))
-                          else binopr(lop, lattr, 134)
-                        end;
-      (* / *)   rdiv: begin
-                        if iso7185 or 
-                             (intt(lattr.typtr) or realt(lattr.typtr)) and
-                             (intt(gattr.typtr) or realt(gattr.typtr)) then begin
-                          { convert either integer to real }
-                          if gattr.typtr = intptr then
-                            begin gen0(10(*flt*));
-                              gattr.typtr := realptr
-                            end;
-                          if lattr.typtr = intptr then
-                            begin gen0(9(*flo*));
-                              lattr.typtr := realptr
-                            end;
-                        end;
-                        if (lattr.typtr = realptr) and
-                           (gattr.typtr=realptr)then gen0(7(*dvr*))
-                        else binopr(lop, lattr, 134)
-                      end;
-      (*div*)   idiv: if (lattr.typtr = intptr)
-                        and (gattr.typtr = intptr) then gen0(6(*dvi*))
-                      else binopr(lop, lattr, 134);
-      (*mod*)   imod: if (lattr.typtr = intptr)
-                        and (gattr.typtr = intptr) then gen0(14(*mod*))
-                      else binopr(lop, lattr, 134);
-      (*and*)   andop:if ((lattr.typtr = boolptr) and (gattr.typtr = boolptr)) or
-                         ((lattr.typtr=intptr) and (gattr.typtr=intptr) and
-                          not iso7185) then gen0(4(*and*))
-                      else binopr(lop, lattr, 134);
+                            if (lattr.typtr = realptr) and
+                               (gattr.typtr=realptr) then gen0(16(*mpr*))
+                            else if (lattr.typtr^.form=power) and 
+                                    comptypes(lattr.typtr,gattr.typtr) then
+                              gen0(12(*int*))
+                            else begin error(134); gattr.typtr:=nil end
+                          end
+                  end
+                end;
+      (* / *)   rdiv: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(fcp, lattr) else begin
+                    { convert either integer to real }
+                    if gattr.typtr = intptr then
+                      begin gen0(10(*flt*)); gattr.typtr := realptr end;
+                    if lattr.typtr = intptr then
+                      begin gen0(9(*flo*)); lattr.typtr := realptr end;
+                    if (lattr.typtr = realptr) and
+                       (gattr.typtr=realptr) then gen0(7(*dvr*))
+                    else begin error(134); gattr.typtr := nil end
+                  end
+                end;
+      (*div*)   idiv: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(fcp, lattr) else begin
+                    if (lattr.typtr = intptr) and (gattr.typtr = intptr) then 
+                      gen0(6(*dvi*))
+                    else begin error(134); gattr.typtr := nil end
+                  end
+                end;
+      (*mod*)   imod: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(fcp, lattr) else begin
+                    if (lattr.typtr = intptr) and (gattr.typtr = intptr) then 
+                      gen0(14(*mod*))
+                    else begin error(134); gattr.typtr := nil end
+                  end
+                end;
+      (*and*)   andop: begin fndopr2(lop, lattr, fcp);
+                  if fcp <> nil then callop2(fcp, lattr) else begin
+                    if ((lattr.typtr = boolptr) and (gattr.typtr = boolptr)) or
+                       ((lattr.typtr=intptr) and (gattr.typtr=intptr) and
+                        not iso7185) then gen0(4(*and*))
+                    else begin error(134); gattr.typtr := nil end
+                  end
+                end
               end (*case*)
             else gattr.typtr := nil
           end (*while*)
@@ -5778,37 +5753,40 @@ end;
               if gattr.typtr^.form <= power then load else loadaddress; 
           if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
             case lop of
-    (*+,-*)     plus,minus: begin fndopr2(lop, lattr, fcp);
-                  if fcp <> nil then callop2(lop, lattr) else begin
-                    if (lattr.typtr = intptr) and (gattr.typtr = intptr) then begin
-                      if lop = plus then gen0(2(*adi*)) else gen0(21(*sbi*))
-                    end else begin
-                      { convert either integer to real }
-                      if lattr.typtr = intptr then
-                        begin gen0(9(*flo*));
-                          lattr.typtr := realptr
-                        end
-                      else
-                        if gattr.typtr = intptr then
-                          begin gen0(10(*flt*));
-                            gattr.typtr := realptr
-                          end;
-                      if (lattr.typtr = realptr) and 
-                         (gattr.typtr = realptr) then begin
-                        if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
-                      end else if (lattr.typtr^.form=power) and
-                                  comptypes(lattr.typtr,gattr.typtr) then begin
-                        if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
-                      end else begin error(134); gattr.typtr:=nil end
-                    end
-                  end
-                end;
-    (*or,xor*)  orop, xorop:
-                if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
-                   ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
-                    not iso7185) then begin
-                  if lop = orop then gen0(13(*ior*)) else gen0(83(*ixor*))
-                end else binopr(lop, lattr, 134);
+    (*+,-*)    plus,minus: begin fndopr2(lop, lattr, fcp);
+                 if fcp <> nil then callop2(fcp, lattr) else begin
+                   if (lattr.typtr = intptr) and (gattr.typtr = intptr) then begin
+                     if lop = plus then gen0(2(*adi*)) else gen0(21(*sbi*))
+                   end else begin
+                     { convert either integer to real }
+                     if lattr.typtr = intptr then
+                       begin gen0(9(*flo*));
+                         lattr.typtr := realptr
+                       end
+                     else
+                       if gattr.typtr = intptr then
+                         begin gen0(10(*flt*));
+                           gattr.typtr := realptr
+                         end;
+                     if (lattr.typtr = realptr) and 
+                        (gattr.typtr = realptr) then begin
+                       if lop = plus then gen0(3(*adr*)) else gen0(22(*sbr*))
+                     end else if (lattr.typtr^.form=power) and
+                                 comptypes(lattr.typtr,gattr.typtr) then begin
+                       if lop = plus then gen0(28(*uni*)) else gen0(5(*dif*))
+                     end else begin error(134); gattr.typtr:=nil end
+                   end
+                 end
+               end;
+    (*or,xor*) orop, xorop: begin fndopr2(lop, lattr, fcp);
+                 if fcp <> nil then callop2(fcp, lattr) else begin
+                   if ((lattr.typtr=boolptr) and (gattr.typtr=boolptr)) or 
+                      ((lattr.typtr=intptr) and (gattr.typtr=intptr) and 
+                       not iso7185) then begin
+                      if lop = orop then gen0(13(*ior*)) else gen0(83(*ixor*))
+                   end else begin error(134); gattr.typtr := nil end
+                 end
+               end 
             end (*case*)
           else gattr.typtr := nil
         end (*while*)
@@ -5816,20 +5794,21 @@ end;
 
   begin (*expression*)
     simpleexpression(fsys + [relop], threaten);
-    if sy = relop then
-      begin
-        if gattr.typtr <> nil then
-          if gattr.typtr^.form <= power then load
-          else loadaddress;
-        lattr := gattr; lop := op;
-        if lop = inop then
-          if not comptypes(gattr.typtr,intptr) then
-            gen0t(58(*ord*),gattr.typtr);
-        insymbol; simpleexpression(fsys, threaten);
-        if gattr.typtr <> nil then
-          if gattr.typtr^.form <= power then load
-          else loadaddress;
-        if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
+    if sy = relop then begin
+      if gattr.typtr <> nil then
+        if gattr.typtr^.form <= power then load
+        else loadaddress;
+      lattr := gattr; lop := op;
+      if lop = inop then
+        if not comptypes(gattr.typtr,intptr) then
+          gen0t(58(*ord*),gattr.typtr);
+      insymbol; simpleexpression(fsys, threaten);
+      if gattr.typtr <> nil then
+        if gattr.typtr^.form <= power then load
+        else loadaddress;
+      if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
+        fndopr2(lop, lattr, fcp);
+        if fcp <> nil then callop2(fcp, lattr) else begin
           if lop = inop then
             if gattr.typtr^.form = power then
               if comptypes(lattr.typtr,gattr.typtr^.elset) then
@@ -5838,20 +5817,17 @@ end;
             else begin error(130); gattr.typtr := nil end
           else
             begin
-              if iso7185 or 
-                 (intt(lattr.typtr) or realt(lattr.typtr)) and
-                 (intt(gattr.typtr) or realt(gattr.typtr)) then
-                { convert either integer to real }
-                if lattr.typtr <> gattr.typtr then
-                  if lattr.typtr = intptr then
-                    begin gen0(9(*flo*));
-                      lattr.typtr := realptr
-                    end
-                  else
-                    if gattr.typtr = intptr then
-                      begin gen0(10(*flt*));
-                        gattr.typtr := realptr
-                      end;
+              { convert either integer to real }
+              if lattr.typtr <> gattr.typtr then
+                if lattr.typtr = intptr then
+                  begin gen0(9(*flo*));
+                    lattr.typtr := realptr
+                  end
+                else
+                  if gattr.typtr = intptr then
+                    begin gen0(10(*flt*));
+                      gattr.typtr := realptr
+                    end;
               if comptypes(lattr.typtr,gattr.typtr) then
                 begin lsize := lattr.typtr^.size;
                   typind := ' ';
@@ -5864,21 +5840,29 @@ end;
                           if lattr.typtr = charptr then typind := 'c'
                           else typind := 'i';
                     pointer:
-                        if lop in [ltop,leop,gtop,geop] then 
-                          binopr(lop, lattr, 131)
-                        else typind := 'a';
-                    power: if lop in [ltop,gtop] then binopr(lop, lattr, 132)
-                           else typind := 's';
+                      begin
+                        if lop in [ltop,leop,gtop,geop] then error(131); 
+                        typind := 'a'
+                      end;
+                    power: 
+                      begin if lop in [ltop,gtop] then error(132);
+                        typind := 's'
+                      end;
                     arrays, arrayc:
-                        if not stringt(lattr.typtr) then binopr(lop, lattr, 134)
-                        else begin
-                          if (lattr.typtr^.form = arrayc) or 
-                             (gattr.typtr^.form = arrayc) then typind := 'v'
-                          else typind := 'm';
-                          containerop(lattr) { rationalize binary container }
-                        end;
-                    records: binopr(lop, lattr, 134);
-                    files: binopr(lop, lattr, 133);
+                      begin
+                        if not stringt(lattr.typtr) then error(134);
+                        if (lattr.typtr^.form = arrayc) or 
+                           (gattr.typtr^.form = arrayc) then typind := 'v'
+                        else typind := 'm';
+                        containerop(lattr) { rationalize binary container }
+                      end;
+                    records: 
+                      begin
+                        error(134);
+                        typind := 'm'
+                      end;
+                    files: 
+                      begin error(133); typind := 'f' end
                   end;
                   if typind <> ' ' then case lop of
                     ltop: gen2(53(*les*),ord(typind),lsize);
@@ -5889,10 +5873,12 @@ end;
                     eqop: gen2(47(*equ*),ord(typind),lsize)
                   end
                 end
-              else binopr(lop, lattr, 129)
+              else error(129)
             end;
-        gattr.typtr := boolptr; gattr.kind := expr
-      end (*sy = relop*)
+          gattr.typtr := boolptr; gattr.kind := expr  
+        end
+      end
+    end (*sy = relop*)
   end (*expression*) ;
       
   procedure body(fsys: setofsys; fprocp: ctp); forward;
