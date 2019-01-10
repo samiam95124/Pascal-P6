@@ -3704,6 +3704,26 @@ end;
     else if realt(pt) and intt(at) then cmptyp := true
   end;
   
+  { find matching uary operator overload }
+  procedure fndopr1(opr: operatort; var fcp: ctp);
+    var dt: disprange; fcp2: ctp;
+  begin fcp := nil;
+    if not iso7185 then begin
+      dt := top; { search top down }
+      repeat
+        while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
+        fcp2 := display[dt].oprprc[opr];
+        fcp := nil; { set not found }
+        while fcp2 <> nil do begin
+          if parnum(fcp2) = 1 then
+            if cmptyp(partype(fcp2, 1), gattr.typtr) then fcp := fcp2;
+          fcp2 := fcp2^.grpnxt
+        end;
+        if dt > 0 then dt := dt-1
+      until (fcp <> nil) or (dt = 0)
+    end
+  end;
+  
   { find matching binary operator overload }
   procedure fndopr2(opr: operatort; var lattr: attr; var fcp: ctp);
     var dt: disprange; fcp2: ctp;
@@ -3727,7 +3747,7 @@ end;
                         
   procedure expression(fsys: setofsys; threaten: boolean); forward;
   
-  procedure callop1(opr: operatort); forward;
+  procedure callop1(fcp: ctp); forward;
   
   procedure callop2(fcp: ctp; var lattr: attr); forward;
 
@@ -3903,84 +3923,63 @@ end;
   (*[*) if sy = lbrack then
           begin gattr.ptrref := false;
             repeat lattr := gattr;
-              if gattr.kind <> expr then
-                if gattr.typtr <> nil then 
-                  if gattr.typtr^.form <= power then load else loadaddress;
+              with lattr do
+                if typtr <> nil then begin
+                  if not arrayt(typtr) then begin error(138); typtr := nil end
+                end;
+              loadaddress;
               insymbol; expression(fsys + [comma,rbrack], false);
-              if gattr.kind <> expr then
-                if gattr.typtr <> nil then 
-                  if gattr.typtr^.form <= power then load else loadaddress;
+              load;
               if gattr.typtr <> nil then
-                if (not arrayt(lattr.typtr) or (gattr.typtr^.form <> scalar)) and 
-                   isopr(inxop) and not iso7185 then begin
-                { possible operator overload }
-                fndopr2(inxop, lattr, fcp2); 
-                if fcp2 = nil then begin error(134); gattr.typtr := nil end
-                else callop2(fcp2, lattr);
-                with gattr do begin
-                  kind := expr;
-                  if typtr <> nil then
-                    if typtr^.form=subrange then typtr := typtr^.rangetype;
-                  access := drct; idplmt := 0; packing := false; 
-                  packcom := false; tagfield := false; ptrref := true; 
-                  vartl := -1; pickup := false; dblptr := false
-                end
-              end else begin
-                with lattr do
-                  if typtr <> nil then begin
-                    if not arrayt(typtr) then begin error(138); typtr := nil end
-                  end;
-                if gattr.typtr <> nil then
-                  if gattr.typtr^.form<>scalar then error(113)
-                  else if not comptypes(gattr.typtr,intptr) then
-                         gen0t(58(*ord*),gattr.typtr);
-                if lattr.typtr <> nil then
-                  with lattr.typtr^ do
-                    begin
-                      if form = arrayc then begin
-                        { note containers merge index and bounds check }
-                        if gattr.typtr <> intptr then error(139)
-                      end else if comptypes(inxtype,gattr.typtr) then
-                        begin
-                          if inxtype <> nil then
-                            begin getbounds(inxtype,lmin,lmax);
-                              if debug then
-                                gen2t(45(*chk*),lmin,lmax,intptr);
-                              if lmin>0 then gen1t(31(*dec*),lmin,intptr)
-                              else if lmin<0 then
-                                gen1t(34(*inc*),-lmin,intptr);
-                              (*or simply gen1(31,lmin)*)
-                            end
-                        end
-                      else error(139);
-                      with gattr do
-                        begin 
-                          if lattr.typtr^.form = arrays then typtr := aeltype
-                          else typtr := abstype;
-                          kind := varbl;
-                          access := indrct; idplmt := 0; packing := false;
-                          packcom := false; tagfield := false; ptrref := false;
-                          vartl := -1; pickup := false; dblptr := false;
-                        end;
-                      if gattr.typtr <> nil then
-                        begin
-                          gattr.packcom := lattr.packing;
-                          gattr.packing :=
-                            lattr.packing or gattr.typtr^.packing;
-                          lsize := gattr.typtr^.size; { get base size }
-                          cc := containers(lattr.typtr);
-                          if lattr.typtr^.form = arrays then gen1(36(*ixa*),lsize)
-                          else if cc = 1 then 
-                            gen1(103(*cxs*),lsize) { simple container index }
-                          else begin { complex container index }
-                            gen2(104(*cxc*),cc,containerbase(gattr.typtr));
-                            { if level is at bottom, simplify the template }
-                            if cc = 2 then gen0(108(*spc*))
+                if gattr.typtr^.form<>scalar then error(113)
+                else if not comptypes(gattr.typtr,intptr) then
+                       gen0t(58(*ord*),gattr.typtr);
+              if lattr.typtr <> nil then
+                with lattr.typtr^ do
+                  begin
+                    if form = arrayc then begin
+                      { note containers merge index and bounds check }
+                      if gattr.typtr <> intptr then error(139)
+                    end else if comptypes(inxtype,gattr.typtr) then
+                      begin
+                        if inxtype <> nil then
+                          begin getbounds(inxtype,lmin,lmax);
+                            if debug then
+                              gen2t(45(*chk*),lmin,lmax,intptr);
+                            if lmin>0 then gen1t(31(*dec*),lmin,intptr)
+                            else if lmin<0 then
+                              gen1t(34(*inc*),-lmin,intptr);
+                            (*or simply gen1(31,lmin)*)
                           end
+                      end
+                    else error(139);
+                    with gattr do
+                      begin 
+                        if lattr.typtr^.form = arrays then typtr := aeltype
+                        else typtr := abstype;
+                        kind := varbl;
+                        access := indrct; idplmt := 0; packing := false;
+                        packcom := false; tagfield := false; ptrref := false;
+                        vartl := -1; pickup := false; dblptr := false;
+                      end;
+                    if gattr.typtr <> nil then
+                      begin
+                        gattr.packcom := lattr.packing;
+                        gattr.packing :=
+                          lattr.packing or gattr.typtr^.packing;
+                        lsize := gattr.typtr^.size; { get base size }
+                        cc := containers(lattr.typtr);
+                        if lattr.typtr^.form = arrays then gen1(36(*ixa*),lsize)
+                        else if cc = 1 then 
+                          gen1(103(*cxs*),lsize) { simple container index }
+                        else begin { complex container index }
+                          gen2(104(*cxc*),cc,containerbase(gattr.typtr));
+                          { if level is at bottom, simplify the template }
+                          if cc = 2 then gen0(108(*spc*))
                         end
-                    end
-                else gattr.typtr := nil
-              end
+                      end
+                  end
+              else gattr.typtr := nil
             until sy <> comma;
             if sy = rbrack then insymbol else error(12);
             lastptr := false { set not pointer op }
@@ -4073,23 +4072,7 @@ end;
                        { index buffer }
                        gen1t(34(*inc*),fileidsize,gattr.typtr);
                        typtr := filtype;
-                    end else begin
-                      if iso7185 then error(141)
-                      else if isopr(drfop) then begin { there is an overload }
-                        if gattr.kind <> expr then
-                          if gattr.typtr <> nil then 
-                            if gattr.typtr^.form <= power then load else loadaddress;
-                        callop1(drfop);
-                        with gattr do begin
-                          kind := expr;
-                          if typtr <> nil then
-                            if typtr^.form=subrange then typtr := typtr^.rangetype;
-                          access := drct; idplmt := 0; packing := false; 
-                          packcom := false; tagfield := false; ptrref := true; 
-                          vartl := -1; pickup := false; dblptr := false;
-                        end
-                      end else error(141)
-                    end;
+                    end else error(141);
               insymbol;
               lastptr := true { set last was ptr op }
             end;
@@ -5263,58 +5246,40 @@ end;
   end;
     
   { call operator type with 1 parameter }
-  procedure callop1{(opr: operatort)};
-    var fcp, fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
-        lsize: addrrange; locpar, locpars, lp, lps: addrrange; 
+  procedure callop1{(fcp: ctp)};
+    var frlab: integer; lsize: addrrange; locpar, locpars, lp, lps: addrrange; 
         sp: stp;
   begin
-    dt := top; { search top down }
-    repeat
-      while (dt > 0) and (display[dt].oprprc[opr] = nil) do dt := dt-1;
-      fcp := display[dt].oprprc[opr];
-      fcpf := nil; { set not found }
-      pn := 1;
-      while fcp <> nil do begin
-        if parnum(fcp) = 1 then
-          if cmptyp(partype(fcp, 1), gattr.typtr) then fcpf := fcp;
-        fcp := fcp^.grpnxt
-      end;
-      if dt > 0 then dt := dt-1
-    until (fcpf <> nil) or (dt = 0);
-    fcp := fcpf;
-    if fcp = nil then begin error(134); gattr.typtr:=nil end 
-    else begin
-      sp := partype(fcp, 1);
-      genlabel(frlab); genmst(level-fcp^.pflev,frlab);
-      { find uncoerced parameters size }
-      locpars := psize(gattr.typtr); 
-      { find final parameters size }
-      locpar := psize(sp);
-      { find function result size }
-      lsize := fcp^.idtype^.size;
-      alignu(parmptr,lsize);
-      { generate a stack hoist of parameters. Basically the common math on stack
-        not formatted the same way as function calls, so we hoist the parameters
-        over the mark, call and then drop the function result downwards. }
-      if gattr.typtr <> nil then
-          if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
-            gen1(118(*lsa*),marksize+lsize)
-          else gen2(116(*cpp*),lsize,locpars);  
-      { do coercions }
-      if realt(sp) and intt(gattr.typtr) then
-        begin gen0(10(*flt*)); gattr.typtr := realptr end;
-      fixpar(sp,gattr.typtr);
-      if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-      gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
-      gen2(117(*cpr*),lsize,locpars);
-      gattr.typtr := fcp^.idtype
-    end
+    sp := partype(fcp, 1);
+    genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+    { find uncoerced parameters size }
+    locpars := psize(gattr.typtr); 
+    { find final parameters size }
+    locpar := psize(sp);
+    { find function result size }
+    lsize := fcp^.idtype^.size;
+    alignu(parmptr,lsize);
+    { generate a stack hoist of parameters. Basically the common math on stack
+      not formatted the same way as function calls, so we hoist the parameters
+      over the mark, call and then drop the function result downwards. }
+    if gattr.typtr <> nil then
+        if (gattr.kind = expr) and (gattr.typtr^.form > power) then 
+          gen1(118(*lsa*),marksize+lsize)
+        else gen2(116(*cpp*),lsize,locpars);  
+    { do coercions }
+    if realt(sp) and intt(gattr.typtr) then
+      begin gen0(10(*flt*)); gattr.typtr := realptr end;
+    fixpar(sp,gattr.typtr);
+    if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
+    gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+    gen2(117(*cpr*),lsize,locpars);
+    gattr.typtr := fcp^.idtype
   end;
   
   { call operator type with 2 parameters }
   procedure callop2{(fcp: ctp; var lattr: attr)};
-    var fcp1, fcpf: ctp; pn: integer; frlab: integer; dt: disprange; 
-        lsize: addrrange; locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
+    var frlab: integer; lsize: addrrange; 
+        locpar, locpars, lpl, lpr, lpls, lprs: addrrange; 
         lsp, rsp: stp;
     { check actual type can be coerced into formal }
     function fungible(fsp,asp: stp): boolean;
@@ -5369,22 +5334,6 @@ end;
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize: addrrange; fcp: ctp;
 
-    { process unary operator overload check }
-    procedure unopr(op: operatort; e: integer);
-    begin
-      if not iso7185 then begin
-        { check for operator overload }
-        if isopr(op) then begin { process the overload }
-          callop1(op);
-          with gattr do begin
-            kind := expr;
-            if typtr <> nil then
-              if typtr^.form=subrange then typtr := typtr^.rangetype
-          end
-        end else begin error(134); gattr.typtr := nil end
-      end else begin error(134); gattr.typtr := nil end
-    end;
-    
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
 
@@ -5392,7 +5341,7 @@ end;
         var lattr: attr; lop: operatort; fcp: ctp;
 
         procedure factor(fsys: setofsys; threaten: boolean);
-          var lcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
+          var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
         begin
           if not (sy in facbegsys) then
@@ -5505,10 +5454,13 @@ end;
                     if gattr.kind <> expr then
                       if gattr.typtr <> nil then 
                         if gattr.typtr^.form <= power then load else loadaddress;
-                    if (gattr.typtr = boolptr) or 
-                       ((gattr.typtr = intptr) and not iso7185) then
-                      gen0t(19(*not*),gattr.typtr)
-                    else unopr(notop, 135)
+                    fndopr1(notop, fcp);
+                    if fcp <> nil then callop1(fcp) else begin
+                      if (gattr.typtr = boolptr) or 
+                         ((gattr.typtr = intptr) and not iso7185) then
+                        gen0t(19(*not*),gattr.typtr)
+                      else begin error(135); gattr.typtr := nil end
+                    end
                   end;
         (*[*)     lbrack:
                   begin insymbol; cstpart := [ ]; varpart := false;
@@ -5731,14 +5683,18 @@ end;
         if gattr.kind <> expr then
             if gattr.typtr <> nil then 
               if gattr.typtr^.form <= power then load else loadaddress;
-        if fop = minus then begin
-          if gattr.typtr = intptr then gen0(17(*ngi*))
-          else
-            if gattr.typtr = realptr then gen0(18(*ngr*))
-              else if gattr.typtr <> nil then unopr(fop, 134)
-        end else begin
-          if (gattr.typtr <> intptr) and 
-             (gattr.typtr <> realptr) then unopr(fop, 134)
+        fndopr1(fop, fcp);
+        if fcp <> nil then callop1(fcp) else begin
+          if fop = minus then begin
+            if gattr.typtr = intptr then gen0(17(*ngi*))
+            else
+              if gattr.typtr = realptr then gen0(18(*ngr*))
+              else begin error(134); gattr.typtr := nil end
+          end else begin
+            if (gattr.typtr <> intptr) and 
+               (gattr.typtr <> realptr) then 
+              begin error(134); gattr.typtr := nil end
+          end
         end
       end;
       while sy = addop do
