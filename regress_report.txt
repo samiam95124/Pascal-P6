@@ -45,9 +45,9 @@ cmach run
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
-Wed Jan  9 22:01:06 PST 2019
+Sat Jan 12 11:36:52 PST 2019
 Source files
-822c7f5fc23858f7ba9874c4503e4b6d  -
+bb61e5351389b9bbeca263fd775dc8e9  -
 batch files
 4c3d5da6c084c65a90e31213c8077e4b  -
 P2 files

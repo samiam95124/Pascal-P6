@@ -239,7 +239,7 @@ type                                                        (*describing:*)
                resultsy,operatorsy,outsy,propertysy,channelsy,streamsy,othersy,
                hexsy,octsy,binsy,numsy);
      operatort = (mul,rdiv,andop,idiv,imod,plus,minus,orop,ltop,leop,geop,gtop,
-                  neop,eqop,inop,noop,xorop,drfop,inxop,notop);
+                  neop,eqop,inop,noop,xorop,notop,bcmop);
      setofsys = set of symbol;
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
@@ -791,7 +791,7 @@ var
       define := false;
       modnam := nil;
       inilst := nil;
-      for oi := mul to notop do oprprc[oi] := nil
+      for oi := mul to bcmop do oprprc[oi] := nil
     end
   end;
   
@@ -835,7 +835,7 @@ var
     end;
     { dispose of module name }
     putstrs(dr.modnam);
-    for oi := mul to notop do 
+    for oi := mul to bcmop do 
       if dr.oprprc[oi] <> nil then putnam(dr.oprprc[oi]);
   end; { putdsp }
 
@@ -1583,6 +1583,7 @@ end;
     285: write('Parameter type not allowed in operator overload parameter ');
     286: write('Parameter mode not allowed in operator overload parameter ');
     287: write('Variable reference is not addressable');
+    288: write('Left side of assignment overload operator must be out mode');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -1825,7 +1826,7 @@ end;
                   { if in ISO 7185 mode and keyword is extended, then revert it
                     to label. Note that forward and external get demoted to
                     "word symbols" in ISO 7185 }
-                  if iso7185 and ((sy >= forwardsy) or (op >= notop)) then
+                  if iso7185 and ((sy >= forwardsy) or (op >= bcmop)) then
                     begin sy := ident; op := noop end 
                 end;
       end;
@@ -3913,7 +3914,8 @@ end;
                     lsize := parmsize; if id <> nil then lsize := id^.size;
                     dplmt := 0   (*impl. relat. addr. of fct. result*)
                   end
-              end
+              end;
+            proc: { nothing, its an error case }
         end (*case*)
       end (*with*);
     if not (sy in selectsys + fsys) and not skp then
@@ -5300,8 +5302,11 @@ end;
     { find final parameters size }
     lpl := psize(lsp); lpr := psize(rsp); locpar := lpl+lpr;
     { find function result size }
-    lsize := fcp^.idtype^.size;
-    alignu(parmptr,lsize);
+    lsize := 0;
+    if fcp^.klass = func then begin
+      lsize := fcp^.idtype^.size;
+      alignu(parmptr,lsize)
+    end;
     { generate a stack hoist of parameters. Basically the common math on stack
       not formatted the same way as function calls, so we hoist the parameters
       over the mark, call and then drop the function result downwards. }
@@ -6843,17 +6848,16 @@ end;
         else error(250);
       end;
 
-      procedure parameterlist(fsy: setofsys; var fpar: ctp; var plst: boolean; opr: boolean);
+      procedure parameterlist(fsy: setofsys; var fpar: ctp; var plst: boolean; 
+                              opr: boolean; opt: operatort);
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
           llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
           oldlevf: 0..maxlevel; oldtopf: disprange;
-          lcs: addrrange;
-          test: boolean;
-          dummy: boolean;
+          lcs: addrrange; test: boolean; dummy: boolean; first: boolean;
       procedure joinlists;
       var lcp, lcp3: ctp;
-      begin
+      begin first := true;
         { we missed the type for this id list, meaning the types are nil. Add 
           the new list as is for error recovery }
         if lcp2 <> nil then begin
@@ -6903,7 +6907,7 @@ end;
                       end
                     else error(2);
                     oldlev := level; oldtop := top; pushlvl(false, lcp);
-                    lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy, false); 
+                    lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy, false, noop); 
                     lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                     if not (sy in fsys+[semicolon,rparent]) then
                       begin error(7);skip(fsys+[semicolon,rparent]) end;
@@ -6934,7 +6938,7 @@ end;
                         else error(2);
                         oldlev := level; oldtop := top; pushlvl(false, lcp);
                         lcs := lc; 
-                        parameterlist([colon,semicolon,rparent],lcp2,dummy, false); 
+                        parameterlist([colon,semicolon,rparent],lcp2,dummy, false, noop); 
                         lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
                         if not (sy in fsys+[colon]) then
                           begin error(7);skip(fsys+[comma,semicolon,rparent]) end;
@@ -6962,8 +6966,12 @@ end;
                         if sy = varsy then pt := ptvar
                         else if sy = viewsy then pt := ptview
                         else if sy = outsy then pt := ptout;
-                        if opr and (pt <> ptval) and (pt <> ptview) then 
-                          error(286);
+                        if opr then begin
+                          if first and (opt = bcmop) then begin
+                            if pt <> ptout then error(288)
+                          end else if opr and (pt <> ptval) and (pt <> ptview) then 
+                            error(286)
+                        end;
                         if (sy = varsy) or (sy = outsy) then
                           begin lkind := formal; insymbol end
                         else begin lkind := actual; 
@@ -7038,6 +7046,7 @@ end;
                         else begin error(5); joinlists end
                       end;
                   end;
+                first := false;
                 if sy = semicolon then
                   begin insymbol;
                     if not (sy in fsys + [ident,varsy,procsy,funcsy,viewsy,outsy]) then
@@ -7160,16 +7169,13 @@ end;
       if (sy = ident) or (fsy = operatorsy) then 
         begin
           if fsy = operatorsy then begin { process operator definition }
-            if not (sy in [mulop,addop,relop,notsy,arrow,lbrack]) then 
+            if not (sy in [mulop,addop,relop,notsy,becomes]) then 
               begin error(281); 
                 skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon]) 
               end
             else begin 
               if sy = notsy then op := notop 
-              else if sy = arrow then op := drfop
-              else if sy = lbrack then 
-                begin
-                insymbol; if sy <> rbrack then error(12); op := inxop end;
+              else if sy = becomes then op := bcmop;
               lcp := display[top].oprprc[op] { pick up an operator leader }
             end;
             if fpat <> fpanone then error(280);
@@ -7201,11 +7207,15 @@ end;
           lcp1 := lcp; { save original }
           if not forw then { create a new proc/func entry }
             begin
-              if fsy = procsy then new(lcp,proc,declared,actual)
+              if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
+                new(lcp,proc,declared,actual)
               else { func/opr } new(lcp,func,declared,actual); 
               ininam(lcp);
               with lcp^ do
-                begin if fsy = procsy then klass := proc else klass := func; 
+                begin 
+                  if (fsy = procsy) or 
+                     ((fsy = operatorsy) and (opt = bcmop)) then 
+                    klass := proc else klass := func; 
                   if fsy = operatorsy then begin
                     { Synth a label based on the operator. This is done for
                       downstream diagnostics. }
@@ -7218,8 +7228,7 @@ end;
                       geop:  ops := '>        '; gtop:  ops := '>=       ';
                       neop:  ops := '<>       '; eqop:  ops := '=        ';
                       inop:  ops := 'in       '; xorop: ops := 'xor      ';
-                      notop: ops := 'not      '; drfop: ops := '^        ';
-                      inxop: ops := '[]       ';
+                      notop: ops := 'not      '; bcmop: ops := ':=       ';
                     end;
                     strassvr(name, ops)
                   end else strassvf(name, id); 
@@ -7274,15 +7283,17 @@ end;
         end
       else
         begin error(2);
-          if fsy = procsy then lcp := uprcptr else lcp := ufctptr
+          if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then 
+            lcp := uprcptr else lcp := ufctptr
         end;
       oldlev := level; oldtop := top;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
       pushlvl(forw, lcp); display[top].define := false;
       begin 
-        if fsy = procsy then parameterlist([semicolon],lcp1,plst, fsy = operatorsy)
-        else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy);
+        if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then 
+          parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
+        else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
         if not forw then begin
           lcp^.pflist := lcp1;
           if ovrl or (fsy = operatorsy) then begin { compare against overload group }
@@ -7294,7 +7305,8 @@ end;
           putparlst(lcp1) { redeclare, dispose of copy }
         end
       end;
-      if (fsy = funcsy) or (fsy = operatorsy) then { function }  
+      if (fsy = funcsy) or ((fsy = operatorsy) and not (opt = bcmop)) then 
+        { function }  
         if sy = colon then
           begin insymbol;
             if sy = ident then
@@ -7445,7 +7457,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean; lsize: addrrange;
+        var lattr, lattr2: attr; tagasc: boolean; lsize: addrrange; fcp2: ctp;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -7470,8 +7482,9 @@ end;
               { process expression rights as load }
               if (gattr.typtr^.form <= power) or (gattr.kind = expr) then load
               else loadaddress;
-            if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
-              begin
+            if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
+              fndopr2(lop, lattr, fcp2);
+              if fcp2 <> nil then callop2(fcp2, lattr) else begin 
                 if comptypes(realptr,lattr.typtr)and(gattr.typtr=intptr)then
                   begin gen0(10(*flt*));
                     gattr.typtr := realptr
@@ -7536,6 +7549,7 @@ end;
                   end;
                 end else error(129)
               end
+            end
           end (*sy = becomes*)
         else error(51)
       end (*assignment*) ;
@@ -8086,11 +8100,12 @@ end;
             trysy:    begin insymbol; trystatement end;
             { process result as a pseudostatement }
             resultsy: begin
-              if fprocp <> nil then if fprocp^.klass <> func then error(210)
-              else begin
-                if fprocp^.asgn then error(212);
-                fprocp^.asgn := true
-              end;
+              if fprocp <> nil then 
+                if fprocp^.klass <> func then error(210)
+                else begin
+                  if fprocp^.asgn then error(212);
+                  fprocp^.asgn := true
+                end;
               assignment(fprocp, true);
               if not (sy = endsy) or (stalvl > 1) then error(211)
             end 
