@@ -2969,6 +2969,21 @@ void sinins()
                        putadr(ad2+PTRSIZE, ad1); break;
     case 225 /*ldp*/: popadr(ad); pshadr(getadr(ad+PTRSIZE));
                        pshadr(getadr(ad)); break;
+    case 239 /*cpp*/: getq(); getq1(); ad = sp+MARKSIZE+q; sp = sp-q1; ad1 = sp;
+                      for (i = 0; i < q1; i++) {
+                        store[ad1] = store[ad]; putdef(ad1, getdef(ad));
+                        ad = ad+1; ad1 = ad1+1;
+                      }
+                      break;
+    case 240 /*cpr*/: getq(); getq1(); ad = sp+q+q1; ad1 = sp+q;
+                      for (i = 0; i < q; i++) {
+                        ad = ad-1; ad1 = ad1-1;
+                        store[ad] = store[ad1]; putdef(ad, getdef(ad1));
+                      }
+                      sp = sp+q1;
+                      break;
+
+    case 241 /*lsa*/: getq(); pshadr(sp+q); break;
 
     /* illegal instructions */
     /* 228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246,

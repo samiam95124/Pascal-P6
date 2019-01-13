@@ -3045,9 +3045,24 @@ begin
                        putadr(ad2+ptrsize, ad1) end;
     225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize)); 
                        pshadr(getadr(ad)) end;
+    239 (*cpp*): begin getq; getq1; ad := sp+marksize+q; sp := sp-q1; ad1 := sp;
+                       for i := 1 to q1 do begin
+                         store[ad1] := store[ad]; putdef(ad1, getdef(ad)); 
+                         ad := ad+1; ad1 := ad1+1 
+                       end
+                 end;
+    240 (*cpr*): begin getq; getq1; ad := sp+q+q1; ad1 := sp+q;
+                       for i := 1 to q do begin
+                         ad := ad-1; ad1 := ad1-1;
+                         store[ad] := store[ad1]; putdef(ad, getdef(ad1)) 
+                       end;
+                       sp := sp+q1
+                 end;
+                 
+    241 (*lsa*): begin getq; pshadr(sp+q) end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246,
+    228, 229, 230, 231, 232, 233, 234, 242, 243, 244, 245, 246,
     247, 248, 249, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
