@@ -23,7 +23,6 @@
 
 pmach=0
 cmach=0
-bit16=0
 progfile=""
 package=0
 
@@ -37,10 +36,6 @@ do
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
-        
-    elif [ "$param" = "--bit16" ]; then
-    
-        bit16=1
         
     elif [ "$param" = "--package" ]; then
     
@@ -97,15 +92,7 @@ do
 	    	cp $param.pas prd
 	    	
 	    fi
-	    if [ "$bit16" = "1" ]; then
-	    
-	        pcom16
-	        
-	    else
-	    
-	        pcom
-	        
-	    fi
+	    pcom
 	    mv prr $param.p6
 	    cat $param.p6 >> temp.p6
 		progfile="$param"
@@ -154,14 +141,6 @@ elif [ "$package" = "1" ]; then
 else
 
 	mv temp.p6 prd
-	if [ "$bit16" = "1" ]; then
-	
-	    pint16le
-	
-	else
-	
-	    pint
-	    
-	fi
+	pint
 
 fi
