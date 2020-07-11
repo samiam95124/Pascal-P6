@@ -52,7 +52,7 @@
 * the parser's error recovery.                                                 *
 *                                                                              *
 * The top error entry is replaced back into the spewtest.pas file, this is     *
-* for the convienence of being able to immediately test for the highest        *
+* for the convenience of being able to immediately test for the highest        *
 * error count case.                                                            *
 *                                                                              *
 * Translated from Pascal 6/7/2018                                              *

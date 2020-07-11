@@ -44,6 +44,7 @@
       ordminchar  =        0;
       maxresult   = realsize;   { maximum size of function result }
       marksize    =       32;   { maxresult+6*ptrsize }
+      maxexp      =      308;   { maximum exponent of real }
       ujplen      =       5;    { length of ujp instruction (used for case
                                   jumps) }
       { Value of nil is 1 because this allows checks for pointers that were

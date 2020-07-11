@@ -1381,6 +1381,7 @@ end;
     27:  write(''','' or '')'' expected');
     28:  write('''array'' expected');
     29:  write(''','' or ''end'' expected');
+    30:  write('''..'' expected');
 
     50:  write('Error in constant');
     51:  write(''':='' expected');
@@ -1880,6 +1881,10 @@ end;
                         end;
                         nextch
                       until chartp[ch] <> number;
+                      if i > maxexp then begin
+                         i := 0;
+                         if ferr then error(194)
+                      end;
                       ev := ev+i*sgn
                     end
                   end;
@@ -2149,7 +2154,7 @@ end;
         if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
         else lcp := lcp^.llink
     end
-  end (*searchidne*) ;
+  end (*searchidnenm*) ;
 
   procedure searchidnenm(fidcls: setofids; var fcp: ctp; var mm: boolean);
     label 1;
@@ -2162,7 +2167,7 @@ end;
         if fcp <> nil then begin disx := disxl; goto 1 end
       end;
     1:;
-  end (*searchidne*) ;
+  end (*searchidnenm*) ;
 
   procedure searchidne(fidcls: setofids; var fcp: ctp);
     var mm: boolean;
@@ -2521,7 +2526,7 @@ end;
                        if pfdeckind = standard then
                          write('standard':intdig, '-', key:intdig)
                        else
-                         begin write('declared':intdig,'-'); wrtctp(next); write('-');
+                         begin write('declared':intdig,'-'); wrtctp(pflist); write('-');
                            write(pflev:intdig,' ',pfname:intdig, ' ');
                            if pfkind = actual then
                              begin write('actual':intdig, ' ');
@@ -3015,7 +3020,7 @@ end;
             mes(fop); putlabel(fp3)
       end;
     ic := ic + 1
-  end (*gen2*) ;
+  end (*genctaivtcvb*) ;
   
   procedure genmst(lev: levrange; lb: integer);
   begin
@@ -5879,7 +5884,7 @@ end;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
         var lsp,lsp1: stp; lcp,lcp1: ctp; ttop: disprange;
-            lcnt: integer; lvalu: valu;
+            lcnt: integer; lvalu: valu; t: integer;
       begin fsize := 1;
         if not (sy in simptypebegsys) then
           begin error(1); skip(fsys + simptypebegsys) end;
@@ -5934,7 +5939,7 @@ end;
                             else min := values;
                             size := intsize; packing := false
                           end;
-                        if sy = range then insymbol else error(5);
+                        if sy = range then insymbol else error(30);
                         constexpr(fsys,lsp1,lvalu);
                         if not lvalu.intval then 
                           begin lsp^.max.intval := true; lsp^.max.ival := 1 end 
@@ -5960,7 +5965,7 @@ end;
                         begin min.intval := true; min.ival := 1 end;
                       size:=intsize 
                     end;
-                    if sy = range then insymbol else error(5);
+                    if sy = range then insymbol else error(30);
                     constexpr(fsys,lsp1,lvalu);
                     if lvalu.intval then lsp^.max := lvalu
                     else begin lsp^.max.intval := true; lsp^.max.ival := 1 end;
@@ -6119,7 +6124,7 @@ end;
                     with lsp3^ do
                       begin form := variant; varln := varlnm; 
                             nxtvar := lsp1; subvar := lsp2; varval := lvalu;
-                            caslst := lsp2;  packing := false
+                            caslst := lsp2; packing := false
                       end;
                     if (lvalu.ival >= 0) and (lvalu.ival <= varmax) then 
                       lsp^.vart^[lvalu.ival] := varlnm; { set case to logical }
@@ -9462,7 +9467,7 @@ begin
   { write initial option values }
   write(prr, 'o '); 
   for c := 'a' to 'z' do 
-    if not (c in ['g','h','n','o','p','q','s','w','r']) then
+    if not (c in ['g','h','n','o','p','m','q','s','w','a','f','e','i','r']) then
       begin write(prr, c); 
     if option[c] then write(prr, '+') else write(prr, '-')
   end;

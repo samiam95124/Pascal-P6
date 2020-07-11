@@ -43,6 +43,7 @@
       ordmaxchar  =      255;   { Characters are 8 bit ISO/IEC 8859-1 }
       ordminchar  =        0;
       marksize    =       12;   { 6*ptrsize }
+      maxexp      =      126;   { maximum exponent of real }
       ujplen      =       5;    { length of ujp instruction (used for case
                                   jumps) }
       { Value of nil is 1 because this allows checks for pointers that were
