@@ -12,7 +12,7 @@
 # 
 # 16
 # 32
-# 64
+# 32
 #
 # Note that 16 bits actually covers both 8 bit and 16 bit processors, since 
 # 8 bit processors usually have 16 bit addressing, regardless of their basic
@@ -36,46 +36,46 @@
 PC=gpc
 PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
-CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DGNU_PASCAL
+CPPFLAGS32LE=-DWRDSIZ32 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
-CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DGNU_PASCAL
+CPPFLAGS32BE=-DWRDSIZ32 -DBENDIAN -DGNU_PASCAL
 CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 
 all: pcom pint pmach cmach genobj spew
 
 pcom: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS64LE)
-	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS32LE)
+	$(PC) $(PFLAGS) -o bin/pcom32 source/pcom.mpp.pas
 	pascpp source/pcom $(CPPFLAGS16LE)
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
-	cp bin/pcom64 bin/pcom
+	cp bin/pcom32 bin/pcom
 	
 pcom_immerr: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS64LE) -DIMM_ERR
-	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
+	pascpp source/pcom $(CPPFLAGS32LE) -DIMM_ERR
+	$(PC) $(PFLAGS) -o bin/pcom32 source/pcom.mpp.pas
 	pascpp source/pcom $(CPPFLAGS16LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
-	cp bin/pcom64 bin/pcom
+	cp bin/pcom32 bin/pcom
 	
 pint: source/pint.pas 
-	pascpp source/pint $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS64BE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint64be source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS32LE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint32le source/pint.mpp.pas
+	pascpp source/pint $(CPPFLAGS32BE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pint32be source/pint.mpp.pas
 	pascpp source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas
 	pascpp source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas
-	cp bin/pint64le bin/pint
+	cp bin/pint32le bin/pint
 
 pmach: source/pmach.pas
-	pascpp source/pmach $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pmach64le source/pmach.mpp.pas
-	cp bin/pmach64le bin/pmach
+	pascpp source/pmach $(CPPFLAGS) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pmach32le source/pmach.mpp.pas
+	cp bin/pmach32le bin/pmach
 
 cmach: source/cmach.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach.c -lm
-	cp bin/cmach64le bin/cmach
+	$(CC) $(CFLAGS) $(CPPFLAGS32LE) -o bin/cmach32le source/cmach.c -lm
+	cp bin/cmach32le bin/cmach
 
 genobj: source/genobj.pas
 	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas

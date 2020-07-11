@@ -1636,20 +1636,21 @@ end;
 
 procedure lstins(var ad: address);
 
-var ads: address;
-    op: instyp; p : lvltyp; q, q1 : integer;  (*instruction register*)
+var op: instyp; p : lvltyp; q, q1,q2 : integer;  (*instruction register*)
 
 begin
 
    { fetch instruction from byte store }
-   ads := ad;
    op := store[ad]; ad := ad+1;
    if insp[op] then begin p := store[ad]; ad := ad+1 end;
    if insq[op] > 0 then begin
 
       if insq[op] = 1 then q := store[ad]
-      else if insq[op] = intsize then q := getint(ad)
-      else begin q := getint(ad); q1 := getint(ad+intsize) end;
+      else begin
+        q := getint(ad);
+        if insq[op] > intsize then q1 := getint(ad+intsize);
+        if insq[op] > intsize*2 then q2 := getint(ad+intsize*2);
+      end;      
       ad := ad+insq[op]
 
    end;
@@ -1662,13 +1663,17 @@ begin
       if insq[op] > 0 then 
         begin write(','); wrthex(output, q, inthex, true) end;
       if insq[op] > intsize then 
-        begin write(','); wrthex(output, q1, inthex, true) end
+        begin write(','); wrthex(output, q1, inthex, true) end;
+      if insq[op] > intsize*2 then 
+        begin write(','); wrthex(output, q2, inthex, true) end
 
    end else if insq[op] > 0 then begin
 
       write('   '); wrthex(output, q, inthex, true);
       if insq[op] > intsize then 
-        begin write(','); wrthex(output, q1, inthex, true) end
+        begin write(','); wrthex(output, q1, inthex, true) end;
+      if insq[op] > intsize*2 then 
+        begin write(','); wrthex(output, q2, inthex, true) end
 
    end
 

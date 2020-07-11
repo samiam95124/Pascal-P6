@@ -91,13 +91,13 @@ if "%progfile%"=="" (
 if "%pmach%"=="1" (
 
     echo|set /p="{$e+}" > temp
-    copy temp+%progfile%.pas prd
+    cat temp %progfile%.pas > prd
     rm temp
     
 ) else if "%cmach%"=="1" (
 
     echo|set /p="{$e+}" > temp
-    copy temp+%progfile%.pas prd
+    cat temp %progfile%.pas > prd
     rm temp
 
 ) else (

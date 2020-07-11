@@ -14,7 +14,7 @@ pint run
 0 standard_tests\iso7185pat.dif
 0 sample_programs\pascals.dif
 0 p2\roman.dif
-985 p4\standardp.dif
+0 p4\standardp.dif
 pmach run 
 0 sample_programs\hello.dif
 0 sample_programs\roman.dif
@@ -46,11 +46,11 @@ cmach run
 0 p2\roman.dif
 0 p4\standardp.dif
 Sat 07/11/2020 
-11:40 AM
+02:28 PM
 Source files
-1a0afe0568635dc0d6d21e62f4404340 *-
+2ccebdb952927be35608bf395fd3c249 *-
 batch files
-1bedd10c8b7b6af457c28f2ded9990a9 *-
+b4e4d188c524b4487adb181e0bea8a85 *-
 P2 files
 a0e0dde6ebcbb1088cdd56a761d9f4c2 *-
 p4 files
@@ -60,4 +60,4 @@ Sample program test files
 standard test files
 2bbefe647038bd0f6e9a0da840e36236 *-
 other files
-7e68edba5b7794c7714f72f8a3dd2c12 *-
+2dbc33b64f6810c43493f46f1ac14777 *-
