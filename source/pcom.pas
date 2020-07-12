@@ -1827,7 +1827,7 @@ end;
                   { if in ISO 7185 mode and keyword is extended, then revert it
                     to label. Note that forward and external get demoted to
                     "word symbols" in ISO 7185 }
-                  if iso7185 and ((sy >= forwardsy) or (op >= bcmop)) then
+                  if iso7185 and ((sy >= forwardsy) or (op > noop)) then
                     begin sy := ident; op := noop end 
                 end;
       end;

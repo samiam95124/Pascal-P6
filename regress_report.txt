@@ -45,12 +45,12 @@ cmach run
 0 sample_programs\pascals.dif
 0 p2\roman.dif
 0 p4\standardp.dif
-Sat 07/11/2020 
-02:28 PM
+Sun 07/12/2020 
+12:42 AM
 Source files
-2ccebdb952927be35608bf395fd3c249 *-
+863e71c60bbaebb62c0b6bc73d14217b *-
 batch files
-b4e4d188c524b4487adb181e0bea8a85 *-
+0961d0c7f0d0dc4959e8f053292318ca *-
 P2 files
 a0e0dde6ebcbb1088cdd56a761d9f4c2 *-
 p4 files
