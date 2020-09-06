@@ -21,47 +21,47 @@ set cmachoption=
 set full=0
 for %%x in (%*) do (
 
-   	if "%%~x"=="--full" (
-   	
-   		set full=1
-   			
-   	) else if "%%~x"=="--short" (
-   	
-   		set full=0
-   		
-   	) else if "%%~x"=="--help" (
-   	
-   		echo.
-   		echo Regression test
-		echo.
-		echo Execution:
-		echo.
-		echo regress [--full^|--short^|--pmach^|--cmach]...
-		echo.
-		echo Run the compiler through a few typical programs
-		echo to a "gold" standard file. Each mode is cycled through in sequence.
-		echo.
-		echo The flags are one of:
-		echo.
-		echo --pmach Generate mach code and run the result through pmach.
-		echo --cmach Generate mach code and run the result through cmach.
-		echo --full  Run full test sequence.
-		echo --short Run short test sequence.
-		echo.
-		goto stop
-   		
+    if "%%~x"=="--full" (
+
+        set full=1
+
+    ) else if "%%~x"=="--short" (
+
+        set full=0
+
+    ) else if "%%~x"=="--help" (
+
+        echo.
+        echo Regression test
+        echo.
+        echo Execution:
+        echo.
+        echo regress [--full^|--short^|--pmach^|--cmach]...
+        echo.
+        echo Run the compiler through a few typical programs
+        echo to a "gold" standard file. Each mode is cycled through in sequence.
+        echo.
+        echo The flags are one of:
+        echo.
+        echo --pmach Generate mach code and run the result through pmach.
+        echo --cmach Generate mach code and run the result through cmach.
+        echo --full  Run full test sequence.
+        echo --short Run short test sequence.
+        echo.
+        goto stop
+
     ) else if not "%%~x"=="" (
-    
-    	echo.
-    	echo *** Option not recognized
-    	echo.
-		echo Execution:
-		echo.
-		echo regress [--full|--short|--pmach|--cmach]...
-		echo.
-		goto stop
-		
-	)
+
+        echo.
+        echo *** Option not recognized
+        echo.
+        echo Execution:
+        echo.
+        echo regress [--full|--short|--pmach|--cmach]...
+        echo.
+        goto stop
+
+    )
 
 )
 echo Regression Summary > regress_report.txt
@@ -114,12 +114,12 @@ rem Now run the ISO7185pat compliance test
 rem
 if "%option%"=="--cmach" (
 
-	call testprog %option% --cmpfile standard_tests\iso7185patc standard_tests\iso7185pat
-	
+    call testprog %option% --cmpfile standard_tests\iso7185patc standard_tests\iso7185pat
+
 ) else (
 
-	call testprog %option% standard_tests\iso7185pat
-	
+    call testprog %option% standard_tests\iso7185pat
+
 )
 wc -l standard_tests\iso7185pat.dif >> regress_report.txt
 rem
@@ -148,14 +148,14 @@ if "%full%"=="1" (
     echo pcom self compile >> regress_report.txt
     call cpcoms %option%
     wc -l pcomm.dif >> regress_report.txt
-    
+
     rem
     rem Run pint self compile (note this runs on P5/P6 only)
     rem
     echo pint self compile >> regress_report.txt
     call cpints %option%
     wc -l standard_tests/iso7185pats.dif >> regress_report.txt
-    
+
 )
 exit /b
 
