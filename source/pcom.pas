@@ -1687,6 +1687,7 @@ end;
         ev: integer;
         rv: real;
         sgn: integer;
+        lfc: boolean;
 
     procedure nextch;
     begin if eol then
@@ -1944,10 +1945,10 @@ end;
       chstrquo:
         begin lgth := 0; sy := stringconst;  op := noop;
           for i := 1 to strglgth do string[i] := ' ';
-          repeat
-            repeat nextch; lgth := lgth + 1;
+          repeat lfc := false;
+            repeat lfc := ch = chr(92); nextch; lgth := lgth + 1;
                    if lgth <= strglgth then string[lgth] := ch
-            until (eol) or (ch = '''');
+            until (eol) or ((ch = '''') and not lfc);
             if eol then error(202) else nextch
           until ch <> '''';
           string[lgth] := ' '; { get rid of trailing quote }
