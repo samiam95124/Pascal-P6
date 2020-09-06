@@ -1585,6 +1585,7 @@ end;
     286: write('Parameter mode not allowed in operator overload parameter ');
     287: write('Variable reference is not addressable');
     288: write('Left side of assignment overload operator must be out mode');
+    289: write('Var parameter must be compatible with parameter');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -1770,11 +1771,11 @@ end;
     var c: char; l: 0..4; i: 1..strglgth;
 
     function match(es: escstr): boolean;
-    var i: 1..4;
+    var i: 1..5;
     begin
       i := 1;
       { move to first mismatch or end }
-      while (es[i] = string[cp+i-1]) and (es[i] <> ' ') and (i < 4) do i := i+1;
+      while (es[i] = string[cp+i-1]) and (es[i] <> ' ') and (i <= 4) do i := i+1;
       match := es[i] = ' '
     end;
 
@@ -5158,7 +5159,10 @@ end;
                                   alignu(parmptr,locpar);
                                 end
                               else error(154);
-                              if lsp <> gattr.typtr then
+                              if (lsp^.form = arrayc) and not iso7185 then begin
+                                if not comptypes(lsp, gattr.typtr)
+                                   and not e then error(289)
+                              end else if lsp <> gattr.typtr then
                                 if not e then error(199)
                             end
                           end
@@ -9481,6 +9485,10 @@ begin
   writeln;
   if iso7185 then begin
     writeln('Pascal-P6 complies with the requirements of level 0 of ISO/IEC 7185.');
+    writeln
+  end else begin
+    writeln('Pascal-P6 complies with the requirements of Pascaline version 0.4');
+    writeln('and the following annexes: A,B,C,E.');
     writeln
   end;
 
