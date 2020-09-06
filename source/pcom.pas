@@ -1886,8 +1886,8 @@ end;
                   v := v*r+ordint[ch]
                 else begin error(203); v := 0 end;
               nextch
-            until (chartp[ch] <> number) and
-                  ((chartp[ch] <> letter) or iso7185);
+            until (chartp[ch] <> number) and ((ch <> '_') or iso7185) and
+                  ((chartp[ch] <> letter) or (r < 16) or iso7185);
             { separator must be non-alpha numeric or 'e' with decimal radix }
             if ((chartp[ch] = letter) and not ((lcase(ch) = 'e') and (r = 10))) or
                (chartp[ch] = number) then error(241);
