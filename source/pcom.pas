@@ -2190,7 +2190,7 @@ end;
   var fcp: ctp;
   begin fcp := nil;
     if lcp^.klass in [proc,func] then begin
-      if lcp^.grppar <> nil then lcp := lcp^.grppar;
+      lcp := lcp^.grppar;
       while lcp <> nil do begin
         if lcp^.klass in fidcls then fcp := lcp;
         lcp := lcp^.grpnxt
