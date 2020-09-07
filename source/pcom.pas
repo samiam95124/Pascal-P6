@@ -2650,22 +2650,26 @@ end;
   function isovlproc(fcp: ctp): boolean;
   begin isovlproc := false;
     if fcp <> nil then
-      if fcp^.klass in [proc, func] then
+      if fcp^.klass in [proc, func] then begin
+        if fcp^.grppar <> nil then fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = proc then isovlproc := true;
           fcp := fcp^.grpnxt
         end
+      end
   end;
 
   { id contains a function in overload list }
   function isovlfunc(fcp: ctp): boolean;
   begin isovlfunc := false;
     if fcp <> nil then
-      if fcp^.klass in [proc, func] then
+      if fcp^.klass in [proc, func] then begin
+        if fcp^.grppar <> nil then fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = func then isovlfunc := true;
           fcp := fcp^.grpnxt
         end
+      end
   end;
 
   { return overload function from list }
@@ -2673,11 +2677,13 @@ end;
   var rcp: ctp;
   begin rcp := nil;
     if fcp <> nil then
-      if fcp^.klass in [proc, func] then
+      if fcp^.klass in [proc, func] then begin
+        if fcp^.grppar <> nil then fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = func then rcp := fcp;
           fcp := fcp^.grpnxt
-        end;
+        end
+      end;
     ovlfunc := rcp
   end;
 
