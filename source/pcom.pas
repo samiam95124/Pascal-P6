@@ -2189,10 +2189,13 @@ end;
   function inclass(lcp: ctp): ctp;
   var fcp: ctp;
   begin fcp := nil;
-    while lcp <> nil do begin
-      if lcp^.klass in fidcls then fcp := lcp;
-      if lcp^.klass in [proc,func] then lcp := lcp^.grpnxt else lcp := nil
-    end;
+    if lcp^.klass in [proc,func] then begin
+      if lcp^.grppar <> nil then lcp := lcp^.grppar;
+      while lcp <> nil do begin
+        if lcp^.klass in fidcls then fcp := lcp;
+        lcp := lcp^.grpnxt
+      end
+    end else if lcp^.klass in fidcls then fcp := lcp;
     inclass := fcp
   end;
 
