@@ -8265,12 +8265,14 @@ end;
               gensuv(lcp^.pfname,lcp^.pfvaddr,lcp)
             else if lcp^.pfattr = fpaoverride then begin
               lcp1 := lcp^.grppar; { link parent }
-              lcp2 := lcp1^.pfvid; { get vector symbol }
-              { copy old vector to store }
-              gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
-              gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
-              { place new vector }
-              gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+              if lcp1 <> nil then begin
+                lcp2 := lcp1^.pfvid; { get vector symbol }
+                { copy old vector to store }
+                gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
+                gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
+                { place new vector }
+                gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+              end
             end
           end;
           schvirt(lcp^.grpnxt);
