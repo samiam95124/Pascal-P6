@@ -2654,7 +2654,7 @@ end;
   begin isovlproc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
-        if fcp^.grppar <> nil then fcp := fcp^.grppar;
+        fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = proc then isovlproc := true;
           fcp := fcp^.grpnxt
@@ -2667,7 +2667,7 @@ end;
   begin isovlfunc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
-        if fcp^.grppar <> nil then fcp := fcp^.grppar;
+        fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = func then isovlfunc := true;
           fcp := fcp^.grpnxt
@@ -2681,7 +2681,7 @@ end;
   begin rcp := nil;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
-        if fcp^.grppar <> nil then fcp := fcp^.grppar;
+        fcp := fcp^.grppar;
         while fcp <> nil do begin
           if fcp^.klass = func then rcp := fcp;
           fcp := fcp^.grpnxt
@@ -6965,7 +6965,7 @@ end;
                             pfdeckind:=declared; pflist := nil;
                             pfkind:=formal; pfaddr := lc; pext := false;
                             pmod := nil; keep := true; pfattr := fpanone;
-                            grpnxt := nil; grppar := nil; pfvid := nil
+                            grpnxt := nil; grppar := lcp; pfvid := nil
                           end;
                         enterid(lcp);
                         lcp1 := lcp;
@@ -6995,7 +6995,7 @@ end;
                                 pfdeckind:=declared; pflist := nil;
                                 pfkind:=formal; pfaddr:=lc; pext := false;
                                 pmod := nil; keep := true; pfattr := fpanone;
-                                grpnxt := nil; grppar := nil; pfvid := nil
+                                grpnxt := nil; grppar := lcp; pfvid := nil
                               end;
                             enterid(lcp);
                             lcp1 := lcp;
@@ -7303,7 +7303,7 @@ end;
                   pfdeckind := declared; pfkind := actual; pfname := lbname;
                   pflist := nil; asgn := false;
                   pext := incstk <> nil; pmod := incstk; refer := false;
-                  pfattr := fpat; grpnxt := nil; grppar := nil;
+                  pfattr := fpat; grpnxt := nil; grppar := lcp;
                   if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
                     if pfattr = fpavirtual then begin
                       { have to create a label for far references to virtual }
@@ -8752,7 +8752,7 @@ end;
       begin klass := idc; strassvr(name, na[sn]); idtype := idt;
         pflist := nil; next := nil; key := kn;
         pfdeckind := standard; pfaddr := 0; pext := false;
-        pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := nil;
+        pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := cp;
         pfvid := nil; pflist := nil
       end; enterid(cp)
   end;
@@ -8870,7 +8870,7 @@ end;
             pflist := cp; forwdecl := false; externl := true; pflev := 0;
             pfname := i - 12; pfdeckind := declared; pfkind := actual;
             pfaddr := 0; pext := false; pmod := nil; pfattr := fpanone;
-            grpnxt := nil; grppar := nil; pfvid := nil
+            grpnxt := nil; grppar := cp1; pfvid := nil
           end;
         enterid(cp1)
       end;
@@ -9031,7 +9031,7 @@ end;
       begin klass := proc; strassvr(name, '         '); idtype := nil;
         forwdecl := false; next := nil; externl := false; pflev := 0;
         genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := nil;
+        pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
@@ -9039,7 +9039,7 @@ end;
       begin klass := func; strassvr(name, '         '); idtype := nil;
         next := nil; forwdecl := false; externl := false; pflev := 0;
         genlabel(pfname); pflist := nil; pfdeckind := declared;
-        pfkind := actual; pmod := nil; grpnxt := nil; grppar := nil;
+        pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
       end
   end (*enterundecl*) ;
