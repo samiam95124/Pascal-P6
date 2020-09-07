@@ -1,4 +1,4 @@
-{$L-}
+{$L-,s+}
 {*******************************************************************************
 *                                                                              *
 *                             BASIC INTERPRETER                                *
@@ -51,7 +51,7 @@ program basic(input, output);
 label 88, 77, 99;
 
 const
- 
+
    maxpwr  = 1000000000; { maximum power of 10 that fits into integer }
    maxnum  = 9999;  { maximum line number }
    maxstr  = 250;   { maximum length of string }
@@ -63,8 +63,8 @@ const
    maxfln  = 250;   { maximum length of filename (must be >= maxstr) }
    intdig  = 11;    { number of digits in integer (to get around SVS bug) }
    hasnfio = true{false}; { implements named file I/O procedures }
- 
-type    
+
+type
 
    string12 = packed array [1..12] of char;   { key }
    bstring  = packed array [1..maxstr] of char; { basic string component }
@@ -227,8 +227,8 @@ type
 
       { end }
 
-   end;   
-   varinx = 0..maxvar; { index for variables table } 
+   end;
+   varinx = 0..maxvar; { index for variables table }
    varptr = ^varety; { pointer to variable entry }
    varety = record { variable }
 
@@ -289,14 +289,14 @@ type
    varttp = array [1..maxvar] of varptr; { table of variables }
    { error codes }
    errcod     = (eitp, estate, eexmi, eeque, estyp, epbful, eiovf, evare,
-                 elabnf, einte, econv, elntl, ewtyp, erpe, eexc, emqu, 
+                 elabnf, einte, econv, elntl, ewtyp, erpe, eexc, emqu,
                  eifact, elintl, estrovf, eedlexp, elpe, ecmaexp, estre,
-                 estrinx, ecodtl, einvchr, ethnexp, eoutdat, erdtyp, 
+                 estrinx, ecodtl, einvchr, ethnexp, eoutdat, erdtyp,
                  ecstexp, edbr, enovf, erfmt, eexpovf, enfmt, erlexp,
-                 eunimp, enoret, enofor, etoexp, etostr, ecmscexp, 
+                 eunimp, enoret, enofor, etoexp, etostr, ecmscexp,
                  enumexp, efnfnd, egtgsexp, eedwhexp, emsgnxt, enowhil,
                  enorpt, enosel, evarovf, elabtl, edim, esubrng, earddim,
-                 edimtl, edupdef, epartyp, efncret, eparnum, echrrng, 
+                 edimtl, edupdef, epartyp, efncret, eparnum, echrrng,
                  esccmexp, eopnfil, ecurpos, eclrval, escnval, einsinp,
                  encstexp, eforexp, efmdexp, easexp, epndexp, einvfnum,
                  esysfnum, einvmod, efilnop, epmtfil, efilnfd, eeofenc,
@@ -305,9 +305,9 @@ type
                  enpact, enoendp, eprctyp, einvfld, etypfld, esysvar,
                  eglbdef, elabimm, eevtexp, eeleiexp, enonfio, ebolneg,
                  esyserr);
- 
+
 var
-     
+
    keywd:  array [keycod] of string12; { keywords }
    temp:   tmptbl; { temp stack }
    top:    integer; { current temps top }
@@ -365,7 +365,7 @@ operating system function.
 ******************************************************************************}
 
 function existsfile(var fn: filnam): boolean;
-    
+
 {
 var f: bindable text;
     b: bindingtype;
@@ -374,7 +374,7 @@ var f: bindable text;
 }
 
 begin
-  
+
    { GPC }
 
    {
@@ -392,7 +392,7 @@ begin
 
    fn[1] := fn[1]; { shut up compiler }
    existsfile := true
-   
+
 end;
 
 {******************************************************************************
@@ -422,7 +422,7 @@ begin
    assign(f, s);
    reset(f)
    }
-   
+
    fn[1] := fn[1]; { shut up compiler }
    reset(f)
 
@@ -447,7 +447,7 @@ begin
 
    { GPC }
 
-   {   
+   {
    l := maxstr;
    while (fn[l] = ' ') and (l > 1) do l := l-1;
    s := '';
@@ -455,7 +455,7 @@ begin
    assign(f, s);
    rewrite(f)
    }
-   
+
    fn[1] := fn[1]; { shut up compiler }
    reset(f)
 
@@ -474,13 +474,13 @@ procedure closefile(var f: text);
 begin
 
    { GPC/FPC/Borland/IP Pascal }
-   
+
    {
    close(f)
    }
-   
+
    reset(f); { shut up compiler }
-   
+
 end;
 
 {******************************************************************************
@@ -491,7 +491,7 @@ End of named file functions.
 
 {******************************************************************************
 
-Bitwise integer instructions. These can be replaced by direct operations if 
+Bitwise integer instructions. These can be replaced by direct operations if
 your Pascal installation has them.
 
 ******************************************************************************}
@@ -505,24 +505,24 @@ Finds bit 'not' of an integer. Only works on positive integers.
 ******************************************************************************}
 
 function bnot(a: integer): integer;
- 
+
 var i, r, p: integer;
- 
+
 begin
- 
+
    r := 0; { clear result }
    p := 1; { set 1st power }
    i := maxint; { set maximium positive number }
    while i <> 0 do begin
- 
+
       if not odd(a) then r := r+p; { add in power }
           a := a div 2; { set next bits of operands }
           i := i div 2; { count bits }
       if i > 0 then p := p*2; { find next power }
- 
+
    end;
    bnot := r { return result }
- 
+
 end;
 
 {******************************************************************************
@@ -534,25 +534,25 @@ Finds bit 'or' of two integers. Only works on positive integers.
 ******************************************************************************}
 
 function bor(a, b: integer): integer;
- 
+
 var i, r, p: integer;
- 
+
 begin
- 
+
    r := 0; { clear result }
    p := 1; { set 1st power }
    i := maxint; { set maximium positive number }
    while i <> 0 do begin
- 
+
       if odd(a) or odd(b) then r := r+p; { add in power }
           a := a div 2; { set next bits of operands }
           b := b div 2;
           i := i div 2; { count bits }
       if i > 0 then p := p*2; { find next power }
- 
+
    end;
    bor := r { return result }
- 
+
 end;
 
 {******************************************************************************
@@ -564,25 +564,25 @@ Finds bit 'and' of two integers. Only works on positive integers.
 ******************************************************************************}
 
 function band(a, b: integer): integer;
- 
+
 var i, r, p: integer;
- 
+
 begin
- 
+
    r := 0; { clear result }
    p := 1; { set 1st power }
    i := maxint; { set maximium positive number }
    while i <> 0 do begin
- 
+
       if odd(a) and odd(b) then r := r+p; { add in power }
           a := a div 2; { set next bits of operands }
           b := b div 2;
           i := i div 2; { count bits }
       if i > 0 then p := p*2; { find next power }
- 
+
    end;
    band := r { return result }
- 
+
 end;
 
 {******************************************************************************
@@ -594,25 +594,25 @@ Finds bit 'xor' of two integers. Only works on positive integers.
 ******************************************************************************}
 
 function bxor(a, b: integer): integer;
- 
+
 var i, r, p: integer;
- 
+
 begin
- 
+
    r := 0; { clear result }
    p := 1; { set 1st power }
    i := maxint; { set maximium positive number }
    while i <> 0 do begin
- 
+
       if odd(a) <> odd(b) then r := r+p; { add in power }
           a := a div 2; { set next bits of operands }
           b := b div 2;
           i := i div 2; { count bits }
       if i > 0 then p := p*2; { find next power }
- 
+
    end;
    bxor := r { return result }
- 
+
 end;
 
 {******************************************************************************
@@ -635,7 +635,7 @@ begin
 
    if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
    lcase := c
-  
+
  end;
 
 {******************************************************************************
@@ -661,7 +661,7 @@ begin
    vp^.inx := 0; { clear index }
    vp^.vt := vvint { set integer }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -678,7 +678,7 @@ begin
    vp^.next := vecfre; { insert to free list }
    vecfre := vp
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -744,7 +744,7 @@ begin
    sp^.next := nil; { clear next }
    sp^.len := 0 { set 0 length string }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -761,7 +761,7 @@ begin
    sp^.next := strfre; { insert to free list }
    strfre := sp
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -786,7 +786,7 @@ begin
    cp^.next := ctlstk; { push onto control stack }
    ctlstk := cp
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -807,7 +807,7 @@ begin
    cp^.next := ctlfre; { insert to free list }
    ctlfre := cp
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -823,7 +823,7 @@ begin
 
    while ctlstk <> nil do popctl { remove all entries }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -854,7 +854,7 @@ begin
 
    end
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -886,13 +886,13 @@ begin
 
    until not fnd { until no more }
 
-end;      
+end;
 
 {******************************************************************************
 
 Append file extention
 
-Appends a given extention, in place, to the given file name. The extention is 
+Appends a given extention, in place, to the given file name. The extention is
 usually in the form: 'ext'. The extention is placed within the file name at the
 first space or period from the left hand side. This allows extention of either
 an unextended filename or an extended one (in which case the new extention
@@ -901,7 +901,7 @@ true, the extention will overwrite any existing, if not, any existing extention
 will be left in place.
 No checking is performed for a new filename that will overflow the allotted
 filename length.
-In the case of overflow, the filename will simply be truncated to the 8:3 
+In the case of overflow, the filename will simply be truncated to the 8:3
 format.
 Note: this routine is MS-DOS dependent.
 
@@ -991,7 +991,7 @@ var fc:  record case boolean of { float convertion }
             false: (r: real);
             true:  (c: packed array [1..8] of char)
 
-         end; 
+         end;
     fci: 1..8; { index for same }
 
 begin
@@ -1128,11 +1128,11 @@ begin
       { make sure that we did not round over limit }
       if m > maxnum then begin m := m div 10; e := e+1 end;
       for i := 1 to 9 do begin { get digits }
-   
+
          digits[i] := chr(m div p+ord('0')); { place digit }
          m := m mod p; { remove that digit }
          p := p div 10 { next digit }
-   
+
       end;
       ld := 9; { find last digit }
       while (ld > 1) and (digits[ld] = '0') do ld := ld-1;
@@ -1142,34 +1142,34 @@ begin
       if (e >= -1) and (e <= 8) then begin dec := e+2; e := 0 end;
       if dec-1 > ld then ld := dec-1; { increase digit output as required }
       for i := 1 to ld do begin { write digits of number }
-   
-         { if this is the decimal position, output } 
+
+         { if this is the decimal position, output }
          if i = dec then putchr('.');
          putchr(digits[i]) { output digit }
-   
+
       end;
       if e <> 0 then begin { output exponent }
-   
+
          putchr('e'); { output exponent marker }
          if e >= 0 then putchr('+') else putchr('-');
          e := abs(e); { find signless exponent }
          p := 100; { set maximum power }
          leading := false; { set no leading digit output }
          while p <> 0 do begin { print digits }
-   
+
             c := chr(e div p+ord('0')); { get digit }
-            if leading or (c <> '0') then begin 
+            if leading or (c <> '0') then begin
 
                { non-zero or leading was output }
                putchr(c); { output digit }
                leading := true { set leading digit output }
-   
+
             end;
             e := e mod p; { remove that digit }
             p := p div 10 { next digit }
-   
+
          end
-   
+
       end
 
    end;
@@ -1180,17 +1180,17 @@ end;
 
 {******************************************************************************
 
-Print basic string 
+Print basic string
 
 Outputs the given string to the console, without an eoln.
 
 ******************************************************************************}
- 
+
 procedure prtbstr(var fr:   frcety;    { file to output to }
                   var bstr: bstringt); { string to output }
- 
+
 var i: integer;
- 
+
 begin
 
    for i := 1 to bstr.len do prtchr(fr, bstr.str[i]);
@@ -1317,14 +1317,14 @@ Expands each tolken on the given line and prints it in the original, or close
 to the original, form.
 
 ******************************************************************************}
- 
+
 procedure prtlin(var f: text; var str: bstptr);
- 
+
 var i, j: integer;
     k:    keycod; { key }
     v:    integer; { integer value holder }
     fv:   real; { real value holder }
- 
+
 begin { prtlin }
 
    if not newlin then writeln; { if not at line start, force it }
@@ -1342,9 +1342,9 @@ begin { prtlin }
          cgosub, creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat,
          cuntil, cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv,
          cdumpp, cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand,
-         ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, 
-         cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot, 
-         cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd, cint, 
+         ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+         cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
+         cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd, cint,
          csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase, cucase,
          cscn, ccln, clpar, crpar, ccma,
          cpnd, cperiod: for j := 1 to 12 do { print key characters }
@@ -1370,11 +1370,11 @@ begin { prtlin }
 
          end;
          cintv: begin { integer variable }
-            
+
             prtlab(f, vartbl[ord(str^.str[i])]^.nam); { print label }
             write(f, '%'); { print '%' (integer) type marker }
             i := i+1 { next }
-   
+
          end;
          cstrv: begin { string variable }
 
@@ -1408,7 +1408,7 @@ begin { prtlin }
          clend: { line end }
 
       end
-      
+
    end;
    writeln(f)
 
@@ -1425,9 +1425,9 @@ This routine should print the standard "^" bit, but needs to be adjusted by
 tolken output counts.
 
 ******************************************************************************}
- 
+
 procedure prterr {(err: errcod)};
- 
+
 var li: integer;
 
 begin
@@ -1435,7 +1435,7 @@ begin
    if not newlin then writeln; { if not at line start, force it }
    newlin := true;
    if linbuf <> nil then begin { print raw ascii }
-      
+
       { this mode is provided for when loading files, which, unlike immediate
         lines, must have errors printed out }
       for li := 1 to linbuf^.len do write(linbuf^.str[li]); { print line }
@@ -1444,12 +1444,12 @@ begin
       putstr(linbuf); { release line buffer }
       linbuf := nil { flag clear }
 
-   end else if (curprg <> immprg) and (curprg <> nil) then 
+   end else if (curprg <> immprg) and (curprg <> nil) then
       { not immediate line, and line valid }
       prtlin(output, curprg); { print line }
    write('*** ');
    case err of
- 
+
       eitp:     writeln('Interpreter error');
       estate:   writeln('Statement expected');
       eexmi:    writeln('Expression must be integer');
@@ -1559,7 +1559,7 @@ begin
       enonfio:  writeln('No named file I/O implemented this version');
       ebolneg:  writeln('Cannot use bit operation on negative');
       esyserr:  writeln('System error: contact program vendor');
- 
+
    end;
    if fsrcop then closefile(source); { close source file }
    goto 88 { loop to ready }
@@ -1605,7 +1605,7 @@ begin
    vp^.sys  := false; { set not system }
    vp^.gto  := false; { set not goto }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -1622,8 +1622,8 @@ begin
 
    vp^.next := varfre; { insert to free list }
    varfre := vp
-   
-end;      
+
+end;
 
 {******************************************************************************
 
@@ -1644,7 +1644,7 @@ begin
    if vartbl[vi] <> nil then prterr(evarovf); { variables overflow }
    getvarp(vartbl[vi]) { get a variable entry }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -1661,14 +1661,14 @@ begin
 
    if vartbl[vi] <> nil then putvarp(vartbl[vi]); { free variable entry }
    vartbl[vi] := nil { clear entry }
-   
-end;      
+
+end;
 
 {******************************************************************************
 
 Push new function context level
 
-Gets a new function context stack record and places that on the function 
+Gets a new function context stack record and places that on the function
 context stack.
 
 ******************************************************************************}
@@ -1691,7 +1691,7 @@ begin
    fp^.next := nil; { clear next }
    fp^.endf := false { set end of function not found }
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -1713,7 +1713,7 @@ begin
    fp^.next := fnsfre; { insert to free list }
    fnsfre := fp
 
-end;      
+end;
 
 {******************************************************************************
 
@@ -1752,16 +1752,16 @@ Check character
 Returns the next character code in the currently executing program line.
 
 ******************************************************************************}
- 
+
 function chkchr: char;
- 
+
 begin
 
    if curprg = nil then chkchr := chr(ord(cpend)) { off end, return end }
    else chkchr := curprg^.str[linec] { return next character }
 
 end;
- 
+
 {******************************************************************************
 
 Get character
@@ -1769,9 +1769,9 @@ Get character
 Skips the current character in the program line.
 
 ******************************************************************************}
- 
+
 procedure getchr;
- 
+
 begin
 
    if linec < maxstr then linec := linec+1 { if not end, skip }
@@ -1786,13 +1786,13 @@ Simply skips any space tolken at the present input position. This need only
 be done once, as there will never be multiple space tolkens back to back.
 
 ******************************************************************************}
- 
+
 procedure skpspc;
- 
+
 begin
 
    if chkchr = chr(ord(cspc)) then getchr { skip single space }
-   else if chkchr = chr(ord(cspcs)) then 
+   else if chkchr = chr(ord(cspcs)) then
       begin getchr; getchr end { skip multiple spaces }
 
 end;
@@ -1836,20 +1836,20 @@ begin
       cinput, cprint, cgoto, con, cif, cthen, celse, cendif, cstop, crun,
       clist, cnew, clet, cload, csave, cdata, cread, crestore, cgosub, creturn,
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
-      cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef, 
+      cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
-      ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, 
+      ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
       cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd,
-      cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase, 
+      cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase,
       cucase, cscn, ccln, clpar, crpar, ccma, cpnd, cperiod,
       cspc: linec := linec+1; { skip tolken }
       cintc: linec := linec+5; { skip integer constant }
       crlc: linec := linec+9; { skip real constant }
-      cstrc, 
+      cstrc,
       crem, crema: linec := linec+2+ord(curprg^.str[linec+1]); { skip string }
       cintv, crlv, cstrv, cspcs: linec := linec+2; { skip variable/spaces }
-      clend: begin curprg := curprg^.next; linec := 1 end; { go to next line } 
+      clend: begin curprg := curprg^.next; linec := 1 end; { go to next line }
       cpend: { do nothing }
 
    end
@@ -1874,17 +1874,17 @@ end;
 
 {******************************************************************************
 
-Check null string 
+Check null string
 
 Checks that the entire basic string is empty, or spaces only.
 
 ******************************************************************************}
- 
+
 function null(var str: bstptr): boolean;
- 
+
 var i: integer;
     f: boolean;
- 
+
 begin
 
    f := true;
@@ -1895,24 +1895,24 @@ end;
 
 {******************************************************************************
 
-Parse leading integer 
+Parse leading integer
 
-Gets the leading integer off the given line. If no leading integer is present, 
+Gets the leading integer off the given line. If no leading integer is present,
 returns 0.
 
 ******************************************************************************}
- 
+
 function lint(var str: bstringt): integer;
- 
+
 var i, v: integer;
- 
+
 begin
 
    v := 0; { clear result }
    i := 1; { set 1st character }
    while ((str.str[i] = chr(ord(cspc))) or (str.str[i] = chr(ord(cspcs)))) and
          (str.str[i] <> chr(ord(clend))) do { skip spaces }
-      if str.str[i] = chr(ord(cspcs)) then i := i+2 else i := i+1;      
+      if str.str[i] = chr(ord(cspcs)) then i := i+2 else i := i+1;
    { if next is integer constant, load that }
    if str.str[i] = chr(ord(cintc)) then begin
 
@@ -1932,11 +1932,11 @@ Finds a program line by the given number. If no program line by the number
 is found, an error results.
 
 ******************************************************************************}
- 
+
 function schlab(lab: integer): bstptr;
- 
+
 var pp, fp: bstptr; { program line pointers }
- 
+
 begin
 
    pp := prglst; { index top program line }
@@ -1956,13 +1956,13 @@ Register labels
 Registers all undefined goto labels.
 
 ******************************************************************************}
- 
+
 procedure reglab;
- 
+
 var pp:      bstptr; { program line pointers }
     vi:      varinx; { variable table index }
     curprgs: bstptr; { current program line save }
- 
+
 begin
 
    curprgs := curprg; { save current program line }
@@ -2034,7 +2034,7 @@ begin
       cinput, cprint, cgoto, con, cif, cthen, celse, cendif, cstop, crun,
       clist, cnew, clet, cload, csave, cdata, cread, crestore, cgosub, creturn,
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
-      cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef, 
+      cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
       ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
@@ -2044,7 +2044,7 @@ begin
       cspc: li := li+1; { skip tolken }
       cintc: li := li+5; { skip integer constant }
       crlc: li := li+9; { skip real constant }
-      cstrc, 
+      cstrc,
       crem, crema: li := li+2+ord(str^.str[li+1]); { skip string }
       cintv, crlv, cstrv: begin { variables }
 
@@ -2065,22 +2065,22 @@ end;
 
 {******************************************************************************
 
-Enter line to store 
+Enter line to store
 
-Enters the top program line to a sorted position in the program store, moving 
+Enters the top program line to a sorted position in the program store, moving
 lines to create space as required. The line number for the string should not be
 missing or zero.
 
 ******************************************************************************}
- 
+
 procedure enter(il: bstptr); { line to enter }
- 
+
 var line, i, j: integer;
     f:          boolean;
     pp, lp, fp: bstptr; { program line pointers }
 
 { insert incoming line to program list }
- 
+
 procedure insert;
 
 begin
@@ -2131,7 +2131,7 @@ begin
          { check incoming is line number only, in which case delete line }
          j := 1;
          if il^.str[j] = chr(ord(cintc)) then j := j+5; { skip integer }
-         while ((il^.str[j] = chr(ord(cspc))) or 
+         while ((il^.str[j] = chr(ord(cspc))) or
                 (il^.str[j] = chr(ord(cspcs)))) and
                (il^.str[j] <> chr(ord(clend))) do { skip spaces }
             if il^.str[j] = chr(ord(cspcs)) then j := j+2 else j := j+1;
@@ -2142,7 +2142,7 @@ begin
             putstr(il) { free new line }
          else insert; { replace }
          putstr(fp) { free deleted line }
-      
+
       end else insert { insert before this line }
 
    end else insert { not found, must be at program end }
@@ -2195,7 +2195,7 @@ procedure parnum(var s:      bstringt; { string to read from }
                      psign:  boolean;  { allow sign }
                  var isreal: boolean;  { result is real/result is integer }
                  var nxtint: integer;  { integer return }
-                 var nxtflt: real);    { real return} 
+                 var nxtflt: real);    { real return}
 
 var c:     char;
     r:     1..16;   { radix }
@@ -2207,7 +2207,7 @@ var c:     char;
     p:     real;    { power }
     dummy: real;    { used as a dummy parameter }
     sign:  boolean; { number is signed (negative) }
-    
+
 
 { check end of string }
 
@@ -2264,7 +2264,7 @@ begin
 
    p := 1.0e+1; { set 1st power }
    t := 1.0; { initalize result }
-   repeat 
+   repeat
 
       if odd(e) then t := t*p; { if bit set, add this power }
       e := e div 2; { index next bit }
@@ -2311,7 +2311,7 @@ begin
          else begin { ok }
 
             { check for overflow }
-            if (nxtint > maxint div r) or 
+            if (nxtint > maxint div r) or
                ((nxtint = maxint div r) and (v > maxint mod r)) then
                prterr(enovf) { overflow }
             else nxtint := nxtint * r + v { scale and add in }
@@ -2374,7 +2374,7 @@ end;
 
 {******************************************************************************
 
-Convert line to intermediate code 
+Convert line to intermediate code
 
 Tolkenize the given string, placing the result back into the same string. The
 encode sequence consists of a series of <code><param> entries, without
@@ -2388,9 +2388,9 @@ for tolkenization. This allows input with control characters embedded, but
 does not preserve them.
 
 ******************************************************************************}
- 
+
 procedure keycom(var str: bstptr); { string to compress }
- 
+
 var ts:     bstringt;
     i1, li: integer;
     f:      boolean;
@@ -2406,12 +2406,12 @@ var ts:     bstringt;
                        false: (r: real);
                        true:  (c: packed array [1..8] of char)
 
-                    end; 
+                    end;
     fci:    1..8; { index for same }
     lab:    string12; { label holder }
-    l:      1..12; { index for label }       
+    l:      1..12; { index for label }
     vi:     varinx; { index for variables table }
- 
+
 { check end of string }
 
 function chkend: boolean;
@@ -2471,10 +2471,10 @@ end;
 
 function matstr(var stra: bstptr; var i: integer;
                  var strb: string12): boolean;
- 
+
 var i1, i2: integer;
     f:      boolean;
- 
+
 begin { matstr }
 
    i1 := i;
@@ -2511,7 +2511,7 @@ begin
    lab := '            '; { clear label }
    li := 1; { set 1st label character }
    while (chkchr in ['a'..'z', 'A'..'Z', '0'..'9', '_']) or
-         ((chkchr in ['$', '%']) and str) do begin 
+         ((chkchr in ['$', '%']) and str) do begin
 
       { get label characters }
       if li > 12 then prterr(elabtl); { label too long }
@@ -2545,12 +2545,12 @@ begin { keycom }
                getchr; { next character }
                spc := spc+1 { count }
 
-            end;   
+            end;
             putchr(chr(ord(cspcs))); { place spaces code }
             putchr(chr(spc)) { place space count }
 
          end else putchr(chr(ord(cspc))) { place single space code }
-   
+
       end else if chkchr = '!' then begin { comment }
 
          getchr; { skip '!' }
@@ -2558,14 +2558,14 @@ begin { keycom }
          putchr(chr(0)); { set length }
          li := ts.len; { save location of length }
          while not chkend do begin
-   
-            putchr(chkchr); 
-            getchr; 
+
+            putchr(chkchr);
+            getchr;
             ts.str[li] := succ(ts.str[li]) { count characters }
-   
+
          end
 
-      end else if chkchr in ['0'..'9', '$', '&', '%', '.'] then begin 
+      end else if chkchr in ['0'..'9', '$', '&', '%', '.'] then begin
 
          c := chkchr; { save lead character }
          getchr; { skip }
@@ -2603,7 +2603,7 @@ begin { keycom }
             end
 
          end
-      
+
       end else if chkchr = '"' then begin { string sequence }
 
          getchr; { skip '"' }
@@ -2628,7 +2628,7 @@ begin { keycom }
                putchr(c); { copy character to destination }
                getchr; { next character }
                ts.str[li] := succ(ts.str[li]) { count string characters }
-            
+
             end
 
          until c <> '"' { not a quote image }
@@ -2664,22 +2664,22 @@ begin { keycom }
 
             end;
             if f then begin { found }
-   
+
                k := pred(k); { back up one }
                putchr(chr(ord(k))); { place key code }
                { if the key was rem, then copy the rest of the line }
                if k = crem then begin
-   
+
                   putchr(chr(0)); { set length }
                   li := ts.len; { save location of length }
                   while not chkend do begin
-   
-                     putchr(chkchr); 
-                     getchr; 
+
+                     putchr(chkchr);
+                     getchr;
                      ts.str[li] := succ(ts.str[li]) { count characters }
-   
+
                   end
-   
+
                end
 
             end else begin { try variable }
@@ -2690,22 +2690,22 @@ begin { keycom }
                if vi <> 0 then { variable exists }
                   vartbl[vi]^.ref := vartbl[vi]^.ref+1 { count references }
                else begin { establish new variable }
-               
+
                   getvar(vi); { get a new variable entry }
                   vartbl[vi]^.nam := lab; { place label }
                   vartbl[vi]^.inx := vi { place index }
-               
+
                end;
                if chkchr = '$' then begin { string variable }
-               
+
                   getchr; { skip '$' }
                   putchr(chr(ord(cstrv))) { set string variable tolken }
-               
+
                end else if chkchr = '%' then begin { integer variable }
-               
+
                   getchr; { skip '%' }
                   putchr(chr(ord(cintv))) { set integer variable tolken }
-               
+
                end else putchr(chr(ord(crlv))); { real variable }
                putchr(chr(vi)) { place variable index }
 
@@ -2730,16 +2730,16 @@ end; { keycom }
 
 {******************************************************************************
 
-Get integer 
+Get integer
 
 Returns the next integer. Errors if the next tolken is not an integer constant.
 
 ******************************************************************************}
- 
+
 function getint: integer;
- 
+
 var v: integer;
- 
+
 begin
 
    skpspc;
@@ -2752,16 +2752,16 @@ end;
 
 {******************************************************************************
 
-Get real 
+Get real
 
 Returns the next real. Errors if the next tolken is not a real constant.
 
 ******************************************************************************}
- 
+
 function getrl: real;
- 
+
 var v: real;
- 
+
 begin
 
    skpspc;
@@ -2774,24 +2774,24 @@ end;
 
 {******************************************************************************
 
-Get real from basic string 
+Get real from basic string
 
 Gets a real value from the given basic string. Any leading spaces are
 skipped. Errors if there is anything else besides the real in the string.
 
 ******************************************************************************}
- 
+
 function getrval(var str: bstringt): real;
- 
+
 var pos, i: integer;
-    r:      real; 
+    r:      real;
     isreal: boolean; { real number flag }
- 
+
 begin
 
    pos := 1;
    parnum(str, pos, false, isreal, i, r); { parse number }
-   if not isreal then r := i; { convert integer to real } 
+   if not isreal then r := i; { convert integer to real }
    { skip trailing spaces }
    while (pos <= str.len) and (str.str[pos] = ' ') do pos := pos+1;
    if pos <= str.len then prterr(econv);
@@ -2801,31 +2801,31 @@ end;
 
 {******************************************************************************
 
-Get integer from basic string 
+Get integer from basic string
 
 Gets an integer value from the given basic string. any leading spaces are
 skipped. Errors if there is anything else besides the integer in the string.
 
 ******************************************************************************}
- 
+
 function getbval(var str: bstringt): integer;
- 
+
 var pos, i: integer;
-    r:      real; 
+    r:      real;
     isreal: boolean; { real number flag }
- 
+
 begin
 
    pos := 1;
    parnum(str, pos, false, isreal, i, r); { parse number }
-   if isreal then i := round(r); { convert real to integer } 
+   if isreal then i := round(r); { convert real to integer }
    { skip trailing spaces }
    while (pos <= str.len) and (str.str[pos] = ' ') do pos := pos+1;
    if pos <= str.len then prterr(econv);
    getbval := i { return result }
 
 end;
- 
+
 {******************************************************************************
 
 Input basic string
@@ -2834,12 +2834,12 @@ Reads a basic string from the console. Reads all characters up until the next
 eoln to the string. Errors on string overflow.
 
 ******************************************************************************}
- 
-procedure inpbstr(var f:    text;      { file to input from }   
+
+procedure inpbstr(var f:    text;      { file to input from }
                   var bstr: bstringt); { string to input }
- 
+
 var i: integer;
- 
+
 begin
 
    for i := 1 to maxstr do bstr.str[i] := ' ';
@@ -2855,7 +2855,7 @@ begin
    readln(f)
 
 end;
- 
+
 {******************************************************************************
 
 Concatenate basic strings
@@ -2864,12 +2864,12 @@ Concatenates the source string to the destination string, and places the
 result into the destination string.
 
 *******************************************************************************}
- 
+
 procedure catbs(var bstra, bstrb: bstringt);
- 
+
 var i: integer; { index for string }
 
-begin 
+begin
 
    if (bstra.len + bstrb.len) > maxstr then prterr(estrovf); { string overflow }
    { copy source after destination }
@@ -2885,19 +2885,19 @@ Check strings equal
 Checks if string a equals string b. Returns true if so.
 
 *******************************************************************************}
- 
+
 function strequ(var bstra, bstrb: bstringt): boolean;
- 
+
 var i: integer; { index for string }
     m: boolean; { match flag }
 
-begin 
+begin
 
-   
+
    m := true; { say they match }
    if bstra.len <> bstrb.len then m := false { lengths unequal, no match }
    else { compare by character }
-      for i := 1 to bstra.len do 
+      for i := 1 to bstra.len do
          if bstra.str[i] <> bstrb.str[i] then m := false;
    strequ := m { return match status }
 
@@ -2910,21 +2910,21 @@ Check string less than
 Checks if string a is less than string b. Returns true if so.
 
 *******************************************************************************}
- 
+
 function strltn(var bstra, bstrb: bstringt): boolean;
- 
+
 var i: integer; { index for string }
     m: boolean; { match flag }
 
-begin 
+begin
 
-   
+
    m := true; { say less than }
    i := 1; { set 1st character }
    { skip to end or first unequal character }
-   while (i <= bstra.len) and (i <= bstrb.len) and 
+   while (i <= bstra.len) and (i <= bstrb.len) and
       (bstra.str[i] = bstrb.str[i]) do i := i+1;
-   if (i <= bstra.len) and (i <= bstrb.len) then begin 
+   if (i <= bstra.len) and (i <= bstrb.len) then begin
 
       { stopped on valid (mismatching) character }
       m := bstra.str[i] < bstrb.str[i] { match by character }
@@ -3045,18 +3045,18 @@ var v: real;
 
 begin
 
-   if (temp[top].typ = trl) or (temp[top-1].typ = trl) then begin 
+   if (temp[top].typ = trl) or (temp[top-1].typ = trl) then begin
 
       { one is real, convert }
       if temp[top].typ = tint then begin { convert top }
- 
+
          v := temp[top].int; { load as real }
          temp[top].typ := trl; { set entry as real }
          temp[top].rl := v { place value }
 
       end;
       if temp[top-1].typ = tint then begin { convert second }
- 
+
          v := temp[top-1].int; { load as real }
          temp[top-1].typ := trl; { set entry as real }
          temp[top-1].rl := v { place value }
@@ -3069,15 +3069,15 @@ end;
 
 {******************************************************************************
 
-Check stack items equal 
+Check stack items equal
 
 Checks if the integer tos is equal to the integer sos. Errors if both are not
 integer. Should be extended for string case.
 
 ******************************************************************************}
- 
+
 function chkequ : boolean;
- 
+
 begin
 
    binprp; { prepare binary }
@@ -3085,14 +3085,14 @@ begin
       chkequ := temp[top-1].rl = temp[top].rl
    else begin { must be integer }
 
-      if (temp[top].typ <> tint) or (temp[top - 1].typ <> tint) then 
+      if (temp[top].typ <> tint) or (temp[top - 1].typ <> tint) then
          prterr(ewtyp);
       chkequ := temp[top-1].int = temp[top].int
 
    end
 
 end;
- 
+
 {******************************************************************************
 
 Check stack items less than
@@ -3101,9 +3101,9 @@ Checks if the integer sos is less than the integer tos. Errors if both are not
 integer. Should be extended for string case.
 
 ******************************************************************************}
- 
+
 function chkltn: boolean;
- 
+
 begin
 
    binprp; { prepare binary }
@@ -3113,25 +3113,25 @@ begin
    else begin { must be integer }
 
       if (temp[top].typ <> tint) or
-         (temp[top - 1].typ <> tint) then 
+         (temp[top - 1].typ <> tint) then
          prterr(ewtyp);
       chkltn := temp[top-1].int < temp[top].int
 
    end
 
 end;
- 
+
 {******************************************************************************
 
 Check stack items greater than
 
-Checks if the integer sos is greater than the integer tos. Errors if both are 
+Checks if the integer sos is greater than the integer tos. Errors if both are
 not integer. Should be extended for string case.
 
 ******************************************************************************}
- 
+
 function chkgtn: boolean;
- 
+
 begin
 
    binprp; { prepare binary }
@@ -3141,31 +3141,31 @@ begin
    else begin { must be integer }
 
       if (temp[top].typ <> tint) or
-         (temp[top - 1].typ <> tint) then 
+         (temp[top - 1].typ <> tint) then
          prterr(ewtyp);
       chkgtn := temp[top-1].int > temp[top].int
 
    end
 
 end;
- 
+
 {******************************************************************************
 
-Set tos true 
+Set tos true
 
 Simply sets the tos to an integer 1, or true.
 
 ******************************************************************************}
- 
+
 procedure settrue;
- 
+
 begin
 
    temp[top].typ := tint;
    temp[top].int := -1
 
 end;
- 
+
 {******************************************************************************
 
 Set tos false
@@ -3173,16 +3173,16 @@ Set tos false
 Simply sets the tos to an integer 0, or false.
 
 ******************************************************************************}
- 
+
 procedure setfalse;
- 
+
 begin
 
    temp[top].typ := tint;
    temp[top].int := 0
 
 end;
- 
+
 {******************************************************************************
 
 Clear single variable
@@ -3191,9 +3191,9 @@ Clears the given variable and its substructure. The substructures are sent
 back to free, and the variable entry itself is set back to zero and initalized.
 
 ******************************************************************************}
- 
+
 procedure clrvar(vp: varptr); { variable to clear }
- 
+
 { clear vector }
 
 procedure clrvec(var vp: vvcptr);
@@ -3236,7 +3236,7 @@ begin
 
    end
 
-end;   
+end;
 
 { clear record field lists }
 
@@ -3277,7 +3277,7 @@ begin
    end
 
 end;
- 
+
 {******************************************************************************
 
 Clear variable store
@@ -3289,11 +3289,11 @@ Note that the variable base entries in the table cannot be totally freed,
 because the tolkenized source references these entries.
 
 ******************************************************************************}
- 
+
 procedure clrvars;
- 
+
 var vi: varinx; { variable index }
- 
+
 begin
 
    for vi := 1 to maxvar do { clear variables }
@@ -3316,11 +3316,11 @@ Clears all the available program lines to empty.
 The program line is set to immediate, and the stack is set empty.
 
 ******************************************************************************}
- 
+
 procedure clear;
- 
+
 var p: bstptr; { pointer to program lines }
- 
+
 begin
 
    while prglst <> nil do begin
@@ -3346,10 +3346,10 @@ procedure spcdat;
 
 begin
 
-   if datac^.str[datal] = chr(ord(cspc)) then 
+   if datac^.str[datal] = chr(ord(cspc)) then
       datal := datal+1 { skip single space }
-   else if datac^.str[datal] = chr(ord(cspcs)) then 
-      datal := datal+2 { skip multiple spaces } 
+   else if datac^.str[datal] = chr(ord(cspcs)) then
+      datal := datal+2 { skip multiple spaces }
 
 end;
 
@@ -3380,18 +3380,18 @@ begin
          creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil,
          cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv, cdumpp,
          cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand, ctrace,
-         cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, cgtn, 
+         cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, cgtn,
          cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
-         cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, 
-         crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, 
+         cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn,
+         crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof,
          clcase, cucase, cscn, ccln, clpar, crpar, ccma, cpnd, cperiod,
          cspc: datal := datal+1; { skip tolken }
          cintc: datal := datal+5; { skip integer constant }
          crlc: datal := datal+9; { skip real constant }
-         cstrc, 
+         cstrc,
          crem, crema: datal := datal+2+ord(datac^.str[datal+1]); { skip string }
          cintv, crlv, cstrv, cspcs: datal := datal+2; { skip variable/spaces }
-         clend: { line end, skip to next line } 
+         clend: { line end, skip to next line }
             begin datac := datac^.next; datal := 1 end;
          cdata: begin { found data statement }
 
@@ -3416,7 +3416,7 @@ Finds a random number between 0 and 1.
 ******************************************************************************}
 
 function rand: real;
- 
+
 const a = 16807;
       m = 2147483647;
 
@@ -3618,18 +3618,18 @@ Execute line
 Executes program statements in the current line.
 
 ******************************************************************************}
- 
+
 procedure execl;
- 
+
 label 2, { exit procedure }
       1; { restart line }
- 
+
 var c: char;
- 
+
 { execute statement }
- 
+
 procedure stat;
- 
+
 var cmd: keycod; { command save }
 
 procedure expr; forward;
@@ -3646,7 +3646,7 @@ given the type implied by the access.
 
 procedure parvec(var rp:  vvcptr;  { root of reference }
                  var vp:  vvcptr;  { vectors pointer }
-                 var inx: integer; { vector index } 
+                 var inx: integer; { vector index }
                      typ: vvctyp); { type of vector }
 
 var newv: boolean; { new vector flag }
@@ -3685,13 +3685,13 @@ begin
       { check proper demensions }
       if vp^.vt <> vvvec then prterr(edim);
       { check index in range }
-      if (temp[top].int > maxvec) or (temp[top].int < 0) then 
+      if (temp[top].int > maxvec) or (temp[top].int < 0) then
          prterr(esubrng); { subscript out of range }
       vi := temp[top].int; { get vector index }
       top := top-1; { remove index }
       if vp^.vec[vi] = nil then begin
 
-         { we allocate arrays "sparsely", or allocating elements only as 
+         { we allocate arrays "sparsely", or allocating elements only as
            actually referenced. So if a new branch is referenced, we allocate
            it and type it according to whether or not we have reached bottom }
          getvec(vp^.vec[vi]); { allocate this vector }
@@ -3704,7 +3704,7 @@ begin
       if temp[top].typ <> tint then prterr(einte); { integer expected }
       ic := ic+1; { count index levels }
       if not news and (ic > rp^.inx) then prterr(edim) { bad index count }
-      
+
    end;
    skpspc; { skip spaces }
    if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
@@ -3716,10 +3716,10 @@ begin
       clrvec(vp) { clear vector }
 
    end;
-   if (vp^.vt <> typ) or (ic <> rp^.inx) then 
+   if (vp^.vt <> typ) or (ic <> rp^.inx) then
       prterr(edim); { must be the end now }
    { check index in range }
-   if (temp[top].int > maxvec) or (temp[top].int < 0) then 
+   if (temp[top].int > maxvec) or (temp[top].int < 0) then
       prterr(esubrng); { subscript out of range }
    inx := temp[top].int; { place index }
    top := top-1 { remove index }
@@ -3732,7 +3732,7 @@ Parse function reference
 
 Parses a (x, y...) function reference. Expects the function variable entry,
 and the expected return type. The return type must match the declared type
-of the function. 
+of the function.
 A list of parameters with their parsed expressions is prepared and checked
 against the declaration types. Then, this list is moved into the variable
 table, replacing identical names there. Then, the function body code is
@@ -3797,7 +3797,7 @@ begin
    top := top-1 { clean stack }
 
 end;
-   
+
 begin
 
    case fp^.typ of { result type }
@@ -3824,7 +3824,7 @@ begin
          parpar(pp); { parse parameter }
          pp := pp^.par; { link next parameter }
          skpspc { skip spaces }
-         
+
       end;
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
       getchr { skip ')' }
@@ -3861,13 +3861,13 @@ begin
      at endfunc }
    if fp^.ml then begin { execute multiple lines }
 
-      repeat { execute lines } 
+      repeat { execute lines }
 
          execl; { execute single lines }
          linec := 1 { set 1st character }
 
       until curprg = nil; { execute lines }
-      if not fnsstk^.endf then 
+      if not fnsstk^.endf then
          if fp^.fnc then prterr(enoendf) { no 'endfunc' found }
          else prterr(enoendp); { no 'endproc' found }
 
@@ -3899,7 +3899,7 @@ Parses a factor, and leaves the result on the stack.
 ******************************************************************************}
 
 procedure factor;
- 
+
 var i:          integer;
     r:          real;
     c:          char;
@@ -3988,14 +3988,14 @@ begin { factor }
             getchr; { skip }
             fndfld(vap^.rec, x, vap1); { lookup or make field }
             vap := vap1 { copy back }
-            
+
          end;
          if chkchr = chr(ord(clpar)) then begin { array reference }
 
             { parse array reference by type }
             if k = cstrv then { string }
                parvec(vap^.strv, vp, x, vvstr)
-            else if k = cintv then { integer } 
+            else if k = cintv then { integer }
                parvec(vap^.intv, vp, x, vvint)
             else { real }
                parvec(vap^.rlv, vp, x, vvrl);
@@ -4070,7 +4070,7 @@ begin { factor }
          if temp[top].int > temp[top-1].bstr.len then prterr(estrinx);
          if c = chr(ord(cright)) then { right$ }
             for i := 1 to temp[top].int do { move string left }
-               temp[top-1].bstr.str[i] := 
+               temp[top-1].bstr.str[i] :=
                   temp[top-1].bstr.str[i+temp[top-1]
                     .bstr.len-temp[top].int];
          { set new length left }
@@ -4091,7 +4091,7 @@ begin { factor }
          getchr; { skip ')' }
          { check requested length > string length }
          if temp[top].int+temp[top-1].int-1 >
-            temp[top-2].bstr.len then 
+            temp[top-2].bstr.len then
             prterr(estrinx);
          for i := 1 to temp[top].int do { move string left }
             temp[top-2].bstr.str[i] :=
@@ -4101,7 +4101,7 @@ begin { factor }
          top := top-2 { clean stack }
 
       end
-    
+
    end else if k = cchr then begin { chr$ }
 
       getchr; { skip 'chr$' }
@@ -4114,7 +4114,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
       getchr; { skip ')' }
       x := temp[top].int; { save integer }
-      if (x > 255) or (x < 0) then 
+      if (x > 255) or (x < 0) then
          prterr(echrrng); { out of range for character }
       temp[top].typ := tstr; { change to string type }
       temp[top].bstr.len := 1; { set single character }
@@ -4207,7 +4207,7 @@ begin { factor }
       if top > maxstk then prterr(eexc); { stack overflow }
       temp[top].typ := trl; { type as real }
       temp[top].rl := rand { place random number }
-      
+
    end else if k = cint then begin
 
       getchr; { skip tolken }
@@ -4229,7 +4229,7 @@ begin { factor }
          temp[top].rl := trunc(temp[top].rl)-1 { find truncation }
       else { positive case }
          temp[top].rl := trunc(temp[top].rl) { find truncation }
-          
+
    end else if k = csqr then begin
 
       getchr; { skip tolken }
@@ -4243,7 +4243,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := sqrt(temp[top].rl) { find square root }
-    
+
    end else if k = cabs then begin
 
       getchr; { skip tolken }
@@ -4252,7 +4252,7 @@ begin { factor }
       getchr; { skip '(' }
       expr; { parse expression }
       if (temp[top].typ <> trl) and
-         (temp[top].typ <> tint) then 
+         (temp[top].typ <> tint) then
          prterr(enumexp); { number expected }
       skpspc; { skip spaces }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
@@ -4261,7 +4261,7 @@ begin { factor }
       if temp[top].typ = tint then
          temp[top].int := abs(temp[top].int)
       else temp[top].rl := abs(temp[top].rl)
-    
+
    end else if k = csgn then begin
 
       getchr; { skip tolken }
@@ -4269,7 +4269,7 @@ begin { factor }
       if chkchr <> chr(ord(clpar)) then prterr(elpe); { '(' expected }
       getchr; { skip '(' }
       expr; { parse expression }
-      if (temp[top].typ <> trl) and (temp[top].typ <> tint) then 
+      if (temp[top].typ <> trl) and (temp[top].typ <> tint) then
          prterr(enumexp); { number expected }
       skpspc; { skip spaces }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
@@ -4304,7 +4304,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := sin(temp[top].rl) { find sin(x) }
-    
+
    end else if k = ccos then begin
 
       getchr; { skip tolken }
@@ -4318,7 +4318,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := cos(temp[top].rl) { find cos(x) }
-    
+
    end else if k = ctan then begin
 
       getchr; { skip tolken }
@@ -4332,7 +4332,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := sin(temp[top].rl)/cos(temp[top].rl) { find tan(x) }
-    
+
    end else if k = catn then begin
 
       getchr; { skip tolken }
@@ -4346,7 +4346,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := arctan(temp[top].rl) { find atn(x) }
-    
+
    end else if k = clog then begin
 
       getchr; { skip tolken }
@@ -4360,7 +4360,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := ln(temp[top].rl) { find log(x) }
-    
+
    end else if k = cexp then begin
 
       getchr; { skip tolken }
@@ -4374,7 +4374,7 @@ begin { factor }
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { '(' expected }
       getchr; { skip ')' }
       temp[top].rl := exp(temp[top].rl) { find exp(x) }
-    
+
    end else if k = clcase then begin
 
       getchr; { skip 'lcase' }
@@ -4449,7 +4449,7 @@ rely on exponentiation being a high priority operator.
 ******************************************************************************}
 
 procedure expf;
- 
+
 var r: real;
     a: real;
     i: integer;
@@ -4491,18 +4491,18 @@ Parses a term, and leaves the result on the stack.
 ******************************************************************************}
 
 procedure term;
- 
+
 begin { term }
 
    expf;
    skpspc;
-   while ktrans[chkchr] in [cmult, cdiv, cmod, cidiv] do 
+   while ktrans[chkchr] in [cmult, cdiv, cmod, cidiv] do
       begin
 
       case ktrans[chkchr] of { tolken }
 
          cmult: begin { * }
-   
+
             getchr; { skip '*' }
             expf;
             binprp; { prepare binary }
@@ -4516,9 +4516,9 @@ begin { term }
             top := top-1
 
          end;
-   
+
          cdiv: begin { / }
-   
+
             getchr; { skip '/' }
             expf;
             { convert both operands to real }
@@ -4531,9 +4531,9 @@ begin { term }
             top := top-1
 
          end;
-   
+
          cmod: begin { mod }
-   
+
             getchr; { skip 'mod' }
             expf;
             cvtint; { convert top to integer }
@@ -4547,7 +4547,7 @@ begin { term }
          end;
 
          cidiv: begin { integer divide }
-   
+
             getchr; { skip 'div' }
             expf;
             cvtint; { convert top to integer }
@@ -4589,13 +4589,13 @@ begin { sexpr }
             getchr; { skip '+' }
             term;
             if temp[top].typ = tstr then begin
-   
+
                if temp[top - 1].typ <> tstr then prterr(estyp);
                catbs(temp[top - 1].bstr, temp[top].bstr);
                top := top - 1
-   
+
             end else begin
-   
+
                binprp; { prepare binary }
                if (temp[top].typ = trl) and (temp[top-1].typ = trl) then
                   { perform in real }
@@ -4605,13 +4605,13 @@ begin { sexpr }
                { perform in integer }
                else temp[top-1].int := temp[top-1].int+temp[top].int;
                top := top-1;
-   
+
             end
 
          end;
-   
+
          csub: begin { - }
-   
+
             getchr; { skip '-' }
             term;
             binprp; { prepare binary }
@@ -4623,7 +4623,7 @@ begin { sexpr }
             { perform in integer }
             else temp[top-1].int := temp[top-1].int-temp[top].int;
             top := top-1
-   
+
          end
 
       end;
@@ -4640,7 +4640,7 @@ Parse equality expression
 Parses an equality expression, and leaves the result on the stack.
 
 ******************************************************************************}
- 
+
 procedure eexpr;
 
 begin { eexpr }
@@ -4652,7 +4652,7 @@ begin { eexpr }
       case ktrans[chkchr] of { tolken }
 
          cequ: begin
-   
+
             getchr; { skip '=' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4660,17 +4660,17 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strequ(temp[top-1].bstr, temp[top].bstr) then { set result }
                      begin top := top-1; settrue end
-                  else 
+                  else
                      begin top := top-1; setfalse end
 
             end else { integer/real }
-               if chkequ then begin top := top-1; settrue end 
+               if chkequ then begin top := top-1; settrue end
                else begin top := top-1; setfalse end
-   
+
          end;
-   
+
          cnequ: begin
-   
+
             getchr; { skip '<>' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4678,17 +4678,17 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strequ(temp[top-1].bstr, temp[top].bstr) then { set result }
                      begin top := top-1; setfalse end
-                  else 
+                  else
                      begin top := top-1; settrue end
 
             end else { integer/real }
                if chkequ then begin top := top-1; setfalse end
                else begin top := top-1; settrue end
-   
+
          end;
-   
+
          cltn: begin
-   
+
             getchr; { skip '<' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4696,17 +4696,17 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strltn(temp[top-1].bstr, temp[top].bstr) then { set result }
                      begin top := top-1; settrue end
-                  else 
-                     begin top := top-1; setfalse end 
+                  else
+                     begin top := top-1; setfalse end
 
             end else { integer/real }
                if chkltn then begin top := top-1; settrue end
                else begin top := top-1; setfalse end
-   
+
          end;
-   
+
          cgtn: begin
-   
+
             getchr; { skip '>' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4714,17 +4714,17 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strltn(temp[top].bstr, temp[top-1].bstr) then { set result }
                      begin top := top-1; settrue end
-                  else 
+                  else
                      begin top := top-1; setfalse end
 
             end else { integer/real }
                if chkgtn then begin top := top-1; settrue end
                else begin top := top-1; setfalse end
-   
+
          end;
-   
+
          clequ: begin
-   
+
             getchr; { skip '<=' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4732,17 +4732,17 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strltn(temp[top].bstr, temp[top-1].bstr) then { set result }
                      begin top := top-1; setfalse end
-                  else 
+                  else
                      begin top := top-1; settrue end
 
             end else { integer/real }
                if chkgtn then begin top := top-1; setfalse end
                else begin top := top-1; settrue end
-   
+
          end;
 
          cgequ: begin
-   
+
             getchr; { '>=' }
             sexpr;
             if temp[top].typ = tstr then begin { string }
@@ -4750,13 +4750,13 @@ begin { eexpr }
                if temp[top-1].typ <> tstr then prterr(estyp); { not same type }
                if strltn(temp[top-1].bstr, temp[top].bstr) then { set result }
                      begin top := top-1; setfalse end
-                  else 
+                  else
                      begin top := top-1; settrue end
 
             end else { integer/real }
                if chkltn then begin top := top-1; setfalse end
                else begin top := top-1; settrue end
-   
+
          end
 
       end;
@@ -4773,7 +4773,7 @@ Parse expression
 Parses an expression, and leaves the result on the stack.
 
 ******************************************************************************}
- 
+
 procedure expr;
 
 begin { expr }
@@ -4785,7 +4785,7 @@ begin { expr }
       case ktrans[chkchr] of { tolken }
 
          cand: begin { and }
-   
+
             getchr; { skip 'and' }
             eexpr;
             cvtint; { convert top to integer }
@@ -4799,7 +4799,7 @@ begin { expr }
          end;
 
          cxor: begin { xor }
-   
+
             getchr; { skip 'xor' }
             eexpr;
             cvtint; { convert top to integer }
@@ -4813,7 +4813,7 @@ begin { expr }
          end;
 
          cor: begin { or }
-   
+
             getchr; { skip 'or' }
             eexpr;
             cvtint; { convert top to integer }
@@ -4890,7 +4890,7 @@ begin
       if (chkchr <> chr(ord(cscn))) and (chkchr <> chr(ord(ccma))) then
          prterr(esccmexp); { ';' or ',' expected }
       getchr { skip ';' or ',' }
-      
+
    end else if not fp then write('? '); { ouput prompt by default }
    { input user string to get input from }
    if filtab[fn]^.ty = tyinp then inpbstr(input, ts)
@@ -4917,13 +4917,13 @@ begin
          { parse array reference by type }
          if c = chr(ord(cstrv)) then { string }
             parvec(vartbl[ord(v)]^.strv, vp, x, vvstr)
-         else if c = chr(ord(cintv)) then { integer } 
+         else if c = chr(ord(cintv)) then { integer }
             parvec(vartbl[ord(v)]^.intv, vp, x, vvint)
          else { real }
             parvec(vartbl[ord(v)]^.rlv, vp, x, vvrl);
       skpspc; { skip spaces }
       if c = chr(ord(cstrv)) then begin
-      
+
          { parse string out of input }
          if chkchr = chr(ord(ccma)) then begin
 
@@ -4955,16 +4955,16 @@ begin
 
             makstr(vp^.str[x]); { make sure string exists }
             vp^.str[x]^ := ts1 { place value }
-            
+
          end else begin { ordinary reference }
 
             makstr(vartbl[ord(v)]^.str); { make sure string exists }
             vartbl[ord(v)]^.str^ := ts1 { place value }
 
          end
-      
+
       end else if c = chr(ord(cintv)) then begin
-      
+
          parnum(ts, i, true, isreal, ti, tr); { get number from string }
          { if the number is real, convert to integer }
          if isreal then ti := round(tr);
@@ -4972,9 +4972,9 @@ begin
             vp^.int[x] := ti { place value }
          else { ordinary reference }
             vartbl[ord(v)]^.int := ti
-      
+
       end else begin
-      
+
          parnum(ts, i, true, isreal, ti, tr); { get number from string }
          { if the number is integer, convert to real }
          if not isreal then tr := ti;
@@ -4982,7 +4982,7 @@ begin
             vp^.rl[x] := tr { place value }
          else { ordinary reference }
             vartbl[ord(v)]^.rl := tr
-      
+
       end;
       skpspc; { skip spaces }
       c := chkchr; { check next character }
@@ -5149,7 +5149,7 @@ begin
 
          if temp[top].typ <> tstr then prterr(estre); { string expected }
          prtbstr(filtab[fn]^, temp[top].bstr) { print string }
- 
+
       end;
 
       '$': begin { dollar sign }
@@ -5291,7 +5291,7 @@ begin
    for i := 1 to p^.len do manstr[i] := p^.str[i];
    manlen := p^.len;
    putstr(p); { release string }
-   sign := '+'; { default to positive } 
+   sign := '+'; { default to positive }
    if manstr[1] = '-' then begin { its negative }
 
       extchr(manstr, sign); { remove the sign }
@@ -5328,7 +5328,7 @@ begin
    for i := 1 to p^.len do manstr[i] := p^.str[i];
    manlen := p^.len;
    putstr(p); { release string }
-   sign := '+'; { default to positive } 
+   sign := '+'; { default to positive }
    if manstr[1] = '-' then begin { its negative }
 
       extchr(manstr, sign); { remove the sign }
@@ -5391,7 +5391,7 @@ procedure prtfil(var fr: frcety);
 
 begin
 
-   while not (fchkchr in ['&', '$', ',', '#', '-', '+', '0', '.', '^']) and 
+   while not (fchkchr in ['&', '$', ',', '#', '-', '+', '0', '.', '^']) and
          (fi <= fl) do begin
 
       if fchkchr = '\' then begin { process force sequence }
@@ -5485,7 +5485,7 @@ begin { sprint }
          getchr; { skip '(' }
          expr; { parse tab expression }
          cvtint; { convert to integer }
-         if temp[top].typ <> tint then 
+         if temp[top].typ <> tint then
             prterr(einte); { integer expected }
          skpspc; { skip spaces }
          if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
@@ -5539,14 +5539,14 @@ begin { sprint }
       { check fielded processing }
       if c = chr(ord(ccma)) then { move to next 15th tab stop }
          repeat prtchr(filtab[fn]^, ' ') until (filtab[fn]^.cp-1) mod 15 = 0;
-      if (c = chr(ord(ccma))) or (c = chr(ord(cscn))) then 
+      if (c = chr(ord(ccma))) or (c = chr(ord(cscn))) then
          getchr { skip ',' or ';' }
-   
+
    end;
    if (c <> chr(ord(cscn))) and (c <> chr(ord(ccma))) then begin
 
       if filtab[fn]^.ty = tyout then writeln { terminate print line }
-      else writeln(filtab[fn]^.f); 
+      else writeln(filtab[fn]^.f);
       rsttab(filtab[fn]^); { reset tabbing }
       newlin := true { set on new line }
 
@@ -5572,7 +5572,7 @@ var io: boolean; { input/output flag }
 begin
 
    if not hasnfio then prterr(enonfio); { no named FIO this version}
-   
+
    getchr; { skip 'open' }
    expr; { parse filename expression }
    if temp[top].typ <> tstr then prterr(estre); { string expected }
@@ -5693,7 +5693,7 @@ end;
 If
 
 Handles the 'if' statement. Implements "dangling then-else". This rule is used
-to extend single line ifs into multiple lines. After a then or else clause, 
+to extend single line ifs into multiple lines. After a then or else clause,
 if nothing else exists on the line, we then go on a multi-line search for the
 next else or endif.
 
@@ -5711,7 +5711,7 @@ begin
    ctlstk^.sif := true; { set single line }
    expr;
    c := chkchr; { save tolken }
-   if (chkchr <> chr(ord(cthen))) and (chkchr <> chr(ord(cgoto))) then 
+   if (chkchr <> chr(ord(cthen))) and (chkchr <> chr(ord(cgoto))) then
       prterr(ethnexp); { 'then' expected }
    getchr; { skip 'then/goto' }
    cvtint; { convert to integer }
@@ -5771,7 +5771,7 @@ begin
 
             getchr; { skip 'endif' }
             popctl { remove 'if' }
-      
+
          end else begin { not found, skip to next line }
 
             { go next line }
@@ -5792,7 +5792,7 @@ begin
          popctl; { remove 'if' }
          goto 2 { go next line }
 
-      end else if c = chr(ord(cgoto)) then 
+      end else if c = chr(ord(cgoto)) then
          prterr(einte); { integer expected }
       { if the 'then' dangles, set as multiple line 'if' }
       if chksend then ctlstk^.sif := false
@@ -5825,7 +5825,7 @@ begin
 
       skpif(false, false); { skip dead section }
       popctl { remove 'if' level }
-   
+
    end else begin { search for single line terminates }
 
       popctl; { remove 'if' level }
@@ -5940,7 +5940,7 @@ begin
    curprg := prglst; { set execute first program line }
    rndseq := 1; { start random number generator }
    rsttab(filtab[2]^); { reset tabbing }
-   goto 2 
+   goto 2
 
 end;
 
@@ -6022,7 +6022,7 @@ var pp: bstptr; { program line pointer }
 begin
 
    if not hasnfio then prterr(enonfio); { no named FIO this version}
-   
+
    getchr; { skip 'load' }
    expr; { parse file expression }
    if temp[top].typ <> tstr then prterr(estre); { must be string }
@@ -6054,7 +6054,7 @@ begin
    closefile(source); { close input file }
    fsrcop := false; { set source file is closed }
    goto 88 { return to command }
-   
+
 end;
 
 {******************************************************************************
@@ -6070,7 +6070,7 @@ procedure snew;
 begin
 
    getchr; { skip 'new' }
-   clear; 
+   clear;
    goto 88 { return to command }
 
 end;
@@ -6095,14 +6095,14 @@ begin
    repeat
 
       skpspc; { skip spaces }
-      if not (ktrans[chkchr] in [cintc, crlc, cstrc, csub, cadd]) then 
+      if not (ktrans[chkchr] in [cintc, crlc, cstrc, csub, cadd]) then
          prterr(ecstexp); { constant expected }
       if ktrans[chkchr] in [csub, cadd] then begin { sign }
 
          skptlk; { skip sign }
-         if not (ktrans[chkchr] in [cintc, crlc]) then 
+         if not (ktrans[chkchr] in [cintc, crlc]) then
             prterr(encstexp) { numeric constant expected }
-         
+
       end;
       skptlk; { skip over constant }
       skpspc; { skip spaces }
@@ -6127,7 +6127,7 @@ procedure sread;
 var c:    char;
     vp:   vvcptr;
     x, y: integer;
-    r:    real; 
+    r:    real;
     sp:   bstptr; { string pointer }
     sgn:  integer; { sign }
 
@@ -6141,7 +6141,7 @@ begin
          prterr(evare); { variable expected }
       if datac = nil then prterr(eoutdat); { out of data }
       { check ANY data exists at data statement }
-      if not (ktrans[datac^.str[datal]] in 
+      if not (ktrans[datac^.str[datal]] in
               [cintc, cstrc, crlc, csub, cadd]) then begin
 
          { this may not be pretty, but we switch executing lines to the
@@ -6200,7 +6200,7 @@ begin
             vp^.int[x] := y*sgn { place integer }
          else { ordinary reference }
             vartbl[ord(c)]^.int := y*sgn { place integer }
-   
+
       end else if chkchr = chr(ord(crlv)) then begin { read real variable }
 
          getchr; { skip }
@@ -6227,7 +6227,7 @@ begin
             vp^.rl[x] := r*sgn { place real }
          else { ordinary reference }
             vartbl[ord(c)]^.rl := r*sgn { place real }
-   
+
       end else begin { read string variable }
 
          getchr; { skip }
@@ -6254,7 +6254,7 @@ begin
          y := 1; { set 1st string position }
          datal := datal+1; { index string }
          while x > 0 do begin { copy string characters }
-      
+
             { copy character }
             sp^.str[y] := datac^.str[datal];
             datal := datal+1; { next character }
@@ -6306,7 +6306,7 @@ begin
       getchr; { skip }
       if vartbl[vi]^.gto then datac := vartbl[vi]^.glin { set line }
       else prterr(elabnf) { not found }
-      
+
    end else if chkchr = chr(ord(cintc)) then { line is specified }
       datac := schlab(getint); { find corresponding line }
    nxtdat { find first data statement }
@@ -6361,13 +6361,13 @@ begin
          getchr; { skip }
          fndfld(vap^.rec, x, vap1); { lookup or make field }
          vap := vap1 { copy back }
-         
+
       end;
       if chkchr = chr(ord(clpar)) then { array reference }
          { parse array reference by type }
          if c = chr(ord(cstrv)) then { string }
             parvec(vap^.strv, vp, x, vvstr)
-         else if c = chr(ord(cintv)) then { integer } 
+         else if c = chr(ord(cintv)) then { integer }
             parvec(vap^.intv, vp, x, vvint)
          else { real }
             parvec(vap^.rlv, vp, x, vvrl);
@@ -6377,13 +6377,13 @@ begin
       getchr; { skip '=' }
       expr; { get source expression }
       if c = chr(ord(cstrv)) then begin
-      
+
          if temp[top].typ <> tstr then prterr(estyp);
          if vp <> nil then begin { array assign }
 
             makstr(vp^.str[x]); { make sure string exists }
             vp^.str[x]^ := temp[top].bstr; { place value }
-            
+
          end else begin { ordinary reference }
 
             makstr(vartbl[x]^.str); { make sure string exists }
@@ -6391,9 +6391,9 @@ begin
 
          end;
          top := top-1
-      
+
       end else if c = chr(ord(cintv)) then begin
-      
+
          cvtint; { convert top to integer }
          if temp[top].typ <> tint then prterr(estyp);
          if vp <> nil then { array assign }
@@ -6401,9 +6401,9 @@ begin
          else { ordinary reference }
             vap^.int := temp[top].int;
          top := top-1
-      
+
       end else begin
-      
+
          cvtrl; { convert to real }
          if temp[top].typ <> trl then prterr(estyp);
          if vp <> nil then { array assign }
@@ -6411,7 +6411,7 @@ begin
          else { ordinary reference }
             vap^.rl := temp[top].rl;
          top := top-1
-      
+
       end
 
    end
@@ -6517,7 +6517,7 @@ begin
    expr; { get starting expression }
    { place starting value }
    case ctlstk^.vtyp of { variable type }
-   
+
       vtint: begin { integer }
 
          cvtint; { convert to integer }
@@ -6535,7 +6535,7 @@ begin
 
       end;
       vtstr: begin { string }
-   
+
          if temp[top].typ <> tstr then prterr(estyp);
          makstr(vartbl[ord(c)]^.str); { make sure string exists }
          vartbl[ord(c)]^.str^ := temp[top].bstr;
@@ -6593,14 +6593,14 @@ begin
       if ctlstk^.vtyp = vtint then begin { integer }
 
          { find if end condition is met }
-         if ((ctlstk^.stepi >= 0) and 
+         if ((ctlstk^.stepi >= 0) and
              (vartbl[ord(c)]^.int > ctlstk^.endi)) or
-            ((ctlstk^.stepi < 0) and 
-             (vartbl[ord(c)]^.int < ctlstk^.endi)) then repeat 
+            ((ctlstk^.stepi < 0) and
+             (vartbl[ord(c)]^.int < ctlstk^.endi)) then repeat
 
             { end condition true, skip to 'next' }
             while (chkchr <> chr(ord(cnext))) and
-                  (chkchr <> chr(ord(cpend))) do 
+                  (chkchr <> chr(ord(cpend))) do
                skptlkl; { skip to 'next' }
             if chkchr = chr(ord(cpend)) then
                prterr(emsgnxt); { missing 'next' }
@@ -6614,7 +6614,7 @@ begin
                getchr { skip }
 
             end else skptlk { skip variable }
- 
+
          until f { matching 'next' is found }
 
       end else begin { real }
@@ -6625,7 +6625,7 @@ begin
             repeat { end condition true, skip to 'next' }
 
             while (chkchr <> chr(ord(cnext))) and
-                  (chkchr <> chr(ord(cpend))) do 
+                  (chkchr <> chr(ord(cpend))) do
                skptlkl; { skip to 'next' }
             if chkchr = chr(ord(cpend)) then
                prterr(emsgnxt); { missing 'next' }
@@ -6639,13 +6639,13 @@ begin
                getchr { skip }
 
             end else skptlk { skip variable }
- 
+
          until f { matching 'next' is found }
 
       end
 
    end else begin { process sequence of values style }
-   
+
       { sequence must have ',' }
       if chkchr <> chr(ord(ccma)) then prterr(etoexp); { 'to' expected }
       ctlstk^.sov := true { set sequence of values type }
@@ -6707,7 +6707,7 @@ begin
             fndctl(ctfor); { find a 'for' block }
             cp := ctlstk; { index that }
             if cp <> nil then { check proper type }
-               if (cp^.vtyp = vt) and (cp^.vinx = c) then 
+               if (cp^.vtyp = vt) and (cp^.vinx = c) then
                   cp := nil; { terminate search }
             if cp <> nil then popctl { remove that block }
 
@@ -6727,10 +6727,10 @@ begin
                linec := ctlstk^.chrp;
                skpspc; { skip spaces }
                if chkchr = chr(ord(ccma)) then begin { more step values }
-               
+
                   getchr; { skip ',' }
-                  expr; { get string expression }             
-                  cvtint; { convert to integer }  
+                  expr; { get string expression }
+                  cvtint; { convert to integer }
                   if temp[top].typ <> tint then prterr(estyp);
                   vartbl[ord(c)]^.int := temp[top].int; { place value }
                   top := top-1;
@@ -6738,12 +6738,12 @@ begin
                   ctlstk^.chrp := linec;
                   { skip forward to end of statement }
                   while not chksend do skptlk
-               
+
                end else begin { for loop terminates }
-               
+
                   curprg := pp; { restore after 'next' position }
                   linec := y
-               
+
                end
 
             end else begin { process to [step] sequence }
@@ -6751,15 +6751,15 @@ begin
                { find next value }
                vartbl[ord(c)]^.int := vartbl[ord(c)]^.int+ctlstk^.stepi;
                { find if end condition is met }
-               if ((ctlstk^.stepi >= 0) and 
+               if ((ctlstk^.stepi >= 0) and
                    (vartbl[ord(c)]^.int <= ctlstk^.endi)) or
-                  ((ctlstk^.stepi < 0) and 
+                  ((ctlstk^.stepi < 0) and
                    (vartbl[ord(c)]^.int >= ctlstk^.endi)) then begin
-      
+
                   { we loop again }
                   curprg := ctlstk^.line; { reset position }
                   linec := ctlstk^.chrp
-      
+
                end
 
             end
@@ -6776,10 +6776,10 @@ begin
                linec := ctlstk^.chrp;
                skpspc; { skip spaces }
                if chkchr = chr(ord(ccma)) then begin { more step values }
-               
+
                   getchr; { skip ',' }
-                  expr; { get string expression }             
-                  cvtrl; { convert to real }  
+                  expr; { get string expression }
+                  cvtrl; { convert to real }
                   if temp[top].typ <> trl then prterr(estyp);
                   vartbl[ord(c)]^.rl := temp[top].rl; { place value }
                   top := top-1;
@@ -6787,12 +6787,12 @@ begin
                   ctlstk^.chrp := linec;
                   { skip forward to end of statement }
                   while not chksend do skptlk
-               
+
                end else begin { for loop terminates }
-               
+
                   curprg := pp; { restore after 'next' position }
                   linec := y
-               
+
                end
 
             end else begin { process to [step] sequence }
@@ -6800,9 +6800,9 @@ begin
                { find next value }
                vartbl[ord(c)]^.rl := vartbl[ord(c)]^.rl+ctlstk^.stepr;
                { find if end condition is met }
-               if ((ctlstk^.stepr >= 0.0) and 
+               if ((ctlstk^.stepr >= 0.0) and
                    (vartbl[ord(c)]^.rl <= ctlstk^.endr)) or
-                  ((ctlstk^.stepr < 0.0) and 
+                  ((ctlstk^.stepr < 0.0) and
                    (vartbl[ord(c)]^.rl >= ctlstk^.endr)) then begin
 
                   { we loop again }
@@ -6826,7 +6826,7 @@ begin
             if chkchr = chr(ord(ccma)) then begin { more step values }
 
                getchr; { skip ',' }
-               expr; { get string expression }               
+               expr; { get string expression }
                if temp[top].typ <> tstr then prterr(estyp);
                makstr(vartbl[ord(c)]^.str); { make sure string exists }
                vartbl[ord(c)]^.str^ := temp[top].bstr; { place value }
@@ -6885,13 +6885,13 @@ begin
    repeat
 
       if chkchr = chr(ord(crlv)) then begin { search for symbolic label }
-      
+
          getchr; { skip }
          vi := ord(chkchr); { get variable index }
          getchr; { skip }
          if vartbl[vi]^.gto then pp := vartbl[vi]^.glin { set line }
          else prterr(elabnf) { not found }
-        
+
       end else { numeric label }
          pp := schlab(getint); { find the target label }
       x := x-1; { count labels }
@@ -6917,7 +6917,7 @@ begin
       goto 2 { go next line }
 
    end
-      
+
 end;
 
 {******************************************************************************
@@ -6944,13 +6944,13 @@ begin
 
       top := top-1; { purge value }
       { skip multi-line to next 'wend' }
-      while (chkchr <> chr(ord(cwend))) and 
+      while (chkchr <> chr(ord(cwend))) and
             (chkchr <> chr(ord(cpend))) do skptlkl;
       { check found 'wend' }
       if chkchr <> chr(ord(cwend)) then prterr(eedwhexp);
       getchr; { skip 'wend' }
       popctl { remove control block }
-      
+
    end else begin { true }
 
       top := top-1; { purge value }
@@ -7211,7 +7211,7 @@ begin
          getchr; { skip }
          fndfld(vp^.rec, x, vp1); { lookup or make field }
          vp := vp1 { copy back }
-         
+
       end;
       { for now, since our vectors and strings are fixed, we will just count
         the indexes and validate they are within the fixed bounds. Later, we
@@ -7227,7 +7227,7 @@ begin
          y := 1; { set 1st index }
          skpspc; { skip spaces }
          while chkchr = chr(ord(ccma)) do begin { parse indecies }
-      
+
             getchr; { skip ',' }
             expr; { parse index }
             cvtint; { convert to integer }
@@ -7236,13 +7236,13 @@ begin
             top := top-1; { remove from stack }
             y := y+1; { count indicies }
             skpspc; { skip spaces }
-            
+
          end;
          if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
          getchr; { skip ')' }
          { check not already allocated, and create new entry }
          if c = chr(ord(cintv)) then begin { integer }
-      
+
             { check already allocated }
             if vp^.intv <> nil then prterr(earddim);
             getvec(vp^.intv); { get the starting vector }
@@ -7251,9 +7251,9 @@ begin
             if y > 1 then vp^.intv^.vt := vvvec
             else vp^.intv^.vt := vvint;
             clrvec(vp^.intv) { clear that }
-      
+
          end else if c = chr(ord(crlv)) then begin { real }
-      
+
             { check already allocated }
             if vp^.rlv <> nil then prterr(earddim);
             getvec(vp^.rlv); { get the starting vector }
@@ -7262,11 +7262,11 @@ begin
             if y > 1 then vp^.rlv^.vt := vvvec
             else vp^.rlv^.vt := vvrl;
             clrvec(vp^.rlv) { clear that }
-      
+
          end else begin { string }
-      
+
             if y > 1 then begin { more than one index }
-      
+
                { check already allocated }
                if vp^.intv <> nil then prterr(earddim);
                getvec(vp^.strv); { get the starting vector }
@@ -7275,9 +7275,9 @@ begin
                if y > 2 then vp^.strv^.vt := vvvec
                else vp^.strv^.vt := vvstr;
                clrvec(vp^.strv) { clear that }
-      
+
             end
-      
+
          end
 
       end;
@@ -7286,7 +7286,7 @@ begin
       if c = chr(ord(ccma)) then getchr { skip ',' }
 
    until c <> chr(ord(ccma)) { until not ',' }
-   
+
 end;
 
 {******************************************************************************
@@ -7360,7 +7360,7 @@ begin
 
          getchr; { skip ',' }
          skpspc; { skip spaces }
-         if not (ktrans[chkchr] in [cstrv, cintv, crlv]) then 
+         if not (ktrans[chkchr] in [cstrv, cintv, crlv]) then
             prterr(evare);
          c := chkchr; { save head type }
          getchr; { skip }
@@ -7384,7 +7384,7 @@ begin
       end;
       if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
       getchr { skip ')' }
-      
+
    end;
    skpspc; { skip spaces }
    if ml then begin { multiline }
@@ -7622,7 +7622,7 @@ begin { stat }
                    cnotrace, cbye, cintv, cstrv, crlv]) then
       prterr(estate);
    case cmd of { statement }
- 
+
       cinput:       sinput;         { input variable }
       cprint:       sprint;         { print }
       cgoto:        sgoto;          { goto line number }
@@ -7631,19 +7631,19 @@ begin { stat }
       cendif:       sendif;         { endif conditional }
       crem, crema:  srem;           { remark }
       { stop/end program }
-      cstop, 
+      cstop,
       cend:         goto 88;
       crun:         srun;           { run program }
-      clist, 
+      clist,
       csave:        slstsav(cmd);   { list or save program }
       cload:        sload;          { load program }
       cnew:         snew;           { clear current program }
       cdata:        sdata;          { define data }
       cread:        sread;          { read data }
       crestore:     srestore;       { restore data }
-      clet, 
-      cintv, 
-      cstrv, 
+      clet,
+      cintv,
+      cstrv,
       crlv:         slet;           { assign variable }
       cgosub:       sgosub;         { go subroutine }
       creturn:      sreturn;        { return to caller position }
@@ -7672,7 +7672,7 @@ begin { stat }
       copen:        sopen;          { open file }
       cclose:       sclose;         { close file }
       cbye:         goto 99         { exit basic }
- 
+
    end
 
 end; { stat }
@@ -7753,119 +7753,119 @@ begin { executive }
    for ki := cinput to clend do ktrans[chr(ord(ki))] := ki;
    { initalize keys }
    for ki := cinput to clend do keywd[ki] := '??????????  ';
-   keywd[cinput]       := 'input       '; 
+   keywd[cinput]       := 'input       ';
    keywd[cprint]       := 'print       ';
-   keywd[cgoto]        := 'goto        '; 
-   keywd[con]          := 'on          '; 
+   keywd[cgoto]        := 'goto        ';
+   keywd[con]          := 'on          ';
    keywd[cif]          := 'if          ';
-   keywd[cthen]        := 'then        '; 
-   keywd[celse]        := 'else        '; 
-   keywd[cendif]       := 'endif       '; 
-   keywd[crem]         := 'rem         '; 
-   keywd[crema]        := '!           '; 
+   keywd[cthen]        := 'then        ';
+   keywd[celse]        := 'else        ';
+   keywd[cendif]       := 'endif       ';
+   keywd[crem]         := 'rem         ';
+   keywd[crema]        := '!           ';
    keywd[cstop]        := 'stop        ';
-   keywd[crun]         := 'run         '; 
+   keywd[crun]         := 'run         ';
    keywd[clist]        := 'list        ';
-   keywd[cnew]         := 'new         '; 
+   keywd[cnew]         := 'new         ';
    keywd[clet]         := 'let         ';
    keywd[cload]        := 'load        ';
    keywd[csave]        := 'save        ';
    keywd[cdata]        := 'data        ';
    keywd[cread]        := 'read        ';
    keywd[crestore]     := 'restore     ';
-   keywd[cgosub]       := 'gosub       '; 
-   keywd[creturn]      := 'return      '; 
-   keywd[cfor]         := 'for         '; 
-   keywd[cnext]        := 'next        '; 
-   keywd[cstep]        := 'step        '; 
-   keywd[cto]          := 'to          '; 
-   keywd[cwhile]       := 'while       '; 
-   keywd[cwend]        := 'wend        '; 
-   keywd[crepeat]      := 'repeat      '; 
-   keywd[cuntil]       := 'until       '; 
+   keywd[cgosub]       := 'gosub       ';
+   keywd[creturn]      := 'return      ';
+   keywd[cfor]         := 'for         ';
+   keywd[cnext]        := 'next        ';
+   keywd[cstep]        := 'step        ';
+   keywd[cto]          := 'to          ';
+   keywd[cwhile]       := 'while       ';
+   keywd[cwend]        := 'wend        ';
+   keywd[crepeat]      := 'repeat      ';
+   keywd[cuntil]       := 'until       ';
    keywd[cselect]      := 'select      ';
    keywd[ccase]        := 'case        ';
    keywd[cother]       := 'other       ';
    keywd[cendsel]      := 'endsel      ';
-   keywd[copen]        := 'open        '; 
-   keywd[cclose]       := 'close       '; 
-   keywd[cend]         := 'end         '; 
-   keywd[cdumpv]       := 'dumpvar     '; 
-   keywd[cdumpp]       := 'dumpprg     '; 
-   keywd[cdim]         := 'dim         '; 
-   keywd[cdef]         := 'def         '; 
-   keywd[cfunction]    := 'function    '; 
-   keywd[cendfunc]     := 'endfunc     '; 
-   keywd[cprocedure]   := 'procedure   '; 
-   keywd[cendproc]     := 'endproc     '; 
-   keywd[crand]        := 'randomize   '; 
-   keywd[ctrace]       := 'trace       '; 
-   keywd[cas]          := 'as          '; 
-   keywd[coutput]      := 'output      '; 
-   keywd[cnotrace]     := 'notrace     '; 
-   keywd[cbye]         := 'bye         '; 
+   keywd[copen]        := 'open        ';
+   keywd[cclose]       := 'close       ';
+   keywd[cend]         := 'end         ';
+   keywd[cdumpv]       := 'dumpvar     ';
+   keywd[cdumpp]       := 'dumpprg     ';
+   keywd[cdim]         := 'dim         ';
+   keywd[cdef]         := 'def         ';
+   keywd[cfunction]    := 'function    ';
+   keywd[cendfunc]     := 'endfunc     ';
+   keywd[cprocedure]   := 'procedure   ';
+   keywd[cendproc]     := 'endproc     ';
+   keywd[crand]        := 'randomize   ';
+   keywd[ctrace]       := 'trace       ';
+   keywd[cas]          := 'as          ';
+   keywd[coutput]      := 'output      ';
+   keywd[cnotrace]     := 'notrace     ';
+   keywd[cbye]         := 'bye         ';
    keywd[cmod]         := 'mod         ';
    keywd[cidiv]        := 'div         ';
    keywd[cand]         := 'and         ';
    keywd[cor]          := 'or          ';
    keywd[cxor]         := 'xor         ';
    keywd[cnot]         := 'not         ';
-   keywd[cleft]        := 'left$       '; 
+   keywd[cleft]        := 'left$       ';
    keywd[cright]       := 'right$      ';
-   keywd[cmid]         := 'mid$        '; 
+   keywd[cmid]         := 'mid$        ';
    keywd[cthen]        := 'then        ';
-   keywd[cstr]         := 'str$        '; 
+   keywd[cstr]         := 'str$        ';
    keywd[cval]         := 'val         ';
-   keywd[cchr]         := 'chr$        '; 
-   keywd[casc]         := 'asc         '; 
-   keywd[clen]         := 'len         '; 
-   keywd[csqr]         := 'sqr         '; 
-   keywd[cabs]         := 'abs         '; 
-   keywd[csgn]         := 'sgn         '; 
-   keywd[crnd]         := 'rnd         '; 
-   keywd[cint]         := 'int         '; 
-   keywd[csin]         := 'sin         '; 
-   keywd[ccos]         := 'cos         '; 
-   keywd[ctan]         := 'tan         '; 
-   keywd[catn]         := 'atn         '; 
-   keywd[clog]         := 'log         '; 
-   keywd[cexp]         := 'exp         '; 
-   keywd[ctab]         := 'tab         '; 
-   keywd[cusing]       := 'using       '; 
-   keywd[ceof]         := 'eof         '; 
-   keywd[clcase]       := 'lcase$      '; 
-   keywd[cucase]       := 'ucase$      '; 
+   keywd[cchr]         := 'chr$        ';
+   keywd[casc]         := 'asc         ';
+   keywd[clen]         := 'len         ';
+   keywd[csqr]         := 'sqr         ';
+   keywd[cabs]         := 'abs         ';
+   keywd[csgn]         := 'sgn         ';
+   keywd[crnd]         := 'rnd         ';
+   keywd[cint]         := 'int         ';
+   keywd[csin]         := 'sin         ';
+   keywd[ccos]         := 'cos         ';
+   keywd[ctan]         := 'tan         ';
+   keywd[catn]         := 'atn         ';
+   keywd[clog]         := 'log         ';
+   keywd[cexp]         := 'exp         ';
+   keywd[ctab]         := 'tab         ';
+   keywd[cusing]       := 'using       ';
+   keywd[ceof]         := 'eof         ';
+   keywd[clcase]       := 'lcase$      ';
+   keywd[cucase]       := 'ucase$      ';
    keywd[clequ]        := '<=          ';
-   keywd[cgequ]        := '>=          '; 
+   keywd[cgequ]        := '>=          ';
    keywd[cequ]         := '=           ';
-   keywd[cnequ]        := '<>          '; 
+   keywd[cnequ]        := '<>          ';
    keywd[cltn]         := '<           ';
-   keywd[cgtn]         := '>           '; 
+   keywd[cgtn]         := '>           ';
    keywd[cadd]         := '+           ';
-   keywd[csub]         := '-           '; 
+   keywd[csub]         := '-           ';
    keywd[cmult]        := '*           ';
-   keywd[cdiv]         := '/           '; 
+   keywd[cdiv]         := '/           ';
    keywd[cexpn]        := '^           ';
-   keywd[cscn]         := ';           '; 
-   keywd[ccln]         := ':           '; 
-   keywd[clpar]        := '(           '; 
-   keywd[crpar]        := ')           '; 
-   keywd[ccma]         := ',           '; 
-   keywd[cpnd]         := '#           '; 
-   keywd[cperiod]      := '.           '; 
-   keywd[cintc]        := 'int const   '; 
-   keywd[cstrc]        := 'str const   '; 
-   keywd[crlc]         := 'real const  '; 
-   keywd[cintv]        := 'int var     '; 
-   keywd[cstrv]        := 'string var  '; 
-   keywd[crlv]         := 'real var    '; 
-   keywd[cspc]         := 'space       '; 
-   keywd[cspcs]        := 'spaces      '; 
-   keywd[cpend]        := 'end of pgm  '; 
-   keywd[clend]        := 'end of lin  '; 
+   keywd[cscn]         := ';           ';
+   keywd[ccln]         := ':           ';
+   keywd[clpar]        := '(           ';
+   keywd[crpar]        := ')           ';
+   keywd[ccma]         := ',           ';
+   keywd[cpnd]         := '#           ';
+   keywd[cperiod]      := '.           ';
+   keywd[cintc]        := 'int const   ';
+   keywd[cstrc]        := 'str const   ';
+   keywd[crlc]         := 'real const  ';
+   keywd[cintv]        := 'int var     ';
+   keywd[cstrv]        := 'string var  ';
+   keywd[crlv]         := 'real var    ';
+   keywd[cspc]         := 'space       ';
+   keywd[cspcs]        := 'spaces      ';
+   keywd[cpend]        := 'end of pgm  ';
+   keywd[clend]        := 'end of lin  ';
    for i := 1 to maxvar do vartbl[i] := nil; { clear active variables table }
    for fi := 1 to maxfil do filtab[fi] := nil; { set files nil }
-   for ki := cinput to clend do keycodc[ord(ki)] := ki; 
+   for ki := cinput to clend do keycodc[ord(ki)] := ki;
    varfre := nil; { free variables list }
    ctlstk := nil; { clear control stack }
    ctlfre := nil; { clear free control list }
@@ -7894,14 +7894,14 @@ begin { executive }
    filtab[2]^.cp := 1; { set 1st character position }
    filtab[2]^.st := stopenwr; { flag open for write }
 
-   88: { return to interactive line entry } 
+   88: { return to interactive line entry }
    while true do begin
 
       { restore display parameters to normal }
       if not newlin then writeln; { if not at line start, force it }
       newlin := true;
       writeln('Ready');
-      77: { reenter line interpret } 
+      77: { reenter line interpret }
       getstr(immprg); { get a new program line for entry }
       { get user lines until non-blank }
       repeat inpbstr(input, immprg^) until not null(immprg);
@@ -7920,7 +7920,7 @@ begin { executive }
 
          curprg := immprg; { set immediate as current execute }
          top := 0; { clear stack }
-         repeat { execute lines } 
+         repeat { execute lines }
 
             linec := 1; { set 1st character }
             execl { execute single lines }
@@ -7936,7 +7936,7 @@ begin { executive }
 
    { close and release all files }
    for fi := 1 to maxfil do if filtab[fi] <> nil then
-      if filtab[fi]^.st <> stclose then 
+      if filtab[fi]^.st <> stclose then
          if filtab[fi]^.ty = tyoth then closefile(filtab[fi]^.f)
 
 end.

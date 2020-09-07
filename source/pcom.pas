@@ -1949,7 +1949,7 @@ end;
           repeat lfc := false;
             repeat lfc := ch = chr(92); nextch; lgth := lgth + 1;
                    if lgth <= strglgth then string[lgth] := ch
-            until (eol) or ((ch = '''') and not lfc);
+            until (eol) or ((ch = '''') and (not lfc or iso7185));
             if eol then error(202) else nextch
           until ch <> '''';
           string[lgth] := ' '; { get rid of trailing quote }
@@ -2104,6 +2104,37 @@ end;
     nvalid := true { set there is a next tolken }
   end;
 
+  procedure prtclass(klass: idclass);
+  begin
+    case klass of
+      types: write('types');
+      konst: write('konst');
+      fixed: write('fixed');
+      vars:  write('vars');
+      field: write('field');
+      proc:  write('proc');
+      func:  write('func');
+      alias: write('alias');
+    end
+  end;
+
+  procedure prtform(form: structform);
+  begin
+    case form of
+      scalar:   write('scalar');
+      subrange: write('subrange');
+      pointer:  write('pointer');
+      power:    write('power');
+      arrays:   write('arrays');
+      arrayc:   write('arrayc');
+      records:  write('records');
+      files:    write('files');
+      tagfld:   write('tagfld');
+      variant:  write('variant');
+      exceptf:  write('exceptf');
+    end
+  end;
+
   procedure enterid(fcp: ctp);
     (*enter id pointed at by fcp into the name-table,
      which on each declaration level is organised as
@@ -2154,12 +2185,24 @@ end;
   procedure schsecidnenm(lcp: ctp; fidcls: setofids; var fcp: ctp;
                          var mm: boolean);
   var lcp1: ctp;
+
+  function inclass(lcp: ctp): ctp;
+  var fcp: ctp;
+  begin fcp := nil;
+    while lcp <> nil do begin
+      if lcp^.klass in fidcls then fcp := lcp;
+      if lcp^.klass in [proc,func] then lcp := lcp^.grpnxt else lcp := nil
+    end;
+    inclass := fcp
+  end;
+
   begin
     mm := false; fcp := nil;
     while lcp <> nil do begin
       if strequvf(lcp^.name, id) then begin
         lcp1 := lcp; if lcp1^.klass = alias then lcp1 := lcp1^.actid;
-        if lcp1^.klass in fidcls then begin fcp := lcp1; lcp := nil end
+        lcp1 := inclass(lcp1);
+        if lcp1 <> nil then begin fcp := lcp1; lcp := nil end
         else begin mm := true; lcp := lcp^.rlink end
       end else
         if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
@@ -2573,37 +2616,6 @@ end;
     writeln(output);
     if not eol then write(' ':chcnt+16)
   end (*printtables*);
-
-  procedure prtclass(klass: idclass);
-  begin
-    case klass of
-      types: write('types');
-      konst: write('konst');
-      fixed: write('fixed');
-      vars:  write('vars');
-      field: write('field');
-      proc:  write('proc');
-      func:  write('func');
-      alias: write('alias');
-    end
-  end;
-
-  procedure prtform(form: structform);
-  begin
-    case form of
-      scalar:   write('scalar');
-      subrange: write('subrange');
-      pointer:  write('pointer');
-      power:    write('power');
-      arrays:   write('arrays');
-      arrayc:   write('arrayc');
-      records:  write('records');
-      files:    write('files');
-      tagfld:   write('tagfld');
-      variant:  write('variant');
-      exceptf:  write('exceptf');
-    end
-  end;
 
   procedure chkrefs(p: ctp; var w: boolean);
   begin
