@@ -8267,11 +8267,13 @@ end;
               lcp1 := lcp^.grppar; { link parent }
               if lcp1 <> nil then begin
                 lcp2 := lcp1^.pfvid; { get vector symbol }
-                { copy old vector to store }
-                gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
-                gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
-                { place new vector }
-                gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+                if lcp2 <> nil then begin
+                  { copy old vector to store }
+                  gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
+                  gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
+                  { place new vector }
+                  gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+                end
               end
             end
           end;
