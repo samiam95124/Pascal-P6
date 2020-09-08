@@ -8422,20 +8422,25 @@ end;
 
   procedure openinput(var ff: boolean);
   var fp: filptr; i, x: integer; es: packed array [1..4] of char;
+  { for any error, back out the include level }
+  procedure err;
+  begin
+    incstk := incstk^.next;
+    dispose(fp);
+    ff := false
+  end;
   begin ff := true; es := extsrc;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false;
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
-      if i > fillen-4-1 then error(265);
-      for x := 1 to 4 do begin i := i+1; fn[i] := es[x] end;
-      if not existsfile(fn) then begin
-        error(264);
-        incstk := incstk^.next;
-        dispose(fp);
-        ff := false
-      end else begin assigntext(f, fn); reset(f) end
+      if i > fillen-4-1 then begin err; error(265) end
+      else begin
+        for x := 1 to 4 do begin i := i+1; fn[i] := es[x] end;
+        if not existsfile(fn) then begin err; error(264) end
+        else begin assigntext(f, fn); reset(f) end
+      end
     end
   end;
 
@@ -8479,6 +8484,7 @@ end;
   end;
   begin
     sym := sy; insymbol; { skip uses/joins }
+    thismod := nil;
     repeat { modules }
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin
