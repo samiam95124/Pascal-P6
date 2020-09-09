@@ -44,32 +44,32 @@ CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 all: pcom pint pmach cmach genobj spew
 
 pcom: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS32LE)
+	pascpp --linemacro source/pcom $(CPPFLAGS32LE)
 	$(PC) $(PFLAGS) -o bin/pcom32 source/pcom.mpp.pas
-	pascpp source/pcom $(CPPFLAGS16LE)
+	pascpp --linemacro source/pcom $(CPPFLAGS16LE)
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom32 bin/pcom
 	
 pcom_immerr: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS32LE) -DIMM_ERR
+	pascpp --linemacro source/pcom $(CPPFLAGS32LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom32 source/pcom.mpp.pas
-	pascpp source/pcom $(CPPFLAGS16LE) -DIMM_ERR
+	pascpp --linemacro source/pcom $(CPPFLAGS16LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom32 bin/pcom
 	
 pint: source/pint.pas 
-	pascpp source/pint $(CPPFLAGS32LE) -DGNU_PASCAL
+	pascpp --linemacro source/pint $(CPPFLAGS32LE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint32le source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS32BE) -DGNU_PASCAL
+	pascpp --linemacro source/pint $(CPPFLAGS32BE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint32be source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
+	pascpp --linemacro source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
+	pascpp --linemacro source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas
 	cp bin/pint32le bin/pint
 
 pmach: source/pmach.pas
-	pascpp source/pmach $(CPPFLAGS) -DGNU_PASCAL
+	pascpp --linemacro source/pmach $(CPPFLAGS) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pmach32le source/pmach.mpp.pas
 	cp bin/pmach32le bin/pmach
 

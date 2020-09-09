@@ -2455,6 +2455,133 @@ end;
       if sp = nil then write('<nil>':intdig) else write(sp^.snm:intdig)
     end;
 
+    procedure prtstp(sp: stp);
+    begin
+      if sp = nil then write('<nil>':intdig)
+      else with sp^ do begin
+        write(sp^.snm:intdig);
+        write(' ', size:intdig, ' ');
+        case form of
+          scalar:   begin write('scalar':intdig, ' ');
+                      if scalkind = standard then write('standard':intdig)
+                      else write('declared':intdig,' ');
+                      wrtctp(fconst)
+                    end;
+          subrange: begin
+                      write('subrange':intdig,' '); wrtstp(rangetype); write(' ');
+                      if rangetype <> realptr then
+                        write(min.ival:intdig, ' ', max.ival:intdig)
+                      else
+                        if (min.valp <> nil) and (max.valp <> nil) then begin
+                          write(' '); write(min.valp^.rval:9);
+                          write(' '); write(max.valp^.rval:9)
+                        end
+                    end;
+          pointer:  begin write('pointer':intdig,' '); wrtstp(eltype) end;
+          power:    begin write('set':intdig,' '); wrtstp(elset) end;
+          arrays:   begin
+                      write('array':intdig,' '); wrtstp(aeltype);
+                      write(' '); wrtstp(inxtype)
+                    end;
+          arrayc:   begin
+                      write('array':intdig,' '); wrtstp(abstype)
+                    end;
+          records:  begin
+                      write('record':intdig,' '); wrtctp(fstfld); write(' ');
+                      wrtstp(recvar); write(' '); wrtstp(recyc)
+                    end;
+          files:    begin write('file':intdig,' '); wrtstp(filtype) end;
+          tagfld:   begin write('tagfld':intdig,' '); wrtctp(tagfieldp);
+                      write(' '); wrtstp(fstvar)
+                    end;
+          variant:  begin write('variant':intdig,' '); wrtstp(nxtvar);
+                      write(' '); wrtstp(subvar); write(' '); wrtstp(caslst);
+                      write(' ',varval.ival);
+                    end;
+          exceptf:  begin write('except':intdig) end
+        end (*case*)
+      end
+    end;
+
+    procedure prtctp(cp: ctp);
+    begin
+      if cp = nil then write('<nil>':intdig)
+      else with cp^ do begin
+        write(cp^.snm:intdig); write(' '); writev(output, name, intdig);
+        write(' '); wrtctp(llink); write(' '); wrtctp(rlink); write(' ');
+        wrtstp(idtype); write(' ');
+        case klass of
+          types: write('type':intdig);
+          konst: begin write('constant':intdig,' '); wrtctp(next); write(' ');
+                   if idtype <> nil then
+                     if idtype = realptr then
+                       begin
+                         if values.valp <> nil then write(values.valp^.rval:9)
+                       end
+                     else
+                       if idtype^.form = arrays then  (*stringconst*)
+                         begin
+                           if values.valp <> nil then
+                             begin
+                               with values.valp^ do writev(output, sval, slgth)
+                             end
+                         end
+                       else write(values.ival:intdig)
+                 end;
+          vars:  begin write('variable':intdig, ' ');
+                   if vkind = actual then write('actual':intdig)
+                   else write('formal':intdig);
+                   write(' '); wrtctp(next);
+                   write(' ', vlev:intdig,' ',vaddr:intdig, ' ');
+                   if threat then write('threat':intdig) else write(' ':intdig);
+                   write(' ', forcnt:intdig, ' ');
+                   case part of
+                     ptval: write('value':intdig, ' ');
+                     ptvar: write('var':intdig, ' ');
+                     ptview: write('view':intdig, ' ');
+                     ptout:write('out':intdig, ' ');
+                   end;
+                   if hdr then write('header':intdig) else write(' ':intdig);
+                   if vext then write('external':intdig) else write(' ':intdig);
+                   if vext then write(vmod^.fn:intdig) else write(' ':intdig)
+                 end;
+          fixed: begin write('fixed':intdig, ' ');
+                   if fext then write('external':intdig) else write(' ':intdig);
+                   if fext then write(vmod^.fn:intdig) else write(' ':intdig)
+                 end;
+          field: begin write('field':intdig,' '); wrtctp(next); write(' ');
+                       write(fldaddr:intdig,' '); wrtstp(varnt); write(' ');
+                       wrtctp(varlb); write(' ');
+                   if tagfield then write('tagfield':intdig) else write(' ':intdig);
+                   write(' ', taglvl:intdig, ' ',varsaddr:intdig, ' ', varssize:intdig)
+                 end;
+          proc,
+          func:  begin
+                   if klass = proc then write('procedure':intdig, ' ')
+                   else write('function':intdig, ' ');
+                   if asgn then write('assigned':intdig, ' ') else write(' ':intdig, ' ');
+                   if pext then write('external':intdig, ' ') else write(' ':intdig, ' ');
+                   if pext then write(pmod^.fn:intdig) else write(' ':intdig);
+                   if pfdeckind = standard then
+                     write('standard':intdig, '-', key:intdig)
+                   else
+                     begin write('declared':intdig,'-'); wrtctp(pflist); write('-');
+                       write(pflev:intdig,' ',pfname:intdig, ' ');
+                       if pfkind = actual then
+                         begin write('actual':intdig, ' ');
+                           if forwdecl then write('forward':intdig, ' ')
+                           else write('notforward':intdig, ' ');
+                           if externl then write('extern':intdig)
+                           else write('not extern':intdig);
+                         end
+                       else write('formal':intdig)
+                     end
+                 end;
+          alias: begin write('alias':intdig, ' '); wrtctp(actid); end;
+        end (*case*);
+      end
+    end;
+
     procedure followctp(fp: ctp); forward;
 
     procedure followstp(fp: stp);
@@ -2462,58 +2589,19 @@ end;
       if fp <> nil then
         with fp^ do
           if marked then
-            begin marked := false; write('S: '); wrtstp(fp);
-              write(' ', size:intdig, ' ');
+            begin marked := false; write('S: '); prtstp(fp); writeln;
               case form of
-              scalar:   begin write('scalar':intdig, ' ');
-                          if scalkind = standard then
-                            write('standard':intdig)
-                          else write('declared':intdig,' '); wrtctp(fconst);
-                          writeln(output)
-                        end;
-              subrange: begin
-                          write('subrange':intdig,' '); wrtstp(rangetype); write(' ');
-                          if rangetype <> realptr then
-                            write(min.ival:intdig, ' ', max.ival:intdig)
-                          else
-                            if (min.valp <> nil) and (max.valp <> nil) then begin
-                              write(' '); write(min.valp^.rval:9);
-                              write(' '); write(max.valp^.rval:9)
-                            end;
-                          writeln; followstp(rangetype);
-                        end;
-              pointer:  begin write('pointer':intdig,' '); wrtstp(eltype);
-                              writeln end;
-              power:    begin write('set':intdig,' '); wrtstp(elset); writeln;
-                          followstp(elset)
-                        end;
-              arrays:   begin
-                          write('array':intdig,' '); wrtstp(aeltype);
-                          write(' '); wrtstp(inxtype); writeln;
-                          followstp(aeltype); followstp(inxtype)
-                        end;
-              arrayc:   begin
-                          write('array':intdig,' '); wrtstp(abstype); writeln;
-                          followstp(abstype)
-                        end;
-              records:  begin
-                          write('record':intdig,' '); wrtctp(fstfld); write(' ');
-                          wrtstp(recvar); write(' '); wrtstp(recyc); writeln;
-                          followctp(fstfld); followstp(recvar)
-                        end;
-              files:    begin write('file':intdig,' '); wrtstp(filtype); writeln;
-                          followstp(filtype)
-                        end;
-              tagfld:   begin write('tagfld':intdig,' '); wrtctp(tagfieldp);
-                          write(' '); wrtstp(fstvar); writeln;
-                          followstp(fstvar)
-                        end;
-              variant:  begin write('variant':intdig,' '); wrtstp(nxtvar);
-                          write(' '); wrtstp(subvar); write(' '); wrtstp(caslst);
-                          writeln(' ',varval.ival);
-                          followstp(nxtvar); followstp(subvar)
-                        end;
-              exceptf:  begin writeln('except':intdig) end
+                scalar:   ;
+                subrange: followstp(rangetype);
+                pointer:  ;
+                power:    followstp(elset);
+                arrays:   begin followstp(aeltype); followstp(inxtype) end;
+                arrayc:   followstp(abstype);
+                records:  begin followctp(fstfld); followstp(recvar) end;
+                files:    followstp(filtype);
+                tagfld:   followstp(fstvar);
+                variant:  begin followstp(nxtvar); followstp(subvar) end;
+                exceptf:  ;
               end (*case*)
             end (*if marked*)
     end (*followstp*);
@@ -2522,82 +2610,7 @@ end;
     begin
       if fp <> nil then
         with fp^ do
-          begin write('C: '); wrtctp(fp); write(' ');
-                writev(output, name, intdig); write(' '); wrtctp(llink);
-                write(' '); wrtctp(rlink); write(' '); wrtstp(idtype); write(' ');
-            case klass of
-              types: write('type':intdig);
-              konst: begin write('constant':intdig,' '); wrtctp(next); write(' ');
-                       if idtype <> nil then
-                         if idtype = realptr then
-                           begin
-                             if values.valp <> nil then begin
-                               write(values.valp^.rval:9)
-                             end
-                           end
-                         else
-                           if idtype^.form = arrays then  (*stringconst*)
-                             begin
-                               if values.valp <> nil then
-                                 begin
-                                   with values.valp^ do
-                                     writev(output, sval, slgth)
-                                 end
-                             end
-                           else write(values.ival:intdig)
-                     end;
-              vars:  begin write('variable':intdig, ' ');
-                       if vkind = actual then write('actual':intdig)
-                       else write('formal':intdig);
-                       write(' '); wrtctp(next);
-                       write(' ', vlev:intdig,' ',vaddr:intdig, ' ');
-                       if threat then write('threat':intdig) else write(' ':intdig);
-                       write(' ', forcnt:intdig, ' ');
-                       case part of
-                         ptval: write('value':intdig, ' ');
-                         ptvar: write('var':intdig, ' ');
-                         ptview: write('view':intdig, ' ');
-                         ptout:write('out':intdig, ' ');
-                       end;
-                       if hdr then write('header':intdig) else write(' ':intdig);
-                       if vext then write('external':intdig) else write(' ':intdig);
-                       if vext then write(vmod^.fn:intdig) else write(' ':intdig)
-                     end;
-              fixed: begin write('fixed':intdig, ' ');
-                       if fext then write('external':intdig) else write(' ':intdig);
-                       if fext then write(vmod^.fn:intdig) else write(' ':intdig)
-                     end;
-              field: begin write('field':intdig,' '); wrtctp(next); write(' ');
-                           write(fldaddr:intdig,' '); wrtstp(varnt); write(' ');
-                           wrtctp(varlb); write(' ');
-                       if tagfield then write('tagfield':intdig) else write(' ':intdig);
-                       write(' ', taglvl:intdig, ' ',varsaddr:intdig, ' ', varssize:intdig)
-                     end;
-              proc,
-              func:  begin
-                       if klass = proc then write('procedure':intdig, ' ')
-                       else write('function':intdig, ' ');
-                       if asgn then write('assigned':intdig, ' ') else write(' ':intdig, ' ');
-                       if pext then write('external':intdig, ' ') else write(' ':intdig, ' ');
-                       if pext then write(pmod^.fn:intdig) else write(' ':intdig);
-                       if pfdeckind = standard then
-                         write('standard':intdig, '-', key:intdig)
-                       else
-                         begin write('declared':intdig,'-'); wrtctp(pflist); write('-');
-                           write(pflev:intdig,' ',pfname:intdig, ' ');
-                           if pfkind = actual then
-                             begin write('actual':intdig, ' ');
-                               if forwdecl then write('forward':intdig, ' ')
-                               else write('notforward':intdig, ' ');
-                               if externl then write('extern':intdig)
-                               else write('not extern':intdig);
-                             end
-                           else write('formal':intdig)
-                         end
-                     end;
-              alias: begin write('alias':intdig, ' '); wrtctp(actid); end;
-            end (*case*);
-            writeln;
+          begin write('C: '); prtctp(fp); writeln;
             followctp(llink); followctp(rlink);
             followstp(idtype)
           end (*with*)

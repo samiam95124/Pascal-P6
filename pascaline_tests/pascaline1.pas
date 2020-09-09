@@ -25,9 +25,9 @@ virtual procedure abstract;
 begin
 
    writeln('This is the abstract procedure')
-   
+
 end;
-   
+
 begin
 
-end.  
+end.
