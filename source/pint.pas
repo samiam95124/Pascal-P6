@@ -1804,7 +1804,7 @@ procedure load;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;
-         instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;
+         instr[ 27]:='cuv       '; insp[ 27] := true;  insq[ 27] := intsize;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;
          instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;
@@ -2680,7 +2680,8 @@ procedure load;
                                              storeq
                                        end;
 
-          12,11(*cup,mst*): begin read(prd,p); storeop; storep; labelsearch; storeq end;
+          12,11(*cup,mst*): begin read(prd,p); storeop; storep; labelsearch;
+                                  storeq end;
 
           91(*suv*): begin storeop; labelsearch; storeq;
                      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
@@ -2702,11 +2703,19 @@ procedure load;
           179, 180, 201, 202,203,211,214,237,241,
           92: begin read(prd,q); storeop; storeq end;
 
-          (*ldo,sro,lao,cuv*)
+          (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
-          3,196,75,76,77,78,79,27,
+          3,196,75,76,77,78,79,
           5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
                    storeop;
+                   if prd^ = 'l' then begin getnxt; labelsearch end
+                   else read(prd,q);
+                   if q > exceptiontop then q := q+gbloff;
+                   putgblfix; storeq end;
+
+          (*cuv*)
+          27: begin read(prd,p); while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+                   storeop; storep;
                    if prd^ = 'l' then begin getnxt; labelsearch end
                    else read(prd,q);
                    if q > exceptiontop then q := q+gbloff;
@@ -4500,7 +4509,7 @@ begin
                 end;
 
     27 (*cuv*): begin (*q=entry point*)
-                 getq;
+                 getp; getq;
                  mp := sp+(p+marksize); { mp to base of mark }
                  putadr(mp+markra, pc); { place ra }
                  pc := getadr(q)
@@ -5219,7 +5228,7 @@ begin
   skpspc(pc);
   for i := 1 to maxalfa do cn[i] := ' '; i := 1;
   { note we abbreviate after 9 characters }
-  while (chkchr(pc) <> ' ') and not chkend(pc) do
+  while (chkchr(pc) <> ' ') and (chkchr(pc) <> ';') and not chkend(pc) do
     begin cn[i] := chkchr(pc); if i < maxalfa then i := i+1 else cn[i] := ' ';
     nxtchr(pc)
   end

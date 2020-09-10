@@ -509,6 +509,9 @@ var
     { -- n: obey heap space recycle requests }
     { -- p: check reuse of freed entry }
     { -- q: check undefined accesses }
+    { -- w: enter debugger on run }
+    { -- a: enter debugger on fault }
+    { -- e: output P-machine code deck and stop }
 
     option: array ['a'..'z'] of     { option array }
               boolean;
@@ -3072,6 +3075,19 @@ end;
     ic := ic + 1
   end;
 
+  procedure gencuv(fp1,fp2: integer; fcp: ctp);
+  begin
+;writeln;writeln('gencuv: fp1: ', fp1:1);
+    if prcode then
+      begin putic;
+        write(prr,mn[91(*cuv*)]:4,fp1:4,' ');
+        if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp2:12);
+        writeln(prr);
+        mes(91)
+      end;
+    ic := ic + 1
+  end;
+
   procedure genlpa(fp1,fp2: integer);
   begin
     if prcode then
@@ -5238,13 +5254,15 @@ end;
             begin
               if externl then gen1(30(*csp*),pfname)
               else begin
-                if pfattr = fpavirtual then begin
-                  if inherit then begin lcp := fcp^.grpnxt;
-                    if lcp = nil then error(235);
-                    if lcp^.pfattr <> fpaoverride then error(507);
+                if (pfattr = fpavirtual) or (pfattr = fpaoverride) then begin
+                  if inherit then begin
+                    if fcp^.pfattr <> fpaoverride then error(507);
                     { inherited calls will never be far }
-                    gen1(91(*cuv*),lcp^.pfvaddr)
-                  end else gen1s(91(*cuv*),fcp^.pfvid^.vaddr,fcp^.pfvid)
+                    gencuv(locpar,fcp^.pfvaddr,nil)
+                  end else begin
+                    lcp := fcp^.grppar;
+                    gencuv(locpar,lcp^.pfvid^.vaddr,lcp^.pfvid)
+                  end
                 end else begin
                   if inherit then error(234);
                   gencupent(46(*cup*),locpar,pfname,fcp)
