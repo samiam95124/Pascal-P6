@@ -80,19 +80,20 @@ type enum_a  = (one, two, three);
      pstring = ^string;
      byte    = 0..255;
 
-var s:    ^string;
-    st:   packed array 10 of char;
-    ia:   ^iarr;
-    miap: ^miarr;
-    a, b: integer;
-    ft:   text;
-    fb:   file of byte;
-    ba:   byte;
-    sp:   pstring;
-    mia:  array 10, 10 of integer;
-    cd:   cardinal;
-    li:   linteger;
-    lc:   lcardinal;
+var s:     ^string;
+    st:    packed array 10 of char;
+    ia:    ^iarr;
+    miap:  ^miarr;
+    a, b:  integer;
+    ft:    text;
+    fb:    file of byte;
+    ba:    byte;
+    sp:    pstring;
+    mia:   array 10, 10 of integer;
+    cd:    cardinal;
+    li:    linteger;
+    lc:    lcardinal;
+    excpt: exception;
 
 { this tests duplication of parameter lists }
 
@@ -796,7 +797,7 @@ begin
    try
 
       writeln('before exception');
-      throw;
+      throw(excpt);
       writeln('after exception')
 
    except writeln('exception taken')

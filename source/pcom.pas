@@ -201,7 +201,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
-   maxftl     = 515; { maximum fatal error }
+   maxftl     = 516; { maximum fatal error }
    maxcmd     = 250; { size of command line buffer }
 
    { default field sizes for write }
@@ -1606,7 +1606,7 @@ end;
     { * marks spared compiler errors }
     400,401,402,403,404,405,406,407,
     500,501,502,503,
-    504,505,506,507,508,509,510,511,512,513,514,515: write('Compiler internal error');
+    504,505,506,507,508,509,510,511,512,513,514,515,516: write('Compiler internal error');
     end
   end;
 
@@ -2715,6 +2715,21 @@ end;
         end
       end;
     ovlfunc := rcp
+  end;
+
+  { return override procedure/function from list }
+  function ovrpf(fcp: ctp): ctp;
+  var rcp: ctp;
+  begin rcp := nil;
+    if fcp <> nil then
+      if fcp^.klass in [proc, func] then begin
+        fcp := fcp^.grppar;
+        while fcp <> nil do begin
+          if fcp^.pfattr = fpaoverride then rcp := fcp;
+          fcp := fcp^.grpnxt
+        end
+      end;
+    ovrpf := rcp
   end;
 
   procedure genlabel(var nxtlab: integer);
@@ -5256,6 +5271,7 @@ end;
               else begin
                 if (pfattr = fpavirtual) or (pfattr = fpaoverride) then begin
                   if inherit then begin
+                    fcp := ovrpf(fcp); if fcp = nil then error(516);
                     if fcp^.pfattr <> fpaoverride then error(507);
                     { inherited calls will never be far }
                     gencuv(locpar,fcp^.pfvaddr,nil)
