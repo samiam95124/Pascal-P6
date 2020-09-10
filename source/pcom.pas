@@ -3077,7 +3077,6 @@ end;
 
   procedure gencuv(fp1,fp2: integer; fcp: ctp);
   begin
-;writeln;writeln('gencuv: fp1: ', fp1:1);
     if prcode then
       begin putic;
         write(prr,mn[91(*cuv*)]:4,fp1:4,' ');
