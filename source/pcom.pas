@@ -5089,7 +5089,8 @@ end;
         while (pc < prcnt) do begin if nxt <> nil then nxt := nxt^.next; pc := pc+1 end
       end
     end;
-    begin fcps := fcp; locpar := 0; genlabel(frlab); prcnt := 1; ovrl := fcp^.grpnxt <> nil;
+    begin fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+      prcnt := 1; ovrl := fcp^.grpnxt <> nil;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
           { I don't know why these are dups, guess is a badly formed far call }
