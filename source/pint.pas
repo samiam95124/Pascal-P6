@@ -413,6 +413,7 @@ const
       extsrc      = '.pas'; { extention for source file }
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
+      maxsym      = 20;   { maximum length of symbol/module name }
 
       { version numbers }
 
@@ -516,6 +517,7 @@ type
                        next: varptr; { next entry }
                        s, e: address { start and end address of block }
                      end;
+      symnam      = packed array [1..maxsym] of char; { symbol/module name }
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -640,6 +642,8 @@ var   pc          : address;   (*program address register*)
       curmod      : pblock; { currently active block }
       varlst      : varptr; { active var block pushdown stack }
       varfre      : varptr; { free var block entries }
+      extvecs     : integer; { number of external vectors }
+      extvecbase  : integer; { base of external vectors }
 
       i           : integer;
       c1          : char;
@@ -969,6 +973,12 @@ end;
 
 #ifdef PASCALINE
 #include "extend_pascaline.inc"
+#endif
+
+#define PETIT_AMI
+
+#ifdef PETIT_AMI
+#include "petit_ami.inc"
 #endif
 
 (*-------------------------------------------------------------------------*)
@@ -1756,6 +1766,7 @@ procedure load;
         sn: filnam;
         snl: 1..fillen;
         flablst: flabelp; { list of far labels }
+        i: integer;
 
    procedure clrlab;
    var i: integer;
@@ -2020,6 +2031,7 @@ procedure load;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
          instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
+         instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2213,8 +2225,10 @@ procedure load;
      end
    end;
 
+   { relocate far labels }
    procedure flabrlc;
-   var ad: address; op: instyp; flp: flabelp; c: char;
+   var ad: address; op: instyp; flp: flabelp; c: char; rt: integer;
+   { find symbols reference }
    function symref(lsp: strvsp): address;
    var mods, syms: filnam; i,x: 1..fillen; bp, fbp: pblock; sp, fsp: psymbol;
    begin
@@ -2251,11 +2265,29 @@ procedure load;
        symref := fbp^.bstart
      end
    end;
+   { find external routine, if exists }
+   function extref(lsp: strvsp): integer;
+   var mods, syms: symnam; rt: integer; i,x: integer;
+   begin
+     { break name into module.symbol components }
+     for i := 1 to maxsym do begin mods[i] := ' '; syms[i] := ' ' end;
+     i := 1;
+     c := strchr(lsp, i);
+     while c <> '.' do
+       begin mods[i] := c; i := i+1; c := strchr(lsp, i) end;
+     i := i+1; c := strchr(lsp, i); x := 1;
+     while c <> ' ' do
+       begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
+     LookupExternal(mods, syms, rt);
+     extref := rt
+   end;
    begin
      while flablst <> nil do begin { empty far label list }
        flp := flablst; flablst := flablst^.next;
        ad := flp^.val; op := store[ad];
-       putadr(ad, symref(flp^.ref));
+       rt := extref(flp^.ref);
+       if rt > 0 then putadr(ad, rt+extvecbase-1)
+       else putadr(ad, symref(flp^.ref));
        dispose(flp)
      end
    end;
@@ -2915,18 +2947,23 @@ procedure load;
 
 begin (*load*)
   init;
+  extvecs := NumExternal;
   pc := 0;
   { insert start sequence:
 
     lnp
     call skip
     stp
+    extvectors
     mstack:
 
   }
   op := 20; storeop; q := 0; npadr := pc; storeq; { lnp }
-  op := 21; storeop; q := pc+intsize+1; storeq; { call mstack }
+  op := 21; storeop; q := pc+intsize+1+extvecs; storeq; { call mstack }
   op := 58; storeop; { stp }
+  { place the external vectors table }
+  extvecbase := pc; op := 242;
+  for i := 1 to extvecs do storeop;
   generate;
   if not gbset then errorl('global space not set     ');
   pctop := pc; { save top of code store }
@@ -4505,7 +4542,10 @@ begin
                  getp; getq;
                  mp := sp+(p+marksize); { mp to base of mark }
                  putadr(mp+markra, pc); { place ra }
-                 pc := q
+                 { execute external or internal }
+                 if (q >= extvecbase) and (q <= extvecbase+extvecs-1) then
+                   ExecuteExternal(q-extvecbase+1)
+                 else pc := q
                 end;
 
     27 (*cuv*): begin (*q=entry point*)
@@ -5069,10 +5109,19 @@ begin
 
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
+    242 (*eext*): begin
+;writeln;writeln('eext: will execute routine: ', pc-extvecbase+1);
+                    ExecuteExternal(pc-extvecbase+1);
+                    { set stack below function result, if any }
+                    sp := mp;
+                    pc := getadr(mp+markra);
+                    ep := getadr(mp+markep);
+                    mp := getadr(mp+markdl)
+                  end;
+
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 242, 243, 244, 245, 246,
-    247, 248, 249, 250, 251, 252, 253, 254,
-    255: errorv(InvalidInstruction)
+    228, 229, 230, 231, 232, 233, 234, 243, 244, 245, 246, 247, 248, 249, 250,
+    251, 252, 253, 254, 255: errorv(InvalidInstruction)
 
   end
 end;
