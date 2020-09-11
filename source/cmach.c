@@ -292,7 +292,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define ORDMAXCHAR        255   /* Characters are 8 bit ISO/IEC 8859-1 */
 #define ORDMINCHAR          0
 #define MAXRESULT    REALSIZE   /* maximum size of function result */
-#define MARKSIZE           32   /* maxresult+6*ptrsize */
+#define MARKSIZE           24   /* maxresult+6*ptrsize */
 #define UJPLEN              5   /* length of ujp instruction (used for case
                                    jumps) */
 
@@ -315,13 +315,12 @@ table is all you should need to adapt to any byte addressable machine.
   -32: Return address
 
 */
-#define MARKFV              -8   /* function value */
-#define MARKSL              -12  /* static link */
-#define MARKDL              -16  /* dynamic link */
-#define MARKEP              -20  /* (old) maximum frame size */
-#define MARKSB              -24  /* stack bottom */
-#define MARKET              -28  /* current ep */
-#define MARKRA              -32  /* return address */
+#define MARKSL              -4  /* static link */
+#define MARKDL              -8  /* dynamic link */
+#define MARKEP              -12 /* (old) maximum frame size */
+#define MARKSB              -16 /* stack bottom */
+#define MARKET              -20 /* current ep */
+#define MARKRA              -24 /* return address */
 #endif
 
 #ifdef WRDSIZ64
