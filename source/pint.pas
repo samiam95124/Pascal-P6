@@ -1568,6 +1568,8 @@ end;
 
 #ifdef EXTERNALS
 #include "externals.inc"
+#else
+#include "externals_null.inc"
 #endif
 
 (*--------------------------------------------------------------------*)
@@ -5109,15 +5111,12 @@ begin
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
     242 (*eext*): begin
-;writeln;writeln('eext: begin');
                     ExecuteExternal(pc-extvecbase);
-;writeln;writeln('eext: after eext');
                     { set stack below function result, if any }
                     sp := mp;
                     pc := getadr(mp+markra);
                     ep := getadr(mp+markep);
                     mp := getadr(mp+markdl)
-;writeln;writeln('eext: end');
                   end;
 
     { illegal instructions }
