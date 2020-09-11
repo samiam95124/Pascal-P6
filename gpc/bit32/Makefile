@@ -57,15 +57,16 @@ pcom_immerr: source/pcom.pas
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom32 bin/pcom
 	
-pint: source/pint.pas 
-	pascpp --linemacro source/pint $(CPPFLAGS32LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint32le source/pint.mpp.pas
-	pascpp --linemacro source/pint $(CPPFLAGS32BE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint32be source/pint.mpp.pas
-	pascpp --linemacro source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas
-	pascpp --linemacro source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas
+pint: source/pint.pas source/externals.c
+	gcc -o source/externals.o -c source/externals.c
+	pascpp --linemacro source/pint $(CPPFLAGS32LE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint32le source/pint.mpp.pas source/externals.o
+	pascpp --linemacro source/pint $(CPPFLAGS32BE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint32be source/pint.mpp.pas source/externals.o
+	pascpp --linemacro source/pint $(CPPFLAGS16LE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas source/externals.o
+	pascpp --linemacro source/pint $(CPPFLAGS16BE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas source/externals.o
 	cp bin/pint32le bin/pint
 
 pmach: source/pmach.pas

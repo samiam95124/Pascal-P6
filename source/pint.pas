@@ -975,12 +975,6 @@ end;
 #include "extend_pascaline.inc"
 #endif
 
-#define PETIT_AMI
-
-#ifdef PETIT_AMI
-#include "petit_ami.inc"
-#endif
-
 (*-------------------------------------------------------------------------*)
 
                         { Boolean integer emulation }
@@ -1567,6 +1561,14 @@ begin
 end;
 
 { end of accessor functions }
+
+(*--------------------------------------------------------------------*)
+
+{ external routines }
+
+#ifdef EXTERNALS
+#include "externals.inc"
+#endif
 
 (*--------------------------------------------------------------------*)
 
@@ -4542,10 +4544,7 @@ begin
                  getp; getq;
                  mp := sp+(p+marksize); { mp to base of mark }
                  putadr(mp+markra, pc); { place ra }
-                 { execute external or internal }
-                 if (q >= extvecbase) and (q <= extvecbase+extvecs-1) then
-                   ExecuteExternal(q-extvecbase+1)
-                 else pc := q
+                 pc := q
                 end;
 
     27 (*cuv*): begin (*q=entry point*)
@@ -5110,13 +5109,15 @@ begin
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
     242 (*eext*): begin
-;writeln;writeln('eext: will execute routine: ', pc-extvecbase+1);
-                    ExecuteExternal(pc-extvecbase+1);
+;writeln;writeln('eext: begin');
+                    ExecuteExternal(pc-extvecbase);
+;writeln;writeln('eext: after eext');
                     { set stack below function result, if any }
                     sp := mp;
                     pc := getadr(mp+markra);
                     ep := getadr(mp+markep);
                     mp := getadr(mp+markdl)
+;writeln;writeln('eext: end');
                   end;
 
     { illegal instructions }
