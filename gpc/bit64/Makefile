@@ -34,42 +34,46 @@
 # specifically state the characteristics of the host.
 #
 PC=gpc
-PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
+PFLAGS=-g --classic-pascal-level-0 --no-warnings --transparent-file-names
 CFLAGS=
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DGNU_PASCAL
 CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
+EXTERNAL=petit_ami
+EXTERNALLIBS=$(EXTERNAL)/services.o
+#EXTERNALLIBS=source/externals.o
 
 all: pcom pint pmach cmach genobj spew
 
 pcom: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS64LE)
+	pascpp --linemacro source/pcom $(CPPFLAGS64LE)
 	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
 	pascpp source/pcom $(CPPFLAGS16LE)
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom64 bin/pcom
 	
 pcom_immerr: source/pcom.pas
-	pascpp source/pcom $(CPPFLAGS64LE) -DIMM_ERR
+	pascpp --linemacro source/pcom $(CPPFLAGS64LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
-	pascpp source/pcom $(CPPFLAGS16LE) -DIMM_ERR
+	pascpp --linemacro source/pcom $(CPPFLAGS16LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom64 bin/pcom
 	
 pint: source/pint.pas 
-	pascpp source/pint $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS64BE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint64be source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS16LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas
-	pascpp source/pint $(CPPFLAGS16BE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas
+	gcc -g -o source/externals.o -c source/externals.c
+	pascpp --linemacro source/pint  $(CPPFLAGS64LE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas $(EXTERNALLIBS)
+	pascpp --linemacro source/pint $(CPPFLAGS64BE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint64be source/pint.mpp.pas $(EXTERNALLIBS)
+	pascpp --linemacro source/pint $(CPPFLAGS16LE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas $(EXTERNALLIBS)
+	pascpp --linemacro source/pint $(CPPFLAGS16BE) -DGNU_PASCAL -DEXTERNALS
+	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas $(EXTERNALLIBS)
 	cp bin/pint64le bin/pint
 
 pmach: source/pmach.pas
-	pascpp source/pmach $(CPPFLAGS) -DGNU_PASCAL
+	pascpp --linemacro source/pmach $(CPPFLAGS64LE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pmach64le source/pmach.mpp.pas
 	cp bin/pmach64le bin/pmach
 

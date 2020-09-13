@@ -459,6 +459,7 @@ type
       alfa        = packed array[alfainx] of char;
       byte        = 0..255; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
+      charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fclosed, fread, fwrite);

@@ -7131,9 +7131,9 @@ end;
                             if sy = ident then
                               begin searchid([types],lcp);
                                 lsp := lcp^.idtype;
-                                if lsp^.form = arrayc then lsize := ptrsize*2
-                                else lsize := ptrsize;
+                                lsize := ptrsize;
                                 if lsp <> nil then
+                                  if lsp^.form = arrayc then lsize := ptrsize*2;
                                   if lkind=actual then begin
                                     if lsp^.form<=power then lsize := lsp^.size
                                     else if lsp^.form=files then error(121);
@@ -7206,9 +7206,9 @@ end;
             fpar := lcp3
           end
             else fpar := nil;
-      if forw then begin { isolate duplicated list in level }
-        level := oldlevf; putdsps(oldtopf); top := oldtopf
-      end
+        if forw then begin { isolate duplicated list in level }
+          level := oldlevf; putdsps(oldtopf); top := oldtopf
+        end
     end (*parameterlist*) ;
 
     { for overloading, same as strict cmpparlst(), but includes read = integer
@@ -7414,20 +7414,18 @@ end;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
       pushlvl(forw, lcp); display[top].define := false;
-      begin
-        if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
-          parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
-        else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
-        if not forw then begin
-          lcp^.pflist := lcp1;
-          if ovrl or (fsy = operatorsy) then begin { compare against overload group }
-            lcp2 := lcp^.grppar; { index top of overload group }
-            chkovlpar(lcp2, lcp)
-          end
-        end else begin
-          if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
-          putparlst(lcp1) { redeclare, dispose of copy }
+      if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
+        parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
+      else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
+      if not forw then begin
+        lcp^.pflist := lcp1;
+        if ovrl or (fsy = operatorsy) then begin { compare against overload group }
+          lcp2 := lcp^.grppar; { index top of overload group }
+          chkovlpar(lcp2, lcp)
         end
+      end else begin
+        if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
+        putparlst(lcp1) { redeclare, dispose of copy }
       end;
       if (fsy = funcsy) or ((fsy = operatorsy) and not (opt = bcmop)) then
         { function }
