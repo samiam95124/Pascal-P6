@@ -1567,6 +1567,8 @@ end;
 
 { external routines }
 
+procedure newspc(len: address; var blk: address); forward;
+
 #ifdef EXTERNALS
 #include "externals.inc"
 #else
@@ -3212,7 +3214,7 @@ end;
 
 { allocate space in heap }
 
-procedure newspc(len: address; var blk: address);
+procedure newspc{(len: address; var blk: address)};
 var ad,ad1: address;
 begin
   alignu(adrsize, len); { align to units of address }

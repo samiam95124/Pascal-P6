@@ -159,7 +159,6 @@ type str = packed array [1..strmax] of char;
 
        { note sets must be cinteger for spacing and pickup vs. the C version }
        name:    charptr;  { name of file }
-       namelen: integer;  { length of name }
        size:    integer;  { size of file }
        alloc:   integer;  { allocation of file }
        attr:    cinteger{attrset};  { attributes }
@@ -178,16 +177,18 @@ type str = packed array [1..strmax] of char;
      envrec = packed record
 
       name: charptr;    { name of string }
-      namelen: integer; { length of name }
       data: charptr;    { data in string }
-      datalen: integer; { length of data }
       next: envptr      { next entry in list }
 
      end;
 
-var a, b, c: integer;
-    s:       str;
-    fp:      filptr;
+var a, b, c:           integer;
+    s:                 str;
+    fp, lfp:           filptr;
+    ad, ad2, ad3, ad4: address;
+    cp:                charptr;
+    i:                 integer;
+    l:                 integer;
 
 procedure getstr(sa: address; var s: str);
 
@@ -214,6 +215,33 @@ begin
 
 end;
 
+procedure putsetfil(var a: address; s: integer);
+
+var i: integer;
+
+begin
+
+   putint(a, s);
+   ad := ad+intsize;
+   for i := 1 to setsize-intsize do begin putbyt(ad, 0); ad := ad+1 end
+
+end;
+
+function strlen(cp: charptr): integer;
+
+var c: integer;
+
+begin
+
+   c := 0;
+   {$X+}
+   while cp^ <> chr(0) do begin c := c+1; cp := cp+1 end;
+   {$X-}
+
+   strlen := c
+
+end;
+
 begin
 
     case routine of
@@ -221,28 +249,54 @@ begin
        1: begin { list }
 
            getstr(sp+adrsize, s); { load string }
-           { *** won't work, need to translate the external structure to vm
-             internal structure }
-           {pa_list(@s, getadr(sp));}
            pa_list(@s, integer(@fp)); { get files list }
+           ad3 := 0; { set no last entry }
+           ad4 := 0; { set no top entry }
            while fp <> nil do begin
 
-              write('file:     '); prtcstr(fp^.name); writeln;
-              writeln('namelen:  ', fp^.namelen);
-              writeln('size:     ', fp^.size);
-              writeln('alloc:    ', fp^.alloc);
-              writeln('attr:     ', fp^.attr);
-              writeln('Create:   ', fp^.create);
-              writeln('modify:   ', fp^.modify);
-              writeln('access:   ', fp^.access);
-              writeln('backup:   ', fp^.backup);
-              writeln('user:     ', fp^.user);
-              writeln('group:    ', fp^.group);
-              writeln('other:    ', fp^.other);
-              writeln;
-              fp := fp^.next
+              { transfer each record to storage }
+              { get space for file record }
+              newspc(ptrsize+intsize+intsize+setsize+intsize+intsize+
+                     intsize+intsize+setsize+setsize+setsize+ptrsize, ad);
+              if ad4 = 0 then ad4 := ad; { set top entry }
+              { link last to this if last exists }
+              if ad3 <> 0 then putadr(ad3, ad);
+              l := strlen(fp^.name); { get length of name }
+              newspc(l+intsize, ad2); { get space for filename }
+              putadr(ad, ad2); { place name pointer }
+              ad := ad+ptrsize;
+              putint(ad2, l); { put string size }
+              ad2 := ad2+intsize;
+              { move the name string into place }
+              cp := fp^.name; { index string }
+              {$X+}
+              for i := 1 to l do
+                begin putbyt(ad2, ord(cp^)); ad2 := ad2+1; cp := cp+1 end;
+              {$X-}
+              putint(ad, fp^.size);
+              ad := ad+intsize;
+              putint(ad, fp^.alloc);
+              ad := ad+intsize;
+              { sets need to be expanded }
+              putsetfil(ad, fp^.attr);
+              putint(ad, fp^.create);
+              ad := ad+intsize;
+              putint(ad, fp^.modify);
+              ad := ad+intsize;
+              putint(ad, fp^.access);
+              ad := ad+intsize;
+              putint(ad, fp^.backup);
+              ad := ad+intsize;
+              putsetfil(ad, fp^.user);
+              putsetfil(ad, fp^.group);
+              putsetfil(ad, fp^.other);
+              ad3 := ad; { set last entry link }
+              putadr(ad, 1); { clear next }
+              fp := fp^.next { link next entry }
 
-           end
+           end;
+           ad := getadr(sp); { get address of list pointer }
+           putadr(ad, ad4); { place to vm client }
 
        end;
 

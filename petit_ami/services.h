@@ -55,7 +55,6 @@ typedef int pa_permset; /* permissions in a set */
 typedef struct pa_filrec {
 
     char*             name;    /* name of file (zero terminated) */
-    long              namelen; /* length of name of file */
     long long         size;    /* size of file */
     long long         alloc;   /* allocation of file */
     pa_attrset        attr;    /* attributes */
@@ -75,9 +74,7 @@ typedef pa_filrec* pa_filptr; /* pointer to file records */
 typedef struct pa_envrec {
 
     char* name;    /* name of string (zero terminated) */
-    int   namelen; /* length of name of string */
     char* data;    /* data in string (zero terminated) */
-    int   datalen; /* length of data in string */
     struct pa_envrec *next; /* next entry in list */
 
 } pa_envrec;

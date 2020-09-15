@@ -45,9 +45,9 @@ cmach run
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
-Sun 13 Sep 2020 11:29:25 AM PDT
+Mon 14 Sep 2020 10:30:45 PM PDT
 Source files
-0e0726f9bc2b1428c1ab958faafe1691  -
+a47d553e18be41bc8a8429329db5ca62  -
 batch files
 a2db875338634e6967955dc98efa685a  -
 P2 files
