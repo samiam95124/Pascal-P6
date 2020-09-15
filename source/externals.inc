@@ -22,7 +22,16 @@ Each of these brings an externally defined routine into Pascal callable form.
 
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
+procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';
 function pa_time: integer; external name 'pa_time';
+function pa_local(t: integer): integer; external name 'pa_local';
+function pa_clock: integer; external name 'pa_clock';
+function pa_elapsed(t: integer): integer; external name 'pa_elapsed';
+function pa_validfile(s: charptr): integer; external name 'pa_validfile';
+function pa_validpath(s: charptr): integer; external name 'pa_validpath';
+function pa_wild(s: charptr): integer; external name 'pa_wild';
+procedure pa_getenv(ls,ds: charptr; dsl: integer); external name 'pa_getenv';
+procedure pa_setenv(ls,ds: charptr); external name 'pa_setenv';
 
 { Restore to ISO 7185 Pascal language }
 {$classic-pascal-level-0}
@@ -184,12 +193,13 @@ type str = packed array [1..strmax] of char;
      end;
 
 var a, b, c:           integer;
-    s:                 str;
+    s, s2:             str;
     fp, lfp:           filptr;
     ad, ad2, ad3, ad4: address;
     cp:                charptr;
     i:                 integer;
     l:                 integer;
+    bl:                boolean;
 
 procedure getstr(sa: address; var s: str);
 
@@ -206,13 +216,13 @@ begin
 
 end;
 
-procedure putstr(var s: str; da: address);
+procedure putstr(var s: str; sl: integer; da: address);
 
 var i: integer;
 
 begin
 
-   for i := 1 to strmax do putchr(da+i-1, ' ');
+   for i := 1 to sl do putchr(da+i-1, ' ');
    i := 1;
    while s[i] <> chr(0) do begin putchr(da, s[i]); da := da+1; i := i+1 end
 
@@ -259,7 +269,7 @@ begin
 
     case routine of
 
-       1: begin { list }
+       1: begin { list() }
 
            getstr(sp+adrsize, s); { load string }
            pa_list(@s, integer(@fp)); { get files list }
@@ -313,36 +323,95 @@ begin
 
        end;
 
-       2:  begin
+       2:  begin { times() }
 
            pa_times(@s, getint(sp+intsize*2), getint(sp));
-           putstr(s, getadr(sp+intsize))
+           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
 
        end;
 
+       3:  begin { dates() }
+
+           pa_dates(@s, getint(sp+intsize*2), getint(sp));
+           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+
+       end;
        {
-       3:  else if symbol = 'dates               ' then routine :=
        4:  else if symbol = 'writetime           ' then routine :=
        5:  else if symbol = 'writedate           ' then routine :=
        }
 
-       6: begin
+       6: begin { time() }
 
            a := pa_time;
            putint(mp, a)
 
        end;
 
+       7: begin { local() }
+
+           a := getint(sp);
+           a := pa_local(a);
+           putint(mp, a)
+
+       end;
+
+       8: begin { clock() }
+
+           a := pa_clock;
+           putint(mp, a)
+
+       end;
+
+       9: begin { elapsed() }
+
+           a := getint(sp);
+           a := pa_elapsed(a);
+           putint(mp, a)
+
+       end;
+
+       10: begin { validfile() }
+
+           getstr(sp, s);
+           bl := pa_validfile(@s) <> 0;
+           putint(mp, ord(bl))
+
+       end;
+
+       11: begin { validpath() }
+
+           getstr(sp, s);
+           bl := pa_validpath(@s) <> 0;
+           putint(mp, ord(bl))
+
+       end;
+
+       12: begin { wild() }
+
+           getstr(sp, s);
+           bl := pa_wild(@s) <> 0;
+           putint(mp, ord(bl))
+
+       end;
+
+       13: begin { getenv() }
+
+          getstr(sp+ptrsize+intsize, s);
+          pa_getenv(@s, @s2, getint(sp+ptrsize));
+          putstr(s, getint(sp+ptrsize), getadr(sp))
+
+       end;
+
+       14: begin { setenv() }
+
+          getstr(sp+ptrsize+intsize, s);
+          getstr(sp, s2);
+          pa_getenv(@s, @s2, getint(sp+ptrsize))
+
+       end;
+
        {
-       6:  else if symbol = 'time                ' then routine :=
-       7:  else if symbol = 'local               ' then routine :=
-       8:  else if symbol = 'clock               ' then routine :=
-       9:  else if symbol = 'elapsed             ' then routine :=
-       10: else if symbol = 'validfile           ' then routine :=
-       11: else if symbol = 'validpath           ' then routine :=
-       12: else if symbol = 'wild                ' then routine :=
-       13: else if symbol = 'getenv              ' then routine :=
-       14: else if symbol = 'setenv              ' then routine :=
        15: else if symbol = 'allenv              ' then routine :=
        16: else if symbol = 'remenv              ' then routine :=
        17: else if symbol = 'exec                ' then routine :=
