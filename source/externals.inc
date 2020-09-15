@@ -21,6 +21,7 @@ Each of these brings an externally defined routine into Pascal callable form.
 {$gnu-pascal}
 
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
+procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 function pa_time: integer; external name 'pa_time';
 
 { Restore to ISO 7185 Pascal language }
@@ -205,6 +206,18 @@ begin
 
 end;
 
+procedure putstr(var s: str; da: address);
+
+var i: integer;
+
+begin
+
+   for i := 1 to strmax do putchr(da+i-1, ' ');
+   i := 1;
+   while s[i] <> chr(0) do begin putchr(da, s[i]); da := da+1; i := i+1 end
+
+end;
+
 procedure prtcstr(cp: charptr);
 
 begin
@@ -300,9 +313,14 @@ begin
 
        end;
 
+       2:  begin
+
+           pa_times(@s, getint(sp+intsize*2), getint(sp));
+           putstr(s, getadr(sp+intsize))
+
+       end;
+
        {
-       if symbol = 'list                ' then routine := 1
-       2:  else if symbol = 'times               ' then routine :=
        3:  else if symbol = 'dates               ' then routine :=
        4:  else if symbol = 'writetime           ' then routine :=
        5:  else if symbol = 'writedate           ' then routine :=
@@ -390,6 +408,6 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := 1
+    NumExternal := 58
 
 end;
