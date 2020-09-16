@@ -34,8 +34,6 @@ function pa_validpath(s: charptr): integer; external name 'pa_validpath';
 function pa_wild(s: charptr): integer; external name 'pa_wild';
 procedure pa_getenv(ls,ds: charptr; dsl: integer); external name 'pa_getenv';
 procedure pa_setenv(ls,ds: charptr); external name 'pa_setenv';
-
-{ below are untested }
 procedure pa_allenv(l: integer); external name 'pa_allenv';
 procedure pa_remenv(sn: charptr); external name 'pa_remenv';
 procedure pa_exec(cmd: charptr); external name 'pa_exec';
@@ -49,6 +47,8 @@ procedure pa_brknam(fn: charptr; p: charptr; pl: integer; n: charptr; nl: intege
 procedure pa_maknam(fn: charptr; fnl: integer; p, n, e: charptr); external name 'pa_maknam';
 procedure pa_fulnam(fn: charptr; fnl: integer); external name 'pa_fulnam';
 procedure pa_getpgm(p: charptr; pl: integer); external name 'pa_getpgm';
+
+{ below are untested }
 procedure pa_getusr(fn: charptr; fnl: integer); external name 'pa_getusr';
 procedure pa_setatr(fn: charptr; a: integer); external name 'pa_setatr';
 procedure pa_resatr(fn: charptr; a: integer); external name 'pa_resatr';
@@ -279,8 +279,11 @@ begin
 
     a1 := getadr(sa); { get base address of string }
     l := getadr(sa+adrsize); { get length of string }
+    { trim off right padding }
+    while (getchr(a1+l-1) = ' ') and(l > 1) do l := l-1;
+    if getchr(a1+l-1) = ' ' then l := 0;
     { transfer string data }
-    for i := 1 to l do s[i] := chr(store[a1+i-1]);
+    for i := 1 to l do s[i] := getchr(a1+i-1);
     s[l+1] := chr(0) { terminate }
 
 end;
@@ -490,7 +493,7 @@ begin
 
           getstr(sp+ptrsize+intsize, s);
           pa_getenv(@s, @s2, getint(sp+ptrsize));
-          putstr(s, getint(sp+ptrsize), getadr(sp))
+          putstr(s2, getint(sp+ptrsize), getadr(sp))
 
        end;
 
@@ -498,7 +501,7 @@ begin
 
           getstr(sp+ptrsize+intsize, s);
           getstr(sp, s2);
-          pa_getenv(@s, @s2, getint(sp+ptrsize))
+          pa_setenv(@s, @s2)
 
        end;
 
@@ -543,10 +546,11 @@ begin
        23: begin { brknam() }
 
           getstr(sp+ptrsize*3+intsize*3, s);
-          pa_brknam(@s, @s2, getint(sp+ptrsize*3), @s3, getint(sp+ptrsize*2),
+          pa_brknam(@s, @s2, getint(sp+ptrsize*3+intsize*2),
+                    @s3, getint(sp+ptrsize*2+intsize),
                     @s4, getint(sp+ptrsize));
-          putstr(s2, getint(sp+ptrsize*3), getadr(sp+ptrsize*2+intsize*2));
-          putstr(s3, getint(sp+ptrsize*2), getadr(sp+ptrsize+intsize));
+          putstr(s2, getint(sp+ptrsize*3+intsize*2), getadr(sp+ptrsize*2+intsize*2));
+          putstr(s3, getint(sp+ptrsize*2+intsize), getadr(sp+ptrsize+intsize));
           putstr(s4, getint(sp+ptrsize), getadr(sp));
 
        end;
@@ -563,23 +567,23 @@ begin
 
        25: begin { fulnam() }
 
-           getstr(sp+intsize,s);
-           pa_fulnam(@s, getint(sp+intsize+ptrsize));
-           putstr(s, getint(sp), getadr(sp+intsize))
+           getstr(sp, s);
+           pa_fulnam(@s, getint(sp+ptrsize));
+           putstr(s, getint(sp+ptrsize), getadr(sp))
 
        end;
 
        26: begin { getpgm() }
 
-           pa_getpgm(@s, getint(sp+intsize+ptrsize));
-           putstr(s, getint(sp+intsize+ptrsize), getadr(sp+intsize))
+           pa_getpgm(@s, getint(sp+ptrsize));
+           putstr(s, getint(sp+ptrsize), getadr(sp))
 
        end;
 
        27: begin { getusr() }
 
-           pa_getusr(@s, getint(sp+intsize+ptrsize));
-           putstr(s, getint(sp+intsize+ptrsize), getadr(sp+intsize))
+           pa_getusr(@s, getint(sp+ptrsize));
+           putstr(s, getint(sp+ptrsize), getadr(sp))
 
        end;
 
