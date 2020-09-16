@@ -23,6 +23,8 @@ Each of these brings an externally defined routine into Pascal callable form.
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';
+{pa_writetime}
+{pa_writedate}
 function pa_time: integer; external name 'pa_time';
 function pa_local(t: integer): integer; external name 'pa_local';
 function pa_clock: integer; external name 'pa_clock';
@@ -32,6 +34,54 @@ function pa_validpath(s: charptr): integer; external name 'pa_validpath';
 function pa_wild(s: charptr): integer; external name 'pa_wild';
 procedure pa_getenv(ls,ds: charptr; dsl: integer); external name 'pa_getenv';
 procedure pa_setenv(ls,ds: charptr); external name 'pa_setenv';
+
+{ below are untested }
+procedure pa_allenv(l: integer); external name 'pa_allenv';
+procedure pa_remenv(sn: charptr); external name 'pa_remenv';
+procedure pa_exec(cmd: charptr); external name 'pa_exec';
+procedure pa_exece(cmd: charptr; el: integer); external name 'pa_exece';
+procedure pa_execw(cmd: charptr; e: integer); external name 'pa_execw';
+procedure pa_execew(cmd: charptr; el: integer; e: integer); external name 'pa_execew';
+procedure pa_getcur(fn: charptr; l: integer); external name 'pa_getcur';
+procedure pa_setcur(fn: charptr); external name 'pa_setcur';
+procedure pa_brknam(fn: charptr; p: charptr; pl: integer; n: charptr; nl: integer;
+                    e: charptr; el: integer); external name 'pa_brknam';
+procedure pa_maknam(fn: charptr; fnl: integer; p, n, e: charptr); external name 'pa_maknam';
+procedure pa_fulnam(fn: charptr; fnl: integer); external name 'pa_fulnam';
+procedure pa_getpgm(p: charptr; pl: integer); external name 'pa_getpgm';
+procedure pa_getusr(fn: charptr; fnl: integer); external name 'pa_getusr';
+procedure pa_setatr(fn: charptr; a: integer); external name 'pa_setatr';
+procedure pa_resatr(fn: charptr; a: integer); external name 'pa_resatr';
+procedure pa_bakupd(fn: charptr); external name 'pa_bakupd';
+procedure pa_setuper(fn: charptr; p: integer); external name 'pa_setuper';
+procedure pa_resuper(fn: charptr; p: integer); external name 'pa_resuper';
+procedure pa_setgper(fn: charptr; p: integer); external name 'pa_setgper';
+procedure pa_resgper(fn: charptr; p: integer); external name 'pa_resgper';
+procedure pa_setoper(fn: charptr; p: integer); external name 'pa_setoper';
+procedure pa_resoper(fn: charptr; p: integer); external name 'pa_setoper';
+procedure pa_seterr(c: integer); external name 'pa_seterr';
+procedure pa_makpth(fn: charptr); external name 'pa_makpth';
+procedure pa_rempth(fn: charptr); external name 'pa_rempth';
+procedure pa_filchr(fc: integer); external name 'pa_filchr';
+function pa_optchr: char; external name 'pa_optchr';
+function pa_pthchr: char; external name 'pa_pthchr';
+function pa_latitude: integer; external name 'pa_latitude';
+function pa_longitude: integer; external name 'pa_longitude';
+function pa_altitude: integer; external name 'pa_altitude';
+function pa_country: integer; external name 'pa_country';
+procedure pa_countrys(s: charptr; sl: integer; c: integer); external name 'pa_countrys';
+function pa_timezone: integer; external name 'pa_timezone';
+function pa_daysave: integer; external name 'pa_daysave';
+function pa_time24hour: integer; external name 'pa_time24hour';
+function pa_language: integer; external name 'pa_language';
+procedure pa_languages(s: charptr; sl: integer; l: integer); external name 'pa_languages';
+function pa_decimal: char; external name 'pa_decimal';
+function pa_numbersep: char; external name 'pa_numbersep';
+function pa_timeorder: integer; external name 'pa_timeorder';
+function pa_dateorder: integer; external name 'pa_dateorder';
+function pa_datesep: char; external name 'pa_datesep';
+function pa_timesep: char; external name 'pa_timesep';
+function pa_currchr: char; external name 'pa_currchr';
 
 { Restore to ISO 7185 Pascal language }
 {$classic-pascal-level-0}
@@ -117,6 +167,20 @@ begin
        else if symbol = 'timesep             ' then routine := 57
        else if symbol = 'currchr             ' then routine := 58
 
+   { placeholders }
+
+   { terminal is complete }
+   end else if module = 'terminal            ' then begin
+
+   { graph is unfinished }
+   end else if module = 'graph               ' then begin
+
+   { terminal is complete }
+   end else if module = 'sound               ' then begin
+
+   { network is fairly complete }
+   end else if module = 'network             ' then begin
+
    end
 
 end;
@@ -192,14 +256,19 @@ type str = packed array [1..strmax] of char;
 
      end;
 
+     setchr = array [1..setsize] of byte;
+
 var a, b, c:           integer;
-    s, s2:             str;
+    s, s2, s3, s4:     str;
     fp, lfp:           filptr;
     ad, ad2, ad3, ad4: address;
     cp:                charptr;
     i:                 integer;
     l:                 integer;
     bl:                boolean;
+    st:                setchr;
+    ch:                char;
+
 
 procedure getstr(sa: address; var s: str);
 
@@ -245,10 +314,32 @@ var i: integer;
 begin
 
    putint(a, s);
-   ad := ad+intsize;
-   for i := 1 to setsize-intsize do begin putbyt(ad, 0); ad := ad+1 end
+   a := a+intsize;
+   for i := 1 to setsize-intsize do begin putbyt(a, 0); a := a+1 end
 
 end;
+
+procedure getsetfil(var a: address; var s: integer);
+
+var i: integer;
+
+begin
+
+   s := getint(a);
+   a := a+intsize;
+
+end;
+
+procedure putsetchr(a: address; s: setchr);
+
+var i: integer;
+
+begin
+
+   for i := 1 to setsize do begin putbyt(a, st[i]); a := a+1 end
+
+end;
+
 
 function strlen(cp: charptr): integer;
 
@@ -413,50 +504,309 @@ begin
 
        {
        15: else if symbol = 'allenv              ' then routine :=
-       16: else if symbol = 'remenv              ' then routine :=
-       17: else if symbol = 'exec                ' then routine :=
+       }
+
+       16: begin { remenv() }
+
+          getstr(sp, s);
+          pa_remenv(@s)
+
+       end;
+
+       17: begin { exec() }
+
+          getstr(sp, s);
+          pa_exec(@s)
+
+       end;
+
+       {
        18: else if symbol = 'exece               ' then routine :=
        19: else if symbol = 'execw               ' then routine :=
        20: else if symbol = 'execew              ' then routine :=
-       21: else if symbol = 'getcur              ' then routine :=
-       22 else if symbol = 'setcur              ' then routine :=
-       23 else if symbol = 'brknam              ' then routine :=
-       24 else if symbol = 'maknam              ' then routine :=
-       25 else if symbol = 'fulnam              ' then routine :=
-       26 else if symbol = 'getpgm              ' then routine :=
-       27 else if symbol = 'getusr              ' then routine :=
-       28 else if symbol = 'setatr              ' then routine :=
-       29 else if symbol = 'resatr              ' then routine :=
-       30 else if symbol = 'bakupd              ' then routine :=
-       31 else if symbol = 'setuper             ' then routine :=
-       32 else if symbol = 'resuper             ' then routine :=
-       33 else if symbol = 'setgper             ' then routine :=
-       34 else if symbol = 'resgper             ' then routine :=
-       35 else if symbol = 'setoper             ' then routine :=
-       36 else if symbol = 'resoper             ' then routine :=
-       37 else if symbol = 'makpth              ' then routine :=
-       38 else if symbol = 'rempth              ' then routine :=
-       39 else if symbol = 'filchr              ' then routine :=
-       40 else if symbol = 'optchr              ' then routine :=
-       41 else if symbol = 'pthchr              ' then routine :=
-       42 else if symbol = 'latitude            ' then routine :=
-       43 else if symbol = 'longitude           ' then routine :=
-       44 else if symbol = 'altitude            ' then routine :=
-       45 else if symbol = 'country             ' then routine :=
-       46 else if symbol = 'countrys            ' then routine :=
-       47 else if symbol = 'timezone            ' then routine :=
-       48 else if symbol = 'daysave             ' then routine :=
-       49 else if symbol = 'time24hour          ' then routine :=
-       50 else if symbol = 'language            ' then routine :=
-       51 else if symbol = 'languages           ' then routine :=
-       52 else if symbol = 'decimal             ' then routine :=
-       53 else if symbol = 'numbersep           ' then routine :=
-       54 else if symbol = 'timeorder           ' then routine :=
-       55 else if symbol = 'dateorder           ' then routine :=
-       56 else if symbol = 'datesep             ' then routine :=
-       57 else if symbol = 'timesep             ' then routine :=
-       58 else if symbol = 'currchr             ' then routine :=
        }
+
+       21: begin { getcur() }
+
+           pa_getcur(@s, getint(sp+intsize+ptrsize));
+           putstr(s, getint(sp+intsize), getadr(sp))
+
+       end;
+
+       22: begin { setcur() }
+
+          getstr(sp, s);
+          pa_setcur(@s)
+
+       end;
+
+       23: begin { brknam() }
+
+          getstr(sp+ptrsize*3+intsize*3, s);
+          pa_brknam(@s, @s2, getint(sp+ptrsize*3), @s3, getint(sp+ptrsize*2),
+                    @s4, getint(sp+ptrsize));
+          putstr(s2, getint(sp+ptrsize*3), getadr(sp+ptrsize*2+intsize*2));
+          putstr(s3, getint(sp+ptrsize*2), getadr(sp+ptrsize+intsize));
+          putstr(s4, getint(sp+ptrsize), getadr(sp));
+
+       end;
+
+       24: begin { maknam() }
+
+          getstr(sp+ptrsize*2+intsize*2, s2);
+          getstr(sp+ptrsize+intsize, s3);
+          getstr(sp, s4);
+          pa_maknam(@s, getint(ptrsize*4+intsize*3), @s2, @s3, @s4);
+          putstr(s, getint(sp+ptrsize*4+intsize*3), getadr(sp+ptrsize*3+intsize*3))
+
+       end;
+
+       25: begin { fulnam() }
+
+           getstr(sp+intsize,s);
+           pa_fulnam(@s, getint(sp+intsize+ptrsize));
+           putstr(s, getint(sp), getadr(sp+intsize))
+
+       end;
+
+       26: begin { getpgm() }
+
+           pa_getpgm(@s, getint(sp+intsize+ptrsize));
+           putstr(s, getint(sp+intsize+ptrsize), getadr(sp+intsize))
+
+       end;
+
+       27: begin { getusr() }
+
+           pa_getusr(@s, getint(sp+intsize+ptrsize));
+           putstr(s, getint(sp+intsize+ptrsize), getadr(sp+intsize))
+
+       end;
+
+       28: begin { setatr() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_setatr(@s, a)
+
+       end;
+
+       29: begin { resatr() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_resatr(@s, a)
+
+       end;
+
+       30: begin { bakupd() }
+
+          getstr(sp, s);
+          pa_bakupd(@s)
+
+       end;
+
+       31: begin { setuper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_setuper(@s, a)
+
+       end;
+
+       32: begin { resuper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_resuper(@s, a)
+
+       end;
+
+       33: begin { setgper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_setgper(@s, a)
+
+       end;
+
+       34: begin { resgper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_resgper(@s, a)
+
+       end;
+
+       35: begin { setoper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_setoper(@s, a)
+
+       end;
+
+       36: begin { resoper() }
+
+           getstr(sp+setsize, s);
+           getsetfil(sp, a);
+           pa_resoper(@s, a)
+
+       end;
+
+       37: begin { makpth() }
+
+          getstr(sp, s);
+          pa_makpth(@s)
+
+       end;
+
+       38: begin { rempth() }
+
+          getstr(sp, s);
+          pa_rempth(@s)
+
+       end;
+
+       39: begin { filchr() }
+
+           pa_filchr(integer(@st));
+           putsetchr(getadr(sp), st)
+
+       end;
+
+       40: begin { optchr() }
+
+           ch := pa_optchr();
+           putchr(mp, ch);
+
+       end;
+
+       41: begin { pthchr() }
+
+           ch := pa_pthchr();
+           putchr(mp, ch);
+
+       end;
+
+       42: begin { latitude() }
+
+           a := pa_latitude();
+           putint(mp, a);
+
+       end;
+
+       43: begin { longitude() }
+
+           a := pa_longitude();
+           putint(mp, a);
+
+       end;
+
+       44: begin { altitude() }
+
+           a := pa_altitude();
+           putint(mp, a);
+
+       end;
+
+       45: begin { country() }
+
+           a := pa_country();
+           putint(mp, a);
+
+       end;
+
+       46: begin { countrys() }
+
+           pa_countrys(@s, getint(sp+intsize*2), getint(sp));
+           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+
+       end;
+
+       47: begin { timezone() }
+
+           a := pa_timezone();
+           putint(mp, a);
+
+       end;
+
+       48: begin { daysave() }
+
+           a := pa_daysave();
+           putint(mp, a);
+
+       end;
+
+       49: begin { time24hour() }
+
+           a := pa_time24hour();
+           putint(mp, a);
+
+       end;
+
+       50: begin { language() }
+
+           a := pa_language();
+           putint(mp, a);
+
+       end;
+
+       51: begin { languages() }
+
+           pa_languages(@s, getint(sp+intsize*2), getint(sp));
+           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+
+       end;
+
+       52: begin { decimal() }
+
+           ch := pa_decimal();
+           putchr(mp, ch);
+
+       end;
+
+       53: begin { numbersep() }
+
+           ch := pa_numbersep();
+           putchr(mp, ch);
+
+       end;
+
+       54: begin { timeorder() }
+
+           a := pa_timeorder();
+           putint(mp, a);
+
+       end;
+
+       55: begin { dateorder() }
+
+           a := pa_dateorder();
+           putint(mp, a);
+
+       end;
+
+       56: begin { datesep() }
+
+           ch := pa_datesep();
+           putchr(mp, ch);
+
+       end;
+
+       57: begin { timesep() }
+
+           ch := pa_timesep();
+           putchr(mp, ch);
+
+       end;
+
+       58: begin { currchr() }
+
+           ch := pa_currchr();
+           putchr(mp, ch);
+
+       end;
 
     end
 
