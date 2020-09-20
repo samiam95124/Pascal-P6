@@ -1569,6 +1569,7 @@ end;
 { external routines }
 
 procedure newspc(len: address; var blk: address); forward;
+procedure valfil(fa: address); forward;
 
 #ifdef EXTERNALS
 #include "externals.inc"
@@ -3052,7 +3053,7 @@ begin
   a1 := a1+i; a2 := a2+i
 end; (*compare*)
 
-procedure valfil(fa: address); { attach file to file entry }
+procedure valfil{(fa: address)}; { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }

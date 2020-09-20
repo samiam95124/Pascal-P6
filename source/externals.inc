@@ -23,13 +23,6 @@ Each of these brings an externally defined routine into Pascal callable form.
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';
-
-{ not implemented }
-{pa_writetime}
-
-{ not implemented }
-{pa_writedate}
-
 function pa_time: integer; external name 'pa_time';
 function pa_local(t: integer): integer; external name 'pa_local';
 function pa_clock: integer; external name 'pa_clock';
@@ -281,6 +274,7 @@ var a, b, c:           integer;
     bl:                boolean;
     st:                setchr;
     ch:                char;
+    fn:                fileno;
 
 procedure getstr(sa: address; var s: str);
 
@@ -318,6 +312,36 @@ begin
 
    {$X+}
    while cp^ <> chr(0) do begin write(cp^); cp := succ(cp) end
+   {$X-}
+
+end;
+
+procedure prtchrfil(fn: integer; c: char);
+
+begin
+
+   if fn <= commandfn then case fn of
+
+      outputfn,errorfn,listfn: begin write(output, c); newline := false end;
+      prrfn: write(prr, c);
+      prdfn,inputfn,
+      commandfn: errore(WriteOnReadOnlyFile)
+
+   end else begin
+
+      if filstate[fn] <> fwrite then errore(FileModeIncorrect);
+      write(filtable[fn], c)
+
+   end
+
+end;
+
+procedure prtcstrfil(fn: integer; cp: charptr);
+
+begin
+
+   {$X+}
+   while cp^ <> chr(0) do begin prtchrfil(fn, cp^); cp := succ(cp) end
    {$X-}
 
 end;
@@ -442,10 +466,23 @@ begin
            putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
 
        end;
-       {
-       4:  else if symbol = 'writetime           ' then routine :=
-       5:  else if symbol = 'writedate           ' then routine :=
-       }
+       4:  begin { writetime() }
+
+           pa_times(@s, strmax, getint(sp));
+           ad := getadr(sp+intsize);
+           valfil(ad); fn := store[ad];
+           prtcstrfil(fn, @s)
+
+       end;
+
+       5:  begin { writedate() }
+
+           pa_dates(@s, strmax, getint(sp));
+           ad := getadr(sp+intsize);
+           valfil(ad); fn := store[ad];
+           prtcstrfil(fn, @s)
+
+       end;
 
        6: begin { time() }
 
