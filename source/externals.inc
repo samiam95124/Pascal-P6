@@ -32,10 +32,7 @@ function pa_validpath(s: charptr): integer; external name 'pa_validpath';
 function pa_wild(s: charptr): integer; external name 'pa_wild';
 procedure pa_getenv(ls,ds: charptr; dsl: integer); external name 'pa_getenv';
 procedure pa_setenv(ls,ds: charptr); external name 'pa_setenv';
-
-{ not implemented }
 procedure pa_allenv(l: integer); external name 'pa_allenv';
-
 procedure pa_remenv(sn: charptr); external name 'pa_remenv';
 procedure pa_exec(cmd: charptr); external name 'pa_exec';
 
@@ -274,7 +271,7 @@ var a, b, c:           integer;
     bl:                boolean;
     st:                setchr;
     ch:                char;
-    fn:                fileno;
+    ep:                envptr;
 
 procedure getstr(sa: address; var s: str);
 
@@ -388,6 +385,18 @@ begin
 
 end;
 
+procedure movstr(cp: charptr; l: integer; ad: address);
+
+var i: integer;
+
+begin
+
+   {$X+}
+   for i := 1 to l do begin putbyt(ad, ord(cp^)); ad := ad+1; cp := cp+1 end;
+   {$X-}
+
+end;
+
 begin
 
     case routine of
@@ -415,10 +424,7 @@ begin
               ad2 := ad2+intsize;
               { move the name string into place }
               cp := fp^.name; { index string }
-              {$X+}
-              for i := 1 to l do
-                begin putbyt(ad2, ord(cp^)); ad2 := ad2+1; cp := cp+1 end;
-              {$X-}
+              movstr(cp, l, ad2); { move into place }
               putint(ad, fp^.size);
               ad := ad+intsize;
               putint(ad, fp^.alloc);
@@ -437,12 +443,14 @@ begin
               putsetfil(ad, fp^.group);
               putsetfil(ad, fp^.other);
               ad3 := ad; { set last entry link }
-              putadr(ad, 1); { clear next }
+              putadr(ad, 1); { clear next (with nil value) }
               fp := fp^.next { link next entry }
 
            end;
            ad := getadr(sp); { get address of list pointer }
            putadr(ad, ad4); { place to vm client }
+
+           { need to free up original C side entries we copied }
 
        end;
 
@@ -545,9 +553,46 @@ begin
 
        end;
 
-       {
-       15: else if symbol = 'allenv              ' then routine :=
-       }
+       15: begin { allenv() }
+
+          pa_allenv(integer(@ep)); { get environment list }
+          ad3 := 0; { set no last entry }
+          ad4 := 0; { set no top entry }
+          while ep <> nil do begin { translate list }
+
+              { transfer each record to storage }
+              { get space for environment record }
+              newspc(ptrsize*3, ad);
+              if ad4 = 0 then ad4 := ad; { set top entry }
+              { link last to this if last exists }
+              if ad3 <> 0 then putadr(ad3, ad);
+              l := strlen(ep^.name); { get length of name }
+              newspc(l+intsize, ad2); { get space for name }
+              putadr(ad, ad2); { place name }
+              ad := ad+ptrsize;
+              putint(ad2, l); { put string size }
+              ad2 := ad2+intsize;
+              cp := ep^.name; { index string }
+              movstr(cp, l, ad2); { move the name string into place }
+              l := strlen(ep^.data); { get length of data }
+              newspc(l+intsize, ad2); { get space for name }
+              putadr(ad, ad2); { place name }
+              ad := ad+ptrsize;
+              putint(ad2, l); { put string size }
+              ad2 := ad2+intsize;
+              cp := ep^.data; { index string }
+              movstr(cp, l, ad2); { move the name string into place }
+              ad3 := ad; { set last entry link }
+              putadr(ad, 1); { clear next (with nil value) }
+              ep := ep^.next { link next entry }
+
+          end;
+          ad := getadr(sp); { get address of list pointer }
+          putadr(ad, ad4); { place to vm client }
+
+          { need to free up original C side entries we copied }
+
+       end;
 
        16: begin { remenv() }
 
