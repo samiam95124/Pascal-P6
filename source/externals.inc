@@ -306,43 +306,36 @@ begin
 
 end;
 
-procedure prtcstr(cp: charptr);
+procedure prtcstr(var f: text; cp: charptr);
 
 begin
 
    {$X+}
-   while cp^ <> chr(0) do begin write(cp^); cp := succ(cp) end
+   while cp^ <> chr(0) do begin write(f, cp^); cp := succ(cp) end
    {$X-}
 
 end;
 
-procedure prtchrfil(fn: integer; c: char);
+procedure prtcstrfil(ad: address; cp: charptr);
+
+var fn: fileno;
 
 begin
 
+   valfil(ad); fn := store[ad];
    if fn <= commandfn then case fn of
 
-      outputfn,errorfn,listfn: begin write(output, c); newline := false end;
-      prrfn: write(prr, c);
+      outputfn,errorfn,listfn: begin prtcstr(output, cp); newline := false end;
+      prrfn: prtcstr(prr, cp);
       prdfn,inputfn,
       commandfn: errore(WriteOnReadOnlyFile)
 
    end else begin
 
       if filstate[fn] <> fwrite then errore(FileModeIncorrect);
-      write(filtable[fn], c)
+      prtcstr(filtable[fn], cp)
 
    end
-
-end;
-
-procedure prtcstrfil(fn: integer; cp: charptr);
-
-begin
-
-   {$X+}
-   while cp^ <> chr(0) do begin prtchrfil(fn, cp^); cp := succ(cp) end
-   {$X-}
 
 end;
 
@@ -470,8 +463,7 @@ begin
 
            pa_times(@s, strmax, getint(sp));
            ad := getadr(sp+intsize);
-           valfil(ad); fn := store[ad];
-           prtcstrfil(fn, @s)
+           prtcstrfil(ad, @s)
 
        end;
 
@@ -479,8 +471,7 @@ begin
 
            pa_dates(@s, strmax, getint(sp));
            ad := getadr(sp+intsize);
-           valfil(ad); fn := store[ad];
-           prtcstrfil(fn, @s)
+           prtcstrfil(ad, @s)
 
        end;
 
