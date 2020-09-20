@@ -21,8 +21,8 @@
  */
 #define SETLEN 32 /* length of char set */
 #define INSET(s, b) (s[b>>3] & 1<<b%8) /* test inclusion */
-#define ADDSET(s, b) (s[b>>3] | 1<<b%8) /* add set member */
-#define SUBSET(s, b) (s[b>>3] & ~(1<<b%8)) /* remove set member */
+#define ADDSET(s, b) (s[b>>3] |= 1<<b%8) /* add set member */
+#define SUBSET(s, b) (s[b>>3] &= ~(1<<b%8)) /* remove set member */
 #define CLRSET(s) { int i; for (i = 0; i < SETLEN; i++) s[i] = 0; } /* clear set */
 
 /* attributes */

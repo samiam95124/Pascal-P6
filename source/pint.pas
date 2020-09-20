@@ -645,6 +645,7 @@ var   pc          : address;   (*program address register*)
       varfre      : varptr; { free var block entries }
       extvecs     : integer; { number of external vectors }
       extvecbase  : integer; { base of external vectors }
+      exitcode    : integer; { exit code for program }
 
       i           : integer;
       c1          : char;
@@ -7144,6 +7145,7 @@ begin (* main *)
   curmod := nil; { set no module active }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
+  exitcode:= 0; { clear program exit code }
   { endian flip status is set if the host processor and the target disagree on
     endian mode }
   flipend := litend <> lendian;
@@ -7232,5 +7234,8 @@ begin (* main *)
 
   writeln;
   writeln('program complete');
+  
+  { give external package a chance to exit }
+  exitprogram(exitcode)  
 
 end.

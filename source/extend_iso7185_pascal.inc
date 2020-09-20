@@ -131,3 +131,7 @@ begin
   l := 0
 end;
 
+procedure exitprogram(ec: integer);
+begin
+  ec := ec
+end;

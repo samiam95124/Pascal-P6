@@ -23,8 +23,13 @@ Each of these brings an externally defined routine into Pascal callable form.
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';
+
+{ not implemented }
 {pa_writetime}
+
+{ not implemented }
 {pa_writedate}
+
 function pa_time: integer; external name 'pa_time';
 function pa_local(t: integer): integer; external name 'pa_local';
 function pa_clock: integer; external name 'pa_clock';
@@ -34,12 +39,22 @@ function pa_validpath(s: charptr): integer; external name 'pa_validpath';
 function pa_wild(s: charptr): integer; external name 'pa_wild';
 procedure pa_getenv(ls,ds: charptr; dsl: integer); external name 'pa_getenv';
 procedure pa_setenv(ls,ds: charptr); external name 'pa_setenv';
+
+{ not implemented }
 procedure pa_allenv(l: integer); external name 'pa_allenv';
+
 procedure pa_remenv(sn: charptr); external name 'pa_remenv';
 procedure pa_exec(cmd: charptr); external name 'pa_exec';
+
+{ not implemented }
 procedure pa_exece(cmd: charptr; el: integer); external name 'pa_exece';
+
+{ not implemented }
 procedure pa_execw(cmd: charptr; e: integer); external name 'pa_execw';
+
+{ not implemented }
 procedure pa_execew(cmd: charptr; el: integer; e: integer); external name 'pa_execew';
+
 procedure pa_getcur(fn: charptr; l: integer); external name 'pa_getcur';
 procedure pa_setcur(fn: charptr); external name 'pa_setcur';
 procedure pa_brknam(fn: charptr; p: charptr; pl: integer; n: charptr; nl: integer;
@@ -47,8 +62,6 @@ procedure pa_brknam(fn: charptr; p: charptr; pl: integer; n: charptr; nl: intege
 procedure pa_maknam(fn: charptr; fnl: integer; p, n, e: charptr); external name 'pa_maknam';
 procedure pa_fulnam(fn: charptr; fnl: integer); external name 'pa_fulnam';
 procedure pa_getpgm(p: charptr; pl: integer); external name 'pa_getpgm';
-
-{ below are untested }
 procedure pa_getusr(fn: charptr; fnl: integer); external name 'pa_getusr';
 procedure pa_setatr(fn: charptr; a: integer); external name 'pa_setatr';
 procedure pa_resatr(fn: charptr; a: integer); external name 'pa_resatr';
@@ -58,8 +71,7 @@ procedure pa_resuper(fn: charptr; p: integer); external name 'pa_resuper';
 procedure pa_setgper(fn: charptr; p: integer); external name 'pa_setgper';
 procedure pa_resgper(fn: charptr; p: integer); external name 'pa_resgper';
 procedure pa_setoper(fn: charptr; p: integer); external name 'pa_setoper';
-procedure pa_resoper(fn: charptr; p: integer); external name 'pa_setoper';
-procedure pa_seterr(c: integer); external name 'pa_seterr';
+procedure pa_resoper(fn: charptr; p: integer); external name 'pa_resoper';
 procedure pa_makpth(fn: charptr); external name 'pa_makpth';
 procedure pa_rempth(fn: charptr); external name 'pa_rempth';
 procedure pa_filchr(fc: integer); external name 'pa_filchr';
@@ -166,6 +178,7 @@ begin
        else if symbol = 'datesep             ' then routine := 56
        else if symbol = 'timesep             ' then routine := 57
        else if symbol = 'currchr             ' then routine := 58
+       else if symbol = 'seterr              ' then routine := 59
 
    { placeholders }
 
@@ -256,7 +269,7 @@ type str = packed array [1..strmax] of char;
 
      end;
 
-     setchr = array [1..setsize] of byte;
+     setchr = packed array [1..setsize] of byte;
 
 var a, b, c:           integer;
     s, s2, s3, s4:     str;
@@ -268,7 +281,6 @@ var a, b, c:           integer;
     bl:                boolean;
     st:                setchr;
     ch:                char;
-
 
 procedure getstr(sa: address; var s: str);
 
@@ -333,7 +345,7 @@ begin
 
 end;
 
-procedure putsetchr(a: address; s: setchr);
+procedure putsetchr(a: address; var st: setchr);
 
 var i: integer;
 
@@ -812,6 +824,12 @@ begin
 
        end;
 
+       59: begin { seterr() }
+
+           exitcode := getint(sp)
+
+       end;
+
     end
 
 end;
@@ -831,6 +849,6 @@ function NumExternal: integer;
 
 begin
 
-    NumExternal := 58
+    NumExternal := 59
 
 end;

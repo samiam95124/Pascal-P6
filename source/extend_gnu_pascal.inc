@@ -166,5 +166,10 @@ begin
   l := i-1
 end;
 
+procedure exitprogram(ec: integer);
+begin
+  halt(ec)
+end;
+
 { Restore to ISO 7185 Pascal language }
 {$classic-pascal-level-0}
