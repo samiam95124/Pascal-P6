@@ -1572,9 +1572,19 @@ procedure newspc(len: address; var blk: address); forward;
 procedure valfil(fa: address); forward;
 
 #ifdef EXTERNALS
-#include "externals.inc"
-#else
-#include "externals_null.inc"
+
+#ifdef GNU_PASCAL
+#include "externals_gnu_pascal.inc"
+#endif
+
+#ifdef ISO7185_PASCAL
+#include "externals_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "externals_pascaline.inc"
+#endif
+
 #endif
 
 (*--------------------------------------------------------------------*)
