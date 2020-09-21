@@ -20,6 +20,7 @@ Each of these brings an externally defined routine into Pascal callable form.
 { Allow GNU Pascal extensions }
 {$gnu-pascal}
 
+{ petit-ami declares }
 procedure pa_list(f: charptr; l: integer); external name 'pa_list';
 procedure pa_times(s: charptr; sl: integer; t: integer); external name 'pa_times';
 procedure pa_dates(s: charptr; sl: integer; t: integer); external name 'pa_dates';
@@ -83,6 +84,9 @@ function pa_dateorder: integer; external name 'pa_dateorder';
 function pa_datesep: char; external name 'pa_datesep';
 function pa_timesep: char; external name 'pa_timesep';
 function pa_currchr: char; external name 'pa_currchr';
+
+{ external C support routines }
+function malloc(s: integer): charptr; external name 'malloc';
 
 { Restore to ISO 7185 Pascal language }
 {$classic-pascal-level-0}
@@ -385,15 +389,64 @@ begin
 
 end;
 
-procedure movstr(cp: charptr; l: integer; ad: address);
+procedure movstr2vm(cp: charptr; l: integer; ad: address);
 
 var i: integer;
 
 begin
 
    {$X+}
-   for i := 1 to l do begin putbyt(ad, ord(cp^)); ad := ad+1; cp := cp+1 end;
+   for i := 1 to l do begin putchr(ad, cp^); ad := ad+1; cp := cp+1 end;
    {$X-}
+
+end;
+
+procedure movstrfvm(cp: charptr; l: integer; ad: address);
+
+var i: integer;
+
+begin
+
+   {$X+}
+   for i := 1 to l do begin cp^ := getchr(ad); ad := ad+1; cp := cp+1 end;
+   {$X-}
+   cp^ := chr(0) { terminate C string }
+
+end;
+
+procedure getenv(ad: address; var ep: envptr);
+
+var ep2, lp: envptr;
+    l: integer;
+
+begin
+
+   ep := nil; { set no top }
+   lp := nil; { set no last }
+   while ad <> nilval do begin
+
+      new(ep2); { get new entry }
+      ep2^.next := nil; { set no next }
+      if ep = nil then ep := ep2; { set top entry if first }
+      if lp <> nil then lp^.next := ep2; { link last to this if last exists }
+      { pick up name }
+      ad2 := getadr(ad); { index the string }
+      ad := ad+adrsize;
+      l := getint(ad2); { get the length }
+      ad2 := ad2+intsize; { index base of string }
+      ep2^.name := malloc(l+1); { allocate C space for that }
+      movstrfvm(ep2^.name, l, ad2); { move string into place }
+      { pick up data }
+      ad2 := getadr(ad);
+      ad := ad+adrsize;
+      l := getint(ad2); { get the length }
+      ad2 := ad2+intsize; { index base of string }
+      ep2^.data := malloc(l+1); { allocate C space for that }
+      movstrfvm(ep2^.data, l, ad2); { move string into place }
+      lp := ep2; { set last entry }
+      ad := getadr(ad) { link next }
+
+   end
 
 end;
 
@@ -424,7 +477,7 @@ begin
               ad2 := ad2+intsize;
               { move the name string into place }
               cp := fp^.name; { index string }
-              movstr(cp, l, ad2); { move into place }
+              movstr2vm(cp, l, ad2); { move into place }
               putint(ad, fp^.size);
               ad := ad+intsize;
               putint(ad, fp^.alloc);
@@ -443,7 +496,7 @@ begin
               putsetfil(ad, fp^.group);
               putsetfil(ad, fp^.other);
               ad3 := ad; { set last entry link }
-              putadr(ad, 1); { clear next (with nil value) }
+              putadr(ad, nilval); { clear next (with nil value) }
               fp := fp^.next { link next entry }
 
            end;
@@ -573,7 +626,7 @@ begin
               putint(ad2, l); { put string size }
               ad2 := ad2+intsize;
               cp := ep^.name; { index string }
-              movstr(cp, l, ad2); { move the name string into place }
+              movstr2vm(cp, l, ad2); { move the name string into place }
               l := strlen(ep^.data); { get length of data }
               newspc(l+intsize, ad2); { get space for name }
               putadr(ad, ad2); { place name }
@@ -581,9 +634,9 @@ begin
               putint(ad2, l); { put string size }
               ad2 := ad2+intsize;
               cp := ep^.data; { index string }
-              movstr(cp, l, ad2); { move the name string into place }
+              movstr2vm(cp, l, ad2); { move the name string into place }
               ad3 := ad; { set last entry link }
-              putadr(ad, 1); { clear next (with nil value) }
+              putadr(ad, nilval); { clear next (with nil value) }
               ep := ep^.next { link next entry }
 
           end;
@@ -608,9 +661,13 @@ begin
 
        end;
 
-       {
-       18: else if symbol = 'exece               ' then routine :=
-       }
+       18: begin { exece() }
+
+          getstr(sp+adrsize, s);
+          getenv(getadr(sp), ep);
+          pa_exece(@s, integer(ep))
+
+       end;
 
        19: begin { execw() }
 
@@ -620,9 +677,14 @@ begin
 
        end;
 
-       {
-       20: else if symbol = 'execew              ' then routine :=
-       }
+       20: begin { execew }
+
+          getstr(sp+adrsize*2, s);
+          getenv(getadr(sp+adrsize), ep);
+          pa_execew(@s, integer(ep), aci);
+          putint(getadr(sp), aci)
+
+       end;
 
        21: begin { getcur() }
 
