@@ -39,8 +39,7 @@ procedure pa_exec(cmd: charptr); external name 'pa_exec';
 { not implemented }
 procedure pa_exece(cmd: charptr; el: integer); external name 'pa_exece';
 
-{ not implemented }
-procedure pa_execw(cmd: charptr; e: integer); external name 'pa_execw';
+procedure pa_execw(cmd: charptr; var e: CInteger); external name 'pa_execw';
 
 { not implemented }
 procedure pa_execew(cmd: charptr; el: integer; e: integer); external name 'pa_execew';
@@ -272,6 +271,7 @@ var a, b, c:           integer;
     st:                setchr;
     ch:                char;
     ep:                envptr;
+    aci:               CInteger;
 
 procedure getstr(sa: address; var s: str);
 
@@ -610,7 +610,17 @@ begin
 
        {
        18: else if symbol = 'exece               ' then routine :=
-       19: else if symbol = 'execw               ' then routine :=
+       }
+
+       19: begin { execw() }
+
+          getstr(sp+adrsize, s);
+          pa_execw(@s, aci);
+          putint(getadr(sp), aci)
+
+       end;
+
+       {
        20: else if symbol = 'execew              ' then routine :=
        }
 
