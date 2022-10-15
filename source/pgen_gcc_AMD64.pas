@@ -732,24 +732,24 @@ procedure load;
         insmax = 30;
       type 
         { registers in target }
-        reg = (rgnull, rgeax, rgebx, rgecx, rgedx, rgesi, rgedi, rgebp, rgesp,
+        reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
+               r8, r9, r10, r11, r12, r13, r14, r15
                rgal, rgbl, rgcl, rgdl);
         { stack and expression tree entries }
+        expptr = ^expstk;
         expstk = record
                    op: instyp; { operator type }
                    p : lvltyp; q : address; { p and q parameters }
-                   rr : integer; { result register }
-                   rt: integer;  { transfer register }
-                   psh: boolean; { pushed }
-                   l, r: expstk; { right and left links }
+                   r1 : integer; { registers }
+                   l, r: expptr; { right and left links }
                  end;
-        expptr = ^expstk;
+    
         insstr = packed array [1..insmax] of char;
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
           t: integer; { [sam] temp for compiler bug }
-          ep, estack, efree: expptr;
+          ep, ep2, estack, efree: expptr;
           r, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
@@ -789,8 +789,7 @@ procedure load;
       begin
         if efree <> nil then begin ep := efree; efree := ep^.l end
         else new(ep); 
-        ep^.r := rgnull; ep^.op := op; ep^.l := nil; ep^.r := nil; 
-        ep^.psh := false
+        ep^.r := 0; ep^.op := op; ep^.p = p; ep^.q := q; ep^.l := nil; ep^.r := nil; 
       end;
       
       procedure putexp(ep: expptr);
@@ -809,207 +808,12 @@ procedure load;
         ep := estack; estack := estack^.l
       end;
       
-      procedure wrtreg(f: text; r: integer);
-      begin
-        if (r < 0) or (r > maxphy) then errorl('Bad register number      ')
-        case r of { register }
-          0: write(f, '(null)');
-          1: write(f, 'eax');
-          2: write(f, 'ebx');
-          3: write(f, 'ecx');
-          4: write(f, 'edx');
-          5: write(f, 'esi');
-          6: write(f, 'edi')
-        end
-      end;   
-      
-      function lowreg(r: integer): integer;
-      begin
-        if (r < 1) or (r > ord(rgedx)) then 
-          errorl('Invalid register op      ');
-        case r of
-          1: r := rgal;
-          2: r := rgbl;
-          3: r := rgcl;
-          4: r := rgdl
-        end;
-        lowreg := r
-      end
-         
-      procedure wrtins(f: text; si: insstr; i1, i2: integer; r1, r2: integer);
-      var i: 1..insmax; n: integer;
-      procedure next;
-      begin if i = insmax then errorl('Error in instruction     '); i := i+1
-      end;
-        
-      begin
-        i := 1;
-        while i < insmax do begin
-          if si[i] = '#' then begin next;
-            if si[i] = '0' then write(prr, i1) else write(prr, i2);
-          end else if si[i] = '%' then begin next; write(prr, '%');
-            if si[i] <> 'r' then errorl('Error in instruction     '); next;
-            if si[i] = '1' then wrtreg(r1) else wrtreg(prr, r2);          
-          end else write(prr, si[i]);
-          i := i+1
-        end;
-        writeln(f)
-      end;
-       
-      procedure getdsp(p: lvltyp; r: integer);
-      begin
-         wrtreg(prr, '        mov     -#1(%ebp),%r1)  ', p*4, 0, r, 0); 
-      end;
-           
-      procedure regtre(ep: expptr);
-      var xr, yr: integer;
-      
-      procedure regnum(ep: expptr);
-      
-      procedure bumpphy(ep: expptr);
-      begin { remap P to V if there is a passage conflict }
-        if ep <> nil then if ep^.l^.rt = ep^.rr then 
-          begin totreg := totreg+1; ep^.l^.rt := totreg end;
-        if ep <> nil then if ep^.r^.rt = ep^.rr then 
-          begin totreg := totreg+1; ep^.r^.rt := totreg end
-       end;
-          
-      begin for r := 1 to maxreg do domains[r] := nil; totreg := 0; r := phyreg+1;
-        { note we leave phyregs as their own domain }
-        if ep^.l <> nil then gentre(ep^.l);
-        if ep^.r <> nil then gentre(ep^.r);
-        case op of { expression operator }
-          0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 108{lodb}, 109{lodc}, 
-          4{lda}: begin totreg := totreg+1; ep^.rr := totreg; 
-            ep^.rt := ep^.rr end;
-          107{lods}: begin ep^.rr = ord(rgeax); ep^.rt := ep^.rr; bumpphy(ep) end;
-          28: begin ep^.rr := ep^.l^.rr; ep^.rt := ep^.rr end;
-        end;
-        domains[r] := ep
-      end;
-      
-      function intersect(ep: expptr; r: integer): boolean;
-      var i: boolean;
-      begin i := false;
-        if ep <> nil then begin
-          i := i or intersect(ep^.l, r);
-          i := i or intersect(ep^.r, r);
-          i := i or (ep^.rr = r) (ep^.rt = r)
-        end;
-        intersect := i
-      end; 
-        
-      procedure remap(ep: expptr; xr, yr: integer);
-      begin
-        if ep <> nil then begin
-          remap(ep^.l, xr, yr);
-          remap(ep^.l, xr, yr);
-          if ep^.rr = xr then ep^.rr := yr;
-          if ep^.rt = xr then ep^.rt := yr
-        end;
-      end; 
-      
-      begin { regtre }
-         regnum(ep); 
-         { remap V to P, but never P to other }
-         for xr := phyreg+1 to totreg do for yr := 1 to totreg do
-           if not intersect(domain[xr], xr, yr) then 
-             begin remap(domain[xr], xr, yr); totreg := totreg-1 end;
-         { We will leave the spill processing for later. The simplified 
-           algorithim for spill fill is we allocate a temp for each VR
-           (register numbers > maxphy). Then we need an algorithim to
-           determine when to spill and fill the containing registers.
-           Note that the elimination of non-intersecting registers
-           above will make sure that only the minimum number of temps
-           are allocated. }
-         if totreg > maxphy then errorl('Expression to complex    ');
-      end;
-      
-      procedure gentre(ep: expptr);
-      var r: integer;
-      begin
-        if ep^.l <> nil then gentre(ep^.l);
-        if ep^.r <> nil then gentre(ep^.r);
-        case op of { expression operator }
-          0   {lodi}, 
-          105 {loda}: begin r := ord(rgebp); 
-            if ep^.p > 0 then begin r := ep^.rt; getdsp(p, r) end;
-            wrtins(prr, '        mov     #1(%r1),%r2    ', q, 0, r, ep^.rr);
-          end;
-          193 {lodx}, 
-          108 {lodb}, 
-          109 {lodc}: begin r := rgebp; 
-            if ep^.p > 0 then begin r := ep^.rt; getdsp(p, r) end;
-            wrtins(prr, '        movzx   #1(%r1),%r2    ', q, 0, r, ep^.rt);
-          end;
-          106 {lodr}: begin r := rgebp; 
-            if ep^.p > 0 then begin r := ep^.rt; getdsp(p, r) end;
-            wrtins(prr, '        push     #1+4(%r1)      ', q, 0, r, 0);
-            wrtins(prr, '        push     #1(%r1)        ', q, 0, r, 0);
-            wrtins(prr, '        mov     %esp,%r1        ', 0, 0, ep^.rt, 0, ); 
-            writeln(prr)
-          end;
-          107 {lods}: begin if ep^.p > 0 then getdsp(p, ord(rgeax));
-            wrtins(prr, '        lea      #1(%eax),%eax  ', q, 0, 0, 0);
-            wrtins(prr, '        call     _passup_pshset ', q, 0, 0, 0);
-            wrtins(prr, '        mov     %esp,%eax       ', 0, 0, 0, 0); 
-          end;
-          1   {ldoi},
-          65  {ldoa}: begin r := ep^.rt; 
-            wrtins(prr, '        mov     (_pascal_globals+#1),%r1    ', q, 0, ep^.rr, 0);
-          end;
-          194 {ldox},
-          68  {ldob},
-          69  {ldoc}: begin r := ep^.rt; 
-            wrtins(prr, '        movzx   (_pascal_globals+#1),%r1    ', q, 0, ep^.rr, 0);
-          end;
-          66 {ldor}: begin r := ep^.rt;
-            wrtins(prr, '        push     (_pascal_globals+#1+4)     ', q, 0, 0, 0);
-            wrtins(prr, '        push     (_pascal_globals+#1)       ', q, 0, 0, 0);
-            wrtins(prr, '        mov     %esp,%r1                    ', 0, 0, ep^.rt, 0, ); 
-            writeln(prr)
-          end;
-         67 {ldos}: begin
-            wrtins(prr, '        lea      (_pascal_globals+#1),%eax  ', q, 0, 0, 0);
-            wrtins(prr, '        call     _passup_pshset             ', q, 0, 0, 0);
-            wrtins(prr, '        mov     %esp,%eax                   ', 0, 0, 0, 0); 
-          end;
-          4 {lda}: begin r := ord(rgebp); 
-            if ep^.p > 0 then begin r := ep^.rt; getdsp(p, r) end;
-            wrtins(prr, '        lea     #1(%r1),%r2    ', q, 0, r, ep^.rr);
-          end;
-          28 {adi}: wrtins(prr, '        add     %r1,%r2  ', 0, 0, ep^.rt, ep^.r^.rt); 
-          29 {adr}: begin
-            wrtins(prr, '        fldl     8(%esp)        ', 0, 0, 0, 0);
-            wrtins(prr, '        faddl    (%esp)         ', 0, 0, 0, 0);
-            wrtins(prr, '        fadd     %esp,8         ', 0, 0, 0, 0);
-            wrtins(prr, '        fstpl    (%esp)         ', 0, 0, 0, 0);
-          end;
-          30 {sbi}: wrtins(prr, '        sub     %r1,%r2  ', 0, 0, ep^.rt, ep^.r^.rt); 
-          31 {sbr}: begin
-            wrtins(prr, '        fldl     8(%esp)        ', 0, 0, 0, 0);
-            wrtins(prr, '        faddl    (%esp)         ', 0, 0, 0, 0);
-            wrtins(prr, '        fsub     %esp,8         ', 0, 0, 0, 0);
-            wrtins(prr, '        fstpl    (%esp)         ', 0, 0, 0, 0);
-          end;
-        end;
-        if ep^.rr <> ep^.rt then
-          wrtins(prr, '        mov     %r1,%r2         ', 0, 0, ep^.rr, ep^.rt);
-      end;
-      
       procedure deltre(ep: expptr);
       begin
         if ep^.l <> nil then deltre(ep^.l);
         if ep^.r <> nil then deltre(ep^.r);
         putexp(ep)
       end;
-      
-      function fndoth(r: integer): integer;
-      var r2: integer;
-      begin
-        for r2 := maxphy downto 1 do if r2 <> r then rr := r2;
-        fndoth := rr
-      end; 
       
    begin  p := 0;  q := 0;  op := 0; estack := nil; efree := nil;
       getname;
@@ -1019,202 +823,134 @@ procedure load;
        
       case op of  (* get parameters p,q *)
 
-{ this is a full sequence set, load, add (dual op) and store }
+{ there are three classes of instructions, a load, and operator, and a store.
+  A load is a leaf operation. An operator takes one or more operands. A store is
+  terminal. A tree is constructed from leaves, operators and rooted at the
+  store. At the store, the entire tree is disposed of. }
+
           0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-          109{lodc}, 4{loda}: begin read(prd,p,q); getexp(ep); ep^.p = p; ep^.q := q; 
-                        pshstk(ep) end;
+          109{lodc}, 4{loda}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          28{adi}: getexp(ep); popstk(ep^.r); popstck(ep^.l); pshstk(ep) end;
+          28{adi}: begin getexp(ep); popstk(ep^.r); popstck(ep^.l); pshstk(ep) 
+            end;
                                                  
-          2{stri}, 70{stra}: begin
-            read(prd,p,q); popstk(ep); regtre(ep); gentre(ep);
-            r := rgebp; if p > 0 then begin r := fndoth(ep^.rt); getdsp(p, r); 
-            wrtins(prr, '        mov     %r1,#1(%r2)   ', q, 0, ep^.rt, r); 
-            deltre(ep)
-          end;
+          2{stri}, 70{stra}: begin read(prd,p,q); popstk(ep); dmptre(ep); 
+            deltre(ep) end;
           195{strx}, 73{strb}, 74{strc}: begin
-            read(prd,p,q); popstk(ep); regtre(ep); gentre(ep);
-            r := rgebp; if p > 0 then begin r := fndoth(ep^.rt); getdsp(p, r);
-            r2 := ep^.r; 
-            if ep^.r > ord(rgedx) then begin
-              wrtins(prr, '        mov    %r1,%r2   ', 0, 0, r2, ord(rgeax));
-              r2 := ord(rgeax);
-            end;   
-            wrtins(prr, '        movb    %r1,#1(%r2)   ', q, 0, lowreg(ep^.r), r); 
-            deltre(ep)
+            read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep)
           end;
-          71{strr}: begin
-            read(prd,p,q); popstk(ep); regtre(ep); gentre(ep);
-            r := rgebp; if p > 0 then begin r := ep^.rt; getdsp(p, r); 
-            wrtins(prr, '        pop     #1(%r1)      ', q, 0, r, 0);
-            wrtins(prr, '        pop     #1+4(%r1)      ', q, 0, r, 0); 
-            deltre(ep)
-          end;
-          72{strs}: begin
-            read(prd,p,q); popstk(ep); regtre(ep); gentre(ep);
-            r := rgebp; if p > 0 then begin r := ord(rgeax); getdsp(p, r);
-            wrtins(prr, '        lea      #1(%r1),%eax   ', q, 0, r, 0);
-            wrtins(prr, '        call     _passup_popset  ', q, 0, 0, 0);
-            wrtins(prr, '        add     %esp,#1          ', setsiz, 0, 0, 0); 
-            deltre(ep)
-          end;
-{ end }
+          71{strr}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep)
+            end;
+          72{strs}: begin read(prd,p,q); popstk(ep); dmptre(ep) end;
 
-          120: ; { lip, not done }
+          120{lip}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          { [sam] There is a compiler bug with reads to restricted range
-            variables in IP Pascal here. }
-          12(*cup*): begin read(prd,t{p}); p := t; labelsearch; storeop;
-                           storep; storeq
-                     end;
+          12{cup}: begin read(prd,p); labelsearch end;
 
-          11,113(*mst,cip*): begin read(prd,p); storeop; storep end;
+          11{mst}: begin read(prd,p) end;
+
+          113{cip}: begin read(prd,p); popstk(ep); dmptre(ep) end;
 
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
-          142, 148, 154, 160, 166, 172,
+          142, 148, 154, 160, 166, 172: begin read(prd,q); getexp(ep); 
+            popstk(ep^.r); popstck(ep^.l); pshstk(ep) end;
 
-          (*lao,ixa,mov,dmp,swp*)
-          5,16,55,117,118,
+          5{lao}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          (*ldo,sro,ind,inc,dec,ckv*)
-          1, 194, 196, 198, 65, 66, 67, 68, 69,
-          3, 75, 76, 77, 78, 79,
-          9, 85, 86, 87, 88, 89,
-          10, 90, 91, 92, 93, 94,
-          57, 100, 101, 102, 103, 104,
-          175, 176, 177, 178, 179, 180, 201, 202, 
-          203: begin read(prd,q); storeop; storeq end;
+          16{ixa}: begin read(prd,q); getexp(ep); popstk(ep^.r); popstck(ep^.l);
+            pshstk(ep) end;
 
-          (*pck,upk,cta,ivt*)
-          63, 64, 191, 192: begin read(prd,q); read(prd,q1); storeop; storeq;
-                                  storeq1 end;
+          55{mov}: begin read(prd,q); popstk(ep); popstk(ep2) end;
 
-          (*ujp,fjp,xjp,tjp*)
+
+          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep) end;
+          118{swp}: begin read(prd,q); popstk(ep); popstk(ep2); pshstk(ep);
+            pshstk(ep2) end;
+
+          {ldo}
+          1, 65, 66, 67, 68, 69, 194: begin read(prd,q); getexp(ep); 
+            pshstk(ep) end;
+
+          {sro}
+          3, 75, 76, 77, 78, 79, 196: begin read(prd,q); popstk(ep); 
+            dmptre(ep) end;
+
+          {ind}
+          9, 85, 86, 87, 88, 89, 198: read(prd,q);
+
+          {inc,dec}
+          10, 90, 91, 92, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
+            getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+          {ckv}
+          175, 179, 180, 203: begin read(prd,q); getexp(ep); popstk(ep^.r); 
+            popstk(ep^.l) end;
+
+
+          {cvbi,cvbx,cvbb,cvbc}
+          100, 115, 116, 121: begin read(prd,q); read(prd,q1); getexp(ep); 
+            popstk(ep^.r); popstk(ep^.l) end;
+
+          {ivti,ivtx,ivtb,ivtc}
+          192,101,102,111: begin read(prd,q); read(prd,q1); getexp(ep); 
+            popstk(ep^.r); popstk(ep^.l) end;
+
+          {cps}
+          176: begin getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+
+          {cpc}
+          177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+
+          {apc}
+          178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep) end; 
+
+??? end
+          202: begin read(prd,q); popstk(ep); dmptre(ep) end;
+
+          {pck,upk,cta,ivt}
+          63, 64, 191: begin read(prd,q); popstk(ep); dmptre(ep) end;
+
+          {ujp,fjp,xjp,tjp}
           23,24,25,119,
 
-          (*ents,ente*)
-          13, 173: begin labelsearch; storeop; storeq end;
+          {ents,ente}
+          13, 173: begin labelsearch; popstk(ep); dmptre(ep) end;
 
-          (*ipj,lpa*)
-          112,114: begin read(prd,p); labelsearch; storeop; storep; storeq end;
+          {ipj,lpa}
+          112,114: begin read(prd,p); labelsearch end;
 
-          15 (*csp*): begin skpspc; getname;
+          15 {csp}: begin skpspc; getname;
                            while name<>sptable[q] do
                            begin q := q+1; if q > maxsp then
                                  errorl('std proc/func not found  ')
-                           end; storeop;
-                           if pc+1 > cp then
-                             errorl('Program code overflow    ');
-                           store[pc] := q; putdef(pc, true); pc := pc+1
+                           end; 
+                           { note the number of expression trees removed from 
+                             the stack are determined by the routine number 
+                             here }
+                           popstk(ep); dmptre(ep)
                       end;
 
-          7, 123, 124, 125, 126, 127 (*ldc*): begin case op of  (*get q*)
-                           123: begin read(prd,i); storeop;
-                                      if pc+intsize > cp then
-                                         errorl('Program code overflow    ');
-                                      putint(pc, i); pc := pc+intsize
-                                end;
+          7, 123, 124, 125, 126, 127 {ldc}: begin case op of  (*get q*)
+                           123: read(prd,i);
 
-                           124: begin read(prd,r);
-                                      cp := cp-realsize;
-                                      alignd(realal, cp);
-                                      if cp <= 0 then
-                                         errorl('constant table overflow  ');
-                                      putrel(cp, r); q := cp;
-                                      storeop; storeq
-                                end;
+                           124: read(prd,r);
 
-                           125: storeop; (*p,q = 0*)
+                           125: ; (*p,q = 0*)
 
-                           126: begin read(prd,q); storeop;
-                                      if pc+1 > cp then
-                                        errorl('Program code overflow    ');
-                                      putbol(pc, q <> 0); pc := pc+1 end;
+                           126: read(prd,q);
 
-                           127: begin
-                                  skpspc;
-                                  if ch in ['0'..'9'] then begin i := 0; 
-                                    while ch in ['0'..'9'] do 
-                                      begin i := i*10+ord(ch)-ord('0'); getnxt end;
-                                    c := chr(i);   
-                                  end else begin
-                                    if ch <> '''' then
-                                      errorl('illegal character        ');
-                                    getnxt;  c := ch;
-                                    getnxt;
-                                    if ch <> '''' then
-                                      errorl('illegal character        ');
-                                  end;
-                                  storeop;
-                                  if pc+1 > cp then
-                                    errorl('Program code overflow    ');
-                                  putchr(pc, c); pc := pc+1
-                                end;
-                           7: begin skpspc;
-                                   if ch <> '(' then
-                                     errorl('ldcs() expected          ');
-                                   s := [ ];  getnxt;
-                                   while ch<>')' do
-                                   begin read(prd,s1); getnxt; s := s + [s1]
-                                   end;
-                                   cp := cp-setsize;
-                                   alignd(setal, cp);
-                                   if cp <= 0 then
-                                      errorl('constant table overflow  ');
-                                   putset(cp, s);
-                                   q := cp;
-                                   storeop; storeq
-                                end
-                           end (*case*)
+                           127: ;
+                           7: ;
+                           end {case*)
                      end;
 
-           26, 95, 96, 97, 98, 99, 190, 199 (*chk*): begin
-                         read(prd,lb,ub);
-                         if (op = 95) or (op = 190) then q := lb
-                         else
-                         begin
-                           cp := cp-intsize;
-                           alignd(intal, cp);
-                           if cp <= 0 then errorl('constant table overflow  ');
-                           putint(cp, ub);
-                           cp := cp-intsize;
-                           alignd(intal, cp);
-                           if cp <= 0 then errorl('constant table overflow  ');
-                           putint(cp, lb); q := cp
-                         end;
-                         storeop; storeq
+           26, 95, 96, 97, 98, 99, 190, 199 {chk}: begin
+                         read(prd,lb,ub); popstk(ep); dmptre(ep)
                        end;
 
-           56 (*lca*): begin read(prd,l); skpspc;
-                         for i := 1 to stringlgth do str[i] := ' ';
-                         if ch <> '''' then errorl('bad string format        ');
-                         i := 0;
-                         repeat
-                           if eoln(prd) then errorl('unterminated string      ');
-                           getnxt;
-                           c := ch; if (ch = '''') and (prd^ = '''') then begin
-                             getnxt; c := ' '
-                           end;
-                           if c <> '''' then begin
-                             if i >= stringlgth then errorl('string overflow          ');
-                             str[i+1] := ch; { accumulate string }
-                             i := i+1
-                           end
-                         until c = '''';
-                         { place in storage }
-                         cp := cp-l;
-                         if cp <= 0 then errorl('constant table overflow  ');
-                         q := cp;
-                         for x := 1 to l do putchr(q+x-1, str[x]);
-                         { this should have worked, the for loop is faulty
-                           because the calculation for end is done after the i
-                           set
-                         for i := 0 to i-1 do putchr(q+i, str[i+1]);
-                         }
-                         storeop; storeq
-                       end;
+           56 {lca}: begin read(prd,l); getexp(ep); pshstk(ep) end;
 
-          14, 128, 129, 130, 131, 132, 204, (*ret*)
+          14, 128, 129, 130, 131, 132, 204, {ret}
 
           { equ,neq,geq,grt,leq,les with no parameter }
           17, 137, 138, 139, 140, 141,
@@ -1224,23 +960,22 @@ procedure load;
           21, 161, 162, 163, 164, 165,
           22, 167, 168, 169, 170, 171,
 
-          59, 133, 134, 135, 136, 200, (*ord*)
+          59, 133, 134, 135, 136, 200, {ord}
 
-          6, 80, 81, 82, 83, 84, 197, (*sto*)
+          6, 80, 81, 82, 83, 84, 197, {sto}
 
           { eof,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,not,and,
             ior,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,rnd,rgs,fbv,
             fvb }
           27,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-          48,49,50,51,52,53,54,58,60,62,110,111,
-          115, 116,
+          48,49,50,51,52,53,54,58,60,62,110,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
           181, 182, 183, 184, 185, 186,187,188,189: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
-          61 (*ujc*): begin storeop; q := 0; storeq end
+          61 {ujc}: begin storeop; q := 0; storeq end
 
       end; (*case*)
 
