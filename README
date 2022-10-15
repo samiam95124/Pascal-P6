@@ -1,11 +1,10 @@
-                         THE P5 COMPILER/INTERPRETER
+                         THE P6 COMPILER/INTERPRETER
 
 ============================== Description =====================================
 
-This is the 5th version of the Pascal-P compiler from Zurich. This is the
-Pascal-P4 compiler modified to be ISO 7185 Pascal compilant, both in the the
-implementation language, and in the language it processes. It is the first
-version of Pascal-P created outside of Zurich.
+This is the 6th version of the Pascal-P compiler from Zurich. Pascal-P6 is the
+Pascal-P5 compiler upgraded to include the set of extensions defined by the
+Pascaline language standard.
 
 Pascal-P was an implementation kit, created between 1972 and 1974, for the
 original language Pascal. The source for the original compiler was passed around
@@ -17,23 +16,20 @@ an improved version called Pascal-P4.
 
 Pascal-P5 is Pascal-P4 modified to accept all of the ISO 7185 language.
 
-The full instructions for running and setting up the P5 compiler/interpreter
+Pascal-P5 is Pascal-P5 extended to accept the Pascaline language.
+
+The full instructions for running and setting up the P6 compiler/interpreter
 have all been incorporated into the document:
 
-doc/the_p5_compiler.docx
+doc/the_p6_compiler.docx
 
-Which is a Microsoft Word document, 2007 or later. it is also available in the
-formats:
+Which is a Microsoft Word document, 2007 or later.
 
-doc/the_p5_compiler.pdf     Adobe Portable Document Format.
-doc/the_p5_compiler.html    Web page format.
-doc/the_p5_compiler.doc     Word 1997-2003 format.
-
-Please consult one of these documents for full instructions on how to use P5.
+Please consult this documents for full instructions on how to use P6.
 
 ============================== Quick start =====================================
 
-Pascal-p5 uses the standard GNU release layout. You execute:
+Pascal-p6 uses the standard GNU release layout. You execute:
 
 [Windows]
 
@@ -52,7 +48,7 @@ Pascal-p5 uses the standard GNU release layout. You execute:
 This will make the compiler and interpreter set. You can then try a sample
 program as:
 
-> p5 sample_programs/hello
+> p6 sample_programs/hello
 
 ================================== Problems ====================================
 

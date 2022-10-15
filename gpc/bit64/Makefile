@@ -34,14 +34,14 @@
 # specifically state the characteristics of the host.
 #
 PC=gpc
-PFLAGS=-g --classic-pascal-level-0 --no-warnings --transparent-file-names
+PFLAGS=-g --classic-pascal-level-0 --no-warnings --transparent-file-names -L/usr/lib/gcc/x86_64-linux-gnu/9
 CFLAGS=
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DGNU_PASCAL
 CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 EXTERNAL=petit_ami
-EXTERNALLIBS=$(EXTERNAL)/services.o
+EXTERNALLIBS=$(EXTERNAL)/linux/services.o
 #EXTERNALLIBS=source/externals.o
 
 all: pcom pint pmach cmach genobj spew
