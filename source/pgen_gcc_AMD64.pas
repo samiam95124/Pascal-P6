@@ -738,10 +738,11 @@ procedure load;
         { stack and expression tree entries }
         expptr = ^expstk;
         expstk = record
-                   op: instyp; { operator type }
-                   p : lvltyp; q : address; { p and q parameters }
-                   r1 : integer; { registers }
+                   op:   instyp; { operator type }
+                   p :   lvltyp; q : address; { p and q parameters }
+                   r1 :  integer; { registers }
                    l, r: expptr; { right and left links }
+                   x1:   expptr; { extra link }
                  end;
     
         insstr = packed array [1..insmax] of char;
@@ -749,7 +750,7 @@ procedure load;
           i,x,s1,lb,ub,l:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
           t: integer; { [sam] temp for compiler bug }
-          ep, ep2, estack, efree: expptr;
+          ep, ep2, ep3, estack, efree: expptr;
           r, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
@@ -904,14 +905,22 @@ procedure load;
           {apc}
           178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep) end; 
 
+          {pck, upk}
+          63, 64: begin read(prd,q,q1); popstk(ep); popstk(ep2); popstk(ep3); 
+            dmptre(ep3); dmptre(ep2); dmptre(ep3) end;
+
+          {cta}
+          191: begin read(prd,q, q1, q2); getexp(ep); popstk(ep^.l); 
+            popstk(ep^.r); popstk(ep^.x1); pshstk(ep) end;
+
+
+          {ujp}
+          23: read(prd,q);
+
+          {fjp,tjp,xjp}
+          24,25,119: begin read(prd,q); popstk(ep); dmptre(ep) end;
+
 ??? end
-          202: begin read(prd,q); popstk(ep); dmptre(ep) end;
-
-          {pck,upk,cta,ivt}
-          63, 64, 191: begin read(prd,q); popstk(ep); dmptre(ep) end;
-
-          {ujp,fjp,xjp,tjp}
-          23,24,25,119,
 
           {ents,ente}
           13, 173: begin labelsearch; popstk(ep); dmptre(ep) end;
