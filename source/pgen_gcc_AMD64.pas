@@ -455,18 +455,18 @@ procedure load;
          instr[ 88]:='indb      '; insp[ 88] := false; insq[ 88] := intsize;
          instr[ 89]:='indc      '; insp[ 89] := false; insq[ 89] := intsize;
          instr[ 90]:='inca      '; insp[ 90] := false; insq[ 90] := intsize;
-         instr[ 91]:='---       '; insp[ 91] := false; insq[ 91] := intsize;
-         instr[ 92]:='---       '; insp[ 92] := false; insq[ 92] := intsize;
+         instr[ 91]:='suv       '; insp[ 91] := false; insq[ 91] := intsize*2;
+         instr[ 92]:='vbs       '; insp[ 92] := false; insq[ 92] := intsize;
          instr[ 93]:='incb      '; insp[ 93] := false; insq[ 93] := intsize;
          instr[ 94]:='incc      '; insp[ 94] := false; insq[ 94] := intsize;
          instr[ 95]:='chka      '; insp[ 95] := false; insq[ 95] := intsize;
-         instr[ 96]:='---       '; insp[ 96] := false; insq[ 96] := intsize;
+         instr[ 96]:='vbe       '; insp[ 96] := false; insq[ 96] := 0;
          instr[ 97]:='chks      '; insp[ 97] := false; insq[ 97] := intsize;
          instr[ 98]:='chkb      '; insp[ 98] := false; insq[ 98] := intsize;
          instr[ 99]:='chkc      '; insp[ 99] := false; insq[ 99] := intsize;
-         instr[100]:='---       '; insp[100] := false; insq[100] := intsize;
-         instr[101]:='---       '; insp[101] := false; insq[101] := intsize;
-         instr[102]:='---       '; insp[102] := false; insq[102] := intsize;
+         instr[100]:='cvbi      '; insp[100] := false; insq[100] := intsize*3;
+         instr[101]:='ivtx      '; insp[101] := false; insq[101] := intsize*3;
+         instr[102]:='ivtb      '; insp[102] := false; insq[102] := intsize*3;
          instr[103]:='decb      '; insp[103] := false; insq[103] := intsize;
          instr[104]:='decc      '; insp[104] := false; insq[104] := intsize;
          instr[105]:='loda      '; insp[105] := true;  insq[105] := intsize;
@@ -475,18 +475,18 @@ procedure load;
          instr[108]:='lodb      '; insp[108] := true;  insq[108] := intsize;
          instr[109]:='lodc      '; insp[109] := true;  insq[109] := intsize;
          instr[110]:='rgs       '; insp[110] := false; insq[110] := 0;
-         instr[111]:='---       '; insp[111] := false; insq[111] := 0;
+         instr[111]:='ivtc      '; insp[111] := false; insq[111] := intsize*3;
          instr[112]:='ipj       '; insp[112] := true;  insq[112] := intsize;
          instr[113]:='cip       '; insp[113] := true;  insq[113] := 0;
          instr[114]:='lpa       '; insp[114] := true;  insq[114] := intsize;
-         instr[115]:='---       '; insp[115] := false; insq[115] := 0;
-         instr[116]:='---       '; insp[116] := false; insq[116] := 0;
+         instr[115]:='cvbx      '; insp[115] := false; insq[115] := intsize*3;
+         instr[116]:='cvbb      '; insp[116] := false; insq[116] := intsize*3;
          instr[117]:='dmp       '; insp[117] := false; insq[117] := intsize;
          instr[118]:='swp       '; insp[118] := false; insq[118] := intsize;
          instr[119]:='tjp       '; insp[119] := false; insq[119] := intsize;
          instr[120]:='lip       '; insp[120] := true;  insq[120] := intsize;
-         instr[121]:='---       '; insp[121] := false; insq[121] := 0;
-         instr[122]:='---       '; insp[122] := false; insq[122] := 0;
+         instr[121]:='cvbc      '; insp[121] := false; insq[121] := intsize*3;
+         instr[122]:='vis       '; insp[122] := false; insq[122] := intsize*2;
          instr[123]:='ldci      '; insp[123] := false; insq[123] := intsize;
          instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
@@ -497,9 +497,9 @@ procedure load;
          instr[130]:='retc      '; insp[130] := false; insq[130] := 0;
          instr[131]:='retb      '; insp[131] := false; insq[131] := 0;
          instr[132]:='reta      '; insp[132] := false; insq[132] := 0;
-         instr[133]:='---       '; insp[133] := false; insq[133] := 0;
+         instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
-         instr[135]:='---       '; insp[135] := false; insq[135] := 0;
+         instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
          instr[136]:='ordc      '; insp[136] := false; insq[136] := 0;
          instr[137]:='equi      '; insp[137] := false; insq[137] := 0;
          instr[138]:='equr      '; insp[138] := false; insq[138] := 0;
@@ -540,9 +540,9 @@ procedure load;
          instr[173]:='ente      '; insp[173] := false; insq[173] := intsize;
          instr[174]:='mrkl*     '; insp[174] := false; insq[174] := intsize;
          instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;
-         instr[176]:='---       '; insp[176] := false; insq[176] := intsize;
-         instr[177]:='---       '; insp[177] := false; insq[177] := intsize;
-         instr[178]:='---       '; insp[178] := false; insq[178] := intsize;
+         instr[176]:='cps       '; insp[176] := false; insq[176] := 0;
+         instr[177]:='cpc       '; insp[177] := false; insq[177] := intsize;
+         instr[178]:='aps       '; insp[178] := false; insq[178] := intsize;
          instr[179]:='ckvb      '; insp[179] := false; insq[179] := intsize;
          instr[180]:='ckvc      '; insp[180] := false; insq[180] := intsize;
          instr[181]:='dupi      '; insp[181] := false; insq[181] := 0;
@@ -569,10 +569,47 @@ procedure load;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
          instr[204]:='retx      '; insp[204] := false; insq[204] := 0;
+         instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
+         instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
+         instr[208]:='ede       '; insp[208] := false; insq[208] := 0;
+         instr[209]:='mse       '; insp[209] := false; insq[209] := 0;
+         instr[210]:='apc       '; insp[210] := false; insq[210] := intsize*2;
+         instr[211]:='cxs       '; insp[211] := false; insq[211] := intsize;
+         instr[212]:='cxc       '; insp[212] := false; insq[212] := intsize*2;
+         instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;
+         instr[214]:='max       '; insp[214] := false; insq[214] := intsize;
+         instr[215]:='equv      '; insp[215] := false; insq[215] := 0;
+         instr[216]:='neqv      '; insp[216] := false; insq[216] := 0;
+         instr[217]:='lesv      '; insp[217] := false; insq[217] := 0;
+         instr[218]:='grtv      '; insp[218] := false; insq[218] := 0;
+         instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;
+         instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;
+         instr[221]:='vdp       '; insp[221] := false; insq[221] := 0;
+         instr[222]:='spc       '; insp[222] := false; insq[222] := 0;
+         instr[223]:='ccs       '; insp[223] := false; insq[223] := intsize*2;
+         instr[224]:='scp       '; insp[224] := false; insq[224] := 0;
+         instr[225]:='ldp       '; insp[225] := false; insq[225] := 0;
+         instr[226]:='vin       '; insp[226] := false; insq[226] := intsize*2;
+         instr[227]:='vdd       '; insp[227] := false; insq[227] := 0;
+         { ltc and lto are aliases to ldo and lao instructions }
+         instr[228]:='ltci      '; insp[228] := false; insq[228] := intsize;
+         instr[229]:='ltcr      '; insp[229] := false; insq[229] := intsize;
+         instr[230]:='ltcs      '; insp[230] := false; insq[230] := intsize;
+         instr[231]:='ltcb      '; insp[231] := false; insq[231] := intsize;
+         instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;
+         instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
+         instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
+         instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
+         instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
+         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
+         instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
+         instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
+         instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
+         instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
+         instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
 
-         { sav (mark) and rst (release) were removed }
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
-         sptable[ 2]:='---       ';     sptable[ 3]:='rln       ';
+         sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
          sptable[ 4]:='new       ';     sptable[ 5]:='wln       ';
          sptable[ 6]:='wrs       ';     sptable[ 7]:='eln       ';
          sptable[ 8]:='wri       ';     sptable[ 9]:='wrr       ';
@@ -594,6 +631,24 @@ procedure load;
          sptable[40]:='dsl       ';     sptable[41]:='eof       ';
          sptable[42]:='efb       ';     sptable[43]:='fbv       ';
          sptable[44]:='fvb       ';     sptable[45]:='wbx       ';
+         sptable[46]:='asst      ';     sptable[47]:='clst      ';
+         sptable[48]:='pos       ';     sptable[49]:='upd       ';
+         sptable[50]:='appt      ';     sptable[51]:='del       ';
+         sptable[52]:='chg       ';     sptable[53]:='len       ';
+         sptable[54]:='loc       ';     sptable[55]:='exs       ';
+         sptable[56]:='assb      ';     sptable[57]:='clsb      ';
+         sptable[58]:='appb      ';     sptable[59]:='hlt       ';
+         sptable[60]:='ast       ';     sptable[61]:='asts      ';
+         sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
+         sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
+         sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
+         sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
+         sptable[70]:='rds       ';     sptable[71]:='ribf      ';
+         sptable[72]:='rdif      ';     sptable[73]:='rdrf      ';
+         sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
+         sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
+         sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
+         sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
 
          pc := begincode;
          cp := maxstr; { set constants pointer to top of storage }
@@ -832,8 +887,9 @@ procedure load;
           0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
           109{lodc}, 4{loda}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          28{adi}: begin getexp(ep); popstk(ep^.r); popstck(ep^.l); pshstk(ep) 
-            end;
+          {adi,adr,sbi,sbr}
+          28, 29, 30, 31: begin getexp(ep); popstk(ep^.r); popstck(ep^.l); 
+            pshstk(ep) end;
                                                  
           2{stri}, 70{stra}: begin read(prd,p,q); popstk(ep); dmptre(ep); 
             deltre(ep) end;
@@ -846,7 +902,8 @@ procedure load;
 
           120{lip}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          12{cup}: begin read(prd,p); labelsearch end;
+          {cup,cuv}
+          12, 27: begin read(prd,p); labelsearch end;
 
           11{mst}: begin read(prd,p) end;
 
@@ -887,7 +944,6 @@ procedure load;
           175, 179, 180, 203: begin read(prd,q); getexp(ep); popstk(ep^.r); 
             popstk(ep^.l) end;
 
-
           {cvbi,cvbx,cvbb,cvbc}
           100, 115, 116, 121: begin read(prd,q); read(prd,q1); getexp(ep); 
             popstk(ep^.r); popstk(ep^.l) end;
@@ -912,7 +968,6 @@ procedure load;
           {cta}
           191: begin read(prd,q, q1, q2); getexp(ep); popstk(ep^.l); 
             popstk(ep^.r); popstk(ep^.x1); pshstk(ep) end;
-
 
           {ujp}
           23: read(prd,q);
@@ -1032,21 +1087,56 @@ procedure load;
           {lcp}
           135: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
-??? end
-          6, 80, 81, 82, 83, 84, 197, {sto}
+          {sto}
+          6, 80, 81, 82, 83, 84, 197: begin popstk(ep); popstk(ep2); 
+            dmptre(ep2); dmptre(ep) end;
 
-          { eof,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,not,and,
-            ior,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,stp,chr,rnd,rgs,fbv,
-            fvb }
-          27,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-          48,49,50,51,52,53,54,58,60,62,110,
+          {sgs}
+          32: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+ 
+          {flt}
+          33: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv }
-          181, 182, 183, 184, 185, 186,187,188,189: storeop;
+          {flo]
+          34: begin getexp(ep); popstk(ep^.l); popstk(ep^.r) pshstk(ep) end;
 
-                      (*ujc must have same length as ujp, so we output a dummy
-                        q argument*)
-          61 {ujc}: begin storeop; q := 0; storeq end
+          {trc}
+          35: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+          {ngi,ngr}
+          36,37: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+          {sqi,sqr}
+          38,39: begin getexp(ep); popstk(ep^.l); popstk(ep^.r) pshstk(ep) end;
+
+          {abi,abr}
+          40,41: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+          {notb,noti,odd,rnd,chr}
+          42,50,60,62,205: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+          {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
+          43,44,46,47,48,49,51,52,53,54,110,206: begin getexp(ep); popstk(ep^.l);
+            popstk(ep^.r); pshstk(ep) end;
+
+          {stp}
+          58:;
+
+          { dupi, dupa, dupr, dups, dupb, dupc }
+          181, 182, 183, 184, 185, 186: begin getexp(ep); popstk(ep^.l);
+            pshstk(ep); pshstk(ep) end;
+
+          {cks}
+          187: begin getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep) end;
+
+          {cke}
+          188: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep) end;
+
+
+          { inv }
+          189: begin popstk(ep); dmptre(ep) end;
+
+          61 {ujc}: ;
 
       end; (*case*)
 
