@@ -1826,7 +1826,7 @@ procedure load;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
          instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;
-         instr[ 19]:='brk       '; insp[ 19] := false; insq[ 19] := 0;
+         instr[ 19]:='brk*      '; insp[ 19] := false; insq[ 19] := 0;
          instr[ 20]:='lnp*      '; insp[ 20] := false; insq[ 20] := intsize;
          instr[ 21]:='cal       '; insp[ 21] := false; insq[ 21] := intsize;
          instr[ 22]:='ret       '; insp[ 22] := false; insq[ 22] := 0;

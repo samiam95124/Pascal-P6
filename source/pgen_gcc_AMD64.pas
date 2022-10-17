@@ -920,13 +920,13 @@ procedure load;
           {fjp,tjp,xjp}
           24,25,119: begin read(prd,q); popstk(ep); dmptre(ep) end;
 
-??? end
-
           {ents,ente}
-          13, 173: begin labelsearch; popstk(ep); dmptre(ep) end;
+          13, 173: labelsearch;
+          {ipj}
+          112: begin read(prd,p); labelsearch end;
 
-          {ipj,lpa}
-          112,114: begin read(prd,p); labelsearch end;
+          {lpa}
+          114: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
           15 {csp}: begin skpspc; getname;
                            while name<>sptable[q] do
@@ -936,30 +936,80 @@ procedure load;
                            { note the number of expression trees removed from 
                              the stack are determined by the routine number 
                              here }
-                           popstk(ep); dmptre(ep)
                       end;
 
-          7, 123, 124, 125, 126, 127 {ldc}: begin case op of  (*get q*)
-                           123: read(prd,i);
+          7, 123, 124, 125, 126, 127 (*ldc*): begin case op of  (*get q*)
+                           123: begin read(prd,i); getexp(ep); pshstk(ep) end;
 
-                           124: read(prd,r);
+                           124: begin read(prd,r); getexp(ep); pshstk(ep) end;
 
-                           125: ; (*p,q = 0*)
+                           125: begin getexp(ep); pshstk(ep) end;
 
-                           126: read(prd,q);
+                           126: begin read(prd,q); getexp(ep); pshstk(ep) end;
 
-                           127: ;
-                           7: ;
-                           end {case*)
+                           127: begin
+                                  skpspc;
+                                  if ch in ['0'..'9'] then begin i := 0;
+                                    while ch in ['0'..'9'] do
+                                      begin i := i*10+ord(ch)-ord('0'); getnxt end;
+                                    c := chr(i);
+                                  end else begin
+                                    if ch <> '''' then
+                                      errorl('illegal character        ');
+                                    getnxt;  c := ch;
+                                    getnxt;
+                                    if ch <> '''' then
+                                      errorl('illegal character        ');
+                                  end;
+                                  getexp(ep);
+                                  pshstk(ep);
+                                end;
+                           7: begin skpspc;
+                                   if ch <> '(' then
+                                     errorl('ldcs() expected          ');
+                                   s := [ ];  getnxt;
+                                   while ch<>')' do
+                                   begin read(prd,s1); getnxt; s := s + [s1]
+                                   end;
+                                   getexp(ep);
+                                   pshstk(ep);
+                                end
+                           end (*case*)
                      end;
 
-           26, 95, 96, 97, 98, 99, 190, 199 {chk}: begin
-                         read(prd,lb,ub); popstk(ep); dmptre(ep)
+           {chk}
+           26, 95, 97, 98, 99, 190, 199: begin read(prd,lb,ub); getexp(ep); 
+             popstk(ep^.l) end;
+
+           {vbs}
+           92: begin read(prd,q); getexp(ep); popexp(ep^.l) end;
+
+           {vbe}
+           96:;
+
+           56 (*lca*): begin read(prd,l); skpspc;
+                         for i := 1 to stringlgth do str[i] := ' ';
+                         if ch <> '''' then errorl('bad string format        ');
+                         i := 0;
+                         repeat
+                           if eoln(prd) then errorl('unterminated string      ');
+                           getnxt;
+                           c := ch; if (ch = '''') and (prd^ = '''') then begin
+                             getnxt; c := ' '
+                           end;
+                           if c <> '''' then begin
+                             if i >= stringlgth then errorl('string overflow          ');
+                             str[i+1] := ch; { accumulate string }
+                             i := i+1
+                           end
+                         until c = '''';
+                         getexp(ep);
+                         pshstk(ep);
                        end;
 
-           56 {lca}: begin read(prd,l); getexp(ep); pshstk(ep) end;
+          {ret}
+          14, 128, 129, 130, 131, 132, 204: begin getexp(ep); pshstk(ep) end;
 
-          14, 128, 129, 130, 131, 132, 204, {ret}
 
           { equ,neq,geq,grt,leq,les with no parameter }
           17, 137, 138, 139, 140, 141,
@@ -967,10 +1017,22 @@ procedure load;
           19, 149, 150, 151, 152, 153,
           20, 155, 156, 157, 158, 159,
           21, 161, 162, 163, 164, 165,
-          22, 167, 168, 169, 170, 171,
+          22, 167, 168, 169, 170, 171: begin getexp(ep); popstk(ep^.r); 
+            popstk(ep^.l); pushstk(ep) end;
 
-          59, 133, 134, 135, 136, 200, {ord}
+          {ord}
+          59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
+          {vip,vis}
+          133, 122:; { ??? fill me in }
+
+          {vin}
+          226:; { ??? fill me in }
+
+          {lcp}
+          135: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+
+??? end
           6, 80, 81, 82, 83, 84, 197, {sto}
 
           { eof,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,not,and,
