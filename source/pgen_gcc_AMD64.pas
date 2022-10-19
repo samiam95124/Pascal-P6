@@ -1,10 +1,10 @@
-(*$c+,t-,d-,l-*)
+(*$c+,t-,d-,l+,s+*)
 {*******************************************************************************
 *                                                                              *
 *                           Portable Pascal compiler                           *
 *                           ************************                           *
 *                                                                              *
-*                                 Pascal P5                                    *
+*                                 Pascal P6                                    *
 *                                                                              *
 *                                 ETH May 76                                   *
 *                                                                              *
@@ -33,14 +33,14 @@
 * Kruislaan 413, 1098 SJ Amsterdam, NL                                         *
 * Steven.Pemberton@cwi.nl                                                      *
 *                                                                              *
-* Adaption from P4 to P5 by:                                                   *
+* Adaption from P4 to P6 by:                                                   *
 *                                                                              *
 *    Scott A. Moore                                                            *
 *    samiam@moorecad.com                                                       *
 *                                                                              *
-* I80386 code generator for GCC                                                *
+* AMD64 code generator for GCC                                                 *
 *                                                                              *
-* This is the code generator backend for 32 bit I80386 processor model running *
+* This is the code generator backend for 64 bit AMD64 processor model running  *
 * with a gcc code base.                                                        *
 *                                                                              *
 * ---------------------------------------------------------------------------- *
@@ -267,7 +267,7 @@ type
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1: address; { extra parameter }
+      q1,q2: address; { extra parameter }
       store       : packed array [0..maxstr] of byte; { complete program storage }
       storedef    : packed array [0..maxdef] of byte; { defined bits }
       sdi         : 0..maxdef; { index for that }
@@ -278,6 +278,14 @@ var   pc          : address;   (*program address register*)
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of byte; { bits in byte }
+      hexdig      : integer; { digits in unsigned hex }
+      decdig      : integer; { digits in unsigned decimal }
+      octdig      : integer; { digits in unsigned octal }
+      bindig      : integer; { digits in unsigned binary }
+      maxpow16    : integer; { maximum power of 16 }
+      maxpow10    : integer; { maximum power of 10 }
+      maxpow8     : integer; { maximum power of 8 }
+      maxpow2     : integer; { maximum power of 2 }
 
       interpreting: boolean;
 
@@ -312,6 +320,68 @@ var   pc          : address;   (*program address register*)
       a1, a2, a3  : address;
       pcs         : address;
       bai         : integer;
+
+procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
+const digmax = 64; { maximum total digits }
+var p,i,x,d,t,n: integer; sgn: boolean;
+    digits: packed array [1..digmax] of char;
+function digit(d: integer): char;
+var c: char;
+begin
+  if d < 10 then c := chr(d+ord('0'))
+  else c := chr(d-10+ord('A'));
+  digit := c
+end;
+begin sgn := false;
+   if (r = 10) and (v < 0) then begin sgn := true; v := -v; lz := false end;
+   if r = 16 then n := hexdig
+   else if r = 10 then n := decdig
+   else if r = 8 then n := octdig
+   else n := bindig;
+   for i := 1 to digmax do digits[i] := '0';
+   { adjust signed radix }
+   if (r = 16) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     t := v div maxpow16+8; { extract high digit w/sign }
+     digits[hexdig] := digit(t); { place high digit }
+     v := v mod maxpow16; { remove digit }
+     n := hexdig-1 { set number of digits-1 }
+   end else if (r = 8) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     if (bindig mod 3) = 2 then { top is either 2 bits or 1 }
+       t := v div maxpow8+4 { extract high digit w/sign }
+     else t := 1; { it is sign }
+     digits[octdig] := digit(t); { place high digit }
+     v := v mod maxpow8; { remove digit }
+     n := octdig-1 { set number of digits-1 }
+   end else if (r = 2) and (v < 0) then begin
+     v := v+1+maxint; { convert number to 31 bit unsigned }
+     digits[bindig] := '1'; { place high digit (sign) }
+     n := bindig-1 { set number of digits-1 }
+   end;
+   p := 1;
+   for i := 1 to n do begin
+      d := v div p mod r; { extract digit }
+      digits[i] := digit(d); { place }
+      if i < n then p := p*r
+   end;
+   i := digmax;
+   while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
+   if sgn then begin digits[i+1] := '-'; i := i+1 end;
+   if not lz then for x := digmax downto i+1 do digits[x] := ' ';
+   if i > f then f := i;
+   if f > digmax then begin
+     for i := 1 to f-8 do if lz then write(tf, '0') else write(tf, ' ');
+     f := digmax
+   end;
+   { print result }
+   for i := f downto 1 do write(tf, digits[i])
+end;
+
+procedure wrthex(var tf: text; v: integer; f: integer; lz: boolean);
+begin
+  wrtnum(tf, v, 16, f, lz)
+end;
 
 { align address, upwards }
 
@@ -372,7 +442,7 @@ procedure load;
          instr[  5]:='lao       '; insp[  5] := false; insq[  5] := intsize;
          instr[  6]:='stoi      '; insp[  6] := false; insq[  6] := 0;
          instr[  7]:='ldcs      '; insp[  7] := false; insq[  7] := intsize;
-         instr[  8]:='---       '; insp[  8] := false; insq[  8] := 0;
+         instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
          instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
@@ -383,15 +453,15 @@ procedure load;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
          instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;
-         instr[ 19]:='---       '; insp[ 19] := false; insq[ 19] := 0;
-         instr[ 20]:='---       '; insp[ 20] := false; insq[ 20] := 0;
-         instr[ 21]:='---       '; insp[ 21] := false; insq[ 21] := 0;
-         instr[ 22]:='---       '; insp[ 22] := false; insq[ 22] := 0;
+         instr[ 19]:='brk*      '; insp[ 19] := false; insq[ 19] := 0;
+         instr[ 20]:='lnp*      '; insp[ 20] := false; insq[ 20] := intsize;
+         instr[ 21]:='cal       '; insp[ 21] := false; insq[ 21] := intsize;
+         instr[ 22]:='ret       '; insp[ 22] := false; insq[ 22] := 0;
          instr[ 23]:='ujp       '; insp[ 23] := false; insq[ 23] := intsize;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;
-         instr[ 27]:='---       '; insp[ 27] := false; insq[ 27] := 0;
+         instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;
          instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;
@@ -693,25 +763,12 @@ procedure load;
    procedure update(x: labelrg); (*when a label definition lx is found*)
       var curr,succ,ad: address; (*resp. current element and successor element
                                of a list of future references*)
-          endlist: boolean;
           op: instyp; q : address;  (*instruction register*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
       else begin
              if labeltab[x].val<>-1 then (*forward reference(s)*)
-             begin curr:= labeltab[x].val; endlist:= false;
-                while not endlist do begin
-                      ad := curr;
-                      op := store[ad]; { get instruction }
-                      q := getadr(ad+1+ord(insp[op]));
-                      succ:= q; { get target address from that }
-                      q:= labelvalue; { place new target address }
-                      ad := curr;
-                      putadr(ad+1+ord(insp[op]), q);
-                      if succ=-1 then endlist:= true
-                                 else curr:= succ
-                 end
-             end;
+             curr:= labeltab[x].val;
              labeltab[x].st := defined;
              labeltab[x].val:= labelvalue;
       end
@@ -763,13 +820,6 @@ procedure load;
                        ':': begin { source line }
 
                                read(prd,x); { get source line number }
-                               if dosrclin then begin
-
-                                  { pass source line register instruction }
-                                  store[pc] := 174; putdef(pc, true); pc := pc+1;
-                                  putint(pc, x); pc := pc+intsize
-
-                               end;
                                { skip the rest of the line, which would be the
                                  contents of the source line if included }
                                while not eoln(prd) do
@@ -788,7 +838,7 @@ procedure load;
       type 
         { registers in target }
         reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
-               r8, r9, r10, r11, r12, r13, r14, r15
+               r8, r9, r10, r11, r12, r13, r14, r15,
                rgal, rgbl, rgcl, rgdl);
         { stack and expression tree entries }
         expptr = ^expstk;
@@ -806,7 +856,7 @@ procedure load;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
           t: integer; { [sam] temp for compiler bug }
           ep, ep2, ep3, estack, efree: expptr;
-          r, r2: reg; ors: set of reg; rage: array [reg] of integer;
+          r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
 
@@ -845,7 +895,7 @@ procedure load;
       begin
         if efree <> nil then begin ep := efree; efree := ep^.l end
         else new(ep); 
-        ep^.r := 0; ep^.op := op; ep^.p = p; ep^.q := q; ep^.l := nil; ep^.r := nil; 
+        ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; ep^.r := nil; 
       end;
       
       procedure putexp(ep: expptr);
@@ -860,7 +910,7 @@ procedure load;
       
       procedure popstk(var ep: expptr);
       begin
-        if estack = nil then errorl('Expression underflow   ');
+        if estack = nil then errorl('Expression underflow     ');
         ep := estack; estack := estack^.l
       end;
       
@@ -871,12 +921,35 @@ procedure load;
         putexp(ep)
       end;
       
+      procedure dmptrel(ep: expptr; lvl: integer);
+      begin
+        if ep^.l <> nil then begin
+          writeln(' ': lvl*3, 'Left:');
+          dmptrel(ep^.l, lvl+1);
+        end;
+        if ep^.r <> nil then begin
+          writeln(' ': lvl*3, 'right:');
+          dmptrel(ep^.r, lvl+1);
+        end;
+        if ep^.x1 <> nil then begin
+          writeln(' ': lvl*3, 'xtra1:');
+          dmptrel(ep^.x1, lvl+1);
+        end;
+        writeln(' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
+      end;
+
+      procedure dmptre(ep: expptr);
+      begin
+        dmptrel(ep, 0)
+      end;
+
    begin  p := 0;  q := 0;  op := 0; estack := nil; efree := nil;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
        
+      writeln('Instruction: ', op:3, ': ', name);
       case op of  (* get parameters p,q *)
 
 { there are three classes of instructions, a load, and operator, and a store.
@@ -888,7 +961,7 @@ procedure load;
           109{lodc}, 4{loda}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
           {adi,adr,sbi,sbr}
-          28, 29, 30, 31: begin getexp(ep); popstk(ep^.r); popstck(ep^.l); 
+          28, 29, 30, 31: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); 
             pshstk(ep) end;
                                                  
           2{stri}, 70{stra}: begin read(prd,p,q); popstk(ep); dmptre(ep); 
@@ -911,11 +984,11 @@ procedure load;
 
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
           142, 148, 154, 160, 166, 172: begin read(prd,q); getexp(ep); 
-            popstk(ep^.r); popstck(ep^.l); pshstk(ep) end;
+            popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
 
           5{lao}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
-          16{ixa}: begin read(prd,q); getexp(ep); popstk(ep^.r); popstck(ep^.l);
+          16{ixa}: begin read(prd,q); getexp(ep); popstk(ep^.r); popstk(ep^.l);
             pshstk(ep) end;
 
           55{mov}: begin read(prd,q); popstk(ep); popstk(ep2) end;
@@ -937,7 +1010,7 @@ procedure load;
           9, 85, 86, 87, 88, 89, 198: read(prd,q);
 
           {inc,dec}
-          10, 90, 91, 92, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
+          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
             getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
           {ckv}
@@ -1037,7 +1110,7 @@ procedure load;
              popstk(ep^.l) end;
 
            {vbs}
-           92: begin read(prd,q); getexp(ep); popexp(ep^.l) end;
+           92: begin read(prd,q); getexp(ep); popstk(ep^.l) end;
 
            {vbe}
            96:;
@@ -1073,7 +1146,7 @@ procedure load;
           20, 155, 156, 157, 158, 159,
           21, 161, 162, 163, 164, 165,
           22, 167, 168, 169, 170, 171: begin getexp(ep); popstk(ep^.r); 
-            popstk(ep^.l); pushstk(ep) end;
+            popstk(ep^.l); pshstk(ep) end;
 
           {ord}
           59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
@@ -1107,7 +1180,7 @@ procedure load;
           36,37: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
           {sqi,sqr}
-          38,39: begin getexp(ep); popstk(ep^.l); popstk(ep^.r) pshstk(ep) end;
+          38,39: begin getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep) end;
 
           {abi,abr}
           40,41: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
@@ -1160,11 +1233,11 @@ begin (*load*)
       writeln;
       writeln('Storage areas occupied');
       writeln;
-      write('Program     '); wrthex(0, maxdigh); write('-'); wrthex(pctop-1, maxdigh);
+      write('Program     '); wrthex(output, 0, maxdigh, false); write('-'); wrthex(output, pctop-1, maxdigh, false);
       writeln(' (',pctop:maxdigd,')');
-      write('Stack/Heap  '); wrthex(pctop, maxdigh); write('-'); wrthex(cp-1, maxdigh);
+      write('Stack/Heap  '); wrthex(output, pctop, maxdigh, false); write('-'); wrthex(output, cp-1, maxdigh, false);
       writeln(' (',cp-pctop+1:maxdigd,')');
-      write('Constants   '); wrthex(cp, maxdigh); write('-'); wrthex(maxstr, maxdigh);
+      write('Constants   '); wrthex(output, cp, maxdigh, false); write('-'); wrthex(output, maxstr, maxdigh, false);
       writeln(' (',maxstr-(cp):maxdigd,')');
       writeln
 
@@ -1173,6 +1246,11 @@ begin (*load*)
 
 end; (*load*)
 
+procedure fndpow(var m: integer; p: integer; var d: integer);
+begin
+  m := 1; d := 1;
+  while m < maxint div p do begin m := m*p; d := d+1 end
+end;
 
 begin (* main *)
 
@@ -1191,7 +1269,12 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  write('P5 Pascal I80386/gcc 32 bit code generator vs. ', majorver:1, '.', minorver:1);
+  fndpow(maxpow10, 10, decdig);
+  fndpow(maxpow16, 16, hexdig);
+  fndpow(maxpow8, 8, octdig);
+  fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
+
+  write('P5 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   writeln;
@@ -1200,6 +1283,8 @@ begin (* main *)
 
   writeln('Generating program');
   load; (* assembles and stores code *)
+
+  1 : { abort run }
 
   writeln;
   writeln('Program generation complete');

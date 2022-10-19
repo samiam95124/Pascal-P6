@@ -81,6 +81,13 @@ cmach: source/cmach.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach.c -lm
 	cp bin/cmach64le bin/cmach
 
+pgen_gcc_AMD64: source/pgen_gcc_AMD64.pas
+	pascpp --linemacro source/pgen_gcc_AMD64 $(CPPFLAGS64LE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pgen_gcc_AMD64 source/pgen_gcc_AMD64.mpp.pas
+	cp bin/pgen_gcc_AMD64 bin/pgen
+
+pgen: pgen_gcc_AMD64
+
 genobj: source/genobj.pas
 	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas
 
