@@ -2105,7 +2105,7 @@ procedure load;
          iline := 1; { set 1st line of intermediate }
          gbset := false; { global size not set }
          gbloff := 0; { set global offset }
-         flablst := nil; { clear far label list }
+         flablst := nil { clear far label list }
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)

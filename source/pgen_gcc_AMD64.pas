@@ -103,75 +103,7 @@ const
 
       }
 
-      { type               #32 #64 }
-      intsize     =        4   {8};  { size of integer }
-      intal       =        4;        { alignment of integer }
-      intdig      =        11  {20}; { number of decimal digits in integer }
-      inthex      =        8   {16}; { number of hex digits of integer }
-      realsize    =        8;        { size of real }
-      realal      =        4;        { alignment of real }
-      charsize    =        1;        { size of char }
-      charal      =        1;        { alignment of char }
-      charmax     =        1;
-      boolsize    =        1;        { size of boolean }
-      boolal      =        1;        { alignment of boolean }
-      ptrsize     =        4   {8};  { size of pointer }
-      adrsize     =        4   {8};  { size of address }
-      adral       =        4;        { alignment of address }
-      setsize     =       32;        { size of set }
-      setal       =        1;        { alignment of set }
-      filesize    =        1;        { required runtime space for file (lfn) }
-      fileidsize  =        1;        { size of the lfn only }
-      stackal     =        4;        { alignment of stack }
-      stackelsize =        4   {8};  { stack element size }
-      maxsize     =       32;        { this is the largest type that can be on
-                                       the stack }
-      { Heap alignment should be either the natural word alignment of the
-        machine, or the largest object needing alignment that will be allocated.
-        It can also be used to enforce minimum block allocation policy. }
-      heapal      =        4;        { alignment for each heap arena }
-      sethigh     =      255;        { Sets are 256 values }
-      setlow      =        0;
-      ordmaxchar  =      255;        { Characters are 8 bit ISO/IEC 8859-1 }
-      ordminchar  =        0;
-      maxresult   = realsize;        { maximum size of function result }
-      marksize    =       32   {56}; { maxresult+6*ptrsize }
-      { Value of nil is 1 because this allows checks for pointers that were
-        initialized, which would be zero (since we clear all space to zero).
-        In the new unified code/data space scheme, 0 and 1 are always invalid
-        addresses, since the startup code is at least that long. }
-      nilval      =        1;  { value of 'nil' }
-      { beginning of code, offset by program preamble:
-
-        2:    mst
-        6/10: cup
-        1:    stp
-
-      }
-      begincode   =        9   {13};
-
-      { Mark element offsets
-
-        Mark format is:
-
-        0:  Function return value, 64 bits, enables a full real result.
-        8:  Static link.
-        12: Dynamic link.
-        16: Saved EP from previous frame.
-        20: Stack bottom after locals allocate. Used for interprocdural gotos.
-        24: EP from current frame. Used for interprocedural gotos.
-        28: Return address
-
-      }
-      markfv      =        0   {0};  { function value }
-      marksl      =        8   {8};  { static link }
-      markdl      =        12  {16}; { dynamic link }
-      markep      =        16  {24}; { (old) maximum frame size }
-      marksb      =        20  {32}; { stack bottom }
-      market      =        24  {40}; { current ep }
-      markra      =        28  {48}; { return address }
-
-      { ******************* end of pcom and pint common parameters *********** }
+#include "mpb64.inc"
 
       { internal constants }
 
@@ -202,38 +134,16 @@ const
       prrfn      = 4;        { 'prr' file no. }
 
       stringlgth  = 1000;    { longest string length we can buffer }
-      maxsp       = 45;      { number of predefined procedures/functions }
+      maxsp       = 81;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
-      ujplen      = 5;       { length of ujp instruction (used for case jumps) }
+      lablen      = 4000;    { label maximum length }
+      varsqt      = 10;      { variable string quanta }
 
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
       maxphy      = 6;       { maximum physical registers to allocate }
-
-      { check flags: these turn on runtime checks }
-      dochkovf    = true;    { check arithmetic overflow }
-
-      { debug flags: turn these on for various dumps and traces }
-
-      dodmpins    = false;    { dump instructions after assembly }
-      dodmplab    = false;    { dump label definitions }
-      dodmpsto    = false;    { dump storage area specs }
-      dotrcrot    = false;    { trace routine executions }
-      dotrcins    = false;    { trace instruction executions }
-      dopmd       = true{false};    { perform post-mortem dump on error }
-      dosrclin    = true;     { add source line sets to code }
-      dotrcsrc    = false;    { trace source line executions (requires dosrclin) }
-      dodmpspc    = false;    { dump heap space after execution }
-      dorecycl    = true;     { obey heap space recycle requests }
-      { invoke a special recycle mode that creates single word entries on
-        recycle of any object, breaking off and recycling the rest. Once
-        allocated, each entry exists forever, and accesses to it can be
-        checked. }
-      dochkrpt    = false;    { check reuse of freed entry (automatically
-                                invokes dorecycl = false }
-      dochkdef    = true;     { check undefined accesses }
 
       { version numbers }
 
@@ -263,6 +173,14 @@ type
       byte        = 0..255; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
+      labbuf      = packed array [1..lablen] of char; { label buffer }
+      { Here is the variable length string containment to save on space. strings
+        are only stored in their length rounded to the nearest 10th. }
+      strvsp = ^strvs; { pointer to variable length id string }
+      strvs = record { id string variable length }
+                str:   packed array [1..varsqt] of char; { data contained }
+                next:  strvsp { next }
+              end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -287,6 +205,42 @@ var   pc          : address;   (*program address register*)
       maxpow8     : integer; { maximum power of 8 }
       maxpow2     : integer; { maximum power of 2 }
 
+      { check flags: these turn on runtime checks }
+      dochkovf: boolean; { check arithmetic overflow }
+
+      { debug flags: turn these on for various dumps and traces }
+      dodmplab: boolean; { dump label definitions }
+      dotrcrot: boolean; { trace routine executions }
+      dotrcins: boolean; { trace instruction executions }
+      dosrclin: boolean; { add source line sets to code }
+      dotrcsrc: boolean; { trace source line executions (requires dosrclin) }
+      dorecycl: boolean; { obey heap space recycle requests }
+      dodebug:  boolean; { start up debug on entry }
+      dodbgflt: boolean; { enter debug on fault }
+      { Don't set this option unless you have file language extensions!
+        It will just cause the run to fail }
+      dodbgsrc: boolean; { do source file debugging }
+      { invoke a special recycle mode that creates single word entries on
+        recycle of any object, breaking off and recycling the rest. Once
+        allocated, each entry exists forever, and accesses to it can be
+        checked. }
+      dochkrpt: boolean; { check reuse of freed entry (automatically
+                           invokes dorecycl = false }
+      donorecpar: boolean; { companion flag to dochkrpt: break returned blocks
+                             as occupied, not free. This essentially converts
+                             disposed blocks to flagged but dead entries that
+                             generate errors on use. }
+      dochkdef: boolean; { check undefined accesses }
+      dosrcprf: boolean; { do source level profiling }
+      dochkcov: boolean; { do code coverage }
+      doanalys: boolean; { do analyze }
+      dodckout: boolean; { do output code deck }
+      dochkvbk: boolean; { do check VAR blocks }
+
+      { other flags }
+      iso7185: boolean; { iso7185 standard flag }
+      flipend: boolean; { endian mode is opposing }
+
       interpreting: boolean;
 
       { !!! remove this next statement for self compile }
@@ -295,8 +249,9 @@ var   pc          : address;   (*program address register*)
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
-      insq        : array[instyp] of 0..16; { length of q parameter }
+      insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
+      option      : array ['a'..'z'] of boolean; { option array }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -383,6 +338,51 @@ begin
   wrtnum(tf, v, 16, f, lz)
 end;
 
+{ get string quanta }
+procedure getstr(var p: strvsp);
+begin
+  new(p); { get new entry }
+end;
+
+{ put character to variable length string }
+procedure strchrass(var a: strvsp; x: integer; c: char);
+var i: integer; q: integer; p, l: strvsp;
+procedure getsqt;
+var y: integer;
+begin
+   if p = nil then begin getstr(p); for y := 1 to varsqt do p^.str[y] := ' ';
+      p^.next := nil; if a = nil then a := p else l^.next := p
+   end
+end;
+begin
+   i := 1; q := 1; p := a; l := nil;
+   getsqt;
+   while i < x do begin
+      if q >= varsqt then begin q := 1; l := p; p := p^.next; getsqt end
+      else q := q+1;
+      i := i+1
+   end;
+   p^.str[q] := c
+ end;
+
+{ assign symbol identifier fixed to variable length string, including
+  allocation }
+procedure strassvf(var a: strvsp; var b: labbuf);
+var i, j, l: integer; p, lp: strvsp;
+begin l := lablen; p := nil; a := nil; j := 1;
+  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+  if b[l] = ' ' then l := 0;
+  for i := 1 to l do begin
+    if j > varsqt then p := nil;
+    if p = nil then begin
+      getstr(p); p^.next := nil; j := 1;
+      if a = nil then a := p else lp^.next := p; lp := p
+    end;
+    p^.str[j] := b[i]; j := j+1
+  end;
+  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
+
 { align address, upwards }
 
 procedure alignu(algn: address; var flc: address);
@@ -403,19 +403,28 @@ end (*align*);
 
 (*--------------------------------------------------------------------*)
 
-{ load intermediate file }
+{ translate intermediate file }
 
-procedure load;
+procedure xlate;
    type  labelst  = (entered,defined); (*label situation*)
          labelrg  = 0..maxlabel;       (*label range*)
          labelrec = record
                           val: address;
                            st: labelst
                     end;
+         flabelp = ^flabel;
+         flabel = record
+                       next: flabelp;
+                       val: address;
+                       ref: strvsp
+                     end;
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
         iline: integer; { line number of intermediate file }
+        sn: labbuf;
+        snl: 1..lablen;
+        flablst: flabelp; { list of far labels }
 
    procedure init;
       var i: integer;
@@ -720,8 +729,6 @@ procedure load;
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
 
-         pc := begincode;
-         cp := maxstr; { set constants pointer to top of storage }
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered end;
@@ -731,7 +738,8 @@ procedure load;
          { !!! remove this next statement for self compile }
          {elide}reset(prd);{noelide}
 
-         iline := 1 { set 1st line of intermediate }
+         iline := 1; { set 1st line of intermediate }
+         flablst := nil { clear far label list }
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -791,44 +799,105 @@ procedure load;
      iline := iline+1 { next intermediate line }
    end;
 
+   procedure getlab;
+   var i: 1..lablen;
+   begin skpspc; for i := 1 to lablen do sn[i] := ' '; snl := 1;
+     if not (ch in ['a'..'z','A'..'Z','_']) then
+       errorl('Symbols format error     ');
+     while ch in ['a'..'z','A'..'Z','0'..'9','_'] do begin
+       if snl >= lablen then errorl('Symbols format error     ');
+       sn[snl] := ch; getnxt; snl := snl+1
+     end;
+     snl := snl-1
+   end;
+
+   procedure parlab(var x: integer; var fl: strvsp);
+   var i,j: integer;
+   begin fl := nil;
+     getlab; if ch <> '.' then errorl('Symbols format error     ');
+     if prd^ in ['0'..'9'] then read(prd, x) { near label }
+     else begin { far label }
+       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab;
+       for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
+     end
+   end;
+
    procedure assemble; forward;
 
    procedure generate;(*generate segment of code*)
       var x: integer; (* label number *)
           again: boolean;
+          c,ch1: char;
+          ls: strvsp;
    begin
       again := true;
-      while again do
-            begin if eof(prd) then errorl('unexpected eof on input  ');
-                  getnxt;(* first character of line*)
-                  if not (ch in ['i', 'l', 'q', ' ', '!', ':']) then
-                    errorl('unexpected line start    ');
-                  case ch of
-                       'i': getlin;
-                       'l': begin read(prd,x);
-                                  getnxt;
-                                  if ch='=' then read(prd,labelvalue)
-                                            else labelvalue:= pc;
-                                  update(x); getlin
-                            end;
-                       'q': begin again := false; getlin end;
-                       ' ': begin getnxt; 
-                                  while not eoln(prd) and (ch = ' ') do getnxt;
-                                  if not eoln(prd) and (ch <> ' ') then assemble
-                                  else getlin 
-                            end;
-                       ':': begin { source line }
+      while again do begin
+        if eof(prd) then errorl('unexpected eof on input  ');
+        getnxt;(* first character of line*)
+        if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'b', 'e', 'g', 'f', 
+                       't']) then
+          errorl('unexpected line start    ');
+        case ch of
+          '!': getlin;
+          'l': begin getnxt; parlab(x,ls);
+                     if ls <> nil then
+                       errorl('Invalid intermediate     ');
+                     getnxt;
+                     if ch='=' then read(prd,labelvalue)
+                               else labelvalue:= pc;
+                     update(x); getlin
+               end;
+          'q': begin again := false; getlin end;
+          ' ': begin getnxt; 
+                     while not eoln(prd) and (ch = ' ') do getnxt;
+                     if not eoln(prd) and (ch <> ' ') then assemble
+                     else getlin 
+               end;
+          ':': begin { source line }
 
-                               read(prd,x); { get source line number }
-                               { skip the rest of the line, which would be the
-                                 contents of the source line if included }
-                               while not eoln(prd) do
-                                  read(prd, c); { get next character }
-                               getlin { source line }
+                  read(prd,x); { get source line number }
+                  { skip the rest of the line, which would be the
+                    contents of the source line if included }
+                  while not eoln(prd) do
+                     read(prd, c); { get next character }
+                  getlin { source line }
 
-                            end
-                  end;
-            end
+               end;
+          'o': begin { option }
+                 getnxt;
+                 while not eoln(prd) and (ch = ' ') do getnxt;
+                 repeat
+                   if not (ch in ['a'..'z']) then
+                     errorl('No valid option found    ');
+                   ch1 := ch; getnxt;
+                   option[ch1] := ch = '+'; getnxt;
+                   case ch1 of
+                     'g': dodmplab := option[ch1];
+                     'h': dosrclin := option[ch1];
+                     'n': dorecycl := option[ch1];
+                     'o': dochkovf := option[ch1];
+                     'p': dochkrpt := option[ch1];
+                     'm': donorecpar := option[ch1];
+                     'q': dochkdef := option[ch1];
+                     's': iso7185  := option[ch1];
+                     'w': dodebug  := option[ch1];
+                     'a': dodbgflt := option[ch1];
+                     'f': dodbgsrc := option[ch1];
+                     'e': dodckout := option[ch1];
+                     'i': dochkvbk := option[ch1];
+                     'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':;
+                     'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
+                   end
+                 until not (ch in ['a'..'z']);
+                 getlin
+               end;
+          'b': getlin; { block start }
+          'e': getlin; { block end }
+          'g': getlin; { set globals space }
+          'f': getlin; { source error count }
+          't': getlin; { template }
+       end
+     end
    end; (*generate*)
 
    procedure assemble; (*translate symbolic code into machine code and store*)
@@ -870,9 +939,13 @@ procedure load;
       end;(*lookup*)
 
       procedure labelsearch;
-         var x: labelrg;
-      begin while (ch<>'l') and not eoln(prd) do read(prd,ch);
-            read(prd,x); lookup(x)
+         var x: integer; sp: strvsp; flp: flabelp;
+      begin skpspc; if ch <> 'l' then errorl('Label format error       ');
+            getnxt; parlab(x,sp);
+            if sp <> nil then begin { far label }
+              new(flp); flp^.next := flablst; flablst := flp;
+              flp^.val := pc; flp^.ref := sp; q := 0
+            end else lookup(x) { near label }
       end;(*labelsearch*)
 
       procedure getname;
@@ -1217,7 +1290,7 @@ procedure load;
 
    end; (*assemble*)
 
-begin (*load*)
+begin (*xlate*)
 
    init;
    generate;
@@ -1228,20 +1301,17 @@ begin (*load*)
    alignu(stackal, pctop); { align the end of code for stack bottom }
    alignd(heapal, cp); { align the start of cp for heap top }
 
-   if dodmpsto then begin { dump storage overview }
+   writeln;
+   writeln('Storage areas occupied');
+   writeln;
+   write('Program     '); wrthex(output, 0, maxdigh, false); write('-'); wrthex(output, pctop-1, maxdigh, false);
+   writeln(' (',pctop:maxdigd,')');
+   write('Stack/Heap  '); wrthex(output, pctop, maxdigh, false); write('-'); wrthex(output, cp-1, maxdigh, false);
+   writeln(' (',cp-pctop+1:maxdigd,')');
+   write('Constants   '); wrthex(output, cp, maxdigh, false); write('-'); wrthex(output, maxstr, maxdigh, false);
+   writeln(' (',maxstr-(cp):maxdigd,')');
+   writeln;
 
-      writeln;
-      writeln('Storage areas occupied');
-      writeln;
-      write('Program     '); wrthex(output, 0, maxdigh, false); write('-'); wrthex(output, pctop-1, maxdigh, false);
-      writeln(' (',pctop:maxdigd,')');
-      write('Stack/Heap  '); wrthex(output, pctop, maxdigh, false); write('-'); wrthex(output, cp-1, maxdigh, false);
-      writeln(' (',cp-pctop+1:maxdigd,')');
-      write('Constants   '); wrthex(output, cp, maxdigh, false); write('-'); wrthex(output, maxstr, maxdigh, false);
-      writeln(' (',maxstr-(cp):maxdigd,')');
-      writeln
-
-   end;
    if dodmplab then dmplabs { Debug: dump label definitions }
 
 end; (*load*)
@@ -1263,11 +1333,32 @@ begin (* main *)
   if codemax = 0 then;    
   if filesize = 0 then;   
   if intdig = 0 then;     
-  if markfv = 0 then;     
-  if maxresult = 0 then;  
   if ordminchar = 0 then; 
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
+
+  for c1 := 'a' to 'z' do option[c1] := false;
+
+  { preset options }
+  dochkovf := true;  { check arithmetic overflow }
+  dodmplab := false; { dump label definitions }
+  dotrcrot := false; { trace routine executions }
+  dotrcins := false; { trace instruction executions }
+  dosrclin := true;  { add source line sets to code }
+  dotrcsrc := false; { trace source line executions (requires dosrclin) }
+  dorecycl := true;  { obey heap space recycle requests }
+  dochkrpt := false;  { check reuse of freed entry (automatically) }
+  donorecpar := false; { check reuse, but leave whole block unused }
+  dochkdef := true;  { check undefined accesses }
+  iso7185 := false;  { iso7185 standard mode }
+  dodebug := false;  { no debug }
+  dodbgflt := false; { no debug on fault }
+  dodbgsrc := false; { no source level debug }
+  dosrcprf := true;  { do source level profiling }
+  dochkcov := false; { don't do code coverage }
+  doanalys := false; { don't do analyze mode }
+  dodckout := false; { don't output code deck }
+  dochkvbk := false; { don't check variable blocks }
 
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
@@ -1282,7 +1373,7 @@ begin (* main *)
   rewrite(prr);
 
   writeln('Generating program');
-  load; (* assembles and stores code *)
+  xlate; (* assembles and stores code *)
 
   1 : { abort run }
 
