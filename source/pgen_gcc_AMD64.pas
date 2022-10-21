@@ -418,6 +418,21 @@ procedure xlate;
                        val: address;
                        ref: strvsp
                      end;
+         { registers in target }
+         reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
+                r8, r9, r10, r11, r12, r13, r14, r15,
+                rgal, rgbl, rgcl, rgdl);
+         { stack and expression tree entries }
+         expptr = ^expstk;
+         expstk = record
+                    next: expptr; { next entry link }
+                    op:   instyp; { operator type }
+                    p :   lvltyp; q : address; { p and q parameters }
+                    r1 :  integer; { registers }
+                    l, r: expptr; { right and left links }
+                    x1:   expptr; { extra link }
+                  end;
+
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
@@ -425,6 +440,7 @@ procedure xlate;
         sn: labbuf;
         snl: 1..lablen;
         flablst: flabelp; { list of far labels }
+        estack, efree: expptr;
 
    procedure init;
       var i: integer;
@@ -739,7 +755,8 @@ procedure xlate;
          {elide}reset(prd);{noelide}
 
          iline := 1; { set 1st line of intermediate }
-         flablst := nil { clear far label list }
+         flablst := nil; { clear far label list }
+         estack := nil; efree := nil;
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -904,22 +921,7 @@ procedure xlate;
    
       const
         insmax = 30;
-      type 
-        { registers in target }
-        reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
-               r8, r9, r10, r11, r12, r13, r14, r15,
-               rgal, rgbl, rgcl, rgdl);
-        { stack and expression tree entries }
-        expptr = ^expstk;
-        expstk = record
-                   op:   instyp; { operator type }
-                   p :   lvltyp; q : address; { p and q parameters }
-                   r1 :  integer; { registers }
-                   l, r: expptr; { right and left links }
-                   x1:   expptr; { extra link }
-                 end;
-    
-        insstr = packed array [1..insmax] of char;
+
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
@@ -966,25 +968,31 @@ procedure xlate;
       
       procedure getexp(var ep: expptr);
       begin
-        if efree <> nil then begin ep := efree; efree := ep^.l end
+        if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
-        ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; ep^.r := nil; 
+        ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
+        ep^.r := nil
       end;
       
       procedure putexp(ep: expptr);
       begin
-        ep^.l := efree; efree := ep
+        ep^.next := efree; efree := ep
       end;
       
       procedure pshstk(ep: expptr);
       begin
-        ep^.l := estack; estack := ep
+        ep^.next := estack; estack := ep
       end;
       
       procedure popstk(var ep: expptr);
       begin
         if estack = nil then errorl('Expression underflow     ');
-        ep := estack; estack := estack^.l
+        ep := estack; estack := estack^.next
+      end;
+
+      procedure botstk;
+      begin
+        if estack <> nil then errorl('Stack balance             ');
       end;
       
       procedure deltre(ep: expptr);
@@ -997,18 +1005,18 @@ procedure xlate;
       procedure dmptrel(ep: expptr; lvl: integer);
       begin
         if ep^.l <> nil then begin
-          writeln(' ': lvl*3, 'Left:');
+          writeln('# ', ' ': lvl*3, 'Left:');
           dmptrel(ep^.l, lvl+1);
         end;
         if ep^.r <> nil then begin
-          writeln(' ': lvl*3, 'right:');
+          writeln('# ', ' ': lvl*3, 'right:');
           dmptrel(ep^.r, lvl+1);
         end;
         if ep^.x1 <> nil then begin
-          writeln(' ': lvl*3, 'xtra1:');
+          writeln('# ', ' ': lvl*3, 'xtra1:');
           dmptrel(ep^.x1, lvl+1);
         end;
-        writeln(' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
+        writeln('# ', ' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
       end;
 
       procedure dmptre(ep: expptr);
@@ -1016,13 +1024,14 @@ procedure xlate;
         dmptrel(ep, 0)
       end;
 
-   begin  p := 0;  q := 0;  op := 0; estack := nil; efree := nil;
+   begin { assemble } 
+      p := 0;  q := 0;  op := 0;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
        
-      writeln('Instruction: ', op:3, ': ', name);
+      writeln('# ',op:3, ': ', name);
       case op of  (* get parameters p,q *)
 
 { there are three classes of instructions, a load, and operator, and a store.
@@ -1038,13 +1047,14 @@ procedure xlate;
             pshstk(ep) end;
                                                  
           2{stri}, 70{stra}: begin read(prd,p,q); popstk(ep); dmptre(ep); 
-            deltre(ep) end;
+            deltre(ep); botstk end;
           195{strx}, 73{strb}, 74{strc}: begin
-            read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep)
+            read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); botstk
           end;
-          71{strr}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep)
-            end;
-          72{strs}: begin read(prd,p,q); popstk(ep); dmptre(ep) end;
+          71{strr}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); 
+            botstk end;
+          72{strs}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); 
+            botstk end;
 
           120{lip}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
 
@@ -1053,13 +1063,14 @@ procedure xlate;
 
           11{mst}: begin read(prd,p) end;
 
-          113{cip}: begin read(prd,p); popstk(ep); dmptre(ep) end;
+          113{cip}: begin read(prd,p); popstk(ep); dmptre(ep); deltre(ep); 
+            botstk end;
 
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
           142, 148, 154, 160, 166, 172: begin read(prd,q); getexp(ep); 
             popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
 
-          5{lao}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
+          5{lao}: begin read(prd,q); getexp(ep); pshstk(ep) end;
 
           16{ixa}: begin read(prd,q); getexp(ep); popstk(ep^.r); popstk(ep^.l);
             pshstk(ep) end;
@@ -1067,7 +1078,7 @@ procedure xlate;
           55{mov}: begin read(prd,q); popstk(ep); popstk(ep2) end;
 
 
-          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep) end;
+          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); botstk end;
           118{swp}: begin read(prd,q); popstk(ep); popstk(ep2); pshstk(ep);
             pshstk(ep2) end;
 
@@ -1077,7 +1088,7 @@ procedure xlate;
 
           {sro}
           3, 75, 76, 77, 78, 79, 196: begin read(prd,q); popstk(ep); 
-            dmptre(ep) end;
+            dmptre(ep); deltre(ep); botstk end;
 
           {ind}
           9, 85, 86, 87, 88, 89, 198: read(prd,q);
@@ -1105,11 +1116,13 @@ procedure xlate;
           177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
 
           {apc}
-          178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep) end; 
+          178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep); 
+            deltre(ep2); deltre(ep); botstk end; 
 
           {pck, upk}
           63, 64: begin read(prd,q,q1); popstk(ep); popstk(ep2); popstk(ep3); 
-            dmptre(ep3); dmptre(ep2); dmptre(ep3) end;
+            dmptre(ep3); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2);
+            deltre(ep3); botstk end;
 
           {cta}
           191: begin read(prd,q, q1, q2); getexp(ep); popstk(ep^.l); 
@@ -1119,7 +1132,8 @@ procedure xlate;
           23: read(prd,q);
 
           {fjp,tjp,xjp}
-          24,25,119: begin read(prd,q); popstk(ep); dmptre(ep) end;
+          24,25,119: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); 
+            botstk end;
 
           {ents,ente}
           13, 173: labelsearch;
@@ -1188,7 +1202,7 @@ procedure xlate;
            {vbe}
            96:;
 
-           56 (*lca*): begin read(prd,l); skpspc;
+           56 {lca}: begin read(prd,l); skpspc;
                          for i := 1 to stringlgth do str[i] := ' ';
                          if ch <> '''' then errorl('bad string format        ');
                          i := 0;
@@ -1209,7 +1223,10 @@ procedure xlate;
                        end;
 
           {ret}
-          14, 128, 129, 130, 131, 132, 204: begin getexp(ep); pshstk(ep) end;
+          22:;
+
+          14, 128, 129, 130, 131, 132, 204: begin popstk(ep); dmptre(ep); 
+            deltre(ep); botstk end;
 
 
           { equ,neq,geq,grt,leq,les with no parameter }
@@ -1218,7 +1235,7 @@ procedure xlate;
           19, 149, 150, 151, 152, 153,
           20, 155, 156, 157, 158, 159,
           21, 161, 162, 163, 164, 165,
-          22, 167, 168, 169, 170, 171: begin getexp(ep); popstk(ep^.r); 
+          167, 168, 169, 170, 171: begin getexp(ep); popstk(ep^.r); 
             popstk(ep^.l); pshstk(ep) end;
 
           {ord}
@@ -1235,7 +1252,7 @@ procedure xlate;
 
           {sto}
           6, 80, 81, 82, 83, 84, 197: begin popstk(ep); popstk(ep2); 
-            dmptre(ep2); dmptre(ep) end;
+            dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); botstk end;
 
           {sgs}
           32: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
@@ -1276,11 +1293,12 @@ procedure xlate;
           187: begin getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep) end;
 
           {cke}
-          188: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep) end;
+          188: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep); 
+            deltre(ep); deltre(ep2); botstk end;
 
 
           { inv }
-          189: begin popstk(ep); dmptre(ep) end;
+          189: begin popstk(ep); dmptre(ep); deltre(ep); botstk end;
 
           61 {ujc}: ;
 
