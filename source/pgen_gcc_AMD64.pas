@@ -420,8 +420,7 @@ procedure xlate;
                      end;
          { registers in target }
          reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
-                r8, r9, r10, r11, r12, r13, r14, r15,
-                rgal, rgbl, rgcl, rgdl);
+                r8, r9, r10, r11, r12, r13, r14, r15);
          { stack and expression tree entries }
          expptr = ^expstk;
          expstk = record
@@ -839,6 +838,52 @@ procedure xlate;
      end
    end;
 
+   procedure preamble;
+   begin
+     { see how much of this is really required }
+     writeln(prr, '        .file   "test.c"');
+     writeln(prr, '        .text');
+     writeln(prr, '        .globl  main');
+     writeln(prr, '        .type   main, @function');
+     writeln(prr, 'main:');
+     writeln(prr, '.LFB0:');
+     writeln(prr, '        .cfi_startproc');
+     writeln(prr, '        endbr64');
+     writeln(prr, '        pushq   %rbp');
+     writeln(prr, '        .cfi_def_cfa_offset 16');
+     writeln(prr, '        .cfi_offset 6, -16');
+     writeln(prr, '        movq    %rsp, %rbp');
+     writeln(prr, '        .cfi_def_cfa_register 6');
+   end;
+
+   procedure postamble;
+   begin
+     writeln(prr, '        nop');
+     writeln(prr, '        popq    %rbp');
+     writeln(prr, '        .cfi_def_cfa 7, 8');
+     writeln(prr, '        ret');
+     writeln(prr, '        .cfi_endproc');
+     writeln(prr, '.LFE0:');
+     writeln(prr, '        .size   main, .-main');
+     writeln(prr, '        .ident  "GCC: (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0"');
+     writeln(prr, '        .section .note.GNU-stack,"",@progbits');
+     writeln(prr, '        .section .note.gnu.property,"a"');
+     writeln(prr, '        .align  8');
+     writeln(prr, '        .long   1f - 0f');
+     writeln(prr, '        .long   4f - 1f');
+     writeln(prr, '        .long   5');
+     writeln(prr, '0:');
+     writeln(prr, '        .string "GNU"');
+     writeln(prr, '1:');
+     writeln(prr, '        .align  8');
+     writeln(prr, '        .long   0xc0000002');
+     writeln(prr, '        .long   3f - 2f');
+     writeln(prr, '2:');
+     writeln(prr, '        .long   0x3');
+     writeln(prr, '3:');
+     writeln(prr, '        .align  8');
+   end;
+
    procedure assemble; forward;
 
    procedure generate;(*generate segment of code*)
@@ -908,8 +953,8 @@ procedure xlate;
                  until not (ch in ['a'..'z']);
                  getlin
                end;
-          'b': getlin; { block start }
-          'e': getlin; { block end }
+          'b': begin getlin; preamble end; { block start }
+          'e': begin getlin; {postamble} end; { block end }
           'g': getlin; { set globals space }
           'f': getlin; { source error count }
           't': getlin; { template }
@@ -926,7 +971,7 @@ procedure xlate;
           i,x,s1,lb,ub,l:integer; c: char;
           str: packed array [1..stringlgth] of char; { buffer for string constants }
           t: integer; { [sam] temp for compiler bug }
-          ep, ep2, ep3, estack, efree: expptr;
+          ep, ep2, ep3, ep4: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
@@ -987,7 +1032,7 @@ procedure xlate;
       procedure popstk(var ep: expptr);
       begin
         if estack = nil then errorl('Expression underflow     ');
-        ep := estack; estack := estack^.next
+        ep := estack; estack := estack^.next; ep^.next := nil
       end;
 
       procedure botstk;
@@ -1005,24 +1050,137 @@ procedure xlate;
       procedure dmptrel(ep: expptr; lvl: integer);
       begin
         if ep^.l <> nil then begin
-          writeln('# ', ' ': lvl*3, 'Left:');
+          writeln(prr, '# ', ' ': lvl*3, 'Left:');
           dmptrel(ep^.l, lvl+1);
         end;
         if ep^.r <> nil then begin
-          writeln('# ', ' ': lvl*3, 'right:');
+          writeln(prr, '# ', ' ': lvl*3, 'right:');
           dmptrel(ep^.r, lvl+1);
         end;
         if ep^.x1 <> nil then begin
-          writeln('# ', ' ': lvl*3, 'xtra1:');
+          writeln(prr, '# ', ' ': lvl*3, 'xtra1:');
           dmptrel(ep^.x1, lvl+1);
         end;
-        writeln('# ', ' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
+        writeln(prr, '# ', ' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
       end;
 
       procedure dmptre(ep: expptr);
       begin
-        dmptrel(ep, 0)
+        writeln(prr, '#    expr:');
+        dmptrel(ep, 1)
       end;
+
+      procedure dmpstk;
+      var ep: expptr;
+      begin
+;writeln('dmpstk: estack = nil: ', estack = nil);
+        ep := estack;
+        while ep <> nil do begin
+          writeln('Stack: ', ep^.op:3, ': ', instr[ep^.op]);
+          ep := ep^.next
+        end
+      end;
+
+      procedure asgreg(ep: expptr; r: reg);
+      begin
+      end;
+
+      procedure callsp;
+      begin (*callsp*)
+        if q > maxsp then errorl('Invalid std proc or func ');
+        writeln(prr, '# ', iline:6, ': ', q:3, ': -> ', sptable[q]);
+        case q of
+          0 (*get*): begin popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); pshstk(ep2) end;
+          1 (*put*): begin popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); pshstk(ep2) end;
+          3 (*rln*): begin popstk(ep); dmptre(ep); pshstk(ep2) end;
+          39 (*nwl*): ;
+          5 (*wln*): begin popstk(ep); asgreg(ep, rgrdi); dmptre(ep); 
+            writeln(prr, '        call    _psystem_wln');
+            pshstk(ep) end;
+          6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
+            asgreg(ep4, rgrdi); asgreg(ep2, rgrsi); asgreg(ep3, rgrdx); asgreg(ep, rgrcx);
+            writeln(prr, '        call    _psystem_wrs');
+            dmptre(ep); dmptre(ep2); dmptre(ep3); dmptre(ep4); 
+            deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
+          65 (*wrsp*):;
+          41 (*eof*):;
+          42 (*efb*):;
+          7 (*eln*):;
+          8 (*wri*),
+          62 (*wrih*),
+          63 (*wrio*),
+          64 (*wrib*),
+          66 (*wiz*),
+          67 (*wizh*),
+          68 (*wizo*),
+          69 (*wizb*):;
+          9 (*wrr*):;
+          10(*wrc*):;
+          11(*rdi*),
+          72(*rdif*):;
+          37(*rib*),
+          71(*ribf*):;
+          12(*rdr*),
+          73(*rdrf*):;
+          13(*rdc*),
+          75(*rdcf*):;
+          38(*rcb*),
+          74(*rcbf*):;
+          14(*sin*):;
+          15(*cos*):;
+          16(*exp*):;
+          17(*log*):  ;                  
+          18(*sqt*):;
+          19(*atn*):;
+          20(*sav*): errorl('Invalid std proc or func ');
+          21(*pag*):;
+          22(*rsf*):;
+          23(*rwf*):;
+          24(*wrb*):;
+          25(*wrf*):;
+          26(*dsp*):;
+          40(*dsl*):;
+          27(*wbf*):;
+          28(*wbi*):;
+          45(*wbx*): ;
+          29(*wbr*):;
+          30(*wbc*):;
+          31(*wbb*):;
+          32(*rbf*):;
+          33(*rsb*):;
+          34(*rwb*):;
+          35(*gbf*):;
+          36(*pbf*):;
+          43 (*fbv*): ;
+          44 (*fvb*):;
+          { extended Pascaline file handlers }
+          46 (*asst*):;
+          56 (*assb*):;
+          47 (*clst*):;
+          57 (*clsb*):;
+          48 (*pos*):;
+          49 (*upd*):;
+          50 (*appt*):;
+          58 (*appb*):;
+          51 (*del*):;
+          52 (*chg*):;
+          53 (*len*):;
+          54 (*loc*):;
+          55 (*exs*):;
+          59 (*hlt*):;
+          60 (*ast*):;
+          61 (*asts*):;
+          70(*rds*),
+          76(*rdsf*):;
+          77(*rdsp*):;
+          78(*aeft*):;
+          79(*aefb*):;
+          80(*rdie*):;
+          81(*rdre*): ;
+          2(*thw*): ;
+
+        end;(*case q*)
+   end;(*callsp*)
 
    begin { assemble } 
       p := 0;  q := 0;  op := 0;
@@ -1031,7 +1189,7 @@ procedure xlate;
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
        
-      writeln('# ',op:3, ': ', name);
+      writeln(prr, '# ', iline:6, ': ', op:3, ': ', name);
       case op of  (* get parameters p,q *)
 
 { there are three classes of instructions, a load, and operator, and a store.
@@ -1078,8 +1236,9 @@ procedure xlate;
           55{mov}: begin read(prd,q); popstk(ep); popstk(ep2) end;
 
 
-          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); botstk end;
-          118{swp}: begin read(prd,q); popstk(ep); popstk(ep2); pshstk(ep);
+          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); 
+            botstk end;
+          118{swp}: begin read(prd,q); popstk(ep); popstk(ep2); pshstk(ep); 
             pshstk(ep2) end;
 
           {ldo}
@@ -1148,9 +1307,7 @@ procedure xlate;
                            begin q := q+1; if q > maxsp then
                                  errorl('std proc/func not found  ')
                            end; 
-                           { note the number of expression trees removed from 
-                             the stack are determined by the routine number 
-                             here }
+                           callsp;
                       end;
 
           7, 123, 124, 125, 126, 127 (*ldc*): begin case op of  (*get q*)
@@ -1225,7 +1382,11 @@ procedure xlate;
           {ret}
           22:;
 
-          14, 128, 129, 130, 131, 132, 204: begin popstk(ep); dmptre(ep); 
+          {retp}
+          14: botstk;
+
+          {reti,retr,retc,retb,reta,retx}
+          128, 129, 130, 131, 132, 204: begin popstk(ep); dmptre(ep); 
             deltre(ep); botstk end;
 
 
@@ -1312,23 +1473,6 @@ begin (*xlate*)
 
    init;
    generate;
-   pctop := pc; { save top of code store }
-   lsttop := pctop; { save as top of listing }
-   pc := 0;
-   generate;
-   alignu(stackal, pctop); { align the end of code for stack bottom }
-   alignd(heapal, cp); { align the start of cp for heap top }
-
-   writeln;
-   writeln('Storage areas occupied');
-   writeln;
-   write('Program     '); wrthex(output, 0, maxdigh, false); write('-'); wrthex(output, pctop-1, maxdigh, false);
-   writeln(' (',pctop:maxdigd,')');
-   write('Stack/Heap  '); wrthex(output, pctop, maxdigh, false); write('-'); wrthex(output, cp-1, maxdigh, false);
-   writeln(' (',cp-pctop+1:maxdigd,')');
-   write('Constants   '); wrthex(output, cp, maxdigh, false); write('-'); wrthex(output, maxstr, maxdigh, false);
-   writeln(' (',maxstr-(cp):maxdigd,')');
-   writeln;
 
    if dodmplab then dmplabs { Debug: dump label definitions }
 
@@ -1391,6 +1535,7 @@ begin (* main *)
   rewrite(prr);
 
   writeln('Generating program');
+
   xlate; (* assembles and stores code *)
 
   1 : { abort run }
