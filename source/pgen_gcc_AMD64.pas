@@ -427,7 +427,7 @@ procedure xlate;
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p :   lvltyp; q : address; { p and q parameters }
-                    r1 :  integer; { registers }
+                    r1, r2, r3 :  integer; { registers }
                     l, r: expptr; { right and left links }
                     x1:   expptr; { extra link }
                   end;
@@ -435,6 +435,7 @@ procedure xlate;
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
         labelvalue: address;
+        sline: integer; { line number of Pascal source file }
         iline: integer; { line number of intermediate file }
         sn: labbuf;
         snl: 1..lablen;
@@ -753,6 +754,7 @@ procedure xlate;
          { !!! remove this next statement for self compile }
          {elide}reset(prd);{noelide}
 
+         sline := 0; { set no line of source }
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          estack := nil; efree := nil;
@@ -900,14 +902,20 @@ procedure xlate;
                        't']) then
           errorl('unexpected line start    ');
         case ch of
-          '!': getlin;
-          'l': begin getnxt; parlab(x,ls);
+          '!': begin write(prr, '# '); while not eoln(prd) do 
+                 begin read(prd, ch); write(prr, ch) end;
+                 writeln(prr);
+               end;
+          'l': begin getnxt; parlab(x,ls); 
+                     write(prr, '# l ', sn:snl, '.', x:1);
                      if ls <> nil then
                        errorl('Invalid intermediate     ');
                      getnxt;
-                     if ch='=' then read(prd,labelvalue)
-                               else labelvalue:= pc;
-                     update(x); getlin
+                     if ch='=' then 
+                       begin read(prd,labelvalue); 
+                             write(prr, '=', labelvalue:1) end
+                       else labelvalue:= pc;
+                     update(x); getlin; writeln(prr)
                end;
           'q': begin again := false; getlin end;
           ' ': begin getnxt; 
@@ -918,6 +926,7 @@ procedure xlate;
           ':': begin { source line }
 
                   read(prd,x); { get source line number }
+                  sline := x; writeln(prr, '# :', x:1);
                   { skip the rest of the line, which would be the
                     contents of the source line if included }
                   while not eoln(prd) do
@@ -926,12 +935,13 @@ procedure xlate;
 
                end;
           'o': begin { option }
+                 write(prr, '# o ');
                  getnxt;
                  while not eoln(prd) and (ch = ' ') do getnxt;
                  repeat
                    if not (ch in ['a'..'z']) then
                      errorl('No valid option found    ');
-                   ch1 := ch; getnxt;
+                   ch1 := ch; write(prr, ch); getnxt; write(prr, ch);
                    option[ch1] := ch = '+'; getnxt;
                    case ch1 of
                      'g': dodmplab := option[ch1];
@@ -951,10 +961,10 @@ procedure xlate;
                      'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
                    end
                  until not (ch in ['a'..'z']);
-                 getlin
+                 getlin; writeln(prr);
                end;
           'b': begin getlin; preamble end; { block start }
-          'e': begin getlin; {postamble} end; { block end }
+          'e': begin getlin; postamble end; { block end }
           'g': getlin; { set globals space }
           'f': getlin; { source error count }
           't': getlin; { template }
@@ -1016,7 +1026,7 @@ procedure xlate;
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
-        ep^.r := nil
+        ep^.r := nil; ep^.r1 := 0; ep^.r2 := 0; ep^.r3 := 0;
       end;
       
       procedure putexp(ep: expptr);
@@ -1050,18 +1060,18 @@ procedure xlate;
       procedure dmptrel(ep: expptr; lvl: integer);
       begin
         if ep^.l <> nil then begin
-          writeln(prr, '# ', ' ': lvl*3, 'Left:');
-          dmptrel(ep^.l, lvl+1);
+          writeln(prr, '# ', ' ': lvl, 'Left:');
+          dmptrel(ep^.l, lvl+3);
         end;
         if ep^.r <> nil then begin
-          writeln(prr, '# ', ' ': lvl*3, 'right:');
-          dmptrel(ep^.r, lvl+1);
+          writeln(prr, '# ', ' ': lvl, 'right:');
+          dmptrel(ep^.r, lvl+3);
         end;
         if ep^.x1 <> nil then begin
-          writeln(prr, '# ', ' ': lvl*3, 'xtra1:');
-          dmptrel(ep^.x1, lvl+1);
+          writeln(prr, '# ', ' ': lvl, 'xtra1:');
+          dmptrel(ep^.x1, lvl+3);
         end;
-        writeln(prr, '# ', ' ': lvl*3, ep^.op:3, ': ', instr[ep^.op]);
+        writeln(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
       end;
 
       procedure dmptre(ep: expptr);
@@ -1073,7 +1083,6 @@ procedure xlate;
       procedure dmpstk;
       var ep: expptr;
       begin
-;writeln('dmpstk: estack = nil: ', estack = nil);
         ep := estack;
         while ep <> nil do begin
           writeln('Stack: ', ep^.op:3, ': ', instr[ep^.op]);
@@ -1085,22 +1094,105 @@ procedure xlate;
       begin
       end;
 
+      procedure genexp(ep: expptr);
+      begin
+        genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
+        if ep <> nil then case ep^.op of
+          0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
+          109{lodc}, 4{loda}: begin end;
+          {adi,adr,sbi,sbr}
+          28, 29, 30, 31: begin end;   
+          120{lip}: begin end;   
+          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
+          142, 148, 154, 160, 166, 172: begin end;      
+          5{lao}: begin end;
+          16{ixa}: begin end;
+          118{swp}: begin end;
+          {ldo}
+          1, 65, 66, 67, 68, 69, 194: begin end;
+          {ind}
+          9, 85, 86, 87, 88, 89, 198: begin end;
+          {inc,dec}
+          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin end;
+          {ckv}
+          175, 179, 180, 203: begin end;
+          {cvbi,cvbx,cvbb,cvbc}
+          100, 115, 116, 121: begin end;
+          {ivti,ivtx,ivtb,ivtc}
+          192,101,102,111: begin end;
+          {cps}
+          176: begin end;
+          {cpc}
+          177: begin end;
+          {cta}
+          191: begin end;
+          {lpa}
+          114: begin end;
+          7, 123, 124, 125, 126, 127 (*ldc*): ;
+           {chk}
+           26, 95, 97, 98, 99, 190, 199: begin end;
+           {vbs}
+           92: begin end;
+           {vbe}
+           96:;
+           56 {lca}: begin end;
+          {ord}
+          59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
+            writeln(prr) end;
+          {lcp}
+          135: begin end;
+          {sgs}
+          32: begin end;
+ 
+          {flt}
+          33: begin end;
+
+          {flo]
+          34: begin end;
+
+          {trc}
+          35: begin end;
+
+          {ngi,ngr}
+          36,37: begin end;
+
+          {sqi,sqr}
+          38,39: begin end;
+
+          {abi,abr}
+          40,41: begin end;
+
+          {notb,noti,odd,rnd,chr}
+          42,50,60,62,205: begin end;
+
+          {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
+          43,44,46,47,48,49,51,52,53,54,110,206: begin end;
+          { dupi, dupa, dupr, dups, dupb, dupc }
+          181, 182, 183, 184, 185, 186: begin end;
+
+          {cks}
+          187: begin end;
+        end;
+      end;
+
       procedure callsp;
       begin (*callsp*)
         if q > maxsp then errorl('Invalid std proc or func ');
-        writeln(prr, '# ', iline:6, ': ', q:3, ': -> ', sptable[q]);
+        writeln(prr, '# ', sline:6, ': ', iline:6, ': ', q:3, ': -> ', sptable[q]);
         case q of
-          0 (*get*): begin popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); pshstk(ep2) end;
-          1 (*put*): begin popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); pshstk(ep2) end;
-          3 (*rln*): begin popstk(ep); dmptre(ep); pshstk(ep2) end;
+          0 (*get*): begin popstk(ep); popstk(ep2); dmptrel(ep, 19); 
+            dmptrel(ep2, 19); deltre(ep); pshstk(ep2) end;
+          1 (*put*): begin popstk(ep); popstk(ep2); dmptrel(ep, 19); dmptrel(ep2, 19); 
+            deltre(ep); pshstk(ep2) end;
+          3 (*rln*): begin popstk(ep); dmptrel(ep, 19); pshstk(ep2) end;
           39 (*nwl*): ;
-          5 (*wln*): begin popstk(ep); asgreg(ep, rgrdi); dmptre(ep); 
+          5 (*wln*): begin popstk(ep); asgreg(ep, rgrdi); dmptrel(ep, 19); 
             writeln(prr, '        call    _psystem_wln');
             pshstk(ep) end;
           6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
             asgreg(ep4, rgrdi); asgreg(ep2, rgrsi); asgreg(ep3, rgrdx); asgreg(ep, rgrcx);
+            dmptrel(ep, 19); dmptrel(ep2, 19); dmptrel(ep3, 19); dmptrel(ep4, 19);
             writeln(prr, '        call    _psystem_wrs');
-            dmptre(ep); dmptre(ep2); dmptre(ep3); dmptre(ep4); 
             deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
           65 (*wrsp*):;
           41 (*eof*):;
@@ -1189,7 +1281,7 @@ procedure xlate;
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
        
-      writeln(prr, '# ', iline:6, ': ', op:3, ': ', name);
+      write(prr, '# ', sline:6, ': ', iline:6, ': ', op:3, ': ', name:4, ' ');
       case op of  (* get parameters p,q *)
 
 { there are three classes of instructions, a load, and operator, and a store.
@@ -1198,126 +1290,136 @@ procedure xlate;
   store. At the store, the entire tree is disposed of. }
 
           0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-          109{lodc}, 4{loda}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
+          109{lodc}, 4{loda}: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
+            getexp(ep); pshstk(ep) end;
 
           {adi,adr,sbi,sbr}
           28, 29, 30, 31: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); 
-            pshstk(ep) end;
+            pshstk(ep); writeln(prr) end;
                                                  
-          2{stri}, 70{stra}: begin read(prd,p,q); popstk(ep); dmptre(ep); 
-            deltre(ep); botstk end;
+          2{stri}, 70{stra}: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
+            popstk(ep); dmptre(ep); deltre(ep); botstk end;
           195{strx}, 73{strb}, 74{strc}: begin
-            read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); botstk
-          end;
-          71{strr}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); 
-            botstk end;
-          72{strs}: begin read(prd,p,q); popstk(ep); dmptre(ep); deltre(ep); 
-            botstk end;
-
-          120{lip}: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
-
-          {cup,cuv}
-          12, 27: begin read(prd,p); labelsearch end;
-
-          11{mst}: begin read(prd,p) end;
-
-          113{cip}: begin read(prd,p); popstk(ep); dmptre(ep); deltre(ep); 
-            botstk end;
-
-          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
-          142, 148, 154, 160, 166, 172: begin read(prd,q); getexp(ep); 
-            popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
-
-          5{lao}: begin read(prd,q); getexp(ep); pshstk(ep) end;
-
-          16{ixa}: begin read(prd,q); getexp(ep); popstk(ep^.r); popstk(ep^.l);
-            pshstk(ep) end;
-
-          55{mov}: begin read(prd,q); popstk(ep); popstk(ep2) end;
-
-
-          117{dmp}: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); 
-            botstk end;
-          118{swp}: begin read(prd,q); popstk(ep); popstk(ep2); pshstk(ep); 
-            pshstk(ep2) end;
-
-          {ldo}
-          1, 65, 66, 67, 68, 69, 194: begin read(prd,q); getexp(ep); 
-            pshstk(ep) end;
-
-          {sro}
-          3, 75, 76, 77, 78, 79, 196: begin read(prd,q); popstk(ep); 
+            read(prd,p,q); writeln(prr,p:1,' ', q:1); popstk(ep); dmptre(ep);
+            deltre(ep); botstk end;
+          71{strr}: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); popstk(ep);
+            dmptre(ep); deltre(ep); botstk end;
+          72{strs}: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); popstk(ep);
             dmptre(ep); deltre(ep); botstk end;
 
+          120{lip}: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); getexp(ep);
+            pshstk(ep) end;
+
+          {cup,cuv}
+          12, 27: begin read(prd,p); writeln(prr,p:1); labelsearch end;
+
+          11{mst}: begin read(prd,p); writeln(prr,p:1); end;
+
+          113{cip}: begin read(prd,p); writeln(prr,p:1); popstk(ep); dmptre(ep);
+            deltre(ep); botstk end;
+
+          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
+          142, 148, 154, 160, 166, 172: begin read(prd,q); writeln(prr,q:1); 
+            getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
+
+          5{lao}: begin read(prd,q); writeln(prr,q:1); getexp(ep); 
+            pshstk(ep) end;
+
+          16{ixa}: begin read(prd,q); writeln(prr,q:1); getexp(ep); 
+            popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
+
+          55{mov}: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
+            popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) end;
+
+          117{dmp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptre(ep);
+            deltre(ep); botstk end;
+
+          118{swp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
+            popstk(ep2); pshstk(ep); pshstk(ep2) end;
+
+          {ldo}
+          1, 65, 66, 67, 68, 69, 194: begin read(prd,q); writeln(prr,q:1);
+            getexp(ep); pshstk(ep) end;
+
+          {sro}
+          3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
+            popstk(ep); dmptre(ep); deltre(ep); botstk end;
+
           {ind}
-          9, 85, 86, 87, 88, 89, 198: read(prd,q);
+          9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) end;
 
           {inc,dec}
           10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
-            getexp(ep); popstk(ep^.l); pshstk(ep) end;
+            writeln(prr,q:1); getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
           {ckv}
-          175, 179, 180, 203: begin read(prd,q); getexp(ep); popstk(ep^.r); 
-            popstk(ep^.l) end;
+          175, 179, 180, 203: begin read(prd,q); writeln(prr,q:1); getexp(ep);
+            popstk(ep^.r); popstk(ep^.l) end;
 
           {cvbi,cvbx,cvbb,cvbc}
-          100, 115, 116, 121: begin read(prd,q); read(prd,q1); getexp(ep); 
-            popstk(ep^.r); popstk(ep^.l) end;
+          100, 115, 116, 121: begin read(prd,q); writeln(prr,q:1); read(prd,q1);
+            getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
 
           {ivti,ivtx,ivtb,ivtc}
-          192,101,102,111: begin read(prd,q); read(prd,q1); getexp(ep); 
-            popstk(ep^.r); popstk(ep^.l) end;
+          192,101,102,111: begin read(prd,q, q1); writeln(prr,q:1, ' ', q1:1);
+            getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
 
           {cps}
-          176: begin getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+          176: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr) end;
 
           {cpc}
-          177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+          177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr) end;
 
           {apc}
           178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep); 
-            deltre(ep2); deltre(ep); botstk end; 
+            deltre(ep2); deltre(ep); botstk; writeln(prr) end; 
 
           {pck, upk}
-          63, 64: begin read(prd,q,q1); popstk(ep); popstk(ep2); popstk(ep3); 
-            dmptre(ep3); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2);
-            deltre(ep3); botstk end;
+          63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); popstk(ep);
+            popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
+            deltre(ep); deltre(ep2); deltre(ep3); botstk end;
 
           {cta}
-          191: begin read(prd,q, q1, q2); getexp(ep); popstk(ep^.l); 
-            popstk(ep^.r); popstk(ep^.x1); pshstk(ep) end;
+          191: begin read(prd,q, q1, q2); 
+            writeln(prr,q:1, ' ', q1:1, ' ', q1:1, ' ', q2:1); getexp(ep); 
+            popstk(ep^.l); popstk(ep^.r); popstk(ep^.x1); pshstk(ep) end;
 
           {ujp}
-          23: read(prd,q);
+          23: begin read(prd,q); writeln(prr, q:1) end;
 
           {fjp,tjp,xjp}
-          24,25,119: begin read(prd,q); popstk(ep); dmptre(ep); deltre(ep); 
-            botstk end;
+          24,25,119: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
+            dmptre(ep); deltre(ep); botstk end;
 
           {ents,ente}
-          13, 173: labelsearch;
+          13, 173: begin labelsearch; writeln(prr) end;
+
           {ipj}
-          112: begin read(prd,p); labelsearch end;
+          112: begin read(prd,p); writeln(prr, p:1); labelsearch end;
 
           {lpa}
-          114: begin read(prd,p,q); getexp(ep); pshstk(ep) end;
+          114: begin read(prd,p,q); getexp(ep); pshstk(ep); writeln(prr) end;
 
           15 {csp}: begin skpspc; getname;
                            while name<>sptable[q] do
                            begin q := q+1; if q > maxsp then
                                  errorl('std proc/func not found  ')
                            end; 
-                           callsp;
+                           writeln(prr);
+                           callsp
                       end;
 
           7, 123, 124, 125, 126, 127 (*ldc*): begin case op of  (*get q*)
-                           123: begin read(prd,i); getexp(ep); pshstk(ep) end;
+                           123: begin read(prd,i); writeln(prr, i:1); 
+                             getexp(ep); pshstk(ep) end;
 
-                           124: begin read(prd,r); getexp(ep); pshstk(ep) end;
+                           124: begin read(prd,r); writeln(prr, r); getexp(ep);
+                             pshstk(ep) end;
 
-                           125: begin getexp(ep); pshstk(ep) end;
+                           125: begin getexp(ep); pshstk(ep); writeln(prr) end;
 
-                           126: begin read(prd,q); getexp(ep); pshstk(ep) end;
+                           126: begin read(prd,q); writeln(prr, q:1); 
+                             getexp(ep); pshstk(ep) end;
 
                            127: begin
                                   skpspc;
@@ -1335,6 +1437,7 @@ procedure xlate;
                                   end;
                                   getexp(ep);
                                   pshstk(ep);
+                                  writeln(prr)
                                 end;
                            7: begin skpspc;
                                    if ch <> '(' then
@@ -1345,21 +1448,23 @@ procedure xlate;
                                    end;
                                    getexp(ep);
                                    pshstk(ep);
+                                   writeln(prr)
                                 end
                            end (*case*)
                      end;
 
            {chk}
-           26, 95, 97, 98, 99, 190, 199: begin read(prd,lb,ub); getexp(ep); 
-             popstk(ep^.l) end;
+           26, 95, 97, 98, 99, 190, 199: begin read(prd,lb,ub); 
+             writeln(prr, lb:1, ' ', ub:1); getexp(ep); popstk(ep^.l) end;
 
            {vbs}
-           92: begin read(prd,q); getexp(ep); popstk(ep^.l) end;
+           92: begin read(prd,q); writeln(prr, q:1); getexp(ep); 
+             popstk(ep^.l) end;
 
            {vbe}
            96:;
 
-           56 {lca}: begin read(prd,l); skpspc;
+           56 {lca}: begin read(prd,l); writeln(prr, l:1); skpspc;
                          for i := 1 to stringlgth do str[i] := ' ';
                          if ch <> '''' then errorl('bad string format        ');
                          i := 0;
@@ -1380,14 +1485,14 @@ procedure xlate;
                        end;
 
           {ret}
-          22:;
+          22: writeln(prr);
 
           {retp}
-          14: botstk;
+          14: begin botstk; writeln(prr) end;
 
           {reti,retr,retc,retb,reta,retx}
           128, 129, 130, 131, 132, 204: begin popstk(ep); dmptre(ep); 
-            deltre(ep); botstk end;
+            deltre(ep); botstk; writeln(prr) end;
 
 
           { equ,neq,geq,grt,leq,les with no parameter }
@@ -1397,75 +1502,82 @@ procedure xlate;
           20, 155, 156, 157, 158, 159,
           21, 161, 162, 163, 164, 165,
           167, 168, 169, 170, 171: begin getexp(ep); popstk(ep^.r); 
-            popstk(ep^.l); pshstk(ep) end;
+            popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {ord}
-          59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
+            writeln(prr) end;
 
           {vip,vis}
-          133, 122:; { ??? fill me in }
+          133, 122: writeln(prr); { ??? fill me in }
 
           {vin}
-          226:; { ??? fill me in }
+          226: writeln(prr); { ??? fill me in }
 
           {lcp}
-          135: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          135: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {sto}
           6, 80, 81, 82, 83, 84, 197: begin popstk(ep); popstk(ep2); 
-            dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); botstk end;
+            dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); botstk; 
+            writeln(prr) end;
 
           {sgs}
-          32: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          32: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
  
           {flt}
-          33: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          33: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {flo]
-          34: begin getexp(ep); popstk(ep^.l); popstk(ep^.r) pshstk(ep) end;
+          34: begin getexp(ep); popstk(ep^.l); popstk(ep^.r) pshstk(ep); 
+            writeln(prr) end;
 
           {trc}
-          35: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          35: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {ngi,ngr}
-          36,37: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          36,37: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {sqi,sqr}
-          38,39: begin getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep) end;
+          38,39: begin getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep); 
+            writeln(prr) end;
 
           {abi,abr}
-          40,41: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          40,41: begin getexp(ep); popstk(ep^.l); pshstk(ep); writeln(prr) end;
 
           {notb,noti,odd,rnd,chr}
-          42,50,60,62,205: begin getexp(ep); popstk(ep^.l); pshstk(ep) end;
+          42,50,60,62,205: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
+            writeln(prr) end;
 
           {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
           43,44,46,47,48,49,51,52,53,54,110,206: begin getexp(ep); popstk(ep^.l);
-            popstk(ep^.r); pshstk(ep) end;
+            popstk(ep^.r); pshstk(ep); writeln(prr) end;
 
           {stp}
           58:;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
           181, 182, 183, 184, 185, 186: begin getexp(ep); popstk(ep^.l);
-            pshstk(ep); pshstk(ep) end;
+            pshstk(ep); pshstk(ep); writeln(prr) end;
 
           {cks}
-          187: begin getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep) end;
+          187: begin getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep); 
+            writeln(prr) end;
 
           {cke}
           188: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep); 
-            deltre(ep); deltre(ep2); botstk end;
+            deltre(ep); deltre(ep2); botstk; writeln(prr) end;
 
 
           { inv }
-          189: begin popstk(ep); dmptre(ep); deltre(ep); botstk end;
+          189: begin popstk(ep); dmptre(ep); deltre(ep); botstk; 
+            writeln(prr) end;
 
-          61 {ujc}: ;
+          61 {ujc}: writeln(prr);
 
       end; (*case*)
 
-      getlin { next intermediate line }
+      getlin; { next intermediate line }
 
    end; (*assemble*)
 
@@ -1527,7 +1639,7 @@ begin (* main *)
   fndpow(maxpow8, 8, octdig);
   fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
 
-  write('P5 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
+  write('P6 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   writeln;
@@ -1536,6 +1648,12 @@ begin (* main *)
 
   writeln('Generating program');
 
+  writeln(prr, '#');
+  writeln(prr, '# File generated by P6 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
+  if experiment then write('.x');
+  writeln(prr, '#');
+  writeln(prr);
+  
   xlate; (* assembles and stores code *)
 
   1 : { abort run }
