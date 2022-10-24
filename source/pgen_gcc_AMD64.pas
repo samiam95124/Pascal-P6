@@ -35,7 +35,7 @@
 *                                                                              *
 * Adaption from P4 to P6 by:                                                   *
 *                                                                              *
-*    Scott A. Moore                                                            *
+*    Scott A. Franco                                                            *
 *    samiam@moorecad.com                                                       *
 *                                                                              *
 * AMD64 code generator for GCC                                                 *
@@ -133,7 +133,7 @@ const
       prdfn      = 3;        { 'prd' file no. }
       prrfn      = 4;        { 'prr' file no. }
 
-      stringlgth  = 1000;    { longest string length we can buffer }
+      strlen      = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
@@ -174,6 +174,7 @@ type
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
       labbuf      = packed array [1..lablen] of char; { label buffer }
+      strbuf      = packed array [1..strlen] of char;
       { Here is the variable length string containment to save on space. strings
         are only stored in their length rounded to the nearest 10th. }
       strvsp = ^strvs; { pointer to variable length id string }
@@ -181,6 +182,8 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
+      strptr = ^strrec; { pointer to string constant entry table }
+      strrec = record next: strptr; str: strvsp; strl, strn: integer end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -252,6 +255,8 @@ var   pc          : address;   (*program address register*)
       insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
+      strtbl      : strptr; { string constant table }
+      strnum      : integer; { string constant table label count }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -383,8 +388,35 @@ begin l := lablen; p := nil; a := nil; j := 1;
   if p <> nil then for j := j to varsqt do p^.str[j] := ' '
 end;
 
-{ align address, upwards }
+{ assign fixed string to variable length string, including allocation }
+procedure strassvsb(var a: strvsp; var b: strbuf);
+var i, j, l: integer; p, lp: strvsp;
+begin l := strlen; p := nil; a := nil; j := 1;
+  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+  if b[l] = ' ' then l := 0;
+  for i := 1 to l do begin
+    if j > varsqt then p := nil;
+    if p = nil then begin
+      getstr(p); p^.next := nil; j := 1;
+      if a = nil then a := p else lp^.next := p; lp := p
+    end;
+    p^.str[j] := b[i]; j := j+1
+  end;
+  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
 
+{ write variable length string to file }
+procedure writev(var f: text; s: strvsp; fl: integer);
+var i: integer; c: char;
+begin i := 1;
+  while fl > 0 do begin
+    c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
+    write(f, c); fl := fl-1;
+    if i > varsqt then begin s := s^.next; i := 1 end
+  end
+end;
+
+{ align address, upwards }
 procedure alignu(algn: address; var flc: address);
   var l: integer;
 begin
@@ -393,7 +425,6 @@ begin
 end (*align*);
 
 { align address, downwards }
-
 procedure alignd(algn: address; var flc: address);
   var l: integer;
 begin
@@ -427,9 +458,12 @@ procedure xlate;
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p :   lvltyp; q : address; { p and q parameters }
-                    r1, r2, r3 :  integer; { registers }
+                    r1, r2, r3 : reg; { registers }
                     l, r: expptr; { right and left links }
                     x1:   expptr; { extra link }
+                    strn: integer; { string number }
+                    vali: integer; { integer value }
+                    valr: integer; { real value }
                   end;
 
    var  word : array[alfainx] of char; ch  : char;
@@ -843,47 +877,18 @@ procedure xlate;
    procedure preamble;
    begin
      { see how much of this is really required }
-     writeln(prr, '        .file   "test.c"');
-     writeln(prr, '        .text');
      writeln(prr, '        .globl  main');
      writeln(prr, '        .type   main, @function');
      writeln(prr, 'main:');
-     writeln(prr, '.LFB0:');
-     writeln(prr, '        .cfi_startproc');
-     writeln(prr, '        endbr64');
      writeln(prr, '        pushq   %rbp');
-     writeln(prr, '        .cfi_def_cfa_offset 16');
-     writeln(prr, '        .cfi_offset 6, -16');
      writeln(prr, '        movq    %rsp, %rbp');
-     writeln(prr, '        .cfi_def_cfa_register 6');
    end;
 
    procedure postamble;
    begin
-     writeln(prr, '        nop');
+     writeln(prr, '        movl    $0,%rax');
      writeln(prr, '        popq    %rbp');
-     writeln(prr, '        .cfi_def_cfa 7, 8');
      writeln(prr, '        ret');
-     writeln(prr, '        .cfi_endproc');
-     writeln(prr, '.LFE0:');
-     writeln(prr, '        .size   main, .-main');
-     writeln(prr, '        .ident  "GCC: (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0"');
-     writeln(prr, '        .section .note.GNU-stack,"",@progbits');
-     writeln(prr, '        .section .note.gnu.property,"a"');
-     writeln(prr, '        .align  8');
-     writeln(prr, '        .long   1f - 0f');
-     writeln(prr, '        .long   4f - 1f');
-     writeln(prr, '        .long   5');
-     writeln(prr, '0:');
-     writeln(prr, '        .string "GNU"');
-     writeln(prr, '1:');
-     writeln(prr, '        .align  8');
-     writeln(prr, '        .long   0xc0000002');
-     writeln(prr, '        .long   3f - 2f');
-     writeln(prr, '2:');
-     writeln(prr, '        .long   0x3');
-     writeln(prr, '3:');
-     writeln(prr, '        .align  8');
    end;
 
    procedure assemble; forward;
@@ -979,7 +984,8 @@ procedure xlate;
 
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
-          str: packed array [1..stringlgth] of char; { buffer for string constants }
+          str: strbuf; { buffer for string constants }
+          sbp: strptr;
           t: integer; { [sam] temp for compiler bug }
           ep, ep2, ep3, ep4: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
@@ -1020,13 +1026,36 @@ procedure xlate;
         end;
         pack(word,1,name)
       end; (*getname*)
-      
+
+      procedure wrtreg(var f: text; r: reg);
+      begin
+        case r of
+          rgnull: write(f, '<null>');
+          rgrax:  write(f, 'rax');
+          rgrbx:  write(f, 'rbx');
+          rgrcx:  write(f, 'rcx');
+          rgrdx:  write(f, 'rdx');
+          rgrsi:  write(f, 'rsi');
+          rgrdi:  write(f, 'rdi');
+          rgrbp:  write(f, 'rbp');
+          rgrsp:  write(f, 'rsp');
+          r8:     write(f, 'r8');
+          r9:     write(f, 'r9');
+          r10:    write(f, 'r10');
+          r11:    write(f, 'r11');
+          r12:    write(f, 'r12');
+          r13:    write(f, 'r13');
+          r14:    write(f, 'r14');
+          r15:    write(f, 'r15');
+        end
+      end;
+
       procedure getexp(var ep: expptr);
       begin
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
-        ep^.r := nil; ep^.r1 := 0; ep^.r2 := 0; ep^.r3 := 0;
+        ep^.r := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
       end;
       
       procedure putexp(ep: expptr);
@@ -1096,83 +1125,106 @@ procedure xlate;
 
       procedure genexp(ep: expptr);
       begin
-        genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
-        if ep <> nil then case ep^.op of
-          0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-          109{lodc}, 4{loda}: begin end;
-          {adi,adr,sbi,sbr}
-          28, 29, 30, 31: begin end;   
-          120{lip}: begin end;   
-          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
-          142, 148, 154, 160, 166, 172: begin end;      
-          5{lao}: begin end;
-          16{ixa}: begin end;
-          118{swp}: begin end;
-          {ldo}
-          1, 65, 66, 67, 68, 69, 194: begin end;
-          {ind}
-          9, 85, 86, 87, 88, 89, 198: begin end;
-          {inc,dec}
-          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin end;
-          {ckv}
-          175, 179, 180, 203: begin end;
-          {cvbi,cvbx,cvbb,cvbc}
-          100, 115, 116, 121: begin end;
-          {ivti,ivtx,ivtb,ivtc}
-          192,101,102,111: begin end;
-          {cps}
-          176: begin end;
-          {cpc}
-          177: begin end;
-          {cta}
-          191: begin end;
-          {lpa}
-          114: begin end;
-          7, 123, 124, 125, 126, 127 (*ldc*): ;
-           {chk}
-           26, 95, 97, 98, 99, 190, 199: begin end;
-           {vbs}
-           92: begin end;
-           {vbe}
-           96:;
-           56 {lca}: begin end;
-          {ord}
-          59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
-            writeln(prr) end;
-          {lcp}
-          135: begin end;
-          {sgs}
-          32: begin end;
- 
-          {flt}
-          33: begin end;
+        if ep <> nil then begin
+          genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
+          case ep^.op of
+            0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
+            109{lodc}, 4{loda}: begin end;
+            {adi,adr,sbi,sbr}
+            28, 29, 30, 31: begin end;   
+            120{lip}: begin end;   
+            { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
+            142, 148, 154, 160, 166, 172: begin end;      
 
-          {flo]
-          34: begin end;
+            5{lao}: begin write(prr, '        movq    $', ep^.q:1, ',%'); 
+              wrtreg(prr, ep^.r1); writeln(prr); 
+              write(prr, '        movq    [%'); wrtreg(prr, ep^.r1); 
+              write(prr, '],%'); wrtreg(prr, ep^.r1); writeln(prr) end;
 
-          {trc}
-          35: begin end;
+            16{ixa}: begin end;
+            118{swp}: begin end;
+            {ldo}
+            1, 65, 66, 67, 68, 69, 194: begin end;
+            {ind}
+            9, 85, 86, 87, 88, 89, 198: begin end;
+            {inc,dec}
+            10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin end;
+            {ckv}
+            175, 179, 180, 203: begin end;
+            {cvbi,cvbx,cvbb,cvbc}
+            100, 115, 116, 121: begin end;
+            {ivti,ivtx,ivtb,ivtc}
+            192,101,102,111: begin end;
+            {cps}
+            176: begin end;
+            {cpc}
+            177: begin end;
+            {cta}
+            191: begin end;
+            {lpa}
+            114: begin end;
 
-          {ngi,ngr}
-          36,37: begin end;
+            {ldci,ldcc,ldcb}
+            123,127,126: begin 
+              write(prr, '        movq    $',  ep^.vali:1, ',%');
+              wrtreg(prr, ep^.r1); writeln(prr) end;
 
-          {sqi,sqr}
-          38,39: begin end;
+            {ldcn}
+            125: begin write(prr, '        movq    $0,%'); 
+              wrtreg(prr, ep^.r1); writeln(prr) end;
 
-          {abi,abr}
-          40,41: begin end;
+            {ldcs,ldcr}
+            7, 124: ;
 
-          {notb,noti,odd,rnd,chr}
-          42,50,60,62,205: begin end;
+             {chk}
+             26, 95, 97, 98, 99, 190, 199: begin end;
+             {vbs}
+             92: begin end;
+             {vbe}
+             96:;
+             56 {lca}: begin 
+               write(prr, '        leaq    string', ep^.strn:1, '(%rip),%'); 
+               wrtreg(prr, ep^.r1); writeln(prr);
+            end;
 
-          {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
-          43,44,46,47,48,49,51,52,53,54,110,206: begin end;
-          { dupi, dupa, dupr, dups, dupb, dupc }
-          181, 182, 183, 184, 185, 186: begin end;
+            {ord}
+            59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
+              writeln(prr) end;
+            {lcp}
+            135: begin end;
+            {sgs}
+            32: begin end;
+     
+            {flt}
+            33: begin end;
 
-          {cks}
-          187: begin end;
-        end;
+            {flo]
+            34: begin end;
+
+            {trc}
+            35: begin end;
+
+            {ngi,ngr}
+            36,37: begin end;
+
+            {sqi,sqr}
+            38,39: begin end;
+
+            {abi,abr}
+            40,41: begin end;
+
+            {notb,noti,odd,rnd,chr}
+            42,50,60,62,205: begin end;
+
+            {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
+            43,44,46,47,48,49,51,52,53,54,110,206: begin end;
+            { dupi, dupa, dupr, dups, dupb, dupc }
+            181, 182, 183, 184, 185, 186: begin end;
+
+            {cks}
+            187: begin end;
+          end
+        end
       end;
 
       procedure callsp;
@@ -1187,11 +1239,12 @@ procedure xlate;
           3 (*rln*): begin popstk(ep); dmptrel(ep, 19); pshstk(ep2) end;
           39 (*nwl*): ;
           5 (*wln*): begin popstk(ep); asgreg(ep, rgrdi); dmptrel(ep, 19); 
-            writeln(prr, '        call    _psystem_wln');
+            genexp(ep); writeln(prr, '        call    _psystem_wln');
             pshstk(ep) end;
           6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
             asgreg(ep4, rgrdi); asgreg(ep2, rgrsi); asgreg(ep3, rgrdx); asgreg(ep, rgrcx);
-            dmptrel(ep, 19); dmptrel(ep2, 19); dmptrel(ep3, 19); dmptrel(ep4, 19);
+            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2); 
+            dmptrel(ep3, 19); genexp(ep3); dmptrel(ep4, 19); genexp(ep4);
             writeln(prr, '        call    _psystem_wrs');
             deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
           65 (*wrsp*):;
@@ -1322,7 +1375,7 @@ procedure xlate;
           142, 148, 154, 160, 166, 172: begin read(prd,q); writeln(prr,q:1); 
             getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
 
-          5{lao}: begin read(prd,q); writeln(prr,q:1); getexp(ep); 
+          5{lao}: begin read(prd,q); writeln(prr,q:1); getexp(ep);
             pshstk(ep) end;
 
           16{ixa}: begin read(prd,q); writeln(prr,q:1); getexp(ep); 
@@ -1332,7 +1385,7 @@ procedure xlate;
             popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) end;
 
           117{dmp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptre(ep);
-            deltre(ep); botstk end;
+            writeln(prr, '        pop     %rax'); deltre(ep); botstk end;
 
           118{swp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
             popstk(ep2); pshstk(ep); pshstk(ep2) end;
@@ -1411,15 +1464,15 @@ procedure xlate;
 
           7, 123, 124, 125, 126, 127 (*ldc*): begin case op of  (*get q*)
                            123: begin read(prd,i); writeln(prr, i:1); 
-                             getexp(ep); pshstk(ep) end;
+                             getexp(ep); ep^.vali := i; pshstk(ep) end;
 
                            124: begin read(prd,r); writeln(prr, r); getexp(ep);
                              pshstk(ep) end;
 
                            125: begin getexp(ep); pshstk(ep); writeln(prr) end;
 
-                           126: begin read(prd,q); writeln(prr, q:1); 
-                             getexp(ep); pshstk(ep) end;
+                           126: begin read(prd,i); writeln(prr, i:1); 
+                             getexp(ep); ep^.vali := i; pshstk(ep) end;
 
                            127: begin
                                   skpspc;
@@ -1435,8 +1488,7 @@ procedure xlate;
                                     if ch <> '''' then
                                       errorl('illegal character        ');
                                   end;
-                                  getexp(ep);
-                                  pshstk(ep);
+                                  getexp(ep); ep^.vali := ord(ch); pshstk(ep);
                                   writeln(prr)
                                 end;
                            7: begin skpspc;
@@ -1464,25 +1516,28 @@ procedure xlate;
            {vbe}
            96:;
 
-           56 {lca}: begin read(prd,l); writeln(prr, l:1); skpspc;
-                         for i := 1 to stringlgth do str[i] := ' ';
-                         if ch <> '''' then errorl('bad string format        ');
-                         i := 0;
-                         repeat
-                           if eoln(prd) then errorl('unterminated string      ');
-                           getnxt;
-                           c := ch; if (ch = '''') and (prd^ = '''') then begin
-                             getnxt; c := ' '
-                           end;
-                           if c <> '''' then begin
-                             if i >= stringlgth then errorl('string overflow          ');
-                             str[i+1] := ch; { accumulate string }
-                             i := i+1
-                           end
-                         until c = '''';
-                         getexp(ep);
-                         pshstk(ep);
-                       end;
+           56 {lca}: begin read(prd,l); write(prr, l:1, ' '); skpspc;
+             for i := 1 to strlen do str[i] := ' ';
+             if ch <> '''' then errorl('bad string format        ');
+             i := 0;
+             repeat
+               if eoln(prd) then errorl('unterminated string      ');
+               getnxt;
+               c := ch; if (ch = '''') and (prd^ = '''') then 
+                 begin getnxt; c := ' ' end;
+               if c <> '''' then begin
+                 if i >= strlen then errorl('string overflow          ');
+                 str[i+1] := ch; { accumulate string }
+                 i := i+1
+               end
+             until c = '''';
+             getexp(ep);
+             pshstk(ep);
+             writeln(prr, '"', str:l,'"');
+             new(sbp); strassvsb(sbp^.str, str); sbp^.strl := l; 
+             strnum := strnum+1; sbp^.strn := strnum; sbp^.next := strtbl;
+             strtbl := sbp; ep^.strn := strnum
+           end;
 
           {ret}
           22: writeln(prr);
@@ -1581,10 +1636,23 @@ procedure xlate;
 
    end; (*assemble*)
 
+   procedure genstrcst;
+   begin
+     while strtbl <> nil do begin
+       writeln(prr, 'string', strtbl^.strn:1, ':');
+       write(prr, '        .string "');
+       writev(prr, strtbl^.str, strtbl^.strl);
+       writeln(prr, '"');
+       strtbl := strtbl^.next
+     end
+   end;
+
 begin (*xlate*)
 
    init;
+   writeln(prr, '        .text');
    generate;
+   genstrcst;
 
    if dodmplab then dmplabs { Debug: dump label definitions }
 
@@ -1610,6 +1678,8 @@ begin (* main *)
   if ordminchar = 0 then; 
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
+
+  strtbl := nil; strnum := 0;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
