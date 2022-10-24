@@ -451,7 +451,8 @@ procedure xlate;
                      end;
          { registers in target }
          reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
-                r8, r9, r10, r11, r12, r13, r14, r15);
+                rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15);
+         regset = set of reg;
          { stack and expression tree entries }
          expptr = ^expstk;
          expstk = record
@@ -475,6 +476,7 @@ procedure xlate;
         snl: 1..lablen;
         flablst: flabelp; { list of far labels }
         estack, efree: expptr;
+        frereg: regset;
 
    procedure init;
       var i: integer;
@@ -792,6 +794,7 @@ procedure xlate;
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          estack := nil; efree := nil;
+         frereg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15];
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -886,7 +889,7 @@ procedure xlate;
 
    procedure postamble;
    begin
-     writeln(prr, '        movl    $0,%rax');
+     writeln(prr, '        movq    $0,%rax');
      writeln(prr, '        popq    %rbp');
      writeln(prr, '        ret');
    end;
@@ -1039,14 +1042,14 @@ procedure xlate;
           rgrdi:  write(f, 'rdi');
           rgrbp:  write(f, 'rbp');
           rgrsp:  write(f, 'rsp');
-          r8:     write(f, 'r8');
-          r9:     write(f, 'r9');
-          r10:    write(f, 'r10');
-          r11:    write(f, 'r11');
-          r12:    write(f, 'r12');
-          r13:    write(f, 'r13');
-          r14:    write(f, 'r14');
-          r15:    write(f, 'r15');
+          rgr8:   write(f, 'r8');
+          rgr9:   write(f, 'r9');
+          rgr10:  write(f, 'r10');
+          rgr11:  write(f, 'r11');
+          rgr12:  write(f, 'r12');
+          rgr13:  write(f, 'r13');
+          rgr14:  write(f, 'r14');
+          rgr15:  write(f, 'r15');
         end
       end;
 
@@ -1119,8 +1122,112 @@ procedure xlate;
         end
       end;
 
-      procedure asgreg(ep: expptr; r: reg);
+      procedure getreg(var r: reg; var rf: regset);
       begin
+        r := rgrax;
+        while not (r in rf) and (r < rgr15) do r := succ(r);
+        if not (r in rf) then errorl('Out of registers         ');
+        rf := rf-[r];
+      end;
+
+      procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
+      begin
+        case ep^.op of
+          0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
+          109{lodc}, 4{loda}: begin end;
+          {adi,adr,sbi,sbr}
+          28, 29, 30, 31: begin end;   
+          120{lip}: begin end;   
+          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
+          142, 148, 154, 160, 166, 172: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
+
+          5{lao}: ep^.r1 := r1;
+
+          16{ixa}: begin end;
+          118{swp}: begin end;
+          {ldo}
+          1, 65, 66, 67, 68, 69, 194: begin end;
+          {ind}
+          9, 85, 86, 87, 88, 89, 198: begin end;
+          {inc,dec}
+          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin end;
+          {ckv}
+          175, 179, 180, 203: begin end;
+          {cvbi,cvbx,cvbb,cvbc}
+          100, 115, 116, 121: begin end;
+          {ivti,ivtx,ivtb,ivtc}
+          192,101,102,111: begin end;
+          {cps}
+          176: begin end;
+          {cpc}
+          177: begin end;
+          {cta}
+          191: begin end;
+          {lpa}
+          114: begin end;
+
+          {ldci,ldcc,ldcb}
+          123,127,126: begin ep^.r1 := r1;
+            write(prr, '        movq    $',  ep^.vali:1, ',%');
+            wrtreg(prr, ep^.r1); writeln(prr) end;
+
+          {ldcn}
+          125: begin ep^.r1 := r1; write(prr, '        movq    $0,%');
+            wrtreg(prr, ep^.r1); writeln(prr) end;
+
+          {ldcs,ldcr}
+          7, 124: ;
+
+           {chk}
+           26, 95, 97, 98, 99, 190, 199: begin end;
+           {vbs}
+           92: begin end;
+           {vbe}
+           96:;
+           56 {lca}: begin ep^.r1 := r1;
+             write(prr, '        leaq    string', ep^.strn:1, '(%rip),%'); 
+             wrtreg(prr, ep^.r1); writeln(prr);
+          end;
+
+          {ord}
+          59, 134, 136, 200: begin ep^.r1 := r1; getexp(ep); popstk(ep^.l);
+            pshstk(ep); writeln(prr) end;
+          {lcp}
+          135: begin end;
+          {sgs}
+          32: begin end;
+     
+          {flt}
+          33: begin end;
+
+          {flo]
+          34: begin end;
+
+          {trc}
+          35: begin end;
+
+          {ngi,ngr}
+          36,37: begin end;
+
+          {sqi,sqr}
+          38,39: begin end;
+
+          {abi,abr}
+          40,41: begin end;
+
+          {notb,noti,odd,rnd,chr}
+          42,50,60,62,205: begin end;
+
+          {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
+          43,44,46,47,48,49,51,52,53,54,110,206: begin end;
+          { dupi, dupa, dupr, dups, dupb, dupc }
+          181, 182, 183, 184, 185, 186: begin end;
+
+          {cks}
+          187: begin end;
+        end
       end;
 
       procedure genexp(ep: expptr);
@@ -1238,11 +1345,15 @@ procedure xlate;
             deltre(ep); pshstk(ep2) end;
           3 (*rln*): begin popstk(ep); dmptrel(ep, 19); pshstk(ep2) end;
           39 (*nwl*): ;
-          5 (*wln*): begin popstk(ep); asgreg(ep, rgrdi); dmptrel(ep, 19); 
+          { do we need to preserve the file across calls? }
+          5 (*wln*): begin popstk(ep); assreg(ep, [], rgrdi, rgnull); dmptrel(ep, 19); 
             genexp(ep); writeln(prr, '        call    _psystem_wln');
             pshstk(ep) end;
           6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
-            asgreg(ep4, rgrdi); asgreg(ep2, rgrsi); asgreg(ep3, rgrdx); asgreg(ep, rgrcx);
+            assreg(ep4, frereg, rgrdi, rgnull); 
+            assreg(ep2, frereg, rgrsi, rgnull);
+            assreg(ep3, frereg, rgrdx, rgnull); 
+            assreg(ep, frereg, rgrcx, rgnull);
             dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2); 
             dmptrel(ep3, 19); genexp(ep3); dmptrel(ep4, 19); genexp(ep4);
             writeln(prr, '        call    _psystem_wrs');
@@ -1384,8 +1495,10 @@ procedure xlate;
           55{mov}: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
             popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) end;
 
-          117{dmp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptre(ep);
-            writeln(prr, '        pop     %rax'); deltre(ep); botstk end;
+          { dmp is a strange one. It is used for stack management, and needs to
+            be checked against each situation it is used in. }
+          117{dmp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptrel(ep, 19);
+            deltre(ep); botstk end;
 
           118{swp}: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
             popstk(ep2); pshstk(ep); pshstk(ep2) end;
