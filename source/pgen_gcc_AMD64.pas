@@ -1237,7 +1237,7 @@ procedure xlate;
             142, 148, 154, 160, 166, 172: begin end;      
 
             5{lao}: begin 
-              write(prr, '        movq    $globals_start+', ep^.q:1, ',%');
+              write(prr, '        movq    globals_start+', ep^.q:1, '(%rip),%');
               wrtreg(prr, ep^.r1); writeln(prr); 
               write(prr, '        movq    (%'); wrtreg(prr, ep^.r1); 
               write(prr, '),%'); wrtreg(prr, ep^.r1); writeln(prr) end;
