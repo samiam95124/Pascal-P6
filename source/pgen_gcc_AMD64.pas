@@ -884,6 +884,11 @@ procedure xlate;
      writeln(prr, 'main:');
      writeln(prr, '        pushq   %rbp');
      writeln(prr, '        movq    %rsp, %rbp');
+     writeln(prr, '# Set up default files');
+     writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
+     writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
+     writeln(prr, '        movb    $prdfn,globals_start+prdoff(%rip)');
+     writeln(prr, '        movb    $prrfn,globals_start+prroff(%rip)');
    end;
 
    procedure postamble;
@@ -1757,11 +1762,32 @@ procedure xlate;
 begin (*xlate*)
 
    init;
+   writeln(prr, '# Header file locations');
+   writeln(prr, '        inputoff  = 0');
+   writeln(prr, '        outputoff = 2');
+   writeln(prr, '        prdoff    = 4');
+   writeln(prr, '        prroff    = 6');
+   writeln(prr);
+   writeln(prr, '# Logical file numbers for header files');
+   writeln(prr, '        inputfn   = 1');
+   writeln(prr, '        outputfn  = 2');
+   writeln(prr, '        prdfn     = 3');
+   writeln(prr, '        prrfn     = 4');
+   writeln(prr);
    writeln(prr, '        .text');
+   writeln(prr, '#');
+   writeln(prr, '# Code section');
+   writeln(prr, '#');
    generate;
+   writeln(prr, '#');
+   writeln(prr, '# Constants section');
+   writeln(prr, '#');
    genstrcst;
 
    writeln(prr, '        .bss');
+   writeln(prr, '#');
+   writeln(prr, '# Globals section');
+   writeln(prr, '#');
    writeln(prr, 'globals_start:');
    writeln(prr, '        .zero ', gblsiz:1);
 
