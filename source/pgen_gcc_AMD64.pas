@@ -189,8 +189,7 @@ var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1,q2: address; { extra parameter }
-      store       : packed array [0..maxstr] of byte; { complete program storage }
-      storedef    : packed array [0..maxdef] of byte; { defined bits }
+      gblsiz: address; { size of globals }
       sdi         : 0..maxdef; { index for that }
       cp          : address;  (* pointer to next free constant position *)
       mp,sp,np,ep : address;  (* address registers *)
@@ -973,7 +972,7 @@ procedure xlate;
                end;
           'b': begin getlin; preamble end; { block start }
           'e': begin getlin; postamble end; { block end }
-          'g': getlin; { set globals space }
+          'g': begin read(prd, gblsiz); getlin end; { set globals space }
           'f': getlin; { source error count }
           't': getlin; { template }
        end
@@ -1237,10 +1236,11 @@ procedure xlate;
             { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
             142, 148, 154, 160, 166, 172: begin end;      
 
-            5{lao}: begin write(prr, '        movq    $', ep^.q:1, ',%'); 
+            5{lao}: begin 
+              write(prr, '        movq    $globals_start+', ep^.q:1, ',%');
               wrtreg(prr, ep^.r1); writeln(prr); 
-              write(prr, '        movq    [%'); wrtreg(prr, ep^.r1); 
-              write(prr, '],%'); wrtreg(prr, ep^.r1); writeln(prr) end;
+              write(prr, '        movq    (%'); wrtreg(prr, ep^.r1); 
+              write(prr, '),%'); wrtreg(prr, ep^.r1); writeln(prr) end;
 
             16{ixa}: begin end;
             118{swp}: begin end;
@@ -1761,6 +1761,10 @@ begin (*xlate*)
    generate;
    genstrcst;
 
+   writeln(prr, '        .bss');
+   writeln(prr, 'globals_start:');
+   writeln(prr, '        .zero ', gblsiz:1);
+
    if dodmplab then dmplabs { Debug: dump label definitions }
 
 end; (*load*)
@@ -1786,7 +1790,7 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  strtbl := nil; strnum := 0;
+  strtbl := nil; strnum := 0; gblsiz := 0;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
