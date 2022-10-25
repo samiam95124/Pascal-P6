@@ -1145,88 +1145,82 @@ procedure xlate;
 
           5{lao}: ep^.r1 := r1;
 
-          16{ixa}: begin end;
-          118{swp}: begin end;
+          16{ixa}: ;
+          118{swp}: ;
           {ldo}
-          1, 65, 66, 67, 68, 69, 194: begin end;
+          1, 65, 66, 67, 68, 69, 194: ;
           {ind}
-          9, 85, 86, 87, 88, 89, 198: begin end;
+          9, 85, 86, 87, 88, 89, 198: ;
           {inc,dec}
-          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin end;
+          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: ;
           {ckv}
-          175, 179, 180, 203: begin end;
+          175, 179, 180, 203: ;
           {cvbi,cvbx,cvbb,cvbc}
-          100, 115, 116, 121: begin end;
+          100, 115, 116, 121: ;
           {ivti,ivtx,ivtb,ivtc}
-          192,101,102,111: begin end;
+          192,101,102,111: ;
           {cps}
-          176: begin end;
+          176: ;
           {cpc}
-          177: begin end;
+          177: ;
           {cta}
-          191: begin end;
+          191: ;
           {lpa}
-          114: begin end;
+          114: ;
 
           {ldci,ldcc,ldcb}
-          123,127,126: begin ep^.r1 := r1;
-            write(prr, '        movq    $',  ep^.vali:1, ',%');
-            wrtreg(prr, ep^.r1); writeln(prr) end;
+          123,127,126: ep^.r1 := r1;
 
           {ldcn}
-          125: begin ep^.r1 := r1; write(prr, '        movq    $0,%');
-            wrtreg(prr, ep^.r1); writeln(prr) end;
+          125: ep^.r1 := r1;
 
           {ldcs,ldcr}
           7, 124: ;
 
            {chk}
-           26, 95, 97, 98, 99, 190, 199: begin end;
+           26, 95, 97, 98, 99, 190, 199: ;
            {vbs}
-           92: begin end;
+           92: ;
            {vbe}
            96:;
-           56 {lca}: begin ep^.r1 := r1;
-             write(prr, '        leaq    string', ep^.strn:1, '(%rip),%'); 
-             wrtreg(prr, ep^.r1); writeln(prr);
-          end;
+           56 {lca}: ep^.r1 := r1;
 
           {ord}
-          59, 134, 136, 200: begin ep^.r1 := r1; getexp(ep); popstk(ep^.l);
-            pshstk(ep); writeln(prr) end;
+          59, 134, 136, 200: ep^.r1 := r1;
+
           {lcp}
-          135: begin end;
+          135: ;
           {sgs}
-          32: begin end;
+          32: ;
      
           {flt}
-          33: begin end;
+          33: ;
 
           {flo]
-          34: begin end;
+          34: ;
 
           {trc}
-          35: begin end;
+          35: ;
 
           {ngi,ngr}
-          36,37: begin end;
+          36,37: ;
 
           {sqi,sqr}
-          38,39: begin end;
+          38,39: ;
 
           {abi,abr}
-          40,41: begin end;
+          40,41: ;
 
           {notb,noti,odd,rnd,chr}
-          42,50,60,62,205: begin end;
+          42,50,60,62,205: ;
 
           {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
           43,44,46,47,48,49,51,52,53,54,110,206: begin end;
           { dupi, dupa, dupr, dups, dupb, dupc }
-          181, 182, 183, 184, 185, 186: begin end;
+          181, 182, 183, 184, 185, 186: ;
 
           {cks}
-          187: begin end;
+          187: ;
         end
       end;
 
