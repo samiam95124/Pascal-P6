@@ -1898,6 +1898,7 @@ void callsp(void)
                                  (char*)(store+ad1));
                     }
                     break;
+{ ??? why does this have a width ??? }
     case 65 /*wrsp*/: popint(w); popadr(ad1); popint(l); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);

@@ -3711,6 +3711,7 @@ begin (*callsp*)
                                 writestr(filtable[fn], ad1, w, l)
                            end;
                       end;
+{ ??? why does this have a width ??? }
            65 (*wrsp*): begin popint(w); popadr(ad1); popint(l);
                            popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then
