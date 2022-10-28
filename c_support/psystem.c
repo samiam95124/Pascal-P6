@@ -1543,7 +1543,7 @@ boolean psystem_wrc(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) errore("Invalid field specification");
+    if (w < 1 && ISO7185) error("Invalid field specification");
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*c", w, c); break;
@@ -1568,7 +1568,7 @@ Reads an integer from the given text file and returns it.
 *******************************************************************************/
 
 long psystem_rdi(
-    /* Pascal file to write to */ pasfil* f,
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1586,36 +1586,163 @@ long psystem_rdi(
     return (i);
 
 }
-    case 11/*rdi*/:
-    case 72/*rdif*/: w = INT_MAX; fld = q == 72; if (fld) popint(w);
-                     popadr(ad1); popadr(ad); pshadr(ad);
-                     valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld);
-                     putint(ad1, i);
-                     break;
 
 /** ****************************************************************************
 
+Read integer from text file with field
+
+Reads an integer from the given text file with the given field and returns it.
+See the Pascaline specification. Only the characters in the indicated field will
+be used, even if followed by other digits.
+
 *******************************************************************************/
 
-    case 37/*rib*/:
-    case 71/*ribf*/: w = INT_MAX; fld = q == 71; popint(mx); popint(mn);
-                    if (fld) popint(w); popadr(ad1); popadr(ad);
-                    pshadr(ad); valfil(ad); fn = store[ad];
-                    readi(fn, &i, &w, fld);
-                    if (i < mn || i > mx) errore(VALUEOUTOFRANGE);
-                    putint(ad1, i);
-                    break;
+long psystem_rdif(
+    /* Pascal file to write to */ pasfil* f,
+    /* Field */                   long    w
+)
+
+{
+
+    int fn;
+    long i;
+    long w;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readi(fn, &i, &w, fld);
+
+    return (i);
+
+}
 
 /** ****************************************************************************
 
+Read integer bounded from text file
+
+Reads an integer with bounds from the given text file and returns it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
 *******************************************************************************/
 
-    case 12/*rdr*/:
-    case 73/*rdrf*/: w = INT_MAX; fld = q == 73; if (fld) popint(w);
-                    popadr(ad1); popadr(ad); pshadr(ad);
-                    valfil(ad); fn = store[ad];
-                    readr(fn, &r, w, fld); putrel(ad1, r);
-                    break;
+long psystem_rib(
+    /* Pascal file to write to */ pasfil* f,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    int fn;
+    long i;
+    long w;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    w = INT_MAX; 
+    readi(fn, &i, &w, FALSE);
+    if (i < mn || i > mx) error("Value out of range");
+
+    return (i);
+
+}
+
+
+
+
+
+/** ****************************************************************************
+
+Read integer bounded from text file with field
+
+Reads an integer with bounds from the given text file with the given field and
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+long psystem_rib(
+    /* Pascal file to write to */ pasfil* f,
+    /* Bounds for integer */      long mn, long mx,
+    /* Field to read */           long w
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readi(fn, &i, &w, TRUE);
+    if (i < mn || i > mx) error("Value out of range");
+
+    return (i);
+
+}
+
+/** ****************************************************************************
+
+Read real from text file
+
+Reads a real in floating format from the given text file. Returns the real as
+read.
+
+*******************************************************************************/
+
+double psystem_rdr(
+    /* Pascal file to read from */ pasfil* f
+)
+
+{
+
+    int    fn;
+    double r;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readr(fn, &r, INT_MAX, false); /* read real */
+
+    return (r);
+
+}
+
+/** ****************************************************************************
+
+Read real from text file with field
+
+Reads a real in floating format from the given text file from the given field.
+Returns the real as read. See the Pascaline specification. Only the characters
+in the indicated field will be used, even if followed by other digits
+
+*******************************************************************************/
+
+double psystem_rdrf(
+    /* Pascal file to read from */ pasfil* f,
+    /* Field */                    long    w
+)
+
+{
+
+    int    fn;
+    double r;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readr(fn, &r, w, TRUE); /* read real */
+
+    return (r);
+
+}
 
 /** ****************************************************************************
 
