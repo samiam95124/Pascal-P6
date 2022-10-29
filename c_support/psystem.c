@@ -1650,10 +1650,6 @@ long psystem_rib(
 
 }
 
-
-
-
-
 /** ****************************************************************************
 
 Read integer bounded from text file with field
@@ -1667,7 +1663,7 @@ maximum. Out of range integers will result in an error.
 
 *******************************************************************************/
 
-long psystem_rib(
+long psystem_ribf(
     /* Pascal file to write to */ pasfil* f,
     /* Bounds for integer */      long mn, long mx,
     /* Field to read */           long w
@@ -1721,7 +1717,7 @@ Read real from text file with field
 
 Reads a real in floating format from the given text file from the given field.
 Returns the real as read. See the Pascaline specification. Only the characters
-in the indicated field will be used, even if followed by other digits
+in the indicated field will be used, even if followed by other digits.
 
 *******************************************************************************/
 
@@ -1746,119 +1742,326 @@ double psystem_rdrf(
 
 /** ****************************************************************************
 
+Read character from text file
+
+Reads a character from the given text file. Returns the character.
+
 *******************************************************************************/
 
-    case 13/*rdc*/:
-    case 75/*rdcf*/: w = INT_MAX; fld = q == 75; if (fld) popint(w);
-                    popadr(ad1); popadr(ad); pshadr(ad);
-                    valfil(ad); fn = store[ad];
-                    readc(fn, &c, w, fld); putchr(ad1, c);
-                    break;
+char psystem_rdc(
+    /* Pascal file to read from */ pasfil* f
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readc(fn, &c, INT_MAX, FALSE);
+
+    return (c);
+
+}
 
 /** ****************************************************************************
 
+Read character from text file with field
+
+Reads a character from the given text file with the given field. Returns the 
+character. See the Pascaline specification. Only the characters in the indicated
+field will be used, even if followed by other digits.
+
 *******************************************************************************/
 
-    case 38/*rcb*/:
-    case 74/*rcbf*/: w = INT_MAX; fld = q == 74; popint(mx); popint(mn);
-                     if (fld) popint(w); popadr(ad1); popadr(ad);
-                     pshadr(ad); valfil(ad);
-                     fn = store[ad];
-                     readc(fn, &c, w, fld);
-                     if (c < mn || c > mx) errore(VALUEOUTOFRANGE);
-                     putchr(ad1, c);
-                     break;
+char psystem_rdcf(
+    /* Pascal file to read from */ pasfil* f,
+    /* Field */                    long w
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readc(fn, &c, w, TRUE);
+
+    return (c);
+
+}
 
 /** ****************************************************************************
 
+Read character from text file with range check
+
+Reads a character from the given text file with a range check. The minimum and 
+and maximum are specified, and an error results if the character is not within
+those two. Returns the character.
+
 *******************************************************************************/
 
-    case 14/*sin*/: poprel(r1); pshrel(sin(r1)); break;
+char psystem_rcb(
+    /* Pascal file to read from */ pasfil* f,
+    /* Range of values          */ long mn, mx
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readc(fn, &c, INT_MAX, fld);
+    if (c < mn || c > mx) error("Value out of range");
+
+    return (c);
+
+}
 
 /** ****************************************************************************
 
+Read character from text file with range check and field
+
+Reads a character from the given text file with a range check and field. The 
+minimum and and maximum are specified, and an error results if the character is
+not within those two. See the Pascaline specification. Only the characters in
+the indicated field will be used, even if followed by other digits. Returns the
+character.
+
 *******************************************************************************/
 
-    case 15/*cos*/: poprel(r1); pshrel(cos(r1)); break;
+char psystem_rcbf(
+    /* Pascal file to read from */ pasfil* f,
+    /* Range of values          */ long mn, long mx,
+    /* Field                    */ w
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readc(fn, &c, w, fld);
+    if (c < mn || c > mx) error("Value out of range");
+
+    return (c);
+
+}
 
 /** ****************************************************************************
 
+Find sine of real
+
+Finds the sine of the given number and returns that.
+
 *******************************************************************************/
 
-    case 16/*exp*/: poprel(r1); pshrel(exp(r1)); break;
+double psystem_sin(
+    /* Real to find sine of */ double r
+)
+
+{
+
+    return (sin(r));
+
+}
 
 /** ****************************************************************************
 
+Find cosine of real
+
+Finds the cosine of the given number and returns that.
+
 *******************************************************************************/
 
-    case 17/*log*/: poprel(r1); if (r1 <= 0) errore(INVALIDARGUMENTTOLN);
-                    pshrel(log(r1)); break;
+double psystem_cos(
+    /* Real to find cosine of */ double r
+)
+
+{
+
+    return (cos(r));
+
+}
 
 /** ****************************************************************************
 
+Find exponential of real
+
+Finds the exponential of the given number and returns that.
+
 *******************************************************************************/
 
-    case 18/*sqt*/: poprel(r1); if (r1 < 0) errore(INVALIDARGUMENTTOSQRT);
-                    pshrel(sqrt(r1)); break;
+double psystem_exp(
+    /* Real to find exponential of */ double r
+)
+
+{
+
+    return (exp(r));
+
+}
 
 /** ****************************************************************************
 
+Find logarithm of real
+
+Finds the logarithm of the given number and returns that.
+
 *******************************************************************************/
 
-    case 19/*atn*/: poprel(r1); pshrel(atan(r1)); break;
+double psystem_log(
+    /* Real to find exponential of */ double r
+)
+
+{
+
+    return (log(r));
+
+}
 
 /** ****************************************************************************
 
+Find square root of real
+
+Finds the square root of the given number and returns that.
+
 *******************************************************************************/
 
-    /* placeholder for "mark" */
-    case 20/*sav*/: errorv(INVALIDSTANDARDPROCEDUREORFUNCTION);
+double psystem_sqt(
+    /* Real to find square root of */ double r
+)
+
+{
+
+    return (sqrt(r));
+
+}
 
 /** ****************************************************************************
 
+Find arctangent of real
+
+Finds the arctangent of the given number and returns that.
+
 *******************************************************************************/
 
-    case 21/*pag*/: popadr(ad); valfil(ad); fn = store[ad];
-                    if (fn <= COMMANDFN) switch (fn) {
-                         case OUTPUTFN: fprintf(stdout, "\f"); break;
-                         case PRRFN: fprintf(filtable[PRRFN], "\f"); break;
-                         case ERRORFN: fprintf(stderr, "\f"); break;
-                         case LISTFN: fprintf(stdout, "\f"); break;
-                         case PRDFN: case INPUTFN:
-                         case COMMANDFN: errore(WRITEONREADONLYFILE); break;
-                    } else {
-                         if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "\f");
-                    }
-                    break;
+double psystem_atn(
+    /* Real to find square root of */ double r
+)
+
+{
+
+    return (atn(r));
+
+}
 
 /** ****************************************************************************
 
+Page text file
+
+Outputs a page or form-feed to the given Pascal text file.
+
 *******************************************************************************/
 
-    case 22/*rsf*/: popadr(ad); valfil(ad); fn = store[ad];
-                    if (fn <= COMMANDFN) switch (fn) {
-                         case PRDFN: resetfn(PRDFN, FALSE); break;
-                         case PRRFN: errore(CANNOTRESETWRITEONLYFILE); break;
-                         case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
-                         case COMMANDFN:
-                           errore(CANNOTRESETORREWRITESTANDARDFILE); break;
-                    } else resetfn(fn, FALSE);
-                    break;
+void psystem_pag(
+    /* Pascal file to page */ pasfil* f,
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: fprintf(stdout, "\f"); break;
+        case ERRORFN: fprintf(stderr, "\f"); break;
+        case LISTFN: fprintf(stdout, "\f"); break;
+        case INPUTFN:
+        case COMMANDFN: error("Write on read only file"); break;
+
+    } else {
+
+        if (filstate[fn] != fswrite) error("File mode incorrect");
+        fprintf(filtable[fn], "\f");
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Reset file text
+
+Resets the given Pascal text file to the beginning and sets it in read mode.
+
 *******************************************************************************/
 
-    case 23/*rwf*/: popadr(ad); valfil(ad); fn = store[ad];
-                    if (fn <= COMMANDFN) switch (fn) {
-                         case PRRFN: rewritefn(PRRFN, FALSE); break;
-                         case PRDFN: errore(CANNOTREWRITEREADONLYFILE); break;
-                         case ERRORFN: case LISTFN: case OUTPUTFN: case INPUTFN:
-                         case COMMANDFN:
-                           errore(CANNOTRESETORREWRITESTANDARDFILE); break;
-                    } else rewritefn(fn, FALSE);
-                    break;
+void psystem_rsf(
+    /* Pascal file to reset */ pasfil* f,
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
+        case COMMANDFN:
+            errore("Cannot reset or rewrite standardfile"); break;
+
+    } else resetfn(fn, FALSE);
+
+}
+
+/** ****************************************************************************
+
+Rewrite file text
+
+Rewrites the given Pascal text file to the beginning and clears the file.
+
+*******************************************************************************/
+
+void psystem_rwf(
+    /* Pascal file to rewrite */ pasfil* f,
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case ERRORFN: case LISTFN: case OUTPUTFN: case INPUTFN:
+        case COMMANDFN:
+            error("Cannot reset or rewrite standardfile"); break;
+
+    } else rewritefn(fn, FALSE);
+
+}
 
 /** ****************************************************************************
 
