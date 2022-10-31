@@ -388,7 +388,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define MARKRA              -48 /* return address */
 #endif
 
-/* ******************* } of pcom and pint common parameters *********** */
+/* ******************* end of pcom and pint common parameters *********** */
 
 /* internal constants */
 

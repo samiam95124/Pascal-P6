@@ -36,40 +36,188 @@ support calls to C ANSI calls.
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef DORECYCL
-#define DORECYCL TRUE /* obey heap space recycle requests */
-#endif
+/* Set default configuration flags. This gives proper behavior even if no
+  preprocessor flags are passed in.
 
-/* invoke a special recycle mode that creates single word entries on
-  recycle of any object, breaking off and recycling the rest. Once
-  allocated, each entry exists forever, and accesses to it can be
-  checked. */
-#ifndef DOCHKRPT
-#define DOCHKRPT FALSE /* check reuse of freed entry (automatically
-                           invokes dorecycl = false */
-#endif
-
-/*
- * Companion flag to DOCHKRPT: break returned blocks as occupied. not free.
- * This means that The entire disposed block will be kept out of circulation,
- * but the first word will be kept as a "disposed block" marker.
- *
- * This helps catch errors when references exist within blocks. This could
- * happen for several reasons, for example a with reference, a var reference,
- * or similar cached pointer. Thus this flag modifies DOCHKRPT to leave returned
- * space totally unused.
- */
-#ifndef DONORECPAR
-#define DONORECPAR FALSE /* do not recycle part of returned entries */
-#endif
-
-#ifndef DOCHKDEF
-#define DOCHKDEF TRUE /* check undefined accesses */
+  The defaults are:
+  WRDSIZ32       - 32 bit compiler.
+  ISO7185_PASCAL - uses ISO 7185 standard language only.
+*/
+#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#define WRDSIZ32 1
 #endif
 
 #ifndef ISO7185
 #define ISO7185 FALSE /* iso7185 standard flag */
 #endif
+
+#ifndef DORECYCL
+#define DORECYCL TRUE /* obey heap space recycle requests */
+#endif
+
+/*******************************************************************************
+
+Program object sizes and characteristics, sync with pint. These define
+the machine specific characteristics of the target.
+
+The configurations are as follows:
+
+type                  #bits 32  #bits 64
+===========================================================
+integer               32        64
+real                  64        64
+char                  8         8
+boolean               8         8
+set                   256       256
+pointers              32        64
+marks                 32        64
+File logical number   8         8
+
+Both endian types are supported. There is no alignment needed, but you
+may wish to use alignment to tune the runtime speed.
+
+The machine characteristics dep}ent on byte accessable machines. This
+table is all you should need to adapt to any byte addressable machine.
+
+*/
+
+#ifdef WRDSIZ32
+#define INTSIZE             4   /* size of integer */
+#define INTAL               4   /* alignment of integer */
+#define INTDIG              11  /* number of decimal digits in integer */
+#define INTHEX              8   /* number of hex digits of integer */
+#define REALSIZE            8   /* size of real */
+#define REALAL              4   /* alignment of real */
+#define CHARSIZE            1   /* size of char */
+#define CHARAL              1   /* alignment of char */
+#define CHARMAX             1
+#define BOOLSIZE            1   /* size of boolean */
+#define BOOLAL              1   /* alignment of boolean */
+#define PTRSIZE             4   /* size of pointer */
+#define ADRSIZE             4   /* size of address */
+#define ADRAL               4   /* alignment of address */
+#define SETSIZE            32   /* size of set */
+#define SETAL               1   /* alignment of set */
+#define FILESIZE            1   /* required runtime space for file (lfn) */
+#define FILEIDSIZE          1   /* size of the lfn only */
+#define EXCEPTSIZE          1   /* size of exception variable */
+#define EXCEPTAL            1
+#define STACKAL             4   /* alignment of stack */
+#define STACKELSIZE         4   /* stack element size */
+#define MAXSIZE            32   /* this is the largest type that can be on the
+                                   stack */
+/* Heap alignment should be either the natural word alignment of the
+  machine, or the largest object needing alignment that will be allocated.
+  It can also be used to enforce minimum block allocation policy. */
+#define HEAPAL              4   /* alignment for each heap arena */
+#define GBSAL               4   /* globals area alignment */
+#define SETHIGH           255   /* Sets are 256 values */
+#define SETLOW              0
+#define ORDMAXCHAR        255   /* Characters are 8 bit ISO/IEC 8859-1 */
+#define ORDMINCHAR          0
+#define MAXRESULT    REALSIZE   /* maximum size of function result */
+#define MARKSIZE           24   /* maxresult+6*ptrsize */
+#define UJPLEN              5   /* length of ujp instruction (used for case
+                                   jumps) */
+
+/* Value of nil is 1 because this allows checks for pointers that were
+  initialized, which would be zero (since we clear all space to zero).
+  In the new unified code/data space scheme, 0 and 1 are always invalid
+  addresses, since the startup code is at least that long. */
+#define NILVAL              1  /* value of 'nil' */
+
+/* Mark element offsets
+
+  Mark format is:
+
+  -8:  Function return value, 64 bits, enables a full real result.
+  -12: Static link.
+  -16: Dynamic link.
+  -20: Saved EP from previous frame.
+  -24: Stack bottom after locals allocate. Used for interprocdural gotos.
+  -28: EP from current frame. Used for interprocedural gotos.
+  -32: Return address
+
+*/
+#define MARKSL              -4  /* static link */
+#define MARKDL              -8  /* dynamic link */
+#define MARKEP              -12 /* (old) maximum frame size */
+#define MARKSB              -16 /* stack bottom */
+#define MARKET              -20 /* current ep */
+#define MARKRA              -24 /* return address */
+#endif
+
+#ifdef WRDSIZ64
+#define INTSIZE             8  /* size of integer */
+#define INTAL               4  /* alignment of integer */
+#define INTDIG              20 /* number of decimal digits in integer */
+#define INTHEX              16 /* number of hex digits of integer */
+#define REALSIZE            8  /* size of real */
+#define REALAL              4  /* alignment of real */
+#define CHARSIZE            1  /* size of char */
+#define CHARAL              1  /* alignment of char */
+#define CHARMAX             1
+#define BOOLSIZE            1  /* size of boolean */
+#define BOOLAL              1  /* alignment of boolean */
+#define PTRSIZE             8  /* size of pointer */
+#define ADRSIZE             8  /* size of address */
+#define ADRAL               4  /* alignment of address */
+#define SETSIZE            32  /* size of set */
+#define SETAL               1  /* alignment of set */
+#define FILESIZE            1  /* required runtime space for file (lfn) */
+#define FILEIDSIZE          1  /* size of the lfn only */
+#define EXCEPTSIZE          1  /* size of exception variable */
+#define EXCEPTAL            1
+#define STACKAL             8  /* alignment of stack */
+#define STACKELSIZE         8  /* stack element size */
+#define MAXSIZE            32  /* this is the largest type that can be on the
+                                  stack */
+/* Heap alignment should be either the natural word alignment of the
+  machine, or the largest object needing alignment that will be allocated.
+  It can also be used to enforce minimum block allocation policy. */
+#define HEAPAL              4  /* alignment for each heap arena */
+#define GBSAL               4  /* globals area alignment */
+#define SETHIGH           255  /* Sets are 256 values */
+#define SETLOW              0
+#define ORDMAXCHAR        255  /* Characters are 8 bit ISO/IEC 8859-1 */
+#define ORDMINCHAR          0
+#define MAXRESULT    REALSIZE  /* maximum size of function result */
+#define MARKSIZE           48  /* maxresult+6*ptrsize */
+#define UJPLEN              9  /* length of ujp instruction (used for case
+                                  jumps) */
+
+/* Value of nil is 1 because this allows checks for pointers that were
+  initialized, which would be zero (since we clear all space to zero).
+  In the new unified code/data space scheme, 0 and 1 are always invalid
+  addresses, since the startup code is at least that long. */
+#define NILVAL              1  /* value of 'nil' */
+
+/* Mark element offsets
+
+  Mark format is:
+
+  -8: Static link.
+  -16: Dynamic link.
+  -24: Saved EP from previous frame.
+  -32: Stack bottom after locals allocate. Used for interprocdural gotos.
+  -40: EP from current frame. Used for interprocedural gotos.
+  -48: Return address
+
+*/
+#define MARKSL              -8  /* static link */
+#define MARKDL              -16 /* dynamic link */
+#define MARKEP              -24 /* (old) maximum frame size */
+#define MARKSB              -32 /* stack bottom */
+#define MARKET              -40 /* current ep */
+#define MARKRA              -48 /* return address */
+#endif
+
+/* ******************* end of pcom and pint common parameters *********** */
+
+/* internal constants */
+
+#define TRUE  1               /* value of true */
+#define FALSE 0               /* value of false */
 
 /* assigned logical channels for header files */
 #define INPUTFN   1 /* 'input' file no. */
@@ -81,9 +229,11 @@ support calls to C ANSI calls.
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       9    /* real extra field in floating format -1.0e+000 */
+#define ERRLEN       250  /* maximum length of error messages */
 
 typedef long boolean; /* true/false */
 typedef char pasfil; /* Pascal file */
+typedef char filnam[FILLEN]; /* filename strings */
 typedef enum {
   fsclosed,
   fsread,
@@ -92,6 +242,7 @@ typedef enum {
 typedef long cmdinx;            /* index for command line buffer */
 typedef long cmdnum;            /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
+typedef char errmsg[ERRLEN]; /* error string */
 
 static FILE* filtable[MAXFIL+1]; /* general file holders */
 static filnam filnamtab[MAXFIL+1]; /* assigned name of files */
@@ -266,7 +417,7 @@ void valfil(
             i = i+1;
 
         }
-        if (ff == 0) errore(TOOMANYFILES);
+        if (ff == 0) error("Too many files");
         *f = ff;
 
     }
@@ -432,7 +583,7 @@ char buffn(
 
     } else {
 
-        if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) error("File mode incorrect");
         c = chkfile(filtable[fn]);
 
     }
@@ -1082,9 +1233,9 @@ code to verify access to the variants used.
 
 void psystem_nwl(
     /** Address of pointer */  unsigned char** p;
-    /** length to allocate */  unsigned long l
-    /** pointer to tag list */ long* tl,
-    /** number of tags */      unsigned long tc
+    /** length to allocate */  unsigned long   l
+    /** pointer to tag list */ long*           tl,
+    /** number of tags */      unsigned long   tc
 )
 
 {
@@ -2065,396 +2216,978 @@ void psystem_rwf(
 
 /** ****************************************************************************
 
+Write boolean to text file
+
+Writes the given boolean to the Pascal text file with width.
+
 *******************************************************************************/
 
-    case 24/*wrb*/: popint(w); popint(i); b = i != 0; popadr(ad);
-                     pshadr(ad); valfil(ad); fn = store[ad];
-                     if (w < 1) errore(INVALIDFIELDSPECIFICATION);
-                     if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: writeb(stdout, b, w); break;
-                          case PRRFN: writeb(filtable[PRRFN], b, w); break;
-                          case ERRORFN: writeb(stderr, b, w); break;
-                          case LISTFN: writeb(stdout, b, w); break;
-                          case PRDFN: case INPUTFN:
-                          case COMMANDFN: errore(WRITEONREADONLYFILE); break;
-                     } else {
-                         if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         writeb(filtable[fn], b, w);
-                     }
-                     break;
+void psystem_wrb(
+    /* Pascal file to rewrite */ pasfil* f,
+    /* Boolean to write */       boolean b,
+    /* Width */                  long    w
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    b = b != 0; popadr(ad);
+    if (w < 1) error("Invalid field specification");
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: writeb(stdout, b, w); break;
+        case ERRORFN: writeb(stderr, b, w); break;
+        case LISTFN: writeb(stdout, b, w); break;
+        case INPUTFN:
+        case COMMANDFN: error("Write on read only file"); break;
+
+    } else {
+
+        if (filstate[fn] != fswrite) errore("File mode incorrect");
+        writeb(filtable[fn], b, w);
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Write real to text file in fixed point notation
+
+Writes a given real to a Pascal text file with field and fraction. 
+
 *******************************************************************************/
 
-    case 25/*wrf*/: popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
-                     valfil(ad); fn = store[ad];
-                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
-                     if (f < 1) errore(INVALIDFRACTIONSPECIFICATION);
-                     if (fn <= COMMANDFN) switch (fn) {
-                          case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r);
-                                         break;
-                          case PRRFN: fprintf(filtable[PRRFN], "%*.*f", (int)w, (int)f, r);
-                                      break;
-                          case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)f, r);
-                                        break;
-                          case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r); break;
-                          case PRDFN: case INPUTFN:
-                          case COMMANDFN: errore(WRITEONREADONLYFILE); break;
-                     } else {
-                         if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-                         fprintf(filtable[fn], "%*.*f", (int)w, (int)f, r);
-                     }
-                     break;
+void psystem_wrf(
+    /* Pascal file to rewrite */ pasfil* f,
+    /* Real to write */          double  r,
+    /* Width */                  long    w,
+    /* Fraction */               long    fr
+)
+
+{
+
+    int  fn;
+    char c;
+    
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (w < 1 && ISO7185) error("Invalid field specification");
+    if (f < 1) error("Invalid fraction specification");
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: fprintf(stdout, "%*.*f", w, fr, r); break;
+        case ERRORFN: fprintf(stderr, "%*.*f", w, fr, r); break;
+        case LISTFN: fprintf(stdout, "%*.*f", w, fr, r); break;
+        case INPUTFN:
+        case COMMANDFN: error("Write on read only file"); break;
+
+    } else {
+
+        if (filstate[fn] != fswrite) error("File mode incorrect");
+        fprintf(filtable[fn], "%*.*f", w, fr, r);
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Dispose of dynamic variable
+
+Returns the indicated space with the given size to free store. The size is not
+used. The block is checked for outstanding variable references.
+
 *******************************************************************************/
 
-    case 26/*dsp*/: popadr(ad1); popadr(ad);
-                    if (varlap(ad, ad+ad1-1))
-                      errorv(DISPOSEOFVARREFERENCEDBLOCK);
-                    dspspc(ad1, ad); break;
+void psystem_dsp(
+    /** Block to dispose of */ unsigned char* p,
+    /** Size of block */       unsigned long  s
+)
+
+{
+
+    if (varlap(p, p+s-1)) error("Dispose of varaible referenced block");
+    free(p);
+
+}
 
 /** ****************************************************************************
 
+Deallocate space for checked variant record
+
+Deallocates space for a variant record with tags. Expects the address of the
+pointer to deallocate, and the length of allocation, a pointer to the tag array,
+and the length of the tag array.
+
+Deallocates space with a "buried" tag field list. Expects that the address given
+will be of a variant record that was allocated with psystem_nwl, which places a
+tag field list below the pointer. This looks like:
+
+    p-> Record space
+        Tag count
+        Tag N
+        ...
+        Tag 2
+        Tag 1
+
+The tag table is found behind the record base pointer. The count of tags is
+placed just below the record base pointer, so that the code can find both the
+number of tags and where the base of the tag array is.
+
+The tag list given is matched to the tag list of the allocated pointer, and an
+error results if they don't match in number and value. This would indicate that
+a different set of tags were used to dispose of the variant record than was
+used to create it.
+
+Once the tags are matched, the whole block is disposed of, both the tag list and
+the variant record.
+
 *******************************************************************************/
 
-    case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
-                    /* add padding for zero tag case */
-                    l = 0; if (i == 0 && DONORECPAR) l = 1;
-                    ad = getadr(sp+i*INTSIZE); /* get rec addr */
-                    j = i; /* save tag count */
-                    /* under us is either the number of tags or the length of the block, if it
-                      was freed. Either way, it is >= adrsize if not free */
-                    if (getint(ad-INTSIZE) <= ADRSIZE)
-                        errorv(BLOCKALREADYFREED);
-                    if (i != getint(ad-INTSIZE)-ADRSIZE-1)
-                        errorv(NEWDISPOSETAGSMISMATCH);
-                    ad = ad-INTSIZE*2; ad2 = sp;
-                    /* ad = top of tags in dynamic, ad2 = top of tags in
-                      stack */
-                    k = i;
-                    while (k > 0)
-                    {
-                        if (getint(ad) != getint(ad2))
-                            errorv(NEWDISPOSETAGSMISMATCH);
-                        ad = ad-INTSIZE; ad2 = ad2+INTSIZE; k = k-1;
-                    }
-                    ad = ad+INTSIZE; ad1 = ad1+(i+1)*INTSIZE;
-                    /* ajust for dummy */
-                    ad = ad-(l*INTSIZE); ad1 = ad1+(l*INTSIZE);
-                    if (varlap(ad, ad+ad1-1))
-                      errorv(DISPOSEOFVARREFERENCEDBLOCK);
-                    dspspc(ad1, ad);
-                    while (i > 0) { popint(j); i = i-1; };
-                    popadr(ad);
-                    if (DONORECPAR) {
-                        /* This flag means we are going to keep the entry, even
-                         * after disposal. We place a dummy tag below the
-                         * pointer just to indicate the space was freed.
-                         */
-                         putadr(ad-ADRSIZE, ADRSIZE);
-                    }
-                    break;
+void psystem_dsl(
+    /** Address of block */    unsigned char* p;
+    /** length to allocate */  unsigned long  l
+    /** pointer to tag list */ long*          tl,
+    /** number of tags */      unsigned long  tc
+)
+
+{
+
+    unsigned long* ulp;
+    long *         lp;
+    unsigned char* bp;
+
+    ulp = (unsigned long*) p; /* point to top */
+    ulp--;
+    if (*ulp != tc) error("New/dispose tags do not match in number");
+    lp = (unsigned long*)ulp; /* point to bottom */
+    bp = (unsigned char*) lp; /* save that */
+    while (tc) { /* compare tags list */
+
+        if (*lp != *tl) error("New/dispose tags do not match");
+        lp++; /* next tag */
+        tl++;
+        tc--
+
+    }
+    free(bp); /* free the net block */
+
+}
 
 /** ****************************************************************************
 
+Write binary variable to binary file
+
+Writes a binary variable to the given Pascal binary file. The binary variable
+can be any size, and the size bytes from the variable address are written.
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 27/*wbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
-                    valfilwm(ad); fn = store[ad];
-                    for (i = 0; i < l; i++) {
-                       chkdef(ad1); fputc(store[ad1], filtable[fn]);
-                       ad1 = ad1+1;
-                    }
-                    break;
+void psystem_wbf(
+    /* Pascal file to rewrite */ pasfil*        f,
+    /* Variable to write */      unsigned char* p,
+    /* Length to write */        long           l
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+    FILE* fp;    /* file pointer */
+
+    fp = filtable[fn];
+    for (i = 0; i < l; i++) fputc(*p++, fp);
+
+}
 
 /** ****************************************************************************
 
+Write integer variable to binary file
+
+Writes a integer variable to the given Pascal binary file. The integer variable
+is written out as a series of bytes. 
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 28/*wbi*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
-                     valfilwm(ad); fn = store[ad];
-                     for (i = 0; i < INTSIZE; i++)
-                        fputc(store[sp+i], filtable[fn]);
-                     popint(i);
-                     break;
+void psystem_wbi(
+    /* Pascal file to rewrite */ pasfil* f,
+    /* Variable to write */      long*   p
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+    FILE* fp;    /* file pointer */
+
+    fp = filtable[fn];
+    for (i = 0; i < INTSIZE; i++) fputc(*p++, fp);
+
+}
 
 /** ****************************************************************************
 
+Write byte variable to binary file
+
+Writes a byte variable to the given Pascal binary file. A single byte is 
+written. 
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 45/*wbx*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
-                     valfilwm(ad); fn = store[ad];
-                     fputc(store[sp], filtable[fn]); popint(i);
-                     break;
+void psystem_wbx(
+    /* Pascal file to rewrite */ pasfil*        f,
+    /* Variable to write */      unsigned char* p
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+
+    fputc(*p++, filtable[fn]);
+
+}
 
 /** ****************************************************************************
 
+Write real variable to binary file
+
+Writes a real variable to the given Pascal binary file. Writes the real as a
+series of bytes.
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 29/*wbr*/: poprel(r); popadr(ad); pshadr(ad); pshrel(r);
-                     valfilwm(ad); fn = store[ad];
-                     for (i = 0; i < REALSIZE; i++)
-                        fputc(store[sp+i], filtable[fn]);
-                     poprel(r);
-                     break;
+void psystem_wbr(
+    /* Pascal file to rewrite */ pasfil* f,
+    /* Variable to write */      double* p
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+    FILE* fp;    /* file pointer */
+
+    fp = filtable[fn];
+    for (i = 0; i < REALSIZE; i++) fputc(*p++, fp);
+
+}
 
 /** ****************************************************************************
 
+Write character variable to binary file
+
+Writes a character variable to the given Pascal binary file. Writes the 
+character as a series of bytes (one in the case of ASCII, more for Unicode).
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 30/*wbc*/: popint(i); c = i; popadr(ad); pshadr(ad); pshint(i);
-                     valfilwm(ad); fn = store[ad];
-                     for (i = 0; i < CHARSIZE; i++)
-                        fputc(store[sp+i], filtable[fn]);
-                     popint(i);
-                     break;
+void psystem_wbc(
+    /* Pascal file to rewrite */ pasfil*        f,
+    /* Variable to write */      unsigned char* p
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+    FILE* fp;    /* file pointer */
+
+    fp = filtable[fn];
+    for (i = 0; i < CHARSIZE; i++) fputc(*p++, fp);
+
+}
 
 /** ****************************************************************************
 
+Write boolean variable to binary file
+
+Writes a boolean variable to the given Pascal binary file. Writes the boolean as
+a single byte.
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 31/*wbb*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
-                     valfilwm(ad); fn = store[ad];
-                     for (i = 0; i < BOOLSIZE; i++)
-                         fputc(store[sp+i], filtable[fn]);
-                     popint(i);
-                     break;
+void psystem_wbb(
+    /* Pascal file to rewrite */ pasfil*  f,
+    /* Variable to write */      boolean* p
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+
+    fputc(*p++, filtable[fn]);
+
+}
 
 /** ****************************************************************************
 
+Read binary variable from binary file
+
+Reads a binary variable from the given Pascal binary file. The binary variable
+can be any size, and the size bytes from the variable address are read.
+
+In Pascal-P6, files are typed text or binary, and binary files are structured
+as bytes.
+
 *******************************************************************************/
 
-    case 32/*rbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
-                     valfilrm(ad); fn = store[ad];
-                     if (filbuff[fn]) /* buffer data exists */
-                       for (i = 0; i < l; i++) {
-                         store[ad1+i] = store[ad+FILEIDSIZE+i];
-                         putdef(ad1+i, TRUE);
-                       }
-                     else
-                       for (i = 0; i < l; i++) {
-                         if (eoffile(filtable[fn])) errore(ENDOFFILE);
-                         store[ad1] = fgetc(filtable[fn]);
-                         putdef(ad1, TRUE);
-                         ad1 = ad1+1;
-                       }
-                     break;
+void psystem_rbf(
+    /* Pascal file to rewrite */ pasfil*        f,
+    /* Variable to read */       unsigned char* p,
+    /* Length to read */         long           l
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfilwm(f); /* validate file for writing */
+    fn = *f;     /* get logical file no. */
+    FILE* fp;    /* file pointer */
+
+    fp = filtable[fn];
+    for (i = 0; i < l; i++) *p++ = fgetc(fp);
+
+}
 
 /** ****************************************************************************
 
+Reset file binary
+
+Resets the given Pascal binary file.
+
 *******************************************************************************/
 
-    case 33/*rsb*/: popadr(ad); valfil(ad); fn = store[ad]; resetfn(fn, TRUE);
-                    break;
+void psystem_rsb(
+    /* Pascal binary file */ pasfil* f,
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfil(f); /* validate file */
+    fn = *f;   /* get logical file no. */
+
+    resetfn(fn, TRUE);
+
+}
 
 /** ****************************************************************************
 
+Rewrite file binary
+
+Rewrites the given Pascal binary file.
+
 *******************************************************************************/
 
-    case 34/*rwb*/: popadr(ad); valfil(ad); fn = store[ad];
-                    rewritefn(fn, TRUE); break;
+void psystem_rwb(
+    /* Pascal binary file */ pasfil* f,
+)
+
+{
+
+    int  fn;
+    long i;
+    
+    valfil(f); /* validate file */
+    fn = *f;   /* get logical file no. */
+
+    rewritefn(fn, TRUE);
+
+}
 
 /** ****************************************************************************
 
+Get file binary
+
+Loads the next file element from a binary file. The Pascal binary file is
+specified, with the size of each element.
+
 *******************************************************************************/
 
-    case 35/*gbf*/: popint(i); popadr(ad); valfilrm(ad);
-                    fn = store[ad];
-                    if (varlap(ad+FILEIDSIZE, ad+FILEIDSIZE+i-1))
-                        errorv(VARREFERENCEDFILEBUFFERMODIFIED);
-                    if (filbuff[fn]) filbuff[fn] = FALSE;
-                    else
-                      for (j = 0; j < i; j++)
-                         store[ad+FILEIDSIZE+j] = fgetc(filtable[fn]);
-                    break;
+void psystem_gbf(
+    /* Pascal binary file */     pasfil*       f,
+    /* Length of file element */ unsigned long l
+)
+
+{
+
+    int            fn;
+    long           i;
+    unsigned char* bp;
+    
+    valfilrm(f); /* validate file */
+    fn = *f;   /* get logical file no. */
+
+    bp = f+FILEIDSIZE; /* index the file variable */
+    fp = filtable[fn]; /* get file pointer */
+    if (varlap(bp, bp+l-1))
+        error("Variable referenced file buffer modified");
+    if (filbuff[fn]) filbuff[fn] = FALSE; /* if buffer is full, just dump it */
+    else /* fill buffer from file */
+        for (i = 0; i < l; i++) bp++ = fgetc(fp);
+
+}
 
 /** ****************************************************************************
 
+Put file binary
+
+Writes the next file element to a binary file. The Pascal binary file is
+specified, with the size of each element.
+
 *******************************************************************************/
 
-    case 36/*pbf*/: popint(i); popadr(ad); valfilwm(ad);
-                 fn = store[ad];
-                 if (!filbuff[fn]) errore(FILEBUFFERVARIABLEUNDEFINED);
-                 for (j = 0; j < i; j++)
-                   fputc(store[ad+FILEIDSIZE+j], filtable[fn]);
-                 filbuff[fn] = FALSE;
-                 break;
+void psystem_pbf(
+    /* Pascal binary file */     pasfil*       f,
+    /* Length of file element */ unsigned long l
+)
+
+{
+
+    int            fn;
+    long           i;
+    unsigned char* bp;
+    
+    valfilwm(f); /* validate file */
+    fn = *f;   /* get logical file no. */
+
+    bp = f+FILEIDSIZE; /* index the file variable */
+    fp = filtable[fn]; /* get file pointer */
+    if (!filbuff[fn]) error("File buffer variable undefined");
+    for (i = 0; i < l; i++) fputc(bp++, fp);
+    filbuff[fn] = FALSE; /* set buffer empty */
+
+}
 
 /** ****************************************************************************
 
+Pascal text file buffer validate
+
+Determines if the given Pascal text file has a valid buffer variable loaded. If
+not, it is loaded from the input file. This satisfies the Lazy I/O concept.
+
 *******************************************************************************/
 
-    case 43 /*fbv*/: popadr(ad); pshadr(ad); valfil(ad);
-                   fn = store[ad];
-                   if (fn == INPUTFN) putchr(ad+FILEIDSIZE, buffn(INPUTFN));
-                   else if (fn == PRDFN) putchr(ad+FILEIDSIZE, buffn(PRDFN));
-                   else {
-                     if (filstate[fn] == fsread)
-                       putchr(ad+FILEIDSIZE, buffn(fn));
-                   }
-                   filbuff[fn] = TRUE;
-                   break;
+void psystem_fbv(
+    /* Pascal binary file */     pasfil*       f,
+)
+
+{
+
+    int            fn;
+    long           i;
+    unsigned char* bp;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    bp = f+FILEIDSIZE; /* index the file variable */
+    if (fn == INPUTFN) putchr(bp, buffn(INPUTFN));
+    else {
+        if (filstate[fn] == fsread)
+        putchr(bp, buffn(fn));
+    }
+    filbuff[fn] = TRUE;
+
+}
 
 /** ****************************************************************************
 
+Pascal binary file buffer validate
+
+Determines if the given Pascal binary file has a valid buffer variable loaded. 
+If not, it is loaded from the input file. This satisfies the Lazy I/O concept.
+
 *******************************************************************************/
 
-    case 44 /*fvb*/: popint(i); popadr(ad); pshadr(ad); valfil(ad);
-                   fn = store[ad];
-                   /* load buffer only if in read mode, and buffer is
-                     empty */
-                   if (filstate[fn] == fsread && !filbuff[fn]) {
-                       for (j = 0; j < i; j++) {
-                         store[ad+FILEIDSIZE+j] = fgetc(filtable[fn]);
-                         putdef(ad+FILEIDSIZE+j, TRUE);
-                       }
-                   }
-                   filbuff[fn] = TRUE;
-                   break;
+void psystem_fvb(
+    /* Pascal binary file */     pasfil*       f,
+    /* Length of file element */ unsigned long l
+)
+
+{
+
+    int            fn;
+    long           i;
+    unsigned char* bp;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    bp = f+FILEIDSIZE; /* index the file variable */
+    /* load buffer only if in read mode, and buffer is
+       empty */
+    if (filstate[fn] == fsread && !filbuff[fn])
+        for (i = 0; i < l; i++) *bp++ = fgetc(filtable[fn]);
+    filbuff[fn] = TRUE;
+
+}
 
 /** ****************************************************************************
 
+Assign filename for text file
+
+Assigns the given filename and length to the Pascal text file. When Pascal files
+are not assigned a name, they are opened as anonymous files, which are deleted
+automatically when closed. Assigning Pascal files a name makes them a permanent
+part of the filesystem.
+
 *******************************************************************************/
 
-    case 46 /*asst*/:
-    case 56 /*assb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
-                  fn = store[ad];
-                  for (j = 0; j < i; j++) {
-                    if (j >= FILLEN) errore(FILENAMETOOLONG);
-                    filnamtab[fn][j] = store[ad1+j];
-                  }
-                  if (j >= FILLEN) errore(FILENAMETOOLONG);
-                  filnamtab[fn][j] = 0;
-                  filanamtab[fn] = TRUE; /* set name assigned */
-                  break;
+void psystem_asst(
+    /* Pascal file to assign name */ pasfil* f,
+    /* Name string to assign */      char*   n,
+    /* Length of name */             long    l
+)
+
+{
+
+    int            fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (l >= FILLEN) error("File name too long");
+    strncpy(filnamtab[fn], n, l);
+    filanamtab[fn] = TRUE; /* set name assigned */
+
+}
 
 /** ****************************************************************************
 
+Assign filename for binary file
+
+Assigns the given filename and length to the Pascal binary file. When Pascal 
+files are not assigned a name, they are opened as anonymous files, which are 
+deleted automatically when closed. Assigning Pascal files a name makes them a 
+permanent part of the filesystem.
+
 *******************************************************************************/
 
-    case 47 /*clst*/:
-    case 57 /*clsb*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                /* if the file is temp, remove now */
-                if (!filanamtab[fn]) remove(filnamtab[fn]);
-                filanamtab[fn] = FALSE; /* break any name association */
-                break;
+void psystem_assb(
+    /* Pascal file to assign name */ pasfil* f,
+    /* Name string to assign */      char*   n,
+    /* Length of name */             long    l
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (l >= FILLEN) error("File name too long");
+    strncpy(filnamtab[fn], n, l);
+    filanamtab[fn] = TRUE; /* set name assigned */
+
+}
 
 /** ****************************************************************************
 
+Close Pascal text file
+
+Closes the given Pascal text file.
+
 *******************************************************************************/
 
-    case 48 /*pos*/: popint(i); popadr(ad); valfil(ad); fn = store[ad];
-                if (i < 1) errore(INVALIDFILEPOSITION);
-                if (fseek(filtable[fn], i-1, SEEK_SET)) errore(FILEPOSITIONFAIL);
-                break;
+void psystem_clst(
+    /* Pascal text file to close */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (fclose(filtable[fn])) error("File close fails");
+    /* if the file is temp, remove now */
+    if (!filanamtab[fn]) remove(filnamtab[fn]);
+    filanamtab[fn] = FALSE; /* break any name association */
+
+}
 
 /** ****************************************************************************
 
+Close Pascal binary file
+
+Closes the given Pascal text file.
+
 *******************************************************************************/
 
-    case 49 /*upd*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
-                }
-                break;
+void psystem_clsb(
+    /* Pascal text file to close */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (fclose(filtable[fn])) error("File close fails");
+    /* if the file is temp, remove now */
+    if (!filanamtab[fn]) remove(filnamtab[fn]);
+    filanamtab[fn] = FALSE; /* break any name association */
+
+}
 
 /** ****************************************************************************
 
+Position Pascal binary file
+
+Positions the given Pascal binary file to the element given. Note that only
+binary files in Pascal can be positioned. File positions are 1 to n.
+
 *******************************************************************************/
 
-    case 50 /*appt*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "w")) errore(FILEOPENFAIL);
-                }
-                break;
+void psystem_pos(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+    if (i < 1) error("Invalid file position");
+    if (fseek(filtable[fn], i-1, SEEK_SET)) error("File position fails");
+
+}
 
 /** ****************************************************************************
 
+Update Pascal binary file
+
+Resets the given file to the beginning, but does not clear the contents of the
+file.
+
 *******************************************************************************/
 
-    case 58 /*appb*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
-                }
-                break;
+void psystem_upd(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
+    else {
+
+      if (fclose(filtable[fn])) error("File close fails");
+      if (!fopen(filnamtab[fn], "wb")) error("File open fails");
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Append Pascal text file
+
+Positions the given file to the end and changes to write mode, effectively 
+setting up the file to append.
+
 *******************************************************************************/
 
-    case 51 /*del*/: popint(i); popadr(ad1);
-                  for (j = 0; j < i; i++) fl1[j] = store[ad1+j]; fl1[j] = 0;
-                  i = remove(fl1); if (i) errorv(FILEDELETEFAIL);
-                  break;
+void psystem_appt(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
+    else {
+
+      if (fclose(filtable[fn])) error("File close fails");
+      if (!fopen(filnamtab[fn], "w")) error("File open fails");
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Append Pascal binary file
+
+Positions the given file to the end and changes to write mode, effectively 
+setting up the file to append.
+
 *******************************************************************************/
 
-    case 52 /*chg*/: popint(i); popadr(ad1); popint(l); popadr(ad);
-                  for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
-                  for (j = 0; j < l; j++) fl2[j] = store[ad+j]; fl2[j] = 0;
-                  if (rename(fl1, fl2)) errorv(FILENAMECHANGEFAIL);
-                  break;
+void psystem_appb(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
+    else {
+
+      if (fclose(filtable[fn])) error("File close fails");
+      if (!fopen(filnamtab[fn], "w")) error("File open fails");
+
+    }
+
+}
 
 /** ****************************************************************************
 
+Delete file by name
+
+Expects a filename string and a length. Deletes the file from storage.
+
 *******************************************************************************/
 
-    case 53 /*len*/: popadr(ad); valfil(ad); fn = store[ad];
-                pshint(lengthfile(filtable[fn]));
-                break;
+void psystem_del(
+    /* Filename string */ char* n,
+    /* Length */          long l
+)
+
+{
+
+    filnam fn;
+    int    r;
+
+    strncpy(fn, n, l); /* copy string to buffer */
+    r = remove(fn); /* remove file */
+    if (r) error("File delete fails");
+
+}
 
 /** ****************************************************************************
 
+Change filename
+
+Expects a old filename and length, and a new filename and length. The filename
+is changed on disk. Note that the path must match between the names.
+
 *******************************************************************************/
 
-    case 54 /*loc*/: popadr(ad); valfil(ad); fn = store[ad];
-                  if (i = ftell(filtable[fn]) < 0) errorv(FILEPOSITIONFAIL);
-                  pshint(i+1);
-                  break;
+void psystem_chg(
+    /* Old filename string */ char* on,
+    /* Length */              long  ol,
+    /* New filename string */ char* nn,
+    /* Length */              long  nl
+)
+
+{
+
+    filnam ofn, nfn;
+    int    r;
+
+    strncpy(ofn, on, ol); /* copy strings to buffers */
+    strncpy(nfn, nn, nl);
+    r = rename(ofn, nfn); /* rename file */
+    if (r) error("File name change fails");
+
+}
 
 /** ****************************************************************************
 
+Find length of binary file
+
+Finds the length in elements of a given binary file.
+
+??? doesn't this and other calls need to know the size of the element ???
+
 *******************************************************************************/
 
-    case 55 /*exs*/: popint(i); popadr(ad1);
-                  for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
-                  if (fp = fopen(fl1, "r")) fclose(fp);
-                  pshint(!!fp);
-                  break;
+long psystem_len(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    return (lengthfile(filtable[fn]));
+
+}
 
 /** ****************************************************************************
 
+Find location of binary file
+
+Finds the current read/write location in elements of a given binary file.
+
+??? doesn't this and other calls need to know the size of the element ???
+
 *******************************************************************************/
 
-    case 59 /*hlt*/: finish(1); break;
+long psystem_loc(
+    /* Pascal file */ pasfil* f
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    i = ftell(filtable[fn]);
+    if (i < 0) errorv("File position fail");
+
+    return (i+1);
+
+}
 
 /** ****************************************************************************
 
+Find file exists
+
+Finds out if the given string with length exists in storage by that filename.
+Returns true if so, otherwise false.
+
 *******************************************************************************/
 
-    case 60 /*ast*/: popint(i);
-                  if (i == 0) errorv(PROGRAMCODEASSERTION);
-                 break;
+boolean psystem_exs(
+    /* Filename string */ char* n,
+    /* String length */   long  l
+)
+
+{
+
+    filnam fn;
+    FILE* fp;
+
+    strncpy(fn, n, l); /* make a copy of the string */
+    if (fp = fopen(fl1, "r")) fclose(fp); /* test file exists */
+
+    return (!!fp); /* exit with status */
+
+}
 
 /** ****************************************************************************
 
+Halt program
+
+Simply halts the running program.
+
 *******************************************************************************/
 
-    case 61 /*asts*/: popint(i); popadr(ad); popint(j);
-                  if (j == 0) errors(ad, i);
-                  break;
+void psystem_hlt(void)
+
+{
+
+    exit(0);
+
+}
+
+/** ****************************************************************************
+
+Assert truth value
+
+Checks if the given truth value is true, and continues if so. If not, the 
+program is halted with an error.
+
+*******************************************************************************/
+
+void psystem_ast(
+    /* Truth value */ long i
+)
+
+{
+
+    if (i == 0) error("Program code assertion fails");
+
+}
+
+/** ****************************************************************************
+
+Assert truth value with message
+
+Checks if the given truth value is true, and continues if so. If not, the 
+program is halted with an error message given by the call.
+
+*******************************************************************************/
+
+void psystem_asts(
+    /* Truth value */          long  i,
+    /* Error message */        char* e,
+    /* Error message length */ long l
+)
+
+{
+
+    errmsg em;
+    
+    strcpy(em, e, l); /* copy error string */
+    if (i == 0) error(em);
+
+}
 
 /** ****************************************************************************
 
@@ -2558,5 +3291,12 @@ static void psystem_deinit (void) __attribute__((destructor (110)));
 static void psystem_deinit()
 
 {
+
+    int i;
+
+    for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed) {
+        fclose(filtable[i]);
+        if (!filanamtab[i]) remove(filnamtab[i]);
+    }
 
 }
