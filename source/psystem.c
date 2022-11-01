@@ -31,10 +31,43 @@ There have been several psystem modules over the years. What makes this one
 (and cmach) unique besides being written in C, is that it translates Pascal 
 support calls to C ANSI calls.
 
+LICENSING:                                                                 
+                                                                           
+Copyright (c) 1996, 2018, Scott A. Franco                                  
+All rights reserved.                                                       
+                                                                           
+Redistribution and use in source and binary forms, with or without         
+modification, are permitted provided that the following conditions are met:
+                                                                           
+1. Redistributions of source code must retain the above copyright notice,  
+   this list of conditions and the following disclaimer.                   
+2. Redistributions in binary form must reproduce the above copyright       
+   notice, this list of conditions and the following disclaimer in the     
+   documentation and/or other materials provided with the distribution.    
+                                                                           
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE   
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR        
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF       
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS   
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN    
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)    
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+POSSIBILITY OF SUCH DAMAGE.                                                
+                                                                           
+The views and conclusions contained in the software and documentation are  
+those of the authors and should not be interpreted as representing official
+policies, either expressed or implied, of the Pascal-P6 project.           
+
 *******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <limits.h>
+#include <math.h>
 
 /* Set default configuration flags. This gives proper behavior even if no
   preprocessor flags are passed in.
@@ -230,9 +263,12 @@ table is all you should need to adapt to any byte addressable machine.
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       9    /* real extra field in floating format -1.0e+000 */
 #define ERRLEN       250  /* maximum length of error messages */
+#define MAXCMD       250  /* size of command line buffer */
+#define MAXDBF       30   /* size of numeric conversion buffer */
 
 typedef long boolean; /* true/false */
-typedef char pasfil; /* Pascal file */
+typedef char pasfil;  /* Pascal file */
+typedef long filnum;  /* logical file number */
 typedef char filnam[FILLEN]; /* filename strings */
 typedef enum {
   fsclosed,
@@ -244,6 +280,14 @@ typedef long cmdnum;            /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
 typedef char errmsg[ERRLEN]; /* error string */
 
+/* VAR reference block */
+typedef struct _varblk *varptr;
+typedef struct _varblk {
+    varptr next;  /* next entry */
+    unsigned char* s; /* start and end address of block */
+    unsigned char* e; 
+} varblk;
+
 static FILE* filtable[MAXFIL+1]; /* general file holders */
 static filnam filnamtab[MAXFIL+1]; /* assigned name of files */
 static boolean filanamtab[MAXFIL+1]; /* name has been assigned flags */
@@ -251,10 +295,12 @@ static filsts filstate[MAXFIL+1]; /* file state holding */
 static boolean filbuff[MAXFIL+1]; /* file buffer full status */
 static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
+static varptr varlst; /* active var block pushdown stack */
+static varptr varfre; /* free var block entries */
 
-cmdbuf  cmdlin;  /* command line */
-cmdnum  cmdlen;  /* length of command line */
-cmdinx  cmdpos;  /* current position in command line */
+static cmdbuf  cmdlin;  /* command line */
+static cmdnum  cmdlen;  /* length of command line */
+static cmdinx  cmdpos;  /* current position in command line */
 
 /** ****************************************************************************
 
@@ -264,7 +310,7 @@ Prints the given error string and halts.
 
 *******************************************************************************/
 
-static error(char* es)
+static void error(char* es)
 
 {
 
@@ -302,7 +348,7 @@ static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
 
                 fprintf(stderr,
                         "*** Too many/too long command line parameters\n");
-                finish(1);
+                exit(1);
 
             }
             cb[i++] = *p++;
@@ -315,7 +361,7 @@ static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
 
                 fprintf(stderr,
                         "*** Too many/too long command line parameters\n");
-                finish(1);
+                exit(1);
 
             }
             cb[i++] = ' ';
@@ -381,12 +427,12 @@ void assignexternal(filnum fn, char hfn[])
     i = 0;
     while (!eolncommand() && !eofcommand() &&
            (isalnum(bufcommand()) || bufcommand() == '_')) {
-        if (i >= FILLEN) errorv(FILENAMETOOLONG);
+        if (i >= FILLEN) error("File name too long");
         filnamtab[fn][i] = bufcommand();
         getcommand();
         i = i+1;
     }
-    if (i >= FILLEN) errorv(FILENAMETOOLONG);
+    if (i >= FILLEN) error("File name too long");
     filnamtab[fn][i] = 0; /* terminate */
 }
 
@@ -414,6 +460,72 @@ void strcpyl(
         sl--;
     }
     *ds = 0;
+
+}
+
+/** ****************************************************************************
+
+Enter variable reference block
+
+Register a block of memory as having an outstanding variable reference.
+
+*******************************************************************************/
+
+void varenter(unsigned char* s, unsigned char* e)
+
+{
+
+    varptr vp;
+
+    if (varfre) { vp = varfre; varfre = vp->next; }
+    else vp = (varptr) malloc(sizeof(varblk));
+    vp->s = s; vp->e = e; vp->next = varlst; varlst = vp;
+
+}
+
+/** ****************************************************************************
+
+Remove variable reference block
+
+Removes the last registered variable reference block.
+
+*******************************************************************************/
+
+void varexit(void)
+
+{
+
+    varptr vp;
+
+    if (!varlst) error("Var list empty");
+    vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
+
+}
+
+/** ****************************************************************************
+
+Check variable reference overlap
+
+Checks if the provided block overlaps any outstanding variable reference block.
+
+*******************************************************************************/
+
+boolean varlap(unsigned char* s, unsigned char* e)
+
+{
+
+    varptr vp;
+    long f;
+
+    vp = varlst; f = FALSE;
+    while (vp && !f) {
+
+        f = (vp->e >= s && vp->s <= e);
+        vp = vp->next;
+
+    }
+
+    return (f);
 
 }
 
@@ -460,13 +572,13 @@ Expects a Pascal file address. Validates the file is in write mode.
 *******************************************************************************/
 
 void valfilwm(
-    /** Pascal file to validate */ pasfile f;
+    /** Pascal file to validate */ pasfil* f
 )
 
 {
 
     valfil(f); /* validate file address */
-    if (filstate[store[*f] != fswrite) error("File mode incorrect");
+    if (filstate[*f] != fswrite) error("File mode incorrect");
 
 }
 
@@ -478,14 +590,14 @@ Expects a Pascal file address. Validates the file is in read mode.
 
 *******************************************************************************/
 
-void valfilwm(
-    /** Pascal file to validate */ pasfile f;
+void valfilrm(
+    /** Pascal file to validate */ pasfil* f
 )
 
 {
 
     valfil(f); /* validate file address */
-    if (filstate[store[*f] != fsread) error("File mode incorrect");
+    if (filstate[*f] != fsread) error("File mode incorrect");
 
 }
 
@@ -664,14 +776,13 @@ void getfn(filnum fn)
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
-        case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
-        case OUTPUTFN: case PRRFN: case ERRORFN:
-        case LISTFN:    errore(READONWRITEONLYFILE); break;
+        case OUTPUTFN: case ERRORFN:
+        case LISTFN:    error("Read on write only file"); break;
         case COMMANDFN: getcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) error("File mode incorrect");
         getfneoln(filtable[fn], fn);
 
     }
@@ -705,7 +816,7 @@ boolean chkeoffn(FILE* fp, filnum fn)
                 return (TRUE);
             else return (FALSE);
 
-        } else errore(FILENOTOPEN);
+        } else error("File not open");
 
     }
 
@@ -729,8 +840,6 @@ boolean eoffn(filnum fn)
 
         case INPUTFN:   eof = chkeoffn(stdin, INPUTFN); break;
         case OUTPUTFN:  eof = TRUE; break;
-        case PRDFN:     eof = chkeoffn(filtable[PRDFN], PRDFN); break;
-        case PRRFN:     eof = chkeoffn(filtable[PRRFN], PRRFN); break;
         case ERRORFN:   eof = TRUE; break;
         case LISTFN:    eof = TRUE; break;
         case COMMANDFN: eof = eofcommand(); break;
@@ -743,15 +852,26 @@ boolean eoffn(filnum fn)
 
 /** ****************************************************************************
 
+Check file is at EOLN
+
+Checks if the file given is at EOLN.
+
 *******************************************************************************/
 
 boolean chkeolnfn(FILE* fp, filnum fn)
+
 {
+
     if ((eoffile(fp) && !fileoln[fn]) && !filbof[fn]) return (TRUE);
     else return (eolnfile(fp));
+
 }
 
 /** ****************************************************************************
+
+Check logical file by number is at EOLN
+
+Checks if the logical file number is at EOLN.
 
 *******************************************************************************/
 
@@ -760,15 +880,17 @@ boolean eolnfn(filnum fn)
     boolean eoln;
 
     if (fn <= COMMANDFN) switch (fn) {
+
         case INPUTFN:   eoln = chkeolnfn(stdin, INPUTFN); break;
-        case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN); break;
-        case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN); break;
         case ERRORFN: case OUTPUTFN:
-        case LISTFN:    errore(FILEMODEINCORRECT); break;
+        case LISTFN:    error("File mode incorrect"); break;
         case COMMANDFN: eoln = eolncommand(); break;
+
     } else {
-        if (filstate[fn] == fsclosed) errore(FILENOTOPEN);
+
+        if (filstate[fn] == fsclosed) error("File not open");
         eoln = chkeolnfn(filtable[fn], fn);
+
     }
 
     return (eoln);
@@ -783,12 +905,16 @@ Reads and discards characters until EOLN is reached.
 *******************************************************************************/
 
 void readline(filnum fn)
+
 {
     while (!eolnfn(fn)) {
-        if (eoffn(fn)) errore(ENDOFFILE);
+
+        if (eoffn(fn)) error("End of file");
         getfn(fn);
+
     }
     if (eolnfn(fn)) getfn(fn);
+
 }
 
 /** ****************************************************************************
@@ -841,7 +967,7 @@ void getbuf(filnum fn, long* w)
 
     if (*w > 0) {
 
-        if (eoffn(fn)) errore(ENDOFFILE);
+        if (eoffn(fn)) error("End of file");
         getfn(fn); *w = *w-1;
 
     }
@@ -1042,7 +1168,7 @@ void reads(filnum fn, char* s, long l, long w, boolean fld)
 
     while (l > 0) {
 
-        c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
+        c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--;
 
     }
     /* if fielded, validate the rest of the field is blank */
@@ -1132,7 +1258,6 @@ is negative and a non-decimal radix is specified, an error results.
 
 *******************************************************************************/
 
-/* Write integer */
 void writei(FILE* f, long w, long fl, long r, long lz)
 {
 
@@ -1174,7 +1299,7 @@ file.
 
 *******************************************************************************/
 
-void writeipf(pasfil f, long w, long fl, long r, long lz)
+void writeipf(pasfil* f, long i, long w, long r, long lz)
 
 {
 
@@ -1185,16 +1310,16 @@ void writeipf(pasfil f, long w, long fl, long r, long lz)
     if (w < 1 && ISO7185) error("Invalid field specification");
     if (fn <= COMMANDFN) switch (fn) {
 
-         case OUTPUTFN: writei(stdout, i, w, rd, lz); break;
-         case ERRORFN: writei(stderr, i, w, rd, lz); break;
-         case LISTFN: writei(stdout, i, w, rd, lz); break;
+         case OUTPUTFN: writei(stdout, i, w, r, lz); break;
+         case ERRORFN: writei(stderr, i, w, r, lz); break;
+         case LISTFN: writei(stdout, i, w, r, lz); break;
          case INPUTFN:
          case COMMANDFN: error("Write on read only file"); break;
 
     } else {
 
         if (filstate[fn] != fswrite) error("File mode incorrect");
-        writei(filtable[fn], i, w, rd, lz);
+        writei(filtable[fn], i, w, r, lz);
 
     }
 
@@ -1219,12 +1344,12 @@ void writeb(FILE* f, boolean b, long w)
     if (b) {
 
         l = 4; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", w, l, "true");
+        fprintf(f, "%*.*s", (int)w, (int)l, "true");
 
     } else {
 
         l = 5; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", w, l, "false");
+        fprintf(f, "%*.*s", (int)w, (int)l, "false");
 
     }
 
@@ -1239,7 +1364,7 @@ void putfile(FILE* f, pasfil* pf, filnum fn)
 {
 
     if (!filbuff[fn]) error("File buffer variable undefined");
-    fputc(getchr(pf+FILEIDSIZE), f);
+    fputc(*(pf+FILEIDSIZE), f);
     filbuff[fn] = FALSE;
 
 }
@@ -1312,7 +1437,7 @@ pointer.
 *******************************************************************************/
 
 void psystem_get(
-    /** Pascal file to read from */ pasfil* f,
+    /** Pascal file to read from */ pasfil* f
 )
 
 {
@@ -1347,7 +1472,7 @@ pointer.
 *******************************************************************************/
 
 void psystem_put(
-    /* Pascal file to write to */ pasfil* f,
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1358,16 +1483,16 @@ void psystem_put(
 
     if (fn <= COMMANDFN) switch (fn) {
 
-        case OUTPUTFN: putfile(stdout, pasfil, fn); break;
-        case ERRORFN: putfile(stderr, pasfil, fn); break;
-        case LISTFN: putfile(stdout, pasfil, fn); break;
-        case INPUTFN: case PRDFN:
+        case OUTPUTFN: putfile(stdout, f, fn); break;
+        case ERRORFN: putfile(stderr, f, fn); break;
+        case LISTFN: putfile(stdout, f, fn); break;
+        case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) errore("File mode incorrect");
-        putfile(filtable[fn], pasfil, fn);
+        if (filstate[fn] != fswrite) error("File mode incorrect");
+        putfile(filtable[fn], f, fn);
 
     }
 
@@ -1381,8 +1506,8 @@ Reads up to the next EOLN and discards any file contents before the EOLN.
 
 *******************************************************************************/
 
-void psystem_put(
-    /* Pascal file to write to */ pasfil* f,
+void psystem_rln(
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1394,8 +1519,7 @@ void psystem_put(
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN: readline(INPUTFN); break;
-        case PRDFN: readline(PRDFN); break;
-        case OUTPUTFN: prrfn: errorfn:
+        case OUTPUTFN: case ERRORFN:
         case LISTFN: error("Read on write only file"); break;
         case COMMANDFN: readlncommand(); break;
 
@@ -1418,13 +1542,13 @@ length of allocation. The space required is allocated and cleared to zeros.
 *******************************************************************************/
 
 void psystem_new(
-    /** Address of pointer */ unsigned char** p;
+    /** Address of pointer */ unsigned char** p,
     /** length to allocate */ unsigned long l
 )
 
 {
 
-    *p = calloc(l); /* allocate */
+    *p = calloc(l, 1); /* allocate */
     if (!*p) error("Could not allocate space");
 
 }
@@ -1459,8 +1583,8 @@ code to verify access to the variants used.
 *******************************************************************************/
 
 void psystem_nwl(
-    /** Address of pointer */  unsigned char** p;
-    /** length to allocate */  unsigned long   l
+    /** Address of pointer */  unsigned char** p,
+    /** length to allocate */  unsigned long   l,
     /** pointer to tag list */ long*           tl,
     /** number of tags */      unsigned long   tc
 )
@@ -1470,8 +1594,9 @@ void psystem_nwl(
     unsigned char* p2;
     long* lp;
     unsigned long* ulp;
+    long i;
 
-    p2 = calloc(l+tc+sizeof(unsigned long)); /* get whole allocation */
+    p2 = calloc(l+tc+sizeof(unsigned long), 1); /* get whole allocation */
     lp = (long*)p2;
     for (i = 0; i < tc; i++) *lp++ = *tl++; /* place tags */
     ulp = (unsigned long*)lp;
@@ -1489,7 +1614,7 @@ Accepts a Pascal file pointer. An end of line sequence is output to the file.
 *******************************************************************************/
 
 void psystem_wln(
-    /* Pascal file to write to */ pasfil* fb 
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1499,15 +1624,18 @@ void psystem_wln(
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
+
        case OUTPUTFN: fprintf(stdout, "\n"); break;
-       case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
        case ERRORFN: fprintf(stderr, "\n"); break;
        case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
-       case PRDFN: case INPUTFN:
+       case INPUTFN:
        case COMMANDFN: error("Write on read only file"); break;
+
     } else {
+
        if (filstate[fn] != fswrite) error("File mode incorrect");
        fprintf(filtable[fn], "\n");
+
     }
 
 }
@@ -1540,10 +1668,9 @@ void psystem_wrs(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*s", w, l, s); break;
-        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l, s); break;
         case ERRORFN: fprintf(stderr, "%*.*s", w, l, s); break;
         case LISTFN: fprintf(stdout, "%*.*s", w, l, s); break;
-        case PRDFN: case INPUTFN:
+        case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
@@ -1568,8 +1695,8 @@ the string, that are non-space.
 
 void psystem_wrsp(
     /* Pascal file to write to */ pasfil* f,
-    /* String to write */         char    s[],
-    /* Length of string */        int     l,
+    /* String to write */         char*   s,
+    /* Length of string */        int     l
 )
 
 {
@@ -1588,8 +1715,8 @@ void psystem_wrsp(
 
     } else {
 
-        if (filstate[fn] != fswrite) errore(FILEMODEINCORRECT);
-        writestrp(filtable[fn], ad1, l);
+        if (filstate[fn] != fswrite) error("File mode incorrect");
+        writestrp(filtable[fn], s, l);
 
     }
 
@@ -1604,7 +1731,7 @@ Checks if the given Pascal text file is at EOF, and returns true if so.
 *******************************************************************************/
 
 boolean psystem_eof(
-    /* Pascal file to write to */ pasfil* f,
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1626,7 +1753,7 @@ Checks if the given Pascal binary file is at EOF, and returns true if so.
 *******************************************************************************/
 
 boolean psystem_efb(
-    /* Pascal file to write to */ pasfil* f,
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1649,8 +1776,8 @@ Checks if the given Pascal text file is at EOLN, and returns true if so.
 
 *******************************************************************************/
 
-boolean psystem_efb(
-    /* Pascal file to write to */ pasfil* f,
+boolean psystem_eln(
+    /* Pascal file to write to */ pasfil* f
 )
 
 {
@@ -1674,7 +1801,7 @@ Writes out the given integer in decimal form, with the given field width.
 boolean psystem_wri(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1698,7 +1825,7 @@ Writes out the given integer in hexadecimal form, with the given field width.
 boolean psystem_wrih(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1722,7 +1849,7 @@ Writes out the given integer in octal form, with the given field width.
 boolean psystem_wrio(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1746,7 +1873,7 @@ Writes out the given integer in binary form, with the given field width.
 boolean psystem_wrib(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1771,7 +1898,7 @@ field width is padded out with leading zeros.
 boolean psystem_wiz(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1796,7 +1923,7 @@ The field width is padded out with leading zeros.
 boolean psystem_wizh(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1821,7 +1948,7 @@ The field width is padded out with leading zeros.
 boolean psystem_wizo(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
-    /* Field width */             long    w,
+    /* Field width */             long    w
 )
 
 {
@@ -1869,13 +1996,14 @@ Writes out the given real, with the given field width.
 
 boolean psystem_wrr(
     /* Pascal file to write to */ pasfil* f,
-    /* Real to write */           long    r,
+    /* Real to write */           double  r,
     /* Field width */             long    w
 )
 
 {
 
     int fn;
+    int l;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -1885,16 +2013,16 @@ boolean psystem_wrr(
     l = w-REALEF+1; /* assign leftover to fractional digits w/o sign */
     if (fn <= COMMANDFN) switch (fn) {
 
-         case OUTPUTFN: fprintf(stdout, "%*.*e", w, l, r); break;
-         case ERRORFN: fprintf(stderr, "%*.*e", w, l, r); break;
-         case LISTFN: fprintf(stdout, "%*.*e", w, l, r); break;
+         case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
+         case ERRORFN: fprintf(stderr, "%*.*e", (int)w, l, r); break;
+         case LISTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
          case INPUTFN:
          case COMMANDFN: error("Write on read only file");
 
     } else {
 
         if (filstate[fn] != fswrite) error("File mode incorrect");
-        fprintf(filtable[fn], "%*.*e", w, l, r);
+        fprintf(filtable[fn], "%*.*e", (int)w, l, r);
 
     }
 
@@ -1924,18 +2052,20 @@ boolean psystem_wrc(
     if (w < 1 && ISO7185) error("Invalid field specification");
     if (fn <= COMMANDFN) switch (fn) {
 
-        case OUTPUTFN: fprintf(stdout, "%*c", w, c); break;
-        case ERRORFN: fprintf(stderr, "%*c", w, c); break;
-        case LISTFN: fprintf(stdout, "%*c", w, c); break;
+        case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
+        case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
+        case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
         case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
 
         if (filstate[fn] != fswrite) error("File mode incorrect");
-        fprintf(filtable[fn], "%*c", w, c);
+        fprintf(filtable[fn], "%*c", (int)w, c);
 
     }
+
+}
 
 /** ****************************************************************************
 
@@ -1959,7 +2089,7 @@ long psystem_rdi(
     fn = *f; /* get logical file no. */
 
     w = INT_MAX;
-    readi(fn, &i, &w, fld);
+    readi(fn, &i, &w, FALSE);
 
     return (i);
 
@@ -1984,12 +2114,11 @@ long psystem_rdif(
 
     int fn;
     long i;
-    long w;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readi(fn, &i, &w, fld);
+    readi(fn, &i, &w, TRUE);
 
     return (i);
 
@@ -2083,7 +2212,7 @@ double psystem_rdr(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readr(fn, &r, INT_MAX, false); /* read real */
+    readr(fn, &r, INT_MAX, FALSE); /* read real */
 
     return (r);
 
@@ -2185,7 +2314,7 @@ those two. Returns the character.
 
 char psystem_rcb(
     /* Pascal file to read from */ pasfil* f,
-    /* Range of values          */ long mn, mx
+    /* Range of values          */ long mn, long mx
 )
 
 {
@@ -2196,7 +2325,7 @@ char psystem_rcb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, INT_MAX, fld);
+    readc(fn, &c, INT_MAX, FALSE);
     if (c < mn || c > mx) error("Value out of range");
 
     return (c);
@@ -2218,7 +2347,7 @@ character.
 char psystem_rcbf(
     /* Pascal file to read from */ pasfil* f,
     /* Range of values          */ long mn, long mx,
-    /* Field                    */ w
+    /* Field                    */ long w
 )
 
 {
@@ -2229,7 +2358,7 @@ char psystem_rcbf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, w, fld);
+    readc(fn, &c, w, TRUE);
     if (c < mn || c > mx) error("Value out of range");
 
     return (c);
@@ -2340,7 +2469,7 @@ double psystem_atn(
 
 {
 
-    return (atn(r));
+    return (atan(r));
 
 }
 
@@ -2353,7 +2482,7 @@ Outputs a page or form-feed to the given Pascal text file.
 *******************************************************************************/
 
 void psystem_pag(
-    /* Pascal file to page */ pasfil* f,
+    /* Pascal file to page */ pasfil* f
 )
 
 {
@@ -2390,7 +2519,7 @@ Resets the given Pascal text file to the beginning and sets it in read mode.
 *******************************************************************************/
 
 void psystem_rsf(
-    /* Pascal file to reset */ pasfil* f,
+    /* Pascal file to reset */ pasfil* f
 )
 
 {
@@ -2405,7 +2534,7 @@ void psystem_rsf(
 
         case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
         case COMMANDFN:
-            errore("Cannot reset or rewrite standardfile"); break;
+            error("Cannot reset or rewrite standardfile"); break;
 
     } else resetfn(fn, FALSE);
 
@@ -2420,7 +2549,7 @@ Rewrites the given Pascal text file to the beginning and clears the file.
 *******************************************************************************/
 
 void psystem_rwf(
-    /* Pascal file to rewrite */ pasfil* f,
+    /* Pascal file to rewrite */ pasfil* f
 )
 
 {
@@ -2463,7 +2592,7 @@ void psystem_wrb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    b = b != 0; popadr(ad);
+    b = b != 0;
     if (w < 1) error("Invalid field specification");
     if (fn <= COMMANDFN) switch (fn) {
 
@@ -2475,7 +2604,7 @@ void psystem_wrb(
 
     } else {
 
-        if (filstate[fn] != fswrite) errore("File mode incorrect");
+        if (filstate[fn] != fswrite) error("File mode incorrect");
         writeb(filtable[fn], b, w);
 
     }
@@ -2506,19 +2635,19 @@ void psystem_wrf(
     fn = *f; /* get logical file no. */
 
     if (w < 1 && ISO7185) error("Invalid field specification");
-    if (f < 1) error("Invalid fraction specification");
+    if (fr < 1) error("Invalid fraction specification");
     if (fn <= COMMANDFN) switch (fn) {
 
-        case OUTPUTFN: fprintf(stdout, "%*.*f", w, fr, r); break;
-        case ERRORFN: fprintf(stderr, "%*.*f", w, fr, r); break;
-        case LISTFN: fprintf(stdout, "%*.*f", w, fr, r); break;
+        case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
+        case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)fr, r); break;
+        case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
 
         if (filstate[fn] != fswrite) error("File mode incorrect");
-        fprintf(filtable[fn], "%*.*f", w, fr, r);
+        fprintf(filtable[fn], "%*.*f", (int)w, (int)fr, r);
 
     }
 
@@ -2579,8 +2708,8 @@ the variant record.
 *******************************************************************************/
 
 void psystem_dsl(
-    /** Address of block */    unsigned char* p;
-    /** length to allocate */  unsigned long  l
+    /** Address of block */    unsigned char* p,
+    /** length to allocate */  unsigned long  l,
     /** pointer to tag list */ long*          tl,
     /** number of tags */      unsigned long  tc
 )
@@ -2601,7 +2730,7 @@ void psystem_dsl(
         if (*lp != *tl) error("New/dispose tags do not match");
         lp++; /* next tag */
         tl++;
-        tc--
+        tc--;
 
     }
     free(bp); /* free the net block */
@@ -2832,7 +2961,7 @@ Resets the given Pascal binary file.
 *******************************************************************************/
 
 void psystem_rsb(
-    /* Pascal binary file */ pasfil* f,
+    /* Pascal binary file */ pasfil* f
 )
 
 {
@@ -2856,7 +2985,7 @@ Rewrites the given Pascal binary file.
 *******************************************************************************/
 
 void psystem_rwb(
-    /* Pascal binary file */ pasfil* f,
+    /* Pascal binary file */ pasfil* f
 )
 
 {
@@ -2890,6 +3019,7 @@ void psystem_gbf(
     int            fn;
     long           i;
     unsigned char* bp;
+    FILE*          fp;
     
     valfilrm(f); /* validate file */
     fn = *f;   /* get logical file no. */
@@ -2900,7 +3030,7 @@ void psystem_gbf(
         error("Variable referenced file buffer modified");
     if (filbuff[fn]) filbuff[fn] = FALSE; /* if buffer is full, just dump it */
     else /* fill buffer from file */
-        for (i = 0; i < l; i++) bp++ = fgetc(fp);
+        for (i = 0; i < l; i++) *bp++ = fgetc(fp);
 
 }
 
@@ -2923,6 +3053,7 @@ void psystem_pbf(
     int            fn;
     long           i;
     unsigned char* bp;
+    FILE*          fp;
     
     valfilwm(f); /* validate file */
     fn = *f;   /* get logical file no. */
@@ -2930,7 +3061,7 @@ void psystem_pbf(
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
     if (!filbuff[fn]) error("File buffer variable undefined");
-    for (i = 0; i < l; i++) fputc(bp++, fp);
+    for (i = 0; i < l; i++) fputc(*bp++, fp);
     filbuff[fn] = FALSE; /* set buffer empty */
 
 }
@@ -2945,7 +3076,7 @@ not, it is loaded from the input file. This satisfies the Lazy I/O concept.
 *******************************************************************************/
 
 void psystem_fbv(
-    /* Pascal binary file */     pasfil*       f,
+    /* Pascal binary file */     pasfil*       f
 )
 
 {
@@ -2958,10 +3089,12 @@ void psystem_fbv(
     fn = *f; /* get logical file no. */
 
     bp = f+FILEIDSIZE; /* index the file variable */
-    if (fn == INPUTFN) putchr(bp, buffn(INPUTFN));
+    if (fn == INPUTFN) *bp = buffn(INPUTFN);
     else {
+
         if (filstate[fn] == fsread)
-        putchr(bp, buffn(fn));
+        *bp = buffn(fn);
+
     }
     filbuff[fn] = TRUE;
 
@@ -3121,7 +3254,8 @@ binary files in Pascal can be positioned. File positions are 1 to n.
 *******************************************************************************/
 
 void psystem_pos(
-    /* Pascal file */ pasfil* f
+    /* Pascal file */ pasfil* f,
+    /* Position */    long i
 )
 
 {
@@ -3325,7 +3459,7 @@ long psystem_loc(
     fn = *f; /* get logical file no. */
 
     i = ftell(filtable[fn]);
-    if (i < 0) errorv("File position fail");
+    if (i < 0) error("File position fail");
 
     return (i+1);
 
@@ -3351,7 +3485,7 @@ boolean psystem_exs(
     FILE* fp;
 
     strcpyl(fn, n, l); /* make a copy of the string */
-    if (fp = fopen(fl1, "r")) fclose(fp); /* test file exists */
+    if (fp = fopen(fn, "r")) fclose(fp); /* test file exists */
 
     return (!!fp); /* exit with status */
 
@@ -3411,7 +3545,7 @@ void psystem_asts(
 
     errmsg em;
     
-    strcpy(em, e, l); /* copy error string */
+    strcpyl(em, e, l); /* copy error string */
     if (i == 0) error(em);
 
 }
@@ -3439,7 +3573,7 @@ long psystem_rds(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    reads(fn, s, l, INT_MAX, fld);
+    reads(fn, s, l, INT_MAX, FALSE);
 
 }
 
@@ -3470,7 +3604,7 @@ long psystem_rdsf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    reads(fn, s, l, w, fld);
+    reads(fn, s, l, w, TRUE);
 
 }
 
@@ -3485,7 +3619,7 @@ the rest of the string is filled with blanks.
 
 *******************************************************************************/
 
-long psystem_rdsf(
+long psystem_rdsp(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
     /* Length */      long    l,
@@ -3616,7 +3750,7 @@ double psystem_rdre(
     double r;
 
     w = INT_MAX; 
-    readr(COMMANDFN, &r, &w, FALSE);
+    readr(COMMANDFN, &r, w, FALSE);
 
     return (r); /* return result */
 
@@ -3646,6 +3780,8 @@ static void psystem_init (int argc, char* argv[]) __attribute__((constructor (11
 static void psystem_init(int argc, char* argv[])
 
 {
+
+    int i;
 
     argc--; argv++; /* discard the program parameter */
 
