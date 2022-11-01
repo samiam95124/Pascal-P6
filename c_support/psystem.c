@@ -652,51 +652,81 @@ void getfneoln(
 
 /** ****************************************************************************
 
+Get next character text file
+
+Advances the character position for a text file.
+
 *******************************************************************************/
 
 void getfn(filnum fn)
 {
+
     if (fn <= COMMANDFN) switch (fn) {
+
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
         case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
         case LISTFN:    errore(READONWRITEONLYFILE); break;
         case COMMANDFN: getcommand(); break;
+
     } else {
+
         if (filstate[fn] != fsread) errore(FILEMODEINCORRECT);
         getfneoln(filtable[fn], fn);
+
     }
+
 }
 
 /** ****************************************************************************
+
+Check file is at EOF.
+
+Returns true if file is at EOF. Handles EOLN insertion.
 
 *******************************************************************************/
 
 boolean chkeoffn(FILE* fp, filnum fn)
+
 {
+
     if (fn == INPUTFN) {
+
         if ((eoffile(fp) && fileoln[fn]) || filbof[fn]) return (TRUE);
         else return (FALSE);
+
     } else {
+
         if (filstate[fn] == fswrite)
             return ftell(filtable[fn]) >= lengthfile(filtable[fn]);
         else if (filstate[fn] == fsread) {
+
             if ((eoffile(filtable[fn]) && fileoln[fn]) || filbof[fn])
                 return (TRUE);
             else return (FALSE);
+
         } else errore(FILENOTOPEN);
+
     }
+
 }
 
 /** ****************************************************************************
 
+Check file is at EOF
+
+Returns true if file is at EOF.
+
 *******************************************************************************/
 
 boolean eoffn(filnum fn)
+
 {
+
     boolean eof;
 
     if (fn <= COMMANDFN) switch (fn) {
+
         case INPUTFN:   eof = chkeoffn(stdin, INPUTFN); break;
         case OUTPUTFN:  eof = TRUE; break;
         case PRDFN:     eof = chkeoffn(filtable[PRDFN], PRDFN); break;
@@ -704,9 +734,11 @@ boolean eoffn(filnum fn)
         case ERRORFN:   eof = TRUE; break;
         case LISTFN:    eof = TRUE; break;
         case COMMANDFN: eof = eofcommand(); break;
+
     } else eof = chkeoffn(filtable[fn], fn);
 
     return (eof);
+
 }
 
 /** ****************************************************************************
@@ -744,6 +776,10 @@ boolean eolnfn(filnum fn)
 
 /** ****************************************************************************
 
+Read to line end
+
+Reads and discards characters until EOLN is reached.
+
 *******************************************************************************/
 
 void readline(filnum fn)
@@ -757,209 +793,342 @@ void readline(filnum fn)
 
 /** ****************************************************************************
 
+Check next character with field
+
+Returns the next character in the given file. Accepts a field width. Returns
+space if past the field width.
+
 *******************************************************************************/
 
 char chkbuf(filnum fn, long w)
-{ if (w > 0) return buffn(fn); else return(' '); }
+
+{ 
+
+    if (w > 0) return buffn(fn); 
+    else return(' '); 
+
+}
 
 /** ****************************************************************************
+
+Check EOF file
+
+Accepts a file number and a field width. Returns true if either the at the EOF
+or end of the field.
 
 *******************************************************************************/
 
 boolean chkend(filnum fn, long w)
-{ return (w = 0 || eoffn(fn)); }
+
+{ 
+ 
+    return (w = 0 || eoffn(fn)); 
+
+}
 
 /** ****************************************************************************
+
+Get next character file with field
+
+Gets the next character in the file if the field is not at end. Treats EOLN as
+an EOF.
 
 *******************************************************************************/
 
 void getbuf(filnum fn, long* w)
+
 {
-  if (*w > 0) {
-    if (eoffn(fn)) errore(ENDOFFILE);
-    getfn(fn); *w = *w-1;
-  }
+
+    if (*w > 0) {
+
+        if (eoffn(fn)) errore(ENDOFFILE);
+        getfn(fn); *w = *w-1;
+
+    }
+
 }
 
 /** ****************************************************************************
+
+Read integer fielded
+
+Reads an integer from the given file with field. An integer is read from the
+input file, but limited by the field width if provided. If the fielded flag is
+true, will also verify that the rest of the field after the number is parsed
+is blank.
 
 *******************************************************************************/
 
 void readi(filnum fn, long *i, long* w, boolean fld)
 {
+
     long s;
     long d;
 
-   s = +1; /* set sign */
-   /* skip leading spaces */
-   while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
-   if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
-         isdigit(chkbuf(fn, *w)))) errore(INVALIDINTEGERFORMAT);
-   if (chkbuf(fn, *w) == '+') getbuf(fn, w);
-   else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
-   if (!(isdigit(chkbuf(fn, *w))))
-     errore(INVALIDINTEGERFORMAT);
-   *i = 0; /* clear initial value */
-   while (isdigit(chkbuf(fn, *w))) { /* parse digit */
-     d = chkbuf(fn, *w)-'0';
-     if (*i > INT_MAX/10 ||
-         *i == INT_MAX/10 && d > INT_MAX%10)
-       errore(INTEGERVALUEOVERFLOW);
-     *i = *i*10+d; /* add in new digit */
-     getbuf(fn, w);
-   }
-   *i = *i*s; /* place sign */
-   /* if fielded, validate the rest of the field is blank */
-   if (fld) while (!chkend(fn, *w)) {
-     if (chkbuf(fn, *w) != ' ') errore(FIELDNOTBLANK);
-     getbuf(fn, w);
-   }
+    s = +1; /* set sign */
+    /* skip leading spaces */
+    while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
+    if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
+        isdigit(chkbuf(fn, *w)))) error("Invalid integer format");
+    if (chkbuf(fn, *w) == '+') getbuf(fn, w);
+    else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
+    if (!(isdigit(chkbuf(fn, *w))))
+        error("Invalid integer format");
+    *i = 0; /* clear initial value */
+    while (isdigit(chkbuf(fn, *w))) { /* parse digit */
+
+        d = chkbuf(fn, *w)-'0';
+        if (*i > INT_MAX/10 || *i == INT_MAX/10 && d > INT_MAX%10)
+            error("Integer value overflow");
+        *i = *i*10+d; /* add in new digit */
+        getbuf(fn, w);
+
+    }
+    *i = *i*s; /* place sign */
+    /* if fielded, validate the rest of the field is blank */
+    if (fld) while (!chkend(fn, *w)) {
+
+        if (chkbuf(fn, *w) != ' ') error("Field not blank");
+        getbuf(fn, w);
+
+    }
+
 }
 
 /** ****************************************************************************
+
+Find power of ten
+
+Finds the given power of 10.
 
 *******************************************************************************/
 
-/* find power of ten */
 double pwrten(long e)
+
 {
+
     double t; /* accumulator */
     double p; /* current power */
 
-   p = 1.0e+1; /* set 1st power */
-   t = 1.0; /* initalize result */
-   do {
-      if (e&1) t = t*p; /* if bit set, add this power */
-      e = e / 2; /* index next bit */
-      p = p*p; /* find next power */
-   } while (e != 0);
-   return (t);
+    p = 1.0e+1; /* set 1st power */
+    t = 1.0; /* initalize result */
+    do {
+
+        if (e&1) t = t*p; /* if bit set, add this power */
+        e = e / 2; /* index next bit */
+        p = p*p; /* find next power */
+
+    } while (e != 0);
+
+    return (t);
+
 }
 
 /** ****************************************************************************
+
+Read real fielded
+
+Reads a real from the given file with field. An real is read from the
+input file, but limited by the field width if provided. If the fielded flag is
+true, will also verify that the rest of the field after the number is parsed
+is blank.
 
 *******************************************************************************/
 
 void readr(filnum fn, double* r, long w, boolean fld)
+
 {
+
     long i; /* integer holding */
     long e; /* exponent */
     long d; /* digit */
     boolean s; /* sign */
 
-   e = 0; /* clear exponent */
-   s = FALSE; /* set sign */
-   *r = 0.0; /* clear result */
-   /* skip leading spaces */
-   while (chkbuf(fn, w) == ' ' && !chkend(fn, w)) getbuf(fn, &w);
-   /* get any sign from number */
-   if (chkbuf(fn, w) == '-') { getbuf(fn, &w); s = TRUE; }
-   else if (chkbuf(fn, w) == '+') getbuf(fn, &w);
-   if (!(isdigit(chkbuf(fn, w)))) errore(INVALIDREALNUMBER);
-   while (isdigit(chkbuf(fn, w))) { /* parse digit */
+    e = 0; /* clear exponent */
+    s = FALSE; /* set sign */
+    *r = 0.0; /* clear result */
+    /* skip leading spaces */
+    while (chkbuf(fn, w) == ' ' && !chkend(fn, w)) getbuf(fn, &w);
+    /* get any sign from number */
+    if (chkbuf(fn, w) == '-') { getbuf(fn, &w); s = TRUE; }
+    else if (chkbuf(fn, w) == '+') getbuf(fn, &w);
+    if (!(isdigit(chkbuf(fn, w)))) error("Invalid real number");
+    while (isdigit(chkbuf(fn, w))) { /* parse digit */
       d = chkbuf(fn, w)-'0';
       *r = *r*10+d; /* add in new digit */
       getbuf(fn, &w);
-   }
-   if (chkbuf(fn, w) == '.' || tolower(chkbuf(fn, w)) == 'e') { /* it's a real */
+    }
+    if (chkbuf(fn, w) == '.' || tolower(chkbuf(fn, w)) == 'e') { /* it's a real */
+
       if (chkbuf(fn, w) == '.') { /* decimal point */
-         getbuf(fn, &w); /* skip '.' */
-         if (!(isdigit(chkbuf(fn, w)))) errore(INVALIDREALNUMBER);
-         while (isdigit(chkbuf(fn, w))) { /* parse digit */
-            d = chkbuf(fn, w)-'0';
-            *r = *r*10+d; /* add in new digit */
-            getbuf(fn, &w);
-            e = e-1; /* count off right of decimal */
-         }
-      }
-      if (tolower(chkbuf(fn, w)) == 'e') { /* exponent */
-         getbuf(fn, &w); /* skip 'e' */
-         if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' ||
-               chkbuf(fn, w) == '-'))
-            errore(INVALIDREALNUMBER);
-         readi(fn, &i, &w, fld); /* get exponent */
-         /* find with exponent */
-         e = e+i;
-      }
-      if (e < 0) *r = *r/pwrten(e); else *r = *r*pwrten(e);
-   }
-   if (s) *r = -*r;
-   /* if fielded, validate the rest of the field is blank */
-   if (fld) while (!chkend(fn, w)) {
-     if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
-     getbuf(fn, &w);
-   }
+
+            getbuf(fn, &w); /* skip '.' */
+            if (!(isdigit(chkbuf(fn, w)))) error("Invalid real number");
+            while (isdigit(chkbuf(fn, w))) { /* parse digit */
+
+                d = chkbuf(fn, w)-'0';
+                *r = *r*10+d; /* add in new digit */
+                getbuf(fn, &w);
+                e = e-1; /* count off right of decimal */
+
+            }
+
+        }
+        if (tolower(chkbuf(fn, w)) == 'e') { /* exponent */
+
+            getbuf(fn, &w); /* skip 'e' */
+            if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' || 
+                chkbuf(fn, w) == '-')) error("Invalid real number");
+            readi(fn, &i, &w, fld); /* get exponent */
+            /* find with exponent */
+            e = e+i;
+
+        }
+        if (e < 0) *r = *r/pwrten(e); else *r = *r*pwrten(e);
+
+    }
+    if (s) *r = -*r;
+    /* if fielded, validate the rest of the field is blank */
+    if (fld) while (!chkend(fn, w)) {
+
+        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        getbuf(fn, &w);
+    }
+
 }
 
 /** ****************************************************************************
+
+Read character fielded
+
+Reads a character from the given file with field. An character is read from the
+input file, but limited by the field width if provided. If the fielded flag is
+true, will also verify that the rest of the field after the character is read
+is blank.
 
 *******************************************************************************/
 
 void readc(filnum fn, char* c, long w, boolean fld)
+
 {
-   *c = chkbuf(fn, w); getbuf(fn, &w);
-   /* if fielded, validate the rest of the field is blank */
-   if (fld) while (!chkend(fn, w)) {
-     if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
-     getbuf(fn, &w);
-   }
-} /*readc*/
 
-/** ****************************************************************************
+    *c = chkbuf(fn, w); getbuf(fn, &w);
+    /* if fielded, validate the rest of the field is blank */
+    if (fld) while (!chkend(fn, w)) {
 
-*******************************************************************************/
+        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        getbuf(fn, &w);
 
-void reads(filnum fn, address ad, long l, long w, boolean fld)
-{
-  long c;
-  while (l > 0) {
-    c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
-  }
-  /* if fielded, validate the rest of the field is blank */
-  if (fld) while (!chkend(fn, w)) {
-    if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
-    getbuf(fn, &w);
-  }
-} /*reads*/
+    }
 
-/** ****************************************************************************
-
-*******************************************************************************/
-
-void readsp(filnum fn, address ad,  long l)
-{
-  char c;
-
-  while (l > 0 && !eolnfn(fn)) {
-    if (eoffn(fn)) errore(ENDOFFILE);
-    c = fgetc(filtable[fn]); putchr(ad, c); ad = ad+1; l = l-1;
-  }
-  while (l > 0) { putchr(ad, ' '); ad = ad+1; l = l-1; }
 }
 
 /** ****************************************************************************
 
+Read string fielded
+
+Reads a string from the given file with field. A string is read from the
+input file, but limited by the field width if provided. If the fielded flag is
+true, will also verify that the rest of the field after the string is read
+is blank.
+
 *******************************************************************************/
 
-void writestrp(FILE* f, address ad, long l)
+void reads(filnum fn, char* s, long l, long w, boolean fld)
+
 {
+
+    long c;
+
+    while (l > 0) {
+
+        c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
+
+    }
+    /* if fielded, validate the rest of the field is blank */
+    if (fld) while (!chkend(fn, w)) {
+
+        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        getbuf(fn, &w);
+
+    }
+
+}
+
+/** ****************************************************************************
+
+Read string padded
+
+Reads from the input file to a given string with lenth. The number of characters
+in the string are read until EOLN is encountered. If EOF is encountered, it is 
+an error. After the string is read, the remaining character positions in the 
+string are cleared to blanks.
+
+*******************************************************************************/
+
+void readsp(filnum fn, char* s,  long l)
+{
+
+    char c;
+
+    while (l > 0 && !eolnfn(fn)) {
+
+        if (eoffn(fn)) error("End of file");
+        c = fgetc(filtable[fn]); *s++ =  c; l--;
+
+    }
+    while (l > 0) { *s++ = ' '; l--; }
+
+}
+
+/** ****************************************************************************
+
+Write string padded
+
+Writes the given text file to the end of a padded string. The end of the padded
+string is the last non-space character in the string.
+
+*******************************************************************************/
+
+void writestrp(FILE* f, char* s, long l)
+{
+
     long i;
-    address ad1;
+    char* p;
 
-    ad1 = ad+l-1; /* find end */
-    while (l > 0 && getchr(ad1) == ' ')
-           { ad1 = ad1-1; l = l-1; }
-    for (i = 0; i < l; i++) fprintf(f, "%c", getchr(ad+i));
+    p = s+l-1; /* find end */
+    while (l > 0 && *p == ' ') { p--; l--; }
+    for (i = 0; i < l; i++) fprintf(f, "%c", *s++);
+
 }
 
 /** ****************************************************************************
+
+Write zero filler to file
+
+Writes n '0's to the file.
 
 *******************************************************************************/
 
 void filllz(FILE* f, long n)
-{ while (n > 0) { fputc('0', f); n--; } }
+
+{ 
+
+    while (n > 0) { fputc('0', f); n--; } 
+
+}
 
 /** ****************************************************************************
+
+Write integer with radix, field and zero fill
+
+Writes an integer to the output file. Accepts a field, a width, a radix and a
+flag indicating to zero fill. The integer is written in the given radix. It is
+placed in either the right of the field, or left if the field is negative. If
+the field is smaller than the number of characters needed by the integer and
+sign, then it will be extended to cover the required space. If the zero fill
+flag is used, then '0's are used to fill the field to the left. If the number
+is negative and a non-decimal radix is specified, an error results.
 
 *******************************************************************************/
 
@@ -974,7 +1143,7 @@ void writei(FILE* f, long w, long fl, long r, long lz)
     if (w < 0) {
 
         sgn = TRUE; w = abs(w);
-        if (r != 10) errore(NONDECIMALRADIXOFNEGATIVE) ;
+        if (r != 10) error("Non-decimal radix of negative") ;
 
     } else sgn = FALSE;
     for (i = 0; i < MAXDBF; i++) digit[i] = ' ';
@@ -1000,7 +1169,7 @@ void writei(FILE* f, long w, long fl, long r, long lz)
 
 Write integer in radix
 
-Writes the given integer with give width, radix and zero fill, from the Pascal
+Writes the given integer with give width, radix and zero fill, to the Pascal
 file.
 
 *******************************************************************************/
@@ -1034,64 +1203,95 @@ void writeipf(pasfil f, long w, long fl, long r, long lz)
 
 /** ****************************************************************************
 
+Write boolean to text file
+
+Writes a boolean to the given Pascal text file, with field width. The values
+"true" or "false" are output, and either clipped or space padded to fit the
+given field.
+
 *******************************************************************************/
 
 void writeb(FILE* f, boolean b, long w)
 {
+
     long l;
 
     if (b) {
+
         l = 4; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", (int)w, (int)l, "true");
+        fprintf(f, "%*.*s", w, l, "true");
+
     } else {
+
         l = 5; if (l > w) l = w; /* limit string to field */
-        fprintf(f, "%*.*s", (int)w, (int)l, "false");
+        fprintf(f, "%*.*s", w, l, "false");
+
     }
+
 }
 
 /** ****************************************************************************
 
 *******************************************************************************/
 
-void putfile(FILE* f, address ad, filnum fn)
+void putfile(FILE* f, pasfil* pf, filnum fn)
+
 {
-    if (!filbuff[fn]) errore(FILEBUFFERVARIABLEUNDEFINED);
-    fputc(getchr(ad+FILEIDSIZE), f);
+
+    if (!filbuff[fn]) error("File buffer variable undefined");
+    fputc(getchr(pf+FILEIDSIZE), f);
     filbuff[fn] = FALSE;
-} /*putfile*/
+
+}
 
 /** ****************************************************************************
+
+Reset file by logical file number
+
+Resets the given file. If the binary flag is true, the file will be opened as
+a binary file, otherwise it is opened as a text file.
 
 *******************************************************************************/
 
 void resetfn(filnum fn, boolean bin)
+
 {
+
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
+        if (fclose(filtable[fn])) error("File close fails");
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
-        errore(FILEOPENFAIL);
+        error("File open fails");
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
     fileoln[fn] = FALSE;
     filbof[fn] = FALSE;
+
 }
 
 /** ****************************************************************************
 
+Rewrite file by logical file number
+
+Rewrites the given file. If the binary flag is true, the file will be opened as
+a binary file, otherwise it is opened as a text file.
+
 *******************************************************************************/
 
 void rewritefn(filnum fn, boolean bin)
+
 {
+
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
+        if (fclose(filtable[fn])) error("File close fails");
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
-        errore(FILEOPENFAIL);
+        error("File open fails");
     filstate[fn] = fswrite;
     filbuff[fn] = FALSE;
+
 }
 
 /** ****************************************************************************
