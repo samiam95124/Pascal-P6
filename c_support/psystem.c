@@ -392,6 +392,33 @@ void assignexternal(filnum fn, char hfn[])
 
 /** ****************************************************************************
 
+Copy addr/length string to C zero terminated string
+
+Copies from the source string to the destination string for length characters,
+then places a zero termination at the end. This is like strncpy(), but always
+terminates the destination.
+
+*******************************************************************************/
+
+void strcpyl(
+    /* destination string */ char* ds,
+    /* source string */      char* ss,
+    /* source string length */ long sl
+)
+
+{
+
+    while (sl) {
+
+        *ds++ = *ss++;
+        sl--;
+    }
+    *ds = 0;
+
+}
+
+/** ****************************************************************************
+
 Validate Pascal file
 
 Expects a Pascal file address. The file is checked for zero, and if so allocates
@@ -1339,7 +1366,7 @@ the string, that are non-space.
 
 *******************************************************************************/
 
-void psystem_wrs(
+void psystem_wrsp(
     /* Pascal file to write to */ pasfil* f,
     /* String to write */         char    s[],
     /* Length of string */        int     l,
@@ -2797,7 +2824,7 @@ void psystem_asst(
     fn = *f; /* get logical file no. */
 
     if (l >= FILLEN) error("File name too long");
-    strncpy(filnamtab[fn], n, l);
+    strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
 }
@@ -2827,7 +2854,7 @@ void psystem_assb(
     fn = *f; /* get logical file no. */
 
     if (l >= FILLEN) error("File name too long");
-    strncpy(filnamtab[fn], n, l);
+    strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
 }
@@ -3016,7 +3043,7 @@ void psystem_del(
     filnam fn;
     int    r;
 
-    strncpy(fn, n, l); /* copy string to buffer */
+    strcpyl(fn, n, l); /* copy string to buffer */
     r = remove(fn); /* remove file */
     if (r) error("File delete fails");
 
@@ -3043,8 +3070,8 @@ void psystem_chg(
     filnam ofn, nfn;
     int    r;
 
-    strncpy(ofn, on, ol); /* copy strings to buffers */
-    strncpy(nfn, nn, nl);
+    strcpyl(ofn, on, ol); /* copy strings to buffers */
+    strcpyl(nfn, nn, nl);
     r = rename(ofn, nfn); /* rename file */
     if (r) error("File name change fails");
 
@@ -3123,7 +3150,7 @@ boolean psystem_exs(
     filnam fn;
     FILE* fp;
 
-    strncpy(fn, n, l); /* make a copy of the string */
+    strcpyl(fn, n, l); /* make a copy of the string */
     if (fp = fopen(fl1, "r")) fclose(fp); /* test file exists */
 
     return (!!fp); /* exit with status */
@@ -3191,69 +3218,223 @@ void psystem_asts(
 
 /** ****************************************************************************
 
+Read string
+
+Reads a string from the Pascal text file. Expects a string address and length,
+The number of characters in the string are read.
+
 *******************************************************************************/
 
-    case 70/*rds*/:
-    case 76/*rdsf*/: w = INT_MAX; fld = q == 76; popint(i);
-                  if (fld) popint(w); popadr(ad1); popadr(ad);
-                  pshadr(ad); valfil(ad); fn = store[ad];
-                  reads(fn, ad1, i, w, fld);
-                  break;
+long psystem_rds(
+    /* Pascal file */ pasfil* f,
+    /* String */      char*   s,
+    /* Length */      long    l
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    reads(fn, s, l, INT_MAX, fld);
+
+}
 
 /** ****************************************************************************
 
+Read string
+
+Read string from Pascal text file. Expects a string address, length and field, 
+The number of characters in the field are read. If the field is smaller than the
+string, only the field number of characters are read, and rest of the string is
+left uninitialized. If the field is longer than the string, the string is 
+filled, then the rest of the field characters are expected to be blank.
+
 *******************************************************************************/
 
-    case 77/*rdsp*/: popint(i); popadr(ad1); popadr(ad); pshadr(ad);
-                  valfil(ad); fn = store[ad];
-                  readsp(fn, ad1, i);
-                  break;
+long psystem_rdsf(
+    /* Pascal file */ pasfil* f,
+    /* String */      char*   s,
+    /* Length */      long    l,
+    /* Field */       long    w
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    reads(fn, s, l, w, fld);
+
+}
 
 /** ****************************************************************************
 
+Read padded string
+
+Reads the string from a Pascal text file. Expects the string address and length.
+The string is read until either the string is full, or eoln occurs. If there are
+more characters, and the string is full, an error results. If eoln occurs first,
+the rest of the string is filled with blanks.
+
 *******************************************************************************/
 
-    case 78/*aeft*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
-                  fn = store[ad]; clrfn(fl1);
-                  for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
-                  assignexternal(fn, fl1);
-                  break;
+long psystem_rdsf(
+    /* Pascal file */ pasfil* f,
+    /* String */      char*   s,
+    /* Length */      long    l,
+    /* Field */       long    w
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readsp(fn, s, l);
+
+}
 
 /** ****************************************************************************
 
+Assign external file text
+
+Assign text file to external header file. The given file is assigned to a file
+read from the header file, or by name of file. The program name of the file
+variable is passed. The standard Pascaline behavior is to read the filename from
+the command line and use that for the assignment. However, other behaviors are
+possible, like using the variable name.
+
 *******************************************************************************/
 
-    case 79/*aefb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
-                  fn = store[ad]; clrfn(fl1);
-                  for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
-                  assignexternal(fn, fl1);
-                  break;
+long psystem_aeft(
+    /* Pascal file */     pasfil* f,
+    /* Filename String */ char*   s,
+    /* Length */          long    l
+)
+
+{
+
+    int fn;
+    long i;
+    filnam fs;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    strcpyl(fs, s, l); /* make copy of string */
+    assignexternal(fn, fs);
+
+}
 
 /** ****************************************************************************
 
+Assign external file binary
+
+Assign binary file to external header file. The given file is assigned to a file
+read from the header file, or by name of file. The program name of the file
+variable is passed. The standard Pascaline behavior is to read the filename from
+the command line and use that for the assignment. However, other behaviors are
+possible, like using the variable name.
+
 *******************************************************************************/
 
-    case 80/*rdie*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
-                  readi(COMMANDFN, &i, &w, FALSE); putint(ad, i);
-                  break;
+long psystem_aefb(
+    /* Pascal file */     pasfil* f,
+    /* Filename String */ char*   s,
+    /* Length */          long    l
+)
+
+{
+
+    int fn;
+    long i;
+    filnam fs;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    strcpyl(fs, s, l); /* make copy of string */
+    assignexternal(fn, fs);
+
+}
 
 /** ****************************************************************************
 
+Read integer external
+
+Reads an external integer for a header parameter. The program name of the header
+parameter and its length are passed as parameters, but the standard Pascaline
+behavior is to read the integer from the command line. The integer is returned.
+
 *******************************************************************************/
 
-    case 81/*rdre*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
-                  readr(COMMANDFN, &r, w, FALSE); putrel(ad, r);
-                  break;
+long psystem_rdie(
+    /* Name of header variable */        char* n,
+    /* Length of header variable name */ long  l
+)
+
+{
+
+    long w;
+    long i;
+
+    w = INT_MAX; 
+    readi(COMMANDFN, &i, &w, FALSE);
+
+    return (i); /* return result */
+
+}
 
 /** ****************************************************************************
 
+Read real external
+
+Reads an external real for a header parameter. The program name of the header
+parameter and its length are passed as parameters, but the standard Pascaline
+behavior is to read the real from the command line. The real is returned.
+
 *******************************************************************************/
 
-    case 2/*thw*/: popadr(ad1); mp = expmrk; sp = expstk;
-                  pc = expadr; popadr(ad2); pshadr(ad1);
-                  ep = getadr(mp+MARKET); /* get the mark ep */
-                  /* release to search vectors */
-                  break;
+double psystem_rdre(
+    /* Name of header variable */        char* n,
+    /* Length of header variable name */ long  l
+)
+
+{
+
+    long w;
+    double r;
+
+    w = INT_MAX; 
+    readr(COMMANDFN, &r, &w, FALSE);
+
+    return (r); /* return result */
+
+}
+
+/** ****************************************************************************
+
+Throw exception
+
+*******************************************************************************/
+
+void psystem_thw(void)
+
+{
+
+    error("Throw function not implemented");
+
+}
 
 /** ****************************************************************************
 

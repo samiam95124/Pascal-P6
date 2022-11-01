@@ -1898,10 +1898,8 @@ void callsp(void)
                                  (char*)(store+ad1));
                     }
                     break;
-{ ??? why does this have a width ??? }
-    case 65 /*wrsp*/: popint(w); popadr(ad1); popint(l); popadr(ad); pshadr(ad);
+    case 65 /*wrsp*/: popadr(ad1); popint(l); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
-                    if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
                     if (fn <= COMMANDFN) switch (fn) {
                       case OUTPUTFN: writestrp(stdout, ad1, l); break;
                       case PRRFN: writestrp(filtable[PRRFN], ad1, l); break;
