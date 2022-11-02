@@ -887,9 +887,9 @@ procedure xlate;
      writeln(prr, '# Set up default files');
      writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
      writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
-     writeln(prr, '        movb    $errorfn,globals_start+prdoff(%rip)');
-     writeln(prr, '        movb    $listfn,globals_start+prroff(%rip)');
-     writeln(prr, '        movb    $commandfn,globals_start+prroff(%rip)');
+     writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
+     writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
+     writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
    end;
 
    procedure postamble;
