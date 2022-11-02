@@ -144,6 +144,7 @@ const
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
       maxphy      = 6;       { maximum physical registers to allocate }
+      tabspc      = 8;       { tab spacing on assembly code }
 
       { version numbers }
 
@@ -436,6 +437,8 @@ end (*align*);
 { translate intermediate file }
 
 procedure xlate;
+    const
+      insmax = 30;
    type  labelst  = (entered,defined); (*label situation*)
          labelrg  = 0..maxlabel;       (*label range*)
          labelrec = record
@@ -450,7 +453,9 @@ procedure xlate;
                      end;
          { registers in target }
          reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
-                rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15);
+                rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15, 
+                rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, rgxmm7,
+                rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14, rgxmm15);
          regset = set of reg;
          { stack and expression tree entries }
          expptr = ^expstk;
@@ -465,6 +470,7 @@ procedure xlate;
                     vali: integer; { integer value }
                     valr: integer; { real value }
                   end;
+         insstr = packed array [1..insmax] of char;
 
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
@@ -988,7 +994,7 @@ procedure xlate;
    procedure assemble; (*translate symbolic code into machine code and store*)
    
       const
-        insmax = 30;
+        insmax = 18;
 
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
@@ -1135,15 +1141,40 @@ procedure xlate;
         rf := rf-[r];
       end;
 
+      procedure getfreg(var r: reg; var rf: regset);
+      begin
+        r := rgxmm0;
+        while not (r in rf) and (r < rgxmm15) do r := succ(r);
+        if not (r in rf) then errorl('Out of registers         ');
+        rf := rf-[r];
+      end;
+
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
       begin
         case ep^.op of
           0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-          109{lodc}, 4{loda}: begin end;
-          {adi,adr,sbi,sbr}
-          28, 29, 30, 31: begin end;   
+          109{lodc}, 4{loda}: begin { local loads } end;
+
+          {adr,sbr}
+          29, 31: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
+
+          {equr,neqr,geqr,grtr,leqr,lesr}
+          138,144,150,156,162,168: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgnull, rgnull); assreg(ep^.r, rf, rgnull, rgnull) end;
+
+          {adi,adr,sbi,sbr,equ,neq,geq,grt,leq,les}
+          28, 30, 17, 137, 139, 140, 141, 18, 143, 145, 146, 
+          147, 19, 149, 151, 152, 153, 20, 155, 157, 158, 159, 21, 
+          161, 163, 164, 165, 167, 169, 170, 171: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;  
+
           120{lip}: begin end;   
-          { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
+
+          { equm,neqm,geqm,grtm,leqm,lesm }
           142, 148, 154, 160, 166, 172: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
@@ -1174,7 +1205,8 @@ procedure xlate;
           114: ;
 
           {ldci,ldcc,ldcb}
-          123,127,126: ep^.r1 := r1;
+          123,127,126: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           {ldcn}
           125: ep^.r1 := r1;
@@ -1210,11 +1242,10 @@ procedure xlate;
           {ngi,ngr}
           36,37: ;
 
-          {sqi,sqr}
-          38,39: ;
-
-          {abi,abr}
-          40,41: ;
+          {abi,abr,sqi,sqr}
+          40,41,38,39: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, r1, r2) end;
 
           {notb,noti,odd,rnd,chr}
           42,50,60,62,205: ;
@@ -1229,16 +1260,58 @@ procedure xlate;
         end
       end;
 
+      procedure wrtins(si: insstr; i1, i2: integer; r1, r2: reg);
+      var i,j: 1..insmax; n: integer;
+      procedure next;
+      begin if i = insmax then errorl('Error in instruction     '); i := i+1
+      end;
+        
+      begin
+        write(prr, ' ':tabspc);
+        i := 1; while si[i] <> ' ' do begin write(prr, si[i]); next end;
+        j := i;
+        while j <= tabspc do begin write(prr, ' '); j := j+1 end;
+        while (i < insmax) and (si[i] = ' ') do next;
+        while i < insmax do begin
+          if si[i] = '#' then begin next;
+            if si[i] = '0' then write(prr, i1) else write(prr, i2);
+          end else if si[i] = '%' then begin next; write(prr, '%');
+            if si[i] <> 'r' then errorl('Error in instruction     '); next;
+            if si[i] = '1' then wrtreg(prr, r1) else wrtreg(prr, r2);          
+          end else write(prr, si[i]);
+          i := i+1
+        end;
+        writeln(prr)
+      end;
+
       procedure genexp(ep: expptr);
       begin
         if ep <> nil then begin
           genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
           case ep^.op of
+
             0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-            109{lodc}, 4{loda}: begin end;
-            {adi,adr,sbi,sbr}
-            28, 29, 30, 31: begin end;   
-            120{lip}: begin end;   
+            109{lodc}, 4{loda}: begin { local loads } end;
+
+            {adi}
+            28: wrtins('add %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+
+            {adr}
+            29: wrtins('addsd %r1,%r2     ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+
+            {sbi}
+            30: wrtins('sub %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+
+            {sbr}
+            31: wrtins('subsd %r1,%r2     ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+
+            {equr}
+            128: begin wrtins('cmpeqsd %r1,%r2   ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+                       wrtins('movq %r1,%r2      ', 0, 0, ep^.l^.r1, ep^.r1);
+                       wrtins('andq %r1,#0       ', 1, 0, ep^.r1, rgnull) end;
+
+            120{lip}: begin end;  
+
             { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
             142, 148, 154, 160, 166, 172: begin end;      
 
@@ -1344,9 +1417,11 @@ procedure xlate;
           3 (*rln*): begin popstk(ep); dmptrel(ep, 19); pshstk(ep2) end;
           39 (*nwl*): ;
           { do we need to preserve the file across calls? }
+
           5 (*wln*): begin popstk(ep); assreg(ep, [], rgrdi, rgnull); dmptrel(ep, 19); 
             genexp(ep); writeln(prr, '        call    psystem_wln');
             pshstk(ep) end;
+
           6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
             assreg(ep4, frereg, rgrdi, rgnull); 
             assreg(ep2, frereg, rgrsi, rgnull);
@@ -1354,13 +1429,23 @@ procedure xlate;
             assreg(ep, frereg, rgrcx, rgnull);
             dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2); 
             dmptrel(ep3, 19); genexp(ep3); dmptrel(ep4, 19); genexp(ep4);
-            writeln(prr, '        call    psystem_wrs');
+            wrtins('call psystem_wrs  ', 0, 0, rgnull, rgnull);
             deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
+
           65 (*wrsp*):;
           41 (*eof*):;
           42 (*efb*):;
           7 (*eln*):;
-          8 (*wri*),
+
+          8 (*wri*): begin popstk(ep3); popstk(ep2); popstk(ep);
+            assreg(ep, frereg, rgrdi, rgnull);
+            assreg(ep2, frereg, rgrsi, rgnull); 
+            assreg(ep3, frereg, rgrdx, rgnull);
+            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
+            dmptrel(ep3, 19); genexp(ep3);
+            wrtins('call psystem_wri  ', 0, 0, rgnull, rgnull);
+            deltre(ep2); deltre(ep3); pshstk(ep) end;
+
           62 (*wrih*),
           63 (*wrio*),
           64 (*wrib*),
