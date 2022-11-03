@@ -183,8 +183,15 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
-      strptr = ^strrec; { pointer to string constant entry table }
-      strrec = record next: strptr; str: strvsp; strl, strn: integer end;
+      ctype = (cstr, creal, cset);
+      cstptr = ^cstrec; { pointer to string constant entry table }
+      cstrec = record 
+        next: cstptr; 
+        case ct: ctype of
+            cstr:  (str: strvsp; strl: integer; strn: integer);
+            creal: (r:   real; realn: integer);
+            cset:  (s:   settype; setn: integer);
+      end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -255,8 +262,9 @@ var   pc          : address;   (*program address register*)
       insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
-      strtbl      : strptr; { string constant table }
-      strnum      : integer; { string constant table label count }
+      csttbl      : cstptr; { constants table }
+      strnum      : integer; { string constant label count }
+      realnum     : integer; { real constants label count }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -467,8 +475,8 @@ procedure xlate;
                     l, r: expptr; { right and left links }
                     x1:   expptr; { extra link }
                     strn: integer; { string number }
+                    realn: integer; { real number }
                     vali: integer; { integer value }
-                    valr: integer; { real value }
                   end;
          insstr = packed array [1..insmax] of char;
 
@@ -999,8 +1007,7 @@ procedure xlate;
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
           str: strbuf; { buffer for string constants }
-          sbp: strptr;
-          t: integer; { [sam] temp for compiler bug }
+          cstp: cstptr;
           ep, ep2, ep3, ep4: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
@@ -1044,23 +1051,39 @@ procedure xlate;
       procedure wrtreg(var f: text; r: reg);
       begin
         case r of
-          rgnull: write(f, '<null>');
-          rgrax:  write(f, 'rax');
-          rgrbx:  write(f, 'rbx');
-          rgrcx:  write(f, 'rcx');
-          rgrdx:  write(f, 'rdx');
-          rgrsi:  write(f, 'rsi');
-          rgrdi:  write(f, 'rdi');
-          rgrbp:  write(f, 'rbp');
-          rgrsp:  write(f, 'rsp');
-          rgr8:   write(f, 'r8');
-          rgr9:   write(f, 'r9');
-          rgr10:  write(f, 'r10');
-          rgr11:  write(f, 'r11');
-          rgr12:  write(f, 'r12');
-          rgr13:  write(f, 'r13');
-          rgr14:  write(f, 'r14');
-          rgr15:  write(f, 'r15');
+          rgnull:  write(f, '<null>');
+          rgrax:   write(f, 'rax');
+          rgrbx:   write(f, 'rbx');
+          rgrcx:   write(f, 'rcx');
+          rgrdx:   write(f, 'rdx');
+          rgrsi:   write(f, 'rsi');
+          rgrdi:   write(f, 'rdi');
+          rgrbp:   write(f, 'rbp');
+          rgrsp:   write(f, 'rsp');
+          rgr8:    write(f, 'r8');
+          rgr9:    write(f, 'r9');
+          rgr10:   write(f, 'r10');
+          rgr11:   write(f, 'r11');
+          rgr12:   write(f, 'r12');
+          rgr13:   write(f, 'r13');
+          rgr14:   write(f, 'r14');
+          rgr15:   write(f, 'r15');
+          rgxmm0:  write(f, 'xmm0'); 
+          rgxmm1:  write(f, 'xmm1'); 
+          rgxmm2:  write(f, 'xmm2'); 
+          rgxmm3:  write(f, 'xmm3'); 
+          rgxmm4:  write(f, 'xmm4'); 
+          rgxmm5:  write(f, 'xmm5'); 
+          rgxmm6:  write(f, 'xmm6'); 
+          rgxmm7:  write(f, 'xmm7');
+          rgxmm8:  write(f, 'xmm8');
+          rgxmm9:  write(f, 'xmm9'); 
+          rgxmm10: write(f, 'xmm10'); 
+          rgxmm11: write(f, 'xmm11'); 
+          rgxmm12: write(f, 'xmm12'); 
+          rgxmm13: write(f, 'xmm13'); 
+          rgxmm14: write(f, 'xmm14'); 
+          rgxmm15: write(f, 'xmm15');
         end
       end;
 
@@ -1209,10 +1232,16 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           {ldcn}
-          125: ep^.r1 := r1;
+          125: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
-          {ldcs,ldcr}
-          7, 124: ;
+          {ldcr}
+          124: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+
+          {ldcs}
+          7: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
            {chk}
            26, 95, 97, 98, 99, 190, 199: ;
@@ -1220,10 +1249,12 @@ procedure xlate;
            92: ;
            {vbe}
            96:;
-           56 {lca}: ep^.r1 := r1;
+           56 {lca}: begin ep^.r1 := r1;
+             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
           {ord}
-          59, 134, 136, 200: ep^.r1 := r1;
+          59, 134, 136, 200: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
           {lcp}
           135: ;
@@ -1316,7 +1347,7 @@ procedure xlate;
             142, 148, 154, 160, 166, 172: begin end;      
 
             5{lao}: begin 
-              write(prr, '        lea     globals_start+', ep^.q:1, '(%rip),%');
+              write(prr, '        leaq    globals_start+', ep^.q:1, '(%rip),%');
               wrtreg(prr, ep^.r1); writeln(prr) end;
 
             16{ixa}: begin end;
@@ -1351,8 +1382,17 @@ procedure xlate;
             125: begin write(prr, '        movq    $0,%'); 
               wrtreg(prr, ep^.r1); writeln(prr) end;
 
-            {ldcs,ldcr}
-            7, 124: ;
+            {ldcr}
+            124: begin 
+               write(prr, '        movsd   real', ep^.realn:1, '(%rip),%'); 
+               wrtreg(prr, ep^.r1); writeln(prr);
+            end;
+
+            {ldcs}
+            7: begin 
+               write(prr, '        leaq    set', ep^.realn:1, '(%rip),%'); 
+               wrtreg(prr, ep^.r1); writeln(prr);
+            end;
 
              {chk}
              26, 95, 97, 98, 99, 190, 199: begin end;
@@ -1453,7 +1493,16 @@ procedure xlate;
           67 (*wizh*),
           68 (*wizo*),
           69 (*wizb*):;
-          9 (*wrr*):;
+
+          9 (*wrr*): begin popstk(ep3); popstk(ep2); popstk(ep);
+            assreg(ep, frereg, rgrdi, rgnull);
+            assreg(ep2, frereg, rgxmm0, rgnull); 
+            assreg(ep3, frereg, rgrsi, rgnull);
+            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
+            dmptrel(ep3, 19); genexp(ep3);
+            wrtins('call psystem_wrr  ', 0, 0, rgnull, rgnull);
+            deltre(ep2); deltre(ep3); pshstk(ep) end;
+
           10(*wrc*):;
           11(*rdi*),
           72(*rdif*):;
@@ -1663,7 +1712,10 @@ procedure xlate;
                              getexp(ep); ep^.vali := i; pshstk(ep) end;
 
                            124: begin read(prd,r); writeln(prr, r); getexp(ep);
-                             pshstk(ep) end;
+                             pshstk(ep); new(cstp); cstp^.ct := creal; 
+                             cstp^.r := r; realnum := realnum+1; 
+                             cstp^.realn := realnum; cstp^.next := csttbl; 
+                             csttbl := cstp; ep^.realn := realnum end;
 
                            125: begin getexp(ep); pshstk(ep); writeln(prr) end;
 
@@ -1730,9 +1782,9 @@ procedure xlate;
              getexp(ep);
              pshstk(ep);
              writeln(prr, '"', str:l,'"');
-             new(sbp); strassvsb(sbp^.str, str); sbp^.strl := l; 
-             strnum := strnum+1; sbp^.strn := strnum; sbp^.next := strtbl;
-             strtbl := sbp; ep^.strn := strnum
+             new(cstp); cstp^.ct := cstr; strassvsb(cstp^.str, str); 
+             cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
+             cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
            end;
 
           {ret}
@@ -1834,12 +1886,16 @@ procedure xlate;
 
    procedure genstrcst;
    begin
-     while strtbl <> nil do begin
-       writeln(prr, 'string', strtbl^.strn:1, ':');
-       write(prr, '        .string "');
-       writev(prr, strtbl^.str, strtbl^.strl);
-       writeln(prr, '"');
-       strtbl := strtbl^.next
+     while csttbl <> nil do begin
+       case csttbl^.ct of
+         cstr: begin writeln(prr, 'string', csttbl^.strn:1, ':');
+           write(prr, '        .string "');
+           writev(prr, csttbl^.str, csttbl^.strl);
+           writeln(prr, '"') end;
+         creal: begin writeln(prr, 'real', csttbl^.realn:1, ':');
+           writeln(prr, '        .double ', csttbl^.r) end
+       end;
+       csttbl := csttbl^.next
      end
    end;
 
@@ -1902,7 +1958,7 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  strtbl := nil; strnum := 0; gblsiz := 0;
+  csttbl := nil; strnum := 0; realnum := 0; gblsiz := 0;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
