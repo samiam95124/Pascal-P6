@@ -3772,6 +3772,25 @@ void psystem_thw(void)
 
 /** ****************************************************************************
 
+Find base of locals
+
+Given the number of frames to climb, finds the base address of locals in the
+stack for a given function/procedure
+
+*******************************************************************************/
+
+unsigned char* psystem_base(
+    /* Number of frames to climb */ int ld
+)
+
+{
+
+    error("Base function not implemented");
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/

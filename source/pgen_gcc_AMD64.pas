@@ -477,6 +477,7 @@ procedure xlate;
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
+                    rs: regset; { push/pop mask }
                   end;
          insstr = packed array [1..insmax] of char;
 
@@ -1093,6 +1094,7 @@ procedure xlate;
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
         ep^.r := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
+        ep^.rs := []
       end;
       
       procedure putexp(ep: expptr);
@@ -1173,9 +1175,25 @@ procedure xlate;
       end;
 
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
+      var rs: regset;
+
+      procedure resreg(r: reg);
+      begin
+        if not (r in rf) then ep^.rs := ep^.rs+[r]
+      end;
+
       begin
         case ep^.op of
-          0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
+
+          {lodi,lodx,loda}
+          0,193,105: begin resreg(rgrax); ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+
+          {lodr}
+          106: begin resreg(rgrax); ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+
+          107{lods}, 108{lodb}, 
           109{lodc}, 4{loda}: begin { local loads } end;
 
           {adr,sbr}
@@ -1202,7 +1220,8 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
 
-          5{lao}: ep^.r1 := r1;
+          5{lao}: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           16{ixa}: ;
           118{swp}: ;
@@ -1316,13 +1335,53 @@ procedure xlate;
       end;
 
       procedure genexp(ep: expptr);
+      var r: reg;
       begin
         if ep <> nil then begin
           genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
+          for r := rgrax to rgr15 do if r in ep^.rs then
+              wrtins('push %r1          ', 0, 0, r, rgnull);
           case ep^.op of
 
-            0{lodi}, 193{lodx}, 105{loda}, 106{lodr}, 107{lods}, 108{lodb}, 
-            109{lodc}, 4{loda}: begin { local loads } end;
+            {lodi,loda}
+            0,105: begin
+              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movq (%r1),%r2    ', 0, 0, rgrax, ep^.l^.r1)
+            end;
+
+            {lodx,lodb,lodc}
+            193,108,109: begin
+              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movzx (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+            end;
+
+            {lodr},
+            106: begin
+              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movsd (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+            end;
+
+            {lods}, 
+            107: begin
+              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
+
+              wrtins('add #0,%rsp       ', -setsize, 0, rgnull, rgnull);
+              wrtins('movq %rsp,%r2     ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins('movq (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+
+
+              wrtins('movsd (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+            end;
+
+            4{lda}: begin { local loads } end;
 
             {adi}
             28: wrtins('add %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
@@ -1442,6 +1501,8 @@ procedure xlate;
             {cks}
             187: begin end;
           end
+          for r := rgr15 downto rgrax do if r in ep^.rs then
+              wrtins('pop %r1           ', 0, 0, r, rgnull);
         end
       end;
 
