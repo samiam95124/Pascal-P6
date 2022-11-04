@@ -1185,16 +1185,19 @@ procedure xlate;
       begin
         case ep^.op of
 
-          {lodi,lodx,loda}
-          0,193,105: begin resreg(rgrax); ep^.r1 := r1;
+          {lodi,lodx,loda,lodb,lodc}
+          0,193,105,108,109: begin resreg(rgrax); ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           {lodr}
           106: begin resreg(rgrax); ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
-          107{lods}, 108{lodb}, 
-          109{lodc}, 4{loda}: begin { local loads } end;
+          {lods}
+          107: begin resreg(rgrax); resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+
+          4{loda}: begin { local loads } end;
 
           {adr,sbr}
           29, 31: begin ep^.r1 := r1;
@@ -1359,7 +1362,7 @@ procedure xlate;
               wrtins('movzx (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
-            {lodr},
+            {lodr}
             106: begin
               wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
               wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
@@ -1367,18 +1370,20 @@ procedure xlate;
               wrtins('movsd (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
-            {lods}, 
+            {lods}
             107: begin
               wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
               wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
               wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
-
               wrtins('add #0,%rsp       ', -setsize, 0, rgnull, rgnull);
-              wrtins('movq %rsp,%r2     ', 0, 0, rgrax, ep^.l^.r1)
-              wrtins('movq (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins('movq %r1,%r2      ', 0, 0, rgrax, rgrsi);
+              wrtins('movq %rsp,%rdi    ', 0, 0, rgnull, rgnull);
+              wrtins('movsq             ', 0, 0, rgnull, rgnull);
+              wrtins('movsq             ', 0, 0, rgnull, rgnull);
+              wrtins('movsq             ', 0, 0, rgnull, rgnull);
+              wrtins('movsq             ', 0, 0, rgnull, rgnull);
+              wrtins('movq %rsp,%r1     ', 0, 0, rgnull, ep^.l^.r1);
 
-
-              wrtins('movsd (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
             4{lda}: begin { local loads } end;
@@ -1500,9 +1505,9 @@ procedure xlate;
 
             {cks}
             187: begin end;
-          end
-          for r := rgr15 downto rgrax do if r in ep^.rs then
-              wrtins('pop %r1           ', 0, 0, r, rgnull);
+          end;
+          for r := rgr15 downto rgrax do if r in ep^.rs then 
+            wrtins('pop %r1           ', 0, 0, r, rgnull)
         end
       end;
 
