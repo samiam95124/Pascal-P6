@@ -446,7 +446,7 @@ end (*align*);
 
 procedure xlate;
     const
-      insmax = 30;
+      insmax = 20;
    type  labelst  = (entered,defined); (*label situation*)
          labelrg  = 0..maxlabel;       (*label range*)
          labelrec = record
@@ -1001,9 +1001,6 @@ procedure xlate;
    end; (*generate*)
 
    procedure assemble; (*translate symbolic code into machine code and store*)
-   
-      const
-        insmax = 18;
 
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
@@ -1185,8 +1182,8 @@ procedure xlate;
       begin
         case ep^.op of
 
-          {lodi,lodx,loda,lodb,lodc}
-          0,193,105,108,109: begin resreg(rgrax); ep^.r1 := r1;
+          {lodi,lodx,loda,lodb,lodc,lda}
+          0,193,105,108,109,4: begin resreg(rgrax); ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           {lodr}
@@ -1196,8 +1193,6 @@ procedure xlate;
           {lods}
           107: begin resreg(rgrax); resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
-
-          4{loda}: begin { local loads } end;
 
           {adr,sbr}
           29, 31: begin ep^.r1 := r1;
@@ -1218,15 +1213,15 @@ procedure xlate;
 
           120{lip}: begin end;   
 
-          { equm,neqm,geqm,grtm,leqm,lesm }
-          142, 148, 154, 160, 166, 172: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
+          {equm,neqm,geqm,grtm,leqm,lesm}
+          142, 148, 154, 160, 166, 172: begin assreg(ep^.l, rf, rgrdi, rgnull); 
+            assreg(ep^.r, rf, rgrsi, rgnull); resreg(rgrdx) end;
 
           5{lao}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           16{ixa}: ;
+
           118{swp}: ;
           {ldo}
           1, 65, 66, 67, 68, 69, 194: ;
@@ -1343,76 +1338,95 @@ procedure xlate;
         if ep <> nil then begin
           genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
           for r := rgrax to rgr15 do if r in ep^.rs then
-              wrtins('push %r1          ', 0, 0, r, rgnull);
+              wrtins('push %r1            ', 0, 0, r, rgnull);
           case ep^.op of
 
             {lodi,loda}
             0,105: begin
-              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
-              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
-              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
-              wrtins('movq (%r1),%r2    ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movq (%r1),%r2      ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
-              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
-              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
-              wrtins('movzx (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movzx (%r1),%r2     ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
             {lodr}
             106: begin
-              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
-              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
-              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
-              wrtins('movsd (%r1),%r2   ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movsd (%r1),%r2     ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
             {lods}
             107: begin
-              wrtins('movq #0,%r1       ', ep^.p, 0, rgrax, rgnull);
-              wrtins('call psystem_base ', 0, 0, rgnull, rgnull);
-              wrtins('add #0,%r1        ', ep^.q, 0, rgrax, rgnull);
-              wrtins('add #0,%rsp       ', -setsize, 0, rgnull, rgnull);
-              wrtins('movq %r1,%r2      ', 0, 0, rgrax, rgrsi);
-              wrtins('movq %rsp,%rdi    ', 0, 0, rgnull, rgnull);
-              wrtins('movsq             ', 0, 0, rgnull, rgnull);
-              wrtins('movsq             ', 0, 0, rgnull, rgnull);
-              wrtins('movsq             ', 0, 0, rgnull, rgnull);
-              wrtins('movsq             ', 0, 0, rgnull, rgnull);
-              wrtins('movq %rsp,%r1     ', 0, 0, rgnull, ep^.l^.r1);
+              wrtins('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins('add #0,%rsp         ', -setsize, 0, rgnull, rgnull);
+              wrtins('movq %r1,%r2        ', 0, 0, rgrax, rgrsi);
+              wrtins('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull);
+              wrtins('movsq               ', 0, 0, rgnull, rgnull);
+              wrtins('movsq               ', 0, 0, rgnull, rgnull);
+              wrtins('movsq               ', 0, 0, rgnull, rgnull);
+              wrtins('movsq               ', 0, 0, rgnull, rgnull);
+              wrtins('movq %rsp,%r1       ', 0, 0, rgnull, ep^.l^.r1);
 
             end;
 
-            4{lda}: begin { local loads } end;
+            {lda}
+            4: begin
+              wrtins('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins('movq %r1,%r2        ', 0, 0, rgrax, ep^.l^.r1)
+            end;
 
             {adi}
-            28: wrtins('add %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+            28: wrtins('add %r1,%r2         ', 0, 0, ep^.r^.r1, ep^.l^.r1);
 
             {adr}
-            29: wrtins('addsd %r1,%r2     ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+            29: wrtins('addsd %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
 
             {sbi}
-            30: wrtins('sub %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+            30: wrtins('sub %r1,%r2         ', 0, 0, ep^.r^.r1, ep^.l^.r1);
 
             {sbr}
-            31: wrtins('subsd %r1,%r2     ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+            31: wrtins('subsd %r1,%r2       ', 0, 0, ep^.r^.r1, ep^.l^.r1);
 
             {equr}
-            128: begin wrtins('cmpeqsd %r1,%r2   ', 0, 0, ep^.r^.r1, ep^.l^.r1);
-                       wrtins('movq %r1,%r2      ', 0, 0, ep^.l^.r1, ep^.r1);
-                       wrtins('andq %r1,#0       ', 1, 0, ep^.r1, rgnull) end;
+            128: begin wrtins('cmpeqsd %r1,%r2     ', 0, 0, ep^.r^.r1, ep^.l^.r1);
+                       wrtins('movq %r1,%r2        ', 0, 0, ep^.l^.r1, ep^.r1);
+                       wrtins('andq %r1,#0         ', 1, 0, ep^.r1, rgnull) end;
 
             120{lip}: begin end;  
 
-            { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
-            142, 148, 154, 160, 166, 172: begin end;      
+            {equm}
+            142: begin wrtins('movq #0,%rdx        ', q, 0, rgnull, rgnull);
+              wrtins('call psystem_strcmp', 0, 0, rgnull, rgnull); 
+              wrtins('cmpq #0,%rax       ', 0, 0, rgnull, rgnull);
+              case ep^.op of
+                142{equm}: wrtins('sete %r0            ', 0, 0, ep^.l^.r1, rgnull);
+                148{neqm}: wrtins('setne %r0           ', 0, 0, ep^.l^.r1, rgnull);
+                154{geqm}: wrtins('setae %r0           ', 0, 0, ep^.l^.r1, rgnull);
+                160{grtm}: wrtins('seta %r0            ', 0, 0, ep^.l^.r1, rgnull);
+                166{leqm}: wrtins('setbe %r0           ', 0, 0, ep^.l^.r1, rgnull);
+                172{lesm}: wrtins('setb %r0            ', 0, 0, ep^.l^.r1, rgnull);
+              end
+            end;
 
             5{lao}: begin 
               write(prr, '        leaq    globals_start+', ep^.q:1, '(%rip),%');
               wrtreg(prr, ep^.r1); writeln(prr) end;
+
+{???}
 
             16{ixa}: begin end;
             118{swp}: begin end;
@@ -1507,7 +1521,7 @@ procedure xlate;
             187: begin end;
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
-            wrtins('pop %r1           ', 0, 0, r, rgnull)
+            wrtins('pop %r1             ', 0, 0, r, rgnull)
         end
       end;
 
@@ -1535,7 +1549,7 @@ procedure xlate;
             assreg(ep, frereg, rgrcx, rgnull);
             dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2); 
             dmptrel(ep3, 19); genexp(ep3); dmptrel(ep4, 19); genexp(ep4);
-            wrtins('call psystem_wrs  ', 0, 0, rgnull, rgnull);
+            wrtins('call psystem_wrs    ', 0, 0, rgnull, rgnull);
             deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
 
           65 (*wrsp*):;
@@ -1549,7 +1563,7 @@ procedure xlate;
             assreg(ep3, frereg, rgrdx, rgnull);
             dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
             dmptrel(ep3, 19); genexp(ep3);
-            wrtins('call psystem_wri  ', 0, 0, rgnull, rgnull);
+            wrtins('call psystem_wri    ', 0, 0, rgnull, rgnull);
             deltre(ep2); deltre(ep3); pshstk(ep) end;
 
           62 (*wrih*),
@@ -1566,7 +1580,7 @@ procedure xlate;
             assreg(ep3, frereg, rgrsi, rgnull);
             dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
             dmptrel(ep3, 19); genexp(ep3);
-            wrtins('call psystem_wrr  ', 0, 0, rgnull, rgnull);
+            wrtins('call psystem_wrr    ', 0, 0, rgnull, rgnull);
             deltre(ep2); deltre(ep3); pshstk(ep) end;
 
           10(*wrc*):;

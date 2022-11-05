@@ -3791,6 +3791,51 @@ unsigned char* psystem_base(
 
 /** ****************************************************************************
 
+Compare strings
+
+Compares two strings, and returns:
+
+<0 - String 2 greater than string 1.
+0  - String 1 and 2 equal.
+1  - String 1 greater than string 2
+
+ie., just like strcmp, but does not treat 0's specially. The length is 
+specified, and both strings must be of the same length.
+
+*******************************************************************************/
+
+int psystem_strcmp(
+    /** First string */  char* s1,
+    /** Second string */ char* s2, 
+    /** Length */        int l
+)
+
+{
+
+    int     i;
+    boolean b;
+    int     r;
+
+    i = 0;
+    b = TRUE;
+    while (b && i<l) do {
+
+        if (*s1++ == *s2++) i++;
+        else b = FALSE;
+
+    }
+    if (i == l) i = i-1;
+    s1--;
+    s2--;
+
+    if (b) r := 0;
+    else if (*s1 < *s2) r = -1;
+    else r = 1;
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/
