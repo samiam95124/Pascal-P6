@@ -5039,9 +5039,10 @@ begin
     226 (*vin*): begin getq; getq1; popadr(ad); ad2 := sp;
                    for i := 1 to q do
                      begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
-                   newspc(q1+q*intsize, ad2); putadr(ad, ad2);
+                   newspc(q1+q*intsize, ad2); putadr(ad, ad2); 
+                   ad2 := ad2+q*intsize;
                    for i := 1 to q do
-                     begin popint(i1); putint(ad2, i1); ad2 := ad2+intsize;end
+                     begin popint(i1); ad2 := ad2-intsize; putint(ad2, i1) end
                  end;
     135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end;
     176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
@@ -5062,7 +5063,7 @@ begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i))
                        end
                  end;
-    210 (*apc*): begin getq; getq1; popadr(ad1); popadr(ad); popadr(ad);
+    210 (*apc*): begin getq; getq1; popadr(ad1); popadr(ad); popadr(ad); 
                        popadr(ad2);
                        for i := 1 to q do
                          begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;

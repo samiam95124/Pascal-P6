@@ -3637,12 +3637,13 @@ end;
     containers := cc
   end;
 
-  { find base size of container series }
+  { find base size of container or array series }
   function containerbase(lsp: stp): integer;
-  var cc: integer; bp: stp;
-  begin cc := 0; bp := nil;
+  var bp: stp;
+  begin bp := nil;
     while lsp <> nil do
-      if lsp^.form = arrayc then begin lsp := lsp^.abstype; cc := cc+1 end
+      if lsp^.form = arrayc then lsp := lsp^.abstype
+      else if lsp^.form = arrays then lsp := lsp^.aeltype
       else begin bp := lsp; lsp := nil end;
     if bp = nil then containerbase := 0
     else containerbase := bp^.size
@@ -7652,8 +7653,7 @@ end;
                         { assign complex pointer }
                         if containers(lattr.typtr) = 1 then
                           gen1(101(*aps*),containerbase(gattr.typtr))
-                        else gen2(102(*apc*),containers(lattr.typtr),
-                                  containerbase(gattr.typtr))
+                        else gen2(102(*apc*),containers(lattr.typtr),containerbase(gattr.typtr))
                       end else begin { standard array assign }
                         { onstack from expr }
                         if gattr.kind = expr then store(lattr)
