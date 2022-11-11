@@ -3772,25 +3772,6 @@ void psystem_thw(void)
 
 /** ****************************************************************************
 
-Find base of locals
-
-Given the number of frames to climb, finds the base address of locals in the
-stack for a given function/procedure
-
-*******************************************************************************/
-
-unsigned char* psystem_base(
-    /* Number of frames to climb */ int ld
-)
-
-{
-
-    error("Base function not implemented");
-
-}
-
-/** ****************************************************************************
-
 Compare strings
 
 Compares two strings, and returns:
@@ -3818,7 +3799,7 @@ int psystem_strcmp(
 
     i = 0;
     b = TRUE;
-    while (b && i<l) do {
+    while (b && i<l) {
 
         if (*s1++ == *s2++) i++;
         else b = FALSE;
@@ -3828,7 +3809,7 @@ int psystem_strcmp(
     s1--;
     s2--;
 
-    if (b) r := 0;
+    if (b) r = 0;
     else if (*s1 < *s2) r = -1;
     else r = 1;
 

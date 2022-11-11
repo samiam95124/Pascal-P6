@@ -1217,7 +1217,9 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;  
 
-          120{lip}: begin end;   
+          120{lip}: begin resreg(rgrax); ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            ep^.r2 := r2; if ep^.r2 = rgnull then getreg(ep^.r2, rf) end; 
 
           {equm,neqm,geqm,grtm,leqm,lesm}
           142, 148, 154, 160, 166, 172: begin assreg(ep^.l, rf, rgrdi, rgnull); 
@@ -1231,7 +1233,7 @@ procedure xlate;
             assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, r1, rgnull);
             resreg(rgrdx) end;
 
-          118{swp}: ;
+          118{swp}: ; { done at top level }
 
           {ldoi,ldoa,ldor,ldob,ldoc,ldox}
           1,65,66,68,69,194:begin ep^.r1 := r1;
@@ -1450,7 +1452,7 @@ procedure xlate;
             4: begin
               wrtins20('movq #0,%r1         ', ep^.p, 0, rgrax, rgnull);
               wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
-              wrtins20('add #0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins20('add #0,%rgrax       ', ep^.q, 0, rgnull, rgnull);
               wrtins20('movq %r1,%r2        ', 0, 0, rgrax, ep^.l^.r1)
             end;
 
@@ -1477,7 +1479,12 @@ procedure xlate;
               wrtins20('andq %r1,#0         ', 1, 0, ep^.r1, rgnull) 
             end;
 
-            120{lip}: begin end;  
+            120{lip}: begin 
+              wrtins20('movq #0,%rax        ', ep^.p, 0, rgnull, rgnull);
+              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
+              wrtins20('movq #0(%rax),%r1   ', ep^.q, 0, ep^.r1, rgnull);
+              wrtins20('movq #0(%rax),%r1   ', ep^.q+ptrsize, 0, ep^.r2, rgnull);
+            end;  
 
             {equm}
             142: begin 
@@ -1485,37 +1492,37 @@ procedure xlate;
               wrtins20('call psystem_strcmp', 0, 0, rgnull, rgnull); 
               wrtins20('cmpq #0,%rax       ', 0, 0, rgnull, rgnull);
               case ep^.op of
-                142{equm}: wrtins10('sete %r0  ', 0, 0, ep^.l^.r1, rgnull);
-                148{neqm}: wrtins10('setne %r0 ', 0, 0, ep^.l^.r1, rgnull);
-                154{geqm}: wrtins10('setae %r0 ', 0, 0, ep^.l^.r1, rgnull);
-                160{grtm}: wrtins10('seta %r0  ', 0, 0, ep^.l^.r1, rgnull);
-                166{leqm}: wrtins10('setbe %r0 ', 0, 0, ep^.l^.r1, rgnull);
-                172{lesm}: wrtins10('setb %r0  ', 0, 0, ep^.l^.r1, rgnull);
+                142{equm}: wrtins10('sete %r1  ', 0, 0, ep^.l^.r1, rgnull);
+                148{neqm}: wrtins10('setne %r1 ', 0, 0, ep^.l^.r1, rgnull);
+                154{geqm}: wrtins10('setae %r1 ', 0, 0, ep^.l^.r1, rgnull);
+                160{grtm}: wrtins10('seta %r1  ', 0, 0, ep^.l^.r1, rgnull);
+                166{leqm}: wrtins10('setbe %r1 ', 0, 0, ep^.l^.r1, rgnull);
+                172{lesm}: wrtins10('setb %r1  ', 0, 0, ep^.l^.r1, rgnull);
               end
             end;
 
             5{lao}:
-              wrtins40('leaq globals_start+0(%rip),%r0         ', ep^.q, 0, ep^.r1, rgnull);
+              wrtins40('leaq globals_start+0(%rip),%r1         ', ep^.q, 0, ep^.r1, rgnull);
 
             16{ixa}: begin 
               wrtins20('movq #0,%rax        ', q, 0, rgnull, rgnull);
-              wrtins10('mul %r0   ', 0, 0, ep^.l^.r1, rgnull);
-              wrtins20('add %rax,%r0        ', 0, 0, ep^.r^.r1, rgnull);
+              wrtins10('mul %r1   ', 0, 0, ep^.l^.r1, rgnull);
+              wrtins20('add %rax,%r1        ', 0, 0, ep^.r^.r1, rgnull);
             end;
 
-            118{swp}: begin end;
+            118{swp}: ; { done at top level }
 
             {ldoi,loda}
             1,65:
-              wrtins40('movzx globals_start+0(%rip),%r0         ', ep^.q, 0, ep^.r1);
+              wrtins40('movzx globals_start+0(%rip),%r1         ', ep^.q, 0, ep^.r1, rgnull);
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins40('movzx globals_start+0(%rip),%r0         ', ep^.q, 0, ep^.r1);
+              wrtins40('movzx globals_start+0(%rip),%r1         ', ep^.q, 0, ep^.r1, rgnull);
 
             {ldor}
             66: 
-              wrtins40('movsd globals_start+0(%rip),%r0         ', ep^.q, ep^.r1);
+              wrtins40('movsd globals_start+0(%rip),%r1         ', ep^.q, 0, ep^.r1, rgnull);
 
             {ldos}
             67: begin
@@ -1531,18 +1538,18 @@ procedure xlate;
 
             {indi,inda}
             9,85: 
-              wrtins20('movq #0(%r0),%r0', q, 0, ep^.l^.r1, rgnull);
+              wrtins20('movq #0(%r1),%r1', q, 0, ep^.l^.r1, rgnull);
 
             {indr}
             86: 
-              wrtins20('movsd #0(%r0),%r1', q, 0, ep^.l^.r1, ep^.r1);
+              wrtins20('movsd #0(%r1),%r1', q, 0, ep^.l^.r1, ep^.r1);
 
             {indb,indc,indx}
-            88,89,198: wrtins20('movzx #0(%r0),%r0', q, 0, ep^.l^.r1, rgnull);
+            88,89,198: wrtins20('movzx #0(%r1),%r1', q, 0, ep^.l^.r1, rgnull);
 
             {inds}
             87: begin 
-              wrtins20('leaq #0(%r0),%r0', q, 0, ep^.l^.r1, rgnull);
+              wrtins20('leaq #0(%r1),%r1', q, 0, ep^.l^.r1, rgnull);
               wrtins20('add #0,%rsp         ', -setsize, 0, rgnull, rgnull);
               wrtins20('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull);
@@ -1554,11 +1561,11 @@ procedure xlate;
 
             {inci,inca,incb,incc,incx}
             10, 90, 93, 94, 201: 
-              wrtins20('addq #0,%r0         ', q, 0, ep^.r1, rgnull);
+              wrtins20('addq #0,%r1         ', q, 0, ep^.r1, rgnull);
 
             {deci,decb,decc,decx}
             57, 103, 104, 202: 
-              wrtins20('subq #0,%r0         ', q, 0, ep^.r1, rgnull);
+              wrtins20('subq #0,%r1         ', q, 0, ep^.r1, rgnull);
 
 {???}
 
@@ -1853,7 +1860,7 @@ procedure xlate;
           9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) end;
 
           {inc,dec}
-          10, 90, 91, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
+          10, 90, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
             writeln(prr,q:1); getexp(ep); popstk(ep^.l); pshstk(ep) end;
 
           {ckv}
