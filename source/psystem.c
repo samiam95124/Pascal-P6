@@ -3817,6 +3817,119 @@ int psystem_strcmp(
 
 /** ****************************************************************************
 
+Check change to tagfield in variable referenced variant
+
+Checks if a new tagfield is different from the old one, and performs a VAR
+reference overlap check on the variant if so.
+
+*******************************************************************************/
+
+void psystem_tagchgvar(
+    /* offset to tagfield */               unsigned long off,
+    /* size of variant */                  unsigned long size,
+    /* address of logical variant table */ unsigned long lvt[],
+    /* new tagfield content */             long ntag,
+    /* old tagfield content */             long otag,
+    /* address of tagfield */              unsigned char* taddr
+)
+
+{
+
+    /* check valid tag. We don't allow negative tags for the check, even
+       though that is valid ISO 7185 */
+    if (ntag < 0 || ntag >= vartbl[0]) errorv(VALUEOUTOFRANGE);
+    taddr += size; /* offset to variant */
+    /* translate both tags to a logical variant, then check has changed */
+    if (vartbl[ntag+1] != vartbl[otag+1])
+        /* if changed, see if the variant is in a VAR referenced region */
+        if (varlap(taddr, taddr+size)) errorv(CHANGETOVARREFERENCEDVARIANT);
+
+}
+
+/** ****************************************************************************
+
+Check change to tagfield invalidate
+
+Checks if a new tagfield is different from the old one, and invalidates the
+variant if so.
+
+This is really a placeholder since we don't implement undefined checks, which
+is the whole point of this routine.
+
+*******************************************************************************/
+
+void psystem_tagchginv(
+    /* offset to tagfield */               unsigned long off,
+    /* size of variant */                  unsigned long size,
+    /* address of logical variant table */ unsigned long lvt[],
+    /* new tagfield content */             long ntag,
+    /* old tagfield content */             long otag,
+    /* address of tagfield */              unsigned char* taddr
+)
+
+{
+
+    /* check valid tag. We don't allow negative tags for the check, even
+       though that is valid ISO 7185 */
+    if (ntag < 0 || ntag >= vartbl[0]) errorv(VALUEOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Check matching templates
+
+Accepts to template addresses, and the number of levels they contain. The 
+templates are matched, and if they don't match, an error is thrown.
+
+*******************************************************************************/
+
+void psystem_cmptmp(
+    /* number of levels */ unsigned long lvl,
+    /* first template */   unsigned long* tmp1,
+    /* second template */  unsigned long* tmp2
+)
+{
+
+    while (lvl--) if (*tmp1++ != *tmp2++) errorv(ContainerMismatch);
+
+}
+
+/** ****************************************************************************
+
+Check tag assignment
+
+*******************************************************************************/
+
+void psystem_tagchkass(
+    /* offset to tagfield from record start */ unsigned long  off,
+    /* nesting level of tagfield */            unsigned long  lvl,
+    /* address of logical variant table */     unsigned long  lvt[],
+    /* new tagfield content */                 long           ntag,
+    /* address of tagfield */                  unsigned char* taddr
+)
+
+{
+
+    unsigned long* tcp;
+
+    taddr = taddr-off-intsize; /* index top of tag constant list on heap */
+    /* fetch table count adjusted for system bias */
+    taddr = (unsigned long*) *taddr-adrsize-1;
+    tcp = taddr; /* put in word form */
+    if (tcp >= lvl) { /* if in tagfield constant list */
+
+        /* check valid tag. We don't allow negative tags for the check, even
+           though that is valid ISO 7185 */
+        if (ntag < 0 || ntag >= vartbl[0]) errorv(ValueOutOfRange);
+        if (tcp[lvl-1] != lvt[lvl+ntag+1]) errorv(ChangeToAllocatedTagfield);
+
+    }
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/
@@ -3848,6 +3961,12 @@ static void psystem_init(int argc, char* argv[])
     cmdpos = 1;
 
 }
+
+/** ****************************************************************************
+
+Deinitialize psystem support module
+
+*******************************************************************************/
 
 static void psystem_deinit (void) __attribute__((destructor (110)));
 static void psystem_deinit()

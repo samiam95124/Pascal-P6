@@ -4453,7 +4453,9 @@ begin
                   end;
 
     4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
-    5 (*lao*): begin getq; pshadr(q) end;
+    5 (*lao*): begin getq; pshadr(q) 
+;writeln;writeln('lao: q: ', q:1);
+end;
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then
@@ -4919,15 +4921,24 @@ begin
                    pshadr(ad2); pshadr(ad1);
                  end;
 
+                      { off  lvl    lvt    new tag    tag addr }
     191 (*cta*): begin getq; getq1; getq2; popint(i); popadr(ad); pshadr(ad);
+                                  { start of record = ad-q, then -intsize is
+                                    size of tag template on stack. Get to ad1 }
                        pshint(i); ad := ad-q-intsize; ad1 := getadr(ad);
+                       { this would mean allocation is not valid in our
+                         malloc() system }
                        if ad1 < intsize then
                          errorv(SystemError);
+                       { remove system bias we put in to diambiguate }
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
+                         { go to start of tagfield constant list */
                          ad := ad-ad1*intsize;
+                         { check new tagfield is < 0 or more than lvn }
                          if (i < 0) or (i >= getint(q2)) then
                            errorv(ValueOutOfRange);
+                         { compare lvns }
                          if getadr(ad+(q1-1)*intsize) <>
                             getint(q2+(i+1)*intsize) then
                            errorv(ChangeToAllocatedTagfield);

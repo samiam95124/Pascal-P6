@@ -133,6 +133,119 @@ const
       prdfn      = 3;        { 'prd' file no. }
       prrfn      = 4;        { 'prr' file no. }
 
+      { locations of standard exceptions }
+      exceptionbase                      = 14;
+      ValueOutOfRange                    = 14;
+      ArrayLengthMatch                   = 15;
+      CaseValueNotFound                  = 16;
+      ZeroDivide                         = 17;
+      InvalidOperand                     = 18;
+      NilPointerDereference              = 19;
+      RealOverflow                       = 20;
+      RealUnderflow                      = 21;
+      RealProcessingFault                = 22;
+      TagValueNotActive                  = 23;
+      TooManyFiles                       = 24;
+      FileIsOpen                         = 25;
+      FileAlreadyNamed                   = 26;
+      FileNotOpen                        = 27;
+      FileModeIncorrect                  = 28;
+      InvalidFieldSpecification          = 29;
+      InvalidRealNumber                  = 30;
+      InvalidFractionSpecification       = 31;
+      InvalidIntegerFormat               = 32;
+      IntegerValueOverflow               = 33;
+      InvalidRealFormat                  = 34;
+      EndOfFile                          = 35;
+      InvalidFilePosition                = 36;
+      FilenameTooLong                    = 37;
+      FileOpenFail                       = 38;
+      FileSIzeFail                       = 39;
+      FileCloseFail                      = 40;
+      FileReadFail                       = 41;
+      FileWriteFail                      = 42;
+      FilePositionFail                   = 43;
+      FileDeleteFail                     = 44;
+      FileNameChangeFail                 = 45;
+      SpaceAllocateFail                  = 46;
+      SpaceReleaseFail                   = 47;
+      SpaceAllocateNegative              = 48;
+      CannotPerformSpecial               = 49;
+      CommandLineTooLong                 = 50;
+      ReadPastEOF                        = 51;
+      FileTransferLengthZero             = 52;
+      FileSizeTooLarge                   = 53;
+      FilenameEmpty                      = 54;
+      CannotOpenStandard                 = 55;
+      TooManyTemporaryFiles              = 56;
+      InputBufferOverflow                = 57;
+      TooManyThreads                     = 58;
+      CannotStartThread                  = 59;
+      InvalidThreadHandle                = 60;
+      CannotStopThread                   = 61;
+      TooManyIntertaskLocks              = 62;
+      InvalidLockHandle                  = 63;
+      LockSequenceFail                   = 64;
+      TooManySignals                     = 65;
+      CannotCreateSignal                 = 66;
+      InvalidSignalHandle                = 67;
+      CannotDeleteSignal                 = 68;
+      CannotSendSignal                   = 69;
+      WaitForSignalFail                  = 70;
+      FieldNotBlank                      = 71;
+      ReadOnWriteOnlyFile                = 72;
+      WriteOnReadOnlyFile                = 73;
+      FileBufferVariableUndefined        = 74;
+      NondecimalRadixOfNegative          = 75;
+      InvalidArgumentToLn                = 76;
+      InvalidArgumentToSqrt              = 77;
+      CannotResetOrRewriteStandardFile   = 78;
+      CannotResetWriteOnlyFile           = 79;
+      CannotRewriteReadOnlyFile          = 80;
+      SetElementOutOfRange               = 81;
+      RealArgumentTooLarge               = 82;
+      BooleanOperatorOfNegative          = 83;
+      InvalidDivisorToMod                = 84;
+      PackElementsOutOfBounds            = 85;
+      UnpackElementsOutOfBounds          = 86;
+      CannotResetClosedTempFile          = 87;
+      exceptiontop                       = 87;
+
+      { Exceptions that can't be caught.
+        Note that these don't have associated exception variables. }
+
+      UndefinedLocationAccess            = 88;
+      FunctionNotImplemented             = 89;
+      InvalidInISO7185Mode               = 90;
+      HeapFormatInvalid                  = 91;
+      DisposeOfUninitalizedPointer       = 92;
+      DisposeOfNilPointer                = 93;
+      BadPointerValue                    = 94;
+      BlockAlreadyFreed                  = 95;
+      InvalidStandardProcedureOrFunction = 96;
+      InvalidInstruction                 = 97;
+      NewDisposeTagsMismatch             = 98;
+      PCOutOfRange                       = 99;
+      StoreOverflow                      = 100;
+      StackBalance                       = 101;
+      SetInclusion                       = 102;
+      UninitializedPointer               = 103;
+      DereferenceOfNilPointer            = 104;
+      PointerUsedAfterDispose            = 105;
+      VariantNotActive                   = 106;
+      InvalidCase                        = 107;
+      SystemError                        = 108;
+      ChangeToAllocatedTagfield          = 109;
+      UnhandledException                 = 110;
+      ProgramCodeAssertion               = 111;
+      VarListEmpty                       = 112;
+      ChangeToVarReferencedVariant       = 113;
+      DisposeOfVarReferencedBlock        = 114;
+      VarReferencedFileBufferModified    = 115;
+      ContainerMismatch                  = 116;
+      InvalidContainerLevel              = 117;
+      privexceptiontop                   = 117;
+
       strlen      = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
@@ -473,7 +586,7 @@ procedure xlate;
          expstk = record
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
-                    p :   lvltyp; q, q1 : address; { p and q parameters }
+                    p:   lvltyp; q, q1, q2: address; { p and q parameters }
                     r1, r2, r3 : reg; { registers }
                     l, r: expptr; { right and left links }
                     x1:   expptr; { extra link }
@@ -1182,7 +1295,7 @@ procedure xlate;
 
       procedure resreg(r: reg);
       begin
-        if not (r in rf) then ep^.rs := ep^.rs+[r]
+        if not (r in rf) then begin ep^.rs := ep^.rs+[r]; rf := rf-[r] end
       end;
 
       begin
@@ -1268,20 +1381,45 @@ procedure xlate;
           {suv}
           91: ;
 
-          {ckv}
-          175, 179, 180, 203: ;
+          {ckvi,ckvb,ckvc,ckvx}
+          175, 179, 180, 203: begin
+            ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull)
+          end;
+
           {cvbi,cvbx,cvbb,cvbc}
-          100, 115, 116, 121: ;
+          100, 115, 116, 121: begin resreg(rgrdi); resreg(rgrsi); resreg(rgrdx);
+            resreg(rgr8); assreg(ep^.l, rf, rgrcx, rgnull); assreg(ep^.r, rf, rgr9, rgnull);
+            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgeax
+          end;
+
           {ivti,ivtx,ivtb,ivtc}
-          192,101,102,111: ;
+          192,101,102,111: begin resreg(rgrdi); resreg(rgrsi); resreg(rgrdx);
+            resreg(rgr8); assreg(ep^.l, rf, rgrcx, rgnull); assreg(ep^.r, rf, rgr9, rgnull);
+            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgeax
+          end;
+
           {cps}
-          176: ;
+          176: begin resreg(rgrdi); ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf); 
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf)
+          end;
+
           {cpc}
-          177: ;
+          177: begin resreg(rgrdi);
+            assreg(ep^.l, rf, rgnull, rgrsi); assreg(ep^.r, rf, rgnull, rgrdx)
+          end;
+
           {cta}
-          191: ;
+          191: begin resreg(rgrdi); resreg(rgrsi); resreg(rgrdx);
+            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rg8)
+          end;
+
           {lpa}
-          114: ;
+          114: begin resreg(rgrdi); ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf); 
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf)
+          end;
 
           {ldci,ldcc,ldcb}
           123,127,126: begin ep^.r1 := r1; 
@@ -1300,7 +1438,17 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
            {chk}
-           26, 95, 97, 98, 99, 190, 199: ;
+           26, 95, 98, 99, 199: begin resreg(rgrax); ep^.r1 := r1;
+             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+             getreg(ep^.r2, rf); assreg(ep^.l, rf, rgnull, rgnull);
+           end;
+
+           {chks}
+           97: ;
+
+           {ckla}
+           190: ;
+
            {vbs}
            92: ;
            {vbe}
@@ -1361,14 +1509,17 @@ procedure xlate;
         while (i < insmax40) and (si[i] = ' ') do next;
         while i < insmax40 do begin
           if si[i] = '$' then begin next; write(prr, '$');
-            if si[i] = '0' then write(prr, i1) else write(prr, i2)
+            if si[i] = '0' then write(prr, i1:1) 
+            else if si[i] = '1' write(prr, i2:1)
           end else if si[i] = '%' then begin next; write(prr, '%');
-            if si[i] <> 'r' then errorl('Error in instruction     '); next;
-            if si[i] = '1' then wrtreg(prr, r1) else wrtreg(prr, r2)
+            if si[i] = '1' then wrtreg(prr, r1) 
+            else if si[i] = '2' then wrtreg(prr, r2)
           end else if si[i] = '+' then begin next; write(prr, '+');
-            if si[i] = '0' then write(prr, i1) else write(prr, i2)
+            if si[i] = '0' then write(prr, i1:1) 
+            else if si[i] = '1' then write(prr, i2:1)
           end else if si[i] = '-' then begin next; write(prr, '-');
-            if si[i] = '0' then write(prr, i1) else write(prr, i2)
+            if si[i] = '0' then write(prr, i1:1) 
+            else if si[i] = '1' then write(prr, i2:1)
           end else write(prr, si[i]);
           i := i+1
         end;
@@ -1413,33 +1564,33 @@ procedure xlate;
 
             {lodi,loda}
             0,105: begin
-              wrtins20('movq $0,%r1         ', ep^.p, 0, rgrax, rgnull);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
-              wrtins20('add $0,%r1          ', ep^.q, 0, rgrax, rgnull);
-              wrtins20('movq (%r1),%r2      ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins20('movq $0,%rax         ', ep^.p, 0, rgnull, rgnull);
+              wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
+              wrtins20('add $0,%rax          ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movq (%rax),%r2       ', 0, 0, rgnull, ep^.l^.r1)
             end;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq $0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull);
               wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
-              wrtins20('add $0,%r1          ', ep^.q, 0, rgrax, rgnull);
-              wrtins20('movzx (%r1),%r2     ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movzx (%rax),%r2    ', 0, 0, rgnull, ep^.l^.r1)
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq $0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull);
               wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
-              wrtins20('add $0,%r1          ', ep^.q, 0, rgrax, rgnull);
-              wrtins20('movsd (%r1),%r2     ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movsd (%rax),%r2    ', 0, 0, rgnull, ep^.l^.r1)
             end;
 
             {lods}
             107: begin
-              wrtins20('movq $0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull);
               wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
-              wrtins20('add $0,%r1          ', ep^.q, 0, rgrax, rgnull);
+              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull);
               wrtins20('add $0,%rsp         ', -setsize, 0, rgnull, rgnull);
               wrtins20('movq %r1,%r2        ', 0, 0, rgrax, rgrsi);
               wrtins20('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull);
@@ -1452,10 +1603,10 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins20('movq $0,%r1         ', ep^.p, 0, rgrax, rgnull);
+              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull);
               wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
               wrtins20('add $0,%rgrax       ', ep^.q, 0, rgnull, rgnull);
-              wrtins20('movq %r1,%r2        ', 0, 0, rgrax, ep^.l^.r1)
+              wrtins20('movq %rax,%r2       ', 0, 0, rgnull, ep^.l^.r1)
             end;
 
             {adi}
@@ -1569,31 +1720,75 @@ procedure xlate;
             57, 103, 104, 202: 
               wrtins20('subq $0,%r1         ', q, 0, ep^.r1, rgnull);
 
-{???}
+            {ckvi,ckvb,ckvc,ckvx}
+            175, 179, 180, 203: begin 
+              wrtins20('cmpq $0,%r1         ', q, 0, ep^.r^.r1, rgnull);
+              wrtins20('sete %r1            ', 0, 0, ep^.r^.r1, rgnull);
+              wrtins20('orq %r1,%r2         ', 0, 0, ep^.r^.r1, ep^.r1);
+            end;
 
-            {ckv}
-            175, 179, 180, 203: begin end;
             {cvbi,cvbx,cvbb,cvbc}
-            100, 115, 116, 121: begin end;
+            100, 115, 116, 121: begin
+              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull);
+              if ep^.op = 100
+                wrtins20('movq (%r1),%r8       ', ep^.q, 0, ep^.r^.r1, rgnull)
+              else
+                wrtins20('movzx (%r1),%r8      ', ep^.q, 0, ep^.r^.r1, rgnull);
+              wrtins30('call psystem_tagchgvar         ', 0, 0, rgnull, rgnull);
+            end;
+
             {ivti,ivtx,ivtb,ivtc}
-            192,101,102,111: begin end;
+            192,101,102,111: begin
+              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull);
+              if ep^.op = 100
+                wrtins20('movq (%r1),%r8       ', ep^.q, 0, ep^.r^.r1, rgnull)
+              else
+                wrtins20('movzx (%r1),%r8      ', ep^.q, 0, ep^.r^.r1, rgnull);
+              wrtins30('call psystem_tagchginv         ', 0, 0, rgnull, rgnull);
+            end;
+
             {cps}
-            176: begin end;
+            176: begin 
+              wrtins20('cmpq %r1,%r2      ', 0, 0, ep^.r^.r2, ep^.l^.r2);
+              wrtins20('je .+21           ', ep^.q, 0, ep^.r^.r1, rgnull);
+              wrtins20('movq $0,%rdi      ', ContainerMismatch, 0, rgnull, rgnull);
+              wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull);
+            end;
+
             {cpc}
-            177: begin end;
+            177: begin 
+              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull);
+              wrtins30('call psystem_cmptmp            ', 0, 0, rgnull, rgnull);
+            end;
+
+
             {cta}
-            191: begin end;
+            191: begin
+              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull);
+              wrtins30('call psystem_tagchkass           ', 0, 0, rgnull, rgnull);
+            end;
+
             {lpa}
-            114: begin end;
+            114: begin 
+              wrtins20('movq $0,%rax         ', ep^.p, 0, rgnull, rgnull);
+              wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
+              wrtins20('movq %rax,%r1        ', 0, 0, ep^.r2, rgnull);
+              wrtins20('movq $0,%rax         ', ep^.q, 0, ep^.r1, rgnull);
+            end;
 
             {ldci,ldcc,ldcb}
-            123,127,126: begin 
-              write(prr, '        movq    $',  ep^.vali:1, ',%');
-              wrtreg(prr, ep^.r1); writeln(prr) end;
+            123,127,126:
+              wrtins20('movq $0,%r1         ', ep^.vali, 0, ep^.r1, rgnull); 
 
             {ldcn}
-            125: begin write(prr, '        movq    $0,%'); 
-              wrtreg(prr, ep^.r1); writeln(prr) end;
+            125:
+              wrtins20('movq $0,%r1         ', 0, 0, ep^.r1, rgnull);
 
             {ldcr}
             124: begin 
@@ -1607,20 +1802,44 @@ procedure xlate;
                wrtreg(prr, ep^.r1); writeln(prr);
             end;
 
-             {chk}
-             26, 95, 97, 98, 99, 190, 199: begin end;
-             {vbs}
-             92: begin end;
-             {vbe}
-             96:;
-             56 {lca}: begin 
+            {chki,chka,chkb,chkc}
+            26, 95, 98, 99, 199: begin 
+              wrtins20('movq $0,%r1         ', 0, 0, ep^.r2, rgnull);
+              wrtins20('cmpq (%r1),%r2      ', 0, 0, ep^.r2, ep^.r1);
+              wrtins20('jae .+21            ', 0, 0, ep^.r2, rgnull);
+              wrtins20('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull);
+              wrtins20('call errore         ', 0, 0, rgnull, rgnull);
+              wrtins20('cmpq +0(%r1),%r2    ', intsize, 0, ep^.r2, ep^.r1);
+              wrtins20('jbe .+11             ', 0, 0, ep^.r2, rgnull);
+              wrtins20('call errore         ', 0, 0, rgnull, rgnull);
+            end;
+
+{???}
+            {chks}
+            97: begin
+              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull);
+              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull);
+              wrtins30('call psystem_tagchkass           ', 0, 0, rgnull, rgnull);
+            end;
+
+            {ckla}
+            190: ;
+
+            {vbs}
+            92: begin end;
+
+            {vbe}
+            96:;
+
+            56 {lca}: begin 
                write(prr, '        leaq    string', ep^.strn:1, '(%rip),%'); 
                wrtreg(prr, ep^.r1); writeln(prr);
             end;
 
             {ord}
-            59, 134, 136, 200: begin getexp(ep); popstk(ep^.l); pshstk(ep); 
-              writeln(prr) end;
+            59, 134, 136, 200: ; { ord is a no-op }
+
             {lcp}
             135: begin end;
             {sgs}
@@ -1867,21 +2086,24 @@ procedure xlate;
 
           {ckv}
           175, 179, 180, 203: begin read(prd,q); writeln(prr,q:1); getexp(ep);
-            popstk(ep^.r); popstk(ep^.l) end;
+            popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
 
           {cvbi,cvbx,cvbb,cvbc}
-          100, 115, 116, 121: begin read(prd,q); writeln(prr,q:1); read(prd,q1);
-            getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+          100, 115, 116, 121: begin read(prd,q, q1, q2); 
+            writeln(prr,q:1, ' ', q1:1, ' ', q2:1); getexp(ep); popstk(ep^.r); 
+            popstk(ep^.l); pshstk(ep) end;
 
           {ivti,ivtx,ivtb,ivtc}
           192,101,102,111: begin read(prd,q, q1); writeln(prr,q:1, ' ', q1:1);
-            getexp(ep); popstk(ep^.r); popstk(ep^.l) end;
+            getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) end;
 
           {cps}
-          176: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr) end;
+          176: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr);
+            pshstk(ep) end;
 
           {cpc}
-          177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr) end;
+          177: begin getexp(ep); popstk(ep^.r); popstk(ep^.l); writeln(prr);
+            pshstk(ep) end;
 
           {apc}
           178: begin popstk(ep); popstk(ep2); dmptre(ep2); dmptre(ep); 
@@ -1911,7 +2133,8 @@ procedure xlate;
           112: begin read(prd,p); writeln(prr, p:1); labelsearch end;
 
           {lpa}
-          114: begin read(prd,p,q); getexp(ep); pshstk(ep); writeln(prr) end;
+          114: begin read(prd,p); labelsearch; getexp(ep); pshstk(ep); 
+            writeln(prr) end;
 
           15 {csp}: begin skpspc; getname;
                            while name<>sptable[q] do
