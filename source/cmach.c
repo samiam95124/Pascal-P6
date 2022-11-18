@@ -252,7 +252,7 @@ File logical number   8         8
 Both endian types are supported. There is no alignment needed, but you
 may wish to use alignment to tune the runtime speed.
 
-The machine characteristics dep}ent on byte accessable machines. This
+The machine characteristics dependent on byte accessable machines. This
 table is all you should need to adapt to any byte addressable machine.
 
 */

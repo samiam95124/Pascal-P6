@@ -266,6 +266,119 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXCMD       250  /* size of command line buffer */
 #define MAXDBF       30   /* size of numeric conversion buffer */
 
+/* locations of standard exceptions */
+#define EXCEPTIONBASE                       14
+#define VALUEOUTOFRANGE                     14
+#define ARRAYLENGTHMATCH                    15
+#define CASEVALUENOTFOUND                   16
+#define ZERODIVIDE                          17
+#define INVALIDOPERAND                      18
+#define NILPOINTERDEREFERENCE               19
+#define REALOVERFLOW                        20
+#define REALUNDERFLOW                       21
+#define REALPROCESSINGFAULT                 22
+#define TAGVALUENOTACTIVE                   23
+#define TOOMANYFILES                        24
+#define FILEISOPEN                          25
+#define FILEALREADYNAMED                    26
+#define FILENOTOPEN                         27
+#define FILEMODEINCORRECT                   28
+#define INVALIDFIELDSPECIFICATION           29
+#define INVALIDREALNUMBER                   30
+#define INVALIDFRACTIONSPECIFICATION        31
+#define INVALIDINTEGERFORMAT                32
+#define INTEGERVALUEOVERFLOW                33
+#define INVALIDREALFORMAT                   34
+#define ENDOFFILE                           35
+#define INVALIDFILEPOSITION                 36
+#define FILENAMETOOLONG                     37
+#define FILEOPENFAIL                        38
+#define FILESIZEFAIL                        39
+#define FILECLOSEFAIL                       40
+#define FILEREADFAIL                        41
+#define FILEWRITEFAIL                       42
+#define FILEPOSITIONFAIL                    43
+#define FILEDELETEFAIL                      44
+#define FILENAMECHANGEFAIL                  45
+#define SPACEALLOCATEFAIL                   46
+#define SPACERELEASEFAIL                    47
+#define SPACEALLOCATENEGATIVE               48
+#define CANNOTPERFORMSPECIAL                49
+#define COMMANDLINETOOLONG                  50
+#define READPASTEOF                         51
+#define FILETRANSFERLENGTHZERO              52
+#define FILESIZETOOLARGE                    53
+#define FILENAMEEMPTY                       54
+#define CANNOTOPENSTANDARD                  55
+#define TOOMANYTEMPORARYFILES               56
+#define INPUTBUFFEROVERFLOW                 57
+#define TOOMANYTHREADS                      58
+#define CANNOTSTARTTHREAD                   59
+#define INVALIDTHREADHANDLE                 60
+#define CANNOTSTOPTHREAD                    61
+#define TOOMANYINTERTASKLOCKS               62
+#define INVALIDLOCKHANDLE                   63
+#define LOCKSEQUENCEFAIL                    64
+#define TOOMANYSIGNALS                      65
+#define CANNOTCREATESIGNAL                  66
+#define INVALIDSIGNALHANDLE                 67
+#define CANNOTDELETESIGNAL                  68
+#define CANNOTSENDSIGNAL                    69
+#define WAITFORSIGNALFAIL                   70
+#define FIELDNOTBLANK                       71
+#define READONWRITEONLYFILE                 72
+#define WRITEONREADONLYFILE                 73
+#define FILEBUFFERVARIABLEUNDEFINED         74
+#define NONDECIMALRADIXOFNEGATIVE           75
+#define INVALIDARGUMENTTOLN                 76
+#define INVALIDARGUMENTTOSQRT               77
+#define CANNOTRESETORREWRITESTANDARDFILE    78
+#define CANNOTRESETWRITEONLYFILE            79
+#define CANNOTREWRITEREADONLYFILE           80
+#define SETELEMENTOUTOFRANGE                81
+#define REALARGUMENTTOOLARGE                82
+#define BOOLEANOPERATOROFNEGATIVE           83
+#define INVALIDDIVISORTOMOD                 84
+#define PACKELEMENTSOUTOFBOUNDS             85
+#define UNPACKELEMENTSOUTOFBOUNDS           86
+#define CANNOTRESETCLOSEDTEMPFILE           87
+#define EXCEPTIONTOP                        87
+
+/* Exceptions that can't be caught.
+  Note that these don't have associated exception variables. */
+
+#define UNDEFINEDLOCATIONACCESS             88
+#define FUNCTIONNOTIMPLEMENTED              89
+#define INVALIDINISO7185MODE                90
+#define HEAPFORMATINVALID                   91
+#define DISPOSEOFUNINITALIZEDPOINTER        92
+#define DISPOSEOFNILPOINTER                 93
+#define BADPOINTERVALUE                     94
+#define BLOCKALREADYFREED                   95
+#define INVALIDSTANDARDPROCEDUREORFUNCTION  96
+#define INVALIDINSTRUCTION                  97
+#define NEWDISPOSETAGSMISMATCH              98
+#define PCOUTOFRANGE                        99
+#define STOREOVERFLOW                       100
+#define STACKBALANCE                        101
+#define SETINCLUSION                        102
+#define UNINITIALIZEDPOINTER                103
+#define DEREFERENCEOFNILPOINTER             104
+#define POINTERUSEDAFTERDISPOSE             105
+#define VARIANTNOTACTIVE                    106
+#define INVALIDCASE                         107
+#define SYSTEMERROR                         108
+#define CHANGETOALLOCATEDTAGFIELD           109
+#define UNHANDLEDEXCEPTION                  110
+#define PROGRAMCODEASSERTION                111
+#define VARLISTEMPTY                        112
+#define CHANGETOVARREFERENCEDVARIANT        113
+#define DISPOSEOFVARREFERENCEDBLOCK         114
+#define VARREFERENCEDFILEBUFFERMODIFIED     115
+#define CONTAINERMISMATCH                   116
+#define INVALIDCONTAINERLEVEL               117
+
+typedef unsigned char byte;    /* 8-bit byte */
 typedef long boolean; /* true/false */
 typedef char pasfil;  /* Pascal file */
 typedef long filnum;  /* logical file number */
@@ -275,10 +388,12 @@ typedef enum {
   fsread,
   fswrite
 } filsts;                      /* file states */
-typedef long cmdinx;            /* index for command line buffer */
-typedef long cmdnum;            /* length of command line buffer */
+typedef long cmdinx;           /* index for command line buffer */
+typedef long cmdnum;           /* length of command line buffer */
 typedef char cmdbuf[MAXCMD];   /* buffer for command line */
-typedef char errmsg[ERRLEN]; /* error string */
+typedef char errmsg[ERRLEN];   /* error string */
+typedef byte settype[SETSIZE]; /* standard set */
+typedef long address;          /* address */
 
 /* VAR reference block */
 typedef struct _varblk *varptr;
@@ -297,6 +412,7 @@ static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
 static varptr varlst; /* active var block pushdown stack */
 static varptr varfre; /* free var block entries */
+static long srclin;  /* current source line executing */
 
 static cmdbuf  cmdlin;  /* command line */
 static cmdnum  cmdlen;  /* length of command line */
@@ -318,6 +434,123 @@ static void error(char* es)
 
     exit(1);
 
+}
+
+/* handle exception vector */
+void errorv(address ea)
+{ printf("\n*** Runtime error");
+  if (srclin > 0) printf(" [%ld]: ", srclin);
+  switch (ea) {
+
+    /* Exceptions that can be intercepted */
+    case VALUEOUTOFRANGE:                    printf("Value out of range\n"); break;
+    case ARRAYLENGTHMATCH:                   printf("Array length match\n"); break;
+    case CASEVALUENOTFOUND:                  printf("Case value not found\n"); break;
+    case ZERODIVIDE:                         printf("Zero divide\n"); break;
+    case INVALIDOPERAND:                     printf("Invalid operand\n"); break;
+    case NILPOINTERDEREFERENCE:              printf("Nil pointer dereference\n"); break;
+    case REALOVERFLOW:                       printf("Real overflow\n"); break;
+    case REALUNDERFLOW:                      printf("Real underflow\n"); break;
+    case REALPROCESSINGFAULT:                printf("Real processing fault\n"); break;
+    case TAGVALUENOTACTIVE:                  printf("Tag value not active\n"); break;
+    case TOOMANYFILES:                       printf("Too many files\n"); break;
+    case FILEISOPEN:                         printf("File is open\n"); break;
+    case FILEALREADYNAMED:                   printf("File already named\n"); break;
+    case FILENOTOPEN:                        printf("File not open\n"); break;
+    case FILEMODEINCORRECT:                  printf("File mode incorrect\n"); break;
+    case INVALIDFIELDSPECIFICATION:          printf("Invalid field specification\n"); break;
+    case INVALIDREALNUMBER:                  printf("Invalid real number\n"); break;
+    case INVALIDFRACTIONSPECIFICATION:       printf("Invalid fraction specification\n"); break;
+    case INVALIDINTEGERFORMAT:               printf("Invalid integer format\n"); break;
+    case INTEGERVALUEOVERFLOW:               printf("Integer value overflow\n"); break;
+    case INVALIDREALFORMAT:                  printf("Invalid real format\n"); break;
+    case ENDOFFILE:                          printf("End of file\n"); break;
+    case INVALIDFILEPOSITION:                printf("Invalid file position\n"); break;
+    case FILENAMETOOLONG:                    printf("Filename too long\n"); break;
+    case FILEOPENFAIL:                       printf("File open fail\n"); break;
+    case FILESIZEFAIL:                       printf("File size fail\n"); break;
+    case FILECLOSEFAIL:                      printf("File close fail\n"); break;
+    case FILEREADFAIL:                       printf("File read fail\n"); break;
+    case FILEWRITEFAIL:                      printf("File write fail\n"); break;
+    case FILEPOSITIONFAIL:                   printf("File position fail\n"); break;
+    case FILEDELETEFAIL:                     printf("File delete fail\n"); break;
+    case FILENAMECHANGEFAIL:                 printf("File name change fail\n"); break;
+    case SPACEALLOCATEFAIL:                  printf("Space allocate fail\n"); break;
+    case SPACERELEASEFAIL:                   printf("Space release fail\n"); break;
+    case SPACEALLOCATENEGATIVE:              printf("Space allocate negative\n"); break;
+    case CANNOTPERFORMSPECIAL:               printf("Cannot perform special\n"); break;
+    case COMMANDLINETOOLONG:                 printf("Command line too long\n"); break;
+    case READPASTEOF:                        printf("Read past eof\n"); break;
+    case FILETRANSFERLENGTHZERO:             printf("File transfer length zero\n"); break;
+    case FILESIZETOOLARGE:                   printf("File size too large\n"); break;
+    case FILENAMEEMPTY:                      printf("Filename empty\n"); break;
+    case CANNOTOPENSTANDARD:                 printf("Cannot open standard\n"); break;
+    case TOOMANYTEMPORARYFILES:              printf("Too many temporary files\n"); break;
+    case INPUTBUFFEROVERFLOW:                printf("Input buffer overflow\n"); break;
+    case TOOMANYTHREADS:                     printf("Too many threads\n"); break;
+    case CANNOTSTARTTHREAD:                  printf("Cannot start thread\n"); break;
+    case INVALIDTHREADHANDLE:                printf("Invalid thread handle\n"); break;
+    case CANNOTSTOPTHREAD:                   printf("Cannot stop thread\n"); break;
+    case TOOMANYINTERTASKLOCKS:              printf("Too many inter task locks\n"); break;
+    case INVALIDLOCKHANDLE:                  printf("Invalid lock handle\n"); break;
+    case LOCKSEQUENCEFAIL:                   printf("Lock sequence fail\n"); break;
+    case TOOMANYSIGNALS:                     printf("Too many signals\n"); break;
+    case CANNOTCREATESIGNAL:                 printf("Cannot create signal\n"); break;
+    case INVALIDSIGNALHANDLE:                printf("Invalid signal handle\n"); break;
+    case CANNOTDELETESIGNAL:                 printf("Cannot delete signal\n"); break;
+    case CANNOTSENDSIGNAL:                   printf("Cannot send signal\n"); break;
+    case WAITFORSIGNALFAIL:                  printf("Wait for signal fail\n"); break;
+    case FIELDNOTBLANK:                      printf("Field not blank\n"); break;
+    case READONWRITEONLYFILE:                printf("Read on write only file\n"); break;
+    case WRITEONREADONLYFILE:                printf("Write on read only file\n"); break;
+    case FILEBUFFERVARIABLEUNDEFINED:        printf("File buffer variable undefined\n"); break;
+    case NONDECIMALRADIXOFNEGATIVE:          printf("Nondecimal radix of negative\n"); break;
+    case INVALIDARGUMENTTOLN:                printf("Invalid argument to ln\n"); break;
+    case INVALIDARGUMENTTOSQRT:              printf("Invalid argument to sqrt\n"); break;
+    case CANNOTRESETORREWRITESTANDARDFILE:   printf("Cannot reset or rewrite standard file\n"); break;
+    case CANNOTRESETWRITEONLYFILE:           printf("Cannot reset write only file\n"); break;
+    case CANNOTREWRITEREADONLYFILE :         printf("Cannot rewrite read only file\n"); break;
+    case SETELEMENTOUTOFRANGE:               printf("Set element out of range\n"); break;
+    case REALARGUMENTTOOLARGE:               printf("Real argument too large\n"); break;
+    case BOOLEANOPERATOROFNEGATIVE:          printf("Boolean operator of negative\n"); break;
+    case INVALIDDIVISORTOMOD:                printf("Invalid divisor to mod\n"); break;
+    case PACKELEMENTSOUTOFBOUNDS:            printf("Pack elements out of bounds\n"); break;
+    case UNPACKELEMENTSOUTOFBOUNDS:          printf("Unpack elements out of bounds\n"); break;
+    case CANNOTRESETCLOSEDTEMPFILE:          printf("Cannot reset closed temp file\n"); break;
+
+    /* Exceptions that can't be intercepted */
+    case UNDEFINEDLOCATIONACCESS:            printf("Undefined location access\n"); break;
+    case FUNCTIONNOTIMPLEMENTED:             printf("Function not implemented\n"); break;
+    case INVALIDINISO7185MODE:               printf("Invalid in ISO 7185 mode\n"); break;
+    case HEAPFORMATINVALID:                  printf("Heap format invalid\n"); break;
+    case DISPOSEOFUNINITALIZEDPOINTER:       printf("Dispose of uninitalized pointer\n"); break;
+    case DISPOSEOFNILPOINTER:                printf("Dispose of nil pointer\n"); break;
+    case BADPOINTERVALUE:                    printf("Bad pointer value\n"); break;
+    case BLOCKALREADYFREED:                  printf("Block already freed\n"); break;
+    case INVALIDSTANDARDPROCEDUREORFUNCTION: printf("Invalid standard procedure or function\n"); break;
+    case INVALIDINSTRUCTION:                 printf("Invalid instruction\n"); break;
+    case NEWDISPOSETAGSMISMATCH:             printf("New dispose tags mismatch\n"); break;
+    case PCOUTOFRANGE:                       printf("Pc out of range\n"); break;
+    case STOREOVERFLOW:                      printf("Store overflow\n"); break;
+    case STACKBALANCE:                       printf("Stack balance\n"); break;
+    case SETINCLUSION:                       printf("Set inclusion\n"); break;
+    case UNINITIALIZEDPOINTER:               printf("Uninitialized pointer\n"); break;
+    case DEREFERENCEOFNILPOINTER:            printf("Dereference of nil pointer\n"); break;
+    case POINTERUSEDAFTERDISPOSE:            printf("Pointer used after dispose\n"); break;
+    case VARIANTNOTACTIVE:                   printf("Variant not active\n"); break;
+    case INVALIDCASE:                        printf("Invalid case\n"); break;
+    case SYSTEMERROR:                        printf("System error\n"); break;
+    case CHANGETOALLOCATEDTAGFIELD:          printf("Change to allocated tag field\n"); break;
+    case UNHANDLEDEXCEPTION:                 printf("Unhandled exception\n"); break;
+    case PROGRAMCODEASSERTION:               printf("Program code assertion\n"); break;
+    case VARLISTEMPTY:                       printf("VAR block list empty\n"); break;
+    case CHANGETOVARREFERENCEDVARIANT:       printf("Change to VAR referenced variant\n"); break;
+    case DISPOSEOFVARREFERENCEDBLOCK:        printf("Dispose of VAR referenced block\n"); break;
+    case VARREFERENCEDFILEBUFFERMODIFIED:    printf("VAR referenced file buffer modified\n"); break;
+    case CONTAINERMISMATCH:                  printf("Container length(s) do not match\n"); break;
+    case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
+  }
+  exit(1);
 }
 
 /** ****************************************************************************
@@ -391,19 +624,19 @@ static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
   the standard specifies.
 */
 
-char bufcommand(void)
+static char bufcommand(void)
 { return (cmdlin[cmdpos]); }
 
-void getcommand(void)
+static void getcommand(void)
 { if (cmdpos <= cmdlen) cmdpos = cmdpos+1; }
 
-boolean eofcommand(void)
+static boolean eofcommand(void)
 { return (cmdpos > cmdlen+1); }
 
-boolean eolncommand(void)
+static boolean eolncommand(void)
 { return (cmdpos >= cmdlen+1); }
 
-void readlncommand(void)
+static void readlncommand(void)
 { cmdpos = MAXCMD; }
 
 /* The external assigns read a filename off the command line. The original name
@@ -434,6 +667,68 @@ void assignexternal(filnum fn, char hfn[])
     }
     if (i >= FILLEN) error("File name too long");
     filnamtab[fn][i] = 0; /* terminate */
+}
+
+/* set operations */
+
+void sset(settype s, long b)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s[i] = 0;
+    s[b/8] |= 1<<b%8;
+}
+
+void rset(settype s, long b1, long b2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s[i] = 0;
+    if (b1 > b2) { i = b1; b1 = b2; b2 = i; }
+    for (i = b1; i <= b2; i++) s[i/8] |= 1<<i%8;
+}
+
+void suni(settype s1, settype s2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
+}
+
+void sint(settype s1, settype s2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
+}
+
+void sdif(settype s1, settype s2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & ~s2[i];
+}
+
+boolean sisin(long i, settype s)
+{
+    return (!!(s[i/8] & 1<<i%8));
+}
+
+boolean sequ(settype s1, settype s2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
+    return (TRUE);
+}
+
+boolean sinc(settype s1, settype s2)
+{
+    long i;
+
+    for (i = 0; i < SETSIZE; i++)
+        if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
+    return (TRUE);
 }
 
 /** ****************************************************************************
@@ -3837,10 +4132,10 @@ void psystem_tagchgvar(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= vartbl[0]) errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
     taddr += size; /* offset to variant */
     /* translate both tags to a logical variant, then check has changed */
-    if (vartbl[ntag+1] != vartbl[otag+1])
+    if (lvt[ntag+1] != lvt[otag+1])
         /* if changed, see if the variant is in a VAR referenced region */
         if (varlap(taddr, taddr+size)) errorv(CHANGETOVARREFERENCEDVARIANT);
 
@@ -3871,7 +4166,7 @@ void psystem_tagchginv(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= vartbl[0]) errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -3891,7 +4186,7 @@ void psystem_cmptmp(
 )
 {
 
-    while (lvl--) if (*tmp1++ != *tmp2++) errorv(ContainerMismatch);
+    while (lvl--) if (*tmp1++ != *tmp2++) errorv(CONTAINERMISMATCH);
 
 }
 
@@ -3913,18 +4208,130 @@ void psystem_tagchkass(
 
     unsigned long* tcp;
 
-    taddr = taddr-off-intsize; /* index top of tag constant list on heap */
+    taddr = taddr-off-INTSIZE; /* index top of tag constant list on heap */
     /* fetch table count adjusted for system bias */
-    taddr = (unsigned long*) *taddr-adrsize-1;
-    tcp = taddr; /* put in word form */
-    if (tcp >= lvl) { /* if in tagfield constant list */
+    taddr = taddr-ADRSIZE-1;
+    tcp = (unsigned long*) taddr; /* put in word form */
+    if (*tcp >= lvl) { /* if in tagfield constant list */
 
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
-        if (ntag < 0 || ntag >= vartbl[0]) errorv(ValueOutOfRange);
-        if (tcp[lvl-1] != lvt[lvl+ntag+1]) errorv(ChangeToAllocatedTagfield);
+        if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
+        if (tcp[lvl-1] != lvt[lvl+ntag+1]) errorv(CHANGETOALLOCATEDTAGFIELD);
 
     }
+
+}
+
+/** ****************************************************************************
+
+Check set bounds
+
+Given a low and high bounds for the set base type, checks if the given set lies
+only within the bounds. That is, there are no members of the set that lie 
+outside the bounds.
+
+*******************************************************************************/
+
+void psystem_chksetbnd(
+    /* low bound */  long    low,
+    /* high bound */ long    high,
+    /* set */        settype s
+)
+
+{
+
+    long j;
+
+    for (j = SETLOW; j < low; j++)
+        if (sisin(j, s)) errorv(SETELEMENTOUTOFRANGE);
+    for (j = high+1; j <= SETHIGH; j++)
+        if (sisin(j, s)) errorv(SETELEMENTOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Set singleton set
+
+Clears the given set and sets the single bit given.
+
+*******************************************************************************/
+
+void psystem_setsgl(
+    /* bit to set */ long    b,
+    /* set */        settype s
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s[i] = 0;
+    s[b/8] |= 1<<b%8;
+
+}
+
+/** ****************************************************************************
+
+Find set difference
+
+Finds set difference, or s1-s2.
+
+*******************************************************************************/
+
+void psystem_setdif(
+    /* a set */ settype d,
+    /* set b */ settype b
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) a[i] = a[i] & ~b[i];
+
+}
+
+/** ****************************************************************************
+
+Find set intersection
+
+Finds set intersection.
+
+*******************************************************************************/
+
+void psystem_setint(
+    /* a set */ settype d,
+    /* set b */ settype b
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
+
+}
+
+/** ****************************************************************************
+
+Find set union
+
+Finds set union.
+
+*******************************************************************************/
+
+void psystem_setuni(
+    /* a set */ settype d,
+    /* set b */ settype b
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
 
 }
 
