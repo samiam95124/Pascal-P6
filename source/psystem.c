@@ -4337,6 +4337,26 @@ void psystem_setuni(
 
 /** ****************************************************************************
 
+Find set inclusion
+
+Finds if the element of the set exists. Expects the element number and the set.
+Returns true if the element is included, otherwise false.
+
+*******************************************************************************/
+
+boolean psystem_setinc(
+    /* set element */ long i,
+    /* set  */        settype s
+)
+
+{
+
+    return (!!(s[i/8] & 1<<i%8));
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/

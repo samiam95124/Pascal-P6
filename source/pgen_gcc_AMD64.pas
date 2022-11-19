@@ -1340,8 +1340,10 @@ procedure xlate;
             ep^.r2 := r2; if ep^.r2 = rgnull then getreg(ep^.r2, rf) end; 
 
           {equm,neqm,geqm,grtm,leqm,lesm}
-          142, 148, 154, 160, 166, 172: begin assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull); resreg(rgrdx) end;
+          142, 148, 154, 160, 166, 172: begin resreg(rgrax); resreg(rgrdx); 
+            assreg(ep^.l, rf, rgrdi, rgnull); 
+            assreg(ep^.r, rf, rgrsi, rgnull);  
+          end;
 
           5{lao}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
@@ -1546,13 +1548,50 @@ procedure xlate;
             assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull) 
           end;
 
+          {inn}
+          48: begin 
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull) 
+          end;
+
+          {mod}
+          49: begin 
+            if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
+            else begin resreg(rgrdx); ep^.r1 := r1 end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, rgnull, rgnull) 
+          end;
+
+          {dvi}
+          53: begin 
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, rgnull, rgnull) 
+          end;
+
+          {mpi}
+          51: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
+
+          {mpr,dvr}
+          52,54: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
+
 {???}
-          {inn,mod,mpi,mpr,dvi,dvr,rgs}
-          48,49,51,52,53,54,110: begin ep^.r1 := r1;
+          {rgs}
+          110: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) 
           end;
-
 
           { dupi, dupa, dupr, dups, dupb, dupc }
           181, 182, 183, 184, 185, 186: ;
@@ -2020,9 +2059,41 @@ procedure xlate;
                 wrtins20('movq %r1,%r1         ', 0, 0, rgrdi, ep^.l^.r1);
             end;
 
+            {inn}
+            48: begin
+              wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull);
+              if ep^.r1 <> rgrax then
+                wrtins20('movq %rax,%r1         ', 0, 0, ep^.r1, rgnull);
+            end;
+
+            {mod}
+            49: begin 
+              wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull);
+              wrtins10('idivq %r1 ', 0, 0, ep^.r^.r1, rgnull);
+              if ep^.r1 <> rgrdx then
+                wrtins20('movq %rdx,%r1       ', 0, 0, ep^.r1, rgnull);
+            end;
+
+            {dvi}
+            53: begin 
+              wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull);
+              wrtins10('idivq %r1 ', 0, 0, ep^.r^.r1, rgnull);
+              if ep^.r1 <> rgrax then
+                wrtins20('movq %rax,%r1       ', 0, 0, ep^.r1, rgnull);
+            end;
+
+            {mpi}
+            51: wrtins10('imulq %r1,%r2       ', 0, 0, ep^.r^.r1, rgnull);
+
+            {mpr}
+            52: wrtins10('imulsd %r1,%r2      ', 0, 0, ep^.r^.r1, rgnull);
+
+            {dvr}
+            54: wrtins10('idivsd %r1,%r2      ', 0, 0, ep^.r^.r1, rgnull);
+
 {???}
-            {inn,mod,mpi,mpr,dvi,dvr,rgs}
-            48,49,51,52,53,54,110: begin end;
+            {rgs}
+            110: begin end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
             181, 182, 183, 184, 185, 186: begin end;
@@ -2171,6 +2242,8 @@ procedure xlate;
       write(prr, '# ', sline:6, ': ', iline:6, ': ', op:3, ': ', name:4, ' ');
       case op of
 
+        { *** non-terminals *** }
+
         {lodi,lodx,loda,lodr,lods,lodb,lodc,loda}
         0,193,105,106,107,108,109,4: begin 
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
@@ -2181,63 +2254,10 @@ procedure xlate;
         28, 29, 30, 31: begin writeln(prr); getexp(ep); popstk(ep^.r); 
           popstk(ep^.l); pshstk(ep);  
         end;
-                                               
-        {stri,stra}
-        2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
-          deltre(ep); botstk 
-        end;
-
-        {strx,strb,strc} 
-        195,73,74: begin
-          read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
-          deltre(ep); botstk 
-        end;
-
-        {strr}
-        71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movsd %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
-          deltre(ep); botstk 
-        end;
-
-        {strs} 
-        72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep);
-          dmptre(ep); deltre(ep); botstk 
-        end;
 
         {lip} 
         120: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); getexp(ep);
           pshstk(ep) 
-        end;
-
-        {cup,cuv}
-        12, 27: begin read(prd,p); labelsearch; writeln(prr,p:1) 
-        end;
-
-        {mst}
-        11: begin read(prd,p); writeln(prr,p:1)
-        end;
-
-        {cip} 
-        113: begin read(prd,p); writeln(prr,p:1); popstk(ep); dmptre(ep);
-          deltre(ep); botstk 
         end;
 
         { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
@@ -2254,18 +2274,6 @@ procedure xlate;
           popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {mov}
-        55: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
-          popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) 
-        end;
-
-        { dmp is a strange one. It is used for stack management, and needs to
-          be checked against each situation it is used in. }
-        {dmp}
-        117: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptrel(ep, 19);
-          deltre(ep); botstk 
-        end;
-
         {swp}
         118: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
           popstk(ep2); pshstk(ep); pshstk(ep2) 
@@ -2274,11 +2282,6 @@ procedure xlate;
         {ldo}
         1, 65, 66, 67, 68, 69, 194: begin read(prd,q); writeln(prr,q:1);
           getexp(ep); pshstk(ep) 
-        end;
-
-        {sro}
-        3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
-          popstk(ep); dmptre(ep); deltre(ep); botstk 
         end;
 
         {ind}
@@ -2312,54 +2315,13 @@ procedure xlate;
 
         {cpc}
         177: begin writeln(prr); getexp(ep); popstk(ep^.r); popstk(ep^.l);
-          pshstk(ep) end;
-
-        {apc}
-        178: begin writeln(prr); popstk(ep); popstk(ep2); dmptre(ep2); 
-          dmptre(ep); deltre(ep2); deltre(ep); botstk  
-        end; 
-
-        {pck, upk}
-        63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); popstk(ep);
-          popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
-          deltre(ep); deltre(ep2); deltre(ep3); botstk 
+          pshstk(ep) 
         end;
 
         {cta}
         191: begin read(prd,q, q1, q2); 
           writeln(prr,q:1, ' ', q1:1, ' ', q1:1, ' ', q2:1); getexp(ep); 
           popstk(ep^.l); popstk(ep^.r); popstk(ep^.x1); pshstk(ep) 
-        end;
-
-        {ujp}
-        23: begin read(prd,q); writeln(prr, q:1) 
-        end;
-
-        {fjp,tjp,xjp}
-        24,25,119: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
-          dmptre(ep); deltre(ep); botstk 
-        end;
-
-        {ents,ente}
-        13, 173: begin labelsearch; writeln(prr) 
-        end;
-
-        {ipj}
-        112: begin read(prd,p); labelsearch; writeln(prr, p:1) 
-        end;
-
-        {lpa}
-        114: begin read(prd,p); labelsearch; writeln(prr); getexp(ep); 
-          pshstk(ep);
-        end;
-
-        {csp} 
-        15: begin skpspc; getname;
-          while name<>sptable[q] do begin 
-            q := q+1; if q > maxsp then errorl('std proc/func not found  ')
-          end; 
-          writeln(prr);
-          callsp
         end;
 
         {ldc}
@@ -2422,18 +2384,6 @@ procedure xlate;
           pshstk(ep) 
         end;
 
-        {vbs}
-        92: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
-          assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
-          wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull);
-          wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull);
-          wrtins20('call varenter          ', 0, 0, rgnull, rgnull);
-          deltre(ep) 
-        end;
-
-        {vbe}
-        96: wrtins20('call varenter          ', 0, 0, rgnull, rgnull);
-
         {lca}
         56: begin read(prd,l); write(prr, l:1, ' '); skpspc;
           for i := 1 to strlen do str[i] := ' ';
@@ -2458,19 +2408,6 @@ procedure xlate;
           cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
         end;
 
-        {ret}
-        22: writeln(prr);
-
-        {retp}
-        14: begin writeln(prr); botstk
-        end;
-
-        {reti,retr,retc,retb,reta,retx}
-        128, 129, 130, 131, 132, 204: begin writeln(prr); popstk(ep); 
-          dmptre(ep); deltre(ep); botstk
-        end;
-
-
         { equ,neq,geq,grt,leq,les with no parameter }
         17, 137, 138, 139, 140, 141,
         18, 143, 144, 145, 146, 147,
@@ -2486,20 +2423,8 @@ procedure xlate;
           pshstk(ep);
         end;
 
-        {vip,vis}
-        133, 122: writeln(prr); { ??? fill me in }
-
-        {vin}
-        226: writeln(prr); { ??? fill me in }
-
         {lcp}
         135: begin writeln(prr); getexp(ep); popstk(ep^.l); pshstk(ep) 
-        end;
-
-        {sto}
-        6, 80, 81, 82, 83, 84, 197: begin writeln(prr); popstk(ep); 
-          popstk(ep2); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); 
-          botstk
         end;
 
         {sgs}
@@ -2542,9 +2467,6 @@ procedure xlate;
           popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
         end;
 
-        {stp}
-        58:;
-
         { dupi, dupa, dupr, dups, dupb, dupc }
         181, 182, 183, 184, 185, 186: begin writeln(prr); getexp(ep);
           popstk(ep^.l); pshstk(ep); pshstk(ep) 
@@ -2554,6 +2476,159 @@ procedure xlate;
         187: begin writeln(prr); getexp(ep); popstk(ep^.l); getexp(ep^.r); 
           pshstk(ep)
         end;
+
+        { *** terminals *** }
+
+        {stri,stra}
+        2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
+          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
+          genexp(ep);
+          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
+          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
+          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
+          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          deltre(ep); botstk 
+        end;
+
+        {strx,strb,strc} 
+        195,73,74: begin
+          read(prd,p,q); writeln(prr,p:1,' ', q:1); 
+          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
+          genexp(ep);
+          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
+          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
+          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
+          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          deltre(ep); botstk 
+        end;
+
+        {strr}
+        71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
+          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
+          genexp(ep);
+          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
+          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
+          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
+          wrtins20('movsd %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          deltre(ep); botstk 
+        end;
+
+        {strs} 
+        72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
+          popstk(ep);
+          dmptre(ep); deltre(ep); botstk 
+        end;
+
+        {cup,cuv}
+        12, 27: begin read(prd,p); labelsearch; writeln(prr,p:1) 
+        end;
+
+        {mst}
+        11: begin read(prd,p); writeln(prr,p:1)
+        end;
+
+        {cip} 
+        113: begin read(prd,p); writeln(prr,p:1); popstk(ep); dmptre(ep);
+          deltre(ep); botstk 
+        end;
+
+        {mov}
+        55: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
+          popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) 
+        end;
+
+        { dmp is a strange one. It is used for stack management, and needs to
+          be checked against each situation it is used in. }
+        {dmp}
+        117: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptrel(ep, 19);
+          deltre(ep); botstk 
+        end;
+
+        {sro}
+        3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
+          popstk(ep); dmptre(ep); deltre(ep); botstk 
+        end;
+
+        {apc}
+        178: begin writeln(prr); popstk(ep); popstk(ep2); dmptre(ep2); 
+          dmptre(ep); deltre(ep2); deltre(ep); botstk  
+        end; 
+
+        {pck, upk}
+        63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); popstk(ep);
+          popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
+          deltre(ep); deltre(ep2); deltre(ep3); botstk 
+        end;
+
+        {ujp}
+        23: begin read(prd,q); writeln(prr, q:1) 
+        end;
+
+        {fjp,tjp,xjp}
+        24,25,119: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
+          dmptre(ep); deltre(ep); botstk 
+        end;
+
+        {ents,ente}
+        13, 173: begin labelsearch; writeln(prr) 
+        end;
+
+        {ipj}
+        112: begin read(prd,p); labelsearch; writeln(prr, p:1) 
+        end;
+
+        {lpa}
+        114: begin read(prd,p); labelsearch; writeln(prr); getexp(ep); 
+          pshstk(ep);
+        end;
+
+        {csp} 
+        15: begin skpspc; getname;
+          while name<>sptable[q] do begin 
+            q := q+1; if q > maxsp then errorl('std proc/func not found  ')
+          end; 
+          writeln(prr);
+          callsp
+        end;
+
+        {vbs}
+        92: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
+          assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
+          wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull);
+          wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull);
+          wrtins20('call varenter          ', 0, 0, rgnull, rgnull);
+          deltre(ep) 
+        end;
+
+        {vbe}
+        96: wrtins20('call varenter          ', 0, 0, rgnull, rgnull);
+
+        {ret}
+        22: writeln(prr);
+
+        {retp}
+        14: begin writeln(prr); botstk
+        end;
+
+        {reti,retr,retc,retb,reta,retx}
+        128, 129, 130, 131, 132, 204: begin writeln(prr); popstk(ep); 
+          dmptre(ep); deltre(ep); botstk
+        end;
+
+        {vip,vis}
+        133, 122: writeln(prr); { ??? fill me in }
+
+        {vin}
+        226: writeln(prr); { ??? fill me in }
+
+        {sto}
+        6, 80, 81, 82, 83, 84, 197: begin writeln(prr); popstk(ep); 
+          popstk(ep2); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); 
+          botstk
+        end;
+
+        {stp}
+        58:;
 
         {cke}
         188: begin writeln(prr); popstk(ep); popstk(ep2); dmptre(ep2); 
