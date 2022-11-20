@@ -2093,7 +2093,7 @@ Writes out the given integer in decimal form, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wri(
+void psystem_wri(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2117,7 +2117,7 @@ Writes out the given integer in hexadecimal form, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wrih(
+void psystem_wrih(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2141,7 +2141,7 @@ Writes out the given integer in octal form, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wrio(
+void psystem_wrio(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2165,7 +2165,7 @@ Writes out the given integer in binary form, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wrib(
+void psystem_wrib(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2190,7 +2190,7 @@ field width is padded out with leading zeros.
 
 *******************************************************************************/
 
-boolean psystem_wiz(
+void psystem_wiz(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2215,7 +2215,7 @@ The field width is padded out with leading zeros.
 
 *******************************************************************************/
 
-boolean psystem_wizh(
+void psystem_wizh(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2240,7 +2240,7 @@ The field width is padded out with leading zeros.
 
 *******************************************************************************/
 
-boolean psystem_wizo(
+void psystem_wizo(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2265,7 +2265,7 @@ The field width is padded out with leading zeros.
 
 *******************************************************************************/
 
-boolean psystem_wizb(
+void psystem_wizb(
     /* Pascal file to write to */ pasfil* f,
     /* Integer to write */        long    i,
     /* Field width */             long    w
@@ -2289,7 +2289,7 @@ Writes out the given real, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wrr(
+void psystem_wrr(
     /* Pascal file to write to */ pasfil* f,
     /* Real to write */           double  r,
     /* Field width */             long    w
@@ -2331,7 +2331,7 @@ Writes out the given character, with the given field width.
 
 *******************************************************************************/
 
-boolean psystem_wrc(
+void psystem_wrc(
     /* Pascal file to write to */ pasfil* f,
     /* Character to write */      char    c,
     /* Field width */             long    w
@@ -2370,23 +2370,21 @@ Reads an integer from the given text file and returns it.
 
 *******************************************************************************/
 
-long psystem_rdi(
-    /* Pascal file to write to */ pasfil* f
+void psystem_rdi(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         int*    i
 )
 
 {
 
     int fn;
-    long i;
     long w;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     w = INT_MAX;
-    readi(fn, &i, &w, FALSE);
-
-    return (i);
+    readi(fn, i, &w, FALSE);
 
 }
 
@@ -2400,22 +2398,20 @@ be used, even if followed by other digits.
 
 *******************************************************************************/
 
-long psystem_rdif(
+void psystem_rdif(
     /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         int*    i,
     /* Field */                   long    w
 )
 
 {
 
     int fn;
-    long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readi(fn, &i, &w, TRUE);
-
-    return (i);
+    readi(fn, i, &w, TRUE);
 
 }
 
@@ -2430,25 +2426,23 @@ maximum. Out of range integers will result in an error.
 
 *******************************************************************************/
 
-long psystem_rib(
+void psystem_rib(
     /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         int*    i,
     /* Bounds for integer */      long mn, long mx
 )
 
 {
 
     int fn;
-    long i;
     long w;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     w = INT_MAX; 
-    readi(fn, &i, &w, FALSE);
-    if (i < mn || i > mx) error("Value out of range");
-
-    return (i);
+    readi(fn, i, &w, FALSE);
+    if (*i < mn || *i > mx) error("Value out of range");
 
 }
 
@@ -2465,8 +2459,9 @@ maximum. Out of range integers will result in an error.
 
 *******************************************************************************/
 
-long psystem_ribf(
+void psystem_ribf(
     /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         int* i,
     /* Bounds for integer */      long mn, long mx,
     /* Field to read */           long w
 )
@@ -2474,15 +2469,12 @@ long psystem_ribf(
 {
 
     int fn;
-    long i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readi(fn, &i, &w, TRUE);
-    if (i < mn || i > mx) error("Value out of range");
-
-    return (i);
+    readi(fn, i, &w, TRUE);
+    if (*i < mn || *i > mx) error("Value out of range");
 
 }
 
@@ -2495,21 +2487,19 @@ read.
 
 *******************************************************************************/
 
-double psystem_rdr(
-    /* Pascal file to read from */ pasfil* f
+void psystem_rdr(
+    /* Pascal file to read from */ pasfil* f,
+    /* real to read */             double* r
 )
 
 {
 
-    int    fn;
-    double r;
+    int fn;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readr(fn, &r, INT_MAX, FALSE); /* read real */
-
-    return (r);
+    readr(fn, r, INT_MAX, FALSE); /* read real */
 
 }
 
@@ -2523,22 +2513,20 @@ in the indicated field will be used, even if followed by other digits.
 
 *******************************************************************************/
 
-double psystem_rdrf(
+void psystem_rdrf(
     /* Pascal file to read from */ pasfil* f,
+    /* real to read */             double* r,
     /* Field */                    long    w
 )
 
 {
 
     int    fn;
-    double r;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readr(fn, &r, w, TRUE); /* read real */
-
-    return (r);
+    readr(fn, r, w, TRUE); /* read real */
 
 }
 
@@ -2550,8 +2538,9 @@ Reads a character from the given text file. Returns the character.
 
 *******************************************************************************/
 
-char psystem_rdc(
-    /* Pascal file to read from */ pasfil* f
+void psystem_rdc(
+    /* Pascal file to read from */ pasfil* f,
+    /* character to read */        char*   c
 )
 
 {
@@ -2562,9 +2551,7 @@ char psystem_rdc(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, INT_MAX, FALSE);
-
-    return (c);
+    readc(fn, c, INT_MAX, FALSE);
 
 }
 
@@ -2578,9 +2565,10 @@ field will be used, even if followed by other digits.
 
 *******************************************************************************/
 
-char psystem_rdcf(
+void psystem_rdcf(
     /* Pascal file to read from */ pasfil* f,
-    /* Field */                    long w
+    /* character to read */        char*   c,
+    /* Field */                    long    w
 )
 
 {
@@ -2591,9 +2579,7 @@ char psystem_rdcf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, w, TRUE);
-
-    return (c);
+    readc(fn, c, w, TRUE);
 
 }
 
@@ -2607,8 +2593,9 @@ those two. Returns the character.
 
 *******************************************************************************/
 
-char psystem_rcb(
+void psystem_rcb(
     /* Pascal file to read from */ pasfil* f,
+    /* character to read */        char*   c,
     /* Range of values          */ long mn, long mx
 )
 
@@ -2620,10 +2607,8 @@ char psystem_rcb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, INT_MAX, FALSE);
-    if (c < mn || c > mx) error("Value out of range");
-
-    return (c);
+    readc(fn, c, INT_MAX, FALSE);
+    if (*c < mn || *c > mx) error("Value out of range");
 
 }
 
@@ -2641,6 +2626,7 @@ character.
 
 char psystem_rcbf(
     /* Pascal file to read from */ pasfil* f,
+    /* character to read */        char*   c,
     /* Range of values          */ long mn, long mx,
     /* Field                    */ long w
 )
@@ -2653,10 +2639,8 @@ char psystem_rcbf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, &c, w, TRUE);
-    if (c < mn || c > mx) error("Value out of range");
-
-    return (c);
+    readc(fn, c, w, TRUE);
+    if (*c < mn || *c > mx) error("Value out of range");
 
 }
 
@@ -4007,7 +3991,8 @@ behavior is to read the integer from the command line. The integer is returned.
 
 *******************************************************************************/
 
-long psystem_rdie(
+void psystem_rdie(
+    /* integer to read */                long* i,
     /* Name of header variable */        char* n,
     /* Length of header variable name */ long  l
 )
@@ -4015,12 +4000,9 @@ long psystem_rdie(
 {
 
     long w;
-    long i;
 
     w = INT_MAX; 
-    readi(COMMANDFN, &i, &w, FALSE);
-
-    return (i); /* return result */
+    readi(COMMANDFN, i, &w, FALSE);
 
 }
 
@@ -4034,9 +4016,10 @@ behavior is to read the real from the command line. The real is returned.
 
 *******************************************************************************/
 
-double psystem_rdre(
-    /* Name of header variable */        char* n,
-    /* Length of header variable name */ long  l
+void psystem_rdre(
+    /* real to read */                   double* r,
+    /* Name of header variable */        char*   n,
+    /* Length of header variable name */ long    l
 )
 
 {
@@ -4045,9 +4028,7 @@ double psystem_rdre(
     double r;
 
     w = INT_MAX; 
-    readr(COMMANDFN, &r, w, FALSE);
-
-    return (r); /* return result */
+    readr(COMMANDFN, r, w, FALSE);
 
 }
 
@@ -4352,6 +4333,31 @@ boolean psystem_setinc(
 {
 
     return (!!(s[i/8] & 1<<i%8));
+
+}
+
+/** ****************************************************************************
+
+Set element range
+
+Sets a range of elements in a set, from low to high. Expects the low index and
+high index, and the set to operate on.
+
+*******************************************************************************/
+
+boolean psystem_setrgs(
+    /* set element low */  long l,
+    /* set element high */ long h,
+    /* set  */             settype s
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) s[i] = 0;
+    if (l > h) { i = l; l = h; h = i; }
+    for (i = l; i <= h; i++) s[i/8] |= 1<<i%8;
 
 }
 

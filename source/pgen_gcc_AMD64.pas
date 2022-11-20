@@ -370,9 +370,13 @@ var   pc          : address;   (*program address register*)
       {elide}prd,prr     : text;{noelide}(*prd for read only, prr for write only *)
 
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
-      sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
       insq        : array[instyp] of 0..32; { length of q parameter }
+      sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
+      spfunc      : array[0..maxsp] of boolean; (*standard function or procedure
+                                                  is function*)
+      sppar       : array[0..maxsp] of integer; (*standard functions and procedures
+                                                  number of parameters*)
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
       csttbl      : cstptr; { constants table }
@@ -874,47 +878,88 @@ procedure xlate;
          instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
          instr[242]:='---       '; insp[242] := false; insq[242] := 0;
 
-         sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
-         sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
-         sptable[ 4]:='new       ';     sptable[ 5]:='wln       ';
-         sptable[ 6]:='wrs       ';     sptable[ 7]:='eln       ';
-         sptable[ 8]:='wri       ';     sptable[ 9]:='wrr       ';
-         sptable[10]:='wrc       ';     sptable[11]:='rdi       ';
-         sptable[12]:='rdr       ';     sptable[13]:='rdc       ';
-         sptable[14]:='sin       ';     sptable[15]:='cos       ';
-         sptable[16]:='exp       ';     sptable[17]:='log       ';
-         sptable[18]:='sqt       ';     sptable[19]:='atn       ';
-         sptable[20]:='---       ';     sptable[21]:='pag       ';
-         sptable[22]:='rsf       ';     sptable[23]:='rwf       ';
-         sptable[24]:='wrb       ';     sptable[25]:='wrf       ';
-         sptable[26]:='dsp       ';     sptable[27]:='wbf       ';
-         sptable[28]:='wbi       ';     sptable[29]:='wbr       ';
-         sptable[30]:='wbc       ';     sptable[31]:='wbb       ';
-         sptable[32]:='rbf       ';     sptable[33]:='rsb       ';
-         sptable[34]:='rwb       ';     sptable[35]:='gbf       ';
-         sptable[36]:='pbf       ';     sptable[37]:='rib       ';
-         sptable[38]:='rcb       ';     sptable[39]:='nwl       ';
-         sptable[40]:='dsl       ';     sptable[41]:='eof       ';
-         sptable[42]:='efb       ';     sptable[43]:='fbv       ';
-         sptable[44]:='fvb       ';     sptable[45]:='wbx       ';
-         sptable[46]:='asst      ';     sptable[47]:='clst      ';
-         sptable[48]:='pos       ';     sptable[49]:='upd       ';
-         sptable[50]:='appt      ';     sptable[51]:='del       ';
-         sptable[52]:='chg       ';     sptable[53]:='len       ';
-         sptable[54]:='loc       ';     sptable[55]:='exs       ';
-         sptable[56]:='assb      ';     sptable[57]:='clsb      ';
-         sptable[58]:='appb      ';     sptable[59]:='hlt       ';
-         sptable[60]:='ast       ';     sptable[61]:='asts      ';
-         sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
-         sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
-         sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
-         sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
-         sptable[70]:='rds       ';     sptable[71]:='ribf      ';
-         sptable[72]:='rdif      ';     sptable[73]:='rdrf      ';
-         sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
-         sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
-         sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
-         sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
+         sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1;   
+         sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1;
+         sptable[ 2]:='thw       '; spfunc[ 2]:=false; sppar[ 2]:=1;   
+         sptable[ 3]:='rln       '; spfunc[ 3]:=false; sppar[ 3]:=1;
+         sptable[ 4]:='new       '; spfunc[ 4]:=false; sppar[ 4]:=2;   
+         sptable[ 5]:='wln       '; spfunc[ 5]:=false; sppar[ 5]:=1;
+         sptable[ 6]:='wrs       '; spfunc[ 6]:=false; sppar[ 6]:=4;   
+         sptable[ 7]:='eln       '; spfunc[ 7]:=false; sppar[ 7]:=1;
+         sptable[ 8]:='wri       '; spfunc[ 8]:=false; sppar[ 8]:=3;   
+         sptable[ 9]:='wrr       '; spfunc[ 9]:=false; sppar[ 9]:=3;
+         sptable[10]:='wrc       '; spfunc[10]:=false; sppar[10]:=3;   
+         sptable[11]:='rdi       '; spfunc[11]:=false; sppar[11]:=2;
+         sptable[12]:='rdr       '; spfunc[12]:=false; sppar[12]:=2;   
+         sptable[13]:='rdc       '; spfunc[13]:=false; sppar[13]:=2;
+         sptable[14]:='sin       '; spfunc[14]:=true;  sppar[14]:=1;   
+         sptable[15]:='cos       '; spfunc[15]:=true;  sppar[15]:=1;
+         sptable[16]:='exp       '; spfunc[16]:=true;  sppar[16]:=1;   
+         sptable[17]:='log       '; spfunc[17]:=true;  sppar[17]:=1;
+         sptable[18]:='sqt       '; spfunc[18]:=true;  sppar[18]:=1;   
+         sptable[19]:='atn       '; spfunc[19]:=true;  sppar[19]:=1;
+         sptable[20]:='---       '; spfunc[20]:=false; sppar[20]:=1;   
+         sptable[21]:='pag       '; spfunc[21]:=false; sppar[21]:=1;
+         sptable[22]:='rsf       '; spfunc[22]:=false; sppar[22]:=1;   
+         sptable[23]:='rwf       '; spfunc[23]:=false; sppar[23]:=1;
+         sptable[24]:='wrb       '; spfunc[24]:=false; sppar[24]:=3;   
+         sptable[25]:='wrf       '; spfunc[25]:=false; sppar[25]:=4;
+         sptable[26]:='dsp       '; spfunc[26]:=false; sppar[26]:=2;   
+         sptable[27]:='wbf       '; spfunc[27]:=false; sppar[27]:=3;
+         sptable[28]:='wbi       '; spfunc[28]:=false; sppar[28]:=2;   
+         sptable[29]:='wbr       '; spfunc[29]:=false; sppar[29]:=2;
+         sptable[30]:='wbc       '; spfunc[30]:=false; sppar[30]:=2;   
+         sptable[31]:='wbb       '; spfunc[31]:=false; sppar[31]:=2;
+         sptable[32]:='rbf       '; spfunc[32]:=false; sppar[32]:=3;   
+         sptable[33]:='rsb       '; spfunc[33]:=false; sppar[33]:=1;
+         sptable[34]:='rwb       '; spfunc[34]:=false; sppar[34]:=1;   
+         sptable[35]:='gbf       '; spfunc[35]:=false; sppar[35]:=2;
+         sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2;   
+         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=3;
+         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=3;   
+         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=0; { special }
+         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=0; { special }
+         sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1;
+         sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1;   
+         sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1;
+         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=1;
+         sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2;
+         sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3;
+         sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1;
+         sptable[48]:='pos       '; spfunc[48]:=false; sppar[48]:=2;
+         sptable[49]:='upd       '; spfunc[49]:=false; sppar[49]:=1;
+         sptable[50]:='appt      '; spfunc[50]:=false; sppar[50]:=1;
+         sptable[51]:='del       '; spfunc[51]:=false; sppar[51]:=2;
+         sptable[52]:='chg       '; spfunc[52]:=false; sppar[52]:=4;
+         sptable[53]:='len       '; spfunc[53]:=true;  sppar[53]:=1;
+         sptable[54]:='loc       '; spfunc[54]:=true;  sppar[54]:=1;
+         sptable[55]:='exs       '; spfunc[55]:=true;  sppar[55]:=2;
+         sptable[56]:='assb      '; spfunc[56]:=false; sppar[56]:=3;
+         sptable[57]:='clsb      '; spfunc[57]:=false; sppar[57]:=1;
+         sptable[58]:='appb      '; spfunc[58]:=false; sppar[58]:=1;
+         sptable[59]:='hlt       '; spfunc[59]:=false; sppar[59]:=0;
+         sptable[60]:='ast       '; spfunc[60]:=false; sppar[60]:=1;
+         sptable[61]:='asts      '; spfunc[61]:=false; sppar[61]:=3;
+         sptable[62]:='wrih      '; spfunc[62]:=false; sppar[62]:=3;
+         sptable[63]:='wrio      '; spfunc[63]:=false; sppar[63]:=3;
+         sptable[64]:='wrib      '; spfunc[64]:=false; sppar[64]:=3;
+         sptable[65]:='wrsp      '; spfunc[65]:=false; sppar[65]:=3;
+         sptable[66]:='wiz       '; spfunc[66]:=false; sppar[66]:=3;
+         sptable[67]:='wizh      '; spfunc[67]:=false; sppar[67]:=3;
+         sptable[68]:='wizo      '; spfunc[68]:=false; sppar[68]:=3;
+         sptable[69]:='wizb      '; spfunc[69]:=false; sppar[69]:=3;
+         sptable[70]:='rds       '; spfunc[70]:=false; sppar[70]:=3;
+         sptable[71]:='ribf      '; spfunc[71]:=false; sppar[71]:=5;
+         sptable[72]:='rdif      '; spfunc[72]:=false; sppar[72]:=3;
+         sptable[73]:='rdrf      '; spfunc[73]:=false; sppar[73]:=3;
+         sptable[74]:='rcbf      '; spfunc[74]:=false; sppar[74]:=5;
+         sptable[75]:='rdcf      '; spfunc[75]:=false; sppar[75]:=3;
+         sptable[76]:='rdsf      '; spfunc[76]:=false; sppar[76]:=4;
+         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=4;
+         sptable[78]:='aeft      '; spfunc[78]:=false; sppar[78]:=3;
+         sptable[79]:='aefb      '; spfunc[79]:=false; sppar[79]:=3;
+         sptable[80]:='rdie      '; spfunc[80]:=false; sppar[80]:=3;
+         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=1;
 
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
@@ -1127,7 +1172,7 @@ procedure xlate;
           i,x,s1,lb,ub,l:integer; c: char;
           str: strbuf; { buffer for string constants }
           cstp: cstptr;
-          ep, ep2, ep3, ep4: expptr;
+          ep, ep2, ep3, ep4, ep5: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
@@ -1586,18 +1631,28 @@ procedure xlate;
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
-{???}
           {rgs}
-          110: begin ep^.r1 := r1;
+          110: begin 
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) 
+            assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull) 
           end;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
-          181, 182, 183, 184, 185, 186: ;
+          181, 182, 183, 184, 185, 186: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
 
           {cks}
-          187: ;
+          187: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
+
         end
       end;
 
@@ -2091,15 +2146,24 @@ procedure xlate;
             {dvr}
             54: wrtins10('idivsd %r1,%r2      ', 0, 0, ep^.r^.r1, rgnull);
 
-{???}
             {rgs}
-            110: begin end;
+            110: begin 
+              wrtins20('subq +0,%rsp        ', setsize, 0, rgnull, rgnull);
+              wrtins20('movq %rsp,%rdx      ', 0, 0, rgnull, rgnull);
+              wrtins20('call psystem_setrgs ', 0, 0, rgnull, rgnull);
+              if ep^.r1 <> rgrdx then
+                wrtins20('movq %rdx,%r1       ', 0, 0, ep^.r1, rgnull);
+            end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
-            181, 182, 183, 184, 185, 186: begin end;
+            181, 182, 183, 184, 185, 186: begin 
+              wrtins20('movq %r2,%r1        ', 0, 0, ep^.l^.r1, ep^.r^.r1);
+            end;
 
             {cks}
-            187: begin end;
+            187: begin 
+              wrtins10('xorq %r1,%r1        ', 0, 0, ep^.r^.r1, rgnull);
+            end;
 
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
@@ -2107,130 +2171,43 @@ procedure xlate;
         end
       end;
 
+      procedure callsppar(p: integer; var sc: alfa; r: boolean);
+      var si: insstr20;
+      begin
+        si := 'call psystem_       ';
+        for i := 1 to maxalfa do si[13+i-1] := sc[i];
+        if p >= 1 then popstk(ep);
+        if p >= 2 then popstk(ep2);
+        if p >= 3 then popstk(ep3);
+        if p >= 4 then popstk(ep4);
+        if p >= 5 then popstk(ep5);
+        if p >= 5 then assreg(ep5, frereg, rgrdi, rgnull);
+        if p >= 4 then assreg(ep4, frereg, rgrdi, rgnull);
+        if p >= 3 then assreg(ep3, frereg, rgrsi, rgnull);
+        if p >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
+        if p >= 1 then assreg(ep, frereg, rgrcx, rgnull);
+        if p >= 1 then begin dmptrel(ep); genexp(ep) end;
+        if p >= 2 then begin dmptrel(ep2); genexp(ep) end;
+        if p >= 3 then begin dmptrel(ep3); genexp(ep) end;
+        if p >= 4 then begin dmptrel(ep4); genexp(ep) end;
+        if p >= 5 then begin dmptrel(ep5); genexp(ep) end;
+        wrtins20(sc, 0, 0, rgnull, rgnull);
+        if p >= 1 then deltre(ep);
+        if p >= 2 then deltre(ep2);
+        if p >= 3 then deltre(ep3);
+        if p >= 4 then deltre(ep4);
+        if p >= 5 then deltre(ep5);
+        if r 
+      end;
+
       procedure callsp;
       begin (*callsp*)
         if q > maxsp then errorl('Invalid std proc or func ');
         writeln(prr, '# ', sline:6, ': ', iline:6, ': ', q:3, ': -> ', sptable[q]);
-        case q of
-          0 (*get*): begin popstk(ep); popstk(ep2); dmptrel(ep, 19); 
-            dmptrel(ep2, 19); deltre(ep); pshstk(ep2) end;
-          1 (*put*): begin popstk(ep); popstk(ep2); dmptrel(ep, 19); dmptrel(ep2, 19); 
-            deltre(ep); pshstk(ep2) end;
-          3 (*rln*): begin popstk(ep); dmptrel(ep, 19); pshstk(ep2) end;
-          39 (*nwl*): ;
-          { do we need to preserve the file across calls? }
-
-          5 (*wln*): begin popstk(ep); assreg(ep, [], rgrdi, rgnull); dmptrel(ep, 19); 
-            genexp(ep); writeln(prr, '        call    psystem_wln');
-            pshstk(ep) end;
-
-          6 (*wrs*): begin popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
-            assreg(ep4, frereg, rgrdi, rgnull); 
-            assreg(ep2, frereg, rgrsi, rgnull);
-            assreg(ep3, frereg, rgrdx, rgnull); 
-            assreg(ep, frereg, rgrcx, rgnull);
-            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2); 
-            dmptrel(ep3, 19); genexp(ep3); dmptrel(ep4, 19); genexp(ep4);
-            wrtins20('call psystem_wrs    ', 0, 0, rgnull, rgnull);
-            deltre(ep); deltre(ep2); deltre(ep3); pshstk(ep4) end;
-
-          65 (*wrsp*):;
-          41 (*eof*):;
-          42 (*efb*):;
-          7 (*eln*):;
-
-          8 (*wri*): begin popstk(ep3); popstk(ep2); popstk(ep);
-            assreg(ep, frereg, rgrdi, rgnull);
-            assreg(ep2, frereg, rgrsi, rgnull); 
-            assreg(ep3, frereg, rgrdx, rgnull);
-            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
-            dmptrel(ep3, 19); genexp(ep3);
-            wrtins20('call psystem_wri    ', 0, 0, rgnull, rgnull);
-            deltre(ep2); deltre(ep3); pshstk(ep) end;
-
-          62 (*wrih*),
-          63 (*wrio*),
-          64 (*wrib*),
-          66 (*wiz*),
-          67 (*wizh*),
-          68 (*wizo*),
-          69 (*wizb*):;
-
-          9 (*wrr*): begin popstk(ep3); popstk(ep2); popstk(ep);
-            assreg(ep, frereg, rgrdi, rgnull);
-            assreg(ep2, frereg, rgxmm0, rgnull); 
-            assreg(ep3, frereg, rgrsi, rgnull);
-            dmptrel(ep, 19); genexp(ep); dmptrel(ep2, 19); genexp(ep2);
-            dmptrel(ep3, 19); genexp(ep3);
-            wrtins20('call psystem_wrr    ', 0, 0, rgnull, rgnull);
-            deltre(ep2); deltre(ep3); pshstk(ep) end;
-
-          10(*wrc*):;
-          11(*rdi*),
-          72(*rdif*):;
-          37(*rib*),
-          71(*ribf*):;
-          12(*rdr*),
-          73(*rdrf*):;
-          13(*rdc*),
-          75(*rdcf*):;
-          38(*rcb*),
-          74(*rcbf*):;
-          14(*sin*):;
-          15(*cos*):;
-          16(*exp*):;
-          17(*log*):  ;                  
-          18(*sqt*):;
-          19(*atn*):;
-          20(*sav*): errorl('Invalid std proc or func ');
-          21(*pag*):;
-          22(*rsf*):;
-          23(*rwf*):;
-          24(*wrb*):;
-          25(*wrf*):;
-          26(*dsp*):;
-          40(*dsl*):;
-          27(*wbf*):;
-          28(*wbi*):;
-          45(*wbx*): ;
-          29(*wbr*):;
-          30(*wbc*):;
-          31(*wbb*):;
-          32(*rbf*):;
-          33(*rsb*):;
-          34(*rwb*):;
-          35(*gbf*):;
-          36(*pbf*):;
-          43 (*fbv*): ;
-          44 (*fvb*):;
-          { extended Pascaline file handlers }
-          46 (*asst*):;
-          56 (*assb*):;
-          47 (*clst*):;
-          57 (*clsb*):;
-          48 (*pos*):;
-          49 (*upd*):;
-          50 (*appt*):;
-          58 (*appb*):;
-          51 (*del*):;
-          52 (*chg*):;
-          53 (*len*):;
-          54 (*loc*):;
-          55 (*exs*):;
-          59 (*hlt*):;
-          60 (*ast*):;
-          61 (*asts*):;
-          70(*rds*),
-          76(*rdsf*):;
-          77(*rdsp*):;
-          78(*aeft*):;
-          79(*aefb*):;
-          80(*rdie*):;
-          81(*rdre*): ;
-          2(*thw*): ;
-
-        end;(*case q*)
-   end;(*callsp*)
+        if q = 39 then begin end {nwl}
+        else if q = 40 then begin end {dsl}
+        else callsppar(sppar[q], sptable[q], spfunc[q]);
+      end;(*callsp*)
 
    begin { assemble } 
       p := 0;  q := 0;  op := 0;
@@ -2467,17 +2444,38 @@ procedure xlate;
           popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
         end;
 
-        { dupi, dupa, dupr, dups, dupb, dupc }
-        181, 182, 183, 184, 185, 186: begin writeln(prr); getexp(ep);
-          popstk(ep^.l); pshstk(ep); pshstk(ep) 
+        { duplicate is a stack operator. We emulate it with a dummy entry that
+          gets copied from the original. }
+
+        { dupi, dupa, dupr, dupb, dupc }
+        181, 182, 183, 185, 186: begin writeln(prr); getexp(ep);
+          popstk(ep^.l); getexp(ep^.r); pshstk(ep); pshstk(ep) 
         end;
+
+        { duplicate set is possible, but not used anywhere in the compiler,
+          so we don't implement it here. }
+
+        {dups}
+        184: errorl('Operator not implemented');
 
         {cks}
         187: begin writeln(prr); getexp(ep); popstk(ep^.l); getexp(ep^.r); 
           pshstk(ep)
         end;
 
+        { system calls can be terminal or non-terminal }
+
+        {csp} 
+        15: begin skpspc; getname;
+          while name<>sptable[q] do begin 
+            q := q+1; if q > maxsp then errorl('std proc/func not found  ')
+          end; 
+          writeln(prr);
+          callsp
+        end;
+
         { *** terminals *** }
+
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
@@ -2537,8 +2535,6 @@ procedure xlate;
           popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) 
         end;
 
-        { dmp is a strange one. It is used for stack management, and needs to
-          be checked against each situation it is used in. }
         {dmp}
         117: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptrel(ep, 19);
           deltre(ep); botstk 
@@ -2580,15 +2576,6 @@ procedure xlate;
         {lpa}
         114: begin read(prd,p); labelsearch; writeln(prr); getexp(ep); 
           pshstk(ep);
-        end;
-
-        {csp} 
-        15: begin skpspc; getname;
-          while name<>sptable[q] do begin 
-            q := q+1; if q > maxsp then errorl('std proc/func not found  ')
-          end; 
-          writeln(prr);
-          callsp
         end;
 
         {vbs}
