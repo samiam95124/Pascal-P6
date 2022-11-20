@@ -245,7 +245,7 @@ const
       ContainerMismatch                  = 116;
       InvalidContainerLevel              = 117;
       privexceptiontop                   = 117;
-test
+
       strlen      = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
