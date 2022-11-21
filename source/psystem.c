@@ -1878,10 +1878,10 @@ code to verify access to the variants used.
 *******************************************************************************/
 
 void psystem_nwl(
-    /** Address of pointer */  unsigned char** p,
-    /** length to allocate */  unsigned long   l,
-    /** pointer to tag list */ long*           tl,
-    /** number of tags */      unsigned long   tc
+    /** Address of pointer */  unsigned char** p,  rdi
+    /** length to allocate */  unsigned long   l,  rsi
+    /** pointer to tag list */ long*           tl, rdx
+    /** number of tags */      unsigned long   tc  rcx
 )
 
 {

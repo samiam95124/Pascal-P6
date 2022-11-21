@@ -1714,6 +1714,8 @@ procedure xlate;
         wrtins40(s, i1, i2, r1, r2)
       end;
 
+      procedure callsp(ep: expptr); forward;
+
       procedure genexp(ep: expptr);
       var r: reg;
       begin
@@ -2197,17 +2199,49 @@ procedure xlate;
         if p >= 3 then deltre(ep3);
         if p >= 4 then deltre(ep4);
         if p >= 5 then deltre(ep5);
-        if r 
+        if r then begin
+          if ep^.r1 <> rgrax then 
+            wrtins20('movq %rax,%r1       ', ep^.p, 0, ep^.r1, rgnull);
+          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx)
+            wrtins20('movq %rdx,%r1       ', ep^.p, 0, ep^.r2, rgnull);
+        end
       end;
 
-      procedure callsp;
-      begin (*callsp*)
-        if q > maxsp then errorl('Invalid std proc or func ');
+      { note: this is only applied to integer/pointer }
+      procedure pushpar(ep: expptr);
+      begin
+        if ep <> nil then pushpar(ep^.next);
+        assreg(ep, frereg, rgnull, rgnull); dmptrel(ep); genexp(ep);
+        wrtins20('pushq %r1 ', 0, 0, ep^.r1, rgnull)
+      end;
+
+      procedure callsp(ep: expptr);
+      begin
+        if ep^.q > maxsp then errorl('Invalid std proc or func ');
         writeln(prr, '# ', sline:6, ': ', iline:6, ': ', q:3, ': -> ', sptable[q]);
-        if q = 39 then begin end {nwl}
-        else if q = 40 then begin end {dsl}
-        else callsppar(sppar[q], sptable[q], spfunc[q]);
-      end;(*callsp*)
+        if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
+          popstk(ep); popstk(ep2);
+          assreg(ep, frereg, rgrsi, rgnull);
+          assreg(ep2, frereg, rgrcx, rgnull);
+          pushpar(ep2^.next);
+          dmptrel(ep); genexp(ep); dmptrel(ep2); genexp(ep2);
+          wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull);
+          wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull);
+          wrtins20('addq %rsp,%rax      ', 0, 0, rgnull, rgnull);
+          wrtins20('movq (%rax),%rdi    ', 0, 0, rgnull, rgnull);
+          wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull);
+          wrtins20('movq %rcx,%rbx      ', 0, 0, rgnull, rgnull);
+          if ep^.q = 39 then
+            wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull)
+          else
+            wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull);
+          wrtins20('orq %rbx,%rbx       ', 0, 0, rgnull, rgnull);
+          wrtins20('jz .+16   ', 0, 0, rgnull, rgnull);  
+          wrtins20('popq %rax ', 0, 0, rgnull, rgnull);
+          wrtins20('decq %rbx ', 0, 0, rgnull, rgnull);
+          wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull);
+        end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q]);
+      end;
 
    begin { assemble } 
       p := 0;  q := 0;  op := 0;
@@ -2471,7 +2505,9 @@ procedure xlate;
             q := q+1; if q > maxsp then errorl('std proc/func not found  ')
           end; 
           writeln(prr);
-          callsp
+          getexp(ep); 
+          if spfunc[q] then pshstk(ep) { non-terminal, stack it }
+          else callsp(ep) { terminal, execute here }
         end;
 
         { *** terminals *** }
