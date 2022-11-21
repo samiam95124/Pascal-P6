@@ -278,6 +278,7 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
+      sctyp       = 0..maxsp;   { system call }
       address     = -maxstr..maxstr; { address }
 
       beta        = packed array[1..25] of char; (*error message*)
@@ -372,10 +373,10 @@ var   pc          : address;   (*program address register*)
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
       insq        : array[instyp] of 0..32; { length of q parameter }
-      sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
-      spfunc      : array[0..maxsp] of boolean; (*standard function or procedure
+      sptable     : array[sctyp] of alfa; (*standard functions and procedures*)
+      spfunc      : array[sctyp] of boolean; (*standard function or procedure
                                                   is function*)
-      sppar       : array[0..maxsp] of integer; (*standard functions and procedures
+      sppar       : array[sctyp] of integer; (*standard functions and procedures
                                                   number of parameters*)
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
@@ -1653,6 +1654,18 @@ procedure xlate;
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
+          {csp}
+          15: begin
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if sppar[ep^.q] >= 5 then assreg(ep5, frereg, rgrdi, rgnull);
+            if sppar[ep^.q] >= 4 then assreg(ep4, frereg, rgrdi, rgnull);
+            if sppar[ep^.q] >= 3 then assreg(ep3, frereg, rgrsi, rgnull);
+            if sppar[ep^.q] >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
+            if sppar[ep^.q] >= 1 then assreg(ep, frereg, rgrcx, rgnull)
+          end;
+
         end
       end;
 
@@ -2167,6 +2180,9 @@ procedure xlate;
               wrtins10('xorq %r1,%r1        ', 0, 0, ep^.r^.r1, rgnull);
             end;
 
+            {csp}
+            15: callsp(ep);
+
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
             wrtins20('pop %r1             ', 0, 0, r, rgnull)
@@ -2183,11 +2199,13 @@ procedure xlate;
         if p >= 3 then popstk(ep3);
         if p >= 4 then popstk(ep4);
         if p >= 5 then popstk(ep5);
-        if p >= 5 then assreg(ep5, frereg, rgrdi, rgnull);
-        if p >= 4 then assreg(ep4, frereg, rgrdi, rgnull);
-        if p >= 3 then assreg(ep3, frereg, rgrsi, rgnull);
-        if p >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
-        if p >= 1 then assreg(ep, frereg, rgrcx, rgnull);
+        if not r then begin
+          if p >= 5 then assreg(ep5, frereg, rgrdi, rgnull);
+          if p >= 4 then assreg(ep4, frereg, rgrdi, rgnull);
+          if p >= 3 then assreg(ep3, frereg, rgrsi, rgnull);
+          if p >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
+          if p >= 1 then assreg(ep, frereg, rgrcx, rgnull);
+        end;
         if p >= 1 then begin dmptrel(ep); genexp(ep) end;
         if p >= 2 then begin dmptrel(ep2); genexp(ep) end;
         if p >= 3 then begin dmptrel(ep3); genexp(ep) end;
@@ -2211,7 +2229,7 @@ procedure xlate;
       procedure pushpar(ep: expptr);
       begin
         if ep <> nil then pushpar(ep^.next);
-        assreg(ep, frereg, rgnull, rgnull); dmptrel(ep); genexp(ep);
+        assreg(ep, frereg, rgnull, rgnull); dmptrel(ep); genexp(ep); deltre(ep);
         wrtins20('pushq %r1 ', 0, 0, ep^.r1, rgnull)
       end;
 
@@ -2497,7 +2515,7 @@ procedure xlate;
           pshstk(ep)
         end;
 
-        { system calls can be terminal or non-terminal }
+        { system calls can be terminal or non-terminal (quasi-terminal?) }
 
         {csp} 
         15: begin skpspc; getname;
@@ -2511,7 +2529,6 @@ procedure xlate;
         end;
 
         { *** terminals *** }
-
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
