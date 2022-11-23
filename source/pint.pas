@@ -4453,9 +4453,7 @@ begin
                   end;
 
     4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
-    5 (*lao*): begin getq; pshadr(q) 
-;writeln;writeln('lao: q: ', q:1);
-end;
+    5 (*lao*): begin getq; pshadr(q) end;
 
     6   (*stoi*): begin popint(i); popadr(stoad);
                         if iswatch(stoad) and stopwatch then

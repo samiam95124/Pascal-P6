@@ -2192,8 +2192,6 @@ procedure xlate;
       procedure callsppar(p: integer; var sc: alfa; r: boolean);
       var si: insstr20;
       begin
-        si := 'call psystem_       ';
-        for i := 1 to maxalfa do si[13+i-1] := sc[i];
         if p >= 1 then popstk(ep);
         if p >= 2 then popstk(ep2);
         if p >= 3 then popstk(ep3);
@@ -2211,12 +2209,14 @@ procedure xlate;
         if p >= 3 then begin dmptrel(ep3); genexp(ep) end;
         if p >= 4 then begin dmptrel(ep4); genexp(ep) end;
         if p >= 5 then begin dmptrel(ep5); genexp(ep) end;
-        wrtins20(sc, 0, 0, rgnull, rgnull);
         if p >= 1 then deltre(ep);
         if p >= 2 then deltre(ep2);
         if p >= 3 then deltre(ep3);
         if p >= 4 then deltre(ep4);
         if p >= 5 then deltre(ep5);
+        si := 'call psystem_       ';
+        for i := 1 to maxalfa do si[13+i-1] := sc[i];
+        wrtins20(sc, 0, 0, rgnull, rgnull);
         if r then begin
           if ep^.r1 <> rgrax then 
             wrtins20('movq %rax,%r1       ', ep^.p, 0, ep^.r1, rgnull);
@@ -2225,12 +2225,29 @@ procedure xlate;
         end
       end;
 
-      { note: this is only applied to integer/pointer }
-      procedure pushpar(ep: expptr);
+      { evaluate and push a parameter list, right to left }
+      procedure pushpar(ep: expptr; p: integer);
       begin
-        if ep <> nil then pushpar(ep^.next);
-        assreg(ep, frereg, rgnull, rgnull); dmptrel(ep); genexp(ep); deltre(ep);
-        wrtins20('pushq %r1 ', 0, 0, ep^.r1, rgnull)
+        if (ep <> nil) and (p < 6) then pushpar(ep^.next, p+1);
+        if p > 6 then assreg(ep, frereg, rgnull, rgnull); 
+        else case p of
+          1: assreg(ep, frereg, rgdi, rgnull);
+          2: assreg(ep, frereg, rgsi, rgnull);
+          3: assreg(ep, frereg, rgdx, rgnull);
+          4: assreg(ep, frereg, rgcx, rgnull);
+          5: assreg(ep, frereg, rg8, rgnull);
+          1: assreg(ep, frereg, rg9, rgnull);
+        end;
+        dmptrel(ep); genexp(ep);
+        if ep^.r2 <> rgnull then
+          wrtins20('pushq %r1 ', 0, 0, ep^.r2, rgnull);
+        if ep^.r1 in [rgrax..rgr15] then
+          wrtins20('pushq %r1 ', 0, 0, ep^.r1, rgnull);
+        if ep^.r1 in [rgxmm0..rgxmm15] then begin
+          wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull);
+          wrtins20('movsd %r1,(%esp)    ', 0, 0, e[^.r1, rgnull)
+        end
+        deltre(ep)
       end;
 
       procedure callsp(ep: expptr);
@@ -2241,7 +2258,7 @@ procedure xlate;
           popstk(ep); popstk(ep2);
           assreg(ep, frereg, rgrsi, rgnull);
           assreg(ep2, frereg, rgrcx, rgnull);
-          pushpar(ep2^.next);
+          pushpar(ep2^.next, maxint);
           dmptrel(ep); genexp(ep); dmptrel(ep2); genexp(ep2);
           wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull);
           wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull);
@@ -2566,12 +2583,30 @@ procedure xlate;
 
         {strs} 
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep);
-          dmptre(ep); deltre(ep); botstk 
+          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
+          genexp(ep);
+          wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull);
+          wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull);
+          wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull);
+          wrtins20('movq %rax,%rdi      ', 0, 0, rgnull, rgnull);
+          wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull);
+          wrtins20('add $0,%rsp         ', setsize, 0, rgnull, rgnull);
+          deltre(ep); botstk 
         end;
 
         {cup,cuv}
-        12, 27: begin read(prd,p); labelsearch; writeln(prr,p:1) 
+        12, 27: begin read(prd,p); labelsearch; writeln(prr,p:1);
+          i = 1; pushpar(stack, 1);
+          wrtins10('movq %rsp,%rbp      ', 0, 0, rgnull, rgnull);
+          wrtins10('addq $0,%rbp        ', p+marksize, 0, rgnull, rgnull);
+          wrtins10('call .+5  ', 0, 0, rgnull, rgnull);
+          wrtins10('popq %rax ', 0, 0, rgnull, rgnull);
+          wrtins10('movq %rax,+0(%ebp)  ', markra, 0, rgnull, rgnull);
+          wrtins10('call                ', 0, 0, rgnull, rgnull);
         end;
 
         {mst}
@@ -2618,9 +2653,12 @@ procedure xlate;
           dmptre(ep); deltre(ep); botstk 
         end;
 
-        {ents,ente}
-        13, 173: begin labelsearch; writeln(prr) 
+        {ents}
+        13: begin labelsearch; writeln(prr) 
         end;
+
+        {ente}
+        173: ; { we don't do stack overflow checking in this version }
 
         {ipj}
         112: begin read(prd,p); labelsearch; writeln(prr, p:1) 

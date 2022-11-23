@@ -2,8 +2,6 @@
 *                                                                              *
 *                         TEST SUITE FOR PASCALINE                             *
 *                                                                              *
-*            Copyright (C) 2008 S. A. Moore - All rights reserved              *
-*                                                                              *
 * This program tests the extentions to ISO 7185 standard pascal that make up   *
 * Pascaline. This program attempts to use and display the results of each      *
 * feature of Pascaline. It is a "positive" test in that it should compile and  *
@@ -18,6 +16,37 @@
 * The output can also be automatically checked by comparing a known good file  *
 * to the generated file. To this end, we have regularized the output,          *
 * specifying all output field widths that are normally compiler dependent.     *
+*                                                                              *
+*                                                                              *
+* LICENSING:                                                                   *
+*                                                                              *
+* Copyright (c) 2022, Scott A. Franco                                          *
+* All rights reserved.                                                         *
+*                                                                              *
+* Redistribution and use in source and binary forms, with or without           *
+* modification, are permitted provided that the following conditions are met:  *
+*                                                                              *
+* 1. Redistributions of source code must retain the above copyright notice,    *
+*    this list of conditions and the following disclaimer.                     *
+* 2. Redistributions in binary form must reproduce the above copyright         *
+*    notice, this list of conditions and the following disclaimer in the       *
+*    documentation and/or other materials provided with the distribution.      *
+*                                                                              *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"  *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE   *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE     *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR          *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF         *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS     *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN      *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
+* POSSIBILITY OF SUCH DAMAGE.                                                  *
+*                                                                              *
+* The views and conclusions contained in the software and documentation are    *
+* those of the authors and should not be interpreted as representing official  *
+* policies, either expressed or implied, of the Pascal-P6 project.             *
 *                                                                              *
 *******************************************************************************}
 
@@ -235,7 +264,7 @@ begin
    writeln;
    writeln('                       TEST SUITE FOR PASCALINE');
    writeln;
-   write('                 Copyright (C) 2004 S. A. Moore - All rights ');
+   write('                 Copyright (C) 2022 S. A. Franco - All rights ');
    writeln('reserved');
    writeln;
    write('****************************************************************');
@@ -253,7 +282,7 @@ begin
    writeln('Maxcrd: ',  maxcrd:1);
    writeln('Maxlint: ', maxlint:1);
    writeln('Maxlcrd: ', maxlcrd:1);
-   writeln('Maxchr: ',  maxcrd:1);
+   writeln('Maxchr: ',  ord(maxchr):1);
 
    cd := maxcrd;
    x := 0;
@@ -294,7 +323,8 @@ begin
 
 *******************************************************************************}
 
-   writeln('ext1: ', $a5:1, ' s/b 165');
+! Pascaline style comment
+   writeln('ext1: ', $a5:1, ' s/b 165'); ! pascaline trailing comment
    writeln('ext2: ', &72:1, ' s/b 58');
    writeln('ext3: ', %011001:1, ' s/b ', 25:1);
    writeln('ext3: ', 123_456_:1, ' s/b ', 123456);
@@ -302,7 +332,7 @@ begin
    writeln('ext5: ', &321_732_:1, ' s/b ', 107482);
    writeln('ext6: ', %0101_0111_:1, ' s/b ', 87);
 
-   { note that these are Annex E character escapes and are optional }
+   ! note that these are Annex E character escapes and are optional
    writeln('ext7: my\'self s/b my''self');
    writeln('ext8: this\\one s/b this<slash>one');
    writeln('ext9: \101 s/b e');
@@ -358,6 +388,7 @@ begin
    write('ext14: start ');
    goto skip_over;
    write('!!! BAD !!!');
+   ! Note this also contains an extended Pascaline symbol character, '_'
    skip_over: writeln(' stop s/b start stop');
 
 {*******************************************************************************
