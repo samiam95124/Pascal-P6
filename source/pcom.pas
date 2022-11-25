@@ -740,7 +740,7 @@ var
   begin
      if (p^.klass = proc) or (p^.klass = func) then begin
         putparlst(p^.pflist); p^.pflist := nil;
-        while p^.grpnxt <> nil do begin
+        if p = p^.grppar then while p^.grpnxt <> nil do begin
           { scavenge the group list }
           p1 := p^.grpnxt; p^.grpnxt := p1^.grpnxt;
           putnam(p1) { release }
