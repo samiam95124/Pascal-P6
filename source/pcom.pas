@@ -432,6 +432,13 @@ type                                                        (*describing:*)
                   cslabs,cslabe: integer
                 end;
 
+     { tag tracking entries }
+     ttp = ^tagtrk;
+     tagtrk = record
+                ival: integer;
+                next: ttp
+              end;
+
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
      modtyp = (mtprogram, mtmodule); { type of current module }
@@ -609,6 +616,7 @@ var
     lbpcnt: integer; { label counts }
     filcnt: integer; { file tracking counts }
     cipcnt: integer; { case entry tracking counts }
+    ttpcnt: integer; { tag tracking entry counts }
 
     { serial numbers to label structure and identifier entries for dumps }
     ctpsnm: integer;
@@ -889,6 +897,20 @@ var
   begin
      dispose(p); { release entry }
      cipcnt := cipcnt-1 { count entry }
+  end;
+
+  { get tag tracking entry }
+  procedure gettag(var p: ttp);
+  begin
+     new(p); { get new entry }
+     ttpcnt := ttpcnt+1 { count entry }
+  end;
+
+  { recycle tag tracking entry }
+  procedure puttag(p: ttp);
+  begin
+     dispose(p); { release entry }
+     ttpcnt := ttpcnt-1 { count entry }
   end;
 
   { get copyback buffer }
@@ -1495,7 +1517,7 @@ end;
     197: write('Var parameter cannot be packed');
     198: write('Var parameter cannot be a tagfield');
     199: write('Var parameter must be same type');
-    200: write('Cannot threaten view parameter');
+    200: write('Tagfield constants must cover entire tagfield type');
     201: write('Error in real constant: digit expected');
     202: write('String constant must not exceed source line');
     203: write('Integer constant exceeds range');
@@ -1589,6 +1611,7 @@ end;
     287: write('Variable reference is not addressable');
     288: write('Left side of assignment overload operator must be out mode');
     289: write('Var parameter must be compatible with parameter');
+    290: write('Cannot threaten view parameter');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -4251,7 +4274,7 @@ end;
       if threaten and (lcp^.klass = vars) then with lcp^ do begin
         if vlev < level then threat := true;
         if forcnt > 0 then error(195);
-        if part = ptview then error(200)
+        if part = ptview then error(290)
       end;
       selector(fsys,lcp, false);
       if gattr.kind = expr then error(287)
@@ -5533,7 +5556,7 @@ end;
                             if threaten and (lcp^.klass = vars) then with lcp^ do begin
                               if vlev < level then threat := true;
                               if forcnt > 0 then error(195);
-                              if part = ptview then error(200)
+                              if part = ptview then error(290)
                             end;
                             if gattr.typtr<>nil then(*elim.subr.types to*)
                               with gattr,typtr^ do(*simplify later tests*)
@@ -6118,7 +6141,23 @@ end;
         var lcp,lcp1,lcp2,nxt,nxt1: ctp; lsp,lsp1,lsp2,lsp3,lsp4: stp;
             minsize,maxsize,lsize: addrrange; lvalu,rvalu: valu;
             test: boolean; mm: boolean; varlnm, varcn, varcmx: varinx;
-            varcof: boolean;
+            varcof: boolean; tagp,tagl: ttp; mint, maxt: integer; ferr: boolean;
+        procedure ordertag(var tp: ttp);
+          var lp, p, p2, p3: ttp;
+        begin
+          if tp <> nil then begin
+            lp := tp; tp := tp^.next; lp^.next := nil;
+            while tp <> nil do begin
+              p := tp;  tp := tp^.next; p^.next := nil; p2 := lp; p3 := nil;
+              while (p^.ival > p2^.ival) and (p2^.next <> nil) do
+                begin p3 := p2; p2 := p2^.next end;
+              if p^.ival > p2^.ival then p2^.next := p
+              else if p3 = nil then begin p^.next := lp; lp := p end
+              else begin p^.next := p3^.next; p3^.next := p end
+            end
+          end;
+          tp := lp
+        end;
       begin nxt1 := nil; lsp := nil; fstlab := nil;
         if not (sy in (fsys+[ident,casesy])) then
           begin error(19); skip(fsys + [ident,casesy]) end;
@@ -6222,10 +6261,19 @@ end;
             lsp^.size := displ;
             if sy = ofsy then insymbol else error(8);
             lsp1 := nil; minsize := displ; maxsize := displ;
+            tagl := nil;
+            mint := -maxint; maxt := maxint;
+            if lsp^.tagfieldp <> nil then
+              if lsp^.tagfieldp^.idtype <> nil then begin
+              getbounds(lsp^.tagfieldp^.idtype, mint, maxt);
+              if maxt-mint+1 > varmax then error(239)
+            end;
             repeat lsp2 := nil;
               if not (sy in fsys + [semicolon]) then
               begin
                 repeat constexpr(fsys + [comma,colon,lparent,range],lsp3,lvalu);
+                  gettag(tagp); tagp^.ival := lvalu.ival; tagp^.next := tagl;
+                  tagl := tagp;
                   rvalu := lvalu; lsp4 := lsp3; if sy = range then begin chkstd;
                     insymbol; constexpr(fsys + [comma,colon,lparent],lsp4,rvalu)
                   end;
@@ -6306,7 +6354,18 @@ end;
                   write(prr, ' ', lsp^.vart^[varcn]:1);
                 writeln(prr)
               end
-            end
+            end;
+            if lsp^.tagfieldp <> nil then begin
+              ordertag(tagl);
+              tagp := tagl; ferr := false;
+              while (tagp <> nil) and (mint <= maxt) and not ferr do begin
+                if tagp^.ival <> mint then begin error(200); ferr := true end
+                else begin mint := mint+1; tagp := tagp^.next end
+              end;
+              if (mint <= maxt) and not ferr then error(200)
+            end;
+            while tagl <> nil do
+              begin tagp := tagl; tagl := tagl^.next; puttag(tagp) end
           end
         else frecvar := nil
       end (*fieldlist*) ;
@@ -7590,7 +7649,7 @@ end;
             else if fcp^.klass = vars then with fcp^ do begin
                if vlev < level then threat := true;
                if forcnt > 0 then error(195);
-               if part = ptview then error(200)
+               if part = ptview then error(290)
             end;
             tagasc := false;
             if gattr.kind = varbl then tagasc := gattr.tagfield and debug;
@@ -7955,7 +8014,7 @@ end;
             with lcp^, lattr do
               begin typtr := idtype; kind := varbl; packing := false;
                 if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
-                if part = ptview then error(200);
+                if part = ptview then error(290);
                 if vkind = actual then
                   begin access := drct; vlevel := vlev;
                     if vlev <> level then error(183);
@@ -8125,7 +8184,7 @@ end;
               with lcp^, lattr do
                 begin typtr := idtype; kind := varbl; packing := false;
                   if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
-                  if part = ptview then error(200);
+                  if part = ptview then error(290);
                   if vkind = actual then
                     begin access := drct; vlevel := vlev;
                       if vlev <> level then error(183);
@@ -9148,6 +9207,7 @@ end;
     lbpcnt := 0; { label counts }
     filcnt := 0; { file tracking counts }
     cipcnt := 0; { case entry tracking counts }
+    ttpcnt := 0; { tag tracking entry counts }
 
     { clear id counts }
     ctpsnm := 0;
@@ -9658,6 +9718,7 @@ begin
     writeln('label counts:               ', lbpcnt:1);
     writeln('file tracking counts:       ', filcnt:1);
     writeln('case entry tracking counts: ', cipcnt:1);
+    writeln('tag entry tracking counts:  ', ttpcnt:1);
     writeln;
 
   end;
@@ -9687,6 +9748,9 @@ begin
              filcnt:1);
   if cipcnt <> 0 then
      writeln('*** Error: Compiler internal error: case recycle balance: ',
+             cipcnt:1);
+  if ttpcnt <> 0 then
+     writeln('*** Error: Compiler internal error: tag recycle balance: ',
              cipcnt:1);
 
   99:
