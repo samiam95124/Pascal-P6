@@ -3704,18 +3704,15 @@ begin (*callsp*)
                       (*top of stack gives the length in units of storage *)
                             popadr(ad1); putadr(ad1, ad)
                       end;
-           39 (*nwl*): begin popadr(ad1); popint(i); { size of record, size of f const list }
+           39 (*nwl*): begin popadr(ad1); popint(i);
                             l := 0; if (i = 0) and donorecpar then l := 1;
-                            { alloc record, size of list, number in list }
                             newspc(ad1+(i+l+1)*intsize, ad);
                             ad1 := ad+(i+l)*intsize; putint(ad1, i+adrsize+1);
-                            k := i; { save n tags for later }
+                            k := i;
                             while k > 0 do
                               begin ad1 := ad1-intsize; popint(j);
                                     putint(ad1, j); k := k-1
                               end;
-                            { get pointer to dest var, place base above taglist and
-                              list of fixed consts }
                             popadr(ad1); putadr(ad1, ad+(i+l+1)*intsize)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
@@ -4967,25 +4964,16 @@ begin
                    pshadr(ad2); pshadr(ad1);
                  end;
 
-                      { off  lvl    lvt    new tag    tag addr }
     191 (*cta*): begin getq; getq1; getq2; popint(i); popadr(ad); pshadr(ad);
-                                  { start of record = ad-q, then -intsize is
-                                    size of tag template on stack. Get to ad1 }
                        pshint(i); ad := ad-q-intsize; ad1 := getadr(ad);
-                       { this would mean allocation is not valid in our
-                         malloc() system }
                        if ad1 < intsize then
                          errorv(SystemError);
-                       { remove system bias we put in to diambiguate }
                        ad1 := ad1-adrsize-1;
                        if ad1 >= q1 then begin
-                         { go to start of tagfield constant list */
                          ad := ad-ad1*intsize;
-                         { check new tagfield is < 0 or more than lvn }
                          if (i < 0) or (i >= getint(q2)) then
                            errorv(ValueOutOfRange);
-                         { compare lvns }
-                         if getadr(ad+(q1-1)*intsize) <>
+                         if getadr(ad+(q1-1)*intsize) <> 
                             getint(q2+(i+1)*intsize) then
                            errorv(ChangeToAllocatedTagfield);
                        end
