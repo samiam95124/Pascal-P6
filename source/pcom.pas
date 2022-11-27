@@ -600,7 +600,7 @@ var
 
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
-    errtbl: array [1..maxftl] of boolean; { error occurence tracking }
+    errtbl: array [1..maxftl] of integer; { error occurence tracking }
     toterr: integer; { total errors in program }
     topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -1354,60 +1354,6 @@ end;
   begin
     if incstk <> nil then bufinp := incstk^.f^ else bufinp := prd^
   end;
-  { --- }
-
-  procedure endofline;
-    var lastpos,freepos,currpos,currnmr,f,k: integer;
-  begin
-    if errinx > 0 then   (*output error messages*)
-      begin write(linecount:6,' ****  ':9);
-        lastpos := -1; freepos := 1;
-        for k := 1 to errinx do
-          begin
-            with errlist[k] do
-              begin currpos := pos; currnmr := nmr end;
-            if currpos = lastpos then write(',')
-            else
-              begin
-                while freepos < currpos do
-                  begin write(' '); freepos := freepos + 1 end;
-                write('^');
-                lastpos := currpos
-              end;
-            if currnmr < 10 then f := 1
-            else if currnmr < 100 then f := 2
-              else f := 3;
-            write(currnmr:f);
-            freepos := freepos + f + 1
-          end;
-        writeln(output); errinx := 0
-      end;
-    linecount := linecount + 1;
-    if list and (not eofinp) then
-      begin write(linecount:6,'  ':2);
-        if dp then write(lc:7) else write(ic:7);
-        write(' ')
-      end;
-    chcnt := 0
-  end  (*endofline*) ;
-
-  { output lines passed to intermediate }
-  procedure outline;
-  begin
-    while lineout < linecount do begin
-      lineout := lineout+1;
-      { output line marker in intermediate file }
-      if not eofinp then begin
-        writeln(prr, ':', lineout:1);
-      end
-    end
-  end;
-
-  { check in private section }
-  function inpriv: boolean;
-  begin inpriv := false;
-    if incstk <> nil then inpriv := incstk^.priv
-  end;
 
   procedure errmsg(ferrnr: integer);
   begin case ferrnr of
@@ -1667,6 +1613,65 @@ end;
     end
   end;
 
+  procedure endofline;
+    var lastpos,freepos,currpos,currnmr,f,k: integer;
+  begin
+    if errinx > 0 then   (*output error messages*)
+      begin write(linecount:6,' ****  ':9);
+        lastpos := -1; freepos := 1;
+        for k := 1 to errinx do
+          begin
+            with errlist[k] do
+              begin currpos := pos; currnmr := nmr end;
+            if currpos = lastpos then write(',')
+            else
+              begin
+                while freepos < currpos do
+                  begin write(' '); freepos := freepos + 1 end;
+                write('^');
+                lastpos := currpos
+              end;
+            if currnmr < 10 then f := 1
+            else if currnmr < 100 then f := 2
+              else f := 3;
+            write(currnmr:f);
+            freepos := freepos + f + 1
+          end;
+        writeln; 
+        write(linecount:6,' ****  ':9);
+        for k := 1 to errinx do 
+          begin write(errlist[k].nmr:3, ' '); errmsg(errlist[k].nmr);
+                if k < errinx then write(', ') end;
+        writeln;
+        errinx := 0;
+      end;
+    linecount := linecount + 1;
+    if list and (not eofinp) then
+      begin write(linecount:6,'  ':2);
+        if dp then write(lc:7) else write(ic:7);
+        write(' ')
+      end;
+    chcnt := 0
+  end  (*endofline*) ;
+
+  { output lines passed to intermediate }
+  procedure outline;
+  begin
+    while lineout < linecount do begin
+      lineout := lineout+1;
+      { output line marker in intermediate file }
+      if not eofinp then begin
+        writeln(prr, ':', lineout:1);
+      end
+    end
+  end;
+
+  { check in private section }
+  function inpriv: boolean;
+  begin inpriv := false;
+    if incstk <> nil then inpriv := incstk^.priv
+  end;
+
   procedure error(ferrnr: integer);
   begin
     if incstk = nil then begin { supress errors in includes }
@@ -1678,7 +1683,7 @@ end;
       writeln; writeln('error: ', ferrnr:1);
 #endif
 
-      errtbl[ferrnr] := true; { track this error }
+      errtbl[ferrnr] := errtbl[ferrnr]+1; { track this error }
       if errinx >= 9 then
         begin errlist[10].nmr := 255; errinx := 10 end
       else
@@ -9241,7 +9246,7 @@ end;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
 
-    for i := 1 to maxftl do errtbl[i] := false; { initialize error tracking }
+    for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
     toterr := 0; { clear error count }
     { clear the recycling tracking counters }
     strcnt := 0; { strings }
@@ -9742,14 +9747,14 @@ begin
   writeln('Errors in program: ', toterr:1);
   { output error report as required }
   f := true;
-  for i := 1 to maxftl do if errtbl[i] then begin
+  for i := 1 to maxftl do if errtbl[i] > 0 then begin
     if f then begin
       writeln;
       writeln('Error numbers in listing:');
       writeln('-------------------------');
       f := false
     end;
-    write(i:3, '  '); errmsg(i); writeln
+    write(i:3, ' ', errtbl[i]:3, ' '); errmsg(i); writeln
   end;
   if not f then writeln;
 
