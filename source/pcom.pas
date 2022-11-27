@@ -185,7 +185,7 @@ const
    parmal     = stackal;
    parmsize   = stackelsize;
    recal      = stackal;
-   maxaddr    =  pmmaxint;
+   maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
    maxins     = 120;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
@@ -9545,7 +9545,8 @@ end;
       cdx[112] := 0;                    cdx[113] := +ptrsize;
       cdx[114] := -adrsize;             cdx[115] := 0;
       cdx[116] := 0;                    cdx[117] := 0;
-      cdx[118] := -adrsize;
+      cdx[118] := -adrsize;             cdx[119] := 0;
+      cdx[120] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
