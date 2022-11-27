@@ -14,8 +14,8 @@
 #
 # The flags are one of:
 #
-# --pmach	  Generate mach code and run the result through pmach.
-# --cmach	  Generate mach code and run the result through cmach.
+# --pmach	Generate mach code and run the result through pmach.
+# --cmach	Generate mach code and run the result through cmach.
 # --package Generate a packaged application and run.
 #
 # The intermediate code is placed in <file>.p6.
@@ -60,6 +60,7 @@ do
 		echo
 		echo "--pmach	Generate mach code and run the result through pmach."
 		echo "--cmach	Generate mach code and run the result through cmach."
+        echo "--package Generate a packaged application and run."
 		echo
 		echo "The intermediate code is placed in <file>.p6."
 		echo

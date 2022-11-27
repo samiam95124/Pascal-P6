@@ -394,7 +394,9 @@ const
       VarReferencedFileBufferModified    = 115;
       ContainerMismatch                  = 116;
       InvalidContainerLevel              = 117;
-      privexceptiontop                   = 117;
+      DisposeOfWithReferencedBlock       = 118;
+      WithBaseListEmpty                  = 119;
+      privexceptiontop                   = 119;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -517,6 +519,12 @@ type
       varblk       = record
                        next: varptr; { next entry }
                        s, e: address { start and end address of block }
+                     end;
+      { with reference block }
+      wthptr       = ^wthblk;
+      wthblk       = record
+                       next: wthptr; { next entry }
+                       b: address    { address of block }
                      end;
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
 
@@ -643,6 +651,9 @@ var   pc          : address;   (*program address register*)
       curmod      : pblock; { currently active block }
       varlst      : varptr; { active var block pushdown stack }
       varfre      : varptr; { free var block entries }
+      wthlst      : wthptr; { active with block pushdown stack }
+      wthcnt      : integer; { number of outstanding with levels }
+      wthfre      : wthptr; { free with block entries }
       extvecs     : integer; { number of external vectors }
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
@@ -868,6 +879,8 @@ begin writeln; write('*** Runtime error');
     VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
     ContainerMismatch:                  writeln('Container length(s) do not match');
     InvalidContainerLevel:              writeln('InvalidContainerLevel');
+    DisposeOfWithReferencedBlock:       writeln('Dispose of with referenced block');
+    WithBaseListEmpty:                  writeln('With base list empty');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -2051,6 +2064,8 @@ procedure load;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
          instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
          instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
+         instr[243]:='wbs       '; insp[243] := false; insq[243] := intsize;
+         instr[244]:='wbe       '; insp[244] := false; insq[244] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2947,10 +2962,11 @@ procedure load;
           { eof,adi,adr,sbi,sbr,sgs,flt,flo,trc,ngi,ngr,sqi,sqr,abi,abr,notb,
             noti,and,ior,xor,dif,int,uni,inn,mod,odd,mpi,mpr,dvi,dvr,chr,
             rnd,rgs,fbv,fvb,ede,mse,lcp,equv,neqv,lesv,grtv,leqv,geqv,vdp,spc,
-            ccs,scp,ldp,vdd }
+            ccs,scp,ldp,vdd,wbs,wbe }
           28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
           48,49,50,51,52,53,54,60,62,110,
           205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
+          243,244,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
           181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
@@ -3040,6 +3056,34 @@ begin
   end;
 
   varlap := f
+end;
+
+procedure withenter(b: address);
+var wp: wthptr;
+begin
+  if wthfre <> nil then begin wp := wthfre; wthfre := wp^.next end
+  else new(wp);
+  wp^.b := b; wp^.next := wthlst; wthlst := wp;
+  wthcnt := wthcnt+1
+end;
+
+procedure withexit;
+var wp: wthptr;
+begin
+  if wthlst = nil then errorv(WithBaseListEmpty);
+  wp := wthlst; wthlst := wp^.next; wp^.next := wthfre; wthfre := wp;
+  wthcnt := wthcnt-1
+end;
+
+function withsch(b: address): boolean;
+var wp: wthptr; f: boolean;
+begin
+  wp := wthlst; f := false;
+  while (wp <> nil) and not f do begin
+    f := wp^.b = b;
+    wp := wp^.next
+  end;
+  withsch := f
 end;
 
 function base(ld :integer):address;
@@ -3958,6 +4002,8 @@ begin (*callsp*)
                            popadr(ad1); popadr(ad);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
+                           if withsch(ad) then
+                             errorv(DisposeOfWithReferencedBlock);
                            dspspc(ad1, ad)
                       end;
            40(*dsl*): begin
@@ -3986,6 +4032,8 @@ begin (*callsp*)
                            ad := ad-(l*intsize); ad1 := ad1+(l*intsize);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
+                           if withsch(ad) then
+                             errorv(DisposeOfWithReferencedBlock);
                            dspspc(ad1, ad);
                            while i > 0 do begin popint(j); i := i-1 end;
                            popadr(ad);
@@ -4985,6 +5033,9 @@ begin
                       end
                 end;
 
+    243 (*wbs*): begin popadr(ad); pshadr(ad); withenter(ad) end;
+    244 (*wbe*): withexit;
+
     174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin);
                         if dosrcprf then begin setcur;
                           if curmod <> nil then
@@ -5143,7 +5194,7 @@ begin
                   end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 243, 244, 245, 246, 247, 248, 249, 250,
+    228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250,
     251, 252, 253, 254, 255: errorv(InvalidInstruction)
 
   end
@@ -7164,6 +7215,9 @@ begin (* main *)
   curmod := nil; { set no module active }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
+  wthlst := nil; { set no with block entries }
+  wthcnt := 0;
+  wthfre := nil;
   exitcode:= 0; { clear program exit code }
   { endian flip status is set if the host processor and the target disagree on
     endian mode }

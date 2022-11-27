@@ -187,7 +187,7 @@ const
    recal      = stackal;
    maxaddr    =  pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 118;  { maximum number of instructions }
+   maxins     = 120;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -439,6 +439,12 @@ type                                                        (*describing:*)
                 next: ttp
               end;
 
+     { 'with' tracking entries }
+     wtp = ^wthtrk;
+     wthtrk = record next: wtp;
+                 sl: integer
+              end;
+
      stdrng = 1..maxstd; { range of standard name entries }
      oprange = 0..maxins;
      modtyp = (mtprogram, mtmodule); { type of current module }
@@ -540,6 +546,7 @@ var
     listptr,commandptr: ctp;        { pointers to default files }
     usclrptr: ctp;                  { used to satisfy broken record tag fields }
     fextfilep: extfilep;            (*head of chain of external files*)
+    wthstk: wtp;                    { stack of with entries active }
 
                                     (*bookkeeping of declaration levels:*)
                                     (************************************)
@@ -617,6 +624,7 @@ var
     filcnt: integer; { file tracking counts }
     cipcnt: integer; { case entry tracking counts }
     ttpcnt: integer; { tag tracking entry counts }
+    wtpcnt: integer; { with tracking entry counts }
 
     { serial numbers to label structure and identifier entries for dumps }
     ctpsnm: integer;
@@ -911,6 +919,32 @@ var
   begin
      dispose(p); { release entry }
      ttpcnt := ttpcnt-1 { count entry }
+  end;
+
+  { push to with stack }
+  procedure pshwth(sl: integer);
+  var p: wtp;
+  begin
+    new(p); { get a new entry }
+    p^.next := wthstk; { push to stack }
+    wthstk := p;
+    p^.sl := sl; { mark level }
+    wtpcnt := wtpcnt+1 { count entry }
+  end;
+
+  { pop from with stack }
+  procedure popwth;
+  var p: wtp;
+  begin
+    if wthstk = nil then begin
+      writeln; writeln('*** Compiler error: with stack underflow');
+      goto 99
+    end else begin
+      p := wthstk;
+      wthstk := p^.next;
+      dispose(p);
+      wtpcnt := wtpcnt-1
+    end
   end;
 
   { get copyback buffer }
@@ -7737,7 +7771,7 @@ end;
 
       procedure gotostatement;
         var llp: lbp; ttop,ttop1: disprange;
-
+            wp: wtp;
       begin
         if (sy = intconst) or (sy = ident) then
           begin
@@ -7758,6 +7792,12 @@ end;
                                   statement }
                 { establish the minimum statement level a goto appeared at }
                 if minlvl > stalvl then minlvl := stalvl;
+                { remove any with statement levels to target }
+                wp := wthstk;
+                while wp <> nil do begin
+                  if wp^.sl <> slevel then gen0(85(*wbe*));
+                  wp := wp^.next
+                end;
                 if ttop = ttop1 then
                   genujpxjpcal(57(*ujp*),labname)
                 else begin { interprocedural goto }
@@ -8104,7 +8144,8 @@ end;
       procedure withstatement;
         var lcp: ctp; lcnt1: disprange; llc: addrrange;
             test: boolean;
-      begin lcnt1 := 0; llc := lc;
+            wbscnt: integer;
+      begin lcnt1 := 0; llc := lc; wbscnt := 0;
         repeat
           if sy = ident then
             begin searchid([vars,field],lcp); insymbol end
@@ -8128,6 +8169,8 @@ end;
                       end
                   else
                     begin loadaddress;
+                      if debug and gattr.ptrref then
+                        begin gen0(119(*wbs*)); wbscnt := wbscnt+1; pshwth(stalvl) end;
                       alignd(nilptr,lc);
                       lc := lc-ptrsize;
                       gen2t(56(*str*),0,lc,nilptr);
@@ -8145,6 +8188,7 @@ end;
         addlvl;
         statement(fsys);
         sublvl;
+          while wbscnt > 0 do begin gen0(120(*wbe*)); wbscnt := wbscnt-1; popwth end;
         { purge display levels }
         while lcnt1 > 0 do begin
            { don't recycle the record context }
@@ -9188,7 +9232,7 @@ end;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option['i'] := false;
     dp := true; errinx := 0;
-    intlabel := 0; kk := maxids; fextfilep := nil;
+    intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     lc := lcaftermarkstack; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0;
@@ -9208,6 +9252,7 @@ end;
     filcnt := 0; { file tracking counts }
     cipcnt := 0; { case entry tracking counts }
     ttpcnt := 0; { tag tracking entry counts }
+    wtpcnt := 0; { with tracking entry counts }
 
     { clear id counts }
     ctpsnm := 0;
@@ -9367,7 +9412,8 @@ end;
       mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp';
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp';
       mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
-      mn[116] :=' cpp'; mn[117] :=' cpr'; mn[118] :=' lsa';
+      mn[116] :=' cpp'; mn[117] :=' cpr'; mn[118] :=' lsa'; mn[119] :=' wbs';
+      mn[120] :=' wbe';
 
     end (*instrmnemonics*) ;
 
@@ -9719,6 +9765,7 @@ begin
     writeln('file tracking counts:       ', filcnt:1);
     writeln('case entry tracking counts: ', cipcnt:1);
     writeln('tag entry tracking counts:  ', ttpcnt:1);
+    writeln('with entry tracking counts: ', wtpcnt:1);
     writeln;
 
   end;
@@ -9752,6 +9799,9 @@ begin
   if ttpcnt <> 0 then
      writeln('*** Error: Compiler internal error: tag recycle balance: ',
              cipcnt:1);
+  if wtpcnt <> 0 then
+     writeln('*** Error: Compiler internal error: with recycle balance: ',
+             wtpcnt:1);
 
   99:
 

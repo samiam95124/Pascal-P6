@@ -11,9 +11,9 @@ pint run
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
+123 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
-0 p2/roman.dif
+16 p2/roman.dif
 0 p4/standardp.dif
 pmach run
 0 sample_programs/hello.dif
@@ -21,42 +21,3 @@ pmach run
 0 sample_programs/match.dif
 0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-cmach run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-0 p2/roman.dif
-0 p4/standardp.dif
-Tue 08 Nov 2022 11:05:52 PM PST
-Source files
-4960b4debfc0b7894229bd846297806f  -
-batch files
-0127c66ea89a27450647232b11846bdf  -
-P2 files
-b4ab36c71cbae7b3115c05f1c68c70b1  -
-p4 files
-e0a677c6cae597855a80c25483229e0b  -
-Sample program test files
-c17b6d54c521ff188ad269190416bd9d  -
-standard test files
-ebb95499bc364ac8397865db233c1196  -
-other files
-886793351bc73cd25b5c7e9189dfff72  -
