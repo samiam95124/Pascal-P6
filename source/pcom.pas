@@ -193,7 +193,7 @@ const
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    maxopt     = 26;   { number of options }
-   optlen     = 5;    { maximum length of option words }
+   optlen     = 10;   { maximum length of option words }
    explen     = 32;   { length of exception names }
    maxrld     = 22;   { maximum length of real in digit form }
    varsqt     = 10;   { variable string quanta }
@@ -521,14 +521,18 @@ var
     { -- f: perform source level debugging }
     { -- m: break heap returned blocks as occupied }
     { -- h: add source line sets to code }
-    { -- j: trace source line executions (requires dosrclin) }
-    { -- k: dump heap space after execution }
     { -- n: obey heap space recycle requests }
     { -- p: check reuse of freed entry }
     { -- q: check undefined accesses }
     { -- w: enter debugger on run }
     { -- a: enter debugger on fault }
     { -- e: output P-machine code deck and stop }
+
+    { unused options }
+
+    { -- j }
+    { -- k }
+    { -- z }
 
     option: array [1..maxopt] of    { option array }
               boolean;
@@ -597,6 +601,7 @@ var
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     opts: array [1..maxopt] of optstr;
+    optsl: array [1..maxopt] of optstr;
     cdx: array [0..maxins] of integer;
     cdxs: array [1..6, 1..8] of integer;
     pdx: array [1..maxsp] of integer;
@@ -1801,15 +1806,16 @@ end;
     begin { options() }
       nextch;
       repeat
-        oni := 1; optst := '     ';
+        oni := 1; optst := '          ';
         repeat ch1 := lcase(ch); 
           if optst[oni] = ' ' then optst[oni] := ch1; 
           if oni < optlen then oni := oni+1;
           nextch
         until not (ch in ['a'..'z', '0'..'9', '_']);
         oi := 1;
-        while (oi < maxopt) and (optst <> opts[oi]) do oi := oi+1;
-        if optst = opts[oi] then case oi of
+        while (oi < maxopt) and (optst <> opts[oi]) and (optst <> optsl[oi]) do
+          oi := oi+1;
+        if (optst = opts[oi]) or (optst = optsl[oi]) then case oi of
           1:  switch(dummy);
           2:  switch(doprtlab);
           3:  switch(prcode);
@@ -9515,32 +9521,61 @@ end;
 
     procedure initoptions;
     begin
-      opts[1]  := 'a    ';
-      opts[2]  := 'b     ';
-      opts[3]  := 'c     ';
-      opts[4]  := 'd     ';
-      opts[5]  := 'e     ';
-      opts[6]  := 'f     ';
-      opts[7]  := 'g     ';
-      opts[8]  := 'h     ';
-      opts[9]  := 'i     ';
-      opts[10] := 'j     ';
-      opts[11] := 'k     ';
-      opts[12] := 'l     ';
-      opts[13] := 'm     ';
-      opts[14] := 'n     ';
-      opts[15] := 'o     ';
-      opts[16] := 'p     ';
-      opts[17] := 'q     ';
-      opts[18] := 'r     ';
-      opts[19] := 's     ';
-      opts[20] := 't     ';
-      opts[21] := 'u     ';
-      opts[22] := 'v     ';
-      opts[23] := 'w     ';
-      opts[24] := 'x     ';
-      opts[25] := 'y     ';
-      opts[26] := 'z     ';
+
+
+      opts[1]  := 'a         ';
+      opts[2]  := 'b         ';
+      opts[3]  := 'c         ';
+      opts[4]  := 'd         ';
+      opts[5]  := 'e         ';
+      opts[6]  := 'f         ';
+      opts[7]  := 'g         ';
+      opts[8]  := 'h         ';
+      opts[9]  := 'i         ';
+      opts[10] := 'j         ';
+      opts[11] := 'k         ';
+      opts[12] := 'l         ';
+      opts[13] := 'm         ';
+      opts[14] := 'n         ';
+      opts[15] := 'o         ';
+      opts[16] := 'p         ';
+      opts[17] := 'q         ';
+      opts[18] := 'r         ';
+      opts[19] := 's         ';
+      opts[20] := 't         ';
+      opts[21] := 'u         ';
+      opts[22] := 'v         ';
+      opts[23] := 'w         ';
+      opts[24] := 'x         ';
+      opts[25] := 'y         ';
+      opts[26] := 'z         ';
+
+      optsl[1]  := 'debugflt ';
+      optsl[2]  := 'prtlab    ';
+      optsl[3]  := 'lstcod    ';
+      optsl[4]  := 'chkdebug  ';
+      optsl[5]  := 'machdeck  ';
+      optsl[6]  := 'debugsrc  ';
+      optsl[7]  := 'prtlabdef ';
+      optsl[8]  := 'sourceset ';
+      optsl[9]  := 'varblk    ';
+      optsl[10] := '          ';
+      optsl[11] := '          ';
+      optsl[12] := 'list      ';
+      optsl[13] := 'breakheap ';
+      optsl[14] := 'recycle   ';
+      optsl[15] := 'chkoverflo';
+      optsl[16] := 'chkreuse  ';
+      optsl[17] := 'chkundef  ';
+      optsl[18] := 'reference ';
+      optsl[19] := 'standard  ';
+      optsl[20] := 'prttables ';
+      optsl[21] := 'undeftag  ';
+      optsl[22] := 'chkvar    ';
+      optsl[23] := 'debugrun  ';
+      optsl[24] := 'prtlex    ';
+      optsl[25] := 'prtdisplay';
+      optsl[26] := '          ';
     end;
 
     procedure initdx;
