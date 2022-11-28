@@ -192,6 +192,8 @@ const
    maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
+   maxopt     = 26;   { number of options }
+   optlen     = 5;    { maximum length of option words }
    explen     = 32;   { length of exception names }
    maxrld     = 22;   { maximum length of real in digit form }
    varsqt     = 10;   { variable string quanta }
@@ -321,6 +323,8 @@ type                                                        (*describing:*)
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
      restr = packed array [1..reslen] of char;
+     optinx = 1..optlen;
+     optstr = packed array [optinx] of char;
      expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
@@ -526,9 +530,8 @@ var
     { -- a: enter debugger on fault }
     { -- e: output P-machine code deck and stop }
 
-    option: array ['a'..'z'] of     { option array }
+    option: array [1..maxopt] of    { option array }
               boolean;
-
 
                                     (*pointers:*)
                                     (***********)
@@ -593,6 +596,7 @@ var
     na:  array [stdrng] of restr;
     mn:  array [0..maxins] of packed array [1..4] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
+    opts: array [1..maxopt] of optstr;
     cdx: array [0..maxins] of integer;
     cdxs: array [1..6, 1..8] of integer;
     pdx: array [1..maxsp] of integer;
@@ -632,7 +636,7 @@ var
 
     f: boolean; { flag for if error number list entries were printed }
     i: 1..maxftl; { index for error number tracking array }
-    c: char;
+    oi: 1..maxopt; oni: optinx;
 
 (*-------------------------------------------------------------------------*)
 
@@ -1773,43 +1777,67 @@ end;
     procedure options;
     var
       ch1 : char; dummy: boolean;
-      procedure switch(var opt: boolean );
+      optst: optstr; oni: optinx; oi: 1..maxopt;
+      procedure switch(var opt: boolean);
+      var oni: optinx;
       begin
         nextch;
         if (ch='+') or (ch='-') then begin
           opt := ch = '+';
-          option[ch1] := opt;
-          writeln(prr, 'o ', ch1, ch);
+          option[oi] := opt;
+          write(prr, 'o ');
+          for oni :=  1 to optlen do 
+            if optst[oni] <> ' ' then write(prr, optst[oni]);
+          writeln(prr, ch);
           nextch;
         end else begin { just default to on }
           opt := true;
-          option[ch1] := true;
-          writeln(prr, 'o ', ch1, '+')
+          option[oi] := true;
+          write(prr, 'o ');
+          for oni :=  1 to optlen do 
+            if optst[oni] <> ' ' then write(prr, optst[oni]);
+          writeln(prr, '+')
         end
       end; { switch() }
     begin { options() }
+      nextch;
       repeat
-        nextch;
-        ch1 := lcase(ch);
-        if ch1 = 't' then switch(prtables)
-        else if ch1 = 'l' then begin
-          switch(list);
-          if not list then writeln(output)
-        end
-        else if ch1 = 'd' then switch(debug)
-        else if ch1 = 'c' then switch(prcode)
-        else if ch1 = 'v' then switch(chkvar)
-        else if ch1 = 'r' then switch(chkref)
-        else if ch1 = 'u' then switch(chkudtc)
-        else if ch1 = 's' then switch(iso7185)
-        else if ch1 = 'x' then switch(dodmplex)
-        else if ch1 = 'z' then switch(doprtryc)
-        else if ch1 = 'b' then switch(doprtlab)
-        else if ch1 = 'y' then switch(dodmpdsp)
-        else if ch1 = 'i' then switch(chkvbk)
-        else if ch1 in ['a'..'z'] then
-          switch(dummy) { pass through unknown options }
-        else begin
+        oni := 1; optst := '     ';
+        repeat ch1 := lcase(ch); 
+          if optst[oni] = ' ' then optst[oni] := ch1; 
+          if oni < optlen then oni := oni+1;
+          nextch
+        until not (ch in ['a'..'z', '0'..'9', '_']);
+        oi := 1;
+        while (oi < maxopt) and (optst <> opts[oi]) do oi := oi+1;
+        if optst = opts[oi] then case oi of
+          1:  switch(dummy);
+          2:  switch(doprtlab);
+          3:  switch(prcode);
+          4:  switch(debug);
+          5:  switch(dummy);
+          6:  switch(dummy);
+          7:  switch(dummy);
+          8:  switch(dummy);
+          9:  switch(chkvbk);
+          10: switch(dummy);
+          11: switch(dummy);
+          12: begin switch(list); if not list then writeln(output) end;
+          13: switch(dummy);
+          14: switch(dummy);
+          15: switch(dummy);
+          16: switch(dummy);
+          17: switch(dummy);
+          18: switch(chkref);
+          19: switch(iso7185);
+          20: switch(prtables);
+          21: switch(chkudtc);
+          22: switch(chkvar);
+          23: switch(dummy);
+          24: switch(dodmplex);
+          25: switch(dodmpdsp);
+          26: switch(dummy);
+        end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
             nextch;
@@ -9228,14 +9256,14 @@ end;
   end (*exitundecl*) ;
 
   procedure initscalars;
-  var i: integer; c: char;
-  begin fwptr := nil; for c := 'a' to 'z' do option[c] := false;
-    prtables := false; option['t'] := false; list := true; option['l'] := true;
-    prcode := true; option['c'] := true; debug := true; option['d'] := true;
-    chkvar := true; option['v'] := true; chkref := true; option['r'] := true;
-    chkudtc := false; option['u'] := false; option['s'] := false; iso7185 := false;
+  var i: integer; oi: 1..maxopt;
+  begin fwptr := nil; for oi := 1 to maxopt do option[oi] := false;
+    prtables := false; option[20] := false; list := true; option[12] := true;
+    prcode := true; option[3] := true; debug := true; option[4] := true;
+    chkvar := true; option[22] := true; chkref := true; option[18] := true;
+    chkudtc := false; option[21] := false; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
-    chkvbk := false; option['i'] := false;
+    chkvbk := false; option[9] := false;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     lc := lcaftermarkstack; gc := 0;
@@ -9486,6 +9514,36 @@ end;
       ordint['F'] := 15;
     end;
 
+    procedure initoptions;
+    begin
+      opts[1]  := 'a    ';
+      opts[2]  := 'b     ';
+      opts[3]  := 'c     ';
+      opts[4]  := 'd     ';
+      opts[5]  := 'e     ';
+      opts[6]  := 'f     ';
+      opts[7]  := 'g     ';
+      opts[8]  := 'h     ';
+      opts[9]  := 'i     ';
+      opts[10] := 'j     ';
+      opts[11] := 'k     ';
+      opts[12] := 'l     ';
+      opts[13] := 'm     ';
+      opts[14] := 'n     ';
+      opts[15] := 'o     ';
+      opts[16] := 'p     ';
+      opts[17] := 'q     ';
+      opts[18] := 'r     ';
+      opts[19] := 's     ';
+      opts[20] := 't     ';
+      opts[21] := 'u     ';
+      opts[22] := 'v     ';
+      opts[23] := 'w     ';
+      opts[24] := 'x     ';
+      opts[25] := 'y     ';
+      opts[26] := 'z     ';
+    end;
+
     procedure initdx;
     begin
       { [sam] if your sizes are not even multiples of
@@ -9658,7 +9716,7 @@ end;
   begin (*inittables*)
     reswords; symbols; rators;
     instrmnemonics; procmnemonics;
-    chartypes; initdx;
+    chartypes; initoptions; initdx;
   end (*inittables*) ;
 
 begin
@@ -9717,10 +9775,13 @@ begin
 
   { write initial option values }
   write(prr, 'o ');
-  for c := 'a' to 'z' do
-    if not (c in ['g','h','n','o','p','m','q','s','w','a','f','e','i','r']) then
-      begin write(prr, c);
-    if option[c] then write(prr, '+') else write(prr, '-')
+  for oi := 1 to maxopt do
+    { exclude pint options }
+    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18]) then
+      begin 
+    for oni :=  1 to optlen do 
+      if opts[oi, oni] <> ' ' then write(prr, opts[oi, oni]);
+    if option[oi] then write(prr, '+') else write(prr, '-')
   end;
   writeln(prr);
 
