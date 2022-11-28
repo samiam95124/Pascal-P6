@@ -1781,7 +1781,6 @@ end;
       procedure switch(var opt: boolean);
       var oni: optinx;
       begin
-        nextch;
         if (ch='+') or (ch='-') then begin
           opt := ch = '+';
           option[oi] := opt;
