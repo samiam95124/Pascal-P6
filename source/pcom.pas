@@ -9815,7 +9815,7 @@ begin
   write(prr, 'o ');
   for oi := 1 to maxopt do
     { exclude pint options and unused }
-    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18,10,11,26]) then
+    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18,11,26]) then
       begin 
     for oni :=  1 to optlen do 
       if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
