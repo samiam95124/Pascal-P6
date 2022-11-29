@@ -513,6 +513,9 @@ var
     doprtlab: boolean;              { -- b: print labels }
     dodmpdsp: boolean;              { -- y: dump the display }
     chkvbk: boolean;                { -- i: check VAR block violations }
+    experr: boolean;                { -- ee/experror: expanded error 
+                                         descriptions }
+    
 
     { switches passed through to pint }
 
@@ -1647,11 +1650,13 @@ end;
             freepos := freepos + f + 1
           end;
         writeln; 
+        if experr then begin
         write(linecount:6,' ****  ':9);
-        for k := 1 to errinx do 
-          begin write(errlist[k].nmr:3, ' '); errmsg(errlist[k].nmr);
-                if k < errinx then write(', ') end;
-        writeln;
+          for k := 1 to errinx do 
+            begin write(errlist[k].nmr:3, ' '); errmsg(errlist[k].nmr);
+                  if k < errinx then write(', ') end;
+          writeln
+        end;
         errinx := 0;
       end;
     linecount := linecount + 1;
@@ -1826,7 +1831,7 @@ end;
           7:  switch(dummy);
           8:  switch(dummy);
           9:  switch(chkvbk);
-          10: switch(dummy);
+          10: switch(experr);
           11: switch(dummy);
           12: begin switch(list); if not list then writeln(output) end;
           13: switch(dummy);
@@ -9269,7 +9274,7 @@ end;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
     chkudtc := false; option[21] := false; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
-    chkvbk := false; option[9] := false;
+    chkvbk := false; option[9] := false; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     lc := lcaftermarkstack; gc := 0;
@@ -9531,7 +9536,7 @@ end;
       opts[7]  := 'g         ';
       opts[8]  := 'h         ';
       opts[9]  := 'i         ';
-      opts[10] := 'j         ';
+      opts[10] := 'ee        ';
       opts[11] := 'k         ';
       opts[12] := 'l         ';
       opts[13] := 'm         ';
@@ -9558,7 +9563,7 @@ end;
       optsl[7]  := 'prtlabdef ';
       optsl[8]  := 'sourceset ';
       optsl[9]  := 'varblk    ';
-      optsl[10] := '          ';
+      optsl[10] := 'experror  ';
       optsl[11] := '          ';
       optsl[12] := 'list      ';
       optsl[13] := 'breakheap ';
