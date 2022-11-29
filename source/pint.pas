@@ -416,6 +416,8 @@ const
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
       maxsym      = 20;   { maximum length of symbol/module name }
+      maxopt      = 26;   { number of options }
+      optlen      = 10;   { maximum length of option words }
 
       { version numbers }
 
@@ -527,6 +529,8 @@ type
                        b: address    { address of block }
                      end;
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
+      optinx = 1..optlen;
+      optstr = packed array [optinx] of char;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -549,6 +553,8 @@ var   pc          : address;   (*program address register*)
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of byte; { bits in byte }
       maxdig      : integer; { number of decimal digits in integer }
+      opts: array [1..maxopt] of optstr;
+      optsl: array [1..maxopt] of optstr;
 
       { check flags: these turn on runtime checks }
       dochkovf: boolean; { check arithmetic overflow }
@@ -598,7 +604,7 @@ var   pc          : address;   (*program address register*)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
       insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
-      option      : array ['a'..'z'] of boolean; { option array }
+      option      : array [1..maxopt] of boolean; { option array }
       cmdlin      : cmdbuf; { command line }
       cmdlen      : cmdnum; { length of command line }
       cmdpos      : cmdinx; { current position in command line }
@@ -663,6 +669,7 @@ var   pc          : address;   (*program address register*)
       ad          : address;
       bai         : integer;
       ai          : 1..maxana;
+      oi          : 1..maxopt;
 
 (*--------------------------------------------------------------------*)
 
@@ -2350,6 +2357,7 @@ procedure load;
           cstadr: address;
           r: real;
           s: settype;
+          optst: optstr; oni: optinx; oi: 1..maxopt;
 
    procedure gblrlc;
    var sp: psymbol;
@@ -2406,29 +2414,41 @@ procedure load;
               end;
          'o': begin { option }
                 getnxt;
-                while not eoln(prd) and (ch = ' ') do getnxt;
                 repeat
-                  if not (ch in ['a'..'z']) then
+                  while not eoln(prd) and (ch = ' ') do getnxt;
+                  if not (ch in ['a'..'z', 'A'..'Z', '_']) then
                     errorl('No valid option found    ');
-                  ch1 := ch; getnxt;
-                  option[ch1] := ch = '+'; getnxt;
-                  case ch1 of
-                    'g': dodmplab := option[ch1];
-                    'h': dosrclin := option[ch1];
-                    'n': dorecycl := option[ch1];
-                    'o': dochkovf := option[ch1];
-                    'p': dochkrpt := option[ch1];
-                    'm': donorecpar := option[ch1];
-                    'q': dochkdef := option[ch1];
-                    's': iso7185  := option[ch1];
-                    'w': dodebug  := option[ch1];
-                    'a': dodbgflt := option[ch1];
-                    'f': dodbgsrc := option[ch1];
-                    'e': dodckout := option[ch1];
-                    'i': dochkvbk := option[ch1];
-                    'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':;
-                    'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
-                  end
+                  oni := 1; optst := '          ';
+                  while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
+                    ch1 := lcase(ch); 
+                    if optst[oni] = ' ' then optst[oni] := ch1; 
+                    if oni < optlen then oni := oni+1;
+                    getnxt
+                  end;
+                  oi := 1;
+                  while (oi < maxopt) and (optst <> opts[oi]) and (optst <> optsl[oi]) do
+                    oi := oi+1;
+                  if (optst = opts[oi]) or (optst = optsl[oi]) then begin
+                    option[oi] := ch = '+'; getnxt;
+                    case oi of
+                      7:  dodmplab   := option[oi];
+                      8:  dosrclin   := option[oi];
+                      14: dorecycl   := option[oi];
+                      15: dochkovf   := option[oi];
+                      16: dochkrpt   := option[oi];
+                      13: donorecpar := option[oi];
+                      17: dochkdef   := option[oi];
+                      19: iso7185    := option[oi];
+                      23: dodebug    := option[oi];
+                      1:  dodbgflt   := option[oi];
+                      6:  dodbgsrc   := option[oi];
+                      5:  dodckout   := option[oi];
+                      9:  dochkvbk   := option[oi];
+                      2:; 3:; 4:; 12:; 20:; 21:; 22:;
+                      24:; 25:; 26:; 11:; 10:; 18:;
+                    end
+                  end;
+                  while not eoln(prd) and (ch = ' ') do getnxt
                 until not (ch in ['a'..'z']);
                 getlin
               end;
@@ -7171,7 +7191,7 @@ begin (* main *)
   i := maxint;  maxdig := 0;
   while i > 0 do begin maxdig := maxdig+1; i := i div 10 end;
 
-  for c1 := 'a' to 'z' do option[c1] := false;
+  for oi := 1 to maxopt do option[oi] := false;
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dodmplab := false; { dump label definitions }
@@ -7206,6 +7226,62 @@ begin (* main *)
   wthlst := nil; { set no with block entries }
   wthcnt := 0;
   wthfre := nil;
+  
+  { initialize options }
+  opts[1]  := 'a         ';
+  opts[2]  := 'b         ';
+  opts[3]  := 'c         ';
+  opts[4]  := 'd         ';
+  opts[5]  := 'e         ';
+  opts[6]  := 'f         ';
+  opts[7]  := 'g         ';
+  opts[8]  := 'h         ';
+  opts[9]  := 'i         ';
+  opts[10] := 'j         ';
+  opts[11] := 'k         ';
+  opts[12] := 'l         ';
+  opts[13] := 'm         ';
+  opts[14] := 'n         ';
+  opts[15] := 'o         ';
+  opts[16] := 'p         ';
+  opts[17] := 'q         ';
+  opts[18] := 'r         ';
+  opts[19] := 's         ';
+  opts[20] := 't         ';
+  opts[21] := 'u         ';
+  opts[22] := 'v         ';
+  opts[23] := 'w         ';
+  opts[24] := 'x         ';
+  opts[25] := 'y         ';
+  opts[26] := 'z         ';
+
+  optsl[1]  := 'debugflt ';
+  optsl[2]  := 'prtlab    ';
+  optsl[3]  := 'lstcod    ';
+  optsl[4]  := 'chkdebug  ';
+  optsl[5]  := 'machdeck  ';
+  optsl[6]  := 'debugsrc  ';
+  optsl[7]  := 'prtlabdef ';
+  optsl[8]  := 'sourceset ';
+  optsl[9]  := 'varblk    ';
+  optsl[10] := '          ';
+  optsl[11] := '          ';
+  optsl[12] := 'list      ';
+  optsl[13] := 'breakheap ';
+  optsl[14] := 'recycle   ';
+  optsl[15] := 'chkoverflo';
+  optsl[16] := 'chkreuse  ';
+  optsl[17] := 'chkundef  ';
+  optsl[18] := 'reference ';
+  optsl[19] := 'standard  ';
+  optsl[20] := 'prttables ';
+  optsl[21] := 'undeftag  ';
+  optsl[22] := 'chkvar    ';
+  optsl[23] := 'debugrun  ';
+  optsl[24] := 'prtlex    ';
+  optsl[25] := 'prtdisplay';
+  optsl[26] := '          ';
+
   exitcode:= 0; { clear program exit code }
   { endian flip status is set if the host processor and the target disagree on
     endian mode }

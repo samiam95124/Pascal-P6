@@ -1791,7 +1791,7 @@ end;
           option[oi] := opt;
           write(prr, 'o ');
           for oni :=  1 to optlen do 
-            if optst[oni] <> ' ' then write(prr, optst[oni]);
+            if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
           writeln(prr, ch);
           nextch;
         end else begin { just default to on }
@@ -1799,7 +1799,7 @@ end;
           option[oi] := true;
           write(prr, 'o ');
           for oni :=  1 to optlen do 
-            if optst[oni] <> ' ' then write(prr, optst[oni]);
+            if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
           writeln(prr, '+')
         end
       end; { switch() }
@@ -1807,11 +1807,12 @@ end;
       nextch;
       repeat
         oni := 1; optst := '          ';
-        repeat ch1 := lcase(ch); 
+        while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
+          ch1 := lcase(ch); 
           if optst[oni] = ' ' then optst[oni] := ch1; 
           if oni < optlen then oni := oni+1;
           nextch
-        until not (ch in ['a'..'z', '0'..'9', '_']);
+        end;
         oi := 1;
         while (oi < maxopt) and (optst <> opts[oi]) and (optst <> optsl[oi]) do
           oi := oi+1;
@@ -9521,8 +9522,6 @@ end;
 
     procedure initoptions;
     begin
-
-
       opts[1]  := 'a         ';
       opts[2]  := 'b         ';
       opts[3]  := 'c         ';
@@ -9810,12 +9809,13 @@ begin
   { write initial option values }
   write(prr, 'o ');
   for oi := 1 to maxopt do
-    { exclude pint options }
-    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18]) then
+    { exclude pint options and unused }
+    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18,10,11,26]) then
       begin 
     for oni :=  1 to optlen do 
-      if opts[oi, oni] <> ' ' then write(prr, opts[oi, oni]);
-    if option[oi] then write(prr, '+') else write(prr, '-')
+      if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
+    if option[oi] then write(prr, '+') else write(prr, '-');
+    write(prr, ' ')
   end;
   writeln(prr);
 
