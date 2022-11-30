@@ -7277,7 +7277,7 @@ begin (* main *)
   optsl[20] := 'prttables ';
   optsl[21] := 'undeftag  ';
   optsl[22] := 'chkvar    ';
-  optsl[23] := 'debugrun  ';
+  optsl[23] := 'debug     ';
   optsl[24] := 'prtlex    ';
   optsl[25] := 'prtdisplay';
   optsl[26] := '          ';
