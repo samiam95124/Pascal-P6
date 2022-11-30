@@ -7237,8 +7237,8 @@ begin (* main *)
   opts[7]  := 'g         ';
   opts[8]  := 'h         ';
   opts[9]  := 'i         ';
-  opts[10] := 'j         ';
-  opts[11] := 'k         ';
+  opts[10] := 'ee         ';
+  opts[11] := '          ';
   opts[12] := 'l         ';
   opts[13] := 'm         ';
   opts[14] := 'n         ';
@@ -7264,7 +7264,7 @@ begin (* main *)
   optsl[7]  := 'prtlabdef ';
   optsl[8]  := 'sourceset ';
   optsl[9]  := 'varblk    ';
-  optsl[10] := '          ';
+  optsl[10] := 'experror  ';
   optsl[11] := '          ';
   optsl[12] := 'list      ';
   optsl[13] := 'breakheap ';
@@ -7273,7 +7273,7 @@ begin (* main *)
   optsl[16] := 'chkreuse  ';
   optsl[17] := 'chkundef  ';
   optsl[18] := 'reference ';
-  optsl[19] := 'standard  ';
+  optsl[19] := 'iso7185   ';
   optsl[20] := 'prttables ';
   optsl[21] := 'undeftag  ';
   optsl[22] := 'chkvar    ';
