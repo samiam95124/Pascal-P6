@@ -2306,6 +2306,7 @@ procedure load;
        symref := fbp^.bstart
      end
    end;
+
    { find external routine, if exists }
    function extref(lsp: strvsp): integer;
    var mods, syms: symnam; rt: integer; i,x: integer;
@@ -2322,7 +2323,8 @@ procedure load;
      LookupExternal(mods, syms, rt);
      extref := rt
    end;
-   begin
+
+   begin { flabrlc }
      while flablst <> nil do begin { empty far label list }
        flp := flablst; flablst := flablst^.next;
        ad := flp^.val; op := store[ad];
@@ -3684,7 +3686,6 @@ begin (*callsp*)
                       end;
            1 (*put*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
-
                               outputfn: begin putfile(output, ad, fn);
                                               newline := false end;
                               prrfn: putfile(prr, ad, fn);
@@ -4024,19 +4025,14 @@ begin (*callsp*)
                            dspspc(ad1, ad)
                       end;
            40(*dsl*): begin
-                           popadr(ad1); popint(i); { get size of record and n tags }
-                           { add padding for zero tag case }
+                           popadr(ad1); popint(i);
                            l := 0; if (i = 0) and donorecpar then l := 1;
                            ad := getadr(sp+i*intsize); { get rec addr }
-                           { under us is either the number of tags or the length of the block, if it
-                             was freed. Either way, it is >= adrsize if not free }
                            if getint(ad-intsize) <= adrsize then
                              errorv(BlockAlreadyFreed);
                            if i <> getint(ad-intsize)-adrsize-1 then
                              errorv(NewDisposeTagsMismatch);
                            ad := ad-intsize*2; ad2 := sp;
-                           { ad = top of tags in dynamic, ad2 = top of tags in
-                             stack }
                            k := i;
                            while k > 0 do
                              begin
@@ -4045,7 +4041,6 @@ begin (*callsp*)
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
                            ad := ad+intsize; ad1 := ad1+(i+1)*intsize;
-                           { ajust for dummy }
                            ad := ad-(l*intsize); ad1 := ad1+(l*intsize);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
@@ -4055,10 +4050,6 @@ begin (*callsp*)
                            while i > 0 do begin popint(j); i := i-1 end;
                            popadr(ad);
                            if donorecpar then
-                             { This flag means we are going to keep the entry,
-                               even after disposal. We place a dummy tag below
-                               the pointer just to indicate the space was
-                               freed. }
                              putadr(ad-adrsize, adrsize)
                       end;
            27(*wbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
@@ -4099,7 +4090,7 @@ begin (*callsp*)
                       end;
            32(*rbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                             valfilrm(ad); fn := store[ad];
-                            if filbuff[fn] then { buffer data exists }
+                            if filbuff[fn] then
                             for i := 1 to l do begin
                               store[ad1+i-1] := store[ad+fileidsize+i-1];
                               putdef(ad1+i-1, true)

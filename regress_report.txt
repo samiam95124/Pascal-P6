@@ -22,11 +22,11 @@ pmach run
 0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
-52 sample_programs/drystone.dif
+0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-125 standard_tests/iso7185pat.dif
+0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
@@ -45,9 +45,9 @@ cmach run
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
-Wed 30 Nov 2022 08:37:18 PM PST
+Thu 01 Dec 2022 12:16:53 AM PST
 Source files
-2346bba6c4de418bd07803bb8561e137  -
+2d878e747ff8a3aa7f3c7f42ea594b75  -
 batch files
 2592fd18697d8392675d4ca193215123  -
 P2 files
@@ -59,4 +59,4 @@ c17b6d54c521ff188ad269190416bd9d  -
 standard test files
 ebb95499bc364ac8397865db233c1196  -
 other files
-64a8b483d4e62104eab43587f200e7d6  -
+8f04674696a992760207884dfa56fd9b  -

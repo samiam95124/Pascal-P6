@@ -171,8 +171,16 @@
   WRDSIZ32       - 32 bit compiler.
   ISO7185_PASCAL - uses ISO 7185 standard language only.
 }
-#if !defined(WRDSIZ32) && !defined(WRDSIZ64)
+#if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
 #define WRDSIZ32 1
+#endif
+
+#if !defined(LENDIAN) && !defined(BENDIAN)
+#define LENDIAN
+#endif
+
+#if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
+#define ISO7185_PASCAL
 #endif
 
 program pmach(input,output,prd,prr
@@ -211,10 +219,14 @@ const
 
       }
 
+#ifdef WRDSIZ16
+#include "mpb16.inc"
+#endif
+
 #ifdef WRDSIZ32
 #include "mpb32.inc"
 #endif
-      
+
 #ifdef WRDSIZ64
 #include "mpb64.inc"
 #endif
@@ -226,14 +238,20 @@ const
       { !!! Need to use the small size memory to self compile, otherwise, by
         definition, pint cannot fit into its own memory. }
 #ifndef SELF_COMPILE
+#ifdef WRDSIZ16
+      maxstr      = 31999;  { maximum size of addressing for program/var }
+      maxtop      = 32000;  { maximum size of addressing for program/var+1 }
+      maxdef      = 4000;   { maxstr / 8 for defined bits }
+#else
       maxstr      = 16777215;  { maximum size of addressing for program/var }
       maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
       maxdef      = 2097152;   { maxstr / 8 for defined bits }
+#endif
 #else
       maxstr     =  2000000;   { maximum size of addressing for program/var }
       maxtop     =  2000001;   { maximum size of addressing for program/var+1 }
       maxdef      = 250000;    { maxstr /8 for defined bits }
-#endif      
+#endif
       
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
@@ -379,11 +397,15 @@ const
       VarReferencedFileBufferModified    = 115;
       ContainerMismatch                  = 116;
       InvalidContainerLevel              = 117;
+      DisposeOfWithReferencedBlock       = 118;
+      WithBaseListEmpty                  = 119;
+      privexceptiontop                   = 119;
 
       maxsp       = 81;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
+      maxsym      = 20;   { maximum length of symbol/module name }
 
       { version numbers }
 
@@ -392,6 +414,24 @@ const
       experiment = true; { is version experimental? }
 
 type
+
+#if defined(WRDSIZ16) && defined(GNU_PASCAL)
+      /* for GNU 16 bit mode, use both 16 bit defines and redefine integer and
+         real size to match */
+      { Allow GNU Pascal extensions }
+      {$gnu-pascal}
+      pminteger = shortint;
+      pmreal = shortreal;
+      pmaddress = shortint;
+      { Restore to ISO 7185 Pascal language }
+      {$classic-pascal-level-0}
+#else
+      { define the internally used types }
+      pminteger = integer;
+      pmreal = real;
+      pmaddress = -maxstr..maxtop;
+#endif
+
       { These equates define the instruction layout. I have choosen a 32 bit
         layout for the instructions defined by (4 bit) digit:
 
@@ -410,6 +450,7 @@ type
       settype     = set of setlow..sethigh;
       byte        = 0..255; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
+      charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fclosed, fread, fwrite);
@@ -422,6 +463,13 @@ type
                        next: varptr; { next entry }
                        s, e: address { start and end address of block }
                      end;
+      { with reference block }
+      wthptr       = ^wthblk;
+      wthblk       = record
+                       next: wthptr; { next entry }
+                       b: address    { address of block }
+                     end;
+      symnam      = packed array [1..maxsym] of char; { symbol/module name }
 
 var   pc          : address;   (*program address register*)
       pctop       : address;   { top of code store }
@@ -462,6 +510,7 @@ var   pc          : address;   (*program address register*)
       { I don't know how we are going to use iso7185 flag in mach. There is
         no real way to set it. }
       iso7185: boolean; { iso7185 standard flag }
+      flipend: boolean; { endian mode is opposing }
       
       { !!! remove this next statement for self compile }
 #ifndef SELF_COMPILE
@@ -485,6 +534,9 @@ var   pc          : address;   (*program address register*)
       filanamtab  : array [1..maxfil] of boolean;
       varlst      : varptr; { active var block pushdown stack }
       varfre      : varptr; { free var block entries }
+      wthlst      : wthptr; { active with block pushdown stack }
+      wthcnt      : integer; { number of outstanding with levels }
+      wthfre      : wthptr; { free with block entries }
       maxpow10    : integer; { maximum power of 10 }
       decdig      : integer; { digits in unsigned decimal }
       maxpow16    : integer; { maximum power of 16 }
@@ -493,6 +545,9 @@ var   pc          : address;   (*program address register*)
       octdig      : integer; { digits in unsigned octal }
       maxpow2     : integer; { maximum power of 2 }
       bindig      : integer; { digits in unsigned binary }
+      newline     : boolean; { output is on new line (unused) }
+      extvecbase  : integer; { base of external vectors }
+      exitcode    : integer; { exit code for program }
       
       i           : integer;
       c1          : char;
@@ -706,6 +761,8 @@ begin writeln; write('*** Runtime error');
     VarReferencedFileBufferModified:    writeln('VAR referenced file buffer modified');
     ContainerMismatch:                  writeln('Container length(s) do not match');
     InvalidContainerLevel:              writeln('InvalidContainerLevel');
+    DisposeOfWithReferencedBlock:       writeln('Dispose of with referenced block');
+    WithBaseListEmpty:                  writeln('With base list empty');
   end;
   goto 1
 end;
@@ -939,6 +996,24 @@ end;
 
 }
 
+{ check running on a little endian processor }
+
+function litend: boolean;
+
+var r: record case boolean of
+
+         true: (i: integer);
+         false: (b: byte);
+
+       end;
+
+begin
+
+   r.i := 1;
+   litend := r.b <> 0
+
+end;
+
 function getint(a: address): integer;
 
 var r: record case boolean of
@@ -950,12 +1025,11 @@ var r: record case boolean of
     i: 1..intsize;
 
 begin
-
    if dochkdef then chkdef(a);
-   for i := 1 to intsize do r.b[i] := store[a+i-1];
+   if flipend then for i := intsize downto 1 do r.b[i] := store[a+(intsize-i)]
+   else for i := 1 to intsize do r.b[i] := store[a+i-1];
 
    getint := r.i
-
 end;
 
 procedure putint(a: address; x: integer);
@@ -971,7 +1045,9 @@ var r: record case boolean of
 begin
 
    r.i := x;
-   for i := 1 to intsize do
+   if flipend then for i := intsize downto 1 do
+     begin store[a+(intsize-i)] := r.b[i]; putdef(a+(intsize-i), true) end
+   else for i := 1 to intsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
 
 end;
@@ -989,7 +1065,8 @@ var r: record case boolean of
 begin
 
    if dochkdef then chkdef(a);
-   for i := 1 to realsize do r.b[i] := store[a+i-1];
+   if flipend then for i := realsize downto 1 do r.b[i] := store[a+(realsize-i)]
+   else for i := 1 to realsize do r.b[i] := store[a+i-1];
    getrel := r.r
 
 end;
@@ -1007,7 +1084,9 @@ var r: record case boolean of
 begin
 
    r.r := f;
-   for i := 1 to realsize do
+   if flipend then for i := realsize downto 1 do
+     begin store[a+(realsize-i)] := r.b[i]; putdef(a+(realsize-i), true) end
+   else for i := 1 to realsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
 
 end;
@@ -1115,7 +1194,9 @@ var r: record case boolean of
 begin
 
    if dochkdef then chkdef(a);
-   for i := 1 to adrsize do r.b[i] := store[a+i-1];
+   if flipend then for i := adrsize downto 1 do r.b[i] := store[a+(adrsize-i)]
+   else for i := 1 to adrsize do r.b[i] := store[a+i-1];
+
    getadr := r.a
 
 end;
@@ -1133,7 +1214,9 @@ var r: record case boolean of
 begin
 
    r.a := ad;
-   for i := 1 to adrsize do
+   if flipend then for i := adrsize downto 1 do
+     begin store[a+(adrsize-i)] := r.b[i]; putdef(a+(adrsize-i), true) end
+   else for i := 1 to adrsize do
      begin store[a+i-1] := r.b[i]; putdef(a+i-1, true) end
      
 end;
@@ -1161,6 +1244,29 @@ begin
 end;
 
 { end of accessor functions
+
+(*--------------------------------------------------------------------*)
+
+{ external routines }
+
+procedure newspc(len: address; var blk: address); forward;
+procedure valfil(fa: address); forward;
+
+#ifdef EXTERNALS
+
+#ifdef GNU_PASCAL
+#include "externals_gnu_pascal.inc"
+#endif
+
+#ifdef ISO7185_PASCAL
+#include "externals_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "externals_pascaline.inc"
+#endif
+
+#endif
 
 (*--------------------------------------------------------------------*)
 
@@ -1287,6 +1393,34 @@ begin
   varlap := f
 end;
 
+procedure withenter(b: address);
+var wp: wthptr;
+begin
+  if wthfre <> nil then begin wp := wthfre; wthfre := wp^.next end
+  else new(wp);
+  wp^.b := b; wp^.next := wthlst; wthlst := wp;
+  wthcnt := wthcnt+1
+end;
+
+procedure withexit;
+var wp: wthptr;
+begin
+  if wthlst = nil then errorv(WithBaseListEmpty);
+  wp := wthlst; wthlst := wp^.next; wp^.next := wthfre; wthfre := wp;
+  wthcnt := wthcnt-1
+end;
+
+function withsch(b: address): boolean;
+var wp: wthptr; f: boolean;
+begin
+  wp := wthlst; f := false;
+  while (wp <> nil) and not f do begin
+    f := wp^.b = b;
+    wp := wp^.next
+  end;
+  withsch := f
+end;
+
 function base(ld :integer):address;
    var ad :address;
 begin ad := mp;
@@ -1308,7 +1442,7 @@ begin
   a1 := a1+i; a2 := a2+i
 end; (*compare*)
 
-procedure valfil(fa: address); { attach file to file entry }
+procedure valfil{(fa: address)}; { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }
@@ -1454,7 +1588,7 @@ end;
 
 { allocate space in heap }
 
-procedure newspc(len: address; var blk: address);
+procedure newspc{(len: address; var blk: address)};
 var ad,ad1: address;
 begin
   alignu(adrsize, len); { align to units of address }
@@ -1889,18 +2023,15 @@ begin (*callsp*)
                       (*top of stack gives the length in units of storage *)
                             popadr(ad1); putadr(ad1, ad)
                       end;
-           39 (*nwl*): begin popadr(ad1); popint(i); { size of record, size of f const list }
+           39 (*nwl*): begin popadr(ad1); popint(i);
                             l := 0; if (i = 0) and donorecpar then l := 1;
-                            { alloc record, size of list, number in list }
                             newspc(ad1+(i+l+1)*intsize, ad); 
                             ad1 := ad+(i+l)*intsize; putint(ad1, i+adrsize+1);
-                            k := i; { save n tags for later }
+                            k := i;
                             while k > 0 do
                               begin ad1 := ad1-intsize; popint(j);
                                     putint(ad1, j); k := k-1
                               end;
-                            { get pointer to dest var, place base above taglist and
-                              list of fixed consts }
                             popadr(ad1); putadr(ad1, ad+(i+l+1)*intsize)
                       end;
            5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
@@ -2162,22 +2293,19 @@ begin (*callsp*)
                            popadr(ad1); popadr(ad); 
                            if varlap(ad, ad+ad1-1) then 
                              errorv(DisposeOfVarReferencedBlock);
+                           if withsch(ad) then
+                             errorv(DisposeOfWithReferencedBlock);
                            dspspc(ad1, ad)
                       end;
            40(*dsl*): begin
-                           popadr(ad1); popint(i); { get size of record and n tags }
-                           { add padding for zero tag case }
+                           popadr(ad1); popint(i);
                            l := 0; if (i = 0) and donorecpar then l := 1; 
                            ad := getadr(sp+i*intsize); { get rec addr }
-                           { under us is either the number of tags or the length of the block, if it
-                             was freed. Either way, it is >= adrsize if not free }
                            if getint(ad-intsize) <= adrsize then
                              errorv(BlockAlreadyFreed);
                            if i <> getint(ad-intsize)-adrsize-1 then
                              errorv(NewDisposeTagsMismatch);
                            ad := ad-intsize*2; ad2 := sp;
-                           { ad = top of tags in dynamic, ad2 = top of tags in
-                             stack }
                            k := i;
                            while k > 0 do
                              begin
@@ -2186,7 +2314,6 @@ begin (*callsp*)
                                ad := ad-intsize; ad2 := ad2+intsize; k := k-1
                              end;
                            ad := ad+intsize; ad1 := ad1+(i+1)*intsize;
-                           { ajust for dummy }
                            ad := ad-(l*intsize); ad1 := ad1+(l*intsize);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
@@ -2194,10 +2321,6 @@ begin (*callsp*)
                            while i > 0 do begin popint(j); i := i-1 end;
                            popadr(ad);
                            if donorecpar then 
-                             { This flag means we are going to keep the entry, 
-                               even after disposal. We place a dummy tag below
-                               the pointer just to indicate the space was 
-                               freed. }
                              putadr(ad-adrsize, adrsize)
                       end;
            27(*wbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
@@ -2238,7 +2361,7 @@ begin (*callsp*)
                       end;
            32(*rbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
                             valfilrm(ad); fn := store[ad];
-                            if filbuff[fn] then { buffer data exists }
+                            if filbuff[fn] then
                             for i := 1 to l do begin
                               store[ad1+i-1] := store[ad+fileidsize+i-1]; 
                               putdef(ad1+i-1, true)
@@ -2611,6 +2734,8 @@ begin
     140 { equs }: begin popset(s2); popset(s1); pshint(ord(s1=s2)) end;
     142 { equm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2); 
                         pshint(ord(b)) end;
+    215 (*equv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2); pshint(ord(b)) end;
 
     18  { neqa }: begin popadr(a2); popadr(a1); pshint(ord(a1<>a2)) end;
     145 { neqb },
@@ -2620,6 +2745,8 @@ begin
     146 { neqs }: begin popset(s2); popset(s1); pshint(ord(s1<>s2)) end;
     148 { neqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b)) end;
+    216 (*neqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2); pshint(ord(not b)) end;
 
     151 { geqb },
     153 { geqc },
@@ -2629,6 +2756,9 @@ begin
     154 { geqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] >= store[a2])))
                   end;
+    220 (*geqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2);
+                        pshint(ord(b or (store[a1] >= store[a2]))) end;
 
     157 { grtb },
     159 { grtc },
@@ -2638,6 +2768,9 @@ begin
     160 { grtm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] > store[a2])))
                   end;
+    218 (*grtv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2);
+                        pshint(ord(not b and (store[a1] > store[a2]))) end;
 
     163 { leqb },
     165 { leqc },
@@ -2647,6 +2780,9 @@ begin
     166 { leqm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(b or (store[a1] <= store[a2])))
                   end;
+    219 (*leqv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2);
+                        pshint(ord(b or (store[a1] <= store[a2]))) end;
 
     169 { lesb },
     171 { lesc },
@@ -2656,6 +2792,9 @@ begin
     172 { lesm }: begin getq; popadr(a2); popadr(a1); compare(b, a1, a2);
                         pshint(ord(not b and (store[a1] < store[a2])))
                   end;
+    217 (*lesv*): begin popint(i); q := i; popadr(a2); popint(i1); popadr(a1);
+                        compare(b, a1, a2);
+                        pshint(ord(not b and (store[a1] < store[a2]))) end;
 
     23 (*ujp*): begin getq; pc := q end;
     24 (*fjp*): begin getq; popint(i); if i = 0 then pc := q end;
@@ -2927,6 +3066,9 @@ begin
                       end
                 end;
 
+    243 (*wbs*): begin popadr(ad); pshadr(ad); withenter(ad) end;
+    244 (*wbe*): withexit;
+
     174 (*mrkl*): begin getq; srclin := q end;
        
     207 (*bge*): begin getq;
@@ -3061,10 +3203,18 @@ begin
                  
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
+    242 (*eext*): begin
+                    ExecuteExternal(pc-extvecbase);
+                    { set stack below function result, if any }
+                    sp := mp;
+                    pc := getadr(mp+markra);
+                    ep := getadr(mp+markep);
+                    mp := getadr(mp+markdl)
+                  end;
+
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 242, 243, 244, 245, 246,
-    247, 248, 249, 250, 251, 252, 253, 254,
-    255: errorv(InvalidInstruction)
+    228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250,
+    251, 252, 253, 254, 255: errorv(InvalidInstruction)
 
   end
 end;
@@ -3105,6 +3255,15 @@ begin (* main *)
   iso7185 := false;  { iso7185 standard mode }
   varlst := nil; { set no VAR block entries }
   varfre := nil;
+  wthlst := nil; { set no with block entries }
+  wthcnt := 0;
+  wthfre := nil;
+  exitcode:= 0; { clear program exit code }
+  { place the external vectors table }
+  extvecbase := 11;
+  { endian flip status is set if the host processor and the target disagree on
+    endian mode }
+  flipend := litend <> lendian;
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
   fndpow(maxpow8, 8, octdig);
@@ -3151,5 +3310,8 @@ begin (* main *)
 
   writeln;
   writeln('program complete');
+
+  { give external package a chance to exit }
+  exitprogram(exitcode)
 
 end.
