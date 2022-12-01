@@ -1853,7 +1853,8 @@ end;
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
             nextch;
         end;
-      until ch <> ',';
+        ch1 := ch; if ch1 = ',' then nextch
+      until ch1 <> ','
     end (*options*) ;
 
     function pwrten(e: integer): real;
