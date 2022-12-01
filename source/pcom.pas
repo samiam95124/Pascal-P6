@@ -7839,7 +7839,7 @@ end;
                 { remove any with statement levels to target }
                 wp := wthstk;
                 while wp <> nil do begin
-                  if wp^.sl <> slevel then gen0(85(*wbe*));
+                  if wp^.sl <> slevel then gen0(120(*wbe*));
                   wp := wp^.next
                 end;
                 if ttop = ttop1 then
@@ -9592,7 +9592,7 @@ end;
       cdx[  4] := +intsize;             cdx[  5] := +setsize;
       cdx[  6] := +intsize;             cdx[  7] := +realsize;
       cdx[  8] :=  4{*};                cdx[  9] := +intsize-realsize;
-      cdx[ 10] :=  -realsize+intsize;   cdx[ 11] := +setsize;
+      cdx[ 10] := -realsize+intsize;    cdx[ 11] := +setsize;
       cdx[ 12] := +setsize;             cdx[ 13] := +intsize;
       cdx[ 14] := +intsize;             cdx[ 15] := +intsize;
       cdx[ 16] := +realsize;            cdx[ 17] :=  0;
