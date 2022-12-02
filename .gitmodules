@@ -1,0 +1,3 @@
+[submodule "petit-ami"]
+	path = petit-ami
+	url = https://github.com/samiam95124/petit-ami

@@ -200,9 +200,9 @@ const
       ===========================================================
       integer               16        32        64
       real                  32        64        64
-      char                  8         8
-      boolean               8         8
-      set                   256       256
+      char                  8         8         8
+      boolean               8         8         8
+      set                   256       256       256
       pointers              16        32        64
       marks                 16        32        64 (bytes)
       File logical number   8         8         8

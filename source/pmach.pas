@@ -200,16 +200,16 @@ const
 
       The configurations are as follows:
 
-      type                  #bits 32  #bits 64
+      type                  #bits 16    #bits 32  #bits 64
       ===========================================================
-      integer               32        64
-      real                  64        64
-      char                  8         8
-      boolean               8         8
-      set                   256       256
-      pointers              32        64
-      marks                 32        64
-      File logical number   8         8
+      integer               16          32        64
+      real                  32          64        64
+      char                  8           8         8
+      boolean               8           8         8
+      set                   256         256       256
+      pointers              16          32        64
+      marks                 16          32        64 (bytes)
+      File logical number   8           8         8
 
       Both endian types are supported. There is no alignment needed, but you
       may wish to use alignment to tune the runtime speed.

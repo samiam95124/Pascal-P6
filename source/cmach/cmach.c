@@ -238,16 +238,16 @@ the machine specific characteristics of the target.
 
 The configurations are as follows:
 
-type                  #bits 32  #bits 64
+type                  #bits 16    #bits 32  #bits 64
 ===========================================================
-integer               32        64
-real                  64        64
-char                  8         8
-boolean               8         8
-set                   256       256
-pointers              32        64
-marks                 32        64
-File logical number   8         8
+integer               16          32        64
+real                  32          64        64
+char                  8           8         8
+boolean               8           8         8
+set                   256         256       256
+pointers              16          32        64
+marks                 16          32        64 (bytes)
+File logical number   8           8         8
 
 Both endian types are supported. There is no alignment needed, but you
 may wish to use alignment to tune the runtime speed.
@@ -257,135 +257,22 @@ table is all you should need to adapt to any byte addressable machine.
 
 */
 
+/******************************************************************************
+
+16 bit Machine Parameter block (MPB)
+
+******************************************************************************/
+
+#ifdef WRDSIZ16
+#include "mpb16.inc"
+#endif
+
 #ifdef WRDSIZ32
-#define INTSIZE             4   /* size of integer */
-#define INTAL               4   /* alignment of integer */
-#define INTDIG              11  /* number of decimal digits in integer */
-#define INTHEX              8   /* number of hex digits of integer */
-#define REALSIZE            8   /* size of real */
-#define REALAL              4   /* alignment of real */
-#define CHARSIZE            1   /* size of char */
-#define CHARAL              1   /* alignment of char */
-#define CHARMAX             1
-#define BOOLSIZE            1   /* size of boolean */
-#define BOOLAL              1   /* alignment of boolean */
-#define PTRSIZE             4   /* size of pointer */
-#define ADRSIZE             4   /* size of address */
-#define ADRAL               4   /* alignment of address */
-#define SETSIZE            32   /* size of set */
-#define SETAL               1   /* alignment of set */
-#define FILESIZE            1   /* required runtime space for file (lfn) */
-#define FILEIDSIZE          1   /* size of the lfn only */
-#define EXCEPTSIZE          1   /* size of exception variable */
-#define EXCEPTAL            1
-#define STACKAL             4   /* alignment of stack */
-#define STACKELSIZE         4   /* stack element size */
-#define MAXSIZE            32   /* this is the largest type that can be on the
-                                   stack */
-/* Heap alignment should be either the natural word alignment of the
-  machine, or the largest object needing alignment that will be allocated.
-  It can also be used to enforce minimum block allocation policy. */
-#define HEAPAL              4   /* alignment for each heap arena */
-#define GBSAL               4   /* globals area alignment */
-#define SETHIGH           255   /* Sets are 256 values */
-#define SETLOW              0
-#define ORDMAXCHAR        255   /* Characters are 8 bit ISO/IEC 8859-1 */
-#define ORDMINCHAR          0
-#define MAXRESULT    REALSIZE   /* maximum size of function result */
-#define MARKSIZE           24   /* maxresult+6*ptrsize */
-#define UJPLEN              5   /* length of ujp instruction (used for case
-                                   jumps) */
-
-/* Value of nil is 1 because this allows checks for pointers that were
-  initialized, which would be zero (since we clear all space to zero).
-  In the new unified code/data space scheme, 0 and 1 are always invalid
-  addresses, since the startup code is at least that long. */
-#define NILVAL              1  /* value of 'nil' */
-
-/* Mark element offsets
-
-  Mark format is:
-
-  -8:  Function return value, 64 bits, enables a full real result.
-  -12: Static link.
-  -16: Dynamic link.
-  -20: Saved EP from previous frame.
-  -24: Stack bottom after locals allocate. Used for interprocdural gotos.
-  -28: EP from current frame. Used for interprocedural gotos.
-  -32: Return address
-
-*/
-#define MARKSL              -4  /* static link */
-#define MARKDL              -8  /* dynamic link */
-#define MARKEP              -12 /* (old) maximum frame size */
-#define MARKSB              -16 /* stack bottom */
-#define MARKET              -20 /* current ep */
-#define MARKRA              -24 /* return address */
+#include "mpb32.inc"
 #endif
 
 #ifdef WRDSIZ64
-#define INTSIZE             8  /* size of integer */
-#define INTAL               4  /* alignment of integer */
-#define INTDIG              20 /* number of decimal digits in integer */
-#define INTHEX              16 /* number of hex digits of integer */
-#define REALSIZE            8  /* size of real */
-#define REALAL              4  /* alignment of real */
-#define CHARSIZE            1  /* size of char */
-#define CHARAL              1  /* alignment of char */
-#define CHARMAX             1
-#define BOOLSIZE            1  /* size of boolean */
-#define BOOLAL              1  /* alignment of boolean */
-#define PTRSIZE             8  /* size of pointer */
-#define ADRSIZE             8  /* size of address */
-#define ADRAL               4  /* alignment of address */
-#define SETSIZE            32  /* size of set */
-#define SETAL               1  /* alignment of set */
-#define FILESIZE            1  /* required runtime space for file (lfn) */
-#define FILEIDSIZE          1  /* size of the lfn only */
-#define EXCEPTSIZE          1  /* size of exception variable */
-#define EXCEPTAL            1
-#define STACKAL             8  /* alignment of stack */
-#define STACKELSIZE         8  /* stack element size */
-#define MAXSIZE            32  /* this is the largest type that can be on the
-                                  stack */
-/* Heap alignment should be either the natural word alignment of the
-  machine, or the largest object needing alignment that will be allocated.
-  It can also be used to enforce minimum block allocation policy. */
-#define HEAPAL              4  /* alignment for each heap arena */
-#define GBSAL               4  /* globals area alignment */
-#define SETHIGH           255  /* Sets are 256 values */
-#define SETLOW              0
-#define ORDMAXCHAR        255  /* Characters are 8 bit ISO/IEC 8859-1 */
-#define ORDMINCHAR          0
-#define MAXRESULT    REALSIZE  /* maximum size of function result */
-#define MARKSIZE           48  /* maxresult+6*ptrsize */
-#define UJPLEN              9  /* length of ujp instruction (used for case
-                                  jumps) */
-
-/* Value of nil is 1 because this allows checks for pointers that were
-  initialized, which would be zero (since we clear all space to zero).
-  In the new unified code/data space scheme, 0 and 1 are always invalid
-  addresses, since the startup code is at least that long. */
-#define NILVAL              1  /* value of 'nil' */
-
-/* Mark element offsets
-
-  Mark format is:
-
-  -8: Static link.
-  -16: Dynamic link.
-  -24: Saved EP from previous frame.
-  -32: Stack bottom after locals allocate. Used for interprocdural gotos.
-  -40: EP from current frame. Used for interprocedural gotos.
-  -48: Return address
-
-*/
-#define MARKSL              -8  /* static link */
-#define MARKDL              -16 /* dynamic link */
-#define MARKEP              -24 /* (old) maximum frame size */
-#define MARKSB              -32 /* stack bottom */
-#define MARKET              -40 /* current ep */
-#define MARKRA              -48 /* return address */
+#include "mpb64.inc"
 #endif
 
 /* ******************* end of pcom and pint common parameters *********** */
@@ -395,9 +282,16 @@ table is all you should need to adapt to any byte addressable machine.
 #define TRUE 1                /* value of true */
 #define FALSE 0               /* value of false */
 
+#ifdef WRDSIZ16
+#define MAXSTR       31999 /* maximum size of addressing for program/var */
+#define MAXTOP       32000 /* maximum size of addressing for program/var+1 */
+#define MAXDEF       4000  /* maxstr / 8 for defined bits */
+#else
 #define MAXSTR       16777215 /* maximum size of addressing for program/var */
 #define MAXTOP       16777216 /* maximum size of addressing for program/var+1 */
 #define MAXDEF       2097152  /* maxstr / 8 for defined bits */
+#endif
+
 #define MAXDIGH      6        /* number of digits in hex representation of maxstr */
 #define MAXDIGD      8        /* number of digits in decimal representation of maxstr */
 #define MAXAST       100      /* maximum size of assert message */
@@ -542,6 +436,9 @@ table is all you should need to adapt to any byte addressable machine.
 #define VARREFERENCEDFILEBUFFERMODIFIED     115
 #define CONTAINERMISMATCH                   116
 #define INVALIDCONTAINERLEVEL               117
+#define DISPOSEOFWITHREFERENCEDBLOCK        118
+#define WITHBASELISTEMPTY                   119
+#define PRIVEXCEPTIONTOP                    119
 
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -591,6 +488,12 @@ typedef struct _varblk *varptr;
 typedef struct _varblk {
     varptr next;  /* next entry */
     address s, e; /* start and end address of block */
+} varblk;
+/* with reference block */
+typedef struct _wthblk *wthptr;
+typedef struct _wthblk {
+    wthptr next;  /* next entry */
+    address b;    /* address of block */
 } varblk;
 
 /**************************** Global Variables ********************************/
@@ -802,6 +705,8 @@ void errorv(address ea)
     case VARREFERENCEDFILEBUFFERMODIFIED:    printf("VAR referenced file buffer modified\n"); break;
     case CONTAINERMISMATCH:                  printf("Container length(s) do not match\n"); break;
     case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
+    case DISPOSEOFWITHREFERENCEDBLOCK:       printf("Dispose of with referenced block\n"); break;
+    case WITHBASELISTEMPTY:                  printf("With base list empty\n"); break;
   }
   finish(1);
 }
@@ -1012,6 +917,14 @@ void swpstk(address l)
 }
 
 /* end of accessor functions */
+
+*--------------------------------------------------------------------*)
+
+/* external routines */
+
+#ifdef EXTERNALS
+#include "externals.inc"
+#endif
 
 /*--------------------------------------------------------------------*/
 
