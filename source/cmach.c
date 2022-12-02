@@ -1163,6 +1163,15 @@ void load(FILE* fp)
         fscanf(fp, "%2lx\n", &csc); if (cs != csc) errorl();
     }
     pctop = ad;
+    /* uncomment for program code dump */
+    /* 
+    printf("core:\n");
+    for (ad =0; ad < 0x100; ad++) {
+        if (!(ad%16)) printf("\n");
+        printf("%02x ", getbyt(ad));
+    }
+    printf("\n\n");
+    */
 } /*load*/
 
 /*------------------------------------------------------------------------*/
@@ -2341,7 +2350,7 @@ void sinins()
 
     /* instruction execution trace diagnostic */
     /*
-    printf("sinins: pc: %08x sp: %08x mp: %02x @pc:%02x/%03d\n",
+    printf("sinins: pc: %08lx sp: %08lx mp: %02lx @pc:%02x/%03d\n",
            pc, sp, mp, store[pc], store[pc]);
     */
 
@@ -2849,6 +2858,9 @@ void sinins()
                       }
                       break;
 
+    case 243 /* wbs */: break; /* dummy handlers for now */
+    case 244 /* wbe */: break;
+
     case 174 /*mrkl*/: getq(); srclin = q; break;
 
     case 207 /*bge*/: getq();
@@ -2984,8 +2996,8 @@ void sinins()
     case 241 /*lsa*/: getq(); pshadr(sp+q); break;
 
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 243, 244, 245, 246,
-       247, 248, 249, 250, 251, 252, 253, 254, 255 */
+    /* 228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 245, 246, 247, 
+       248, 249, 250, 251, 252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

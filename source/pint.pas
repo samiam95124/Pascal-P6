@@ -2071,8 +2071,8 @@ procedure load;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
          instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
          instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
-         instr[243]:='wbs       '; insp[243] := false; insq[243] := intsize;
-         instr[244]:='wbe       '; insp[244] := false; insq[244] := intsize;
+         instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;
+         instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
