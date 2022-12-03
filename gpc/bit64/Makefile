@@ -105,6 +105,7 @@ clean:
 	find . -name "*.err" -type f -delete
 	find . -name "*.ecd" -type f -delete
 	find . -name "*.tmp" -type f -delete
+	find . -name "*.o" -type f -delete
 	find . -name "prd" -type f -delete
 	find . -name "prr" -type f -delete
 	find . -name "temp" -type f -delete
