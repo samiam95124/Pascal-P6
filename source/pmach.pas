@@ -2317,6 +2317,8 @@ begin (*callsp*)
                            ad := ad-(l*intsize); ad1 := ad1+(l*intsize);
                            if varlap(ad, ad+ad1-1) then
                              errorv(DisposeOfVarReferencedBlock);
+                           if withsch(ad) then
+                             errorv(DisposeOfWithReferencedBlock);
                            dspspc(ad1, ad);
                            while i > 0 do begin popint(j); i := i-1 end;
                            popadr(ad);

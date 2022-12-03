@@ -538,6 +538,10 @@ boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 boolean filbof[MAXFIL+1]; /* beginning of file */
 varptr varlst; /* active var block pushdown stack */
 varptr varfre; /* free var block entries */
+wthptr wthlst; /* active with block pushdown stack */
+int wthcnt; /* number of outstanding with levels */
+wthptr wthfre; /* free with block entries */
+int exitcode; /* exit code for program */
 
 long i;
 char c1;
@@ -1118,6 +1122,39 @@ long varlap(address s, address e)
     while (vp && !f) {
         f = (vp->e >= s && vp->s <= e);
         vp = vp->next;
+    }
+
+    return (f);
+}
+
+void withenter(address b)
+{
+    wthptr wp;
+
+    if (wthfre) { wp = wthfre; wthfre = wp->next }
+    else wp = (wthptr) malloc(sizeof(wthblk));
+    wp->b = b; wp->next = wthlst; wthlst = wp;
+    wthcnt++;
+}
+
+void withexit(void)
+{
+    wthptr wp;
+
+    if (!wthlst) errorv(WITHBASELISTEMPTY);
+    wp = wthlst; wthlst = wp->next; wp->next = wthfre; wthfre = wp;
+    wthcnt--;
+}
+
+boolean withsch(address b)
+{
+    wthptr  wp;
+    boolean f;
+
+    wp = wthlst; f = FALSE;
+    while (wp && !f) {
+        f = wp->b = b;
+        wp = wp->next;
     }
 
     return (f);
@@ -2018,6 +2055,8 @@ void callsp(void)
     case 26/*dsp*/: popadr(ad1); popadr(ad);
                     if (varlap(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
+                    if withsch(ad)
+                      errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad); break;
     case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
                     /* add padding for zero tag case */
@@ -2045,6 +2084,8 @@ void callsp(void)
                     ad = ad-(l*INTSIZE); ad1 = ad1+(l*INTSIZE);
                     if (varlap(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
+                    if withsch(ad)
+                      errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad);
                     while (i > 0) { popint(j); i = i-1; };
                     popadr(ad);
@@ -2460,6 +2501,8 @@ void sinins()
     case 140 /* equs */: popset(s2); popset(s1); pshint(sequ(s1,s2)); break;
     case 142 /* equm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(b); break;
+    case 215 /* equv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                        compare(&b, &a1, &a2); pshint(b); break;
 
     case 18  /* neqa */: popadr(a2); popadr(a1); pshint(a1!=a2); break;
     case 145 /* neqb */:
@@ -2469,6 +2512,8 @@ void sinins()
     case 146 /* neqs */: popset(s2); popset(s1); pshint(!sequ(s1,s2)); break;
     case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
+    case 216 /* neqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                         compare(&b, &a1, &a2); pshint(ord(not b)); break;
 
     case 151 /* geqb */:
     case 153 /* geqc */:
@@ -2478,6 +2523,9 @@ void sinins()
     case 154 /* geqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
+    case 220 /* geqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                         compare(&b, &a1, &a2);
+                         pshint(ord(b or (store[a1] >= store[a2]))); break;
 
     case 157 /* grtb */:
     case 159 /* grtc */:
@@ -2487,6 +2535,9 @@ void sinins()
     case 160 /* grtm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] > store[a2])); break;
+    case 218 /* grtv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                         compare(&b, &a1, &a2);
+                         pshint(ord(not b and (store[a1] > store[a2]))); break;
 
     case 163 /* leqb */:
     case 165 /* leqc */:
@@ -2496,6 +2547,9 @@ void sinins()
     case 166 /* leqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
+    case 219 /*leqv*/:   popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                         compare(&b, &a1, &a2);
+                         pshint(ord(b or (store[a1] <= store[a2]))); break;
 
     case 169 /* lesb */:
     case 171 /* lesc */:
@@ -2505,6 +2559,9 @@ void sinins()
     case 172 /* lesm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] < store[a2])); break;
+    case 217 /* lesv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+                         compare(&b, &a1, &a2);
+                         pshint(ord(not b and (store[a1] < store[a2]))); break;
 
     case 23 /*ujp*/: getq(); pc = q; break;
     case 24 /*fjp*/: getq(); popint(i); if (i == 0) pc = q; break;
@@ -2771,8 +2828,8 @@ void sinins()
                       }
                       break;
 
-    case 243 /* wbs */: break; /* dummy handlers for now */
-    case 244 /* wbe */: break;
+    case 243 /* wbs */: popadr(ad); pshadr(ad); withenter(ad); break;
+    case 244 /* wbe */: withexit; break;
 
     case 174 /*mrkl*/: getq(); srclin = q; break;
 
@@ -2908,9 +2965,18 @@ void sinins()
 
     case 241 /*lsa*/: getq(); pshadr(sp+q); break;
 
+    case 242 /*eext*/:
+                    ExecuteExternal(pc-extvecbase);
+                    /* set stack below function result, if any */
+                    sp = mp;
+                    pc = getadr(mp+markra);
+                    ep = getadr(mp+markep);
+                    mp = getadr(mp+markdl)
+                    break;
+
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 239, 240, 241, 242, 245, 246, 247, 
-       248, 249, 250, 251, 252, 253, 254, 255 */
+    /* 228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250, 251, 
+       252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }
@@ -2929,6 +2995,10 @@ void main (long argc, char *argv[])
 
     varlst = NULL; /* set no VAR block entries */
     varfre = NULL;
+    wthlst = NULL; /* set no with block entries */
+    wthcnt = 0;
+    wthfre = nil;
+    exitcode = 0; /* clear program exit code */
 
     argc--; argv++; /* discard the program parameter */
 
@@ -3019,6 +3089,6 @@ void main (long argc, char *argv[])
         sinins();
     } while (!stopins); /* until stop instruction is seen */
 
-    finish(0); /* exit program with good status */
+    finish(exitcode); /* exit program with good status */
 
 }
