@@ -60,6 +60,7 @@ do
 		echo
 		echo "--pmach	Generate mach code and run the result through pmach."
 		echo "--cmach	Generate mach code and run the result through cmach."
+        echo "--package Generate a packaged application and run."
 		echo
 		echo "The intermediate code is placed in <file>.p6."
 		echo
@@ -82,6 +83,12 @@ do
 	        rm temp
 	
         elif [ "$cmach" = "1" ]; then
+
+            echo "{\$e+}" > temp
+	        cat temp $param.pas > prd
+	        rm temp
+
+        elif [ "$package" = "1" ]; then
 
             echo "{\$e+}" > temp
 	        cat temp $param.pas > prd
@@ -135,8 +142,8 @@ elif [ "$package" = "1" ]; then
 	mv $progfile.p6o prd
 	genobj
 	cp prr program_code.c
-	gcc -DPACKAGE -I. -o $progfile source/cmach.c
-	$progfile
+	gcc -DPACKAGE -DWRDSIZ32 -I. -o $progfile source/cmach/cmach.c -lm
+	./$progfile
 	
 else
 

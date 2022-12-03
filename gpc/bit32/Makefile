@@ -34,7 +34,7 @@
 # specifically state the characteristics of the host.
 #
 PC=gpc
-PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names
+PFLAGS=--classic-pascal-level-0 --no-warnings --transparent-file-names -lpthread
 CFLAGS=
 CPPFLAGS32LE=-DWRDSIZ32 -DLENDIAN -DGNU_PASCAL
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
@@ -74,8 +74,8 @@ pmach: source/pmach.pas
 	$(PC) $(PFLAGS) -o bin/pmach32le source/pmach.mpp.pas
 	cp bin/pmach32le bin/pmach
 
-cmach: source/cmach.c
-	$(CC) $(CFLAGS) $(CPPFLAGS32LE) -o bin/cmach32le source/cmach.c -lm
+cmach: source/cmach/cmach.c
+	$(CC) $(CFLAGS) $(CPPFLAGS32LE) -o bin/cmach32le source/cmach/cmach.c -lm -lpthread
 	cp bin/cmach32le bin/cmach
 
 genobj: source/genobj.pas
