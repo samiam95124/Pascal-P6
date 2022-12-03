@@ -2829,7 +2829,7 @@ void sinins()
                       break;
 
     case 243 /* wbs */: popadr(ad); pshadr(ad); withenter(ad); break;
-    case 244 /* wbe */: withexit; break;
+    case 244 /* wbe */: withexit(); break;
 
     case 174 /*mrkl*/: getq(); srclin = q; break;
 

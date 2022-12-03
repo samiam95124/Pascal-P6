@@ -41,15 +41,15 @@ cmach run
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-123 standard_tests/iso7185pat.dif
+0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
-Fri 02 Dec 2022 10:08:31 PM PST
+Fri 02 Dec 2022 10:33:22 PM PST
 Source files
 808f6a4e2c79d4204b957af0e2dfd7c8  -
 batch files
-83ea2799e1bf33307d4ac0c5a9c3833c  -
+ddd9181518371f5fcec28dc81ea656df  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
