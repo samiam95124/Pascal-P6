@@ -396,7 +396,8 @@ const
       InvalidContainerLevel              = 117;
       DisposeOfWithReferencedBlock       = 118;
       WithBaseListEmpty                  = 119;
-      privexceptiontop                   = 119;
+      ExternalsNotEnabled                = 120;
+      privexceptiontop                   = 120;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 81;   { number of predefined procedures/functions }
@@ -888,6 +889,7 @@ begin writeln; write('*** Runtime error');
     InvalidContainerLevel:              writeln('InvalidContainerLevel');
     DisposeOfWithReferencedBlock:       writeln('Dispose of with referenced block');
     WithBaseListEmpty:                  writeln('With base list empty');
+    ExternalsNotEnabled:                writeln('Externals not enabled');
   end;
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
@@ -5184,12 +5186,16 @@ begin
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
     242 (*eext*): begin
+#ifdef EXTERNALS
                     ExecuteExternal(pc-extvecbase);
                     { set stack below function result, if any }
                     sp := mp;
                     pc := getadr(mp+markra);
                     ep := getadr(mp+markep);
                     mp := getadr(mp+markdl)
+#else
+                    errorv(ExternalsNotEnabled)
+#endif
                   end;
 
     { illegal instructions }

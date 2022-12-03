@@ -438,6 +438,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define INVALIDCONTAINERLEVEL               117
 #define DISPOSEOFWITHREFERENCEDBLOCK        118
 #define WITHBASELISTEMPTY                   119
+#define EXTERNALSNOTENABLED                 120
 #define PRIVEXCEPTIONTOP                    119
 
 #define MAXSP        81   /* number of predefined procedures/functions */
@@ -494,7 +495,7 @@ typedef struct _wthblk *wthptr;
 typedef struct _wthblk {
     wthptr next;  /* next entry */
     address b;    /* address of block */
-} varblk;
+} wthblk;
 
 /**************************** Global Variables ********************************/
 
@@ -711,6 +712,7 @@ void errorv(address ea)
     case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
     case DISPOSEOFWITHREFERENCEDBLOCK:       printf("Dispose of with referenced block\n"); break;
     case WITHBASELISTEMPTY:                  printf("With base list empty\n"); break;
+    case EXTERNALSNOTENABLED:                printf("Externals not enabled"); break;
   }
   finish(1);
 }
@@ -922,7 +924,7 @@ void swpstk(address l)
 
 /* end of accessor functions */
 
-*--------------------------------------------------------------------*)
+/*--------------------------------------------------------------------*/
 
 /* external routines */
 
@@ -1131,7 +1133,7 @@ void withenter(address b)
 {
     wthptr wp;
 
-    if (wthfre) { wp = wthfre; wthfre = wp->next }
+    if (wthfre) { wp = wthfre; wthfre = wp->next; }
     else wp = (wthptr) malloc(sizeof(wthblk));
     wp->b = b; wp->next = wthlst; wthlst = wp;
     wthcnt++;
@@ -2055,8 +2057,7 @@ void callsp(void)
     case 26/*dsp*/: popadr(ad1); popadr(ad);
                     if (varlap(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
-                    if withsch(ad)
-                      errorv(DISPOSEOFWITHREFERENCEDBLOCK);
+                    if (withsch(ad)) errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad); break;
     case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
                     /* add padding for zero tag case */
@@ -2084,8 +2085,7 @@ void callsp(void)
                     ad = ad-(l*INTSIZE); ad1 = ad1+(l*INTSIZE);
                     if (varlap(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
-                    if withsch(ad)
-                      errorv(DISPOSEOFWITHREFERENCEDBLOCK);
+                    if (withsch(ad)) errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad);
                     while (i > 0) { popint(j); i = i-1; };
                     popadr(ad);
@@ -2513,7 +2513,7 @@ void sinins()
     case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
     case 216 /* neqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
-                         compare(&b, &a1, &a2); pshint(ord(not b)); break;
+                         compare(&b, &a1, &a2); pshint(!b); break;
 
     case 151 /* geqb */:
     case 153 /* geqc */:
@@ -2525,7 +2525,7 @@ void sinins()
                          pshint(b || (store[a1] >= store[a2])); break;
     case 220 /* geqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
                          compare(&b, &a1, &a2);
-                         pshint(ord(b or (store[a1] >= store[a2]))); break;
+                         pshint(b || store[a1] >= store[a2]); break;
 
     case 157 /* grtb */:
     case 159 /* grtc */:
@@ -2537,7 +2537,7 @@ void sinins()
                          pshint(!b && (store[a1] > store[a2])); break;
     case 218 /* grtv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
                          compare(&b, &a1, &a2);
-                         pshint(ord(not b and (store[a1] > store[a2]))); break;
+                         pshint(!b && store[a1] > store[a2]); break;
 
     case 163 /* leqb */:
     case 165 /* leqc */:
@@ -2549,7 +2549,7 @@ void sinins()
                          pshint(b || (store[a1] <= store[a2])); break;
     case 219 /*leqv*/:   popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
                          compare(&b, &a1, &a2);
-                         pshint(ord(b or (store[a1] <= store[a2]))); break;
+                         pshint(b || store[a1] <= store[a2]); break;
 
     case 169 /* lesb */:
     case 171 /* lesc */:
@@ -2561,7 +2561,7 @@ void sinins()
                          pshint(!b && (store[a1] < store[a2])); break;
     case 217 /* lesv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
                          compare(&b, &a1, &a2);
-                         pshint(ord(not b and (store[a1] < store[a2]))); break;
+                         pshint(!b && store[a1] < store[a2]); break;
 
     case 23 /*ujp*/: getq(); pc = q; break;
     case 24 /*fjp*/: getq(); popint(i); if (i == 0) pc = q; break;
@@ -2966,12 +2966,16 @@ void sinins()
     case 241 /*lsa*/: getq(); pshadr(sp+q); break;
 
     case 242 /*eext*/:
+#ifdef EXTERNALS
                     ExecuteExternal(pc-extvecbase);
                     /* set stack below function result, if any */
                     sp = mp;
-                    pc = getadr(mp+markra);
-                    ep = getadr(mp+markep);
-                    mp = getadr(mp+markdl)
+                    pc = getadr(mp+MARKRA);
+                    ep = getadr(mp+MARKEP);
+                    mp = getadr(mp+MARKDL);
+#else
+                    errorv(EXTERNALSNOTENABLED);
+#endif
                     break;
 
     /* illegal instructions */
@@ -2997,7 +3001,7 @@ void main (long argc, char *argv[])
     varfre = NULL;
     wthlst = NULL; /* set no with block entries */
     wthcnt = 0;
-    wthfre = nil;
+    wthfre = NULL;
     exitcode = 0; /* clear program exit code */
 
     argc--; argv++; /* discard the program parameter */
