@@ -9558,7 +9558,7 @@ end;
       optsl[1]  := 'debugflt ';
       optsl[2]  := 'prtlab    ';
       optsl[3]  := 'lstcod    ';
-      optsl[4]  := 'chkdebug  ';
+      optsl[4]  := 'chk       ';
       optsl[5]  := 'machdeck  ';
       optsl[6]  := 'debugsrc  ';
       optsl[7]  := 'prtlabdef ';
