@@ -45,11 +45,11 @@ cmach run
 0 sample_programs/pascals.dif
 0 p2/roman.dif
 0 p4/standardp.dif
-Fri 02 Dec 2022 10:33:22 PM PST
+Sat 03 Dec 2022 05:07:36 PM PST
 Source files
-808f6a4e2c79d4204b957af0e2dfd7c8  -
+c85cf843ee4c4d1c552b6a1a9becb02a  -
 batch files
-ddd9181518371f5fcec28dc81ea656df  -
+7c382793b23337c56ac1dcec1e616bc8  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
@@ -59,4 +59,4 @@ c17b6d54c521ff188ad269190416bd9d  -
 standard test files
 ebb95499bc364ac8397865db233c1196  -
 other files
-8b9bdae44d1616689b102622d4fff2c1  -
+62046e4dcd7962962f4fb053dee7c83d  -

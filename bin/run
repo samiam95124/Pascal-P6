@@ -6,7 +6,7 @@
 #
 # Execution:
 #
-# run <file> [pmach|cmach|pint] [<inpfile>] <file>
+# run <file> [--pmach|--cmach|--pint] [<inpfile>] <file>
 #
 # <file> is the filename without extention.
 #
@@ -89,15 +89,15 @@ if [ -z "$progfile" ]; then
 	
 fi
 
-if [ ! -f "$param.p6" ]; then
+if [ ! -f "$progfile.p6" ]; then
 	
-	echo "$param.p6 does not exist"
+	echo "$progfile.p6 does not exist"
 	exit 1
 			
 fi
-if [ ! -f "$param.inp" ]; then
+if [ ! -f "$progfile.inp" ]; then
 		
-	echo "$param.inp does not exist"
+	echo "$progfile.inp does not exist"
 	exit 1
 			
 fi

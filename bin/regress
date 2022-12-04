@@ -26,36 +26,36 @@ full="0"
 #
 function do_regress {
 
-    testprog $option sample_programs/hello
+    testprog --noerrmsg $option sample_programs/hello
     wc -l sample_programs/hello.dif >> regress_report.txt
-    testprog $option sample_programs/roman
+    testprog --noerrmsg $option sample_programs/roman
     wc -l sample_programs/roman.dif >> regress_report.txt
-    testprog $option sample_programs/match
+    testprog --noerrmsg $option sample_programs/match
     wc -l sample_programs/match.dif >> regress_report.txt
-    testprog $option sample_programs/prime
+    testprog --noerrmsg $option sample_programs/prime
     wc -l sample_programs/prime.dif >> regress_report.txt
-    testprog $option sample_programs/qsort
+    testprog --noerrmsg $option sample_programs/qsort
     wc -l sample_programs/qsort.dif >> regress_report.txt
-    testprog $option sample_programs/fbench
+    testprog --noerrmsg $option sample_programs/fbench
     wc -l sample_programs/fbench.dif >> regress_report.txt
-    testprog $option sample_programs/drystone
+    testprog --noerrmsg $option sample_programs/drystone
     wc -l sample_programs/drystone.dif >> regress_report.txt
-    testprog $option sample_programs/startrek
+    testprog --noerrmsg $option sample_programs/startrek
     wc -l sample_programs/startrek.dif >> regress_report.txt
-    testprog $option sample_programs/basics
+    testprog --noerrmsg $option sample_programs/basics
     wc -l sample_programs/basics.dif >> regress_report.txt
-    testprog $option basic/basic
+    testprog --noerrmsg $option basic/basic
     wc -l basic/basic.dif >> regress_report.txt
     #
     # Now run the ISO7185pat compliance test
     #
     if [ "$option" = "--cmach" ]; then
     
-    	testprog $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat
+    	testprog --noerrmsg $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat
     	
     else
     
-		testprog $option standard_tests/iso7185pat
+		testprog --noerrmsg $option standard_tests/iso7185pat
     	
     fi
     wc -l standard_tests/iso7185pat.dif >> regress_report.txt
