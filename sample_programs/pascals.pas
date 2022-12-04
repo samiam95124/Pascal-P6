@@ -1,3 +1,4 @@
+{$u-}
 {******************************************************************************
 *                                                                             *
 * Pascal-s entered from wirth's Pascal-s document and converted for           *

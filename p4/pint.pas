@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l+*)
+(*$c+,t-,d-,l+,u-*)
 (*Assembler and interpreter of Pascal code*)
 (*K. Jensen, N. Wirth, Ch. Jacobi, ETH May 76*)
 

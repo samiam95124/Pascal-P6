@@ -9273,9 +9273,9 @@ end;
     prtables := false; option[20] := false; list := true; option[12] := true;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
-    chkudtc := false; option[21] := false; option[19] := false; iso7185 := false;
+    chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
-    chkvbk := false; option[9] := false; experr := true; option[10] := true;
+    chkvbk := true; option[9] := true; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     lc := lcaftermarkstack; gc := 0;
@@ -9816,7 +9816,7 @@ begin
   write(prr, 'o ');
   for oi := 1 to maxopt do
     { exclude pint options and unused }
-    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,9,18,11,26]) then
+    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26]) then
       begin 
     for oni :=  1 to optlen do 
       if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);

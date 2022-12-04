@@ -11,7 +11,7 @@
 echo Running tests
 
 for tp in standard_tests/iso7185prt*.pas ; do
-    testprog standard_tests/`basename $tp .pas`
+    testprog --noerrmsg standard_tests/`basename $tp .pas`
 done
 
 echo Creating combined listing

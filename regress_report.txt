@@ -14,7 +14,7 @@ pint run
 0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 0 p2/roman.dif
-0 p4/standardp.dif
+980 p4/standardp.dif
 pmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -29,7 +29,7 @@ pmach run
 0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 0 p2/roman.dif
-0 p4/standardp.dif
+980 p4/standardp.dif
 cmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -44,18 +44,18 @@ cmach run
 0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 0 p2/roman.dif
-0 p4/standardp.dif
-Sat 03 Dec 2022 06:00:36 PM PST
+982 p4/standardp.dif
+Sun 04 Dec 2022 12:38:53 AM PST
 Source files
-c85cf843ee4c4d1c552b6a1a9becb02a  -
+a8854b75c3dbbb488b7f54ecc26423bf  -
 batch files
-7e136ba2d2e59b622a8cb70f4362e4e9  -
+575ea57bf8b141e32c688ee4f4771736  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
-e0a677c6cae597855a80c25483229e0b  -
+58f285241c4e61fbc98d9440dd3ec184  -
 Sample program test files
-c17b6d54c521ff188ad269190416bd9d  -
+ab3d375e247ac594023432c220e9277d  -
 standard test files
 ebb95499bc364ac8397865db233c1196  -
 other files
