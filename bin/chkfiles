@@ -7,7 +7,7 @@ echo Source files
 cat source/*.pas | md5sum
 
 echo batch files
-cat bin/chkfiles bin/cmach bin/compile bin/compile bin/cpcom bin/cpcom bin/cpcoms bin/cpcoms bin/cpint bin/cpint bin/cpints bin/cpints bin/diffnole bin/diffnole bin/doseol bin/doseol bin/fixeol bin/fixeol bin/make_flip bin/make_flip bin/p6 bin/p6 bin/regress bin/regress bin/repo_ready bin/repo_ready bin/run bin/run bin/runprt bin/runprt bin/setgpc bin/setiso7185 bin/testp2 bin/testp2 bin/testp4 bin/testp4 bin/testpascals bin/testpascals bin/testprog bin/testprog bin/unixeol bin/unixeol bin/zipp5 bin/zipp5 | md5sum
+cat bin/chkfiles bin/cmach bin/compile bin/compile bin/cpcom bin/cpcom bin/cpcoms bin/cpcoms bin/cpint bin/cpint bin/cpints bin/cpints bin/diffnole bin/diffnole bin/doseol bin/doseol bin/fixeol bin/fixeol bin/make_flip bin/make_flip bin/p6 bin/p6 bin/regress bin/regress bin/repo_ready bin/repo_ready bin/run bin/run bin/runprt bin/runprt bin/testp2 bin/testp2 bin/testp4 bin/testp4 bin/testpascals bin/testpascals bin/testprog bin/testprog bin/unixeol bin/unixeol bin/zipp5 bin/zipp5 | md5sum
 
 echo P2 files
 cat p2/*.pas | md5sum
