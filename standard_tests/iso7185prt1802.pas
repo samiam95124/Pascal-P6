@@ -15,7 +15,7 @@ procedure a(var i: integer);
 
 begin
 
-   i := 1
+   i := 10
 
 end;
 
