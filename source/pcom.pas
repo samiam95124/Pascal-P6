@@ -7731,7 +7731,8 @@ end;
                if part = ptview then error(290)
             end;
             tagasc := false;
-            if gattr.kind = varbl then tagasc := gattr.tagfield and debug;
+            if gattr.kind = varbl then 
+              tagasc := gattr.tagfield and (debug or chkvbk);
             lattr2 := gattr; { save access before load }
             if gattr.typtr <> nil then
               if (gattr.access<>drct) or (gattr.typtr^.form>power) or

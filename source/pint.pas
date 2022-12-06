@@ -533,7 +533,7 @@ type
       optinx = 1..optlen;
       optstr = packed array [optinx] of char;
 
-var   pc          : address;   (*program address register*)
+var   pc, pcs     : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
       gbtop, gbsiz: address;   { top of globals, size of globals }
       gbset       : boolean;   { global size was set }
@@ -753,6 +753,17 @@ begin
     writeln
 end;
 
+procedure lstins(var ad: address); forward;
+
+procedure dmpins;
+begin
+    wrthex(output, pcs, maxdigh, true);
+    write('/');
+    wrthex(output, sp, maxdigh, true);
+    lstins(pcs);
+    writeln
+end;
+
 procedure errors(a: address; l: address);
 begin writeln; write('*** Runtime error');
       if srclin > 0 then write(' [', srclin:1, ']');
@@ -891,6 +902,13 @@ begin writeln; write('*** Runtime error');
     WithBaseListEmpty:                  writeln('With base list empty');
     ExternalsNotEnabled:                writeln('Externals not enabled');
   end;
+
+  { Uncomment for machine instruction dump on fault }
+
+  {
+  dmpins;
+  }
+
   if dodebug or dodbgflt then debug { enter debugger on fault }
   else goto 1
 end;
@@ -1685,7 +1703,7 @@ end;
 
 { list single instruction at address }
 
-procedure lstins(var ad: address);
+procedure lstins{(var ad: address)};
 
 var op: instyp; p : lvltyp; q, q1,q2 : integer;  (*instruction register*)
 
@@ -4386,7 +4404,7 @@ end;
 procedure sinins;
 var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,i1,i2 : integer; c1: char;
     i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype;
-    a1,a2,a3: address; pcs: address;
+    a1,a2,a3: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
 
