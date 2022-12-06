@@ -6898,8 +6898,9 @@ end;
           { change variable from size of base to pointer+template for containers }
           lsize := ptrsize+cc*intsize;
         resolvep; { resolve pointer defs before symbol generate }
-        if (lsp^.form = arrayc) and (maxpar = 0) then error(270)
-        else if maxpar <> containers(lsp) then error(271);
+        if lsp <> nil then
+          if (lsp^.form = arrayc) and (maxpar = 0) then error(270)
+          else if maxpar <> containers(lsp) then error(271);
         while nxt <> nil do
           with nxt^ do
             begin

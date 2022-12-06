@@ -1,27 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 {$s+} 
-     2      -32 { 
-     3      -32  
-     4      -32 PRT test 15: Non-numeric label 
-     5      -32  
-     6      -32 } 
-     7      -32  
-     8      -32 program iso7185prt0015; 
-     9      -32  
-    10      -32 label one; 
+
+     1      -48 {$s+} 
+     2      -48 { 
+     3      -48  
+     4      -48 PRT test 15: Non-numeric label 
+     5      -48  
+     6      -48 } 
+     7      -48  
+     8      -48 program iso7185prt0015; 
+     9      -48  
+    10      -48 label one; 
     10   ****           ^397
-    11      -32  
-    12      -32 begin 
-    13        8 end. 
+    10   ****  397 Feature not valid in ISO 7185 Pascal
+    11      -48  
+    12      -48 begin 
+    13        7 end. 
 label           0 unreferenced
                      
     13   ****      ^168
+    13   ****  168 Undefined label
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-168  Undefined label
-397  Feature not valid in ISO 7185 Pascal
+168   1 Undefined label
+397   1 Feature not valid in ISO 7185 Pascal
 

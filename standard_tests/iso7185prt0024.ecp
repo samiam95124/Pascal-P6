@@ -1,32 +1,36 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 {$s+} 
-     2      -32 { 
-     3      -32  
-     4      -32 PRT test 24: Reverse order between label and const 
-     5      -32  
-     6      -32 } 
-     7      -32  
-     8      -32 program iso7185prt0024(output); 
-     9      -32  
-    10      -32 const one = 1; 
-    11      -32  
-    12      -32 label 1; 
+
+     1      -48 {$s+} 
+     2      -48 { 
+     3      -48  
+     4      -48 PRT test 24: Reverse order between label and const 
+     5      -48  
+     6      -48 } 
+     7      -48  
+     8      -48 program iso7185prt0024(output); 
+     9      -48  
+    10      -48 const one = 1; 
+    11      -48  
+    12      -48 label 1; 
     12   ****       ^18
-    13      -32  
-    14      -32 begin 
-    15        8  
-    16        8    writeln(one); 
-    17       15  
-    18       15    goto 1; 
-    19       16  
-    20       16    1: 
-    21       16  
-    22       16 end. 
+    12   ****   18 Error in declaration part
+    13      -48  
+    14      -48 begin 
+    15        7  
+    16        7    writeln(one); 
+    17       14  
+    18       14    goto 1; 
+    19       15  
+    20       15    1: 
+    21       15  
+    22       15 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
- 18  Error in declaration part
+ 18   1 Error in declaration part
 
