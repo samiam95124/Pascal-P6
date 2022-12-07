@@ -1,33 +1,37 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 104: Missing procedure identifier 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0104(output); 
-     8      -32  
-     9      -32 { The appearance of a procedure with a matching list could conceivably 
-    10      -32   allow recovery } 
-    11      -32 procedure x(a, b: integer); 
-    12      -40  
-    13      -40 begin 
-    14        8  
-    15        8    writeln(a, b) 
-    16       16  
-    17       16 end; 
-    18       19  
-    19       19 begin 
-    20       21  
-    21       21    (1, 2) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 104: Missing procedure identifier 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0104(output); 
+     8      -48  
+     9      -48 { The appearance of a procedure with a matching list could conceivably 
+    10      -48   allow recovery } 
+    11      -48 procedure x(a, b: integer); 
+    12      -64  
+    13      -64 begin 
+    14        7  
+    15        7    writeln(a, b) 
+    16       15  
+    17       15 end; 
+    18       18  
+    19       18 begin 
+    20       20  
+    21       20    (1, 2) 
     21   ****      ^6
-    22       21  
-    23       21 end. 
+    21   ****    6 Illegal symbol
+    22       20  
+    23       20 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
+  6   1 Illegal symbol
 

@@ -1,30 +1,37 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 108: Mispelled "end" on statement block 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0108; 
-     8      -32  
-     9      -32 begin 
-    10        8  
-    11        8    begin 
-    12        8  
-    13        8       if 1=1 then 
-    14       12  
-    15       12    edn 
-    16       12  
-    17       12 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 108: Mispelled "end" on statement block 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0108; 
+     8      -48  
+     9      -48 begin 
+    10        7  
+    11        7    begin 
+    12        7  
+    13        7       if 1=1 then 
+    14       11  
+    15       11    edn 
+    16       11  
+    17       11 end. 
     17   ****     ^104,51^6,13
+    17   ****  104 Identifier not declared
+    17   ****   51 ':=' expected
+    17   ****    6 Illegal symbol
+    17   ****   13 'end' expected
 
 Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
- 13  'end' expected
- 51  ':=' expected
-104  Identifier not declared
+  6   1 Illegal symbol
+ 13   1 'end' expected
+ 51   1 ':=' expected
+104   1 Identifier not declared
 
