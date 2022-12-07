@@ -1,33 +1,39 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 119: Misspelled "of" on case statement 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0119; 
-     8      -32  
-     9      -32 var x, a: integer; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    case x fo 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 119: Misspelled "of" on case statement 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0119; 
+     8      -48  
+     9      -48 var x, a: integer; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    case x fo 
     13   ****              ^59
-    14        8  
-    15        8       1: a := 1; 
+    13   ****   59 Error in variable
+    14        7  
+    15        7       1: a := 1; 
     15   ****          ^8,50
-    16       13       2: a := 2 
-    17       13  
-    18       13    end 
-    19       23  
-    20       23 end. 
+    15   ****    8 'of' expected
+    15   ****   50 Error in constant
+    16       12       2: a := 2 
+    17       12  
+    18       12    end 
+    19       22  
+    20       22 end. 
 
 Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-  8  'of' expected
- 50  Error in constant
- 59  Error in variable
+  8   1 'of' expected
+ 50   1 Error in constant
+ 59   1 Error in variable
 

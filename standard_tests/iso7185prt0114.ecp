@@ -1,25 +1,29 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 114: Misspelled "else" on conditional 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0114; 
-     8      -32  
-     9      -32 var a, b: integer; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    if 1=1 then a := b eles b := a 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 114: Misspelled "else" on conditional 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0114; 
+     8      -48  
+     9      -48 var a, b: integer; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    if 1=1 then a := b eles b := a 
     13   ****                            ^59
-    14       12  
-    15       12 end. 
+    13   ****   59 Error in variable
+    14       11  
+    15       11 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
- 59  Error in variable
+ 59   1 Error in variable
 
