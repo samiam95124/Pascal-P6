@@ -16,35 +16,35 @@ standard_tests/iso7185prt1918.err
 Compile output differences: **********************
 
 
-*** compare standard_tests/iso7185prt0001.err failed
+    compare standard_tests/iso7185prt0001.err OK
 *** compare standard_tests/iso7185prt0002.err failed
-*** compare standard_tests/iso7185prt0003.err failed
-*** compare standard_tests/iso7185prt0006.err failed
-*** compare standard_tests/iso7185prt0007.err failed
-*** compare standard_tests/iso7185prt0008.err failed
+    compare standard_tests/iso7185prt0003.err OK
+    compare standard_tests/iso7185prt0006.err OK
+    compare standard_tests/iso7185prt0007.err OK
+    compare standard_tests/iso7185prt0008.err OK
 *** compare standard_tests/iso7185prt0009.err failed
 *** compare standard_tests/iso7185prt0010.err failed
-*** compare standard_tests/iso7185prt0011.err failed
-*** compare standard_tests/iso7185prt0012.err failed
-*** compare standard_tests/iso7185prt0013.err failed
-*** compare standard_tests/iso7185prt0014.err failed
-*** compare standard_tests/iso7185prt0015.err failed
-*** compare standard_tests/iso7185prt0016.err failed
-*** compare standard_tests/iso7185prt0017.err failed
-*** compare standard_tests/iso7185prt0018.err failed
+    compare standard_tests/iso7185prt0011.err OK
+    compare standard_tests/iso7185prt0012.err OK
+    compare standard_tests/iso7185prt0013.err OK
+    compare standard_tests/iso7185prt0014.err OK
+    compare standard_tests/iso7185prt0015.err OK
+    compare standard_tests/iso7185prt0016.err OK
+    compare standard_tests/iso7185prt0017.err OK
+    compare standard_tests/iso7185prt0018.err OK
 *** compare standard_tests/iso7185prt0019.err failed
-*** compare standard_tests/iso7185prt0020.err failed
+    compare standard_tests/iso7185prt0020.err OK
 *** compare standard_tests/iso7185prt0021.err failed
-*** compare standard_tests/iso7185prt0022.err failed
-*** compare standard_tests/iso7185prt0023.err failed
-*** compare standard_tests/iso7185prt0024.err failed
-*** compare standard_tests/iso7185prt0025.err failed
+    compare standard_tests/iso7185prt0022.err OK
+    compare standard_tests/iso7185prt0023.err OK
+    compare standard_tests/iso7185prt0024.err OK
+    compare standard_tests/iso7185prt0025.err OK
 *** compare standard_tests/iso7185prt0026.err failed
-*** compare standard_tests/iso7185prt0027.err failed
+    compare standard_tests/iso7185prt0027.err OK
 *** compare standard_tests/iso7185prt0028.err failed
 *** compare standard_tests/iso7185prt0029.err failed
-*** compare standard_tests/iso7185prt0030.err failed
-*** compare standard_tests/iso7185prt0031.err failed
+    compare standard_tests/iso7185prt0030.err OK
+    compare standard_tests/iso7185prt0031.err OK
 *** compare standard_tests/iso7185prt0032.err failed
 *** compare standard_tests/iso7185prt0033.err failed
 *** compare standard_tests/iso7185prt0034.err failed
@@ -418,68 +418,68 @@ Compile output differences: **********************
 Run output differences: **********************
 
 
-*** run standard_tests/iso7185prt1702A.dif failed
-*** run standard_tests/iso7185prt1702b.dif failed
-*** run standard_tests/iso7185prt1702c.dif failed
-*** run standard_tests/iso7185prt1702d.dif failed
-*** run standard_tests/iso7185prt1703.dif failed
-*** run standard_tests/iso7185prt1704.dif failed
-*** run standard_tests/iso7185prt1705.dif failed
-*** run standard_tests/iso7185prt1706a.dif failed
-*** run standard_tests/iso7185prt1706b.dif failed
-*** run standard_tests/iso7185prt1708.dif failed
-*** run standard_tests/iso7185prt1709.dif failed
-*** run standard_tests/iso7185prt1710.dif failed
-*** run standard_tests/iso7185prt1712.dif failed
-*** run standard_tests/iso7185prt1713.dif failed
-*** run standard_tests/iso7185prt1714.dif failed
-*** run standard_tests/iso7185prt1715.dif failed
-*** run standard_tests/iso7185prt1716.dif failed
-*** run standard_tests/iso7185prt1719.dif failed
-*** run standard_tests/iso7185prt1720.dif failed
-*** run standard_tests/iso7185prt1721.dif failed
-*** run standard_tests/iso7185prt1722.dif failed
-*** run standard_tests/iso7185prt1723.dif failed
-*** run standard_tests/iso7185prt1724.dif failed
-*** run standard_tests/iso7185prt1727.dif failed
-*** run standard_tests/iso7185prt1728.dif failed
-*** run standard_tests/iso7185prt1730.dif failed
-*** run standard_tests/iso7185prt1731.dif failed
-*** run standard_tests/iso7185prt1732.dif failed
-*** run standard_tests/iso7185prt1733.dif failed
-*** run standard_tests/iso7185prt1734.dif failed
+    run standard_tests/iso7185prt1702A.dif OK
+    run standard_tests/iso7185prt1702b.dif OK
+    run standard_tests/iso7185prt1702c.dif OK
+    run standard_tests/iso7185prt1702d.dif OK
+    run standard_tests/iso7185prt1703.dif OK
+    run standard_tests/iso7185prt1704.dif OK
+    run standard_tests/iso7185prt1705.dif OK
+    run standard_tests/iso7185prt1706a.dif OK
+    run standard_tests/iso7185prt1706b.dif OK
+    run standard_tests/iso7185prt1708.dif OK
+    run standard_tests/iso7185prt1709.dif OK
+    run standard_tests/iso7185prt1710.dif OK
+    run standard_tests/iso7185prt1712.dif OK
+    run standard_tests/iso7185prt1713.dif OK
+    run standard_tests/iso7185prt1714.dif OK
+    run standard_tests/iso7185prt1715.dif OK
+    run standard_tests/iso7185prt1716.dif OK
+    run standard_tests/iso7185prt1719.dif OK
+    run standard_tests/iso7185prt1720.dif OK
+    run standard_tests/iso7185prt1721.dif OK
+    run standard_tests/iso7185prt1722.dif OK
+    run standard_tests/iso7185prt1723.dif OK
+    run standard_tests/iso7185prt1724.dif OK
+    run standard_tests/iso7185prt1727.dif OK
+    run standard_tests/iso7185prt1728.dif OK
+    run standard_tests/iso7185prt1730.dif OK
+    run standard_tests/iso7185prt1731.dif OK
+    run standard_tests/iso7185prt1732.dif OK
+    run standard_tests/iso7185prt1733.dif OK
+    run standard_tests/iso7185prt1734.dif OK
 *** run standard_tests/iso7185prt1735.dif failed
-*** run standard_tests/iso7185prt1736.dif failed
-*** run standard_tests/iso7185prt1737.dif failed
-*** run standard_tests/iso7185prt1738.dif failed
-*** run standard_tests/iso7185prt1739.dif failed
-*** run standard_tests/iso7185prt1740.dif failed
-*** run standard_tests/iso7185prt1741.dif failed
-*** run standard_tests/iso7185prt1743.dif failed
-*** run standard_tests/iso7185prt1744.dif failed
-*** run standard_tests/iso7185prt1745.dif failed
-*** run standard_tests/iso7185prt1746A.dif failed
-*** run standard_tests/iso7185prt1746b.dif failed
-*** run standard_tests/iso7185prt1750.dif failed
-*** run standard_tests/iso7185prt1751.dif failed
-*** run standard_tests/iso7185prt1754.dif failed
-*** run standard_tests/iso7185prt1755.dif failed
-*** run standard_tests/iso7185prt1756.dif failed
-*** run standard_tests/iso7185prt1757.dif failed
-*** run standard_tests/iso7185prt1758a.dif failed
-*** run standard_tests/iso7185prt1758b.dif failed
-*** run standard_tests/iso7185prt1800.dif failed
+    run standard_tests/iso7185prt1736.dif OK
+    run standard_tests/iso7185prt1737.dif OK
+    run standard_tests/iso7185prt1738.dif OK
+    run standard_tests/iso7185prt1739.dif OK
+    run standard_tests/iso7185prt1740.dif OK
+    run standard_tests/iso7185prt1741.dif OK
+    run standard_tests/iso7185prt1743.dif OK
+    run standard_tests/iso7185prt1744.dif OK
+    run standard_tests/iso7185prt1745.dif OK
+    run standard_tests/iso7185prt1746A.dif OK
+    run standard_tests/iso7185prt1746b.dif OK
+    run standard_tests/iso7185prt1750.dif OK
+    run standard_tests/iso7185prt1751.dif OK
+    run standard_tests/iso7185prt1754.dif OK
+    run standard_tests/iso7185prt1755.dif OK
+    run standard_tests/iso7185prt1756.dif OK
+    run standard_tests/iso7185prt1757.dif OK
+    run standard_tests/iso7185prt1758a.dif OK
+    run standard_tests/iso7185prt1758b.dif OK
+    run standard_tests/iso7185prt1800.dif OK
 *** run standard_tests/iso7185prt1802.dif failed
     run standard_tests/iso7185prt1806.dif OK
-*** run standard_tests/iso7185prt1811.dif failed
-*** run standard_tests/iso7185prt1828.dif failed
+    run standard_tests/iso7185prt1811.dif OK
+    run standard_tests/iso7185prt1828.dif OK
     run standard_tests/iso7185prt1834.dif OK
-*** run standard_tests/iso7185prt1839.dif failed
-*** run standard_tests/iso7185prt1840.dif failed
+    run standard_tests/iso7185prt1839.dif OK
+    run standard_tests/iso7185prt1840.dif OK
     run standard_tests/iso7185prt1850.dif OK
-*** run standard_tests/iso7185prt1851.dif failed
-*** run standard_tests/iso7185prt1852.dif failed
-*** run standard_tests/iso7185prt1909.dif failed
+    run standard_tests/iso7185prt1851.dif OK
+    run standard_tests/iso7185prt1852.dif OK
+    run standard_tests/iso7185prt1909.dif OK
 *** run standard_tests/iso7185prt1918.dif failed
 
 *******************************************************************************
@@ -535,7 +535,8 @@ and the following annexes: A,B,C,E.
      6      -48  
      7      -48 iso7185prt0002 
      7   ****                ^3,18
-     7   ****    3 'program' expected,  18 Error in declaration part
+     7   ****    3 'program' expected
+     7   ****   18 Error in declaration part
      8      -48  
      9      -48 begin 
     10        5 end. 
@@ -698,7 +699,8 @@ and the following annexes: A,B,C,E.
      6      -48  
      7      -48 program iso7185prt0009(; 
      7   ****                          ^2,4
-     7   ****    2 Identifier expected,   4 ')' expected
+     7   ****    2 Identifier expected
+     7   ****    4 ')' expected
      8      -48  
      9      -48 begin 
      9   ****       ^14
@@ -737,7 +739,8 @@ and the following annexes: A,B,C,E.
      6      -48  
      7      -48 program iso7185prt0010); 
      7   ****                         ^14,18
-     7   ****   14 ';' expected,  18 Error in declaration part
+     7   ****   14 ';' expected
+     7   ****   18 Error in declaration part
      8      -48  
      9      -48 begin 
     10        7 end 
@@ -1053,7 +1056,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 const one; 
      9   ****            ^16,50
-     9   ****   16 '=' expected,  50 Error in constant
+     9   ****   16 '=' expected
+     9   ****   50 Error in constant
     10      -48  
     11      -48 begin 
     12        7  
@@ -1125,7 +1129,8 @@ and the following annexes: A,B,C,E.
      9      -48 const one = 1; 
     10      -48       two; 
     10   ****            ^16,50
-    10   ****   16 '=' expected,  50 Error in constant
+    10   ****   16 '=' expected
+    10   ****   50 Error in constant
     11      -48  
     12      -48 begin 
     13        7  
@@ -1307,9 +1312,25 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 type  integer; 
      9   ****                ^16,10
-     9   ****   16 '=' expected,  10 Error in type
+     9   ****   16 '=' expected
+     9   ****   10 Error in type
     10      -48  
     11      -48 var i: integer; 
+    12      -48  
+    13      -48 begin 
+    14        7  
+    15        7    writeln(i) 
+    16        8  
+    17        8 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+ 10   1 Error in type
+ 16   1 '=' expected
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0027.pas *************************************
 
@@ -1367,7 +1388,9 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 type  = char; 
      9   ****         ^2    ^16,10
-     9   ****    2 Identifier expected,  16 '=' expected,  10 Error in type
+     9   ****    2 Identifier expected
+     9   ****   16 '=' expected
+     9   ****   10 Error in type
     10      -48  
     11      -48 begin 
     12        7 end. 
@@ -1402,10 +1425,28 @@ and the following annexes: A,B,C,E.
      9      -48 type  integer = char; 
     10      -48       five; 
     10   ****             ^16,10
-    10   ****   16 '=' expected,  10 Error in type
+    10   ****   16 '=' expected
+    10   ****   10 Error in type
     11      -48  
     12      -48 var c: integer; 
     13      -48     d: five; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    c := 'a'; 
+    18       10    d := 1; 
+    19       11    writeln(c, d) 
+    20       16  
+    21       16 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+ 10   1 Error in type
+ 16   1 '=' expected
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0030.pas *************************************
 
@@ -1431,6 +1472,24 @@ and the following annexes: A,B,C,E.
     11      -48  
     12      -48 var i: integer; 
     13      -48     a: five; 
+    13   ****             ^104
+    13   ****  104 Identifier not declared
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    i := 'a'; 
+    18       10    a := 1 
+    19       10  
+    20       10 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   1 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0031.pas *************************************
 
@@ -1491,6 +1550,25 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0032; 
      8      -48  
      9      -48 var ; 
+     9   ****       ^2,6,5,10
+     9   ****    2 Identifier expected
+     9   ****    6 Illegal symbol
+     9   ****    5 ':' expected
+     9   ****   10 Error in type
+    10      -48  
+    11      -48 begin 
+    12        7 end. 
+
+Errors in program: 4
+
+Error numbers in listing:
+-------------------------
+  2   1 Identifier expected
+  5   1 ':' expected
+  6   1 Illegal symbol
+ 10   1 Error in type
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0033.pas *************************************
 
@@ -1510,6 +1588,26 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0033; 
      8      -48  
      9      -48 var  store; 
+     9   ****             ^6,5,10
+     9   ****    6 Illegal symbol
+     9   ****    5 ':' expected
+     9   ****   10 Error in type
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    writeln(store) 
+    14        8  
+    15        8 end. 
+
+Errors in program: 3
+
+Error numbers in listing:
+-------------------------
+  5   1 ':' expected
+  6   1 Illegal symbol
+ 10   1 Error in type
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0034.pas *************************************
 
@@ -1599,6 +1697,26 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0036(output); 
      8      -48  
      9      -48 var one integer; 
+     9   ****                 ^6^5,10
+     9   ****    6 Illegal symbol
+     9   ****    5 ':' expected
+     9   ****   10 Error in type
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    writeln(one) 
+    14        8  
+    15        8 end. 
+
+Errors in program: 3
+
+Error numbers in listing:
+-------------------------
+  5   1 ':' expected
+  6   1 Illegal symbol
+ 10   1 Error in type
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0037.pas *************************************
 
@@ -1619,7 +1737,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var : integer; 
      9   ****       ^2       ^271
-     9   ****    2 Identifier expected, 271 Number of initializers does not match container array levels
+     9   ****    2 Identifier expected
+     9   ****  271 Number of initializers does not match container array levels
     10      -48  
     11      -48 begin 
     12        7 end. 
@@ -1652,6 +1771,26 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var  one: char; 
     10      -48      two; 
+    10   ****           ^6,5,10
+    10   ****    6 Illegal symbol
+    10   ****    5 ':' expected
+    10   ****   10 Error in type
+    11      -48  
+    12      -48 begin 
+    13        7  
+    14        7    writeln(one, two) 
+    15       12  
+    16       12 end. 
+
+Errors in program: 3
+
+Error numbers in listing:
+-------------------------
+  5   1 ':' expected
+  6   1 Illegal symbol
+ 10   1 Error in type
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0039.pas *************************************
 
@@ -1752,7 +1891,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 x; begin end; 
      9   ****   ^18         ^21
-     9   ****   18 Error in declaration part,  21 '.' expected
+     9   ****   18 Error in declaration part
+     9   ****   21 '.' expected
     10        0  
     11        0 begin 
     12        0 end. 
@@ -1817,7 +1957,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 procedure x begin end; 
      9   ****                   ^7,14
-     9   ****    7 Error in parameter list,  14 ';' expected
+     9   ****    7 Error in parameter list
+     9   ****   14 ';' expected
     10        8  
     11        8 begin 
     12       10  
@@ -1896,7 +2037,11 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****      ^14,18,17,6,13
-    15   ****   14 ';' expected,  18 Error in declaration part,  17 'begin' expected,   6 Illegal symbol,  13 'end' expected
+    15   ****   14 ';' expected
+    15   ****   18 Error in declaration part
+    15   ****   17 'begin' expected
+    15   ****    6 Illegal symbol
+    15   ****   13 'end' expected
 
 Errors in program: 6
 
@@ -1939,7 +2084,11 @@ and the following annexes: A,B,C,E.
    *** eof encountered
 
     16   ****  ^18,17,6,13,21
-    16   ****   18 Error in declaration part,  17 'begin' expected,   6 Illegal symbol,  13 'end' expected,  21 '.' expected
+    16   ****   18 Error in declaration part
+    16   ****   17 'begin' expected
+    16   ****    6 Illegal symbol
+    16   ****   13 'end' expected
+    16   ****   21 '.' expected
 
 Errors in program: 6
 
@@ -1981,7 +2130,11 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****      ^14,18,17,6,13
-    15   ****   14 ';' expected,  18 Error in declaration part,  17 'begin' expected,   6 Illegal symbol,  13 'end' expected
+    15   ****   14 ';' expected
+    15   ****   18 Error in declaration part
+    15   ****   17 'begin' expected
+    15   ****    6 Illegal symbol
+    15   ****   13 'end' expected
 
 Errors in program: 6
 
@@ -2022,7 +2175,11 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****      ^14,18,17,6,13
-    15   ****   14 ';' expected,  18 Error in declaration part,  17 'begin' expected,   6 Illegal symbol,  13 'end' expected
+    15   ****   14 ';' expected
+    15   ****   18 Error in declaration part
+    15   ****   17 'begin' expected
+    15   ****    6 Illegal symbol
+    15   ****   13 'end' expected
 
 Errors in program: 6
 
@@ -2055,7 +2212,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 prosedure x; begin end; 
      9   ****           ^18           ^21
-     9   ****   18 Error in declaration part,  21 '.' expected
+     9   ****   18 Error in declaration part
+     9   ****   21 '.' expected
     10        0  
     11        0 begin 
     12        0  
@@ -2091,7 +2249,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 funktion x: integer; begin end; 
      9   ****          ^18                    ^21
-     9   ****   18 Error in declaration part,  21 '.' expected
+     9   ****   18 Error in declaration part
+     9   ****   21 '.' expected
     10        0  
     11        0 begin 
     12        0  
@@ -2127,7 +2286,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 bark x; begin end; 
      9   ****      ^18           ^21
-     9   ****   18 Error in declaration part,  21 '.' expected
+     9   ****   18 Error in declaration part
+     9   ****   21 '.' expected
     10        0  
     11        0 begin 
     12        0 end. 
@@ -2160,7 +2320,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 function x integer; begin x := 1 end; 
      9   ****                    ^7^123
-     9   ****    7 Error in parameter list, 123 Missing result type in function declaration
+     9   ****    7 Error in parameter list
+     9   ****  123 Missing result type in function declaration
     10        9  
     11        9 begin 
     12       11 end. 
@@ -2228,7 +2389,8 @@ and the following annexes: A,B,C,E.
     11        8  
     12        8 var y: integer; 
     12   ****     ^6,18
-    12   ****    6 Illegal symbol,  18 Error in declaration part
+    12   ****    6 Illegal symbol
+    12   ****   18 Error in declaration part
     13        8  
     14        8 begin 
     15       10  
@@ -2268,7 +2430,8 @@ and the following annexes: A,B,C,E.
     11       10  
     12       10 var y: integer; 
     12   ****     ^6,18
-    12   ****    6 Illegal symbol,  18 Error in declaration part
+    12   ****    6 Illegal symbol
+    12   ****   18 Error in declaration part
     13       10  
     14       10 begin 
     15       12  
@@ -2308,7 +2471,10 @@ and the following annexes: A,B,C,E.
    *** eof encountered
 
     10   ****  ^17,6,13,21
-    10   ****   17 'begin' expected,   6 Illegal symbol,  13 'end' expected,  21 '.' expected
+    10   ****   17 'begin' expected
+    10   ****    6 Illegal symbol
+    10   ****   13 'end' expected
+    10   ****   21 '.' expected
 
 Errors in program: 5
 
@@ -2342,7 +2508,8 @@ and the following annexes: A,B,C,E.
      9      -48 begin 
     10        7 . 
     10   ****   ^6,13
-    10   ****    6 Illegal symbol,  13 'end' expected
+    10   ****    6 Illegal symbol
+    10   ****   13 'end' expected
 
 Errors in program: 2
 
@@ -2602,7 +2769,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7       if 1=1 then 
     13   ****          ^104,51,6
-    13   ****  104 Identifier not declared,  51 ':=' expected,   6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****   51 ':=' expected
+    13   ****    6 Illegal symbol
     14       11  
     15       11    end 
     16       11  
@@ -2646,7 +2815,8 @@ and the following annexes: A,B,C,E.
     14       11  
     15       11 end. 
     15   ****      ^6,13
-    15   ****    6 Illegal symbol,  13 'end' expected
+    15   ****    6 Illegal symbol
+    15   ****   13 'end' expected
 
 Errors in program: 2
 
@@ -2684,7 +2854,10 @@ and the following annexes: A,B,C,E.
     16       11  
     17       11 end. 
     17   ****     ^104,51^6,13
-    17   ****  104 Identifier not declared,  51 ':=' expected,   6 Illegal symbol,  13 'end' expected
+    17   ****  104 Identifier not declared
+    17   ****   51 ':=' expected
+    17   ****    6 Illegal symbol
+    17   ****   13 'end' expected
 
 Errors in program: 4
 
@@ -2751,7 +2924,8 @@ and the following annexes: A,B,C,E.
     10        7  
     11        7    fi 1=1 then 
     11   ****         ^104,59
-    11   ****  104 Identifier not declared,  59 Error in variable
+    11   ****  104 Identifier not declared
+    11   ****   59 Error in variable
     12        7  
     13        7 end. 
     13   ****     ^51
@@ -2825,7 +2999,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    if 1=1 a := b 
     13   ****             ^6 ^59
-    13   ****    6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        8  
     15        8 end. 
     15   ****     ^52
@@ -2864,7 +3039,10 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    if 1=1 thne a := b 
     13   ****                ^6,104^6^59
-    13   ****    6 Illegal symbol, 104 Identifier not declared,   6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        8  
     15        8 end. 
     15   ****     ^52
@@ -2952,7 +3130,8 @@ and the following annexes: A,B,C,E.
 label           2 unreferenced
                      
     20   ****     ^168,21
-    20   ****  168 Undefined label,  21 '.' expected
+    20   ****  168 Undefined label
+    20   ****   21 '.' expected
 
 Errors in program: 4
 
@@ -2988,7 +3167,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    csae x of  
     13   ****           ^104,59
-    13   ****  104 Identifier not declared,  59 Error in variable
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
     14        7  
     15        7       1: a := 1; 
     16        8       2: a := 2 
@@ -3001,7 +3181,8 @@ and the following annexes: A,B,C,E.
 label           2 unreferenced
                      
     20   ****     ^168,21
-    20   ****  168 Undefined label,  21 '.' expected
+    20   ****  168 Undefined label
+    20   ****   21 '.' expected
 
 Errors in program: 5
 
@@ -3080,7 +3261,9 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7       1: a := 1; 
     15   ****         ^59^8,50
-    15   ****   59 Error in variable,   8 'of' expected,  50 Error in constant
+    15   ****   59 Error in variable
+    15   ****    8 'of' expected
+    15   ****   50 Error in constant
     16       12       2: a := 2 
     17       12  
     18       12    end 
@@ -3124,7 +3307,8 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7       1: a := 1; 
     15   ****          ^8,50
-    15   ****    8 'of' expected,  50 Error in constant
+    15   ****    8 'of' expected
+    15   ****   50 Error in constant
     16       12       2: a := 2 
     17       12  
     18       12    end 
@@ -3246,7 +3430,8 @@ and the following annexes: A,B,C,E.
     14        9  
     15        9       1 a := 1; 
     15   ****           ^6    ^5
-    15   ****    6 Illegal symbol,   5 ':' expected
+    15   ****    6 Illegal symbol
+    15   ****    5 ':' expected
     16       10       2: a := 2 
     17       10  
     18       10    end 
@@ -3288,7 +3473,9 @@ and the following annexes: A,B,C,E.
     15        9       1: a := 1 
     16        9       2: a := 2 
     16   ****         ^6^6  ^59
-    16   ****    6 Illegal symbol,   6 Illegal symbol,  59 Error in variable
+    16   ****    6 Illegal symbol
+    16   ****    6 Illegal symbol
+    16   ****   59 Error in variable
     17        9  
     18        9    end 
     19       17  
@@ -3331,7 +3518,8 @@ and the following annexes: A,B,C,E.
     17       12  
     18       12 end. 
     18   ****      ^6,13
-    18   ****    6 Illegal symbol,  13 'end' expected
+    18   ****    6 Illegal symbol
+    18   ****   13 'end' expected
 
 Errors in program: 2
 
@@ -3370,11 +3558,13 @@ and the following annexes: A,B,C,E.
     17       12  
     18       12    edn 
     18   ****        ^6,104
-    18   ****    6 Illegal symbol, 104 Identifier not declared
+    18   ****    6 Illegal symbol
+    18   ****  104 Identifier not declared
     19       12  
     20       12 end. 
     20   ****      ^6,13
-    20   ****    6 Illegal symbol,  13 'end' expected
+    20   ****    6 Illegal symbol
+    20   ****   13 'end' expected
 
 Errors in program: 4
 
@@ -3444,7 +3634,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    wihle 1=1 do a := b 
     13   ****            ^104,59
-    13   ****  104 Identifier not declared,  59 Error in variable
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
     14        7  
     15        7 end. 
 
@@ -3515,7 +3706,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    while 1=1 a := b 
     13   ****                ^6 ^59
-    13   ****    6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        8  
     15        8 end. 
     15   ****     ^54
@@ -3592,7 +3784,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    reepat a := b until a = b 
     13   ****             ^104,59    ^59
-    13   ****  104 Identifier not declared,  59 Error in variable,  59 Error in variable
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
+    13   ****   59 Error in variable
     14        8  
     15        8 end. 
 
@@ -3632,7 +3826,8 @@ and the following annexes: A,B,C,E.
     14        8  
     15        8 end. 
     15   ****     ^129,53
-    15   ****  129 Type conflict of operands,  53 'until' expected
+    15   ****  129 Type conflict of operands
+    15   ****   53 'until' expected
 
 Errors in program: 3
 
@@ -3671,7 +3866,8 @@ and the following annexes: A,B,C,E.
     14        8  
     15        8 end. 
     15   ****     ^129,53
-    15   ****  129 Type conflict of operands,  53 'until' expected
+    15   ****  129 Type conflict of operands
+    15   ****   53 'until' expected
 
 Errors in program: 3
 
@@ -3741,7 +3937,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    i := 1 to 10 do a := b 
     13   ****              ^6    ^6   ^59
-    13   ****    6 Illegal symbol,   6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        7  
     15        7 end. 
 
@@ -3777,7 +3975,11 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    fro i := 1 to 10 do a := b 
     13   ****          ^104,59 ^6    ^6   ^59
-    13   ****  104 Identifier not declared,  59 Error in variable,   6 Illegal symbol,   6 Illegal symbol,  59 Error in variable
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        7  
     15        7 end. 
 
@@ -3849,7 +4051,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for id := 1 to 10 do a := b 
     13   ****           ^104,183
-    13   ****  104 Identifier not declared, 183 For index variable must be local to this block
+    13   ****  104 Identifier not declared
+    13   ****  183 For index variable must be local to this block
     14       15  
     15       15 end. 
 
@@ -3955,7 +4158,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for i := 10 1 do a := b 
     13   ****                  ^6 ^55
-    13   ****    6 Illegal symbol,  55 'to'/'downto' expected
+    13   ****    6 Illegal symbol
+    13   ****   55 'to'/'downto' expected
     14       10  
     15       10 end. 
 
@@ -3991,7 +4195,10 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for i := 1 ta 10 do a := b 
     13   ****                  ^6,104^6^55
-    13   ****    6 Illegal symbol, 104 Identifier not declared,   6 Illegal symbol,  55 'to'/'downto' expected
+    13   ****    6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****    6 Illegal symbol
+    13   ****   55 'to'/'downto' expected
     14       10  
     15       10 end. 
 
@@ -4028,7 +4235,10 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for i := 10 dunto 1 do a := b 
     13   ****                      ^6,104^6^55
-    13   ****    6 Illegal symbol, 104 Identifier not declared,   6 Illegal symbol,  55 'to'/'downto' expected
+    13   ****    6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****    6 Illegal symbol
+    13   ****   55 'to'/'downto' expected
     14       10  
     15       10 end. 
 
@@ -4100,7 +4310,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for i := 1 to 10 a := b 
     13   ****                       ^6 ^59
-    13   ****    6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        9  
     15        9 end. 
     15   ****     ^54
@@ -4139,7 +4350,10 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    for i := 1 to 10 od a := b 
     13   ****                        ^6,104^6^59
-    13   ****    6 Illegal symbol, 104 Identifier not declared,   6 Illegal symbol,  59 Error in variable
+    13   ****    6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****    6 Illegal symbol
+    13   ****   59 Error in variable
     14        9  
     15        9 end. 
     15   ****     ^54
@@ -4179,7 +4393,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    a do b := c 
     13   ****         ^59    ^104
-    13   ****   59 Error in variable, 104 Identifier not declared
+    13   ****   59 Error in variable
+    13   ****  104 Identifier not declared
     14        8  
     15        8 end. 
 
@@ -4215,7 +4430,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    wtih a do b := c 
     13   ****           ^104,59   ^104
-    13   ****  104 Identifier not declared,  59 Error in variable, 104 Identifier not declared
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
+    13   ****  104 Identifier not declared
     14        7  
     15        7 end. 
 
@@ -4365,7 +4582,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    ogto 1; 
     13   ****           ^104,59^51
-    13   ****  104 Identifier not declared,  59 Error in variable,  51 ':=' expected
+    13   ****  104 Identifier not declared
+    13   ****   59 Error in variable
+    13   ****   51 ':=' expected
     14        7  
     15        7    1:; 
     16        7  
@@ -4489,7 +4708,9 @@ and the following annexes: A,B,C,E.
     14        7    a.b := 1; 
     15        9    with do e := f 
     15   ****            ^2   ^104^104
-    15   ****    2 Identifier expected, 104 Identifier not declared, 104 Identifier not declared
+    15   ****    2 Identifier expected
+    15   ****  104 Identifier not declared
+    15   ****  104 Identifier not declared
     16        9  
     17        9 end. 
 
@@ -4566,7 +4787,9 @@ and the following annexes: A,B,C,E.
     13        7  
     14        7    with a d do e := f 
     14   ****             ^59     ^104^104
-    14   ****   59 Error in variable, 104 Identifier not declared, 104 Identifier not declared
+    14   ****   59 Error in variable
+    14   ****  104 Identifier not declared
+    14   ****  104 Identifier not declared
     15        7  
     16        7 end. 
 
@@ -4726,7 +4949,10 @@ and the following annexes: A,B,C,E.
      9      -48 var a: record b, c: integer end 
     10      -48     d: record e, f: integer end; 
     10   ****       ^6      ^14,2,5
-    10   ****    6 Illegal symbol,  14 ';' expected,   2 Identifier expected,   5 ':' expected
+    10   ****    6 Illegal symbol
+    10   ****   14 ';' expected
+    10   ****    2 Identifier expected
+    10   ****    5 ':' expected
     11      -48  
     12      -48 begin 
     13        7  
@@ -4769,7 +4995,8 @@ and the following annexes: A,B,C,E.
      9      -48 var a: record b, c: integer; 
     10      -48               csae d: boolean of 
     10   ****                      ^6          ^6
-    10   ****    6 Illegal symbol,   6 Illegal symbol
+    10   ****    6 Illegal symbol
+    10   ****    6 Illegal symbol
     11      -48                  true: (); 
     12      -48                  false: () 
     12   ****                            ^2
@@ -4970,7 +5197,8 @@ and the following annexes: A,B,C,E.
      9      -48 var a: record b, c: integer; 
     10      -48               case d: boolean fo 
     10   ****                                  ^8,104
-    10   ****    8 'of' expected, 104 Identifier not declared
+    10   ****    8 'of' expected
+    10   ****  104 Identifier not declared
     11      -48                  true: (); 
     11   ****                       ^6
     11   ****    6 Illegal symbol
@@ -5108,7 +5336,8 @@ and the following annexes: A,B,C,E.
     12      -48               case d: q of 
     13      -48                  one,: (); 
     13   ****                        ^50,178
-    13   ****   50 Error in constant, 178 Multidefined record variant
+    13   ****   50 Error in constant
+    13   ****  178 Multidefined record variant
     14      -48                  three: () 
     15      -48        end; 
     15   ****            ^200
@@ -5322,7 +5551,11 @@ and the following annexes: A,B,C,E.
     14      -48                  three: (); 
     15      -48               case e: boolean of 
     15   ****                    ^50^104^178^9 ^6
-    15   ****   50 Error in constant, 104 Identifier not declared, 178 Multidefined record variant,   9 '(' expected,   6 Illegal symbol
+    15   ****   50 Error in constant
+    15   ****  104 Identifier not declared
+    15   ****  178 Multidefined record variant
+    15   ****    9 '(' expected
+    15   ****    6 Illegal symbol
     16      -48                  true: (); 
     16   ****                           ^2
     16   ****    2 Identifier expected
@@ -5331,7 +5564,8 @@ and the following annexes: A,B,C,E.
     17   ****    2 Identifier expected
     18      -48        end; 
     18   ****            ^4,200
-    18   ****    4 ')' expected, 200 Tagfield constants must cover entire tagfield type
+    18   ****    4 ')' expected
+    18   ****  200 Tagfield constants must cover entire tagfield type
     19      -48  
     20      -48 begin 
     21        7  
@@ -5379,7 +5613,12 @@ and the following annexes: A,B,C,E.
     14      -48                  three: (); 
     15      -48                  e, f: char 
     15   ****                    ^104^178^104^178,178^9
-    15   ****  104 Identifier not declared, 178 Multidefined record variant, 104 Identifier not declared, 178 Multidefined record variant, 178 Multidefined record variant,   9 '(' expected
+    15   ****  104 Identifier not declared
+    15   ****  178 Multidefined record variant
+    15   ****  104 Identifier not declared
+    15   ****  178 Multidefined record variant
+    15   ****  178 Multidefined record variant
+    15   ****    9 '(' expected
     16      -48        end;
 
 Listing for standard_tests/standard_tests/iso7185prt0221.pas *************************************
@@ -5772,6 +6011,32 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0400; 
      8      -48  
      9      -48 var a: one, two, three); 
+     9   ****            ^104^6
+     9   ****  104 Identifier not declared
+     9   ****    6 Illegal symbol
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a := one; 
+    13   ****             ^104
+    13   ****  104 Identifier not declared
+    14        7    a := two; 
+    14   ****             ^104
+    14   ****  104 Identifier not declared
+    15        7    a := three 
+    15   ****               ^104
+    15   ****  104 Identifier not declared
+    16        7  
+    17        7 end. 
+
+Errors in program: 5
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   4 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0401.pas *************************************
 
@@ -5937,7 +6202,11 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: ..5; 
      9   ****           ^10^30,50,107,102
-     9   ****   10 Error in type,  30 '..' expected,  50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+     9   ****   10 Error in type
+     9   ****   30 '..' expected
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
     10      -48  
     11      -48 begin 
     12        7  
@@ -5976,7 +6245,11 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: 1 5; 
      9   ****            ^6^30,50,107,102
-     9   ****    6 Illegal symbol,  30 '..' expected,  50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+     9   ****    6 Illegal symbol
+     9   ****   30 '..' expected
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
     10      -48  
     11      -48 begin 
     12        7  
@@ -6015,7 +6288,9 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: 1..; 
      9   ****             ^50,107,102
-     9   ****   50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
     10      -48  
     11      -48 begin 
     12        7  
@@ -6120,7 +6395,32 @@ and the following annexes: A,B,C,E.
      6      -48  
      7      -48 program iso7185prt0501; 
      8      -48  
-     9      -48 var a: picked array 
+     9      -48 var a: picked array [1..10] of integer; 
+     9   ****               ^104  ^14,2,5
+     9   ****  104 Identifier not declared
+     9   ****   14 ';' expected
+     9   ****    2 Identifier expected
+     9   ****    5 ':' expected
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a[1] := 1 
+    13   ****            ^287
+    13   ****  287 Variable reference is not addressable
+    14        8  
+    15        8 end. 
+
+Errors in program: 5
+
+Error numbers in listing:
+-------------------------
+  2   1 Identifier expected
+  5   1 ':' expected
+ 14   1 ';' expected
+104   1 Identifier not declared
+287   1 Variable reference is not addressable
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0502.pas *************************************
 
@@ -6141,13 +6441,15 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: [1..10] of integer; 
      9   ****          ^10   ^6
-     9   ****   10 Error in type,   6 Illegal symbol
+     9   ****   10 Error in type
+     9   ****    6 Illegal symbol
     10      -48  
     11      -48 begin 
     12        7  
     13        7    a[1] := 1 
     13   ****       ^138 ^287
-    13   ****  138 Type of variable is not array, 287 Variable reference is not addressable
+    13   ****  138 Type of variable is not array
+    13   ****  287 Variable reference is not addressable
     14        9  
     15        9 end. 
 
@@ -6252,7 +6554,11 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: array [..10] of integer; 
      9   ****                  ^1 ^30,50,107,102
-     9   ****    1 Error in simple type,  30 '..' expected,  50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+     9   ****    1 Error in simple type
+     9   ****   30 '..' expected
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
     10      -48  
     11      -48 begin 
     12        7  
@@ -6291,7 +6597,9 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 var a: array [1..] of integer; 
      9   ****                    ^50,107,102
-     9   ****   50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
     10      -48  
     11      -48 begin 
     12        7  
@@ -6508,6 +6816,24 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0513; 
      8      -48  
      9      -48 var a: filed of integer; 
+     9   ****              ^104^6
+     9   ****  104 Identifier not declared
+     9   ****    6 Illegal symbol
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    rewrite(a) 
+    14        8  
+    15        8 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   1 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0514.pas *************************************
 
@@ -6597,6 +6923,24 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0516; 
      8      -48  
      9      -48 var a: ste of char; 
+     9   ****            ^104^6
+     9   ****  104 Identifier not declared
+     9   ****    6 Illegal symbol
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a := [] 
+    14        7  
+    15        7 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   1 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0517.pas *************************************
 
@@ -6686,6 +7030,24 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0519; 
      8      -48  
      9      -48 var a: a, b: integer end; 
+     9   ****          ^104^6
+     9   ****  104 Identifier not declared
+     9   ****    6 Illegal symbol
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a.a := 1 
+    14        7  
+    15        7 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   1 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0520.pas *************************************
 
@@ -6705,6 +7067,24 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0520; 
      8      -48  
      9      -48 var a: recard a, b: integer end; 
+     9   ****               ^104^6
+     9   ****  104 Identifier not declared
+     9   ****    6 Illegal symbol
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a.a := 1 
+    14        7  
+    15        7 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+  6   1 Illegal symbol
+104   1 Identifier not declared
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt0521.pas *************************************
 
@@ -6727,7 +7107,8 @@ and the following annexes: A,B,C,E.
     10      -48  
     11      -48 begin 
     11   ****       ^13,14
-    11   ****   13 'end' expected,  14 ';' expected
+    11   ****   13 'end' expected
+    11   ****   14 ';' expected
     12        7  
     13        7    a.a := 1 
     14        7  
@@ -6765,7 +7146,8 @@ and the following annexes: A,B,C,E.
     10      -48  
     11      -48 begin 
     11   ****       ^13,14
-    11   ****   13 'end' expected,  14 ';' expected
+    11   ****   13 'end' expected
+    11   ****   14 ';' expected
     12        7  
     13        7    a.a := 1 
     14        7  
@@ -6800,7 +7182,9 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 procedure a(: integer); 
      9   ****               ^7       ^7,5
-     9   ****    7 Error in parameter list,   7 Error in parameter list,   5 ':' expected
+     9   ****    7 Error in parameter list
+     9   ****    7 Error in parameter list
+     9   ****    5 ':' expected
     10      -48  
     11      -48 begin 
     12        7 end; 
@@ -6856,7 +7240,8 @@ and the following annexes: A,B,C,E.
     18       12  
     19       12    a(1, 2) 
     19   ****           ^126^277
-    19   ****  126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    19   ****  126 Number of parameters does not agree with declaration
+    19   ****  277 No overload found to match parameter
     20       13  
     21       13 end. 
 
@@ -6901,7 +7286,8 @@ and the following annexes: A,B,C,E.
     18       12  
     19       12    a(1, 2) 
     19   ****           ^126^277
-    19   ****  126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    19   ****  126 Number of parameters does not agree with declaration
+    19   ****  277 No overload found to match parameter
     20       13  
     21       13 end. 
 
@@ -6934,7 +7320,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 procedure a(b c: integer); 
      9   ****                 ^7        ^5
-     9   ****    7 Error in parameter list,   5 ':' expected
+     9   ****    7 Error in parameter list
+     9   ****    5 ':' expected
     10      -48  
     11      -48 begin 
     12        7  
@@ -6949,7 +7336,9 @@ and the following annexes: A,B,C,E.
     19       12  
     20       12    a(1, 2) 
     20   ****         ^277^126^277
-    20   ****  277 No overload found to match parameter, 126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    20   ****  277 No overload found to match parameter
+    20   ****  126 Number of parameters does not agree with declaration
+    20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
 
@@ -6984,7 +7373,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 procedure a(b, c integer); 
      9   ****                          ^7^5
-     9   ****    7 Error in parameter list,   5 ':' expected
+     9   ****    7 Error in parameter list
+     9   ****    5 ':' expected
     10      -48  
     11      -48 begin 
     12        7  
@@ -6997,7 +7387,8 @@ and the following annexes: A,B,C,E.
     19       12  
     20       12    a(1, 2) 
     20   ****         ^277^277
-    20   ****  277 No overload found to match parameter, 277 No overload found to match parameter
+    20   ****  277 No overload found to match parameter
+    20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
 
@@ -7043,7 +7434,8 @@ and the following annexes: A,B,C,E.
     19       12  
     20       12    a(1,2) 
     20   ****         ^277^277
-    20   ****  277 No overload found to match parameter, 277 No overload found to match parameter
+    20   ****  277 No overload found to match parameter
+    20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
 
@@ -7077,7 +7469,9 @@ and the following annexes: A,B,C,E.
     10      -48  
     11      -48 procedure a(var ); 
     11   ****                   ^2,7,5
-    11   ****    2 Identifier expected,   7 Error in parameter list,   5 ':' expected
+    11   ****    2 Identifier expected
+    11   ****    7 Error in parameter list
+    11   ****    5 ':' expected
     12      -48  
     13      -48 begin 
     14        7 end; 
@@ -7086,7 +7480,8 @@ and the following annexes: A,B,C,E.
     17       10  
     18       10    a(b) 
     18   ****        ^126^277
-    18   ****  126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    18   ****  126 Number of parameters does not agree with declaration
+    18   ****  277 No overload found to match parameter
     19       10  
     20       10 end. 
 
@@ -7123,7 +7518,8 @@ and the following annexes: A,B,C,E.
     10      -48  
     11      -48 procedure a(vas b: integer); 
     11   ****                   ^7        ^5
-    11   ****    7 Error in parameter list,   5 ':' expected
+    11   ****    7 Error in parameter list
+    11   ****    5 ':' expected
     12      -48  
     13      -48 begin 
     14        7  
@@ -7186,7 +7582,8 @@ and the following annexes: A,B,C,E.
     20       15  
     21       15    a(1, 2, 'a') 
     21   ****                ^126^277
-    21   ****  126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    21   ****  126 Number of parameters does not agree with declaration
+    21   ****  277 No overload found to match parameter
     22       17  
     23       17 end. 
 
@@ -7885,7 +8282,8 @@ and the following annexes: A,B,C,E.
     19       14  
     20       14    test() 
     20   ****           ^58,277
-    20   ****   58 Error in factor, 277 No overload found to match parameter
+    20   ****   58 Error in factor
+    20   ****  277 No overload found to match parameter
     21       14  
     22       14 end. 
     22   ****     ^126
@@ -7931,7 +8329,8 @@ and the following annexes: A,B,C,E.
     19       14  
     20       14    test 1, 2) 
     20   ****           ^126,6
-    20   ****  126 Number of parameters does not agree with declaration,   6 Illegal symbol
+    20   ****  126 Number of parameters does not agree with declaration
+    20   ****    6 Illegal symbol
     21       15  
     22       15 end. 
 
@@ -8019,7 +8418,8 @@ and the following annexes: A,B,C,E.
     19       14  
     20       14    test(, 2) 
     20   ****           ^58,277
-    20   ****   58 Error in factor, 277 No overload found to match parameter
+    20   ****   58 Error in factor
+    20   ****  277 No overload found to match parameter
     21       15  
     22       15 end. 
 
@@ -8062,7 +8462,8 @@ and the following annexes: A,B,C,E.
     19       14  
     20       14    test(1, ) 
     20   ****              ^58,277
-    20   ****   58 Error in factor, 277 No overload found to match parameter
+    20   ****   58 Error in factor
+    20   ****  277 No overload found to match parameter
     21       15  
     22       15 end. 
 
@@ -8173,7 +8574,8 @@ and the following annexes: A,B,C,E.
     11        7      
     12        7    write 42) 
     12   ****             ^116,6
-    12   ****  116 Error in type of standard procedure parameter,   6 Illegal symbol
+    12   ****  116 Error in type of standard procedure parameter
+    12   ****    6 Illegal symbol
     13        9  
     14        9 end. 
 
@@ -8517,7 +8919,8 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    a := nat b 
     13   ****             ^104^6
-    13   ****  104 Identifier not declared,   6 Illegal symbol
+    13   ****  104 Identifier not declared
+    13   ****    6 Illegal symbol
     14        7  
     15        7 end. 
 
@@ -8555,7 +8958,8 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****     ^58,135
-    15   ****   58 Error in factor, 135 Type of operand must be Boolean
+    15   ****   58 Error in factor
+    15   ****  135 Type of operand must be Boolean
 
 Errors in program: 2
 
@@ -8589,11 +8993,13 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    a := b in 1..10] 
     13   ****                  ^6 ^6
-    13   ****    6 Illegal symbol,   6 Illegal symbol
+    13   ****    6 Illegal symbol
+    13   ****    6 Illegal symbol
     14        8  
     15        8 end. 
     15   ****     ^130,129
-    15   ****  130 Expression is not of set type, 129 Type conflict of operands
+    15   ****  130 Expression is not of set type
+    15   ****  129 Type conflict of operands
 
 Errors in program: 4
 
@@ -9166,7 +9572,8 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****     ^58,134
-    15   ****   58 Error in factor, 134 Illegal type of operand(s)
+    15   ****   58 Error in factor
+    15   ****  134 Illegal type of operand(s)
 
 Errors in program: 2
 
@@ -9202,7 +9609,8 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7 end. 
     15   ****     ^58,134
-    15   ****   58 Error in factor, 134 Illegal type of operand(s)
+    15   ****   58 Error in factor
+    15   ****  134 Illegal type of operand(s)
 
 Errors in program: 2
 
@@ -9672,7 +10080,8 @@ and the following annexes: A,B,C,E.
     15        7  
     16        7 end. 
     16   ****     ^2,129
-    16   ****    2 Identifier expected, 129 Type conflict of operands
+    16   ****    2 Identifier expected
+    16   ****  129 Type conflict of operands
 
 Errors in program: 2
 
@@ -9814,7 +10223,9 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    a := 1d5 
     13   ****           ^241^6,104
-    13   ****  241 Invalid tolken separator,   6 Illegal symbol, 104 Identifier not declared
+    13   ****  241 Invalid tolken separator
+    13   ****    6 Illegal symbol
+    13   ****  104 Identifier not declared
     14        7  
     15        7 end. 
 
@@ -10079,7 +10490,9 @@ and the following annexes: A,B,C,E.
    *** eof encountered
 
     16   ****  ^6,13,21
-    16   ****    6 Illegal symbol,  13 'end' expected,  21 '.' expected
+    16   ****    6 Illegal symbol
+    16   ****   13 'end' expected
+    16   ****   21 '.' expected
 
 Errors in program: 3
 
@@ -10145,7 +10558,10 @@ and the following annexes: A,B,C,E.
     10        7  
     11        7    { hi there (* george *) again... } 
     11   ****                                    ^104,59^2,6
-    11   ****  104 Identifier not declared,  59 Error in variable,   2 Identifier expected,   6 Illegal symbol
+    11   ****  104 Identifier not declared
+    11   ****   59 Error in variable
+    11   ****    2 Identifier expected
+    11   ****    6 Illegal symbol
     12        7  
     13        7 end. 
     13   ****     ^51
@@ -10258,7 +10674,6 @@ Running program
 
 
 *** Runtime error [32]: Variant not active
-0001E6/FFFFC8: BC cke         
 
 program complete
 
@@ -10330,7 +10745,6 @@ Running program
 
 
 *** Runtime error [37]: Change to VAR referenced variant
-0001E0/FFFF80: 74 cvbb           0000000000000004,0000000000000008,0000000000000308
 
 program complete
 
@@ -10393,7 +10807,6 @@ Running program
 
 
 *** Runtime error [36]: Undefined location access
-00027D/FFFFC8: 45 ldoc           0000000000000330
 
 program complete
 
@@ -10466,7 +10879,6 @@ Running program
 
 
 *** Runtime error [38]: Change to VAR referenced variant
-0001F0/FFFF80: 74 cvbb           0000000000000004,0000000000000008,0000000000000417
 
 program complete
 
@@ -10512,7 +10924,6 @@ Running program
 
 
 *** Runtime error [19]: Dereference of nil pointer
-00013C/FFFFC0: 5F chka           0000000000000001
 
 program complete
 
@@ -10556,7 +10967,6 @@ Running program
 
 
 *** Runtime error [17]: Undefined location access
-00010E/FFFFC8: 41 ldoa           00000000000001A0
 
 program complete
 
@@ -10613,7 +11023,6 @@ Running program
 
 
 *** Runtime error [21]: Dispose of VAR referenced block
-00016B/FFFF90: 0F csp            000000000000001A
 
 program complete
 
@@ -10671,7 +11080,6 @@ Running program
 
 
 *** Runtime error [19]: VAR referenced file buffer modified
-000145/FFFF90: 0F csp            0000000000000023
 
 program complete
 
@@ -10729,7 +11137,6 @@ Running program
 
 
 *** Runtime error [19]: VAR referenced file buffer modified
-00013C/FFFF90: 0F csp            0000000000000000
 
 program complete
 
@@ -10876,7 +11283,6 @@ Running program
 
 
 *** Runtime error [20]: Set element out of range
-000132/FFFF58: 61 chks           00000000000001F8
 
 program complete
 
@@ -10925,7 +11331,6 @@ Running program
 
 
 *** Runtime error [22]: File mode incorrect
-0001C5/FFFFC8: 0F csp            0000000000000024
 
 program complete
 
@@ -10968,7 +11373,6 @@ Running program
 
 
 *** Runtime error [16]: File mode incorrect
-000117/FFFFB8: 0F csp            000000000000001C
 
 program complete
 
@@ -11012,7 +11416,6 @@ Running program
 
 
 *** Runtime error [17]: File buffer variable undefined
-00012B/FFFFC8: 0F csp            0000000000000024
 
 program complete
 
@@ -11055,7 +11458,6 @@ Running program
 
 
 *** Runtime error [16]: Cannot reset closed temp file
-00010E/FFFFC8: 0F csp            0000000000000021
 
 program complete
 
@@ -11100,7 +11502,6 @@ Running program
 
 
 *** Runtime error [18]: File mode incorrect
-00013D/FFFFC0: 0F csp            0000000000000020
 
 program complete
 
@@ -11143,7 +11544,6 @@ Running program
 
 
 *** Runtime error [16]: File mode incorrect
-000117/FFFFC8: 0F csp            0000000000000023
 
 program complete
 
@@ -11191,7 +11591,6 @@ Running program
 
 
 *** Runtime error [21]: End of file
-0001A6/FFFFC0: 0F csp            0000000000000020
 
 program complete
 
@@ -11326,7 +11725,6 @@ Running program
 
 
 *** Runtime error [26]: Change to allocated tag field
-000199/FFFFB8: BF cta            0000000000000000,0000000000000001,00000000000001F8
 
 program complete
 
@@ -11376,7 +11774,6 @@ Running program
 
 
 *** Runtime error [23]: New dispose tags mismatch
-000185/FFFFC0: 0F csp            0000000000000028
 
 program complete
 
@@ -11435,7 +11832,6 @@ Running program
 
 
 *** Runtime error [32]: New dispose tags mismatch
-0001E8/FFFFB8: 0F csp            0000000000000028
 
 program complete
 
@@ -11487,7 +11883,6 @@ Running program
 
 
 *** Runtime error [25]: New dispose tags mismatch
-000200/FFFFB8: 0F csp            0000000000000028
 
 program complete
 
@@ -11531,7 +11926,6 @@ Running program
 
 
 *** Runtime error [17]: Dispose of nil pointer
-000133/FFFFC8: 0F csp            000000000000001A
 
 program complete
 
@@ -11574,7 +11968,6 @@ Running program
 
 
 *** Runtime error [16]: Undefined location access
-000105/FFFFC8: 41 ldoa           0000000000000184
 
 program complete
 
@@ -11661,7 +12054,6 @@ Running program
 
 
 *** Runtime error [17]: Undefined location access
-00013D/FFFFC8: 3F pck            0000000000000050,0000000000000050
 
 program complete
 
@@ -11707,7 +12099,6 @@ Running program
 
 
 *** Runtime error [19]: Pack elements out of bounds
-000227/FFFFB8: 3F pck            0000000000000050,00000000000000A0
 
 program complete
 
@@ -11793,7 +12184,6 @@ Running program
 
 
 *** Runtime error [17]: Undefined location access
-00013D/FFFFC8: 40 upk            0000000000000050,0000000000000050
 
 program complete
 
@@ -11837,7 +12227,6 @@ Running program
 
 
 *** Runtime error [17]: Unpack elements out of bounds
-00013D/FFFFC8: 40 upk            0000000000000050,0000000000000050
 
 program complete
 
@@ -11881,7 +12270,6 @@ Running program
 
 
 *** Runtime error [17]: Integer value overflow
-000129/FFFFC8: 26 sqi         
 
 program complete
 
@@ -11925,7 +12313,6 @@ Running program
 
 
 *** Runtime error [17]: Invalid argument to ln
-00012A/FFFFC8: 0F csp            0000000000000011
 
 program complete
 
@@ -11969,7 +12356,6 @@ Running program
 
 
 *** Runtime error [17]: Invalid argument to sqrt
-00012B/FFFFC8: 0F csp            0000000000000012
 
 program complete
 
@@ -12066,7 +12452,6 @@ Running program
 
 
 *** Runtime error [23]: Real argument too large
-00017C/FFFFC8: 3E rnd         
 
 program complete
 
@@ -12113,7 +12498,6 @@ Running program
 
 
 *** Runtime error [20]: Value out of range
-000146/FFFFC0: 63 chkc           000000000000016C
 
 program complete
 
@@ -12158,7 +12542,6 @@ Running program
 
 
 *** Runtime error [18]: Integer value overflow
-000132/FFFFC8: 0A inci           0000000000000001
 
 program complete
 
@@ -12208,7 +12591,6 @@ Running program
 
 
 *** Runtime error [22]: Integer value overflow
-000157/FFFFC8: 39 deci           0000000000000001
 
 program complete
 
@@ -12251,7 +12633,6 @@ Running program
 
 
 *** Runtime error [16]: File mode incorrect
-00010E/FFFFC8: 0F csp            000000000000002A
 
 program complete
 
@@ -12294,7 +12675,6 @@ Running program
 
 
 *** Runtime error [16]: File not open
-00010E/FFFFC8: 0F csp            0000000000000007
 
 program complete
 
@@ -12340,7 +12720,6 @@ Running program
 
 
 *** Runtime error [19]: Undefined location access
-000120/FFFFC8: 01 ldoi           00000000000001BC
 
 program complete
 
@@ -12387,7 +12766,6 @@ Running program
 
 
 *** Runtime error [20]: Zero divide
-000161/FFFFC8: 36 dvr         
 
 program complete
 
@@ -12432,7 +12810,6 @@ Running program
 
 
 *** Runtime error [18]: Zero divide
-00014D/FFFFC8: 35 dvi         
 
 program complete
 
@@ -12484,7 +12861,6 @@ Running program
 
 
 *** Runtime error [25]: Invalid divisor to mod
-00018C/FFFFC8: 31 mod         
 
 program complete
 
@@ -12536,7 +12912,6 @@ Running program
 
 
 *** Runtime error [25]: Invalid divisor to mod
-00018D/FFFFC8: 31 mod         
 
 program complete
 
@@ -12661,7 +13036,6 @@ Running program
 
 
 *** Runtime error [17]: Set element out of range
-000117/FFFFA8: 61 chks           000000000000013C
 
 program complete
 
@@ -12712,7 +13086,6 @@ Running program
 
 
 *** Runtime error [18]: Value out of range
-000243/FFFFC0: 1A chki           00000000000002A0
 
 program complete
 
@@ -12840,7 +13213,6 @@ Running program
 
 
 *** Runtime error [21]: Invalid integer format
-0001A6/FFFFC0: 0F csp            0000000000000025
 
 program complete
 
@@ -12888,7 +13260,6 @@ Running program
 
 
 *** Runtime error [21]: Value out of range
-0001A6/FFFFC0: 0F csp            0000000000000025
 
 program complete
 
@@ -12936,7 +13307,6 @@ Running program
 
 
 *** Runtime error [21]: Invalid real number
-000194/FFFFC0: 0F csp            000000000000000C
 
 program complete
 
@@ -12985,7 +13355,6 @@ Running program
 
 
 *** Runtime error [22]: End of file
-00016C/FFFFC0: 0F csp            0000000000000020
 
 program complete
 
@@ -13036,7 +13405,6 @@ Running program
 
 
 *** Runtime error [24]: Invalid field specification
-000183/FFFFC0: 0F csp            0000000000000009
 
 program complete
 
@@ -13087,7 +13455,6 @@ Running program
 
 
 *** Runtime error [24]: Invalid fraction specification
-00018C/FFFFC0: 0F csp            0000000000000019
 
 program complete
 
@@ -13462,7 +13829,6 @@ Running program
 
 
 *** Runtime error [21]: Pointer used after dispose
-000177/FFFFC0: 5F chka           0000000000000001
 
 program complete
 
@@ -13943,7 +14309,8 @@ and the following annexes: A,B,C,E.
     20        7  
     21        7    for r.i := 1 to 10 do begin 
     21   ****          ^143^51
-    21   ****  143 Illegal type of loop control variable,  51 ':=' expected
+    21   ****  143 Illegal type of loop control variable
+    21   ****   51 ':=' expected
     22       13  
     23       13       write(r.i:1, ' ') 
     24       21  
@@ -14004,7 +14371,6 @@ Running program
 
 1 2 3 4 5 6 7 8 9 10 
 *** Runtime error [21]: Undefined location access
-00020F/FFFFB8: 01 ldoi           00000000000002AC
 
 program complete
 
@@ -14397,7 +14763,6 @@ Running program
 
 
 *** Runtime error [19]: Value out of range
-00021C/FFFFA8: 1A chki           000000000000027C
 
 program complete
 
@@ -14479,7 +14844,8 @@ and the following annexes: A,B,C,E.
     22       15  
     23       15    a(1, 'a', 1.0) 
     23   ****                  ^126^277
-    23   ****  126 Number of parameters does not agree with declaration, 277 No overload found to match parameter
+    23   ****  126 Number of parameters does not agree with declaration
+    23   ****  277 No overload found to match parameter
     24       18  
     25       18 end. 
 
@@ -14901,7 +15267,6 @@ Running program
 
 
 *** Runtime error [18]: Invalid field specification
-00014D/FFFFC0: 0F csp            0000000000000008
 
 program complete
 
@@ -14945,7 +15310,6 @@ Running program
 
 
 *** Runtime error [17]: Invalid fraction specification
-00014D/FFFFC0: 0F csp            0000000000000019
 
 program complete
 
@@ -15459,7 +15823,6 @@ Running program
 before error
 
 *** Runtime error [28]: Undefined location access
-00026A/FFFFC8: 45 ldoc           0000000000000330
 
 program complete
 
@@ -15503,7 +15866,6 @@ Running program
 
 
 *** Runtime error [17]: Value out of range
-00013E/FFFFB0: C7 chkx           0000000000000247
 
 program complete
 
@@ -15529,6 +15891,25 @@ and the following annexes: A,B,C,E.
     11      -48  
     12      -48 var 
     13      -48     avi:   { packed [1..10] of integer} ; 
+    13   ****                                           ^10
+    13   ****   10 Error in type
+    14      -48     pavi:  packed array [1..10] of integer; 
+    15      -48     i:     integer; 
+    16      -48  
+    17      -48 begin 
+    18        7  
+    19        7     for i := 1 to 10 do pavi[i] := i+10; 
+    20       36     unpack(pavi, avi, 1); 
+    21       42  
+    22       42 end. 
+
+Errors in program: 1
+
+Error numbers in listing:
+-------------------------
+ 10   1 Error in type
+
+
 
 Listing for standard_tests/standard_tests/iso7185prt1901.pas *************************************
 
@@ -15557,7 +15938,8 @@ and the following annexes: A,B,C,E.
     16        7  
     17        7     if [r] <> [] then 
     17   ****            ^109       ^144
-    17   ****  109 Type must not be real, 144 Illegal type of expression
+    17   ****  109 Type must not be real
+    17   ****  144 Illegal type of expression
     18        9  
     19        9 end. 
 
@@ -15813,7 +16195,8 @@ and the following annexes: A,B,C,E.
     10      -48  
     11      -48 type MySubrange = 1.1 .. 10; 
     11   ****                          ^109^107
-    11   ****  109 Type must not be real, 107 Incompatible subrange types
+    11   ****  109 Type must not be real
+    11   ****  107 Incompatible subrange types
     12      -48  
     13      -48 var s: MySubrange; 
     14      -48  
@@ -15956,7 +16339,6 @@ Running program
 
 The result is: 
 *** Runtime error [19]: Value out of range
-00018F/FFFFA8: 1A chki           00000000000001E0
 
 program complete
 
@@ -15982,7 +16364,8 @@ and the following annexes: A,B,C,E.
     11      -48  
     12      -48 var nil: integer; 
     12   ****         ^2,6
-    12   ****    2 Identifier expected,   6 Illegal symbol
+    12   ****    2 Identifier expected
+    12   ****    6 Illegal symbol
     13      -48  
     14      -48 begin 
     15        7  
@@ -16019,7 +16402,11 @@ and the following annexes: A,B,C,E.
     11      -48  
     12      -48 var r: 1:10; 
     12   ****           ^6 ^30,50,107,102
-    12   ****    6 Illegal symbol,  30 '..' expected,  50 Error in constant, 107 Incompatible subrange types, 102 Low bound exceeds highbound
+    12   ****    6 Illegal symbol
+    12   ****   30 '..' expected
+    12   ****   50 Error in constant
+    12   ****  107 Incompatible subrange types
+    12   ****  102 Low bound exceeds highbound
     13      -48  
     14      -48 begin 
     15        7  
@@ -16097,7 +16484,8 @@ and the following annexes: A,B,C,E.
     14        7  
     15        7    writeln('The result is: ', 42myvar); 
     15   ****                                  ^241 ^6
-    15   ****  241 Invalid tolken separator,   6 Illegal symbol
+    15   ****  241 Invalid tolken separator
+    15   ****    6 Illegal symbol
     16       19  
     17       19 end. 
 

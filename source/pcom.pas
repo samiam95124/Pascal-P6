@@ -1651,11 +1651,10 @@ end;
           end;
         writeln; 
         if experr then begin
-        write(linecount:6,' ****  ':9);
           for k := 1 to errinx do 
-            begin write(errlist[k].nmr:3, ' '); errmsg(errlist[k].nmr);
-                  if k < errinx then write(', ') end;
-          writeln
+            begin write(linecount:6,' ****  ':9); write(errlist[k].nmr:3, ' ');
+              errmsg(errlist[k].nmr); writeln
+            end
         end;
         errinx := 0;
       end;

@@ -18,3 +18,19 @@ and the following annexes: A,B,C,E.
     11      -48  
     12      -48 var c: integer; 
     13      -48     d: five; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    c := 'a'; 
+    18       10    d := 1; 
+    19       11    writeln(c, d) 
+    20       16  
+    21       16 end. 
+
+Errors in program: 2
+
+Error numbers in listing:
+-------------------------
+ 10   1 Error in type
+ 16   1 '=' expected
+
