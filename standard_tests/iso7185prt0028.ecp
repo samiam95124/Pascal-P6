@@ -13,7 +13,9 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 type  = char; 
      9   ****         ^2    ^16,10
-     9   ****    2 Identifier expected,  16 '=' expected,  10 Error in type
+     9   ****    2 Identifier expected
+     9   ****   16 '=' expected
+     9   ****   10 Error in type
     10      -48  
     11      -48 begin 
     12        7 end. 

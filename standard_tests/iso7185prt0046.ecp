@@ -1,33 +1,42 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 46: Missing final semicolon 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0046; 
-     8      -32  
-     9      -32 procedure x; begin end 
-    10        8  
-    11        8 begin 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 46: Missing final semicolon 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0046; 
+     8      -48  
+     9      -48 procedure x; begin end 
+    10        7  
+    11        7 begin 
     11   ****       ^14
-    12        9  
-    13        9    x 
-    14        9  
-    15        9 end. 
+    11   ****   14 ';' expected
+    12        8  
+    13        8    x 
+    14        8  
+    15        8 end. 
    *** eof encountered
 
     16   ****  ^18,17,6,13,21
+    16   ****   18 Error in declaration part
+    16   ****   17 'begin' expected
+    16   ****    6 Illegal symbol
+    16   ****   13 'end' expected
+    16   ****   21 '.' expected
 
 Errors in program: 6
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
- 13  'end' expected
- 14  ';' expected
- 17  'begin' expected
- 18  Error in declaration part
- 21  '.' expected
+  6   1 Illegal symbol
+ 13   1 'end' expected
+ 14   1 ';' expected
+ 17   1 'begin' expected
+ 18   1 Error in declaration part
+ 21   1 '.' expected
 

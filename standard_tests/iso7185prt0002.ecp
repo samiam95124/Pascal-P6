@@ -11,7 +11,8 @@ and the following annexes: A,B,C,E.
      6      -48  
      7      -48 iso7185prt0002 
      7   ****                ^3,18
-     7   ****    3 'program' expected,  18 Error in declaration part
+     7   ****    3 'program' expected
+     7   ****   18 Error in declaration part
      8      -48  
      9      -48 begin 
     10        5 end. 

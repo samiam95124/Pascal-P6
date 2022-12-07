@@ -1,30 +1,39 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 47: Misspelled directive 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0047; 
-     8      -32  
-     9      -32 procedure x; forvard; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 47: Misspelled directive 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0047; 
+     8      -48  
+     9      -48 procedure x; forvard; 
      9   ****                      ^18
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    x 
-    14        8  
-    15        8 end. 
+     9   ****   18 Error in declaration part
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    x 
+    14        7  
+    15        7 end. 
     15   ****      ^14,18,17,6,13
+    15   ****   14 ';' expected
+    15   ****   18 Error in declaration part
+    15   ****   17 'begin' expected
+    15   ****    6 Illegal symbol
+    15   ****   13 'end' expected
 
 Errors in program: 6
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
- 13  'end' expected
- 14  ';' expected
- 17  'begin' expected
- 18  Error in declaration part
+  6   1 Illegal symbol
+ 13   1 'end' expected
+ 14   1 ';' expected
+ 17   1 'begin' expected
+ 18   2 Error in declaration part
 

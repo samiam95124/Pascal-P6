@@ -14,7 +14,8 @@ and the following annexes: A,B,C,E.
      9      -48 const one = 1; 
     10      -48       two; 
     10   ****            ^16,50
-    10   ****   16 '=' expected,  50 Error in constant
+    10   ****   16 '=' expected
+    10   ****   50 Error in constant
     11      -48  
     12      -48 begin 
     13        7  

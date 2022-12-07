@@ -1,28 +1,33 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 39: Missing semicolon in var 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0039(output); 
-     8      -32  
-     9      -32 var  one: char 
-    10      -32      two: integer; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 39: Missing semicolon in var 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0039(output); 
+     8      -48  
+     9      -48 var  one: char 
+    10      -48      two: integer; 
     10   ****          ^6
-    11      -32  
-    12      -32 begin 
-    13        8  
-    14        8    writeln(one, two) 
+    10   ****    6 Illegal symbol
+    11      -48  
+    12      -48 begin 
+    13        7  
+    14        7    writeln(one, two) 
     14   ****                     ^104
-    15       15  
-    16       15 end. 
+    14   ****  104 Identifier not declared
+    15       14  
+    16       14 end. 
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
-104  Identifier not declared
+  6   1 Illegal symbol
+104   1 Identifier not declared
 

@@ -13,7 +13,8 @@ and the following annexes: A,B,C,E.
      8      -48  
      9      -48 type  integer; 
      9   ****                ^16,10
-     9   ****   16 '=' expected,  10 Error in type
+     9   ****   16 '=' expected
+     9   ****   10 Error in type
     10      -48  
     11      -48 var i: integer; 
     12      -48  

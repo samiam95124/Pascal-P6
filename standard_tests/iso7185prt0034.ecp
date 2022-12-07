@@ -1,25 +1,29 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 34: Missing type var ident list prime 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0034(output); 
-     8      -32  
-     9      -32 var , two: integer; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 34: Missing type var ident list prime 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0034(output); 
+     8      -48  
+     9      -48 var , two: integer; 
      9   ****       ^2
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    writeln(two) 
-    14       13  
-    15       13 end. 
+     9   ****    2 Identifier expected
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    writeln(two) 
+    14       12  
+    15       12 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
+  2   1 Identifier expected
 
