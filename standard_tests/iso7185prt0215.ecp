@@ -1,31 +1,35 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 215: Missing ':' on variant case 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0215; 
-     8      -32  
-     9      -32 type q = (one, two, three); 
-    10      -32  
-    11      -32 var a: record b, c: integer; 
-    12      -32               case d: q of 
-    13      -32                  one, two (); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 215: Missing ':' on variant case 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0215; 
+     8      -48  
+     9      -48 type q = (one, two, three); 
+    10      -48  
+    11      -48 var a: record b, c: integer; 
+    12      -48               case d: q of 
+    13      -48                  one, two (); 
     13   ****                             ^5
-    14      -32                  three: () 
-    15      -32        end; 
-    16      -32  
-    17      -32 begin 
-    18        8  
-    19        8    a.b := 1 
-    20        8  
-    21        8 end. 
+    13   ****    5 ':' expected
+    14      -48                  three: () 
+    15      -48        end; 
+    16      -48  
+    17      -48 begin 
+    18        7  
+    19        7    a.b := 1 
+    20        7  
+    21        7 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  5  ':' expected
+  5   1 ':' expected
 

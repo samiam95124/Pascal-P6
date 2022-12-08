@@ -1,43 +1,56 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 219: Attempt to define multiple variant sections 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0219; 
-     8      -32  
-     9      -32 type q = (one, two, three); 
-    10      -32  
-    11      -32 var a: record b, c: integer; 
-    12      -32               case d: q of 
-    13      -32                  one, two: (); 
-    14      -32                  three: (); 
-    15      -32               case e: boolean of 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 219: Attempt to define multiple variant sections 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0219; 
+     8      -48  
+     9      -48 type q = (one, two, three); 
+    10      -48  
+    11      -48 var a: record b, c: integer; 
+    12      -48               case d: q of 
+    13      -48                  one, two: (); 
+    14      -48                  three: (); 
+    15      -48               case e: boolean of 
     15   ****                    ^50^104^178^9 ^6
-    16      -32                  true: (); 
+    15   ****   50 Error in constant
+    15   ****  104 Identifier not declared
+    15   ****  178 Multidefined record variant
+    15   ****    9 '(' expected
+    15   ****    6 Illegal symbol
+    16      -48                  true: (); 
     16   ****                           ^2
-    17      -32                  false: () 
+    16   ****    2 Identifier expected
+    17      -48                  false: () 
     17   ****                            ^2
-    18      -32        end; 
-    18   ****            ^4
-    19      -32  
-    20      -32 begin 
-    21        8  
-    22        8    a.b := 1 
-    23        8  
-    24        8 end. 
+    17   ****    2 Identifier expected
+    18      -48        end; 
+    18   ****            ^4,200
+    18   ****    4 ')' expected
+    18   ****  200 Tagfield constants must cover entire tagfield type
+    19      -48  
+    20      -48 begin 
+    21        7  
+    22        7    a.b := 1 
+    23        7  
+    24        7 end. 
 
-Errors in program: 8
+Errors in program: 9
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
-  4  ')' expected
-  6  Illegal symbol
-  9  '(' expected
- 50  Error in constant
-104  Identifier not declared
-178  Multidefined record variant
+  2   2 Identifier expected
+  4   1 ')' expected
+  6   1 Illegal symbol
+  9   1 '(' expected
+ 50   1 Error in constant
+104   1 Identifier not declared
+178   1 Multidefined record variant
+200   1 Tagfield constants must cover entire tagfield type
 

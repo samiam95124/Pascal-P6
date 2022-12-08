@@ -1,32 +1,40 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 205: Missing ';' between successive fields 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0205; 
-     8      -32  
-     9      -32 var a: record b, c: integer end 
-    10      -32     d: record e, f: integer end; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 205: Missing ';' between successive fields 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0205; 
+     8      -48  
+     9      -48 var a: record b, c: integer end 
+    10      -48     d: record e, f: integer end; 
     10   ****       ^6      ^14,2,5
-    11      -32  
-    12      -32 begin 
-    13        8  
-    14        8    a.b := 1; 
-    15       10    d.e := 1 
+    10   ****    6 Illegal symbol
+    10   ****   14 ';' expected
+    10   ****    2 Identifier expected
+    10   ****    5 ':' expected
+    11      -48  
+    12      -48 begin 
+    13        7  
+    14        7    a.b := 1; 
+    15        9    d.e := 1 
     15   ****       ^104
-    16       10  
-    17       10 end. 
+    15   ****  104 Identifier not declared
+    16        9  
+    17        9 end. 
 
 Errors in program: 5
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
-  5  ':' expected
-  6  Illegal symbol
- 14  ';' expected
-104  Identifier not declared
+  2   1 Identifier expected
+  5   1 ':' expected
+  6   1 Illegal symbol
+ 14   1 ';' expected
+104   1 Identifier not declared
 

@@ -1,31 +1,35 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 306: Missing type ident after ':' for function 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0306; 
-     8      -32  
-     9      -32 function x(one, two: integer):; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 306: Missing type ident after ':' for function 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0306; 
+     8      -48  
+     9      -48 function x(one, two: integer):; 
      9   ****                                 ^2
-    10      -40  
-    11      -40 begin 
-    12        8  
-    13        8    one := 1; 
-    14       10    two := 2; 
-    15       12    x := 'a' 
-    16       12  
-    17       12 end; 
-    18       14  
-    19       14 begin 
-    20       16  
-    21       16 end. 
+     9   ****    2 Identifier expected
+    10      -64  
+    11      -64 begin 
+    12        7  
+    13        7    one := 1; 
+    14        9    two := 2; 
+    15       11    x := 'a' 
+    16       11  
+    17       11 end; 
+    18       13  
+    19       13 begin 
+    20       15  
+    21       15 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
+  2   1 Identifier expected
 

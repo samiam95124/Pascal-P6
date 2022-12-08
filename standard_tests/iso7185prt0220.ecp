@@ -1,39 +1,51 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 220: Standard field specification in variant 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0220; 
-     8      -32  
-     9      -32 type q = (one, two, three); 
-    10      -32  
-    11      -32 var a: record b, c: integer; 
-    12      -32               case d: q of 
-    13      -32                  one, two: (); 
-    14      -32                  three: (); 
-    15      -32                  e, f: char 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 220: Standard field specification in variant 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0220; 
+     8      -48  
+     9      -48 type q = (one, two, three); 
+    10      -48  
+    11      -48 var a: record b, c: integer; 
+    12      -48               case d: q of 
+    13      -48                  one, two: (); 
+    14      -48                  three: (); 
+    15      -48                  e, f: char 
     15   ****                    ^104^178^104^178,178^9
-    16      -32        end; 
-    16   ****            ^6,5,10,4
-    17      -32  
-    18      -32 begin 
-    19        8  
-    20        8    a.b := 1 
-    21        8  
-    22        8 end. 
+    15   ****  104 Identifier not declared
+    15   ****  178 Multidefined record variant
+    15   ****    9 '(' expected
+    16      -48        end; 
+    16   ****            ^6,5,10,4,200
+    16   ****    6 Illegal symbol
+    16   ****    5 ':' expected
+    16   ****   10 Error in type
+    16   ****    4 ')' expected
+    16   ****  200 Tagfield constants must cover entire tagfield type
+    17      -48  
+    18      -48 begin 
+    19        7  
+    20        7    a.b := 1 
+    21        7  
+    22        7 end. 
 
-Errors in program: 10
+Errors in program: 11
 
 Error numbers in listing:
 -------------------------
-  4  ')' expected
-  5  ':' expected
-  6  Illegal symbol
-  9  '(' expected
- 10  Error in type
-104  Identifier not declared
-178  Multidefined record variant
+  4   1 ')' expected
+  5   1 ':' expected
+  6   1 Illegal symbol
+  9   1 '(' expected
+ 10   1 Error in type
+104   2 Identifier not declared
+178   3 Multidefined record variant
+200   1 Tagfield constants must cover entire tagfield type
 
