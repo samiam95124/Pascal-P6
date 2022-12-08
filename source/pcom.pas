@@ -6269,7 +6269,8 @@ end;
             until test;
             if sy = colon then insymbol else error(5);
             typ(fsys + [casesy,semicolon],lsp,lsize);
-            if lsp^.form = arrayc then error(272);
+            if lsp <> nil then
+              if lsp^.form = arrayc then error(272);
             while nxt <> nxt1 do
               with nxt^ do
                 begin alignu(lsp,displ);
