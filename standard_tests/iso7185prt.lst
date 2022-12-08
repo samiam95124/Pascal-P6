@@ -17,13 +17,13 @@ Compile output differences: **********************
 
 
     compare standard_tests/iso7185prt0001.err OK
-*** compare standard_tests/iso7185prt0002.err failed
+    compare standard_tests/iso7185prt0002.err OK
     compare standard_tests/iso7185prt0003.err OK
     compare standard_tests/iso7185prt0006.err OK
     compare standard_tests/iso7185prt0007.err OK
     compare standard_tests/iso7185prt0008.err OK
-*** compare standard_tests/iso7185prt0009.err failed
-*** compare standard_tests/iso7185prt0010.err failed
+    compare standard_tests/iso7185prt0009.err OK
+    compare standard_tests/iso7185prt0010.err OK
     compare standard_tests/iso7185prt0011.err OK
     compare standard_tests/iso7185prt0012.err OK
     compare standard_tests/iso7185prt0013.err OK
@@ -32,68 +32,68 @@ Compile output differences: **********************
     compare standard_tests/iso7185prt0016.err OK
     compare standard_tests/iso7185prt0017.err OK
     compare standard_tests/iso7185prt0018.err OK
-*** compare standard_tests/iso7185prt0019.err failed
+    compare standard_tests/iso7185prt0019.err OK
     compare standard_tests/iso7185prt0020.err OK
-*** compare standard_tests/iso7185prt0021.err failed
+    compare standard_tests/iso7185prt0021.err OK
     compare standard_tests/iso7185prt0022.err OK
     compare standard_tests/iso7185prt0023.err OK
     compare standard_tests/iso7185prt0024.err OK
     compare standard_tests/iso7185prt0025.err OK
-*** compare standard_tests/iso7185prt0026.err failed
+    compare standard_tests/iso7185prt0026.err OK
     compare standard_tests/iso7185prt0027.err OK
-*** compare standard_tests/iso7185prt0028.err failed
-*** compare standard_tests/iso7185prt0029.err failed
+    compare standard_tests/iso7185prt0028.err OK
+    compare standard_tests/iso7185prt0029.err OK
     compare standard_tests/iso7185prt0030.err OK
     compare standard_tests/iso7185prt0031.err OK
-*** compare standard_tests/iso7185prt0032.err failed
-*** compare standard_tests/iso7185prt0033.err failed
-*** compare standard_tests/iso7185prt0034.err failed
-*** compare standard_tests/iso7185prt0035.err failed
-*** compare standard_tests/iso7185prt0036.err failed
-*** compare standard_tests/iso7185prt0037.err failed
-*** compare standard_tests/iso7185prt0038.err failed
-*** compare standard_tests/iso7185prt0039.err failed
-*** compare standard_tests/iso7185prt0040.err failed
-*** compare standard_tests/iso7185prt0041.err failed
-*** compare standard_tests/iso7185prt0042.err failed
-*** compare standard_tests/iso7185prt0043.err failed
-*** compare standard_tests/iso7185prt0044.err failed
-*** compare standard_tests/iso7185prt0045.err failed
-*** compare standard_tests/iso7185prt0046.err failed
-*** compare standard_tests/iso7185prt0047.err failed
-*** compare standard_tests/iso7185prt0048.err failed
-*** compare standard_tests/iso7185prt0049.err failed
-*** compare standard_tests/iso7185prt0050.err failed
-*** compare standard_tests/iso7185prt0051.err failed
-*** compare standard_tests/iso7185prt0052.err failed
-*** compare standard_tests/iso7185prt0053.err failed
-*** compare standard_tests/iso7185prt0054.err failed
-*** compare standard_tests/iso7185prt0055.err failed
-*** compare standard_tests/iso7185prt0056.err failed
-*** compare standard_tests/iso7185prt0057.err failed
-*** compare standard_tests/iso7185prt0100.err failed
-*** compare standard_tests/iso7185prt0101.err failed
-*** compare standard_tests/iso7185prt0102.err failed
-*** compare standard_tests/iso7185prt0103.err failed
-*** compare standard_tests/iso7185prt0104.err failed
-*** compare standard_tests/iso7185prt0105.err failed
-*** compare standard_tests/iso7185prt0106.err failed
-*** compare standard_tests/iso7185prt0107.err failed
-*** compare standard_tests/iso7185prt0108.err failed
-*** compare standard_tests/iso7185prt0109.err failed
-*** compare standard_tests/iso7185prt0110.err failed
-*** compare standard_tests/iso7185prt0111.err failed
-*** compare standard_tests/iso7185prt0112.err failed
+    compare standard_tests/iso7185prt0032.err OK
+    compare standard_tests/iso7185prt0033.err OK
+    compare standard_tests/iso7185prt0034.err OK
+    compare standard_tests/iso7185prt0035.err OK
+    compare standard_tests/iso7185prt0036.err OK
+    compare standard_tests/iso7185prt0037.err OK
+    compare standard_tests/iso7185prt0038.err OK
+    compare standard_tests/iso7185prt0039.err OK
+    compare standard_tests/iso7185prt0040.err OK
+    compare standard_tests/iso7185prt0041.err OK
+    compare standard_tests/iso7185prt0042.err OK
+    compare standard_tests/iso7185prt0043.err OK
+    compare standard_tests/iso7185prt0044.err OK
+    compare standard_tests/iso7185prt0045.err OK
+    compare standard_tests/iso7185prt0046.err OK
+    compare standard_tests/iso7185prt0047.err OK
+    compare standard_tests/iso7185prt0048.err OK
+    compare standard_tests/iso7185prt0049.err OK
+    compare standard_tests/iso7185prt0050.err OK
+    compare standard_tests/iso7185prt0051.err OK
+    compare standard_tests/iso7185prt0052.err OK
+    compare standard_tests/iso7185prt0053.err OK
+    compare standard_tests/iso7185prt0054.err OK
+    compare standard_tests/iso7185prt0055.err OK
+    compare standard_tests/iso7185prt0056.err OK
+    compare standard_tests/iso7185prt0057.err OK
+    compare standard_tests/iso7185prt0100.err OK
+    compare standard_tests/iso7185prt0101.err OK
+    compare standard_tests/iso7185prt0102.err OK
+    compare standard_tests/iso7185prt0103.err OK
+    compare standard_tests/iso7185prt0104.err OK
+    compare standard_tests/iso7185prt0105.err OK
+    compare standard_tests/iso7185prt0106.err OK
+    compare standard_tests/iso7185prt0107.err OK
+    compare standard_tests/iso7185prt0108.err OK
+    compare standard_tests/iso7185prt0109.err OK
+    compare standard_tests/iso7185prt0110.err OK
+    compare standard_tests/iso7185prt0111.err OK
+    compare standard_tests/iso7185prt0112.err OK
 *** compare standard_tests/iso7185prt0113.err failed
-*** compare standard_tests/iso7185prt0114.err failed
-*** compare standard_tests/iso7185prt0115.err failed
-*** compare standard_tests/iso7185prt0116.err failed
-*** compare standard_tests/iso7185prt0117.err failed
-*** compare standard_tests/iso7185prt0118.err failed
-*** compare standard_tests/iso7185prt0119.err failed
-*** compare standard_tests/iso7185prt0120.err failed
-*** compare standard_tests/iso7185prt0121.err failed
-*** compare standard_tests/iso7185prt0122.err failed
+    compare standard_tests/iso7185prt0114.err OK
+    compare standard_tests/iso7185prt0115.err OK
+    compare standard_tests/iso7185prt0116.err OK
+    compare standard_tests/iso7185prt0117.err OK
+    compare standard_tests/iso7185prt0118.err OK
+    compare standard_tests/iso7185prt0119.err OK
+    compare standard_tests/iso7185prt0120.err OK
+    compare standard_tests/iso7185prt0121.err OK
+    compare standard_tests/iso7185prt0122.err OK
 *** compare standard_tests/iso7185prt0123.err failed
 *** compare standard_tests/iso7185prt0124.err failed
 *** compare standard_tests/iso7185prt0125.err failed
@@ -3041,7 +3041,6 @@ and the following annexes: A,B,C,E.
     13   ****                ^6,104^6^59
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
-    13   ****    6 Illegal symbol
     13   ****   59 Error in variable
     14        8  
     15        8 end. 
@@ -3474,7 +3473,6 @@ and the following annexes: A,B,C,E.
     16        9       2: a := 2 
     16   ****         ^6^6  ^59
     16   ****    6 Illegal symbol
-    16   ****    6 Illegal symbol
     16   ****   59 Error in variable
     17        9  
     18        9    end 
@@ -3786,7 +3784,6 @@ and the following annexes: A,B,C,E.
     13   ****             ^104,59    ^59
     13   ****  104 Identifier not declared
     13   ****   59 Error in variable
-    13   ****   59 Error in variable
     14        8  
     15        8 end. 
 
@@ -3938,7 +3935,6 @@ and the following annexes: A,B,C,E.
     13        7    i := 1 to 10 do a := b 
     13   ****              ^6    ^6   ^59
     13   ****    6 Illegal symbol
-    13   ****    6 Illegal symbol
     13   ****   59 Error in variable
     14        7  
     15        7 end. 
@@ -3978,8 +3974,6 @@ and the following annexes: A,B,C,E.
     13   ****  104 Identifier not declared
     13   ****   59 Error in variable
     13   ****    6 Illegal symbol
-    13   ****    6 Illegal symbol
-    13   ****   59 Error in variable
     14        7  
     15        7 end. 
 
@@ -4197,7 +4191,6 @@ and the following annexes: A,B,C,E.
     13   ****                  ^6,104^6^55
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
-    13   ****    6 Illegal symbol
     13   ****   55 'to'/'downto' expected
     14       10  
     15       10 end. 
@@ -4237,7 +4230,6 @@ and the following annexes: A,B,C,E.
     13   ****                      ^6,104^6^55
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
-    13   ****    6 Illegal symbol
     13   ****   55 'to'/'downto' expected
     14       10  
     15       10 end. 
@@ -4352,7 +4344,6 @@ and the following annexes: A,B,C,E.
     13   ****                        ^6,104^6^59
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
-    13   ****    6 Illegal symbol
     13   ****   59 Error in variable
     14        9  
     15        9 end. 
@@ -4432,7 +4423,6 @@ and the following annexes: A,B,C,E.
     13   ****           ^104,59   ^104
     13   ****  104 Identifier not declared
     13   ****   59 Error in variable
-    13   ****  104 Identifier not declared
     14        7  
     15        7 end. 
 
@@ -4710,7 +4700,6 @@ and the following annexes: A,B,C,E.
     15   ****            ^2   ^104^104
     15   ****    2 Identifier expected
     15   ****  104 Identifier not declared
-    15   ****  104 Identifier not declared
     16        9  
     17        9 end. 
 
@@ -4788,7 +4777,6 @@ and the following annexes: A,B,C,E.
     14        7    with a d do e := f 
     14   ****             ^59     ^104^104
     14   ****   59 Error in variable
-    14   ****  104 Identifier not declared
     14   ****  104 Identifier not declared
     15        7  
     16        7 end. 
@@ -4995,7 +4983,6 @@ and the following annexes: A,B,C,E.
      9      -48 var a: record b, c: integer; 
     10      -48               csae d: boolean of 
     10   ****                      ^6          ^6
-    10   ****    6 Illegal symbol
     10   ****    6 Illegal symbol
     11      -48                  true: (); 
     12      -48                  false: () 
@@ -5614,9 +5601,6 @@ and the following annexes: A,B,C,E.
     15      -48                  e, f: char 
     15   ****                    ^104^178^104^178,178^9
     15   ****  104 Identifier not declared
-    15   ****  178 Multidefined record variant
-    15   ****  104 Identifier not declared
-    15   ****  178 Multidefined record variant
     15   ****  178 Multidefined record variant
     15   ****    9 '(' expected
     16      -48        end;
@@ -7183,7 +7167,6 @@ and the following annexes: A,B,C,E.
      9      -48 procedure a(: integer); 
      9   ****               ^7       ^7,5
      9   ****    7 Error in parameter list
-     9   ****    7 Error in parameter list
      9   ****    5 ':' expected
     10      -48  
     11      -48 begin 
@@ -7338,7 +7321,6 @@ and the following annexes: A,B,C,E.
     20   ****         ^277^126^277
     20   ****  277 No overload found to match parameter
     20   ****  126 Number of parameters does not agree with declaration
-    20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
 
@@ -7388,7 +7370,6 @@ and the following annexes: A,B,C,E.
     20       12    a(1, 2) 
     20   ****         ^277^277
     20   ****  277 No overload found to match parameter
-    20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
 
@@ -7434,7 +7415,6 @@ and the following annexes: A,B,C,E.
     19       12  
     20       12    a(1,2) 
     20   ****         ^277^277
-    20   ****  277 No overload found to match parameter
     20   ****  277 No overload found to match parameter
     21       12  
     22       12 end. 
@@ -8993,7 +8973,6 @@ and the following annexes: A,B,C,E.
     12        7  
     13        7    a := b in 1..10] 
     13   ****                  ^6 ^6
-    13   ****    6 Illegal symbol
     13   ****    6 Illegal symbol
     14        8  
     15        8 end. 

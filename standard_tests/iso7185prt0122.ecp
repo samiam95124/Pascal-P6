@@ -1,31 +1,36 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 122: Missing ":" before statement on case statement 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0122; 
-     8      -32  
-     9      -32 var x, a: integer; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    case x of 
-    14       10  
-    15       10       1 a := 1; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 122: Missing ":" before statement on case statement 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0122; 
+     8      -48  
+     9      -48 var x, a: integer; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    case x of 
+    14        9  
+    15        9       1 a := 1; 
     15   ****           ^6    ^5
-    16       11       2: a := 2 
-    17       11  
-    18       11    end 
-    19       20  
-    20       20 end. 
+    15   ****    6 Illegal symbol
+    15   ****    5 ':' expected
+    16       10       2: a := 2 
+    17       10  
+    18       10    end 
+    19       19  
+    20       19 end. 
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  5  ':' expected
-  6  Illegal symbol
+  5   1 ':' expected
+  6   1 Illegal symbol
 

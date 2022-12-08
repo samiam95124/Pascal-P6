@@ -1626,7 +1626,7 @@ end;
   end;
 
   procedure endofline;
-    var lastpos,freepos,currpos,currnmr,f,k: integer;
+    var lastpos,freepos,currpos,currnmr,f,j,k: integer; df: boolean;
   begin
     if errinx > 0 then   (*output error messages*)
       begin write(linecount:6,' ****  ':9);
@@ -1652,8 +1652,13 @@ end;
         writeln; 
         if experr then begin
           for k := 1 to errinx do 
-            begin write(linecount:6,' ****  ':9); write(errlist[k].nmr:3, ' ');
-              errmsg(errlist[k].nmr); writeln
+            begin df := false;
+              for j := 1 to k-1 do 
+                if errlist[j].nmr = errlist[k].nmr then df := true;
+              if not df then begin
+                write(linecount:6,' ****  ':9); write(errlist[k].nmr:3, ' ');
+                errmsg(errlist[k].nmr); writeln
+              end
             end
         end;
         errinx := 0;
