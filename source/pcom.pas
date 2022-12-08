@@ -6556,7 +6556,8 @@ end;
                     repeat
                       with lsp1^ do begin
                         if lsp1^.form = arrays then begin
-                          if lsp^.form = arrayc then error(272);
+                          if lsp <> nil then 
+                            if lsp^.form = arrayc then error(272);
                           lsp2 := aeltype; aeltype := lsp;
                           if inxtype <> nil then begin
                             getbounds(inxtype,lmin,lmax);
