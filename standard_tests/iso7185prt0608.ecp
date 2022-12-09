@@ -1,37 +1,45 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 608: Missing ';' between parameter specifications 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0608; 
-     8      -32  
-     9      -32 procedure a(b, c: integer d: char); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 608: Missing ';' between parameter specifications 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0608; 
+     8      -48  
+     9      -48 procedure a(b, c: integer d: char); 
      9   ****                             ^7
-    10      -40  
-    11      -40 begin 
-    12        8  
-    13        8    b := 1; 
-    14       10    c := 1; 
-    15       12    d := 'a' 
+     9   ****    7 Error in parameter list
+    10      -64  
+    11      -64 begin 
+    12        7  
+    13        7    b := 1; 
+    14        9    c := 1; 
+    15       11    d := 'a' 
     15   ****         ^104
-    16       12  
-    17       12 end; 
-    18       14  
-    19       14 begin 
-    20       16  
-    21       16    a(1, 2, 'a') 
-    21   ****            ^126
-    22       19  
-    23       19 end. 
+    15   ****  104 Identifier not declared
+    16       11  
+    17       11 end; 
+    18       13  
+    19       13 begin 
+    20       15  
+    21       15    a(1, 2, 'a') 
+    21   ****                ^126^277
+    21   ****  126 Number of parameters does not agree with declaration
+    21   ****  277 No overload found to match parameter
+    22       17  
+    23       17 end. 
 
-Errors in program: 3
+Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  7  Error in parameter list
-104  Identifier not declared
-126  Number of parameters does not agree with declaration
+  7   1 Error in parameter list
+104   1 Identifier not declared
+126   1 Number of parameters does not agree with declaration
+277   1 No overload found to match parameter
 

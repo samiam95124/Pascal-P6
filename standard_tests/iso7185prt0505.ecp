@@ -1,29 +1,37 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 505: Missing first index in array 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0505; 
-     8      -32  
-     9      -32 var a: array [..10] of integer; 
-     9   ****                  ^1 ^5,50,107,102
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    a[1] := 1 
-    14       12  
-    15       12 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 505: Missing first index in array 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0505; 
+     8      -48  
+     9      -48 var a: array [..10] of integer; 
+     9   ****                  ^1 ^30,50,107,102
+     9   ****    1 Error in simple type
+     9   ****   30 '..' expected
+     9   ****   50 Error in constant
+     9   ****  107 Incompatible subrange types
+     9   ****  102 Low bound exceeds highbound
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a[1] := 1 
+    14       11  
+    15       11 end. 
 
 Errors in program: 5
 
 Error numbers in listing:
 -------------------------
-  1  Error in simple type
-  5  ':' expected
- 50  Error in constant
-102  Low bound exceeds highbound
-107  Incompatible subrange types
+  1   1 Error in simple type
+ 30   1 '..' expected
+ 50   1 Error in constant
+102   1 Low bound exceeds highbound
+107   1 Incompatible subrange types
 

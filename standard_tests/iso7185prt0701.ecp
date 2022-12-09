@@ -1,25 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 701: Missing first operand to '=' 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0701; 
-     8      -32  
-     9      -32 var b: boolean; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    b := = 1 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 701: Missing first operand to '=' 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0701; 
+     8      -48  
+     9      -48 var b: boolean; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    b := = 1 
     13   ****           ^58
-    14        8  
-    15        8 end. 
+    13   ****   58 Error in factor
+    14        7  
+    15        7 end. 
+    15   ****     ^129
+    15   ****  129 Type conflict of operands
 
-Errors in program: 1
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
- 58  Error in factor
+ 58   1 Error in factor
+129   1 Type conflict of operands
 

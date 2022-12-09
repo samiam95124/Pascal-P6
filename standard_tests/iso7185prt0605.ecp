@@ -1,32 +1,39 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 605: Missing type identifier on parameter specification 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0605; 
-     8      -32  
-     9      -32 procedure a(b, c:); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 605: Missing type identifier on parameter specification 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0605; 
+     8      -48  
+     9      -48 procedure a(b, c:); 
      9   ****                    ^2
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    b := 1; 
-    14        9    c := 1 
-    15        9  
-    16        9 end; 
-    17       11  
-    18       11 begin 
-    19       13  
-    20       13    a(1,2) 
-    21       14  
-    22       14 end. 
+     9   ****    2 Identifier expected
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    b := 1; 
+    14        8    c := 1 
+    15        8  
+    16        8 end; 
+    17       10  
+    18       10 begin 
+    19       12  
+    20       12    a(1,2) 
+    20   ****         ^277^277
+    20   ****  277 No overload found to match parameter
+    21       12  
+    22       12 end. 
 
-Errors in program: 1
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
+  2   1 Identifier expected
+277   2 No overload found to match parameter
 

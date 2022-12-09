@@ -1,33 +1,40 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 601: Missing first parameter identifier 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0601; 
-     8      -32  
-     9      -32 procedure a(, c: integer); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 601: Missing first parameter identifier 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0601; 
+     8      -48  
+     9      -48 procedure a(, c: integer); 
      9   ****               ^7
-    10      -36  
-    11      -36 begin 
-    12        8  
-    13        8    c := 1 
-    14        8  
-    15        8 end; 
-    16       11  
-    17       11 begin 
-    18       13  
-    19       13    a(1, 2) 
-    19   ****         ^126
-    20       15  
-    21       15 end. 
+     9   ****    7 Error in parameter list
+    10      -56  
+    11      -56 begin 
+    12        7  
+    13        7    c := 1 
+    14        7  
+    15        7 end; 
+    16       10  
+    17       10 begin 
+    18       12  
+    19       12    a(1, 2) 
+    19   ****           ^126^277
+    19   ****  126 Number of parameters does not agree with declaration
+    19   ****  277 No overload found to match parameter
+    20       13  
+    21       13 end. 
 
-Errors in program: 2
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-  7  Error in parameter list
-126  Number of parameters does not agree with declaration
+  7   1 Error in parameter list
+126   1 Number of parameters does not agree with declaration
+277   1 No overload found to match parameter
 

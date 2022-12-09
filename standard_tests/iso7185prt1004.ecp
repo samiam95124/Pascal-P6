@@ -1,28 +1,34 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1004: Missing '[' on set constant 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt1004(output); 
-     8      -32  
-     9      -32 var a, b: integer; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    a := b in 1..10] 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1004: Missing '[' on set constant 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt1004(output); 
+     8      -48  
+     9      -48 var a, b: integer; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a := b in 1..10] 
     13   ****                  ^6 ^6
-    14        9  
-    15        9 end. 
+    13   ****    6 Illegal symbol
+    14        8  
+    15        8 end. 
     15   ****     ^130,129
+    15   ****  130 Expression is not of set type
+    15   ****  129 Type conflict of operands
 
 Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
-129  Type conflict of operands
-130  Expression is not of set type
+  6   2 Illegal symbol
+129   1 Type conflict of operands
+130   1 Expression is not of set type
 

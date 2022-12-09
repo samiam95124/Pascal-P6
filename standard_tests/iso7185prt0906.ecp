@@ -1,24 +1,28 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 906: Fraction with missing value 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0906(output); 
-     8      -32  
-     9      -32 begin 
-    10        8  
-    11        8      
-    12        8    write(1.0:2: ) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 906: Fraction with missing value 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0906(output); 
+     8      -48  
+     9      -48 begin 
+    10        7  
+    11        7      
+    12        7    write(1.0:2: ) 
     12   ****                   ^58
-    13       13  
-    14       13 end. 
+    12   ****   58 Error in factor
+    13       12  
+    14       12 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
- 58  Error in factor
+ 58   1 Error in factor
 

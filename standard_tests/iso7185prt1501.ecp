@@ -1,27 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1501: Missing digit after '.' 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt1501(output); 
-     8      -32  
-     9      -32 var a: integer; 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    a := 5. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1501: Missing digit after '.' 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt1501(output); 
+     8      -48  
+     9      -48 var a: integer; 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    a := 5. 
     13   ****            ^201
-    14        8  
-    15        8 end. 
+    13   ****  201 Error in real constant: digit expected
+    14        7  
+    15        7 end. 
     15   ****     ^129
+    15   ****  129 Type conflict of operands
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-129  Type conflict of operands
-201  Error in real constant: digit expected
+129   1 Type conflict of operands
+201   1 Error in real constant: digit expected
 

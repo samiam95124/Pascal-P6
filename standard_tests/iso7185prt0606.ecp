@@ -1,34 +1,43 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 606: Missing parameter specification after 'var' 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0606; 
-     8      -32  
-     9      -32 var b: integer; 
-    10      -32  
-    11      -32 procedure a(var ); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 606: Missing parameter specification after 'var' 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0606; 
+     8      -48  
+     9      -48 var b: integer; 
+    10      -48  
+    11      -48 procedure a(var ); 
     11   ****                   ^2,7,5
-    12      -32  
-    13      -32 begin 
-    14        8 end; 
-    15        9  
-    16        9 begin 
-    17       11  
-    18       11    a(b) 
-    18   ****       ^126
-    19       12  
-    20       12 end. 
+    11   ****    2 Identifier expected
+    11   ****    7 Error in parameter list
+    11   ****    5 ':' expected
+    12      -48  
+    13      -48 begin 
+    14        7 end; 
+    15        8  
+    16        8 begin 
+    17       10  
+    18       10    a(b) 
+    18   ****        ^126^277
+    18   ****  126 Number of parameters does not agree with declaration
+    18   ****  277 No overload found to match parameter
+    19       10  
+    20       10 end. 
 
-Errors in program: 4
+Errors in program: 5
 
 Error numbers in listing:
 -------------------------
-  2  Identifier expected
-  5  ':' expected
-  7  Error in parameter list
-126  Number of parameters does not agree with declaration
+  2   1 Identifier expected
+  5   1 ':' expected
+  7   1 Error in parameter list
+126   1 Number of parameters does not agree with declaration
+277   1 No overload found to match parameter
 

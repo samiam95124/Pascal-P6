@@ -1,34 +1,39 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 802: Missing ',' in parameter list 
-     4      -32  
-     5      -32 } 
-     6      -32  
-     7      -32 program iso7185prt0802; 
-     8      -32  
-     9      -32 procedure test(a, b: integer); 
-    10      -40  
-    11      -40 begin 
-    12        8  
-    13        8    a := 1; 
-    14       10    b := 1 
-    15       10  
-    16       10 end; 
-    17       13  
-    18       13 begin 
-    19       15  
-    20       15    test(1 2) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 802: Missing ',' in parameter list 
+     4      -48  
+     5      -48 } 
+     6      -48  
+     7      -48 program iso7185prt0802; 
+     8      -48  
+     9      -48 procedure test(a, b: integer); 
+    10      -64  
+    11      -64 begin 
+    12        7  
+    13        7    a := 1; 
+    14        9    b := 1 
+    15        9  
+    16        9 end; 
+    17       12  
+    18       12 begin 
+    19       14  
+    20       14    test(1 2) 
     20   ****             ^6
-    21       17  
-    22       17 end. 
+    20   ****    6 Illegal symbol
+    21       15  
+    22       15 end. 
     22   ****     ^126
+    22   ****  126 Number of parameters does not agree with declaration
 
 Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
-126  Number of parameters does not agree with declaration
+  6   1 Illegal symbol
+126   1 Number of parameters does not agree with declaration
 
