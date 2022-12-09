@@ -1,3 +1,6 @@
 [submodule "petit-ami"]
 	path = petit_ami
 	url = https://github.com/samiam95124/petit-ami
+[submodule "p5"]
+	path = p5
+	url = https://github.com/samiam95124/Pascal-P5.git
