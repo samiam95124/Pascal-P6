@@ -1,39 +1,43 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1707b: It is an error if the value of each corresponding actual value 
-     4      -32                 parameter is not assignment compatible with the type possessed 
-     5      -32                 by the formal-parameter. 
-     6      -32  
-     7      -32                 ISO 7185 reference: 6.6.3.2 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1707b(output); 
-    12      -32  
-    13      -32 type r = record f: text end; 
-    14      -32  
-    15      -32 var d: r; 
-    16      -32  
-    17      -32 procedure b(c: r); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1707b: It is an error if the value of each corresponding actual value 
+     4      -48                 parameter is not assignment compatible with the type possessed 
+     5      -48                 by the formal-parameter. 
+     6      -48  
+     7      -48                 ISO 7185 reference: 6.6.3.2 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1707b(output); 
+    12      -48  
+    13      -48 type r = record f: text end; 
+    14      -48  
+    15      -48 var d: r; 
+    16      -48  
+    17      -48 procedure b(c: r); 
     17   ****                  ^121
-    18      -40  
-    19      -40 begin 
-    20       11  
-    21       11    rewrite(c.f) 
-    22       13     
-    23       13 end; 
-    24       14  
-    25       14 begin 
-    26       16  
-    27       16    b(d) 
-    28       18     
-    29       18 end. 
+    17   ****  121 File value parameter, or parameter containing file, not allowed
+    18      -64  
+    19      -64 begin 
+    20       10  
+    21       10    rewrite(c.f) 
+    22       12     
+    23       12 end; 
+    24       13  
+    25       13 begin 
+    26       15  
+    27       15    b(d) 
+    28       16     
+    29       16 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-121  File value parameter, or parameter containing file, not allowed
+121   1 File value parameter, or parameter containing file, not allowed
 

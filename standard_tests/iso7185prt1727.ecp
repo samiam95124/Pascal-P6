@@ -1,23 +1,26 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1727: For pack, it is an error if any of the components of the  
-     4      -32                unpacked array are both undefined and accessed. 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.6.5.4 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1727(output); 
-    11      -32  
-    12      -32 var a: array [1..10] of integer; 
-    13      -32     b: packed array [1..10] of integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    pack(a, 1, b) 
-    18       16  
-    19       16 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1727: For pack, it is an error if any of the components of the  
+     4      -48                unpacked array are both undefined and accessed. 
+     5      -48  
+     6      -48                ISO 7185 reference: 6.6.5.4 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1727(output); 
+    11      -48  
+    12      -48 var a: array [1..10] of integer; 
+    13      -48     b: packed array [1..10] of integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    pack(a, 1, b) 
+    18       15  
+    19       15 end. 
 
 Errors in program: 0

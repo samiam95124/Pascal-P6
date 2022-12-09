@@ -1,29 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1720: For dispose(p), it is an error if the identifying-value had 
-     4      -32                been created using the form new(p,c l ,...,c n ). 
-     5      -32  
-     6      -32                ISO 7185 reference: 6.6.5.3 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1720(output); 
-    11      -32  
-    12      -32 type a = record case b: boolean of 
-    13      -32  
-    14      -32           true:  (c: integer); 
-    15      -32           false: (d: char) 
-    16      -32  
-    17      -32        end; 
-    18      -32 var e: ^a; 
-    19      -32  
-    20      -32 begin 
-    21        8  
-    22        8    new(e, true); 
-    23       13    dispose(e) 
-    24       17  
-    25       17 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1720: For dispose(p), it is an error if the identifying-value had 
+     4      -48                been created using the form new(p,c l ,...,c n ). 
+     5      -48  
+     6      -48                ISO 7185 reference: 6.6.5.3 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1720(output); 
+    11      -48  
+    12      -48 type a = record case b: boolean of 
+    13      -48  
+    14      -48           true:  (c: integer); 
+    15      -48           false: (d: char) 
+    16      -48  
+    17      -48        end; 
+    18      -48 var e: ^a; 
+    19      -48  
+    20      -48 begin 
+    21        7  
+    22        7    new(e, true); 
+    23       12    dispose(e) 
+    24       16  
+    25       16 end. 
 
 Errors in program: 0

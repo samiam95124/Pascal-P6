@@ -1,38 +1,41 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1721: For dispose(p,k l ,...,k, ), it is an error unless the variable 
-     4      -32                had been created using the form new(p,c l ,...,c,,,) and m is 
-     5      -32                equal to n. 
-     6      -32  
-     7      -32                ISO 7185 reference: 6.6.5.3 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1721(output); 
-    12      -32  
-    13      -32 type 
-    14      -32  
-    15      -32      x = (one, two, three); 
-    16      -32      a = record case b: boolean of 
-    17      -32  
-    18      -32         true:  ( 
-    19      -32            case e: x of 
-    20      -32               one: (c: integer); 
-    21      -32               two: (f: char); 
-    22      -32               three: (g: boolean) 
-    23      -32         ); 
-    24      -32         false: (d: char) 
-    25      -32  
-    26      -32      end; 
-    27      -32 var e: ^a; 
-    28      -32  
-    29      -32 begin 
-    30        8  
-    31        8    new(e, true, one); 
-    32       14    dispose(e, false) 
-    33       19  
-    34       19 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1721: For dispose(p,k l ,...,k, ), it is an error unless the variable 
+     4      -48                had been created using the form new(p,c l ,...,c,,,) and m is 
+     5      -48                equal to n. 
+     6      -48  
+     7      -48                ISO 7185 reference: 6.6.5.3 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1721(output); 
+    12      -48  
+    13      -48 type 
+    14      -48  
+    15      -48      x = (one, two, three); 
+    16      -48      a = record case b: boolean of 
+    17      -48  
+    18      -48         true:  ( 
+    19      -48            case e: x of 
+    20      -48               one: (c: integer); 
+    21      -48               two: (f: char); 
+    22      -48               three: (g: boolean) 
+    23      -48         ); 
+    24      -48         false: (d: char) 
+    25      -48  
+    26      -48      end; 
+    27      -48 var e: ^a; 
+    28      -48  
+    29      -48 begin 
+    30        7  
+    31        7    new(e, true, one); 
+    32       13    dispose(e, false) 
+    33       18  
+    34       18 end. 
 
 Errors in program: 0
