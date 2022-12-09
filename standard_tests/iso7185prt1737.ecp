@@ -1,26 +1,29 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1737: For chr(x), the function returns a result of char-type that is  
-     4      -32                the value whose ordinal number is equal to the value of the  
-     5      -32                expression x if such a character value exists. It is an error 
-     6      -32                if such a character value does not exist. 
-     7      -32  
-     8      -32                ISO 7185 reference: 6.6.5.3 
-     9      -32  
-    10      -32 } 
-    11      -32  
-    12      -32 program iso7185prt1737; 
-    13      -32  
-    14      -32 var a: integer; 
-    15      -32     b: char; 
-    16      -32  
-    17      -32 begin 
-    18        8  
-    19        8    a := -1; 
-    20       11    b := chr(a) 
-    21       13  
-    22       13 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1737: For chr(x), the function returns a result of char-type that is  
+     4      -48                the value whose ordinal number is equal to the value of the  
+     5      -48                expression x if such a character value exists. It is an error 
+     6      -48                if such a character value does not exist. 
+     7      -48  
+     8      -48                ISO 7185 reference: 6.6.5.3 
+     9      -48  
+    10      -48 } 
+    11      -48  
+    12      -48 program iso7185prt1737; 
+    13      -48  
+    14      -48 var a: integer; 
+    15      -48     b: char; 
+    16      -48  
+    17      -48 begin 
+    18        7  
+    19        7    a := -1; 
+    20       10    b := chr(a) 
+    21       12  
+    22       12 end. 
 
 Errors in program: 0

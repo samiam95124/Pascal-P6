@@ -1,25 +1,30 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1765: String not based on char. 
-     4      -32  
-     5      -32     String based on subrange of char, not char itself. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1765(output); 
-    10      -32  
-    11      -32 type mychar = 'a'..'z'; 
-    12      -32  
-    13      -32 var s: packed array [1..10] of mychar; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    s := 'hello you '; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1765: String not based on char. 
+     4      -48  
+     5      -48     String based on subrange of char, not char itself. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1765(output); 
+    10      -48  
+    11      -48 type mychar = 'a'..'z'; 
+    12      -48  
+    13      -48 var s: packed array [1..10] of mychar; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    s := 'hello you '; 
     17   ****                       ^129
-    18       10    writeln('The string is: ''', s, ''''); 
+    17   ****  129 Type conflict of operands
+    18        9    writeln('The string is: ''', s, ''''); 
     18   ****                                    ^116
+    18   ****  116 Error in type of standard procedure parameter
     19       22  
     20       22 end. 
 
@@ -27,6 +32,6 @@ Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-116  Error in type of standard procedure parameter
-129  Type conflict of operands
+116   1 Error in type of standard procedure parameter
+129   1 Type conflict of operands
 

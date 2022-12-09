@@ -1,21 +1,25 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1767: Repeated header file 
-     4      -32  
-     5      -32     Tests for a duplicated header file. The ISO 7185 standard states that header 
-     6      -32     parameters must be distinct. 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1767(output,output); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1767: Repeated header file 
+     4      -48  
+     5      -48     Tests for a duplicated header file. The ISO 7185 standard states that header 
+     6      -48     parameters must be distinct. 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1767(output,output); 
     10   ****                                      ^240
-    11      -32  
-    12      -32  
-    13      -32 begin 
-    14        8  
-    15        8    writeln('Test runs') 
+    10   ****  240 Header parameter already included
+    11      -48  
+    12      -48  
+    13      -48 begin 
+    14        7  
+    15        7    writeln('Test runs') 
     16       14  
     17       14 end. 
 
@@ -23,5 +27,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-240  Header parameter already included
+240   1 Header parameter already included
 

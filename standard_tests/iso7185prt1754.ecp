@@ -1,24 +1,27 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1754: On reading an integer from a textfile, after skipping preceding 
-     4      -32                spaces and end-of-lines, it is an error if the rest of the  
-     5      -32                sequence does not form a signed-integer. 
-     6      -32  
-     7      -32                ISO 7185 reference: 6.9.1 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1754(output); 
-    12      -32  
-    13      -32 var a: text; 
-    14      -32     b: integer; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    rewrite(a); 
-    19       10    writeln(a, '      five       '); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1754: On reading an integer from a textfile, after skipping preceding 
+     4      -48                spaces and end-of-lines, it is an error if the rest of the  
+     5      -48                sequence does not form a signed-integer. 
+     6      -48  
+     7      -48                ISO 7185 reference: 6.9.1 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1754(output); 
+    12      -48  
+    13      -48 var a: text; 
+    14      -48     b: integer; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    rewrite(a); 
+    19        9    writeln(a, '      five       '); 
     20       17    reset(a); 
     21       19    read(a, b) 
     22       24  

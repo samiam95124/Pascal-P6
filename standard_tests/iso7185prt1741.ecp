@@ -1,22 +1,25 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1741: When eoln(f) is activated, it is an error if f is undefined. 
-     4      -32  
-     5      -32                ISO 7185 reference: 6.6.6.5 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1741(output); 
-    10      -32  
-    11      -32 var a: text; 
-    12      -32  
-    13      -32 begin 
-    14        8  
-    15        8    { As usual, it is possible that this could be completely optimized out } 
-    16        8    if eoln(a) then 
-    17       11  
-    18       11 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1741: When eoln(f) is activated, it is an error if f is undefined. 
+     4      -48  
+     5      -48                ISO 7185 reference: 6.6.6.5 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1741(output); 
+    10      -48  
+    11      -48 var a: text; 
+    12      -48  
+    13      -48 begin 
+    14        7  
+    15        7    { As usual, it is possible that this could be completely optimized out } 
+    16        7    if eoln(a) then 
+    17       10  
+    18       10 end. 
 
 Errors in program: 0

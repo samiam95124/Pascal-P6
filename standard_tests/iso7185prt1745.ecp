@@ -1,24 +1,27 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1745: A term of the form i div j is an error if j is zero. 
-     4      -32  
-     5      -32                ISO 7185 reference: 6.7.2.2 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1745(output); 
-    10      -32  
-    11      -32 var a: integer; 
-    12      -32     b: integer; 
-    13      -32  
-    14      -32 begin 
-    15        8  
-    16        8    a := 1; 
-    17       10    b := 0; 
-    18       12    a := a div b 
-    19       13  
-    20       13 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1745: A term of the form i div j is an error if j is zero. 
+     4      -48  
+     5      -48                ISO 7185 reference: 6.7.2.2 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1745(output); 
+    10      -48  
+    11      -48 var a: integer; 
+    12      -48     b: integer; 
+    13      -48  
+    14      -48 begin 
+    15        7  
+    16        7    a := 1; 
+    17        9    b := 0; 
+    18       11    a := a div b 
+    19       12  
+    20       12 end. 
 
 Errors in program: 0

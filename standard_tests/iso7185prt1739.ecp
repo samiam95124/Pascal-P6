@@ -1,29 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1739: For pred(x), the function yields a value whose ordinal number 
-     4      -32                is one less than that of x, if such a value exists. It is an 
-     5      -32                error if such a value does not exist. 
-     6      -32  
-     7      -32                ISO 7185 reference: 6.6.6.4 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1739(output); 
-    12      -32  
-    13      -32 var a: integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    a := -maxint; 
-    18       11    { for binary 2s complement math, which is asymetrical about 0, it would 
-    19       11      require 2 decrements to fail. However, the letter of the rule for ISO 7185 
-    20       11      pascal is that it should fail anytime the result is outside of 
-    21       11      -maxint..maxint. } 
-    22       11    a := pred(a); 
-    23       14    a := pred(a) 
-    24       16  
-    25       16 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1739: For pred(x), the function yields a value whose ordinal number 
+     4      -48                is one less than that of x, if such a value exists. It is an 
+     5      -48                error if such a value does not exist. 
+     6      -48  
+     7      -48                ISO 7185 reference: 6.6.6.4 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1739(output); 
+    12      -48  
+    13      -48 var a: integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    a := -maxint; 
+    18       10    { for binary 2s complement math, which is asymetrical about 0, it would 
+    19       10      require 2 decrements to fail. However, the letter of the rule for ISO 7185 
+    20       10      pascal is that it should fail anytime the result is outside of 
+    21       10      -maxint..maxint. } 
+    22       10    a := pred(a); 
+    23       13    a := pred(a) 
+    24       15  
+    25       15 end. 
 
 Errors in program: 0

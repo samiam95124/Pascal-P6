@@ -1,24 +1,27 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1755: On reading an integer from a textfile, it is an error if the  
-     4      -32                value of the signed-integer read is not assignment-compatible 
-     5      -32                with the type possessed by variable-access. 
-     6      -32  
-     7      -32                ISO 7185 reference: 6.9.1 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1755(output); 
-    12      -32  
-    13      -32 var a: text; 
-    14      -32     b: 1..5; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    rewrite(a); 
-    19       10    writeln(a, '      10       '); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1755: On reading an integer from a textfile, it is an error if the  
+     4      -48                value of the signed-integer read is not assignment-compatible 
+     5      -48                with the type possessed by variable-access. 
+     6      -48  
+     7      -48                ISO 7185 reference: 6.9.1 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1755(output); 
+    12      -48  
+    13      -48 var a: text; 
+    14      -48     b: 1..5; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    rewrite(a); 
+    19        9    writeln(a, '      10       '); 
     20       17    reset(a); 
     21       19    read(a, b) 
     22       24  

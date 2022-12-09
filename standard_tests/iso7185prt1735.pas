@@ -18,7 +18,7 @@ begin
    { assign maximum value of integer }
    b := maxint;
    { now move it completely out of range in floating point only }
-   b := b+10.0;
+   b := b+10000.0;
    { now the assignment is invalid }
    a := trunc(b)
 
