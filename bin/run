@@ -50,7 +50,7 @@ do
 		echo ""
 		echo "Execution:"
 		echo ""
-		echo "run <file> [pmach|cmach|pint] [<inpfile>] <file>"
+		echo "run <file> [--pmach|--cmach|--pint] [<inpfile>] <file>"
 		echo ""
 		echo "<file> is the filename without extention."
 		echo ""
