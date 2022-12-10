@@ -257,7 +257,7 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel  = 5000;      { total possible near labels in intermediate }
+      maxlabel  = 10000;      { total possible near labels in intermediate }
       maxcstfx  = 10000;     { maximum constant fixup in intermediate }
       maxgblfx  = 10000;     { maximum global access fixup in intermediate }
       resspc    = 0;         { reserve space in heap (if you want) }
