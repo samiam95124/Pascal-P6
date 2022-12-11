@@ -3,7 +3,7 @@ P6 Pascal interpreter vs. 0.1.x
 Assembling/loading program
 Running program
 
-
-*** Runtime error [22]: End of file
+Value is: 
+*** Runtime error [21]: Undefined location access
 
 program complete

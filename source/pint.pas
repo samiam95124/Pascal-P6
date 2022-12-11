@@ -4620,6 +4620,8 @@ begin
                  getp; getq;
                  { allocate function result as zeros }
                  for j := 1 to q div intsize do pshint(0);
+                 { set function result undefined }
+                 for j := 1 to q do putdef(sp+j-1, false);
                  ad := sp; { save mark base }
                  { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
