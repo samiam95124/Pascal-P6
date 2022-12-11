@@ -1,35 +1,39 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1825: Invalid type substitutions 
-     4      -32  
-     5      -32     Wrong type of case label 
-     6      -32     ISO 7185 6.8.3.5 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1825(input, output); 
-    11      -32  
-    12      -32 var i: integer; 
-    13      -32  
-    14      -32 begin 
-    15        8  
-    16        8    read(i); 
-    17       15    case i of 
-    18       17  
-    19       17       0: writeln('zero'); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1825: Invalid type substitutions 
+     4      -48  
+     5      -48     Wrong type of case label 
+     6      -48     ISO 7185 6.8.3.5 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1825(input, output); 
+    11      -48  
+    12      -48 var i: integer; 
+    13      -48  
+    14      -48 begin 
+    15        7  
+    16        7    read(i); 
+    17       14    case i of 
+    18       16  
+    19       16       0: writeln('zero'); 
     20       26       1: writeln('one'); 
-    21       35       'a': writeln('a') 
+    21       36       'a': writeln('a') 
     21   ****            ^147
-    22       40  
-    23       40    end 
-    24       48  
-    25       48 end. 
+    21   ****  147 Label type incompatible with selecting expression
+    22       41  
+    23       41    end 
+    24       49  
+    25       49 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-147  Label type incompatible with selecting expression
+147   1 Label type incompatible with selecting expression
 

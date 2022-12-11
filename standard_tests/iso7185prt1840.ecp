@@ -1,23 +1,26 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1840: Write with invalid fields 
-     4      -32  
-     5      -32     Write with zero fraction. 
-     6      -32     ISO 7185 6.9.3 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1840(output); 
-    11      -32  
-    12      -32 var r: real; 
-    13      -32  
-    14      -32 begin 
-    15        8  
-    16        8    r := 1.0; 
-    17       10    writeln(r:1:0) 
-    18       16  
-    19       16 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1840: Write with invalid fields 
+     4      -48  
+     5      -48     Write with zero fraction. 
+     6      -48     ISO 7185 6.9.3 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1840(output); 
+    11      -48  
+    12      -48 var r: real; 
+    13      -48  
+    14      -48 begin 
+    15        7  
+    16        7    r := 1.0; 
+    17        9    writeln(r:1:0) 
+    18       15  
+    19       15 end. 
 
 Errors in program: 0

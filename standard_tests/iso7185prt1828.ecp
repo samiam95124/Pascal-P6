@@ -1,25 +1,28 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1828: Out of bounds array access 
-     4      -32  
-     5      -32     Simple out of bounds access, with attempt to redirect to runtime. 
-     6      -32     ISO 7185 6.5.3.2 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1828(output); 
-    11      -32  
-    12      -32 var a: array [1..10] of integer; 
-    13      -32     i: integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8     for i := 1 to 10 do a[i] := 0; 
-    18       35     i := 11; 
-    19       37     writeln(a[i]) 
-    20       47  
-    21       47 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1828: Out of bounds array access 
+     4      -48  
+     5      -48     Simple out of bounds access, with attempt to redirect to runtime. 
+     6      -48     ISO 7185 6.5.3.2 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1828(output); 
+    11      -48  
+    12      -48 var a: array [1..10] of integer; 
+    13      -48     i: integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7     for i := 1 to 10 do a[i] := 0; 
+    18       34     i := 11; 
+    19       36     writeln(a[i]) 
+    20       46  
+    21       46 end. 
 
 Errors in program: 0

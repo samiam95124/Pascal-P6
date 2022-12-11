@@ -1,34 +1,37 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1851: Reference to undefined variant 
-     4      -32  
-     5      -32    Test if undefined variant can be detected after the variant is changed. 
-     6      -32  
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1851(output); 
-    11      -32  
-    12      -32 var r: record 
-    13      -32  
-    14      -32           case b: boolean of 
-    15      -32  
-    16      -32              true:  (i: integer); 
-    17      -32              false: (c: char) 
-    18      -32  
-    19      -32        end; 
-    20      -32     c: char; 
-    21      -32  
-    22      -32 begin 
-    23        8  
-    24        8    r.b := true; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1851: Reference to undefined variant 
+     4      -48  
+     5      -48    Test if undefined variant can be detected after the variant is changed. 
+     6      -48  
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1851(output); 
+    11      -48  
+    12      -48 var r: record 
+    13      -48  
+    14      -48           case b: boolean of 
+    15      -48  
+    16      -48              true:  (i: integer); 
+    17      -48              false: (c: char) 
+    18      -48  
+    19      -48        end; 
+    20      -48     c: char; 
+    21      -48  
+    22      -48 begin 
+    23        7  
+    24        7    r.b := true; 
     25       12    r.i := 1; 
     26       18    r.b := false; 
-    27       22    writeln('before error'); 
-    28       30    c := r.c 
-    29       34  
-    30       34 end. 
+    27       23    writeln('before error'); 
+    28       32    c := r.c 
+    29       36  
+    30       36 end. 
 
 Errors in program: 0

@@ -1,36 +1,40 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1835: Goto/label issues 
-     4      -32  
-     5      -32     No label to go to. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1835(output); 
-    10      -32  
-    11      -32 label 1; 
-    12      -32  
-    13      -32 var i: integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    goto 1; 
-    18        9    for i := 1 to 10 do begin 
-    19       19  
-    20       19       writeln(i) 
-    21       24  
-    22       24    end 
-    23       26  
-    24       26 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1835: Goto/label issues 
+     4      -48  
+     5      -48     No label to go to. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1835(output); 
+    10      -48  
+    11      -48 label 1; 
+    12      -48  
+    13      -48 var i: integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    goto 1; 
+    18        8    for i := 1 to 10 do begin 
+    19       18  
+    20       18       writeln(i) 
+    21       23  
+    22       23    end 
+    23       25  
+    24       25 end. 
 label           1
                      
     24   ****      ^168
+    24   ****  168 Undefined label
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-168  Undefined label
+168   1 Undefined label
 

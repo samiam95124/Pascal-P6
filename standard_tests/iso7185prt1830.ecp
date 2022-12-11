@@ -1,35 +1,41 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1830: Parameter number mismatch 
-     4      -32  
-     5      -32     More parameters than specified. 
-     6      -32     ISO 7185 6.8.2.3 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1830; 
-    11      -32  
-    12      -32 procedure a(b: integer; c: char); 
-    13      -40  
-    14      -40 begin 
-    15        8  
-    16        8    b := 1; 
-    17       10    c := 'a' 
-    18       10  
-    19       10 end; 
-    20       14  
-    21       14 begin 
-    22       16  
-    23       16    a(1, 'a', 1.0) 
-    23   ****              ^126
-    24       20  
-    25       20 end. 
 
-Errors in program: 1
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1830: Parameter number mismatch 
+     4      -48  
+     5      -48     More parameters than specified. 
+     6      -48     ISO 7185 6.8.2.3 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1830; 
+    11      -48  
+    12      -48 procedure a(b: integer; c: char); 
+    13      -64  
+    14      -64 begin 
+    15        7  
+    16        7    b := 1; 
+    17        9    c := 'a' 
+    18        9  
+    19        9 end; 
+    20       13  
+    21       13 begin 
+    22       15  
+    23       15    a(1, 'a', 1.0) 
+    23   ****                  ^126^277
+    23   ****  126 Number of parameters does not agree with declaration
+    23   ****  277 No overload found to match parameter
+    24       18  
+    25       18 end. 
+
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-126  Number of parameters does not agree with declaration
+126   1 Number of parameters does not agree with declaration
+277   1 No overload found to match parameter
 

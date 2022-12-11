@@ -1,43 +1,47 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1833: Goto/label issues 
-     4      -32  
-     5      -32     Intraprocedure Goto nested block. 
-     6      -32     ISO 7185 6.8.1 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1833(output); 
-    11      -32  
-    12      -32 label 1; 
-    13      -32  
-    14      -32 var i: integer; 
-    15      -32  
-    16      -32 procedure abort; 
-    17      -32  
-    18      -32 begin 
-    19        8  
-    20        8    goto 1 
-    21        9  
-    22        9 end; 
-    23       10  
-    24       10 begin 
-    25       12  
-    26       12    abort; 
-    27       14    for i := 1 to 10 do begin 
-    28       24  
-    29       24       1: writeln(i) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1833: Goto/label issues 
+     4      -48  
+     5      -48     Intraprocedure Goto nested block. 
+     6      -48     ISO 7185 6.8.1 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1833(output); 
+    11      -48  
+    12      -48 label 1; 
+    13      -48  
+    14      -48 var i: integer; 
+    15      -48  
+    16      -48 procedure abort; 
+    17      -48  
+    18      -48 begin 
+    19        7  
+    20        7    goto 1 
+    21        8  
+    22        8 end; 
+    23        9  
+    24        9 begin 
+    25       11  
+    26       11    abort; 
+    27       12    for i := 1 to 10 do begin 
+    28       22  
+    29       22       1: writeln(i) 
     29   ****                  ^184
-    30       29  
-    31       29    end 
-    32       31  
-    33       31 end. 
+    29   ****  184 Interprocedure goto does not reference outter block of destination
+    30       27  
+    31       27    end 
+    32       29  
+    33       29 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-184  Interprocedure goto does not reference outter block of destination
+184   1 Interprocedure goto does not reference outter block of destination
 

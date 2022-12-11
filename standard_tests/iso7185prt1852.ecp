@@ -1,22 +1,25 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1852: Out of range for index variable 
-     4      -32  
-     5      -32    Test if out of range is checked on 'for' index variable. 
-     6      -32  
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1852(output); 
-    11      -32  
-    12      -32 var i: 1..9; 
-    13      -32  
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    for i := 0 to 10 do writeln('i: ', i) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1852: Out of range for index variable 
+     4      -48  
+     5      -48    Test if out of range is checked on 'for' index variable. 
+     6      -48  
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1852(output); 
+    11      -48  
+    12      -48 var i: 1..9; 
+    13      -48  
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    for i := 0 to 10 do writeln('i: ', i) 
     18       28  
     19       28 end. 
 

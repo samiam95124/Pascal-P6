@@ -1,25 +1,29 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1847: Numeric overflow on constant 
-     4      -32  
-     5      -32     Overflow on exponent. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1847(output); 
-    10      -32  
-    11      -32 begin 
-    12        8  
-    13        8    write(1.0e100000000000000000000000000000000000000000000000000000000000000) 
-    13   ****                         ^194
-    14       13  
-    15       13 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1847: Numeric overflow on constant 
+     4      -48  
+     5      -48     Overflow on exponent. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1847(output); 
+    10      -48  
+    11      -48 begin 
+    12        7  
+    13        7    write(1.0e100000000000000000000000000000000000000000000000000000000000000) 
+    13   ****                                  ^194
+    13   ****  194 Exponent too large
+    14       12  
+    15       12 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-194  Exponent too large
+194   1 Exponent too large
 

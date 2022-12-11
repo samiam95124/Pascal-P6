@@ -1,32 +1,36 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1900: Elide of type 
-     4      -32  
-     5      -32    Type description completely missing. 
-     6      -32  
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1900(output); 
-    11      -32  
-    12      -32 var 
-    13      -32     avi:   { packed [1..10] of integer} ; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1900: Elide of type 
+     4      -48  
+     5      -48    Type description completely missing. 
+     6      -48  
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1900(output); 
+    11      -48  
+    12      -48 var 
+    13      -48     avi:   { packed [1..10] of integer} ; 
     13   ****                                           ^10
-    14      -32     pavi:  packed array [1..10] of integer; 
-    15      -32     i:     integer; 
-    16      -32  
-    17      -32 begin 
-    18        8  
-    19        8     for i := 1 to 10 do pavi[i] := i+10; 
-    20       37     unpack(pavi, avi, 1); 
-    21       43  
-    22       43 end. 
+    13   ****   10 Error in type
+    14      -48     pavi:  packed array [1..10] of integer; 
+    15      -48     i:     integer; 
+    16      -48  
+    17      -48 begin 
+    18        7  
+    19        7     for i := 1 to 10 do pavi[i] := i+10; 
+    20       36     unpack(pavi, avi, 1); 
+    21       42  
+    22       42 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
- 10  Error in type
+ 10   1 Error in type
 

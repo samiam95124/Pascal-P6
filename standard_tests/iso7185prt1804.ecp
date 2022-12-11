@@ -1,26 +1,30 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1804: Threats to FOR statement index. 
-     4      -32  
-     5      -32     Threat within the controlled statement block, reuse of index in nested 
-     6      -32     FOR loop. 
-     7      -32     ISO 7185 6.8.3.9 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1804(output); 
-    12      -32  
-    13      -32 var i: integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8    for i := 1 to 10 do begin 
-    18       18  
-    19       18       write(i:1, ' '); 
-    20       27       for i := 1 to 10 do write('hi') 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1804: Threats to FOR statement index. 
+     4      -48  
+     5      -48     Threat within the controlled statement block, reuse of index in nested 
+     6      -48     FOR loop. 
+     7      -48     ISO 7185 6.8.3.9 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1804(output); 
+    12      -48  
+    13      -48 var i: integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7    for i := 1 to 10 do begin 
+    18       17  
+    19       17       write(i:1, ' '); 
+    20       26       for i := 1 to 10 do write('hi') 
     20   ****             ^195
+    20   ****  195 For loop index is threatened
     21       43  
     22       43    end 
     23       54  
@@ -30,5 +34,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-195  For loop index is threatened
+195   1 For loop index is threatened
 

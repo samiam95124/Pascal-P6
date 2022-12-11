@@ -1,49 +1,53 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1849: Variable reference to packed variable 
-     4      -32  
-     5      -32    Passing a packed element as a variable reference. 
-     6      -32    ISO 7185 6.6.3.3 
-     7      -32  
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1849; 
-    12      -32  
-    13      -32 type prec = packed record 
-    14      -32                i: integer; 
-    15      -32                b: boolean 
-    16      -32             end; 
-    17      -32  
-    18      -32 var r: record 
-    19      -32           i: integer; 
-    20      -32           b: boolean; 
-    21      -32           r: record 
-    22      -32              c: char; 
-    23      -32              d: prec 
-    24      -32           end 
-    25      -32        end; 
-    26      -32  
-    27      -32 procedure a(var b: boolean); 
-    28      -36  
-    29      -36 begin 
-    30        8  
-    31        8    b := true 
-    32        9  
-    33        9 end; 
-    34       13  
-    35       13 begin 
-    36       15  
-    37       15    a(r.r.d.b) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1849: Variable reference to packed variable 
+     4      -48  
+     5      -48    Passing a packed element as a variable reference. 
+     6      -48    ISO 7185 6.6.3.3 
+     7      -48  
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1849; 
+    12      -48  
+    13      -48 type prec = packed record 
+    14      -48                i: integer; 
+    15      -48                b: boolean 
+    16      -48             end; 
+    17      -48  
+    18      -48 var r: record 
+    19      -48           i: integer; 
+    20      -48           b: boolean; 
+    21      -48           r: record 
+    22      -48              c: char; 
+    23      -48              d: prec 
+    24      -48           end 
+    25      -48        end; 
+    26      -48  
+    27      -48 procedure a(var b: boolean); 
+    28      -56  
+    29      -56 begin 
+    30        9  
+    31        9    b := true 
+    32       10  
+    33       10 end; 
+    34       15  
+    35       15 begin 
+    36       17  
+    37       17    a(r.r.d.b) 
     37   ****               ^197
-    38       17  
-    39       17 end. 
+    37   ****  197 Var parameter cannot be packed
+    38       18  
+    39       18 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-197  Var parameter cannot be packed
+197   1 Var parameter cannot be packed
 

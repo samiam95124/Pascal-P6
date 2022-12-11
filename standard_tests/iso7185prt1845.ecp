@@ -1,49 +1,55 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1845: Goto/label issues 
-     4      -32  
-     5      -32     Label defined in outter block than use. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1845(output); 
-    10      -32  
-    11      -32 label 1; 
-    12      -32  
-    13      -32 procedure a; 
-    14      -32  
-    15      -32 var i: integer; 
-    16      -36  
-    17      -36 begin 
-    18        8  
-    19        8    goto 1; 
-    20        9    for i := 1 to 10 do begin 
-    21       19  
-    22       19       1: writeln(i) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1845: Goto/label issues 
+     4      -48  
+     5      -48     Label defined in outter block than use. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1845(output); 
+    10      -48  
+    11      -48 label 1; 
+    12      -48  
+    13      -48 procedure a; 
+    14      -48  
+    15      -48 var i: integer; 
+    16      -56  
+    17      -56 begin 
+    18        7  
+    19        7    goto 1; 
+    20        8    for i := 1 to 10 do begin 
+    21       18  
+    22       18       1: writeln(i) 
     22   ****                  ^167
-    23       24  
-    24       24    end 
-    25       26  
-    26       26 end; 
+    22   ****  167 Undeclared label
+    23       23  
+    24       23    end 
+    25       25  
+    26       25 end; 
 label           1 unreferenced
                      
     26   ****      ^168
-    27       37  
-    28       37 begin 
-    29       39  
-    30       39    a 
-    31       39  
-    32       39 end. 
+    26   ****  168 Undefined label
+    27       36  
+    28       36 begin 
+    29       38  
+    30       38    a 
+    31       38  
+    32       38 end. 
 label           1
                      
     32   ****      ^168
+    32   ****  168 Undefined label
 
 Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-167  Undeclared label
-168  Undefined label
+167   1 Undeclared label
+168   2 Undefined label
 

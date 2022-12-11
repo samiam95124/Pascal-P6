@@ -1,22 +1,25 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 {$s+} 
-     2      -32 { 
-     3      -32  
-     4      -32 PRT test 1850: Unreferenced variable 
-     5      -32  
-     6      -32    Variable without reference in program. Note that this is technically not an 
-     7      -32    error. Its just a compiler quality test if it can detect this. 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1850; 
-    12      -32  
-    13      -32 var i: integer; 
-    14      -32  
-    15      -32 begin 
-    16        8  
-    17        8 end. 
+
+     1      -48 {$s+} 
+     2      -48 { 
+     3      -48  
+     4      -48 PRT test 1850: Unreferenced variable 
+     5      -48  
+     6      -48    Variable without reference in program. Note that this is technically not an 
+     7      -48    error. Its just a compiler quality test if it can detect this. 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1850; 
+    12      -48  
+    13      -48 var i: integer; 
+    14      -48  
+    15      -48 begin 
+    16        7  
+    17        7 end. 
 i          unreferenced
 
 

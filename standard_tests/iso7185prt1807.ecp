@@ -1,45 +1,49 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1807: Threats to FOR statement index. 
-     4      -32  
-     5      -32     Threat in same scope block, read or readln. 
-     6      -32     ISO 7185 6.8.3.9 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1807(output); 
-    11      -32  
-    12      -32 var i: integer; 
-    13      -32     f: file of integer; 
-    14      -32  
-    15      -32 procedure a; 
-    16      -32  
-    17      -32 begin 
-    18        8  
-    19        8    read(f, i) 
-    20       12  
-    21       12 end; 
-    22       14  
-    23       14 begin 
-    24       16  
-    25       16    rewrite(f); 
-    26       18    write(f, 10); 
-    27       22    reset(f); 
-    28       24    for i := 1 to 10 do begin 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1807: Threats to FOR statement index. 
+     4      -48  
+     5      -48     Threat in same scope block, read or readln. 
+     6      -48     ISO 7185 6.8.3.9 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1807(output); 
+    11      -48  
+    12      -48 var i: integer; 
+    13      -48     f: file of integer; 
+    14      -48  
+    15      -48 procedure a; 
+    16      -48  
+    17      -48 begin 
+    18        7  
+    19        7    read(f, i) 
+    20       11  
+    21       11 end; 
+    22       13  
+    23       13 begin 
+    24       15  
+    25       15    rewrite(f); 
+    26       17    write(f, 10); 
+    27       21    reset(f); 
+    28       23    for i := 1 to 10 do begin 
     28   ****          ^195
-    29       34  
-    30       34       write(i:1, ' ') 
-    31       42  
-    32       42    end; 
-    33       53    a 
-    34       53  
-    35       53 end. 
+    28   ****  195 For loop index is threatened
+    29       33  
+    30       33       write(i:1, ' ') 
+    31       41  
+    32       41    end; 
+    33       52    a 
+    34       52  
+    35       52 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-195  For loop index is threatened
+195   1 For loop index is threatened
 

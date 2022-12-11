@@ -1,36 +1,40 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1823: Invalid type substitutions 
-     4      -32  
-     5      -32     Use of subrange for VAR reference. 
-     6      -32     ISO 7185 6.6.3.3 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1823(input); 
-    11      -32  
-    12      -32 var c: 1..10; 
-    13      -32  
-    14      -32 procedure a(var b: integer); 
-    15      -36  
-    16      -36 begin 
-    17        8  
-    18        8    b := 1 
-    19        9  
-    20        9 end; 
-    21       12  
-    22       12 begin 
-    23       14  
-    24       14    a(c) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1823: Invalid type substitutions 
+     4      -48  
+     5      -48     Use of subrange for VAR reference. 
+     6      -48     ISO 7185 6.6.3.3 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1823(input); 
+    11      -48  
+    12      -48 var c: 1..10; 
+    13      -48  
+    14      -48 procedure a(var b: integer); 
+    15      -56  
+    16      -56 begin 
+    17        9  
+    18        9    b := 1 
+    19       10  
+    20       10 end; 
+    21       14  
+    22       14 begin 
+    23       16  
+    24       16    a(c) 
     24   ****         ^199
-    25       16  
-    26       16 end. 
+    24   ****  199 Var parameter must be same type
+    25       17  
+    26       17 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-199  Var parameter must be same type
+199   1 Var parameter must be same type
 

@@ -1,28 +1,32 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1824: Invalid type substitutions 
-     4      -32  
-     5      -32     Assign of real to integer. 
-     6      -32     ISO 7185 6.6.3.3 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1824(input); 
-    11      -32  
-    12      -32 var i: integer; 
-    13      -32  
-    14      -32 begin 
-    15        8  
-    16        8    i := 1.0 
-    17        8  
-    18        8 end. 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1824: Invalid type substitutions 
+     4      -48  
+     5      -48     Assign of real to integer. 
+     6      -48     ISO 7185 6.6.3.3 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1824(input); 
+    11      -48  
+    12      -48 var i: integer; 
+    13      -48  
+    14      -48 begin 
+    15        7  
+    16        7    i := 1.0 
+    17        7  
+    18        7 end. 
     18   ****     ^129
+    18   ****  129 Type conflict of operands
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-129  Type conflict of operands
+129   1 Type conflict of operands
 
