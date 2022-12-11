@@ -1,34 +1,38 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1917: Redefinition of same constant. 
-     4      -32  
-     5      -32     Defining a constant as itself is both a reference and a defining point, thus 
-     6      -32     it is inherently illegal. 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1917(output); 
-    11      -32  
-    12      -32 const one = 1; 
-    13      -32  
-    14      -32 procedure x; 
-    15      -32  
-    16      -32 const one = one; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1917: Redefinition of same constant. 
+     4      -48  
+     5      -48     Defining a constant as itself is both a reference and a defining point, thus 
+     6      -48     it is inherently illegal. 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1917(output); 
+    11      -48  
+    12      -48 const one = 1; 
+    13      -48  
+    14      -48 procedure x; 
+    15      -48  
+    16      -48 const one = one; 
     16   ****                  ^242
-    17      -32  
-    18      -32 begin 
-    19        8  
-    20        8    write(one) 
-    21       13     
-    22       13 end; 
+    16   ****  242 Identifier referenced before defining point
+    17      -48  
+    18      -48 begin 
+    19        7  
+    20        7    write(one) 
+    21       12     
+    22       12 end; 
 one        unreferenced
 
-    23       15  
-    24       15 begin 
-    25       17  
-    26       17    writeln('Value is: ', one) 
+    23       14  
+    24       14 begin 
+    25       16  
+    26       16    writeln('Value is: ', one) 
     27       26     
     28       26 end. 
 
@@ -36,5 +40,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-242  Identifier referenced before defining point
+242   1 Identifier referenced before defining point
 

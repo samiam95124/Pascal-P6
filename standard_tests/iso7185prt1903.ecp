@@ -1,37 +1,41 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1903: Goto/label issues 
-     4      -32  
-     5      -32     Goto nested block. 
-     6      -32     ISO 7185 6.8.1 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1903(output); 
-    11      -32  
-    12      -32 label 1; 
-    13      -32  
-    14      -32 var i: integer; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    for i := 1 to 10 do 
-    19       18       if i < 0 then goto 1; 
-    20       33  
-    21       33    for i := 1 to 10 do begin 
-    22       43  
-    23       43       1: writeln(i) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1903: Goto/label issues 
+     4      -48  
+     5      -48     Goto nested block. 
+     6      -48     ISO 7185 6.8.1 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1903(output); 
+    11      -48  
+    12      -48 label 1; 
+    13      -48  
+    14      -48 var i: integer; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    for i := 1 to 10 do 
+    19       17       if i < 0 then goto 1; 
+    20       32  
+    21       32    for i := 1 to 10 do begin 
+    22       42  
+    23       42       1: writeln(i) 
     23   ****                  ^186
-    24       48  
-    25       48    end; 
-    26       60  
-    27       60 end. 
+    23   ****  186 Label referenced by goto at lesser statement level or differently nested statement
+    24       47  
+    25       47    end; 
+    26       59  
+    27       59 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-186  Label referenced by goto at lesser statement level or differently nested statement
+186   1 Label referenced by goto at lesser statement level or differently nested statement
 

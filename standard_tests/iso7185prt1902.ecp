@@ -1,36 +1,40 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1902: Goto/label issues 
-     4      -32  
-     5      -32     Goto nested block. 
-     6      -32     ISO 7185 6.8.1 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1902(output); 
-    11      -32  
-    12      -32 label 1; 
-    13      -32  
-    14      -32 var i: integer; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    for i := 1 to 10 do begin 
-    19       18  
-    20       18       1: writeln(i) 
-    21       23  
-    22       23    end; 
-    23       35  
-    24       35    if i < 0 then goto 1; 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1902: Goto/label issues 
+     4      -48  
+     5      -48     Goto nested block. 
+     6      -48     ISO 7185 6.8.1 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1902(output); 
+    11      -48  
+    12      -48 label 1; 
+    13      -48  
+    14      -48 var i: integer; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    for i := 1 to 10 do begin 
+    19       17  
+    20       17       1: writeln(i) 
+    21       22  
+    22       22    end; 
+    23       34  
+    24       34    if i < 0 then goto 1; 
     24   ****                         ^185
-    25       40  
-    26       40 end. 
+    24   ****  185 Goto references deeper nested statement
+    25       39  
+    26       39 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-185  Goto references deeper nested statement
+185   1 Goto references deeper nested statement
 

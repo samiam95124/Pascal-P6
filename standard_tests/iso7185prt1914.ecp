@@ -1,21 +1,26 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1914: Adjoining symbols. 
-     4      -32  
-     5      -32     Number directly adjoining a symbol. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1914(output); 
-    10      -32  
-    11      -32 var myvar: integer; 
-    12      -32  
-    13      -32 begin 
-    14        8  
-    15        8    writeln('The result is: ', 42myvar); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1914: Adjoining symbols. 
+     4      -48  
+     5      -48     Number directly adjoining a symbol. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1914(output); 
+    10      -48  
+    11      -48 var myvar: integer; 
+    12      -48  
+    13      -48 begin 
+    14        7  
+    15        7    writeln('The result is: ', 42myvar); 
     15   ****                                  ^241 ^6
+    15   ****  241 Invalid tolken separator
+    15   ****    6 Illegal symbol
     16       19  
     17       19 end. 
 
@@ -23,6 +28,6 @@ Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-  6  Illegal symbol
-241  Invalid tolken separator
+  6   1 Illegal symbol
+241   1 Invalid tolken separator
 

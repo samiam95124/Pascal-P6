@@ -1,27 +1,31 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1905: while statement 
-     4      -32  
-     5      -32     the condition part of a while statement must have boolean type 
-     6      -32 ISO 7185 6.8.3.8 
-     7      -32  
-     8      -32 } 
-     9      -32  
-    10      -32 program iso7185prt1905(output); 
-    11      -32  
-    12      -32 type myBoolean = (myFalse, myTrue); 
-    13      -32  
-    14      -32 var b: myBoolean; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    b := myFalse; 
-    19       11    while b do 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1905: while statement 
+     4      -48  
+     5      -48     the condition part of a while statement must have boolean type 
+     6      -48 ISO 7185 6.8.3.8 
+     7      -48  
+     8      -48 } 
+     9      -48  
+    10      -48 program iso7185prt1905(output); 
+    11      -48  
+    12      -48 type myBoolean = (myFalse, myTrue); 
+    13      -48  
+    14      -48 var b: myBoolean; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    b := myFalse; 
+    19       10    while b do 
     19   ****               ^144
-    20       13       ; 
-    21       14    writeln('error not detected'); 
+    19   ****  144 Illegal type of expression
+    20       12       ; 
+    21       13    writeln('error not detected'); 
     22       22  
     23       22 end. 
 
@@ -29,5 +33,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-144  Illegal type of expression
+144   1 Illegal type of expression
 

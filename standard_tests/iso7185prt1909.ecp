@@ -1,24 +1,27 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1909: Second expression 
-     4      -32  
-     5      -32     An error in the second part of a boolean expression. 
-     6      -32     This tests if the implementation tries to short circuit evaluate the  
-     7      -32     expression. 
-     8      -32  
-     9      -32 } 
-    10      -32  
-    11      -32 program iso7185prt1909(output); 
-    12      -32  
-    13      -32 var i: integer; 
-    14      -32     a: array [1..10] of char; 
-    15      -32  
-    16      -32 begin 
-    17        8  
-    18        8    i := 11; 
-    19       10    writeln('The result is: ', (i = 1) and (a[i] = 'g')) 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1909: Second expression 
+     4      -48  
+     5      -48     An error in the second part of a boolean expression. 
+     6      -48     This tests if the implementation tries to short circuit evaluate the  
+     7      -48     expression. 
+     8      -48  
+     9      -48 } 
+    10      -48  
+    11      -48 program iso7185prt1909(output); 
+    12      -48  
+    13      -48 var i: integer; 
+    14      -48     a: array [1..10] of char; 
+    15      -48  
+    16      -48 begin 
+    17        7  
+    18        7    i := 11; 
+    19        9    writeln('The result is: ', (i = 1) and (a[i] = 'g')) 
     20       30  
     21       30 end. 
 

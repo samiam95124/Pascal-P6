@@ -2,7 +2,7 @@
 
 PRT test 1915: Reference to outer block defintion before local definition.
 
-    Use of an outer block definine before a definition in the same block.
+    Use of an outer block definition before a definition in the same block.
 
 }
 

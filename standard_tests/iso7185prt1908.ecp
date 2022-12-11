@@ -1,33 +1,37 @@
 P6 Pascal compiler vs. 0.1.x
+Pascal-P6 complies with the requirements of Pascaline version 0.4
+and the following annexes: A,B,C,E.
 
-     1      -32 { 
-     2      -32  
-     3      -32 PRT test 1908: Use real value as case constant 
-     4      -32  
-     5      -32     A real value is used as a case constant. 
-     6      -32  
-     7      -32 } 
-     8      -32  
-     9      -32 program iso7185prt1908(output); 
-    10      -32  
-    11      -32 var i: integer; 
-    12      -32  
-    13      -32 begin 
-    14        8  
-    15        8    i := 1; 
-    16       10    case i of 
-    17       12     
-    18       12       1.1: writeln('one'); 
+
+     1      -48 { 
+     2      -48  
+     3      -48 PRT test 1908: Use real value as case constant 
+     4      -48  
+     5      -48     A real value is used as a case constant. 
+     6      -48  
+     7      -48 } 
+     8      -48  
+     9      -48 program iso7185prt1908(output); 
+    10      -48  
+    11      -48 var i: integer; 
+    12      -48  
+    13      -48 begin 
+    14        7  
+    15        7    i := 1; 
+    16        9    case i of 
+    17       11     
+    18       11       1.1: writeln('one'); 
     18   ****            ^147
+    18   ****  147 Label type incompatible with selecting expression
     19       20       2: writeln('two') 
-    20       26        
-    21       26    end 
-    22       34  
-    23       34 end. 
+    20       27        
+    21       27    end 
+    22       35  
+    23       35 end. 
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-147  Label type incompatible with selecting expression
+147   1 Label type incompatible with selecting expression
 
