@@ -5283,6 +5283,7 @@ end;
               end (*if lb*)
             else
               begin varp := false;
+                if nxt <> nil then varp := nxt^.vkind = formal;
                 expression(fsys + [comma,rparent], varp);
                 { find the appropriate overload }
                 match := false;
