@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Script to test p5 compile and run
+#
+# Compile p5
+#
+echo "Compiling pcom to intermediate code"
+cpp -DSELF_COMPILE -P -nostdinc -traditional-cpp p5/source/pcom.pas p5/source/pcom.mpp.pas
+compile p5/source/pcom.mpp $1
+cat p5/source/pcom.mpp.err
+#
+# Run P5/pcom on P6
+#
+run $1 standard_tests/iso7185pat.pas p5/source/pcom.mpp 
+cat p5/source/pcom.mpp.lst
+#
+# For neatness sake, copy out the intermediate to .p5 file
+#
+cp p5/source/pcom.out standard_tests/iso7185pat.p5
+#
+# Compile pint
+#
+echo Compiling pint to intermediate code
+cpp -DSELF_COMPILE -P -nostdinc -traditional-cpp p5/source/pint.pas p5/source/pint.mpp.pas
+compile p5/source/pint.mpp $1
+#
+# Add the final target program to the end of pint.
+# This means that the version of pint will read and interpret
+# this.
+#
+# Create null input file
+#
+echo > p5/source/pint.inp
+#
+# Now run pint(p5) on pint(p6), which runs the test program.
+#
+echo Running pint\(p5\) on pint\(p6\) to execute test program
+run $1 standard_tests/iso7185pat.p5 p5/pint
+#
+# Copy the result listing back to standardp.lst, again for neatness
+#
+cp p5/source/pint.lst standard_tests/iso7185pat.lst
+#
+# Now compare with reference
+#
+echo Comparing PAT result to reference
+if [ "$1" = "--cmach" ]; then
+
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185pat.cmp > standard_tests/iso7185pat.dif
+	
+else
+
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185pat.cmp > standard_tests/iso7185pat.dif
+
+fi
+
+#
+# Show the file, so if the length is zero, it compared ok.
+#
+echo Resulting diff file length should be zero for pass
+wc -l standard_tests/iso7185pat.dif
+
+rm -f p5/source/pcom.inp
+rm -f p5/source/pint.inp
