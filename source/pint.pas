@@ -2422,7 +2422,8 @@ procedure load;
          ':': begin { source line }
                  read(prd,x); { get source line number }
                  { place in line tracking }
-                 if curmod <> nil then curmod^.lintrk^[x] := pc;
+                 if curmod <> nil then 
+                   if curmod^.lintrk^[x] = -1 then curmod^.lintrk^[x] := pc;
                  if dosrclin then begin
                     { pass source line register instruction }
                     store[pc] := 174; putdef(pc, true); pc := pc+1;

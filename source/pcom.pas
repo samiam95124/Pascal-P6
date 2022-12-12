@@ -1684,6 +1684,12 @@ end;
     end
   end;
 
+  procedure markline;
+  begin
+    outline;
+    writeln(prr, ':', linecount:1)
+  end;
+
   { check in private section }
   function inpriv: boolean;
   begin inpriv := false;
@@ -7896,13 +7902,15 @@ end;
         if sy = elsesy then
           begin genlabel(lcix2); genujpxjpcal(57(*ujp*),lcix2);
             putlabel(lcix1);
+            markline;
             insymbol;
             addlvl;
             statement(fsys);
             sublvl;
-            putlabel(lcix2)
+            putlabel(lcix2);
+            markline
           end
-        else putlabel(lcix1)
+        else begin putlabel(lcix1); markline end
       end (*ifstatement*) ;
 
       procedure casestatement;
@@ -7968,6 +7976,7 @@ end;
               until test;
               if sy = colon then insymbol else error(5);
               putlabel(lcix1);
+              markline;
               repeat
                 addlvl;
                 statement(fsys + [semicolon]);
@@ -7983,6 +7992,7 @@ end;
           mesl(-intsize); { put selector on stack }
           gen1(71(*dmp*),intsize);
           putlabel(lelse);
+          markline;
           addlvl;
           statement(fsys + [semicolon]);
           sublvl;
@@ -7990,6 +8000,7 @@ end;
           if sy = semicolon then insymbol
         end;
         putlabel(lcix);
+        markline;
         mesl(-intsize); { put selector back on stack }
         if fstptr <> nil then
           begin lmax := fstptr^.cslabe;
@@ -8042,7 +8053,8 @@ end;
                   if lelse > 0 then genujpxjpcal(57(*ujp*),lelse2);
                   mesl(+intsize) { remove selector from stack }
                 end;
-                putlabel(laddr)
+                putlabel(laddr);
+                markline
               end
             else begin
               error(157);
@@ -8060,7 +8072,7 @@ end;
 
       procedure repeatstatement;
         var laddr: integer;
-      begin genlabel(laddr); putlabel(laddr);
+      begin genlabel(laddr); putlabel(laddr); markline;
         addlvl;
         repeat
           statement(fsys + [semicolon,untilsy]);
@@ -8082,13 +8094,13 @@ end;
 
       procedure whilestatement;
         var laddr, lcix: integer;
-      begin genlabel(laddr); putlabel(laddr);
+      begin genlabel(laddr); putlabel(laddr); markline;
         expression(fsys + [dosy], false); genlabel(lcix); genfjp(lcix);
         if sy = dosy then insymbol else error(54);
         addlvl;
         statement(fsys);
         sublvl;
-        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix)
+        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix); markline
       end (*whilestatement*) ;
 
       procedure forstatement;
@@ -8158,7 +8170,7 @@ end;
                     if debug and (lattr.typtr <> nil) then
                       checkbnds(lattr.typtr);
                     store(lattr);
-                    genlabel(laddr); putlabel(laddr);
+                    genlabel(laddr); putlabel(laddr); markline;
                     gattr := lattr; load;
                     if not comptypes(gattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
@@ -8189,7 +8201,7 @@ end;
         if debug and (lattr.typtr <> nil) then
           checkbnds(lattr.typtr);
         store(lattr);
-        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix);
+        genujpxjpcal(57(*ujp*),laddr); putlabel(lcix); markline;
         gattr := lattr; loadaddress; gen0(79(*inv*));
         lc := llc;
         if lcp <> nil then lcp^.forcnt := lcp^.forcnt-1
@@ -8272,7 +8284,7 @@ end;
           end;
         sublvl;
         genujpxjpcal(57(*ujp*),noexplbl);
-        putlabel(bgnexplbl);
+        putlabel(bgnexplbl); markline;
         if (sy <> onsy) and (sy <> exceptsy) then error(24);
         while sy = onsy do begin insymbol; genlabel(onstalbl);
           genlabel(onendlbl);
@@ -8305,11 +8317,13 @@ end;
           if sy = exceptsy then insymbol else
             begin error(23); skip(fsys+[onsy,exceptsy,elsesy]) end;
           putlabel(onstalbl);
+          markline;
           addlvl;
           statement(fsys+[exceptsy]);
           sublvl;
           genujpxjpcal(57(*ujp*),endlbl);
-          putlabel(onendlbl)
+          putlabel(onendlbl);
+          markline
         end;
         if sy = exceptsy then begin addlvl;
           insymbol; statement(fsys+[elsesy]); sublvl;
@@ -8317,11 +8331,13 @@ end;
         end;
         gen0(86(*mse*));
         putlabel(noexplbl);
+        markline;
         if sy = elsesy then begin addlvl;
           insymbol; statement(fsys); sublvl
         end;
         sublvl;
         putlabel(endlbl);
+        markline;
         gen0(85(*ede*))
       end (*trystatement*) ;
 
@@ -8345,7 +8361,8 @@ end;
                { Label referenced by goto at lesser statement level or
                  differently nested statement }
                error(186);
-             putlabel(labname) { output label to intermediate }
+             putlabel(labname); { output label to intermediate }
+             markline
            end else begin { not found }
              error(167); { undeclared label }
              newlabel(llp, false) { create a dummy level }
@@ -8505,6 +8522,7 @@ end;
     { if processing procedure/function, use that entry label, otherwise set
       at program }
     if fprocp <> nil then putlabel(fprocp^.pfname) else putlabel(entname);
+    markline;
     genlabel(segsize); genlabel(stackbot);
     genlabel(gblsize);
     gencupent(32(*ents*),1,segsize,fprocp);

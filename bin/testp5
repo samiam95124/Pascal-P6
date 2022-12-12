@@ -13,6 +13,8 @@ cat p5/source/pcom.mpp.err
 #
 run $1 standard_tests/iso7185pat.pas p5/source/pcom.mpp 
 cat p5/source/pcom.mpp.lst
+
+exit 0
 #
 # For neatness sake, copy out the intermediate to .p5 file
 #
