@@ -5470,7 +5470,7 @@ end;
               if sy = rparent then insymbol else error(4)
           end;
       end (*standard procedures and functions*)
-    else callnonstandard(fcp,inherit)
+    else begin callnonstandard(fcp,inherit); markline end
   end (*call*) ;
 
   function psize(sp: stp): addrrange;
