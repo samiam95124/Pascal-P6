@@ -69,7 +69,12 @@ function do_regress {
     testp4 $option
     wc -l p4/standardp.dif >> regress_report.txt
     if [ "$full" = "1" ]; then
-    
+
+        echo "Running Pascal-P5"
+        echo "Pascal-P5 run" >> regress_report.txt
+        testp5 $option
+        wc -l standard_tests/iso7185pat.dif >> regress_report.txt
+
         echo "Running PRT..."
         echo "PRT run" >> regress_report.txt
         #
