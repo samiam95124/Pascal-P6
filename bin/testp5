@@ -14,6 +14,8 @@ cat p5/source/pcom.mpp.err
 echo > p5/source/pcom.mpp.inp
 run $1 standard_tests/iso7185pat.pas p5/source/pcom.mpp 
 cat p5/source/pcom.mpp.lst
+
+exit 0
 #
 # For neatness sake, copy out the intermediate to .p5 file
 #
@@ -21,7 +23,7 @@ cp p5/source/pcom.mpp.out standard_tests/iso7185pat.p5
 #
 # Compile pint
 #
-echo Compiling pint to intermediate code
+echo "Compiling pint to intermediate code"
 cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp p5/source/pint.pas p5/source/pint.mpp.pas
 compile p5/source/pint.mpp $1
 cat p5/source/pint.mpp.err
@@ -36,7 +38,7 @@ echo > p5/source/pint.mpp.inp
 #
 # Now run pint(p5) on pint(p6), which runs the test program.
 #
-echo Running pint\(p5\) on pint\(p6\) to execute test program
+echo "Running pint\(p5\) on pint\(p6\) to execute test program"
 run $1 standard_tests/iso7185pat.p5 p5/source/pint.mpp
 #
 # Copy the result listing back to standardp.lst, again for neatness
@@ -45,7 +47,7 @@ cp p5/source/pint.mpp.lst standard_tests/iso7185pat.lst
 #
 # Now compare with reference
 #
-echo Comparing PAT result to reference
+echo "Comparing PAT result to reference"
 if [ "$1" = "--cmach" ]; then
 
 	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5.cmp > standard_tests/iso7185pat.dif
@@ -59,7 +61,7 @@ fi
 #
 # Show the file, so if the length is zero, it compared ok.
 #
-echo Resulting diff file length should be zero for pass
+echo "Resulting diff file length should be zero for pass"
 wc -l standard_tests/iso7185pat.dif
 
 rm -f p5/source/pcom.inp
