@@ -8559,7 +8559,8 @@ end;
                     end
                   else
                     begin
-                      llc1 := llc1 - idtype^.size;
+                      if vkind = formal then llc1 := llc1-ptrsize
+                      else llc1 := llc1 - idtype^.size;
                       alignd(parmptr,llc1);
                     end;
                   if chkvbk and (vkind = formal) then begin
