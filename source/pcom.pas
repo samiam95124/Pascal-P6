@@ -4,7 +4,7 @@
 *                                                                              *
 * LICENSING:                                                                   *
 *                                                                              *
-* Copyright (c) 1996, 2018, Scott A. Franco                                    *
+* Copyright (c) 2022, Scott A. Franco                                          *
 * All rights reserved.                                                         *
 *                                                                              *
 * Redistribution and use in source and binary forms, with or without           *
