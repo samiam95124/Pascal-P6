@@ -5038,22 +5038,16 @@ begin
     100 (*cvbi*),
     115 (*cvbx*),
     116 (*cvbb*),
-                      { off   size   lvn    tagval     tagaddr }
     121 (*cvbc*): begin getq; getq1; getq2; popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
-                      { find new tag value out of range of check }
                       if (i < 0) or (i >= getint(q2)) then
                         errorv(ValueOutOfRange);
-                      { check old tag value defined }
                       b := getdef(ad);
                       if b then begin
-                        { if defined get old tag value }
                         if op = 100 then j := getint(ad) else j := getbyt(ad);
-                        { see if tag has changed }
                         b := getint(q2+(i+1)*intsize) <>
                              getint(q2+(j+1)*intsize)
                       end;
-                      { if tag was defined and has changed }
                       if b then begin
                         ad := ad+q;
                         if varinc(ad, ad+q1-1) then

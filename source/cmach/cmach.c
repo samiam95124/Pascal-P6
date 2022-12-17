@@ -2409,6 +2409,8 @@ void sinins()
                  getp(); getq();
                  /* allocate function result as zeros */
                  for (j = 0; j < q/INTSIZE; j++) pshint(0);
+                 /* set function result undefined */
+                 for (j = 0; j < q; j++) putdef(sp+j, FALSE);
                  ad = sp; /* save mark base */
                  /* allocate mark as zeros */
                  for (j = 0; j < MARKSIZE/INTSIZE; j++) pshint(0);
