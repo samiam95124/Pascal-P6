@@ -1,6 +1,6 @@
 Installation instructions
 
-To install Pascal-p5, execute:
+To install Pascal-P6, execute:
 
 [Linux]
 
@@ -27,6 +27,6 @@ to your startup environment to prevent the need to execute this again.
 
 You can then compile and run single Pascal sources with the command:
 
-p5 <file>
+P6 <file>
 
 The extension .pas is supplied automatically.
