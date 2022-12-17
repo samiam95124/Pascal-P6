@@ -1115,14 +1115,14 @@ void varexit(void)
     vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
 }
 
-long varlap(address s, address e)
+long varinc(address s, address e)
 {
     varptr vp;
     long f;
 
     vp = varlst; f = FALSE;
     while (vp && !f) {
-        f = (vp->e >= s && vp->s <= e);
+        f = (vp->s >= s && vp->e <= e);
         vp = vp->next;
     }
 
@@ -1775,7 +1775,7 @@ void callsp(void)
     switch (q) {
 
     case 0 /*get*/: popadr(ad); valfil(ad); fn = store[ad];
-                    if (varlap(ad+FILEIDSIZE, ad+FILEIDSIZE))
+                    if (varinc(ad+FILEIDSIZE, ad+FILEIDSIZE))
                           errorv(VARREFERENCEDFILEBUFFERMODIFIED);
                     getfn(fn); break;
     case 1 /*put*/: popadr(ad); valfil(ad); fn = store[ad];
@@ -2055,7 +2055,7 @@ void callsp(void)
                      }
                      break;
     case 26/*dsp*/: popadr(ad1); popadr(ad);
-                    if (varlap(ad, ad+ad1-1))
+                    if (varinc(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
                     if (withsch(ad)) errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad); break;
@@ -2083,7 +2083,7 @@ void callsp(void)
                     ad = ad+INTSIZE; ad1 = ad1+(i+1)*INTSIZE;
                     /* ajust for dummy */
                     ad = ad-(l*INTSIZE); ad1 = ad1+(l*INTSIZE);
-                    if (varlap(ad, ad+ad1-1))
+                    if (varinc(ad, ad+ad1-1))
                       errorv(DISPOSEOFVARREFERENCEDBLOCK);
                     if (withsch(ad)) errorv(DISPOSEOFWITHREFERENCEDBLOCK);
                     dspspc(ad1, ad);
@@ -2153,7 +2153,7 @@ void callsp(void)
                     rewritefn(fn, TRUE); break;
     case 35/*gbf*/: popint(i); popadr(ad); valfilrm(ad);
                     fn = store[ad];
-                    if (varlap(ad+FILEIDSIZE, ad+FILEIDSIZE+i-1))
+                    if (varinc(ad+FILEIDSIZE, ad+FILEIDSIZE+i-1))
                         errorv(VARREFERENCEDFILEBUFFERMODIFIED);
                     if (filbuff[fn]) filbuff[fn] = FALSE;
                     else
@@ -2825,7 +2825,7 @@ void sinins()
                       }
                       if (b) {
                         ad = ad+q;
-                        if (varlap(ad, ad+q1-1))
+                        if (varinc(ad, ad+q1-1))
                             errorv(CHANGETOVARREFERENCEDVARIANT);
                       }
                       break;
