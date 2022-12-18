@@ -318,7 +318,7 @@ type                                                        (*describing:*)
                size: addrrange    { size of variable in buffer }
              end;
 
-     idclass = (types,konst,fixed,vars,field,proc,func,alias);
+     idclass = (types,konst,fixedt,vars,field,proc,func,alias);
      setofids = set of idclass;
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
@@ -348,7 +348,7 @@ type                                                        (*describing:*)
                              threat: boolean; forcnt: integer; part: partyp;
                              hdr: boolean; vext: boolean; vmod: filptr;
                              inilab: integer; ininxt: ctp; dblptr: boolean);
-                     fixed: (floc: integer; fext: boolean; fmod: filptr);
+                     fixedt: (floc: integer; fext: boolean; fmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
                              varsaddr: addrrange; varssize: addrrange;
@@ -780,7 +780,7 @@ var
        types: dispose(p, types);
        konst: dispose(p, konst);
        vars:  dispose(p, vars);
-       fixed: dispose(p, fixed);
+       fixedt: dispose(p, fixedt);
        field: dispose(p, field);
        proc: if p^.pfdeckind = standard then dispose(p, proc, standard)
                                         else if p^.pfkind = actual then
@@ -2222,14 +2222,14 @@ end;
   procedure prtclass(klass: idclass);
   begin
     case klass of
-      types: write('types');
-      konst: write('konst');
-      fixed: write('fixed');
-      vars:  write('vars');
-      field: write('field');
-      proc:  write('proc');
-      func:  write('func');
-      alias: write('alias');
+      types:  write('types');
+      konst:  write('konst');
+      fixedt: write('fixedt');
+      vars:   write('vars');
+      field:  write('field');
+      proc:   write('proc');
+      func:   write('func');
+      alias:  write('alias');
     end
   end;
 
@@ -2387,7 +2387,7 @@ end;
        --> procedure enterundecl*)
       if types in fidcls then lcp := utypptr
       else
-        if (vars in fidcls) or (fixed in fidcls) then lcp := uvarptr
+        if (vars in fidcls) or (fixedt in fidcls) then lcp := uvarptr
         else
           if field in fidcls then lcp := ufldptr
           else
@@ -2612,7 +2612,7 @@ end;
                  write(inilab:intdig, ' '); wrtctp(ininxt);
                  write(' ', dblptr:intdig);
                end;
-        fixed: begin write('fixed':intdig, ' ', floc:intdig, ' ');
+        fixedt: begin write('fixed':intdig, ' ', floc:intdig, ' ');
                  if fext then write('external':intdig) else write(' ':intdig);
                  if fext then write(fmod^.fn:intdig) else write(' ':intdig)
                end;
@@ -2777,7 +2777,7 @@ end;
   begin chkext := false;
     if fcp <> nil then begin
       if fcp^.klass = vars then chkext := fcp^.vext
-      else if fcp^.klass = fixed then chkext := fcp^.fext
+      else if fcp^.klass = fixedt then chkext := fcp^.fext
       else if (fcp^.klass = proc) or (fcp^.klass = func) then
         chkext := fcp^.pext
     end
@@ -2785,7 +2785,7 @@ end;
 
   function chkfix(fcp: ctp): boolean;
   begin chkfix := false;
-    if fcp <> nil then chkfix := fcp^.klass = fixed
+    if fcp <> nil then chkfix := fcp^.klass = fixedt
   end;
 
   { id contains a procedure in overload list }
@@ -2858,7 +2858,7 @@ end;
   begin
     write(prr, 'l ');
     if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
-    else if fcp^.klass = fixed then writevp(prr, fcp^.fmod^.mn)
+    else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
     else writevp(prr, fcp^.pmod^.mn);
     write(prr, '.');
     writevp(prr, fcp^.name)
@@ -4094,7 +4094,7 @@ end;
                   access := indrct; idplmt := 0
                 end;
             end;
-          fixed: begin symptr := fcp;
+          fixedt: begin symptr := fcp;
               if typtr <> nil then packing := typtr^.packing;
               access := drct; vlevel := 0; dplmt := 0
             end;
@@ -4358,7 +4358,7 @@ end;
       var lcp: ctp;
     begin
       if sy = ident then
-        begin searchid([vars,fixed,field],lcp); insymbol end
+        begin searchid([vars,fixedt,field],lcp); insymbol end
       else begin error(2); lcp := uvarptr end;
       if threaten and (lcp^.klass = vars) then with lcp^ do begin
         if vlev < level then threat := true;
@@ -5601,7 +5601,7 @@ end;
               end;
               if sy in facbegsys then case sy of
         (*id*)    ident:
-                  begin searchid([types,konst,vars,fixed,field,func],lcp);
+                  begin searchid([types,konst,vars,fixedt,field,func],lcp);
                     insymbol;
                     if isovlfunc(lcp) then
                       begin call(fsys,lcp, inherit, true);
@@ -7071,9 +7071,9 @@ end;
       repeat { id:type group }
         lcp := nil;
         if sy = ident then
-          begin new(lcp,fixed); ininam(lcp);
+          begin new(lcp,fixedt); ininam(lcp);
             with lcp^ do
-             begin klass := fixed; strassvf(name, id);
+             begin klass := fixedt; strassvf(name, id);
                idtype := nil; floc := -1; fext := incstk <> nil; fmod := incstk
              end;
             enterid(lcp);
