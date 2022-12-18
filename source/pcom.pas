@@ -1,3 +1,4 @@
+{$l+}
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -9584,7 +9585,7 @@ end;
       opts[25] := 'y         ';
       opts[26] := 'z         ';
 
-      optsl[1]  := 'debugflt ';
+      optsl[1]  := 'debugflt  ';
       optsl[2]  := 'prtlab    ';
       optsl[3]  := 'lstcod    ';
       optsl[4]  := 'chk       ';
