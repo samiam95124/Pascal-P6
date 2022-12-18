@@ -7285,14 +7285,15 @@ end;
                               begin searchid([types],lcp);
                                 lsp := lcp^.idtype;
                                 lsize := ptrsize;
-                                if lsp <> nil then
+                                if lsp <> nil then begin
                                   if lsp^.form = arrayc then lsize := ptrsize*2;
                                   if lkind=actual then begin
                                     if lsp^.form<=power then lsize := lsp^.size
                                     else if lsp^.form=files then error(121);
                                     { type containing file not allowed either }
                                     if filecomponent(lsp) then error(121)
-                                  end;
+                                  end
+                                end;
                                 alignu(parmptr,lsize);
                                 lcp3 := lcp2;
                                 lc := lc-count*lsize;
