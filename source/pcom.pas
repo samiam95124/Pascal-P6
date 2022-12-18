@@ -1,4 +1,4 @@
-{$l+}
+{$l-}
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -4004,7 +4004,7 @@ end;
   end;
 
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
-  var lattr: attr; lcp,fcp2: ctp; lsize: addrrange; lmin,lmax: integer;
+  var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
@@ -5488,7 +5488,7 @@ end;
 
   { call operator type with 1 parameter }
   procedure callop1{(fcp: ctp)};
-    var frlab: integer; lsize: addrrange; locpar, locpars, lp, lps: addrrange;
+    var frlab: integer; lsize: addrrange; locpar, locpars: addrrange;
         sp: stp;
   begin
     sp := partype(fcp, 1);
@@ -6113,7 +6113,7 @@ end;
 
     procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
       var lsp,lsp1,lsp2: stp; oldtop: disprange; lcp: ctp;
-          lsize,displ: addrrange; lmin,lmax, t, span: integer;
+          lsize,displ: addrrange; lmin,lmax, span: integer;
           test: boolean; ispacked: boolean; lvalu: valu;
 
       procedure simpletype(fsys:setofsys; var fsp:stp; var fsize:addrrange);
@@ -6955,9 +6955,9 @@ end;
 
     procedure fixeddeclaration;
       var lcp: ctp; lsp: stp; lsize: addrrange;
-          test: boolean; v: integer; d: boolean; dummy: stp; fvalu: valu;
+          v: integer; d: boolean; dummy: stp;
     procedure fixeditem(fsys: setofsys; lsp: stp; size: integer; var v: integer; var d: boolean);
-      var fvalu: valu; lsp1: stp; c:char; lcp: ctp; i, min, max: integer;
+      var fvalu: valu; lsp1: stp; lcp: ctp; i, min, max: integer;
           test: boolean;
     begin v := 0; d := false;
       if lsp <> nil then begin
@@ -7106,8 +7106,8 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
-          forw,virt,ovrl: boolean; oldtop, dt: disprange;
-          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr; e: boolean;
+          forw,virt,ovrl: boolean; oldtop: disprange;
+          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
           ops: restr; opt: operatort;
 
       procedure pushlvl(forw: boolean; lcp: ctp);
@@ -7388,7 +7388,7 @@ end;
 
     { check parameter lists converge with different modes }
     function conpar(pla, plb: ctp): boolean;
-      var f: boolean; t1, t2: stp;
+      var f: boolean;
     { find bidirectionally assignment compatible }
     function comp(t1, t2: stp): boolean;
     begin comp := false;
@@ -7734,7 +7734,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean; lsize: addrrange; fcp2: ctp;
+        var lattr, lattr2: attr; tagasc: boolean; fcp2: ctp;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
