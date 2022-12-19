@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+# Script to test p6 compile and run
+#
+# 48 minutes on AMD Ryzen 9 3950x 16-core processorx32
+#
+# Compile p6
+#
+echo "Compiling pcom to intermediate code"
+cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas source/pcom.mpp.pas
+compile source/pcom.mpp $1
+cat source/pcom.mpp.err
+#
+# Run P6/pcom on P6
+#
+echo > source/pcom.mpp.inp
+run $1 standard_tests/iso7185pat.pas source/pcom.mpp 
+cat source/pcom.mpp.lst
+#
+# For neatness sake, copy out the intermediate to .p6 file
+#
+cp source/pcom.mpp.out standard_tests/iso7185pat.p6
+#
+# Compile pint
+#
+echo "Compiling pint to intermediate code"
+cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
+compile source/pint.mpp $1
+cat source/pint.mpp.err
+#
+# Add the final target program to the end of pint.
+# This means that the version of pint will read and interpret
+# this.
+#
+# Create null input file
+#
+echo > source/pint.mpp.inp
+#
+# Now run pint(p6) on pint(p6), which runs the test program.
+#
+echo "Running pint\(p6\) on pint\(p6\) to execute test program"
+run $1 standard_tests/iso7185pat.p6 source/pint.mpp
+#
+# Copy the result listing back to standardp.lst, again for neatness
+#
+cp source/pint.mpp.lst standard_tests/iso7185pat.lst
+#
+# Now compare with reference
+#
+echo "Comparing PAT result to reference"
+if [ "$1" = "--cmach" ]; then
+
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp6.cmp > standard_tests/iso7185pat.dif
+	
+else
+
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp6.cmp > standard_tests/iso7185pat.dif
+
+fi
+
+#
+# Show the file, so if the length is zero, it compared ok.
+#
+echo "Resulting diff file length should be zero for pass"
+wc -l standard_tests/iso7185pat.dif
+
+rm -f source/pcom.inp
+rm -f source/pint.inp

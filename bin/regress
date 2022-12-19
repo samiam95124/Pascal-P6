@@ -75,6 +75,11 @@ function do_regress {
         testp5 $option
         wc -l standard_tests/iso7185pat.dif >> regress_report.txt
 
+        echo "Running Pascal-P6"
+        echo "Pascal-P6 run" >> regress_report.txt
+        testp6 $option
+        wc -l standard_tests/iso7185pat.dif >> regress_report.txt
+
         echo "Running PRT..."
         echo "PRT run" >> regress_report.txt
         #
@@ -89,7 +94,7 @@ function do_regress {
         #
         echo "pcom self compile" >> regress_report.txt
         cpcoms $option
-        wc -l pcomm.dif >> regress_report.txt
+        wc -l source/pcom.mpp.dif >> regress_report.txt
         
         #
         # Run pint self compile \(note this runs on P5/P6 only\)

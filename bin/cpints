@@ -5,7 +5,7 @@
 # First, change elide patterns to #ove prd and prr file statements.
 # The modified file goes in pintm.pas (pint modified).
 #
-sed -e 's/{elide}/{/g' -e 's/{noelide}/}/g' -e 's/{remove//g' -e 's/remove}//g' source/pint.pas > pintm.pas
+cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
 #
 # Compile the final target, the PAT
 #
@@ -16,26 +16,26 @@ cat standard_tests/iso7185pat.err
 # Compile pint itself
 #
 echo Compiling pint to intermediate code
-compile pintm
-cat pintm.err
+compile source/pint.mpp
+cat source/pint.mpp.err
 #
 # Add the final target program (the pat) to the end of pint.
 # This means that the version of pint will read and interpret
 # this.
 #
-cat pintm.p5 standard_tests/iso7185pat.p5 > tmp.p5
-rm pintm.p5
+cat soruce/pint.mpp.p6 standard_tests/iso7185pat.p6 > tmp.p6
+rm /source/pint.mpp.p6
 mv tmp.p5 pintm.p5
 #
 # Create null input file
 #
-echo > pintm.inp
+echo > source/pint.mpp.inp
 #
 # Now run pint on pint, which runs the PAT.
 #
 echo Running pint on itself, to run the ISO 7185 PAT
-run pintm
-cp pintm.lst standard_tests/iso7185pats.lst
+run source/pint.mpp
+cp source/pint.mpp.lst standard_tests/iso7185pats.lst
 echo -n "Comparing PAT result to reference ... "
 diffnole standard_tests/iso7185pats.lst standard_tests/iso7185pats.cmp > standard_tests/iso7185pats.dif
 if test -s iso7185pats.dif
