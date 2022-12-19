@@ -3846,7 +3846,7 @@ end;
                    end;
             expr:  error(405);
           end;
-          if (typtr^.form = arrayc) and pickup then begin
+          if typtr^.form = arrayc then if pickup then begin
             { it's a container, load a complex pointer based on that }
             if dblptr then gen0(111(*ldp*)) else begin
               gen0(98(*lcp*));
@@ -7431,6 +7431,7 @@ end;
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
+      opt := bcmop; { avoid undefined error }
       if fsy in [overloadsy,staticsy,virtualsy,overridesy] then begin
         chkstd;
         case fsy of { attribute }
@@ -8039,18 +8040,18 @@ end;
                         end;
                         for i := cslabs to cslabe do
                           genujpxjpcal(57(*ujp*),csstart);
-                        lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
-                        putcas(lpt1);
-                      end
+                        lpt1 := fstptr; fstptr := next; lmin := cslabe+1
+                      end;
+                      putcas(lpt1)
                   until fstptr = nil;
                 end else begin
                   { devolve to comp/jmp seq }
                   repeat
                     with fstptr^ do begin
                       gencjp(87(*cjp*),cslabs,cslabe,csstart);
-                      lpt1 := fstptr; fstptr := next; lmin := cslabe+1;
-                      putcas(lpt1);
-                    end
+                      lpt1 := fstptr; fstptr := next; lmin := cslabe+1
+                    end;
+                    putcas(lpt1)
                   until fstptr = nil;
                   if lelse > 0 then genujpxjpcal(57(*ujp*),lelse2);
                   mesl(+intsize) { remove selector from stack }
@@ -8062,10 +8063,8 @@ end;
               error(157);
               repeat
                 with fstptr^ do
-                  begin
-                    lpt1 := fstptr; fstptr := next;
-                    putcas(lpt1);
-                  end
+                  begin lpt1 := fstptr; fstptr := next end;
+                putcas(lpt1);
               until fstptr = nil
             end
           end;

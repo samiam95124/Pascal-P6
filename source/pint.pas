@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l-*)
+(*$c+,t-,d-,l+*)
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -2340,7 +2340,10 @@ procedure load;
      i := i+1; c := strchr(lsp, i); x := 1;
      while c <> ' ' do
        begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
+     rt := 0;
+#ifdef EXTERNALS
      LookupExternal(mods, syms, rt);
+#endif
      extref := rt
    end;
 
@@ -2662,7 +2665,7 @@ procedure load;
                        end;
                   'p': begin
                          getnxt; skpspc;
-                         if ch <> '(' then errorl('''('' expected for set   ');
+                         if ch <> '(' then errorl('''('' expected for set     ');
                          s := [ ]; getnxt;
                          while ch<>')' do
                            begin read(prd,i); getnxt; s := s + [i] end;
@@ -3025,7 +3028,10 @@ procedure load;
 
 begin (*load*)
   init;
+  extvecs := 0;
+#ifdef EXTERNALS
   extvecs := NumExternal;
+#endif
   pc := 0;
   { insert start sequence:
 
@@ -7255,7 +7261,7 @@ begin (* main *)
   opts[7]  := 'g         ';
   opts[8]  := 'h         ';
   opts[9]  := 'i         ';
-  opts[10] := 'ee         ';
+  opts[10] := 'ee        ';
   opts[11] := '          ';
   opts[12] := 'l         ';
   opts[13] := 'm         ';
@@ -7273,7 +7279,7 @@ begin (* main *)
   opts[25] := 'y         ';
   opts[26] := 'z         ';
 
-  optsl[1]  := 'debugflt ';
+  optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
   optsl[3]  := 'lstcod    ';
   optsl[4]  := 'chkdebug  ';
