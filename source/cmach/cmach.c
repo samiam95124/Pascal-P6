@@ -1260,7 +1260,7 @@ void dmpblk(void)
         l = getadr(blk); /* get length */
         printf("%ld: Addr: %08lx Len: %08lx Occ: %d\n", c, blk, labs(l), l < 0);
         c++;
-        if (labs(l) < HEAPAL || abs(l) > np) errorv(HEAPFORMATINVALID);
+        if (labs(l) < HEAPAL || labs(l) > np) errorv(HEAPFORMATINVALID);
         blk = blk+labs(l); /* go next block */
     }
     printf("\n");
@@ -1276,9 +1276,9 @@ void fndfre(address len, address* blk)
     *blk = gbtop; /* set to bottom of heap */
     while (*blk < np) { /* search blocks in heap */
         l = getadr(*blk); /* get length */
-        if (abs(l) < HEAPAL || *blk+abs(l) > np) errorv(HEAPFORMATINVALID);
+        if (labs(l) < HEAPAL || *blk+labs(l) > np) errorv(HEAPFORMATINVALID);
         if (l >= len+ADRSIZE) { b = *blk; *blk = np; } /* found */
-        else *blk = *blk+abs(l); /* go next block */
+        else *blk = *blk+labs(l); /* go next block */
     }
     if (b > 0) { /* block was found */
         putadr(b, -l); /* allocate block */
@@ -1305,7 +1305,7 @@ void cscspc(void)
    while (l >= 0 && np > gbtop) {
         /* find last entry */
         ad = gbtop;
-        while (ad < np) { ad1 = ad; ad = ad+abs(getadr(ad)); }
+        while (ad < np) { ad1 = ad; ad = ad+labs(getadr(ad)); }
         l = getadr(ad1); /* get header length */
         if (l >= 0) np = ad1; /* release to free space */
     }
@@ -1319,9 +1319,9 @@ void cscspc(void)
                 l1 = getadr(ad1); /* get length next */
                 if (l1 >=0) /* both blocks are free, combine the blocks */
                     putadr(ad, l+l1);
-                else ad = ad+l+abs(l1); /* skip both blocks */
+                else ad = ad+l+labs(l1); /* skip both blocks */
             } else ad = ad1; /* skip to end, done */
-        } else ad = ad+abs(l); /* this block is not free, skip it */
+        } else ad = ad+labs(l); /* this block is not free, skip it */
     }
 }
 
@@ -1359,15 +1359,15 @@ void dspspc(address len, address blk)
    ad = blk-ADRSIZE; /* index header */
    if (getadr(ad) >= 0) errorv(BLOCKALREADYFREED);
    if (DORECYCL && !DOCHKRPT && !DONORECPAR) { /* obey recycling requests */
-        putadr(ad, abs(getadr(ad))); /* set block free */
+        putadr(ad, labs(getadr(ad))); /* set block free */
         cscspc(); /* coalesce free space */
    } else if (DOCHKRPT || DONORECPAR) { /* perform special recycle */
         /* check can break off top block */
-        len = abs(getadr(ad)); /* get length */
+        len = labs(getadr(ad)); /* get length */
         if (len >= ADRSIZE*2) {
 
-            if (DONORECPAR) putadr(ad+ADRSIZE, -(abs(getadr(ad))-ADRSIZE));
-            else putadr(ad+ADRSIZE, abs(getadr(ad))-ADRSIZE);
+            if (DONORECPAR) putadr(ad+ADRSIZE, -(labs(getadr(ad))-ADRSIZE));
+            else putadr(ad+ADRSIZE, labs(getadr(ad))-ADRSIZE);
 
         }
         /* the "marker" is a block with a single address. Since it can't
@@ -1683,7 +1683,7 @@ void writei(FILE* f, long w, long fl, long r, long lz)
     boolean sgn;
 
     if (w < 0) {
-        sgn = TRUE; w = abs(w);
+        sgn = TRUE; w = labs(w);
         if (r != 10) errore(NONDECIMALRADIXOFNEGATIVE) ;
     } else sgn = FALSE;
     for (i = 0; i < MAXDBF; i++) digit[i] = ' ';
@@ -1694,12 +1694,12 @@ void writei(FILE* f, long w, long fl, long r, long lz)
         w = w / r; i = i-1; d = d+1;
     } while (w != 0);
     if (sgn) ds = d+1; else ds = d; /* add sign */
-    if (ds > abs(fl)) if (fl < 0) fl = -ds; else fl = ds;
+    if (ds > labs(fl)) if (fl < 0) fl = -ds; else fl = ds;
     if (fl > 0 && fl > ds)
       if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' ');
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
-    if (fl < 1 && abs(fl) > ds) fprintf(f, "%*c", (int)(abs(fl)-ds), ' ');
+    if (fl < 1 && labs(fl) > ds) fprintf(f, "%*c", (int)(labs(fl)-ds), ' ');
 }
 
 void writeb(FILE* f, boolean b, long w)
@@ -2396,7 +2396,7 @@ void sinins()
     case 201 /*incx*/:
     case 10 /*inci*/: getq(); popint(i1);
                    if (DOCHKOVF) if (i1<0 == q<0)
-                      if (LONG_MAX-abs(i1) < abs(q))
+                      if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                    pshint(i1+q);
                    break;
@@ -2630,12 +2630,12 @@ void sinins()
 
     case 28 /*adi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 == i2<0)
-                    if (LONG_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
+                    if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1+i2); break;
     case 29 /*adr*/: poprel(r2); poprel(r1); pshrel(r1+r2); break;
     case 30 /*sbi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 != i2<0)
-                    if (LONG_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
+                    if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
     case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
     case 32 /*sgs*/: popint(i1); sset(s1, i1); pshset(s1); break;
@@ -2652,10 +2652,10 @@ void sinins()
     case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
     case 38 /*sqi*/: popint(i1);
                 if (DOCHKOVF) if (i1 != 0)
-                  if (abs(i1) > LONG_MAX/abs(i1)) errore(INTEGERVALUEOVERFLOW);
+                  if (labs(i1) > LONG_MAX/labs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
     case 39 /*sqr*/: poprel(r1); pshrel(r1*r1); break;
-    case 40 /*abi*/: popint(i1); pshint(abs(i1)); break;
+    case 40 /*abi*/: popint(i1); pshint(labs(i1)); break;
     case 41 /*abr*/: poprel(r1); pshrel(fabs(r1)); break;
     case 42 /*notb*/: popint(i1); b1 = i1 != 0; pshint(!b1); break;
     case 205 /*noti*/: popint(i1);
@@ -2689,7 +2689,7 @@ void sinins()
     case 50 /*odd*/: popint(i1); pshint(i1&1); break;
     case 51 /*mpi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1 != 0 && i2 != 0)
-                    if (abs(i1) > LONG_MAX / abs(i2))
+                    if (labs(i1) > LONG_MAX / labs(i2))
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
     case 52 /*mpr*/: poprel(r2); poprel(r1); pshrel(r1*r2); break;
@@ -2712,7 +2712,7 @@ void sinins()
     case 202 /*decx*/:
     case 57  /*deci*/: getq(); popint(i1);
                     if (DOCHKOVF) if (i1<0 != q<0)
-                      if (LONG_MAX-abs(i1) < abs(q))
+                      if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                     pshint(i1-q); break;
 
