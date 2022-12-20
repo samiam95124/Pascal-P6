@@ -1546,8 +1546,8 @@ void readi(filnum fn, long *i, long* w, boolean fld)
    *i = 0; /* clear initial value */
    while (isdigit(chkbuf(fn, *w))) { /* parse digit */
      d = chkbuf(fn, *w)-'0';
-     if (*i > INT_MAX/10 ||
-         *i == INT_MAX/10 && d > INT_MAX%10)
+     if (*i > LONG_MAX/10 ||
+         *i == LONG_MAX/10 && d > LONG_MAX%10)
        errore(INTEGERVALUEOVERFLOW);
      *i = *i*10+d; /* add in new digit */
      getbuf(fn, w);
@@ -1945,13 +1945,13 @@ void callsp(void)
                      }
                      break;
     case 11/*rdi*/:
-    case 72/*rdif*/: w = INT_MAX; fld = q == 72; if (fld) popint(w);
+    case 72/*rdif*/: w = LONG_MAX; fld = q == 72; if (fld) popint(w);
                      popadr(ad1); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld);
                      putint(ad1, i);
                      break;
     case 37/*rib*/:
-    case 71/*ribf*/: w = INT_MAX; fld = q == 71; popint(mx); popint(mn);
+    case 71/*ribf*/: w = LONG_MAX; fld = q == 71; popint(mx); popint(mn);
                     if (fld) popint(w); popadr(ad1); popadr(ad);
                     pshadr(ad); valfil(ad); fn = store[ad];
                     readi(fn, &i, &w, fld);
@@ -1959,19 +1959,19 @@ void callsp(void)
                     putint(ad1, i);
                     break;
     case 12/*rdr*/:
-    case 73/*rdrf*/: w = INT_MAX; fld = q == 73; if (fld) popint(w);
+    case 73/*rdrf*/: w = LONG_MAX; fld = q == 73; if (fld) popint(w);
                     popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     readr(fn, &r, w, fld); putrel(ad1, r);
                     break;
     case 13/*rdc*/:
-    case 75/*rdcf*/: w = INT_MAX; fld = q == 75; if (fld) popint(w);
+    case 75/*rdcf*/: w = LONG_MAX; fld = q == 75; if (fld) popint(w);
                     popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
                     readc(fn, &c, w, fld); putchr(ad1, c);
                     break;
     case 38/*rcb*/:
-    case 74/*rcbf*/: w = INT_MAX; fld = q == 74; popint(mx); popint(mn);
+    case 74/*rcbf*/: w = LONG_MAX; fld = q == 74; popint(mx); popint(mn);
                      if (fld) popint(w); popadr(ad1); popadr(ad);
                      pshadr(ad); valfil(ad);
                      fn = store[ad];
@@ -2262,7 +2262,7 @@ void callsp(void)
                   if (j == 0) errors(ad, i);
                   break;
     case 70/*rds*/:
-    case 76/*rdsf*/: w = INT_MAX; fld = q == 76; popint(i);
+    case 76/*rdsf*/: w = LONG_MAX; fld = q == 76; popint(i);
                   if (fld) popint(w); popadr(ad1); popadr(ad);
                   pshadr(ad); valfil(ad); fn = store[ad];
                   reads(fn, ad1, i, w, fld);
@@ -2281,10 +2281,10 @@ void callsp(void)
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
                   assignexternal(fn, fl1);
                   break;
-    case 80/*rdie*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
+    case 80/*rdie*/: w = LONG_MAX; popint(i); popadr(ad1); popadr(ad);
                   readi(COMMANDFN, &i, &w, FALSE); putint(ad, i);
                   break;
-    case 81/*rdre*/: w = INT_MAX; popint(i); popadr(ad1); popadr(ad);
+    case 81/*rdre*/: w = LONG_MAX; popint(i); popadr(ad1); popadr(ad);
                   readr(COMMANDFN, &r, w, FALSE); putrel(ad, r);
                   break;
     case 2/*thw*/: popadr(ad1); mp = expmrk; sp = expstk;
@@ -2396,7 +2396,7 @@ void sinins()
     case 201 /*incx*/:
     case 10 /*inci*/: getq(); popint(i1);
                    if (DOCHKOVF) if (i1<0 == q<0)
-                      if (INT_MAX-abs(i1) < abs(q))
+                      if (LONG_MAX-abs(i1) < abs(q))
                         errore(INTEGERVALUEOVERFLOW);
                    pshint(i1+q);
                    break;
@@ -2630,12 +2630,12 @@ void sinins()
 
     case 28 /*adi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 == i2<0)
-                    if (INT_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
+                    if (LONG_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1+i2); break;
     case 29 /*adr*/: poprel(r2); poprel(r1); pshrel(r1+r2); break;
     case 30 /*sbi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1<0 != i2<0)
-                    if (INT_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
+                    if (LONG_MAX-abs(i1) < abs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
     case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
     case 32 /*sgs*/: popint(i1); sset(s1, i1); pshset(s1); break;
@@ -2645,14 +2645,14 @@ void sinins()
     case 34 /*flo*/: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
 
     case 35 /*trc*/: poprel(r1);
-                  if (DOCHKOVF) if (r1 < -INT_MAX || r1 > INT_MAX)
+                  if (DOCHKOVF) if (r1 < -LONG_MAX || r1 > LONG_MAX)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(trunc(r1)); break;
     case 36 /*ngi*/: popint(i1); pshint(-i1); break;
     case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
     case 38 /*sqi*/: popint(i1);
                 if (DOCHKOVF) if (i1 != 0)
-                  if (abs(i1) > INT_MAX/abs(i1)) errore(INTEGERVALUEOVERFLOW);
+                  if (abs(i1) > LONG_MAX/abs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
     case 39 /*sqr*/: poprel(r1); pshrel(r1*r1); break;
     case 40 /*abi*/: popint(i1); pshint(abs(i1)); break;
@@ -2689,7 +2689,7 @@ void sinins()
     case 50 /*odd*/: popint(i1); pshint(i1&1); break;
     case 51 /*mpi*/: popint(i2); popint(i1);
                   if (DOCHKOVF) if (i1 != 0 && i2 != 0)
-                    if (abs(i1) > INT_MAX / abs(i2))
+                    if (abs(i1) > LONG_MAX / abs(i2))
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
     case 52 /*mpr*/: poprel(r2); poprel(r1); pshrel(r1*r2); break;
@@ -2712,7 +2712,7 @@ void sinins()
     case 202 /*decx*/:
     case 57  /*deci*/: getq(); popint(i1);
                     if (DOCHKOVF) if (i1<0 != q<0)
-                      if (INT_MAX-abs(i1) < abs(q))
+                      if (LONG_MAX-abs(i1) < abs(q))
                         errore(INTEGERVALUEOVERFLOW);
                     pshint(i1-q); break;
 
@@ -2727,7 +2727,7 @@ void sinins()
 
     case 61 /*ujc*/: errorv(INVALIDCASE); break;
     case 62 /*rnd*/: poprel(r1);
-                  if (DOCHKOVF) if (r1 < -(INT_MAX+0.5) || r1 > INT_MAX+0.5)
+                  if (DOCHKOVF) if (r1 < -(LONG_MAX+0.5) || r1 > LONG_MAX+0.5)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(round(r1)); break;
     case 63 /*pck*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
