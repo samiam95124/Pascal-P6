@@ -50,7 +50,7 @@ cp source/pint.mpp.lst standard_tests/iso7185pat.lst
 echo "Comparing PAT result to reference"
 if [ "$1" = "--cmach" ]; then
 
-	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp6.cmp > standard_tests/iso7185pat.dif
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp6c.cmp > standard_tests/iso7185pat.dif
 	
 else
 
