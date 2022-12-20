@@ -630,7 +630,7 @@ end;
 { Low level error check and handling }
 
 procedure errors(a: address; l: address);
-begin writeln; write('*** Runtime error'); 
+begin writeln; write('*** pmach: Runtime error'); 
       if srclin > 0 then write(' [', srclin:1, ']');
       write(': ');
       if l > maxast then l := maxast;
@@ -650,7 +650,7 @@ procedure errore(ei: integer); forward;
 
 { handle exception vector }
 procedure errorv(ea: address);
-begin writeln; write('*** Runtime error');
+begin writeln; write('*** pmach: Runtime error');
   if srclin > 0 then write(' [', srclin:1, ']');
   write(': ');
   case ea of
