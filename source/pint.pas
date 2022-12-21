@@ -1762,8 +1762,10 @@ end (*align*);
 procedure alignd(algn: address; var flc: address);
   var l: integer;
 begin
-  l := flc+1;
-  flc := l - algn  +  (algn-l) mod algn
+  if (flc mod algn) <> 0 then begin
+    l := flc+1;
+    flc := l - algn  +  (algn-l) mod algn
+  end
 end (*align*);
 
 { align upwards with space clear }

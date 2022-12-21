@@ -2500,16 +2500,20 @@ end;
     var k,l: integer;
   begin
     k := alignquot(fsp);
-    l := flc+1;
-    flc := l - k  +  (k-l) mod k;
+    if (flc mod k) <> 0 then begin
+      l := flc+1;
+      flc := l - k  +  (k-l) mod k
+    end
   end (*align*);
 
   { align for stack }
   function aligns(flc: addrrange): addrrange;
     var l: integer;
   begin
-    l := flc+1;
-    flc := l - stackal  +  (stackal-l) mod stackal;
+    if (flc mod stackal) <> 0 then begin
+      l := flc+1;
+      flc := l - stackal  +  (stackal-l) mod stackal
+    end;
     aligns := flc
   end (*aligns*);
 
