@@ -1605,6 +1605,7 @@ end;
     288: write('Left side of assignment overload operator must be out mode');
     289: write('Var parameter must be compatible with parameter');
     290: write('Cannot threaten view parameter');
+    291: write('Set element out of implementation range');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -3578,7 +3579,9 @@ end;
               insymbol; lv := fvalu;
               constexpr(fsys+[rbrack,comma], fsp, fvalu);
               if not fvalu.intval then error(134);
-              for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
+              if (lv.ival < setlow) or (lv.ival > sethigh) or 
+                 (fvalu.ival < setlow) or (fvalu.ival > sethigh) then error(291)
+              else for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
             end else lvp^.pval := lvp^.pval+[fvalu.ival];
             test := sy <> comma;
             if not test then insymbol
