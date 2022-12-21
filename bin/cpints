@@ -11,21 +11,35 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas sour
 #
 echo Compiling the ISO 7185 PAT
 compile standard_tests/iso7185pat
-cat standard_tests/iso7185pat.err
+if [ $? -ne 0 ]
+then
+
+    echo "*** Compile failed"
+    cat standard_tests/iso7185pat.err
+    exit 1
+
+fi
 #
 # Compile pint itself
 #
 echo Compiling pint to intermediate code
 compile source/pint.mpp
-cat source/pint.mpp.err
+if [ $? -ne 0 ]
+then
+
+    echo "*** Compile failed"
+    cat source/pint.mpp.err
+    exit 1
+
+fi
 #
 # Add the final target program (the pat) to the end of pint.
 # This means that the version of pint will read and interpret
 # this.
 #
-cat soruce/pint.mpp.p6 standard_tests/iso7185pat.p6 > tmp.p6
-rm /source/pint.mpp.p6
-mv tmp.p5 pintm.p5
+cat source/pint.mpp.p6 standard_tests/iso7185pat.p6 > source/tmp.p6
+rm source/pint.mpp.p6
+mv source/tmp.p6 source/pint.mpp.p6
 #
 # Create null input file
 #

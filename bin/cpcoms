@@ -10,8 +10,16 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas sour
 # Compile pcom to intermediate code using its binary version.
 #
 echo Compiling pcom to intermediate code
-compile source/pcomm.mpp
-cat source/pcom.mpp.err
+compile source/pcom.mpp
+if [ $? -ne 0 ]
+then
+
+    echo "*** Compile failed"
+    cat source/pcom.mpp.err
+    exit 1
+
+fi
+
 #
 # Now run that code on the interpreter and have it compile itself
 # to intermediate again.
@@ -20,7 +28,7 @@ echo Running pcom to compile itself
 
 cat source/pcom.mpp.p6 source/pcom.mpp.pas > tmp.p6
 mv source/pcom.mpp.p6 source/pcom.mpp.p6.org
-cp tmp.p5 source/pcom.mpp.p6
+cp tmp.p6 source/pcom.mpp.p6
 echo > source/pcom.mpp.inp
 
 run source/pcom.mpp
@@ -43,4 +51,4 @@ else
     echo PASS
 fi
 echo
-#ls -l pcomm.dif
+#ls -l source/pcom.mpp.dif

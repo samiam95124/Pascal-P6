@@ -64,8 +64,12 @@ function do_regress {
     #
     testpascals $option
     wc -l sample_programs/pascals.dif >> regress_report.txt
+    echo "Running Pascal-P2"
+    echo "Pascal-P2 run" >> regress_report.txt
     testp2 $option
     wc -l p2/roman.dif >> regress_report.txt
+    echo "Running Pascal-P4"
+    echo "Pascal-P4 run" >> regress_report.txt
     testp4 $option
     wc -l p4/standardp.dif >> regress_report.txt
     if [ "$full" = "1" ]; then

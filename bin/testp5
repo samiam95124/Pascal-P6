@@ -36,7 +36,7 @@ echo > p5/source/pint.mpp.inp
 #
 # Now run pint(p5) on pint(p6), which runs the test program.
 #
-echo "Running pint\(p5\) on pint\(p6\) to execute test program"
+echo "Running pint(p5) on pint(p6) to execute test program"
 run $1 standard_tests/iso7185pat.p5 p5/source/pint.mpp
 #
 # Copy the result listing back to standardp.lst, again for neatness
@@ -48,7 +48,7 @@ cp p5/source/pint.mpp.lst standard_tests/iso7185pat.lst
 echo "Comparing PAT result to reference"
 if [ "$1" = "--cmach" ]; then
 
-	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5.cmp > standard_tests/iso7185pat.dif
+	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5c.cmp > standard_tests/iso7185pat.dif
 	
 else
 
