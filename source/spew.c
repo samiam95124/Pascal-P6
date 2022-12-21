@@ -692,6 +692,7 @@ void main(/* Input argument count */ int argc,
         lincnt = errlog[0].errlin; /* set line */
         chrcnt = errlog[0].errchr; /* set character */
         createtemp(ALTCHR, srcnam); /* reproduce the file */
+        system("compile spewtest");
         printf("The maximum error case has been reproduced in spewtest.pas\n");
         printf("\n");
 
