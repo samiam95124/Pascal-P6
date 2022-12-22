@@ -4,6 +4,6 @@ Assembling/loading program
 Running program
 
 Value is: 
-*** Runtime error [21]: Undefined location access
+*** Runtime error [25]: Undefined location access
 
 program complete
