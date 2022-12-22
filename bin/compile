@@ -89,25 +89,9 @@ if [ -z "$progfile" ]; then
 	
 fi
 
-if [ "$pmach" = "1" ]; then
-
-	echo "{\$e+}" > temp
-	cat temp $progfile.pas > prd
-	rm temp
-	
-elif [ "$cmach" = "1" ]; then
-
-    echo "{\$e+}" > temp
-	cat temp $progfile.pas > prd
-	rm temp
-	
-else
-
-	cp $progfile.pas prd
-	
-fi
-
+cp $progfile.pas prd
 pcom > $progfile.err
+
 #
 # The status of the compile is not returned, so convert a non-zero
 # error message to fail status

@@ -105,7 +105,8 @@ fi
 if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
-    cp $progfile.p6 prd
+    echo "o e+" > temp
+    cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
     cat $progfile.p6o $inpfile > prd
@@ -115,7 +116,8 @@ if [ "$pmach" = "1" ]; then
 elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
-    cp $progfile.p6 prd
+    echo "o e+" > temp
+    cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
     cat $progfile.p6o $inpfile > prd
