@@ -10,8 +10,15 @@
 #
 echo Running tests
 
+error=0
 for tp in standard_tests/iso7185prt*.pas ; do
-    testprog --noerrmsg standard_tests/`basename $tp .pas`
+    testprog $1 --noerrmsg standard_tests/`basename $tp .pas`
+    if [ $? -ne 0 ]
+    then
+
+        error=1
+
+    fi
 done
 
 echo Creating combined listing
@@ -62,6 +69,7 @@ for a in `basename --suffix=.err standard_tests/iso7185prt*.err` ; do
     if [ -s standard_tests/$a.ecd ] ; then
         #kdiff3 standard_tests/$a.{err,ecp}
         echo "*** compare standard_tests/$a.err failed" >> standard_tests/iso7185prt.ecdlst
+        error=1
     else
         echo "    compare standard_tests/$a.err OK" >> standard_tests/iso7185prt.ecdlst
     fi
@@ -90,6 +98,7 @@ for f in `basename --suffix=.dif standard_tests/iso7185prt*.dif` ; do
     if [ -s standard_tests/$f.dif ] ; then
         #kdiff3 standard_tests/$f.{lst,cmp}
         echo "*** run standard_tests/$f.dif failed" >> standard_tests/iso7185prt.diflst
+        error=1
     else
         echo "    run standard_tests/$f.dif OK" >> standard_tests/iso7185prt.diflst
     fi
@@ -134,3 +143,4 @@ for f in standard_tests/iso7185prt*.pas ; do
 
 done
 
+exit $error

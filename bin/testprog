@@ -176,5 +176,21 @@ if [ $? -eq 0 ]; then
     ls -l $progfile.dif > $progfile.tmp
     grep ".dif" $progfile.tmp
     rm -f $progfile.tmp
+    ## pass if diff file is empty
+    if test -s $progfile.dif
+    then
+        if [ "$noerrmsg" = "0" ]; then
+    		    
+            echo "*** FAIL"
+
+        fi
+        exit 1
+    else
+        echo "PASS"
+    fi
+
+else
+
+    exit 1
 
 fi

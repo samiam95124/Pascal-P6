@@ -3582,7 +3582,10 @@ end;
               if (lv.ival < setlow) or (lv.ival > sethigh) or 
                  (fvalu.ival < setlow) or (fvalu.ival > sethigh) then error(291)
               else for i := lv.ival to fvalu.ival do lvp^.pval := lvp^.pval+[i]
-            end else lvp^.pval := lvp^.pval+[fvalu.ival];
+            end else begin
+              if (fvalu.ival < setlow) or (fvalu.ival > sethigh) then error(291)
+              else lvp^.pval := lvp^.pval+[fvalu.ival]
+            end;
             test := sy <> comma;
             if not test then insymbol
           until test;
