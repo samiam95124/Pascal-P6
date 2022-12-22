@@ -583,7 +583,7 @@ void finish(long e)
 }
 
 void errors(address a, address l)
-{ printf("\n*** cmach: Runtime error\n");
+{ printf("\n*** Runtime error\n");
       if (srclin > 0) printf(" [%ld]: ", srclin);
       if (l > MAXAST) l = MAXAST;
       while (l > 0) { printf("%c", store[a]); a = a+1; l = l-1; }
@@ -599,7 +599,7 @@ void errors(address a, address l)
 
 /* handle exception vector */
 void errorv(address ea)
-{ printf("\n*** cmach: Runtime error");
+{ printf("\n*** Runtime error");
   if (srclin > 0) printf(" [%ld]: ", srclin);
   switch (ea) {
 
