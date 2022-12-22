@@ -18,3 +18,78 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+PRT run
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+33 standard_tests/iso7185pats.dif
+pmach run
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+PRT run
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+33 standard_tests/iso7185pats.dif
+cmach run
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+PRT run
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+33 standard_tests/iso7185pats.dif
+Thu 22 Dec 2022 08:32:49 AM PST
+Source files
+b0c4a9481efaf375787378969ea32891  -
+batch files
+f528f475b38fb18f9fdc688d66d011f1  -
+P2 files
+b4ab36c71cbae7b3115c05f1c68c70b1  -
+p4 files
+6b0c9de3a1938ead47c15da92f8a4dbd  -
+Sample program test files
+ab3d375e247ac594023432c220e9277d  -
+standard test files
+0a90c0acea6ebec1c9fcc8874776fdd8  -
+other files
+62046e4dcd7962962f4fb053dee7c83d  -
