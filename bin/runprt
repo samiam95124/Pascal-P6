@@ -94,7 +94,7 @@ cat standard_tests/iso7185prt.ecdlst >> standard_tests/iso7185prt.lst
 #
 echo creating runtime difference list
 echo > standard_tests/iso7185prt.diflst
-for f in `basename --suffix=.dif standard_tests/iso7185prt*.dif` ; do
+for f in `basename --suffix=.dif standard_tests/iso7185prt????.dif` ; do
     if [ -s standard_tests/$f.dif ] ; then
         #kdiff3 standard_tests/$f.{lst,cmp}
         echo "*** run standard_tests/$f.dif failed" >> standard_tests/iso7185prt.diflst
