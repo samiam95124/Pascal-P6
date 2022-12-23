@@ -153,7 +153,7 @@ do
     	echo ""
 		echo "Execution:"
 		echo ""
-		echo "regress [--full|--short|--pmach|--cmach]..."
+		echo "regress [--full|--short]..."
 		echo ""
 		exit 1
 		
