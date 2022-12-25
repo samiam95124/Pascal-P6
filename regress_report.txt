@@ -19,14 +19,6 @@ Pascal-P4 run
 0 p4/standardp.dif
 PRT run
 0 standard_tests/iso7185prt.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-0 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
-0 standard_tests/iso7185pats.dif
 pmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -46,14 +38,6 @@ Pascal-P4 run
 0 p4/standardp.dif
 PRT run
 20 standard_tests/iso7185prt.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-0 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
-0 standard_tests/iso7185pats.dif
 cmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -73,17 +57,9 @@ Pascal-P4 run
 0 p4/standardp.dif
 PRT run
 236 standard_tests/iso7185prt.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-0 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
-0 standard_tests/iso7185pats.dif
-Fri 23 Dec 2022 07:58:45 AM PST
+Sat 24 Dec 2022 10:46:15 PM PST
 Source files
-1172724fbdd4e96593ff7a2f279f630f  -
+7c6cdd81e9baf03d0f51a6108a8575fb  -
 batch files
 bb1a0dafc4895a3a7c15ce032f0eeb67  -
 P2 files

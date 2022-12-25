@@ -7817,9 +7817,11 @@ end;
                       if (lattr.typtr^.form = arrayc) or
                          (gattr.typtr^.form = arrayc) then begin
                         { assign complex pointer }
-                        if containers(lattr.typtr) = 1 then
+                        if (containers(lattr.typtr) = 1) or 
+                          (containers(gattr.typtr) = 1) then
                           gen1(101(*aps*),containerbase(gattr.typtr))
-                        else gen2(102(*apc*),containers(lattr.typtr),containerbase(gattr.typtr))
+                        else gen2(102(*apc*),containers(lattr.typtr),
+                                  containerbase(gattr.typtr))
                       end else begin { standard array assign }
                         { onstack from expr }
                         if gattr.kind = expr then store(lattr)
