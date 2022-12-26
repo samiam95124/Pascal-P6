@@ -3590,7 +3590,11 @@ end;
             if not test then insymbol
           until test;
           if sy = rbrack then insymbol else error(12);
-          fvalu.intval := false; fvalu.valp := lvp
+          fvalu.intval := false; fvalu.valp := lvp;
+          new(lsp,power); pshstc(lsp);
+            with lsp^ do 
+              begin form:=power; elset:=nil; size:=setsize; packing := false; 
+                    matchpack := false end;
         end else
           begin
             if sy = ident then

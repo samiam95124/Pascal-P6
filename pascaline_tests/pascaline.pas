@@ -1,3 +1,4 @@
+{$list-}
 {*******************************************************************************
 *                                                                              *
 *                         TEST SUITE FOR PASCALINE                             *
@@ -180,7 +181,7 @@ begin
 
    ca[5, 5] := 123;
    for x := max(ca, 2) downto 1 do
-      for y := max(ca, 1) downto 1 do write(ca[x, y]:3);
+      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -194,7 +195,7 @@ begin
 
    ca[5, 5] := 123;
    for x := max(ca, 2) downto 1 do
-      for y := max(ca, 1) downto 1 do write(ca[x, y]:3);
+      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -207,7 +208,7 @@ var x, y: integer;
 begin
 
    for x := max(ca, 2) downto 1 do
-      for y := max(ca, 1) downto 1 do write(ca[x, y]:3);
+      begin for y := max(ca, 1) downto 1 do write(ca[x, y]:4); writeln end
 
 end;
 
@@ -397,7 +398,7 @@ begin
 
 *******************************************************************************}
 
-   writeln('ext15: ', not_exp:1,  ' s/b -43');
+   writeln('ext15: ', not_exp:1,  ' s/b 9223372036854775765');
    writeln('ext16: ', mlt_exp:1,  ' s/b 130');
    writeln('ext17: ', div_exp:1,  ' s/b 24');
    writeln('ext18: ', rdiv_exp:1:4, ' s/b 0.0022');
@@ -500,12 +501,13 @@ begin
 
 *******************************************************************************}
 
+   writeln('ext43: ');
    new(miap, 10, 10);
    i := 1;
    for x := 1 to 10 do
-      for y := 1 to 10 do miap^[x, y] := i;
+      for y := 1 to 10 do begin miap^[x, y] := i; i := i+1 end;
    for x := 10 downto 1 do
-      for y := 10 downto 1 do write(miap^[x, y]:3);
+      begin for y := 10 downto 1 do write(miap^[x, y]:4); writeln end;
    writeln('s/b');
    writeln(' 100  99  98  97  96  95  94  93  92  91');
    writeln('  90  89  88  87  86  85  84  83  82  81');
@@ -527,7 +529,7 @@ begin
 
    a := 56;
    b := 13;
-   writeln('ext43: ', not a:1, ' s/b -57');
+   writeln('ext43: ', not a:1, ' s/b 9223372036854775751');
    writeln('ext44: ', a and b:1, ' s/b 8');
    writeln('ext45: ', a or b:1, ' s/b 61');
    writeln('ext46: ', a xor b:1, ' s/b 53');
@@ -549,12 +551,13 @@ begin
    write('ext49: ');
    prtstr2('hi george');
    writeln(' s/b hi george');
+   writeln('ext50:');
    i := 1;
    for x := 1 to 10 do
-      for y := 1 to 10 do mia[x, y] := i;
+      for y := 1 to 10 do begin mia[x, y] := i; i := i+1 end;
    mconarr1(mia);
    for x := 10 downto 1 do
-      for y := 10 downto 1 do write(mia[x, y]:3);
+      begin for y := 10 downto 1 do write(mia[x, y]:4); writeln end;
    writeln('s/b');
    writeln(' 100  99  98  97  96  95  94  93  92  91');
    writeln('  90  89  88  87  86  85  84  83  82  81');
@@ -576,10 +579,13 @@ begin
    writeln('  30  29  28  27  26  25  24  23  22  21');
    writeln('  20  19  18  17  16  15  14  13  12  11');
    writeln('  10   9   8   7   6   5   4   3   2   1');
+   writeln('ext51:');
    i := 1;
    for x := 1 to 10 do
-      for y := 1 to 10 do mia[x, y] := i;
+      for y := 1 to 10 do begin mia[x, y] := i; i := i+1 end;
    mconarr2(mia);
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(mia[x, y]:4); writeln end;
    writeln('s/b');
    writeln(' 100  99  98  97  96  95  94  93  92  91');
    writeln('  90  89  88  87  86  85  84  83  82  81');
@@ -601,9 +607,10 @@ begin
    writeln('  30  29  28  27  26  25  24  23  22  21');
    writeln('  20  19  18  17  16  15  14  13  12  11');
    writeln('  10   9   8   7   6   5   4   3   2   1');
+   writeln('ext52:');
    i := 1;
    for x := 1 to 10 do
-      for y := 1 to 10 do mia[x, y] := i;
+      for y := 1 to 10 do begin mia[x, y] := i; i := i+1 end;
    mconarr3(mia);
    writeln('s/b');
    writeln(' 100  99  98  97  96  95  94  93  92  91');
