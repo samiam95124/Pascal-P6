@@ -231,13 +231,13 @@ if "%compiler%" == "gpc" (
     rem
     rem Set up for GPC Pascal
     rem
-    cp %compiler%\p6.bat      bin\p6.bat
-    cp %compiler%\compile.bat bin\compile.bat
-    cp %compiler%\run.bat     bin\run.bat
+    cp %compiler%\bit%bits%\p6.bat bin\p6.bat
+    cp %compiler%\compile.bat      bin\compile.bat
+    cp %compiler%\run.bat          bin\run.bat
 
-    cp %compiler%\p6          bin\p6
-    cp %compiler%\compile     bin\compile
-    cp %compiler%\run         bin\run
+    cp %compiler%\bit%bits%p6      bin\p6
+    cp %compiler%\compile          bin\compile
+    cp %compiler%\run              bin\run
 
     cp %compiler%\bit%bits%/Makefile    .
 
