@@ -28,6 +28,15 @@ procedure getcommandline(var cb: cmdbuf; var l: cmdnum); - Get the shell command
                                                            line.
 
 This set of extensions is for the GNU Pascal dialect.
+
+Notes:
+
+1. I try to use the native GPC (built-ins) wherever possible. Where there is no
+native function, or the native function dosen't work, an external C function was
+used.
+
+2. The size of int became an issue between 32 and 64 bit versions of GPC. Ignore
+the GPC documentation for that, it is wrong.
   
 }
   
@@ -100,8 +109,14 @@ begin
   append(f);
 end;
 
+/* there does not appear to be a 32/64 equivalent to long int in GPC */
+#ifdef WRDSIZ64
+function open(fn: Cstring; f: shortint): shortint; external name 'open';
+function c_close(fd: shortint): shortint; external name 'close';
+#else /* WRDSIZ32 */
 function open(fn: Cstring; f: integer): integer; external name 'open';
 function c_close(fd: integer): integer; external name 'close';
+#endif
 
 function existsfile(var fn: filnam): boolean;
 var s: string(fillen);
@@ -116,7 +131,11 @@ begin
   existsfile := fd >= 0
 end;
 
+#ifdef WRDSIZ64
+function remove(fn: Cstring): shortint; external name 'remove';
+#else /* WRDSIZ32 */
 function remove(fn: Cstring): integer; external name 'remove';
+#endif
 
 procedure deletefile(var fn: filnam);
 var s: string(fillen);
@@ -130,7 +149,11 @@ begin
   if r <> 0 then errore(FileDeleteFail);
 end;
 
+#ifdef WRDSIZ64
+function rename(fns, fnd: Cstring): shortint; external name 'rename';
+#else /* WRDSIZ32 */
 function rename(fns, fnd: Cstring): integer; external name 'rename';
+#endif
 
 procedure changefile(var fnd, fns: filnam);
 var ss,sd: string(fillen);
