@@ -462,10 +462,14 @@ type
       settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }
       alfa        = packed array[alfainx] of char;
+#ifdef GNU_PASCAL
 {$gnu-pascal}
+#endif
       ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
+#ifdef GNU_PASCAL
 {$classic-pascal-level-0}
+#endif
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }

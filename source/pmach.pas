@@ -449,8 +449,14 @@ type
 
       beta        = packed array[1..25] of char; (*error message*)
       settype     = set of setlow..sethigh;
-      byte        = 0..255; { 8-bit byte }
+#ifdef GNU_PASCAL
+{$gnu-pascal}
+#endif
+      ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
+#ifdef GNU_PASCAL
+{$classic-pascal-level-0}
+#endif
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
@@ -477,8 +483,8 @@ var   pc          : address;   (*program address register*)
       gbtop       : address;   { top of globals, size of globals }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1,q2: address; { extra parameters }
-      store       : packed array [0..maxstr] of byte; { complete program storage }
-      storedef    : packed array [0..maxdef] of byte; { defined bits }
+      store       : packed array [0..maxstr] of ibyte; { complete program storage }
+      storedef    : packed array [0..maxdef] of ibyte; { defined bits }
       sdi         : 0..maxdef; { index for that }
       mp,sp,np,ep : address;  (* address registers *)
       expadr      : address; { exception address of exception handler starts }
@@ -488,7 +494,7 @@ var   pc          : address;   (*program address register*)
         sp  points to top of the stack
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
-      bitmsk      : packed array [0..7] of byte; { bits in byte }
+      bitmsk      : packed array [0..7] of ibyte; { bits in byte }
       
       { check flags: these turn on runtime checks }
       dochkovf: boolean; { check arithmetic overflow }
@@ -781,7 +787,7 @@ end;
 
 function getdef(a: address): boolean;
 
-var b: byte;
+var b: ibyte;
     r: boolean;
 
 begin
@@ -801,7 +807,7 @@ end;
 
 procedure putdef(a: address; b: boolean);
 
-var sb: byte;
+var sb: ibyte;
     r:  boolean;
 
 begin
@@ -1005,7 +1011,7 @@ function litend: boolean;
 var r: record case boolean of
 
          true: (i: integer);
-         false: (b: byte);
+         false: (b: ibyte);
 
        end;
 
@@ -1021,7 +1027,7 @@ function getint(a: address): integer;
 var r: record case boolean of
 
           true:  (i: integer);
-          false: (b: packed array [1..intsize] of byte);
+          false: (b: packed array [1..intsize] of ibyte);
 
        end;
     i: 1..intsize;
@@ -1039,7 +1045,7 @@ procedure putint(a: address; x: integer);
 var r: record case boolean of
 
           true:  (i: integer);
-          false: (b: packed array [1..intsize] of byte);
+          false: (b: packed array [1..intsize] of ibyte);
 
        end;
     i: 1..intsize;
@@ -1059,7 +1065,7 @@ function getrel(a: address): real;
 var r: record case boolean of
 
           true:  (r: real);
-          false: (b: packed array [1..realsize] of byte);
+          false: (b: packed array [1..realsize] of ibyte);
 
        end;
     i: 1..realsize;
@@ -1078,7 +1084,7 @@ procedure putrel(a: address; f: real);
 var r: record case boolean of
 
           true:  (r: real);
-          false: (b: packed array [1..realsize] of byte);
+          false: (b: packed array [1..realsize] of ibyte);
 
        end;
     i: 1..realsize;
@@ -1118,7 +1124,7 @@ procedure getset(a: address; var s: settype);
 var r: record case boolean of
 
           true:  (s: settype);
-          false: (b: packed array [1..setsize] of byte);
+          false: (b: packed array [1..setsize] of ibyte);
 
        end;
     i: 1..setsize;
@@ -1136,7 +1142,7 @@ procedure putset(a: address; s: settype);
 var r: record case boolean of
 
           true:  (s: settype);
-          false: (b: packed array [1..setsize] of byte);
+          false: (b: packed array [1..setsize] of ibyte);
 
        end;
     i: 1..setsize;
@@ -1166,7 +1172,7 @@ begin
 
 end;
 
-function getbyt(a: address): byte;
+function getbyt(a: address): ibyte;
 
 begin
 
@@ -1175,7 +1181,7 @@ begin
 
 end;
 
-procedure putbyt(a: address; b: byte);
+procedure putbyt(a: address; b: ibyte);
 
 begin
 
@@ -1188,7 +1194,7 @@ function getadr(a: address): address;
 var r: record case boolean of
 
           true:  (a: address);
-          false: (b: packed array [1..adrsize] of byte);
+          false: (b: packed array [1..adrsize] of ibyte);
 
        end;
     i: 1..adrsize;
@@ -1208,7 +1214,7 @@ procedure putadr(a: address; ad: address);
 var r: record case boolean of
 
           true:  (a: address);
-          false: (b: packed array [1..adrsize] of byte);
+          false: (b: packed array [1..adrsize] of ibyte);
 
        end;
     i: 1..adrsize;
@@ -1227,7 +1233,7 @@ end;
 
 procedure swpstk(l: address);
 
-var sb: packed array [1..maxsize] of byte;
+var sb: packed array [1..maxsize] of ibyte;
     p:  address;
     i:  1..maxsize;
 
