@@ -5233,6 +5233,9 @@ end;
       end
     end;
     begin fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+      while ((isfunc and (fcp^.klass <> func)) or 
+             (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
+        fcp := fcp^.grpnxt;
       prcnt := 1; ovrl := fcp^.grpnxt <> nil;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
@@ -5616,7 +5619,7 @@ end;
               end;
               if sy in facbegsys then case sy of
         (*id*)    ident:
-                  begin searchid([types,konst,vars,fixedt,field,func],lcp);
+                  begin searchid([types,konst,vars,fixedt,field,func,proc],lcp);
                     insymbol;
                     if isovlfunc(lcp) then
                       begin call(fsys,lcp, inherit, true);
