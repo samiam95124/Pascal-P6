@@ -4215,7 +4215,8 @@ begin (*callsp*)
                          positionbin(bfiltable[fn], i)
                        end;
            49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         updatebin(bfiltable[fn])
+                         updatebin(bfiltable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            50 (*appt*): begin popadr(ad); valfil(ad); fn := store[ad];
                          appendtext(filtable[fn]); filstate[fn] := fwrite;
