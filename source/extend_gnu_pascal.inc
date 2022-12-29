@@ -85,7 +85,7 @@ end;
 
 function locationbin(var f: bytfil): integer;
 begin
-  locationbin := position(f);
+  locationbin := position(f)+1;
 end;
 
 procedure positionbin(var f: bytfil; p: integer);
