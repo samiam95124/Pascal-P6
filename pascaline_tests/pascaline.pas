@@ -694,7 +694,7 @@ begin
    for i := 1 to 10 do begin read(fb, ba); write(ba:3) end;
    writeln(' s/b  99  99  99  99  99   6   7   8   9  10');
 
-   write('fh12: ');
+   writeln('fh12: ');
    rewrite(ft);
    writeln(ft, 'The rain in spain');
    writeln(ft, 'falls mainly on the plain');
@@ -729,6 +729,8 @@ begin
    writeln('s/b');
    writeln('The rain in spain');
    writeln('falls mainly on the plain');
+   writeln('The rain in spain');
+   writeln('falls mainly on the plain');
    writeln('But only on tuesdays and thursdays');
 
 {*******************************************************************************
@@ -747,7 +749,7 @@ begin
 
 *******************************************************************************}
 
-   write('ecs1: ');
+   writeln('ecs1:');
    for i := 1 to 10 do
       case i of
 
@@ -774,7 +776,7 @@ begin
 
 *******************************************************************************}
 
-   write('ew1: ');
+   writeln('ew1:');
    for i := 1 to 10 do writeln('*', 10:-i, '*');
    writeln('s/b');
    writeln('*10*');
@@ -787,7 +789,7 @@ begin
    writeln('*10      *');
    writeln('*10       *');
    writeln('*10        *');
-   writeln('hi there         ':0, '<');
+   writeln('hi there         ':*, '<');
    writeln('s/b');
    writeln('hi there<');
 
@@ -805,7 +807,7 @@ begin
 
 *******************************************************************************}
 
-   write('ol1: ');
+   writeln('ol1:');
    bark;
    bark(52);
    bark('hi there');
@@ -822,8 +824,11 @@ begin
 
 *******************************************************************************}
 
-   write('ov1: ');
+   writeln('ov1:');
    abstract;
+   writeln('s/b');
+   writeln('This is the overriding procedure');
+   writeln('This is the abstract procedure');
 
 {*******************************************************************************
 
@@ -831,7 +836,7 @@ begin
 
 *******************************************************************************}
 
-   write('ex1: ');
+   writeln('ex1:');
    try
 
       writeln('before exception');
@@ -844,7 +849,7 @@ begin
    writeln('before exception');
    writeln('exception taken');
 
-   write('ex2: ');
+   writeln('ex2:');
    try
 
       writeln('In try block')
@@ -852,6 +857,7 @@ begin
    except writeln('exception taken')
    else writeln('exception not taken');
    writeln('s/b');
+   writeln('In try block');
    writeln('exception not taken');
 
 {*******************************************************************************
@@ -860,9 +866,10 @@ begin
 
 *******************************************************************************}
 
-   write('Testing negative assertion, this should not stop here');
+   writeln('as1:');
+   writeln('Testing negative assertion, this should not stop here');
    i := 4;
-   assert(i = 5);
+   assert(i = 4);
 
 {*******************************************************************************
 
@@ -870,10 +877,11 @@ begin
 
 *******************************************************************************}
 
-   write('ex2: ');
+   writeln('ex2:');
    mod1_i := 87;
    mod1_p;
-   writeln('s/b this is the used module: 87');
+   writeln('s/b');
+   writeln('this is the used module: 87');
 
 {*******************************************************************************
 
@@ -881,6 +889,7 @@ begin
 
 *******************************************************************************}
 
+   writeln('ht:');
    writeln('The test should now halt');
    halt;
    writeln('!!! Bad !!! halt did not take effect')

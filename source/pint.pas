@@ -4218,10 +4218,12 @@ begin (*callsp*)
                          updatebin(bfiltable[fn])
                        end;
            50 (*appt*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendtext(filtable[fn])
+                         appendtext(filtable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            58 (*appb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendbin(bfiltable[fn])
+                         appendbin(bfiltable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            51 (*del*): begin popint(i); popadr(ad1); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
