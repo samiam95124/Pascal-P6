@@ -1606,6 +1606,8 @@ end;
     289: write('Var parameter must be compatible with parameter');
     290: write('Cannot threaten view parameter');
     291: write('Set element out of implementation range');
+    292: write('Function expected in this context');
+    293: write('Procedure expected in this context');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -5236,6 +5238,8 @@ end;
       while ((isfunc and (fcp^.klass <> func)) or 
              (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
         fcp := fcp^.grpnxt;
+      if isfunc and (fcp^.klass <> func) then error(292)
+      else if not isfunc and (fcp^.klass <> proc) then error(293);
       prcnt := 1; ovrl := fcp^.grpnxt <> nil;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
@@ -5621,7 +5625,7 @@ end;
         (*id*)    ident:
                   begin searchid([types,konst,vars,fixedt,field,func,proc],lcp);
                     insymbol;
-                    if isovlfunc(lcp) then
+                    if isovlfunc(lcp) or isovlproc(lcp) then
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
