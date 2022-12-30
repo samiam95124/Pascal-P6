@@ -1,69 +1,61 @@
-******************************* NEWS FOR 2022-11-09 ****************************
+******************************* NEWS FOR 2022-12-29 ****************************
 
-Been a long long time since I did a news update here. Apologies.
+End of year news!
 
-I have been working mainly on Petit-Ami. This benifits Pascal-p6 greatly, since it is the API catalog for Pascal-P6.
-I came back to the project mainly to bang out pgen, the code generator program for Pascal-P. This was actually started back in the Pascal-P5 days, but I decided that it was not very useful without expanded calls, like named file access an other features. Indeed, there has never been a code generator for the Pascal-P series that didn't expand the call set.
-pgen compiles and runs the "hello, world" program!
-I expect pgen to self-boot by end of November, 2022-12-01. Note that since Pascal-P6 is itself written in ISO 7185, that means it will be far from a complete system when it self boots. However, that will effectively remove its dependence on GPC or other base compilers.
-I changed the target of pgen from 32 bit I80386 to 64 bit AMD64. There really isn't much use for the 32 bit model anymore, and I notice some Linuxes are dropping the model. Yes, I know you can run 32 bit code on 64 bit Linuxes/Windows, but it is a PITA. In addition, there is a standardized register passing model for AMD64 with 6 available parameter passing registers. With the 32 bit model there is (drumroll) exactly one parameter in fastcall, and you have to specially select that calling convention, besides.
-I updated the Pascal-P6 document to contain the complete intermediate instruction set for Pascaline. It was overdue. I had to do a lot of research to figure out what some of the instructions do, it has been that long.
-That's it for the bullet points. Here's a brief FAQ for pgen:
+1. I returned to implementing the framing changes, see "move to pulldown marks"
+in issues. I just don't like the P5 framing method, and I want to make a few
+changes before I code that in pgen. This is technical, but that would be
+pulldown marks, having the called function/procedure do the framing, instead of
+doing that before the function result and parameter list. This just matches what
+happens in the target processors (x86/Arm) much better. Because changing framing
+is major surgery, I wanted the test catalog to be in good shape before I did
+that. As a result, I went through a complete test series and fixed the resulting
+bugs.
 
-Q. Will Pascal-P6 need a host compiler after pgen?
-A. No, it will self compile.
+2. The PAT and PRT were put into order, run, and the resulting bugs fixed. Self
+compile was run, and partial spew was run (more to do). I will admit the error
+reporting really sucks in many errors, but it always did (P5/P4/P2).
 
-Q. Will it be possible to use another host compiler after pgen?
-A. Yes, indefinately. I will keep the scripts around for other host compilers. pgen will just become another host.
+3. Errors now get reported with full text in-line. I got tired of having to look
+them up at the dictionary at the end.
 
-Q. Can another compiler still be used for Pascal-P6?
-A. Again, indefinately. Pascal-P6 is written in ISO 7185, even though it compiles Pascaline (extended ISO 7185). Thus any ISO 7185 compliant compiler will be able to compile Pascal-P6, just as with the previous Pascal-P5.
+4. I tried using the debugger a few times. It is really beta, and not very
+workable. Apologies for that.
 
-Q. What other compilers can be used to compile Pascal-P6 at present?
-A. Obviously GPC, but that is getting hard to find and install. FPC is (the last time I checked) ISO 7185 compliant, but would need modification to Pascal-P6 to run (again, last time I checked). The issue was with header files, which the ISO 7185 standard largely leaves up to the implementor. There is also p2c, which compiles Pascal-P5 to C code, then allows any C compiler to make the system. There is no reason it could not also compile Pascal-P6. This system is maintained by Trevor.
+5. I began a project to get the implemented Pascaline extentions into shape.
+this is about halfway complete. See the Pascaline implementation list, which is
+#15 in the issues list. This involves completing the Pascaline AT or Acceptance
+Test in ./pascaline_tests, and fixing the bugs found.
 
-Q. What is Pascal-P6 dependent on with pgen?
-A. It is dependent on GCC/GAS (Gnu C compiler and Gnu assembler). I have also been able to substitute LLVM for GCC, and will try that system in the future. There is no reason other C compilers also cannot be used. The main dependency there is they must support original ANSI/Whitebook libc calls. Even a lot of embedded systems do that nowadays.
+Other notes:
 
-Q. How much trouble would it be to change assemblers?
-A. It should be quite easy. Most of it would be format changes, for example GAS uses left to right move format, but (for example) NASM uses Intel right to left. There are other differences.
+I got some pushback on not creating a versioned release for P6, and I admit this
+needs doing. I will also admit that the main reason is that I don't want people
+to characterize P6 as "only an interpreter". It is not.
 
-Q. How much work is it to port pgen to different machines?
-A. pgen is designed to be the simplest compiler possible, and has a structure that enables easy porting, so it should be quite easy.
+The other reason is that there are a lot of band-aids on P6 because of it's host
+implementation, presently GPC. Besides difficultly to find and set up that 
+compiler, but also ugly workarounds with it. A really good example of this is
+some changes I needed to make to get byte files to work. The declaration:
 
-Q. What machines/models (other than AMD64) are planned or important?
-A. Most likely ARM32/64 or RISC-V 32/64. 64 bit is the first and most important support plan, because virtually all hosts run 64 bit now. 32 bit is still interesting because of embedded processors, which largely don't need 64 bits. I don't see a 32 bit x86 right now because it is virtually unused in embedded applications.
+type bytfil = packed file of byte;
 
-Q. What library calls are supported?
-A. pgen already calls a lot of C routines, because its support library is written in C (see below). This is enabled by the fact pgen uses the same register based calling convention. That means outcalls to C are relatively easy. Pascaline already has a very extensive porting library called Petit-Ami, written in C. I expect that to be available soon after the compiler bootstraps.
+Works, and I/O to it is bytes, but it only works in GPC mode. In standard mode
+it does not, apparently because:
 
-Q. What protections will carry over to the pgen machine encoded model?
-A. So far only the undefined checks have not been included. This would require a bit database for all variable areas in the generated binary. However, I have looked into ways to get around that, like producing a bitmap for the entire .bss segment, and/or implementing malloc() locally, so we can define where the heap lives.
+type byte = 0..255;
 
-Q. What about calling non-Petit-Ami libraries?
-A. Because pgen is calling convention compatible with GCC, it is very easy to make wrappers for other APIs. the main issue is that over 6 parameters, you have to deal with Pascal's right to left convention and convert to C's left to right convention (its always been a problem). Your wrapper must stack invert. There is an automatic wrapper generator called ch2ph. I used it to generate the complete call catalog for the Windows API. One of the nice things about Pascal-P6 using Pascaline as the source language is that there are a lot of programs like that out there. This can be used to make Pascal programs that directly call Windows/Xwindows API. Why in the world you would want to do that is another subject.
+Does not give you a true byte, even in a packed file. ISO 7185 *does* make 
+extending it to integer standard, *but* packing it into a file is valid, and in
+fact records and arrays can do that, it works in pint. I *think* it used to work
+in GPC 32 bit, but I can't verify that, since my GPC/Windows32 implementation no
+longer functions.
 
-Please post any other FAQs you have.
-
-A brief description of pgen (specifically pgen_gcc_AMD64.pas):
-
-pgen is built using the assembler part of pint. Essentially, instead of generating code for the Pascal-P machine, it generates real code for AMD64 CPUs. It is a register oriented compiler, meaning that it loads and stores operands to and from registers. The register allocation is done by gathering expression operators into a tree, and allocating them there.
-
-The reasons for starting with a register based code generator are:
-
-It is a small increment in effort to do register generation vs. linear or threaded code, but gives huge performance advantages.
-It allows calling GCC routines directly, since GCC uses the same calling convention up to 6 parameters.
-pgen uses expression trees, and not full graphing of the intermediate, which dramatically simplifies the compiler.
-
-Another system that gives a simpler compiler is that pgen uses "code strips" to generate the assembly code. These are statements like:
-
-wrtins('mov #0,%r1');
-
-wrtins() is a fairly simple macro processor that substitutes patterns in the string, like #0 becomes a constant, and %r1 becomes a register, etc. This means that each instruction sequence pgen generates looks like the actual code that gets generated.
-
-pgen takes an intermediate file and generates an assembly language file as a result (.s file). All of the library support calls it needs to run ISO 7185 functions are contained in the C language file psystem.c.
-
-That's it for now. More documentation will be provided in "the_p6_compiler.docx", in the doc directory.
+So the above bytfil declare works, BUT ONLY WITH GPC EXTENDED MODE ON! Why? 
+Because the GPC built-in byte type is *magical*, and can only be accessed in GPC
+extended mode. Thus I had to work around that by declaring a special ibyte so
+the two values wouldn't conflict. This is a good example of a workaround I would
+like to flush.
 
 Scott Franco
 San Jose, CA
