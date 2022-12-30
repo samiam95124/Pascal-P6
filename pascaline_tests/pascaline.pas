@@ -811,7 +811,7 @@ begin
    bark;
    bark(52);
    bark('hi there');
-   writeln(bark);
+   writeln(bark:1);
    writeln('s/b');
    writeln('This is bark');
    writeln('bark: the integer is: 52');
