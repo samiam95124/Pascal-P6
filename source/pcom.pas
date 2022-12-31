@@ -6385,8 +6385,6 @@ end;
               if not (sy in fsys + [semicolon]) then
               begin
                 repeat constexpr(fsys + [comma,colon,lparent,range],lsp3,lvalu);
-                  gettag(tagp); tagp^.ival := lvalu.ival; tagp^.next := tagl;
-                  tagl := tagp;
                   rvalu := lvalu; lsp4 := lsp3; if sy = range then begin chkstd;
                     insymbol; constexpr(fsys + [comma,colon,lparent],lsp4,rvalu)
                   end;
@@ -6401,6 +6399,8 @@ end;
                     begin rvalu.intval := true; rvalu.ival := 1 end;
                   if lvalu.ival > rvalu.ival then error(225);
                   repeat { case range }
+                    gettag(tagp); tagp^.ival := lvalu.ival; tagp^.next := tagl;
+                    tagl := tagp;
                     new(lsp3,variant); pshstc(lsp3);
                     with lsp3^ do
                       begin form := variant; varln := varlnm;

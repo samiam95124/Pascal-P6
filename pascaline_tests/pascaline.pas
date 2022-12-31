@@ -1,4 +1,4 @@
-{$list-}
+{$list+}
 {*******************************************************************************
 *                                                                              *
 *                         TEST SUITE FOR PASCALINE                             *
@@ -110,22 +110,27 @@ type enum_a  = (one, two, three);
      pstring = ^string;
      byte    = 0..255;
 
-var s:      ^string;
-    st:     packed array 10 of char;
-    ia:     ^iarr;
-    miap:   ^miarr;
-    a, b:   integer;
-    ft:     text;
-    fb:     file of byte;
-    ba:     byte;
-    sp:     pstring;
-    mia:    array 10, 10 of integer;
-    cd:     cardinal;
-    li:     linteger;
-    lc:     lcardinal;
-    excpt:  exception;
-    s2(10): string;
-    v(10):  vector;
+var s:         ^string;
+    st:        packed array 10 of char;
+    ia:        ^iarr;
+    miap:      ^miarr;
+    a, b:      integer;
+    ft:        text;
+    fb:        file of byte;
+    ba:        byte;
+    sp:        pstring;
+    mia:       array 10, 10 of integer;
+    cd:        cardinal;
+    li:        linteger;
+    lc:        lcardinal;
+    excpt:     exception;
+    s2(10):    string;
+    v(10):     vector;
+    m(10, 10): matrix;
+    vr:        record case e: enum_a of
+                 one..two: (i: integer);
+                 three:    (c: char)
+               end;
 
 { this tests duplication of parameter lists }
 
@@ -271,6 +276,29 @@ begin
 
    for i := 1 to l do v[i] := i+20;
    for i := l downto 1 do write(v[i]:3)
+
+end;
+
+procedure parvar2(x, y: integer);
+
+var m(x, y): matrix;
+    i:       integer;
+
+begin
+
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m[x, y] := i; i := i+1 end;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m[x, y]:4); writeln end
+
+end;
+
+procedure outpar(out i: integer);
+
+begin
+
+   i := 42
 
 end;
 
@@ -520,8 +548,7 @@ begin
    writeln(' s/b 20 19 18 17 16 15 14 13 12 11');
    write('sdc7: ');
    parvar(10);
-   writeln(' s/b 20 19 18 17 16 15 14 13 12 11');
-
+   writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
 
 {*******************************************************************************
 
@@ -529,7 +556,7 @@ begin
 
 *******************************************************************************}
 
-   writeln('ext43: ');
+   writeln('mdc1: ');
    new(miap, 10, 10);
    i := 1;
    for x := 1 to 10 do
@@ -549,6 +576,38 @@ begin
    writeln('  10   9   8   7   6   5   4   3   2   1');
    dispose(miap);
 
+   writeln('mdc2: ');
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m[x, y] := i; i := i+1 end;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m[x, y]:4); writeln end;
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
+   writeln('mdc3: ');
+   parvar2(10, 10);
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
 {*******************************************************************************
 
                  Variable boolean integer expressions
@@ -561,6 +620,16 @@ begin
    writeln('ext44: ', a and b:1, ' s/b 8');
    writeln('ext45: ', a or b:1, ' s/b 61');
    writeln('ext46: ', a xor b:1, ' s/b 53');
+
+{*******************************************************************************
+
+                               Out parameters
+
+*******************************************************************************}
+
+   write('op1: ');
+   outpar(i);
+   writeln(i:1, ' s/b 42');
 
 {*******************************************************************************
 
@@ -797,6 +866,24 @@ begin
    writeln('8: from 5 to 10');
    writeln('9: from 5 to 10');
    writeln('10: from 5 to 10');
+
+{*******************************************************************************
+
+                          variant record case ranges
+
+*******************************************************************************}
+
+   write('vcr1: ');
+   vr.e := one;
+   vr.i := 42;
+   write(vr.i:1, ' ');
+   vr.e := two;
+   vr.i := 43;
+   write(vr.i:1, ' ');
+   vr.e := three;
+   vr.c := 'a';
+   write(vr.c, ' ');
+   writeln(' s/b 42 43 a');
 
 {*******************************************************************************
 
