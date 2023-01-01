@@ -294,6 +294,21 @@ begin
 
 end;
 
+{ can create two parvars, can copy one to the other }
+
+procedure parvar3(l: integer);
+
+var v1(l), v2(l): vector;
+    i:    integer;
+
+begin
+
+   for i := 1 to l do v1[i] := i+20;
+   v2 := v1;
+   for i := l downto 1 do write(v2[i]:3)
+
+end;
+
 procedure outpar(out i: integer);
 
 begin
@@ -548,6 +563,8 @@ begin
    writeln(' s/b 20 19 18 17 16 15 14 13 12 11');
    write('sdc7: ');
    parvar(10);
+   writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
+   parvar3(10);
    writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
 
 {*******************************************************************************

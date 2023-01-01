@@ -348,7 +348,8 @@ type                                                        (*describing:*)
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp;
                              hdr: boolean; vext: boolean; vmod: filptr;
-                             inilab: integer; ininxt: ctp; dblptr: boolean);
+                             inilab: integer; skplab: integer; ininxt: ctp; 
+                             dblptr: boolean);
                      fixedt: (floc: integer; fext: boolean; fmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
@@ -6900,7 +6901,8 @@ end;
             { parameterized type specification }
             if nxt <> nil then begin { gen code strip label }
               lcp^.ininxt := display[top].inilst; display[top].inilst := lcp;
-              genlabel(lcp^.inilab); putlabel(lcp^.inilab)
+              genlabel(lcp^.inilab); putlabel(lcp^.inilab); 
+              genlabel(lcp^.skplab)
             end;
             insymbol;
             repeat
@@ -6913,6 +6915,7 @@ end;
               test := sy <> comma;
               if not test then insymbol
             until test;
+            genujpxjpcal(57(*ujp*),lcp^.skplab);
             if sy = rparent then insymbol else error(4)
           end;
           if (maxpar <> 0) and (curpar <> maxpar) then error(269);
@@ -6948,8 +6951,8 @@ end;
               { mark symbol }
               if prcode then
                 if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
-              nxt := next;
               if maxpar > 0 then begin
+                putlabel(nxt^.skplab);
                 { load variable address }
                 if level <= 1 then gen1(37(*lao*),vaddr)
                 else gen2(50(*lda*),level-vlev,vaddr);
@@ -6962,7 +6965,8 @@ end;
                 gen0(90(*ret*)); { issue code strip return }
                 { remove initializers, var addr }
                 mesl(maxpar*intsize+adrsize)
-              end
+              end;
+              nxt := next
             end;
         if sy = semicolon then
           begin insymbol;
