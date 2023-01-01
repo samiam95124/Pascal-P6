@@ -180,9 +180,9 @@
 #endif
 
 program pint(input,output,prd,prr
-              { Pascaline start !
+#ifdef PASCALINE
               ,command
-              ! Pascaline end }
+#endif
               );
 
 label 1;
@@ -4172,6 +4172,8 @@ begin (*callsp*)
                           fn := store[ad];
                           if fn = inputfn then putchr(ad+fileidsize, input^)
                           else if fn = prdfn then putchr(ad+fileidsize, prd^)
+                          else if fn = commandfn then 
+                            putchr(ad+fileidsize, bufcommand)
                           else begin
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)
@@ -4180,6 +4182,7 @@ begin (*callsp*)
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
+
                           { load buffer only if in read mode, and buffer is
                             empty }
                           if (filstate[fn] = fread) and not filbuff[fn] then

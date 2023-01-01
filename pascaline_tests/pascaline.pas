@@ -309,6 +309,22 @@ begin
 
 end;
 
+procedure parvar4(x, y: integer);
+
+var m1(x, y), m2(x, y): matrix;
+    i:       integer;
+
+begin
+
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m1[x, y] := i; i := i+1 end;
+   m2 := m1;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m2[x, y]:4); writeln end
+
+end;
+
 procedure outpar(out i: integer);
 
 begin
@@ -564,6 +580,7 @@ begin
    write('sdc7: ');
    parvar(10);
    writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
+   write('sdc8: ');
    parvar3(10);
    writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
 
@@ -613,6 +630,20 @@ begin
 
    writeln('mdc3: ');
    parvar2(10, 10);
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
+   writeln('mdc4: ');
+   parvar4(10, 10);
    writeln('s/b');
    writeln(' 100  99  98  97  96  95  94  93  92  91');
    writeln('  90  89  88  87  86  85  84  83  82  81');
