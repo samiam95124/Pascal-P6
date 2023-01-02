@@ -4269,12 +4269,14 @@ begin (*callsp*)
            78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternaltext(filtable[fn], fl1)
+                         assignexternaltext(filtable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            79(*aefb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternalbin(bfiltable[fn], fl1)
+                         assignexternalbin(bfiltable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            80(*rdie*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad);
                          readi(commandfn, i, w, false); putint(ad, i);
