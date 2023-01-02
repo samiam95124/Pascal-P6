@@ -473,7 +473,7 @@ type
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
-      filsts      = (fclosed, fread, fwrite);
+      filsts      = (fnone, fclosed, fread, fwrite);
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
@@ -3179,7 +3179,7 @@ begin
        i := commandfn+1; { start search after the header files }
        ff := 0;
        while i <= maxfil do begin
-         if filstate[i] = fclosed then begin ff := i; i := maxfil end;
+         if filstate[i] = fnone then begin ff := i; i := maxfil end;
          i := i+1
        end;
        if ff = 0 then errore(TooManyFiles);
@@ -7380,7 +7380,7 @@ begin (* main *)
 
   { initalize file state }
   for i := 1 to maxfil do
-    begin filstate[i] := fclosed; filanamtab[i] := false end;
+    begin filstate[i] := fnone; filanamtab[i] := false end;
 
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;
