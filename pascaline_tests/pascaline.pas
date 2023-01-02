@@ -1,4 +1,4 @@
-{$list-}
+{$list+}
 {*******************************************************************************
 *                                                                              *
 *                         TEST SUITE FOR PASCALINE                             *
@@ -110,20 +110,27 @@ type enum_a  = (one, two, three);
      pstring = ^string;
      byte    = 0..255;
 
-var s:     ^string;
-    st:    packed array 10 of char;
-    ia:    ^iarr;
-    miap:  ^miarr;
-    a, b:  integer;
-    ft:    text;
-    fb:    file of byte;
-    ba:    byte;
-    sp:    pstring;
-    mia:   array 10, 10 of integer;
-    cd:    cardinal;
-    li:    linteger;
-    lc:    lcardinal;
-    excpt: exception;
+var s:         ^string;
+    st:        packed array 10 of char;
+    ia:        ^iarr;
+    miap:      ^miarr;
+    a, b:      integer;
+    ft:        text;
+    fb:        file of byte;
+    ba:        byte;
+    sp:        pstring;
+    mia:       array 10, 10 of integer;
+    cd:        cardinal;
+    li:        linteger;
+    lc:        lcardinal;
+    excpt:     exception;
+    s2(10):    string;
+    v(10):     vector;
+    m(10, 10): matrix;
+    vr:        record case e: enum_a of
+                 one..two: (i: integer);
+                 three:    (c: char)
+               end;
 
 { this tests duplication of parameter lists }
 
@@ -255,6 +262,74 @@ begin
    writeln('This is the overriding procedure');
 
    inherited abstract
+
+end;
+
+{ parameterized variables }
+
+procedure parvar(l: integer);
+
+var v(l): vector;
+    i:    integer;
+
+begin
+
+   for i := 1 to l do v[i] := i+20;
+   for i := l downto 1 do write(v[i]:3)
+
+end;
+
+procedure parvar2(x, y: integer);
+
+var m(x, y): matrix;
+    i:       integer;
+
+begin
+
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m[x, y] := i; i := i+1 end;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m[x, y]:4); writeln end
+
+end;
+
+{ can create two parvars, can copy one to the other }
+
+procedure parvar3(l: integer);
+
+var v1(l), v2(l): vector;
+    i:    integer;
+
+begin
+
+   for i := 1 to l do v1[i] := i+20;
+   v2 := v1;
+   for i := l downto 1 do write(v2[i]:3)
+
+end;
+
+procedure parvar4(x, y: integer);
+
+var m1(x, y), m2(x, y): matrix;
+    i:       integer;
+
+begin
+
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m1[x, y] := i; i := i+1 end;
+   m2 := m1;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m2[x, y]:4); writeln end
+
+end;
+
+procedure outpar(out i: integer);
+
+begin
+
+   i := 42
 
 end;
 
@@ -427,16 +502,16 @@ begin
 
 *******************************************************************************}
 
-   write('ext33: ');
+   write('f1: ');
    for i := 1 to 5 do write(f_ai[i]:1, ' ');
    writeln(' s/b 1 5 3 10 92');
-   write('ext34: ');
+   write('f2: ');
    for i := 1 to 5 do write(f_ac[i]);
    writeln(' s/b ahuoz');
-   write('ext35: ');
+   write('f3: ');
    for i := 1 to 5 do write(f_ar[i]:1:1, ' ');
    writeln(' s/b 1.1 1.2 1.3 1.4 1.5');
-   write('ext36: ');
+   write('f4: ');
    for x := 1 to 3 do
       for y := 1 to 4 do write(f_ma[x, y]:1, ' ');
    writeln(' s/b 1 3 64 2 12 31 647 21 190 32 641 243');
@@ -448,7 +523,7 @@ begin
 
 *******************************************************************************}
 
-   write('ext38: ');
+   write('tc1: ');
    for i := 0 to 2 do case enum_a(i) of
 
       one: write('one ');
@@ -464,23 +539,23 @@ begin
 
 *******************************************************************************}
 
-   write('ext39: ');
+   write('sdc1: ');
    new(s, 10);
    s^ := 'hi there ?';
    write(s^);
    writeln(' s/b hi there ?');
-   write('ext40: ');
+   write('sdc2: ');
    new(s, 10);
    s^ := 'hi there ?';
    st := s^;
    write(st);
    writeln(' s/b hi there ?');
-   write('ext41: ');
+   write('sdc3: ');
    new(s, 10);
    s^ := 'hi there ?';
    for i := 1 to 10 do write(s^[i]);
    writeln(' s/b hi there ?');
-   write('ext42: ');
+   write('sdc4: ');
    new(ia, 10);
    ia^[1] := 143;
    ia^[2] := 276;
@@ -494,6 +569,20 @@ begin
    ia^[10] := 1;
    for i := 1 to 10 do write(ia^[i]:1, ' ');
    writeln(' s/b 143 276 388 412 574 622 74 83 99 1');
+   write('sdc5: ');
+   s2 := 'hi there ?';
+   write(s2);
+   writeln(' s/b hi there ?');
+   write('sdc6: ');
+   for i := 1 to 10 do v[i] := i+10;
+   for i := 10 downto 1 do write(v[i]:3);
+   writeln(' s/b 20 19 18 17 16 15 14 13 12 11');
+   write('sdc7: ');
+   parvar(10);
+   writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
+   write('sdc8: ');
+   parvar3(10);
+   writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
 
 {*******************************************************************************
 
@@ -501,7 +590,7 @@ begin
 
 *******************************************************************************}
 
-   writeln('ext43: ');
+   writeln('mdc1: ');
    new(miap, 10, 10);
    i := 1;
    for x := 1 to 10 do
@@ -521,6 +610,52 @@ begin
    writeln('  10   9   8   7   6   5   4   3   2   1');
    dispose(miap);
 
+   writeln('mdc2: ');
+   i := 1;
+   for x := 1 to 10 do
+      for y := 1 to 10 do begin m[x, y] := i; i := i+1 end;
+   for x := 10 downto 1 do
+      begin for y := 10 downto 1 do write(m[x, y]:4); writeln end;
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
+   writeln('mdc3: ');
+   parvar2(10, 10);
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
+   writeln('mdc4: ');
+   parvar4(10, 10);
+   writeln('s/b');
+   writeln(' 100  99  98  97  96  95  94  93  92  91');
+   writeln('  90  89  88  87  86  85  84  83  82  81');
+   writeln('  80  79  78  77  76  75  74  73  72  71');
+   writeln('  70  69  68  67  66  65  64  63  62  61');
+   writeln('  60  59  58  57  56  55  54  53  52  51');
+   writeln('  50  49  48  47  46  45  44  43  42  41');
+   writeln('  40  39  38  37  36  35  34  33  32  31');
+   writeln('  30  29  28  27  26  25  24  23  22  21');
+   writeln('  20  19  18  17  16  15  14  13  12  11');
+   writeln('  10   9   8   7   6   5   4   3   2   1');
+
 {*******************************************************************************
 
                  Variable boolean integer expressions
@@ -533,6 +668,16 @@ begin
    writeln('ext44: ', a and b:1, ' s/b 8');
    writeln('ext45: ', a or b:1, ' s/b 61');
    writeln('ext46: ', a xor b:1, ' s/b 53');
+
+{*******************************************************************************
+
+                               Out parameters
+
+*******************************************************************************}
+
+   write('op1: ');
+   outpar(i);
+   writeln(i:1, ' s/b 42');
 
 {*******************************************************************************
 
@@ -694,7 +839,7 @@ begin
    for i := 1 to 10 do begin read(fb, ba); write(ba:3) end;
    writeln(' s/b  99  99  99  99  99   6   7   8   9  10');
 
-   write('fh12: ');
+   writeln('fh12: ');
    rewrite(ft);
    writeln(ft, 'The rain in spain');
    writeln(ft, 'falls mainly on the plain');
@@ -729,6 +874,8 @@ begin
    writeln('s/b');
    writeln('The rain in spain');
    writeln('falls mainly on the plain');
+   writeln('The rain in spain');
+   writeln('falls mainly on the plain');
    writeln('But only on tuesdays and thursdays');
 
 {*******************************************************************************
@@ -747,7 +894,7 @@ begin
 
 *******************************************************************************}
 
-   write('ecs1: ');
+   writeln('ecs1:');
    for i := 1 to 10 do
       case i of
 
@@ -770,13 +917,32 @@ begin
 
 {*******************************************************************************
 
+                          variant record case ranges
+
+*******************************************************************************}
+
+   write('vcr1: ');
+   vr.e := one;
+   vr.i := 42;
+   write(vr.i:1, ' ');
+   vr.e := two;
+   vr.i := 43;
+   write(vr.i:1, ' ');
+   vr.e := three;
+   vr.c := 'a';
+   write(vr.c, ' ');
+   writeln(' s/b 42 43 a');
+
+{*******************************************************************************
+
                        Extended write/writeln statements
 
 *******************************************************************************}
 
-   write('ew1: ');
-   for i := 1 to 10 do writeln('*', 10:-i, '*');
+   writeln('ew1:');
+   for i := 0 to 10 do writeln('*', 10:-i, '*');
    writeln('s/b');
+   writeln('*10*');
    writeln('*10*');
    writeln('*10*');
    writeln('*10 *');
@@ -787,9 +953,188 @@ begin
    writeln('*10      *');
    writeln('*10       *');
    writeln('*10        *');
-   writeln('hi there         ':0, '<');
+
+   writeln('ew2:');
+   for i := 0 to 10 do writeln('*', 'hi there':i, '*');
+   writeln('s/b');
+   writeln('**');
+   writeln('*h*');
+   writeln('*hi*');
+   writeln('*hi *');
+   writeln('*hi t*');
+   writeln('*hi th*');
+   writeln('*hi the*');
+   writeln('*hi ther*');
+   writeln('*hi there*');
+   writeln('* hi there*');
+   writeln('*  hi there*');
+
+   writeln('ew3:');
+   for i := 0 to 10 do writeln('*', 'hi there':-i, '*');
+   writeln('s/b');
+   writeln('**');
+   writeln('*h*');
+   writeln('*hi*');
+   writeln('*hi *');
+   writeln('*hi t*');
+   writeln('*hi th*');
+   writeln('*hi the*');
+   writeln('*hi ther*');
+   writeln('*hi there*');
+   writeln('*hi there *');
+   writeln('*hi there  *');
+
+   writeln('ew4:');
+   writeln('hi there         ':*, '<');
    writeln('s/b');
    writeln('hi there<');
+
+   writeln('ew5:');
+   for i := 0 to 10 do writeln('*', 10:#i, '*');
+   writeln('s/b');
+   writeln('*10*');
+   writeln('*10*');
+   writeln('*10*');
+   writeln('*010*');
+   writeln('*0010*');
+   writeln('*00010*');
+   writeln('*000010*');
+   writeln('*0000010*');
+   writeln('*00000010*');
+   writeln('*000000010*');
+   writeln('*0000000010*');
+
+   writeln('ew6:');
+   for i := 0 to 10 do writeln('*', 10:#-i, '*');
+   writeln('s/b');
+   writeln('*10*');
+   writeln('*10*');
+   writeln('*10*');
+   writeln('*10 *');
+   writeln('*10  *');
+   writeln('*10   *');
+   writeln('*10    *');
+   writeln('*10     *');
+   writeln('*10      *');
+   writeln('*10       *');
+   writeln('*10        *');
+
+   writeln('ew7: ', $abcdef$:1, ' s/b abcdef');
+   writeln('ew8: ', &76543&:1, ' s/b 76543');
+   writeln('ew9: ', %1100101%:1, ' s/b 1100101');
+
+   writeln('ew10:');
+   for i := 0 to 10 do writeln('*', $123abc$:i, '*');
+   writeln('s/b');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('* 123abc*');
+   writeln('*  123abc*');
+   writeln('*   123abc*');
+   writeln('*    123abc*');
+
+   writeln('ew11:');
+   for i := 0 to 10 do writeln('*', $123abc$:-i, '*');
+   writeln('s/b');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc *');
+   writeln('*123abc  *');
+   writeln('*123abc   *');
+   writeln('*123abc    *');
+
+   writeln('ew12:');
+   for i := 0 to 10 do writeln('*', $123abc$:#i, '*');
+   writeln('s/b');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*0123abc*');
+   writeln('*00123abc*');
+   writeln('*000123abc*');
+   writeln('*0000123abc*');
+
+   writeln('ew13:');
+   for i := 0 to 10 do writeln('*', $123abc$:#-i, '*');
+   writeln('s/b');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc*');
+   writeln('*123abc *');
+   writeln('*123abc  *');
+   writeln('*123abc   *');
+   writeln('*123abc    *');
+
+   writeln('ew14:');
+   for i := 0 to 10 do writeln('*', &123765&:i, '*');
+   writeln('s/b');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('* 123765*');
+   writeln('*  123765*');
+   writeln('*   123765*');
+   writeln('*    123765*');
+
+   writeln('ew15:');
+   for i := 0 to 10 do writeln('*', &123765&:-i, '*');
+   writeln('s/b');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765 *');
+   writeln('*123765  *');
+   writeln('*123765   *');
+   writeln('*123765    *');
+
+   writeln('ew16:');
+   for i := 0 to 10 do writeln('*', &123765&:#i, '*');
+   writeln('s/b');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*0123765*');
+   writeln('*00123765*');
+   writeln('*000123765*');
+   writeln('*0000123765*');
+
+   writeln('ew17:');
+   for i := 0 to 10 do writeln('*', &123765&:#-i, '*');
+   writeln('s/b');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765*');
+   writeln('*123765 *');
+   writeln('*123765  *');
+   writeln('*123765   *');
+   writeln('*123765    *');
 
 {*******************************************************************************
 
@@ -805,11 +1150,11 @@ begin
 
 *******************************************************************************}
 
-   write('ol1: ');
+   writeln('ol1:');
    bark;
    bark(52);
    bark('hi there');
-   writeln(bark);
+   writeln(bark:1);
    writeln('s/b');
    writeln('This is bark');
    writeln('bark: the integer is: 52');
@@ -822,8 +1167,11 @@ begin
 
 *******************************************************************************}
 
-   write('ov1: ');
+   writeln('ov1:');
    abstract;
+   writeln('s/b');
+   writeln('This is the overriding procedure');
+   writeln('This is the abstract procedure');
 
 {*******************************************************************************
 
@@ -831,7 +1179,7 @@ begin
 
 *******************************************************************************}
 
-   write('ex1: ');
+   writeln('ex1:');
    try
 
       writeln('before exception');
@@ -844,7 +1192,7 @@ begin
    writeln('before exception');
    writeln('exception taken');
 
-   write('ex2: ');
+   writeln('ex2:');
    try
 
       writeln('In try block')
@@ -852,6 +1200,7 @@ begin
    except writeln('exception taken')
    else writeln('exception not taken');
    writeln('s/b');
+   writeln('In try block');
    writeln('exception not taken');
 
 {*******************************************************************************
@@ -860,9 +1209,10 @@ begin
 
 *******************************************************************************}
 
-   write('Testing negative assertion, this should not stop here');
+   writeln('as1:');
+   writeln('Testing negative assertion, this should not stop here');
    i := 4;
-   assert(i = 5);
+   assert(i = 4);
 
 {*******************************************************************************
 
@@ -870,10 +1220,11 @@ begin
 
 *******************************************************************************}
 
-   write('ex2: ');
+   writeln('ex2:');
    mod1_i := 87;
    mod1_p;
-   writeln('s/b this is the used module: 87');
+   writeln('s/b');
+   writeln('this is the used module: 87');
 
 {*******************************************************************************
 
@@ -881,6 +1232,7 @@ begin
 
 *******************************************************************************}
 
+   writeln('ht:');
    writeln('The test should now halt');
    halt;
    writeln('!!! Bad !!! halt did not take effect')

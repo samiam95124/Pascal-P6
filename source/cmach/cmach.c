@@ -2218,6 +2218,7 @@ void callsp(void)
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
                 }
+                filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 50 /*appt*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
@@ -2225,6 +2226,7 @@ void callsp(void)
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "w")) errore(FILEOPENFAIL);
                 }
+                filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 58 /*appb*/: popadr(ad); valfil(ad); fn = store[ad];
                 if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
@@ -2232,6 +2234,7 @@ void callsp(void)
                   if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
                   if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
                 }
+                filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 51 /*del*/: popint(i); popadr(ad1);
                   for (j = 0; j < i; i++) fl1[j] = store[ad1+j]; fl1[j] = 0;

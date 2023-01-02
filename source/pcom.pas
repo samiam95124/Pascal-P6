@@ -348,7 +348,8 @@ type                                                        (*describing:*)
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
                              threat: boolean; forcnt: integer; part: partyp;
                              hdr: boolean; vext: boolean; vmod: filptr;
-                             inilab: integer; ininxt: ctp; dblptr: boolean);
+                             inilab: integer; skplab: integer; ininxt: ctp; 
+                             dblptr: boolean);
                      fixedt: (floc: integer; fext: boolean; fmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
@@ -1606,6 +1607,8 @@ end;
     289: write('Var parameter must be compatible with parameter');
     290: write('Cannot threaten view parameter');
     291: write('Set element out of implementation range');
+    292: write('Function expected in this context');
+    293: write('Procedure expected in this context');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -5233,6 +5236,11 @@ end;
       end
     end;
     begin fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+      while ((isfunc and (fcp^.klass <> func)) or 
+             (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
+        fcp := fcp^.grpnxt;
+      if isfunc and (fcp^.klass <> func) then error(292)
+      else if not isfunc and (fcp^.klass <> proc) then error(293);
       prcnt := 1; ovrl := fcp^.grpnxt <> nil;
       with fcp^ do
         begin nxt := pflist; lkind := pfkind;
@@ -5616,9 +5624,9 @@ end;
               end;
               if sy in facbegsys then case sy of
         (*id*)    ident:
-                  begin searchid([types,konst,vars,fixedt,field,func],lcp);
+                  begin searchid([types,konst,vars,fixedt,field,func,proc],lcp);
                     insymbol;
-                    if isovlfunc(lcp) then
+                    if isovlfunc(lcp) or isovlproc(lcp) then
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
@@ -6378,8 +6386,6 @@ end;
               if not (sy in fsys + [semicolon]) then
               begin
                 repeat constexpr(fsys + [comma,colon,lparent,range],lsp3,lvalu);
-                  gettag(tagp); tagp^.ival := lvalu.ival; tagp^.next := tagl;
-                  tagl := tagp;
                   rvalu := lvalu; lsp4 := lsp3; if sy = range then begin chkstd;
                     insymbol; constexpr(fsys + [comma,colon,lparent],lsp4,rvalu)
                   end;
@@ -6394,6 +6400,8 @@ end;
                     begin rvalu.intval := true; rvalu.ival := 1 end;
                   if lvalu.ival > rvalu.ival then error(225);
                   repeat { case range }
+                    gettag(tagp); tagp^.ival := lvalu.ival; tagp^.next := tagl;
+                    tagl := tagp;
                     new(lsp3,variant); pshstc(lsp3);
                     with lsp3^ do
                       begin form := variant; varln := varlnm;
@@ -6893,7 +6901,8 @@ end;
             { parameterized type specification }
             if nxt <> nil then begin { gen code strip label }
               lcp^.ininxt := display[top].inilst; display[top].inilst := lcp;
-              genlabel(lcp^.inilab); putlabel(lcp^.inilab)
+              genlabel(lcp^.inilab); putlabel(lcp^.inilab); 
+              genlabel(lcp^.skplab)
             end;
             insymbol;
             repeat
@@ -6906,6 +6915,7 @@ end;
               test := sy <> comma;
               if not test then insymbol
             until test;
+            genujpxjpcal(57(*ujp*),lcp^.skplab);
             if sy = rparent then insymbol else error(4)
           end;
           if (maxpar <> 0) and (curpar <> maxpar) then error(269);
@@ -6941,8 +6951,8 @@ end;
               { mark symbol }
               if prcode then
                 if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
-              nxt := next;
               if maxpar > 0 then begin
+                putlabel(nxt^.skplab);
                 { load variable address }
                 if level <= 1 then gen1(37(*lao*),vaddr)
                 else gen2(50(*lda*),level-vlev,vaddr);
@@ -6955,7 +6965,8 @@ end;
                 gen0(90(*ret*)); { issue code strip return }
                 { remove initializers, var addr }
                 mesl(maxpar*intsize+adrsize)
-              end
+              end;
+              nxt := next
             end;
         if sy = semicolon then
           begin insymbol;

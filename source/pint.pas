@@ -180,9 +180,9 @@
 #endif
 
 program pint(input,output,prd,prr
-              { Pascaline start !
+#ifdef PASCALINE
               ,command
-              ! Pascaline end }
+#endif
               );
 
 label 1;
@@ -462,8 +462,14 @@ type
       settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }
       alfa        = packed array[alfainx] of char;
-      byte        = 0..255; { 8-bit byte }
+#ifdef GNU_PASCAL
+{$gnu-pascal}
+#endif
+      ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
+#ifdef GNU_PASCAL
+{$classic-pascal-level-0}
+#endif
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
@@ -472,7 +478,7 @@ type
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       break       = record
-                      ss: byte; { byte under breakpoint }
+                      ss: ibyte; { byte under breakpoint }
                       sa: address; { code address }
                       line: 0..maxsrc; { source line if associated, or 0 }
                       trace: boolean { is a tracepoint }
@@ -539,9 +545,9 @@ var   pc, pcs     : address;   (*program address register*)
       gbset       : boolean;   { global size was set }
       op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1, q2: address; { extra parameters }
-      store       : packed array [0..maxstr] of byte; { complete program storage }
-      storedef    : packed array [0..maxdef] of byte; { defined bits }
-      storecov    : packed array [0..maxdef] of byte; { coverage bits }
+      store       : packed array [0..maxstr] of ibyte; { complete program storage }
+      storedef    : packed array [0..maxdef] of ibyte; { defined bits }
+      storecov    : packed array [0..maxdef] of ibyte; { coverage bits }
       sdi         : 0..maxdef; { index for that }
       cststr      : address; { start of constants block }
       mp,sp,np,ep : address;  (* address registers *)
@@ -552,7 +558,7 @@ var   pc, pcs     : address;   (*program address register*)
         sp  points to top of the stack
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
-      bitmsk      : packed array [0..7] of byte; { bits in byte }
+      bitmsk      : packed array [0..7] of ibyte; { bits in byte }
       maxdig      : integer; { number of decimal digits in integer }
       opts: array [1..maxopt] of optstr;
       optsl: array [1..maxopt] of optstr;
@@ -925,7 +931,7 @@ end;
 
 function getdef(a: address): boolean;
 
-var b: byte;
+var b: ibyte;
     r: boolean;
 
 begin
@@ -945,7 +951,7 @@ end;
 
 procedure putdef(a: address; b: boolean);
 
-var sb: byte;
+var sb: ibyte;
     r:  boolean;
 
 begin
@@ -975,7 +981,7 @@ end;
 { get bit from coverage array }
 function getcov(a: address): boolean;
 
-var b: byte;
+var b: ibyte;
     r: boolean;
 
 begin
@@ -987,7 +993,7 @@ end;
 { put bit to coverage array }
 procedure putcov(a: address; b: boolean);
 
-var sb: byte;
+var sb: ibyte;
     r:  boolean;
 
 begin
@@ -1361,7 +1367,7 @@ function litend: boolean;
 var r: record case boolean of
 
          true: (i: integer);
-         false: (b: byte);
+         false: (b: ibyte);
 
        end;
 
@@ -1377,7 +1383,7 @@ function getint(a: address): integer;
 var r: record case boolean of
 
           true:  (i: pminteger);
-          false: (b: packed array [1..intsize] of byte);
+          false: (b: packed array [1..intsize] of ibyte);
 
        end;
     i: 1..intsize;
@@ -1396,7 +1402,7 @@ procedure putint(a: address; x: integer);
 var r: record case boolean of
 
           true:  (i: pminteger);
-          false: (b: packed array [1..intsize] of byte);
+          false: (b: packed array [1..intsize] of ibyte);
 
        end;
     i: 1..intsize;
@@ -1416,7 +1422,7 @@ function getrel(a: address): real;
 var r: record case boolean of
 
           true:  (r: pmreal);
-          false: (b: packed array [1..realsize] of byte);
+          false: (b: packed array [1..realsize] of ibyte);
 
        end;
     i: 1..realsize;
@@ -1435,7 +1441,7 @@ procedure putrel(a: address; f: real);
 var r: record case boolean of
 
           true:  (r: pmreal);
-          false: (b: packed array [1..realsize] of byte);
+          false: (b: packed array [1..realsize] of ibyte);
 
        end;
     i: 1..realsize;
@@ -1475,7 +1481,7 @@ procedure getset(a: address; var s: settype);
 var r: record case boolean of
 
           true:  (s: settype);
-          false: (b: packed array [1..setsize] of byte);
+          false: (b: packed array [1..setsize] of ibyte);
 
        end;
     i: 1..setsize;
@@ -1493,7 +1499,7 @@ procedure putset(a: address; s: settype);
 var r: record case boolean of
 
           true:  (s: settype);
-          false: (b: packed array [1..setsize] of byte);
+          false: (b: packed array [1..setsize] of ibyte);
 
        end;
     i: 1..setsize;
@@ -1523,7 +1529,7 @@ begin
 
 end;
 
-function getbyt(a: address): byte;
+function getbyt(a: address): ibyte;
 
 begin
 
@@ -1532,7 +1538,7 @@ begin
 
 end;
 
-procedure putbyt(a: address; b: byte);
+procedure putbyt(a: address; b: ibyte);
 
 begin
 
@@ -1545,7 +1551,7 @@ function getadr(a: address): address;
 var r: record case boolean of
 
           true:  (a: pmaddress);
-          false: (b: packed array [1..adrsize] of byte);
+          false: (b: packed array [1..adrsize] of ibyte);
 
        end;
     i: 1..adrsize;
@@ -1565,7 +1571,7 @@ procedure putadr(a: address; ad: address);
 var r: record case boolean of
 
           true:  (a: pmaddress);
-          false: (b: packed array [1..adrsize] of byte);
+          false: (b: packed array [1..adrsize] of ibyte);
 
        end;
     i: 1..adrsize;
@@ -1584,7 +1590,7 @@ end;
 
 procedure swpstk(l: address);
 
-var sb: packed array [1..maxsize] of byte;
+var sb: packed array [1..maxsize] of ibyte;
     p:  address;
     i:  1..maxsize;
 
@@ -4166,6 +4172,8 @@ begin (*callsp*)
                           fn := store[ad];
                           if fn = inputfn then putchr(ad+fileidsize, input^)
                           else if fn = prdfn then putchr(ad+fileidsize, prd^)
+                          else if fn = commandfn then 
+                            putchr(ad+fileidsize, bufcommand)
                           else begin
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)
@@ -4174,6 +4182,7 @@ begin (*callsp*)
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
+
                           { load buffer only if in read mode, and buffer is
                             empty }
                           if (filstate[fn] = fread) and not filbuff[fn] then
@@ -4209,13 +4218,16 @@ begin (*callsp*)
                          positionbin(bfiltable[fn], i)
                        end;
            49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         updatebin(bfiltable[fn])
+                         updatebin(bfiltable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            50 (*appt*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendtext(filtable[fn])
+                         appendtext(filtable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            58 (*appb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendbin(bfiltable[fn])
+                         appendbin(bfiltable[fn]); filstate[fn] := fwrite;
+                         filbuff[fn] := false
                        end;
            51 (*del*): begin popint(i); popadr(ad1); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
@@ -4257,12 +4269,14 @@ begin (*callsp*)
            78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternaltext(filtable[fn], fl1)
+                         assignexternaltext(filtable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            79(*aefb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternalbin(bfiltable[fn], fl1)
+                         assignexternalbin(bfiltable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            80(*rdie*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad);
                          readi(commandfn, i, w, false); putint(ad, i);
@@ -5118,13 +5132,17 @@ begin
     92 (*vbs*): begin getq; popadr(ad); varenter(ad, ad+q-1) end;
     96 (*vbe*): varexit;
     19 (*brk*): begin breakins := true; pc := pcs end;
-    122 (*vis*),
+    122 (*vis*): begin getq; getq1; popadr(ad); ad1 := ad+q*intsize;
+                   for i := 1 to q do begin
+                     popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q1 := q1*i1;
+                   end;
+                   popadr(ad1); sp := sp-q1; putadr(ad, sp); pshadr(ad1)
+                 end;
     133 (*vip*): begin getq; getq1; popadr(ad); ad1 := ad+q*intsize;
                    for i := 1 to q do begin
                      popint(i1); putint(ad1, i1); ad1 := ad1-intsize; q1 := q1*i1;
                    end;
-                   if op = 122 then begin sp := sp-q; putadr(ad1, sp) end
-                   else begin newspc(q1, ad2); putadr(ad1, ad2) end
+                   newspc(q1, ad2); putadr(ad1, ad2)
                  end;
     226 (*vin*): begin getq; getq1; popadr(ad); ad2 := sp;
                    for i := 1 to q do
@@ -5417,7 +5435,7 @@ end;
 
 procedure dmpmem(s, e: address);
    var i, x: integer;
-       bs: array [1..16] of byte;
+       bs: array [1..16] of ibyte;
        f, l: boolean;
        ba: address;
 begin l := false; for i := 1 to 16 do bs[i] := 0;
