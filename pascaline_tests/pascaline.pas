@@ -1173,6 +1173,16 @@ begin
    for i := 1 to 10 do begin read(file2, x); write(x:1, ' ') end;
    writeln(' s/b 1 2 3 4 5 6 7 8 9 10');
 
+   writeln('hbt3: ', number1:1, ' s/b 42');
+
+   writeln('hbt4: ', number2:1:3, ' s/b 123.456');
+
+   writeln('hbt5: ');
+   while not eoln(command) do begin write(command^); get(command) end;
+   writeln;
+   writeln('s/b');
+   writeln(' hi there');
+
 {*******************************************************************************
 
                                        Overloads
