@@ -51,7 +51,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pascaline(output, file1{, file2, number1, number2, command});
+program pascaline(output, file1, file2, number1, number2, command);
 
 uses pascaline1; { test used module }
 
@@ -1165,6 +1165,13 @@ begin
       else begin get(file1); writeln end;
    writeln('s/b');
    writeln('The rain in spain falls mainly on the plain');
+
+   writeln('hbt2:');
+   rewrite(file2);
+   for i := 1 to 10 do write(file2, i);
+   reset(file2);
+   for i := 1 to 10 do begin read(file2, x); write(x:1, ' ') end;
+   writeln(' s/b 1 2 3 4 5 6 7 8 9 10');
 
 {*******************************************************************************
 

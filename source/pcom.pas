@@ -8792,7 +8792,7 @@ end;
   end;
 
   procedure modulep{(fsys:setofsys)};
-    var extfp:extfilep; segsize, stackbot: integer; frlab: integer;
+    var extfp,newfl:extfilep; segsize, stackbot: integer; frlab: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname);
     genlabel(extname); genlabel(nxtname);
@@ -8832,12 +8832,16 @@ end;
         if not (sy in [lparent,semicolon]) then error(14);
         if sy = lparent  then
           begin
+            newfl := nil;
             repeat insymbol;
               if sy = ident then
-                begin getfil(extfp); if searchext then error(240);
-                  with extfp^ do
-                    begin filename := id; nextfile := fextfilep end;
-                  fextfilep := extfp;
+                begin 
+                  if incstk = nil then begin
+                    getfil(extfp); if searchext then error(240);
+                    with extfp^ do
+                      begin filename := id; nextfile := fextfilep end;
+                    fextfilep := extfp
+                  end;
                   { check 'input' or 'output' appears in header for defaults }
                   if strequri('input    ', id) then inputptr^.hdr := true
                   else if strequri('output   ', id) then outputptr^.hdr := true
@@ -8851,6 +8855,14 @@ end;
                 end
               else error(2)
             until sy <> comma;
+            { reverse the header list into order }
+            if incstk = nil then begin
+              newfl := nil;
+              while fextfilep <> nil do 
+                begin extfp := fextfilep; fextfilep := fextfilep^.nextfile; 
+                      extfp^.nextfile := newfl; newfl := extfp end;
+              fextfilep := newfl
+            end;
             if sy <> rparent then error(4);
             insymbol;
             if sy <> semicolon then error(14)
