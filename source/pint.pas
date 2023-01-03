@@ -3179,8 +3179,9 @@ begin
        i := commandfn+1; { start search after the header files }
        ff := 0;
        while i <= maxfil do begin
-         if filstate[i] = fnone then begin ff := i; i := maxfil end;
-         i := i+1
+         if filstate[i] = fnone then 
+           begin ff := i; filstate[i] := fclosed; i := maxfil+1 end
+         else i := i+1
        end;
        if ff = 0 then errore(TooManyFiles);
      end;
@@ -4182,7 +4183,6 @@ begin (*callsp*)
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
-
                           { load buffer only if in read mode, and buffer is
                             empty }
                           if (filstate[fn] = fread) and not filbuff[fn] then

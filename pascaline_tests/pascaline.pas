@@ -51,7 +51,7 @@
 *                                                                              *
 *******************************************************************************}
 
-program pascaline(output);
+program pascaline(output, file1{, file2, number1, number2, command});
 
 uses pascaline1; { test used module }
 
@@ -60,6 +60,10 @@ uses pascaline1; { test used module }
 var a_1: integer;
     c:   char;
     i, x, y:   integer;
+    file1: text;
+    file2: file of integer;
+    number1: integer;
+    number2: real;
 
 { this tests relaxed declarations }
 
@@ -1143,6 +1147,24 @@ begin
 *******************************************************************************}
 
 {tbd}
+
+{*******************************************************************************
+
+                       Header binding
+
+*******************************************************************************}
+
+   ! header binding is optional, and is covered in annex C
+
+   ! expects headertest1 headertest2 42 123.456 hi there as the command tail
+
+   writeln('hbt1:');
+   reset(file1);
+   while not eof(file1) do 
+      if not eoln(file1) then begin read(file1, c); write(c) end
+      else begin get(file1); writeln end;
+   writeln('s/b');
+   writeln('The rain in spain falls mainly on the plain');
 
 {*******************************************************************************
 
