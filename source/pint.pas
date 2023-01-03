@@ -1137,7 +1137,7 @@ begin
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
   i := 1;
   while not eolncommand and not eofcommand and
-        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+        (bufcommand in ['a'..'z',  'A'..'Z', '0'..'9', '_']) do begin
     if i = fillen then errorv(FilenameTooLong);
     fne[i] := bufcommand;
     getcommand;
@@ -1155,7 +1155,7 @@ begin
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
   i := 1;
   while not eolncommand and not eofcommand and
-        (bufcommand in ['a'..'z',  'A'..'Z', '_']) do begin
+        (bufcommand in ['a'..'z',  'A'..'Z', '0'..'9', '_']) do begin
     if i = fillen then errorv(FileNameTooLong);
     fne[i] := bufcommand;
     getcommand;
