@@ -8602,7 +8602,7 @@ end;
       end;
     lcmin := lc;
     addlvl;
-    if level = 1 then begin { perform module setup tasks }
+    if (level = 1) and (incstk = nil) then begin { perform module setup tasks }
       externalheader; { process external header files }
       initvirt { process virtual procedure/function sets }
     end;
