@@ -109,10 +109,14 @@ fixed f_i: integer = 432;
       end;
       f_rc: record i: integer; c: char; r: real end = record 42, 'a', 1.234 end;
 
-type enum_a  = (one, two, three);
-     string  = packed array of char;
-     pstring = ^string;
-     byte    = 0..255;
+type enum_a   = (one, two, three);
+     enum_b   = (red, green, blue, cyan, purple, black, white);
+     string   = packed array of char;
+     pstring  = ^string;
+     byte     = 0..255;
+     string10 = packed array 10 of char;
+     pinteger = ^integer;
+     
 
 var s:         ^string;
     st:        packed array 10 of char;
@@ -135,6 +139,7 @@ var s:         ^string;
                  one..two: (i: integer);
                  three:    (c: char)
                end;
+    pi1, pi2, pi3: pinteger;
 
 { this tests duplication of parameter lists }
 
@@ -334,6 +339,380 @@ procedure outpar(out i: integer);
 begin
 
    i := 42
+
+end;
+
+function anonyret: integer;
+
+begin
+
+   result 42
+
+end;
+
+function strret: string10;
+
+begin
+
+    result 'hi there ?'
+
+end;
+
+operator +(a: enum_b): enum_b;
+
+begin
+
+    result succ(a)
+
+end;
+
+operator -(a: enum_b): enum_b;
+
+begin
+
+   result pred(a)
+
+end;
+
+operator not(a: enum_b): enum_b;
+
+begin
+
+   result succ(succ(a))
+
+end;
+
+operator +(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator -(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)-ord(b))
+
+end;
+
+operator *(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)*ord(b))
+
+end;
+
+operator /(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a) div ord(b))
+
+end;
+
+operator div(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a) div ord(b)+1)
+
+end;
+
+operator mod(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a) mod ord(b))
+
+end;
+
+operator and(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator or(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator xor(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator <(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator >(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator =(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator <=(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator >=(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+operator in(a, b: enum_b): enum_b;
+
+begin
+
+   result enum_b(ord(a)+ord(b))
+
+end;
+
+
+
+
+
+
+
+
+
+
+
+operator +(a: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := +a^;   
+   result p
+
+end;
+
+operator -(a: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := -a^;   
+   result p
+
+end;
+
+operator +(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator -(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^-b^;   
+   result p
+
+end;
+
+operator *(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^*b^;   
+   result p
+
+end;
+
+operator /(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ div b^;   
+   result p
+
+end;
+
+operator div(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ div b^;   
+   result p
+
+end;
+
+operator mod(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ mod b^;   
+   result p
+
+end;
+
+operator and(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ and b^;   
+   result p
+
+end;
+
+operator or(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ or b^;   
+   result p
+
+end;
+
+operator xor(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^ xor b^;   
+   result p
+
+end;
+
+operator <(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator >(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator =(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator <=(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator >=(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
+
+end;
+
+operator in(a, b: pinteger): pinteger;
+
+var p: pinteger;
+
+begin
+
+   new(p);
+   p^ := a^+b^;   
+   result p
 
 end;
 
@@ -1211,6 +1590,117 @@ begin
    writeln('s/b');
    writeln('This is the overriding procedure');
    writeln('This is the abstract procedure');
+
+{*******************************************************************************
+
+                            Anonymous function returns
+
+*******************************************************************************}
+
+   writeln('afr1: ', anonyret:1, ' s/b 42');
+
+{*******************************************************************************
+
+                            Structured function returns
+
+*******************************************************************************}
+
+{
+   write('sfr1:');
+   s2 := strret;
+   writeln(s2, ' s/b hi there');
+}
+   
+{*******************************************************************************
+
+                            Operator overloads
+
+*******************************************************************************}
+
+   ! note there is no requirement for the result to be the same type as the
+   ! system equivalent.
+
+   writeln('opo1: ', ord(+red):1, ' s/b 1');
+   writeln('opo2: ', ord(-cyan):1, ' s/b 2');
+   writeln('opo3: ', ord(not purple):1, ' s/b 6');   
+   writeln('opo4: ', ord(green+blue):1, ' s/b 3');
+   writeln('opo5: ', ord(blue-green)$:1, ' s/b 1');
+   writeln('opo6: ', ord(blue*cyan):1, ' s/b 6');
+   writeln('opo7: ', ord(white/blue):1, ' s/b 3');
+   writeln('opo8: ', ord(white div blue):1, ' s/b 4');
+   writeln('opo9: ', ord(black mod cyan):1, ' s/b 1');
+   writeln('opo10: ', ord(red and green):1, ' s/b 1');
+   writeln('opo11: ', ord(green or green):1, ' s/b 2');
+   writeln('opo12: ', ord(blue xor green):1, ' s/b 3');
+   writeln('opo13: ', ord(cyan < green):1, ' s/b 4');
+   writeln('opo14: ', ord(purple > green):1, ' s/b 5');
+   writeln('opo15: ', ord(black = green):1, ' s/b 6');
+   writeln('opo16: ', ord(red <= blue):1, ' s/b 2');
+   writeln('opo17: ', ord(green >= cyan):1, ' s/b 4');
+   writeln('opo18: ', ord(cyan in blue):1, ' s/b 5');
+
+! assign
+
+   new(pi1);
+   new(pi2);
+   pi1^ := 42;
+   pi2^ := 12;
+   write('opo19: ');
+   pi3 := +pi1;
+   writeln(pi3^:1, ' s/b 42');
+   write('opo20: ');
+   pi3 := -pi1;
+   writeln(pi3^:1, ' s/b -42');
+   write('opo21: ');
+   pi3 := pi1+pi2;
+   writeln(pi3^:1, ' s/b 54');
+   write('opo22: ');
+   pi3 := pi1-pi2;
+   writeln(pi3^:1, ' s/b 30');
+   write('opo23: ');
+   pi3 := pi1*pi2;
+   writeln(pi3^:1, ' s/b 504');
+   write('opo24: ');
+   pi3 := pi1/pi2;
+   writeln(pi3^:1, ' s/b 3');
+   write('opo25: ');
+   pi3 := pi1 div pi2;
+   writeln(pi3^:1, ' s/b 3');
+   write('opo26: ');
+   pi3 := pi1 mod pi2;
+   writeln(pi3^:1, ' s/b 6');
+   write('opo27: ');
+   pi3 := pi1 and pi2;
+   writeln(pi3^:1, ' s/b 8');
+   write('opo28: ');
+   pi3 := pi1 or pi2;
+   writeln(pi3^:1, ' s/b 46');
+   write('opo29: ');
+   pi3 := pi1 xor pi2;
+   writeln(pi3^:1, ' s/b 38');
+   write('opo30: ');
+   pi3 := pi1 < pi2;
+   writeln(pi3^:1, ' s/b 54');
+   write('opo31: ');
+   pi3 := pi1 > pi2;
+   writeln(pi3^:1, ' s/b 54');
+   write('opo32: ');
+   pi3 := pi1 = pi2;
+   writeln(pi3^:1, ' s/b 54');
+   write('opo33: ');
+   pi3 := pi1 <= pi2;
+   writeln(pi3^:1, ' s/b 54');
+   write('opo34: ');
+   pi3 := pi1 >= pi2;
+   writeln(pi3^:1, ' s/b 54');
+
+{
+generates orda instruction (bad)
+
+   write('opo35: ');
+   pi3 := pi1 in pi2;
+   writeln(pi3^:1, ' s/b 30');
+}
 
 {*******************************************************************************
 

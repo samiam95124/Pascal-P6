@@ -1624,7 +1624,7 @@ end;
     399: write('Feature not implemented');
 
     { * marks spared compiler errors }
-    400,401,402,403,404,405,406,407,
+    400,401,402,403,404,406,407,
     500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515,516: write('Compiler internal error');
     end
@@ -3861,7 +3861,7 @@ end;
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            expr:  error(405);
+            expr:  gen1(118(*lsa*),0)
           end;
           if typtr^.form = arrayc then if pickup then begin
             { it's a container, load a complex pointer based on that }
@@ -4568,10 +4568,12 @@ end;
           spad: boolean; { write space padded string }
           ledz: boolean; { use leading zeros }
           cpx: boolean; { is complex pointer }
-    begin llkey := lkey; txt := true; deffil := true; byt := false;
+          onstk: boolean; { expression result on stack }
+    begin llkey := lkey; txt := true; deffil := true; byt := false; 
       if sy = lparent then
       begin insymbol; chkhdr;
       expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false);
+      onstk := gattr.kind = expr;
       lsp := gattr.typtr; test := false;
       if lsp <> nil then
         if lsp^.form = files then
@@ -4593,7 +4595,8 @@ end;
               if sy = comma then
                 begin insymbol;
                   expression(fsys+[comma,colon,rparent,hexsy,octsy,binsy],
-                             false)
+                             false);
+                  onstk := gattr.kind = expr
                 end
               else test := true
             end
@@ -4718,7 +4721,11 @@ end;
                             if default then gen2(51(*ldc*),1,len)
                           end;
                           if spad then gen1(30(*csp*),68(*wrsp*))
-                          else gen1(30(*csp*),10(*wrs*))
+                          else gen1(30(*csp*),10(*wrs*));
+                          if onstk then begin len := lsp^.size; 
+                            alignu(parmptr,len); gen1(72(*swp*),len);
+                            gen1(71(*dmp*),len)
+                          end
                         end else error(116)
                     end
         end else begin { binary file }
