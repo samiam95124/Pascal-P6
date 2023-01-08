@@ -11,7 +11,6 @@ pint run
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 Pascal-P2 run
 0 p2/roman.dif
@@ -30,7 +29,6 @@ pmach run
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 Pascal-P2 run
 0 p2/roman.dif
@@ -49,7 +47,6 @@ cmach run
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
 0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
 0 sample_programs/pascals.dif
 Pascal-P2 run
 0 p2/roman.dif
@@ -57,9 +54,9 @@ Pascal-P4 run
 0 p4/standardp.dif
 PRT run
 236 standard_tests/iso7185prt.dif
-Tue 03 Jan 2023 11:00:46 AM PST
+Sat 07 Jan 2023 11:41:58 AM PST
 Source files
-8a42fe06baa2409b4c53ce0d3073aaf8  -
+8e1ffa84e421c5ff9904e5782d9c7400  -
 batch files
 67c944fc4357971cd8e315d28a33be6a  -
 P2 files
