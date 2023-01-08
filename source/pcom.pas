@@ -4751,7 +4751,8 @@ end;
         if not test then
           begin insymbol;
             expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy],
-                       false)
+                       false);
+            onstk := gattr.kind = expr
           end
       until test;
       if sy = rparent then insymbol else error(4)

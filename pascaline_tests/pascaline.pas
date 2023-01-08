@@ -118,7 +118,7 @@ type enum_a   = (one, two, three);
      pinteger = ^integer;
      
 
-var s:         ^string;
+var s:         pstring;
     st:        packed array 10 of char;
     ia:        ^iarr;
     miap:      ^miarr;
@@ -141,6 +141,20 @@ var s:         ^string;
                end;
     pi1, pi2, pi3: pinteger;
 
+{ allocate variable length string }
+function str(s: string): pstring;
+
+var sp: pstring;
+
+begin
+
+   new(sp, max(s));
+   sp^ := s;
+   
+   result sp
+
+end;
+   
 { this tests duplication of parameter lists }
 
 procedure prtstr(view s: string); forward;
@@ -501,16 +515,6 @@ begin
    result enum_b(ord(a)+ord(b))
 
 end;
-
-
-
-
-
-
-
-
-
-
 
 operator +(a: pinteger): pinteger;
 
@@ -966,6 +970,14 @@ begin
    write('sdc8: ');
    parvar3(10);
    writeln(' s/b 30 29 28 27 26 25 24 23 22 21');
+
+   { compares using pstring }
+   write('sdc9: ');
+   s := str('hi there bob');
+   writeln(s^ = 'hi there bob', ' s/b true');
+   
+
+   {compares (=, <>, < etc), and passing to parameters.}
 
 {*******************************************************************************
 
