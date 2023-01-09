@@ -975,10 +975,90 @@ begin
    write('sdc9: ');
    s := str('hi there bob');
    writeln(s^ = 'hi there bob', ' s/b true');
+   write('sdc10: ');
+   s := str('lo there bob');
+   writeln(s^ = 'hi there bob', ' s/b false');
+   write('sdc11: ');
+   s := str('hi there bob');
+   writeln(s^ <> 'hi there bob', ' s/b false');
+   write('sdc12: ');
+   s := str('lo there bob');
+   writeln(s^ <> 'hi there bob', ' s/b true');
+   write('sdc13: ');
+   s := str('abcd');
+   writeln(s^ < 'abce', ' s/b true');
+   write('sdc14: ');
+   writeln('abce' < s^, ' s/b false');
+   write('sdc15: ');
+   s := str('abcd');
+   writeln(s^ > 'abce', ' s/b false');
+   write('sdc16: ');
+   writeln('abce' > s^, ' s/b true');
+   write('sdc17: ');
+   s := str('abcd');
+   writeln(s^ <= 'abce', ' s/b true');
+   write('sdc18: ');
+   writeln('abce' <= s^, ' s/b false');
+   write('sdc19: ');
+   s := str('abcd');
+   writeln(s^ <= 'abcd', ' s/b true');
+   write('sdc20: ');
+   writeln('abcd' <= s^, ' s/b true');
+   write('sdc21: ');
+   s := str('abcd');
+   writeln(s^ >= 'abce', ' s/b false');
+   write('sdc22: ');
+   writeln('abce' >= s^, ' s/b true');
+   write('sdc23: ');
+   s := str('abcd');
+   writeln(s^ >= 'abcd', ' s/b true');
+   write('sdc24: ');
+   writeln('abcd' >= s^, ' s/b true');
+
+   { compares using parameterized string }
+   write('sdc25: ');
+   s2 := 'hi there ?';
+   writeln(s2 = 'hi there ?', ' s/b true');
+   write('sdc26: ');
+   s2 := 'lo there ?';
+   writeln(s2 = 'hi there ?', ' s/b false');
+   write('sdc27: ');
+   s2 := 'hi there ?';
+   writeln(s2 <> 'hi there ?', ' s/b false');
+   write('sdc28: ');
+   s2 := 'lo there ?';
+   writeln(s2 <> 'hi there ?', ' s/b true');
+   write('sdc29: ');
+   s2 := 'abcd      ';
+   writeln(s2 < 'abce      ', ' s/b true');
+   write('sdc30: ');
+   writeln('abce      ' < s2, ' s/b false');
+   write('sdc31: ');
+   s2 := 'abcd      ';
+   writeln(s2 > 'abce      ', ' s/b false');
+   write('sdc32: ');
+   writeln('abce      ' > s2, ' s/b true');
+   write('sdc33: ');
+   s2 := 'abcd      ';
+   writeln(s2 <= 'abce      ', ' s/b true');
+   write('sdc34: ');
+   writeln('abce      ' <= s2, ' s/b false');
+   write('sdc35: ');
+   s2 := 'abcd      ';
+   writeln(s2 <= 'abcd      ', ' s/b true');
+   write('sdc36: ');
+   writeln('abcd      ' <= s2, ' s/b true');
+   write('sdc37: ');
+   s2 := 'abcd      ';
+   writeln(s2 >= 'abce      ', ' s/b false');
+   write('sdc38: ');
+   writeln('abce      ' >= s2, ' s/b true');
+   write('sdc39: ');
+   s2 := 'abcd      ';
+   writeln(s2 >= 'abcd      ', ' s/b true');
+   write('sdc40: ');
+   writeln('abcd      ' >= s2, ' s/b true');
    
-
-   {compares (=, <>, < etc), and passing to parameters.}
-
 {*******************************************************************************
 
                     Multiple dimension container arrays
