@@ -2506,7 +2506,7 @@ void sinins()
     case 140 /* equs */: popset(s2); popset(s1); pshint(sequ(s1,s2)); break;
     case 142 /* equm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(b); break;
-    case 215 /* equv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 215 /* equv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                         compare(&b, &a1, &a2); pshint(b); break;
 
     case 18  /* neqa */: popadr(a2); popadr(a1); pshint(a1!=a2); break;
@@ -2517,7 +2517,7 @@ void sinins()
     case 146 /* neqs */: popset(s2); popset(s1); pshint(!sequ(s1,s2)); break;
     case 148 /* neqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2); pshint(!b); break;
-    case 216 /* neqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 216 /* neqv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2); pshint(!b); break;
 
     case 151 /* geqb */:
@@ -2528,7 +2528,7 @@ void sinins()
     case 154 /* geqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] >= store[a2])); break;
-    case 220 /* geqv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 220 /* geqv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(b || store[a1] >= store[a2]); break;
 
@@ -2540,7 +2540,7 @@ void sinins()
     case 160 /* grtm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] > store[a2])); break;
-    case 218 /* grtv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 218 /* grtv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(!b && store[a1] > store[a2]); break;
 
@@ -2552,7 +2552,7 @@ void sinins()
     case 166 /* leqm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(b || (store[a1] <= store[a2])); break;
-    case 219 /*leqv*/:   popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 219 /*leqv*/:   popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(b || store[a1] <= store[a2]); break;
 
@@ -2564,7 +2564,7 @@ void sinins()
     case 172 /* lesm */: getq(); popadr(a2); popadr(a1);
                          compare(&b, &a1, &a2);
                          pshint(!b && (store[a1] < store[a2])); break;
-    case 217 /* lesv */: popint(i); q = i; popadr(a2); popint(i1); popadr(a1);
+    case 217 /* lesv */: popadr(a2); popint(i); q = i; popadr(a1); popint(i1);
                          compare(&b, &a1, &a2);
                          pshint(!b && store[a1] < store[a2]); break;
 
