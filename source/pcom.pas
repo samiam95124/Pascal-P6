@@ -3898,7 +3898,7 @@ end;
 
   { rationalize binary container operator }
   procedure containerop(var lattr: attr);
-  var cc: integer;
+  var cc: integer; len:addrrange;
   begin
     { check one or both operands is container }
     if (lattr.typtr^.form = arrayc) or
@@ -3908,6 +3908,14 @@ end;
         cc := containers(lattr.typtr)
       else
         cc := containers(gattr.typtr);
+      if gattr.kind = expr then begin
+        { have to pull pointer over stack bubble }
+        len := gattr.typtr^.size;
+        alignu(parmptr,len);
+        gen1(118(*lsa*),len);
+        gen0(111(*ldp*));
+        gen1(118(*lsa*),ptrsize*2)
+      end;
       if gattr.typtr^.form = arrays then begin
         { right is fixed }
         if cc = 1 then begin
@@ -7768,7 +7776,7 @@ end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean; fcp2: ctp;
+        var lattr, lattr2: attr; tagasc: boolean; fcp2: ctp; len: addrrange;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -7844,7 +7852,11 @@ end;
                           (containers(gattr.typtr) = 1) then
                           gen1(101(*aps*),containerbase(gattr.typtr))
                         else gen2(102(*apc*),containers(lattr.typtr),
-                                  containerbase(gattr.typtr))
+                                  containerbase(gattr.typtr));
+                        if gattr.kind = expr then begin 
+                          len := gattr.typtr^.size; alignu(parmptr,len); 
+                          gen1(71(*dmp*),len+ptrsize*2)
+                        end
                       end else begin { standard array assign }
                         { onstack from expr }
                         if gattr.kind = expr then store(lattr)
