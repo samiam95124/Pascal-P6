@@ -372,6 +372,14 @@ begin
 
 end;
 
+function strret2: string10;
+
+begin
+
+    result 'abcd      '
+
+end;
+
 operator +(a: enum_b): enum_b;
 
 begin
@@ -1697,13 +1705,34 @@ begin
 
 *******************************************************************************}
 
+   { assignments }
    write('sfr1:');
    st := strret;
    writeln(st, ' s/b hi there ?');
    write('sfr2:');
    s2 := strret;
    writeln(s2, ' s/b hi there ?');
+
+   { writes }
    writeln('sfr3: ', strret, ' s/b hi there ?');
+
+   { compares }
+   writeln('sfr4: ', strret = 'hi there ?', ' s/b true');
+   write('sfr5: ', strret = 'lo there ?', ' s/b false');
+   writeln('sfr5: ', strret <> 'hi there ?', ' s/b false');
+   writeln('sfr6: ', strret <> 'lo there ?', ' s/b true');
+   writeln('sfr7: ', strret2 < 'abce      ', ' s/b true');
+   writeln('sfr8: ', 'abce      ' < strret2, ' s/b false');
+   writeln('sfr9: ', strret2 > 'abce      ', ' s/b false');
+   writeln('sfr10: ', 'abce      ' > strret2, ' s/b true');
+   writeln('sfr11: ', strret2 <= 'abce      ', ' s/b true');
+   writeln('sfr12: ', 'abce      ' <= strret2, ' s/b false');
+   writeln('sfr13: ', strret2 <= 'abcd      ', ' s/b true');
+   writeln('sfr14: ', 'abcd      ' <= strret2, ' s/b true');
+   writeln('sfr15: ', strret2 >= 'abce      ', ' s/b false');
+   writeln('sfr16: ', 'abce      ' >= strret2, ' s/b true');
+   writeln('sfr17: ', strret2 >= 'abcd      ', ' s/b true');
+   writeln('sfr18: ', 'abcd      ' >= strret2, ' s/b true');
    
 {*******************************************************************************
 
