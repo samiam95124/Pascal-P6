@@ -1698,8 +1698,12 @@ begin
 *******************************************************************************}
 
    write('sfr1:');
+   st := strret;
+   writeln(st, ' s/b hi there ?');
+   write('sfr2:');
    s2 := strret;
-   writeln(s2, ' s/b hi there');
+   writeln(s2, ' s/b hi there ?');
+   writeln('sfr3: ', strret, ' s/b hi there ?');
    
 {*******************************************************************************
 

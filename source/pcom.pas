@@ -4567,7 +4567,7 @@ end;
 
     procedure writeprocedure;
       var lsp,lsp1: stp; default, default1: boolean; llkey: 1..15;
-          len:addrrange;
+          len:addrrange; strspc: addrrange;
           txt: boolean; { is a text file }
           byt: boolean; { is a byte file }
           deffil: boolean; { default file was loaded }
@@ -4714,6 +4714,13 @@ end;
                       if lsp^.form = scalar then error(236)
                       else
                         if stringt(lsp) then begin
+                          if onstk then begin 
+                            strspc := lsp^.size;
+                            alignu(parmptr,strspc);
+                            gen1(118(*lsa*),strspc+ptrsize+intsize);
+                            gen1t(35(*ind*),0,nilptr);
+                            gen1(72(*swp*),stackelsize*2)
+                          end;
                           if lsp = nil then cpx := false
                           else cpx := lsp^.form = arrayc;
                           if cpx then begin { complex }
@@ -4730,10 +4737,7 @@ end;
                           end;
                           if spad then gen1(30(*csp*),68(*wrsp*))
                           else gen1(30(*csp*),10(*wrs*));
-                          if onstk then begin len := lsp^.size; 
-                            alignu(parmptr,len); gen1(72(*swp*),len);
-                            gen1(71(*dmp*),len)
-                          end
+                          if onstk then gen1(71(*dmp*),strspc+ptrsize)
                         end else error(116)
                     end
         end else begin { binary file }
