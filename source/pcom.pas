@@ -5619,6 +5619,7 @@ end;
 
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize: addrrange; fcp: ctp;
+        onstkl, onstkr: boolean;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -6036,6 +6037,7 @@ end;
 
   begin (*expression*)
     simpleexpression(fsys + [relop], threaten);
+    onstkl := gattr.kind = expr;
     if sy = relop then begin
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
@@ -6045,6 +6047,7 @@ end;
         if not comptypes(gattr.typtr,intptr) then
           gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
+      onstkr := gattr.kind = expr;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
@@ -6113,6 +6116,11 @@ end;
                     geop: gen2(48(*geq*),ord(typind),lsize);
                     neop: gen2(55(*neq*),ord(typind),lsize);
                     eqop: gen2(47(*equ*),ord(typind),lsize)
+                  end;
+                  if lattr.typtr^.form = arrays then begin
+                    alignu(parmptr,lsize);
+                    if onstkl and onstkr then gen1(71(*dmp*),lsize*2)
+                    else if onstkl or onstkr then gen1(71(*dmp*),lsize)
                   end
                 end
               else error(129)
