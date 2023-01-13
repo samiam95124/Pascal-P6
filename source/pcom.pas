@@ -5618,8 +5618,8 @@ end;
   end;
 
   procedure expression{(fsys: setofsys; threaten: boolean)};
-    var lattr: attr; lop: operatort; typind: char; lsize: addrrange; fcp: ctp;
-        onstkl, onstkr: boolean;
+    var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
+        fcp: ctp; onstkl, onstkr: boolean;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -6096,10 +6096,16 @@ end;
                     arrays, arrayc:
                       begin
                         if not stringt(lattr.typtr) then error(134);
+                        lsizspc := lsize; alignu(parmptr,lsizspc);
                         if (lattr.typtr^.form = arrayc) or
                            (gattr.typtr^.form = arrayc) then typind := 'v'
                         else typind := 'm';
-                        containerop(lattr) { rationalize binary container }
+                        containerop(lattr); { rationalize binary container }
+                        if onstkr then begin { pull left up }
+                          gen1(118(*lsa*),ptrsize+lsizspc);
+                          gen1t(35(*ind*),0,nilptr);
+                          gen1(72(*swp*),stackelsize)
+                        end
                       end;
                     records:
                       begin
@@ -6119,8 +6125,9 @@ end;
                   end;
                   if lattr.typtr^.form = arrays then begin
                     alignu(parmptr,lsize);
-                    if onstkl and onstkr then gen1(71(*dmp*),lsize*2)
-                    else if onstkl or onstkr then gen1(71(*dmp*),lsize)
+                    if onstkl and onstkr then gen1(71(*dmp*),lsizspc*2)
+                    else if onstkr then gen1(71(*dmp*),lsizspc+ptrsize)
+                    else if onstkl then gen1(71(*dmp*),lsizspc)
                   end
                 end
               else error(129)

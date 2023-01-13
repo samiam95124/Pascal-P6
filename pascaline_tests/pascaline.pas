@@ -1733,6 +1733,10 @@ begin
    writeln('sfr16: ', 'abce      ' >= strret2, ' s/b true');
    writeln('sfr17: ', strret2 >= 'abcd      ', ' s/b true');
    writeln('sfr18: ', 'abcd      ' >= strret2, ' s/b true');
+
+   { as a parameter }
+
+   { records }
    
 {*******************************************************************************
 
@@ -1825,6 +1829,8 @@ generates orda instruction (bad)
    writeln(pi3^:1, ' s/b 30');
 }
 
+   { overload from used module }
+
 {*******************************************************************************
 
                                    Exception handling
@@ -1855,6 +1861,8 @@ generates orda instruction (bad)
    writeln('In try block');
    writeln('exception not taken');
 
+   { nested in procedure }
+
 {*******************************************************************************
 
                    Assert: all we can do here is test false asserts
@@ -1865,6 +1873,18 @@ generates orda instruction (bad)
    writeln('Testing negative assertion, this should not stop here');
    i := 4;
    assert(i = 4);
+
+{*******************************************************************************
+
+                               lreal and sreal
+
+*******************************************************************************}
+
+{*******************************************************************************
+
+                                 private
+
+*******************************************************************************}
 
 {*******************************************************************************
 
