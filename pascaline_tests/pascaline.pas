@@ -1706,10 +1706,10 @@ begin
 *******************************************************************************}
 
    { assignments }
-   write('sfr1:');
+   write('sfr1: ');
    st := strret;
    writeln(st, ' s/b hi there ?');
-   write('sfr2:');
+   write('sfr2: ');
    s2 := strret;
    writeln(s2, ' s/b hi there ?');
 
@@ -1718,21 +1718,21 @@ begin
 
    { compares }
    writeln('sfr4: ', strret = 'hi there ?', ' s/b true');
-   write('sfr5: ', strret = 'lo there ?', ' s/b false');
-   writeln('sfr5: ', strret <> 'hi there ?', ' s/b false');
-   writeln('sfr6: ', strret <> 'lo there ?', ' s/b true');
-   writeln('sfr7: ', strret2 < 'abce      ', ' s/b true');
-   writeln('sfr8: ', 'abce      ' < strret2, ' s/b false');
-   writeln('sfr9: ', strret2 > 'abce      ', ' s/b false');
-   writeln('sfr10: ', 'abce      ' > strret2, ' s/b true');
-   writeln('sfr11: ', strret2 <= 'abce      ', ' s/b true');
-   writeln('sfr12: ', 'abce      ' <= strret2, ' s/b false');
-   writeln('sfr13: ', strret2 <= 'abcd      ', ' s/b true');
-   writeln('sfr14: ', 'abcd      ' <= strret2, ' s/b true');
-   writeln('sfr15: ', strret2 >= 'abce      ', ' s/b false');
-   writeln('sfr16: ', 'abce      ' >= strret2, ' s/b true');
-   writeln('sfr17: ', strret2 >= 'abcd      ', ' s/b true');
-   writeln('sfr18: ', 'abcd      ' >= strret2, ' s/b true');
+   writeln('sfr5: ', strret = 'lo there ?', ' s/b false');
+   writeln('sfr6: ', strret <> 'hi there ?', ' s/b false');
+   writeln('sfr7: ', strret <> 'lo there ?', ' s/b true');
+   writeln('sfr8: ', strret2 < 'abce      ', ' s/b true');
+   writeln('sfr9: ', 'abce      ' < strret2, ' s/b false');
+   writeln('sfr10: ', strret2 > 'abce      ', ' s/b false');
+   writeln('sfr11: ', 'abce      ' > strret2, ' s/b true');
+   writeln('sfr12: ', strret2 <= 'abce      ', ' s/b true');
+   writeln('sfr13: ', 'abce      ' <= strret2, ' s/b false');
+   writeln('sfr14: ', strret2 <= 'abcd      ', ' s/b true');
+   writeln('sfr15: ', 'abcd      ' <= strret2, ' s/b true');
+   writeln('sfr16: ', strret2 >= 'abce      ', ' s/b false');
+   writeln('sfr17: ', 'abce      ' >= strret2, ' s/b true');
+   writeln('sfr18: ', strret2 >= 'abcd      ', ' s/b true');
+   writeln('sfr19: ', 'abcd      ' >= strret2, ' s/b true');
 
    { as a parameter }
 
@@ -1830,6 +1830,10 @@ generates orda instruction (bad)
 }
 
    { overload from used module }
+
+   { overload from joined module }
+
+   { inherited operator overload }
 
 {*******************************************************************************
 

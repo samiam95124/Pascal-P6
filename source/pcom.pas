@@ -6125,9 +6125,14 @@ end;
                   end;
                   if lattr.typtr^.form = arrays then begin
                     alignu(parmptr,lsize);
-                    if onstkl and onstkr then gen1(71(*dmp*),lsizspc*2)
-                    else if onstkr then gen1(71(*dmp*),lsizspc+ptrsize)
-                    else if onstkl then gen1(71(*dmp*),lsizspc)
+                    if onstkl and onstkr then 
+                      begin gen1(72(*swp*),lsizspc*2); gen1(71(*dmp*),lsizspc*2) 
+                      end
+                    else if onstkr then 
+                      begin gen1(72(*swp*),lsizspc+ptrsize); 
+                            gen1(71(*dmp*),lsizspc+ptrsize) end
+                    else if onstkl then 
+                      begin gen1(72(*swp*),lsizspc); gen1(71(*dmp*),lsizspc) end
                   end
                 end
               else error(129)
