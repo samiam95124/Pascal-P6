@@ -782,6 +782,9 @@ begin
    writeln('Maxlint: ', maxlint:1);
    writeln('Maxlcrd: ', maxlcrd:1);
    writeln('Maxchr: ',  ord(maxchr):1);
+   writeln('Maxreal: ', maxreal);
+   writeln('Maxsreal: ', maxsreal);
+   writeln('Maxlreal: ', maxlreal);
 
    cd := maxcrd;
    x := 0;
@@ -1211,9 +1214,9 @@ begin
    prtstr('hi george');
    writeln(' s/b hi george');
    write('ext48: ');
-   st := 'hi george';
+   st := 'hi george?';
    prtstr1(st);
-   writeln(' s/b hi george');
+   writeln(' s/b hi george?');
 
    write('ext49: ');
    prtstr2('hi george');
@@ -1737,8 +1740,16 @@ begin
    writeln('sfr19: ', 'abcd      ' >= strret2, ' s/b true');
 
    { as a parameter }
-
+   write('sfr20: ');
+   prtstr10(strret);
+   writeln(' s/b hi there ?');
+   write('sfr21: ');
+   prtstr(strret);
+   writeln(' s/b hi there ?');
+   
    { records }
+   r1 := recret;
+   writeln('sfr22: ', r1.i:1, ' ', r1.c, ' s/b 42 a');
    
 {*******************************************************************************
 
