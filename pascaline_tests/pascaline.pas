@@ -11,6 +11,9 @@
 * Each test is labeled and numbered, and the expected result also output, so   *
 * that the output can be self evidently hand checked.                          *
 *                                                                              *
+* The test cases are roughly arranged in the same order as the section         *
+* headings of "The language Pascaline".                                        *
+*                                                                              *
 * The output can be redirected to a printer or a file to facillitate such      *
 * checking.                                                                    *
 *                                                                              *
@@ -111,11 +114,12 @@ fixed f_i: integer = 432;
 
 type enum_a   = (one, two, three);
      enum_b   = (red, green, blue, cyan, purple, black, white);
-     string   = packed array of char;
+     {string   = packed array of char;
      pstring  = ^string;
-     byte     = 0..255;
+     byte     = 0..255;}
      string10 = packed array 10 of char;
      pinteger = ^integer;
+     rec1     = record i: integer; c: char end;
      
 
 var s:         pstring;
@@ -140,6 +144,9 @@ var s:         pstring;
                  three:    (c: char)
                end;
     pi1, pi2, pi3: pinteger;
+    r1:        rec1;
+    f1:        lreal;
+    f2:        sreal;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -377,6 +384,27 @@ function strret2: string10;
 begin
 
     result 'abcd      '
+
+end;
+
+procedure prtstr10(s: string10);
+
+begin
+
+   write(s)
+
+end;
+
+function recret: rec1;
+
+var r: rec1;
+
+begin
+
+    r.i := 42;
+    r.c := 'a';
+
+    result r
 
 end;
 
@@ -893,40 +921,74 @@ begin
 
 {*******************************************************************************
 
-                                    Fixed
+                 Variable boolean integer expressions
 
 *******************************************************************************}
 
-   write('f1: ');
-   for i := 1 to 5 do write(f_ai[i]:1, ' ');
-   writeln(' s/b 1 5 3 10 92');
-   write('f2: ');
-   for i := 1 to 5 do write(f_ac[i]);
-   writeln(' s/b ahuoz');
-   write('f3: ');
-   for i := 1 to 5 do write(f_ar[i]:1:1, ' ');
-   writeln(' s/b 1.1 1.2 1.3 1.4 1.5');
-   write('f4: ');
-   for x := 1 to 3 do
-      for y := 1 to 4 do write(f_ma[x, y]:1, ' ');
-   writeln(' s/b 1 3 64 2 12 31 647 21 190 32 641 243');
-   writeln('ext37: ', f_rc.i:1, f_rc.c, f_rc.r:1:4, ' s/b 42a1.2340');
+   a := 56;
+   b := 13;
+   writeln('vb1: ', not a:1, ' s/b 9223372036854775751');
+   writeln('vb2: ', a and b:1, ' s/b 8');
+   writeln('vb3: ', a or b:1, ' s/b 61');
+   writeln('vb4: ', a xor b:1, ' s/b 53');
 
 {*******************************************************************************
 
-                                Type convertion
+                               View and out parameters
 
 *******************************************************************************}
 
-   write('tc1: ');
-   for i := 0 to 2 do case enum_a(i) of
+   write('vop1: ');
+   prtstr('this is a test');
+   writeln(' s/b this is a test');
+   write('vop2: ');
+   outpar(i);
+   writeln(i:1, ' s/b 42');
 
-      one: write('one ');
-      two: write('two ');
-      three: write('three ')
+{*******************************************************************************
+
+                            Extended case statements
+
+*******************************************************************************}
+
+   writeln('ecs1:');
+   for i := 1 to 10 do
+      case i of
+
+      1: writeln(i:1, ': one');
+      2..4: writeln(i:1, ': from 2 to 4');
+      else writeln(i:1, ': from 5 to 10')
 
    end;
-   writeln(' s/b one two three');
+   writeln('s/b');
+   writeln('1: one');
+   writeln('2: from 2 to 4');
+   writeln('3: from 2 to 4');
+   writeln('4: from 2 to 4');
+   writeln('5: from 5 to 10');
+   writeln('6: from 5 to 10');
+   writeln('7: from 5 to 10');
+   writeln('8: from 5 to 10');
+   writeln('9: from 5 to 10');
+   writeln('10: from 5 to 10');
+
+{*******************************************************************************
+
+                          variant record case ranges
+
+*******************************************************************************}
+
+   write('vcr1: ');
+   vr.e := one;
+   vr.i := 42;
+   write(vr.i:1, ' ');
+   vr.e := two;
+   vr.i := 43;
+   write(vr.i:1, ' ');
+   vr.e := three;
+   vr.c := 'a';
+   write(vr.c, ' ');
+   writeln(' s/b 42 43 a');
 
 {*******************************************************************************
 
@@ -1141,29 +1203,6 @@ begin
 
 {*******************************************************************************
 
-                 Variable boolean integer expressions
-
-*******************************************************************************}
-
-   a := 56;
-   b := 13;
-   writeln('ext43: ', not a:1, ' s/b 9223372036854775751');
-   writeln('ext44: ', a and b:1, ' s/b 8');
-   writeln('ext45: ', a or b:1, ' s/b 61');
-   writeln('ext46: ', a xor b:1, ' s/b 53');
-
-{*******************************************************************************
-
-                               Out parameters
-
-*******************************************************************************}
-
-   write('op1: ');
-   outpar(i);
-   writeln(i:1, ' s/b 42');
-
-{*******************************************************************************
-
                        Container arrays as parameters
 
 *******************************************************************************}
@@ -1172,7 +1211,7 @@ begin
    prtstr('hi george');
    writeln(' s/b hi george');
    write('ext48: ');
-   st := 'hi george ';
+   st := 'hi george';
    prtstr1(st);
    writeln(' s/b hi george');
 
@@ -1254,115 +1293,6 @@ begin
 
 {*******************************************************************************
 
-                    File handling procedures and functions
-
-*******************************************************************************}
-
-   write('fh1: ');
-   if exists('ext0001.txt') then delete('ext0001.txt');
-   if exists('ext0002.txt') then delete('ext0002.txt');
-   assign(ft, 'ext0001.txt');
-   rewrite(ft);
-   writeln(ft, 'hi there, bob');
-   reset(ft);
-   while not eoln(ft) do begin
-
-      read(ft, c);
-      write(c);
-
-   end;
-   close(ft);
-   writeln(' s/b hi there, bob');
-
-   write('fh2: ');
-   change('ext0002.txt', 'ext0001.txt');
-   assign(ft, 'ext0002.txt');
-   reset(ft);
-   while not eoln(ft) do begin
-
-      read(ft, c);
-      write(c);
-
-   end;
-   close(ft);
-   writeln(' s/b hi there, bob');
-
-   writeln('fh3: ', exists('ext0001.txt'), ' s/b false');
-
-   writeln('fh4: ', exists('ext0002.txt'), ' s/b true');
-   delete('ext0002.txt');
-
-   writeln('fh5: ', exists('ext0002.txt'), ' s/b false');
-
-   write('fh6: ');
-   assign(fb, 'ext0001.txt');
-   rewrite(fb);
-   for i := 1 to 10 do write(fb, i);
-   reset(fb);
-   for i := 10 downto 1 do begin read(fb, ba); write(ba:1, ' ') end;
-   writeln(' s/b 1 2 3 4 5 6 7 8 9 10');
-
-   writeln('fh7: ', length(fb):1, ' s/b 10');
-
-   writeln('fh8: ', location(fb):1, ' s/b 11');
-
-   write('fh9: ');
-   position(fb, 5);
-   read(fb, ba);
-   writeln(ba:1, ' s/b 5');
-
-   writeln('fh10: ', location(fb):1, ' s/b 6');
-
-   write('fh11: ');
-   rewrite(fb);
-   for i := 1 to 10 do write(fb, i);
-   update(fb);
-   for i := 1 to 5 do write(fb, 99);
-   reset(fb);
-   for i := 1 to 10 do begin read(fb, ba); write(ba:3) end;
-   writeln(' s/b  99  99  99  99  99   6   7   8   9  10');
-
-   writeln('fh12: ');
-   rewrite(ft);
-   writeln(ft, 'The rain in spain');
-   writeln(ft, 'falls mainly on the plain');
-   reset(ft);
-   while not eof(ft) do begin
-
-      while not eoln(ft) do begin
-
-         read(ft, c);
-         write(c)
-
-      end;
-      readln(ft);
-      writeln
-
-   end;
-   append(ft);
-   writeln(ft, 'But only on tuesdays and thursdays');
-   reset(ft);
-   while not eof(ft) do begin
-
-      while not eoln(ft) do begin
-
-         read(ft, c);
-         write(c)
-
-      end;
-      readln(ft);
-      writeln
-
-   end;
-   writeln('s/b');
-   writeln('The rain in spain');
-   writeln('falls mainly on the plain');
-   writeln('The rain in spain');
-   writeln('falls mainly on the plain');
-   writeln('But only on tuesdays and thursdays');
-
-{*******************************************************************************
-
                       Container pointer function results
 
 *******************************************************************************}
@@ -1370,51 +1300,6 @@ begin
    write('cp1: ');
    sp := str('hi there');
    writeln(sp^, ' s/b hi there');
-
-{*******************************************************************************
-
-                            Extended case statements
-
-*******************************************************************************}
-
-   writeln('ecs1:');
-   for i := 1 to 10 do
-      case i of
-
-      1: writeln(i:1, ': one');
-      2..4: writeln(i:1, ': from 2 to 4');
-      else writeln(i:1, ': from 5 to 10')
-
-   end;
-   writeln('s/b');
-   writeln('1: one');
-   writeln('2: from 2 to 4');
-   writeln('3: from 2 to 4');
-   writeln('4: from 2 to 4');
-   writeln('5: from 5 to 10');
-   writeln('6: from 5 to 10');
-   writeln('7: from 5 to 10');
-   writeln('8: from 5 to 10');
-   writeln('9: from 5 to 10');
-   writeln('10: from 5 to 10');
-
-{*******************************************************************************
-
-                          variant record case ranges
-
-*******************************************************************************}
-
-   write('vcr1: ');
-   vr.e := one;
-   vr.i := 42;
-   write(vr.i:1, ' ');
-   vr.e := two;
-   vr.i := 43;
-   write(vr.i:1, ' ');
-   vr.e := three;
-   vr.c := 'a';
-   write(vr.c, ' ');
-   writeln(' s/b 42 43 a');
 
 {*******************************************************************************
 
@@ -1629,6 +1514,152 @@ begin
 
 {*******************************************************************************
 
+                                Type convertion
+
+*******************************************************************************}
+
+   write('tc1: ');
+   for i := 0 to 2 do case enum_a(i) of
+
+      one: write('one ');
+      two: write('two ');
+      three: write('three ')
+
+   end;
+   writeln(' s/b one two three');
+
+{*******************************************************************************
+
+                                    Fixed types
+
+*******************************************************************************}
+
+   write('f1: ');
+   for i := 1 to 5 do write(f_ai[i]:1, ' ');
+   writeln(' s/b 1 5 3 10 92');
+   write('f2: ');
+   for i := 1 to 5 do write(f_ac[i]);
+   writeln(' s/b ahuoz');
+   write('f3: ');
+   for i := 1 to 5 do write(f_ar[i]:1:1, ' ');
+   writeln(' s/b 1.1 1.2 1.3 1.4 1.5');
+   write('f4: ');
+   for x := 1 to 3 do
+      for y := 1 to 4 do write(f_ma[x, y]:1, ' ');
+   writeln(' s/b 1 3 64 2 12 31 647 21 190 32 641 243');
+   writeln('ext37: ', f_rc.i:1, f_rc.c, f_rc.r:1:4, ' s/b 42a1.2340');
+
+{*******************************************************************************
+
+                  Extended file handling procedures and functions
+
+*******************************************************************************}
+
+   write('fh1: ');
+   if exists('ext0001.txt') then delete('ext0001.txt');
+   if exists('ext0002.txt') then delete('ext0002.txt');
+   assign(ft, 'ext0001.txt');
+   rewrite(ft);
+   writeln(ft, 'hi there, bob');
+   reset(ft);
+   while not eoln(ft) do begin
+
+      read(ft, c);
+      write(c);
+
+   end;
+   close(ft);
+   writeln(' s/b hi there, bob');
+
+   write('fh2: ');
+   change('ext0002.txt', 'ext0001.txt');
+   assign(ft, 'ext0002.txt');
+   reset(ft);
+   while not eoln(ft) do begin
+
+      read(ft, c);
+      write(c);
+
+   end;
+   close(ft);
+   writeln(' s/b hi there, bob');
+
+   writeln('fh3: ', exists('ext0001.txt'), ' s/b false');
+
+   writeln('fh4: ', exists('ext0002.txt'), ' s/b true');
+   delete('ext0002.txt');
+
+   writeln('fh5: ', exists('ext0002.txt'), ' s/b false');
+
+   write('fh6: ');
+   assign(fb, 'ext0001.txt');
+   rewrite(fb);
+   for i := 1 to 10 do write(fb, i);
+   reset(fb);
+   for i := 10 downto 1 do begin read(fb, ba); write(ba:1, ' ') end;
+   writeln(' s/b 1 2 3 4 5 6 7 8 9 10');
+
+   writeln('fh7: ', length(fb):1, ' s/b 10');
+
+   writeln('fh8: ', location(fb):1, ' s/b 11');
+
+   write('fh9: ');
+   position(fb, 5);
+   read(fb, ba);
+   writeln(ba:1, ' s/b 5');
+
+   writeln('fh10: ', location(fb):1, ' s/b 6');
+
+   write('fh11: ');
+   rewrite(fb);
+   for i := 1 to 10 do write(fb, i);
+   update(fb);
+   for i := 1 to 5 do write(fb, 99);
+   reset(fb);
+   for i := 1 to 10 do begin read(fb, ba); write(ba:3) end;
+   writeln(' s/b  99  99  99  99  99   6   7   8   9  10');
+
+   writeln('fh12: ');
+   rewrite(ft);
+   writeln(ft, 'The rain in spain');
+   writeln(ft, 'falls mainly on the plain');
+   reset(ft);
+   while not eof(ft) do begin
+
+      while not eoln(ft) do begin
+
+         read(ft, c);
+         write(c)
+
+      end;
+      readln(ft);
+      writeln
+
+   end;
+   append(ft);
+   writeln(ft, 'But only on tuesdays and thursdays');
+   reset(ft);
+   while not eof(ft) do begin
+
+      while not eoln(ft) do begin
+
+         read(ft, c);
+         write(c)
+
+      end;
+      readln(ft);
+      writeln
+
+   end;
+   writeln('s/b');
+   writeln('The rain in spain');
+   writeln('falls mainly on the plain');
+   writeln('The rain in spain');
+   writeln('falls mainly on the plain');
+   writeln('But only on tuesdays and thursdays');
+
+{*******************************************************************************
+
                        Header binding
 
 *******************************************************************************}
@@ -1661,35 +1692,6 @@ begin
    writeln;
    writeln('s/b');
    writeln(' hi there');
-
-{*******************************************************************************
-
-                                       Overloads
-
-*******************************************************************************}
-
-   writeln('ol1:');
-   bark;
-   bark(52);
-   bark('hi there');
-   writeln(bark:1);
-   writeln('s/b');
-   writeln('This is bark');
-   writeln('bark: the integer is: 52');
-   writeln('bark: the string is: hi there');
-   writeln('42');
-
-{*******************************************************************************
-
-                                       Overrides
-
-*******************************************************************************}
-
-   writeln('ov1:');
-   abstract;
-   writeln('s/b');
-   writeln('This is the overriding procedure');
-   writeln('This is the abstract procedure');
 
 {*******************************************************************************
 
@@ -1738,6 +1740,23 @@ begin
 
    { records }
    
+{*******************************************************************************
+
+                    Overloading of procedures and functions
+
+*******************************************************************************}
+
+   writeln('ol1:');
+   bark;
+   bark(52);
+   bark('hi there');
+   writeln(bark:1);
+   writeln('s/b');
+   writeln('This is bark');
+   writeln('bark: the integer is: 52');
+   writeln('bark: the string is: hi there');
+   writeln('42');
+
 {*******************************************************************************
 
                             Operator overloads
@@ -1837,6 +1856,12 @@ generates orda instruction (bad)
 
 {*******************************************************************************
 
+                          Static procedures and functions
+
+*******************************************************************************}
+
+{*******************************************************************************
+
                                    Exception handling
 
 *******************************************************************************}
@@ -1880,13 +1905,31 @@ generates orda instruction (bad)
 
 {*******************************************************************************
 
-                               lreal and sreal
+                            Extended range types
 
 *******************************************************************************}
 
 {*******************************************************************************
 
-                                 private
+                              Extended real types
+
+*******************************************************************************}
+
+{*******************************************************************************
+
+                                Matrix mathmatics
+
+*******************************************************************************}
+
+{*******************************************************************************
+
+                          Saturated math operators
+
+*******************************************************************************}
+
+{*******************************************************************************
+
+                               Properties
 
 *******************************************************************************}
 
@@ -1901,6 +1944,24 @@ generates orda instruction (bad)
    mod1_p;
    writeln('s/b');
    writeln('this is the used module: 87');
+
+{*******************************************************************************
+
+                                 Overrides
+
+*******************************************************************************}
+
+   writeln('ov1:');
+   abstract;
+   writeln('s/b');
+   writeln('This is the overriding procedure');
+   writeln('This is the abstract procedure');
+
+{*******************************************************************************
+
+                               Joined module
+
+*******************************************************************************}
 
 {*******************************************************************************
 
