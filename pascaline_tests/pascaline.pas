@@ -147,6 +147,7 @@ var s:         pstring;
     r1:        rec1;
     f1:        lreal;
     f2:        sreal;
+    fl1:       text;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -821,6 +822,18 @@ begin
 
 {*******************************************************************************
 
+                                   labels
+
+*******************************************************************************}
+
+   write('glb1: start ');
+   goto skip_over;
+   write('!!! BAD !!!');
+   ! Note this also contains an extended Pascaline symbol character, '_'
+   skip_over: writeln(' stop s/b start stop');
+
+{*******************************************************************************
+
                                    Constants
 
 *******************************************************************************}
@@ -883,18 +896,6 @@ begin
 
 {*******************************************************************************
 
-                                Extended goto labels
-
-*******************************************************************************}
-
-   write('ext14: start ');
-   goto skip_over;
-   write('!!! BAD !!!');
-   ! Note this also contains an extended Pascaline symbol character, '_'
-   skip_over: writeln(' stop s/b start stop');
-
-{*******************************************************************************
-
                                Constant expressions
 
 *******************************************************************************}
@@ -924,7 +925,7 @@ begin
 
 {*******************************************************************************
 
-                 Variable boolean integer expressions
+                        Boolean integer operations
 
 *******************************************************************************}
 
@@ -1513,7 +1514,13 @@ begin
 
 *******************************************************************************}
 
-{tbd}
+   assign(fl1, 'readtest.txt');
+   reset(fl1);
+   readln(fl1, st);
+   writeln('er1: ', st, ' s/b hi there ?');
+   readln(fl1, s2);
+   writeln('er2: ', s2, ' s/b lo there ?');
+
 
 {*******************************************************************************
 

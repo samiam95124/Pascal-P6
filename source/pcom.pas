@@ -4457,11 +4457,13 @@ end;
           lmin,lmax: integer;
           len:addrrange;
           fld, spad: boolean;
+          cp: boolean;
     begin
-      txt := true; deffil := true;
+      txt := true; deffil := true; cp := false;
       if sy = lparent then
         begin insymbol; chkhdr;
           variable(fsys + [comma,colon,rparent], true);
+          if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc;
           lsp := gattr.typtr; test := false;
           if lsp <> nil then
             if lsp^.form = files then
@@ -4481,7 +4483,9 @@ end;
                       end;
                   if sy = comma then
                     begin insymbol;
-                      variable(fsys + [comma,colon,rparent], true)
+                      variable(fsys + [comma,colon,rparent], true);
+                      if gattr.typtr <> nil then 
+                        cp := gattr.typtr^.form = arrayc
                     end
                   else test := true
                 end
@@ -4492,7 +4496,9 @@ end;
               { file was not loaded, we load and swap so that it ends up
                 on the bottom.}
               gen1(37(*lao*),inputptr^.vaddr);
-              gen1(72(*swp*),ptrsize); { note 2nd is always pointer }
+              { note 2nd is always pointer }
+              if cp then gen1(72(*swp*),ptrsize+intsize) 
+              else gen1(72(*swp*),ptrsize);
               deffil := false
             end;
             if txt then begin lsp := gattr.typtr;
@@ -4537,7 +4543,8 @@ end;
                                  else gen1(30(*csp*),5(*rdc*))
                       end else if stringt(lsp) then begin
                         len := lsp^.size div charmax;
-                        gen2(51(*ldc*),1,len);
+                        if not cp then gen2(51(*ldc*),1,len)
+                        else gen1(72(*swp*),intsize);
                         if fld then gen1(30(*csp*),79(*rdsf*))
                         else if spad then gen1(30(*csp*),80(*rdsp*))
                         else gen1(30(*csp*),73(*rds*))
@@ -4550,7 +4557,8 @@ end;
             end;
             test := sy <> comma;
             if not test then
-              begin insymbol; variable(fsys + [comma,colon,rparent], true)
+              begin insymbol; variable(fsys + [comma,colon,rparent], true);
+                if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc
               end
           until test;
           if sy = rparent then insymbol else error(4)
