@@ -1520,11 +1520,20 @@ begin
    writeln('er1: ', st, ' s/b hi there ?');
    readln(fl1, s2);
    writeln('er2: ', s2, ' s/b lo there ?');
-
+   readln(fl1, i:10, x:10);
+   writeln('er3: ', i:1, ' ', x:1, ' s/b 42 92');
+   readln(fl1, i:2, x:3);
+   writeln('er4: ', i:1, ' ', x:1, ' s/b 92 421');
+   readln(fl1, i:3);
+   writeln('er5: ', i:1, ' s/b 456');
+   readln(fl1, c:3);
+   writeln('er6: ', c, ' s/b a');
+   readln(fl1, st:13);
+   writeln('er7: ', st, ' s/b hi there ?');
 
 {*******************************************************************************
 
-                                Type convertion
+                           Type converters/restrictors
 
 *******************************************************************************}
 
@@ -1537,6 +1546,8 @@ begin
 
    end;
    writeln(' s/b one two three');
+
+   ! type restrictor
 
 {*******************************************************************************
 
@@ -1668,9 +1679,11 @@ begin
    writeln('falls mainly on the plain');
    writeln('But only on tuesdays and thursdays');
 
+   ! change procedure
+
 {*******************************************************************************
 
-                       Header binding
+                                 Header binding
 
 *******************************************************************************}
 
@@ -1713,7 +1726,7 @@ begin
 
 {*******************************************************************************
 
-                            Structured function returns
+                            Extended function results
 
 *******************************************************************************}
 

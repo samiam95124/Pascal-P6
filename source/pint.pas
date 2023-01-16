@@ -3615,13 +3615,23 @@ procedure callsp;
      chkend := (w = 0) or eoffn(fn)
    end;
    begin
-     while l > 0 do begin
-       c := chkbuf; getbuf; putchr(ad, c); ad := ad+1; l := l-1
-     end;
-     { if fielded, validate the rest of the field is blank }
-     if fld then while not chkend do begin
-       if chkbuf <> ' ' then errore(FieldNotBlank);
-       getbuf
+     if w < 0 then begin w := abs(w); if w < l then l := w;
+       while l > 0 do begin
+         c := chkbuf; getbuf; putchr(ad, c); ad := ad+1; l := l-1
+       end;
+       { if fielded, validate the rest of the field is blank }
+       if fld then while not chkend do begin
+         if chkbuf <> ' ' then errore(FieldNotBlank);
+         getbuf
+       end
+     end else begin if w < l then l := w;
+       if fld then while w > l do begin
+         if chkbuf <> ' ' then errore(FieldNotBlank);
+         getbuf
+       end;
+       while l > 0 do begin
+         c := chkbuf; getbuf; putchr(ad, c); ad := ad+1; l := l-1
+       end
      end
    end;(*reads*)
 
