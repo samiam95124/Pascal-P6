@@ -1640,13 +1640,23 @@ void readc(filnum fn, char* c, long w, boolean fld)
 void reads(filnum fn, address ad, long l, long w, boolean fld)
 {
   long c;
-  while (l > 0) {
-    c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
-  }
-  /* if fielded, validate the rest of the field is blank */
-  if (fld) while (!chkend(fn, w)) {
-    if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
-    getbuf(fn, &w);
+  if (w < 0) { w = labs(w); if (w < l) l = w;
+    while (l > 0) {
+      c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
+    }
+    /* if fielded, validate the rest of the field is blank */
+    if (fld) while (!chkend(fn, w)) {
+      if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
+      getbuf(fn, &w);
+    }
+  } else {
+    if (fld) while (w > l) {
+      if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
+      getbuf(fn, &w);
+    }
+    while (l > 0) {
+      c = chkbuf(fn, w); getbuf(fn, &w); putchr(ad, c); ad = ad+1; l = l-1;
+    }
   }
 } /*reads*/
 
