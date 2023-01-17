@@ -1555,8 +1555,16 @@ begin
    }
    readln(fl1);
 
+   {
+   radix specifiers on variables
    read(fl1, i$, x&, y%);
    writeln('er13: ', i:1, x:1, y:1);
+   }
+   readln(fl1);
+
+   st := '1234567890';
+   readln(fl1, st:*);
+   writeln('er14: ', st, '<', ' s/b hi!       <');
 
 {*******************************************************************************
 

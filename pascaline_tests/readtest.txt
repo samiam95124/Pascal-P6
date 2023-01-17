@@ -1,0 +1,14 @@
+hi there ?
+lo there ?
+42        92        <- note this should be ignored
+92421
+4567
+a  <- note this should be ignored
+   hi there ?<- note this should be ignored
+lo there ?   <- note this should be ignored
+   bite me  ?42<- note this should be ignored
+1234.56789876.5432<- note this should be ignored
+The answer is: 42
+$42 &42 %1000010
+42 42 1000010
+hi!
