@@ -148,6 +148,7 @@ var s:         pstring;
     f1:        lreal;
     f2:        sreal;
     fl1:       text;
+    f3, f4:    real;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -1530,6 +1531,32 @@ begin
    writeln('er6: ', c, ' s/b a');
    readln(fl1, st:13);
    writeln('er7: ', st, ' s/b hi there ?');
+   readln(fl1, st:-13);
+   writeln('er8: ', st, ' s/b lo there ?');
+   read(fl1, st:13); read(fl1, i:2); readln(fl1);
+   writeln('er9: ', st, i:1, ' s/b bite me  ?42');
+   st := '1234567890';
+   read(fl1, st:0);
+   writeln('er10: ', st, ' s/b 1234567890');
+   readln(fl1, f3:9, f4:9);
+   writeln('er11: ', f3:9:4, ' ', f4:9:4, ' s/b 1234.5678 9876.5432');
+
+   {
+   string constants to match input
+   read(fl1, 'The answer is: ', i);
+   writeln('er12: ', i:1, ' s/b 42');
+   }
+   readln(fl1);
+
+   {
+   radix specifiers in the input file
+   read(fl1, i, x, y);
+   writeln('er13: ', i:1, x:1, y:1);
+   }
+   readln(fl1);
+
+   read(fl1, i$, x&, y%);
+   writeln('er13: ', i:1, x:1, y:1);
 
 {*******************************************************************************
 

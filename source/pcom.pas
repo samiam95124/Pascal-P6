@@ -1976,8 +1976,7 @@ end;
              begin k := k + 1; id[k] := ch end
             else if ferr then begin error(182); ferr := false end;
             nextch
-          until chartp[ch] in [special,illegal,chstrquo,chcolon,
-                                chperiod,chlt,chgt,chlparen,chspace,chlcmt];
+          until not (chartp[ch] in [letter, number]);
           if k >= kk then kk := k
           else
             repeat id[kk] := ' '; kk := kk - 1
