@@ -962,22 +962,22 @@ var
   end;
 
   { get copyback buffer }
-  procedure getcbb(var p: cbbufp; id: ctp);
+  procedure getcbb(var p: cbbufp; id: ctp; size: integer);
     var lp, fp: cbbufp;
   begin p := nil;
     if id <> nil then if id^.idtype <> nil then begin
       lp := cbblst; fp := nil;
       { find a matching buffer }
       while lp <> nil do begin
-        if (lp^.id = nil) and (lp^.size = id^.idtype^.size) then fp := lp;
+        if (lp^.id = nil) and (lp^.size = size) then fp := lp;
         lp := lp^.next
       end;
       if fp = nil then begin { no existing buffer, or all occupied, get new }
         new(fp); fp^.next := lp; lp := fp; fp^.addr := gc;
-        gc := gc+id^.idtype^.size
+        gc := gc+size
       end;
       fp^.id := id;
-      fp^.size := id^.idtype^.size;
+      fp^.size := size;
       p := fp
     end
   end;
@@ -5220,7 +5220,7 @@ end;
       if nxt <> nil then begin
         lsize := gattr.typtr^.size;
         alignu(parmptr,lsize);
-        getcbb(nxt^.cbb, nxt); { get a buffer }
+        getcbb(nxt^.cbb, nxt,gattr.typtr^.size); { get a buffer }
         gen1(37(*lao*),nxt^.cbb^.addr); { load address }
         { store to that }
         gen2(115(*ctb*),gattr.typtr^.size,lsize);
