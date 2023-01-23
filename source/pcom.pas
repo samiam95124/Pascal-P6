@@ -7834,7 +7834,7 @@ end;
               if (gattr.typtr^.form <= power) or (gattr.kind = expr) then load
               else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
-              fndopr2(lop, lattr, fcp2);
+              fndopr2(bcmop, lattr, fcp2);
               if fcp2 <> nil then callop2(fcp2, lattr) else begin
                 if comptypes(realptr,lattr.typtr)and(gattr.typtr=intptr)then
                   begin gen0(10(*flt*));

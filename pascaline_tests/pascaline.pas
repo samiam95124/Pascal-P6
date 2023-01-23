@@ -149,6 +149,7 @@ var s:         pstring;
     f2:        sreal;
     fl1:       text;
     f3, f4:    real;
+    eb:        enum_b;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -551,6 +552,14 @@ operator in(a, b: enum_b): enum_b;
 begin
 
    result enum_b(ord(a)+ord(b))
+
+end;
+
+operator :=(out a: enum_b; b: enum_b);
+
+begin
+
+   a := succ(b)
 
 end;
 
@@ -1851,7 +1860,11 @@ begin
    writeln('opo17: ', ord(green >= cyan):1, ' s/b 4');
    writeln('opo18: ', ord(cyan in blue):1, ' s/b 5');
 
-! assign
+   {
+   ! assigns not implemented correctly
+   eb := blue;
+   writeln('opo19: ', ord(eb):1, ' s/b 3');
+   }
 
    new(pi1);
    new(pi2);
