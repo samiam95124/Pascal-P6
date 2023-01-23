@@ -114,9 +114,6 @@ fixed f_i: integer = 432;
 
 type enum_a   = (one, two, three);
      enum_b   = (red, green, blue, cyan, purple, black, white);
-     {string   = packed array of char;
-     pstring  = ^string;
-     byte     = 0..255;}
      string10 = packed array 10 of char;
      pinteger = ^integer;
      rec1     = record i: integer; c: char end;
@@ -129,7 +126,7 @@ var s:         pstring;
     a, b:      integer;
     ft:        text;
     fb:        file of byte;
-    ba:        byte;
+    ba, bb:    byte;
     sp:        pstring;
     mia:       array 10, 10 of integer;
     cd:        cardinal;
@@ -1581,7 +1578,7 @@ begin
 
 *******************************************************************************}
 
-   write('tc1: ');
+   write('tcr1: ');
    for i := 0 to 2 do case enum_a(i) of
 
       one: write('one ');
@@ -1592,6 +1589,10 @@ begin
    writeln(' s/b one two three');
 
    ! type restrictor
+   ba := 42;
+   bb := 11;
+   ba := byte(ba+bb);
+   writeln('tcr2: ', ba:1, ' s/b 53 ');
 
 {*******************************************************************************
 
@@ -2000,17 +2001,23 @@ generates orda instruction (bad)
 
 *******************************************************************************}
 
+   ! not implemented
+
 {*******************************************************************************
 
                           Saturated math operators
 
 *******************************************************************************}
 
+   ! not implemented
+
 {*******************************************************************************
 
                                Properties
 
 *******************************************************************************}
+
+   ! not implemented
 
 {*******************************************************************************
 
