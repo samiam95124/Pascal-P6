@@ -119,15 +119,14 @@ type enum_a   = (one, two, three);
      rec1     = record i: integer; c: char end;
      
 
-var s:         pstring;
-    st:        packed array 10 of char;
+var ps:         pstring;
+    s10:        packed array 10 of char;
     ia:        ^iarr;
     miap:      ^miarr;
     a, b:      integer;
     ft:        text;
     fb:        file of byte;
     ba, bb:    byte;
-    sp:        pstring;
     mia:       array 10, 10 of integer;
     cd:        cardinal;
     li:        linteger;
@@ -984,8 +983,8 @@ begin
 
 *******************************************************************************}
 
-   st := 'hi there ?';
-   writeln('ats1: ', st, ' s/b hi there ?');
+   s10 := 'hi there ?';
+   writeln('ats1: ', s10, ' s/b hi there ?');
    writeln('ats2: ');
    i := 1;
    for x := 1 to 10 do
@@ -1011,20 +1010,20 @@ begin
 *******************************************************************************}
 
    write('sdc1: ');
-   new(s, 10);
-   s^ := 'hi there ?';
-   write(s^);
+   new(ps, 10);
+   ps^ := 'hi there ?';
+   write(ps^);
    writeln(' s/b hi there ?');
    write('sdc2: ');
-   new(s, 10);
-   s^ := 'hi there ?';
-   st := s^;
-   write(st);
+   new(ps, 10);
+   ps^ := 'hi there ?';
+   s10 := ps^;
+   write(s10);
    writeln(' s/b hi there ?');
    write('sdc3: ');
-   new(s, 10);
-   s^ := 'hi there ?';
-   for i := 1 to 10 do write(s^[i]);
+   new(ps, 10);
+   ps^ := 'hi there ?';
+   for i := 1 to 10 do write(ps^[i]);
    writeln(' s/b hi there ?');
    write('sdc4: ');
    new(ia, 10);
@@ -1057,47 +1056,47 @@ begin
 
    { compares using pstring }
    write('sdc9: ');
-   s := str('hi there bob');
-   writeln(s^ = 'hi there bob', ' s/b true');
+   ps := str('hi there bob');
+   writeln(ps^ = 'hi there bob', ' s/b true');
    write('sdc10: ');
-   s := str('lo there bob');
-   writeln(s^ = 'hi there bob', ' s/b false');
+   ps := str('lo there bob');
+   writeln(ps^ = 'hi there bob', ' s/b false');
    write('sdc11: ');
-   s := str('hi there bob');
-   writeln(s^ <> 'hi there bob', ' s/b false');
+   ps := str('hi there bob');
+   writeln(ps^ <> 'hi there bob', ' s/b false');
    write('sdc12: ');
-   s := str('lo there bob');
-   writeln(s^ <> 'hi there bob', ' s/b true');
+   ps := str('lo there bob');
+   writeln(ps^ <> 'hi there bob', ' s/b true');
    write('sdc13: ');
-   s := str('abcd');
-   writeln(s^ < 'abce', ' s/b true');
+   ps := str('abcd');
+   writeln(ps^ < 'abce', ' s/b true');
    write('sdc14: ');
-   writeln('abce' < s^, ' s/b false');
+   writeln('abce' < ps^, ' s/b false');
    write('sdc15: ');
-   s := str('abcd');
-   writeln(s^ > 'abce', ' s/b false');
+   ps := str('abcd');
+   writeln(ps^ > 'abce', ' s/b false');
    write('sdc16: ');
-   writeln('abce' > s^, ' s/b true');
+   writeln('abce' > ps^, ' s/b true');
    write('sdc17: ');
-   s := str('abcd');
-   writeln(s^ <= 'abce', ' s/b true');
+   ps := str('abcd');
+   writeln(ps^ <= 'abce', ' s/b true');
    write('sdc18: ');
-   writeln('abce' <= s^, ' s/b false');
+   writeln('abce' <= ps^, ' s/b false');
    write('sdc19: ');
-   s := str('abcd');
-   writeln(s^ <= 'abcd', ' s/b true');
+   ps := str('abcd');
+   writeln(ps^ <= 'abcd', ' s/b true');
    write('sdc20: ');
-   writeln('abcd' <= s^, ' s/b true');
+   writeln('abcd' <= ps^, ' s/b true');
    write('sdc21: ');
-   s := str('abcd');
-   writeln(s^ >= 'abce', ' s/b false');
+   ps := str('abcd');
+   writeln(ps^ >= 'abce', ' s/b false');
    write('sdc22: ');
-   writeln('abce' >= s^, ' s/b true');
+   writeln('abce' >= ps^, ' s/b true');
    write('sdc23: ');
-   s := str('abcd');
-   writeln(s^ >= 'abcd', ' s/b true');
+   ps := str('abcd');
+   writeln(ps^ >= 'abcd', ' s/b true');
    write('sdc24: ');
-   writeln('abcd' >= s^, ' s/b true');
+   writeln('abcd' >= ps^, ' s/b true');
 
    { compares using parameterized string }
    write('sdc25: ');
@@ -1225,8 +1224,8 @@ begin
    prtstr('hi george');
    writeln(' s/b hi george');
    write('ext48: ');
-   st := 'hi george?';
-   prtstr1(st);
+   s10 := 'hi george?';
+   prtstr1(s10);
    writeln(' s/b hi george?');
 
    write('ext49: ');
@@ -1312,8 +1311,8 @@ begin
 *******************************************************************************}
 
    write('cp1: ');
-   sp := str('hi there');
-   writeln(sp^, ' s/b hi there');
+   ps := str('hi there');
+   writeln(ps^, ' s/b hi there');
 
 {*******************************************************************************
 
@@ -1526,8 +1525,8 @@ begin
 
    assign(fl1, 'readtest.txt');
    reset(fl1);
-   readln(fl1, st);
-   writeln('er1: ', st, ' s/b hi there ?');
+   readln(fl1, s10);
+   writeln('er1: ', s10, ' s/b hi there ?');
    readln(fl1, ps10);
    writeln('er2: ', ps10, ' s/b lo there ?');
    readln(fl1, i:10, x:10);
@@ -1538,15 +1537,15 @@ begin
    writeln('er5: ', i:1, ' s/b 456');
    readln(fl1, c:3);
    writeln('er6: ', c, ' s/b a');
-   readln(fl1, st:13);
-   writeln('er7: ', st, ' s/b hi there ?');
-   readln(fl1, st:-13);
-   writeln('er8: ', st, ' s/b lo there ?');
-   read(fl1, st:13); read(fl1, i:2); readln(fl1);
-   writeln('er9: ', st, i:1, ' s/b bite me  ?42');
-   st := '1234567890';
-   read(fl1, st:0);
-   writeln('er10: ', st, ' s/b 1234567890');
+   readln(fl1, s10:13);
+   writeln('er7: ', s10, ' s/b hi there ?');
+   readln(fl1, s10:-13);
+   writeln('er8: ', s10, ' s/b lo there ?');
+   read(fl1, s10:13); read(fl1, i:2); readln(fl1);
+   writeln('er9: ', s10, i:1, ' s/b bite me  ?42');
+   s10 := '1234567890';
+   read(fl1, s10:0);
+   writeln('er10: ', s10, ' s/b 1234567890');
    readln(fl1, f3:9, f4:9);
    writeln('er11: ', f3:9:4, ' ', f4:9:4, ' s/b 1234.5678 9876.5432');
 
@@ -1574,9 +1573,9 @@ begin
    }
    readln(fl1);
 
-   st := '1234567890';
-   readln(fl1, st:*);
-   writeln('er14: ', st, '<', ' s/b hi!       <');
+   s10 := '1234567890';
+   readln(fl1, s10:*);
+   writeln('er14: ', s10, '<', ' s/b hi!       <');
 
 {*******************************************************************************
 
@@ -1738,7 +1737,8 @@ begin
 
 *******************************************************************************}
 
-   ! header binding is optional, and is covered in annex C
+   ! header binding is optional, and is covered in annex C. That is included
+   ! here because it must be done in order.
 
    ! expects headertest1 headertest2 42 123.456 hi there as the command tail
 
@@ -1801,8 +1801,8 @@ begin
 
    { assignments }
    write('sfr1: ');
-   st := strret;
-   writeln(st, ' s/b hi there ?');
+   s10 := strret;
+   writeln(s10, ' s/b hi there ?');
    write('sfr2: ');
    ps10 := strret;
    writeln(ps10, ' s/b hi there ?');
