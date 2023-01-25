@@ -133,7 +133,7 @@ var s:         pstring;
     li:        linteger;
     lc:        lcardinal;
     excpt:     exception;
-    s2(10):    string;
+    ps10(10):    string;
     v(10):     vector;
     m(10, 10): matrix;
     vr:        record case e: enum_a of
@@ -870,60 +870,13 @@ begin
 *******************************************************************************}
 
 ! Pascaline style comment
-   writeln('ext1: ', $a5:1, ' s/b 165'); ! pascaline trailing comment
-   writeln('ext2: ', &72:1, ' s/b 58');
-   writeln('ext3: ', %011001:1, ' s/b ', 25:1);
-   writeln('ext3: ', 123_456_:1, ' s/b ', 123456);
-   writeln('ext4: ', $342_834_:1, ' s/b ', 3418164);
-   writeln('ext5: ', &321_732_:1, ' s/b ', 107482);
-   writeln('ext6: ', %0101_0111_:1, ' s/b ', 87);
-
-   ! note that these are Annex E character escapes and are optional
-   writeln('ext7: my\'self s/b my''self');
-   writeln('ext8: this\\one s/b this<slash>one');
-   writeln('ext9: \101 s/b e');
-   writeln('ext10: \$6f s/b o');
-   writeln('ext11: \&132 s/b Z');
-   writeln('ext12: \%1001001 s/b I');
-   writeln('ext13: ');
-   write(ord('\nul'):1, ' ');
-   write(ord('\soh'):1, ' ');
-   write(ord('\stx'):1, ' ');
-   write(ord('\etx'):1, ' ');
-   write(ord('\eot'):1, ' ');
-   write(ord('\enq'):1, ' ');
-   write(ord('\ack'):1, ' ');
-   write(ord('\bel'):1, ' ');
-   write(ord('\bs'):1, ' ');
-   write(ord('\ht'):1, ' ');
-   write(ord('\lf'):1, ' ');
-   write(ord('\vt'):1, ' ');
-   write(ord('\ff'):1, ' ');
-   write(ord('\cr'):1, ' ');
-   write(ord('\so'):1, ' ');
-   write(ord('\si'):1, ' ');
-   write(ord('\dle'):1, ' ');
-   write(ord('\dc1'):1, ' ');
-   write(ord('\xon'):1, ' ');
-   write(ord('\dc2'):1, ' ');
-   write(ord('\dc3'):1, ' ');
-   write(ord('\xoff'):1, ' ');
-   write(ord('\dc4'):1, ' ');
-   writeln;
-   write(ord('\nak'):1, ' ');
-   write(ord('\syn'):1, ' ');
-   write(ord('\etb'):1, ' ');
-   write(ord('\can'):1, ' ');
-   write(ord('\em'):1, ' ');
-   write(ord('\sub'):1, ' ');
-   write(ord('\esc'):1, ' ');
-   write(ord('\fs'):1, ' ');
-   write(ord('\gs'):1, ' ');
-   write(ord('\rs'):1, ' ');
-   write(ord('\us'):1, ' ');
-   writeln(ord('\del'):1, ' ');
-   writeln('s/b 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20');
-   writeln('21 22 23 24 25 26 27 28 29 30 31 127');
+   writeln('nc1: ', $a5:1, ' s/b 165'); ! pascaline trailing comment
+   writeln('nc2: ', &72:1, ' s/b 58');
+   writeln('nc3: ', %011001:1, ' s/b ', 25:1);
+   writeln('nc3: ', 123_456_:1, ' s/b ', 123456);
+   writeln('nc4: ', $342_834_:1, ' s/b ', 3418164);
+   writeln('nc5: ', &321_732_:1, ' s/b ', 107482);
+   writeln('nc6: ', %0101_0111_:1, ' s/b ', 87);
 
 {*******************************************************************************
 
@@ -1088,8 +1041,8 @@ begin
    for i := 1 to 10 do write(ia^[i]:1, ' ');
    writeln(' s/b 143 276 388 412 574 622 74 83 99 1');
    write('sdc5: ');
-   s2 := 'hi there ?';
-   write(s2);
+   ps10 := 'hi there ?';
+   write(ps10);
    writeln(' s/b hi there ?');
    write('sdc6: ');
    for i := 1 to 10 do v[i] := i+10;
@@ -1148,47 +1101,47 @@ begin
 
    { compares using parameterized string }
    write('sdc25: ');
-   s2 := 'hi there ?';
-   writeln(s2 = 'hi there ?', ' s/b true');
+   ps10 := 'hi there ?';
+   writeln(ps10 = 'hi there ?', ' s/b true');
    write('sdc26: ');
-   s2 := 'lo there ?';
-   writeln(s2 = 'hi there ?', ' s/b false');
+   ps10 := 'lo there ?';
+   writeln(ps10 = 'hi there ?', ' s/b false');
    write('sdc27: ');
-   s2 := 'hi there ?';
-   writeln(s2 <> 'hi there ?', ' s/b false');
+   ps10 := 'hi there ?';
+   writeln(ps10 <> 'hi there ?', ' s/b false');
    write('sdc28: ');
-   s2 := 'lo there ?';
-   writeln(s2 <> 'hi there ?', ' s/b true');
+   ps10 := 'lo there ?';
+   writeln(ps10 <> 'hi there ?', ' s/b true');
    write('sdc29: ');
-   s2 := 'abcd      ';
-   writeln(s2 < 'abce      ', ' s/b true');
+   ps10 := 'abcd      ';
+   writeln(ps10 < 'abce      ', ' s/b true');
    write('sdc30: ');
-   writeln('abce      ' < s2, ' s/b false');
+   writeln('abce      ' < ps10, ' s/b false');
    write('sdc31: ');
-   s2 := 'abcd      ';
-   writeln(s2 > 'abce      ', ' s/b false');
+   ps10 := 'abcd      ';
+   writeln(ps10 > 'abce      ', ' s/b false');
    write('sdc32: ');
-   writeln('abce      ' > s2, ' s/b true');
+   writeln('abce      ' > ps10, ' s/b true');
    write('sdc33: ');
-   s2 := 'abcd      ';
-   writeln(s2 <= 'abce      ', ' s/b true');
+   ps10 := 'abcd      ';
+   writeln(ps10 <= 'abce      ', ' s/b true');
    write('sdc34: ');
-   writeln('abce      ' <= s2, ' s/b false');
+   writeln('abce      ' <= ps10, ' s/b false');
    write('sdc35: ');
-   s2 := 'abcd      ';
-   writeln(s2 <= 'abcd      ', ' s/b true');
+   ps10 := 'abcd      ';
+   writeln(ps10 <= 'abcd      ', ' s/b true');
    write('sdc36: ');
-   writeln('abcd      ' <= s2, ' s/b true');
+   writeln('abcd      ' <= ps10, ' s/b true');
    write('sdc37: ');
-   s2 := 'abcd      ';
-   writeln(s2 >= 'abce      ', ' s/b false');
+   ps10 := 'abcd      ';
+   writeln(ps10 >= 'abce      ', ' s/b false');
    write('sdc38: ');
-   writeln('abce      ' >= s2, ' s/b true');
+   writeln('abce      ' >= ps10, ' s/b true');
    write('sdc39: ');
-   s2 := 'abcd      ';
-   writeln(s2 >= 'abcd      ', ' s/b true');
+   ps10 := 'abcd      ';
+   writeln(ps10 >= 'abcd      ', ' s/b true');
    write('sdc40: ');
-   writeln('abcd      ' >= s2, ' s/b true');
+   writeln('abcd      ' >= ps10, ' s/b true');
    
 {*******************************************************************************
 
@@ -1575,8 +1528,8 @@ begin
    reset(fl1);
    readln(fl1, st);
    writeln('er1: ', st, ' s/b hi there ?');
-   readln(fl1, s2);
-   writeln('er2: ', s2, ' s/b lo there ?');
+   readln(fl1, ps10);
+   writeln('er2: ', ps10, ' s/b lo there ?');
    readln(fl1, i:10, x:10);
    writeln('er3: ', i:1, ' ', x:1, ' s/b 42 92');
    readln(fl1, i:2, x:3);
@@ -1851,8 +1804,8 @@ begin
    st := strret;
    writeln(st, ' s/b hi there ?');
    write('sfr2: ');
-   s2 := strret;
-   writeln(s2, ' s/b hi there ?');
+   ps10 := strret;
+   writeln(ps10, ' s/b hi there ?');
 
    { writes }
    writeln('sfr3: ', strret, ' s/b hi there ?');
@@ -2140,6 +2093,59 @@ generates orda instruction (bad)
 *******************************************************************************}
 
    ! Not implemented
+
+{*******************************************************************************
+
+                          Annex E: Character escapes
+
+*******************************************************************************}
+
+   ! note that these are Annex E character escapes and are optional
+   writeln('ce1: my\'self s/b my''self');
+   writeln('ce2: this\\one s/b this<slash>one');
+   writeln('ce3: \101 s/b e');
+   writeln('ce4: \$6f s/b o');
+   writeln('ce5: \&132 s/b Z');
+   writeln('ce6: \%1001001 s/b I');
+   writeln('ce7: ');
+   write(ord('\nul'):1, ' ');
+   write(ord('\soh'):1, ' ');
+   write(ord('\stx'):1, ' ');
+   write(ord('\etx'):1, ' ');
+   write(ord('\eot'):1, ' ');
+   write(ord('\enq'):1, ' ');
+   write(ord('\ack'):1, ' ');
+   write(ord('\bel'):1, ' ');
+   write(ord('\bs'):1, ' ');
+   write(ord('\ht'):1, ' ');
+   write(ord('\lf'):1, ' ');
+   write(ord('\vt'):1, ' ');
+   write(ord('\ff'):1, ' ');
+   write(ord('\cr'):1, ' ');
+   write(ord('\so'):1, ' ');
+   write(ord('\si'):1, ' ');
+   write(ord('\dle'):1, ' ');
+   write(ord('\dc1'):1, ' ');
+   write(ord('\xon'):1, ' ');
+   write(ord('\dc2'):1, ' ');
+   write(ord('\dc3'):1, ' ');
+   write(ord('\xoff'):1, ' ');
+   write(ord('\dc4'):1, ' ');
+   writeln;
+   write(ord('\nak'):1, ' ');
+   write(ord('\syn'):1, ' ');
+   write(ord('\etb'):1, ' ');
+   write(ord('\can'):1, ' ');
+   write(ord('\em'):1, ' ');
+   write(ord('\sub'):1, ' ');
+   write(ord('\esc'):1, ' ');
+   write(ord('\fs'):1, ' ');
+   write(ord('\gs'):1, ' ');
+   write(ord('\rs'):1, ' ');
+   write(ord('\us'):1, ' ');
+   writeln(ord('\del'):1, ' ');
+   writeln('s/b 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20');
+   writeln('21 22 23 24 25 26 27 28 29 30 31 127');
 
 {*******************************************************************************
 
