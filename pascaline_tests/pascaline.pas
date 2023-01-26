@@ -63,6 +63,7 @@ uses pascaline1; { test used module }
 var a_1: integer;
     c:   char;
     i, x, y:   integer;
+    lx, ly, lz: linteger;
     file1: text;
     file2: file of integer;
     number1: integer;
@@ -92,6 +93,7 @@ const not_exp = not 42;
       xor_exp = 31 xor 53;
       set_exp = ['a'..'d', 'z'];
       set_exp1 = [1..5, 10+2];
+      mmaxlint = -maxlint;
 
 type iarr   = array of integer;
      miarr  = array of array of integer;
@@ -146,6 +148,8 @@ var ps:         pstring;
     fl1:       text;
     f3, f4:    real;
     eb:        enum_b;
+    las, lbs, lcs, lds, les, lgs, lhs: linteger;
+    lvnum: -maxint..maxint;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -2022,6 +2026,89 @@ begin
                             6.31 Extended range types
 
 *******************************************************************************}
+
+   { linteger variables }
+   lx := 43; ly := 78; lz := ly;
+   writeln('linteger1:   ', lx + ly:1, ' s/b 121');
+   writeln('linteger2:   ', ly - lx:1, ' s/b 35');
+   writeln('linteger3:   ', lx * ly:1, ' s/b 3354');
+   writeln('linteger4:   ', ly div lx:1, ' s/b 1');
+   writeln('linteger5:   ', ly mod lx:1, ' s/b 35');
+   writeln('linteger6:   ', succ(lx):1, ' s/b 44');
+   writeln('liinteger7:   ', pred(lx):1, ' s/b 42');
+   writeln('linteger8:   ', sqr(lx):1, ' s/b 1849');
+   writeln('linteger9:   ', chr(ly), ' s/b N');
+   writeln('linteger10:  ', ord(chr(lx)):1, ' s/b 43');
+   writeln('linteger11:  ', odd(lx):5, ' s/b true');
+   writeln('linteger12:  ', odd(ly):5, ' s/b false');
+   writeln('linteger13:  ', lz = ly:5, ' s/b true');
+   writeln('linteger14:  ', lx = ly:5, ' s/b false');
+   writeln('linteger15:  ', lx < ly:5, ' s/b true');
+   writeln('linteger16:  ', ly < lx:5, ' s/b false');
+   writeln('linteger17:  ', ly > lx:5, ' s/b true');
+   writeln('linteger18:  ', lx > ly:5, ' s/b false');
+   writeln('linteger19:  ', lx <> ly:5, ' s/b true');
+   writeln('linteger20:  ', ly <> lz:5, ' s/b false');
+   writeln('linteger21:  ', lx <= ly:5, ' s/b true');
+   writeln('linteger22:  ', lz <= ly:5, ' s/b true');
+   writeln('linteger23:  ', ly <= lx:5, ' s/b false');
+   writeln('linteger24:  ', ly >= lx:5, ' s/b true');
+   writeln('linteger25:  ', ly >= lz:5, ' s/b true');
+   writeln('linteger26:  ', lx >= ly:5, ' s/b false');
+
+   { signed integer variables }
+   las := -14;
+   lbs := -32;
+   lcs := -14;
+   lds := 20;
+   les := -15;
+   lgs := maxlint;
+   lhs := mmaxlint;
+   lvnum := -maxlint;
+   writeln('linteger55:  ', las + lds:1, ' s/b 6');
+   writeln('linteger56:  ', lds + las:1, ' s/b 6');
+   writeln('linteger57:  ', lbs + lds:1, ' s/b -12');
+   writeln('linteger58:  ', las + lbs:1, ' s/b -46');
+   writeln('linteger59:  ', lds - las:1, ' s/b 34');
+   writeln('linteger60:  ', lbs - lds:1, ' s/b -52');
+   writeln('linteger61:  ', lbs - las:1, ' s/b -18');
+   writeln('linteger62:  ', lds * las:1, ' s/b -280');
+   writeln('linteger63:  ', las * lds:1, ' s/b -280');
+   writeln('linteger64:  ', las * lbs:1, ' s/b 448');
+   writeln('linteger65:  ', lds div las:1, ' s/b -1');
+   writeln('linteger66:  ', lbs div lds:1, ' s/b -1');
+   writeln('linteger67:  ', lbs div las:1, ' s/b 2');
+   writeln('linteger68:  ', succ(las):1, ' s/b -13');
+   writeln('linteger69:  ', pred(lbs):1, ' s/b -33');
+   writeln('linteger70: ', sqr(las):1, ' s/b 196');
+   writeln('linteger71:  ', odd(las):5, ' s/b false');
+   writeln('linteger72:  ', odd(les):5, ' s/b true');
+   writeln('linteger73:  ', las = lcs:5, ' s/b true');
+   writeln('linteger74:  ', las = lbs:5, ' s/b false');
+   writeln('linteger75:  ', las <> lbs:5, ' s/b true');
+   writeln('linteger76:  ', las <> lcs:5, ' s/b false');
+   writeln('linteger77:  ', las < lds:5, ' s/b true');
+   writeln('linteger78:  ', lbs < las:5, ' s/b true');
+   writeln('linteger79:  ', lds < las:5, ' s/b false');
+   writeln('linteger80:  ', las < lbs:5, ' s/b false');
+   writeln('linteger81:  ', lds > las:5, ' s/b true');
+   writeln('linteger82:  ', las > lbs:5, ' s/b true');
+   writeln('linteger83:  ', las > lds:5, ' s/b false');
+   writeln('linteger84:  ', lbs > las:5, ' s/b false');
+   writeln('linteger85:  ', las <= lds:5, ' s/b true');
+   writeln('linteger86:  ', lbs <= las:5, ' s/b true');
+   writeln('linteger87:  ', las <= lcs:5, ' s/b true');
+   writeln('linteger88:  ', lds <= las:5, ' s/b false');
+   writeln('linteger89:  ', las <= lbs:5, ' s/b false');
+   writeln('linteger90:  ', lds >= las:5, ' s/b true');
+   writeln('linteger91:  ', las >= lbs:5, ' s/b true');
+   writeln('linteger92:  ', las >= lcs:5, ' s/b true');
+   writeln('linteger93:  ', las >= lds:5, ' s/b false');
+   writeln('linteger94:  ', lbs >= las:5, ' s/b false');
+   writeln('linteger95:  ', abs(las):1, ' s/b 14');
+   writeln('linteger96:  ', lgs+lhs:1, ' s/b 0');
+   writeln('linteger97:  ', lgs-maxlint:1, ' s/b 0');
+   writeln('linteger98:  ', lgs+lvnum:1, ' s/b 0');
 
 {*******************************************************************************
 
