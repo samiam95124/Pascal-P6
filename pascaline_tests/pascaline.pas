@@ -152,6 +152,8 @@ var ps:         pstring;
     eb:        enum_b;
     las, lbs, lcs, lds, les, lgs, lhs: linteger;
     lvnum: -maxint..maxint;
+    sra, srb, src, srd, sre: real;
+    lra, lrb, lrc, lrd, lre: real;
 
 { allocate variable length string }
 function str(s: string): pstring;
@@ -2175,6 +2177,178 @@ begin
                               6.32 Extended real types
 
 *******************************************************************************}
+
+   { sreal }
+
+   { unsigned variables }
+   sra := 435.23;
+   srb := 983.67;
+   src := srb;
+   srd := 0.3443;
+   writeln('sreal1:  ', sra + srb:15, ' s/b  1.418900e+03');
+   writeln('sreal2:  ', srb - sra:15, ' s/b  5.484399e+02');
+   writeln('sreal3:  ', sra * srb:15, ' s/b  4.281227e+05');
+   writeln('sreal4:  ', srb / sra:15, ' s/b  2.260115e+00');
+   writeln('sreal5:  ', src = srb:5, ' s/b true');
+   writeln('sreal6:  ', sra = srb:5, ' s/b false');
+   writeln('sreal7:  ', sra < srb:5, ' s/b true');
+   writeln('sreal8:  ', srb < sra:5, ' s/b false');
+   writeln('sreal9:  ', srb > sra:5, ' s/b true');
+   writeln('sreal10:  ', sra > srb:5, ' s/b false');
+   writeln('sreal11:  ', sra <> srb:5, ' s/b true');
+   writeln('sreal12:  ', srb <> src:5, ' s/b false');
+   writeln('sreal13:  ', sra <= srb:5, ' s/b true');
+   writeln('sreal14:  ', src <= srb:5, ' s/b true');
+   writeln('sreal15:  ', srb <= sra:5, ' s/b false');
+   writeln('sreal16:  ', srb >= sra:5, ' s/b true');
+   writeln('sreal17:  ', srb >= src:5, ' s/b true');
+   writeln('sreal18:  ', sra >= srb:5, ' s/b false');
+   writeln('sreal19:  ', abs(sra):15, ' s/b  4.35230e+02');
+   writeln('sreal20:  ', sqr(sra):15, ' s/b  1.89425e+05');
+   writeln('sreal21:  ', sqrt(srb):15, ' s/b  3.13635e+01');
+   writeln('sreal22:  ', sin(srb):15, ' s/b -3.44290e-01');
+   writeln('sreal23:  ', arctan(sra):15, ' s/b  1.56850e+00');
+   writeln('sreal24:  ', exp(srd):15, ' s/b  1.41100e+00');
+   writeln('sreal25:  ', ln(sra):15, ' s/b  6.07587e+00');
+   writeln('sreal26:  ', trunc(sra):1, ' s/b 435');
+   writeln('sreal27:  ', round(srb):1, ' s/b 984');
+   writeln('sreal28:  ', round(sra):1, ' s/b 435');
+
+   { signed variables }
+   sra := -734.2;
+   srb := -7634.52;
+   src := sra;
+   srd := 1034.54;
+   sre := -0.38483;
+   writeln('sreal29:  ', sra + srd:15, ' s/b  3.003400e+02');
+   writeln('sreal30:  ', srd + sra:15, ' s/b  3.003400e+02');
+   writeln('sreal31:  ', srb + srd:15, ' s/b -6.599980e+03');
+   writeln('sreal32:  ', sra + srb:15, ' s/b -8.368720e+03');
+   writeln('sreal33:  ', srd - sra:15, ' s/b  1.768740e+03');
+   writeln('sreal34:  ', srb - srd:15, ' s/b -8.669061e+03');
+   writeln('sreal35:  ', srb - sra:15, ' s/b -6.900320e+03');
+   writeln('sreal36:  ', srd * sra:15, ' s/b -7.595593e+05');
+   writeln('sreal37:  ', sra * srd:15, ' s/b -7.595593e+05');
+   writeln('sreal38:  ', sra * srb:15, ' s/b  5.605265e+06');
+   writeln('sreal39:  ', srd / sra:15, ' s/b -1.409071e+00');
+   writeln('sreal40:  ', srb / srd:15, ' s/b -7.379627e+00');
+   writeln('sreal41:  ', srb / sra:15, ' s/b  1.039842e+01');
+   writeln('sreal42:  ', sra = src:5, ' s/b true');
+   writeln('sreal43:  ', sra = srb:5, ' s/b false');
+   writeln('sreal44:  ', sra <> srb:5, ' s/b true');
+   writeln('sreal45:  ', sra <> src:5, ' s/b false');
+   writeln('sreal46:  ', sra < srd:5, ' s/b true');
+   writeln('sreal47:  ', srb < sra:5, ' s/b true');
+   writeln('sreal48:  ', srd < sra:5, ' s/b false');
+   writeln('sreal49:  ', sra < srb:5, ' s/b false');
+   writeln('sreal50:  ', srd > sra:5, ' s/b true');
+   writeln('sreal51:  ', sra > srb:5, ' s/b true');
+   writeln('sreal52:  ', sra > srd:5, ' s/b false');
+   writeln('sreal53:  ', srb > sra:5, ' s/b false');
+   writeln('sreal54:  ', sra <= srd:5, ' s/b true');
+   writeln('sreal55:  ', srb <= sra:5, ' s/b true');
+   writeln('sreal56:  ', sra <= src:5, ' s/b true');
+   writeln('sreal57:  ', srd <= sra:5, ' s/b false');
+   writeln('sreal58:  ', sra <= srb:5, ' s/b false');
+   writeln('sreal59:  ', srd >= sra:5, ' s/b true');
+   writeln('sreal60:  ', sra >= srb:5, ' s/b true');
+   writeln('sreal61: ', sra >= src:5, ' s/b true');
+   writeln('sreal62: ', sra >= srd:5, ' s/b false');
+   writeln('sreal63: ', srb >= sra:5, ' s/b false');
+   writeln('sreal64: ', abs(sra):15, ' s/b  7.34200e+02');
+   writeln('sreal65: ', sqr(sra):15, ' s/b  5.39050e+05');
+   writeln('sreal66: ', sin(srb):15, ' s/b -4.34850e-01');
+   writeln('sreal67: ', arctan(sra):15, ' s/b -1.56943e+00');
+   writeln('sreal68: ', exp(sre):15, ' s/b  6.80566e-01');
+   writeln('sreal69: ', trunc(sra):15, ' s/b -734');
+   writeln('sreal70: ', round(srb):15, ' s/b -7635');
+   writeln('sreal71: ', round(sra):15, ' s/b -734');
+
+   { lreal }
+
+   { unsigned variables }
+   lra := 435.23;
+   lrb := 983.67;
+   lrc := lrb;
+   lrd := 0.3443;
+   writeln('lreal1:  ', lra + lrb:15, ' s/b  1.418900e+03');
+   writeln('lreal2:  ', lrb - lra:15, ' s/b  5.484399e+02');
+   writeln('lreal3:  ', lra * lrb:15, ' s/b  4.281227e+05');
+   writeln('lreal4:  ', lrb / lra:15, ' s/b  2.260115e+00');
+   writeln('lreal5:  ', lrc = lrb:5, ' s/b true');
+   writeln('lreal6:  ', lra = lrb:5, ' s/b false');
+   writeln('lreal7:  ', lra < lrb:5, ' s/b true');
+   writeln('lreal8:  ', lrb < lra:5, ' s/b false');
+   writeln('lreal9:  ', lrb > lra:5, ' s/b true');
+   writeln('lreal10:  ', lra > lrb:5, ' s/b false');
+   writeln('lreal11:  ', lra <> lrb:5, ' s/b true');
+   writeln('lreal12:  ', lrb <> lrc:5, ' s/b false');
+   writeln('lreal13:  ', lra <= lrb:5, ' s/b true');
+   writeln('lreal14:  ', lrc <= lrb:5, ' s/b true');
+   writeln('lreal15:  ', lrb <= lra:5, ' s/b false');
+   writeln('lreal16:  ', lrb >= lra:5, ' s/b true');
+   writeln('lreal17:  ', lrb >= lrc:5, ' s/b true');
+   writeln('lreal18:  ', lra >= lrb:5, ' s/b false');
+   writeln('lreal19:  ', abs(lra):15, ' s/b  4.35230e+02');
+   writeln('lreal20:  ', sqr(lra):15, ' s/b  1.89425e+05');
+   writeln('lreal21:  ', sqrt(lrb):15, ' s/b  3.13635e+01');
+   writeln('lreal22:  ', sin(lrb):15, ' s/b -3.44290e-01');
+   writeln('lreal23:  ', arctan(lra):15, ' s/b  1.56850e+00');
+   writeln('lreal24:  ', exp(lrd):15, ' s/b  1.41100e+00');
+   writeln('lreal25:  ', ln(lra):15, ' s/b  6.07587e+00');
+   writeln('lreal26:  ', trunc(lra):1, ' s/b 435');
+   writeln('lreal27:  ', round(lrb):1, ' s/b 984');
+   writeln('lreal28:  ', round(lra):1, ' s/b 435');
+
+   { signed variables }
+   lra := -734.2;
+   lrb := -7634.52;
+   lrc := lra;
+   lrd := 1034.54;
+   lre := -0.38483;
+   writeln('lreal29:  ', lra + lrd:15, ' s/b  3.003400e+02');
+   writeln('lreal30:  ', lrd + lra:15, ' s/b  3.003400e+02');
+   writeln('lreal31:  ', lrb + lrd:15, ' s/b -6.599980e+03');
+   writeln('lreal32:  ', lra + lrb:15, ' s/b -8.368720e+03');
+   writeln('lreal33:  ', lrd - lra:15, ' s/b  1.768740e+03');
+   writeln('lreal34:  ', lrb - lrd:15, ' s/b -8.669061e+03');
+   writeln('lreal35:  ', lrb - lra:15, ' s/b -6.900320e+03');
+   writeln('lreal36:  ', lrd * lra:15, ' s/b -7.595593e+05');
+   writeln('lreal37:  ', lra * lrd:15, ' s/b -7.595593e+05');
+   writeln('lreal38:  ', lra * lrb:15, ' s/b  5.605265e+06');
+   writeln('lreal39:  ', lrd / lra:15, ' s/b -1.409071e+00');
+   writeln('lreal40:  ', lrb / lrd:15, ' s/b -7.379627e+00');
+   writeln('lreal41:  ', lrb / lra:15, ' s/b  1.039842e+01');
+   writeln('lreal42:  ', lra = lrc:5, ' s/b true');
+   writeln('lreal43:  ', lra = lrb:5, ' s/b false');
+   writeln('lreal44:  ', lra <> lrb:5, ' s/b true');
+   writeln('lreal45:  ', lra <> lrc:5, ' s/b false');
+   writeln('lreal46:  ', lra < lrd:5, ' s/b true');
+   writeln('lreal47:  ', lrb < lra:5, ' s/b true');
+   writeln('lreal48:  ', lrd < lra:5, ' s/b false');
+   writeln('lreal49:  ', lra < lrb:5, ' s/b false');
+   writeln('lreal50:  ', lrd > lra:5, ' s/b true');
+   writeln('lreal51:  ', lra > lrb:5, ' s/b true');
+   writeln('lreal52:  ', lra > lrd:5, ' s/b false');
+   writeln('lreal53:  ', lrb > lra:5, ' s/b false');
+   writeln('lreal54:  ', lra <= lrd:5, ' s/b true');
+   writeln('lreal55:  ', lrb <= lra:5, ' s/b true');
+   writeln('lreal56:  ', lra <= lrc:5, ' s/b true');
+   writeln('lreal57:  ', lrd <= lra:5, ' s/b false');
+   writeln('lreal58:  ', lra <= lrb:5, ' s/b false');
+   writeln('lreal59:  ', lrd >= lra:5, ' s/b true');
+   writeln('lreal60:  ', lra >= lrb:5, ' s/b true');
+   writeln('lreal61: ', lra >= lrc:5, ' s/b true');
+   writeln('lreal62: ', lra >= lrd:5, ' s/b false');
+   writeln('lreal63: ', lrb >= lra:5, ' s/b false');
+   writeln('lreal64: ', abs(lra):15, ' s/b  7.34200e+02');
+   writeln('lreal65: ', sqr(lra):15, ' s/b  5.39050e+05');
+   writeln('lreal66: ', sin(lrb):15, ' s/b -4.34850e-01');
+   writeln('lreal67: ', arctan(lra):15, ' s/b -1.56943e+00');
+   writeln('lreal68: ', exp(lre):15, ' s/b  6.80566e-01');
+   writeln('lreal69: ', trunc(lra):15, ' s/b -734');
+   writeln('lreal70: ', round(lrb):15, ' s/b -7635');
+   writeln('lreal71: ', round(lra):15, ' s/b -734');
 
 {*******************************************************************************
 
