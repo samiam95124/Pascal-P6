@@ -6051,8 +6051,9 @@ end;
         else loadaddress;
       lattr := gattr; lop := op;
       if lop = inop then
-        if not comptypes(gattr.typtr,intptr) then
-          gen0t(58(*ord*),gattr.typtr);
+        if not comptypes(gattr.typtr,intptr) and 
+          (gattr.typtr^.form <= subrange) then
+            gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
       onstkr := gattr.kind = expr;
       if gattr.typtr <> nil then

@@ -1943,14 +1943,9 @@ begin
    write('opo34: ');
    pi3 := pi1 >= pi2;
    writeln(pi3^:1, ' s/b 54');
-
-{
-generates orda instruction (bad)
-
    write('opo35: ');
    pi3 := pi1 in pi2;
-   writeln(pi3^:1, ' s/b 30');
-}
+   writeln(pi3^:1, ' s/b 54');
 
    { overload from used module }
 
@@ -2005,6 +2000,8 @@ generates orda instruction (bad)
    writeln('exception not taken');
 
    { nested in procedure }
+
+   { in module destructor }
 
 {*******************************************************************************
 

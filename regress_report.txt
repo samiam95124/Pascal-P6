@@ -18,7 +18,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-0 standard_tests/iso7185prt.dif
+23 standard_tests/iso7185prt.dif
 pmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -37,7 +37,7 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-20 standard_tests/iso7185prt.dif
+43 standard_tests/iso7185prt.dif
 cmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -56,10 +56,10 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-236 standard_tests/iso7185prt.dif
-Mon 23 Jan 2023 12:49:15 AM PST
+259 standard_tests/iso7185prt.dif
+Wed 25 Jan 2023 06:39:45 PM PST
 Source files
-8b3ed1bb4cd546938ede3d8465c16fb0  -
+062bede3944e85d76edcb8af66bb0959  -
 batch files
 6f37b3bc1f0b2d30bb592840f98a4ce4  -
 P2 files
