@@ -1848,7 +1848,9 @@ end;
           9:  switch(chkvbk);
           10: switch(experr);
           11: switch(dummy);
-          12: begin switch(list); if not list then writeln(output) end;
+          12: if (incstk = nil) then begin 
+                switch(list); if not list then writeln(output) 
+              end;
           13: switch(dummy);
           14: switch(dummy);
           15: switch(dummy);

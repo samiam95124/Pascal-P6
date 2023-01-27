@@ -56,6 +56,7 @@
 
 program pascaline(output, error, list, file1, file2, number1, number2, command);
 
+joins pascaline2; { test joined module }
 uses pascaline1; { test used module }
 
 { this will test for extended labeling }
