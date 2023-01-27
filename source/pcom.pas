@@ -6050,7 +6050,7 @@ end;
         if gattr.typtr^.form <= power then load
         else loadaddress;
       lattr := gattr; lop := op;
-      if lop = inop then
+      if (lop = inop) and (gattr.typtr <> nil) then
         if not comptypes(gattr.typtr,intptr) and 
           (gattr.typtr^.form <= subrange) then
             gen0t(58(*ord*),gattr.typtr);
