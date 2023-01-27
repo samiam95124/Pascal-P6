@@ -2364,22 +2364,22 @@ end;
   procedure searchid(fidcls: setofids; var fcp: ctp);
     var lcp, lcp1: ctp; pn, fpn: disprange; pdf: boolean;
   begin
+    pdf := false;
     searchidne(fidcls, lcp); { perform no error search }
     if lcp = nil then begin
       { search module leader in the pile }
-      pdf := false;
       if ptop > 0 then for pn := ptop-1 downto 0 do
         if strequvf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
       if pdf then begin { module name was found }
         insymbol; if sy <> period then error(21) else insymbol;
         if sy <> ident then error(2)
         else schsecidne(pile[fpn].fname,fidcls,lcp); { search qualifed name }
-        if lcp = nil then error(268) { not found }
+        if lcp = nil then begin error(268); pdf := false end { not found }
       end
     end;
     if lcp <> nil then begin { found }
       lcp^.refer := true;
-      if (disx <> top) and (display[top].define) then begin
+      if (disx <> top) and (display[top].define) and not pdf then begin
         { downlevel, create an alias and link to bottom }
         new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
         lcp1^.name := lcp^.name; lcp1^.actid := lcp;
