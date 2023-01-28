@@ -5443,7 +5443,8 @@ end;
                     gencuv(locpar,fcp^.pfvaddr,nil)
                   end else begin
                     lcp := fcp^.grppar;
-                    gencuv(locpar,lcp^.pfvid^.vaddr,lcp^.pfvid)
+                    if lcp^.pfvid <> nil then 
+                      gencuv(locpar,lcp^.pfvid^.vaddr,lcp^.pfvid)
                   end
                 end else begin
                   if inherit then error(234);

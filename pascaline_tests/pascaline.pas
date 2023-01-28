@@ -303,6 +303,16 @@ begin
 
 end;
 
+override procedure pascaline2.abstract;
+
+begin
+
+   writeln('This is the overriding procedure');
+
+   inherited abstract
+
+end;
+
 { parameterized variables }
 
 procedure parvar(l: integer);
@@ -2410,6 +2420,19 @@ begin
    pascaline2.mod1_p;
    writeln('s/b');
    writeln('this is the joined module: 87');
+
+{
+   writeln('lm2:');
+   pascaline2.zork;
+   pascaline2.zork(52);
+   pascaline2.zork('hi there');
+   writeln(bark:1);
+   writeln('s/b');
+   writeln('This is bark');
+   writeln('bark: the integer is: 52');
+   writeln('bark: the string is: hi there');
+   writeln('42');
+}
 
 {*******************************************************************************
 
