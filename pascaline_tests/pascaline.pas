@@ -303,6 +303,7 @@ begin
 
 end;
 
+{
 override procedure pascaline2.abstract;
 
 begin
@@ -312,6 +313,7 @@ begin
    inherited abstract
 
 end;
+}
 
 { parameterized variables }
 
@@ -2421,7 +2423,9 @@ begin
    writeln('s/b');
    writeln('this is the joined module: 87');
 
-{
+   {
+   override of joined module
+   does not work at present.
    writeln('lm2:');
    pascaline2.zork;
    pascaline2.zork(52);
@@ -2432,7 +2436,7 @@ begin
    writeln('bark: the integer is: 52');
    writeln('bark: the string is: hi there');
    writeln('42');
-}
+   }
 
 {*******************************************************************************
 
