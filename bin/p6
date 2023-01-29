@@ -16,9 +16,13 @@
 #
 # --pmach	  Generate mach code and run the result through pmach.
 # --cmach	  Generate mach code and run the result through cmach.
-# --package Generate a packaged application and run.
+# --package   Generate a packaged application and run.
 #
-# The intermediate code is placed in <file>.p6.
+# The intermediate code is placed in <file>.p6, where the <file> is the last
+# filename on the command line, which is considered the name of the program.
+# If a binary intermediate is selected (pmach, cmach or package mode), then the
+# intel hex format binary form of the P-machine code will be placed in
+# <file>.p6o, where <file> is the program name.
 #
 
 pmach=0
