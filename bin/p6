@@ -94,13 +94,18 @@ if [ -z "$progfile" ]; then
 fi
 
 #
+# Put intermediate under the program filename
+#
+mv temp.p6 $progfile.p6
+
+#
 # Run combined file
 #
 if [ "$pmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp temp.p6 > prd
-    rm temp temp.p6
+	cat temp $progfile.p6 > prd
+    rm temp
 	pint
     cp prr progfile.p6o
 	mv prr prd
@@ -109,8 +114,8 @@ if [ "$pmach" = "1" ]; then
 elif [ "$cmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp temp.p6 > prd
-    rm temp temp.p6
+	cat temp $progfile.p6 > prd
+    rm temp
 	pint
     cp prr $progfile.p6o
 	mv prr prd
@@ -119,8 +124,8 @@ elif [ "$cmach" = "1" ]; then
 elif [ "$package" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp temp.p6 > prd
-    rm temp temp.p6
+	cat temp $progfile.p6 > prd
+    rm temp
 	pint
     cp prr $progfile.p6o
 	mv $progfile.p6o prd
@@ -131,7 +136,7 @@ elif [ "$package" = "1" ]; then
 	
 else
 
-	mv temp.p6 prd
+	mv $progfile.p6 prd
 	pint
 
 fi
