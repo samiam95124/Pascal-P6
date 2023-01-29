@@ -76,29 +76,7 @@ do
 			
 		fi
 		echo Compiling $param...
-		if [ "$pmach" = "1" ]; then
-
-	        echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-	
-        elif [ "$cmach" = "1" ]; then
-
-            echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-
-        elif [ "$package" = "1" ]; then
-
-            echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-	        
-	    else
-	    
-	    	cp $param.pas prd
-	    	
-	    fi
+	    cp $param.pas prd
 	    pcom
 	    mv prr $param.p6
 	    cat $param.p6 >> temp.p6
