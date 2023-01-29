@@ -22,7 +22,8 @@
 # filename on the command line, which is considered the name of the program.
 # If a binary intermediate is selected (pmach, cmach or package mode), then the
 # intel hex format binary form of the P-machine code will be placed in
-# <file>.p6o, where <file> is the program name.
+# <file>.p6o, where <file> is the program name. For package mode, the final
+# executable will be placed under the program name.
 #
 
 pmach=0
