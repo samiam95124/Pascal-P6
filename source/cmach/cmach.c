@@ -2885,13 +2885,17 @@ void sinins()
     case 92 /*vbs*/: getq(); popadr(ad); varenter(ad, ad+q-1); break;
     case 96 /*vbe*/: varexit(); break;
     case 19 /*brk*/: break; /* breaks are no-ops here */
-    case 122 /*vis*/:
+    case 122 /*vis*/: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
+                   for (i = 1; i <= q; i++) {
+                     popint(i1); putint(ad1, i1); ad1 = ad1-INTSIZE; q1 = q1*i1;
+                   }
+                   popadr(ad1); sp = sp-q1; putadr(ad, sp); pshadr(ad1);
+                   break;
     case 133 /*vip*/: getq(); getq1(); popadr(ad); ad1 = ad+q*INTSIZE;
                    for (i = 1; i <= q; i++) {
                      popint(i1); putint(ad1, i1); ad1 = ad1-INTSIZE; q1 = q1*i1;
                    }
-                   if (op == 122) { sp = sp-q; putadr(ad1, sp); }
-                   else { newspc(q1, &ad2); putadr(ad1, ad2); }
+                   newspc(q1, &ad2); putadr(ad1, ad2);
                    break;
     case 226 /*vin*/: getq(); getq1(); popadr(ad); ad2 = sp;
                    for (i = 1; i <= q; i++)
