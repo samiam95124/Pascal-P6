@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# Script to run Pascaline test suite
+#
+# Execution:
+#
+# testpascaline [--pmach|--cmach|--pint]
+#
+# The flags are one of:
+#
+# --pmach Generate mach code and run the result through pmach.
+# --cmach Generate mach code and run the result through cmach.
+# --pint  Generate mach code and run the result through pint (default).
+#
+cd pascaline_tests
+
+#
+# Compile sources
+#
+compile $1 pascaline2 pascaline1 pascaline
+
+#
+# Form combined deck
+#
+cat pascaline.p6 > prd
+
+#
+# Run test with parameters
+#
+if [ "$1" = "--pmach" ]; then
+
+	echo Running with pmach
+    echo "o e+" > temp
+    cat temp pascaline.p6 > prd
+    pint > temp
+    mv prr pascaline.p6o
+    cat pascaline.p6o $inpfile > prd
+    pmach headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+    rm temp
+    
+elif [ "$1" = "--cmach" ]; then
+
+	echo Running with cmach
+    echo "o e+" > temp
+    cat temp pascaline.p6 > prd
+    pint > temp
+    mv prr pascaline.p6o
+    cat pascaline.p6o $inpfile > prd
+    cmach headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+    rm temp
+    
+else
+
+	echo Running with pint
+    cat pascaline.p6 $inpfile > prd
+    pint headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+    
+fi

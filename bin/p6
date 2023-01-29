@@ -108,6 +108,7 @@ mv temp.p6 $progfile.p6
 #
 if [ "$pmach" = "1" ]; then
 
+	echo Running with pmach
     echo "o e+" > temp
 	cat temp $progfile.p6 > prd
     rm temp
@@ -118,6 +119,7 @@ if [ "$pmach" = "1" ]; then
 	
 elif [ "$cmach" = "1" ]; then
 
+	echo Running with cmach
     echo "o e+" > temp
 	cat temp $progfile.p6 > prd
     rm temp
@@ -128,6 +130,7 @@ elif [ "$cmach" = "1" ]; then
 	
 elif [ "$package" = "1" ]; then
 
+    echo Running in packaged mode
     echo "o e+" > temp
 	cat temp $progfile.p6 > prd
     rm temp
