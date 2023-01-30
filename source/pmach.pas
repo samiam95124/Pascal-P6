@@ -2431,6 +2431,8 @@ begin (*callsp*)
                           fn := store[ad];
                           if fn = inputfn then putchr(ad+fileidsize, input^)
                           else if fn = prdfn then putchr(ad+fileidsize, prd^)
+                          else if fn = commandfn then 
+                            putchr(ad+fileidsize, bufcommand)
                           else begin
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)

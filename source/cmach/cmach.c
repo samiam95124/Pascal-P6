@@ -2186,6 +2186,7 @@ void callsp(void)
                    fn = store[ad];
                    if (fn == INPUTFN) putchr(ad+FILEIDSIZE, buffn(INPUTFN));
                    else if (fn == PRDFN) putchr(ad+FILEIDSIZE, buffn(PRDFN));
+                   else if (fn == COMMANDFN) putchr(ad+FILEIDSIZE, bufcommand());
                    else {
                      if (filstate[fn] == fsread)
                        putchr(ad+FILEIDSIZE, buffn(fn));
