@@ -477,6 +477,7 @@ typedef byte settype[SETSIZE]; /* standard set */
 typedef long filnum;            /* logical file number */
 typedef char filnam[FILLEN];   /* filename strings */
 typedef enum {
+  fsnone,
   fsclosed,
   fsread,
   fswrite
@@ -570,7 +571,8 @@ void dmpmem(address s, address e)
 
 void finish(long e)
 {
-    for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed) {
+    for (i = COMMANDFN+1; i <= MAXFIL; i++) 
+      if (filstate[i] != fsclosed && filstate[i] != fsnone) {
         fclose(filtable[i]);
         if (!filanamtab[i]) remove(filnamtab[i]);
     }
@@ -1046,8 +1048,10 @@ void alignu(address algn, address* flc)
 void alignd(address algn, address* flc)
 {
     long l;
-    l = *flc+1;
-    *flc = l-algn+(algn-l)%algn;
+    if ((*flc%algn) != 0) {
+      l = *flc+1;
+      *flc = l-algn+(algn-l)%algn;
+    }
 } /*align*/
 
 /* clear filename string */
@@ -1202,8 +1206,9 @@ void valfil(address fa) /* attach file to file entry */
             i = COMMANDFN+1; /* start search after the header files */
             ff = 0;
             while (i <= MAXFIL) {
-                if (filstate[i] == fsclosed) { ff = i; i = MAXFIL; }
-                i = i+1;
+              if (filstate[i] == fsnone)
+                { ff = i; filstate[i] = fsclosed; i = MAXFIL+1; }
+              else i = i+1;
             }
             if (ff == 0) errore(TOOMANYFILES);
         }
@@ -2288,11 +2293,13 @@ void callsp(void)
                   fn = store[ad]; clrfn(fl1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
                   assignexternal(fn, fl1);
+                  filanamtab[fn] = TRUE;
                   break;
     case 79/*aefb*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
                   fn = store[ad]; clrfn(fl1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j];
                   assignexternal(fn, fl1);
+                  filanamtab[fn] = TRUE;
                   break;
     case 80/*rdie*/: w = LONG_MAX; popint(i); popadr(ad1); popadr(ad);
                   readi(COMMANDFN, &i, &w, FALSE); putint(ad, i);
@@ -3027,7 +3034,7 @@ void main (long argc, char *argv[])
 
     /* initialize file state */
     for (i = 1; i <= MAXFIL; i++) {
-        filstate[i] = fsclosed; /* closed */
+        filstate[i] = fsnone; /* never opened */
         filanamtab[i] = FALSE; /* no name assigned */
     }
 

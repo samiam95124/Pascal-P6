@@ -460,7 +460,7 @@ type
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
-      filsts      = (fclosed, fread, fwrite);
+      filsts      = (fnone, fclosed, fread, fwrite);
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
@@ -1316,8 +1316,10 @@ end (*align*);
 procedure alignd(algn: address; var flc: address);
   var l: integer;
 begin
-  l := flc+1;
-  flc := l - algn  +  (algn-l) mod algn
+  if (flc mod algn) <> 0 then begin
+    l := flc+1;
+    flc := l - algn  +  (algn-l) mod algn
+  end
 end (*align*);
 
 { clear filename string }
@@ -1465,8 +1467,9 @@ begin
        i := commandfn+1; { start search after the header files }
        ff := 0;
        while i <= maxfil do begin
-         if filstate[i] = fclosed then begin ff := i; i := maxfil end;
-         i := i+1
+         if filstate[i] = fnone then 
+           begin ff := i; filstate[i] := fclosed; i := maxfil+1 end
+         else i := i+1
        end;
        if ff = 0 then errore(TooManyFiles);
      end;
@@ -2522,12 +2525,14 @@ begin (*callsp*)
            78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternaltext(filtable[fn], fl1) 
+                         assignexternaltext(filtable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            79(*aefb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignexternalbin(bfiltable[fn], fl1) 
+                         assignexternalbin(bfiltable[fn], fl1);
+                         filanamtab[fn] := true
                        end;
            80(*rdie*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
                          readi(commandfn, i, w, false); putint(ad, i);
@@ -3325,9 +3330,9 @@ begin (* main *)
   writeln('loading program');
   load; (* assembles and stores code *)
 
-  { initalize file state }
+  { initialize file state }
   for i := 1 to maxfil do 
-    begin filstate[i] := fclosed; filanamtab[i] := false end;
+    begin filstate[i] := fnone; filanamtab[i] := false end;
   
   pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
   expadr := 0; expstk := 0; expmrk := 0;

@@ -7388,7 +7388,7 @@ begin (* main *)
     goto 1
   end;
 
-  { initalize file state }
+  { initialize file state }
   for i := 1 to maxfil do
     begin filstate[i] := fnone; filanamtab[i] := false end;
 
