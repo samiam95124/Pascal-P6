@@ -812,7 +812,7 @@ char bufcommand(void)
 { return (cmdlin[cmdpos]); }
 
 void getcommand(void)
-{ if (cmdpos <= cmdlen) cmdpos = cmdpos+1; }
+{ if (cmdpos <= cmdlen+1) cmdpos = cmdpos+1; }
 
 boolean eofcommand(void)
 { return (cmdpos > cmdlen+1); }

@@ -934,7 +934,7 @@ function bufcommand: char;
 begin bufcommand := cmdlin[cmdpos] end;
 
 procedure getcommand; 
-begin if cmdpos <= cmdlen then cmdpos := cmdpos+1 end;
+begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
 
 function eofcommand: boolean; 
 begin eofcommand := cmdpos > cmdlen+1 end;
