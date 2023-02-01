@@ -18,8 +18,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    a[1] := 1 
-    14       10  
-    15       10 end. 
+    14       11  
+    15       11 end. 
 
 Errors in program: 1
 

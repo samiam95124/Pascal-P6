@@ -4,7 +4,7 @@ PRT test 33: Missing var right side
 
 }
 
-program iso7185prt0033;
+program iso7185prt0033(output);
 
 var  store;
 

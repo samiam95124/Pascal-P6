@@ -544,7 +544,7 @@ var
 
                                     (*pointers:*)
                                     (***********)
-    parmptr,
+    parmptr, utypeptr,
     intptr,crdptr,realptr,charptr,
     boolptr,nilptr,textptr,
     exceptptr,stringptr,pstringptr,
@@ -3416,7 +3416,8 @@ end;
     fsp1 := basetype(fsp1);
     fsp2 := basetype(fsp2);
     { Check equal. Aliases of the same type will also be equal. }
-    if fsp1 = fsp2 then comptypes := true
+    if (fsp1 = fsp2) or (fsp1 = utypeptr) or (fsp2 = utypeptr) then 
+      comptypes := true
     else
       if (fsp1 <> nil) and (fsp2 <> nil) then
         { if the structure forms are the same, or they are both array types }
@@ -4720,34 +4721,35 @@ end;
                 else
                   if lsp <> nil then
                     begin
-                      if lsp^.form = scalar then error(236)
-                      else
-                        if stringt(lsp) then begin
-                          if onstk then begin 
-                            strspc := lsp^.size;
-                            alignu(parmptr,strspc);
-                            gen1(118(*lsa*),strspc+ptrsize+intsize);
-                            gen1t(35(*ind*),0,nilptr);
-                            gen1(72(*swp*),stackelsize*2)
-                          end;
-                          if lsp = nil then cpx := false
-                          else cpx := lsp^.form = arrayc;
-                          if cpx then begin { complex }
-                            if default then begin
-                              { no field, need to duplicate len to make the
-                                field }
-                              gen1(72(*swp*),stackelsize); { swap ptr and len }
-                              gen0t(76(*dup*),nilptr); { make copy len }
-                              gen1(72(*swp*),stackelsize*2); { back in order }
-                            end
-                          end else begin { standard array }
-                            len := lsp^.size div charmax;
-                            if default then gen2(51(*ldc*),1,len)
-                          end;
-                          if spad then gen1(30(*csp*),68(*wrsp*))
-                          else gen1(30(*csp*),10(*wrs*));
-                          if onstk then gen1(71(*dmp*),strspc+ptrsize)
-                        end else error(116)
+                      if lsp <> utypeptr then
+                        if lsp^.form = scalar then error(236)
+                        else
+                          if stringt(lsp) then begin
+                            if onstk then begin 
+                              strspc := lsp^.size;
+                              alignu(parmptr,strspc);
+                              gen1(118(*lsa*),strspc+ptrsize+intsize);
+                              gen1t(35(*ind*),0,nilptr);
+                              gen1(72(*swp*),stackelsize*2)
+                            end;
+                            if lsp = nil then cpx := false
+                            else cpx := lsp^.form = arrayc;
+                            if cpx then begin { complex }
+                              if default then begin
+                                { no field, need to duplicate len to make the
+                                  field }
+                                gen1(72(*swp*),stackelsize); { swap ptr and len }
+                                gen0t(76(*dup*),nilptr); { make copy len }
+                                gen1(72(*swp*),stackelsize*2); { back in order }
+                              end
+                            end else begin { standard array }
+                              len := lsp^.size div charmax;
+                              if default then gen2(51(*ldc*),1,len)
+                            end;
+                            if spad then gen1(30(*csp*),68(*wrsp*))
+                            else gen1(30(*csp*),10(*wrs*));
+                            if onstk then gen1(71(*dmp*),strspc+ptrsize)
+                          end else error(116)
                     end
         end else begin { binary file }
           if not comptypes(lsp1^.filtype,lsp) then error(129);
@@ -4793,7 +4795,7 @@ end;
     begin variable(fsys + [comma,rparent], false); loadaddress;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
       lattr := gattr;
-      if gattr.typtr <> nil then
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
         with gattr.typtr^ do
           if form = arrays then
             begin lsp := inxtype; lsp1 := aeltype;
@@ -4804,17 +4806,17 @@ end;
           else error(116);
       if sy = comma then insymbol else error(20);
       expression(fsys + [comma,rparent], false); load;
-      if gattr.typtr <> nil then
-        if gattr.typtr^.form <> scalar then error(116)
-        else
-          if not comptypes(lsp,gattr.typtr) then error(116);
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
+          if gattr.typtr^.form <> scalar then error(116)
+          else
+            if not comptypes(lsp,gattr.typtr) then error(116);
       gen2(51(*ldc*),1,lb);
       gen0(21(*sbi*));
       gen2(51(*ldc*),1,bs);
       gen0(15(*mpi*));
       if sy = comma then insymbol else error(20);
       variable(fsys + [rparent], false); loadaddress;
-      if gattr.typtr <> nil then
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
         with gattr.typtr^ do
           if form = arrays then
             begin
@@ -4830,14 +4832,14 @@ end;
     begin variable(fsys + [comma,rparent], false); loadaddress;
       lattr := gattr;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
-      if gattr.typtr <> nil then
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
         with gattr.typtr^ do
           if form = arrays then lsp1 := aeltype
           else error(116);
       if sy = comma then insymbol else error(20);
       variable(fsys + [comma,rparent], false); loadaddress;
       lattr1 := gattr;
-      if gattr.typtr <> nil then
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
         with gattr.typtr^ do
           if form = arrays then
             begin
@@ -4850,7 +4852,7 @@ end;
           else error(116);
       if sy = comma then insymbol else error(20);
       expression(fsys + [rparent], false); load;
-      if gattr.typtr <> nil then
+      if (gattr.typtr <> nil) and (gattr.typtr <> utypeptr) then
         if gattr.typtr^.form <> scalar then error(116)
         else
           if not comptypes(lsp,gattr.typtr) then error(116);
@@ -6297,7 +6299,7 @@ end;
             if not (sy in fsys) then
               begin error(6); skip(fsys) end
           end
-            else fsp := nil
+            else fsp := utypeptr
       end (*simpletype*) ;
 
       procedure fieldlist(fsys: setofsys; var frecvar: stp; vartyp: stp;
@@ -6717,13 +6719,13 @@ end;
                                  size := filesize+lsize; packing := ispacked
                               end
                           end
-                    else fsp := nil;
+                    else fsp := utypeptr;
                 fsp := lsp
               end;
           if not (sy in fsys) then
             begin error(6); skip(fsys) end
         end
-      else fsp := nil;
+      else fsp := utypeptr;
       if fsp = nil then fsize := 1 else fsize := fsp^.size
     end (*typ*) ;
 
@@ -9039,6 +9041,11 @@ end;
     new(parmptr,scalar,standard); pshstc(parmptr);
     with parmptr^ do
       begin form := scalar; size := parmsize; scalkind := standard;
+            packing := false end ;
+    new(utypeptr,scalar,standard); pshstc(utypeptr);
+    {for undefined structures}
+    with utypeptr^ do
+      begin form := scalar; size := intsize; scalkind := standard;
             packing := false end ;
     new(textptr,files); pshstc(textptr);                       (*text*)
     with textptr^ do

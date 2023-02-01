@@ -25,8 +25,8 @@ and the following annexes: A,B,C,E.
     18        7  
     19        7     for i := 1 to 10 do pavi[i] := i+10; 
     20       36     unpack(pavi, avi, 1); 
-    21       42  
-    22       42 end. 
+    21       44  
+    22       44 end. 
 
 Errors in program: 1
 

@@ -12,16 +12,17 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0032; 
      8      -48  
      9      -48 var ; 
-     9   ****       ^2,6,5,10
+     9   ****       ^2,6,5,10,271
      9   ****    2 Identifier expected
      9   ****    6 Illegal symbol
      9   ****    5 ':' expected
      9   ****   10 Error in type
+     9   ****  271 Number of initializers does not match container array levels
     10      -48  
     11      -48 begin 
     12        7 end. 
 
-Errors in program: 4
+Errors in program: 5
 
 Error numbers in listing:
 -------------------------
@@ -29,4 +30,5 @@ Error numbers in listing:
   5   1 ':' expected
   6   1 Illegal symbol
  10   1 Error in type
+271   1 Number of initializers does not match container array levels
 

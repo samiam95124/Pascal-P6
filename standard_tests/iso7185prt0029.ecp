@@ -24,9 +24,9 @@ and the following annexes: A,B,C,E.
     16        7  
     17        7    c := 'a'; 
     18       10    d := 1; 
-    19       11    writeln(c, d) 
-    20       16  
-    21       16 end. 
+    19       14    writeln(c, d) 
+    20       20  
+    21       20 end. 
 
 Errors in program: 2
 
