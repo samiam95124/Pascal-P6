@@ -785,6 +785,7 @@ void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
             cb[i++] = ' ';
         }
     }
+    *l = i;
 }
 
 /*--------------------------------------------------------------------*/
@@ -3105,7 +3106,7 @@ void main (long argc, char *argv[])
 
     /* get the command line */
     getcommandline(argc, argv, cmdlin, &cmdlen);
-    cmdpos = 1;
+    cmdpos = 0;
 
     /* prep for the run */
     pc = 0; sp = MAXTOP; np = -1; mp = MAXTOP; ep = 5; srclin = 1;
