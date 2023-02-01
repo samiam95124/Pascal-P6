@@ -144,7 +144,7 @@ elif [ "$package" = "1" ]; then
 	
 else
 
-	mv $progfile.p6 prd
+	cp $progfile.p6 prd
 	pint
 
 fi
