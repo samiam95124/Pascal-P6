@@ -1855,7 +1855,7 @@ void callsp(void)
     case 6 /*wrs*/: popint(w); popadr(ad1); popint(l);
                     popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
-                    if (l > w) l = w; /* limit string to field */
+                    if (l > labs(w)) l = labs(w); /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
                                               (char*)(store+ad1)); break;
