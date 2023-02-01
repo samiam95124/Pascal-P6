@@ -2690,7 +2690,7 @@ begin
                 end;
                 
     27 (*cuv*): begin (*q=entry point*)
-                 getq;
+                 getp; getq;
                  mp := sp+(p+marksize); { mp to base of mark }
                  putadr(mp+markra, pc); { place ra }
                  pc := getadr(q)
