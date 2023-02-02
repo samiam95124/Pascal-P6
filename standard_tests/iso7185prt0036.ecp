@@ -20,8 +20,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    writeln(one) 
-    14       10  
-    15       10 end. 
+    14        8  
+    15        8 end. 
 
 Errors in program: 3
 

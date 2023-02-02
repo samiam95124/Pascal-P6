@@ -1304,8 +1304,8 @@ and the following annexes: A,B,C,E.
     13      -48 begin 
     14        7  
     15        7    writeln(i) 
-    16       10  
-    17       10 end. 
+    16        8  
+    17        8 end. 
 
 Errors in program: 2
 
@@ -1419,9 +1419,9 @@ and the following annexes: A,B,C,E.
     16        7  
     17        7    c := 'a'; 
     18       10    d := 1; 
-    19       14    writeln(c, d) 
-    20       20  
-    21       20 end. 
+    19       11    writeln(c, d) 
+    20       16  
+    21       16 end. 
 
 Errors in program: 2
 
@@ -1534,17 +1534,16 @@ and the following annexes: A,B,C,E.
      7      -48 program iso7185prt0032; 
      8      -48  
      9      -48 var ; 
-     9   ****       ^2,6,5,10,271
+     9   ****       ^2,6,5,10
      9   ****    2 Identifier expected
      9   ****    6 Illegal symbol
      9   ****    5 ':' expected
      9   ****   10 Error in type
-     9   ****  271 Number of initializers does not match container array levels
     10      -48  
     11      -48 begin 
     12        7 end. 
 
-Errors in program: 5
+Errors in program: 4
 
 Error numbers in listing:
 -------------------------
@@ -1552,7 +1551,6 @@ Error numbers in listing:
   5   1 ':' expected
   6   1 Illegal symbol
  10   1 Error in type
-271   1 Number of initializers does not match container array levels
 
 
 
@@ -1571,7 +1569,7 @@ and the following annexes: A,B,C,E.
      4      -48  
      5      -48 } 
      6      -48  
-     7      -48 program iso7185prt0033(output); 
+     7      -48 program iso7185prt0033; 
      8      -48  
      9      -48 var  store; 
      9   ****             ^6,5,10
@@ -1582,8 +1580,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    writeln(store) 
-    14       10  
-    15       10 end. 
+    14        8  
+    15        8 end. 
 
 Errors in program: 3
 
@@ -1691,8 +1689,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    writeln(one) 
-    14       10  
-    15       10 end. 
+    14        8  
+    15        8 end. 
 
 Errors in program: 3
 
@@ -1765,8 +1763,8 @@ and the following annexes: A,B,C,E.
     12      -48 begin 
     13        7  
     14        7    writeln(one, two) 
-    15       13  
-    16       13 end. 
+    15       12  
+    16       12 end. 
 
 Errors in program: 3
 
@@ -6579,8 +6577,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    a[1] := 1 
-    14       11  
-    15       11 end. 
+    14       10  
+    15       10 end. 
 
 Errors in program: 1
 
@@ -6840,8 +6838,8 @@ and the following annexes: A,B,C,E.
     11      -48 begin 
     12        7  
     13        7    a[1] := 1 
-    14       12  
-    15       12 end. 
+    14       11  
+    15       11 end. 
 
 Errors in program: 1
 
@@ -15984,8 +15982,8 @@ and the following annexes: A,B,C,E.
     18        7  
     19        7     for i := 1 to 10 do pavi[i] := i+10; 
     20       36     unpack(pavi, avi, 1); 
-    21       44  
-    22       44 end. 
+    21       42  
+    22       42 end. 
 
 Errors in program: 1
 
