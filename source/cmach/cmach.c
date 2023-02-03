@@ -1525,7 +1525,7 @@ char chkbuf(filnum fn, long w)
 { if (w > 0) return buffn(fn); else return(' '); }
 
 boolean chkend(filnum fn, long w)
-{ return (w = 0 || eoffn(fn)); }
+{ return (w == 0 || eoffn(fn)); }
 
 void getbuf(filnum fn, long* w)
 {
