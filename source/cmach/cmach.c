@@ -2326,8 +2326,7 @@ void sinins()
 
     /* instruction execution trace diagnostic */
     /*
-    printf("sinins: pc: %08lx sp: %08lx mp: %02lx @pc:%02x/%03d\n",
-           pc, sp, mp, store[pc], store[pc]);
+    printf("%08lx/%08lx: %02x\n", pc, sp, store[pc]);
     */
 
     if (pc >= pctop) errorv(PCOUTOFRANGE);
