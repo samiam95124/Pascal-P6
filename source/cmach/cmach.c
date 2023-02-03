@@ -2224,6 +2224,7 @@ void callsp(void)
                 /* if the file is temp, remove now */
                 if (!filanamtab[fn]) remove(filnamtab[fn]);
                 filanamtab[fn] = FALSE; /* break any name association */
+                filstate[fn] = fsclosed;
                 break;
     case 48 /*pos*/: popint(i); popadr(ad); valfil(ad); fn = store[ad];
                 if (i < 1) errore(INVALIDFILEPOSITION);
