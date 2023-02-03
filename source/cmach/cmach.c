@@ -2254,7 +2254,7 @@ void callsp(void)
                 filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 51 /*del*/: popint(i); popadr(ad1);
-                  for (j = 0; j < i; i++) fl1[j] = store[ad1+j]; fl1[j] = 0;
+                  for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
                   i = remove(fl1); if (i) errorv(FILEDELETEFAIL);
                   break;
     case 52 /*chg*/: popint(i); popadr(ad1); popint(l); popadr(ad);
