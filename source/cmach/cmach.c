@@ -2231,26 +2231,34 @@ void callsp(void)
                 if (fseek(filtable[fn], i-1, SEEK_SET)) errore(FILEPOSITIONFAIL);
                 break;
     case 49 /*upd*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
+                if (filstate[fn] == fswrite) {
+                  if (fseek(filtable[fn], 0, SEEK_SET)) errore(FILEPOSITIONFAIL);
+                } else {
+                  if (filstate[fn] == fsread)
+                    if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
+                  if (!fopen(filnamtab[fn], "rb+")) errore(FILEOPENFAIL);
                 }
                 filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 50 /*appt*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "w")) errore(FILEOPENFAIL);
+                if (filstate[fn] == fswrite) {
+                  if (fseek(filtable[fn], 0, SEEK_SET)) errore(FILEPOSITIONFAIL);
+                } else {
+                  if (filstate[fn] == fsread)
+                    if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
+                  if (!fopen(filnamtab[fn], "r+")) errore(FILEOPENFAIL);
+                  if (fseek(filtable[fn], 0, SEEK_END)) errore(FILEPOSITIONFAIL);
                 }
                 filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
     case 58 /*appb*/: popadr(ad); valfil(ad); fn = store[ad];
-                if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-                else {
-                  if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
-                  if (!fopen(filnamtab[fn], "wb")) errore(FILEOPENFAIL);
+                if (filstate[fn] == fswrite) {
+                  if (fseek(filtable[fn], 0, SEEK_SET)) errore(FILEPOSITIONFAIL);
+                } else {
+                  if (filstate[fn] == fsread)
+                    if (fclose(filtable[fn])) errorv(FILECLOSEFAIL);
+                  if (!fopen(filnamtab[fn], "rb+")) errore(FILEOPENFAIL);
+                  if (fseek(filtable[fn], 0, SEEK_END)) errore(FILEPOSITIONFAIL);
                 }
                 filstate[fn] = fswrite; filbuff[fn] = FALSE;
                 break;
