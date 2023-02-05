@@ -1844,7 +1844,7 @@ void callsp(void)
                        case OUTPUTFN: fprintf(stdout, "\n"); break;
                        case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
                        case ERRORFN: fprintf(stderr, "\n"); break;
-                       case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
+                       case LISTFN: fprintf(stdout, "\n"); break;
                        case PRDFN: case INPUTFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
                     } else {
