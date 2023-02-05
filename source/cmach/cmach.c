@@ -2999,7 +2999,7 @@ void sinins()
                       sp = sp+q1;
                       break;
 
-    case 241 /*lsa*/: getq(); pshadr(sp+q); break;
+    case 241 /*lsa*/: getq(); ad = sp+q; pshadr(ad); break;
 
     case 242 /*eext*/:
 #ifdef EXTERNALS
