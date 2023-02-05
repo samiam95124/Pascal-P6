@@ -4403,11 +4403,11 @@ end;
         searchidnenm([vars],lcp,dummy);
         if (lcp = inputptr) and not inputptr^.hdr then error(175)
         else if (lcp = outputptr) and not outputptr^.hdr then error(176)
-        else if (lcp = prdptr) and not outputptr^.hdr then error(217)
-        else if (lcp = prrptr) and not outputptr^.hdr then error(218)
-        else if (lcp = errorptr) and not outputptr^.hdr then error(219)
-        else if (lcp = listptr) and not outputptr^.hdr then error(220)
-        else if (lcp = commandptr) and not outputptr^.hdr then error(221)
+        else if (lcp = prdptr) and not prdptr^.hdr then error(217)
+        else if (lcp = prrptr) and not prrptr^.hdr then error(218)
+        else if (lcp = errorptr) and not errorptr^.hdr then error(219)
+        else if (lcp = listptr) and not listptr^.hdr then error(220)
+        else if (lcp = commandptr) and not commandptr^.hdr then error(221)
       end
     end;
 
