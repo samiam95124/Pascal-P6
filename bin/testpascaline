@@ -35,7 +35,7 @@ if [ "$1" = "--pmach" ]; then
     pint > temp
     mv prr pascaline.p6o
     cat pascaline.p6o $inpfile > prd
-    pmach headertest1 headertest2 42 123.456 hi there < pascaline.inp &> pascaline.lst
+    pmach headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     rm temp
     
 elif [ "$1" = "--cmach" ]; then
@@ -46,13 +46,13 @@ elif [ "$1" = "--cmach" ]; then
     pint > temp
     mv prr pascaline.p6o
     cat pascaline.p6o $inpfile > prd
-    cmach headertest1 headertest2 42 123.456 hi there < pascaline.inp &> pascaline.lst
+    cmach headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     rm temp
     
 else
 
 	echo Running with pint
     cat pascaline.p6 $inpfile > prd
-    pint headertest1 headertest2 42 123.456 hi there < pascaline.inp &> pascaline.lst
+    pint headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     
 fi

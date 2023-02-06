@@ -1895,7 +1895,7 @@ begin
    writeln('opo6: ', ord(blue*cyan):1, ' s/b 6');
    writeln('opo7: ', ord(white/blue):1, ' s/b 3');
    writeln('opo8: ', ord(white div blue):1, ' s/b 4');
-   writeln('opo9: ', ord(black mod cyan):1, ' s/b 1');
+   writeln('opo9: ', ord(black mod cyan):1, ' s/b 2');
    writeln('opo10: ', ord(red and green):1, ' s/b 1');
    writeln('opo11: ', ord(green or green):1, ' s/b 2');
    writeln('opo12: ', ord(blue xor green):1, ' s/b 3');

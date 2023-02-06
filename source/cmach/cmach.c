@@ -1798,7 +1798,7 @@ void callsp(void)
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: putfile(stdout, ad, fn); break;
                        case PRRFN: putfile(filtable[PRRFN], ad, fn); break;
-                       case ERRORFN: putfile(stderr, ad, fn); break;
+                       case ERRORFN: putfile( stdout, ad, fn); break;
                        case LISTFN: putfile(stdout, ad, fn); break;
                        case INPUTFN: case PRDFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -1843,7 +1843,7 @@ void callsp(void)
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "\n"); break;
                        case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
-                       case ERRORFN: fprintf(stderr, "\n"); break;
+                       case ERRORFN: fprintf( stdout, "\n"); break;
                        case LISTFN: fprintf(stdout, "\n"); break;
                        case PRDFN: case INPUTFN:
                        case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -1861,7 +1861,7 @@ void callsp(void)
                                               (char*)(store+ad1)); break;
                        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", (int)w, (int)l,
                                            (char*)(store+ad1)); break;
-                       case ERRORFN: fprintf(stderr, "%*.*s", (int)w, (int)l,
+                       case ERRORFN: fprintf( stdout, "%*.*s", (int)w, (int)l,
                                              (char*)(store+ad1));
                                      break;
                        case LISTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
@@ -1880,7 +1880,7 @@ void callsp(void)
                     if (fn <= COMMANDFN) switch (fn) {
                       case OUTPUTFN: writestrp(stdout, ad1, l); break;
                       case PRRFN: writestrp(filtable[PRRFN], ad1, l); break;
-                      case ERRORFN: writestrp(stderr, ad1, l); break;
+                      case ERRORFN: writestrp( stdout, ad1, l); break;
                       case LISTFN: writestrp(stdout, ad1, l); break;
                       case PRDFN: case INPUTFN:
                       case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -1919,7 +1919,7 @@ void callsp(void)
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: writei(stdout, i, w, rd, lz); break;
                           case PRRFN: writei(filtable[PRRFN], i, w, rd, lz); break;
-                          case ERRORFN: writei(stderr, i, w, rd, lz); break;
+                          case ERRORFN: writei( stdout, i, w, rd, lz); break;
                           case LISTFN: writei(stdout, i, w, rd, lz); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -1936,7 +1936,7 @@ void callsp(void)
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, (int)l, r); break;
                           case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); break;
-                          case ERRORFN: fprintf(stderr, "%*.*e", (int)w, (int)l, r); break;
+                          case ERRORFN: fprintf( stdout, "%*.*e", (int)w, (int)l, r); break;
                           case LISTFN: fprintf(stdout, "%*.*e", (int)w, (int)l, r); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE);
@@ -1951,7 +1951,7 @@ void callsp(void)
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
                           case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
-                          case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
+                          case ERRORFN: fprintf( stdout, "%*c", (int)w, c); break;
                           case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -2009,7 +2009,7 @@ void callsp(void)
                     if (fn <= COMMANDFN) switch (fn) {
                          case OUTPUTFN: fprintf(stdout, "\f"); break;
                          case PRRFN: fprintf(filtable[PRRFN], "\f"); break;
-                         case ERRORFN: fprintf(stderr, "\f"); break;
+                         case ERRORFN: fprintf( stdout, "\f"); break;
                          case LISTFN: fprintf(stdout, "\f"); break;
                          case PRDFN: case INPUTFN:
                          case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -2042,7 +2042,7 @@ void callsp(void)
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: writeb(stdout, b, w); break;
                           case PRRFN: writeb(filtable[PRRFN], b, w); break;
-                          case ERRORFN: writeb(stderr, b, w); break;
+                          case ERRORFN: writeb( stdout, b, w); break;
                           case LISTFN: writeb(stdout, b, w); break;
                           case PRDFN: case INPUTFN:
                           case COMMANDFN: errore(WRITEONREADONLYFILE); break;
@@ -2060,7 +2060,7 @@ void callsp(void)
                                          break;
                           case PRRFN: fprintf(filtable[PRRFN], "%*.*f", (int)w, (int)f, r);
                                       break;
-                          case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)f, r);
+                          case ERRORFN: fprintf( stdout, "%*.*f", (int)w, (int)f, r);
                                         break;
                           case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r); break;
                           case PRDFN: case INPUTFN:
