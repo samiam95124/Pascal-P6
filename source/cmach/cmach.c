@@ -2690,7 +2690,7 @@ void sinins()
     case 42 /*notb*/: popint(i1); b1 = i1 != 0; pshint(!b1); break;
     case 205 /*noti*/: popint(i1);
                       if (i1 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
-                      pshint(~i1); break;
+                      pshint(~i1 & LONG_MAX); break;
     case 43 /*and*/: popint(i2);
                       if (i2 < 0) errore(BOOLEANOPERATOROFNEGATIVE);
                       popint(i1);
