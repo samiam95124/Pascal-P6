@@ -2460,7 +2460,7 @@ void sinins()
                  break;
 
     case 27 /*cuv*/: /*q=entry point*/
-                 getq();
+                 getp(); getq();
                  mp = sp+(p+MARKSIZE); /* mp to base of mark */
                  putadr(mp+MARKRA, pc); /* place ra */
                  pc = getadr(q);
