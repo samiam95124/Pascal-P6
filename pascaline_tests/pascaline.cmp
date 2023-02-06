@@ -1,0 +1,1104 @@
+P6 Pascal interpreter vs. 0.1.x
+
+Assembling/loading program
+Running program
+
+*******************************************************************************
+
+                       TEST SUITE FOR PASCALINE
+
+                 Copyright (C) 2022 S. A. Franco - All rights reserved
+
+*******************************************************************************
+
+The following are implementation defined characteristics
+
+Maxcrd: 9223372036854775807
+Maxlint: 9223372036854775807
+Maxlcrd: 9223372036854775807
+Maxchr: 255
+Maxreal:  1.79769313486231e+308
+Maxsreal:  1.79769313486231e+308
+Maxlreal:  1.79769313486231e+308
+Bit length of cardinal appears to be: 63
+Bit length of long integer without sign appears to be: 63
+Bit length of long cardinal appears to be: 63
+Cardinal default output field
+         1111111111222222222233333333334
+1234567890123456789012345678901234567890
+          1
+Long integer default output field
+         1111111111222222222233333333334
+1234567890123456789012345678901234567890
+          1
+Long cardinal default output field
+         1111111111222222222233333333334
+1234567890123456789012345678901234567890
+          1
+cmt1: <nothing>
+id1: 42 s/b 42
+glb1: start  stop s/b start stop
+nc1: 165 s/b 165
+nc2: 58 s/b 58
+nc3: 25 s/b 25
+nc3: 123456 s/b      123456
+nc4: 3418164 s/b     3418164
+nc5: 107482 s/b      107482
+nc6: 87 s/b          87
+ext15: 9223372036854775765 s/b 9223372036854775765
+ext16: 130 s/b 130
+ext17: 24 s/b 24
+ext18: 0.0023 s/b 0.0022
+ext19: 2 s/b 2
+ext20: 12 s/b 12
+ext21: -76 s/b -76
+ext22: 54 s/b 54
+ext23: 97 s/b 97
+ext24: 53 s/b 53
+ext25: 106 s/b 106
+ext26: 42 s/b 42
+ext27: abcdz s/b abcdz
+ext28: 1 2 3 4 5 12  s/b 1 2 3 4 5 12
+ext29: 432 s/b 432
+ext30: Q s/b Q
+ext31:  1.234560000000000e+00 s/b 1.23456000e+000
+ext32: hi there s/b hi there
+vb1: 9223372036854775751 s/b 9223372036854775751
+vb2: 8 s/b 8
+vb3: 61 s/b 61
+vb4: 53 s/b 53
+vop1: this is a test s/b this is a test
+vop2: 42 s/b 42
+ecs1:
+1: one
+2: from 2 to 4
+3: from 2 to 4
+4: from 2 to 4
+5: from 5 to 10
+6: from 5 to 10
+7: from 5 to 10
+8: from 5 to 10
+9: from 5 to 10
+10: from 5 to 10
+s/b
+1: one
+2: from 2 to 4
+3: from 2 to 4
+4: from 2 to 4
+5: from 5 to 10
+6: from 5 to 10
+7: from 5 to 10
+8: from 5 to 10
+9: from 5 to 10
+10: from 5 to 10
+vcr1: 42 43 a  s/b 42 43 a
+ats1: hi there ? s/b hi there ?
+ats2: 
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+sdc1: hi there ? s/b hi there ?
+sdc2: hi there ? s/b hi there ?
+sdc3: hi there ? s/b hi there ?
+sdc4: 143 276 388 412 574 622 74 83 99 1  s/b 143 276 388 412 574 622 74 83 99 1
+sdc5: hi there ? s/b hi there ?
+sdc6:  20 19 18 17 16 15 14 13 12 11 s/b 20 19 18 17 16 15 14 13 12 11
+sdc7:  30 29 28 27 26 25 24 23 22 21 s/b 30 29 28 27 26 25 24 23 22 21
+sdc8:  30 29 28 27 26 25 24 23 22 21 s/b 30 29 28 27 26 25 24 23 22 21
+sdc9:  True s/b true
+sdc10: False s/b false
+sdc11: False s/b false
+sdc12:  True s/b true
+sdc13:  True s/b true
+sdc14: False s/b false
+sdc15: False s/b false
+sdc16:  True s/b true
+sdc17:  True s/b true
+sdc18: False s/b false
+sdc19:  True s/b true
+sdc20:  True s/b true
+sdc21: False s/b false
+sdc22:  True s/b true
+sdc23:  True s/b true
+sdc24:  True s/b true
+sdc25:  True s/b true
+sdc26: False s/b false
+sdc27: False s/b false
+sdc28:  True s/b true
+sdc29:  True s/b true
+sdc30: False s/b false
+sdc31: False s/b false
+sdc32:  True s/b true
+sdc33:  True s/b true
+sdc34: False s/b false
+sdc35:  True s/b true
+sdc36:  True s/b true
+sdc37: False s/b false
+sdc38:  True s/b true
+sdc39:  True s/b true
+sdc40:  True s/b true
+mdc1: 
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+mdc2: 
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+mdc3: 
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+mdc4: 
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ext47: hi george s/b hi george
+ext48: hi george? s/b hi george?
+ext49: hi george s/b hi george
+ext50:
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ext51:
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46 123  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+ext52:
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+s/b
+ 100  99  98  97  96  95  94  93  92  91
+  90  89  88  87  86  85  84  83  82  81
+  80  79  78  77  76  75  74  73  72  71
+  70  69  68  67  66  65  64  63  62  61
+  60  59  58  57  56  55  54  53  52  51
+  50  49  48  47  46  45  44  43  42  41
+  40  39  38  37  36  35  34  33  32  31
+  30  29  28  27  26  25  24  23  22  21
+  20  19  18  17  16  15  14  13  12  11
+  10   9   8   7   6   5   4   3   2   1
+cp1: hi there s/b hi there
+ew1:
+*10*
+*10*
+*10*
+*10 *
+*10  *
+*10   *
+*10    *
+*10     *
+*10      *
+*10       *
+*10        *
+s/b
+*10*
+*10*
+*10*
+*10 *
+*10  *
+*10   *
+*10    *
+*10     *
+*10      *
+*10       *
+*10        *
+ew2:
+**
+*h*
+*hi*
+*hi *
+*hi t*
+*hi th*
+*hi the*
+*hi ther*
+*hi there*
+* hi there*
+*  hi there*
+s/b
+**
+*h*
+*hi*
+*hi *
+*hi t*
+*hi th*
+*hi the*
+*hi ther*
+*hi there*
+* hi there*
+*  hi there*
+ew3:
+**
+*h*
+*hi*
+*hi *
+*hi t*
+*hi th*
+*hi the*
+*hi ther*
+*hi there*
+*hi there *
+*hi there  *
+s/b
+**
+*h*
+*hi*
+*hi *
+*hi t*
+*hi th*
+*hi the*
+*hi ther*
+*hi there*
+*hi there *
+*hi there  *
+ew4:
+hi there<
+s/b
+hi there<
+ew5:
+*10*
+*10*
+*10*
+*010*
+*0010*
+*00010*
+*000010*
+*0000010*
+*00000010*
+*000000010*
+*0000000010*
+s/b
+*10*
+*10*
+*10*
+*010*
+*0010*
+*00010*
+*000010*
+*0000010*
+*00000010*
+*000000010*
+*0000000010*
+ew6:
+*10*
+*10*
+*10*
+*10 *
+*10  *
+*10   *
+*10    *
+*10     *
+*10      *
+*10       *
+*10        *
+s/b
+*10*
+*10*
+*10*
+*10 *
+*10  *
+*10   *
+*10    *
+*10     *
+*10      *
+*10       *
+*10        *
+ew7: abcdef s/b abcdef
+ew8: 76543 s/b 76543
+ew9: 1100101 s/b 1100101
+ew10:
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+* 123abc*
+*  123abc*
+*   123abc*
+*    123abc*
+s/b
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+* 123abc*
+*  123abc*
+*   123abc*
+*    123abc*
+ew11:
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc *
+*123abc  *
+*123abc   *
+*123abc    *
+s/b
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc *
+*123abc  *
+*123abc   *
+*123abc    *
+ew12:
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*0123abc*
+*00123abc*
+*000123abc*
+*0000123abc*
+s/b
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*0123abc*
+*00123abc*
+*000123abc*
+*0000123abc*
+ew13:
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc *
+*123abc  *
+*123abc   *
+*123abc    *
+s/b
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc*
+*123abc *
+*123abc  *
+*123abc   *
+*123abc    *
+ew14:
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+* 123765*
+*  123765*
+*   123765*
+*    123765*
+s/b
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+* 123765*
+*  123765*
+*   123765*
+*    123765*
+ew15:
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765 *
+*123765  *
+*123765   *
+*123765    *
+s/b
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765 *
+*123765  *
+*123765   *
+*123765    *
+ew16:
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*0123765*
+*00123765*
+*000123765*
+*0000123765*
+s/b
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*0123765*
+*00123765*
+*000123765*
+*0000123765*
+ew17:
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765 *
+*123765  *
+*123765   *
+*123765    *
+s/b
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765*
+*123765 *
+*123765  *
+*123765   *
+*123765    *
+er1: hi there ? s/b hi there ?
+er2: lo there ? s/b lo there ?
+er3: 42 92 s/b 42 92
+er4: 92 421 s/b 92 421
+er5: 456 s/b 456
+er6: a s/b a
+er7: hi there ? s/b hi there ?
+er8: lo there ? s/b lo there ?
+er9: bite me  ?42 s/b bite me  ?42
+er10: 1234567890 s/b 1234567890
+er11: 1234.5678 9876.5432 s/b 1234.5678 9876.5432
+er14: hi!       < s/b hi!       <
+tcr1: one two three  s/b one two three
+tcr2: 53 s/b 53 
+f1: 1 5 3 10 92  s/b 1 5 3 10 92
+f2: ahuoz s/b ahuoz
+f3: 1.1 1.2 1.3 1.4 1.5  s/b 1.1 1.2 1.3 1.4 1.5
+f4: 1 3 64 2 12 31 647 21 190 32 641 243  s/b 1 3 64 2 12 31 647 21 190 32 641 243
+ext37: 42a1.2340 s/b 42a1.2340
+fh1: hi there, bob s/b hi there, bob
+fh2: hi there, bob s/b hi there, bob
+fh3: False s/b false
+fh4:  True s/b true
+fh5: False s/b false
+fh6: 1 2 3 4 5 6 7 8 9 10  s/b 1 2 3 4 5 6 7 8 9 10
+fh7: 10 s/b 10
+fh8: 11 s/b 11
+fh9: 5 s/b 5
+fh10: 6 s/b 6
+fh11:  99 99 99 99 99  6  7  8  9 10 s/b  99  99  99  99  99   6   7   8   9  10
+fh12: 
+The rain in spain
+falls mainly on the plain
+The rain in spain
+falls mainly on the plain
+But only on tuesdays and thursdays
+s/b
+The rain in spain
+falls mainly on the plain
+The rain in spain
+falls mainly on the plain
+But only on tuesdays and thursdays
+hbt1:
+The rain in spain falls mainly on the plain.
+s/b
+The rain in spain falls mainly on the plain
+hbt2:
+1 2 3 4 5 6 7 8 9 10  s/b 1 2 3 4 5 6 7 8 9 10
+hbt3: 42 s/b 42
+hbt4: 123.456 s/b 123.456
+hbt5: 
+ hi there
+s/b
+ hi there
+hbt6:
+This is a test of the error file
+s/b
+This is a test of the error file
+hbt7:
+This is a test of the list file
+s/b
+This is a test of the list file
+afr1: 42 s/b 42
+sfr1: hi there ? s/b hi there ?
+sfr2: hi there ? s/b hi there ?
+sfr3: hi there ? s/b hi there ?
+sfr4:  True s/b true
+sfr5: False s/b false
+sfr6: False s/b false
+sfr7:  True s/b true
+sfr8:  True s/b true
+sfr9: False s/b false
+sfr10: False s/b false
+sfr11:  True s/b true
+sfr12:  True s/b true
+sfr13: False s/b false
+sfr14:  True s/b true
+sfr15:  True s/b true
+sfr16: False s/b false
+sfr17:  True s/b true
+sfr18:  True s/b true
+sfr19:  True s/b true
+sfr20: hi there ? s/b hi there ?
+sfr21: hi there ? s/b hi there ?
+sfr22: 42 a s/b 42 a
+ol1:
+This is bark
+bark: the integer is: 52
+bark: the string is: hi there
+42
+s/b
+This is bark
+bark: the integer is: 52
+bark: the string is: hi there
+42
+opo1: 1 s/b 1
+opo2: 2 s/b 2
+opo3: 6 s/b 6
+opo4: 3 s/b 3
+opo5: 1 s/b 1
+opo6: 6 s/b 6
+opo7: 3 s/b 3
+opo8: 4 s/b 4
+opo9: 2 s/b 2
+opo10: 1 s/b 1
+opo11: 2 s/b 2
+opo12: 3 s/b 3
+opo13: 4 s/b 4
+opo14: 5 s/b 5
+opo15: 6 s/b 6
+opo16: 2 s/b 2
+opo17: 4 s/b 4
+opo18: 5 s/b 5
+opo19: 42 s/b 42
+opo20: -42 s/b -42
+opo21: 54 s/b 54
+opo22: 30 s/b 30
+opo23: 504 s/b 504
+opo24: 3 s/b 3
+opo25: 3 s/b 3
+opo26: 6 s/b 6
+opo27: 8 s/b 8
+opo28: 46 s/b 46
+opo29: 38 s/b 38
+opo30: 54 s/b 54
+opo31: 54 s/b 54
+opo32: 54 s/b 54
+opo33: 54 s/b 54
+opo34: 54 s/b 54
+opo35: 54 s/b 54
+ex1:
+before exception
+exception taken
+s/b
+before exception
+exception taken
+ex2:
+In try block
+exception not taken
+s/b
+In try block
+exception not taken
+as1:
+Testing negative assertion, this should not stop here
+linteger1:   121 s/b 121
+linteger2:   35 s/b 35
+linteger3:   3354 s/b 3354
+linteger4:   1 s/b 1
+linteger5:   35 s/b 35
+linteger6:   44 s/b 44
+linteger7:   42 s/b 42
+linteger8:   1849 s/b 1849
+linteger9:   N s/b N
+linteger10:  43 s/b 43
+linteger11:   True s/b true
+linteger12:  False s/b false
+linteger13:   True s/b true
+linteger14:  False s/b false
+linteger15:   True s/b true
+linteger16:  False s/b false
+linteger17:   True s/b true
+linteger18:  False s/b false
+linteger19:   True s/b true
+linteger20:  False s/b false
+linteger21:   True s/b true
+linteger22:   True s/b true
+linteger23:  False s/b false
+linteger24:   True s/b true
+linteger25:   True s/b true
+linteger26:  False s/b false
+linteger27:  6 s/b 6
+linteger28:  6 s/b 6
+linteger29:  -12 s/b -12
+linteger30:  -46 s/b -46
+linteger31:  34 s/b 34
+linteger32:  -52 s/b -52
+linteger33:  -18 s/b -18
+linteger34:  -280 s/b -280
+linteger35:  -280 s/b -280
+linteger36:  448 s/b 448
+linteger37:  -1 s/b -1
+linteger38:  -1 s/b -1
+linteger39:  2 s/b 2
+linteger40:  -13 s/b -13
+linteger41:  -33 s/b -33
+linteger42: 196 s/b 196
+linteger43:  False s/b false
+linteger44:   True s/b true
+linteger45:   True s/b true
+linteger46:  False s/b false
+linteger47:   True s/b true
+linteger48:  False s/b false
+linteger49:   True s/b true
+linteger50:   True s/b true
+linteger51:  False s/b false
+linteger52:  False s/b false
+linteger53:   True s/b true
+linteger54:   True s/b true
+linteger55:  False s/b false
+linteger56:  False s/b false
+linteger57:   True s/b true
+linteger58:   True s/b true
+linteger59:   True s/b true
+linteger60:  False s/b false
+linteger61:  False s/b false
+linteger62:   True s/b true
+linteger63:   True s/b true
+linteger64:   True s/b true
+linteger65:  False s/b false
+linteger66:  False s/b false
+linteger67:  14 s/b 14
+linteger68:  0 s/b 0
+linteger69:  0 s/b 0
+linteger70:  0 s/b 0
+cardinal1:   121 s/b 121
+cardinal2:   35 s/b 35
+cardinal3:   3354 s/b 3354
+cardinal4:   1 s/b 1
+cardinal5:   35 s/b 35
+cardinal6:   44 s/b 44
+cardinal7:   42 s/b 42
+cardinal8:   1849 s/b 1849
+cardinal9:   N s/b N
+cardinal10:  43 s/b 43
+cardinal11:   True s/b true
+cardinal12:  False s/b false
+cardinal13:   True s/b true
+cardinal14:  False s/b false
+cardinal15:   True s/b true
+cardinal16:  False s/b false
+cardinal17:   True s/b true
+cardinal18:  False s/b false
+cardinal19:   True s/b true
+cardinal20:  False s/b false
+cardinal21:   True s/b true
+cardinal22:   True s/b true
+cardinal23:  False s/b false
+cardinal24:   True s/b true
+cardinal25:   True s/b true
+cardinal26:  False s/b false
+lcardinal1:   121 s/b 121
+lcardinal2:   35 s/b 35
+lcardinal3:   3354 s/b 3354
+lcardinal4:   1 s/b 1
+lcardinal5:   35 s/b 35
+lcardinal6:   44 s/b 44
+lcardinal7:   42 s/b 42
+lcardinal8:   1849 s/b 1849
+lcardinal9:   N s/b N
+lcardinal10:  43 s/b 43
+lcardinal11:   True s/b true
+lcardinal12:  False s/b false
+lcardinal13:   True s/b true
+lcardinal14:  False s/b false
+lcardinal15:   True s/b true
+lcardinal16:  False s/b false
+lcardinal17:   True s/b true
+lcardinal18:  False s/b false
+lcardinal19:   True s/b true
+lcardinal20:  False s/b false
+lcardinal21:   True s/b true
+lcardinal22:   True s/b true
+lcardinal23:  False s/b false
+lcardinal24:   True s/b true
+lcardinal25:   True s/b true
+lcardinal26:  False s/b false
+sreal1:   1.41890000e+03 s/b  1.418900e+03
+sreal2:   5.48440000e+02 s/b  5.484399e+02
+sreal3:   4.28122694e+05 s/b  4.281227e+05
+sreal4:   2.26011534e+00 s/b  2.260115e+00
+sreal5:   True s/b true
+sreal6:  False s/b false
+sreal7:   True s/b true
+sreal8:  False s/b false
+sreal9:   True s/b true
+sreal10:  False s/b false
+sreal11:   True s/b true
+sreal12:  False s/b false
+sreal13:   True s/b true
+sreal14:   True s/b true
+sreal15:  False s/b false
+sreal16:   True s/b true
+sreal17:   True s/b true
+sreal18:  False s/b false
+sreal19:   4.35230000e+02 s/b  4.35230e+02
+sreal20:   1.89425153e+05 s/b  1.89425e+05
+sreal21:   3.13635138e+01 s/b  3.13635e+01
+sreal22:  -3.44305942e-01 s/b -3.44290e-01
+sreal23:   1.56849870e+00 s/b  1.56850e+00
+sreal24:   1.41100187e+00 s/b  1.41100e+00
+sreal25:   6.07587463e+00 s/b  6.07587e+00
+sreal26:  435 s/b 435
+sreal27:  984 s/b 984
+sreal28:  435 s/b 435
+sreal29:   3.00340000e+02 s/b  3.003400e+02
+sreal30:   3.00340000e+02 s/b  3.003400e+02
+sreal31:  -6.59998000e+03 s/b -6.599980e+03
+sreal32:  -8.36872000e+03 s/b -8.368720e+03
+sreal33:   1.76874000e+03 s/b  1.768740e+03
+sreal34:  -8.66906000e+03 s/b -8.669061e+03
+sreal35:  -6.90032000e+03 s/b -6.900320e+03
+sreal36:  -7.59559268e+05 s/b -7.595593e+05
+sreal37:  -7.59559268e+05 s/b -7.595593e+05
+sreal38:   5.60526458e+06 s/b  5.605265e+06
+sreal39:  -1.40907110e+00 s/b -1.409071e+00
+sreal40:  -7.37962766e+00 s/b -7.379627e+00
+sreal41:   1.03984200e+01 s/b  1.039842e+01
+sreal42:   True s/b true
+sreal43:  False s/b false
+sreal44:   True s/b true
+sreal45:  False s/b false
+sreal46:   True s/b true
+sreal47:   True s/b true
+sreal48:  False s/b false
+sreal49:  False s/b false
+sreal50:   True s/b true
+sreal51:   True s/b true
+sreal52:  False s/b false
+sreal53:  False s/b false
+sreal54:   True s/b true
+sreal55:   True s/b true
+sreal56:   True s/b true
+sreal57:  False s/b false
+sreal58:  False s/b false
+sreal59:   True s/b true
+sreal60:   True s/b true
+sreal61:  True s/b true
+sreal62: False s/b false
+sreal63: False s/b false
+sreal64:  7.34200000e+02 s/b  7.34200e+02
+sreal65:  5.39049640e+05 s/b  5.39050e+05
+sreal66: -4.34832062e-01 s/b -4.34850e-01
+sreal67: -1.56943430e+00 s/b -1.56943e+00
+sreal68:  6.80566323e-01 s/b  6.80566e-01
+sreal69:            -734 s/b -734
+sreal70:           -7635 s/b -7635
+sreal71:            -734 s/b -734
+lreal1:   1.41890000e+03 s/b  1.418900e+03
+lreal2:   5.48440000e+02 s/b  5.484399e+02
+lreal3:   4.28122694e+05 s/b  4.281227e+05
+lreal4:   2.26011534e+00 s/b  2.260115e+00
+lreal5:   True s/b true
+lreal6:  False s/b false
+lreal7:   True s/b true
+lreal8:  False s/b false
+lreal9:   True s/b true
+lreal10:  False s/b false
+lreal11:   True s/b true
+lreal12:  False s/b false
+lreal13:   True s/b true
+lreal14:   True s/b true
+lreal15:  False s/b false
+lreal16:   True s/b true
+lreal17:   True s/b true
+lreal18:  False s/b false
+lreal19:   4.35230000e+02 s/b  4.35230e+02
+lreal20:   1.89425153e+05 s/b  1.89425e+05
+lreal21:   3.13635138e+01 s/b  3.13635e+01
+lreal22:  -3.44305942e-01 s/b -3.44290e-01
+lreal23:   1.56849870e+00 s/b  1.56850e+00
+lreal24:   1.41100187e+00 s/b  1.41100e+00
+lreal25:   6.07587463e+00 s/b  6.07587e+00
+lreal26:  435 s/b 435
+lreal27:  984 s/b 984
+lreal28:  435 s/b 435
+lreal29:   3.00340000e+02 s/b  3.003400e+02
+lreal30:   3.00340000e+02 s/b  3.003400e+02
+lreal31:  -6.59998000e+03 s/b -6.599980e+03
+lreal32:  -8.36872000e+03 s/b -8.368720e+03
+lreal33:   1.76874000e+03 s/b  1.768740e+03
+lreal34:  -8.66906000e+03 s/b -8.669061e+03
+lreal35:  -6.90032000e+03 s/b -6.900320e+03
+lreal36:  -7.59559268e+05 s/b -7.595593e+05
+lreal37:  -7.59559268e+05 s/b -7.595593e+05
+lreal38:   5.60526458e+06 s/b  5.605265e+06
+lreal39:  -1.40907110e+00 s/b -1.409071e+00
+lreal40:  -7.37962766e+00 s/b -7.379627e+00
+lreal41:   1.03984200e+01 s/b  1.039842e+01
+lreal42:   True s/b true
+lreal43:  False s/b false
+lreal44:   True s/b true
+lreal45:  False s/b false
+lreal46:   True s/b true
+lreal47:   True s/b true
+lreal48:  False s/b false
+lreal49:  False s/b false
+lreal50:   True s/b true
+lreal51:   True s/b true
+lreal52:  False s/b false
+lreal53:  False s/b false
+lreal54:   True s/b true
+lreal55:   True s/b true
+lreal56:   True s/b true
+lreal57:  False s/b false
+lreal58:  False s/b false
+lreal59:   True s/b true
+lreal60:   True s/b true
+lreal61:  True s/b true
+lreal62: False s/b false
+lreal63: False s/b false
+lreal64:  7.34200000e+02 s/b  7.34200e+02
+lreal65:  5.39049640e+05 s/b  5.39050e+05
+lreal66: -4.34832062e-01 s/b -4.34850e-01
+lreal67: -1.56943430e+00 s/b -1.56943e+00
+lreal68:  6.80566323e-01 s/b  6.80566e-01
+lreal69:            -734 s/b -734
+lreal70:           -7635 s/b -7635
+lreal71:            -734 s/b -734
+um1:
+This is the used module: 87
+s/b
+this is the used module: 87
+ov1:
+This is the overriding procedure
+This is the abstract procedure
+s/b
+This is the overriding procedure
+This is the abstract procedure
+lm1:
+This is the joined module: 87
+s/b
+this is the joined module: 87
+ce1: my'self s/b my'self 
+ce2: this\one s/b this<slash>one 
+ce3: e s/b e
+ce4: o s/b o
+ce5: Z s/b Z
+ce6: I s/b I
+ce7: 
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20 
+21 22 23 24 25 26 27 28 29 30 31 127 
+s/b 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20
+21 22 23 24 25 26 27 28 29 30 31 127
+ht:
+The test should now halt
+
+program complete

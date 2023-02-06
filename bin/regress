@@ -85,6 +85,32 @@ function do_regress {
         standard_tests/iso7185prt.dif
     wc -l standard_tests/iso7185prt.dif >> regress_report.txt
 
+    #
+    # Run Pascaline test
+    #
+    echo "Running Pascaline test"
+    echo "Pascaline run" >> regress_report.txt
+    testpascaline $option
+    if [ "$option" = "--pmach" ]; then
+
+        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline_pmach.cmp > \
+            pascaline_tests/pascaline_pmach.dif
+        wc -l pascaline_tests/pascaline_pmach.dif >> regress_report.txt
+
+    elif [ "$option" = "--cmach" ]; then
+
+        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline_cmach.cmp > \
+            pascaline_tests/pascaline_cmach.dif
+        wc -l pascaline_tests/pascaline_cmach.dif >> regress_report.txt
+
+    else
+
+        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline.cmp > \
+            pascaline_tests/pascaline.dif
+        wc -l pascaline_tests/pascaline.dif >> regress_report.txt
+
+    fi
+
     if [ "$full" = "1" ]; then
 
         echo "Running Pascal-P5"
