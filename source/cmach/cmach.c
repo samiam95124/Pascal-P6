@@ -1655,7 +1655,7 @@ void reads(filnum fn, address ad, long l, long w, boolean fld)
       if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
       getbuf(fn, &w);
     }
-  } else {
+  } else { if (w < l) l = w;
     if (fld) while (w > l) {
       if (chkbuf(fn, w) != ' ') errore(FIELDNOTBLANK);
       getbuf(fn, &w);
