@@ -6950,7 +6950,7 @@ end;
           else error(2);
           if (sy = lparent) and not iso7185 then begin
             { parameterized type specification }
-            if nxt <> nil then begin { gen code strip label }
+            if (nxt <> nil) and (lcp <>nil) then begin { gen code strip label }
               lcp^.ininxt := display[top].inilst; display[top].inilst := lcp;
               genlabel(lcp^.inilab); putlabel(lcp^.inilab); 
               genlabel(lcp^.skplab)
@@ -6966,7 +6966,7 @@ end;
               test := sy <> comma;
               if not test then insymbol
             until test;
-            genujpxjpcal(57(*ujp*),lcp^.skplab);
+            if lcp <> nil then genujpxjpcal(57(*ujp*),lcp^.skplab);
             if sy = rparent then insymbol else error(4)
           end;
           if (maxpar <> 0) and (curpar <> maxpar) then error(269);
