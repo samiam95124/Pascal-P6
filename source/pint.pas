@@ -420,11 +420,7 @@ const
       maxopt      = 26;   { number of options }
       optlen      = 10;   { maximum length of option words }
 
-      { version numbers }
-
-      majorver   = 0; { major version number }
-      minorver   = 1; { minor version number }
-      experiment = true; { is version experimental? }
+#include "version.inc"
 
 type
 

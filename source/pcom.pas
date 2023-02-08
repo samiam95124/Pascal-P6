@@ -213,10 +213,7 @@ const
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
 
-   { version numbers }
-   majorver   = 0; { major version number }
-   minorver   = 1; { minor version number }
-   experiment = true; { is version experimental? }
+#include  "version.inc"
 
    { standard exceptions. Used for extension routines, this is a subset. }
    CommandLineTooLong      = 1;
@@ -5424,7 +5421,7 @@ end;
       if fcp = nil then fcp := fcps;
       { find function result size }
       lsize := 0;
-      if fcp^.klass = func then begin
+      if (fcp^.klass = func) and (fcp^.idtype <> nil) then begin
           lsize := fcp^.idtype^.size;
           alignu(parmptr,lsize);
       end;

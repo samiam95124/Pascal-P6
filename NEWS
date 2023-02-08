@@ -1,61 +1,64 @@
-******************************* NEWS FOR 2022-12-29 ****************************
+******************************* NEWS FOR 2023-02-06 ****************************
 
-End of year news!
+Welcome to the 0.1 release!
 
-1. I returned to implementing the framing changes, see "move to pulldown marks"
-in issues. I just don't like the P5 framing method, and I want to make a few
-changes before I code that in pgen. This is technical, but that would be
-pulldown marks, having the called function/procedure do the framing, instead of
-doing that before the function result and parameter list. This just matches what
-happens in the target processors (x86/Arm) much better. Because changing framing
-is major surgery, I wanted the test catalog to be in good shape before I did
-that. As a result, I went through a complete test series and fixed the resulting
-bugs.
+This is the first (beta) release of Pascal-P6. Although Pascal-P6 is still very
+much in development, I get complaints about there not being a release. This is
+a legitimate complaint, and I have made it about other projects.
 
-2. The PAT and PRT were put into order, run, and the resulting bugs fixed. Self
-compile was run, and partial spew was run (more to do). I will admit the error
-reporting really sucks in many errors, but it always did (P5/P4/P2).
+The occasion for the release is that a significant portion of the Pascaline
+language standard has been implemented, and a regression test exists for that.
+In addition, I have run many tests on the project, and the stability has been
+greatly improved.
 
-3. Errors now get reported with full text in-line. I got tired of having to look
-them up at the dictionary at the end.
+The language guide is pascaline.docx as usual. And as usual, I assume you have
+resources for the ISO 7185 Pascal language.
 
-4. I tried using the debugger a few times. It is really beta, and not very
-workable. Apologies for that.
+What follows is a list of unimplemented features, and this superceeds the 
+documentation. It is mostly a list of points from pascaline_tests/pascaline.pas,
+the acceptance test for Pascaline. It may be (and probably is) incomplete.
 
-5. I began a project to get the implemented Pascaline extentions into shape.
-this is about halfway complete. See the Pascaline implementation list, which is
-#15 in the issues list. This involves completing the Pascaline AT or Acceptance
-Test in ./pascaline_tests, and fixing the bugs found.
+There is a lot that works here in Pascaline! And of course the entire ISO 7185
+language is here. The biggest lack is the set of outcalls or system calls, which
+I haven't had time to connect to Pascal-P6, outside of the services module.
 
-Other notes:
+Pascaline features not implemented in Pascal-P6 0.1:
 
-I got some pushback on not creating a versioned release for P6, and I admit this
-needs doing. I will also admit that the main reason is that I don't want people
-to characterize P6 as "only an interpreter". It is not.
+* 6.16 Constant strings on read/ln is not implemented (specifying text to skip).
 
-The other reason is that there are a lot of band-aids on P6 because of it's host
-implementation, presently GPC. Besides difficultly to find and set up that 
-compiler, but also ugly workarounds with it. A really good example of this is
-some changes I needed to make to get byte files to work. The declaration:
+* 6.16.1 Radix convertion on input.
 
-type bytfil = packed file of byte;
+* 6.16.2 Radix specifiers in read/ln statements.
 
-Works, and I/O to it is bytes, but it only works in GPC mode. In standard mode
-it does not, apparently because:
+* 6.26 The operator overload for assignment (:=) is not implemented correctly.
 
-type byte = 0..255;
+* 6.26 Operator overloads from used and joined modules is not implemented.
 
-Does not give you a true byte, even in a packed file. ISO 7185 *does* make 
-extending it to integer standard, *but* packing it into a file is valid, and in
-fact records and arrays can do that, it works in pint. I *think* it used to work
-in GPC 32 bit, but I can't verify that, since my GPC/Windows32 implementation no
-longer functions.
+* 6.26 Inherited operator overloads is not implemented or not tested (I don't
+       actually recall which).
 
-So the above bytfil declare works, BUT ONLY WITH GPC EXTENDED MODE ON! Why? 
-Because the GPC built-in byte type is *magical*, and can only be accessed in GPC
-extended mode. Thus I had to work around that by declaring a special ibyte so
-the two values wouldn't conflict. This is a good example of a workaround I would
-like to flush.
+* 6.29 Exception handling on module destructor is not implemented.
+
+* 6.35 Matrix math is not implemented.
+
+* 6.36 Saturated math operators are not implemented.
+
+* 6.37 Properties are not implemented.
+
+* 6.39.2 Joined module overrides are do not work.
+
+* 6.41 Classes and all operations with respect to classes are not implemented.
+
+* The pgen module is in development, and does not work at present. The 
+documentation covering it is a preview of how it is expected to work, and could
+be changed by the time it is implemented.
+
+* Linking external modules is in development, and further documentation on this
+will be forthcoming.
+
+* Debug mode has several issues. It needs work before it becomes useful.
+
+That's it! Enjoy playing around with the system.
 
 Scott Franco
 San Jose, CA

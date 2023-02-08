@@ -408,11 +408,7 @@ const
       fillen      = 2000; { maximum length of filenames }
       maxsym      = 20;   { maximum length of symbol/module name }
 
-      { version numbers }
-
-      majorver   = 0; { major version number }
-      minorver   = 1; { minor version number }
-      experiment = true; { is version experimental? }
+#include "version.inc"
 
 type
 
