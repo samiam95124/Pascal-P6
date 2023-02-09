@@ -4294,7 +4294,8 @@ end;
                 with gattr,typtr^ do
                   if form = pointer then
                     begin load;
-                      if eltype^.form = arrayc then begin
+                      if eltype <> nil then
+                        if eltype^.form = arrayc then begin
                         { it's a container, load a complex pointer based on
                           that }
                         gen0t(76(*dup*),nilptr); { copy that }

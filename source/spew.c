@@ -55,7 +55,34 @@
 * for the convenience of being able to immediately test for the highest        *
 * error count case.                                                            *
 *                                                                              *
+* spew is an old program from the last century. It has been found to be very   *
+* effective in finding compiler faults, and also for improving the error       *
+* handling in general.                                                         *
+*                                                                              *
 * Translated from Pascal 6/7/2018                                              *
+*                                                                              *
+* USE:                                                                         *
+*                                                                              *
+* spew [<option>]... file                                                      *
+*                                                                              *
+* Options:                                                                     *
+*                                                                              *
+* --help or -h               Help                                              *
+* --line or -l <lineno>      Set single fault line number (default 1)          *
+* --char or -c <charno>      Set single fault character number (default 1)     *
+* --random or -r             Set random fault mode (default is linear)         *
+* --iterations or -i <limit> Set max number of iterations to perform           *
+* --proceed or -p            Override single fault mode and proceed            *
+* --again or -a              Run same file again (recover position)            *
+*                                                                              *
+* Note either --line or --char places spew into single fault mode.             *
+*                                                                              *
+* Single fault can be overriden with --proceed or -p, but that must appear     *
+* AFTER line and/or character set options.                                     *
+* The default limit is the file length for linear mode.                        *
+*                                                                              *
+* Again mode recovers previous position from spewtest.pas and starts           *
+* from that point.                                                             *
 *                                                                              *
 *******************************************************************************/
 
