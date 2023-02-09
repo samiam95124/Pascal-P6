@@ -39,7 +39,7 @@ Pascal-p6 uses the standard GNU release layout. You execute:
 
 [linux]
 
-> ./setpath
+> . ./setpath
 > ./configure
 > make
 

@@ -57,7 +57,7 @@ if [[ $rc != 0 ]] ; then
     echo $PATH | grep -q "$PWD/bin" || echo -n ", has PATH been set up?"
     echo
     echo "attempting to make it"
-    gcc -o ./bin/flip ./c_support/flip.c
+    gcc -o ./bin/flip ./source/flip.c
     checkexists flip > /dev/null
     flip=$rc
     if [[ $rc != 0 ]] ; then
