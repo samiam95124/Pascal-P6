@@ -188,7 +188,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 120;  { maximum number of instructions }
+   maxins     = 121;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 81;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3256,8 +3256,9 @@ end;
   procedure genmst(lev: levrange; lb: integer);
   begin
     if prcode then begin
-      putic; write(prr,mn[41(*mst*)]:4); write(prr,lev:12, ' '); prtlabel(lb);
-      writeln(prr)
+      putic; 
+      write(prr,mn[121(*sfr*)]:4, ' '); prtlabel(lb); writeln(prr);
+      write(prr,mn[41(*mst*)]:4); write(prr,lev:4); writeln(prr)
     end
   end;
 
@@ -9579,7 +9580,7 @@ end;
       mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp';
       mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
       mn[116] :=' cpp'; mn[117] :=' cpr'; mn[118] :=' lsa'; mn[119] :=' wbs';
-      mn[120] :=' wbe';
+      mn[120] :=' wbe'; mn[121] :=' sfr';
 
     end (*instrmnemonics*) ;
 

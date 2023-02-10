@@ -2432,15 +2432,17 @@ void sinins()
                    break;
     case 90 /*inca*/: getq(); popadr(a1); pshadr(a1+q); break;
 
-    case 11 /*mst*/: /*p=level of calling procedure minus level of called
-                       procedure + 1;  set dl and sl, decrement sp*/
-                     /* then length of this element is
-                        max(intsize,realsize,boolsize,charsize,ptrsize */
-                 getp(); getq();
+    case 245 /*sfr*/: getq();
                  /* allocate function result as zeros */
                  for (j = 0; j < q/INTSIZE; j++) pshint(0);
                  /* set function result undefined */
                  for (j = 0; j < q; j++) putdef(sp+j, FALSE);
+                 break;
+    case 11 /*mst*/: /*p=level of calling procedure minus level of called
+                       procedure + 1;  set dl and sl, decrement sp*/
+                     /* then length of this element is
+                        max(intsize,realsize,boolsize,charsize,ptrsize */
+                 getp();
                  ad = sp; /* save mark base */
                  /* allocate mark as zeros */
                  for (j = 0; j < MARKSIZE/INTSIZE; j++) pshint(0);
@@ -3015,7 +3017,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250, 251, 
+    /* 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 
        252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

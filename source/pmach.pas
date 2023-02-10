@@ -2658,15 +2658,17 @@ begin
                    end;
     90 (*inca*): begin getq; popadr(a1); pshadr(a1+q) end;
 
+    245 (*sfr*): begin getq;
+                   { allocate function result as zeros }
+                   for j := 1 to q div intsize do pshint(0);
+                   { set function result undefined }
+                   for j := 1 to q do putdef(sp+j-1, false)
+                 end;
     11 (*mst*): begin (*p=level of calling procedure minus level of called
                         procedure + 1;  set dl and sl, decrement sp*)
                  (* then length of this element is
                     max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp; getq;
-                 { allocate function result as zeros }
-                 for j := 1 to q div intsize do pshint(0);
-                 { set function result undefined }
-                 for j := 1 to q do putdef(sp+j-1, false);
+                 getp;
                  ad := sp; { save mark base }
                  { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
@@ -3249,7 +3251,7 @@ begin
                   end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250, 251, 252,
+    228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
     253, 254, 255: errorv(InvalidInstruction)
 
   end

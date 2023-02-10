@@ -1862,7 +1862,7 @@ procedure load;
          instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
-         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize;
+         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
          instr[ 12]:='cup       '; insp[ 12] := true;  insq[ 12] := intsize;
          instr[ 13]:='ents      '; insp[ 13] := false; insq[ 13] := intsize;
          instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := 0;
@@ -2097,6 +2097,7 @@ procedure load;
          instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
          instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
+         instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2796,8 +2797,11 @@ procedure load;
                                              storeq
                                        end;
 
-          12,11(*cup,mst*): begin read(prd,p); storeop; storep; labelsearch;
+          12(*cup*): begin read(prd,p); storeop; storep; labelsearch;
                                   storeq end;
+
+          245(*sfr*): begin storeop; labelsearch; storeq end;
+          11(*mst*): begin read(prd,p); storeop; storep end;
 
           91(*suv*): begin storeop; labelsearch; storeq;
                      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
@@ -4641,15 +4645,17 @@ begin
                    end;
     90 (*inca*): begin getq; popadr(a1); pshadr(a1+q) end;
 
+    245 (*sfr*): begin getq;
+                   { allocate function result as zeros }
+                   for j := 1 to q div intsize do pshint(0);
+                   { set function result undefined }
+                   for j := 1 to q do putdef(sp+j-1, false)
+                 end;
     11 (*mst*): begin (*p=level of calling procedure minus level of called
                         procedure + 1;  set dl and sl, decrement sp*)
                  (* then length of this element is
                     max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp; getq;
-                 { allocate function result as zeros }
-                 for j := 1 to q div intsize do pshint(0);
-                 { set function result undefined }
-                 for j := 1 to q do putdef(sp+j-1, false);
+                 getp;
                  ad := sp; { save mark base }
                  { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
@@ -5251,7 +5257,7 @@ begin
                   end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 245, 246, 247, 248, 249, 250,
+    228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250,
     251, 252, 253, 254, 255: errorv(InvalidInstruction)
 
   end
