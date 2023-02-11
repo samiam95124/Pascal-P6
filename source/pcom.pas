@@ -3200,7 +3200,7 @@ end;
           writeln(prr);
           mes(fop)
         end else begin
-          write(prr,mn[fop]:4,fp1:4,' ');
+          write(prr,mn[fop]:4, ' ');
           if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
           writeln(prr);
           mesl(fp1)
@@ -3253,11 +3253,18 @@ end;
     ic := ic + 1
   end (*genctaivtcvb*) ;
 
-  procedure genmst(lev: levrange; lb: integer);
+  procedure gensfr(lb: integer);
   begin
     if prcode then begin
       putic; 
       write(prr,mn[121(*sfr*)]:4, ' '); prtlabel(lb); writeln(prr);
+    end
+  end;
+
+  procedure genmst(lev: levrange);
+  begin
+    if prcode then begin
+      putic; 
       write(prr,mn[41(*mst*)]:4); write(prr,lev:4); writeln(prr)
     end
   end;
@@ -5274,8 +5281,8 @@ end;
         begin nxt := pflist; lkind := pfkind;
           { I don't know why these are dups, guess is a badly formed far call }
           if pfkind = actual then begin { it's a system call }
-            if not externl then genmst(level-pflev,frlab)
-          end else genmst(level-pflev,frlab) { its an indirect }
+            if not externl then gensfr(frlab)
+          end else gensfr(frlab) { its an indirect }
         end;
       if sy = lparent then
         begin llc := lc; insymbol;
@@ -5543,7 +5550,7 @@ end;
         sp: stp;
   begin
     sp := partype(fcp, 1);
-    genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+    genlabel(frlab); gensfr(frlab);
     { find uncoerced parameters size }
     locpars := psize(gattr.typtr);
     { find final parameters size }
@@ -5585,7 +5592,7 @@ end;
     end;
   begin
     lsp := partype(fcp, 1); rsp := partype(fcp, 2);
-    genlabel(frlab); genmst(level-fcp^.pflev,frlab);
+    genlabel(frlab); gensfr(frlab);
     { find uncoerced parameters size }
     lpls := psize(lattr.typtr); lprs := psize(gattr.typtr);
     locpars := lpls+lprs;
@@ -8607,6 +8614,7 @@ end;
     markline;
     genlabel(segsize); genlabel(stackbot);
     genlabel(gblsize);
+    genmst(level-1);
     gencupent(32(*ents*),1,segsize,fprocp);
     gencupent(32(*ente*),2,stackbot,fprocp);
     if fprocp <> nil then (*copy multiple values into local cells*)
@@ -8874,12 +8882,12 @@ end;
           insymbol;
           { mark stack, generate call to startup block }
           genlabel(frlab); prtlabel(frlab); writeln(prr,'=',0:1);
-          genmst(0,frlab); gencupent(46(*cup*),0,entname,nil);
+          gensfr(frlab); gencupent(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname);
-            genmst(0,frlab); gencupent(46(*cup*),0,extname,nil)
+            gensfr(frlab); gencupent(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
@@ -8940,6 +8948,7 @@ end;
         entname := extname; body(fsys, nil);
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
+        genmst(level);
         gencupent(32(*ents*),1,segsize,nil);
         gencupent(32(*ente*),2,stackbot,nil);
         gen1(42(*ret*),ord('p'));
