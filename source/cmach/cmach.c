@@ -451,7 +451,7 @@ table is all you should need to adapt to any byte addressable machine.
 
 #define MAJORVER 0
 #define MINORVER 1
-#define EXPERIMENT 0
+#define EXPERIMENT 1
 
 /* typedefs */
 
