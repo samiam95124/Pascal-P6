@@ -755,6 +755,12 @@ begin
     writeln
 end;
 
+{ print hex full word with leading zeros for diagnostics }
+procedure prthex(v: integer);
+begin
+  wrthex(output, v, maxdigh, true)
+end;
+
 procedure lstins(var ad: address); forward;
 
 procedure dmpins;
@@ -1865,7 +1871,7 @@ procedure load;
          instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
          instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;
          instr[ 13]:='ents      '; insp[ 13] := false; insq[ 13] := intsize;
-         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := 0;
+         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;
          instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
@@ -1979,11 +1985,11 @@ procedure load;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
          instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;
          instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;
-         instr[128]:='reti      '; insp[128] := false; insq[128] := 0;
-         instr[129]:='retr      '; insp[129] := false; insq[129] := 0;
-         instr[130]:='retc      '; insp[130] := false; insq[130] := 0;
-         instr[131]:='retb      '; insp[131] := false; insq[131] := 0;
-         instr[132]:='reta      '; insp[132] := false; insq[132] := 0;
+         instr[128]:='reti      '; insp[128] := false; insq[128] := intsize;
+         instr[129]:='retr      '; insp[129] := false; insq[129] := intsize;
+         instr[130]:='retc      '; insp[130] := false; insq[130] := intsize;
+         instr[131]:='retb      '; insp[131] := false; insq[131] := intsize;
+         instr[132]:='reta      '; insp[132] := false; insq[132] := intsize;
          instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
          instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
@@ -2055,7 +2061,7 @@ procedure load;
          instr[201]:='incx      '; insp[201] := false; insq[201] := intsize;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
-         instr[204]:='retx      '; insp[204] := false; insq[204] := 0;
+         instr[204]:='retx      '; insp[204] := false; insq[204] := intsize;
          instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
          instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
          instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
@@ -2088,8 +2094,8 @@ procedure load;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
          instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
-         instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
-         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
+         instr[236]:='rets      '; insp[236] := false; insq[236] := intsize;
+         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize*2;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
@@ -2998,7 +3004,9 @@ procedure load;
                          storeop; putcstfix; storeq
                        end;
 
-          14, 128, 129, 130, 131, 132, 204, 236, (*ret*)
+          (*ret*)
+          14, 128, 129, 130, 131, 132, 204, 
+          236: begin read(prd,q); storeop; storeq end;
 
           { equ,neq,geq,grt,leq,les with no parameter }
           17, 137, 138, 139, 140, 141,
@@ -3144,9 +3152,8 @@ end;
 
 function base(ld :integer):address;
    var ad :address;
-begin ad := mp;
-   while ld>0 do begin ad := getadr(ad+marksl); ld := ld-1 end;
-   base := ad
+begin 
+  base := getadr(mp-ld*ptrsize);
 end; (*base*)
 
 procedure compare(var b: boolean; var a1, a2: address);
@@ -4650,22 +4657,16 @@ begin
                    { set function result undefined }
                    for j := 1 to q do putdef(sp+j-1, false)
                  end;
-    11 (*mst*): begin (*p=level of calling procedure minus level of called
-                        procedure + 1;  set dl and sl, decrement sp*)
-                 (* then length of this element is
-                    max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp; popadr(ad1);
-                 ad := sp; { save mark base }
+    11 (*mst*): begin getp;
+                 pshadr(mp); { save old mp on stack }
+                 ad1 := mp; { save old mp }
+                 mp := sp; { set new mp }
+                 { copy old display to stack }
+                 for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
+                 pshadr(mp); { push new mp to complete display } 
                  { allocate mark as zeros }
                  for j := 1 to marksize div intsize do pshint(0);
-                 putadr(ad+marksl, base(p)); { sl }
-                 (* the length of this element is ptrsize *)
-                 putadr(ad+markdl, mp); { dl }
-                 (* idem *)
-                 putadr(ad+markep, ep); { ep }
-                 (* idem *)
-                 putadr(ad+markra, ad1); { ra }
-                 mp := ad { set mark pointer }
+                 putadr(mp-p*ptrsize+markep, ep); { previous ep }
                 end;
 
     12 (*cup*): begin (*q=entry point*)
@@ -4721,12 +4722,13 @@ begin
     204 (*retx*),
     236 (*rets*),
     129 (*retr*),
-    132 (*reta*): begin evict(ep, mp);
+    132 (*reta*): begin getq; evict(ep, mp);
                    { set stack below function result, if any }
                    sp := mp;
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q; { remove parameters }
+                   ep := getadr(mp+markep)
                  end;
 
     237 (*retm*): begin evict(ep, mp); getq; { we don't use q }

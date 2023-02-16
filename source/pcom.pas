@@ -171,18 +171,12 @@ const
      string quanta system, string lengths are effectively unlimited, but there
      it still sets the size of some buffers in pcom. }
    strglgth    = 250;
-   { lcaftermarkstack is a very pcom specific way of stating the size of a mark
-     in pint. However, it is used frequently in Perberton's documentation, so I
-     left it, but equated it to the more portable marksize. }
-   lcaftermarkstack = -marksize;
    fileal      = charal;
    (* stackelsize = minimum size for 1 stackelement
                   = k*stackal
       stackal     = scm(all other al-constants)
       charmax     = scm(charsize,charal)
-                    scm = smallest common multiple
-      lcaftermarkstack >= maxresult+3*ptrsize+max(x-size)
-                        = k1*stackelsize          *)
+                    scm = smallest common multiple *)
    parmal     = stackal;
    parmsize   = stackelsize;
    recal      = stackal;
@@ -353,6 +347,7 @@ type                                                        (*describing:*)
                              varsaddr: addrrange; varssize: addrrange;
                              vartl: integer);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
+                                   locpar: addrrange; { size of parameters }
                                    asgn: boolean; { assigned }
                                    pext: boolean; pmod: filptr; pfattr: fpattr;
                                    pfvaddr: addrrange; pfvid: ctp;
@@ -3035,6 +3030,10 @@ end;
     if prcode then
       begin putic; write(prr,mn[fop]:4);
         case fop of
+          42: begin
+            writeln(prr,chr(fp1), ' ', fp2:8);
+            mes(0);
+          end;
           45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117:
             begin
               writeln(prr,' ',fp1:3,' ',fp2:8);
@@ -3824,7 +3823,9 @@ end;
                                    gen1ts(8(*ltc*),dplmt,typtr,symptr)
                                  else gen1ts(39(*ldo*),dplmt,typtr,symptr)
                                end
-                             end else gen2t(54(*lod*),level-vlevel,dplmt,typtr);
+                             end else 
+                               gen2t(54(*lod*),level-(level-vlevel),dplmt,
+                                     typtr);
                      indrct: gen1t(35(*ind*),idplmt,typtr);
                      inxd:   error(400)
                    end;
@@ -3889,7 +3890,7 @@ end;
       if typtr <> nil then
         case access of
           drct:   if vlevel <= 1 then gen1ts(43(*sro*),dplmt,typtr,symptr)
-                  else gen2t(56(*str*),level-vlevel,dplmt,typtr);
+                  else gen2t(56(*str*),level-(level-vlevel),dplmt,typtr);
           indrct: if idplmt <> 0 then error(401)
                   else if typtr^.form in [records,arrays] then begin
                     lsize := typtr^.size;
@@ -7230,7 +7231,7 @@ end;
           lcp1 := lcp3
         end
       end;
-      begin
+      begin { parameterlist }
         plst := false;
         if forw then begin { isolate duplicated list in level }
           oldlevf := level; oldtopf := top; pushlvl(false, nil)
@@ -7510,6 +7511,21 @@ end;
       end
     end;
 
+    { find space occupied by parameter list }
+    function parmspc(plst: ctp): addrrange;
+    var locpar: addrrange;
+    begin
+      locpar := 0;
+      while plst <> nil do begin
+        if plst^.idtype <> nil then begin
+          locpar := locpar+plst^.idtype^.size;
+          alignu(parmptr,locpar)
+        end;
+        plst := plst^.next
+      end;
+      parmspc := locpar
+    end;
+
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
@@ -7526,7 +7542,7 @@ end;
           if iso7185 then error(209) else error(279)
         else fsy := sy; insymbol
       end;
-      llc := lc; lc := lcaftermarkstack; forw := false; virt := false;
+      llc := lc; lc := -(level+1)*ptrsize-marksize; forw := false; virt := false;
       ovrl := false;
       if (sy = ident) or (fsy = operatorsy) then
         begin
@@ -7656,7 +7672,7 @@ end;
         parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
       else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
       if not forw then begin
-        lcp^.pflist := lcp1;
+        lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist);
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
@@ -8618,7 +8634,7 @@ end;
     gencupent(32(*ents*),1,segsize,fprocp);
     gencupent(32(*ente*),2,stackbot,fprocp);
     if fprocp <> nil then (*copy multiple values into local cells*)
-      begin llc1 := lcaftermarkstack;
+      begin llc1 := -(level+1)*ptrsize-marksize;
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -8717,10 +8733,11 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
+        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),fprocp^.locpar)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen1t(42(*ret*),fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen0t(42(*ret*),basetype(fprocp^.idtype));
+          gen2t(42(*ret*),fprocp^.idtype^.size,fprocp^.locpar,
+                basetype(fprocp^.idtype))
+        else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
         begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
@@ -8728,7 +8745,7 @@ end;
           end
       end
     else
-      begin gen1(42(*ret*),ord('p'));
+      begin gen2(42(*ret*),ord('p'),0);
         alignd(parmptr,lcmin);
         if prcode then
         begin
@@ -8951,7 +8968,7 @@ end;
         genmst(level);
         gencupent(32(*ents*),1,segsize,nil);
         gencupent(32(*ente*),2,stackbot,nil);
-        gen1(42(*ret*),ord('p'));
+        gen2(42(*ret*),ord('p'),0);
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
           prtlabel(stackbot); writeln(prr,'=',0:1)
@@ -9409,7 +9426,7 @@ end;
     chkvbk := true; option[9] := true; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
-    lc := lcaftermarkstack; gc := 0;
+    lc := -ptrsize-marksize; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0;
     incstk := nil; inclst := nil; cbblst := nil;
