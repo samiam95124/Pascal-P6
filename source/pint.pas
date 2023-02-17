@@ -3150,12 +3150,6 @@ begin
   withsch := f
 end;
 
-function base(ld :integer):address;
-   var ad :address;
-begin 
-  base := getadr(mp-ld*ptrsize);
-end; (*base*)
-
 procedure compare(var b: boolean; var a1, a2: address);
 (*comparing is only correct if result by comparing integers will be*)
 var i: integer;
@@ -4474,13 +4468,13 @@ begin
 
   case op of
 
-    0   (*lodi*): begin getp; getq; pshint(getint(base(p) + q)) end;
-    193 (*lodx*): begin getp; getq; pshint(getbyt(base(p) + q)) end;
-    105 (*loda*): begin getp; getq; pshadr(getadr(base(p) + q)) end;
-    106 (*lodr*): begin getp; getq; pshrel(getrel(base(p) + q)) end;
-    107 (*lods*): begin getp; getq; getset(base(p) + q, s1); pshset(s1) end;
-    108 (*lodb*): begin getp; getq; pshint(ord(getbol(base(p) + q))) end;
-    109 (*lodc*): begin getp; getq; pshint(ord(getchr(base(p) + q))) end;
+    0   (*lodi*): begin getp; getq; pshint(getint(getadr(mp-p*ptrsize)+q)) end;
+    193 (*lodx*): begin getp; getq; pshint(getbyt(getadr(mp-p*ptrsize)+q)) end;
+    105 (*loda*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
+    106 (*lodr*): begin getp; getq; pshrel(getrel(getadr(mp-p*ptrsize)+ q)) end;
+    107 (*lods*): begin getp; getq; getset(getadr(mp-p*ptrsize)+q, s1); pshset(s1) end;
+    108 (*lodb*): begin getp; getq; pshint(ord(getbol(getadr(mp-p*ptrsize)+q))) end;
+    109 (*lodc*): begin getp; getq; pshint(ord(getchr(getadr(mp-p*ptrsize)+q))) end;
 
     1   (*ldoi*): begin getq; pshint(getint(q)) end;
     194 (*ldox*): begin getq; pshint(getbyt(q)) end;
@@ -4490,38 +4484,38 @@ begin
     68  (*ldob*): begin getq; pshint(ord(getbol(q))) end;
     69  (*ldoc*): begin getq; pshint(ord(getchr(q))) end;
 
-    2   (*stri*): begin getp; getq; stoad := base(p)+q;
+    2   (*stri*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putint(stoad, i) end
                   end;
-    195 (*strx*): begin getp; getq; stoad := base(p)+q;
+    195 (*strx*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
-    70  (*stra*): begin getp; getq; stoad := base(p)+q;
+    70  (*stra*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
                   end;
-    71  (*strr*): begin getp; getq; stoad := base(p)+q;
+    71  (*strr*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin poprel(r1); putrel(stoad, r1) end
                   end;
-    72  (*strs*): begin getp; getq; stoad := base(p)+q;
+    72  (*strs*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popset(s1); putset(stoad, s1) end
                   end;
-    73  (*strb*): begin getp; getq; stoad := base(p)+q;
+    73  (*strb*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else
                           begin popint(i1); b1 := i1 <> 0; putbol(stoad, b1) end
                   end;
-    74  (*strc*): begin getp; getq; stoad := base(p)+q;
+    74  (*strc*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else
@@ -4566,7 +4560,7 @@ begin
                           begin popint(i1); c1 := chr(i1); putchr(stoad, c1) end
                   end;
 
-    4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
+    4 (*lda*): begin getp; getq; pshadr(getadr(mp-p*ptrsize)+q) end;
     5 (*lao*): begin getq; pshadr(q) end;
 
     6   (*stoi*): begin popint(i); popadr(stoad);
@@ -5004,7 +4998,7 @@ begin
 
     110 (*rgs*): begin popint(i2); popint(i1); pshset([i1..i2]) end;
     112 (*ipj*): begin getp; getq; pc := q;
-                 mp := base(p); { index the mark to restore }
+                 mp := getadr(mp-p*ptrsize); { index the mark to restore }
                  { restore marks until we reach the destination level }
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
@@ -5017,7 +5011,7 @@ begin
                 pc := getadr(ad)
               end;
     114 (*lpa*): begin getp; getq; { place procedure address on stack }
-                pshadr(base(p));
+                pshadr(getadr(mp-p*ptrsize));
                 pshadr(q)
               end;
     117 (*dmp*): begin getq; sp := sp+q end; { remove top of stack }
@@ -5026,7 +5020,7 @@ begin
 
     119 (*tjp*): begin getq; popint(i); if i <> 0 then pc := q end;
 
-    120 (*lip*): begin getp; getq; ad := base(p) + q;
+    120 (*lip*): begin getp; getq; ad := getadr(mp-p*ptrsize) + q;
                    ad1 := getadr(ad); ad2 := getadr(ad+1*ptrsize);
                    pshadr(ad2); pshadr(ad1);
                  end;

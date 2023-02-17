@@ -3863,7 +3863,7 @@ end;
                                if (chkext(symptr) or chkfix(symptr)) and
                                   (dplmt <> 0) then
                                   gen1t(34(*inc*),idplmt,nilptr);
-                             end else gen2(50(*lda*),level-vlevel,dplmt);
+                             end else gen2(50(*lda*),level-(level-vlevel),dplmt);
                      indrct: if idplmt <> 0 then
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
@@ -4122,8 +4122,8 @@ end;
                   { if container, just load the address of it, the complex
                     pointer is loaded when the address is loaded }
                   ct := false; if typtr <> nil then ct := typtr^.form = arrayc;
-                  if ct then gen2(50(*lda*),level-vlev,vaddr)
-                  else gen2t(54(*lod*),level-vlev,vaddr,nilptr);
+                  if ct then gen2(50(*lda*),level-(level-vlev),vaddr)
+                  else gen2t(54(*lod*),level-(level-vlev),vaddr,nilptr);
                   access := indrct; idplmt := 0
                 end;
             end;
@@ -4151,13 +4151,13 @@ end;
               else if occur = vrec then
                 begin
                   { override to local for with statement }
-                  gen2t(54(*lod*),0,vdspl,nilptr);
+                  gen2t(54(*lod*),level,vdspl,nilptr);
                   access := indrct; idplmt := fldaddr
                 end
               else
                 begin
                   if level = 1 then gen1t(39(*ldo*),vdspl,nilptr)
-                  else gen2t(54(*lod*),0,vdspl,nilptr);
+                  else gen2t(54(*lod*),level,vdspl,nilptr);
                   access := indrct; idplmt := fldaddr
                 end
             end;
@@ -5462,7 +5462,7 @@ end;
             end
         end
       else begin { call procedure or function parameter }
-        gen2(50(*lda*),level-fcp^.pflev,fcp^.pfaddr);
+        gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
         gen1(67(*cip*),locpar);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
@@ -7013,7 +7013,7 @@ end;
                 putlabel(nxt^.skplab);
                 { load variable address }
                 if level <= 1 then gen1(37(*lao*),vaddr)
-                else gen2(50(*lda*),level-vlev,vaddr);
+                else gen2(50(*lda*),level-(level-vlev),vaddr);
                 if level <= 1 then
                   { issue vector init ptr instruction }
                   gen2(97(*vip*),maxpar,containerbase(lsp))
@@ -8253,7 +8253,7 @@ end;
                   if comptypes(lattr.typtr,gattr.typtr) then begin
                     load; alignd(intptr,lc);
                     { store start to temp }
-                    gen2t(56(*str*),0,lc-intsize,intptr);
+                    gen2t(56(*str*),level,lc-intsize,intptr);
                   end else error(145)
           end
         else
@@ -8269,9 +8269,9 @@ end;
                     load; alignd(intptr,lc);
                     if not comptypes(lattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
-                    gen2t(56(*str*),0,lc-intsize*2,intptr);
+                    gen2t(56(*str*),level,lc-intsize*2,intptr);
                     { set initial value of index }
-                    gen2t(54(*lod*),0,lc-intsize,intptr);
+                    gen2t(54(*lod*),level,lc-intsize,intptr);
                     if debug and (lattr.typtr <> nil) then
                       checkbnds(lattr.typtr);
                     store(lattr);
@@ -8279,7 +8279,7 @@ end;
                     gattr := lattr; load;
                     if not comptypes(gattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
-                    gen2t(54(*lod*),0,lc-intsize*2,intptr);
+                    gen2t(54(*lod*),level,lc-intsize*2,intptr);
                     lcs := lc;
                     lc := lc - intsize*2;
                     if lc < lcmin then lcmin := lc;
@@ -8297,7 +8297,7 @@ end;
         gattr := lattr; load;
         if not comptypes(gattr.typtr,intptr) then
           gen0t(58(*ord*),gattr.typtr);
-        gen2t(54(*lod*),0,lcs-intsize*2,intptr);
+        gen2t(54(*lod*),level,lcs-intsize*2,intptr);
         gen2(47(*equ*),ord(typind),1);
         genujpxjpcal(73(*tjp*),lcix);
         gattr := lattr; load;
@@ -8344,7 +8344,7 @@ end;
                         begin gen0(119(*wbs*)); wbscnt := wbscnt+1; pshwth(stalvl) end;
                       alignd(nilptr,lc);
                       lc := lc-ptrsize;
-                      gen2t(56(*str*),0,lc,nilptr);
+                      gen2t(56(*str*),level,lc,nilptr);
                       with display[top] do
                         begin occur := vrec; vdspl := lc end;
                       if lc < lcmin then lcmin := lc
@@ -8650,15 +8650,15 @@ end;
                         if idtype^.form = arrayc then begin
                           { Container array. These are not preallocated, so we
                             have to create a copy on stack. }
-                          gen2(50(*lda*),0,llc1); { index the pointer }
+                          gen2(50(*lda*),level,llc1); { index the pointer }
                           gen0(111(*ldp*)); { load complex pointer }
                           { copy complex to stack }
                           gen2(109(*ccs*),containers(idtype),containerbase(idtype));
-                          gen2(50(*lda*),0,vaddr); { load dest addr }
+                          gen2(50(*lda*),level,vaddr); { load dest addr }
                           gen1(72(*swp*),stackelsize*2); { swap that under cp }
                           gen0(110(*scp*)) { store complex pointer }
                         end else begin
-                          gen2(50(*lda*),0,vaddr);
+                          gen2(50(*lda*),level,vaddr);
                           gen2t(54(*lod*),0,llc1,nilptr);
                           gen1(40(*mov*),idtype^.size);
                         end
@@ -8671,7 +8671,7 @@ end;
                     end;
                   if chkvbk and (vkind = formal) then begin
                     { establish var block }
-                    gen2t(54(*lod*),0,llc1,nilptr);
+                    gen2t(54(*lod*),level,llc1,nilptr);
                     gen1(93(*vbs*),idtype^.size)
                   end
                 end;
