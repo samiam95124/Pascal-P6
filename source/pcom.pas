@@ -5339,7 +5339,7 @@ end;
                       if not cmpparlst(nxt^.pflist, lcp^.pflist) then
                         if not e then error(189);
                     if lcp^.pfkind = actual then genlpa(lcp^.pfname,level-lcp^.pflev)
-                    else gen2(74(*lip*),level-lcp^.pflev,lcp^.pfaddr);
+                    else gen2(74(*lip*),level-(level-lcp^.pflev),lcp^.pfaddr);
                     locpar := locpar+ptrsize*2;
                     insymbol;
                     if not (sy in fsys + [comma,rparent]) then
@@ -7526,6 +7526,17 @@ end;
       parmspc := locpar
     end;
 
+    { offset addresses in parameter list }
+    procedure parmoff(plst: ctp; off: addrrange);
+    begin
+      while plst <> nil do begin
+        if plst^.klass = vars then plst^.vaddr := plst^.vaddr+off
+        else if (plst^.klass = proc) or (plst^.klass = func) then 
+          plst^.pfaddr := plst^.pfaddr+off;
+        plst := plst^.next
+      end
+    end;
+
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
@@ -7542,7 +7553,8 @@ end;
           if iso7185 then error(209) else error(279)
         else fsy := sy; insymbol
       end;
-      llc := lc; lc := -(level+1)*ptrsize-marksize; forw := false; virt := false;
+      { set parameter address start to zero, offset later }
+      llc := lc; lc := 0; forw := false; virt := false;
       ovrl := false;
       if (sy = ident) or (fsy = operatorsy) then
         begin
@@ -7672,7 +7684,8 @@ end;
         parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
       else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
       if not forw then begin
-        lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist);
+        lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist); 
+        parmoff(lcp^.pflist, ptrsize+adrsize+lcp^.locpar);
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
@@ -7729,6 +7742,7 @@ end;
           while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
           { now we change to a block with defining points }
           display[top].define := true;
+          lc := -(level+1)*ptrsize-marksize; { set locals top }
           declare(fsys);
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
