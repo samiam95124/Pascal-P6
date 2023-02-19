@@ -4175,7 +4175,7 @@ end;
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
                     lsize := parmsize; if id <> nil then lsize := id^.size;
-                    dplmt := 0   (*impl. relat. addr. of fct. result*)
+                    dplmt := ptrsize+adrsize+locpar { addr of fr }
                   end
               end;
             proc: { nothing, its an error case }
