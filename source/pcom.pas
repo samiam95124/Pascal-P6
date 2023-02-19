@@ -7517,10 +7517,12 @@ end;
     begin
       locpar := 0;
       while plst <> nil do begin
-        if plst^.idtype <> nil then begin
-          locpar := locpar+plst^.idtype^.size;
-          alignu(parmptr,locpar)
-        end;
+        if plst^.klass = vars then begin
+          if plst^.idtype <> nil then
+            locpar := locpar+plst^.idtype^.size;
+        end else if (plst^.klass = proc) or (plst^.klass = func) then 
+          locpar := locpar+ptrsize*2;
+        alignu(parmptr,locpar);      
         plst := plst^.next
       end;
       parmspc := locpar
