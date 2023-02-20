@@ -5271,7 +5271,8 @@ end;
         while (pc < prcnt) do begin if nxt <> nil then nxt := nxt^.next; pc := pc+1 end
       end
     end;
-    begin fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+    begin { callnonstandard }
+      fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
       while ((isfunc and (fcp^.klass <> func)) or 
              (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
         fcp := fcp^.grpnxt;
@@ -7518,11 +7519,13 @@ end;
       locpar := 0;
       while plst <> nil do begin
         if plst^.klass = vars then begin
-          if plst^.idtype <> nil then
-            locpar := locpar+plst^.idtype^.size;
+          if plst^.part = ptval then begin
+            if plst^.idtype <> nil then
+              locpar := locpar+plst^.idtype^.size
+          end else locpar := locpar+ptrsize
         end else if (plst^.klass = proc) or (plst^.klass = func) then 
           locpar := locpar+ptrsize*2;
-        alignu(parmptr,locpar);      
+        alignu(parmptr,locpar);   
         plst := plst^.next
       end;
       parmspc := locpar
