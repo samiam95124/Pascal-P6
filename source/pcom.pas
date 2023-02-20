@@ -7519,9 +7519,12 @@ end;
       locpar := 0;
       while plst <> nil do begin
         if plst^.klass = vars then begin
-          if plst^.part = ptval then begin
-            if plst^.idtype <> nil then
+          if (plst^.part = ptval) and (plst^.idtype <> nil) then begin
+            if plst^.idtype^.form <= power then
               locpar := locpar+plst^.idtype^.size
+            else if plst^.idtype^.form = arrayc then
+              locpar := locpar+ptrsize*2
+            else locpar := locpar+ptrsize
           end else locpar := locpar+ptrsize
         end else if (plst^.klass = proc) or (plst^.klass = func) then 
           locpar := locpar+ptrsize*2;
