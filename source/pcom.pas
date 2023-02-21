@@ -3212,7 +3212,7 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[91(*cuv*)]:4,fp1:4,' ');
+        write(prr,mn[91(*cuv*)]:4,' ');
         if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp2:12);
         writeln(prr);
         mes(91)

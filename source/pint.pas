@@ -1884,7 +1884,7 @@ procedure load;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;
-         instr[ 27]:='cuv       '; insp[ 27] := true;  insq[ 27] := intsize;
+         instr[ 27]:='cuv       '; insp[ 27] := false;  insq[ 27] := intsize;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;
          instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;
@@ -4667,11 +4667,8 @@ begin
                  getq; pshadr(pc); pc := q
                 end;
 
-    27 (*cuv*): begin (*q=entry point*)
-                 getp; getq;
-                 mp := sp+(p+marksize); { mp to base of mark }
-                 putadr(mp+markra, pc); { place ra }
-                 pc := getadr(q)
+    27 (*cuv*): begin (*q=vector entry point*)
+                 getq; pshadr(pc); pc := getadr(q)
                 end;
 
     91 (*suv*): begin getq; getq1; putadr(q1, q) end;
