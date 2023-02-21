@@ -2839,8 +2839,8 @@ procedure load;
                    putgblfix; storeq end;
 
           (*cuv*)
-          27: begin read(prd,p); while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
-                   storeop; storep;
+          27: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+                   storeop;
                    if prd^ = 'l' then begin getnxt; labelsearch end
                    else read(prd,q);
                    if q > exceptiontop then q := q+gbloff;
