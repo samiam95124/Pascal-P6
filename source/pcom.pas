@@ -3187,23 +3187,14 @@ end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
-  procedure gencupent(fop: oprange; fp1,fp2: integer; fcp: ctp);
+  procedure gencup(fop: oprange; fp1,fp2: integer; fcp: ctp);
   begin
     if prcode then
       begin putic;
-        if fop = 32 then begin { create ents or ente instructions }
-          if fp1 = 1 then
-            begin write(prr,mn[fop]:4,'s '); prtlabel(fp2) end
-          else
-            begin write(prr,mn[fop]:4,'e '); prtlabel(fp2) end;
-          writeln(prr);
-          mes(fop)
-        end else begin
-          write(prr,mn[fop]:4, ' ');
-          if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
-          writeln(prr);
-          mesl(fp1)
-        end
+        write(prr,mn[fop]:4, ' ');
+        if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
+        writeln(prr);
+        mesl(fp1)
       end;
     ic := ic + 1
   end;
@@ -3260,13 +3251,36 @@ end;
     end
   end;
 
-  procedure genmst(lev: levrange);
+  procedure genmst(lev: levrange; fp1,fp2: integer);
   begin
     if prcode then begin
       putic; 
-      write(prr,mn[41(*mst*)]:4); write(prr,lev:4); writeln(prr)
+      write(prr,mn[41(*mst*)]:4, ' ', lev:4, ' '); prtlabel(fp1); 
+      write(prr, ' '); prtlabel(fp2); writeln(prr)
     end
   end;
+
+  procedure genret1t(lev: levrange; fp1: integer; fsp: stp);
+  begin
+    if prcode then
+      begin putic;
+        write(prr,mn[42(*ret*)]:4);
+        if fsp = nil then write(prr, 'p') else gentypindicator(fsp);
+        writeln(prr, ' ', lev:4, fp1:11);
+      end;
+    ic := ic + 1; mest(42(*ret*), fsp)
+  end (*genret1t*);
+
+  procedure genret2t(lev: levrange; fp1,fp2: integer; fsp: stp);
+  begin
+    if prcode then
+      begin putic;
+        write(prr,mn[42(*ret*)]:4);
+        gentypindicator(fsp);
+        writeln(prr,' ', lev:4, ' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
+      end;
+    ic := ic + 1; mest(42(*ret*), fsp)
+  end (*gen2t*);
 
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
@@ -5456,7 +5470,7 @@ end;
                   end
                 end else begin
                   if inherit then error(234);
-                  gencupent(46(*cup*),locpar,pfname,fcp)
+                  gencup(46(*cup*),locpar,pfname,fcp)
                 end;
                 mesl(-lsize)
               end
@@ -5572,7 +5586,7 @@ end;
       begin gen0(10(*flt*)); gattr.typtr := realptr end;
     fixpar(sp,gattr.typtr);
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+    gencup(46(*cup*),locpar,fcp^.pfname,fcp);
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -5630,7 +5644,7 @@ end;
       fixpar(rsp,gattr.typtr);
     end else gen2(116(*cpp*),lsize,locpar); { get both params }
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencupent(46(*cup*),locpar,fcp^.pfname,fcp);
+    gencup(46(*cup*),locpar,fcp^.pfname,fcp);
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -8652,9 +8666,7 @@ end;
     markline;
     genlabel(segsize); genlabel(stackbot);
     genlabel(gblsize);
-    genmst(level-1);
-    gencupent(32(*ents*),1,segsize,fprocp);
-    gencupent(32(*ente*),2,stackbot,fprocp);
+    genmst(level-1,segsize,stackbot);
     if fprocp <> nil then (*copy multiple values into local cells*)
       begin llc1 := -(level+1)*ptrsize-marksize;
         lcp := fprocp^.pflist;
@@ -8755,11 +8767,11 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),fprocp^.locpar)
+        if fprocp^.idtype = nil then genret1t(level-1,fprocp^.locpar,nil)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen2t(42(*ret*),fprocp^.idtype^.size,fprocp^.locpar,
+          genret2t(level-1,fprocp^.idtype^.size,fprocp^.locpar,
                 basetype(fprocp^.idtype))
-        else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
+        else genret1t(level-1,fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
         begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
@@ -8767,7 +8779,7 @@ end;
           end
       end
     else
-      begin gen2(42(*ret*),ord('p'),0);
+      begin genret1t(level-1,0,nil);
         alignd(parmptr,lcmin);
         if prcode then
         begin
@@ -8921,12 +8933,12 @@ end;
           insymbol;
           { mark stack, generate call to startup block }
           genlabel(frlab); prtlabel(frlab); writeln(prr,'=',0:1);
-          gensfr(frlab); gencupent(46(*cup*),0,entname,nil);
+          gensfr(frlab); gencup(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname);
-            gensfr(frlab); gencupent(46(*cup*),0,extname,nil)
+            gensfr(frlab); gencup(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
@@ -8987,10 +8999,8 @@ end;
         entname := extname; body(fsys, nil);
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
-        genmst(level);
-        gencupent(32(*ents*),1,segsize,nil);
-        gencupent(32(*ente*),2,stackbot,nil);
-        gen2(42(*ret*),ord('p'),0);
+        genmst(level,segsize,stackbot);
+        genret1t(level,0,nil);
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
           prtlabel(stackbot); writeln(prr,'=',0:1)

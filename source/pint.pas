@@ -1855,6 +1855,7 @@ procedure load;
               The "*" mark both shows in the listing, and also prevents
               their use in the intermediate file, since only alpha
               characters are allowed as opcode labels.
+           2. Instructions marked with "---" are unused.
 
          }
          instr[  0]:='lodi      '; insp[  0] := true;  insq[  0] := intsize;
@@ -1868,10 +1869,10 @@ procedure load;
          instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
-         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
+         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize*2;
          instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;
-         instr[ 13]:='ents      '; insp[ 13] := false; insq[ 13] := intsize;
-         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;
+         instr[ 13]:='---       '; insp[ 13] := false; insq[ 13] := 0;
+         instr[ 14]:='retp      '; insp[ 14] := true;  insq[ 14] := intsize;
          instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
@@ -1985,11 +1986,11 @@ procedure load;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
          instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;
          instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;
-         instr[128]:='reti      '; insp[128] := false; insq[128] := intsize;
-         instr[129]:='retr      '; insp[129] := false; insq[129] := intsize;
-         instr[130]:='retc      '; insp[130] := false; insq[130] := intsize;
-         instr[131]:='retb      '; insp[131] := false; insq[131] := intsize;
-         instr[132]:='reta      '; insp[132] := false; insq[132] := intsize;
+         instr[128]:='reti      '; insp[128] := true; insq[128] := intsize;
+         instr[129]:='retr      '; insp[129] := true; insq[129] := intsize;
+         instr[130]:='retc      '; insp[130] := true;  insq[130] := intsize;
+         instr[131]:='retb      '; insp[131] := true;  insq[131] := intsize;
+         instr[132]:='reta      '; insp[132] := true; insq[132] := intsize;
          instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
          instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
@@ -2030,7 +2031,7 @@ procedure load;
          instr[170]:='less      '; insp[170] := false; insq[170] := 0;
          instr[171]:='lesc      '; insp[171] := false; insq[171] := 0;
          instr[172]:='lesm      '; insp[172] := false; insq[172] := intsize;
-         instr[173]:='ente      '; insp[173] := false; insq[173] := intsize;
+         instr[173]:='---       '; insp[173] := false; insq[173] := 0;
          instr[174]:='mrkl*     '; insp[174] := false; insq[174] := intsize;
          instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;
          instr[176]:='cps       '; insp[176] := false; insq[176] := 0;
@@ -2061,7 +2062,7 @@ procedure load;
          instr[201]:='incx      '; insp[201] := false; insq[201] := intsize;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
-         instr[204]:='retx      '; insp[204] := false; insq[204] := intsize;
+         instr[204]:='retx      '; insp[204] := true;  insq[204] := intsize;
          instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
          instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
          instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
@@ -2094,8 +2095,8 @@ procedure load;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
          instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
-         instr[236]:='rets      '; insp[236] := false; insq[236] := intsize;
-         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize*2;
+         instr[236]:='rets      '; insp[236] := true;  insq[236] := intsize;
+         instr[237]:='retm      '; insp[237] := true; insq[237] := intsize*2;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
@@ -2806,7 +2807,8 @@ procedure load;
           12(*cup*): begin storeop; labelsearch; storeq end;
 
           245(*sfr*): begin storeop; labelsearch; storeq end;
-          11(*mst*): begin read(prd,p); storeop; storep end;
+          11(*mst*): begin read(prd,p); storeop; labelsearch; q2 := q; 
+                           labelsearch; q1 := q; q := q2; storep end;
 
           91(*suv*): begin storeop; labelsearch; storeq;
                      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
@@ -2879,9 +2881,6 @@ procedure load;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
           23,24,25,119,207,21,
-
-          (*ents,ente*)
-          13, 173: begin storeop; labelsearch; storeq end;
 
           (*ipj,lpa*)
           112,114: begin read(prd,p); storeop; storep; labelsearch; storeq end;
@@ -2956,7 +2955,8 @@ procedure load;
                            end (*case*)
                      end;
 
-           26, 95, 97, 98, 99, 190, 199,8 (*chk,cjp*): begin
+           {chki,chka,chks,chkb,chkc,ckla,chkx,cjp}
+           26, 95, 97, 98, 99, 190, 199,8: begin
                          read(prd,lb,ub); storeop;
                          { cjp is compare with jump }
                          if op = 8 then begin labelsearch; q1 := q end;
@@ -4651,16 +4651,24 @@ begin
                    { set function result undefined }
                    for j := 1 to q do putdef(sp+j-1, false)
                  end;
-    11 (*mst*): begin getp;
-                 pshadr(mp); { save old mp on stack }
-                 ad1 := mp; { save old mp }
-                 mp := sp; { set new mp }
-                 { copy old display to stack }
-                 for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
-                 pshadr(mp); { push new mp to complete display } 
-                 { allocate mark as zeros }
-                 for j := 1 to marksize div intsize do pshint(0);
-                 putadr(mp-p*ptrsize+markep, ep); { previous ep }
+    11 (*mst*): begin getp; getq; getq1;
+                  pshadr(mp); { save old mp on stack }
+                  ad1 := mp; { save old mp }
+                  mp := sp; { set new mp }
+                  { copy old display to stack }
+                  for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
+                  pshadr(mp); { push new mp to complete display } 
+                  { allocate mark as zeros }
+                  for j := 1 to marksize div intsize do pshint(0);
+                  putadr(mp-p*ptrsize+markep, ep); { previous ep }
+                  ad := mp+q; (*q = length of dataseg*)
+                  if ad <= np then errorv(StoreOverflow);
+                  { clear allocated memory and set undefined }
+                  while sp > ad do 
+                    begin sp := sp-1; store[sp] := 0; putdef(sp, false) end;
+                  putadr(mp-p*ptrsize+marksb, sp); { set bottom of stack }
+                  ep := sp+q1; if ep <= np then errorv(StoreOverFlow);
+                  putadr(mp-p*ptrsize+market, ep) { place current ep }
                 end;
 
     12 (*cup*): begin (*q=entry point*)
@@ -4673,53 +4681,40 @@ begin
 
     91 (*suv*): begin getq; getq1; putadr(q1, q) end;
 
-    13 (*ents*): begin getq; ad := mp+q; (*q = length of dataseg*)
-                    if ad <= np then begin
-                      errorv(StoreOverflow);
-                    end;
-                    { clear allocated memory and set undefined }
-                    while sp > ad do
-                      begin sp := sp-1; store[sp] := 0; putdef(sp, false);
-                      end;
-                    putadr(mp+marksb, sp) { set bottom of stack }
-                 end;
-
-    173 (*ente*): begin getq; ep := sp+q;
-                    if ep <= np then errorv(StoreOverFlow);
-                    putadr(mp+market, ep) { place current ep }
-                  end;
-                  (*q = max space required on stack*)
-
     { For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. }
-    130 (*retc*): begin evict(ep, mp);
+    130 (*retc*): begin getp; getq; evict(ep, mp);
+                   ep := getadr(mp-p*ptrsize+markep);
                    { set stack below function result }
                    sp := mp;
-                   putint(sp, ord(getchr(sp)));
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q; { remove parameters }
+                   { clean result }
+                   putint(sp, ord(getchr(sp)))
                  end;
-    131 (*retb*): begin evict(ep, mp);
+    131 (*retb*): begin getp; getq; evict(ep, mp);
+                   ep := getadr(mp-p*ptrsize+markep);
                    { set stack below function result }
                    sp := mp;
-                   putint(sp, ord(getbol(sp)));
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q; { remove parameters }
+                   { clean result }
+                   putint(sp, ord(getbol(sp)))
                  end;
     14  (*retp*),
     128 (*reti*),
     204 (*retx*),
     236 (*rets*),
     129 (*retr*),
-    132 (*reta*): begin getq; evict(ep, mp);
+    132 (*reta*): begin getp; getq; evict(ep, mp);
+                   ep := getadr(mp-p*ptrsize+markep);
                    { set stack below function result, if any }
                    sp := mp;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
-                   sp := sp+q; { remove parameters }
-                   ep := getadr(mp+markep)
+                   sp := sp+q { remove parameters }
                  end;
 
     237 (*retm*): begin evict(ep, mp); getq; { we don't use q }
@@ -5248,7 +5243,7 @@ begin
                   end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250,
+    13, 173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250,
     251, 252, 253, 254, 255: errorv(InvalidInstruction)
 
   end
