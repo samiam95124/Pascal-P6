@@ -9607,7 +9607,7 @@ end;
     end (*procmnemonics*) ;
 
     procedure instrmnemonics;
-    begin
+    begin { --- are unused codes }
       mn[  0] :=' abi'; mn[  1] :=' abr'; mn[  2] :=' adi'; mn[  3] :=' adr';
       mn[  4] :=' and'; mn[  5] :=' dif'; mn[  6] :=' dvi'; mn[  7] :=' dvr';
       mn[  8] :=' ltc'; mn[  9] :=' flo'; mn[ 10] :=' flt'; mn[ 11] :=' inn';
@@ -9616,7 +9616,7 @@ end;
       mn[ 20] :=' odd'; mn[ 21] :=' sbi'; mn[ 22] :=' sbr'; mn[ 23] :=' sgs';
       mn[ 24] :=' sqi'; mn[ 25] :=' sqr'; mn[ 26] :=' sto'; mn[ 27] :=' trc';
       mn[ 28] :=' uni'; mn[ 29] :=' stp'; mn[ 30] :=' csp'; mn[ 31] :=' dec';
-      mn[ 32] :=' ent'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
+      mn[ 32] :=' ---'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
       mn[ 36] :=' ixa'; mn[ 37] :=' lao'; mn[ 38] :=' lca'; mn[ 39] :=' ldo';
       mn[ 40] :=' mov'; mn[ 41] :=' mst'; mn[ 42] :=' ret'; mn[ 43] :=' sro';
       mn[ 44] :=' xjp'; mn[ 45] :=' chk'; mn[ 46] :=' cup'; mn[ 47] :=' equ';

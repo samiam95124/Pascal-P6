@@ -4717,12 +4717,13 @@ begin
                    sp := sp+q { remove parameters }
                  end;
 
-    237 (*retm*): begin evict(ep, mp); getq; { we don't use q }
+    237 (*retm*): begin getp; getq; evict(ep, mp); { we don't use q }
+                   ep := getadr(mp-p*ptrsize+markep);
                    { set stack below function result, if any }
                    sp := mp;
-                   pc := getadr(mp+markra);
-                   ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q { remove parameters }
                  end;
 
     15 (*csp*): begin q := store[pc]; pc := pc+1; callsp end;
