@@ -42,7 +42,7 @@
       setlow      =        0;
       ordmaxchar  =      255;   { Characters are 8 bit ISO/IEC 8859-1 }
       ordminchar  =        0;
-      marksize    =       48;   { 6*ptrsize }
+      marksize    =       24;   { 3*ptrsize }
       maxexp      =      308;   { maximum exponent of real }
       ujplen      =       9;    { length of ujp instruction (used for case
                                   jumps) }
@@ -58,17 +58,11 @@
 
         Mark format is:
 
-        -8:  Static link.
-        -16: Dynamic link.
-        -24: Saved EP from previous frame.
-        -32: Stack bottom after locals allocate. Used for interprocdural gotos.
-        -40: EP from current frame. Used for interprocedural gotos.
-        -48: Return address
+        0: Saved EP from previous frame.
+        8: Stack bottom after locals allocate. Used for interprocdural gotos.
+        16: EP from current frame. Used for interprocedural gotos.
 
       }
-      marksl      =        -8; { static link }
-      markdl      =        -16; { dynamic link }
-      markep      =        -24; { (old) maximum frame size }
-      marksb      =        -32; { stack bottom }
-      market      =        -40; { current ep }
-      markra      =        -48; { return address }
+      markep      =        0;  { (old) maximum frame size }
+      marksb      =        8;  { stack bottom }
+      market      =        16; { current ep }

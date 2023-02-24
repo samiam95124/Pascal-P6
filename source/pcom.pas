@@ -9946,10 +9946,7 @@ begin
   if inthex = 0 then;
   if market = 0 then;
   if markep = 0 then;
-  if markdl = 0 then;
-  if markra = 0 then;
   if marksb = 0 then;
-  if marksl = 0 then;
   if maxsize = 0 then;
 
   (*initialize*)

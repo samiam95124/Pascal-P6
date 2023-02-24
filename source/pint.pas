@@ -1872,7 +1872,7 @@ procedure load;
          instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize*2;
          instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;
          instr[ 13]:='---       '; insp[ 13] := false; insq[ 13] := 0;
-         instr[ 14]:='retp      '; insp[ 14] := true;  insq[ 14] := intsize;
+         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;
          instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
@@ -1885,7 +1885,7 @@ procedure load;
          instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;
          instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;
-         instr[ 27]:='cuv       '; insp[ 27] := false;  insq[ 27] := intsize;
+         instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;
          instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;
@@ -1986,11 +1986,11 @@ procedure load;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
          instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;
          instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;
-         instr[128]:='reti      '; insp[128] := true; insq[128] := intsize;
-         instr[129]:='retr      '; insp[129] := true; insq[129] := intsize;
-         instr[130]:='retc      '; insp[130] := true;  insq[130] := intsize;
-         instr[131]:='retb      '; insp[131] := true;  insq[131] := intsize;
-         instr[132]:='reta      '; insp[132] := true; insq[132] := intsize;
+         instr[128]:='reti      '; insp[128] := false; insq[128] := intsize;
+         instr[129]:='retr      '; insp[129] := false; insq[129] := intsize;
+         instr[130]:='retc      '; insp[130] := false; insq[130] := intsize;
+         instr[131]:='retb      '; insp[131] := false; insq[131] := intsize;
+         instr[132]:='reta      '; insp[132] := false; insq[132] := intsize;
          instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
          instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
@@ -2062,7 +2062,7 @@ procedure load;
          instr[201]:='incx      '; insp[201] := false; insq[201] := intsize;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
-         instr[204]:='retx      '; insp[204] := true;  insq[204] := intsize;
+         instr[204]:='retx      '; insp[204] := false; insq[204] := intsize;
          instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
          instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
          instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
@@ -2095,8 +2095,8 @@ procedure load;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
          instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
-         instr[236]:='rets      '; insp[236] := true;  insq[236] := intsize;
-         instr[237]:='retm      '; insp[237] := true; insq[237] := intsize*2;
+         instr[236]:='rets      '; insp[236] := false; insq[236] := intsize;
+         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize*2;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
@@ -4653,22 +4653,22 @@ begin
                  end;
     11 (*mst*): begin getp; getq; getq1;
                   pshadr(mp); { save old mp on stack }
+                  pshadr(0); { place current ep }
+                  pshadr(0); { place bottom of stack }
+                  pshadr(ep); { previous ep }
                   ad1 := mp; { save old mp }
                   mp := sp; { set new mp }
                   { copy old display to stack }
                   for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
                   pshadr(mp); { push new mp to complete display } 
-                  { allocate mark as zeros }
-                  for j := 1 to marksize div intsize do pshint(0);
-                  putadr(mp-p*ptrsize+markep, ep); { previous ep }
                   ad := mp+q; (*q = length of dataseg*)
                   if ad <= np then errorv(StoreOverflow);
                   { clear allocated memory and set undefined }
                   while sp > ad do 
                     begin sp := sp-1; store[sp] := 0; putdef(sp, false) end;
-                  putadr(mp-p*ptrsize+marksb, sp); { set bottom of stack }
+                  putadr(mp+marksb, sp); { set bottom of stack }
                   ep := sp+q1; if ep <= np then errorv(StoreOverFlow);
-                  putadr(mp-p*ptrsize+market, ep) { place current ep }
+                  putadr(mp+market, ep) { place current ep }
                 end;
 
     12 (*cup*): begin (*q=entry point*)
@@ -4683,20 +4683,20 @@ begin
 
     { For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. }
-    130 (*retc*): begin getp; getq; evict(ep, mp);
-                   ep := getadr(mp-p*ptrsize+markep);
+    130 (*retc*): begin getq; evict(ep, mp);
+                   ep := getadr(mp+markep);
                    { set stack below function result }
-                   sp := mp;
+                   sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
                    sp := sp+q; { remove parameters }
                    { clean result }
                    putint(sp, ord(getchr(sp)))
                  end;
-    131 (*retb*): begin getp; getq; evict(ep, mp);
-                   ep := getadr(mp-p*ptrsize+markep);
+    131 (*retb*): begin getq; evict(ep, mp);
+                   ep := getadr(mp+markep);
                    { set stack below function result }
-                   sp := mp;
+                   sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
                    sp := sp+q; { remove parameters }
@@ -4708,19 +4708,19 @@ begin
     204 (*retx*),
     236 (*rets*),
     129 (*retr*),
-    132 (*reta*): begin getp; getq; evict(ep, mp);
-                   ep := getadr(mp-p*ptrsize+markep);
+    132 (*reta*): begin getq; evict(ep, mp);
+                   ep := getadr(mp+markep);
                    { set stack below function result, if any }
-                   sp := mp;
+                   sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
                    sp := sp+q { remove parameters }
                  end;
 
-    237 (*retm*): begin getp; getq; evict(ep, mp); { we don't use q }
-                   ep := getadr(mp-p*ptrsize+markep);
+    237 (*retm*): begin getq; evict(ep, mp); { we don't use q }
+                   ep := getadr(mp+markep);
                    { set stack below function result, if any }
-                   sp := mp;
+                   sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
                    sp := sp+q { remove parameters }
@@ -4999,8 +4999,11 @@ begin
     113 (*cip*): begin getp; popadr(ad);
                 mp := sp+(p+marksize);
                 { replace next link mp with the one for the target }
+                {???fixme???}
+                {
                 putadr(mp+marksl, getadr(ad+1*ptrsize));
                 putadr(mp+markra, pc);
+                }
                 pc := getadr(ad)
               end;
     114 (*lpa*): begin getp; getq; { place procedure address on stack }
@@ -5235,9 +5238,15 @@ begin
                     ExecuteExternal(pc-extvecbase);
                     { set stack below function result, if any }
                     sp := mp;
+                    {???fixme???}
+                    {
                     pc := getadr(mp+markra);
+                    }
                     ep := getadr(mp+markep);
+                    {???fixme???}
+                    {
                     mp := getadr(mp+markdl)
+                    }
 #else
                     errorv(ExternalsNotEnabled)
 #endif
@@ -5480,12 +5489,15 @@ procedure dmpdsp(mp: address);
 begin
   wrtnewline; writeln;
   write('Mark @'); wrthex(output, mp, maxdigh, true); writeln;
+  {???fixme???}
+  {
   write('sl: '); wrthex(output, mp+marksl, 8, true); write(': ');
   if getdef(mp+marksl) then wrthex(output, getadr(mp+marksl), 8, true)
   else write('********'); writeln;
   write('dl: '); wrthex(output, mp+markdl, 8, true); write(': ');
   if getdef(mp+markdl) then wrthex(output, getadr(mp+markdl), 8, true)
   else write('********'); writeln;
+  }
   write('ep: '); wrthex(output, mp+markep, 8, true); write(': ');
   if getdef(mp+markep) then wrthex(output, getadr(mp+markep), 8, true)
   else write('********'); writeln;
@@ -5495,9 +5507,12 @@ begin
   write('et: '); wrthex(output, mp+market, 8, true); write(': ');
   if getdef(mp+market) then wrthex(output, getadr(mp+market), 8, true)
   else write('********'); writeln;
+  {???fixme???}
+  {
   write('ra: '); wrthex(output, mp+markra, 8, true); write(': ');
   if getdef(mp+markra) then wrthex(output, getadr(mp+markra), 8, true)
   else write('********'); writeln;
+  }
   writeln
 end;
 
@@ -5547,7 +5562,11 @@ end;
 function lastframe(ma: address): boolean;
 begin
   { the last frame points to itself }
+  {???fixme???}
+  {
   lastframe := ma = getadr(ma+marksl)
+  }
+  lastframe := false
 end;
 
 { find active symbol }
@@ -5578,8 +5597,12 @@ begin
     repeat
       fndsym; { find in this frame }
       if fs = nil then begin
-        cpc := getadr(ma+markra); { get next frame }
+        {???fixme???}
+        {cpc := getadr(ma+markra);} { get next frame }
+        {???fixme???}
+        {
         ma := getadr(ma+marksl)
+        }
       end
     until (fs <> nil) or (ma = maxtop); { found or no next frame }
   end
@@ -5651,8 +5674,11 @@ begin
           ma := mp; ad := pc;
           while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and
                 (ma <> maxtop) do begin
+            {???fixme???}
+            {
             ad := getadr(ma+markra);
             ma := getadr(ma+marksl)
+            }
           end;
           if ma = maxtop then error(eblkmba)
         end
@@ -6664,7 +6690,8 @@ begin
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
-      repeat dmpdsp(s); e := s; s := getadr(s+marksl); i := i-1
+      {???fixme???}
+      repeat dmpdsp(s); e := s; {s := getadr(s+marksl); i := i-1}
       until (i = 0) or lastframe(e)
     end
   end else if (cn = 'df        ') then begin
@@ -6673,8 +6700,9 @@ begin
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc; eps := getadr(s+market);
-      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+markra);
-        e := s; s := getadr(s+marksl); eps := getadr(s+market); i := i-1;
+      {???fixme???}
+      repeat dmpfrm(s, eps, pcs); {pcs := getadr(s+markra);}
+        e := s; {s := getadr(s+marksl);} eps := getadr(s+market); i := i-1;
       until (i = 0) or lastframe(e)
     end
   end else if (cn = 'b         ') or
@@ -6953,7 +6981,10 @@ begin
           end;
           writeln
         end;
+        {???fixme???}
+        {
         pcs := getadr(s+markra); e := s; s := getadr(s+marksl); i := i-1
+        }
       until (i = 0) or lastframe(e)
     end
   end else if cn = 'hs        ' then repspc { report heap space }
