@@ -3260,28 +3260,6 @@ end;
     end
   end;
 
-  procedure genret1t(lev: levrange; fp1: integer; fsp: stp);
-  begin
-    if prcode then
-      begin putic;
-        write(prr,mn[42(*ret*)]:4);
-        if fsp = nil then write(prr, 'p') else gentypindicator(fsp);
-        writeln(prr, ' ', lev:4, fp1:11);
-      end;
-    ic := ic + 1; mest(42(*ret*), fsp)
-  end (*genret1t*);
-
-  procedure genret2t(lev: levrange; fp1,fp2: integer; fsp: stp);
-  begin
-    if prcode then
-      begin putic;
-        write(prr,mn[42(*ret*)]:4);
-        gentypindicator(fsp);
-        writeln(prr,' ', lev:4, ' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
-      end;
-    ic := ic + 1; mest(42(*ret*), fsp)
-  end (*gen2t*);
-
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
   { check integer or subrange of }
@@ -8767,11 +8745,10 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if fprocp^.idtype = nil then genret1t(level-1,fprocp^.locpar,nil)
+        if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
         else if fprocp^.idtype^.form in [records, arrays] then
-          genret2t(level-1,fprocp^.idtype^.size,fprocp^.locpar,
-                basetype(fprocp^.idtype))
-        else genret1t(level-1,fprocp^.locpar,basetype(fprocp^.idtype));
+          gen1t(42(*ret*),fprocp^.idtype^.size,basetype(fprocp^.idtype))
+        else gen0t(42(*ret*),basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
         begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
@@ -8779,7 +8756,7 @@ end;
           end
       end
     else
-      begin genret1t(level-1,0,nil);
+      begin gen1(42(*ret*),ord('p'));
         alignd(parmptr,lcmin);
         if prcode then
         begin
@@ -9000,7 +8977,7 @@ end;
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
         genmst(level,segsize,stackbot);
-        genret1t(level,0,nil);
+        gen1(42(*ret*),ord('p'));
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
           prtlabel(stackbot); writeln(prr,'=',0:1)
