@@ -2273,7 +2273,7 @@ procedure load;
    var i,j: integer;
    begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
-     if prd^ in ['0'..'9'] then read(prd, x) { near label }
+     if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
      else begin { far label }
        getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab;
        for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
@@ -2423,7 +2423,6 @@ procedure load;
          'l': begin getnxt; parlab(x,ls);
                     if ls <> nil then
                       errorl('Invalid intermediate     ');
-                    getnxt;
                     if ch='=' then read(prd,labelvalue)
                               else labelvalue:= pc;
                     update(x); getlin
@@ -2807,8 +2806,8 @@ procedure load;
           12(*cup*): begin storeop; labelsearch; storeq end;
 
           245(*sfr*): begin storeop; labelsearch; storeq end;
-          11(*mst*): begin read(prd,p); storeop; labelsearch; q2 := q; 
-                           labelsearch; q1 := q; q := q2; storep end;
+          11(*mst*): begin read(prd,p); storeop; storep; labelsearch; storeq;
+                           labelsearch; storeq end;
 
           91(*suv*): begin storeop; labelsearch; storeq;
                      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);

@@ -3031,8 +3031,8 @@ end;
       begin putic; write(prr,mn[fop]:4);
         case fop of
           42: begin
-            writeln(prr,chr(fp1), ' ', fp2:8);
-            mes(0);
+            writeln(prr,chr(fp1),' ',fp2:8);
+            mes(0)
           end;
           45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117:
             begin
@@ -8745,10 +8745,10 @@ end;
               if chkvbk and (vkind = formal) then gen0(94(*vbe*));
             lcp := next
           end;
-        if fprocp^.idtype = nil then gen1(42(*ret*),ord('p'))
+        if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),fprocp^.locpar)
         else if fprocp^.idtype^.form in [records, arrays] then
-          gen1t(42(*ret*),fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen0t(42(*ret*),basetype(fprocp^.idtype));
+          gen2t(42(*ret*),fprocp^.locpar,fprocp^.idtype^.size,basetype(fprocp^.idtype))
+        else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
         begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
@@ -8756,7 +8756,7 @@ end;
           end
       end
     else
-      begin gen1(42(*ret*),ord('p'));
+      begin gen2(42(*ret*),ord('p'),0);
         alignd(parmptr,lcmin);
         if prcode then
         begin
