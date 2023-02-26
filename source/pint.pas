@@ -2607,7 +2607,6 @@ procedure load;
                 getnxt; parlab(x,ls);
                 if ls <> nil then
                   errorl('Invalid intermediate     ');
-                getnxt;
                 read(prd,l); cp := cp-(l*intsize+intsize);
                 ad := cp; putint(ad, l); ad := ad+intsize;
                 while not eoln(prd) do begin
@@ -2624,7 +2623,6 @@ procedure load;
                 getnxt; parlab(x,ls);
                 if ls <> nil then
                   errorl('Invalid intermediate     ');
-                getnxt;
                 read(prd,l); cp := cp-(l*intsize); ad := cp;
                 while not eoln(prd) do begin
                   read(prd,i); putint(ad, i); ad := ad+intsize;
@@ -2645,7 +2643,6 @@ procedure load;
                 getnxt; parlab(x,ls);
                 if ls <> nil then
                   errorl('Invalid intermediate     ');
-                getnxt;
                 { Note the constant table must start on maximium
                   natural alignment to match it's structure type.
                   We use stackal for that. }
@@ -2879,7 +2876,7 @@ procedure load;
           213: begin storeop; labelsearch; putcstfix; storeq end;
 
           (*ujp,fjp,xjp,tjp,bge,cal*)
-          23,24,25,119,207,21,
+          23,24,25,119,207,21: begin storeop; labelsearch; storeq end;
 
           (*ipj,lpa*)
           112,114: begin read(prd,p); storeop; storep; labelsearch; storeq end;
