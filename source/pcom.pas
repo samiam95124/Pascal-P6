@@ -4167,7 +4167,7 @@ end;
                       the upper half of the FR. }
                     id := basetype(fcp^.idtype);
                     lsize := parmsize; if id <> nil then lsize := id^.size;
-                    dplmt := ptrsize+adrsize+locpar { addr of fr }
+                    dplmt := marksize+ptrsize+adrsize+locpar { addr of fr }
                   end
               end;
             proc: { nothing, its an error case }
@@ -7685,7 +7685,7 @@ end;
       else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
       if not forw then begin
         lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist); 
-        parmoff(lcp^.pflist, ptrsize+adrsize+lcp^.locpar);
+        parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
@@ -7742,7 +7742,7 @@ end;
           while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
           { now we change to a block with defining points }
           display[top].define := true;
-          lc := -(level+1)*ptrsize-marksize; { set locals top }
+          lc := -level*ptrsize; { set locals top }
           declare(fsys);
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
@@ -8646,7 +8646,7 @@ end;
     genlabel(gblsize);
     genmst(level-1,segsize,stackbot);
     if fprocp <> nil then (*copy multiple values into local cells*)
-      begin llc1 := -(level+1)*ptrsize-marksize;
+      begin llc1 := -(level+1)*ptrsize;
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -9435,7 +9435,7 @@ end;
     chkvbk := true; option[9] := true; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
-    lc := -ptrsize-marksize; gc := 0;
+    lc := -ptrsize; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0;
     incstk := nil; inclst := nil; cbblst := nil;
