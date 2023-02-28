@@ -266,7 +266,7 @@ type                                                        (*describing:*)
 
                                                            (*data structures*)
                                                            (*****************)
-     levrange = 0..maxlevel; addrrange = -maxaddr..maxaddr; stkoff = -maxaddr..0;
+     levrange = 0..maxlevel; addrrange = -maxaddr..maxaddr; stkoff = -maxaddr..maxaddr;
      structform = (scalar,subrange,pointer,power,arrays,arrayc,records,files,
                    tagfld,variant,exceptf);
      declkind = (standard,declared);
@@ -337,10 +337,10 @@ type                                                        (*describing:*)
                      types: ();
                      konst: (values: valu);
                      vars:  (vkind: idkind; vlev: levrange; vaddr: addrrange;
-                             threat: boolean; forcnt: integer; part: partyp;
-                             hdr: boolean; vext: boolean; vmod: filptr;
-                             inilab: integer; skplab: integer; ininxt: ctp; 
-                             dblptr: boolean);
+                             isloc: boolean; threat: boolean; forcnt: integer; 
+                             part: partyp; hdr: boolean; vext: boolean; 
+                             vmod: filptr; inilab: integer; skplab: integer; 
+                             ininxt: ctp; dblptr: boolean);
                      fixedt: (floc: integer; fext: boolean; fmod: filptr);
                      field: (fldaddr: addrrange; varnt: stp; varlb: ctp;
                              tagfield: boolean; taglvl: integer;
@@ -6939,9 +6939,9 @@ end;
               with lcp^ do
                begin klass := vars; strassvf(name, id); next := nxt;
                   idtype := nil; vkind := actual; vlev := level;
-                  refer := false; threat := false; forcnt := 0; part := ptval;
-                  hdr := false; vext := incstk <> nil; vmod := incstk;
-                  inilab := -1; ininxt := nil; dblptr := false;
+                  refer := false; isloc := false; threat := false; forcnt := 0;
+                  part := ptval; hdr := false; vext := incstk <> nil; 
+                  vmod := incstk; inilab := -1; ininxt := nil; dblptr := false;
                 end;
               enterid(lcp);
               nxt := lcp;
@@ -7340,10 +7340,10 @@ end;
                                 begin klass:=vars; strassvf(name,id);
                                   idtype:=nil; vkind := lkind; next := lcp2;
                                   vlev := level; keep := true; refer := false;
-                                  threat := false; forcnt := 0; part := pt;
-                                  hdr := false; vext := false; vmod := nil;
-                                  vaddr := 0; inilab := -1; ininxt := nil;
-                                  dblptr := true;
+                                  isloc := false; threat := false; forcnt := 0; 
+                                  part := pt; hdr := false; vext := false; 
+                                  vmod := nil; vaddr := 0; inilab := -1; 
+                                  ininxt := nil; dblptr := true
                                 end;
                               enterid(lcp);
                               lcp2 := lcp; count := count+1;
@@ -7417,6 +7417,7 @@ end;
             lcp3 := nil;
             (*reverse pointers and reserve local cells for copies of multiple
              values*)
+            lc := -level*ptrsize; { set locals top }
             while lcp1 <> nil do
               with lcp1^ do
                 begin lcp2 := next; next := lcp3;
@@ -7429,8 +7430,9 @@ end;
                          (idtype^.form <> arrayc) then
                         begin
                           lc := lc-idtype^.size;
-                          alignd(idtype,lc);
-                          vaddr := lc
+                          alignd(parmptr,lc);
+                          vaddr := lc;
+                          isloc := true { flag is a local now }
                         end;
                   lcp3 := lcp1; lcp1 := lcp2
                 end;
@@ -7530,7 +7532,8 @@ end;
     procedure parmoff(plst: ctp; off: addrrange);
     begin
       while plst <> nil do begin
-        if plst^.klass = vars then plst^.vaddr := plst^.vaddr+off
+        if (plst^.klass = vars) and not plst^.isloc then 
+          plst^.vaddr := plst^.vaddr+off
         else if (plst^.klass = proc) or (plst^.klass = func) then 
           plst^.pfaddr := plst^.pfaddr+off;
         plst := plst^.next
@@ -7635,10 +7638,10 @@ end;
                       with lcp2^ do begin klass := vars;
                         strassvf(name, id); strcatvr(name, '__virtvec');
                         idtype := nilptr; vkind := actual; next := nil;
-                        vlev := 0; vaddr := gc; threat := false; forcnt := 0;
-                        part := ptval; hdr := false; vext := incstk <> nil;
-                        vmod := incstk; inilab := -1; ininxt := nil;
-                        dblptr := false;
+                        vlev := 0; vaddr := gc; isloc := false; threat := false;
+                        forcnt := 0; part := ptval; hdr := false; 
+                        vext := incstk <> nil; vmod := incstk; inilab := -1; 
+                        ininxt := nil; dblptr := false;
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
                       wrtsym(lcp2, 'g')
@@ -7742,7 +7745,6 @@ end;
           while lcp1 <> nil do begin wrtsym(lcp1, 'p'); lcp1 := lcp1^.next end;
           { now we change to a block with defining points }
           display[top].define := true;
-          lc := -level*ptrsize; { set locals top }
           declare(fsys);
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
@@ -8646,7 +8648,7 @@ end;
     genlabel(gblsize);
     genmst(level-1,segsize,stackbot);
     if fprocp <> nil then (*copy multiple values into local cells*)
-      begin llc1 := -(level+1)*ptrsize;
+      begin llc1 := marksize+ptrsize+adrsize+fprocp^.locpar; { index params }
         lcp := fprocp^.pflist;
         while lcp <> nil do
           with lcp^ do
@@ -8656,7 +8658,7 @@ end;
                   if idtype^.form > power then
                     begin
                       if idtype^.form = arrayc then llc1 := llc1 - ptrsize*2
-                      else llc1 := llc1 - ptrsize;
+                      else llc1 := llc1-ptrsize;
                       alignd(parmptr,llc1);
                       if vkind = actual then
                         if idtype^.form = arrayc then begin
@@ -8671,14 +8673,14 @@ end;
                           gen0(110(*scp*)) { store complex pointer }
                         end else begin
                           gen2(50(*lda*),level,vaddr);
-                          gen2t(54(*lod*),0,llc1,nilptr);
+                          gen2t(54(*lod*),level,llc1,nilptr);
                           gen1(40(*mov*),idtype^.size);
                         end
                     end
                   else
                     begin
                       if vkind = formal then llc1 := llc1-ptrsize
-                      else llc1 := llc1 - idtype^.size;
+                      else llc1 := llc1-idtype^.size;
                       alignd(parmptr,llc1);
                     end;
                   if chkvbk and (vkind = formal) then begin
@@ -9161,8 +9163,8 @@ end;
     begin klass := vars; strassvr(name, na[sn]); idtype := textptr;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
-      threat := false; forcnt := 0; part := ptval; hdr := false; vext := false;
-      vmod := nil; inilab := -1; ininxt := nil; dblptr := false;
+      isloc := false; threat := false; forcnt := 0; part := ptval; hdr := false;
+      vext := false; vmod := nil; inilab := -1; ininxt := nil; dblptr := false
     end;
     enterid(cp)
   end;
@@ -9174,8 +9176,8 @@ end;
     begin klass := vars; strassve(name, en); idtype := exceptptr;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
-      threat := false; forcnt := 0; part := ptval; hdr := false; vext := false;
-      vmod := nil; inilab := -1; ininxt := nil; dblptr := false;
+      isloc := false; threat := false; forcnt := 0; part := ptval; hdr := false;
+      vext := false; vmod := nil; inilab := -1; ininxt := nil; dblptr := false
     end;
     enterid(cp)
   end;
@@ -9229,9 +9231,9 @@ end;
         with cp^ do
           begin klass := vars; strassvr(name, '         '); idtype := realptr;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
-            threat := false; forcnt := 0; part := ptval; hdr := false;
-            vext := false; vmod := nil; inilab := -1; ininxt := nil;
-            dblptr := false;
+            isloc := false; threat := false; forcnt := 0; part := ptval; 
+            hdr := false; vext := false; vmod := nil; inilab := -1; 
+            ininxt := nil; dblptr := false
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
@@ -9384,9 +9386,9 @@ end;
     with uvarptr^ do
       begin klass := vars; strassvr(name, '         '); idtype := nil;
         vkind := actual; next := nil; vlev := 0; vaddr := 0;
-        threat := false; forcnt := 0; part := ptval; hdr := false;
-        vext := false; vmod := nil; inilab := -1; ininxt := nil;
-        dblptr := false;
+        isloc := false; threat := false; forcnt := 0; part := ptval; 
+        hdr := false; vext := false; vmod := nil; inilab := -1; ininxt := nil;
+        dblptr := false
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
