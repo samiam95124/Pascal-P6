@@ -348,6 +348,7 @@ type                                                        (*describing:*)
                              vartl: integer);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    locpar: addrrange; { size of parameters }
+                                   locstr: addrrange; { start of locals }
                                    asgn: boolean; { assigned }
                                    pext: boolean; pmod: filptr; pfattr: fpattr;
                                    pfvaddr: addrrange; pfvid: ctp;
@@ -7692,10 +7693,12 @@ end;
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
-        end
+        end;
+        lcp^.locstr := lc { save locals counter }
       end else begin
         if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
-        putparlst(lcp1) { redeclare, dispose of copy }
+        putparlst(lcp1); { redeclare, dispose of copy }
+        lc := lcp^.locstr { reset locals counter }
       end;
       if (fsy = funcsy) or ((fsy = operatorsy) and not (opt = bcmop)) then
         { function }
