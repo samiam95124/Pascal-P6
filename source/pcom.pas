@@ -349,6 +349,7 @@ type                                                        (*describing:*)
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
                                    locpar: addrrange; { size of parameters }
                                    locstr: addrrange; { start of locals }
+                                   locspc: addrrange; { space occupied by locals }
                                    asgn: boolean; { assigned }
                                    pext: boolean; pmod: filptr; pfattr: fpattr;
                                    pfvaddr: addrrange; pfvid: ctp;
@@ -5213,7 +5214,7 @@ end;
 
     procedure callnonstandard(fcp: ctp; inherit: boolean);
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
-          locpar, llc: addrrange; varp: boolean; lsize: addrrange;
+          locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
     procedure cpy2adr;
@@ -5265,6 +5266,7 @@ end;
       end
     end;
     begin { callnonstandard }
+      soff := abs(topnew); { save stack net offset }
       fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
       while ((isfunc and (fcp^.klass <> func)) or 
              (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
@@ -5332,7 +5334,8 @@ end;
                        (lcp^.klass in [proc,func]) then
                       if not cmpparlst(nxt^.pflist, lcp^.pflist) then
                         if not e then error(189);
-                    if lcp^.pfkind = actual then genlpa(lcp^.pfname,level-lcp^.pflev)
+                    if lcp^.pfkind = actual then 
+                      genlpa(lcp^.pfname,level-(level-lcp^.pflev))
                     else gen2(74(*lip*),level-(level-lcp^.pflev),lcp^.pfaddr);
                     locpar := locpar+ptrsize*2;
                     insymbol;
@@ -5457,7 +5460,8 @@ end;
         end
       else begin { call procedure or function parameter }
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
-        gen1(67(*cip*),locpar);
+        gen0(67(*cip*));
+        gen1(32(*rip*),fcp^.locspc+lsize+soff);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
       end;
@@ -7749,6 +7753,7 @@ end;
           { now we change to a block with defining points }
           display[top].define := true;
           declare(fsys);
+          lcp^.locspc := lcp^.locstr-lc;
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;
@@ -9598,7 +9603,7 @@ end;
       mn[ 20] :=' odd'; mn[ 21] :=' sbi'; mn[ 22] :=' sbr'; mn[ 23] :=' sgs';
       mn[ 24] :=' sqi'; mn[ 25] :=' sqr'; mn[ 26] :=' sto'; mn[ 27] :=' trc';
       mn[ 28] :=' uni'; mn[ 29] :=' stp'; mn[ 30] :=' csp'; mn[ 31] :=' dec';
-      mn[ 32] :=' ---'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
+      mn[ 32] :=' rip'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
       mn[ 36] :=' ixa'; mn[ 37] :=' lao'; mn[ 38] :=' lca'; mn[ 39] :=' ldo';
       mn[ 40] :=' mov'; mn[ 41] :=' mst'; mn[ 42] :=' ret'; mn[ 43] :=' sro';
       mn[ 44] :=' xjp'; mn[ 45] :=' chk'; mn[ 46] :=' cup'; mn[ 47] :=' equ';
@@ -9810,7 +9815,7 @@ end;
       cdx[114] := -adrsize;             cdx[115] := 0;
       cdx[116] := 0;                    cdx[117] := 0;
       cdx[118] := -adrsize;             cdx[119] := 0;
-      cdx[120] := 0;
+      cdx[120] := 0;                    cdx[121] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

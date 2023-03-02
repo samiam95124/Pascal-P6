@@ -1871,7 +1871,7 @@ procedure load;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
          instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize*2;
          instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;
-         instr[ 13]:='---       '; insp[ 13] := false; insq[ 13] := 0;
+         instr[ 13]:='rip       '; insp[ 13] := false; insq[ 13] := adrsize;
          instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;
          instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
@@ -1971,7 +1971,7 @@ procedure load;
          instr[110]:='rgs       '; insp[110] := false; insq[110] := 0;
          instr[111]:='ivtc      '; insp[111] := false; insq[111] := intsize*3;
          instr[112]:='ipj       '; insp[112] := true;  insq[112] := intsize;
-         instr[113]:='cip       '; insp[113] := true;  insq[113] := 0;
+         instr[113]:='cip       '; insp[113] := false; insq[113] := 0;
          instr[114]:='lpa       '; insp[114] := true;  insq[114] := intsize;
          instr[115]:='cvbx      '; insp[115] := false; insq[115] := intsize*3;
          instr[116]:='cvbb      '; insp[116] := false; insq[116] := intsize*3;
@@ -2813,8 +2813,6 @@ procedure load;
                      if q > exceptiontop then q := q+gbloff;
                      putgblfix; storeq end;
 
-          113(*cip*): begin read(prd,p); storeop; storep end;
-
           { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
           142, 148, 154, 160, 166, 172,
 
@@ -3000,9 +2998,9 @@ procedure load;
                          storeop; putcstfix; storeq
                        end;
 
-          (*ret*)
+          (*ret, rip*)
           14, 128, 129, 130, 131, 132, 204, 
-          236: begin read(prd,q); storeop; storeq end;
+          236, 13: begin read(prd,q); storeop; storeq end;
 
           { equ,neq,geq,grt,leq,les with no parameter }
           17, 137, 138, 139, 140, 141,
@@ -3025,8 +3023,8 @@ procedure load;
           205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
           243,244,
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe }
-          181, 182, 183, 184, 185, 186,187,188,189,22,96: storeop;
+          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip }
+          181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
@@ -4992,16 +4990,10 @@ begin
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
                end;
-    113 (*cip*): begin getp; popadr(ad);
-                mp := sp+(p+marksize);
-                { replace next link mp with the one for the target }
-                {???fixme???}
-                {
-                putadr(mp+marksl, getadr(ad+1*ptrsize));
-                putadr(mp+markra, pc);
-                }
-                pc := getadr(ad)
+    113 (*cip*): begin popadr(ad); ad1 := mp;
+                mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
+    13 (*rip*): begin getq; mp := getadr(sp+q) end;
     114 (*lpa*): begin getp; getq; { place procedure address on stack }
                 pshadr(getadr(mp-p*ptrsize));
                 pshadr(q)
@@ -5249,8 +5241,8 @@ begin
                   end;
 
     { illegal instructions }
-    13, 173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250,
-    251, 252, 253, 254, 255: errorv(InvalidInstruction)
+    173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
+    253, 254, 255: errorv(InvalidInstruction)
 
   end
 end;
