@@ -7442,8 +7442,7 @@ end;
                   lcp3 := lcp1; lcp1 := lcp2
                 end;
             fpar := lcp3
-          end
-            else fpar := nil;
+          end else begin fpar := nil; lc := -level*ptrsize end;
         if forw then begin { isolate duplicated list in level }
           level := oldlevf; putdsps(oldtopf); top := oldtopf
         end
