@@ -200,6 +200,7 @@ const
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 516; { maximum fatal error }
    maxcmd     = 250; { size of command line buffer }
+   maxlin     = 250; { size of source line buffer }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -453,6 +454,8 @@ type                                                        (*describing:*)
      cmdinx = 1..maxcmd; { index for command line buffer }
      cmdnum = 0..maxcmd; { length of command line buffer }
      cmdbuf = packed array [cmdinx] of char; { buffer for command line }
+     lininx = 1..maxlin; { index for source line buffer }
+     linbuf = packed array [lininx] of char; { buffer for source lines }
 
 (*-------------------------------------------------------------------------*)
 
@@ -460,7 +463,8 @@ var
 
     { !!! remove this statement for self compile }
 #ifndef SELF_COMPILE
-    prd,prr: text;                  { output code file }
+    prd: text;                      { input source file }
+    prr: text;                      { output code file }
 #endif
 
                                     (*returned by source program scanner
@@ -622,6 +626,9 @@ var
     incstk: filptr; { stack of included files }
     inclst: filptr; { discard list for includes }
     cbblst: cbbufp; { copyback buffer entry list }
+    srclin: linbuf; { buffer for input source lines }
+    srcinx: lininx; { index for input buffer }
+    srclen: 0..maxlin; { size of input line }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -1338,30 +1345,58 @@ end;
     writeln;
   end;
 
-  { this block of functions wraps source reads }
+  { this block of functions wraps source reads ******************************* }
+
+  function fileeof: boolean;
+  begin
+    if incstk <> nil then fileeof := eof(incstk^.f) else fileeof := eof(prd);
+  end;
+
+  procedure readline;
+  var ovf: boolean;
+      i: lininx;
+  begin
+    ovf := false;
+    srclen := 0; srcinx := 1; for i := 1 to maxlin do srclin[i] := ' ';
+    if not fileeof then begin
+      while not eoln(prd) do begin
+        if incstk <> nil then read(incstk^.f, srclin[srcinx])
+        else read(prd, srclin[srcinx]); 
+        if srclen = maxlin-1 then begin
+          if not ovf then writeln('*** Input line too long, truncated');
+          ovf := true
+        end else begin srclen := srclen+1; srcinx := srcinx+1 end
+      end;
+      if incstk <> nil then readln(incstk^.f)
+      else readln(prd);   
+    end;
+    srcinx := 1
+  end;
+
   function eofinp: boolean;
   begin
-    if incstk <> nil then begin
-      if incstk^.priv then eofinp := true else eofinp := eof(incstk^.f)
-    end else eofinp := eof(prd)
+    if srclen <> 0 then eofinp := false else eofinp := fileeof
   end;
 
   function eolninp: boolean;
   begin
     if eofinp then eolninp := true
-    else if incstk <> nil then eolninp := eoln(incstk^.f)
-         else eolninp := eoln(prd)
-  end;
-
-  procedure readinp(var c: char);
-  begin
-    if incstk <> nil then read(incstk^.f, c) else read(prd, c)
+    else if srcinx > srclen then eolninp := true
+    else eolninp := false
   end;
 
   function bufinp: char;
   begin
-    if incstk <> nil then bufinp := incstk^.f^ else bufinp := prd^
+    if not eolninp then bufinp := srclin[srcinx] else bufinp := ' '
   end;
+
+  procedure readinp(var c: char);
+  begin
+    c := bufinp;
+    if eolninp then readline else srcinx := srcinx+1
+  end;
+
+  { ************************************************************************** }
 
   procedure errmsg(ferrnr: integer);
   begin case ferrnr of
@@ -9991,6 +10026,7 @@ begin
   nvalid := false; { set no lookahead }
   { init for lookahead }
   sy := ident; op := mul; lgth := 0; kk := 1; ch := ' ';
+  srclen := 0; srcinx := 1; readline;
   insymbol;
   modulep(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }

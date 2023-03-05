@@ -4711,7 +4711,7 @@ begin
                    sp := sp+q { remove parameters }
                  end;
 
-    237 (*retm*): begin getq; evict(ep, mp); { we don't use q }
+    237 (*retm*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
                    { set stack below function result, if any }
                    sp := mp+marksize;
