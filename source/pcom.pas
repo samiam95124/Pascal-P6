@@ -10026,7 +10026,7 @@ begin
   nvalid := false; { set no lookahead }
   { init for lookahead }
   sy := ident; op := mul; lgth := 0; kk := 1; ch := ' ';
-  srclen := 0; srcinx := 1; readline;
+  readline;
   insymbol;
   modulep(blockbegsys+statbegsys-[casesy]);
   { release file tracking entries }
