@@ -601,7 +601,7 @@ var
     rop: array [1..maxres(*nr. of res. words*)] of operatort;
     sop: array [char] of operatort;
     na:  array [stdrng] of restr;
-    mn:  array [0..maxins] of packed array [1..4] of char;
+    mn:  array [0..maxins] of packed array [1..3] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
     opts: array [1..maxopt] of optstr;
     optsl: array [1..maxopt] of optstr;
@@ -1370,7 +1370,10 @@ end;
       if incstk <> nil then readln(incstk^.f)
       else readln(prd);   
     end;
-    srcinx := 1
+    srcinx := 1;
+    if prcode then
+      if srclen = 0 then writeln(prr, '!') 
+      else writeln(prr, '! ', srclin:srclen)
   end;
 
   function eofinp: boolean;
@@ -1838,7 +1841,7 @@ end;
         if (ch='+') or (ch='-') then begin
           opt := ch = '+';
           option[oi] := opt;
-          write(prr, 'o ');
+          write(prr, 'o', ' ':7);
           for oni :=  1 to optlen do 
             if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
           writeln(prr, ch);
@@ -1846,7 +1849,7 @@ end;
         end else begin { just default to on }
           opt := true;
           option[oi] := true;
-          write(prr, 'o ');
+          write(prr, 'o', ' ':7);
           for oni :=  1 to optlen do 
             if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
           writeln(prr, '+')
@@ -3012,7 +3015,7 @@ end;
 
   procedure gen0(fop: oprange);
   begin
-    if prcode then begin putic; writeln(prr,mn[fop]:4) end;
+    if prcode then begin putic; writeln(prr,mn[fop]:11) end;
     ic := ic + 1; mes(fop)
   end (*gen0*) ;
 
@@ -3020,9 +3023,9 @@ end;
     var k, j: integer; p: strvsp;
   begin
     if prcode then
-      begin putic; write(prr,mn[fop]:4);
+      begin putic; write(prr,mn[fop]:11, ' ':5);
         if fop = 30 then
-          begin writeln(prr,sna[fp2]:12);
+          begin writeln(prr,sna[fp2]:4);
             mesl(pdx[fp2]);
           end
         else
@@ -3041,13 +3044,13 @@ end;
                  writeln(prr,'''')
                end
             else if fop = 42 then writeln(prr,chr(fp2))
-            else if fop = 67 then writeln(prr,fp2:4)
+            else if fop = 67 then writeln(prr,fp2:1)
             else if fop = 105 then begin write(prr, ' '); putlabel(fp2) end
             else if chkext(symptr) then
               begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
             else if chkfix(symptr) then
               begin write(prr, ' '); prtlabel(symptr^.floc); writeln(prr) end
-            else writeln(prr,fp2:12);
+            else writeln(prr,fp2:1);
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2)
             else mes(fop)
@@ -3065,22 +3068,22 @@ end;
     var k : integer;
   begin
     if prcode then
-      begin putic; write(prr,mn[fop]:4);
+      begin putic; write(prr,mn[fop]:11);
         case fop of
           42: begin
-            writeln(prr,chr(fp1),' ',fp2:8);
+            writeln(prr,chr(fp1),' ':4,fp2:1);
             mes(0)
           end;
           45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117:
             begin
-              writeln(prr,' ',fp1:3,' ',fp2:8);
+              writeln(prr,' ':5,fp1:1,' ',fp2:1);
               if fop = 116 then mesl(-fp2)
               else if fop = 117 then mesl(fp2-fp1)
               else mes(fop)
             end;
           47,48,49,52,53,55:
             begin write(prr,chr(fp1));
-              if chr(fp1) = 'm' then write(prr,' ',fp2:11);
+              if chr(fp1) = 'm' then write(prr,' ':4,fp2:1);
               writeln(prr);
               case chr(fp1) of
                 'i': mesl(cdxs[cdx[fop]][1]);
@@ -3096,15 +3099,15 @@ end;
           51:
             begin
               case fp1 of
-                1: begin writeln(prr,'i ',fp2:1);
+                1: begin writeln(prr,'i',' ':4,fp2:1);
                      mesl(cdxs[cdx[fop]][1])
                    end;
-                2: begin write(prr,'r ');
+                2: begin write(prr,'r',' ':4);
                      with cstptr[fp2]^ do write(prr,rval:23);
                      writeln(prr);
                      mesl(cdxs[cdx[fop]][2]);
                    end;
-                3: begin writeln(prr,'b ',fp2:1);
+                3: begin writeln(prr,'b',' ':4,fp2:1);
                      mesl(cdxs[cdx[fop]][3])
                    end;
                 4: begin writeln(prr,'n');
@@ -3113,12 +3116,12 @@ end;
                 6: begin
                 if chartp[chr(fp2)] = illegal then
                      { output illegal characters as numbers }
-                     writeln(prr,'c  ':3,fp2:1)
+                     writeln(prr,'c',' ':4,fp2:1)
                    else
-                     writeln(prr,'c ''':3,chr(fp2),'''');
+                     writeln(prr,'c',' ':4, '''':3,chr(fp2),'''');
                      mesl(cdxs[cdx[fop]][4])
                    end;
-                5: begin write(prr,'s(');
+                5: begin write(prr,'s',' ':4, '(');
                      with cstptr[fp2]^ do
                        for k := setlow to sethigh do
                          if k in pval then write(prr,k:4);
@@ -3162,7 +3165,7 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[fop]:4);
+        write(prr,mn[fop]:11);
         gentypindicator(fsp);
         writeln(prr);
       end;
@@ -3173,9 +3176,9 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[fop]:4);
+        write(prr,mn[fop]:11);
         gentypindicator(fsp);
-        write(prr, ' ');
+        write(prr, ' ':4);
         if chkext(symptr) then prtflabel(symptr)
         else if chkfix(symptr) then prtlabel(symptr^.floc)
         else write(prr,fp2:11);
@@ -3193,9 +3196,9 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[fop]: 4);
+        write(prr,mn[fop]:11);
         gentypindicator(fsp);
-        writeln(prr,' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
+        writeln(prr,' ':5, fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
       end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen2t*);
@@ -3203,7 +3206,7 @@ end;
   procedure genujpxjpcal(fop: oprange; fp2: integer);
   begin
    if prcode then
-      begin putic; write(prr,mn[fop]:4, ' '); prtlabel(fp2); writeln(prr) end;
+      begin putic; write(prr,mn[fop]:11, ' ':5); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genujpxjpcal*);
 
@@ -3211,7 +3214,7 @@ end;
   begin
    if prcode then
       begin putic;
-        write(prr,mn[fop]:4, ' ', fp1:3+5*ord(abs(fp1)>99),' ',fp2:11,
+        write(prr,mn[fop]:11, ' ':5, fp1:3+5*ord(abs(fp1)>99),' ',fp2:11,
                     ' '); prtlabel(fp3); writeln(prr)
       end;
     ic := ic + 1; mes(fop)
@@ -3220,7 +3223,7 @@ end;
   procedure genipj(fop: oprange; fp1, fp2: integer);
   begin
    if prcode then
-      begin putic; write(prr,mn[fop]:4,fp1:4,' '); prtlabel(fp2); writeln(prr) end;
+      begin putic; write(prr,mn[fop]:11,' ':5,fp1:4,' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
@@ -3228,7 +3231,7 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[fop]:4, ' ');
+        write(prr,mn[fop]:11, ' ':5);
         if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
         writeln(prr);
         mesl(fp1)
@@ -3240,7 +3243,7 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[91(*cuv*)]:4,' ');
+        write(prr,mn[91(*cuv*)]:11,' ':5);
         if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp2:12);
         writeln(prr);
         mes(91)
@@ -3252,7 +3255,7 @@ end;
   begin
     if prcode then
       begin putic;
-        write(prr,mn[68]:4,fp2:4, ' '); prtlabel(fp1); writeln(prr);
+        write(prr,mn[68(*lpa*)]:11,' ':5, fp2:4, ' '); prtlabel(fp1); writeln(prr);
       end;
     ic := ic + 1; mes(68)
   end (*genlpa*);
@@ -3260,7 +3263,7 @@ end;
   procedure gensuv(fp1, fp2: integer; sym: ctp);
   begin
     if prcode then begin
-      putic; write(prr,mn[92(*suv*)]:4);
+      putic; write(prr,mn[92(*suv*)]:11, ' ':5);
       write(prr, ' '); prtlabel(fp1);
       if chkext(sym) then
         begin write(prr, ' '); prtflabel(sym); writeln(prr) end
@@ -3272,9 +3275,9 @@ end;
   procedure genctaivtcvb(fop: oprange; fp1,fp2,fp3: integer; fsp: stp);
   begin if fp3 < 0 then error(511);
     if prcode then
-      begin putic; write(prr,mn[fop]:4);
+      begin putic; write(prr,mn[fop]:11);
             if fop <> 81(*cta*) then gentypindicator(fsp);
-            write(prr,' ',fp1:3,' ',fp2:8,' ');
+            write(prr,' ':5,fp1:3,' ',fp2:8,' ');
             mes(fop); putlabel(fp3)
       end;
     ic := ic + 1
@@ -3284,7 +3287,7 @@ end;
   begin
     if prcode then begin
       putic; 
-      write(prr,mn[121(*sfr*)]:4, ' '); prtlabel(lb); writeln(prr);
+      write(prr,mn[121(*sfr*)]:11, ' ':5); prtlabel(lb); writeln(prr);
     end
   end;
 
@@ -3292,7 +3295,7 @@ end;
   begin
     if prcode then begin
       putic; 
-      write(prr,mn[41(*mst*)]:4, ' ', lev:4, ' '); prtlabel(fp1); 
+      write(prr,mn[41(*mst*)]:11, ' ':5, lev:1, ' '); prtlabel(fp1); 
       write(prr, ' '); prtlabel(fp2); writeln(prr)
     end
   end;
@@ -3556,7 +3559,7 @@ end;
         tp := sp; while tp <> nil do
           if tp^.form = arrays then begin lc := lc+1; tp := tp^.aeltype end
           else tp := nil;
-        write(prr, 't ');
+        write(prr, 't',' ':7);
         genlabel(sp^.tmpl); prtlabel(sp^.tmpl);
         write(prr, ' ', lc:1);
         while sp <> nil do
@@ -7883,7 +7886,7 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr <> boolptr then error(144);
       if prcode then
-        begin putic; write(prr,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
+        begin putic; write(prr,' ':8,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
       ic := ic + 1; mes(33)
     end (*genfjp*) ;
 
@@ -8947,9 +8950,9 @@ end;
               begin write(prr, '! Module '); writevp(prr, nammod); writeln(prr) end;
             writeln(prr, '!');
             if curmod = mtmodule then
-              writeln(prr, 'b m ', id:kk) { mark module block start }
+              writeln(prr, 'b', ' ':7, 'm', ' ':7, id:kk) { mark module block start }
             else
-              writeln(prr, 'b p ', id:kk) { mark program block start }
+              writeln(prr, 'b', ' ':7, 'p', ' ':7, id:kk) { mark program block start }
           end;
           insymbol;
           { mark stack, generate call to startup block }
@@ -9034,13 +9037,13 @@ end;
       end
     end else begin { program }
       if prcode then begin
-        writeln(prr,'g ',gc:1);
-        writeln(prr, 'e p') { mark program block end }
+        writeln(prr,'g', ' ':7,gc:1);
+        writeln(prr, 'e', ' ':7, 'p') { mark program block end }
       end
     end;
     if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
     if prcode then begin
-      writeln(prr, 'f ', toterr:1);
+      writeln(prr, 'f', ' ':7, toterr:1);
       { only terminate intermediate if we are a cap cell (program) }
       if curmod = mtprogram then writeln(prr,'q')
     end;
@@ -9601,23 +9604,23 @@ end;
       { There are two mnemonics that have no counterpart in the
         assembler/interpreter: wro, pak. I didn't find a generator for them, and
         suspect they are abandoned. }
-      sna[ 1] :=' get'; sna[ 2] :=' put'; sna[ 3] :=' rdi'; sna[ 4] :=' rdr';
-      sna[ 5] :=' rdc'; sna[ 6] :=' wri'; sna[ 7] :=' wro'; sna[ 8] :=' wrr';
-      sna[ 9] :=' wrc'; sna[10] :=' wrs'; sna[11] :=' pak'; sna[12] :=' new';
-      sna[13] :=' rst'; sna[14] :=' eln'; sna[15] :=' sin'; sna[16] :=' cos';
-      sna[17] :=' exp'; sna[18] :=' sqt'; sna[19] :=' log'; sna[20] :=' atn';
-      sna[21] :=' rln'; sna[22] :=' wln'; sna[23] :=' sav';
+      sna[ 1] :='get '; sna[ 2] :='put '; sna[ 3] :='rdi '; sna[ 4] :='rdr ';
+      sna[ 5] :='rdc '; sna[ 6] :='wri '; sna[ 7] :='wro '; sna[ 8] :='wrr ';
+      sna[ 9] :='wrc '; sna[10] :='wrs '; sna[11] :='pak '; sna[12] :='new ';
+      sna[13] :='rst '; sna[14] :='eln '; sna[15] :='sin '; sna[16] :='cos ';
+      sna[17] :='exp '; sna[18] :='sqt '; sna[19] :='log '; sna[20] :='atn ';
+      sna[21] :='rln '; sna[22] :='wln '; sna[23] :='sav ';
       { new procedure/function memonics for p5/p6 }
-      sna[24] :=' pag'; sna[25] :=' rsf'; sna[26] :=' rwf'; sna[27] :=' wrb';
-      sna[28] :=' wrf'; sna[29] :=' dsp'; sna[30] :=' wbf'; sna[31] :=' wbi';
-      sna[32] :=' wbr'; sna[33] :=' wbc'; sna[34] :=' wbb'; sna[35] :=' rbf';
-      sna[36] :=' rsb'; sna[37] :=' rwb'; sna[38] :=' gbf'; sna[39] :=' pbf';
-      sna[40] :=' rib'; sna[41] :=' rcb'; sna[42] :=' nwl'; sna[43] :=' dsl';
-      sna[44] :=' eof'; sna[45] :=' efb'; sna[46] :=' fbv'; sna[47] :=' fvb';
-      sna[48] :=' wbx'; sna[49] :='asst'; sna[50] :='clst'; sna[51] :=' pos';
-      sna[52] :=' upd'; sna[53] :='appt'; sna[54] :=' del'; sna[55] :=' chg';
-      sna[56] :=' len'; sna[57] :=' loc'; sna[58] :=' exs'; sna[59] :='assb';
-      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :=' hlt'; sna[63] :=' ast';
+      sna[24] :='pag '; sna[25] :='rsf '; sna[26] :='rwf '; sna[27] :='wrb ';
+      sna[28] :='wrf '; sna[29] :='dsp '; sna[30] :='wbf '; sna[31] :='wbi ';
+      sna[32] :='wbr '; sna[33] :='wbc '; sna[34] :='wbb '; sna[35] :='rbf ';
+      sna[36] :='rsb '; sna[37] :='rwb '; sna[38] :='gbf '; sna[39] :='pbf ';
+      sna[40] :='rib '; sna[41] :='rcb '; sna[42] :='nwl '; sna[43] :='dsl ';
+      sna[44] :='eof '; sna[45] :='efb '; sna[46] :='fbv '; sna[47] :='fvb ';
+      sna[48] :='wbx '; sna[49] :='asst'; sna[50] :='clst'; sna[51] :='pos ';
+      sna[52] :='upd '; sna[53] :='appt'; sna[54] :='del '; sna[55] :='chg ';
+      sna[56] :='len '; sna[57] :='loc '; sna[58] :='exs '; sna[59] :='assb';
+      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :='hlt '; sna[63] :='ast ';
       sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
       sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
@@ -9629,37 +9632,37 @@ end;
 
     procedure instrmnemonics;
     begin { --- are unused codes }
-      mn[  0] :=' abi'; mn[  1] :=' abr'; mn[  2] :=' adi'; mn[  3] :=' adr';
-      mn[  4] :=' and'; mn[  5] :=' dif'; mn[  6] :=' dvi'; mn[  7] :=' dvr';
-      mn[  8] :=' ltc'; mn[  9] :=' flo'; mn[ 10] :=' flt'; mn[ 11] :=' inn';
-      mn[ 12] :=' int'; mn[ 13] :=' ior'; mn[ 14] :=' mod'; mn[ 15] :=' mpi';
-      mn[ 16] :=' mpr'; mn[ 17] :=' ngi'; mn[ 18] :=' ngr'; mn[ 19] :=' not';
-      mn[ 20] :=' odd'; mn[ 21] :=' sbi'; mn[ 22] :=' sbr'; mn[ 23] :=' sgs';
-      mn[ 24] :=' sqi'; mn[ 25] :=' sqr'; mn[ 26] :=' sto'; mn[ 27] :=' trc';
-      mn[ 28] :=' uni'; mn[ 29] :=' stp'; mn[ 30] :=' csp'; mn[ 31] :=' dec';
-      mn[ 32] :=' rip'; mn[ 33] :=' fjp'; mn[ 34] :=' inc'; mn[ 35] :=' ind';
-      mn[ 36] :=' ixa'; mn[ 37] :=' lao'; mn[ 38] :=' lca'; mn[ 39] :=' ldo';
-      mn[ 40] :=' mov'; mn[ 41] :=' mst'; mn[ 42] :=' ret'; mn[ 43] :=' sro';
-      mn[ 44] :=' xjp'; mn[ 45] :=' chk'; mn[ 46] :=' cup'; mn[ 47] :=' equ';
-      mn[ 48] :=' geq'; mn[ 49] :=' grt'; mn[ 50] :=' lda'; mn[ 51] :=' ldc';
-      mn[ 52] :=' leq'; mn[ 53] :=' les'; mn[ 54] :=' lod'; mn[ 55] :=' neq';
-      mn[ 56] :=' str'; mn[ 57] :=' ujp'; mn[ 58] :=' ord'; mn[ 59] :=' chr';
-      mn[ 60] :=' ujc'; mn[ 61] :=' rnd'; mn[ 62] :=' pck'; mn[ 63] :=' upk';
-      mn[ 64] :=' rgs'; mn[ 65] :=' ???'; mn[ 66] :=' ipj'; mn[ 67] :=' cip';
-      mn[ 68] :=' lpa'; mn[ 69] :=' ???'; mn[ 70] :=' ???'; mn[ 71] :=' dmp';
-      mn[ 72] :=' swp'; mn[ 73] :=' tjp'; mn[ 74] :=' lip'; mn[ 75] :=' ckv';
-      mn[ 76] :=' dup'; mn[ 77] :=' cke'; mn[ 78] :=' cks'; mn[ 79] :=' inv';
-      mn[ 80] :=' ckl'; mn[ 81] :=' cta'; mn[ 82] :=' ivt'; mn[ 83] :=' xor';
-      mn[ 84] :=' bge'; mn[ 85] :=' ede'; mn[ 86] :=' mse'; mn[ 87] :=' cjp';
-      mn[ 88] :=' lnp'; mn[ 89] :=' cal'; mn[ 90] :=' ret'; mn[ 91] :=' cuv';
-      mn[ 92] :=' suv'; mn[ 93] :=' vbs'; mn[ 94] :=' vbe'; mn[ 95] :=' cvb';
-      mn[ 96] :=' vis'; mn[ 97] :=' vip'; mn[ 98] :=' lcp'; mn[ 99] :=' cps';
-      mn[100] :=' cpc'; mn[101] :=' aps'; mn[102] :=' apc'; mn[103] :=' cxs';
-      mn[104] :=' cxc'; mn[105] :=' lft'; mn[106] :=' max'; mn[107] :=' vdp';
-      mn[108] :=' spc'; mn[109] :=' ccs'; mn[110] :=' scp'; mn[111] :=' ldp';
-      mn[112] :=' vin'; mn[113] :=' vdd'; mn[114] :=' lto'; mn[115] :=' ctb';
-      mn[116] :=' cpp'; mn[117] :=' cpr'; mn[118] :=' lsa'; mn[119] :=' wbs';
-      mn[120] :=' wbe'; mn[121] :=' sfr';
+      mn[  0] :='abi'; mn[  1] :='abr'; mn[  2] :='adi'; mn[  3] :='adr';
+      mn[  4] :='and'; mn[  5] :='dif'; mn[  6] :='dvi'; mn[  7] :='dvr';
+      mn[  8] :='ltc'; mn[  9] :='flo'; mn[ 10] :='flt'; mn[ 11] :='inn';
+      mn[ 12] :='int'; mn[ 13] :='ior'; mn[ 14] :='mod'; mn[ 15] :='mpi';
+      mn[ 16] :='mpr'; mn[ 17] :='ngi'; mn[ 18] :='ngr'; mn[ 19] :='not';
+      mn[ 20] :='odd'; mn[ 21] :='sbi'; mn[ 22] :='sbr'; mn[ 23] :='sgs';
+      mn[ 24] :='sqi'; mn[ 25] :='sqr'; mn[ 26] :='sto'; mn[ 27] :='trc';
+      mn[ 28] :='uni'; mn[ 29] :='stp'; mn[ 30] :='csp'; mn[ 31] :='dec';
+      mn[ 32] :='rip'; mn[ 33] :='fjp'; mn[ 34] :='inc'; mn[ 35] :='ind';
+      mn[ 36] :='ixa'; mn[ 37] :='lao'; mn[ 38] :='lca'; mn[ 39] :='ldo';
+      mn[ 40] :='mov'; mn[ 41] :='mst'; mn[ 42] :='ret'; mn[ 43] :='sro';
+      mn[ 44] :='xjp'; mn[ 45] :='chk'; mn[ 46] :='cup'; mn[ 47] :='equ';
+      mn[ 48] :='geq'; mn[ 49] :='grt'; mn[ 50] :='lda'; mn[ 51] :='ldc';
+      mn[ 52] :='leq'; mn[ 53] :='les'; mn[ 54] :='lod'; mn[ 55] :='neq';
+      mn[ 56] :='str'; mn[ 57] :='ujp'; mn[ 58] :='ord'; mn[ 59] :='chr';
+      mn[ 60] :='ujc'; mn[ 61] :='rnd'; mn[ 62] :='pck'; mn[ 63] :='upk';
+      mn[ 64] :='rgs'; mn[ 65] :='???'; mn[ 66] :='ipj'; mn[ 67] :='cip';
+      mn[ 68] :='lpa'; mn[ 69] :='???'; mn[ 70] :='???'; mn[ 71] :='dmp';
+      mn[ 72] :='swp'; mn[ 73] :='tjp'; mn[ 74] :='lip'; mn[ 75] :='ckv';
+      mn[ 76] :='dup'; mn[ 77] :='cke'; mn[ 78] :='cks'; mn[ 79] :='inv';
+      mn[ 80] :='ckl'; mn[ 81] :='cta'; mn[ 82] :='ivt'; mn[ 83] :='xor';
+      mn[ 84] :='bge'; mn[ 85] :='ede'; mn[ 86] :='mse'; mn[ 87] :='cjp';
+      mn[ 88] :='lnp'; mn[ 89] :='cal'; mn[ 90] :='ret'; mn[ 91] :='cuv';
+      mn[ 92] :='suv'; mn[ 93] :='vbs'; mn[ 94] :='vbe'; mn[ 95] :='cvb';
+      mn[ 96] :='vis'; mn[ 97] :='vip'; mn[ 98] :='lcp'; mn[ 99] :='cps';
+      mn[100] :='cpc'; mn[101] :='aps'; mn[102] :='apc'; mn[103] :='cxs';
+      mn[104] :='cxc'; mn[105] :='lft'; mn[106] :='max'; mn[107] :='vdp';
+      mn[108] :='spc'; mn[109] :='ccs'; mn[110] :='scp'; mn[111] :='ldp';
+      mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
+      mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
+      mn[120] :='wbe'; mn[121] :='sfr';
 
     end (*instrmnemonics*) ;
 
