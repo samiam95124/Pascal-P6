@@ -3118,7 +3118,7 @@ end;
                      { output illegal characters as numbers }
                      writeln(prr,'c',' ':4,fp2:1)
                    else
-                     writeln(prr,'c',' ':4, '''':3,chr(fp2),'''');
+                     writeln(prr,'c',' ':4, '''',chr(fp2),'''');
                      mesl(cdxs[cdx[fop]][4])
                    end;
                 5: begin write(prr,'s',' ':4, '(');
@@ -3181,7 +3181,7 @@ end;
         write(prr, ' ':4);
         if chkext(symptr) then prtflabel(symptr)
         else if chkfix(symptr) then prtlabel(symptr^.floc)
-        else write(prr,fp2:11);
+        else write(prr,fp2:1);
         writeln(prr)
       end;
     ic := ic + 1; mest(fop, fsp)
@@ -3198,7 +3198,7 @@ end;
       begin putic;
         write(prr,mn[fop]:11);
         gentypindicator(fsp);
-        writeln(prr,' ':5, fp1:3+5*ord(abs(fp1)>99),' ',fp2:11);
+        writeln(prr,' ':4, fp1:1,' ',fp2:1);
       end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen2t*);
@@ -3223,7 +3223,7 @@ end;
   procedure genipj(fop: oprange; fp1, fp2: integer);
   begin
    if prcode then
-      begin putic; write(prr,mn[fop]:11,' ':5,fp1:4,' '); prtlabel(fp2); writeln(prr) end;
+      begin putic; write(prr,mn[fop]:11,' ':5,fp1:1,' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
@@ -6555,7 +6555,7 @@ end;
               if varcmx >= 0 then lsp^.varts := varcmx+1;
               { output LVN table }
               if prcode then begin
-                write(prr, 'v ');
+                write(prr, 'v',' ':7);
                 genlabel(lcp^.vartl); prtlabel(lcp^.vartl);
                 write(prr, ' ', lsp^.varts:1);
                 for varcn := 0 to lsp^.varts-1 do
@@ -6962,7 +6962,7 @@ end;
     begin
       if prcode then begin
         with lcp^ do begin
-          write(prr, 's ');
+          write(prr, 's',' ':7);
           writev(prr, name, lenpv(name)); write(prr, ' ', typ);
           write(prr, ' ', vaddr:1, ' '); wrttyp(prr, idtype); writeln(prr)
         end
