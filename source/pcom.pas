@@ -1352,6 +1352,12 @@ end;
     if incstk <> nil then fileeof := eof(incstk^.f) else fileeof := eof(prd);
   end;
 
+  function fileeoln: boolean;
+  begin
+    if incstk <> nil then fileeoln := eoln(incstk^.f) 
+    else fileeoln := eoln(prd);
+  end;
+
   procedure readline;
   var ovf: boolean;
       i: lininx;
@@ -1359,11 +1365,12 @@ end;
     ovf := false;
     srclen := 0; srcinx := 1; for i := 1 to maxlin do srclin[i] := ' ';
     if not fileeof then begin
-      while not eoln(prd) do begin
+      while not fileeoln do begin
         if incstk <> nil then read(incstk^.f, srclin[srcinx])
         else read(prd, srclin[srcinx]); 
         if srclen = maxlin-1 then begin
-          if not ovf then writeln('*** Input line too long, truncated');
+          if not ovf then 
+            begin writeln; writeln('*** Input line too long, truncated') end;
           ovf := true
         end else begin srclen := srclen+1; srcinx := srcinx+1 end
       end;
@@ -8890,7 +8897,7 @@ end;
           openinput(ff);
           if ff then begin
             ch := ' '; eol := true; prcode := false; list := false;
-            insymbol; modnams := display[top].modnam;
+            readline; insymbol; modnams := display[top].modnam;
             display[top].modnam := nil;
             modulep(blockbegsys+statbegsys-[casesy]);
             thismod := display[top].modnam; display[top].modnam := modnams;
