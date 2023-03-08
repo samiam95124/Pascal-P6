@@ -3017,12 +3017,9 @@ end;
     mesl(cdxs[cdx[i]][mestn(fsp)]);
   end (*mest*);
 
-  procedure putic;
-  begin if ic mod 10 = 0 then writeln(prr,'!',ic:5) end;
-
   procedure gen0(fop: oprange);
   begin
-    if prcode then begin putic; writeln(prr,mn[fop]:11) end;
+    if prcode then writeln(prr,mn[fop]:11);
     ic := ic + 1; mes(fop)
   end (*gen0*) ;
 
@@ -3030,7 +3027,7 @@ end;
     var k, j: integer; p: strvsp;
   begin
     if prcode then
-      begin putic; write(prr,mn[fop]:11, ' ':5);
+      begin write(prr,mn[fop]:11, ' ':5);
         if fop = 30 then
           begin writeln(prr,sna[fp2]:4);
             mesl(pdx[fp2]);
@@ -3039,7 +3036,7 @@ end;
           begin
             if fop = 38 then
                begin with cstptr[fp2]^ do begin p := sval; j := 1;
-                   write(prr,' ',slgth:4,' ''');
+                   write(prr,slgth:1,' ''');
                    for k := 1 to lenpv(p) do begin
                      if p^.str[j] = '''' then write(prr, '''''')
                      else write(prr,p^.str[j]:1);
@@ -3075,7 +3072,7 @@ end;
     var k : integer;
   begin
     if prcode then
-      begin putic; write(prr,mn[fop]:11);
+      begin write(prr,mn[fop]:11);
         case fop of
           42: begin
             writeln(prr,chr(fp1),' ':4,fp2:1);
@@ -3171,7 +3168,7 @@ end;
   procedure gen0t(fop: oprange; fsp: stp);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[fop]:11);
         gentypindicator(fsp);
         writeln(prr);
@@ -3182,7 +3179,7 @@ end;
   procedure gen1ts(fop: oprange; fp2: integer; fsp: stp; symptr: ctp);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[fop]:11);
         gentypindicator(fsp);
         write(prr, ' ':4);
@@ -3202,7 +3199,7 @@ end;
   procedure gen2t(fop: oprange; fp1,fp2: integer; fsp: stp);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[fop]:11);
         gentypindicator(fsp);
         writeln(prr,' ':4, fp1:1,' ',fp2:1);
@@ -3213,14 +3210,14 @@ end;
   procedure genujpxjpcal(fop: oprange; fp2: integer);
   begin
    if prcode then
-      begin putic; write(prr,mn[fop]:11, ' ':5); prtlabel(fp2); writeln(prr) end;
+      begin write(prr,mn[fop]:11, ' ':5); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genujpxjpcal*);
 
   procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
   begin
    if prcode then
-      begin putic;
+      begin
         write(prr,mn[fop]:11, ' ':5, fp1:3+5*ord(abs(fp1)>99),' ',fp2:11,
                     ' '); prtlabel(fp3); writeln(prr)
       end;
@@ -3230,14 +3227,14 @@ end;
   procedure genipj(fop: oprange; fp1, fp2: integer);
   begin
    if prcode then
-      begin putic; write(prr,mn[fop]:11,' ':5,fp1:1,' '); prtlabel(fp2); writeln(prr) end;
+      begin write(prr,mn[fop]:11,' ':5,fp1:1,' '); prtlabel(fp2); writeln(prr) end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
   procedure gencup(fop: oprange; fp1,fp2: integer; fcp: ctp);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[fop]:11, ' ':5);
         if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
         writeln(prr);
@@ -3249,7 +3246,7 @@ end;
   procedure gencuv(fp1,fp2: integer; fcp: ctp);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[91(*cuv*)]:11,' ':5);
         if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp2:12);
         writeln(prr);
@@ -3261,7 +3258,7 @@ end;
   procedure genlpa(fp1,fp2: integer);
   begin
     if prcode then
-      begin putic;
+      begin
         write(prr,mn[68(*lpa*)]:11,' ':5, fp2:4, ' '); prtlabel(fp1); writeln(prr);
       end;
     ic := ic + 1; mes(68)
@@ -3270,8 +3267,7 @@ end;
   procedure gensuv(fp1, fp2: integer; sym: ctp);
   begin
     if prcode then begin
-      putic; write(prr,mn[92(*suv*)]:11, ' ':5);
-      write(prr, ' '); prtlabel(fp1);
+      write(prr,mn[92(*suv*)]:11, ' ':5); prtlabel(fp1);
       if chkext(sym) then
         begin write(prr, ' '); prtflabel(sym); writeln(prr) end
       else writeln(prr, ' ', fp2:1)
@@ -3282,9 +3278,9 @@ end;
   procedure genctaivtcvb(fop: oprange; fp1,fp2,fp3: integer; fsp: stp);
   begin if fp3 < 0 then error(511);
     if prcode then
-      begin putic; write(prr,mn[fop]:11);
+      begin write(prr,mn[fop]:11);
             if fop <> 81(*cta*) then gentypindicator(fsp);
-            write(prr,' ':5,fp1:3,' ',fp2:8,' ');
+            write(prr,' ':4,fp1:1,' ',fp2:1,' ');
             mes(fop); putlabel(fp3)
       end;
     ic := ic + 1
@@ -3293,7 +3289,6 @@ end;
   procedure gensfr(lb: integer);
   begin
     if prcode then begin
-      putic; 
       write(prr,mn[121(*sfr*)]:11, ' ':5); prtlabel(lb); writeln(prr);
     end
   end;
@@ -3301,7 +3296,6 @@ end;
   procedure genmst(lev: levrange; fp1,fp2: integer);
   begin
     if prcode then begin
-      putic; 
       write(prr,mn[41(*mst*)]:11, ' ':5, lev:1, ' '); prtlabel(fp1); 
       write(prr, ' '); prtlabel(fp2); writeln(prr)
     end
@@ -7893,7 +7887,7 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr <> boolptr then error(144);
       if prcode then
-        begin putic; write(prr,' ':8,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
+        begin write(prr,' ':8,mn[33]:4,' '); prtlabel(faddr); writeln(prr) end;
       ic := ic + 1; mes(33)
     end (*genfjp*) ;
 
