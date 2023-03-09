@@ -7556,7 +7556,8 @@ end;
       locpar := 0;
       while plst <> nil do begin
         if plst^.klass = vars then begin
-          if (plst^.part = ptval) and (plst^.idtype <> nil) then begin
+          if ((plst^.part = ptval) or (plst^.part = ptview)) and 
+             (plst^.idtype <> nil) then begin
             if plst^.idtype^.form <= power then
               locpar := locpar+plst^.idtype^.size
             else if plst^.idtype^.form = arrayc then
