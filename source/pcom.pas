@@ -7555,15 +7555,17 @@ end;
     begin
       locpar := 0;
       while plst <> nil do begin
-        if plst^.klass = vars then begin
-          if ((plst^.part = ptval) or (plst^.part = ptview)) and 
-             (plst^.idtype <> nil) then begin
-            if plst^.idtype^.form <= power then
+        if (plst^.idtype <> nil) and (plst^.klass = vars) then begin
+          if (plst^.part = ptval) or (plst^.part = ptview) then begin
+            if plst^.idtype^.form <= power then 
               locpar := locpar+plst^.idtype^.size
             else if plst^.idtype^.form = arrayc then
               locpar := locpar+ptrsize*2
             else locpar := locpar+ptrsize
-          end else locpar := locpar+ptrsize
+          end else begin
+            if plst^.idtype^.form = arrayc then locpar := locpar+ptrsize*2
+            else locpar := locpar+ptrsize
+          end
         end else if (plst^.klass = proc) or (plst^.klass = func) then 
           locpar := locpar+ptrsize*2;
         alignu(parmptr,locpar);   
