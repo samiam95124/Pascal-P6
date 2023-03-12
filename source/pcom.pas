@@ -8033,7 +8033,7 @@ end;
                 if ttop = ttop1 then
                   genujpxjpcal(57(*ujp*),labname)
                 else begin { interprocedural goto }
-                  genipj(66(*ipj*),level-vlevel,labname);
+                  genipj(66(*ipj*),level-(level-vlevel),labname);
                   ipcref := true
                 end
               end;
