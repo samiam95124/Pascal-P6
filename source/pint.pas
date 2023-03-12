@@ -5205,7 +5205,7 @@ begin
                        putadr(ad2+ptrsize, ad1) end;
     225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize));
                        pshadr(getadr(ad)) end;
-    239 (*cpp*): begin getq; getq1; ad := sp+marksize+q; sp := sp-q1; ad1 := sp;
+    239 (*cpp*): begin getq; getq1; ad := sp+q; sp := sp-q1; ad1 := sp;
                        for i := 1 to q1 do begin
                          store[ad1] := store[ad]; putdef(ad1, getdef(ad));
                          ad := ad+1; ad1 := ad1+1
