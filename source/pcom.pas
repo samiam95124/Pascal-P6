@@ -5601,7 +5601,7 @@ end;
       over the mark, call and then drop the function result downwards. }
     if gattr.typtr <> nil then
         if (gattr.kind = expr) and (gattr.typtr^.form > power) then
-          gen1(118(*lsa*),marksize+lsize)
+          gen1(118(*lsa*),lsize)
         else gen2(116(*cpp*),lsize,locpars);
     { do coercions }
     if realt(sp) and intt(gattr.typtr) then
@@ -5650,7 +5650,7 @@ end;
       { bring the parameters up and convert them one by one }
       if lattr.typtr <> nil then
         if (lattr.kind = expr) and (lattr.typtr^.form > power) then
-          gen1(118(*lsa*),marksize+lsize+lprs)
+          gen1(118(*lsa*),lsize+lprs)
         else gen2(116(*cpp*),lsize+lprs,lpls);
       { do coercions }
       if realt(lsp) and intt(lattr.typtr) then
@@ -5658,7 +5658,7 @@ end;
       fixpar(lsp,lattr.typtr);
       if gattr.typtr <> nil then
         if (gattr.kind = expr) and (gattr.typtr^.form > power) then
-          gen1(118(*lsa*),marksize+lsize+lpl)
+          gen1(118(*lsa*),lsize+lpl)
         else gen2(116(*cpp*),lsize+lpl,lprs);
       { do coercions }
       if realt(rsp) and intt(gattr.typtr) then
