@@ -3,30 +3,30 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 118: Missing "of" on case statement 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0118; 
-     8      -48  
-     9      -48 var x, a: integer; 
-    10      -48  
-    11      -48 begin 
-    12        7  
-    13        7    case x  
-    14        7  
-    15        7       1: a := 1; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 118: Missing "of" on case statement 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0118; 
+     8       -8  
+     9       -8 var x, a: integer; 
+    10       -8  
+    11       -8 begin 
+    12        5  
+    13        5    case x  
+    14        5  
+    15        5       1: a := 1; 
     15   ****         ^59^8,50
     15   ****   59 Error in variable
     15   ****    8 'of' expected
     15   ****   50 Error in constant
-    16       12       2: a := 2 
-    17       12  
-    18       12    end 
-    19       22  
-    20       22 end. 
+    16       10       2: a := 2 
+    17       10  
+    18       10    end 
+    19       20  
+    20       20 end. 
 
 Errors in program: 3
 

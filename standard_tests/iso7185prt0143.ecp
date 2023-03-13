@@ -3,25 +3,25 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 143: Misspelled "downto" on for statement 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0143; 
-     8      -48  
-     9      -48 var i, a, b: integer; 
-    10      -48  
-    11      -48 begin 
-    12        7  
-    13        7    for i := 10 dunto 1 do a := b 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 143: Misspelled "downto" on for statement 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0143; 
+     8       -8  
+     9       -8 var i, a, b: integer; 
+    10       -8  
+    11       -8 begin 
+    12        5  
+    13        5    for i := 10 dunto 1 do a := b 
     13   ****                      ^6,104^6^55
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
     13   ****   55 'to'/'downto' expected
-    14       10  
-    15       10 end. 
+    14        8  
+    15        8 end. 
 
 Errors in program: 4
 

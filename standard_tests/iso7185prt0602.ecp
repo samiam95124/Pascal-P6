@@ -3,32 +3,32 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 602: Missing second parameter identifier 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0602; 
-     8      -48  
-     9      -48 procedure a(b,: integer); 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 602: Missing second parameter identifier 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0602; 
+     8       -8  
+     9       -8 procedure a(b,: integer); 
      9   ****                 ^2
      9   ****    2 Identifier expected
-    10      -56  
-    11      -56 begin 
-    12        7  
-    13        7    b := 1 
-    14        7  
-    15        7 end; 
-    16       10  
-    17       10 begin 
-    18       12  
-    19       12    a(1, 2) 
+    10      -16  
+    11      -16 begin 
+    12        5  
+    13        5    b := 1 
+    14        5  
+    15        5 end; 
+    16        8  
+    17        8 begin 
+    18        8  
+    19        8    a(1, 2) 
     19   ****           ^126^277
     19   ****  126 Number of parameters does not agree with declaration
     19   ****  277 No overload found to match parameter
-    20       13  
-    21       13 end. 
+    20        9  
+    21        9 end. 
 
 Errors in program: 3
 

@@ -3,30 +3,30 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 802: Missing ',' in parameter list 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0802; 
-     8      -48  
-     9      -48 procedure test(a, b: integer); 
-    10      -64  
-    11      -64 begin 
-    12        7  
-    13        7    a := 1; 
-    14        9    b := 1 
-    15        9  
-    16        9 end; 
-    17       12  
-    18       12 begin 
-    19       14  
-    20       14    test(1 2) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 802: Missing ',' in parameter list 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0802; 
+     8       -8  
+     9       -8 procedure test(a, b: integer); 
+    10      -16  
+    11      -16 begin 
+    12        5  
+    13        5    a := 1; 
+    14        7    b := 1 
+    15        7  
+    16        7 end; 
+    17       10  
+    18       10 begin 
+    19       10  
+    20       10    test(1 2) 
     20   ****             ^6
     20   ****    6 Illegal symbol
-    21       15  
-    22       15 end. 
+    21       11  
+    22       11 end. 
     22   ****     ^126
     22   ****  126 Number of parameters does not agree with declaration
 

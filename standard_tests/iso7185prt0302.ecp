@@ -3,28 +3,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 302: Missing procedure identifier 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0302; 
-     8      -48  
-     9      -48 procedure (one, two: integer); 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 302: Missing procedure identifier 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0302; 
+     8       -8  
+     9       -8 procedure (one, two: integer); 
      9   ****             ^2
      9   ****    2 Identifier expected
-    10      -64  
-    11      -64 begin 
-    12        7  
-    13        7    one := 1; 
-    14        9    two := 2 
-    15        9  
-    16        9 end; 
-    17       12  
-    18       12 begin 
-    19       14  
-    20       14 end. 
+    10      -16  
+    11      -16 begin 
+    12        5  
+    13        5    one := 1; 
+    14        7    two := 2 
+    15        7  
+    16        7 end; 
+    17       10  
+    18       10 begin 
+    19       10  
+    20       10 end. 
 
 Errors in program: 1
 

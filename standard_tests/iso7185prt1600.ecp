@@ -3,21 +3,21 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1600: String extends beyond eol (no end quote) 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt1600(output); 
-     8      -48  
-     9      -48 begin 
-    10        7  
-    11        7    writeln('Hello, world) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1600: String extends beyond eol (no end quote) 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt1600(output); 
+     8       -8  
+     9       -8 begin 
+    10        5  
+    11        5    writeln('Hello, world) 
     11   ****                           ^202
     11   ****  202 String constant must not exceed source line
-    12        7  
-    13        7 end. 
+    12        5  
+    13        5 end. 
     13   ****     ^4
     13   ****    4 ')' expected
 

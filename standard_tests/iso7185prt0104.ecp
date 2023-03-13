@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 104: Missing procedure identifier 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0104(output); 
-     8      -48  
-     9      -48 { The appearance of a procedure with a matching list could conceivably 
-    10      -48   allow recovery } 
-    11      -48 procedure x(a, b: integer); 
-    12      -64  
-    13      -64 begin 
-    14        7  
-    15        7    writeln(a, b) 
-    16       15  
-    17       15 end; 
-    18       18  
-    19       18 begin 
-    20       20  
-    21       20    (1, 2) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 104: Missing procedure identifier 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0104(output); 
+     8       -8  
+     9       -8 { The appearance of a procedure with a matching list could conceivably 
+    10       -8   allow recovery } 
+    11       -8 procedure x(a, b: integer); 
+    12      -16  
+    13      -16 begin 
+    14        5  
+    15        5    writeln(a, b) 
+    16       13  
+    17       13 end; 
+    18       16  
+    19       16 begin 
+    20       16  
+    21       16    (1, 2) 
     21   ****      ^6
     21   ****    6 Illegal symbol
-    22       20  
-    23       20 end. 
+    22       16  
+    23       16 end. 
 
 Errors in program: 1
 

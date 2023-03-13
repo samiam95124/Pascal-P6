@@ -3,22 +3,22 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 28: Missing ident in type 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0028; 
-     8      -48  
-     9      -48 type  = char; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 28: Missing ident in type 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0028; 
+     8       -8  
+     9       -8 type  = char; 
      9   ****         ^2    ^16,10
      9   ****    2 Identifier expected
      9   ****   16 '=' expected
      9   ****   10 Error in type
-    10      -48  
-    11      -48 begin 
-    12        7 end. 
+    10       -8  
+    11       -8 begin 
+    12        5 end. 
 
 Errors in program: 3
 

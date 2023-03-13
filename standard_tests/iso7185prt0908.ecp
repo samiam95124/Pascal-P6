@@ -3,20 +3,20 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 908: Missing ')' in list 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0908(output); 
-     8      -48  
-     9      -48 begin 
-    10        7  
-    11        7      
-    12        7    write(42 
-    13        7  
-    14        7 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 908: Missing ')' in list 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0908(output); 
+     8       -8  
+     9       -8 begin 
+    10        5  
+    11        5      
+    12        5    write(42 
+    13        5  
+    14        5 end. 
     14   ****     ^4
     14   ****    4 ')' expected
 

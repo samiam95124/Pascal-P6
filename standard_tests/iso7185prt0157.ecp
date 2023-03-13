@@ -3,25 +3,25 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 157: Missing ',' between variables in with statement 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0157; 
-     8      -48  
-     9      -48 var a: record b, c: integer end; 
-    10      -48     d: record e, f: integer end; 
-    11      -48  
-    12      -48 begin 
-    13        7  
-    14        7    with a d do e := f 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 157: Missing ',' between variables in with statement 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0157; 
+     8       -8  
+     9       -8 var a: record b, c: integer end; 
+    10       -8     d: record e, f: integer end; 
+    11       -8  
+    12       -8 begin 
+    13        5  
+    14        5    with a d do e := f 
     14   ****             ^59     ^104^104
     14   ****   59 Error in variable
     14   ****  104 Identifier not declared
-    15        7  
-    16        7 end. 
+    15        5  
+    16        5 end. 
 
 Errors in program: 3
 

@@ -3,23 +3,23 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 504: Missing index in array 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0504; 
-     8      -48  
-     9      -48 var a: array [] of integer; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 504: Missing index in array 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0504; 
+     8       -8  
+     9       -8 var a: array [] of integer; 
      9   ****                 ^1
      9   ****    1 Error in simple type
-    10      -48  
-    11      -48 begin 
-    12        7  
-    13        7    a[1] := 1 
-    14       10  
-    15       10 end. 
+    10       -8  
+    11       -8 begin 
+    12        5  
+    13        5    a[1] := 1 
+    14        8  
+    15        8 end. 
 
 Errors in program: 1
 

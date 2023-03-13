@@ -3,23 +3,23 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 133: Misspelled "until" on repeat statement 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0133; 
-     8      -48  
-     9      -48 var a, b: integer; 
-    10      -48  
-    11      -48 begin 
-    12        7  
-    13        7    repeat a := b util a = b 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 133: Misspelled "until" on repeat statement 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0133; 
+     8       -8  
+     9       -8 var a, b: integer; 
+    10       -8  
+    11       -8 begin 
+    12        5  
+    13        5    repeat a := b util a = b 
     13   ****                       ^59
     13   ****   59 Error in variable
-    14        8  
-    15        8 end. 
+    14        6  
+    15        6 end. 
     15   ****     ^129,53
     15   ****  129 Type conflict of operands
     15   ****   53 'until' expected

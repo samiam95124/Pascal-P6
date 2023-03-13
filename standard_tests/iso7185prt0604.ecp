@@ -3,33 +3,33 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 604: Missing ':' on parameter specification 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0604; 
-     8      -48  
-     9      -48 procedure a(b, c integer); 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 604: Missing ':' on parameter specification 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0604; 
+     8       -8  
+     9       -8 procedure a(b, c integer); 
      9   ****                          ^7^5
      9   ****    7 Error in parameter list
      9   ****    5 ':' expected
-    10      -48  
-    11      -48 begin 
-    12        7  
-    13        7    b := 1; 
-    14        8    c := 1 
-    15        8  
-    16        8 end; 
-    17       10  
-    18       10 begin 
-    19       12  
-    20       12    a(1, 2) 
+    10      -16  
+    11      -16 begin 
+    12        5  
+    13        5    b := 1; 
+    14        6    c := 1 
+    15        6  
+    16        6 end; 
+    17        8  
+    18        8 begin 
+    19        8  
+    20        8    a(1, 2) 
     20   ****         ^277^277
     20   ****  277 No overload found to match parameter
-    21       12  
-    22       12 end. 
+    21        8  
+    22        8 end. 
 
 Errors in program: 4
 

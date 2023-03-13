@@ -3,22 +3,22 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 905: Field with missing value 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0905(output); 
-     8      -48  
-     9      -48 begin 
-    10        7  
-    11        7      
-    12        7    write(84: ) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 905: Field with missing value 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0905(output); 
+     8       -8  
+     9       -8 begin 
+    10        5  
+    11        5      
+    12        5    write(84: ) 
     12   ****                ^58
     12   ****   58 Error in factor
-    13       11  
-    14       11 end. 
+    13        9  
+    14        9 end. 
 
 Errors in program: 1
 

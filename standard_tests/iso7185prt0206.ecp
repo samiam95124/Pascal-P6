@@ -3,29 +3,29 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 206: Misspelled 'case' to variant 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0206; 
-     8      -48  
-     9      -48 var a: record b, c: integer; 
-    10      -48               csae d: boolean of 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 206: Misspelled 'case' to variant 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0206; 
+     8       -8  
+     9       -8 var a: record b, c: integer; 
+    10       -8               csae d: boolean of 
     10   ****                      ^6          ^6
     10   ****    6 Illegal symbol
-    11      -48                  true: (); 
-    12      -48                  false: () 
+    11       -8                  true: (); 
+    12       -8                  false: () 
     12   ****                            ^2
     12   ****    2 Identifier expected
-    13      -48        end; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    a.b := 1 
-    18        7  
-    19        7 end. 
+    13       -8        end; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    a.b := 1 
+    18        5  
+    19        5 end. 
 
 Errors in program: 3
 

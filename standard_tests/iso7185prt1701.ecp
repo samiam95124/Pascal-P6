@@ -3,28 +3,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1701: For an indexed-variable closest-containing a single 
-     4      -48                index-expression, it is an error if the value of the 
-     5      -48                index-expression is not assignment-compatible with the 
-     6      -48                index-type of the array-type. 
-     7      -48  
-     8      -48                ISO 7185 reference: 6.5.3.2 
-     9      -48  
-    10      -48 } 
-    11      -48  
-    12      -48 program iso7185prt1701; 
-    13      -48  
-    14      -48 var a: array [1..10] of integer; 
-    15      -48  
-    16      -48 begin 
-    17        7  
-    18        7    a['6'] := 1 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1701: For an indexed-variable closest-containing a single 
+     4       -8                index-expression, it is an error if the value of the 
+     5       -8                index-expression is not assignment-compatible with the 
+     6       -8                index-type of the array-type. 
+     7       -8  
+     8       -8                ISO 7185 reference: 6.5.3.2 
+     9       -8  
+    10       -8 } 
+    11       -8  
+    12       -8 program iso7185prt1701; 
+    13       -8  
+    14       -8 var a: array [1..10] of integer; 
+    15       -8  
+    16       -8 begin 
+    17        5  
+    18        5    a['6'] := 1 
     18   ****           ^139
     18   ****  139 Index type is not compatible with declaration
-    19       11  
-    20       11 end. 
+    19        9  
+    20        9 end. 
 
 Errors in program: 1
 

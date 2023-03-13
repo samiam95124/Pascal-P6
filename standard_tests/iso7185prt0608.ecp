@@ -3,36 +3,36 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 608: Missing ';' between parameter specifications 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0608; 
-     8      -48  
-     9      -48 procedure a(b, c: integer d: char); 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 608: Missing ';' between parameter specifications 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0608; 
+     8       -8  
+     9       -8 procedure a(b, c: integer d: char); 
      9   ****                             ^7
      9   ****    7 Error in parameter list
-    10      -64  
-    11      -64 begin 
-    12        7  
-    13        7    b := 1; 
-    14        9    c := 1; 
-    15       11    d := 'a' 
+    10      -16  
+    11      -16 begin 
+    12        5  
+    13        5    b := 1; 
+    14        7    c := 1; 
+    15        9    d := 'a' 
     15   ****         ^104
     15   ****  104 Identifier not declared
-    16       11  
-    17       11 end; 
-    18       13  
-    19       13 begin 
-    20       15  
-    21       15    a(1, 2, 'a') 
+    16        9  
+    17        9 end; 
+    18       11  
+    19       11 begin 
+    20       11  
+    21       11    a(1, 2, 'a') 
     21   ****                ^126^277
     21   ****  126 Number of parameters does not agree with declaration
     21   ****  277 No overload found to match parameter
-    22       17  
-    23       17 end. 
+    22       13  
+    23       13 end. 
 
 Errors in program: 4
 

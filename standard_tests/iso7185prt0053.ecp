@@ -3,20 +3,20 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 53: Missing type id on return type for function 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0053; 
-     8      -48  
-     9      -48 function x: ; begin x := 1 end; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 53: Missing type id on return type for function 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0053; 
+     8       -8  
+     9       -8 function x: ; begin x := 1 end; 
      9   ****               ^2
      9   ****    2 Identifier expected
-    10        9  
-    11        9 begin 
-    12       11 end. 
+    10        7  
+    11        7 begin 
+    12        7 end. 
 
 Errors in program: 1
 

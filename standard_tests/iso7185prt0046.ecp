@@ -3,23 +3,23 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 46: Missing final semicolon 
-     4      -48  
-     5      -48 } 
-     6      -48  
-     7      -48 program iso7185prt0046; 
-     8      -48  
-     9      -48 procedure x; begin end 
-    10        7  
-    11        7 begin 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 46: Missing final semicolon 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0046; 
+     8       -8  
+     9       -8 procedure x; begin end 
+    10        5  
+    11        5 begin 
     11   ****       ^14
     11   ****   14 ';' expected
-    12        8  
-    13        8    x 
-    14        8  
-    15        8 end. 
+    12        6  
+    13        6    x 
+    14        6  
+    15        6 end. 
    *** eof encountered
 
     16   ****  ^18,17,6,13,21
