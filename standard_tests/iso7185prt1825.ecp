@@ -3,33 +3,33 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1825: Invalid type substitutions 
-     4      -48  
-     5      -48     Wrong type of case label 
-     6      -48     ISO 7185 6.8.3.5 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1825(input, output); 
-    11      -48  
-    12      -48 var i: integer; 
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7    read(i); 
-    17       14    case i of 
-    18       16  
-    19       16       0: writeln('zero'); 
-    20       26       1: writeln('one'); 
-    21       36       'a': writeln('a') 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1825: Invalid type substitutions 
+     4       -8  
+     5       -8     Wrong type of case label 
+     6       -8     ISO 7185 6.8.3.5 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1825(input, output); 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    read(i); 
+    17       12    case i of 
+    18       14  
+    19       14       0: writeln('zero'); 
+    20       24       1: writeln('one'); 
+    21       34       'a': writeln('a') 
     21   ****            ^147
     21   ****  147 Label type incompatible with selecting expression
-    22       41  
-    23       41    end 
-    24       49  
-    25       49 end. 
+    22       39  
+    23       39    end 
+    24       47  
+    25       47 end. 
 
 Errors in program: 1
 

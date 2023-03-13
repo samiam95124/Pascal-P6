@@ -3,26 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1914: Adjoining symbols. 
-     4      -48  
-     5      -48     Number directly adjoining a symbol. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1914(output); 
-    10      -48  
-    11      -48 var myvar: integer; 
-    12      -48  
-    13      -48 begin 
-    14        7  
-    15        7    writeln('The result is: ', 42myvar); 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1914: Adjoining symbols. 
+     4       -8  
+     5       -8     Number directly adjoining a symbol. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1914(output); 
+    10       -8  
+    11       -8 var myvar: integer; 
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    writeln('The result is: ', 42myvar); 
     15   ****                                  ^241 ^6
     15   ****  241 Invalid tolken separator
     15   ****    6 Illegal symbol
-    16       19  
-    17       19 end. 
+    16       17  
+    17       17 end. 
 
 Errors in program: 2
 

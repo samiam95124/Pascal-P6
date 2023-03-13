@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1759: Label "apparent value" not in the range 0 to 9999. 
-     4      -48  
-     5      -48                ISO 7185 reference: 6.1.6 
-     6      -48  
-     7      -48                The numeric value of a label must be within 0 to 9999. 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1759(output); 
-    12      -48  
-    13      -48 label 10000; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1759: Label "apparent value" not in the range 0 to 9999. 
+     4       -8  
+     5       -8                ISO 7185 reference: 6.1.6 
+     6       -8  
+     7       -8                The numeric value of a label must be within 0 to 9999. 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1759(output); 
+    12       -8  
+    13       -8 label 10000; 
     13   ****             ^261
     13   ****  261 Label beyond valid integral value (>9999)
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    goto 10000; 
-    18        8  
-    19        8    writeln('*** Should not execute this'); 
-    20       17     
-    21       17    10000: writeln('At label'); 
-    22       26  
-    23       26 end. 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    goto 10000; 
+    18        6  
+    19        6    writeln('*** Should not execute this'); 
+    20       15     
+    21       15    10000: writeln('At label'); 
+    22       24  
+    23       24 end. 
 
 Errors in program: 1
 

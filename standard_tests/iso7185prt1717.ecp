@@ -3,30 +3,30 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1717: For read, it is an error if the value possessed by the  
-     4      -48                buffer-variable is not assignment compatible with the  
-     5      -48                variable-access. 
-     6      -48  
-     7      -48                ISO 7185 reference: 6.6.5.2 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1717(output); 
-    12      -48  
-    13      -48 var a: file of integer; 
-    14      -48     b: char; 
-    15      -48  
-    16      -48 begin 
-    17        7  
-    18        7    rewrite(a); 
-    19        9    write(a, 1); 
-    20       13    read(a, b) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1717: For read, it is an error if the value possessed by the  
+     4       -8                buffer-variable is not assignment compatible with the  
+     5       -8                variable-access. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.6.5.2 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1717(output); 
+    12       -8  
+    13       -8 var a: file of integer; 
+    14       -8     b: char; 
+    15       -8  
+    16       -8 begin 
+    17        5  
+    18        5    rewrite(a); 
+    19        7    write(a, 1); 
+    20       11    read(a, b) 
     20   ****               ^129
     20   ****  129 Type conflict of operands
-    21       17  
-    22       17 end. 
+    21       15  
+    22       15 end. 
 
 Errors in program: 1
 

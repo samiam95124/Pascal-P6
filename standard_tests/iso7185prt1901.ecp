@@ -3,28 +3,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1901: Constructing set from real 
-     4      -48  
-     5      -48    Check attempt to construct set from real element. 
-     6      -48  
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1901(output); 
-    11      -48  
-    12      -48 var 
-    13      -48 	r: real; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7     if [r] <> [] then 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1901: Constructing set from real 
+     4       -8  
+     5       -8    Check attempt to construct set from real element. 
+     6       -8  
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1901(output); 
+    11       -8  
+    12       -8 var 
+    13       -8 	r: real; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5     if [r] <> [] then 
     17   ****            ^109       ^144
     17   ****  109 Type must not be real
     17   ****  144 Illegal type of expression
-    18        9  
-    19        9 end. 
+    18        7  
+    19        7 end. 
 
 Errors in program: 2
 

@@ -3,33 +3,33 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1719: For new(p,c l ,...,c n,), it is an error if a variant of a 
-     4      -48                variant-part within the new variable becomes active and a 
-     5      -48                different variant of the variant-part is one of the specified 
-     6      -48                variants. 
-     7      -48  
-     8      -48                ISO 7185 reference: 6.6.5.3 
-     9      -48  
-    10      -48 } 
-    11      -48  
-    12      -48 program iso7185prt1719(output); 
-    13      -48  
-    14      -48 type a = record case b: boolean of 
-    15      -48  
-    16      -48           true:  (c: integer); 
-    17      -48           false: (d: char) 
-    18      -48  
-    19      -48        end; 
-    20      -48  
-    21      -48 var e: ^a; 
-    22      -48  
-    23      -48 begin 
-    24        7  
-    25        7    new(e, true); 
-    26       12    e^.b := false 
-    27       14  
-    28       14 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1719: For new(p,c l ,...,c n,), it is an error if a variant of a 
+     4       -8                variant-part within the new variable becomes active and a 
+     5       -8                different variant of the variant-part is one of the specified 
+     6       -8                variants. 
+     7       -8  
+     8       -8                ISO 7185 reference: 6.6.5.3 
+     9       -8  
+    10       -8 } 
+    11       -8  
+    12       -8 program iso7185prt1719(output); 
+    13       -8  
+    14       -8 type a = record case b: boolean of 
+    15       -8  
+    16       -8           true:  (c: integer); 
+    17       -8           false: (d: char) 
+    18       -8  
+    19       -8        end; 
+    20       -8  
+    21       -8 var e: ^a; 
+    22       -8  
+    23       -8 begin 
+    24        5  
+    25        5    new(e, true); 
+    26       10    e^.b := false 
+    27       12  
+    28       12 end. 
 
 Errors in program: 0

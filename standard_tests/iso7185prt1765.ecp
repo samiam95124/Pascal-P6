@@ -3,30 +3,30 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1765: String not based on char. 
-     4      -48  
-     5      -48     String based on subrange of char, not char itself. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1765(output); 
-    10      -48  
-    11      -48 type mychar = 'a'..'z'; 
-    12      -48  
-    13      -48 var s: packed array [1..10] of mychar; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    s := 'hello you '; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1765: String not based on char. 
+     4       -8  
+     5       -8     String based on subrange of char, not char itself. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1765(output); 
+    10       -8  
+    11       -8 type mychar = 'a'..'z'; 
+    12       -8  
+    13       -8 var s: packed array [1..10] of mychar; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    s := 'hello you '; 
     17   ****                       ^129
     17   ****  129 Type conflict of operands
-    18        9    writeln('The string is: ''', s, ''''); 
+    18        7    writeln('The string is: ''', s, ''''); 
     18   ****                                    ^116
     18   ****  116 Error in type of standard procedure parameter
-    19       22  
-    20       22 end. 
+    19       20  
+    20       20 end. 
 
 Errors in program: 2
 

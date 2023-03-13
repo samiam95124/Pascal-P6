@@ -3,44 +3,44 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1845: Goto/label issues 
-     4      -48  
-     5      -48     Label defined in outter block than use. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1845(output); 
-    10      -48  
-    11      -48 label 1; 
-    12      -48  
-    13      -48 procedure a; 
-    14      -48  
-    15      -48 var i: integer; 
-    16      -56  
-    17      -56 begin 
-    18        7  
-    19        7    goto 1; 
-    20        8    for i := 1 to 10 do begin 
-    21       18  
-    22       18       1: writeln(i) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1845: Goto/label issues 
+     4       -8  
+     5       -8     Label defined in outter block than use. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1845(output); 
+    10       -8  
+    11       -8 label 1; 
+    12       -8  
+    13       -8 procedure a; 
+    14      -16  
+    15      -16 var i: integer; 
+    16      -24  
+    17      -24 begin 
+    18        5  
+    19        5    goto 1; 
+    20        6    for i := 1 to 10 do begin 
+    21       16  
+    22       16       1: writeln(i) 
     22   ****                  ^167
     22   ****  167 Undeclared label
-    23       23  
-    24       23    end 
-    25       25  
-    26       25 end; 
+    23       21  
+    24       21    end 
+    25       23  
+    26       23 end; 
 label           1 unreferenced
                      
     26   ****      ^168
     26   ****  168 Undefined label
-    27       36  
-    28       36 begin 
-    29       38  
-    30       38    a 
-    31       38  
-    32       38 end. 
+    27       34  
+    28       34 begin 
+    29       34  
+    30       34    a 
+    31       34  
+    32       34 end. 
 label           1
                      
     32   ****      ^168

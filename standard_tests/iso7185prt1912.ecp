@@ -3,28 +3,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1912: '..' and ':' equivalence 
-     4      -48  
-     5      -48     Pascal-P2 regarded '..' and ':' as equivalent. This should not be possible 
-     6      -48     under ISO 7185. 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1912(output); 
-    11      -48  
-    12      -48 var r: 1:10; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1912: '..' and ':' equivalence 
+     4       -8  
+     5       -8     Pascal-P2 regarded '..' and ':' as equivalent. This should not be possible 
+     6       -8     under ISO 7185. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1912(output); 
+    11       -8  
+    12       -8 var r: 1:10; 
     12   ****           ^6 ^30,50,107,102
     12   ****    6 Illegal symbol
     12   ****   30 '..' expected
     12   ****   50 Error in constant
     12   ****  107 Incompatible subrange types
     12   ****  102 Low bound exceeds highbound
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7 end. 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5 end. 
 
 Errors in program: 5
 

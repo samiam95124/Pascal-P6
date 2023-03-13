@@ -3,43 +3,43 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 {$u} 
-     2      -48 { 
-     3      -48  
-     4      -48 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     5      -48                each reference and access to each component of the variant. 
-     6      -48  
-     7      -48                ISO 7185 reference: 6.5.3.3 
-     8      -48  
-     9      -48                There are four possible cases for active variants: 
-    10      -48  
-    11      -48                   A: Reference to discriminated variant. 
-    12      -48                   B: Change to the tagfield of a discriminated variant with 
-    13      -48                      an outstanding reference. 
-    14      -48                   C: Read of an undiscriminated variant after a write. 
-    15      -48                   D: Write of an undiscriminated variant with outstanding 
-    16      -48                      reference. 
-    17      -48  
-    18      -48                This is case C. 
-    19      -48 } 
-    20      -48  
-    21      -48 program iso7185prt1702(output); 
-    22      -48  
-    23      -48 var a: record case boolean of 
-    24      -48  
-    25      -48           true: (i: integer); 
-    26      -48           false: (c: char); 
-    27      -48  
-    28      -48        end; 
-    29      -48     c: char; 
-    30      -48  
-    31      -48 begin 
-    32        7  
-    33        7    { This could fail if the compiler allocates tagfields even on undiscriminated 
-    34        7      variants and writes to the tagfield on a write to member. } 
-    35        7    a.i := 1; 
-    36       18    c := a.c 
-    37       27  
-    38       27 end. 
+     1       -8 {$u} 
+     2       -8 { 
+     3       -8  
+     4       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     5       -8                each reference and access to each component of the variant. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.5.3.3 
+     8       -8  
+     9       -8                There are four possible cases for active variants: 
+    10       -8  
+    11       -8                   A: Reference to discriminated variant. 
+    12       -8                   B: Change to the tagfield of a discriminated variant with 
+    13       -8                      an outstanding reference. 
+    14       -8                   C: Read of an undiscriminated variant after a write. 
+    15       -8                   D: Write of an undiscriminated variant with outstanding 
+    16       -8                      reference. 
+    17       -8  
+    18       -8                This is case C. 
+    19       -8 } 
+    20       -8  
+    21       -8 program iso7185prt1702(output); 
+    22       -8  
+    23       -8 var a: record case boolean of 
+    24       -8  
+    25       -8           true: (i: integer); 
+    26       -8           false: (c: char); 
+    27       -8  
+    28       -8        end; 
+    29       -8     c: char; 
+    30       -8  
+    31       -8 begin 
+    32        5  
+    33        5    { This could fail if the compiler allocates tagfields even on undiscriminated 
+    34        5      variants and writes to the tagfield on a write to member. } 
+    35        5    a.i := 1; 
+    36       16    c := a.c 
+    37       25  
+    38       25 end. 
 
 Errors in program: 0

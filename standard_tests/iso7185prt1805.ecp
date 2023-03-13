@@ -3,39 +3,39 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1805: Threats to FOR statement index. 
-     4      -48  
-     5      -48     Threat in same scope block, assignment. 
-     6      -48     ISO 7185 6.8.3.9 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1805(output); 
-    11      -48  
-    12      -48 var i: integer; 
-    13      -48  
-    14      -48 procedure a; 
-    15      -48  
-    16      -48 begin 
-    17        7  
-    18        7    i := 1 
-    19        7  
-    20        7 end; 
-    21       10  
-    22       10 begin 
-    23       12  
-    24       12    a; 
-    25       13    for i := 1 to 10 do begin 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1805: Threats to FOR statement index. 
+     4       -8  
+     5       -8     Threat in same scope block, assignment. 
+     6       -8     ISO 7185 6.8.3.9 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1805(output); 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 procedure a; 
+    15      -16  
+    16      -16 begin 
+    17        5  
+    18        5    i := 1 
+    19        5  
+    20        5 end; 
+    21        8  
+    22        8 begin 
+    23        8  
+    24        8    a; 
+    25        9    for i := 1 to 10 do begin 
     25   ****          ^195
     25   ****  195 For loop index is threatened
-    26       23  
-    27       23       write(i:1, ' ') 
-    28       31  
-    29       31    end 
-    30       32  
-    31       32 end. 
+    26       19  
+    27       19       write(i:1, ' ') 
+    28       27  
+    29       27    end 
+    30       28  
+    31       28 end. 
 
 Errors in program: 1
 

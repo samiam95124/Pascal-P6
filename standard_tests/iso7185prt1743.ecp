@@ -3,26 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1743: An expression denotes a value unless a variable denoted by a 
-     4      -48                variable-access contained by the expression is undefined at the 
-     5      -48                time of its use, in which case that use is an error. 
-     6      -48  
-     7      -48                ISO 7185 reference: 6.7.1 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1743(output); 
-    12      -48  
-    13      -48 var a: integer; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    { In this case the undefined variable is output to force the error, if it can 
-    18        7      be done. Not many compilers check for undefines. } 
-    19        7    write(a) 
-    20       12  
-    21       12 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1743: An expression denotes a value unless a variable denoted by a 
+     4       -8                variable-access contained by the expression is undefined at the 
+     5       -8                time of its use, in which case that use is an error. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.7.1 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1743(output); 
+    12       -8  
+    13       -8 var a: integer; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    { In this case the undefined variable is output to force the error, if it can 
+    18        5      be done. Not many compilers check for undefines. } 
+    19        5    write(a) 
+    20       10  
+    21       10 end. 
 
 Errors in program: 0

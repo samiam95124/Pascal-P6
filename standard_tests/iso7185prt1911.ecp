@@ -3,25 +3,25 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1911: nil as tolken 
-     4      -48  
-     5      -48     In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
-     6      -48     as defined in ISO 7185. 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1911(output); 
-    11      -48  
-    12      -48 var nil: integer; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1911: nil as tolken 
+     4       -8  
+     5       -8     In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
+     6       -8     as defined in ISO 7185. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1911(output); 
+    11       -8  
+    12       -8 var nil: integer; 
     12   ****         ^2,6
     12   ****    2 Identifier expected
     12   ****    6 Illegal symbol
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7 end. 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5 end. 
 
 Errors in program: 2
 

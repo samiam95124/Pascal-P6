@@ -3,39 +3,39 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     4      -48                each reference and access to each component of the variant. 
-     5      -48  
-     6      -48                ISO 7185 reference: 6.5.3.3 
-     7      -48  
-     8      -48                There are four possible cases for active variants: 
-     9      -48  
-    10      -48                   A: Reference to discriminated variant. 
-    11      -48                   B: Change to the tagfield of a discriminated variant with 
-    12      -48                      an outstanding reference. 
-    13      -48                   C: Read of an undiscriminated variant after a write. 
-    14      -48                   D: Write of an undiscriminated variant with outstanding 
-    15      -48                      reference. 
-    16      -48  
-    17      -48                This is case A, discrminated variant with standard reference. 
-    18      -48 } 
-    19      -48  
-    20      -48 program iso7185prt1702(output); 
-    21      -48  
-    22      -48 var a: record case val: boolean of 
-    23      -48  
-    24      -48           true: (i: integer); 
-    25      -48           false: (c: char); 
-    26      -48  
-    27      -48        end; 
-    28      -48  
-    29      -48 begin 
-    30        7  
-    31        7    a.val := true; 
-    32       12    a.c := 'c'; 
-    33       19  
-    34       19 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     4       -8                each reference and access to each component of the variant. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.3.3 
+     7       -8  
+     8       -8                There are four possible cases for active variants: 
+     9       -8  
+    10       -8                   A: Reference to discriminated variant. 
+    11       -8                   B: Change to the tagfield of a discriminated variant with 
+    12       -8                      an outstanding reference. 
+    13       -8                   C: Read of an undiscriminated variant after a write. 
+    14       -8                   D: Write of an undiscriminated variant with outstanding 
+    15       -8                      reference. 
+    16       -8  
+    17       -8                This is case A, discrminated variant with standard reference. 
+    18       -8 } 
+    19       -8  
+    20       -8 program iso7185prt1702(output); 
+    21       -8  
+    22       -8 var a: record case val: boolean of 
+    23       -8  
+    24       -8           true: (i: integer); 
+    25       -8           false: (c: char); 
+    26       -8  
+    27       -8        end; 
+    28       -8  
+    29       -8 begin 
+    30        5  
+    31        5    a.val := true; 
+    32       10    a.c := 'c'; 
+    33       17  
+    34       17 end. 
 
 Errors in program: 0

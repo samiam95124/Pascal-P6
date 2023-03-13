@@ -3,24 +3,24 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1840: Write with invalid fields 
-     4      -48  
-     5      -48     Write with zero fraction. 
-     6      -48     ISO 7185 6.9.3 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1840(output); 
-    11      -48  
-    12      -48 var r: real; 
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7    r := 1.0; 
-    17        9    writeln(r:1:0) 
-    18       15  
-    19       15 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1840: Write with invalid fields 
+     4       -8  
+     5       -8     Write with zero fraction. 
+     6       -8     ISO 7185 6.9.3 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1840(output); 
+    11       -8  
+    12       -8 var r: real; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    r := 1.0; 
+    17        7    writeln(r:1:0) 
+    18       13  
+    19       13 end. 
 
 Errors in program: 0

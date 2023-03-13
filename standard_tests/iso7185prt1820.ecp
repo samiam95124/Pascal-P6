@@ -3,45 +3,45 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1820: Backwards pointer association. 
-     4      -48  
-     5      -48     Indicates an error unless a pointer reference uses backwards assocation, 
-     6      -48     which is incorrect. 
-     7      -48     ISO 7185 6.2.2.9, 6.4.1 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1820(output); 
-    12      -48  
-    13      -48 type a = integer; 
-    14      -48  
-    15      -48 var k: a; 
-    16      -48  
-    17      -48 procedure b; 
-    18      -48  
-    19      -48 type b = ^a; 
-    20      -48      a = char; 
-    21      -48  
-    22      -48 var cp: b; 
-    23      -56  
-    24      -56 begin 
-    25        7  
-    26        7     new(cp); 
-    27       10     cp^ := 1 
-    28       12  
-    29       12 end; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1820: Backwards pointer association. 
+     4       -8  
+     5       -8     Indicates an error unless a pointer reference uses backwards assocation, 
+     6       -8     which is incorrect. 
+     7       -8     ISO 7185 6.2.2.9, 6.4.1 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1820(output); 
+    12       -8  
+    13       -8 type a = integer; 
+    14       -8  
+    15       -8 var k: a; 
+    16       -8  
+    17       -8 procedure b; 
+    18      -16  
+    19      -16 type b = ^a; 
+    20      -16      a = char; 
+    21      -16  
+    22      -16 var cp: b; 
+    23      -24  
+    24      -24 begin 
+    25        5  
+    26        5     new(cp); 
+    27        8     cp^ := 1 
+    28       10  
+    29       10 end; 
     29   ****     ^129
     29   ****  129 Type conflict of operands
-    30       14  
-    31       14 begin 
-    32       16  
-    33       16    k := 1; 
-    34       18    b 
-    35       18  
-    36       18  
-    37       18 end. 
+    30       12  
+    31       12 begin 
+    32       12  
+    33       12    k := 1; 
+    34       14    b 
+    35       14  
+    36       14  
+    37       14 end. 
 
 Errors in program: 1
 

@@ -3,30 +3,30 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1729: For unpack, it is an error if the parameter of ordinal-type is  
-     4      -48                not assignment-compatible with the index-type of the unpacked  
-     5      -48                array parameter. 
-     6      -48  
-     7      -48                ISO 7185 reference: 6.6.5.4 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1729; 
-    12      -48  
-    13      -48 var a: array [1..10] of integer; 
-    14      -48     b: packed array [1..10] of integer; 
-    15      -48     i: integer; 
-    16      -48  
-    17      -48 begin 
-    18        7  
-    19        7    for i := 1 to 10 do b[i] := i; 
-    20       34    unpack(b, a, 'a') 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1729: For unpack, it is an error if the parameter of ordinal-type is  
+     4       -8                not assignment-compatible with the index-type of the unpacked  
+     5       -8                array parameter. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.6.5.4 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1729; 
+    12       -8  
+    13       -8 var a: array [1..10] of integer; 
+    14       -8     b: packed array [1..10] of integer; 
+    15       -8     i: integer; 
+    16       -8  
+    17       -8 begin 
+    18        5  
+    19        5    for i := 1 to 10 do b[i] := i; 
+    20       32    unpack(b, a, 'a') 
     20   ****                      ^116
     20   ****  116 Error in type of standard procedure parameter
-    21       42  
-    22       42 end. 
+    21       40  
+    22       40 end. 
 
 Errors in program: 1
 

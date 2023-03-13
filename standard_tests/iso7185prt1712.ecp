@@ -3,24 +3,24 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1712: It is an error if the buffer-variable is undefined immediately  
-     4      -48                prior to any use of put. 
-     5      -48  
-     6      -48                ISO 7185 reference: 6.6.5.2 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1712(output); 
-    11      -48  
-    12      -48 var a: file of integer; 
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7    rewrite(a); 
-    17        9    put(a) 
-    18       12  
-    19       12 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1712: It is an error if the buffer-variable is undefined immediately  
+     4       -8                prior to any use of put. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.6.5.2 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1712(output); 
+    11       -8  
+    12       -8 var a: file of integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    rewrite(a); 
+    17        7    put(a) 
+    18       10  
+    19       10 end. 
 
 Errors in program: 0

@@ -3,32 +3,32 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 {$s} 
-     2      -48 { 
-     3      -48  
-     4      -48 PRT test 1760: Alphanumeric label. 
-     5      -48  
-     6      -48                Attempt to use alphanumeric label instead of number. 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1760(output); 
-    11      -48  
-    12      -48 label skip; 
+     1       -8 {$s} 
+     2       -8 { 
+     3       -8  
+     4       -8 PRT test 1760: Alphanumeric label. 
+     5       -8  
+     6       -8                Attempt to use alphanumeric label instead of number. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1760(output); 
+    11       -8  
+    12       -8 label skip; 
     12   ****            ^397
     12   ****  397 Feature not valid in ISO 7185 Pascal
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7    goto skip; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    goto skip; 
     16   ****              ^397
     16   ****  397 Feature not valid in ISO 7185 Pascal
-    17        8  
-    18        8    writeln('*** Should not execute this'); 
-    19       17     
-    20       17    skip: writeln('At label'); 
-    21       26  
-    22       26 end. 
+    17        6  
+    18        6    writeln('*** Should not execute this'); 
+    19       15     
+    20       15    skip: writeln('At label'); 
+    21       24  
+    22       24 end. 
 
 Errors in program: 2
 

@@ -3,26 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1916: Inappropriate application of sign. 
-     4      -48  
-     5      -48     Use of sign on char value. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1916(output); 
-    10      -48  
-    11      -48 var c: char; 
-    12      -48  
-    13      -48 begin 
-    14        7  
-    15        7    c := 'a'; 
-    16       10    writeln('Value is: ', +c) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1916: Inappropriate application of sign. 
+     4       -8  
+     5       -8     Use of sign on char value. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1916(output); 
+    10       -8  
+    11       -8 var c: char; 
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    c := 'a'; 
+    16        8    writeln('Value is: ', +c) 
     16   ****                              ^134
     16   ****  134 Illegal type of operand(s)
-    17       18     
-    18       18 end. 
+    17       16     
+    18       16 end. 
 
 Errors in program: 1
 

@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1801: Threats to FOR statement index. 
-     4      -48  
-     5      -48     Threat within the controlled statement block, assignment. 
-     6      -48     ISO 7185 6.8.3.9 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1801(output); 
-    11      -48  
-    12      -48 var i: integer; 
-    13      -48  
-    14      -48 begin 
-    15        7  
-    16        7    for i := 1 to 10 do begin 
-    17       17  
-    18       17       write(i:1, ' '); 
-    19       26       i := 10 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1801: Threats to FOR statement index. 
+     4       -8  
+     5       -8     Threat within the controlled statement block, assignment. 
+     6       -8     ISO 7185 6.8.3.9 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1801(output); 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    for i := 1 to 10 do begin 
+    17       15  
+    18       15       write(i:1, ' '); 
+    19       24       i := 10 
     19   ****            ^195
     19   ****  195 For loop index is threatened
-    20       26  
-    21       26    end 
-    22       28  
-    23       28 end. 
+    20       24  
+    21       24    end 
+    22       26  
+    23       26 end. 
 
 Errors in program: 1
 

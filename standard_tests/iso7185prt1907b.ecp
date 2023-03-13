@@ -3,27 +3,27 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1907b: Use real value to form subrange 
-     4      -48  
-     5      -48     A real value is used as a subrange bound. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1907b; 
-    10      -48  
-    11      -48 type MySubrange = 1 .. 10.1; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1907b: Use real value to form subrange 
+     4       -8  
+     5       -8     A real value is used as a subrange bound. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1907b; 
+    10       -8  
+    11       -8 type MySubrange = 1 .. 10.1; 
     11   ****                              ^107
     11   ****  107 Incompatible subrange types
-    12      -48  
-    13      -48 var s: MySubrange; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    s := 5 
-    18        7  
-    19        7 end. 
+    12       -8  
+    13       -8 var s: MySubrange; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    s := 5 
+    18        5  
+    19        5 end. 
 
 Errors in program: 1
 

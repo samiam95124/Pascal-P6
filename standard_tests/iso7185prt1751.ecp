@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1751: For a case-statement, it is an error if none of the  
-     4      -48                case-constants is equal to the value of the case-index upon  
-     5      -48                entry to the case-statement. 
-     6      -48  
-     7      -48                ISO 7185 reference: 6.8.3.5 
-     8      -48  
-     9      -48 } 
-    10      -48  
-    11      -48 program iso7185prt1751(output); 
-    12      -48  
-    13      -48 var a: integer; 
-    14      -48  
-    15      -48 begin 
-    16        7  
-    17        7    a := 4; 
-    18        9    case a of 
-    19       11  
-    20       11       1: writeln('one'); 
-    21       21       2: writeln('two'); 
-    22       31       3: writeln('three') 
-    23       38  
-    24       38    end 
-    25       48  
-    26       48 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1751: For a case-statement, it is an error if none of the  
+     4       -8                case-constants is equal to the value of the case-index upon  
+     5       -8                entry to the case-statement. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.8.3.5 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1751(output); 
+    12       -8  
+    13       -8 var a: integer; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    a := 4; 
+    18        7    case a of 
+    19        9  
+    20        9       1: writeln('one'); 
+    21       19       2: writeln('two'); 
+    22       29       3: writeln('three') 
+    23       36  
+    24       36    end 
+    25       46  
+    26       46 end. 
 
 Errors in program: 0

@@ -3,43 +3,43 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1807: Threats to FOR statement index. 
-     4      -48  
-     5      -48     Threat in same scope block, read or readln. 
-     6      -48     ISO 7185 6.8.3.9 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1807(output); 
-    11      -48  
-    12      -48 var i: integer; 
-    13      -48     f: file of integer; 
-    14      -48  
-    15      -48 procedure a; 
-    16      -48  
-    17      -48 begin 
-    18        7  
-    19        7    read(f, i) 
-    20       11  
-    21       11 end; 
-    22       13  
-    23       13 begin 
-    24       15  
-    25       15    rewrite(f); 
-    26       17    write(f, 10); 
-    27       21    reset(f); 
-    28       23    for i := 1 to 10 do begin 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1807: Threats to FOR statement index. 
+     4       -8  
+     5       -8     Threat in same scope block, read or readln. 
+     6       -8     ISO 7185 6.8.3.9 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1807(output); 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8     f: file of integer; 
+    14       -8  
+    15       -8 procedure a; 
+    16      -16  
+    17      -16 begin 
+    18        5  
+    19        5    read(f, i) 
+    20        9  
+    21        9 end; 
+    22       11  
+    23       11 begin 
+    24       11  
+    25       11    rewrite(f); 
+    26       13    write(f, 10); 
+    27       17    reset(f); 
+    28       19    for i := 1 to 10 do begin 
     28   ****          ^195
     28   ****  195 For loop index is threatened
-    29       33  
-    30       33       write(i:1, ' ') 
-    31       41  
-    32       41    end; 
-    33       52    a 
-    34       52  
-    35       52 end. 
+    29       29  
+    30       29       write(i:1, ' ') 
+    31       37  
+    32       37    end; 
+    33       48    a 
+    34       48  
+    35       48 end. 
 
 Errors in program: 1
 

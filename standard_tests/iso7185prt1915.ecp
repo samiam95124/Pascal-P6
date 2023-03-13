@@ -3,38 +3,38 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1915: Reference to outer block defintion before local definition. 
-     4      -48  
-     5      -48     Use of an outer block definition before a definition in the same block. 
-     6      -48  
-     7      -48 } 
-     8      -48  
-     9      -48 program iso7185prt1762(output); 
-    10      -48  
-    11      -48 const one = 1; 
-    12      -48  
-    13      -48 procedure x; 
-    14      -48  
-    15      -48 const two = one; 
-    16      -48       one = 2; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1915: Reference to outer block defintion before local definition. 
+     4       -8  
+     5       -8     Use of an outer block definition before a definition in the same block. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1762(output); 
+    10       -8  
+    11       -8 const one = 1; 
+    12       -8  
+    13       -8 procedure x; 
+    14      -16  
+    15      -16 const two = one; 
+    16      -16       one = 2; 
     16   ****                ^242
     16   ****  242 Identifier referenced before defining point
-    17      -48        
-    18      -48 begin 
-    19        7  
-    20        7   writeln(one, two) 
-    21       15    
-    22       15 end; 
+    17      -16        
+    18      -16 begin 
+    19        5  
+    20        5   writeln(one, two) 
+    21       13    
+    22       13 end; 
 one        unreferenced
 
-    23       18  
-    24       18 begin 
-    25       20  
-    26       20    writeln(one) 
-    27       25     
-    28       25 end. 
+    23       16  
+    24       16 begin 
+    25       16  
+    26       16    writeln(one) 
+    27       21     
+    28       21 end. 
 
 Errors in program: 1
 

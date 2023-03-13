@@ -3,32 +3,32 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1918: Function assignment present but not executed. 
-     4      -48  
-     5      -48     Tests the case where a function assignment exists, but is not executed due 
-     6      -48     to being inside a conditional. 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1918(output); 
-    11      -48  
-    12      -48 function x: integer; 
-    13      -48  
-    14      -48 var y: integer; 
-    15      -56  
-    16      -56 begin 
-    17        7  
-    18        7    y := 1; 
-    19        9    if y > 1 then x := 2 
-    20       13     
-    21       13 end; 
-    22       16  
-    23       16 begin 
-    24       18  
-    25       18    writeln('Value is: ', x) 
-    26       28     
-    27       28 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1918: Function assignment present but not executed. 
+     4       -8  
+     5       -8     Tests the case where a function assignment exists, but is not executed due 
+     6       -8     to being inside a conditional. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1918(output); 
+    11       -8  
+    12       -8 function x: integer; 
+    13      -16  
+    14      -16 var y: integer; 
+    15      -24  
+    16      -24 begin 
+    17        5  
+    18        5    y := 1; 
+    19        7    if y > 1 then x := 2 
+    20       11     
+    21       11 end; 
+    22       14  
+    23       14 begin 
+    24       14  
+    25       14    writeln('Value is: ', x) 
+    26       24     
+    27       24 end. 
 
 Errors in program: 0

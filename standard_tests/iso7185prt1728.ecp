@@ -3,26 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1728: For pack, it is an error if the index-type of the unpacked  
-     4      -48                array is exceeded. 
-     5      -48  
-     6      -48                ISO 7185 reference: 6.6.5.4 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1728(output); 
-    11      -48  
-    12      -48 var a: array [1..20] of integer; 
-    13      -48     b: packed array [1..10] of integer; 
-    14      -48     i: integer; 
-    15      -48  
-    16      -48 begin 
-    17        7  
-    18        7    for i := 1 to 20 do a[i] := i; 
-    19       34    pack(a, 15, b) 
-    20       42  
-    21       42 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1728: For pack, it is an error if the index-type of the unpacked  
+     4       -8                array is exceeded. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.6.5.4 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1728(output); 
+    11       -8  
+    12       -8 var a: array [1..20] of integer; 
+    13       -8     b: packed array [1..10] of integer; 
+    14       -8     i: integer; 
+    15       -8  
+    16       -8 begin 
+    17        5  
+    18        5    for i := 1 to 20 do a[i] := i; 
+    19       32    pack(a, 15, b) 
+    20       40  
+    21       40 end. 
 
 Errors in program: 0

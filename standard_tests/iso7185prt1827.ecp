@@ -3,33 +3,33 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1827: Files of files 
-     4      -48  
-     5      -48     File in substructure. 
-     6      -48     ISO 7185 6.4.3.5 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1827; 
-    11      -48  
-    12      -48 type r = record 
-    13      -48  
-    14      -48             i: integer; 
-    15      -48             f: text 
-    16      -48  
-    17      -48          end; 
-    18      -48  
-    19      -48 var f: file of r; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1827: Files of files 
+     4       -8  
+     5       -8     File in substructure. 
+     6       -8     ISO 7185 6.4.3.5 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1827; 
+    11       -8  
+    12       -8 type r = record 
+    13       -8  
+    14       -8             i: integer; 
+    15       -8             f: text 
+    16       -8  
+    17       -8          end; 
+    18       -8  
+    19       -8 var f: file of r; 
     19   ****                   ^190
     19   ****  190 File component may not contain other files
-    20      -48  
-    21      -48 begin 
-    22        7  
-    23        7    rewrite(f) 
-    24        9  
-    25        9 end. 
+    20       -8  
+    21       -8 begin 
+    22        5  
+    23        5    rewrite(f) 
+    24        7  
+    25        7 end. 
 
 Errors in program: 1
 

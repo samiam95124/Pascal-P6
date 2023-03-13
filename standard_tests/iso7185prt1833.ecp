@@ -3,41 +3,41 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1      -48 { 
-     2      -48  
-     3      -48 PRT test 1833: Goto/label issues 
-     4      -48  
-     5      -48     Intraprocedure Goto nested block. 
-     6      -48     ISO 7185 6.8.1 
-     7      -48  
-     8      -48 } 
-     9      -48  
-    10      -48 program iso7185prt1833(output); 
-    11      -48  
-    12      -48 label 1; 
-    13      -48  
-    14      -48 var i: integer; 
-    15      -48  
-    16      -48 procedure abort; 
-    17      -48  
-    18      -48 begin 
-    19        7  
-    20        7    goto 1 
-    21        8  
-    22        8 end; 
-    23        9  
-    24        9 begin 
-    25       11  
-    26       11    abort; 
-    27       12    for i := 1 to 10 do begin 
-    28       22  
-    29       22       1: writeln(i) 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1833: Goto/label issues 
+     4       -8  
+     5       -8     Intraprocedure Goto nested block. 
+     6       -8     ISO 7185 6.8.1 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1833(output); 
+    11       -8  
+    12       -8 label 1; 
+    13       -8  
+    14       -8 var i: integer; 
+    15       -8  
+    16       -8 procedure abort; 
+    17      -16  
+    18      -16 begin 
+    19        5  
+    20        5    goto 1 
+    21        6  
+    22        6 end; 
+    23        7  
+    24        7 begin 
+    25        7  
+    26        7    abort; 
+    27        8    for i := 1 to 10 do begin 
+    28       18  
+    29       18       1: writeln(i) 
     29   ****                  ^184
     29   ****  184 Interprocedure goto does not reference outter block of destination
-    30       27  
-    31       27    end 
-    32       29  
-    33       29 end. 
+    30       23  
+    31       23    end 
+    32       25  
+    33       25 end. 
 
 Errors in program: 1
 
