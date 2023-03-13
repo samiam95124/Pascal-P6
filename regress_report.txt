@@ -78,3 +78,4 @@ standard test files
 0a90c0acea6ebec1c9fcc8874776fdd8  -
 other files
 0b59c89d194596a50dafd5c565e54d88  -
+16148 standard_tests/iso7185prt.dif
