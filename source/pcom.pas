@@ -7578,9 +7578,9 @@ end;
     procedure parmoff(plst: ctp; off: addrrange);
     begin
       while plst <> nil do begin
-        if (plst^.klass = vars) and not plst^.isloc then 
-          plst^.vaddr := plst^.vaddr+off
-        else if (plst^.klass = proc) or (plst^.klass = func) then 
+        if plst^.klass = vars then begin
+          if not plst^.isloc then plst^.vaddr := plst^.vaddr+off
+        end else if (plst^.klass = proc) or (plst^.klass = func) then 
           plst^.pfaddr := plst^.pfaddr+off;
         plst := plst^.next
       end

@@ -4,7 +4,7 @@
 #
 # Execution:
 #
-# regress [--full|--short|--pmach|--cmach]...
+# regress [--full|--short|--pint|--pmach|--cmach]...
 #
 # Run the compiler through a few typical programs
 # to a "gold" standard file. Each mode is cycled through in sequence.
@@ -15,10 +15,9 @@
 # --short Run short test sequence.
 #
 
+pint="0"
 pmach="0"
-pmachoption=""
 cmach="0"
-cmachoption=""
 full="0"
 
 #
@@ -153,6 +152,18 @@ do
     
         full=0
       
+    elif [ "$param" = "--pint" ]; then
+    
+        pint=1
+
+    elif [ "$param" = "--pmach" ]; then
+    
+        pmach=1
+
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+
     elif [ "$param" = "--help" ]; then
 
         echo ""
@@ -160,7 +171,7 @@ do
         echo ""
         echo "Execution:"
         echo ""
-        echo "regress [--full|--short|--pmach|--cmach]..."
+        echo "regress [--full|--short|--pint|--pmach|--cmach]..."
         echo ""
         echo "Run the compiler through a few typical programs"
         echo "to a "gold" standard file. Each mode is cycled through in sequence."
@@ -169,6 +180,9 @@ do
         echo ""
         echo "--full  Run full test sequence."
         echo "--short Run short test sequence."
+        echo "--pint  Run only pint mode."
+        echo "--pmach Run only pmach mode."
+        echo "--cmach Run only cmach mode."
         echo ""
 		exit 0
 		
@@ -189,15 +203,38 @@ done
 
 echo "Regression Summary" > regress_report.txt
 echo Line counts should be 0 for pass >> regress_report.txt
-option=""
-echo "pint run" >> regress_report.txt
-do_regress
-option="--pmach"
-echo "pmach run" >> regress_report.txt
-do_regress
-option="--cmach"
-echo "cmach run" >> regress_report.txt
-do_regress
+if [ "$pint" = "1" ]; then
+
+    option=""
+    echo "pint run" >> regress_report.txt
+    do_regress
+
+elif [ "$pmach" = "1" ]; then
+
+    option="--pmach"
+    echo "pmach run" >> regress_report.txt
+    do_regress
+
+elif [ "$cmach" = "1" ]; then
+
+    option="--cmach"
+    echo "cmach run" >> regress_report.txt
+    do_regress
+
+else
+
+    # run all modes
+    option=""
+    echo "pint run" >> regress_report.txt
+    do_regress
+    option="--pmach"
+    echo "pmach run" >> regress_report.txt
+    do_regress
+    option="--cmach"
+    echo "cmach run" >> regress_report.txt
+    do_regress
+
+fi
 
 #
 # Print collected status
