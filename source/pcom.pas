@@ -491,7 +491,7 @@ var
 
     chcnt: integer;                 (*character counter*)
     ic,gc: addrrange;               (*data location and instruction counter*)
-    lc:    stkoff;
+    lc,lcs: stkoff;
     linecount: integer;
     lineout: integer;
 
@@ -5500,7 +5500,7 @@ end;
       else begin { call procedure or function parameter }
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
         gen0(67(*cip*));
-        gen1(32(*rip*),fcp^.locspc+lsize+soff);
+        gen1(32(*rip*),lcs+lsize+soff);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
       end;
@@ -7795,6 +7795,7 @@ end;
           display[top].define := true;
           declare(fsys);
           lcp^.locspc := lcp^.locstr-lc;
+          lcs := lcp^.locspc;
           body(fsys + [semicolon],lcp);
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;

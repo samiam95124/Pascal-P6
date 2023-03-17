@@ -21,53 +21,19 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
-pmach run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
+Pascal-P5 run
 0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-20 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline_pmach.dif
-cmach run
-0 sample_programs/hello.dif
-0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
+Pascal-P6 run
 0 standard_tests/iso7185pat.dif
-0 sample_programs/pascals.dif
-Pascal-P2 run
-0 p2/roman.dif
-Pascal-P4 run
-0 p4/standardp.dif
-PRT run
-236 standard_tests/iso7185prt.dif
-Pascaline run
-0 pascaline_tests/pascaline_cmach.dif
-Thu 09 Feb 2023 11:35:12 PM PST
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
+Thu 16 Mar 2023 10:18:17 AM PDT
 Source files
-6869a307a8c0efb87db525715f0a422b  -
+113fbab108ed688b5dce90ee8b8b661d  -
 batch files
-5de383c712237249aeba79395ee1dfc9  -
+e9b356040cecf2c05d1b8303d5a690ba  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
@@ -78,4 +44,3 @@ standard test files
 0a90c0acea6ebec1c9fcc8874776fdd8  -
 other files
 0b59c89d194596a50dafd5c565e54d88  -
-16148 standard_tests/iso7185prt.dif
