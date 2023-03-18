@@ -1427,13 +1427,6 @@ begin
   withsch := f
 end;
 
-function base(ld :integer):address;
-   var ad :address;
-begin ad := mp;
-   while ld>0 do begin ad := getadr(ad+marksl); ld := ld-1 end;
-   base := ad
-end; (*base*)
-
 procedure compare(var b: boolean; var a1, a2: address);
 (*comparing is only correct if result by comparing integers will be*)
 var i: integer;
@@ -2571,13 +2564,13 @@ begin
 
   case op of
 
-    0   (*lodi*): begin getp; getq; pshint(getint(base(p) + q)) end;
-    193 (*lodx*): begin getp; getq; pshint(getbyt(base(p) + q)) end;
-    105 (*loda*): begin getp; getq; pshadr(getadr(base(p) + q)) end;
-    106 (*lodr*): begin getp; getq; pshrel(getrel(base(p) + q)) end;
-    107 (*lods*): begin getp; getq; getset(base(p) + q, s1); pshset(s1) end;
-    108 (*lodb*): begin getp; getq; pshint(ord(getbol(base(p) + q))) end;
-    109 (*lodc*): begin getp; getq; pshint(ord(getchr(base(p) + q))) end;
+    0   (*lodi*): begin getp; getq; pshint(getint(getadr(mp-p*ptrsize)+q)) end;
+    193 (*lodx*): begin getp; getq; pshint(getbyt(getadr(mp-p*ptrsize)+q)) end;
+    105 (*loda*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
+    106 (*lodr*): begin getp; getq; pshrel(getrel(getadr(mp-p*ptrsize)+ q)) end;
+    107 (*lods*): begin getp; getq; getset(getadr(mp-p*ptrsize)+q, s1); pshset(s1) end;
+    108 (*lodb*): begin getp; getq; pshint(ord(getbol(getadr(mp-p*ptrsize)+q))) end;
+    109 (*lodc*): begin getp; getq; pshint(ord(getchr(getadr(mp-p*ptrsize)+q))) end;
 
     1   (*ldoi*): begin getq; pshint(getint(q)) end;
     194 (*ldox*): begin getq; pshint(getbyt(q)) end;
@@ -2587,15 +2580,15 @@ begin
     68  (*ldob*): begin getq; pshint(ord(getbol(q))) end;
     69  (*ldoc*): begin getq; pshint(ord(getchr(q))) end;
 
-    2   (*stri*): begin getp; getq; popint(i); putint(base(p)+q, i) end;
-    195 (*strx*): begin getp; getq; popint(i); putbyt(base(p)+q, i) end;
-    70  (*stra*): begin getp; getq; popadr(ad); putadr(base(p)+q, ad) end;
-    71  (*strr*): begin getp; getq; poprel(r1); putrel(base(p)+q, r1) end;
-    72  (*strs*): begin getp; getq; popset(s1); putset(base(p)+q, s1) end;
+    2   (*stri*): begin getp; getq; popint(i); putint(getadr(mp-p*ptrsize)+q, i) end;
+    195 (*strx*): begin getp; getq; popint(i); putbyt(getadr(mp-p*ptrsize)+q, i) end;
+    70  (*stra*): begin getp; getq; popadr(ad); putadr(getadr(mp-p*ptrsize)+q, ad) end;
+    71  (*strr*): begin getp; getq; poprel(r1); putrel(getadr(mp-p*ptrsize)+q, r1) end;
+    72  (*strs*): begin getp; getq; popset(s1); putset(getadr(mp-p*ptrsize)+q, s1) end;
     73  (*strb*): begin getp; getq; popint(i1); b1 := i1 <> 0; 
-                        putbol(base(p)+q, b1) end;
+                        putbol(getadr(mp-p*ptrsize)+q, b1) end;
     74  (*strc*): begin getp; getq; popint(i1); c1 := chr(i1); 
-                        putchr(base(p)+q, c1) end;
+                        putchr(getadr(mp-p*ptrsize)+q, c1) end;
 
     3   (*sroi*): begin getq; popint(i); putint(q, i) end;
     196 (*srox*): begin getq; popint(i); putbyt(q, i) end;
@@ -2605,7 +2598,7 @@ begin
     78  (*srob*): begin getq; popint(i1); b1 := i1 <> 0; putbol(q, b1) end;
     79  (*sroc*): begin getq; popint(i1); c1 := chr(i1); putchr(q, c1) end;
 
-    4 (*lda*): begin getp; getq; pshadr(base(p)+q) end;
+    4 (*lda*): begin getp; getq; pshadr(getadr(mp-p*ptrsize)+q) end;
     5 (*lao*): begin getq; pshadr(q) end;
 
     6   (*stoi*): begin popint(i); popadr(ad); putint(ad, i) end;
@@ -2664,92 +2657,79 @@ begin
                    { set function result undefined }
                    for j := 1 to q do putdef(sp+j-1, false)
                  end;
-    11 (*mst*): begin (*p=level of calling procedure minus level of called
-                        procedure + 1;  set dl and sl, decrement sp*)
-                 (* then length of this element is
-                    max(intsize,realsize,boolsize,charsize,ptrsize *)
-                 getp;
-                 ad := sp; { save mark base }
-                 { allocate mark as zeros }
-                 for j := 1 to marksize div intsize do pshint(0);
-                 putadr(ad+marksl, base(p)); { sl }
-                 (* the length of this element is ptrsize *)
-                 putadr(ad+markdl, mp); { dl }
-                 (* idem *)
-                 putadr(ad+markep, ep); { ep }
-                 (* idem *)
+    11 (*mst*): begin getp; getq; getq1;
+                  pshadr(mp); { save old mp on stack }
+                  pshadr(0); { place current ep }
+                  pshadr(0); { place bottom of stack }
+                  pshadr(ep); { previous ep }
+                  ad1 := mp; { save old mp }
+                  mp := sp; { set new mp }
+                  { copy old display to stack }
+                  for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
+                  pshadr(mp); { push new mp to complete display } 
+                  ad := mp+q; (*q = length of dataseg*)
+                  if ad <= np then errorv(StoreOverflow);
+                  { clear allocated memory and set undefined }
+                  while sp > ad do 
+                    begin sp := sp-1; store[sp] := 0; putdef(sp, false) end;
+                  putadr(mp+marksb, sp); { set bottom of stack }
+                  ep := sp+q1; if ep <= np then errorv(StoreOverFlow);
+                  putadr(mp+market, ep) { place current ep }
                 end;
 
-    12 (*cup*): begin (*p=no of locations for parameters, q=entry point*)
-                 getp; getq;
-                 mp := sp+(p+marksize); { mp to base of mark }
-                 putadr(mp+markra, pc); { place ra }
-                 pc := q
+    12 (*cup*): begin (*q=entry point*)
+                 getq; pshadr(pc); pc := q
                 end;
-                
-    27 (*cuv*): begin (*q=entry point*)
-                 getp; getq;
-                 mp := sp+(p+marksize); { mp to base of mark }
-                 putadr(mp+markra, pc); { place ra }
-                 pc := getadr(q)
+
+    27 (*cuv*): begin (*q=vector entry point*)
+                 getq; pshadr(pc); pc := getadr(q)
                 end;
-                
+
     91 (*suv*): begin getq; getq1; putadr(q1, q) end;
 
-    13 (*ents*): begin getq; ad := mp+q; (*q = length of dataseg*)
-                    if ad <= np then begin
-                      errorv(StoreOverflow);
-                    end;
-                    { clear allocated memory and set undefined }
-                    while sp > ad do
-                      begin sp := sp-1; store[sp] := 0; putdef(sp, false);
-                      end;
-                    putadr(mp+marksb, sp) { set bottom of stack }
-                 end;
-
-    173 (*ente*): begin getq; ep := sp+q;
-                    if ep <= np then errorv(StoreOverFlow);
-                    putadr(mp+market, ep) { place current ep }
-                  end;
-                  (*q = max space required on stack*)
-               
     { For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. }
-    130 (*retc*): begin
-                   { set stack below function result }
-                   sp := mp; 
-                   putint(sp, ord(getchr(sp)));
-                   pc := getadr(mp+markra);
+    130 (*retc*): begin getq;
                    ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   { set stack below function result }
+                   sp := mp+marksize;
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q; { remove parameters }
+                   { clean result }
+                   putint(sp, ord(getchr(sp)))
                  end;
-    131 (*retb*): begin
-                   { set stack below function result }
-                   sp := mp; 
-                   putint(sp, ord(getbol(sp)));
-                   pc := getadr(mp+markra);
+    131 (*retb*): begin getq;
                    ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   { set stack below function result }
+                   sp := mp+marksize;
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q; { remove parameters }
+                   { clean result }
+                   putint(sp, ord(getbol(sp)))
                  end;
     14  (*retp*),
     128 (*reti*),
     204 (*retx*),
     236 (*rets*),
     129 (*retr*),
-    132 (*reta*): begin
-                   { set stack below function result, if any }  
-                   sp := mp;
-                   pc := getadr(mp+markra);
+    132 (*reta*): begin getq;
                    ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
-                 end;  
-                 
-    237 (*retm*): begin getq; { we don't use q }
-                   { set stack below function result, if any }  
-                   sp := mp;
-                   pc := getadr(mp+markra);
+                   { set stack below function result, if any }
+                   sp := mp+marksize;
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q { remove parameters }
+                 end;
+
+    237 (*retm*): begin getq;
                    ep := getadr(mp+markep);
-                   mp := getadr(mp+markdl)
+                   { set stack below function result, if any }
+                   sp := mp+marksize;
+                   popadr(mp); { restore old mp }
+                   popadr(pc); { load return address }
+                   sp := sp+q { remove parameters }
                  end;
                
     15 (*csp*): begin q := store[pc]; pc := pc+1; callsp end;
@@ -3012,20 +2992,17 @@ begin
 
     110 (*rgs*): begin popint(i2); popint(i1); pshset([i1..i2]) end;
     112 (*ipj*): begin getp; getq; pc := q;
-                 mp := base(p); { index the mark to restore }
+                 mp := getadr(mp-p*ptrsize); { index the mark to restore }
                  { restore marks until we reach the destination level }
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
                end;
-    113 (*cip*): begin getp; popadr(ad);
-                mp := sp+(p+marksize);
-                { replace next link mp with the one for the target }
-                putadr(mp+marksl, getadr(ad+1*ptrsize));
-                putadr(mp+markra, pc);
-                pc := getadr(ad)
+    113 (*cip*): begin popadr(ad); ad1 := mp;
+                mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
+    13 (*rip*): begin getq; mp := getadr(sp+q) end;
     114 (*lpa*): begin getp; getq; { place procedure address on stack }
-                pshadr(base(p));
+                pshadr(getadr(mp-p*ptrsize));
                 pshadr(q)
               end;
     117 (*dmp*): begin getq; sp := sp+q end; { remove top of stack }
@@ -3034,7 +3011,7 @@ begin
 
     119 (*tjp*): begin getq; popint(i); if i <> 0 then pc := q end;
 
-    120 (*lip*): begin getp; getq; ad := base(p) + q;
+    120 (*lip*): begin getp; getq; ad := getadr(mp-p*ptrsize) + q;
                    ad1 := getadr(ad); ad2 := getadr(ad+1*ptrsize);
                    pshadr(ad2); pshadr(ad1); 
                  end;
@@ -3221,7 +3198,7 @@ begin
                        putadr(ad2+ptrsize, ad1) end;
     225 (*ldp*): begin popadr(ad); pshadr(getadr(ad+ptrsize)); 
                        pshadr(getadr(ad)) end;
-    239 (*cpp*): begin getq; getq1; ad := sp+marksize+q; sp := sp-q1; ad1 := sp;
+    239 (*cpp*): begin getq; getq1; ad := sp+q; sp := sp-q1; ad1 := sp;
                        for i := 1 to q1 do begin
                          store[ad1] := store[ad]; putdef(ad1, getdef(ad)); 
                          ad := ad+1; ad1 := ad1+1 
@@ -3242,16 +3219,22 @@ begin
                     ExecuteExternal(pc-extvecbase);
                     { set stack below function result, if any }
                     sp := mp;
+                    {???fixme???}
+                    {
                     pc := getadr(mp+markra);
+                    }
                     ep := getadr(mp+markep);
+                    {???fixme???}
+                    {
                     mp := getadr(mp+markdl)
+                    }
 #else
                     errorv(ExternalsNotEnabled)
 #endif
                   end;
 
     { illegal instructions }
-    228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
+    173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
     253, 254, 255: errorv(InvalidInstruction)
 
   end
