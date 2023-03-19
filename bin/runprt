@@ -32,6 +32,9 @@ if [ "$1" = "" ]; then
 
 fi
 
+#
+# Note some of the tests need options to run.
+#
 dotestprog $option standard_tests/iso7185prt0001
 dotestprog $option standard_tests/iso7185prt0002
 dotestprog $option standard_tests/iso7185prt0003
@@ -44,7 +47,7 @@ dotestprog $option standard_tests/iso7185prt0011
 dotestprog $option standard_tests/iso7185prt0012
 dotestprog $option standard_tests/iso7185prt0013
 dotestprog $option standard_tests/iso7185prt0014
-dotestprog $option standard_tests/iso7185prt0015
+dotestprog $option standard_tests/iso7185prt0015 -s
 dotestprog $option standard_tests/iso7185prt0016
 dotestprog $option standard_tests/iso7185prt0017
 dotestprog $option standard_tests/iso7185prt0018
@@ -53,14 +56,14 @@ dotestprog $option standard_tests/iso7185prt0020
 dotestprog $option standard_tests/iso7185prt0021
 dotestprog $option standard_tests/iso7185prt0022
 dotestprog $option standard_tests/iso7185prt0023
-dotestprog $option standard_tests/iso7185prt0024
+dotestprog $option standard_tests/iso7185prt0024 -s
 dotestprog $option standard_tests/iso7185prt0025
 dotestprog $option standard_tests/iso7185prt0026
 dotestprog $option standard_tests/iso7185prt0027
 dotestprog $option standard_tests/iso7185prt0028
 dotestprog $option standard_tests/iso7185prt0029
 dotestprog $option standard_tests/iso7185prt0030
-dotestprog $option standard_tests/iso7185prt0031
+dotestprog $option standard_tests/iso7185prt0031 -s
 dotestprog $option standard_tests/iso7185prt0032
 dotestprog $option standard_tests/iso7185prt0033
 dotestprog $option standard_tests/iso7185prt0034
@@ -69,7 +72,7 @@ dotestprog $option standard_tests/iso7185prt0036
 dotestprog $option standard_tests/iso7185prt0037
 dotestprog $option standard_tests/iso7185prt0038
 dotestprog $option standard_tests/iso7185prt0039
-dotestprog $option standard_tests/iso7185prt0040
+dotestprog $option standard_tests/iso7185prt0040 -s
 dotestprog $option standard_tests/iso7185prt0041
 dotestprog $option standard_tests/iso7185prt0042
 dotestprog $option standard_tests/iso7185prt0043
@@ -83,8 +86,8 @@ dotestprog $option standard_tests/iso7185prt0050
 dotestprog $option standard_tests/iso7185prt0051
 dotestprog $option standard_tests/iso7185prt0052
 dotestprog $option standard_tests/iso7185prt0053
-dotestprog $option standard_tests/iso7185prt0054
-dotestprog $option standard_tests/iso7185prt0055
+dotestprog $option standard_tests/iso7185prt0054 -s
+dotestprog $option standard_tests/iso7185prt0055 -s
 dotestprog $option standard_tests/iso7185prt0056
 dotestprog $option standard_tests/iso7185prt0057
 dotestprog $option standard_tests/iso7185prt0100
@@ -187,7 +190,7 @@ dotestprog $option standard_tests/iso7185prt0408
 dotestprog $option standard_tests/iso7185prt0500
 dotestprog $option standard_tests/iso7185prt0501
 dotestprog $option standard_tests/iso7185prt0502
-dotestprog $option standard_tests/iso7185prt0503
+dotestprog $option standard_tests/iso7185prt0503 -s
 dotestprog $option standard_tests/iso7185prt0504
 dotestprog $option standard_tests/iso7185prt0505
 dotestprog $option standard_tests/iso7185prt0506
@@ -299,14 +302,14 @@ dotestprog $option standard_tests/iso7185prt1621
 dotestprog $option standard_tests/iso7185prt1622
 dotestprog $option standard_tests/iso7185prt1701
 dotestprog $option standard_tests/iso7185prt1702A
-dotestprog $option standard_tests/iso7185prt1702b
-dotestprog $option standard_tests/iso7185prt1702c
-dotestprog $option standard_tests/iso7185prt1702d
+dotestprog $option standard_tests/iso7185prt1702b -i
+dotestprog $option standard_tests/iso7185prt1702c -u
+dotestprog $option standard_tests/iso7185prt1702d -u -i
 dotestprog $option standard_tests/iso7185prt1703
 dotestprog $option standard_tests/iso7185prt1704
-dotestprog $option standard_tests/iso7185prt1705
-dotestprog $option standard_tests/iso7185prt1706a
-dotestprog $option standard_tests/iso7185prt1706b
+dotestprog $option standard_tests/iso7185prt1705 -i
+dotestprog $option standard_tests/iso7185prt1706a -i
+dotestprog $option standard_tests/iso7185prt1706b -i
 dotestprog $option standard_tests/iso7185prt1707a
 dotestprog $option standard_tests/iso7185prt1707b
 dotestprog $option standard_tests/iso7185prt1708
@@ -359,14 +362,14 @@ dotestprog $option standard_tests/iso7185prt1757
 dotestprog $option standard_tests/iso7185prt1758a
 dotestprog $option standard_tests/iso7185prt1758b
 dotestprog $option standard_tests/iso7185prt1759
-dotestprog $option standard_tests/iso7185prt1760
+dotestprog $option standard_tests/iso7185prt1760 -s
 dotestprog $option standard_tests/iso7185prt1761
 dotestprog $option standard_tests/iso7185prt1762
 dotestprog $option standard_tests/iso7185prt1763
 dotestprog $option standard_tests/iso7185prt1764
 dotestprog $option standard_tests/iso7185prt1765
 dotestprog $option standard_tests/iso7185prt1767
-dotestprog $option standard_tests/iso7185prt1800
+dotestprog $option standard_tests/iso7185prt1800 -m
 dotestprog $option standard_tests/iso7185prt1801
 dotestprog $option standard_tests/iso7185prt1802
 dotestprog $option standard_tests/iso7185prt1803
@@ -397,7 +400,7 @@ dotestprog $option standard_tests/iso7185prt1835
 dotestprog $option standard_tests/iso7185prt1836
 dotestprog $option standard_tests/iso7185prt1837
 dotestprog $option standard_tests/iso7185prt1838
-dotestprog $option standard_tests/iso7185prt1839
+dotestprog $option standard_tests/iso7185prt1839 -s
 dotestprog $option standard_tests/iso7185prt1840
 dotestprog $option standard_tests/iso7185prt1841
 dotestprog $option standard_tests/iso7185prt1842
@@ -408,7 +411,7 @@ dotestprog $option standard_tests/iso7185prt1846
 dotestprog $option standard_tests/iso7185prt1847
 dotestprog $option standard_tests/iso7185prt1848
 dotestprog $option standard_tests/iso7185prt1849
-dotestprog $option standard_tests/iso7185prt1850
+dotestprog $option standard_tests/iso7185prt1850 -s
 dotestprog $option standard_tests/iso7185prt1851
 dotestprog $option standard_tests/iso7185prt1852
 dotestprog $option standard_tests/iso7185prt1900
