@@ -113,7 +113,7 @@ if [ "$pmach" = "1" ]; then
 	cat temp $progfile.p6 > prd
     rm temp
 	pint
-    cp prr progfile.p6o
+    cp prr $progfile.p6o
 	mv prr prd
 	pmach
 	

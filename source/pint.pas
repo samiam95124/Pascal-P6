@@ -742,6 +742,12 @@ begin
   wrtnum(tf, v, 16, f, lz)
 end;
 
+{ print hex full word with leading zeros for diagnostics }
+procedure prthex(v: integer);
+begin
+  wrthex(output, v, maxdigh, true)
+end;
+
 procedure dmpmem(s, e: address);
 var c: integer;
 begin
@@ -753,12 +759,6 @@ begin
     end;
     if c <> 0 then writeln;
     writeln
-end;
-
-{ print hex full word with leading zeros for diagnostics }
-procedure prthex(v: integer);
-begin
-  wrthex(output, v, maxdigh, true)
 end;
 
 procedure lstins(var ad: address); forward;

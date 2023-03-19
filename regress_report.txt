@@ -1,6 +1,6 @@
 Regression Summary
 Line counts should be 0 for pass
-pmach run
+pint run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
@@ -18,14 +18,14 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-20 standard_tests/iso7185prt.dif
+0 standard_tests/iso7185prt.dif
 Pascaline run
-0 pascaline_tests/pascaline_pmach.dif
-Sat 18 Mar 2023 10:34:34 AM PDT
+0 pascaline_tests/pascaline.dif
+Sat 18 Mar 2023 04:32:34 PM PDT
 Source files
-a968a02d325e41f92d4f330a4e4fc0f3  -
+21bfc7cd2a8fa69504e371701524e2bb  -
 batch files
-e9b356040cecf2c05d1b8303d5a690ba  -
+07e9cda43b86381a80564f2c7823c426  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files

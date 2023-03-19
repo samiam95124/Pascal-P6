@@ -616,6 +616,17 @@ begin sgn := false;
    for i := f downto 1 do write(tf, digits[i])
 end;
 
+procedure wrthex(var tf: text; v: integer; f: integer; lz: boolean);
+begin
+  wrtnum(tf, v, 16, f, lz)
+end;
+
+{ print hex full word with leading zeros for diagnostics }
+procedure prthex(v: integer);
+begin
+  wrthex(output, v, maxdigh, true)
+end;
+
 procedure dmpmem(s, e: address);
 var c: integer;
 begin
