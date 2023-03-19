@@ -2468,7 +2468,8 @@ procedure load;
                   while (oi < maxopt) and (optst <> opts[oi]) and (optst <> optsl[oi]) do
                     oi := oi+1;
                   if (optst = opts[oi]) or (optst = optsl[oi]) then begin
-                    option[oi] := ch = '+'; getnxt;
+                    option[oi] := ch = '+'; 
+                    if (ch = '+') or (ch = '-') then getnxt;
                     case oi of
                       7:  dodmplab   := option[oi];
                       8:  dosrclin   := option[oi];
