@@ -31,6 +31,7 @@ progfile=""
 cmpnext="0"
 cmpfile=""
 noerrmsg="0"
+options=""
 
 for param in "$@" 
 do
@@ -79,6 +80,11 @@ do
 		echo ""
 		exit 0
 		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
 	else
 	
         if [ "$cmpnext" = "1" ] 
@@ -166,7 +172,8 @@ then
 fi
 
 echo "Running $progfile..."
-run $pmachoption $cmachoption $progfile
+echo "run $pmachoption $cmachoption $progfile $options"
+run $pmachoption $cmachoption $progfile $options
 if [ $? -eq 0 ]; then
 
     #
