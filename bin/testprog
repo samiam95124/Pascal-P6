@@ -16,6 +16,7 @@
 # <file>.dif - will contain the differences in output of the run.
 # <file>.p6  - Contains the intermediate file.
 #
+# --pint           Run via pint (the default)
 # --pmach          Generate mach code and run the result through pmach.
 # --cmach	       Generate mach code and run the result through cmach.
 # --cmpfile <file> Use filename following option for compare file
@@ -32,11 +33,16 @@ cmpnext="0"
 cmpfile=""
 noerrmsg="0"
 options=""
+pint="0"
 
 for param in "$@" 
 do
 
-    if [ "$param" = "--pmach" ]; then
+    if [ "$param" = "--pint" ]; then
+
+        pint=1
+
+    elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
         pmachoption="--pmach"
