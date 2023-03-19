@@ -515,7 +515,27 @@ var
     chkvbk: boolean;                { -- i: check VAR block violations }
     experr: boolean;                { -- ee/experror: expanded error 
                                          descriptions }
-    
+
+    { debug flags from backend, these are not set here }
+    dochkovf: boolean; { check arithmetic overflow }
+    dodmplab: boolean; { dump label definitions }
+    dotrcrot: boolean; { trace routine executions }
+    dotrcins: boolean; { trace instruction executions }
+    dosrclin: boolean; { add source line sets to code }
+    dotrcsrc: boolean; { trace source line executions (requires dosrclin) }
+    dorecycl: boolean; { obey heap space recycle requests }
+    dodebug:  boolean; { start up debug on entry }
+    dodbgflt: boolean; { enter debug on fault }
+    dodbgsrc: boolean; { do source file debugging }
+    dochkrpt: boolean; { check reuse of freed entry (automatically }
+    donorecpar: boolean; { break returned blocks as occupied, not free }
+    dochkdef: boolean; { check undefined accesses }
+    dosrcprf: boolean; { do source level profiling }
+    dochkcov: boolean; { do code coverage }
+    doanalys: boolean; { do analyze }
+    dodckout: boolean; { do output code deck }
+    dochkvbk: boolean; { do check VAR blocks }
+   
 
     { switches passed through to pint }
 
@@ -644,6 +664,11 @@ var
     { serial numbers to label structure and identifier entries for dumps }
     ctpsnm: integer;
     stpsnm: integer;
+
+    { command line handling }
+    cmdlin: cmdbuf; { command line }
+    cmdlen: cmdnum; { length of command line }
+    cmdpos: cmdinx; { current position in command line }
 
     f: boolean; { flag for if error number list entries were printed }
     i: 1..maxftl; { index for error number tracking array }
@@ -1302,6 +1327,40 @@ procedure errorv(v: integer);
 begin
   errore(v)
 end;
+
+{ "fileofy" routines for command line processing.
+
+  These routines implement the command header file by reading from a
+  buffer where the command line is stored. The assumption here is that
+  there is a fairly simple call to retrieve the command line.
+
+  If it is wanted, the command file primitives can be used to implement
+  another type of interface, say, reading from an actual file.
+
+  The command buffer is designed to never be completely full.
+  The last two locations indicate:
+
+  maxcmd: end of file
+  maxcmd-1: end of line
+
+  These locations are always left as space, thus eoln returns space as
+  the standard specifies.
+}
+
+function bufcommand: char;
+begin bufcommand := cmdlin[cmdpos] end;
+
+procedure getcommand;
+begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
+
+function eofcommand: boolean;
+begin eofcommand := cmdpos > cmdlen+1 end;
+
+function eolncommand: boolean;
+begin eolncommand := cmdpos >= cmdlen+1 end;
+
+procedure readlncommand;
+begin cmdpos := maxcmd end;
 
 #ifdef GNU_PASCAL
 #include "extend_gnu_pascal.inc"
@@ -10003,6 +10062,12 @@ begin
   top := 1; level := 1;
   with display[1] do
     begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
+
+  { get command line }
+  getcommandline(cmdlin, cmdlen);
+  cmdpos := 1;
+  { load command line options }
+  paroptions;
 
   (*compile:*)
   (**********)

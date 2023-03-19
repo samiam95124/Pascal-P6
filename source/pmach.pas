@@ -189,7 +189,7 @@ program pmach(input,output,prd,prr
               ! Pascaline end }
               );
 
-label 1;
+label 99;
 
 const
 
@@ -407,6 +407,8 @@ const
       maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
       maxsym      = 20;   { maximum length of symbol/module name }
+      maxopt      = 26;   { number of options }
+      optlen      = 10;   { maximum length of option words }
 
 #include "version.inc"
 
@@ -473,6 +475,8 @@ type
                        b: address    { address of block }
                      end;
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
+      optinx      = 1..optlen;
+      optstr      = packed array [optinx] of char;
 
 var   pc          : address;   (*program address register*)
       pctop       : address;   { top of code store }
@@ -491,6 +495,9 @@ var   pc          : address;   (*program address register*)
         ep  points to the maximum extent of the stack
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of ibyte; { bits in byte }
+      option      : array [1..maxopt] of boolean; { option array }
+      opts        : array [1..maxopt] of optstr;
+      optsl       : array [1..maxopt] of optstr;
       
       { check flags: these turn on runtime checks }
       dochkovf: boolean; { check arithmetic overflow }
@@ -509,6 +516,14 @@ var   pc          : address;   (*program address register*)
                              disposed blocks to flagged but dead entries that
                              generate errors on use. }
       dochkdef: boolean; { check undefined accesses }
+
+      { unused (here) flags }
+      dodmplab: boolean; { dump label definitions }
+      dodebug:  boolean; { start up debug on entry }
+      dodbgflt: boolean; { enter debug on fault }
+      dodbgsrc: boolean; { do source file debugging }
+      dodckout: boolean; { do output code deck }
+      dochkvbk: boolean; { do check VAR blocks }
       
       { I don't know how we are going to use iso7185 flag in mach. There is
         no real way to set it. }
@@ -648,7 +663,7 @@ begin writeln; write('*** Runtime error');
       write(': ');
       if l > maxast then l := maxast;
       while l > 0 do begin write(chr(store[a])); a := a+1; l := l-1 end;
-      goto 1
+      goto 99
 end;(*errori*)
 
 { Error handling:
@@ -779,7 +794,7 @@ begin writeln; write('*** Runtime error');
     WithBaseListEmpty:                  writeln('With base list empty');
     ExternalsNotEnabled:                writeln('Externals not enabled');
   end;
-  goto 1
+  goto 99
 end;
 
 procedure errorm(ea: address);
@@ -841,22 +856,6 @@ begin
    if dochkdef then if not getdef(a) then errorv(UndefinedLocationAccess)
 end;
 
-(*--------------------------------------------------------------------*)
-
-{ Language extension routines }
-  
-#ifdef GNU_PASCAL
-#include "extend_gnu_pascal.inc"
-#endif
-
-#ifdef ISO7185_PASCAL
-#include "extend_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "extend_pascaline.inc"
-#endif
-
 (*-------------------------------------------------------------------------*)
 
                         { Boolean integer emulation }
@@ -916,6 +915,13 @@ end;
 
 { End of language extension routines }
 
+{ find lower case of character }
+function lcase(c: char): char;
+begin
+  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
+  lcase := c
+end { lcase };
+
 (*--------------------------------------------------------------------*)
 
 { "fileofy" routines for command line processing.
@@ -951,6 +957,24 @@ begin eolncommand := cmdpos >= cmdlen+1 end;
 
 procedure readlncommand; 
 begin cmdpos := maxcmd end;
+
+(*--------------------------------------------------------------------*)
+
+{ Language extension routines }
+  
+#ifdef GNU_PASCAL
+#include "extend_gnu_pascal.inc"
+#endif
+
+#ifdef ISO7185_PASCAL
+#include "extend_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "extend_pascaline.inc"
+#endif
+
+(*--------------------------------------------------------------------*)
 
 { The external assigns read a filename off the command line. The original name
   of the header file is also passed in, and can be used to process. However,
@@ -1350,7 +1374,7 @@ procedure load;
    procedure errorl; (*error in loading*)
    begin writeln;
       writeln('*** Invalid code deck');
-      goto 1
+      goto 99
    end; (*errorl*)
 
    procedure readhex(var v: integer; d: integer);
@@ -2507,7 +2531,7 @@ begin (*callsp*)
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]); 
                          pshint(ord(existsfile(fl1))) 
                        end;  
-           59 (*hlt*): goto 1;
+           59 (*hlt*): goto 99;
            60 (*ast*): begin popint(i); 
                          if i = 0 then errorv(ProgramCodeAssertion);
                        end;
@@ -3301,9 +3325,66 @@ begin (* main *)
   fndpow(maxpow8, 8, octdig);
   fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
 
+  { initialize options }
+  opts[1]  := 'a         ';
+  opts[2]  := 'b         ';
+  opts[3]  := 'c         ';
+  opts[4]  := 'd         ';
+  opts[5]  := 'e         ';
+  opts[6]  := 'f         ';
+  opts[7]  := 'g         ';
+  opts[8]  := 'h         ';
+  opts[9]  := 'i         ';
+  opts[10] := 'ee        ';
+  opts[11] := '          ';
+  opts[12] := 'l         ';
+  opts[13] := 'm         ';
+  opts[14] := 'n         ';
+  opts[15] := 'o         ';
+  opts[16] := 'p         ';
+  opts[17] := 'q         ';
+  opts[18] := 'r         ';
+  opts[19] := 's         ';
+  opts[20] := 't         ';
+  opts[21] := 'u         ';
+  opts[22] := 'v         ';
+  opts[23] := 'w         ';
+  opts[24] := 'x         ';
+  opts[25] := 'y         ';
+  opts[26] := 'z         ';
+
+  optsl[1]  := 'debugflt  ';
+  optsl[2]  := 'prtlab    ';
+  optsl[3]  := 'lstcod    ';
+  optsl[4]  := 'chkdebug  ';
+  optsl[5]  := 'machdeck  ';
+  optsl[6]  := 'debugsrc  ';
+  optsl[7]  := 'prtlabdef ';
+  optsl[8]  := 'sourceset ';
+  optsl[9]  := 'varblk    ';
+  optsl[10] := 'experror  ';
+  optsl[11] := '          ';
+  optsl[12] := 'list      ';
+  optsl[13] := 'breakheap ';
+  optsl[14] := 'recycle   ';
+  optsl[15] := 'chkoverflo';
+  optsl[16] := 'chkreuse  ';
+  optsl[17] := 'chkundef  ';
+  optsl[18] := 'reference ';
+  optsl[19] := 'iso7185   ';
+  optsl[20] := 'prttables ';
+  optsl[21] := 'undeftag  ';
+  optsl[22] := 'chkvar    ';
+  optsl[23] := 'debug     ';
+  optsl[24] := 'prtlex    ';
+  optsl[25] := 'prtdisplay';
+  optsl[26] := '          ';
+
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
+  { load command line options }
+  paroptions;
   
   { !!! remove this next statement for self compile }
 #ifndef SELF_COMPILE
@@ -3338,7 +3419,7 @@ begin (* main *)
     sinins
   until stopins; { until stop instruction is seen }
 
-  1 : { abort run }
+  99: { abort run }
 
   writeln;
   writeln('program complete');

@@ -185,7 +185,7 @@ program pint(input,output,prd,prr
 #endif
               );
 
-label 1;
+label 99;
 
 const
 
@@ -779,7 +779,7 @@ begin writeln; write('*** Runtime error');
       if l > maxast then l := maxast;
       while l > 0 do begin write(chr(store[a])); a := a+1; l := l-1 end;
       if dodebug or dodbgflt then debug { enter debugger on fault }
-      else goto 1
+      else goto 99
 end;(*errori*)
 
 { Error handling:
@@ -918,7 +918,7 @@ begin writeln; write('*** Runtime error');
   }
 
   if dodebug or dodbgflt then debug { enter debugger on fault }
-  else goto 1
+  else goto 99
 end;
 
 procedure errorm(ea: address);
@@ -1009,22 +1009,6 @@ begin
   end
 end;
 
-(*--------------------------------------------------------------------*)
-
-{ Language extension routines }
-
-#ifdef GNU_PASCAL
-#include "extend_gnu_pascal.inc"
-#endif
-
-#ifdef ISO7185_PASCAL
-#include "extend_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "extend_pascaline.inc"
-#endif
-
 (*-------------------------------------------------------------------------*)
 
                         { Boolean integer emulation }
@@ -1084,6 +1068,13 @@ end;
 
 { End of language extension routines }
 
+{ find lower case of character }
+function lcase(c: char): char;
+begin
+  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
+  lcase := c
+end { lcase };
+
 (*--------------------------------------------------------------------*)
 
 { "fileofy" routines for command line processing.
@@ -1119,6 +1110,24 @@ begin eolncommand := cmdpos >= cmdlen+1 end;
 
 procedure readlncommand;
 begin cmdpos := maxcmd end;
+
+(*--------------------------------------------------------------------*)
+
+{ Language extension routines }
+
+#ifdef GNU_PASCAL
+#include "extend_gnu_pascal.inc"
+#endif
+
+#ifdef ISO7185_PASCAL
+#include "extend_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "extend_pascaline.inc"
+#endif
+
+(*--------------------------------------------------------------------*)
 
 { The external assigns read a filename off the command line. The original name
   of the header file is also passed in, and can be used to process. However,
@@ -1171,13 +1180,6 @@ end;
                 { character and string quanta functions }
 
 (*-------------------------------------------------------------------------*)
-
-{ find lower case of character }
-function lcase(c: char): char;
-begin
-  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-  lcase := c
-end { lcase };
 
 { get string quanta }
 procedure getstr(var p: strvsp);
@@ -2165,7 +2167,7 @@ procedure load;
    procedure errorl(string: beta); (*error in loading*)
    begin writeln;
       writeln('*** Program load error: [', iline:1, '] ', string);
-      goto 1
+      goto 99
    end; (*errorl*)
 
    procedure dmplabs; { dump label table }
@@ -4252,7 +4254,7 @@ begin (*callsp*)
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          pshint(ord(existsfile(fl1)))
                        end;
-           59 (*hlt*): goto 1;
+           59 (*hlt*): goto 99;
            60 (*ast*): begin popint(i);
                          if i = 0 then errorv(ProgramCodeAssertion);
                        end;
@@ -7030,7 +7032,7 @@ begin
     doanalys := false { no analyze }
   else if cn = 'ps        ' then prthdr { print status }
   else if cn = 'r         ' then dbgend := true
-  else if cn = 'q         ' then goto 1
+  else if cn = 'q         ' then goto 99
   else if (cn = 'h         ') or
           (cn = 'help      ') then begin
     wrtnewline; writeln;
@@ -7359,6 +7361,9 @@ begin (* main *)
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
+  { load command line options }
+  paroptions;
+
   for bi := 1 to maxbrk do brktbl[bi].sa := -1; { clear breakpoint table }
   for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }
   { clear instruction analyzer table }
@@ -7386,13 +7391,13 @@ begin (* main *)
   load; (* assembles and stores code *)
 
   { if we are to output a deck, write that and stop }
-  if dodckout then begin wrtdck; goto 1 end;
+  if dodckout then begin wrtdck; goto 99 end;
 
   { check and abort if source errors: this indicates a bad intermediate }
   if errsinprg > 0 then begin
     writeln;
     writeln('*** Source program contains errors: ', errsinprg:1);
-    goto 1
+    goto 99
   end;
 
   { initialize file state }
@@ -7428,7 +7433,7 @@ begin (* main *)
     end
   until stopins; { until stop instruction is seen }
 
-  1 : { abort run }
+  99: { abort run }
 
   writeln;
   writeln('program complete');
