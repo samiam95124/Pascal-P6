@@ -26,6 +26,7 @@ procedure deletefile(var fn: filnam); - Delete file by name.
 procedure changefile(var fnd, fns: filnam); - Change filename.
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum); - Get the shell command
                                                            line.
+procedure paroptions; - Parse command line options.
 
 This set of extensions is for the GNU Pascal dialect.
 
@@ -235,7 +236,6 @@ begin
     end
   until bufcommand <> '-'
 end;
-  
 
 procedure exitprogram(ec: integer);
 begin

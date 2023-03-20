@@ -26,6 +26,7 @@ procedure deletefile(var fn: filnam); - Delete file by name.
 procedure changefile(var fnd, fns: filnam); - Change filename.
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum); - Get the shell command
                                                            line.
+procedure paroptions; - Parse command line options.
 
 This set of extensions is for the ISO7185 Pascal language.
 
@@ -129,6 +130,10 @@ begin
   i := 1; putcmd(' ');
   for j := 1 to maxcmd do cb[j] := ' '; j := 1;
   l := 0
+end;
+
+procedure paroptions;
+begin
 end;
 
 procedure exitprogram(ec: integer);
