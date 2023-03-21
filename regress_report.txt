@@ -26,10 +26,12 @@ Pascal-P5 run
 Pascal-P6 run
 0 standard_tests/iso7185pat.dif
 pcom self compile
+0 source/pcom.mpp.dif
 pint self compile
-Sun 19 Mar 2023 01:12:46 PM PDT
+0 standard_tests/iso7185pats.dif
+Mon 20 Mar 2023 03:37:57 AM PDT
 Source files
-59b34f388cca6796651cd651820daef7  -
+16e4cbad8d736d849ddee8de54c5c23b  -
 batch files
 a7e143ddb098c696f40600b9314a89d7  -
 P2 files

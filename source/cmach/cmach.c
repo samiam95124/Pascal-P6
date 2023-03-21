@@ -1167,15 +1167,6 @@ boolean withsch(address b)
     return (f);
 }
 
-address base(long ld)
-{
-    address ad;
-
-    ad = mp;
-    while (ld>0) { ad = getadr(ad+MARKSL); ld = ld-1; }
-    return (ad);
-} /*base*/
-
 void compare(boolean* b, address* a1, address* a2)
 /*comparing is only correct if result by comparing integers will be*/
 {
@@ -2347,13 +2338,13 @@ void sinins()
 
     switch (op) {
 
-    case 0   /*lodi*/: getp(); getq(); pshint(getint(base(p) + q)); break;
-    case 193 /*lodx*/: getp(); getq(); pshint(getbyt(base(p) + q)); break;
-    case 105 /*loda*/: getp(); getq(); pshadr(getadr(base(p) + q)); break;
-    case 106 /*lodr*/: getp(); getq(); pshrel(getrel(base(p) + q)); break;
-    case 107 /*lods*/: getp(); getq(); getset(base(p) + q, s1); pshset(s1); break;
-    case 108 /*lodb*/: getp(); getq(); pshint(getbol(base(p) + q)); break;
-    case 109 /*lodc*/: getp(); getq(); pshint(getchr(base(p) + q)); break;
+    case 0   /*lodi*/: getp(); getq(); pshint(getint(getadr(mp-p*PTRSIZE) + q)); break;
+    case 193 /*lodx*/: getp(); getq(); pshint(getbyt(getadr(mp-p*PTRSIZE) + q)); break;
+    case 105 /*loda*/: getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
+    case 106 /*lodr*/: getp(); getq(); pshrel(getrel(getadr(mp-p*PTRSIZE) + q)); break;
+    case 107 /*lods*/: getp(); getq(); getset(getadr(mp-p*PTRSIZE) + q, s1); pshset(s1); break;
+    case 108 /*lodb*/: getp(); getq(); pshint(getbol(getadr(mp-p*PTRSIZE) + q)); break;
+    case 109 /*lodc*/: getp(); getq(); pshint(getchr(getadr(mp-p*PTRSIZE) + q)); break;
 
     case 1   /*ldoi*/: getq(); pshint(getint(q)); break;
     case 194 /*ldox*/: getq(); pshint(getbyt(q)); break;
@@ -2363,15 +2354,15 @@ void sinins()
     case 68  /*ldob*/: getq(); pshint(getbol(q)); break;
     case 69  /*ldoc*/: getq(); pshint(getchr(q)); break;
 
-    case 2   /*stri*/: getp(); getq(); popint(i); putint(base(p)+q, i); break;
-    case 195 /*strx*/: getp(); getq(); popint(i); putbyt(base(p)+q, i); break;
-    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(base(p)+q, ad); break;
-    case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(base(p)+q, r1); break;
-    case 72  /*strs*/: getp(); getq(); popset(s1); putset(base(p)+q, s1); break;
+    case 2   /*stri*/: getp(); getq(); popint(i); putint(getadr(mp-p*PTRSIZE)+q, i); break;
+    case 195 /*strx*/: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
+    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
+    case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
+    case 72  /*strs*/: getp(); getq(); popset(s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
     case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
-                       putbol(base(p)+q, b1); break;
+                       putbol(getadr(mp-p*PTRSIZE)+q, b1); break;
     case 74  /*strc*/: getp(); getq(); popint(i1); c1 = i1;
-                         putchr(base(p)+q, c1); break;
+                         putchr(getadr(mp-p*PTRSIZE)+q, c1); break;
 
     case 3   /*sroi*/: getq(); popint(i); putint(q, i); break;
     case 196 /*srox*/: getq(); popint(i); putbyt(q, i); break;
@@ -2381,7 +2372,7 @@ void sinins()
     case 78  /*srob*/: getq(); popint(i1); b1 = i1 != 0; putbol(q, b1); break;
     case 79  /*sroc*/: getq(); popint(i1); c1 = i1; putchr(q, c1); break;
 
-    case 4 /*lda*/: getp(); getq(); pshadr(base(p)+q); break;
+    case 4 /*lda*/: getp(); getq(); pshadr(getadr(mp-p*PTRSIZE)+q); break;
     case 5 /*lao*/: getq(); pshadr(q); break;
 
     case 6   /*stoi*/: popint(i); popadr(ad); putint(ad, i); break;
@@ -2438,89 +2429,81 @@ void sinins()
                  /* set function result undefined */
                  for (j = 0; j < q; j++) putdef(sp+j, FALSE);
                  break;
-    case 11 /*mst*/: /*p=level of calling procedure minus level of called
-                       procedure + 1;  set dl and sl, decrement sp*/
-                     /* then length of this element is
-                        max(intsize,realsize,boolsize,charsize,ptrsize */
-                 getp();
-                 ad = sp; /* save mark base */
-                 /* allocate mark as zeros */
-                 for (j = 0; j < MARKSIZE/INTSIZE; j++) pshint(0);
-                 putadr(ad+MARKSL, base(p)); /* sl */
-                 /* the length of this element is ptrsize */
-                 putadr(ad+MARKDL, mp); /* dl */
-                 /* idem */
-                 putadr(ad+MARKEP, ep); /* ep */
-                 /* idem */
+
+    case 11 /*mst*/: getp(); getq(); getq1();
+                  pshadr(mp); /* save old mp on stack */
+                  pshadr(0); /* place current ep */
+                  pshadr(0); /* place bottom of stack */
+                  pshadr(ep); /* previous ep */
+                  ad1 = mp; /* save old mp */
+                  mp = sp; /* set new mp */
+                  /* copy old display to stack */
+                  for (i = 1; i <= p; i++) { ad1 = ad1-PTRSIZE; pshadr(getadr(ad1)); }
+                  pshadr(mp); /* push new mp to complete display */
+                  ad = mp+q; /* q = length of dataseg */
+                  if (ad <= np) errorv(STOREOVERFLOW);
+                  /* clear allocated memory and set undefined */
+                  while (sp > ad) 
+                    { sp = sp-1; store[sp] = 0; putdef(sp, FALSE); }
+                  putadr(mp+MARKSB, sp); /* set bottom of stack */
+                  ep = sp+q1; if (ep <= np) errorv(STOREOVERFLOW);
+                  putadr(mp+MARKET, ep); /* place current ep */
+                  break;
+
+    case 12 /*cup*/: /* q=entry point */
+                 getq(); pshadr(pc); pc = q;
                  break;
 
-    case 12 /*cup*/: /*p=no of locations for parameters, q=entry point*/
-                 getp(); getq();
-                 mp = sp+(p+MARKSIZE); /* mp to base of mark */
-                 putadr(mp+MARKRA, pc); /* place ra */
-                 pc = q;
-                 break;
-
-    case 27 /*cuv*/: /*q=entry point*/
-                 getp(); getq();
-                 mp = sp+(p+MARKSIZE); /* mp to base of mark */
-                 putadr(mp+MARKRA, pc); /* place ra */
-                 pc = getadr(q);
+    case 27 /*cuv*/: /*q=vector entry point*/
+                 getq(); pshadr(pc); pc = getadr(q);
                  break;
 
     case 91 /*suv*/: getq(); getq1(); putadr(q1, q); break;
 
-    case 13 /*ents*/: getq(); ad = mp+q; /*q = length of dataseg*/
-                    if (ad <= np) errorv(STOREOVERFLOW);
-                    /* clear allocated memory and set undefined */
-                    while (sp > ad)
-                      { sp = sp-1; store[sp] = 0; putdef(sp, FALSE); }
-                    putadr(mp+MARKSB, sp); /* set bottom of stack */
-                    break;
-
-    case 173 /*ente*/:  getq(); ep = sp+q;
-                    if (ep <= np) errorv(STOREOVERFLOW);
-                    putadr(mp+MARKET, ep); /* place current ep */
-                    break;
-                    /*q = max space required on stack*/
-
     /* For characters and booleans, need to clean 8 bit results because
       only the lower 8 bits were stored to. */
-    case 130 /*retc*/:
+    case 130 /*retc*/: getq();
+                   ep = getadr(mp+MARKEP);
                    /* set stack below function result */
-                   sp = mp;
+                   sp = mp+MARKSIZE;
+                   popadr(mp); /* restore old mp */
+                   popadr(pc); /* load return address */
+                   sp = sp+q; /* remove parameters */
+                   /* clean result */
                    putint(sp, getchr(sp));
-                   pc = getadr(mp+MARKRA);
-                   ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
                    break;
-    case 131 /*retb*/:
-                   /* set stack below function result */
-                   sp = mp;
-                   putint(sp, getbol(sp));
-                   pc = getadr(mp+MARKRA);
+
+    case 131 /*retb*/:  getq();
                    ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
+                   /* set stack below function result */
+                   sp = mp+MARKSIZE;
+                   popadr(mp); /* restore old mp */
+                   popadr(pc); /* load return address */
+                   sp = sp+q; /* remove parameters */
+                   /* clean result */
+                   putint(sp, getbol(sp));
                    break;
     case 14  /*retp*/:
     case 128 /*reti*/:
     case 204 /*retx*/:
     case 236 /*rets*/:
     case 129 /*retr*/:
-    case 132  /*reta*/:
-                   /* set stack below function result, if any */
-                   sp = mp;
-                   pc = getadr(mp+MARKRA);
+    case 132 /*reta*/: getq();
                    ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
+                   /* set stack below function result, if any */
+                   sp = mp+MARKSIZE;
+                   popadr(mp); /* restore old mp */
+                   popadr(pc); /* load return address */
+                   sp = sp+q; /* remove parameters */
                    break;
 
-    case 237 /*retm*/: getq(); /* we don't use q */
-                   /* set stack below function result, if any */
-                   sp = mp;
-                   pc = getadr(mp+MARKRA);
+    case 237 /*retm*/: getq();
                    ep = getadr(mp+MARKEP);
-                   mp = getadr(mp+MARKDL);
+                   /* set stack below function result, if any */
+                   sp = mp+MARKSIZE;
+                   popadr(mp); /* restore old mp */
+                   popadr(pc); /* load return address */
+                   sp = sp+q; /* remove parameters */
                    break;
 
     case 15 /*csp*/: q = store[pc]; pc = pc+1; callsp(); break;
@@ -2781,20 +2764,17 @@ void sinins()
     case 110 /*rgs*/: popint(i2); popint(i1); rset(s1, i1, i2); pshset(s1);
                       break;
     case 112 /*ipj*/: getp(); getq(); pc = q;
-                 mp = base(p); /* index the mark to restore */
+                 mp = getadr(mp-p*PTRSIZE); /* index the mark to restore */
                  /* restore marks until we reach the destination level */
                  sp = getadr(mp+MARKSB); /* get the stack bottom */
                  ep = getadr(mp+MARKET); /* get the mark ep */
                  break;
-    case 113 /*cip*/: getp(); popadr(ad);
-                mp = sp+(p+MARKSIZE);
-                /* replace next link mp with the one for the target */
-                putadr(mp+MARKSL, getadr(ad+1*PTRSIZE));
-                putadr(mp+MARKRA, pc);
-                pc = getadr(ad);
+    case 113 /*cip*/: popadr(ad); ad1 = mp;
+                mp = getadr(ad+1*PTRSIZE); pshadr(pc); pc = getadr(ad);
                 break;
+    case 13 /*rip*/: getq(); mp = getadr(sp+q); break;
     case 114 /*lpa*/: getp(); getq(); /* place procedure address on stack */
-                pshadr(base(p));
+                pshadr(getadr(mp-p*PTRSIZE));
                 pshadr(q);
                 break;
     case 117 /*dmp*/: getq(); sp = sp+q; break; /* remove top of stack */
@@ -2803,7 +2783,7 @@ void sinins()
 
     case 119 /*tjp*/: getq(); popint(i); if (i != 0) pc = q; break;
 
-    case 120 /*lip*/: getp(); getq(); ad = base(p) + q;
+    case 120 /*lip*/: getp(); getq(); ad = getadr(mp-p*PTRSIZE) + q;
                    ad1 = getadr(ad); ad2 = getadr(ad+1*PTRSIZE);
                    pshadr(ad2); pshadr(ad1);
                    break;
@@ -2987,7 +2967,7 @@ void sinins()
                        putadr(ad2+PTRSIZE, ad1); break;
     case 225 /*ldp*/: popadr(ad); pshadr(getadr(ad+PTRSIZE));
                        pshadr(getadr(ad)); break;
-    case 239 /*cpp*/: getq(); getq1(); ad = sp+MARKSIZE+q; sp = sp-q1; ad1 = sp;
+    case 239 /*cpp*/: getq(); getq1(); ad = sp+q; sp = sp-q1; ad1 = sp;
                       for (i = 0; i < q1; i++) {
                         store[ad1] = store[ad]; putdef(ad1, getdef(ad));
                         ad = ad+1; ad1 = ad1+1;
@@ -3008,16 +2988,22 @@ void sinins()
                     ExecuteExternal(pc-extvecbase);
                     /* set stack below function result, if any */
                     sp = mp;
+                    {???fixme???}
+                    {
                     pc = getadr(mp+MARKRA);
+                    }
                     ep = getadr(mp+MARKEP);
+                    {???fixme???}
+                    {
                     mp = getadr(mp+MARKDL);
+                    }
 #else
                     errorv(EXTERNALSNOTENABLED);
 #endif
                     break;
 
     /* illegal instructions */
-    /* 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 
        252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
