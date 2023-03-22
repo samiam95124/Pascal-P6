@@ -38,7 +38,7 @@
 #define ORDMAXCHAR        255  /* Characters are 8 bit ISO/IEC 8859-1 */
 #define ORDMINCHAR          0
 #define MAXRESULT    REALSIZE  /* maximum size of function result */
-#define MARKSIZE           48  /* maxresult+6*ptrsize */
+#define MARKSIZE           24  /* maxresult+6*ptrsize */
 #define UJPLEN              9  /* length of ujp instruction (used for case
                                   jumps) */
 
@@ -52,17 +52,11 @@
 
   Mark format is:
 
-  -8: Static link.
-  -16: Dynamic link.
-  -24: Saved EP from previous frame.
-  -32: Stack bottom after locals allocate. Used for interprocdural gotos.
-  -40: EP from current frame. Used for interprocedural gotos.
-  -48: Return address
+  0: Saved EP from previous frame.
+  8: Stack bottom after locals allocate. Used for interprocdural gotos.
+  16: EP from current frame. Used for interprocedural gotos.
 
 */
-#define MARKSL              -8  /* static link */
-#define MARKDL              -16 /* dynamic link */
-#define MARKEP              -24 /* (old) maximum frame size */
-#define MARKSB              -32 /* stack bottom */
-#define MARKET              -40 /* current ep */
-#define MARKRA              -48 /* return address */
+#define MARKEP              0 /* (old) maximum frame size */
+#define MARKSB              8 /* stack bottom */
+#define MARKET              16 /* current ep */
