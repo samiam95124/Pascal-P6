@@ -154,6 +154,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <string.h>
 
 /*******************************************************************************
 
@@ -446,6 +447,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
 #define REALEF       9    /* real extra field in floating format -1.0e+000 */
+#define MAXOPT       26   /* number of options */
+#define OPTLEN       10   /* maximum length of option words */
 
 /* version numbers */
 
@@ -498,6 +501,66 @@ typedef struct _wthblk {
     address b;    /* address of block */
 } wthblk;
 
+/******************************* Constants ************************************/
+
+char* opts[] = {
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "ee",
+    "",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z"
+};
+
+char* optsl[] = {
+    "debugflt",
+    "prtlab",
+    "lstcod",
+    "chkdebug",
+    "machdeck",
+    "debugsrc",
+    "prtlabdef",
+    "sourceset",
+    "varblk",
+    "experror",
+    "",
+    "list",
+    "breakheap",
+    "recycle",
+    "chkoverflo",
+    "chkreuse",
+    "chkundef",
+    "reference",
+    "iso7185",
+    "prttables",
+    "undeftag",
+    "chkvar",
+    "debug",
+    "prtlex",
+    "prtdisplay",
+    ""
+};
+
 /**************************** Global Variables ********************************/
 
 address pc;      /*program address register*/
@@ -525,7 +588,7 @@ address expmrk; /* exception address of mp at handlers */
 
 byte bitmsk[8]; /* bits in byte */
 
-long     srclin;  /* current source line executing */
+long    srclin;  /* current source line executing */
 cmdbuf  cmdlin;  /* command line */
 cmdnum  cmdlen;  /* length of command line */
 cmdinx  cmdpos;  /* current position in command line */
@@ -544,6 +607,39 @@ wthptr wthlst; /* active with block pushdown stack */
 int wthcnt; /* number of outstanding with levels */
 wthptr wthfre; /* free with block entries */
 int exitcode; /* exit code for program */
+boolean option[MAXOPT]; /* option array */
+
+/* check flags: these turn on runtime checks */
+boolean dochkovf; /* check arithmetic overflow */
+/* debug flags: turn these on for various dumps and traces */
+boolean dodmplab; /* dump label definitions */
+boolean dotrcrot; /* trace routine executions */
+boolean dotrcins; /* trace instruction executions */
+boolean dosrclin; /* add source line sets to code */
+boolean dotrcsrc; /* trace source line executions (requires dosrclin) */
+boolean dorecycl; /* obey heap space recycle requests */
+boolean dodebug; /* start up debug on entry */
+boolean dodbgflt; /* enter debug on fault */
+/* Don't set this option unless you have file language extensions!
+  It will just cause the run to fail */
+boolean dodbgsrc; /* do source file debugging */
+/* invoke a special recycle mode that creates single word entries on
+  recycle of any object, breaking off and recycling the rest. Once
+  allocated, each entry exists forever, and accesses to it can be
+  checked. */
+boolean dochkrpt; /* check reuse of freed entry (automatically
+                     invokes dorecycl = false */
+boolean donorecpar; /* companion flag to dochkrpt: break returned blocks
+                       as occupied, not free. This essentially converts
+                       disposed blocks to flagged but dead entries that
+                       generate errors on use. */
+boolean dochkdef; /* check undefined accesses */
+boolean dosrcprf; /* do source level profiling */
+boolean dochkcov; /* do code coverage */
+boolean doanalys; /* do analyze */
+boolean dodckout; /* do output code deck */
+boolean dochkvbk; /* do check VAR blocks */
+boolean iso7185; /* iso7185 standard flag */
 
 long i;
 char c1;
@@ -823,6 +919,62 @@ boolean eolncommand(void)
 
 void readlncommand(void)
 { cmdpos = MAXCMD; }
+
+
+/*
+  Parse options from command line.
+*/
+void paroptions(void)
+
+{
+
+    char optst[10+1]; 
+    int  oni; 
+    int  oi; 
+    char ch1;
+
+    do {
+        while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
+        if (bufcommand() == '-') {
+            getcommand();
+            if (bufcommand() == '-') getcommand();
+            if (!isalpha(bufcommand())) {
+                fprintf(stderr, "*** No valid option found");
+                finish(1);
+            }
+        }
+        oni = 0;
+        while (isalpha(bufcommand())) {
+            ch1 = tolower(bufcommand()); 
+            if (optst[oni] == ' ') optst[oni] = ch1; 
+            if (oni < OPTLEN) oni = oni+1;
+            getcommand();
+        }
+        optst[oni] = 0;
+        oi = 0;
+        while (oi < MAXOPT && strcmp(optst, opts[oi]) && strcmp(optst, optsl[oi])) 
+            oi = oi+1;
+        if (!strcmp(optst, opts[oi]) || !strcmp(optst, optsl[oi])) {
+            option[oi] = TRUE; if (bufcommand() == '-') option[oi] = FALSE;
+            if (bufcommand() == '+' || bufcommand() == '-') getcommand();
+            switch (oi) {
+                case 7:  dodmplab   = option[oi];
+                case 8:  dosrclin   = option[oi];
+                case 14: dorecycl   = option[oi];
+                case 15: dochkovf   = option[oi];
+                case 16: dochkrpt   = option[oi];
+                case 13: donorecpar = option[oi];
+                case 17: dochkdef   = option[oi];
+                case 19: iso7185    = option[oi];
+                case 23: dodebug    = option[oi];
+                case 1:  dodbgflt   = option[oi];
+                case 6:  dodbgsrc   = option[oi];
+                case 5:  dodckout   = option[oi];
+                case 9:  dochkvbk   = option[oi];
+            }
+        }
+    } while (bufcommand() == '-');
+}
 
 /* The external assigns read a filename off the command line. The original name
   of the header file is also passed in, and can be used to process. However,
@@ -3028,6 +3180,27 @@ void main (long argc, char *argv[])
     wthfre = NULL;
     exitcode = 0; /* clear program exit code */
 
+    /* Set options. Note not all have internal equivalents. */
+    dochkovf = DOCHKOVF; /* check arithmetic overflow */
+    dodmplab = FALSE; /* dump label definitions */
+    dotrcrot = FALSE; /* trace routine executions */
+    dotrcins = FALSE; /* trace instruction executions */
+    dosrclin = DOSRCLIN; /* add source line sets to code */
+    dotrcsrc = FALSE; /* trace source line executions (requires dosrclin) */
+    dorecycl = DORECYCL; /* obey heap space recycle requests */
+    dodebug = FALSE; /* start up debug on entry */
+    dodbgflt = FALSE; /* enter debug on fault */
+    dodbgsrc = FALSE; /* do source file debugging */
+    dochkrpt = DOCHKRPT; /* check reuse of freed entry (automatically */
+    donorecpar = DONORECPAR; /* break returned blocks as occupied, not free */
+    dochkdef = DOCHKDEF; /* check undefined accesses */
+    dosrcprf = FALSE; /* do source level profiling */
+    dochkcov = FALSE; /* do code coverage */
+    doanalys = FALSE; /* do analyze */
+    dodckout = FALSE; /* do output code deck */
+    dochkvbk = FALSE; /* do check VAR blocks */
+    iso7185 = FALSE; /* iso7185 standard flag */
+
     argc--; argv++; /* discard the program parameter */
 
     /* initialize file state */
@@ -3103,6 +3276,8 @@ void main (long argc, char *argv[])
     /* get the command line */
     getcommandline(argc, argv, cmdlin, &cmdlen);
     cmdpos = 0;
+    /* load command line options */
+    paroptions();
 
     /* prep for the run */
     pc = 0; sp = MAXTOP; np = -1; mp = MAXTOP; ep = 5; srclin = 1;
