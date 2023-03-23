@@ -823,33 +823,27 @@ void errorm(address ea)
 }
 
 /* get bit from defined array */
-#if dochkdef
-#define getdef(a) (!!((storedef[(a)/8])&(1<<(a)%8)))
-#else
-#define getdef(a) TRUE
-#endif
+boolean getdef(address a)
+{
+    if (dochkdef) return (!!((storedef[(a)/8])&(1<<(a)%8)));
+    else return (TRUE);
+}
 
-/* put bit to defined array */
-#if dochkdef
-#define putdef(a, b) (b?((storedef[(a)/8]) |= \
-        (1<<(a)%8)):((storedef[(a)/8]) &= ~(1<<(a)%8)))
-#else
-#define putdef(a, b) FALSE
-#endif
+void putdef(address a, boolean b)
+{
+    if (dochkdef) b?((storedef[(a)/8]) |= \
+        (1<<(a)%8)):((storedef[(a)/8]) &= ~(1<<(a)%8));
+}
 
-/* put swath of bits to defined array */
-#if dochkdef
-#define putswt(s, e, b) { long i; for (i = s; i <= e; i++) putdef(i, b); }
-#else
-#define putswt(s, e, b) do {} while(0)
-#endif
+void putswt(address s, address e, boolean b)
+{
+    if (dochkdef) { long i; for (i = s; i <= e; i++) putdef(i, b); }
+}
 
-/* check location defined and error */
-#if dochkdef
-#define chkdef(a) (getdef(a)?0:errorv(UNDEFINEDLOCATIONACCESS))
-#else
-#define chkdef(a) FALSE
-#endif
+void chkdef(address a)
+{
+    if (dochkdef) getdef(a)?0:errorv(UNDEFINEDLOCATIONACCESS);
+}
 
 /* Command line processing */
 

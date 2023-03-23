@@ -18,14 +18,14 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-92 standard_tests/iso7185prt.dif
+17 standard_tests/iso7185prt.dif
 Pascaline run
 1106 pascaline_tests/pascaline_cmach.dif
-Wed 22 Mar 2023 11:10:29 PM PDT
+Wed 22 Mar 2023 11:40:33 PM PDT
 Source files
 57c929bc50bf82df042aa80eb9221980  -
 batch files
-ff495fb5ada5a005db109af0f2f69e57  -
+5364de99bc0d6386ee06515535366b0b  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
