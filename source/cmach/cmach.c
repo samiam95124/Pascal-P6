@@ -673,7 +673,6 @@ void finish(long e)
         if (!filanamtab[i]) remove(filnamtab[i]);
     }
     printf("\n");
-    if (e) printf("Program aborted\n");
 #ifndef PACKAGE
     printf("program complete\n");
 #endif
