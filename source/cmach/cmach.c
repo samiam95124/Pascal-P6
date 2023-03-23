@@ -824,14 +824,14 @@ void errorm(address ea)
 }
 
 /* get bit from defined array */
-#if DOCHKDEF
+#if dochkdef
 #define getdef(a) (!!((storedef[(a)/8])&(1<<(a)%8)))
 #else
 #define getdef(a) TRUE
 #endif
 
 /* put bit to defined array */
-#if DOCHKDEF
+#if dochkdef
 #define putdef(a, b) (b?((storedef[(a)/8]) |= \
         (1<<(a)%8)):((storedef[(a)/8]) &= ~(1<<(a)%8)))
 #else
@@ -839,14 +839,14 @@ void errorm(address ea)
 #endif
 
 /* put swath of bits to defined array */
-#if DOCHKDEF
+#if dochkdef
 #define putswt(s, e, b) { long i; for (i = s; i <= e; i++) putdef(i, b); }
 #else
 #define putswt(s, e, b) do {} while(0)
 #endif
 
 /* check location defined and error */
-#if DOCHKDEF
+#if dochkdef
 #define chkdef(a) (getdef(a)?0:errorv(UNDEFINEDLOCATIONACCESS))
 #else
 #define chkdef(a) FALSE
@@ -946,8 +946,7 @@ void paroptions(void)
         oni = 0;
         while (isalpha(bufcommand())) {
             ch1 = tolower(bufcommand()); 
-            if (optst[oni] == ' ') optst[oni] = ch1; 
-            if (oni < OPTLEN) oni = oni+1;
+            if (oni < OPTLEN) optst[oni++] = ch1; 
             getcommand();
         }
         optst[oni] = 0;
@@ -957,7 +956,7 @@ void paroptions(void)
         if (!strcmp(optst, opts[oi]) || !strcmp(optst, optsl[oi])) {
             option[oi] = TRUE; if (bufcommand() == '-') option[oi] = FALSE;
             if (bufcommand() == '+' || bufcommand() == '-') getcommand();
-            switch (oi) {
+            switch (oi+1) {
                 case 7:  dodmplab   = option[oi];
                 case 8:  dosrclin   = option[oi];
                 case 14: dorecycl   = option[oi];
@@ -1507,15 +1506,15 @@ void dspspc(address len, address blk)
    else if (blk < gbtop || blk >= np) errorv(BADPOINTERVALUE);
    ad = blk-ADRSIZE; /* index header */
    if (getadr(ad) >= 0) errorv(BLOCKALREADYFREED);
-   if (DORECYCL && !DOCHKRPT && !DONORECPAR) { /* obey recycling requests */
+   if (dorecycl && !dochkrpt && !donorecpar) { /* obey recycling requests */
         putadr(ad, labs(getadr(ad))); /* set block free */
         cscspc(); /* coalesce free space */
-   } else if (DOCHKRPT || DONORECPAR) { /* perform special recycle */
+   } else if (dochkrpt || donorecpar) { /* perform special recycle */
         /* check can break off top block */
         len = labs(getadr(ad)); /* get length */
         if (len >= ADRSIZE*2) {
 
-            if (DONORECPAR) putadr(ad+ADRSIZE, -(labs(getadr(ad))-ADRSIZE));
+            if (donorecpar) putadr(ad+ADRSIZE, -(labs(getadr(ad))-ADRSIZE));
             else putadr(ad+ADRSIZE, labs(getadr(ad))-ADRSIZE);
 
         }
@@ -1968,7 +1967,7 @@ void callsp(void)
                     break;
     case 39 /*nwl*/: /* size of record, size of f const list */
                      popadr(ad1); popint(i);
-                     l = 0; if (i == 0 && DONORECPAR) l = 1;
+                     l = 0; if (i == 0 && donorecpar) l = 1;
                      /* alloc record, size of list, number in list */
                      newspc(ad1+(i+l+1)*INTSIZE, &ad);
                      ad1 = ad+(i+l)*INTSIZE; putint(ad1, i+ADRSIZE+1);
@@ -1997,7 +1996,7 @@ void callsp(void)
                     break;
     case 6 /*wrs*/: popint(w); popadr(ad1); popint(l);
                     popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
-                    if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
+                    if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > labs(w)) l = labs(w); /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "%*.*s", (int)w, (int)l,
@@ -2058,7 +2057,7 @@ void callsp(void)
                      else if (q == 64 || q == 69) rd = 2;
                      lz = q >= 66 && q <= 69;
                      valfil(ad); fn = store[ad];
-                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
+                     if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: writei(stdout, i, w, rd, lz); break;
                           case PRRFN: writei(filtable[PRRFN], i, w, rd, lz); break;
@@ -2090,7 +2089,7 @@ void callsp(void)
                      break;
     case 10/*wrc*/: popint(w); popint(i); c = i; popadr(ad);
                      pshadr(ad); valfil(ad); fn = store[ad];
-                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
+                     if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
                           case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
@@ -2196,7 +2195,7 @@ void callsp(void)
                      break;
     case 25/*wrf*/: popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad];
-                     if (w < 1 && ISO7185) errore(INVALIDFIELDSPECIFICATION);
+                     if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (f < 1) errore(INVALIDFRACTIONSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)f, r);
@@ -2220,7 +2219,7 @@ void callsp(void)
                     dspspc(ad1, ad); break;
     case 40/*dsl*/: popadr(ad1); popint(i); /* get size of record and n tags */
                     /* add padding for zero tag case */
-                    l = 0; if (i == 0 && DONORECPAR) l = 1;
+                    l = 0; if (i == 0 && donorecpar) l = 1;
                     ad = getadr(sp+i*INTSIZE); /* get rec addr */
                     j = i; /* save tag count */
                     /* under us is either the number of tags or the length of the block, if it
@@ -2248,7 +2247,7 @@ void callsp(void)
                     dspspc(ad1, ad);
                     while (i > 0) { popint(j); i = i-1; };
                     popadr(ad);
-                    if (DONORECPAR) {
+                    if (donorecpar) {
                         /* This flag means we are going to keep the entry, even
                          * after disposal. We place a dummy tag below the
                          * pointer just to indicate the space was freed.
@@ -2568,7 +2567,7 @@ void sinins()
     case 94 /*incc*/:
     case 201 /*incx*/:
     case 10 /*inci*/: getq(); popint(i1);
-                   if (DOCHKOVF) if (i1<0 == q<0)
+                   if (dochkovf) if (i1<0 == q<0)
                       if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                    pshint(i1+q);
@@ -2752,7 +2751,7 @@ void sinins()
                           /* outside heap space (which could have
                             contracted!) */
                           errorv(BADPOINTERVALUE);
-                       else if ((DOCHKRPT || DONORECPAR) && a1 != NILVAL) {
+                       else if ((dochkrpt || donorecpar) && a1 != NILVAL) {
                          /* perform use of freed space check */
                          if (isfree(a1))
                            /* attempt to dereference or assign a freed
@@ -2796,12 +2795,12 @@ void sinins()
     case 189 /* inv */: popadr(ad); putdef(ad, FALSE); break;
 
     case 28 /*adi*/: popint(i2); popint(i1);
-                  if (DOCHKOVF) if (i1<0 == i2<0)
+                  if (dochkovf) if (i1<0 == i2<0)
                     if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1+i2); break;
     case 29 /*adr*/: poprel(r2); poprel(r1); pshrel(r1+r2); break;
     case 30 /*sbi*/: popint(i2); popint(i1);
-                  if (DOCHKOVF) if (i1<0 != i2<0)
+                  if (dochkovf) if (i1<0 != i2<0)
                     if (LONG_MAX-labs(i1) < labs(i2)) errore(INTEGERVALUEOVERFLOW);
                   pshint(i1-i2); break;
     case 31 /*sbr*/: poprel(r2); poprel(r1); pshrel(r1-r2); break;
@@ -2812,13 +2811,13 @@ void sinins()
     case 34 /*flo*/: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
 
     case 35 /*trc*/: poprel(r1);
-                  if (DOCHKOVF) if (r1 < -LONG_MAX || r1 > LONG_MAX)
+                  if (dochkovf) if (r1 < -LONG_MAX || r1 > LONG_MAX)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(trunc(r1)); break;
     case 36 /*ngi*/: popint(i1); pshint(-i1); break;
     case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
     case 38 /*sqi*/: popint(i1);
-                if (DOCHKOVF) if (i1 != 0)
+                if (dochkovf) if (i1 != 0)
                   if (labs(i1) > LONG_MAX/labs(i1)) errore(INTEGERVALUEOVERFLOW);
                 pshint(i1*i1); break;
     case 39 /*sqr*/: poprel(r1); pshrel(r1*r1); break;
@@ -2851,20 +2850,20 @@ void sinins()
                      break;
     case 48 /*inn*/: popset(s1); popint(i1); pshint(sisin(i1, s1)); break;
     case 49 /*mod*/: popint(i2); popint(i1);
-                  if (DOCHKOVF) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
+                  if (dochkovf) if (i2 <= 0) errore(INVALIDDIVISORTOMOD);
                   pshint(i1 % i2); break;
     case 50 /*odd*/: popint(i1); pshint(i1&1); break;
     case 51 /*mpi*/: popint(i2); popint(i1);
-                  if (DOCHKOVF) if (i1 != 0 && i2 != 0)
+                  if (dochkovf) if (i1 != 0 && i2 != 0)
                     if (labs(i1) > LONG_MAX / labs(i2))
                       errore(INTEGERVALUEOVERFLOW);
                   pshint(i1*i2); break;
     case 52 /*mpr*/: poprel(r2); poprel(r1); pshrel(r1*r2); break;
     case 53 /*dvi*/: popint(i2); popint(i1);
-                      if (DOCHKOVF) if (i2 == 0) errore(ZERODIVIDE);
+                      if (dochkovf) if (i2 == 0) errore(ZERODIVIDE);
                       pshint(i1/i2); break;
     case 54 /*dvr*/: poprel(r2); poprel(r1);
-                      if (DOCHKOVF) if (r2 == 0.0) errore(ZERODIVIDE);
+                      if (dochkovf) if (r2 == 0.0) errore(ZERODIVIDE);
                       pshrel(r1/r2); break;
     case 55 /*mov*/: getq(); popint(i2); popint(i1);
                  for (i3 = 0; i3 <= q-1; i3++)
@@ -2878,7 +2877,7 @@ void sinins()
     case 104 /*decc*/:
     case 202 /*decx*/:
     case 57  /*deci*/: getq(); popint(i1);
-                    if (DOCHKOVF) if (i1<0 != q<0)
+                    if (dochkovf) if (i1<0 != q<0)
                       if (LONG_MAX-labs(i1) < labs(q))
                         errore(INTEGERVALUEOVERFLOW);
                     pshint(i1-q); break;
@@ -2894,7 +2893,7 @@ void sinins()
 
     case 61 /*ujc*/: errorv(INVALIDCASE); break;
     case 62 /*rnd*/: poprel(r1);
-                  if (DOCHKOVF) if (r1 < -(LONG_MAX+0.5) || r1 > LONG_MAX+0.5)
+                  if (dochkovf) if (r1 < -(LONG_MAX+0.5) || r1 > LONG_MAX+0.5)
                     errore(REALARGUMENTTOOLARGE);
                   pshint(round(r1)); break;
     case 63 /*pck*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
@@ -2960,7 +2959,7 @@ void sinins()
     case 111 /*ivtc*/: getq(); getq1(); getq2(); popint(i); popadr(ad);
                       pshadr(ad); pshint(i);
                       if (i < 0 || i >= getint(q2)) errorv(VALUEOUTOFRANGE);
-                      if (DOCHKDEF) {
+                      if (dochkdef) {
                         b = getdef(ad);
                         if (b) {
                           if (op == 192) j = getint(ad); else j = getbyt(ad);

@@ -30,6 +30,7 @@ pmach=0
 cmach=0
 progfile=""
 package=0
+options=""
 
 for param in "$@" 
 do
@@ -71,6 +72,11 @@ do
 		echo
 		exit 0
 		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
 	elif [ ! -z "$param.pas" ]; then
 
 	
@@ -112,7 +118,7 @@ if [ "$pmach" = "1" ]; then
     echo "o e+" > temp
 	cat temp $progfile.p6 > prd
     rm temp
-	pint
+	pint $options
     cp prr $progfile.p6o
 	mv prr prd
 	pmach
@@ -126,7 +132,7 @@ elif [ "$cmach" = "1" ]; then
 	pint
     cp prr $progfile.p6o
 	mv prr prd
-	cmach
+	cmach $options
 	
 elif [ "$package" = "1" ]; then
 
@@ -140,11 +146,11 @@ elif [ "$package" = "1" ]; then
 	genobj
 	cp prr program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
-	./$progfile
+	./$progfile $options
 	
 else
 
 	cp $progfile.p6 prd
-	pint
+	pint $options
 
 fi
