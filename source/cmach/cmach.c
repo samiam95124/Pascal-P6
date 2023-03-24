@@ -2160,7 +2160,11 @@ void callsp(void)
                          case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
                          case COMMANDFN:
                            errore(CANNOTRESETORREWRITESTANDARDFILE); break;
-                    } else resetfn(fn, FALSE);
+                    } else {
+                         if (filstate[fn] == fsclosed && !filanamtab[fn])
+                           errore(CANNOTRESETCLOSEDTEMPFILE);
+                         resetfn(fn, FALSE);
+                    }
                     break;
     case 23/*rwf*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
@@ -2298,7 +2302,10 @@ void callsp(void)
                          ad1 = ad1+1;
                        }
                      break;
-    case 33/*rsb*/: popadr(ad); valfil(ad); fn = store[ad]; resetfn(fn, TRUE);
+    case 33/*rsb*/: popadr(ad); valfil(ad); fn = store[ad]; 
+                     if (filstate[fn] == fsclosed && !filanamtab[fn])
+                       errore(CANNOTRESETCLOSEDTEMPFILE);
+                     resetfn(fn, TRUE);
                     break;
     case 34/*rwb*/: popadr(ad); valfil(ad); fn = store[ad];
                     rewritefn(fn, TRUE); break;

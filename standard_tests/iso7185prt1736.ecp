@@ -23,7 +23,7 @@ and the following annexes: A,B,C,E.
     18        5    { assign maximum value of integer } 
     19        5    b := maxint; 
     20        8    { now move it completely out of range in floating point only } 
-    21        8    b := b+10.0; 
+    21        8    b := b+10000.0; 
     22       12    { now the assignment is invalid } 
     23       12    a := round(b) 
     24       14  
