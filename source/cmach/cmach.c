@@ -875,7 +875,6 @@ void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
         }
     }
     *l = i;
-printf("getcommandline: command line: %.*s\n", (int)*l, cb);
 }
 
 /*--------------------------------------------------------------------*/
