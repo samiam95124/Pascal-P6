@@ -831,7 +831,7 @@ boolean getdef(address a)
 
 void putdef(address a, boolean b)
 {
-    if (dochkdef) b?((storedef[(a)/8]) |= \
+    if (dochkdef) b?((storedef[(a)/8]) |= 
         (1<<(a)%8)):((storedef[(a)/8]) &= ~(1<<(a)%8));
 }
 
@@ -875,6 +875,7 @@ void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
         }
     }
     *l = i;
+printf("getcommandline: command line: %.*s\n", (int)*l, cb);
 }
 
 /*--------------------------------------------------------------------*/
@@ -935,34 +936,34 @@ void paroptions(void)
                 fprintf(stderr, "*** No valid option found");
                 finish(1);
             }
-        }
-        oni = 0;
-        while (isalpha(bufcommand())) {
-            ch1 = tolower(bufcommand()); 
-            if (oni < OPTLEN) optst[oni++] = ch1; 
-            getcommand();
-        }
-        optst[oni] = 0;
-        oi = 0;
-        while (oi < MAXOPT && strcmp(optst, opts[oi]) && strcmp(optst, optsl[oi])) 
-            oi = oi+1;
-        if (!strcmp(optst, opts[oi]) || !strcmp(optst, optsl[oi])) {
-            option[oi] = TRUE; if (bufcommand() == '-') option[oi] = FALSE;
-            if (bufcommand() == '+' || bufcommand() == '-') getcommand();
-            switch (oi+1) {
-                case 7:  dodmplab   = option[oi];
-                case 8:  dosrclin   = option[oi];
-                case 14: dorecycl   = option[oi];
-                case 15: dochkovf   = option[oi];
-                case 16: dochkrpt   = option[oi];
-                case 13: donorecpar = option[oi];
-                case 17: dochkdef   = option[oi];
-                case 19: iso7185    = option[oi];
-                case 23: dodebug    = option[oi];
-                case 1:  dodbgflt   = option[oi];
-                case 6:  dodbgsrc   = option[oi];
-                case 5:  dodckout   = option[oi];
-                case 9:  dochkvbk   = option[oi];
+            oni = 0;
+            while (isalpha(bufcommand())) {
+                ch1 = tolower(bufcommand()); 
+                if (oni < OPTLEN) optst[oni++] = ch1; 
+                getcommand();
+            }
+            optst[oni] = 0;
+            oi = 0;
+            while (oi < MAXOPT-1 && strcmp(optst, opts[oi]) && strcmp(optst, optsl[oi])) 
+                oi = oi+1;
+            if (!strcmp(optst, opts[oi]) || !strcmp(optst, optsl[oi])) {
+                option[oi] = TRUE; if (bufcommand() == '-') option[oi] = FALSE;
+                if (bufcommand() == '+' || bufcommand() == '-') getcommand();
+                switch (oi+1) {
+                    case 7:  dodmplab   = option[oi];
+                    case 8:  dosrclin   = option[oi];
+                    case 14: dorecycl   = option[oi];
+                    case 15: dochkovf   = option[oi];
+                    case 16: dochkrpt   = option[oi];
+                    case 13: donorecpar = option[oi];
+                    case 17: dochkdef   = option[oi];
+                    case 19: iso7185    = option[oi];
+                    case 23: dodebug    = option[oi];
+                    case 1:  dodbgflt   = option[oi];
+                    case 6:  dodbgsrc   = option[oi];
+                    case 5:  dodckout   = option[oi];
+                    case 9:  dochkvbk   = option[oi];
+                }
             }
         }
     } while (bufcommand() == '-');
