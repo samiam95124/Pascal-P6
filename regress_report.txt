@@ -21,9 +21,17 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline_cmach.dif
-Sat 25 Mar 2023 10:23:42 AM PDT
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
+Sat 25 Mar 2023 11:50:46 AM PDT
 Source files
-57c929bc50bf82df042aa80eb9221980  -
+16e4cbad8d736d849ddee8de54c5c23b  -
 batch files
 fd019bfb7e8f28986d46fd7a6f478a3e  -
 P2 files
