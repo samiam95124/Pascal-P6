@@ -6629,22 +6629,22 @@ end;
 procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
-    s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean;
+    s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
     eres: expres; deffld: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
-    s := 0; e := 10;
+    s := 0; e := lsttop-1; l := 10;
     skpspc(dbc);
-    if not chkend(dbc) then begin expr(i); s := i; e := s+10-1 end;
+    if not chkend(dbc) then begin expr(i); s := i end;
     skpspc(dbc);
     if chkchr(dbc) = ':' then
-      begin nxtchr(dbc); expr(i); e := s+i-1 end
-    else if not chkend(dbc) then begin expr(i); e := i end;
+      begin nxtchr(dbc); expr(i); l := i end
+    else if not chkend(dbc) then begin expr(i); e := i; l := maxint end;
     if e > lsttop-1 then e := lsttop-1;
     wrtnewline; writeln;
     writeln('Addr    Op Ins            P  Q');
     writeln('----------------------------------');
-    while s <= e do begin
+    while (s <= e) and (l > 0) do begin
       if isbrk(s) then write('b')
       else if istrc(s) then write('t')
       else write(' ');
@@ -6653,7 +6653,8 @@ begin
       write(' ');
       wrthex(output, s, maxdigh, true);
       lstins(s);
-      writeln
+      writeln;
+      l := l-1
     end
   end else if cn = 'd         ' then begin { dump memory }
     s := 0; e := lsttop;
