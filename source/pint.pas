@@ -6633,9 +6633,9 @@ var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     eres: expres; deffld: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
-    s := 0; e := lsttop-1;
+    s := 0; e := 10;
     skpspc(dbc);
-    if not chkend(dbc) then begin expr(i); s := i end;
+    if not chkend(dbc) then begin expr(i); s := i; e := s+10-1 end;
     skpspc(dbc);
     if chkchr(dbc) = ':' then
       begin nxtchr(dbc); expr(i); e := s+i-1 end
@@ -6775,8 +6775,8 @@ begin
     fndmnm(bp); { find if module specified }
     if bp = nil then { none found }
       begin setcur; if curmod = nil then error(emodmba); bp := curmod end;
-    s := 0; e := maxsrc;
-    skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i end;
+    s := 0; e := 10;
+    skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i; e := s+10-1 end;
     skpspc(dbc);
     if chkchr(dbc) = ':' then
       begin nxtchr(dbc); expr(i); e := s+i-1 end
