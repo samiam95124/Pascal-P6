@@ -1,5 +1,63 @@
 Regression Summary
 Line counts should be 0 for pass
+pint run
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+PRT run
+0 standard_tests/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/pascaline.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
+pmach run
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+PRT run
+0 standard_tests/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/pascaline_pmach.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+0 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
 cmach run
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -29,9 +87,9 @@ pcom self compile
 0 source/pcom.mpp.dif
 pint self compile
 0 standard_tests/iso7185pats.dif
-Sat 25 Mar 2023 11:50:46 AM PDT
+Mon 27 Mar 2023 11:07:59 AM PDT
 Source files
-16e4cbad8d736d849ddee8de54c5c23b  -
+410be3c4beaa3f3117e9835e9c3e37a9  -
 batch files
 fd019bfb7e8f28986d46fd7a6f478a3e  -
 P2 files
