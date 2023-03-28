@@ -6709,7 +6709,7 @@ begin
         if bp = nil then error(emodmba)
       end
     end;
-    if bp2 <> nil then s := bp^.bstart
+    if bp2 <> nil then s := bp2^.bstart
     else begin { not a routine, get line no }
       expr(l); if l > maxsrc then error(einvsln);
       if bp^.lintrk^[l] < 0 then error(einvsln);
