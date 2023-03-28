@@ -5480,15 +5480,6 @@ procedure dmpdsp(mp: address);
 begin
   wrtnewline; writeln;
   write('Mark @'); wrthex(output, mp, maxdigh, true); writeln;
-  {???fixme???}
-  {
-  write('sl: '); wrthex(output, mp+marksl, 8, true); write(': ');
-  if getdef(mp+marksl) then wrthex(output, getadr(mp+marksl), 8, true)
-  else write('********'); writeln;
-  write('dl: '); wrthex(output, mp+markdl, 8, true); write(': ');
-  if getdef(mp+markdl) then wrthex(output, getadr(mp+markdl), 8, true)
-  else write('********'); writeln;
-  }
   write('ep: '); wrthex(output, mp+markep, 8, true); write(': ');
   if getdef(mp+markep) then wrthex(output, getadr(mp+markep), 8, true)
   else write('********'); writeln;
@@ -5498,12 +5489,6 @@ begin
   write('et: '); wrthex(output, mp+market, 8, true); write(': ');
   if getdef(mp+market) then wrthex(output, getadr(mp+market), 8, true)
   else write('********'); writeln;
-  {???fixme???}
-  {
-  write('ra: '); wrthex(output, mp+markra, 8, true); write(': ');
-  if getdef(mp+markra) then wrthex(output, getadr(mp+markra), 8, true)
-  else write('********'); writeln;
-  }
   writeln
 end;
 
@@ -5544,9 +5529,7 @@ end;
 { test if there are any frames }
 function noframe: boolean;
 begin
-  { for this mark system, the mp points at frame top, so sp = mp means not
-    allocated }
-  noframe := sp = mp
+  noframe := mp = maxtop { mp at top of memory }
 end;
 
 { test if last frame }
