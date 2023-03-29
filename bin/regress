@@ -206,32 +206,32 @@ echo Line counts should be 0 for pass >> regress_report.txt
 if [ "$pint" = "1" ]; then
 
     option=""
-    echo "pint run" >> regress_report.txt
+    echo "pint run ***************************************" >> regress_report.txt
     do_regress
 
 elif [ "$pmach" = "1" ]; then
 
     option="--pmach"
-    echo "pmach run" >> regress_report.txt
+    echo "pmach run ***************************************" >> regress_report.txt
     do_regress
 
 elif [ "$cmach" = "1" ]; then
 
     option="--cmach"
-    echo "cmach run" >> regress_report.txt
+    echo "cmach run ***************************************" >> regress_report.txt
     do_regress
 
 else
 
     # run all modes
     option=""
-    echo "pint run" >> regress_report.txt
+    echo "pint run ***************************************" >> regress_report.txt
     do_regress
     option="--pmach"
-    echo "pmach run" >> regress_report.txt
+    echo "pmach run ***************************************" >> regress_report.txt
     do_regress
     option="--cmach"
-    echo "cmach run" >> regress_report.txt
+    echo "cmach run ***************************************" >> regress_report.txt
     do_regress
 
 fi
@@ -241,6 +241,7 @@ fi
 #
 echo ""
 date >> regress_report.txt
+echo "Files md5sum ***************************************"
 chkfiles >> regress_report.txt
 cat regress_report.txt
 echo ""
