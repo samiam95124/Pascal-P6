@@ -5229,15 +5229,9 @@ begin
                     ExecuteExternal(pc-extvecbase);
                     { set stack below function result, if any }
                     sp := mp;
-                    {???fixme???}
-                    {
-                    pc := getadr(mp+markra);
-                    }
+                    pc := getadr(mp+marksize+adrsize);
                     ep := getadr(mp+markep);
-                    {???fixme???}
-                    {
-                    mp := getadr(mp+markdl)
-                    }
+                    mp := getadr(mp+marksize)
 #else
                     errorv(ExternalsNotEnabled)
 #endif
@@ -5566,12 +5560,8 @@ begin
     repeat
       fndsym; { find in this frame }
       if fs = nil then begin
-        {???fixme???}
-        {cpc := getadr(ma+markra);} { get next frame }
-        {???fixme???}
-        {
-        ma := getadr(ma+marksl)
-        }
+        cpc := getadr(ma+marksize+adrsize); { get next frame pc }
+        ma := getadr(ma+marksize)
       end
     until (fs <> nil) or (ma = maxtop); { found or no next frame }
   end
@@ -5643,11 +5633,8 @@ begin
           ma := mp; ad := pc;
           while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and
                 (ma <> maxtop) do begin
-            {???fixme???}
-            {
-            ad := getadr(ma+markra);
-            ma := getadr(ma+marksl)
-            }
+            ad := getadr(ma+marksize+adrsize);
+            ma := getadr(ma+marksize)
           end;
           if ma = maxtop then error(eblkmba)
         end
@@ -6669,8 +6656,7 @@ begin
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc; eps := getadr(s+market);
-      {???fixme???}
-      repeat dmpfrm(s, eps, pcs); {pcs := getadr(s+markra);}
+      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+marksize+ptrsize);
         e := s; {s := getadr(s+marksl);} eps := getadr(s+market); i := i-1;
       until (i = 0) or lastframe(e)
     end
@@ -6950,10 +6936,7 @@ begin
           end;
           writeln
         end;
-        {???fixme???}
-        {
-        pcs := getadr(s+markra); e := s; s := getadr(s+marksl); i := i-1
-        }
+        pcs := getadr(s+marksize+ptrsize); e := s; s := getadr(s+marksize); i := i-1
       until (i = 0) or lastframe(e)
     end
   end else if cn = 'hs        ' then repspc { report heap space }
