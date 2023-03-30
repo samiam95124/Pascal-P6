@@ -233,7 +233,8 @@ begin
           24:; 25:; 26:; 11:; 10:; 18:;
         end
       end;
-    end
+    end;
+    while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand
   until bufcommand <> '-'
 end;
 

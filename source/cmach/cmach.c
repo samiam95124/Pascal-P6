@@ -965,6 +965,7 @@ void paroptions(void)
                 }
             }
         }
+        while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     } while (bufcommand() == '-');
 }
 
