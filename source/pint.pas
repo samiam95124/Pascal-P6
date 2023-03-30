@@ -5526,10 +5526,16 @@ begin
   end
 end;
 
+{ test if there are any frames }
+function noframe: boolean;
+begin
+  noframe := mp  = maxtop { mp at top of memory }
+end;
+
 { test if last frame }
 function lastframe(ma: address): boolean;
 begin
-  lastframe := ma = maxtop { ma at top of memory }
+  lastframe := getadr(ma+marksize) = maxtop { ma at top of memory }
 end;
 
 { find active symbol }
@@ -5554,7 +5560,7 @@ begin
 end;
 begin
   fs := nil;
-  if not lastframe(mp) then begin { there is an active frame }
+  if not noframe then begin { there is an active frame }
     ma := mp; { set current mark }
     cpc := pc; { set current pc }
     repeat
@@ -6649,16 +6655,16 @@ begin
     write('Stack/Heap  '); prtrng(gbtop, maxstr);
     writeln
   end else if cn = 'dd        ' then begin { dump displays }
-    if lastframe(mp) then
+    if noframe then
       begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
-      repeat dmpdsp(s); s := getadr(s+marksize); i := i-1
-      until (i = 0) or lastframe(s)
+      repeat dmpdsp(s); e := s; s := getadr(s+marksize); i := i-1
+      until (i = 0) or lastframe(e)
     end
   end else if (cn = 'df        ') then begin
-    if lastframe(mp) then
+    if noframe then
       begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
@@ -6918,7 +6924,7 @@ begin
     writeln
   end else if (cn = 'pl        ') or
               (cn = 'pp        ') then begin { print locals }
-    if lastframe(mp) then
+    if noframe then
       begin wrtnewline; writeln; writeln('No displays active'); writeln end
     else begin
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
