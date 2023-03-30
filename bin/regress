@@ -201,7 +201,8 @@ do
     
 done
 
-echo "Regression Summary" > regress_report.txt
+echo "************ Regression Summary *************" > regress_report.txt
+date >> regress_report.txt
 echo Line counts should be 0 for pass >> regress_report.txt
 if [ "$pint" = "1" ]; then
 
@@ -241,7 +242,7 @@ fi
 #
 echo ""
 date >> regress_report.txt
-echo "Files md5sum ***************************************"
+echo "Files md5sum ***************************************" >> regress_report.txt
 chkfiles >> regress_report.txt
 cat regress_report.txt
 echo ""

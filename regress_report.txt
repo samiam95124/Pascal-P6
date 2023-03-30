@@ -1,6 +1,6 @@
 Regression Summary
 Line counts should be 0 for pass
-pint run
+pint run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
@@ -29,7 +29,7 @@ pcom self compile
 0 source/pcom.mpp.dif
 pint self compile
 0 standard_tests/iso7185pats.dif
-pmach run
+pmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
@@ -58,7 +58,7 @@ pcom self compile
 0 source/pcom.mpp.dif
 pint self compile
 0 standard_tests/iso7185pats.dif
-cmach run
+cmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
@@ -87,11 +87,11 @@ pcom self compile
 0 source/pcom.mpp.dif
 pint self compile
 0 standard_tests/iso7185pats.dif
-Mon 27 Mar 2023 11:07:59 AM PDT
+Wed 29 Mar 2023 11:53:52 AM PDT
 Source files
-410be3c4beaa3f3117e9835e9c3e37a9  -
+891863236b956e6510d4e394e4092357  -
 batch files
-fd019bfb7e8f28986d46fd7a6f478a3e  -
+d88004801e385ccad026de6d8e67233b  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
