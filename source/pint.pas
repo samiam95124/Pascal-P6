@@ -666,6 +666,7 @@ var   pc, pcs     : address;   (*program address register*)
       extvecs     : integer; { number of external vectors }
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
+      breakflag   : boolean; { user break signaled }
 
       i           : integer;
       c1          : char;
@@ -7211,6 +7212,10 @@ begin (* main *)
   if experiment then write('.x');
   writeln;
   writeln;
+
+  { capture user breaks, if possible }
+  breakflag := false;
+  capture;
 
   { find integer parameters }
   i := maxint;  maxdig := 0;

@@ -243,5 +243,23 @@ begin
   halt(ec)
 end;
 
+procedure ctlchandler(sig: integer);
+begin
+  breakflag := true
+end;
+
+procedure signal(signum: integer; handler: integer); external name 'signal';
+
+procedure capture;
+begin
+  signal(2, integer(addr(ctlchandler)));
+  signal(6, integer(addr(ctlchandler)))
+end;
+
+function chkbrk: boolean;
+begin
+  chkbrk := breakflag
+end;
+
 { Restore to ISO 7185 Pascal language }
 {$classic-pascal-level-0}

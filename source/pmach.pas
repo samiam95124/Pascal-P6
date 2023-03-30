@@ -566,6 +566,7 @@ var   pc          : address;   (*program address register*)
       newline     : boolean; { output is on new line (unused) }
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
+      breakflag   : boolean; { user break signaled }
       
       i           : integer;
       c1          : char;

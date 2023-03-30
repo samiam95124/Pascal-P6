@@ -670,6 +670,8 @@ var
     cmdlen: cmdnum; { length of command line }
     cmdpos: cmdinx; { current position in command line }
 
+    breakflag: boolean; { user break signaled }
+
     f: boolean; { flag for if error number list entries were printed }
     i: 1..maxftl; { index for error number tracking array }
     oi: 1..maxopt; oni: optinx;
