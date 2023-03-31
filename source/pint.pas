@@ -4364,7 +4364,7 @@ begin
       assigntext(f, fn); reset(f); i := 1;
       nl := true;
       while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
-      while (i <= e) and not eof(f) do begin
+      while (i <= e) and not eof(f) and not chkbrk do begin
         if nl then begin { output line head }
           write(i:4, ': ');
           if dosrcprf then write(bp^.linprf^[i]:6, ': ');
@@ -5432,7 +5432,7 @@ procedure dmpmem(s, e: address);
        f, l: boolean;
        ba: address;
 begin l := false; for i := 1 to 16 do bs[i] := 0;
-   while s <= e do begin
+   while (s <= e) and not chkbrk do begin
      ba := s; i := 1; f := true;
      while (s <= e) and (i <= 16) do begin
        if bs[i] <> store[s] then f := false;
@@ -6596,7 +6596,7 @@ procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
-    eres: expres; deffld: boolean;
+    eres: expres; deffld: boolean; brk: boolean;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1; l := 10;
@@ -6610,7 +6610,7 @@ begin
     wrtnewline; writeln;
     writeln('Addr    Op Ins            P  Q');
     writeln('----------------------------------');
-    while (s <= e) and (l > 0) do begin
+    while (s <= e) and (l > 0) and not chkbrk do begin
       if isbrk(s) then write('b')
       else if istrc(s) then write('t')
       else write(' ');
@@ -6649,7 +6649,7 @@ begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
       repeat dmpdsp(s); e := s; s := getadr(s+marksize); i := i-1
-      until (i = 0) or lastframe(e)
+      until (i = 0) or lastframe(e) or chkbrk
     end
   end else if (cn = 'df        ') then begin
     if noframe then
@@ -6659,7 +6659,7 @@ begin
       s := mp; pcs := pc; eps := getadr(s+market);
       repeat dmpfrm(s, eps, pcs); pcs := getadr(s+marksize+ptrsize);
         e := s; {s := getadr(s+marksl);} eps := getadr(s+market); i := i-1;
-      until (i = 0) or lastframe(e)
+      until (i = 0) or lastframe(e) or chkbrk
     end
   end else if (cn = 'b         ') or
               (cn = 'tp        ') then begin
@@ -6722,7 +6722,7 @@ begin
   end else if (cn = 'si        ') or
               (cn = 'sis       ') then begin { step instruction }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
-    while i > 0 do begin
+    while (i > 0) and not chkbrk do begin
       sinins;
       if watchmatch then begin watchmatch := false; prtwth end;
       if cn = 'si        ' then prthdr; i := i-1;
@@ -6755,11 +6755,15 @@ begin
     while i > 0 do begin
       repeat
         sinins;
+        brk := chkbrk;
         if watchmatch then begin watchmatch := false; prtwth end
-      until stopins or sourcemark;
+      until stopins or sourcemark or brk;
       sinins; if cn = 's         ' then prthdr; i := i-1;
+      if brk then begin
+        writeln('*** Program stopped by user break');
+        i := 0
       { if we hit break or stop, just stay on that instruction }
-      if breakins then begin
+      end else if breakins then begin
         writeln('*** Break instruction hit');
         i := 0
       end else if stopins then begin
@@ -6884,7 +6888,7 @@ begin
   end else if cn = 'lsa       ' then begin { list source analysis }
     i := lstana(aniptr); writeln; writeln('last source lines executed:');
     wrtnewline; writeln;
-    while i > 0 do begin
+    while (i > 0) and not chkbrk do begin
       if anstbl[i] <= 0 then i := 0
       else begin
         prtsrc(nil, anstbl[i], anstbl[i], false); i := lstana(i);
@@ -6895,16 +6899,18 @@ begin
   end else if cn = 'pg        ' then begin { print globals }
     wrtnewline; writeln; writeln('Globals:'); writeln;
     bp := blklst; { index top of block list }
-    while bp <> nil do begin
+    brk := false; { set no break }
+    while (bp <> nil) and not brk do begin
       syp := bp^.symbols;
-      while syp <> nil do begin { traverse symbols list }
+      while (syp <> nil) and brk do begin { traverse symbols list }
         if syp^.styp = stglobal then begin
           writev(output, syp^.name, 20); write(' ');
           s := pctop+syp^.off; p := 1;
           prttyp(s, syp^.digest, p, false, 10, 1, true, false, 0);
-          writeln
+          writeln;
         end;
-        syp := syp^.next
+        syp := syp^.next;
+        brk := chkbrk
       end;
       bp := bp^.next
     end;
@@ -6917,6 +6923,7 @@ begin
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc;
       wrtnewline;
+      brk := false;
       repeat
         bp := fndblk(pcs);
         if bp = nil then error(eblknf);
@@ -6925,7 +6932,7 @@ begin
           write('Locals for block: '); writev(output, bp^.name, lenpv(bp^.name));
           writeln; writeln;
           syp := bp^.symbols;
-          while syp <> nil do begin { traverse symbols list }
+          while (syp <> nil) and not brk do begin { traverse symbols list }
             if ((syp^.styp = stlocal) and (cn <> 'pp        ')) or
                (syp^.styp = stparam) then begin
               writev(output, syp^.name, 20); write(' ');
@@ -6933,12 +6940,13 @@ begin
               prttyp(e, syp^.digest, p, false, 10, 1, true, false, 0);
               writeln
             end;
-            syp := syp^.next
+            syp := syp^.next;
+            brk := chkbrk
           end;
           writeln
         end;
         pcs := getadr(s+marksize+ptrsize); e := s; s := getadr(s+marksize); i := i-1
-      until (i = 0) or lastframe(e)
+      until (i = 0) or lastframe(e) or brk
     end
   end else if cn = 'hs        ' then repspc { report heap space }
   else if cn = 'pc        ' then begin { set pc }
@@ -7067,7 +7075,8 @@ begin
     writeln('Symbols:');
     writeln;
     bp := blklst;
-    while bp <> nil do begin
+    brk := false;
+    while (bp <> nil) and not brk do begin
       write('Block: '); writev(output, bp^.name, 20);
       write(' ');
       case bp^.btyp of
@@ -7083,7 +7092,7 @@ begin
       writeln;
       writeln;
       syp := bp^.symbols;
-      while syp <> nil do begin
+      while (syp <> nil) and not brk do begin
         write('   Symbol: '); writev(output, syp^.name, 40);
         write(' ');
         case syp^.styp of
@@ -7093,7 +7102,8 @@ begin
         end;
         write(' ', syp^.off:10, ' ');
         writev(output, syp^.digest, lenpv(syp^.digest));
-        writeln; syp := syp^.next
+        writeln; syp := syp^.next;
+        brk := chkbrk
       end;
       writeln;
       bp := bp^.next
