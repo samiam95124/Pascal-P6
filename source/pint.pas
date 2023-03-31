@@ -6754,11 +6754,14 @@ begin
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
     while i > 0 do begin
       repeat
+        stopins := false; { set no stop flag }
+        sourcemark := false; { set no source line instruction }
+        watchmatch := false; { set no watch was matched }
         sinins;
         brk := chkbrk;
         if watchmatch then begin watchmatch := false; prtwth end
       until stopins or sourcemark or brk;
-      sinins; if cn = 's         ' then prthdr; i := i-1;
+      if cn = 's         ' then prthdr; i := i-1;
       if brk then begin
         writeln('*** Program stopped by user break');
         i := 0
