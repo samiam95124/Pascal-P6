@@ -7389,15 +7389,20 @@ begin (* main *)
     stopwatch := true; { set stop on watch match }
     watchmatch := false; { set no watch was matched }
     sinins;
-    { if breakpoint hit, go debugger }
-    if breakins or (stopins and dodebug) or watchmatch then begin
-      if stopins then
-        begin wrtnewline; writeln; writeln('*** Stop instruction hit') end;
-      breakins := false; stopins := false; writeln;
-      if not watchmatch and not istrc(pc) then
-        begin wrtnewline; writeln('=== break ===') end;
-      debug
-    end
+    if chkbrk then begin
+      wrtnewline;
+      writeln('*** Program stopped by user break');
+      if dodebug or dodbgflt then debug else goto 99
+    end else
+      { if breakpoint hit, go debugger }
+      if breakins or (stopins and dodebug) or watchmatch then begin
+        if stopins then
+          begin wrtnewline; writeln; writeln('*** Stop instruction hit') end;
+        breakins := false; stopins := false; writeln;
+        if not watchmatch and not istrc(pc) then
+          begin wrtnewline; writeln('=== break ===') end;
+        debug
+      end
   until stopins; { until stop instruction is seen }
 
   99: { abort run }

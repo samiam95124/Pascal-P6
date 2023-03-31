@@ -258,7 +258,8 @@ end;
 
 function chkbrk: boolean;
 begin
-  chkbrk := breakflag
+  chkbrk := breakflag;
+  breakflag := false
 end;
 
 { Restore to ISO 7185 Pascal language }
