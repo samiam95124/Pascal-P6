@@ -6908,7 +6908,7 @@ begin
     brk := false; { set no break }
     while (bp <> nil) and not brk do begin
       syp := bp^.symbols;
-      while (syp <> nil) and brk do begin { traverse symbols list }
+      while (syp <> nil) and not brk do begin { traverse symbols list }
         if syp^.styp = stglobal then begin
           writev(output, syp^.name, 20); write(' ');
           s := pctop+syp^.off; p := 1;
