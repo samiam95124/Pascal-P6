@@ -6911,7 +6911,7 @@ begin
       while (syp <> nil) and not brk do begin { traverse symbols list }
         if syp^.styp = stglobal then begin
           writev(output, syp^.name, 20); write(' ');
-          s := pctop+syp^.off; p := 1;
+          s := syp^.off; p := 1;
           prttyp(s, syp^.digest, p, false, 10, 1, true, false, 0);
           writeln;
         end;
