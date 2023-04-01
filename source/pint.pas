@@ -5428,15 +5428,15 @@ end;
 
 procedure dmpmem(s, e: address);
    var i, x: integer;
-       bs: array [1..16] of ibyte;
+       bs: array [1..16] of ibyte; bd: array [1..16] of boolean;
        f, l: boolean;
        ba: address;
-begin l := false; for i := 1 to 16 do bs[i] := 0;
+begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
    while (s <= e) and not chkbrk do begin
      ba := s; i := 1; f := true;
      while (s <= e) and (i <= 16) do begin
-       if bs[i] <> store[s] then f := false;
-       bs[i] := store[s]; s := s+1; i := i+1
+       if (bs[i] <> store[s]) or not bd[i] then f := false;
+       bs[i] := store[s]; bd[i] := true; s := s+1; i := i+1
      end;
      if not f or (i < 16) then begin
        if l then begin
