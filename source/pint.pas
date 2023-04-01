@@ -6596,7 +6596,7 @@ procedure dbgins;
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
-    eres: expres; deffld: boolean; brk: boolean;
+    eres: expres; deffld: boolean; brk: boolean; sls: integer;
 begin
   if cn = 'li        ' then begin { list instructions }
     s := 0; e := lsttop-1; l := 10;
@@ -6752,6 +6752,7 @@ begin
   end else if (cn = 's         ') or
               (cn = 'ss        ') then begin { step source line }
     i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
+    sls := srclin; { save current source line }
     while i > 0 do begin
       repeat
         stopins := false; { set no stop flag }
@@ -6760,7 +6761,9 @@ begin
         sinins;
         brk := chkbrk;
         if watchmatch then begin watchmatch := false; prtwth end
-      until stopins or sourcemark or brk;
+      until stopins or (sourcemark and (srclin <> sls)) or brk;
+      { advance over any other source markers }
+      while store[pc] = 174 {mrkl} do sinins;
       if cn = 's         ' then prthdr; i := i-1;
       if brk then begin
         writeln('*** Program stopped by user break');
@@ -7384,12 +7387,12 @@ begin (* main *)
   for i := 1 to maxfil do
     begin filstate[i] := fnone; filanamtab[i] := false end;
 
-  pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 1;
+  pc := 0; sp := maxtop; np := -1; mp := maxtop; ep := 5; srclin := 0;
   expadr := 0; expstk := 0; expmrk := 0;
 
   { set breakpoint at 0 to kick off debugger }
   if dodebug then
-    begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 1;
+    begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 0;
           store[0] := brkins end;
 
   debugstart := false; setcur;
