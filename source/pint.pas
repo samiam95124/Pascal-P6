@@ -6935,7 +6935,9 @@ begin
         if bp = nil then error(eblknf);
         if (bp^.btyp = btproc) or (bp^.btyp = btfunc) then begin
           writeln;
-          write('Locals for block: '); writev(output, bp^.name, lenpv(bp^.name));
+          if (cn = 'pl        ') then write('Locals for block: ')
+          else write('Parameters for block: ');
+          writev(output, bp^.name, lenpv(bp^.name));
           writeln; writeln;
           syp := bp^.symbols;
           while (syp <> nil) and not brk do begin { traverse symbols list }
