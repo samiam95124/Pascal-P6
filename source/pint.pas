@@ -6939,8 +6939,8 @@ begin
           writeln; writeln;
           syp := bp^.symbols;
           while (syp <> nil) and not brk do begin { traverse symbols list }
-            if ((syp^.styp = stlocal) and (cn <> 'pp        ')) or
-               (syp^.styp = stparam) then begin
+            if ((syp^.styp = stlocal) and (cn = 'pl        ')) or
+               ((syp^.styp = stparam) and (cn = 'pp        ')) then begin
               writev(output, syp^.name, 20); write(' ');
               e := s+syp^.off; p := 1;
               prttyp(e, syp^.digest, p, false, 10, 1, true, false, 0);
