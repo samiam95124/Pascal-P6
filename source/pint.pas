@@ -5492,8 +5492,7 @@ var bp: pblock; line: integer;
 function addr2line(a: address): integer;
 begin
   i := 1;
-  while (curmod^.lintrk^[i] < a) and (i < maxsrc) and
-        (curmod^.lintrk^[i] >= 0) do i := i+1;
+  while (curmod^.lintrk^[i] < a) and (i < maxsrc) do i := i+1;
   if i > 1 then i := i-1;
   if curmod^.lintrk^[i] < 0 then error(elinnf);
   addr2line := i
@@ -6658,7 +6657,8 @@ begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc; eps := getadr(s+market);
       repeat dmpfrm(s, eps, pcs); pcs := getadr(s+marksize+ptrsize);
-        e := s; {s := getadr(s+marksl);} eps := getadr(s+market); i := i-1;
+        e := s; s := getadr(s+marksize);
+        if not lastframe(e) then begin eps := getadr(s+market); i := i-1 end
       until (i = 0) or lastframe(e) or chkbrk
     end
   end else if (cn = 'b         ') or
