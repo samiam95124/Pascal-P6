@@ -408,7 +408,7 @@ const
       maxbrk      = 10;   { maximum number of breakpoints }
       brkins      = 19;   { breakpoint instruction no. }
       mrkins      = 174;  { source line marker instruction executed }
-      mrkinsl     = 5;    { length of that instruction }
+      mrkinsl     = 1;    { length of that instruction (minus line address) }
       varsqt      = 10;   { variable string quanta }
       { 25k lines is well above my personal limit. I tend to split files with
         more than 10,000 lines. Obviously others think that's excessive. }
@@ -6685,7 +6685,7 @@ begin
         on out of memory store or taking too long to find code to keep
         this from locking up }
       if (s > maxstr) or (i > 100) then error(ecntpbk);
-      s := s+mrkinsl; i := i+1
+      s := s+(mrkinsl+intsize); i := i+1
     end;
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
@@ -7145,7 +7145,7 @@ begin { debug }
   { if we broke on a source marker, execute it then back up.
     This is because break on source line always will do this, and we need the
     source line from the instruction. }
-  if store[pc] = mrkins then begin sinins; pc := pc-mrkinsl end;
+  if store[pc] = mrkins then begin sinins; pc := pc-(mrkinsl+intsize) end;
   dbgend := false;
   debugstart := true; { set we started }
   prthdr;
