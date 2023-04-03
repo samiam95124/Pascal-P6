@@ -674,7 +674,9 @@ var   pc, pcs     : address;   (*program address register*)
       bai         : integer;
       ai          : 1..maxana;
       oi          : 1..maxopt;
-
+      bp, pbp     : pblock;
+      lno         : integer;
+      
 (*--------------------------------------------------------------------*)
 
 procedure debug; forward;
@@ -4347,6 +4349,17 @@ begin
   end else curmod := fndmod(pc)
 end;
 
+{ find line from address in current module }
+function addr2line(a: address): integer;
+var i: integer;
+begin
+  i := 1;
+  while (curmod^.lintrk^[i] < a) and (i < maxsrc) do i := i+1;
+  if i > 1 then i := i-1;
+  if curmod^.lintrk^[i] < 0 then i := 0;
+  addr2line := i
+end;
+
 { print source lines }
 procedure prtsrc(bp: pblock; s, e: integer; comp: boolean);
 var f: text; i: integer; c: char; nl: boolean; si,ei: address; fn: filnam;
@@ -5489,14 +5502,6 @@ end;
 
 procedure dmpfrm(mp, ep: address; pc: address);
 var bp: pblock; line: integer;
-function addr2line(a: address): integer;
-begin
-  i := 1;
-  while (curmod^.lintrk^[i] < a) and (i < maxsrc) do i := i+1;
-  if i > 1 then i := i-1;
-  if curmod^.lintrk^[i] < 0 then error(elinnf);
-  addr2line := i
-end;
 begin
   setcur;
   if curmod = nil then error(emodmba)
@@ -5512,6 +5517,7 @@ begin
     writeln;
     if dodbgsrc and (curmod <> nil) then begin
       line := addr2line(pc); { get equivalent line }
+      if line = 0 then error(elinnf);
       prtsrc(nil, line-1, line+1, false) { do source level }
     end else begin { machine level }
       ad := pc; lstinsa(ad)
@@ -7393,9 +7399,22 @@ begin (* main *)
   expadr := 0; expstk := 0; expmrk := 0;
 
   { set breakpoint at 0 to kick off debugger }
-  if dodebug then
-    begin brktbl[1].sa := 0; brktbl[1].ss := store[0]; brktbl[1].line := 0;
-          store[0] := brkins end;
+  if dodebug then begin
+    ad := 0; { break at 0 }
+    lno := 0;
+    if dodbgsrc then begin { source level, find start of program }
+      bp := blklst;
+      pbp := nil;
+      while bp <> nil do begin
+        if bp^.btyp = btprog then pbp := bp; bp := bp^.next
+      end;
+      if pbp = nil then 
+        begin writeln('*** Program block not found'); goto 99 end;
+      curmod := pbp; ad := pbp^.bstart; lno := addr2line(ad);
+    end;
+    begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
+          store[ad] := brkins end;
+  end;
 
   debugstart := false; setcur;
   writeln('Running program');
