@@ -409,6 +409,7 @@ const
       brkins      = 19;   { breakpoint instruction no. }
       mrkins      = 174;  { source line marker instruction executed }
       mrkinsl     = 1;    { length of that instruction (minus line address) }
+      mstins      = 11;   { mark stack instruction }
       varsqt      = 10;   { variable string quanta }
       { 25k lines is well above my personal limit. I tend to split files with
         more than 10,000 lines. Obviously others think that's excessive. }
@@ -7410,7 +7411,14 @@ begin (* main *)
       end;
       if pbp = nil then 
         begin writeln('*** Program block not found'); goto 99 end;
-      curmod := pbp; ad := pbp^.bstart; lno := addr2line(ad);
+      curmod := pbp; ad := pbp^.bstart; 
+      { skip any line markers }
+      while store[ad] = mrkins do ad := ad+(mrkinsl+intsize);
+      { skip mst instruction to start frame }
+      if store[ad] = mstins then ad := ad+1+1+intsize*2;
+      { skip any line markers }
+      while store[ad] = mrkins do ad := ad+(mrkinsl+intsize);
+      lno := addr2line(ad)
     end;
     begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
           store[ad] := brkins end;
