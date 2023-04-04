@@ -4361,6 +4361,27 @@ begin
   addr2line := i
 end;
 
+{ skip over line markers }
+procedure skplmk(var ad: address);
+var i: integer;
+begin
+  i := 1;
+  while store[ad] = mrkins do begin
+    if (ad > maxstr) or (i > 100) then begin
+      writeln('*** Could not skip line markers');
+      goto 99
+    end;
+    ad := ad+(mrkinsl+intsize);
+    i := i+1
+  end
+end;
+
+{ skip mst instruction }
+procedure skpmst(var ad: address);
+begin
+  if store[ad] = mstins then ad := ad+1+1+intsize*2
+end;
+
 { print source lines }
 procedure prtsrc(bp: pblock; s, e: integer; comp: boolean);
 var f: text; i: integer; c: char; nl: boolean; si,ei: address; fn: filnam;
@@ -6686,14 +6707,9 @@ begin
       if bp^.lintrk^[l] < 0 then error(einvsln);
       s := bp^.lintrk^[l]
     end;
-    i := 1;
-    while store[s] = mrkins do begin { walk over source line markers }
-      { source markers should always be within valid code, but we bail
-        on out of memory store or taking too long to find code to keep
-        this from locking up }
-      if (s > maxstr) or (i > 100) then error(ecntpbk);
-      s := s+(mrkinsl+intsize); i := i+1
-    end;
+    skplmk(ad); { skip preceeding line markers }
+    skpmst(ad); { skip mst instruction to start frame }
+    skplmk(ad); { skip trailing line markers }
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
     brktbl[x].sa := s; brktbl[x].line := l;
@@ -6770,7 +6786,11 @@ begin
         if watchmatch then begin watchmatch := false; prtwth end
       until stopins or (sourcemark and (srclin <> sls)) or brk;
       { advance over any other source markers }
-      while store[pc] = 174 {mrkl} do sinins;
+      while store[pc] = mrkins do sinins;
+      { advance over mst if present }
+      if store[pc] = mstins then sinins;
+      { advance over any source markers }
+      while store[pc] = mrkins do sinins;
       if cn = 's         ' then prthdr; i := i-1;
       if brk then begin
         writeln('*** Program stopped by user break');
@@ -7412,12 +7432,9 @@ begin (* main *)
       if pbp = nil then 
         begin writeln('*** Program block not found'); goto 99 end;
       curmod := pbp; ad := pbp^.bstart; 
-      { skip any line markers }
-      while store[ad] = mrkins do ad := ad+(mrkinsl+intsize);
-      { skip mst instruction to start frame }
-      if store[ad] = mstins then ad := ad+1+1+intsize*2;
-      { skip any line markers }
-      while store[ad] = mrkins do ad := ad+(mrkinsl+intsize);
+      skplmk(ad); { skip preceeding line markers }
+      skpmst(ad); { skip mst instruction to start frame }
+      skplmk(ad); { skip trailing line markers }
       lno := addr2line(ad)
     end;
     begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
