@@ -6718,7 +6718,6 @@ begin
               (cn = 'tpi       ') then begin
     { place breakpoint/tracepoint instruction }
     expr(i); s := i;
-    skplmk(s); { skip preceeding line markers }
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
     brktbl[x].sa := s; brktbl[x].line := 0;
