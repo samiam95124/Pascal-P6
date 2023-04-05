@@ -6707,9 +6707,9 @@ begin
       if bp^.lintrk^[l] < 0 then error(einvsln);
       s := bp^.lintrk^[l]
     end;
-    skplmk(ad); { skip preceeding line markers }
-    skpmst(ad); { skip mst instruction to start frame }
-    skplmk(ad); { skip trailing line markers }
+    skplmk(s); { skip preceeding line markers }
+    skpmst(s); { skip mst instruction to start frame }
+    skplmk(s); { skip trailing line markers }
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
     brktbl[x].sa := s; brktbl[x].line := l;
