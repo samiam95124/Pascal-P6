@@ -617,6 +617,7 @@ var   pc, pcs     : address;   (*program address register*)
       anitbl      : array [1..maxana] of address; { instruction analyzer queue }
       aniptr      : 1..maxana; { input pointer }
       anstbl      : array [1..maxana] of 0..maxsrc; { source analyzer queue }
+      ansmtbl     : array [1..maxana] of pblock; { source analyzer module queue }
       ansptr      : 1..maxana; { input pointer }
       stopins     : boolean; { stop instruction executed }
       breakins    : boolean; { break instruction executed }
@@ -4455,9 +4456,10 @@ end;
 function lstana(a: integer): integer;
 begin if a > 1 then a := a-1 else a := maxana; lstana := a end;
 
-procedure putans(l: integer);
+procedure putans(mp: pblock; l: integer);
 begin
   anstbl[ansptr] := l;
+  ansmtbl[ansptr] := mp;
   if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
 end;
 
@@ -5108,7 +5110,7 @@ begin
     243 (*wbs*): begin popadr(ad); pshadr(ad); withenter(ad) end;
     244 (*wbe*): withexit;
 
-    174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(srclin);
+    174 (*mrkl*): begin getq; srclin := q; if doanalys then putans(curmod, srclin);
                         if dosrcprf then begin setcur;
                           if curmod <> nil then
                             if curmod^.linprf^[q] < pmmaxint then
@@ -6925,7 +6927,7 @@ begin
     while (i > 0) and not chkbrk do begin
       if anstbl[i] <= 0 then i := 0
       else begin
-        prtsrc(nil, anstbl[i], anstbl[i], false); i := lstana(i);
+        prtsrc(ansmtbl[i], anstbl[i], anstbl[i], false); i := lstana(i);
         if i = lstana(ansptr) then i := 0
       end
     end;
@@ -7382,7 +7384,7 @@ begin (* main *)
   { clear instruction analyzer table }
   for ai := 1 to maxana do anitbl[ai] := -1;
   { clear source analyzer table }
-  for ai := 1 to maxana do anstbl[ai] := 0;
+  for ai := 1 to maxana do begin anstbl[ai] := 0; ansmtbl[ai] := nil end;
 
   { !!! remove this next statement for self compile }
 #ifndef SELF_COMPILE
