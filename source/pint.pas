@@ -6926,7 +6926,7 @@ begin
       if anstbl[i] <= 0 then i := 0
       else begin
         prtsrc(nil, anstbl[i], anstbl[i], false); i := lstana(i);
-        if i = lstana(aniptr) then i := 0
+        if i = lstana(ansptr) then i := 0
       end
     end;
     writeln
