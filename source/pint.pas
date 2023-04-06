@@ -6911,7 +6911,7 @@ begin
   end else if cn = 'lia       ' then begin { list instruction analysis }
     i := lstana(aniptr); writeln; writeln('last instructions executed:');
     wrtnewline; writeln;
-    while i > 0 do begin
+    while (i > 0) and not chkbrk do begin
       if anitbl[i] < 0 then i := 0
       else begin
         s := anitbl[i]; lstinsa(s); i := lstana(i);
@@ -6920,7 +6920,7 @@ begin
     end;
     writeln
   end else if cn = 'lsa       ' then begin { list source analysis }
-    i := lstana(aniptr); writeln; writeln('last source lines executed:');
+    i := lstana(ansptr); writeln; writeln('last source lines executed:');
     wrtnewline; writeln;
     while (i > 0) and not chkbrk do begin
       if anstbl[i] <= 0 then i := 0
