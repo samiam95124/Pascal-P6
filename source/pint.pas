@@ -5890,7 +5890,7 @@ begin
       end;
       texpect(pc, ')')
     end;
-    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(',') end;
+    c := chkchr(pc); if c = ',' then begin nxtchr(pc); write(', ') end;
     if line and (chkchr(pc) <> ')') then newline
   end;
   texpect(pc, ')')
