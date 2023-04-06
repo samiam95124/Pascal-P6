@@ -6719,7 +6719,9 @@ begin
     expr(i); s := i;
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
-    brktbl[x].sa := s; brktbl[x].line := 0;
+    l := 0;
+    if curmod <> nil then l := addr2line(curmod, s);
+    brktbl[x].sa := s; brktbl[x].line := l;
     brktbl[x].trace := cn = 'tpi       '
   end else if cn = 'c         ' then begin { clear breakpoint }
     skpspc(dbc); if not chkend(dbc) then begin
