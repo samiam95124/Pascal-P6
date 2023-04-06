@@ -3097,6 +3097,11 @@ end; (*load*)
 
 { runtime handlers }
 
+procedure wrtnewline;
+begin
+  if not newline then begin writeln; newline := true end
+end;
+
 procedure varenter(s, e: address);
 var vp: varptr;
 begin
@@ -3723,7 +3728,8 @@ begin (*callsp*)
       if q > maxsp then errorv(InvalidStandardProcedureOrFunction);
 
       { trace routine executions }
-      if dotrcrot then writeln(pc:6, '/', sp:6, '-> ', q:2);
+      if dotrcrot then 
+        begin wrtnewline; writeln(pc:6, '/', sp:6, '-> ', q:2) end;
 
       case q of
            0 (*get*): begin popadr(ad); valfil(ad); fn := store[ad];
@@ -4461,11 +4467,6 @@ begin
   anstbl[ansptr] := l;
   ansmtbl[ansptr] := mp;
   if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
-end;
-
-procedure wrtnewline;
-begin
-  if not newline then begin writeln; newline := true end
 end;
 
 procedure sinins;
