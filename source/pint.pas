@@ -4350,14 +4350,14 @@ begin
   end else curmod := fndmod(pc)
 end;
 
-{ find line from address in current module }
-function addr2line(a: address): integer;
+{ find line from address in module }
+function addr2line(modp: pblock; a: address): integer;
 var i: integer;
 begin
   i := 1;
-  while (curmod^.lintrk^[i] < a) and (i < maxsrc) do i := i+1;
+  while (modp^.lintrk^[i] < a) and (i < maxsrc) do i := i+1;
   if i > 1 then i := i-1;
-  if curmod^.lintrk^[i] < 0 then i := 0;
+  if modp^.lintrk^[i] < 0 then i := 0;
   addr2line := i
 end;
 
@@ -5538,7 +5538,7 @@ begin
     write(' (', mp-marksize-ep:1, ')');
     writeln;
     if dodbgsrc and (curmod <> nil) then begin
-      line := addr2line(pc); { get equivalent line }
+      line := addr2line(curmod, pc); { get equivalent line }
       if line = 0 then error(elinnf);
       prtsrc(nil, line-1, line+1, false) { do source level }
     end else begin { machine level }
@@ -6695,11 +6695,9 @@ begin
     fndmnm(bp); { find if module specified }
     bp2 := nil;
     if bp = nil then begin { none found }
-      fndrot(bp2); { see if routine name }
-      if bp2 = nil then begin { set from current module }
-        setcur; bp := curmod;
-        if bp = nil then error(emodmba)
-      end
+      setcur; bp := curmod; { set module as current }
+      if bp = nil then error(emodmba);
+      fndrot(bp2) { see if routine name }
     end;
     if bp2 <> nil then s := bp2^.bstart
     else begin { not a routine, get line no }
@@ -6710,6 +6708,7 @@ begin
     skplmk(s); { skip preceeding line markers }
     skpmst(s); { skip mst instruction to start frame }
     skplmk(s); { skip trailing line markers }
+    l := addr2line(bp, s);
     x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
     if x = 0 then error(ebktblf);
     brktbl[x].sa := s; brktbl[x].line := l;
@@ -7435,7 +7434,7 @@ begin (* main *)
       skplmk(ad); { skip preceeding line markers }
       skpmst(ad); { skip mst instruction to start frame }
       skplmk(ad); { skip trailing line markers }
-      lno := addr2line(ad)
+      lno := addr2line(curmod, ad)
     end;
     begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
           store[ad] := brkins end;
