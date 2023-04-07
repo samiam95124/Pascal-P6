@@ -325,7 +325,7 @@ type                                                        (*describing:*)
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
-                     priv: boolean end;
+                     priv: boolean; linecounts, lineouts: integer end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
@@ -8910,7 +8910,8 @@ begin cmdpos := maxcmd end;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
-      next := incstk; incstk := fp; strassvf(mn, id); priv := false;
+      next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
+      linecounts := linecount; lineouts := lineout;
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
       if i > fillen-4-1 then begin err; error(265) end
       else begin
@@ -8926,6 +8927,7 @@ begin cmdpos := maxcmd end;
   begin
     if incstk = nil then error(505);
     closetext(incstk^.f);
+    linecount := incstk^.linecounts; lineout := incstk^.lineouts;
     { remove top include entry }
     fp := incstk; incstk := incstk^.next;
     fp^.next := inclst; { put on discard list }
