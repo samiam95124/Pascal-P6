@@ -1783,7 +1783,7 @@ begin cmdpos := maxcmd end;
     while lineout < linecount do begin
       lineout := lineout+1;
       { output line marker in intermediate file }
-      if not eofinp then begin
+      if not eofinp and prcode then begin
         writeln(prr, ':', lineout:1);
       end
     end
@@ -1792,7 +1792,7 @@ begin cmdpos := maxcmd end;
   procedure markline;
   begin
     outline;
-    writeln(prr, ':', linecount:1)
+    if prcode then writeln(prr, ':', linecount:1)
   end;
 
   { check in private section }
@@ -1909,18 +1909,22 @@ begin cmdpos := maxcmd end;
         if (ch='+') or (ch='-') then begin
           opt := ch = '+';
           option[oi] := opt;
-          write(prr, 'o', ' ':7);
-          for oni :=  1 to optlen do 
-            if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
-          writeln(prr, ch);
+          if prcode then begin
+            write(prr, 'o', ' ':7);
+            for oni :=  1 to optlen do 
+              if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
+            writeln(prr, ch)
+          end;
           nextch;
         end else begin { just default to on }
           opt := true;
           option[oi] := true;
-          write(prr, 'o', ' ':7);
-          for oni :=  1 to optlen do 
-            if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
-          writeln(prr, '+')
+          if prcode then begin
+            write(prr, 'o', ' ':7);
+            for oni :=  1 to optlen do 
+              if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
+            writeln(prr, '+')
+          end
         end
       end; { switch() }
     begin { options() }
@@ -2960,18 +2964,22 @@ begin cmdpos := maxcmd end;
   end (*genlabel*);
 
   procedure prtlabel(labname: integer);
-  begin
-    write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
+  begin 
+    if prcode then begin
+      write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
+    end
   end;
 
   procedure prtflabel(fcp: ctp);
   begin
-    write(prr, 'l ');
-    if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
-    else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
-    else writevp(prr, fcp^.pmod^.mn);
-    write(prr, '.');
-    writevp(prr, fcp^.name)
+    if prcode then begin
+      write(prr, 'l ');
+      if fcp^.klass = vars then writevp(prr, fcp^.vmod^.mn)
+      else if fcp^.klass = fixedt then writevp(prr, fcp^.fmod^.mn)
+      else writevp(prr, fcp^.pmod^.mn);
+      write(prr, '.');
+      writevp(prr, fcp^.name)
+    end
   end;
 
   procedure putlabel(labname: integer);
@@ -3202,7 +3210,7 @@ begin cmdpos := maxcmd end;
 
   procedure gentypindicator(fsp: stp);
   begin
-    if fsp<>nil then
+    if (fsp <> nil) and prcode then
       with fsp^ do
         case form of
          scalar: if fsp=intptr then write(prr,'i')
@@ -7149,11 +7157,13 @@ begin cmdpos := maxcmd end;
                       searchid([konst],lcp);
                       if not comptypes(lsp, lcp^.idtype) then error(245);
                       if lcp^.values.intval then begin
-                        if lsp = boolptr then
-                          writeln(prr, 'c b ', lcp^.values.ival:1)
-                        else if size = 1 then
-                          writeln(prr, 'c x ', lcp^.values.ival:1)
-                        else writeln(prr, 'c i ', lcp^.values.ival:1);
+                        if prcode then begin
+                          if lsp = boolptr then
+                            writeln(prr, 'c b ', lcp^.values.ival:1)
+                          else if size = 1 then
+                            writeln(prr, 'c x ', lcp^.values.ival:1)
+                          else writeln(prr, 'c i ', lcp^.values.ival:1);
+                        end;
                         v := lcp^.values.ival; d := true
                       end else error(513);
                       insymbol
@@ -7165,24 +7175,24 @@ begin cmdpos := maxcmd end;
                       if (lsp = realptr) and (lsp1 = intptr) then begin
                         { integer to real, convert }
                         if not fvalu.intval then error(515)
-                        else writeln(prr, 'c r ', fvalu.ival:1)
+                        else if prcode then writeln(prr, 'c r ', fvalu.ival:1)
                       end else if comptypes(lsp, lsp1) then begin
                         { constants possible are i: integer, r: real,
                           p: (power) set, s: string (including set), c: char,
                           b: boolean, x: byte integer }
                         if lsp = charptr then begin
                           if fvalu.intval then begin
-                            write(prr, 'c c ', fvalu.ival:1);
+                            if prcode then write(prr, 'c c ', fvalu.ival:1);
                             v := fvalu.ival; d := true
                           end
                         end else if fvalu.intval then begin
-                          if size = 1 then
+                          if (size = 1) and prcode then
                             write(prr, 'c x ', fvalu.ival:1)
                           else write(prr, 'c i ', fvalu.ival:1);
                           v := fvalu.ival; d := true
-                        end else if fvalu.valp^.cclass = reel then
-                                   write(prr, 'c r ', fvalu.valp^.rval:23);
-                        writeln(prr)
+                        end else if (fvalu.valp^.cclass = reel) and prcode then
+                          write(prr, 'c r ', fvalu.valp^.rval:23); 
+                        if prcode then writeln(prr)
                       end else error(245)
                   end;
           subrange: begin fixeditem(fsys,lsp^.rangetype,lsp^.size,v,d);
@@ -7193,10 +7203,12 @@ begin cmdpos := maxcmd end;
           power: begin { get value to satisfy entry }
                    constexpr(fsys,lsp1,fvalu);
                    if comptypes(lsp, lsp1) then begin
-                     write(prr, 'c p (');
-                     for i := setlow to sethigh do
-                       if i in fvalu.valp^.pval then write(prr,' ',i:1);
-                     writeln(prr, ')')
+                     if prcode then begin
+                       write(prr, 'c p (');
+                       for i := setlow to sethigh do
+                         if i in fvalu.valp^.pval then write(prr,' ',i:1);
+                       writeln(prr, ')')
+                     end
                    end else error(245)
                  end;
           arrays: begin getbounds(lsp^.inxtype, min, max);
@@ -7205,10 +7217,12 @@ begin cmdpos := maxcmd end;
                       if comptypes(lsp, lsp1) then begin
                         { string constant matches array }
                         if fvalu.valp^.slgth <> max then error(245);
-                        write(prr, 'c ');
-                        write(prr, 's ''');
-                        writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
-                        writeln(prr, '''')
+                        if prcode then begin
+                          write(prr, 'c ');
+                          write(prr, 's ''');
+                          writev(prr, fvalu.valp^.sval, fvalu.valp^.slgth);
+                          writeln(prr, '''')
+                        end
                       end else error(245)
                     end else begin
                       { iterate array elements }
@@ -7270,11 +7284,11 @@ begin cmdpos := maxcmd end;
         if (sy = relop) and (op = eqop) then begin
           insymbol;
           { start fixed constants }
-          write(prr, 'n ');
+          if prcode then write(prr, 'n ');
           genlabel(lcp^.floc); prtlabel(lcp^.floc);
-          writeln(prr, ' ', lsize:1);
+          if prcode then writeln(prr, ' ', lsize:1);
           fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d);
-          writeln(prr, 'x')
+          if prcode then writeln(prr, 'x')
         end else error(16);
         if sy = semicolon then
           begin insymbol;
@@ -8864,15 +8878,15 @@ begin cmdpos := maxcmd end;
         else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
-        begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
-           prtlabel(stackbot); writeln(prr,'=',topmin:1)
+          begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
+            prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end
       end
     else
       begin gen2(42(*ret*),ord('p'),0);
         alignd(parmptr,lcmin);
         if prcode then
-        begin
+          begin
             prtlabel(segsize); writeln(prr,'=',lcmin:1);
             prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end;
@@ -9022,7 +9036,7 @@ begin cmdpos := maxcmd end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
-          genlabel(frlab); prtlabel(frlab); writeln(prr,'=',0:1);
+          genlabel(frlab); prtlabel(frlab); if prcode then writeln(prr,'=',0:1);
           gensfr(frlab); gencup(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
@@ -10080,23 +10094,25 @@ begin
 #endif
 
   { write generator comment }
-  writeln(prr, '!');
-  writeln(prr, '! Pascal intermediate file Generated by P6 Pascal compiler vs. ',
-          majorver:1, '.', minorver:1);
-  writeln(prr, '!');
+  if prcode then begin
+    writeln(prr, '!');
+    writeln(prr, '! Pascal intermediate file Generated by P6 Pascal compiler vs. ',
+            majorver:1, '.', minorver:1);
+    writeln(prr, '!');
 
-  { write initial option values }
-  write(prr, 'o ');
-  for oi := 1 to maxopt do
-    { exclude pint options and unused }
-    if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26]) then
-      begin 
-    for oni :=  1 to optlen do 
-      if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
-    if option[oi] then write(prr, '+') else write(prr, '-');
-    write(prr, ' ')
+    { write initial option values }
+    write(prr, 'o ');
+    for oi := 1 to maxopt do
+      { exclude pint options and unused }
+      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26]) then
+        begin 
+      for oni :=  1 to optlen do 
+        if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
+      if option[oi] then write(prr, '+') else write(prr, '-');
+      write(prr, ' ')
+    end;
+    writeln(prr)
   end;
-  writeln(prr);
 
   nvalid := false; { set no lookahead }
   { init for lookahead }
