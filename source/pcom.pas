@@ -3096,16 +3096,16 @@ begin cmdpos := maxcmd end;
     var k, j: integer; p: strvsp;
   begin
     if prcode then
-      begin write(prr,mn[fop]:11, ' ':5);
+      begin write(prr,mn[fop]:11);
         if fop = 30 then
-          begin writeln(prr,sna[fp2]:4);
+          begin writeln(prr,' ':5,sna[fp2]:4);
             mesl(pdx[fp2]);
           end
         else
           begin
             if fop = 38 then
                begin with cstptr[fp2]^ do begin p := sval; j := 1;
-                   write(prr,slgth:1,' ''');
+                   write(prr,' ':5,slgth:1,' ''');
                    for k := 1 to lenpv(p) do begin
                      if p^.str[j] = '''' then write(prr, '''''')
                      else write(prr,p^.str[j]:1);
@@ -3117,13 +3117,13 @@ begin cmdpos := maxcmd end;
                  writeln(prr,'''')
                end
             else if fop = 42 then writeln(prr,chr(fp2))
-            else if fop = 67 then writeln(prr,fp2:1)
-            else if fop = 105 then begin write(prr, ' '); putlabel(fp2) end
+            else if fop = 67 then writeln(prr,' ':5,fp2:1)
+            else if fop = 105 then begin write(prr,' ':5); putlabel(fp2) end
             else if chkext(symptr) then
-              begin write(prr, ' '); prtflabel(symptr); writeln(prr) end
+              begin write(prr,' ':5); prtflabel(symptr); writeln(prr) end
             else if chkfix(symptr) then
-              begin write(prr, ' '); prtlabel(symptr^.floc); writeln(prr) end
-            else writeln(prr,fp2:1);
+              begin write(prr,' ':5); prtlabel(symptr^.floc); writeln(prr) end
+            else writeln(prr,' ':5,fp2:1);
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2)
             else mes(fop)
@@ -9106,7 +9106,7 @@ begin cmdpos := maxcmd end;
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); putlabel(extname);
         genmst(level,segsize,stackbot);
-        gen1(42(*ret*),ord('p'));
+        gen2(42(*ret*),ord('p'),0);
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);
           prtlabel(stackbot); writeln(prr,'=',0:1)
