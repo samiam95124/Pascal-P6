@@ -1,0 +1,10 @@
+h
+l debug_test 1
+l debug_test 1 100
+l debug_test 1:100
+l debug_test1 1
+l debug_test1 1 100
+l debug_test1 1:100
+d 0 100
+d 0:100
+q
