@@ -524,9 +524,8 @@ var   pc          : address;   (*program address register*)
       dodbgsrc: boolean; { do source file debugging }
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
+      doechlin: boolean; { do echo command line for testing (unused) }
       
-      { I don't know how we are going to use iso7185 flag in mach. There is
-        no real way to set it. }
       iso7185: boolean; { iso7185 standard flag }
       flipend: boolean; { endian mode is opposing }
       

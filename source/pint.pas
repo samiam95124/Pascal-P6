@@ -591,6 +591,7 @@ var   pc, pcs     : address;   (*program address register*)
       doanalys: boolean; { do analyze }
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
+      doechlin: boolean; { echo input command line }
 
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -1215,26 +1216,33 @@ end;
 
 { write padded string to file }
 procedure writevp(var f: text; s: strvsp);
-var i: integer;
+var l: integer;
 begin
   while s <> nil do begin
-    for i := 1 to varsqt do if s^.str[i] <> ' ' then write(f, s^.str[i]);
+    l := varsqt; 
+    if s^.next = nil then begin
+      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
+      if s^.str[l] = ' ' then l := 0;
+    end;
+    if l > 0 then write(f, s^.str:l);
     s := s^.next
   end;
 end;
 
 { find padded length of variable length id string }
 function lenpv(s: strvsp): integer;
-var i, l, lc: integer;
-begin l := 1; lc := 0;
+var l, tl: integer;
+begin tl := 1;
   while s <> nil do begin
-    for i := 1 to varsqt do begin
-      if s^.str[i] <> ' ' then lc := l;
-      l := l+1; { count characters }
+    l := varsqt; 
+    if s^.next = nil then begin
+      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
+      if s^.str[l] = ' ' then l := 0;
     end;
+    tl := tl+l;
     s := s^.next
   end;
-  lenpv := lc
+  lenpv := tl
 end;
 
 { find length of fixed padded string }
@@ -5377,6 +5385,10 @@ begin
     b := nil; l := 0; write('debug> ');
     while not eoln do begin read(c); l := l+1; strchrass(b, l, c) end;
     readln; p := 1
+  end;
+  if doechlin then begin { echo the line for testing }
+    writevp(output, pc.b);
+    writeln
   end
 end;
 
@@ -7291,6 +7303,8 @@ begin (* main *)
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
+  doechlin := false; { don't echo command lines }
+
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
@@ -7344,7 +7358,7 @@ begin (* main *)
   optsl[8]  := 'sourceset ';
   optsl[9]  := 'varblk    ';
   optsl[10] := 'experror  ';
-  optsl[11] := '          ';
+  optsl[11] := 'echoline  ';
   optsl[12] := 'list      ';
   optsl[13] := 'breakheap ';
   optsl[14] := 'recycle   ';

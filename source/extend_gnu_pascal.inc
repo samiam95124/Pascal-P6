@@ -218,6 +218,7 @@ begin
         case oi of
           7:  dodmplab   := option[oi];
           8:  dosrclin   := option[oi];
+          11: doechlin   := option[oi];
           14: dorecycl   := option[oi];
           15: dochkovf   := option[oi];
           16: dochkrpt   := option[oi];
@@ -230,7 +231,7 @@ begin
           5:  dodckout   := option[oi];
           9:  dochkvbk   := option[oi];
           2:; 3:; 4:; 12:; 20:; 21:; 22:;
-          24:; 25:; 26:; 11:; 10:; 18:;
+          24:; 25:; 26:; 10:; 18:;
         end
       end;
     end;
