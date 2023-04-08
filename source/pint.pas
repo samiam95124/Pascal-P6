@@ -7050,7 +7050,7 @@ begin
     writeln;
     writeln('h|help             Help (this command)');
     writeln('l   [m] [s[ e|:l]  List source lines');
-    writeln('lc  [s[ e|:l]      List source and machine lines coordinated');
+    writeln('lc  [m] [s[ e|:l]  List source and machine lines coordinated');
     writeln('li  [s[ e|:l]      List machine instructions');
     writeln('p   v              Print expression');
     writeln('d   [s[ e|:l]      Dump memory');
