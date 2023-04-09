@@ -7201,13 +7201,15 @@ begin { debug }
       getlin(dbc);
       repeat { statements }
         skpspc(dbc);
-        if not chkend(dbc) then begin
-          getnam(dbc);
-          dbgins
-        end;
-        c := chkchr(dbc);
-        if c = ';' then nxtchr(dbc)
-      until c <> ';'
+        if chkchr(dbc) <> '!' then begin
+          if not chkend(dbc) then begin
+            getnam(dbc);
+            dbgins
+          end;
+          c := chkchr(dbc);
+          if c = ';' then nxtchr(dbc)
+        end
+      until (c <> ';') or (c = '!')
     until dbgend
   end;
   { single step past entry breakpoint (if it exists) }
