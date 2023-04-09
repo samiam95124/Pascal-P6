@@ -6666,8 +6666,8 @@ begin
       l := l-1
     end
   end else if cn = 'd         ' then begin { dump memory }
-    s := 0; e := lsttop;
-    skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i end;
+    s := 0; e := 255;
+    skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i; e := s+255 end;
     skpspc(dbc);
     if chkchr(dbc) = ':' then
       begin nxtchr(dbc); expr(i); e := s+i-1 end
