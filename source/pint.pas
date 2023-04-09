@@ -5704,7 +5704,7 @@ begin enum := false; { not enumeration }
       getnum(pc, s); texpect(pc, ','); getnum(pc, e); texpect(pc, ')')
     end else begin { enum }
       enum := true; s := 0; e := 0; si := 1;
-      repeat ens[si] := p; getsym(pc); e := e+1; c := chkchr(pc);
+      repeat ens[si] := pc.p; getsym(pc); e := e+1; c := chkchr(pc);
         if c = ',' then nxtchr(pc);
         if si < 100 then si := si+1
       until c <> ',';
@@ -6329,7 +6329,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
         'b','c': begin r.t := rtint; r.i := getbyt(ad) end;
         'x': begin ps := tdc.p; r.t := rtint;
                getrng(tdc, enum, s, e);
-               if isbyte(s) and isbyte(e) then i := getbyt(ad)
+               if isbyte(s) and isbyte(e) then r.i := getbyt(ad)
                else r.i := getint(ad);
                if enum then tdc.p := ps { return type as enum if so }
              end;
