@@ -17,6 +17,7 @@ li $0:$100
 li $4e
 li $4e $100
 li $4e:$100
+! run until end of program block
 b debug_test 20
 r
 p i

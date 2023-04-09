@@ -5851,7 +5851,8 @@ begin
              repeat
                c := strchr(tdc.b, x);
                if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
-             until (c = ')') or (c = ',')
+             until (c = ')') or (c = ',');
+             write('(', v.i:1, ')')
            end else write(v.i:1);
          end;
     's': begin nxtchr(tdc); wrtset(v.s, tdc) end;
