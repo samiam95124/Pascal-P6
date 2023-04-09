@@ -2,9 +2,28 @@ h
 l debug_test 1
 l debug_test 1 100
 l debug_test 1:100
-l debug_test1 1
-l debug_test1 1 100
-l debug_test1 1:100
+l debug_test 5
+l debug_test 5 100
+l debug_test 5:100
+lc debug_test1 1
+lc debug_test1 1 100
+lc debug_test1 1:100
+lc debug_test 5
+lc debug_test 5 100
+lc debug_test 5:100
+li $0
+li $0 $100
+li $0:$100
+li $4e
+li $4e $100
+li $4e:$100
+b debug_test 20
+r
+p i
+p c
+p b
+p e
+p r
 d 0 100
 d 0:100
 q

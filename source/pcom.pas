@@ -1069,7 +1069,7 @@ var
   { find padded length of variable length id string }
   function lenpv(s: strvsp): integer;
   var l, tl: integer;
-  begin tl := 1;
+  begin tl := 0;
     while s <> nil do begin
       l := varsqt; 
       if s^.next = nil then begin
