@@ -5833,7 +5833,7 @@ end;
 { print simple value }
 procedure prtsim(var v: expres; var tdc: parctl; r: integer; fl: integer;
                  deffld: boolean; lz: boolean);
-var i, s, e: integer; enum: boolean;
+var s, e: integer; enum: boolean;
 begin
   valsim(v, tdc); { validate value matches type }
   case chkchr(tdc) of { type }
@@ -5847,12 +5847,12 @@ begin
            getrng(tdc, enum, s, e);
            if not enum then prtsim(v, tdc, r, fl, deffld, lz)
            else if (e < 100) and (v.i >= s) and (v.i <= e) then begin
-             x := ens[i]; { get start position }
+             x := ens[v.i+1]; { get start position }
              repeat
                c := strchr(tdc.b, x);
                if (c <> ',') and (c <> ')') then begin write(c); x := x+1 end
              until (c = ')') or (c = ',')
-           end else write(i:1);
+           end else write(v.i:1);
          end;
     's': begin nxtchr(tdc); wrtset(v.s, tdc) end;
     'a': begin nxtchr(tdc); getrng(tdc, enum, s, e); { get range of index }
