@@ -6711,12 +6711,10 @@ begin
               (cn = 'tp        ') then begin
     { place breakpoint/tracepoint source }
     fndmnm(bp); { find if module specified }
-    bp2 := nil;
     if bp = nil then begin { none found }
       setcur; bp := curmod; { set module as current }
-      if bp = nil then error(emodmba);
-      fndrot(bp2) { see if routine name }
     end;
+    fndrot(bp2); { see if routine name }
     if bp2 <> nil then s := bp2^.bstart
     else begin { not a routine, get line no }
       expr(l); if l > maxsrc then error(einvsln);

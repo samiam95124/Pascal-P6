@@ -13,18 +13,18 @@ lc debug_test 5 100
 lc debug_test 5:100
 li $0
 li $0 $100
-li $0:$100
+li $0:100
 li $4e
 li $4e $100
-li $4e:$100
+li $4e:100
 ! run until end of program block
-! note the line of the end statement can move
-b debug_test 46
+b debug_test proc1
 r
 p x
 p c
 p b
 p e
+p sr
 p f
 p rv
 p a
