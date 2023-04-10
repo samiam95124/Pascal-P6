@@ -5875,7 +5875,7 @@ const ispc = 2;
 var i: integer; s, e: integer;
     enum: boolean;
     ad2, ad3: address; tdc, stdc: parctl; ps: integer; v: expres;
-    subc: boolean;
+    subc: boolean; fbyt: boolean;
 
 procedure newline;
 begin
@@ -5991,6 +5991,7 @@ begin { prttyp }
     'x': begin
            { have to parse ahead to know type and size }
            stdc := tdc; getrng(tdc, enum, s, e);
+           fbyt := isbyte(s) and isbyte(e);
            { It's subrange or enumerated. Subrange has a subtype. Note all
            subranges are reduced to numeric. }
            if not enum then begin { eval subtype }
@@ -5999,8 +6000,9 @@ begin { prttyp }
            end else begin { it's an enumeration, that's terminal }
              if getdef(ad) then begin v.t := rtint;
                { fetch according to size }
-               if byt then begin v.i := getbyt(ad); ad := ad+1 end
-               else begin v.i := getint(ad); ad := ad+intsize end;
+               if fbyt then v.i := getbyt(ad) else v.i := getint(ad);
+               { skip address according to span }
+               if byt then ad := ad+1 else ad := ad+intsize;
                tdc := stdc; prtsim(v, tdc, r, fl, deffld, lz)
              end else begin
                if byt then ad := ad+1 else ad := ad+intsize;

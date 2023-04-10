@@ -18,17 +18,30 @@ li $4e
 li $4e $100
 li $4e:$100
 ! run until end of program block
-b debug_test 20
+! note the line of the end statement can move
+b debug_test 46
 r
-p i
+p x
 p c
 p b
 p e
-p r
+p f
+p rv
+p a
+p ar
+
 d 0
 d 0 $100
 d 0:$100
 d $100
 d $100 $100
 d $100:$100
+! print contents of i, then modify using enter, then print again
+! note this depends on the address of i not moving.
+p i
+e 1613 12 0 0 0
+p i
+st i $1234
+p i$
+pg
 q
