@@ -18,7 +18,7 @@ li $4e
 li $4e $100
 li $4e:100
 ! run until end of program block
-b debug_test proc1
+b debug_test stop1
 r
 p x
 p c
@@ -29,7 +29,6 @@ p f
 p rv
 p a
 p ar
-
 d 0
 d 0 $100
 d 0:$100
@@ -38,9 +37,9 @@ d $100 $100
 d $100:$100
 ! print contents of i, then modify using enter, then print again
 ! note this depends on the address of i not moving.
-p i
-e 1613 12 0 0 0
-p i
+p x
+e 5169 12 0 0 0
+p x
 st i $1234
 p i$
 pg

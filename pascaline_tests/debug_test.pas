@@ -22,6 +22,8 @@ var i, x, i2: integer;
     a: a10;
     ar: a2;
 
+procedure stop1; begin end;
+
 procedure proc1(i: integer; c: char; b: boolean; e: enum; sr: sub; r: real; rec: r2; a: a2);
 begin
 end;
@@ -69,10 +71,12 @@ begin
         ar[i].rec.e := one;
         ar[i].rec.sr := 3;
         ar[i].rec.r := 54.32e8;
-        for i2 := 1 to 10 do ar[i2].rec.a[i2] := i2+20;
-        for i2 := 1 to 10 do ar[i2].a[i2] := i2+30;
+        for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+20;
+        for i2 := 1 to 10 do ar[i].a[i2] := i2+30;
 
     end;
+
+    stop1;
 
     proc1(83, 'g', true, two, 7, 98.76, rv, ar);
 
