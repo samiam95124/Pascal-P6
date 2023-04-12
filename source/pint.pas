@@ -6437,12 +6437,9 @@ begin { term }
       end else error(einvcop)
     end else if chkchr(dbc) = '/' then begin nxtchr(dbc); right;
       if ((l.t <> rtint) and (l.t <> rtreal)) or
-         ((l.t <> rtint) and (l.t <> rtreal)) then error(etypmir);
-      if (l.t = rtreal) or (r.t = rtreal) then
-        begin float(l); float(r); sp := realsym; p := 1 end;
-      if (l.t = rtreal) and (r.t = rtreal) then
-        begin f := l.r*r.r; r.t := rtreal; r.r := f end
-      else error(einvcop)
+         ((r.t <> rtint) and (r.t <> rtreal)) then error(etypmir);
+      float(l); float(r); sp := realsym; p := 1;
+      f := l.r/r.r; r.t := rtreal; r.r := f
     end else if matop('div ', true) then begin
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right;
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
