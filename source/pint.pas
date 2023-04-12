@@ -6451,7 +6451,7 @@ begin { term }
     end else if matop('and ', true) then begin
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right;
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
-      l.i := band(l.i,r.i)
+      r.i := band(l.i,r.i)
     end;
     skpspc(dbc)
   end
