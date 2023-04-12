@@ -24,25 +24,46 @@ r
 p $100
 p &100
 p %100
-p 100$
+p 255$
 p 100&
 p 100%
-p not 1
+p not 1$
 p 2+(3*4)
 p (2+3)*4
 p ['0'..'9','a','b']
 p 'hi there bob''s'
+p 'hi '''' there'
 p 1
 p 12.34
-p 1+2
-p 1.0+2.0
 p 3*4
 p 3.0*4.0
 p 10/3
 p 10.0/3.0
 p 10 div 3
 p 10 mod 3
-p 10 and 3
+p 10 and 3%
+p 1+2
+p 1.0+2.0
+p 3-1
+p 3.0-1.0
+p 10 or 3%
+p 10 xor 3%
+p 12 = 12
+p 12 = 13
+p 12 <> 12
+p 12 <> 13
+p 12 < 13
+p 12 < 12
+p 12 < 10
+p 42 > 10
+p 42 > 42
+p 42 > 50
+p 32 <= 40
+p 32 <= 32
+p 32 <= 12
+p 92 >= 10
+p 92 >= 92
+p 92 >= 100
 
 p x
 p c
@@ -59,6 +80,9 @@ p rv.rec.a
 p rv.rec.a[5]
 p ar[5].e
 p ar[6].rec.a[5]
+p pi$
+p pi^
+
 d 0
 d 0 $100
 d 0:$100
@@ -68,9 +92,12 @@ d $100:$100
 ! print contents of i, then modify using enter, then print again
 ! note this depends on the address of i not moving.
 p x
-e 5169 12 0 0 0
+e *x 12 0 0 0
 p x
 st i $1234
 p i$
 pg
+! go down a level
+b proc1
+r
 q

@@ -21,6 +21,7 @@ var i, x, i2: integer;
     rv: r2;
     a: a10;
     ar: a2;
+    pi: ^integer;
 
 procedure stop1; begin end;
 
@@ -75,6 +76,9 @@ begin
         for i2 := 1 to 10 do ar[i].a[i2] := i2+30;
 
     end;
+
+    new(pi);
+    pi^ := 42;
 
     stop1;
 

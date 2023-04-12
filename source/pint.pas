@@ -6405,6 +6405,8 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
       pd(')'); pd('i'); pd('c');
     end;
     p := 1; simple := true
+  end else if chkchr(dbc) = '*' then begin { address of }
+    nxtchr(dbc); p := 1; vartyp(sp, ad, p); r.t := rtint; r.i := ad; simple := true
   end else error(efactor)
 end;
 
@@ -6508,7 +6510,7 @@ begin { sexpr }
     end else if matop('xor ', true) then begin nxtchr(dbc); nxtchr(dbc);
       if (l.t <> rtint) or (r.t <> rtint) then error(eoprmbi);
       nxtchr(dbc); right;
-      r.i := bxor(r.i, r.i)
+      r.i := bxor(l.i, r.i)
     end;
     skpspc(dbc)
   end
@@ -7113,6 +7115,8 @@ begin
     writeln('r                  Run program from current pc');
     writeln('ps                 Print current registers and instruction');
     writeln('q                  Quit interpreter');
+    writeln;
+    writeln('!                  Anywhere in line starts a comment');
     writeln
   end
   { these are internal debugger commands }
@@ -7155,7 +7159,7 @@ begin
           stlocal: write('local ');
           stparam:  write('param ')
         end;
-        write(' ', syp^.off:10, ' ');
+        write(' '); prthex(syp^.off); write(' ');
         writev(output, syp^.digest, lenpv(syp^.digest));
         writeln; syp := syp^.next;
         brk := chkbrk
