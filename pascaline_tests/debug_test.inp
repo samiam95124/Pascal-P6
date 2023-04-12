@@ -20,6 +20,26 @@ li $4e:100
 ! run until end of program block
 b debug_test stop1
 r
+! expressions/constants
+p $100
+p &100
+p %100
+p 100$
+p 100&
+p 100%
+p not 1
+p 2+(3*4)
+p (2+3)*4
+p ['0'..'9','a','b']
+p 'hi there bob''s'
+p 1
+p 1+2
+p 3*4
+p 10/3
+p 10 div 3
+p 10 mod 3
+p 10 and 3
+
 p x
 p c
 p b
@@ -29,6 +49,12 @@ p f
 p rv
 p a
 p ar
+p a[5]
+p rv.rec.sr
+p rv.rec.a
+p rv.rec.a[5]
+p ar[5].e
+p ar[6].rec.a[5]
 d 0
 d 0 $100
 d 0:$100

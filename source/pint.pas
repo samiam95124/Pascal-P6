@@ -6387,10 +6387,16 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     p := 1
   end else if chkchr(dbc) = '''' then begin { string }
     nxtchr(dbc); r.t := rtstrg; r.sc := nil; r.l := 0;
-    while not chkend(dbc) and (chkchr(dbc) <> '''') do begin
-      r.l := r.l+1; strchrass(r.sc, r.l, chkchr(dbc)); nxtchr(dbc);
-    end;
-    if chkchr(dbc) <> '''' then error(eutstrg); nxtchr(dbc);
+    repeat
+      while not chkend(dbc) and (chkchr(dbc) <> '''') do begin
+        r.l := r.l+1; strchrass(r.sc, r.l, chkchr(dbc)); nxtchr(dbc);
+      end;
+      if chkchr(dbc) <> '''' then error(eutstrg) else nxtchr(dbc);
+      c := chkchr(dbc); 
+      if chkchr(dbc) = '''' then begin
+        r.l := r.l+1; strchrass(r.sc, r.l, chkchr(dbc)); nxtchr(dbc)
+      end
+    until c <> '''';
     if r.l = 1 then begin { single character }
       c := strchr(r.sc, 1); r.t := rtint; r.i := ord(c); sp := charsym
     end else begin
