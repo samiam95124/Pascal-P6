@@ -99,6 +99,8 @@ pg
 ! go down a level
 b stop2
 r
+! step out of the stop
+s
 
 ! print parameters
 p pi
@@ -128,4 +130,9 @@ p ar[5].e
 p ar[6].rec.a[5]
 p ip$
 p ip^
+
+pl
+pp
+ds
+dd
 q
