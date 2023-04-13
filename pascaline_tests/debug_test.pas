@@ -25,8 +25,72 @@ var i, x, i2: integer;
 
 procedure stop1; begin end;
 
-procedure proc1(i: integer; c: char; b: boolean; e: enum; sr: sub; r: real; rec: r2; a: a2);
+procedure stop2; begin end;
+
+procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+
+var i, x, i2: integer;
+    c: char;
+    b: boolean;
+    e: enum;
+    sr: sub;
+    f: real;
+    rv: r2;
+    a: a10;
+    ar: a2;
+    ip: ^integer;
+
 begin
+
+    x := 43;
+    c := 'b';
+    b := false;
+    e := three;
+    sr := 8;
+    f := 56.78e10;
+
+    rv.i := 13;
+    rv.c := 'd';
+    rv.b := false;
+    rv.e := one;
+    rv.sr := 4;
+    rv.r := 87.65e20;
+    rv.rec.i := 85;
+    rv.rec.c := 'x';
+    rv.rec.b := true;
+    rv.rec.e := two;
+    rv.rec.sr := 4;
+    rv.rec.r := 36.32e8;
+    for i := 1 to 10 do rv.rec.a[i] := i+40;
+    for i := 1 to 10 do rv.a[i] := i+50;
+
+    for i := 1 to 10 do a[i] := i+20;
+
+    for i := 1 to 10 do begin
+
+        ar[i].i := 16;
+        ar[i].c := 'z';
+        ar[i].b := false;
+        ar[i].e := three;
+        ar[i].sr := 2;
+        ar[i].r := 43.32e20;
+
+        ar[i].rec.i := 85;
+        ar[i].rec.c := 'k';
+        ar[i].rec.b := true;
+        ar[i].rec.e := two;
+        ar[i].rec.sr := 7;
+        ar[i].rec.r := 23.65e8;
+        for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+60;
+        for i2 := 1 to 10 do ar[i].a[i2] := i2+70;
+
+    end;
+
+    new(ip);
+    ip^ := 76;
+
+    stop2;
+
 end;
 
 begin
