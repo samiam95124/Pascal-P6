@@ -99,6 +99,18 @@ pg
 ! go down a level
 b stop2
 r
+
+! print parameters
+p pi
+p pc
+p pb
+p pe
+p psr
+p pr
+p prec
+p pa
+
+! print locals
 p x
 p c
 p b
