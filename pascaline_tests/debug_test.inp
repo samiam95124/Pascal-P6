@@ -1,3 +1,7 @@
+!
+! This first part is source level only. I put the machine level commands at the
+! end because they can move around with changes to the program.
+!
 h
 l debug_test 1
 l debug_test 1 100
@@ -96,7 +100,7 @@ p x
 st i $1234
 p i$
 pg
-! go down a level
+! go down a level to proc1
 b stop2
 r
 ! step out of the stop
@@ -131,8 +135,77 @@ p ar[6].rec.a[5]
 p ip$
 p ip^
 
+! Various dumps. Note pl 2 and pp 2 dumps only dump one level since that is all
+! there is.
 pl
+pl 2
 pp
+pp 2
 ds
 dd
+dd 1
+
+! go down a level to proc2
+b stop3
+r
+s
+
+pl 2
+pp 2
+dd
+dd 2
+! step over some writes
+s 2
+ss 2
+tp traceme
+b stop4
+r
+s
+lb
+c
+lb
+w a
+w b
+b stop5
+r
+s
+lw
+cw 1
+lw
+cw
+lw
+ts
+b stop6
+r
+s
+nts
+an
+b stop7
+r
+s
+lsa
+s
+s
+hs
+s
+hs
+tr
+b stop8
+r
+s
+ntr
+
+! Do this at the end, since we change essential variables
+pc
+pc $1234
+pc
+sp
+sp $1234
+sp
+mp
+mp $1234
+mp
+np
+np $1234
+np
 q

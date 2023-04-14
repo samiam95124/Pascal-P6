@@ -27,6 +27,72 @@ procedure stop1; begin end;
 
 procedure stop2; begin end;
 
+procedure stop3; begin end;
+
+procedure traceme; begin end;
+
+procedure stop4; begin end;
+
+procedure stop5; begin end;
+
+procedure stop6; begin end;
+
+procedure stop7; begin end;
+
+procedure stop8; begin end;
+
+procedure dostuff;
+
+var i: integer;
+
+begin
+
+    for i := 1 to 4 do writeln('iteration: ', i);
+
+end;
+
+procedure proc2(i: integer; c: char);
+
+var a: integer;
+    b: char;
+    d: ^integer;
+    e: ^integer;
+
+begin
+
+    a := 75;
+    b := '6';
+
+    stop3;
+
+    writeln('Step past me!');
+    writeln('And me too!');
+    writeln('1');
+    writeln('2');
+    writeln('3');
+    traceme;
+    writeln('4');
+    stop4;
+    writeln('5');
+    a := 12;
+    writeln('6');
+    stop5;
+    writeln('7');
+    writeln('8');
+    dostuff;
+    writeln('9');
+    writeln('10');
+    stop6;
+    dostuff;
+    stop7;
+    new(d);
+    new(e);
+    dispose(d);
+    writeln('11');
+    stop8;
+
+end;
+
 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
 
 var i, x, i2: integer;
@@ -90,6 +156,8 @@ begin
     ip^ := 76;
 
     stop2;
+
+    proc2(74, 'j');
 
 end;
 
