@@ -5301,7 +5301,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
                etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
-               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba,enospcs);
+               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba,enospcs,enomodss);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -5374,6 +5374,7 @@ begin
     eblkmba:  writeln('Block containing symbol must be active');
     emodmba:  writeln('Module must be active');
     enospcs:  writeln('No special symbol found');
+    enomodss: writeln('Cannot modify this special symbol');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -6884,53 +6885,63 @@ begin
       s := s+1
     until chkend(dbc) or (s < 0);
   end else if cn = 'st        ' then begin { set (variable) }
-    vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
-    exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
-    if undef then error(esrcudf);
-    if sim then begin { simple }
-      if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
-        case chkchr(tdc) of
-          'i','p': begin if eres.t <> rtint then error(etypmis);
-                     putint(ad, eres.i)
-                   end;
-          'b','c': begin if eres.t <> rtint then error(etypmis);
-                     putbyt(ad, eres.i)
-                   end;
-          'x': begin if eres.t <> rtint then error(etypmis);
-                 getrng(tdc, enum, si, ei);
-                 if not enum then nxtchr(tdc);
-                 if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
-                 else putint(ad, eres.i)
-               end;
-          'n': begin float(eres); if eres.t <> rtreal then error(etypmis);
-                 putrel(ad, eres.r)
-               end;
-          's': begin if eres.t <> rtreal then error(etypmis);
-                 skpsub(tdc); skpsub(stdc);
-                 if not mattyp(tdc, stdc) then error(etypmat);
-                 putset(ad, eres.s)
-               end;
-          'a': begin if eres.t <> rtstrg then error(etypmis);
-                 if not mattyp(tdc, stdc) then error(etypmat);
-                 nxtchr(stdc); getrng(stdc, enum, si, ei);
-                 if not enum then nxtchr(stdc);
-                 if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
-                   for i := 1 to ei do
-                     begin putbyt(ad, ord(strchr(eres.sc, i)));
-                           ad := ad+charsize end;
-                 end else error(etypmis)
-               end;
+    skpspc(dbc); if chkchr(dbc) = '@' then begin nxtchr(dbc); getlab(dbc);
+      if cn = 'pc        ' then begin expr(i); pc := i end
+      else if cn = 'sp        ' then begin expr(i); sp := i end
+      else if cn = 'mp        ' then begin expr(i); mp := i end
+      else if cn = 'np        ' then begin expr(i); np := i end
+      else if (cn = 'constants ') or (cn = 'globals   ') or 
+              (cn = 'heapbotto ') then error(enomodss)
+      else error(enospcs)
+    end else begin
+      vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
+      exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
+      if undef then error(esrcudf);
+      if sim then begin { simple }
+        if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
+          case chkchr(tdc) of
+            'i','p': begin if eres.t <> rtint then error(etypmis);
+                       putint(ad, eres.i)
+                     end;
+            'b','c': begin if eres.t <> rtint then error(etypmis);
+                       putbyt(ad, eres.i)
+                     end;
+            'x': begin if eres.t <> rtint then error(etypmis);
+                   getrng(tdc, enum, si, ei);
+                   if not enum then nxtchr(tdc);
+                   if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
+                   else putint(ad, eres.i)
+                 end;
+            'n': begin float(eres); if eres.t <> rtreal then error(etypmis);
+                   putrel(ad, eres.r)
+                 end;
+            's': begin if eres.t <> rtreal then error(etypmis);
+                   skpsub(tdc); skpsub(stdc);
+                   if not mattyp(tdc, stdc) then error(etypmat);
+                   putset(ad, eres.s)
+                 end;
+            'a': begin if eres.t <> rtstrg then error(etypmis);
+                   if not mattyp(tdc, stdc) then error(etypmat);
+                   nxtchr(stdc); getrng(stdc, enum, si, ei);
+                   if not enum then nxtchr(stdc);
+                   if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
+                     for i := 1 to ei do
+                       begin putbyt(ad, ord(strchr(eres.sc, i)));
+                             ad := ad+charsize end;
+                   end else error(etypmis)
+                 end;
+          end
+        end else error(etypmis)
+      end else begin { set complex }
+        if not mattyp(tdc, stdc) then error(etypmat);
+        case chkchr(stdc) of
+          'i','b','c','n','x','p','s','e','f': error(esystem);
+          'a','r': begin x := siztyp(stdc);
+                     for i := 1 to x do
+                       begin store[ad] := store[s]; putdef(ad, getdef(s));
+                             ad := ad+1; s := s+1 end;
+                   end
         end
-      end else error(etypmis)
-    end else begin { set complex }
-      if not mattyp(tdc, stdc) then error(etypmat);
-      case chkchr(stdc) of
-        'i','b','c','n','x','p','s','e','f': error(esystem);
-        'a','r': begin x := siztyp(stdc);
-                   for i := 1 to x do
-                     begin store[ad] := store[s]; putdef(ad, getdef(s));
-                           ad := ad+1; s := s+1 end;
-                 end
       end
     end
   end else if cn = 'w         ' then begin { watch (variable) }
@@ -7030,35 +7041,7 @@ begin
       until (i = 0) or lastframe(e) or brk
     end
   end else if cn = 'hs        ' then repspc { report heap space }
-  else if cn = 'pc        ' then begin { set pc }
-    if not chkend(dbc) then begin expr(i); pc := i end
-    else begin
-      wrtnewline; writeln;
-      write('pc: '); wrthex(output, pc, 8, true); writeln;
-      writeln
-    end
-  end else if cn = 'sp        ' then begin { set sp }
-    if not chkend(dbc) then begin expr(i); sp := i end
-    else begin
-      wrtnewline; writeln;
-      write('sp: '); wrthex(output, sp, 8, true); writeln;
-      writeln
-    end
-  end else if cn = 'mp        ' then begin { set mp }
-    if not chkend(dbc) then begin expr(i); mp := i end
-    else begin
-      wrtnewline; writeln;
-      write('mp: '); wrthex(output, mp, 8, true); writeln;
-      writeln
-    end
-  end else if cn = 'np        ' then begin { set np }
-    if not chkend(dbc) then begin expr(i); np := i end
-    else begin
-      wrtnewline; writeln;
-      write('np: '); wrthex(output, np, 8, true); writeln;
-      writeln
-    end
-  end else if cn = 'ti        ' then
+  else if cn = 'ti        ' then
     dotrcins := true { trace instructions }
   else if cn = 'nti       ' then
     dotrcins := false { no trace instructions }
@@ -7122,10 +7105,6 @@ begin
     writeln('si  [n]            Step instructions');
     writeln('sis [n]            Step instructions silently');
     writeln('hs                 Report heap space');
-    writeln('pc  [a]            Set/print pc contents');
-    writeln('sp  [a]            Set/print sp contents');
-    writeln('mp  [a]            Set/print mp contents');
-    writeln('np  [a]            Set/print np contents');
     writeln('ti                 Turn instruction tracing on');
     writeln('nti                Turn instruction tracing off');
     writeln('tr                 Turn system routine tracing on');
