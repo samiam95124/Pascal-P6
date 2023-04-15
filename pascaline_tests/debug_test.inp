@@ -195,6 +195,10 @@ r
 s
 ntr
 
+! Test source profiling
+
+! Test si, sis, lia, bi, tpi
+
 ! Do this at the end, since we change essential variables
 pc
 pc $1234

@@ -5301,7 +5301,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
                etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
-               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba);
+               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba,enospcs);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -5373,6 +5373,7 @@ begin
     emssym:   writeln('Must specify symbol in block');
     eblkmba:  writeln('Block containing symbol must be active');
     emodmba:  writeln('Module must be active');
+    enospcs:  writeln('No special symbol found');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -5447,6 +5448,18 @@ begin
   for i := 1 to maxalfa do cn[i] := ' '; i := 1;
   { note we abbreviate after 9 characters }
   while (chkchr(pc) <> ' ') and (chkchr(pc) <> ';') and not chkend(pc) do
+    begin cn[i] := chkchr(pc); if i < maxalfa then i := i+1 else cn[i] := ' ';
+    nxtchr(pc)
+  end
+end;
+
+procedure getlab(var pc: parctl);
+var i: alfainx;
+begin
+  skpspc(pc);
+  for i := 1 to maxalfa do cn[i] := ' '; i := 1;
+  { note we abbreviate after 9 characters }
+  while chkchr(pc) in ['A'..'Z','a'..'z', '_'] do
     begin cn[i] := chkchr(pc); if i < maxalfa then i := i+1 else cn[i] := ' ';
     nxtchr(pc)
   end
@@ -6226,7 +6239,7 @@ begin
 end;
 
 { process expression or structured reference }
-procedure exptyp(var sp: psymbol; var ad: address; var p: integer;
+procedure exptyp(var syp: psymbol; var ad: address; var p: integer;
                  var r: expres; var simple: boolean; var undef: boolean);
 type opstr = packed array [1..4] of char;
 
@@ -6244,15 +6257,15 @@ begin
    dbc.p := ps
 end;
 
-procedure sexpr(var sp: psymbol; var ad: address; var p: integer;
+procedure sexpr(var syp: psymbol; var ad: address; var p: integer;
                 var r: expres; var simple: boolean; var undef: boolean);
 var l: expres; c: char; f: real; ldc, rdc: parctl;
 
-procedure term(var sp: psymbol; var ad: address; var p: integer;
+procedure term(var syp: psymbol; var ad: address; var p: integer;
                var r: expres; var simple: boolean; var undef: boolean);
 var l: expres; f: real; ldc, rdc: parctl; c: char; lsp: psymbol;
 
-procedure factor(var sp: psymbol; var ad: address; var p: integer;
+procedure factor(var syp: psymbol; var ad: address; var p: integer;
                  var r: expres; var simple: boolean; var undef: boolean);
 var tdc: parctl; enum: boolean; s, e, i, ps, ev, sgn: integer; f: real; c: char;
     st: settype; first: boolean; ldc, rdc: parctl;
@@ -6272,7 +6285,7 @@ begin
 end;
 
 procedure pd(c: char);
-begin strchrass(sp^.digest, p, c); p := p+1 end;
+begin strchrass(syp^.digest, p, c); p := p+1 end;
 
 procedure pdn(i: integer);
 var c: char; lz: boolean; p: integer;
@@ -6285,9 +6298,9 @@ begin
   end
 end;
 
-begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
+begin syp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
   if chkchr(dbc) in ['$','&','%','0'..'9'] then begin
-    getnum(dbc, i); simple := true; r.t := rtint; r.i := i; sp := intsym; p := 1;
+    getnum(dbc, i); simple := true; r.t := rtint; r.i := i; syp := intsym; p := 1;
     if ((chkchr(dbc) = '.') and not matop('..  ', false)) or
        (lcase(chkchr(dbc)) = 'e') then begin { real }
       f := i; ev := 0; if c in ['$','&','%'] then error(erealrx);
@@ -6307,22 +6320,22 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
         ev := ev+i*sgn
       end;
       if ev < 0 then f := f/pwrten(ev) else f := f*pwrten(ev);
-      r.t := rtreal; r.r := f; sp := realsym; p := 1
+      r.t := rtreal; r.r := f; syp := realsym; p := 1
     end
   end else if matop('not ', true) then begin
-    nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(sp, ad, p, r, simple, undef);
+    nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); factor(syp, ad, p, r, simple, undef);
     if undef then error(eoprudf);
     if not simple then error(estropr);
     if r.t <> rtint then error(etypmbus);
-    setpar(tdc, sp^.digest, p);
+    setpar(tdc, syp^.digest, p);
     { if boolean treat as boolean, else whole integer }
     if chkchr(tdc) = 'b' then
       begin if r.i = 0 then r.i := 1 else r.i := 0 end
     else if chkchr(tdc) = 'x' then error(eoprenm)
     else r.i := bnot(r.i)
   end else if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
-    p := 1; vartyp(sp, ad, p);
-    setpar(tdc, sp^.digest, p); { set up type digest for parse }
+    p := 1; vartyp(syp, ad, p);
+    setpar(tdc, syp^.digest, p); { set up type digest for parse }
     if chkchr(tdc) in ['i', 'b','c','p','x','n','s'] then begin
       { scalar }
       simple := true;
@@ -6352,12 +6365,12 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     end else simple := false;
     p := tdc.p
   end else if chkchr(dbc) = '(' then begin
-    nxtchr(dbc); exptyp(sp, ad, p, r, simple, undef);
+    nxtchr(dbc); exptyp(syp, ad, p, r, simple, undef);
     texpect(dbc, ')')
   end else if chkchr(dbc) = '[' then begin { set constant }
     nxtchr(dbc); st := []; first := true;
     repeat { set elements }
-      exptyp(sp, ad, p, r, simple, undef); setpar(rdc, sp^.digest, p);
+      exptyp(syp, ad, p, r, simple, undef); setpar(rdc, syp^.digest, p);
       if undef then error(eoprudf);
       if not simple then error(estropr);
       if r.t <> rtint then error(etypmbus);
@@ -6367,7 +6380,7 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
       first := false; s := r.i; e := s;
       if matop('..  ', false) then begin { range }
         nxtchr(dbc); nxtchr(dbc);
-        exptyp(sp, ad, p, r, simple, undef);
+        exptyp(syp, ad, p, r, simple, undef);
         if undef then error(eoprudf);
         if not simple then error(estropr);
         if r.t <> rtint then error(etypmbus);
@@ -6382,8 +6395,8 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     texpect(dbc, ']');
     r.t := rtset; r.s := st; { place result }
     { create set version of base type }
-    gettmp(sp); strchrass(sp^.digest, 1, 's');
-    for i := rdc.p to rdc.l do strchrass(sp^.digest, i+1, strchr(rdc.b, i));
+    gettmp(syp); strchrass(syp^.digest, 1, 's');
+    for i := rdc.p to rdc.l do strchrass(syp^.digest, i+1, strchr(rdc.b, i));
     p := 1
   end else if chkchr(dbc) = '''' then begin { string }
     nxtchr(dbc); r.t := rtstrg; r.sc := nil; r.l := 0;
@@ -6398,49 +6411,60 @@ begin sp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
       end
     until c <> '''';
     if r.l = 1 then begin { single character }
-      c := strchr(r.sc, 1); r.t := rtint; r.i := ord(c); sp := charsym
+      c := strchr(r.sc, 1); r.t := rtint; r.i := ord(c); syp := charsym
     end else begin
       { construct a type for fixed string }
-      gettmp(sp); p := 1; pd('a'); pd('x'); pd('('); pd('1'); pd(','); pdn(r.l);
+      gettmp(syp); p := 1; pd('a'); pd('x'); pd('('); pd('1'); pd(','); pdn(r.l);
       pd(')'); pd('i'); pd('c');
     end;
     p := 1; simple := true
   end else if chkchr(dbc) = '*' then begin { address of }
-    nxtchr(dbc); p := 1; vartyp(sp, ad, p); r.t := rtint; r.i := ad; simple := true
+    nxtchr(dbc); p := 1; vartyp(syp, ad, p); syp := intsym; r.t := rtint;
+    r.i := ad; simple := true
+  end else if chkchr(dbc) = '@' then begin { special symbol }
+    nxtchr(dbc); getlab(dbc);p := 1; syp := intsym; r.t := rtint; simple := true;
+    if cn = 'pc        ' then r.i := pc
+    else if cn = 'sp        ' then r.i := sp
+    else if cn = 'mp        ' then r.i := mp
+    else if cn = 'np        ' then r.i := np
+    else if cn = 'constants ' then r.i := cststr
+    else if cn = 'globals   ' then r.i := pctop
+    else if cn = 'heapbotto ' then r.i := gbtop
+    else error(enospcs)
   end else error(efactor)
 end;
 
 procedure right;
-begin factor(sp, ad, p, r, simple, undef);
+begin factor(syp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
   if not simple then error(estropr);
 end;
 
 begin { term }
-  factor(sp, ad, p, r, simple, undef);
+  factor(syp, ad, p, r, simple, undef);
   skpspc(dbc);
   while (chkchr(dbc) in ['*', '/']) or matop('div ', true) or
         matop('mod ', true) or
      matop('and ', true) do begin { operator }
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    l := r; lsp := sp; setpar(ldc, sp^.digest, p); c := chkchr(dbc);
+    l := r; lsp := syp; setpar(ldc, syp^.digest, p); c := chkchr(dbc);
     if chkchr(dbc) = '*' then begin nxtchr(dbc); right;
       if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
       if (l.t = rtreal) or (r.t = rtreal) then
-        begin  float(l); float(r); sp := realsym; p := 1 end;
+        begin  float(l); float(r); syp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i*r.i
       else if (l.t = rtreal) and (r.t = rtreal) then
         begin f := l.r*r.r; r.t := rtreal; r.r := f end
       else if (l.t = rtset) and (r.t = rtset) then begin
-        setpar(rdc, sp^.digest, p);
+        setpar(rdc, syp^.digest, p);
         if mattyp(ldc, rdc) then r.s := l.s*r.s
         else error(etypmat)
       end else error(einvcop)
     end else if chkchr(dbc) = '/' then begin nxtchr(dbc); right;
       if ((l.t <> rtint) and (l.t <> rtreal)) or
          ((r.t <> rtint) and (r.t <> rtreal)) then error(etypmir);
-      float(l); float(r); sp := realsym; p := 1;
+      float(l); float(r); syp := realsym; p := 1;
       f := l.r/r.r; r.t := rtreal; r.r := f
     end else if matop('div ', true) then begin
       nxtchr(dbc); nxtchr(dbc); nxtchr(dbc); right;
@@ -6460,14 +6484,14 @@ begin { term }
 end;
 
 procedure right;
-begin term(sp, ad, p, r, simple, undef);
+begin term(syp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
   if not simple then error(estropr)
 end;
 
 begin { sexpr }
   skpspc(dbc); c := chkchr(dbc); if c in ['+','-'] then nxtchr(dbc);
-  term(sp, ad, p, r, simple, undef);
+  term(syp, ad, p, r, simple, undef);
   if c in ['+','-'] then begin
     if undef then error(eoprudf);
     if not simple then error(eoprmbi);
@@ -6479,28 +6503,28 @@ begin { sexpr }
         matop('xor ', true) do begin
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    l := r; setpar(ldc, sp^.digest, p);
+    l := r; setpar(ldc, syp^.digest, p);
     if chkchr(dbc) = '+' then begin nxtchr(dbc); right;
       if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
       if (l.t = rtreal) or (r.t = rtreal) then
-        begin float(l); float(r); sp := realsym; p := 1 end;
+        begin float(l); float(r); syp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i+r.i
       else if (l.t = rtreal) and (r.t = rtreal) then
         begin f := l.r+r.r; r.t := rtreal; r.r := f end
       else if (l.t = rtset) and (r.t = rtset) then begin
-        setpar(rdc, sp^.digest, p);
+        setpar(rdc, syp^.digest, p);
         if mattyp(ldc, rdc) then r.s := l.s+r.s
         else error(etypmat)
       end else error(einvcop)
     end else if chkchr(dbc) = '-' then begin nxtchr(dbc); right;
       if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
       if (l.t = rtreal) or (r.t = rtreal) then
-        begin float(l); float(r); sp := realsym; p := 1 end;
+        begin float(l); float(r); syp := realsym; p := 1 end;
       if (l.t = rtint) and (r.t = rtint) then r.i := l.i-r.i
       else if (l.t = rtreal) and (r.t = rtreal) then
         begin f := l.r-r.r; r.t := rtreal; r.r := f end
       else if (l.t = rtset) and (r.t = rtset) then begin
-        setpar(rdc, sp^.digest, p);
+        setpar(rdc, syp^.digest, p);
         if mattyp(ldc, rdc) then r.s := l.s-r.s
         else error(etypmat)
       end else error(einvcop)
@@ -6518,10 +6542,10 @@ end;
 
 procedure right;
 var rdc: parctl;
-begin sexpr(sp, ad, p, r, simple, undef);
+begin sexpr(syp, ad, p, r, simple, undef);
   if undef then error(eoprudf);
   if not simple then error(estropr);
-  setpar(rdc, sp^.digest, p);
+  setpar(rdc, syp^.digest, p);
   if opin then begin { a in b }
     if chkchr(rdc) <> 's' then error(etypset);
     nxtchr(rdc) { get base type }
@@ -6530,11 +6554,11 @@ begin sexpr(sp, ad, p, r, simple, undef);
 end;
 
 begin { exptyp }
-  sexpr(sp, ad, p, r, simple, undef); skpspc(dbc); opin := matop('in  ', true);
+  sexpr(syp, ad, p, r, simple, undef); skpspc(dbc); opin := matop('in  ', true);
   if (chkchr(dbc) in ['=', '<', '>']) or opin then begin { operator }
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    l := r; setpar(ldc, sp^.digest, p);
+    l := r; setpar(ldc, syp^.digest, p);
     if chkchr(dbc) = '=' then begin nxtchr(dbc); right;
       if (l.t = rtreal) or (r.t = rtreal) then begin float(l); float(r) end;
       if (l.t = rtint) and (r.t = rtint) then r.i := ord(l.i = r.i)
@@ -6596,7 +6620,7 @@ begin { exptyp }
         begin b := l.i in r.s; r.t := rtint; r.i := ord(b) end
       else error(einvcop)
     end;
-    sp := boolsym; p := 1 { retype for boolean result }
+    syp := boolsym; p := 1 { retype for boolean result }
   end
 end;
 
