@@ -19,6 +19,7 @@ pint="0"
 pmach="0"
 cmach="0"
 full="0"
+option=""
 
 #
 # Run regression with current options
@@ -107,6 +108,20 @@ function do_regress {
         diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline.cmp > \
             pascaline_tests/pascaline.dif
         wc -l pascaline_tests/pascaline.dif >> regress_report.txt
+
+    fi
+
+    #
+    # Run debug test
+    # 
+    # Note debug test only runs in pint mode.
+    #
+    if [ "$option" = "" ]; then
+
+        echo "Running debug test"
+        echo "Debug test run" >> regress_report.txt
+        rundebug
+        wc -l pascaline_tests/debug_test.dif >> regress_report.txt
 
     fi
 
