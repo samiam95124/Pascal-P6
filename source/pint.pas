@@ -5301,7 +5301,8 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                evalstr,einvsln,ecntpbk,ebktblf,enbpaad,ebadbv,ecntsct,ewtblf,
                einvwnm,ecmdni,ecmderr,etypmbus,einvcop,etypmir,eintexp,etypmat,
                etypset,eoprenm,erealrx,esetval,eutstrg,etyperr,etypmis,esystem,
-               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba,enospcs,enomodss);
+               esrcudf,etypmirs,esymnfb,emssym,eblkmba,emodmba,enospcs,enomodss,
+               echrrng);
      restyp = (rtint, rtreal, rtset, rtstrg);
      expres = record case t: restyp of
                        rtint:  (i: integer);
@@ -5375,6 +5376,7 @@ begin
     emodmba:  writeln('Module must be active');
     enospcs:  writeln('No special symbol found');
     enomodss: writeln('Cannot modify this special symbol');
+    echrrng:  writeln('Character value out of range');
     esystem:  writeln('System error');
   end;
   goto 2
@@ -6896,7 +6898,6 @@ begin
     end else begin
       vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
       exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
-      if not mattyp(tdc, stdc) then error(etypmis);
       if undef then error(esrcudf);
       if sim then begin { simple }
         if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
@@ -6905,6 +6906,7 @@ begin
                        putint(ad, eres.i)
                      end;
             'b','c': begin if eres.t <> rtint then error(etypmis);
+                       if (eres.i < 0) or (eres.i > 255) then error(echrrng);
                        putbyt(ad, eres.i mod 256)
                      end;
             'x': begin if eres.t <> rtint then error(etypmis);

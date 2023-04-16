@@ -194,41 +194,32 @@ b stop8
 r
 s
 ntr
+! step out of proc2
+s
+! step out of proc1
+s
 
 ! Test source profiling
 
 ! Test si, sis, lia, bi, tpi
 
 ! Test system variables
-! We save the contents to program variables
-st pc @pc
-
+! This must be done at the end since it corrups the variables.
 p @pc$
 st @pc $1234
 p @pc$
-st @pc pc
-p @pc
 
-st sp @sp
 p @sp$
 st @sp $1234
 p @sp$
-st @sp sp
-p @sp
 
-st mp @mp
 p @mp$
 st @mp $1234
 p @mp$
-st @mp mp
-p @mp
 
-st np @np
 p @np$
 st @np $1234
 p @np$
-st @np np
-p @np
 
 ! these variables can't be changed
 p @constants

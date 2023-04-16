@@ -22,7 +22,6 @@ var i, x, i2: integer;
     a: a10;
     ar: a2;
     pi: ^integer;
-    pc, sp, mp, np: integer;
 
 procedure stop1; begin end;
 
