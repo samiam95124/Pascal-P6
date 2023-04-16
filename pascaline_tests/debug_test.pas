@@ -216,4 +216,7 @@ begin
 
     proc1(83, 'g', true, two, 7, 98.76, rv, ar);
 
+    writeln('Step me!');
+    for i := 1 to 3 do writeln('Hi there!');    
+
 end.

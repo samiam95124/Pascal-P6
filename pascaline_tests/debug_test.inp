@@ -3,6 +3,8 @@
 ! end because they can move around with changes to the program.
 !
 h
+! turn on source profiling for later test
+spf
 l debug_test 1
 l debug_test 1 100
 l debug_test 1:100
@@ -199,9 +201,39 @@ s
 ! step out of proc1
 s
 
-! Test source profiling
+! Test source profiling.
+! Compare this listing with the one at program start to see if the counters have
+! rolled.
+l debug_test 1 100
 
+! machine commands can be tested in source mode, we just don't get a machine
+! level status print. Note li @pc can be a defacto assembly status, since it 
+! shows where the execution point is.
+!
+! Note the test can need to be recalibrated if the source changes.
+!
 ! Test si, sis, lia, bi, tpi
+p @pc$
+li @pc
+si
+p @pc$
+li @pc
+sis
+p @pc$
+li @pc
+an
+bi $278d
+r
+p @pc$
+li @pc
+lia
+! Now step to for loop
+s
+li @pc:20
+! trace at the top of the for loop, and break the line after
+tpi $27f9
+b 222
+r
 
 ! Test system variables
 ! This must be done at the end since it corrups the variables.
