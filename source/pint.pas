@@ -6420,7 +6420,7 @@ begin syp := nil; undef := false; skpspc(dbc); c := chkchr(dbc);
     end;
     p := 1; simple := true
   end else if chkchr(dbc) = '*' then begin { address of }
-    nxtchr(dbc); p := 1; vartyp(syp, ad, p); syp := intsym; r.t := rtint;
+    nxtchr(dbc); vartyp(syp, ad, p); syp := intsym; p := 1; r.t := rtint;
     r.i := ad; simple := true
   end else if chkchr(dbc) = '@' then begin { special symbol }
     nxtchr(dbc); getlab(dbc);p := 1; syp := intsym; r.t := rtint; simple := true;
@@ -6896,6 +6896,7 @@ begin
     end else begin
       vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
       exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
+      if not mattyp(tdc, stdc) then error(etypmis);
       if undef then error(esrcudf);
       if sim then begin { simple }
         if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
@@ -6904,7 +6905,7 @@ begin
                        putint(ad, eres.i)
                      end;
             'b','c': begin if eres.t <> rtint then error(etypmis);
-                       putbyt(ad, eres.i)
+                       putbyt(ad, eres.i mod 256)
                      end;
             'x': begin if eres.t <> rtint then error(etypmis);
                    getrng(tdc, enum, si, ei);

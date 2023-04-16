@@ -199,17 +199,40 @@ ntr
 
 ! Test si, sis, lia, bi, tpi
 
-! Do this at the end, since we change essential variables
-pc
-pc $1234
-pc
-sp
-sp $1234
-sp
-mp
-mp $1234
-mp
-np
-np $1234
-np
+! Test system variables
+! We save the contents to program variables
+st pc @pc
+
+p @pc$
+st @pc $1234
+p @pc$
+st @pc pc
+p @pc
+
+st sp @sp
+p @sp$
+st @sp $1234
+p @sp$
+st @sp sp
+p @sp
+
+st mp @mp
+p @mp$
+st @mp $1234
+p @mp$
+st @mp mp
+p @mp
+
+st np @np
+p @np$
+st @np $1234
+p @np$
+st @np np
+p @np
+
+! these variables can't be changed
+p @constants
+p @heapbottom
+
+! exit complete
 q
