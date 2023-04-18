@@ -184,7 +184,7 @@ const
    maxsp      = 85;   { number of standard procedures/functions }
    maxins     = 121;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
-   maxstd     = 81;   { number of standard identifiers }
+   maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    maxopt     = 26;   { number of options }
@@ -568,7 +568,7 @@ var
     boolptr,nilptr,textptr,
     exceptptr,stringptr,pstringptr,
     byteptr,vectorptr,matrixptr,
-    abyteptr: stp;                  (*pointers to entries of standard ids*)
+    abyteptr,scharptr: stp;         (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
     ufldptr,uprcptr,ufctptr,        (*pointers to entries for undeclared ids*)
     fwptr: ctp;                     (*head of chain of forw decl type ids*)
@@ -9181,6 +9181,7 @@ begin cmdpos := maxcmd end;
     na[73] := 'exception'; na[74] := 'throw    '; na[75] := 'max      ';
     na[76] := 'string   '; na[77] := 'pstring  '; na[78] := 'byte     ';
     na[79] := 'vector   '; na[80] := 'matrix   '; na[81] := 'abyte    ';
+    na[82] := 'schar    ';
 
   end (*stdnames*) ;
 
@@ -9251,7 +9252,10 @@ begin cmdpos := maxcmd end;
       begin form := arrayc; size := 0; packing := false;
             abstype := vectorptr end;
 
-
+    new(scharptr,power); pshstc(scharptr);                    (*set of char*)
+    with scharptr^ do
+      begin form := power; size := setsize; packing := false; elset := charptr;
+            matchpack := true end;
   end (*enterstdtypes*) ;
 
   procedure entstdnames;
@@ -9346,7 +9350,7 @@ begin cmdpos := maxcmd end;
     entstdtyp(79, vectorptr);                                 (*vector*)
     entstdtyp(80, matrixptr);                                 (*matrix*)
     entstdtyp(81, abyteptr);                                  (*array of bytes*)
-
+    entstdtyp(82, scharptr);                                  (*set of char*)
 
     cp1 := nil;
     for i := 1 to 2 do
@@ -9358,7 +9362,6 @@ begin cmdpos := maxcmd end;
         enterid(cp); cp1 := cp
       end;
     boolptr^.fconst := cp;
-
 
     entstdhdr(3); inputptr := cp;                             (*input*)
     entstdhdr(4); outputptr := cp;                            (*output*)
