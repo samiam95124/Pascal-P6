@@ -1717,6 +1717,8 @@ begin cmdpos := maxcmd end;
     291: write('Set element out of implementation range');
     292: write('Function expected in this context');
     293: write('Procedure expected in this context');
+    294: write('Cannot forward an external declaration');
+    295: write('procedure or function previously declared external');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -7309,7 +7311,7 @@ begin cmdpos := maxcmd end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
-          forw,virt,ovrl: boolean; oldtop: disprange;
+          forw,extl,virt,ovrl: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
           ops: restr; opt: operatort;
 
@@ -7686,7 +7688,7 @@ begin cmdpos := maxcmd end;
         else fsy := sy; insymbol
       end;
       { set parameter address start to zero, offset later }
-      llc := lc; lc := 0; forw := false; virt := false;
+      llc := lc; lc := 0; forw := false; extl := false; virt := false;
       ovrl := false;
       if (sy = ident) or (fsy = operatorsy) then
         begin
@@ -7709,12 +7711,14 @@ begin cmdpos := maxcmd end;
               { set flags according to attribute }
               if lcp^.klass = proc then begin
                 forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
+                extl := lcp^.externl and (fsy=procsy) and (lcp^.pfkind=actual);
                 virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
                         (fsy=procsy)and(lcp^.pfkind=actual);
                 ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
                         (fpat = fpaoverload)
               end else if lcp^.klass = func then begin
                   forw:=lcp^.forwdecl and (fsy=funcsy) and (lcp^.pfkind=actual);
+                  extl:=lcp^.externl and (fsy=funcsy) and (lcp^.pfkind=actual);
                   virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
                           (fsy=funcsy)and(lcp^.pfkind=actual);
                   ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
@@ -7855,9 +7859,13 @@ begin cmdpos := maxcmd end;
         else
           if not forw or plst then error(123);
       if sy = semicolon then insymbol else error(14);
-      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy)  then
+      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
+         (sy = externalsy) then
         begin
-          if forw then error(161)
+          if forw then { previously forwarded }
+            if (sy = externalsy) then error(294) else error(161);
+          if extl and not ovrl then error(295);
+          if sy = externalsy then begin chkstd; lcp^.externl  := true end
           else lcp^.forwdecl := true;
           insymbol;
           if sy = semicolon then insymbol else error(14);
