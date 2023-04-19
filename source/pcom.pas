@@ -1416,14 +1416,19 @@ begin cmdpos := maxcmd end;
 
   { this block of functions wraps source reads ******************************* }
 
+  function incact: boolean;
+  begin
+    incact := incstk <> nil
+  end;
+
   function fileeof: boolean;
   begin
-    if incstk <> nil then fileeof := eof(incstk^.f) else fileeof := eof(prd);
+    if incact then fileeof := eof(incstk^.f) else fileeof := eof(prd);
   end;
 
   function fileeoln: boolean;
   begin
-    if incstk <> nil then fileeoln := eoln(incstk^.f) 
+    if incact then fileeoln := eoln(incstk^.f) 
     else fileeoln := eoln(prd);
   end;
 
@@ -1435,7 +1440,7 @@ begin cmdpos := maxcmd end;
     srclen := 0; srcinx := 1; for i := 1 to maxlin do srclin[i] := ' ';
     if not fileeof then begin
       while not fileeoln do begin
-        if incstk <> nil then read(incstk^.f, srclin[srcinx])
+        if incact then read(incstk^.f, srclin[srcinx])
         else read(prd, srclin[srcinx]); 
         if srclen = maxlin-1 then begin
           if not ovf then 
@@ -1443,7 +1448,7 @@ begin cmdpos := maxcmd end;
           ovf := true
         end else begin srclen := srclen+1; srcinx := srcinx+1 end
       end;
-      if incstk <> nil then readln(incstk^.f)
+      if incact then readln(incstk^.f)
       else readln(prd);   
     end;
     srcinx := 1;
@@ -1808,12 +1813,12 @@ begin cmdpos := maxcmd end;
   { check in private section }
   function inpriv: boolean;
   begin inpriv := false;
-    if incstk <> nil then inpriv := incstk^.priv
+    if incact then inpriv := incstk^.priv
   end;
 
   procedure error(ferrnr: integer);
   begin
-    if incstk = nil then begin { supress errors in includes }
+    if not incact then begin { supress errors in includes }
 
       { This diagnostic is here because error buffers error numbers til the end
         of line, and sometimes you need to know exactly where they occurred. }
@@ -1962,8 +1967,8 @@ begin cmdpos := maxcmd end;
           9:  switch(chkvbk);
           10: switch(experr);
           11: switch(dummy);
-          12: if (incstk = nil) then begin 
-                switch(list); if not list then writeln(output) 
+          12: if not incact then begin 
+                switch(list); if not list then writeln(output)
               end;
           13: switch(dummy);
           14: switch(dummy);
@@ -2278,7 +2283,7 @@ begin cmdpos := maxcmd end;
        begin nextch;
          if ch = '*' then
            begin nextch;
-             if (ch = '$') and (incstk = nil) then options;
+             if (ch = '$') and not incact then options;
              repeat
                while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
                iscmte := ch = '}'; nextch
@@ -2384,7 +2389,7 @@ begin cmdpos := maxcmd end;
         repeat lcp1 := lcp;
           if strequvv(lcp^.name, fcp^.name) then begin
             (*name conflict, follow right link*)
-            if incstk <> nil then begin
+            if incact then begin
               writeln; write('*** Duplicate in uses/joins: ');
               writevp(output, fcp^.name);
               writeln
@@ -2891,7 +2896,7 @@ begin cmdpos := maxcmd end;
       if p <> nil then begin
         chkrefs(p^.llink, w); { check left }
         chkrefs(p^.rlink, w); { check right }
-        if not p^.refer and (p^.klass <> alias) then begin
+        if not p^.refer and (p^.klass <> alias) and not incact then begin
           if not w then writeln; writev(output, p^.name, 10);
           writeln(' unreferenced'); w := true
         end
@@ -7065,7 +7070,7 @@ begin cmdpos := maxcmd end;
                begin klass := vars; strassvf(name, id); next := nxt;
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; isloc := false; threat := false; forcnt := 0;
-                  part := ptval; hdr := false; vext := incstk <> nil; 
+                  part := ptval; hdr := false; vext := incact; 
                   vmod := incstk; inilab := -1; ininxt := nil; dblptr := false;
                 end;
               enterid(lcp);
@@ -7282,7 +7287,7 @@ begin cmdpos := maxcmd end;
           begin new(lcp,fixedt); ininam(lcp);
             with lcp^ do
              begin klass := fixedt; strassvf(name, id);
-               idtype := nil; floc := -1; fext := incstk <> nil; fmod := incstk
+               idtype := nil; floc := -1; fext := incact; fmod := incstk
              end;
             enterid(lcp);
             insymbol;
@@ -7764,7 +7769,7 @@ begin cmdpos := maxcmd end;
                   sysrot := false; extern := false; pflev := level; 
                   genlabel(lbname); pfdeckind := declared; pfkind := actual; 
                   pfname := lbname; pflist := nil; asgn := false;
-                  pext := incstk <> nil; pmod := incstk; refer := false;
+                  pext := incact; pmod := incstk; refer := false;
                   pfattr := fpat; grpnxt := nil; grppar := lcp;
                   if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
                     if pfattr = fpavirtual then begin
@@ -7775,7 +7780,7 @@ begin cmdpos := maxcmd end;
                         idtype := nilptr; vkind := actual; next := nil;
                         vlev := 0; vaddr := gc; isloc := false; threat := false;
                         forcnt := 0; part := ptval; hdr := false; 
-                        vext := incstk <> nil; vmod := incstk; inilab := -1; 
+                        vext := incact; vmod := incstk; inilab := -1; 
                         ininxt := nil; dblptr := false;
                       end;
                       enterid(lcp2); lcp^.pfvid := lcp2;
@@ -7908,7 +7913,8 @@ begin cmdpos := maxcmd end;
             else writeln(prr, 'e f');
           if lcp^.klass = func then
             if lcp <> ufctptr then
-              if not lcp^.asgn then error(193) { no function result assign }
+              if not lcp^.asgn and not incact then 
+                error(193) { no function result assign }
         end;
       level := oldlev; putdsps(oldtop); top := oldtop; lc := llc;
     end (*procdeclaration*) ;
@@ -7919,7 +7925,7 @@ begin cmdpos := maxcmd end;
       repeat
         if sy = privatesy then begin insymbol;
           if level > 1 then error(266);
-          if (incstk <> nil) and (level <= 1) then
+          if incact and (level <= 1) then
             incstk^.priv := true { flag private encountered }
         end;
         if not inpriv then begin { if private, get us out quickly }
@@ -8837,7 +8843,7 @@ begin cmdpos := maxcmd end;
       end;
     lcmin := lc;
     addlvl;
-    if (level = 1) and (incstk = nil) then begin { perform module setup tasks }
+    if (level = 1) and not incact then begin { perform module setup tasks }
       externalheader; { process external header files }
       initvirt { process virtual procedure/function sets }
     end;
@@ -8869,7 +8875,7 @@ begin cmdpos := maxcmd end;
           if not defined or not refer then
             begin if not defined then error(168);
               writeln(output); write('label ',labval:11);
-              if not refer then write(' unreferenced');
+              if not refer and not incact then write(' unreferenced');
               writeln;
               write(' ':chcnt+16)
             end;
@@ -8943,7 +8949,7 @@ begin cmdpos := maxcmd end;
   procedure closeinput;
   var fp: filptr;
   begin
-    if incstk = nil then error(505);
+    if not incact then error(505);
     closetext(incstk^.f);
     linecount := incstk^.linecounts; lineout := incstk^.lineouts;
     { remove top include entry }
@@ -9073,7 +9079,7 @@ begin cmdpos := maxcmd end;
             repeat insymbol;
               if sy = ident then
                 begin 
-                  if incstk = nil then begin
+                  if not incact then begin
                     getfil(extfp); if searchext then error(240);
                     with extfp^ do
                       begin filename := id; nextfile := fextfilep end;
@@ -9093,7 +9099,7 @@ begin cmdpos := maxcmd end;
               else error(2)
             until sy <> comma;
             { reverse the header list into order }
-            if incstk = nil then begin
+            if not incact then begin
               newfl := nil;
               while fextfilep <> nil do 
                 begin extfp := fextfilep; fextfilep := fextfilep^.nextfile; 
