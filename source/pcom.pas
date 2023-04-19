@@ -359,7 +359,7 @@ type                                                        (*describing:*)
                               standard: (key: keyrng);
                               declared: (pflev: levrange; pfname: integer;
                                           case pfkind: idkind of
-                                           actual: (forwdecl, externl: boolean);
+                                           actual: (forwdecl, sysrot, extern: boolean);
                                            formal: ()));
                      alias: (actid: ctp; { actual id })
                    end;
@@ -2773,8 +2773,10 @@ begin cmdpos := maxcmd end;
                        begin write('actual':intdig, ' ');
                          if forwdecl then write('forward':intdig, ' ')
                          else write('not forward':intdig, ' ');
-                         if externl then write('extern':intdig)
-                         else write('not extern':intdig);
+                         if sysrot then write('system routine':intdig)
+                         else write('not system routine':intdig);
+                         if extern then write('external':intdig)
+                         else write('not external':intdig)
                        end
                      else write('formal':intdig)
                    end
@@ -5396,7 +5398,7 @@ begin cmdpos := maxcmd end;
         begin nxt := pflist; lkind := pfkind;
           { I don't know why these are dups, guess is a badly formed far call }
           if pfkind = actual then begin { it's a system call }
-            if not externl then gensfr(frlab)
+            if not sysrot then gensfr(frlab)
           end else gensfr(frlab) { its an indirect }
         end;
       if sy = lparent then
@@ -5555,7 +5557,7 @@ begin cmdpos := maxcmd end;
         begin if nxt <> nil then if ovrl then error(275) else error(126);
           with fcp^ do
             begin
-              if externl then gen1(30(*csp*),pfname)
+              if sysrot then gen1(30(*csp*),pfname)
               else begin
                 if (pfattr = fpavirtual) or (pfattr = fpaoverride) then begin
                   if inherit then begin
@@ -7711,14 +7713,14 @@ begin cmdpos := maxcmd end;
               { set flags according to attribute }
               if lcp^.klass = proc then begin
                 forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
-                extl := lcp^.externl and (fsy=procsy) and (lcp^.pfkind=actual);
+                extl := lcp^.extern and (fsy=procsy) and (lcp^.pfkind=actual);
                 virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
                         (fsy=procsy)and(lcp^.pfkind=actual);
                 ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
                         (fpat = fpaoverload)
               end else if lcp^.klass = func then begin
                   forw:=lcp^.forwdecl and (fsy=funcsy) and (lcp^.pfkind=actual);
-                  extl:=lcp^.externl and (fsy=funcsy) and (lcp^.pfkind=actual);
+                  extl:=lcp^.extern and (fsy=funcsy) and (lcp^.pfkind=actual);
                   virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
                           (fsy=funcsy)and(lcp^.pfkind=actual);
                   ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
@@ -7759,9 +7761,9 @@ begin cmdpos := maxcmd end;
                     strassvr(name, ops)
                   end else strassvf(name, id);
                   idtype := nil; next := nil;
-                  externl := false; pflev := level; genlabel(lbname);
-                  pfdeckind := declared; pfkind := actual; pfname := lbname;
-                  pflist := nil; asgn := false;
+                  sysrot := false; extern := false; pflev := level; 
+                  genlabel(lbname); pfdeckind := declared; pfkind := actual; 
+                  pfname := lbname; pflist := nil; asgn := false;
                   pext := incstk <> nil; pmod := incstk; refer := false;
                   pfattr := fpat; grpnxt := nil; grppar := lcp;
                   if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
@@ -7865,7 +7867,7 @@ begin cmdpos := maxcmd end;
           if forw then { previously forwarded }
             if (sy = externalsy) then error(294) else error(161);
           if extl and not ovrl then error(295);
-          if sy = externalsy then begin chkstd; lcp^.externl  := true end
+          if sy = externalsy then begin chkstd; lcp^.extern  := true end
           else lcp^.forwdecl := true;
           insymbol;
           if sy = semicolon then insymbol else error(14);
@@ -9384,10 +9386,10 @@ begin cmdpos := maxcmd end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
           begin klass := func; strassvr(name, na[i]); idtype := realptr;
-            pflist := cp; forwdecl := false; externl := true; pflev := 0;
-            pfname := i - 12; pfdeckind := declared; pfkind := actual;
-            pfaddr := 0; pext := false; pmod := nil; pfattr := fpanone;
-            grpnxt := nil; grppar := cp1; pfvid := nil
+            pflist := cp; forwdecl := false; sysrot := true; extern := false; 
+            pflev := 0; pfname := i - 12; pfdeckind := declared; 
+            pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
+            pfattr := fpanone; grpnxt := nil; grppar := cp1; pfvid := nil
           end;
         enterid(cp1)
       end;
@@ -9546,16 +9548,16 @@ begin cmdpos := maxcmd end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
       begin klass := proc; strassvr(name, '         '); idtype := nil;
-        forwdecl := false; next := nil; externl := false; pflev := 0;
-        genlabel(pfname); pflist := nil; pfdeckind := declared;
+        forwdecl := false; next := nil; sysrot := false; extern := false; 
+        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
         pfvid := nil
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
       begin klass := func; strassvr(name, '         '); idtype := nil;
-        next := nil; forwdecl := false; externl := false; pflev := 0;
-        genlabel(pfname); pflist := nil; pfdeckind := declared;
+        next := nil; forwdecl := false; sysrot := false; extern := false; 
+        pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
         pfvid := nil
       end
