@@ -510,45 +510,50 @@ begin
 
        2:  begin { times() }
 
-           pa_times(@s, getint(sp+intsize*2), getint(sp));
-           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+           pa_times(@s, getint(params+intsize*2), getint(params));
+           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           params := params+intsize+ptrsize+intsize
 
        end;
 
        3:  begin { dates() }
 
-           pa_dates(@s, getint(sp+intsize*2), getint(sp));
-           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+           pa_dates(@s, getint(params+intsize*2), getint(params));
+           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           params := params+intsize+ptrsize+intsize
 
        end;
        4:  begin { writetime() }
 
-           pa_times(@s, strmax, getint(sp));
-           ad := getadr(sp+intsize);
-           prtcstrfil(ad, @s)
+           pa_times(@s, strmax, getint(params));
+           ad := getadr(params+intsize);
+           prtcstrfil(ad, @s);
+           params := params+intsize+ptrsize
 
        end;
 
        5:  begin { writedate() }
 
-           pa_dates(@s, strmax, getint(sp));
-           ad := getadr(sp+intsize);
-           prtcstrfil(ad, @s)
+           pa_dates(@s, strmax, getint(params));
+           ad := getadr(params+intsize);
+           prtcstrfil(ad, @s);
+           params := params+intsize+ptrsize
 
        end;
 
        6: begin { time() }
 
            a := pa_time;
-           putint(mp, a)
+           putint(params, a)
 
        end;
 
        7: begin { local() }
 
-           a := getint(sp);
+           a := getint(params);
            a := pa_local(a);
-           putint(mp, a)
+           putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -561,49 +566,55 @@ begin
 
        9: begin { elapsed() }
 
-           a := getint(sp);
+           a := getint(params);
            a := pa_elapsed(a);
-           putint(mp, a)
+           putint(mp, a);
+           params := params+intsize
 
        end;
 
        10: begin { validfile() }
 
-           getstr(sp, s);
+           getstr(params, s);
            bl := pa_validfile(@s) <> 0;
-           putint(mp, ord(bl))
+           putint(mp, ord(bl));
+           params := params+ptrsize+intsize
 
        end;
 
        11: begin { validpath() }
 
-           getstr(sp, s);
+           getstr(params, s);
            bl := pa_validpath(@s) <> 0;
-           putint(mp, ord(bl))
+           putint(mp, ord(bl));
+           params := params+ptrsize+intsize
 
        end;
 
        12: begin { wild() }
 
-           getstr(sp, s);
+           getstr(params, s);
            bl := pa_wild(@s) <> 0;
-           putint(mp, ord(bl))
+           putint(mp, ord(bl));
+           params := params+ptrsize+intsize
 
        end;
 
        13: begin { getenv() }
 
-          getstr(sp+ptrsize+intsize, s);
-          pa_getenv(@s, @s2, getint(sp+ptrsize));
-          putstr(s2, getint(sp+ptrsize), getadr(sp))
+          getstr(params+ptrsize+intsize, s);
+          pa_getenv(@s, @s2, getint(params+ptrsize));
+          putstr(s2, getint(params+ptrsize), getadr(params));
+          params := params+ptrsize+intsize+ptrsize+intsize
 
        end;
 
        14: begin { setenv() }
 
-          getstr(sp+ptrsize+intsize, s);
-          getstr(sp, s2);
-          pa_setenv(@s, @s2)
+          getstr(params+ptrsize+intsize, s);
+          getstr(params, s2);
+          pa_setenv(@s, @s2);
+          params := params+ptrsize+intsize
 
        end;
 
@@ -641,7 +652,7 @@ begin
               ep := ep^.next { link next entry }
 
           end;
-          ad := getadr(sp); { get address of list pointer }
+          ad := getadr(params); { get address of list pointer }
           putadr(ad, ad4); { place to vm client }
 
           { need to free up original C side entries we copied }
@@ -650,190 +661,214 @@ begin
 
        16: begin { remenv() }
 
-          getstr(sp, s);
-          pa_remenv(@s)
+          getstr(params, s);
+          pa_remenv(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        17: begin { exec() }
 
-          getstr(sp, s);
-          pa_exec(@s)
+          getstr(params, s);
+          pa_exec(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        18: begin { exece() }
 
-          getstr(sp+adrsize, s);
-          getenv(getadr(sp), ep);
-          pa_exece(@s, integer(ep))
+          getstr(params+adrsize, s);
+          getenv(getadr(params), ep);
+          pa_exece(@s, integer(ep));
+          params := params+ptrsize+ptrsize+intsize
 
        end;
 
        19: begin { execw() }
 
-          getstr(sp+adrsize, s);
+          getstr(params+adrsize, s);
           pa_execw(@s, aci);
-          putint(getadr(sp), aci)
+          putint(getadr(params), aci);
+          params := params+ptrsize+ptrsize+intsize
 
        end;
 
        20: begin { execew }
 
-          getstr(sp+adrsize*2, s);
-          getenv(getadr(sp+adrsize), ep);
+          getstr(params+adrsize*2, s);
+          getenv(getadr(params+adrsize), ep);
           pa_execew(@s, integer(ep), aci);
-          putint(getadr(sp), aci)
+          putint(getadr(params), aci);
+          params := params+ptrsize+ptrsize+ptrsize+intsize
 
        end;
 
        21: begin { getcur() }
 
-           pa_getcur(@s, getint(sp+intsize+ptrsize));
-           putstr(s, getint(sp+intsize), getadr(sp))
+           pa_getcur(@s, getint(params+intsize+ptrsize));
+           putstr(s, getint(params+intsize), getadr(params));
+           params := params+ptrsize+intsize
 
        end;
 
        22: begin { setcur() }
 
-          getstr(sp, s);
-          pa_setcur(@s)
+          getstr(params, s);
+          pa_setcur(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        23: begin { brknam() }
 
-          getstr(sp+ptrsize*3+intsize*3, s);
-          pa_brknam(@s, @s2, getint(sp+ptrsize*3+intsize*2),
-                    @s3, getint(sp+ptrsize*2+intsize),
-                    @s4, getint(sp+ptrsize));
-          putstr(s2, getint(sp+ptrsize*3+intsize*2), getadr(sp+ptrsize*2+intsize*2));
-          putstr(s3, getint(sp+ptrsize*2+intsize), getadr(sp+ptrsize+intsize));
-          putstr(s4, getint(sp+ptrsize), getadr(sp));
+          getstr(params+ptrsize*3+intsize*3, s);
+          pa_brknam(@s, @s2, getint(params+ptrsize*3+intsize*2),
+                    @s3, getint(params+ptrsize*2+intsize),
+                    @s4, getint(params+ptrsize));
+          putstr(s2, getint(params+ptrsize*3+intsize*2), getadr(params+ptrsize*2+intsize*2));
+          putstr(s3, getint(params+ptrsize*2+intsize), getadr(params+ptrsize+intsize));
+          putstr(s4, getint(params+ptrsize), getadr(params));
+          params := params+(ptrsize+intsize)*4
 
        end;
 
        24: begin { maknam() }
 
-          getstr(sp+ptrsize*2+intsize*2, s2);
-          getstr(sp+ptrsize+intsize, s3);
-          getstr(sp, s4);
+          getstr(params+ptrsize*2+intsize*2, s2);
+          getstr(params+ptrsize+intsize, s3);
+          getstr(params, s4);
           pa_maknam(@s, getint(ptrsize*4+intsize*3), @s2, @s3, @s4);
-          putstr(s, getint(sp+ptrsize*4+intsize*3), getadr(sp+ptrsize*3+intsize*3))
+          putstr(s, getint(params+ptrsize*4+intsize*3), getadr(params+ptrsize*3+intsize*3))
+          params := params+(ptrsize+intsize)*4
 
        end;
 
        25: begin { fulnam() }
 
-           getstr(sp, s);
-           pa_fulnam(@s, getint(sp+ptrsize));
-           putstr(s, getint(sp+ptrsize), getadr(sp))
+           getstr(params, s);
+           pa_fulnam(@s, getint(params+ptrsize));
+           putstr(s, getint(params+ptrsize), getadr(params));
+           params := params+ptrsize+intsize
 
        end;
 
        26: begin { getpgm() }
 
-           pa_getpgm(@s, getint(sp+ptrsize));
-           putstr(s, getint(sp+ptrsize), getadr(sp))
+           pa_getpgm(@s, getint(params+ptrsize));
+           putstr(s, getint(params+ptrsize), getadr(params));
+           params := params+ptrsize+intsize
 
        end;
 
        27: begin { getusr() }
 
-           pa_getusr(@s, getint(sp+ptrsize));
-           putstr(s, getint(sp+ptrsize), getadr(sp))
+           pa_getusr(@s, getint(params+ptrsize));
+           putstr(s, getint(params+ptrsize), getadr(params));
+           params := params+ptrsize+intsize
 
        end;
 
        28: begin { setatr() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_setatr(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_setatr(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        29: begin { resatr() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_resatr(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_resatr(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        30: begin { bakupd() }
 
-          getstr(sp, s);
-          pa_bakupd(@s)
+          getstr(params, s);
+          pa_bakupd(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        31: begin { setuper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_setuper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_setuper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        32: begin { resuper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_resuper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_resuper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        33: begin { setgper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_setgper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_setgper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        34: begin { resgper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_resgper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_resgper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        35: begin { setoper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_setoper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_setoper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        36: begin { resoper() }
 
-           getstr(sp+setsize, s);
-           getsetfil(sp, a);
-           pa_resoper(@s, a)
+           getstr(params+setsize, s);
+           getsetfil(params, a);
+           pa_resoper(@s, a);
+           params := params+setsize+ptrsize+intsize
 
        end;
 
        37: begin { makpth() }
 
-          getstr(sp, s);
-          pa_makpth(@s)
+          getstr(params, s);
+          pa_makpth(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        38: begin { rempth() }
 
-          getstr(sp, s);
-          pa_rempth(@s)
+          getstr(params, s);
+          pa_rempth(@s);
+          params := params+ptrsize+intsize
 
        end;
 
        39: begin { filchr() }
 
            pa_filchr(integer(@st));
-           putsetchr(getadr(sp), st)
+           putsetchr(getadr(params), st)
+           params := params+setsize
 
        end;
 
@@ -841,6 +876,7 @@ begin
 
            ch := pa_optchr();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -881,8 +917,8 @@ begin
 
        46: begin { countrys() }
 
-           pa_countrys(@s, getint(sp+intsize*2), getint(sp));
-           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+           pa_countrys(@s, getint(params+intsize*2), getint(params));
+           putstr(s, getint(params+intsize*2), getadr(params+intsize))
 
        end;
 
@@ -916,8 +952,8 @@ begin
 
        51: begin { languages() }
 
-           pa_languages(@s, getint(sp+intsize*2), getint(sp));
-           putstr(s, getint(sp+intsize*2), getadr(sp+intsize))
+           pa_languages(@s, getint(params+intsize*2), getint(params));
+           putstr(s, getint(params+intsize*2), getadr(params+intsize))
 
        end;
 
@@ -972,7 +1008,7 @@ begin
 
        59: begin { seterr() }
 
-           exitcode := getint(sp)
+           exitcode := getint(params)
 
        end;
 
