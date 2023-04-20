@@ -13,7 +13,7 @@ C.
 
 External routine definitions
 
-Each of these brings an externally defined routine into Pascal callable form.
+Each of these brings an externally defined routine into Pascaline callable form.
 
 *******************************************************************************}
 
@@ -195,11 +195,9 @@ end;
 
 Execute routine by number
 
-Given a routine number, executes that routine. All of the input parameters are
-passed on the stack, and the result, if any, also returned on the stack.
-
-All of the input parameters are removed from the stack, leaving just the result
-(if any).
+Given a routine number, executes that routine. The bottom of the input 
+parameters is given, and the result above that. On return, the parameters are
+skipped and the address of the return value is given.
 
 The load of parameters is fairly ad-hoc. Value parameters are simply fetched.
 VAR and VIEW pameters have to be loaded into a buffer to transfer.
@@ -210,7 +208,8 @@ VAR and VIEW pameters have to be loaded into a buffer to transfer.
 {$gnu-pascal}
 
 procedure ExecuteExternal(
-    { number of routine to execute} routine: integer
+    { number of routine to execute}             routine: integer;
+    { address of parameters bottom/result } var params:  address
     );
 
 const strmax = 1000;
@@ -456,7 +455,7 @@ begin
 
        1: begin { list() }
 
-           getstr(sp+adrsize, s); { load string }
+           getstr(params+adrsize, s); { load string }
            pa_list(@s, integer(@fp)); { get files list }
            ad3 := 0; { set no last entry }
            ad4 := 0; { set no top entry }
@@ -500,8 +499,10 @@ begin
               fp := fp^.next { link next entry }
 
            end;
-           ad := getadr(sp); { get address of list pointer }
+           ad := getadr(params); { get address of list pointer }
            putadr(ad, ad4); { place to vm client }
+           { return past parameters }
+           params := params+ptrsize+ptrsize+intsize
 
            { need to free up original C side entries we copied }
 

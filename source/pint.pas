@@ -4754,7 +4754,7 @@ begin
     129 (*retr*),
     132 (*reta*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below function result, if any }
+                   { set stack below parameters }
                    sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
@@ -4763,7 +4763,7 @@ begin
 
     237 (*retm*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below function result, if any }
+                   { set stack below parameters }
                    sp := mp+marksize;
                    popadr(mp); { restore old mp }
                    popadr(pc); { load return address }
@@ -5273,12 +5273,10 @@ begin
 
     242 (*eext*): begin
 #ifdef EXTERNALS
-                    ExecuteExternal(pc-extvecbase);
-                    { set stack below function result, if any }
-                    sp := mp;
-                    pc := getadr(mp+marksize+adrsize);
-                    ep := getadr(mp+markep);
-                    mp := getadr(mp+marksize)
+                    ad := sp+adrsize; { index parameters }
+                    ExecuteExternal(pc-extvecbase, ad);
+                    popadr(pc); { load return address }
+                    sp := ad; { skip parameters }
 #else
                     errorv(ExternalsNotEnabled)
 #endif
