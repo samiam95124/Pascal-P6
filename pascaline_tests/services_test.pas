@@ -265,4 +265,25 @@ begin
    writeln(' s/b <the set of valid characters>');
    write('test 51: ''', optchr, ''' s/b the option character');
 
+   { tests remaining. See the C file }
+   { pthchr }
+   { latitude }
+   { longitude }
+   { altitude }
+   { country }
+   { countrys }
+   { timezone }
+   { daysave }
+   { time24hour }
+   { language }
+   { languages }
+   { decimal }
+   { numbersep }
+   { timeorder }
+   { dateorder }
+   { datesep }
+   { timesep }
+   { currchr }
+   { seterr }
+
 end.

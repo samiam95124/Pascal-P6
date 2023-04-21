@@ -738,7 +738,7 @@ begin
           getstr(params+ptrsize+intsize, s3);
           getstr(params, s4);
           pa_maknam(@s, getint(ptrsize*4+intsize*3), @s2, @s3, @s4);
-          putstr(s, getint(params+ptrsize*4+intsize*3), getadr(params+ptrsize*3+intsize*3))
+          putstr(s, getint(params+ptrsize*4+intsize*3), getadr(params+ptrsize*3+intsize*3));
           params := params+(ptrsize+intsize)*4
 
        end;
@@ -867,7 +867,7 @@ begin
        39: begin { filchr() }
 
            pa_filchr(integer(@st));
-           putsetchr(getadr(params), st)
+           putsetchr(getadr(params), st);
            params := params+setsize
 
        end;
@@ -884,6 +884,7 @@ begin
 
            ch := pa_pthchr();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -891,6 +892,7 @@ begin
 
            a := pa_latitude();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -898,6 +900,7 @@ begin
 
            a := pa_longitude();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -905,6 +908,7 @@ begin
 
            a := pa_altitude();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -912,13 +916,15 @@ begin
 
            a := pa_country();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
        46: begin { countrys() }
 
            pa_countrys(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize))
+           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           params := params+intsize+ptrsize+intsize
 
        end;
 
@@ -926,6 +932,7 @@ begin
 
            a := pa_timezone();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -933,6 +940,7 @@ begin
 
            a := pa_daysave();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -940,6 +948,7 @@ begin
 
            a := pa_time24hour();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -947,13 +956,15 @@ begin
 
            a := pa_language();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
        51: begin { languages() }
 
            pa_languages(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize))
+           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           params := params+intsize+ptrsize+intsize
 
        end;
 
@@ -961,6 +972,7 @@ begin
 
            ch := pa_decimal();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -968,6 +980,7 @@ begin
 
            ch := pa_numbersep();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -975,6 +988,7 @@ begin
 
            a := pa_timeorder();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -982,6 +996,7 @@ begin
 
            a := pa_dateorder();
            putint(mp, a);
+           params := params+intsize
 
        end;
 
@@ -989,6 +1004,7 @@ begin
 
            ch := pa_datesep();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -996,6 +1012,7 @@ begin
 
            ch := pa_timesep();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
@@ -1003,6 +1020,7 @@ begin
 
            ch := pa_currchr();
            putchr(mp, ch);
+           params := params+intsize
 
        end;
 
