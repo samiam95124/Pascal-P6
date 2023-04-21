@@ -6,15 +6,15 @@
 *                                                                             *
 ******************************************************************************}
 
-program exttst1(output);
+program services_test1(output);
 
-uses extlib;
+uses services;
 
-var p: pstring;
+var p: packed array 40 of char;
 
 begin
   
    getenv('bark', p);
-   writeln('This is exttst1: ''', p^, '''');
+   writeln('This is exttst1: ''', p:*, '''');
 
 end.

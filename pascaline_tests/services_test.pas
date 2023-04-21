@@ -1,6 +1,6 @@
 {******************************************************************************
 *                                                                             *
-*                         TESTS FOR EXTLIB                                    *
+*                         TESTS FOR SERVICES                                  *
 *                                                                             *
 *                   Copyright (C) 2001 S. A. Moore                            *
 *                                                                             *
@@ -11,12 +11,11 @@
 *                                                                             *
 ******************************************************************************}
 
-program exttst(output);
+program services_test(output);
 
-uses strlib,
-     extlib;
+uses services;
                                                           
-var sa:         packed array [1..40] of char;
+var sa, sb:     packed array 40 of char;
     sp:         pstring;
     fla:        filptr;
     ta:         integer;
@@ -24,11 +23,36 @@ var sa:         packed array [1..40] of char;
     i:          integer;
     atr:        attribute;
     ps:         pstring;
-    p, n, e:    packed array [1..40] of char;
+    p, n, e:    packed array 40 of char;
     pp, pn, pe: pstring;
     ft:         text;
-    sc:         chrset;
+    sc:         schar;
     err:        integer;
+
+function copy(view s: string) { source }
+             : pstring; { result }
+
+var d: pstring;
+
+begin
+
+   new(d, max(s)); { create destination }
+   d^ := s; { copy string }
+  
+   result d { return result }
+
+end;
+
+procedure copyp(var d: string; view s: string);
+
+var i: integer;
+
+begin
+
+   for i := 1 to max(d) do d[i] := ' ';
+   for i := 1 to max(d) do if i <= max(s) then d[i] := s[i]
+
+end;
 
 begin
 
@@ -41,7 +65,9 @@ begin
 
    end;
    writeln(' s/b exttst.pas');
-   list('*', fla);
+   { this should not need to be more than 1 character, it is being evaluated
+     as char }
+   list('* ', fla);
    writeln('test 2: ');
    i := 10;
    writeln('Name                Size');
@@ -66,16 +92,10 @@ begin
    writeln('s/b <10 entries from the current directory>');
    times(sa, time);
    writeln('test 3: ', sa:0, ' s/b <the current time in zulu>');
-   sp := times(time);
-   writeln('test 4: ', sp^, ' s/b <the current time in zulu>');
    times(sa, local(time));
    writeln('test 5: ', sa:0, ' s/b <the current time in local>');
-   sp := times(local(time));
-   writeln('test 6: ', sp^, ' s/b <the current time in local>');
    dates(sa, local(time));
    writeln('test 7: ', sa:0, ' s/b <the current date>');
-   sp := dates(local(time));
-   writeln('test 8: ', sp^, ' s/b <the current date>');
    write('test 9: ');
    writetime(output, local(time));
    writeln(' s/b <the time>');
@@ -84,19 +104,17 @@ begin
    writeln(' s/b <the date>');
    ta := clock;
    writeln('test 11: ', elapsed(ta):1, ' s/b <a small amount of time>');
-   writeln('test 12: ', validfile('c:\\just\\fargle.com'), ' s/b true');
-   writeln('test 13: ', validfile('c:\\fargle.com'), ' s/b false');
-   writeln('test 14: ', wild('c:\\fargle.c?m'), ' s/b true');
-   writeln('test 15: ', validfile('c:\\far*gle.com'), ' s/b true');
-   writeln('test 16: ', validfile('c:\\fargle.com'), ' s/b false');
-   writeln('test 17: ', wild('c:\\for?.txt'), ' s/b true');
-   writeln('test 18: ', wild('c:\\for*.txt'), ' s/b true');
-   writeln('test 19: ', wild('c:\\fork.txt'), ' s/b false');
+   writeln('test 12: ', validfile('/just/fargle.com'), ' s/b true');
+   writeln('test 13: ', validfile('/fargle.com'), ' s/b false');
+   writeln('test 14: ', wild('/fargle.c?m'), ' s/b true');
+   writeln('test 15: ', validfile('/far*gle.com'), ' s/b true');
+   writeln('test 16: ', validfile('/fargle.com'), ' s/b false');
+   writeln('test 17: ', wild('/for?.txt'), ' s/b true');
+   writeln('test 18: ', wild('/for*.txt'), ' s/b true');
+   writeln('test 19: ', wild('/fork.txt'), ' s/b false');
    setenv('barkbark', 'what is this');
    getenv('barkbark   ', sa);
    writeln('test20: ', sa:0, ' s/b what is this');
-   sp := getenv('barkbark   ');
-   writeln('test21: ', sp^, ' s/b what is this');
    remenv('barkbark');
    getenv('barkbark', sa);
    writeln('test22: ''', sa:0, ''' s/b ''''');
@@ -183,38 +201,27 @@ begin
    writeln('0');
    getcur(sa);
    writeln('test 28: ', sa:0, ' s/b <the current path>');
-   sp := getcur;
-   writeln('test 29: ', sp^:0, ' s/b <the current path>');
-   ps := getcur;
-   setcur('\\');
+   getcur(sb);
+   { this should produce \ }
+   setcur('/ ');
    getcur(sa);
-   writeln('test 30: ', sa:0, ' s/b c:\\');
-   setcur(ps^);
+   { same }
+   writeln('test 30: ', sa:0, ' s/b /');
+   setcur(sb);
    getcur(sa);
    writeln('test 31: ', sa:0, ' s/b <the current path>');
-   brknam('c:\\what\\ho\\junk.com', p, n, e);
+   brknam('/what/ho/junk.com', p, n, e);
    writeln('test 32: Path: ', p:0, ' Name: ', n:0, ' Ext: ', e:0);
-   writeln('    s/b: Path: c:\\what\\ho\\ Name: junk Ext: com');
+   writeln('    s/b: Path: /what/ho/ Name: junk Ext: com');
    maknam(sa, p, n, e);
-   writeln('test 33: ', sa:0, ' s/b c:\\what\\ho\\junk.com');
-   brknam('c:\\what\\ho\\junk.com', pp, pn, pe);
-   writeln('test 34: Path: ', pp^, ' Name: ', pn^, ' Ext: ', pe^);
-   writeln('    s/b: Path: c:\\what\\ho\\ Name: junk Ext: com');
-   sp := maknam(pp^, pn^, pe^);
-   writeln('test 35: ', sp^, ' s/b c:\\what\\ho\\junk.com');
-   copy(sa, 'junk');
+   writeln('test 33: ', sa:0, ' s/b /what/ho/junk.com');
+   copyp(sa, 'junk');
    fulnam(sa);
    writeln('test 36: ', sa:0, ' s/b <path>junk');
-   sp := fulnam('trash');
-   writeln('test 37: ', sp^, ' s/b <path>trash');
    getpgm(sa);
    writeln('test 38: ', sa:0, ' s/b <the program path>');
-   sp := getpgm;
-   writeln('test 39: ', sp^, ' s/b <the program path>');
    getusr(sa);
    writeln('test 40: ', sa:0, ' s/b <the user path>');
-   sp := getusr;
-   writeln('test 41: ', sp^, ' s/b <the user path>');
    assign(ft, 'junk');
    rewrite(ft);
    close(ft);

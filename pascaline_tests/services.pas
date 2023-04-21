@@ -103,6 +103,23 @@ procedure rempth(view fn: string); external;
 procedure filchr(var fc: schar); external;
 function optchr: char; external;
 function pthchr: char; external;
+function latitude: integer; external;
+function longitude: integer; external;
+function altitude: integer; external;
+function country: integer; external;
+procedure countrys(var cs: string; c: integer); external;
+function timezone: integer; external;
+function daysave: integer; external;
+function time24hour: integer; external;
+function language: integer; external;
+procedure languages(var ls: string; l: integer); external;
+function decimal: char; external;
+function numbersep: char; external;
+function timeorder: integer; external;
+function dateorder: integer; external;
+function datesep: char; external;
+function timesep: char; external;
+function currchr: char; external;
 
 begin
 end.
