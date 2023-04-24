@@ -2979,6 +2979,123 @@ begin cmdpos := maxcmd end;
     nxtlab := intlabel
   end (*genlabel*);
 
+  { write shorthand type }
+  procedure wrttyp(var f: text; tp: stp);
+  const maxtrk = 4000;
+  var typtrk: array [1..maxtrk] of stp; cti: integer; err: boolean;
+
+  procedure wrttypsub(tp: stp);
+  var x, y, fi: integer;
+
+  procedure nxtcti;
+  begin
+    cti := cti+1; if cti <= maxtrk then typtrk[cti] := nil
+  end;
+
+  procedure nxtctis(i: integer);
+  var x: integer;
+  begin
+    for x := 1 to i do nxtcti
+  end;
+
+  procedure wrtchr(c: char);
+  begin
+    write(f, c); nxtcti
+  end;
+
+  procedure wrtint(i: integer);
+  var p, d: integer;
+  begin
+     p := 10; d := 1;
+     while (i >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
+     write(f, i:1);
+     nxtctis(d)
+  end;
+
+  procedure wrtrfd(fld: ctp);
+  begin
+    while fld <> nil do begin
+      with fld^ do begin
+        writev(f, name, lenpv(name)); nxtctis(lenpv(name));
+        wrtchr(':');
+        if klass = field then wrtint(fldaddr) else wrtchr('?');
+        wrtchr(':'); wrttypsub(idtype);
+      end;
+      fld := fld^.next;
+      if fld <> nil then wrtchr(',')
+    end
+  end;
+
+  procedure wrtvar(sp: stp);
+  begin
+    while sp <> nil do with sp^ do
+      if form = variant then begin
+        wrtint(varval.ival); wrtchr('('); wrtrfd(varfld); wrtchr(')');
+        sp := nxtvar
+      end else sp := nil
+  end;
+
+  { enums are backwards, so print thus }
+  procedure wrtenm(ep: ctp; i: integer);
+  begin
+    if ep <> nil then begin
+      wrtenm(ep^.next, i+1);
+      writev(f, ep^.name, lenpv(ep^.name)); nxtctis(lenpv(ep^.name));
+      if i > 0 then wrtchr(',')
+    end
+  end;
+
+  begin { wrttypsub }
+    if cti > maxtrk then begin
+      if not err then error(227);
+      err := true
+    end else typtrk[cti] := tp; { track this type entry }
+    if tp <> nil then with tp^ do case form of
+      scalar: begin
+                if tp = intptr then wrtchr('i')
+                else if tp = boolptr then wrtchr('b')
+                else if tp = charptr then wrtchr('c')
+                else if tp = realptr then wrtchr('n')
+                else if scalkind = declared then
+                  begin wrtchr('x'); wrtchr('('); wrtenm(fconst, 0);
+                        wrtchr(')') end
+                else wrtchr('?')
+              end;
+      subrange: begin
+                  wrtchr('x'); wrtchr('('); wrtint(min.ival); wrtchr(',');
+                  wrtint(max.ival); wrtchr(')');
+                  wrttypsub(rangetype)
+                end;
+      pointer: begin
+                 wrtchr('p'); fi := 0; y := cti;
+                 if y > maxtrk then y := maxtrk;
+                 if eltype <> nil then
+                   for x := y downto 1 do if typtrk[x] = eltype then fi := x;
+                 { if there is a cycle, output type digest position, otherwise
+                   the actual type }
+                 if fi > 0 then wrtint(fi) else wrttypsub(eltype)
+               end;
+      power: begin wrtchr('s'); wrttypsub(elset) end;
+      arrays: begin wrtchr('a'); wrttypsub(inxtype); wrttypsub(aeltype) end;
+      arrayc: begin wrtchr('v'); wrttypsub(abstype) end;
+      records: begin wrtchr('r'); wrtchr('('); wrtrfd(fstfld);
+                 if recvar <> nil then if recvar^.form = tagfld then
+                   begin wrtchr(','); wrtrfd(recvar^.tagfieldp);
+                         wrtchr('('); wrtvar(recvar^.fstvar);
+                         wrtchr(')') end;
+                 wrtchr(')') end;
+      files: begin wrtchr('f'); wrttypsub(filtype) end;
+      variant: wrtchr('?');
+      exceptf: wrtchr('e')
+    end else wrtchr('?')
+  end;
+
+  begin { wrttyp }
+    cti := 1; { set 1st position in tracking }
+    err := false; { set no error }
+    wrttypsub(tp) { issue type }
+  end;
+
   procedure prtlabel(labname: integer);
   begin 
     if prcode then begin
@@ -2995,6 +3112,17 @@ begin cmdpos := maxcmd end;
       else writevp(prr, fcp^.pmod^.mn);
       write(prr, '.');
       writevp(prr, fcp^.name)
+    end
+  end;
+
+  procedure prtpartyp(fcp: ctp);
+  var plst: ctp;
+  begin
+    plst := fcp^.pflist;
+    while plst <> nil do begin
+      wrttyp(prr, plst^.idtype);
+      if plst^.next <> nil then write(prr, '_');
+      plst := plst^.next
     end
   end;
 
@@ -3321,7 +3449,17 @@ begin cmdpos := maxcmd end;
     if prcode then
       begin
         write(prr,mn[fop]:11, ' ':5);
-        if chkext(fcp) then prtflabel(fcp) else prtlabel(fp2);
+        if chkext(fcp) then begin
+          prtflabel(fcp);
+          if isovlfunc(fcp) or isovlproc(fcp) then begin
+            write(prr, '@'); { this keeps the user from aliasing it }
+            if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+            if fcp^.pflist <> nil then begin
+              write(prr, '_');
+              prtpartyp(fcp)
+            end
+          end
+        end else prtlabel(fp2);
         writeln(prr);
         mesl(fp1)
       end;
@@ -6926,123 +7064,6 @@ begin cmdpos := maxcmd end;
         end;
       resolvep
     end (*typedeclaration*) ;
-
-    { write shorthand type }
-    procedure wrttyp(var f: text; tp: stp);
-    const maxtrk = 4000;
-    var typtrk: array [1..maxtrk] of stp; cti: integer; err: boolean;
-
-    procedure wrttypsub(tp: stp);
-    var x, y, fi: integer;
-
-    procedure nxtcti;
-    begin
-      cti := cti+1; if cti <= maxtrk then typtrk[cti] := nil
-    end;
-
-    procedure nxtctis(i: integer);
-    var x: integer;
-    begin
-      for x := 1 to i do nxtcti
-    end;
-
-    procedure wrtchr(c: char);
-    begin
-      write(f, c); nxtcti
-    end;
-
-    procedure wrtint(i: integer);
-    var p, d: integer;
-    begin
-       p := 10; d := 1;
-       while (i >= p) and (p < maxpow10) do begin p := p*10; d := d+1 end;
-       write(f, i:1);
-       nxtctis(d)
-    end;
-
-    procedure wrtrfd(fld: ctp);
-    begin
-      while fld <> nil do begin
-        with fld^ do begin
-          writev(f, name, lenpv(name)); nxtctis(lenpv(name));
-          wrtchr(':');
-          if klass = field then wrtint(fldaddr) else wrtchr('?');
-          wrtchr(':'); wrttypsub(idtype);
-        end;
-        fld := fld^.next;
-        if fld <> nil then wrtchr(',')
-      end
-    end;
-
-    procedure wrtvar(sp: stp);
-    begin
-      while sp <> nil do with sp^ do
-        if form = variant then begin
-          wrtint(varval.ival); wrtchr('('); wrtrfd(varfld); wrtchr(')');
-          sp := nxtvar
-        end else sp := nil
-    end;
-
-    { enums are backwards, so print thus }
-    procedure wrtenm(ep: ctp; i: integer);
-    begin
-      if ep <> nil then begin
-        wrtenm(ep^.next, i+1);
-        writev(f, ep^.name, lenpv(ep^.name)); nxtctis(lenpv(ep^.name));
-        if i > 0 then wrtchr(',')
-      end
-    end;
-
-    begin { wrttypsub }
-      if cti > maxtrk then begin
-        if not err then error(227);
-        err := true
-      end else typtrk[cti] := tp; { track this type entry }
-      if tp <> nil then with tp^ do case form of
-        scalar: begin
-                  if tp = intptr then wrtchr('i')
-                  else if tp = boolptr then wrtchr('b')
-                  else if tp = charptr then wrtchr('c')
-                  else if tp = realptr then wrtchr('n')
-                  else if scalkind = declared then
-                    begin wrtchr('x'); wrtchr('('); wrtenm(fconst, 0);
-                          wrtchr(')') end
-                  else wrtchr('?')
-                end;
-        subrange: begin
-                    wrtchr('x'); wrtchr('('); wrtint(min.ival); wrtchr(',');
-                    wrtint(max.ival); wrtchr(')');
-                    wrttypsub(rangetype)
-                  end;
-        pointer: begin
-                   wrtchr('p'); fi := 0; y := cti;
-                   if y > maxtrk then y := maxtrk;
-                   if eltype <> nil then
-                     for x := y downto 1 do if typtrk[x] = eltype then fi := x;
-                   { if there is a cycle, output type digest position, otherwise
-                     the actual type }
-                   if fi > 0 then wrtint(fi) else wrttypsub(eltype)
-                 end;
-        power: begin wrtchr('s'); wrttypsub(elset) end;
-        arrays: begin wrtchr('a'); wrttypsub(inxtype); wrttypsub(aeltype) end;
-        arrayc: begin wrtchr('v'); wrttypsub(abstype) end;
-        records: begin wrtchr('r'); wrtchr('('); wrtrfd(fstfld);
-                   if recvar <> nil then if recvar^.form = tagfld then
-                     begin wrtchr(','); wrtrfd(recvar^.tagfieldp);
-                           wrtchr('('); wrtvar(recvar^.fstvar);
-                           wrtchr(')') end;
-                   wrtchr(')') end;
-        files: begin wrtchr('f'); wrttypsub(filtype) end;
-        variant: wrtchr('?');
-        exceptf: wrtchr('e')
-      end else wrtchr('?')
-    end;
-
-    begin { wrttyp }
-      cti := 1; { set 1st position in tracking }
-      err := false; { set no error }
-      wrttypsub(tp) { issue type }
-    end;
 
     procedure wrtsym(lcp: ctp; typ: char);
     begin

@@ -2252,7 +2252,7 @@ procedure load;
    begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
      if not (ch in ['a'..'z','A'..'Z','_']) then
        errorl('Symbols format error     ');
-     while ch in ['a'..'z','A'..'Z','0'..'9','_'] do begin
+     while ch in ['a'..'z','A'..'Z','0'..'9','_','@'] do begin
        if snl >= fillen then errorl('Symbols format error     ');
        sn[snl] := ch; getnxt; snl := snl+1
      end;
