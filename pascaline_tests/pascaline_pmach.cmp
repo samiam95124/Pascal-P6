@@ -1087,17 +1087,19 @@ lm1:
 This is the joined module: 87
 s/b
 this is the joined module: 87
-ce1: my'self s/b my'self 
-ce2: this\one s/b this<slash>one 
+ce1: my'self s/b my'self
+ce2: this\one s/b this<slash>one
 ce3: e s/b e
 ce4: o s/b o
 ce5: Z s/b Z
 ce6: I s/b I
 ce7: 
 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20 
-21 22 23 24 25 26 27 28 29 30 31 127 
+21 22 23 24 25 26 27 28 29 30 31 127 92 
 s/b 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 17 18 19 19 20
 21 22 23 24 25 26 27 28 29 30 31 127
+ce8: \ s/b \
+ce9: a s/b a
 ht:
 The test should now halt
 

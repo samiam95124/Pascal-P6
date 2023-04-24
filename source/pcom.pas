@@ -1897,12 +1897,11 @@ begin cmdpos := maxcmd end;
         ev: integer;
         rv: real;
         sgn: integer;
-        lfc: boolean;
+        strend: boolean;
 
     procedure nextch;
     begin if eol then
-      begin if list then writeln(output); endofline
-      end;
+      begin if list then writeln(output); endofline end;
       if not eofinp then
        begin eol := eolninp; readinp(ch);
         if list then write(ch);
@@ -2007,21 +2006,29 @@ begin cmdpos := maxcmd end;
       pwrten := t
     end;
 
-    procedure escchr(var cp: integer);
+    procedure plcchr(c: char);
+    begin
+      if not eol then begin
+        lgth := lgth+1;
+        if lgth <= strglgth then string[lgth] := c
+      end
+    end;
+
+    procedure escchr;
     type escstr = packed array [1..5] of char; { escape string }
-    var c: char; l: 0..4; i: 1..strglgth;
+    var c: char; l: 0..4; si: lininx; i: 1..5;
 
     function match(es: escstr): boolean;
     var i: 1..5;
     begin
       i := 1;
       { move to first mismatch or end }
-      while (es[i] = string[cp+i-1]) and (es[i] <> ' ') and (i <= 4) do i := i+1;
+      while (es[i] = srclin[si+i-1]) and (es[i] <> ' ') and (i <= 4) do i := i+1;
       match := es[i] = ' '
     end;
 
     begin
-      cp := cp+1; { past '\' }
+      si := srcinx-1; { move back to after '\' }
       c := ' '; { set none found }
       if match('xoff ') then begin c := chr(19); l := 4 end
       else if match('dle  ') then begin c := chr(16); l := 3 end
@@ -2058,13 +2065,11 @@ begin cmdpos := maxcmd end;
       else if match('gs   ') then begin c := chr(29); l := 2 end
       else if match('rs   ') then begin c := chr(30); l := 2 end
       else if match('us   ') then begin c := chr(31); l := 2 end;
-      if c <> ' ' then begin { replace }
-        string[cp-1] := c; { overwrite '\' }
-        for i := cp to strglgth-l do string[i] := string[i+l];
-        lgth := lgth-l
-      end else begin { gap common forced }
-        for i := cp-1 to strglgth-1 do string[i] := string[i+1]
-      end
+      if c <> ' ' then begin { found escape }
+        plcchr(c);
+        for i := 1 to l do nextch { skip escape sequence }
+      end else { place common forced }
+        begin plcchr(ch); nextch end
     end;
 
   begin (*insymbol*)
@@ -2184,55 +2189,49 @@ begin cmdpos := maxcmd end;
             else sy := binsy
         end;
       chstrquo:
-        begin lgth := 0; sy := stringconst;  op := noop;
+        begin nextch; lgth := 0; sy := stringconst; op := noop; strend := false;
           for i := 1 to strglgth do string[i] := ' ';
-          repeat lfc := false;
-            repeat lfc := ch = chr(92); nextch; lgth := lgth + 1;
-                   if lgth <= strglgth then string[lgth] := ch
-            until (eol) or ((ch = '''') and (not lfc or iso7185));
-            if eol then error(202) else nextch
-          until ch <> '''';
-          string[lgth] := ' '; { get rid of trailing quote }
-          lgth := lgth - 1;   (*now lgth = nr of chars in string*)
-          { see if string contains character escapes }
-          i := 1;
-          if not iso7185 then
-            while i <= strglgth do begin
-            if string[i] = chr(92){\} then begin
-              if string[i+1] in ['$','&','%','0'..'9'] then begin
+          repeat 
+            { force character if '\' and not ISO 7185 mode }
+            if (ch = chr(92)) and not iso7185 then begin
+              nextch; { skip '\' }
+              if ch in ['$','&','%','0'..'9'] then begin 
+                { character code }
                 j := i+1; v := 0; k := 1;
                 { parse in radix and only correct number of digits to keep from
                   eating follow on characters }
-                if string[j] = '$' then begin j := j+1;
-                  if not (string[j] in ['0'..'9','a'..'f','A'..'F']) then
-                    error(207);
-                  while (string[j] in ['0'..'9', 'a'..'f', 'A'..'F']) and
+                if ch = '$' then begin nextch;
+                  if not (ch in ['0'..'9','a'..'f','A'..'F']) then error(207);
+                  while (ch in ['0'..'9', 'a'..'f', 'A'..'F']) and
                         (k <= 2) do begin
-                    v := v*16+ordint[string[j]]; j := j+1; k := k+1
-                  end; k := k+1
-                end else if string[j] = '&' then begin j := j+1;
-                  if not (string[j] in ['0'..'7']) then error(207);
-                  while (string[j] in ['0'..'7']) and (k <= 3) do begin
-                    v := v*8+ordint[string[j]]; j := j+1; k := k+1
-                  end; k := k+1
-                end else if string[j] = '%' then begin j := j+1;
-                  if not (string[j] in ['0'..'1']) then error(207);
-                  while (string[j] in ['0'..'1']) and (k <= 8) do begin
-                    v := v*2+ordint[string[j]]; j := j+1; k := k+1
-                  end; k := k+1
+                    v := v*16+ordint[ch]; nextch; k := k+1
+                  end
+                end else if ch = '&' then begin nextch;
+                  if not (ch in ['0'..'7']) then error(207);
+                  while (ch in ['0'..'7']) and (k <= 3) do begin
+                    v := v*8+ordint[ch]; nextch; k := k+1
+                  end
+                end else if ch = '%' then begin nextch;
+                  if not (ch in ['0'..'1']) then error(207);
+                  while (ch in ['0'..'1']) and (k <= 8) do begin
+                    v := v*2+ordint[ch]; nextch; k := k+1
+                  end
                 end else begin
-                  while (string[j] in ['0'..'9']) and (k <= 3) do begin
-                    v := v*10+ordint[string[j]]; j := j+1; k := k+1
+                  while (ch in ['0'..'9']) and (k <= 3) do begin
+                    v := v*10+ordint[ch]; nextch; k := k+1
                   end
                 end;
                 if v > ordmaxchar then error(222);
-                string[i] := chr(v);
-                for j := i+1 to strglgth-k+1 do string[j] := string[j+k-1];
-                lgth := lgth-k+1
-              end else escchr(i) { process force sequence }
-            end;
-            i := i+1 { pass escaped char or forced char }
-          end;
+                plcchr(chr(v));
+              end else escchr { process force sequence }
+            end else if ch = '''' then
+              begin nextch; 
+                if ch = '''' then 
+                  begin plcchr(ch); nextch end else strend := true
+              end
+            else begin plcchr(ch); nextch end { place regular char }
+          until eol or strend;
+          if eol and not strend then error(202);
           if lgth = 1 then begin
             { this is an artifact of the original code. If the string is a
               single character, we store it as an integer even though the

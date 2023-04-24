@@ -93,20 +93,14 @@ function do_regress {
     testpascaline $option
     if [ "$option" = "--pmach" ]; then
 
-        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline_pmach.cmp > \
-            pascaline_tests/pascaline_pmach.dif
         wc -l pascaline_tests/pascaline_pmach.dif >> regress_report.txt
 
     elif [ "$option" = "--cmach" ]; then
 
-        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline_cmach.cmp > \
-            pascaline_tests/pascaline_cmach.dif
         wc -l pascaline_tests/pascaline_cmach.dif >> regress_report.txt
 
     else
 
-        diffnole pascaline_tests/pascaline.lst pascaline_tests/pascaline.cmp > \
-            pascaline_tests/pascaline.dif
         wc -l pascaline_tests/pascaline.dif >> regress_report.txt
 
     fi
