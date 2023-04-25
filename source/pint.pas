@@ -2252,21 +2252,7 @@ procedure load;
    begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
      if not (ch in ['a'..'z','A'..'Z','_']) then
        errorl('Symbols format error     ');
-     while ch in ['a'..'z','A'..'Z','0'..'9','_','@'] do begin
-       if snl >= fillen then errorl('Symbols format error     ');
-       sn[snl] := ch; getnxt; snl := snl+1
-     end;
-     snl := snl-1
-   end;
-
-   procedure getlabe;
-   var i: 1..fillen;
-   begin skpspc; for i := 1 to fillen do sn[i] := ' '; snl := 1;
-     if not (ch in ['a'..'z','A'..'Z','_','*','/','+','-','<','=','>','^','[',']',':']) then
-       errorl('Symbols format error     ');
-     while ch in ['a'..'z','A'..'Z','0'..'9','_','*','/','+','-','<','=','>',
-                  '^','[',']',':'] do
-       begin
+     while ch in ['a'..'z','A'..'Z','0'..'9','_'] do begin
        if snl >= fillen then errorl('Symbols format error     ');
        sn[snl] := ch; getnxt; snl := snl+1
      end;
@@ -2290,7 +2276,7 @@ procedure load;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
      if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
      else begin { far label }
-       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab;
+       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getsds;
        for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
      end
    end;
@@ -2518,7 +2504,7 @@ procedure load;
                 if not (ch in ['p', 'm', 'r', 'f']) then
                   errorl('Block type is invalid    ');
                 ch1 := ch; { save block type }
-                getnxt; skpspc; getlabe;
+                getnxt; skpspc; getsds;
                 new(bp); strassvf(bp^.name, sn);
                 bp^.symbols := nil;
                 bp^.incnxt := nil;

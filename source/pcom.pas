@@ -7904,7 +7904,16 @@ begin cmdpos := maxcmd end;
           { output block begin marker }
           if prcode then begin
             if lcp^.klass = proc then write(prr, 'b r ') else write(prr, 'b f ');
-            writev(prr, lcp^.name, lenpv(lcp^.name)); writeln(prr);
+            writev(prr, lcp^.name, lenpv(lcp^.name)); 
+            if isovlfunc(lcp) or isovlproc(lcp) then begin
+              write(prr, '@'); { this keeps the user from aliasing it }
+              if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+              if lcp^.pflist <> nil then begin
+                write(prr, '_');
+                prtpartyp(lcp)
+              end
+            end;
+            writeln(prr);
           end;
           { output parameter symbols }
           lcp1 := lcp^.pflist;
