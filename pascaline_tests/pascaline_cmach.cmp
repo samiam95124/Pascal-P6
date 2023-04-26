@@ -1087,6 +1087,16 @@ lm1:
 This is the joined module: 87
 s/b
 this is the joined module: 87
+lm2:
+This is zork
+zork: the integer is: 52
+zork: the string is: hi there
+42
+s/b
+This is zork
+zork: the integer is: 52
+zork: the string is: hi there
+42
 ce1: my'self s/b my'self
 ce2: this\one s/b this<slash>one
 ce3: e s/b e

@@ -2422,21 +2422,16 @@ begin
    pascaline2.mod1_p;
    writeln('s/b');
    writeln('this is the joined module: 87');
-
-   {
-   override of joined module
-   does not work at present.
    writeln('lm2:');
    pascaline2.zork;
    pascaline2.zork(52);
    pascaline2.zork('hi there');
-   writeln(bark:1);
+   writeln(zork:1);
    writeln('s/b');
-   writeln('This is bark');
-   writeln('bark: the integer is: 52');
-   writeln('bark: the string is: hi there');
+   writeln('This is zork');
+   writeln('zork: the integer is: 52');
+   writeln('zork: the string is: hi there');
    writeln('42');
-   }
 
 {*******************************************************************************
 

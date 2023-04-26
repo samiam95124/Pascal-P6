@@ -114,7 +114,7 @@ function do_regress {
 
         echo "Running debug test"
         echo "Debug test run" >> regress_report.txt
-        rundebug
+        testdebug
         wc -l pascaline_tests/debug_test.dif >> regress_report.txt
 
     fi

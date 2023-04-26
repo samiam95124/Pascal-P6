@@ -2919,26 +2919,26 @@ begin cmdpos := maxcmd end;
   end;
 
   { id contains a procedure in overload list }
-  function isovlproc(fcp: ctp): boolean;
-  begin isovlproc := false;
+  function hasovlproc(fcp: ctp): boolean;
+  begin hasovlproc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
         fcp := fcp^.grppar;
         while fcp <> nil do begin
-          if fcp^.klass = proc then isovlproc := true;
+          if fcp^.klass = proc then hasovlproc := true;
           fcp := fcp^.grpnxt
         end
       end
   end;
 
   { id contains a function in overload list }
-  function isovlfunc(fcp: ctp): boolean;
-  begin isovlfunc := false;
+  function hasovlfunc(fcp: ctp): boolean;
+  begin hasovlfunc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
         fcp := fcp^.grppar;
         while fcp <> nil do begin
-          if fcp^.klass = func then isovlfunc := true;
+          if fcp^.klass = func then hasovlfunc := true;
           fcp := fcp^.grpnxt
         end
       end
@@ -3451,13 +3451,11 @@ begin cmdpos := maxcmd end;
         write(prr,mn[fop]:11, ' ':5);
         if chkext(fcp) then begin
           prtflabel(fcp);
-          if isovlfunc(fcp) or isovlproc(fcp) then begin
-            write(prr, '@'); { this keeps the user from aliasing it }
-            if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
-            if fcp^.pflist <> nil then begin
-              write(prr, '_');
-              prtpartyp(fcp)
-            end
+          write(prr, '@'); { this keeps the user from aliasing it }
+          if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+          if fcp^.pflist <> nil then begin
+            write(prr, '_');
+            prtpartyp(fcp)
           end
         end else prtlabel(fp2);
         writeln(prr);
@@ -5924,7 +5922,7 @@ begin cmdpos := maxcmd end;
         (*id*)    ident:
                   begin searchid([types,konst,vars,fixedt,field,func,proc],lcp);
                     insymbol;
-                    if isovlfunc(lcp) or isovlproc(lcp) then
+                    if hasovlfunc(lcp) or hasovlproc(lcp) then
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
@@ -7905,13 +7903,11 @@ begin cmdpos := maxcmd end;
           if prcode then begin
             if lcp^.klass = proc then write(prr, 'b r ') else write(prr, 'b f ');
             writev(prr, lcp^.name, lenpv(lcp^.name)); 
-            if isovlfunc(lcp) or isovlproc(lcp) then begin
-              write(prr, '@'); { this keeps the user from aliasing it }
-              if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
-              if lcp^.pflist <> nil then begin
-                write(prr, '_');
-                prtpartyp(lcp)
-              end
+            write(prr, '@'); { this keeps the user from aliasing it }
+            if lcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
+            if lcp^.pflist <> nil then begin
+              write(prr, '_');
+              prtpartyp(lcp)
             end;
             writeln(prr);
           end;
@@ -8679,8 +8675,8 @@ begin cmdpos := maxcmd end;
                         if sy = inheritedsy then
                           begin insymbol; inherit := true end;
                         searchid([vars,field,func,proc],lcp); insymbol;
-                        if isovlproc(lcp) then begin
-                          if isovlfunc(lcp) then begin
+                        if hasovlproc(lcp) then begin
+                          if hasovlfunc(lcp) then begin
                             { could be proc or func, need disambiguate }
                             if sy = becomes then begin
                               if inherit then error(233);
@@ -8688,7 +8684,7 @@ begin cmdpos := maxcmd end;
                             end else call(fsys,lcp,inherit,false)
                           end else call(fsys,lcp,inherit,false)
                         end else begin if inherit then error(233);
-                          if isovlfunc(lcp) then assignment(ovlfunc(lcp), false)
+                          if hasovlfunc(lcp) then assignment(ovlfunc(lcp), false)
                           else assignment(lcp, false)
                         end
                       end;

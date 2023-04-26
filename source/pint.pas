@@ -503,7 +503,8 @@ type
       block        = record
                        next:    pblock; { next list block }
                        incnxt:  pblock; { included blocks list }
-                       name:    strvsp; { name of block }
+                       name:    strvsp; { name of block, including type }
+                       bname:   strvsp; { name of block, not including type }
                        fname:   strvsp; { filename of block(module) }
                        symbols: psymbol; { symbol list for block }
                        { block type }
@@ -1292,12 +1293,10 @@ begin
  end;
 
 { assign symbol identifier fixed to variable length string, including
-  allocation }
-procedure strassvf(var a: strvsp; var b: filnam);
-var i, j, l: integer; p, lp: strvsp;
-begin l := fillen; p := nil; a := nil; j := 1;
-  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-  if b[l] = ' ' then l := 0;
+  allocation, with length specified }
+procedure strassvfl(var a: strvsp; var b: filnam; l: integer);
+var i, j: integer; p, lp: strvsp;
+begin p := nil; a := nil; j := 1;
   for i := 1 to l do begin
     if j > varsqt then p := nil;
     if p = nil then begin
@@ -1307,6 +1306,16 @@ begin l := fillen; p := nil; a := nil; j := 1;
     p^.str[j] := b[i]; j := j+1
   end;
   if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
+
+{ assign symbol identifier fixed to variable length string, including
+  allocation }
+procedure strassvf(var a: strvsp; var b: filnam);
+var l: integer;
+begin l := fillen;
+  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
+  if b[l] = ' ' then l := 0;
+  strassvfl(a, b, l) { perform assign }
 end;
 
 { assign variable length string to fixed identifier }
@@ -2506,6 +2515,11 @@ procedure load;
                 ch1 := ch; { save block type }
                 getnxt; skpspc; getsds;
                 new(bp); strassvf(bp^.name, sn);
+                { get basename, without type }
+                l := 1;
+                while (l < fillen) and (sn[l] <> '@') do l := l+1;
+                if sn[l] = '@' then strassvfl(bp^.bname, sn, l-1)
+                else strassvf(bp^.bname, sn); { just use whole name }
                 bp^.symbols := nil;
                 bp^.incnxt := nil;
                 case ch1 of { block type }
@@ -5628,7 +5642,7 @@ begin p := dbc.p; skpspc(dbc); fbp := nil;
   if chkchr(dbc) in ['a'..'z', 'A'..'Z', '_'] then begin
     getsym(dbc); bp := blklst;
     while bp <> nil do begin
-      if strequvf(bp^.name, sn) then begin fbp := bp; bp := nil end;
+      if strequvf(bp^.bname, sn) then begin fbp := bp; bp := nil end;
       if bp <> nil then bp := bp^.next
     end;
     if fbp = nil then dbc.p := p
