@@ -2418,7 +2418,7 @@ void callsp(void)
                 pshint(lengthfile(filtable[fn]));
                 break;
     case 54 /*loc*/: popadr(ad); valfil(ad); fn = store[ad];
-                  if (i = ftell(filtable[fn]) < 0) errorv(FILEPOSITIONFAIL);
+                  if ((i = ftell(filtable[fn])) < 0) errorv(FILEPOSITIONFAIL);
                   pshint(i+1);
                   break;
     case 55 /*exs*/: popint(i); popadr(ad1);

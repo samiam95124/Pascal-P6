@@ -566,7 +566,7 @@ var
     parmptr,
     intptr,crdptr,realptr,charptr,
     boolptr,nilptr,textptr,
-    exceptptr,stringptr, pstringptr,
+    exceptptr,stringptr,pstringptr,
     byteptr,vectorptr,matrixptr,
     abyteptr,scharptr: stp;         (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
