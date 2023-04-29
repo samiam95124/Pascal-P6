@@ -566,7 +566,7 @@ var
     parmptr,
     intptr,crdptr,realptr,charptr,
     boolptr,nilptr,textptr,
-    exceptptr,stringptr,pstringptr,
+    exceptptr,stringptr, pstringptr,
     byteptr,vectorptr,matrixptr,
     abyteptr,scharptr: stp;         (*pointers to entries of standard ids*)
     utypptr,ucstptr,uvarptr,
@@ -5612,7 +5612,11 @@ begin cmdpos := maxcmd end;
                 repeat
                   if (nxt <> nil) and (gattr.typtr <> nil) then
                     if nxt^.idtype <> nil then begin
-                      if comptypes(nxt^.idtype, gattr.typtr) then match := true
+                      if comptypes(nxt^.idtype, gattr.typtr) or 
+                         { special rule: const char matches container }
+                         ((nxt^.idtype^.form = arrayc) and 
+                          chart(gattr.typtr) and (gattr.kind = cst)) then 
+                        match := true
                       else if comptypes(realptr,nxt^.idtype) and
                               (gattr.typtr = intptr) then match := true
                     end;
@@ -5629,6 +5633,13 @@ begin cmdpos := maxcmd end;
                         if lsp <> nil then
                           begin
                             if (nxt^.vkind = actual) or (nxt^.part = ptview) then begin
+                              if not comptypes(lsp,gattr.typtr) and not
+                                 { special rule: const char matches container }
+                                 ((nxt^.idtype^.form = arrayc) and 
+                                  chart(gattr.typtr) and (gattr.kind = cst)) and not
+                                 (comptypes(realptr,lsp) and 
+                                  (gattr.typtr = intptr)) then 
+                                if not e then error(142);
                               if lsp^.form <= power then
                                 begin load;
                                   if debug then checkbnds(lsp);
@@ -5640,8 +5651,14 @@ begin cmdpos := maxcmd end;
                                   locpar := locpar+lsp^.size;
                                   alignu(parmptr,locpar);
                                 end
-                              else
-                                begin
+                              else if stringt(lsp) and chart(gattr.typtr) then
+                                begin { is char to string }
+                                  load; cpy2adr;
+                                  gen2(51(*ldc*),1,1);
+                                  gen1(72(*swp*),stackelsize);
+                                  locpar := locpar+ptrsize*2;
+                                  alignu(parmptr,locpar)
+                                end else begin
                                   if gattr.kind = expr then cpy2adr
                                   else loadaddress;
                                   fixpar(lsp,gattr.typtr);
@@ -5649,9 +5666,7 @@ begin cmdpos := maxcmd end;
                                     locpar := locpar+ptrsize*2
                                   else locpar := locpar+ptrsize;
                                   alignu(parmptr,locpar)
-                                end;
-                                if not comptypes(lsp,gattr.typtr) then
-                                  if not e then error(142)
+                                end
                             end else begin
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
@@ -9284,7 +9299,6 @@ begin cmdpos := maxcmd end;
     with matrixptr^ do
       begin form := arrayc; size := 0; packing := false;
             abstype := vectorptr end;
-
     new(scharptr,power); pshstc(scharptr);                    (*set of char*)
     with scharptr^ do
       begin form := power; size := setsize; packing := false; elset := charptr;

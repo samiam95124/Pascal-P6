@@ -69,6 +69,7 @@ vb3: 61 s/b 61
 vb4: 53 s/b 53
 vop1: this is a test s/b this is a test
 vop2: 42 s/b 42
+vop3: g s/b g
 ecs1:
 1: one
 2: from 2 to 4
