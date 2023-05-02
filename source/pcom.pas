@@ -1070,7 +1070,7 @@ var
   begin l := lenpv(s); cc := 0;
     while s <> nil do begin
       for i := 1 to varsqt do begin
-        cc := cc+1; if cc < l then write(f, s^.str[i])
+        cc := cc+1; if cc <= l then write(f, s^.str[i])
       end;
       s := s^.next
     end
