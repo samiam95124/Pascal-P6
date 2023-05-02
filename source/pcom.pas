@@ -382,8 +382,8 @@ type                                                        (*describing:*)
                         case access: vaccess of
                           drct: (vlevel: levrange; dplmt: addrrange);
                           indrct: (idplmt: addrrange);
-           inxd: ());
-           expr: ()
+                          inxd: ());
+                expr: ()
               end;
 
                                                                  (*labels*)
@@ -1051,35 +1051,29 @@ var
     end
   end;
 
-  { write padded string to file }
-  procedure writevp(var f: text; s: strvsp);
-  var l: integer;
-  begin
-    while s <> nil do begin
-      l := varsqt; 
-      if s^.next = nil then begin
-        while (s^.str[l] = ' ') and (l > 1) do l := l-1;
-        if s^.str[l] = ' ' then l := 0;
-      end;
-      if l > 0 then write(f, s^.str:l);
-      s := s^.next
-    end;
-  end;
-
   { find padded length of variable length id string }
   function lenpv(s: strvsp): integer;
-  var l, tl: integer;
-  begin tl := 0;
+  var lc, cc, i: integer;
+  begin lc := 0; cc := 0;
     while s <> nil do begin
-      l := varsqt; 
-      if s^.next = nil then begin
-        while (s^.str[l] = ' ') and (l > 1) do l := l-1;
-        if s^.str[l] = ' ' then l := 0;
+      for i := 1 to varsqt do begin
+        cc := cc+1; if s^.str[i] <> ' ' then lc := cc
       end;
-      tl := tl+l;
       s := s^.next
     end;
-    lenpv := tl
+    lenpv := lc
+  end;
+
+  { write padded string to file }
+  procedure writevp(var f: text; s: strvsp);
+  var l, cc, i: integer;
+  begin l := lenpv(s); cc := 0;
+    while s <> nil do begin
+      for i := 1 to varsqt do begin
+        cc := cc+1; if cc < l then write(f, s^.str[i])
+      end;
+      s := s^.next
+    end
   end;
 
   { assign identifier fixed to variable length string, including allocation }
@@ -5472,24 +5466,24 @@ begin cmdpos := maxcmd end;
       gattr.typtr := intptr
     end;
 
+    { assign buffer to id and copy top of stack to it, replacing with address }
+    procedure cpy2adr(id: ctp; var at: attr);
+      var lsize: addrrange;
+    begin
+      lsize := at.typtr^.size;
+      alignu(parmptr,lsize);
+      getcbb(id^.cbb,id,at.typtr^.size); { get a buffer }
+      gen1(37(*lao*),id^.cbb^.addr); { load address }
+      { store to that }
+      gen2(115(*ctb*),at.typtr^.size,lsize);
+      mesl(lsize)
+    end;
+
     procedure callnonstandard(fcp: ctp; inherit: boolean);
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
-    procedure cpy2adr;
-      var lsize: addrrange;
-    begin
-      if nxt <> nil then begin
-        lsize := gattr.typtr^.size;
-        alignu(parmptr,lsize);
-        getcbb(nxt^.cbb, nxt,gattr.typtr^.size); { get a buffer }
-        gen1(37(*lao*),nxt^.cbb^.addr); { load address }
-        { store to that }
-        gen2(115(*ctb*),gattr.typtr^.size,lsize);
-        mesl(lsize)
-      end
-    end;
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. }
     procedure nxtprc;
@@ -5653,13 +5647,13 @@ begin cmdpos := maxcmd end;
                                 end
                               else if stringt(lsp) and chart(gattr.typtr) then
                                 begin { is char to string }
-                                  load; cpy2adr;
+                                  load; cpy2adr(nxt,gattr);
                                   gen2(51(*ldc*),1,1);
                                   gen1(72(*swp*),stackelsize);
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin
-                                  if gattr.kind = expr then cpy2adr
+                                  if gattr.kind = expr then cpy2adr(nxt,gattr)
                                   else loadaddress;
                                   fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then
@@ -5671,7 +5665,7 @@ begin cmdpos := maxcmd end;
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
                                   if gattr.tagfield then error(198);
-                                  if gattr.kind = expr then cpy2adr
+                                  if gattr.kind = expr then cpy2adr(nxt,gattr)
                                   else loadaddress;
                                   fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then
@@ -6325,6 +6319,11 @@ begin cmdpos := maxcmd end;
         end (*while*)
     end (*simpleexpression*) ;
 
+    function ischrcst(var at: attr): boolean;
+    begin
+      ischrcst := (at.typtr = charptr) and (at.kind = cst)
+    end;
+
   begin (*expression*)
     simpleexpression(fsys + [relop], threaten);
     onstkl := gattr.kind = expr;
@@ -6364,12 +6363,17 @@ begin cmdpos := maxcmd end;
                     begin gen0(10(*flt*));
                       gattr.typtr := realptr
                     end;
-              if comptypes(lattr.typtr,gattr.typtr) then
+              if comptypes(lattr.typtr,gattr.typtr) or
+                 (ischrcst(lattr) and (gattr.typtr^.form = arrayc)) or
+                 ((lattr.typtr^.form = arrayc) and ischrcst(gattr)) then
                 begin lsize := lattr.typtr^.size;
                   typind := ' ';
                   case lattr.typtr^.form of
                     scalar:
-                      if lattr.typtr = realptr then typind := 'r'
+                      if ischrcst(lattr) and (gattr.typtr^.form = arrayc) then
+                        begin
+                        end
+                      else if lattr.typtr = realptr then typind := 'r'
                       else
                         if lattr.typtr = boolptr then typind := 'b'
                         else
@@ -6387,15 +6391,21 @@ begin cmdpos := maxcmd end;
                     arrays, arrayc:
                       begin
                         if not stringt(lattr.typtr) then error(134);
-                        lsizspc := lsize; alignu(parmptr,lsizspc);
-                        if (lattr.typtr^.form = arrayc) or
-                           (gattr.typtr^.form = arrayc) then typind := 'v'
-                        else typind := 'm';
-                        containerop(lattr); { rationalize binary container }
-                        if onstkr then begin { pull left up }
-                          gen1(118(*lsa*),ptrsize+lsizspc);
-                          gen1t(35(*ind*),0,nilptr);
-                          gen1(72(*swp*),stackelsize)
+                        if ischrcst(gattr) then begin { rationalize character }
+                          { form address to stack }
+                          gen1(118(*lsa*),0);
+                          gen2(51(*ldc*),1,1);
+                        end else begin
+                          lsizspc := lsize; alignu(parmptr,lsizspc);
+                          if (lattr.typtr^.form = arrayc) or
+                             (gattr.typtr^.form = arrayc) then typind := 'v'
+                          else typind := 'm';
+                          containerop(lattr); { rationalize binary container }
+                          if onstkr then begin { pull left up }
+                            gen1(118(*lsa*),ptrsize+lsizspc);
+                            gen1t(35(*ind*),0,nilptr);
+                            gen1(72(*swp*),stackelsize)
+                          end
                         end
                       end;
                     records:

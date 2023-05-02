@@ -122,7 +122,6 @@ type enum_a   = (one, two, three);
      string10 = packed array 10 of char;
      pinteger = ^integer;
      rec1     = record i: integer; c: char end;
-     
 
 var ps:         pstring;
     s10:        packed array 10 of char;
@@ -137,7 +136,8 @@ var ps:         pstring;
     li:        linteger;
     lc:        lcardinal;
     excpt:     exception;
-    ps10(10):    string;
+    ps10(10):  string;
+    ps1(1):    string;
     v(10):     vector;
     m(10, 10): matrix;
     vr:        record case e: enum_a of
@@ -1165,6 +1165,50 @@ begin
    writeln(ps10 >= 'abcd      ', ' s/b true');
    write('sdc40: ');
    writeln('abcd      ' >= ps10, ' s/b true');
+
+   { single character strings evaluate to character }
+   write('sdc41: ');
+   ps1 := 'h';
+   writeln(ps1 = 'h', ' s/b true');
+   write('sdc42: ');
+   ps1 := 'l';
+   writeln(ps1 = 'h', ' s/b false');
+   write('sdc43: ');
+   ps1 := 'h';
+   writeln(ps1 <> 'h', ' s/b false');
+   write('sdc44: ');
+   ps1 := 'l';
+   writeln(ps1 <> 'h', ' s/b true');
+   write('sdc45: ');
+   ps1 := 'a';
+   writeln(ps1 < 'b', ' s/b true');
+   write('sdc46: ');
+   writeln('a' < ps1, ' s/b false');
+   write('sdc47: ');
+   ps1 := 'a';
+   writeln(ps1 > 'b', ' s/b false');
+   write('sdc48: ');
+   writeln('b' > ps1, ' s/b true');
+   write('sdc49: ');
+   ps1 := 'a';
+   writeln(ps1 <= 'a', ' s/b true');
+   write('sdc50: ');
+   writeln('b' <= ps1, ' s/b false');
+   write('sdc51: ');
+   ps1 := 'a';
+   writeln(ps1 <= 'b', ' s/b true');
+   write('sdc52: ');
+   writeln('b' <= ps1, ' s/b true');
+   write('sdc53: ');
+   ps1 := 'a';
+   writeln(ps1 >= 'b', ' s/b false');
+   write('sdc54: ');
+   writeln('b' >= ps1, ' s/b true');
+   write('sdc55: ');
+   ps1 := 'b';
+   writeln(ps1 >= 'a', ' s/b true');
+   write('sdc56: ');
+   writeln('a' >= ps1, ' s/b true');
    
 {*******************************************************************************
 
