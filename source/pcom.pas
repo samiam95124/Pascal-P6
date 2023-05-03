@@ -3516,6 +3516,16 @@ begin cmdpos := maxcmd end;
     end
   end;
 
+  procedure gensca(c: char);
+  begin
+    if prcode then begin
+      write(prr,mn[(*lca*)38]:11,1:6,' ''');
+      if c = '''' then write(prr,'''') else write(prr,c);
+      writeln(prr,'''');
+      mes(38)
+    end
+   end;
+
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
   { check integer or subrange of }
@@ -4214,6 +4224,11 @@ begin cmdpos := maxcmd end;
   begin cmptyp := false;
     if comptypes(pt, at) then cmptyp := true
     else if realt(pt) and intt(at) then cmptyp := true
+  end;
+
+  function ischrcst(var at: attr): boolean;
+  begin
+    ischrcst := (at.typtr = charptr) and (at.kind = cst)
   end;
 
   { find matching uary operator overload }
@@ -5645,11 +5660,10 @@ begin cmdpos := maxcmd end;
                                   locpar := locpar+lsp^.size;
                                   alignu(parmptr,locpar);
                                 end
-                              else if stringt(lsp) and chart(gattr.typtr) then
+                              else if stringt(lsp) and ischrcst(gattr) then
                                 begin { is char to string }
-                                  load; cpy2adr(nxt,gattr);
                                   gen2(51(*ldc*),1,1);
-                                  gen1(72(*swp*),stackelsize);
+                                  gensca(chr(gattr.cval.ival));
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin
@@ -5903,7 +5917,7 @@ begin cmdpos := maxcmd end;
 
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
-        fcp: ctp; onstkl, onstkr: boolean;
+        fcp: ctp; onstkl, onstkr, lschrcst, rschrcst, revcmp: boolean;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -6319,14 +6333,10 @@ begin cmdpos := maxcmd end;
         end (*while*)
     end (*simpleexpression*) ;
 
-    function ischrcst(var at: attr): boolean;
-    begin
-      ischrcst := (at.typtr = charptr) and (at.kind = cst)
-    end;
-
   begin (*expression*)
+    revcmp := false;
     simpleexpression(fsys + [relop], threaten);
-    onstkl := gattr.kind = expr;
+    onstkl := gattr.kind = expr; lschrcst := ischrcst(gattr);
     if sy = relop then begin
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
@@ -6337,7 +6347,7 @@ begin cmdpos := maxcmd end;
           (gattr.typtr^.form <= subrange) then
             gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
-      onstkr := gattr.kind = expr;
+      onstkr := gattr.kind = expr; rschrcst := ischrcst(gattr);
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
@@ -6364,14 +6374,19 @@ begin cmdpos := maxcmd end;
                       gattr.typtr := realptr
                     end;
               if comptypes(lattr.typtr,gattr.typtr) or
-                 (ischrcst(lattr) and (gattr.typtr^.form = arrayc)) or
-                 ((lattr.typtr^.form = arrayc) and ischrcst(gattr)) then
+                 (lschrcst and (gattr.typtr^.form = arrayc)) or
+                 ((lattr.typtr^.form = arrayc) and rschrcst) then
                 begin lsize := lattr.typtr^.size;
                   typind := ' ';
                   case lattr.typtr^.form of
                     scalar:
-                      if ischrcst(lattr) and (gattr.typtr^.form = arrayc) then
+                      if lschrcst and (gattr.typtr^.form = arrayc) then
                         begin
+                          { load char ptr under }
+                          gen2(51(*ldc*),1,1);
+                          gensca(chr(gattr.cval.ival));
+                          typind := 'v';
+                          revcmp := true
                         end
                       else if lattr.typtr = realptr then typind := 'r'
                       else
@@ -6391,10 +6406,12 @@ begin cmdpos := maxcmd end;
                     arrays, arrayc:
                       begin
                         if not stringt(lattr.typtr) then error(134);
-                        if ischrcst(gattr) then begin { rationalize character }
-                          { form address to stack }
-                          gen1(118(*lsa*),0);
+                        if rschrcst and (lattr.typtr^.form = arrayc) then begin 
+                          gen1(71(*dmp*),intsize); { discard char }
+                          { rationalize character }
                           gen2(51(*ldc*),1,1);
+                          gensca(chr(gattr.cval.ival));
+                          typind := 'v'
                         end else begin
                           lsizspc := lsize; alignu(parmptr,lsizspc);
                           if (lattr.typtr^.form = arrayc) or
@@ -6416,7 +6433,19 @@ begin cmdpos := maxcmd end;
                     files:
                       begin error(133); typind := 'f' end
                   end;
-                  if typind <> ' ' then case lop of
+                  if typind <> ' ' then if revcmp then begin 
+                    case lop of
+                      { reverse flipped operands }
+                      ltop: gen2(49(*grt*),ord(typind),lsize);
+                      leop: gen2(48(*geq*),ord(typind),lsize);
+                      gtop: gen2(53(*les*),ord(typind),lsize);
+                      geop: gen2(52(*leq*),ord(typind),lsize);
+                      neop: gen2(55(*neq*),ord(typind),lsize);
+                      eqop: gen2(47(*equ*),ord(typind),lsize)
+                    end;
+                    gen1(72(*swp*),intsize); { swap for previous const }
+                    gen1(71(*dmp*),ptrsize) { dump it }
+                  end else case lop of
                     ltop: gen2(53(*les*),ord(typind),lsize);
                     leop: gen2(52(*leq*),ord(typind),lsize);
                     gtop: gen2(49(*grt*),ord(typind),lsize);
