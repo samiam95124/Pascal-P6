@@ -14,9 +14,9 @@ and the following annexes: A,B,C,E.
      9       -8 function x: ; begin x := 1 end; 
      9   ****               ^2
      9   ****    2 Identifier expected
-    10        7  
-    11        7 begin 
-    12        7 end. 
+    10        6  
+    11        6 begin 
+    12        6 end. 
 
 Errors in program: 1
 

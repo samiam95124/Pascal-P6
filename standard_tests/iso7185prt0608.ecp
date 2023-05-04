@@ -24,15 +24,15 @@ and the following annexes: A,B,C,E.
     15   ****  104 Identifier not declared
     16        9  
     17        9 end; 
-    18       11  
-    19       11 begin 
-    20       11  
-    21       11    a(1, 2, 'a') 
+    18       10  
+    19       10 begin 
+    20       10  
+    21       10    a(1, 2, 'a') 
     21   ****                ^126^277
     21   ****  126 Number of parameters does not agree with declaration
     21   ****  277 No overload found to match parameter
-    22       13  
-    23       13 end. 
+    22       12  
+    23       12 end. 
 
 Errors in program: 4
 

@@ -1419,9 +1419,9 @@ and the following annexes: A,B,C,E.
     16        5  
     17        5    c := 'a'; 
     18        8    d := 1; 
-    19        9    writeln(c, d) 
-    20       14  
-    21       14 end. 
+    19        8    writeln(c, d) 
+    20       13  
+    21       13 end. 
 
 Errors in program: 2
 
@@ -2306,9 +2306,9 @@ and the following annexes: A,B,C,E.
      9   ****                    ^7^123
      9   ****    7 Error in parameter list
      9   ****  123 Missing result type in function declaration
-    10        7  
-    11        7 begin 
-    12        7 end. 
+    10        6  
+    11        6 begin 
+    12        6 end. 
 
 Errors in program: 2
 
@@ -2339,9 +2339,9 @@ and the following annexes: A,B,C,E.
      9       -8 function x: ; begin x := 1 end; 
      9   ****               ^2
      9   ****    2 Identifier expected
-    10        7  
-    11        7 begin 
-    12        7 end. 
+    10        6  
+    11        6 begin 
+    12        6 end. 
 
 Errors in program: 1
 
@@ -3154,13 +3154,13 @@ and the following annexes: A,B,C,E.
     13   ****   59 Error in variable
     14        5  
     15        5       1: a := 1; 
-    16        6       2: a := 2 
+    16        5       2: a := 2 
     16   ****            ^167
     16   ****  167 Undeclared label
-    17        6  
-    18        6    end 
-    19        8  
-    20        8 end.
+    17        5  
+    18        5    end 
+    19        7  
+    20        7 end.
 label           2 unreferenced
                      
     20   ****     ^168,21
@@ -5991,10 +5991,10 @@ and the following annexes: A,B,C,E.
     15   ****  104 Identifier not declared
     16        9  
     17        9 end; 
-    18       11  
-    19       11 begin 
-    20       11  
-    21       11 end. 
+    18       10  
+    19       10 begin 
+    20       10  
+    21       10 end. 
 
 Errors in program: 2
 
@@ -6033,10 +6033,10 @@ and the following annexes: A,B,C,E.
     15        9    x := 'a' 
     16        9  
     17        9 end; 
-    18       11  
-    19       11 begin 
-    20       11  
-    21       11 end. 
+    18       10  
+    19       10 begin 
+    20       10  
+    21       10 end. 
 
 Errors in program: 1
 
@@ -7414,20 +7414,20 @@ and the following annexes: A,B,C,E.
     11      -16 begin 
     12        5  
     13        5    b := 1; 
-    14        6    c := 1 
+    14        5    c := 1 
     14   ****         ^104
     14   ****  104 Identifier not declared
-    15        6  
-    16        6 end; 
-    17        8  
-    18        8 begin 
-    19        8  
-    20        8    a(1, 2) 
+    15        5  
+    16        5 end; 
+    17        6  
+    18        6 begin 
+    19        6  
+    20        6    a(1, 2) 
     20   ****         ^277^126^277
     20   ****  277 No overload found to match parameter
     20   ****  126 Number of parameters does not agree with declaration
-    21        8  
-    22        8 end. 
+    21        6  
+    22        6 end. 
 
 Errors in program: 6
 
@@ -7466,17 +7466,17 @@ and the following annexes: A,B,C,E.
     11      -16 begin 
     12        5  
     13        5    b := 1; 
-    14        6    c := 1 
-    15        6  
-    16        6 end; 
-    17        8  
-    18        8 begin 
-    19        8  
-    20        8    a(1, 2) 
+    14        5    c := 1 
+    15        5  
+    16        5 end; 
+    17        6  
+    18        6 begin 
+    19        6  
+    20        6    a(1, 2) 
     20   ****         ^277^277
     20   ****  277 No overload found to match parameter
-    21        8  
-    22        8 end. 
+    21        6  
+    22        6 end. 
 
 Errors in program: 4
 
@@ -7512,17 +7512,17 @@ and the following annexes: A,B,C,E.
     11      -16 begin 
     12        5  
     13        5    b := 1; 
-    14        6    c := 1 
-    15        6  
-    16        6 end; 
-    17        8  
-    18        8 begin 
-    19        8  
-    20        8    a(1,2) 
+    14        5    c := 1 
+    15        5  
+    16        5 end; 
+    17        6  
+    18        6 begin 
+    19        6  
+    20        6    a(1,2) 
     20   ****         ^277^277
     20   ****  277 No overload found to match parameter
-    21        8  
-    22        8 end. 
+    21        6  
+    22        6 end. 
 
 Errors in program: 3
 
@@ -7662,15 +7662,15 @@ and the following annexes: A,B,C,E.
     15   ****  104 Identifier not declared
     16        9  
     17        9 end; 
-    18       11  
-    19       11 begin 
-    20       11  
-    21       11    a(1, 2, 'a') 
+    18       10  
+    19       10 begin 
+    20       10  
+    21       10    a(1, 2, 'a') 
     21   ****                ^126^277
     21   ****  126 Number of parameters does not agree with declaration
     21   ****  277 No overload found to match parameter
-    22       13  
-    23       13 end. 
+    22       12  
+    23       12 end. 
 
 Errors in program: 4
 

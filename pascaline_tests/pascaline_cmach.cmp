@@ -156,6 +156,22 @@ sdc37: false s/b false
 sdc38:  true s/b true
 sdc39:  true s/b true
 sdc40:  true s/b true
+sdc41:  true s/b true
+sdc42: false s/b false
+sdc43: false s/b false
+sdc44:  true s/b true
+sdc45:  true s/b true
+sdc46: false s/b false
+sdc47: false s/b false
+sdc48:  true s/b true
+sdc49:  true s/b true
+sdc50: false s/b false
+sdc51:  true s/b true
+sdc52:  true s/b true
+sdc53: false s/b false
+sdc54:  true s/b true
+sdc55:  true s/b true
+sdc56:  true s/b true
 mdc1: 
  100  99  98  97  96  95  94  93  92  91
   90  89  88  87  86  85  84  83  82  81

@@ -8077,7 +8077,8 @@ begin cmdpos := maxcmd end;
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
-        var lattr, lattr2: attr; tagasc: boolean; fcp2: ctp; len: addrrange;
+        var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp; 
+            len: addrrange;
       begin tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -8098,11 +8099,16 @@ begin cmdpos := maxcmd end;
                  tagasc then { if tag checking, force address load }
                 if gattr.kind <> expr then loadaddress;
             lattr := gattr;
-            insymbol; expression(fsys, false);
-            if gattr.typtr <> nil then
+            insymbol; expression(fsys, false); schrcst := ischrcst(gattr);
+            if (lattr.typtr <> nil) and (gattr.typtr <> nil) then
               { process expression rights as load }
-              if (gattr.typtr^.form <= power) or (gattr.kind = expr) then load
-              else loadaddress;
+              if (gattr.typtr^.form <= power) or (gattr.kind = expr) then begin
+                if (lattr.typtr^.form = arrayc) and schrcst then begin
+                  { load as string }
+                  gen2(51(*ldc*),1,1);
+                  gensca(chr(gattr.cval.ival))
+                end else load
+              end else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
               fndopr2(bcmop, lattr, fcp2);
               if fcp2 <> nil then callop2(fcp2, lattr) else begin
@@ -8110,7 +8116,8 @@ begin cmdpos := maxcmd end;
                   begin gen0(10(*flt*));
                     gattr.typtr := realptr
                   end;
-                if comptypes(lattr.typtr,gattr.typtr) then begin
+                if comptypes(lattr.typtr,gattr.typtr) or 
+                   ((lattr.typtr^.form = arrayc) and schrcst) then begin
                   if filecomponent(gattr.typtr) then error(191);
                   with lattr2 do
                     if kind = varbl then begin

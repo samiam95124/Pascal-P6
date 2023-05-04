@@ -1195,10 +1195,10 @@ begin
    write('sdc50: ');
    writeln('b' <= ps1, ' s/b false');
    write('sdc51: ');
-   ps1 := 'a';
-   writeln(ps1 <= 'b', ' s/b true');
+   ps1 := 'b';
+   writeln(ps1 <= 'c', ' s/b true');
    write('sdc52: ');
-   writeln('b' <= ps1, ' s/b true');
+   writeln('a' <= ps1, ' s/b true');
    write('sdc53: ');
    ps1 := 'a';
    writeln(ps1 >= 'b', ' s/b false');
@@ -1208,7 +1208,7 @@ begin
    ps1 := 'b';
    writeln(ps1 >= 'a', ' s/b true');
    write('sdc56: ');
-   writeln('a' >= ps1, ' s/b true');
+   writeln('b' >= ps1, ' s/b true');
    
 {*******************************************************************************
 

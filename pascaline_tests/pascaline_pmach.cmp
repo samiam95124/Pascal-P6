@@ -1,6 +1,6 @@
-P6 Pascal interpreter vs. 0.1.x
+P6 Pascal pmach interpreter vs. 0.1.x
 
-Assembling/loading program
+loading program
 Running program
 
 *******************************************************************************
@@ -156,6 +156,22 @@ sdc37: False s/b false
 sdc38:  True s/b true
 sdc39:  True s/b true
 sdc40:  True s/b true
+sdc41:  True s/b true
+sdc42: False s/b false
+sdc43: False s/b false
+sdc44:  True s/b true
+sdc45:  True s/b true
+sdc46: False s/b false
+sdc47: False s/b false
+sdc48:  True s/b true
+sdc49:  True s/b true
+sdc50: False s/b false
+sdc51:  True s/b true
+sdc52:  True s/b true
+sdc53: False s/b false
+sdc54:  True s/b true
+sdc55:  True s/b true
+sdc56:  True s/b true
 mdc1: 
  100  99  98  97  96  95  94  93  92  91
   90  89  88  87  86  85  84  83  82  81

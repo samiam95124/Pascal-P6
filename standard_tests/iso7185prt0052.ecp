@@ -15,9 +15,9 @@ and the following annexes: A,B,C,E.
      9   ****                    ^7^123
      9   ****    7 Error in parameter list
      9   ****  123 Missing result type in function declaration
-    10        7  
-    11        7 begin 
-    12        7 end. 
+    10        6  
+    11        6 begin 
+    12        6 end. 
 
 Errors in program: 2
 
