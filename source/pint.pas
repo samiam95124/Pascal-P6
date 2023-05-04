@@ -2310,7 +2310,7 @@ procedure load;
 
    { relocate far labels }
    procedure flabrlc;
-   var ad: address; op: instyp; flp: flabelp; c: char; rt: integer;
+   var ad: address; op: instyp; flp: flabelp; c: char; rt: integer; symerr: boolean;
    { find symbols reference }
    function symref(lsp: strvsp): address;
    var mods, syms: filnam; i,x: 1..fillen; bp, fbp: pblock; sp, fsp: psymbol;
@@ -2344,8 +2344,11 @@ procedure load;
          if strequvf(bp^.name, syms) then begin fbp := bp; bp := nil end
          else bp := bp^.next
        end;
-       if fbp = nil then errorl('Symbol not present       ');
-       symref := fbp^.bstart
+       if fbp = nil then begin
+         write('Symbol not present: '); writevp(output, lsp); writeln;
+         symref := 0;
+         symerr := true
+       end else symref := fbp^.bstart
      end
    end;
 
@@ -2360,7 +2363,7 @@ procedure load;
      while c <> '.' do
        begin mods[i] := c; i := i+1; c := strchr(lsp, i) end;
      i := i+1; c := strchr(lsp, i); x := 1;
-     while c <> ' ' do
+     while (c <> ' ') and (c <> '@') do
        begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
      rt := 0;
 #ifdef EXTERNALS
@@ -2370,6 +2373,7 @@ procedure load;
    end;
 
    begin { flabrlc }
+     symerr := false; { set no symbols error }
      while flablst <> nil do begin { empty far label list }
        flp := flablst; flablst := flablst^.next;
        ad := flp^.val; op := store[ad];
@@ -2377,7 +2381,8 @@ procedure load;
        if rt > 0 then putadr(ad, rt+extvecbase-1)
        else putadr(ad, symref(flp^.ref));
        dispose(flp)
-     end
+     end;
+     if symerr then errorl('Missing symbols found    ');
    end;
 
    function isprog: boolean;
