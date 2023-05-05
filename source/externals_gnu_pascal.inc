@@ -499,6 +499,8 @@ begin
               fp := fp^.next { link next entry }
 
            end;
+           { replace with our value for nil }
+           if ad4 = 0 then ad4 := nilval;
            ad := getadr(params); { get address of list pointer }
            putadr(ad, ad4); { place to vm client }
            { return past parameters }
