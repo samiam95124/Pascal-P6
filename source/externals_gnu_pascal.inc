@@ -554,15 +554,15 @@ begin
 
            a := getint(params);
            a := pa_local(a);
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        8: begin { clock() }
 
            a := pa_clock;
-           putint(mp, a)
+           putint(params, a)
 
        end;
 
@@ -570,8 +570,8 @@ begin
 
            a := getint(params);
            a := pa_elapsed(a);
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
@@ -579,8 +579,8 @@ begin
 
            getstr(params, s);
            bl := pa_validfile(@s) <> 0;
-           putint(mp, ord(bl));
-           params := params+ptrsize+intsize
+           params := params+ptrsize+intsize;
+           putint(params, ord(bl))
 
        end;
 
@@ -588,8 +588,8 @@ begin
 
            getstr(params, s);
            bl := pa_validpath(@s) <> 0;
-           putint(mp, ord(bl));
-           params := params+ptrsize+intsize
+           params := params+ptrsize+intsize;
+           putint(params, ord(bl))
 
        end;
 
@@ -597,8 +597,8 @@ begin
 
            getstr(params, s);
            bl := pa_wild(@s) <> 0;
-           putint(mp, ord(bl));
-           params := params+ptrsize+intsize
+           params := params+ptrsize+intsize;
+           putint(mp, ord(bl))
 
        end;
 
@@ -877,48 +877,48 @@ begin
        40: begin { optchr() }
 
            ch := pa_optchr();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        41: begin { pthchr() }
 
            ch := pa_pthchr();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        42: begin { latitude() }
 
            a := pa_latitude();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        43: begin { longitude() }
 
            a := pa_longitude();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        44: begin { altitude() }
 
            a := pa_altitude();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        45: begin { country() }
 
            a := pa_country();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
@@ -933,32 +933,32 @@ begin
        47: begin { timezone() }
 
            a := pa_timezone();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        48: begin { daysave() }
 
            a := pa_daysave();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        49: begin { time24hour() }
 
            a := pa_time24hour();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        50: begin { language() }
 
            a := pa_language();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
@@ -973,56 +973,56 @@ begin
        52: begin { decimal() }
 
            ch := pa_decimal();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        53: begin { numbersep() }
 
            ch := pa_numbersep();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        54: begin { timeorder() }
 
            a := pa_timeorder();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        55: begin { dateorder() }
 
            a := pa_dateorder();
-           putint(mp, a);
-           params := params+intsize
+           params := params+intsize;
+           putint(params, a)
 
        end;
 
        56: begin { datesep() }
 
            ch := pa_datesep();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        57: begin { timesep() }
 
            ch := pa_timesep();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 
        58: begin { currchr() }
 
            ch := pa_currchr();
-           putchr(mp, ch);
-           params := params+intsize
+           params := params+intsize;
+           putchr(params, ch)
 
        end;
 

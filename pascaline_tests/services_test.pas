@@ -57,17 +57,17 @@ end;
 begin
 
    write('test 1: ');
-   list('exttst.pas', fla);
+   list('services_test.pas', fla);
    while fla <> nil do begin
 
       write(fla^.name^);
       fla := fla^.next
 
    end;
-   writeln(' s/b exttst.pas');
+   writeln(' s/b services_test.pas');
    { this should not need to be more than 1 character, it is being evaluated
      as char }
-   list('* ', fla);
+   list('*', fla);
    writeln('test 2: ');
    i := 10;
    writeln('Name                Size');
@@ -91,11 +91,11 @@ begin
    end;
    writeln('s/b <10 entries from the current directory>');
    times(sa, time);
-   writeln('test 3: ', sa:0, ' s/b <the current time in zulu>');
+   writeln('test 3: ', sa:*, ' s/b <the current time in zulu>');
    times(sa, local(time));
-   writeln('test 5: ', sa:0, ' s/b <the current time in local>');
+   writeln('test 5: ', sa:*, ' s/b <the current time in local>');
    dates(sa, local(time));
-   writeln('test 7: ', sa:0, ' s/b <the current date>');
+   writeln('test 7: ', sa:*, ' s/b <the current date>');
    write('test 9: ');
    writetime(output, local(time));
    writeln(' s/b <the time>');
@@ -114,10 +114,10 @@ begin
    writeln('test 19: ', wild('/fork.txt'), ' s/b false');
    setenv('barkbark', 'what is this');
    getenv('barkbark   ', sa);
-   writeln('test20: ', sa:0, ' s/b what is this');
+   writeln('test20: ', sa:*, ' s/b what is this');
    remenv('barkbark');
    getenv('barkbark', sa);
-   writeln('test22: ''', sa:0, ''' s/b ''''');
+   writeln('test22: ''', sa:*, ''' s/b ''''');
    allenv(ep);
    writeln('test23: ');
    i := 10;
@@ -200,28 +200,28 @@ begin
    writeln('This is extst1: ''hi there''');
    writeln('0');
    getcur(sa);
-   writeln('test 28: ', sa:0, ' s/b <the current path>');
+   writeln('test 28: ', sa:*, ' s/b <the current path>');
    getcur(sb);
    { this should produce \ }
    setcur('/ ');
    getcur(sa);
    { same }
-   writeln('test 30: ', sa:0, ' s/b /');
+   writeln('test 30: ', sa:*, ' s/b /');
    setcur(sb);
    getcur(sa);
-   writeln('test 31: ', sa:0, ' s/b <the current path>');
+   writeln('test 31: ', sa:*, ' s/b <the current path>');
    brknam('/what/ho/junk.com', p, n, e);
-   writeln('test 32: Path: ', p:0, ' Name: ', n:0, ' Ext: ', e:0);
+   writeln('test 32: Path: ', p:*, ' Name: ', n:*, ' Ext: ', e:*);
    writeln('    s/b: Path: /what/ho/ Name: junk Ext: com');
    maknam(sa, p, n, e);
-   writeln('test 33: ', sa:0, ' s/b /what/ho/junk.com');
+   writeln('test 33: ', sa:*, ' s/b /what/ho/junk.com');
    copyp(sa, 'junk');
    fulnam(sa);
-   writeln('test 36: ', sa:0, ' s/b <path>junk');
+   writeln('test 36: ', sa:*, ' s/b <path>junk');
    getpgm(sa);
-   writeln('test 38: ', sa:0, ' s/b <the program path>');
+   writeln('test 38: ', sa:*, ' s/b <the program path>');
    getusr(sa);
-   writeln('test 40: ', sa:0, ' s/b <the user path>');
+   writeln('test 40: ', sa:*, ' s/b <the user path>');
    assign(ft, 'junk');
    rewrite(ft);
    close(ft);
