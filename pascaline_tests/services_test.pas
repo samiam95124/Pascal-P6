@@ -130,7 +130,7 @@ begin
    end;
    writeln('s/b <10 entries from the current environment>');
    writeln('test24: ');
-   exec('exttst1');
+   exec('services_test1');
    writeln('waiting');
    writeln('waiting');
    writeln('waiting');
@@ -156,7 +156,7 @@ begin
    writeln('waiting');
    writeln('s/b This is extst1: '''' (mixed with ''waiting'' lines above)');
    writeln('test25: ');
-   execw('exttst1', err);
+   execw('services_test1', err);
    writeln(err:1);
    writeln('s/b');
    writeln('This is extst1: ''''');
@@ -166,7 +166,7 @@ begin
    ep^.name := copy('bark');
    ep^.data := copy('hi there');
    ep^.next := nil;
-   exece('exttst1', ep);
+   exece('services_test1', ep);
    writeln('waiting');
    writeln('waiting');
    writeln('waiting');
@@ -194,7 +194,7 @@ begin
    writeln('waiting');
    writeln('s/b This is extst1: ''hi there'' (mixed with ''waiting'' lines above)');
    writeln('test27: ');
-   execew('exttst1', ep, err);
+   execew('services_test1', ep, err);
    writeln(err:1);
    writeln('s/b');
    writeln('This is extst1: ''hi there''');
