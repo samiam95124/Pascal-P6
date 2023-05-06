@@ -3676,9 +3676,10 @@ procedure callsp;
       var i: integer;
    begin
          ad1 := ad+l-1; { find end }
-         while (l > 0) and (getchr(ad1) = ' ') do
+         while (l > 1) and (getchr(ad1) = ' ') do
            begin ad1 := ad1-1; l := l-1 end;
-         for i := 0 to l-1 do write(f, getchr(ad+i));
+         if getchr(ad1) <> ' ' then
+           for i := 0 to l-1 do write(f, getchr(ad+i));
    end;
 
    procedure writec(var f: text; c: char; w: integer);

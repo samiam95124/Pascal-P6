@@ -598,7 +598,7 @@ begin
            getstr(params, s);
            bl := pa_wild(@s) <> 0;
            params := params+ptrsize+intsize;
-           putint(mp, ord(bl))
+           putint(params, ord(bl))
 
        end;
 
