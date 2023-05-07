@@ -17,6 +17,6 @@ void main()
    char s[40];
 
    pa_getenv("bark", s, 40);
-   printf("This is exttst1: \'%s\'\n", s);
+   printf("This is services_test1: \'%s\'\n", s);
 
 }
