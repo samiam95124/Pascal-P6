@@ -15,7 +15,7 @@ program services_test(output);
 
 uses services;
                                                           
-var sa, sb:     packed array 40 of char;
+var sa, sb:     packed array 1000 of char;
     sp:         pstring;
     fla:        filptr;
     ta:         integer;
@@ -23,7 +23,7 @@ var sa, sb:     packed array 40 of char;
     i:          integer;
     atr:        attribute;
     ps:         pstring;
-    p, n, e:    packed array 40 of char;
+    p, n, e:    packed array 1000 of char;
     pp, pn, pe: pstring;
     ft:         text;
     sc:         schar;
@@ -202,8 +202,7 @@ begin
    getcur(sa);
    writeln('test 28: ', sa:*, ' s/b <the current path>');
    getcur(sb);
-   { this should produce \ }
-   setcur('/ ');
+   setcur('/');
    getcur(sa);
    { same }
    writeln('test 30: ', sa:*, ' s/b /');
@@ -266,8 +265,8 @@ begin
    rempth('junk');
    list('junk', fla);
    writeln(fla = nil, ' s/b true');
-   filchr(sc);
    write('test 50: ');
+   filchr(sc);
    for i := 0 to 255 do if chr(i) in sc then write(chr(i));
    writeln(' s/b <the set of valid characters>');
    write('test 51: ''', optchr, ''' s/b the option character');

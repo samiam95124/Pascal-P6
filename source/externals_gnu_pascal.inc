@@ -357,8 +357,7 @@ var i: integer;
 
 begin
 
-   s := getint(a);
-   a := a+intsize;
+   s := getint(a)
 
 end;
 
@@ -512,16 +511,16 @@ begin
 
        2:  begin { times() }
 
-           pa_times(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           pa_times(@s, getint(params+intsize+ptrsize), getint(params));
+           putstr(s, getint(params+intsize+ptrsize), getadr(params+intsize));
            params := params+intsize+ptrsize+intsize
 
        end;
 
        3:  begin { dates() }
 
-           pa_dates(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           pa_dates(@s, getint(params+intsize+ptrsize), getint(params));
+           putstr(s, getint(params+intsize+ptrsize), getadr(params+intsize));
            params := params+intsize+ptrsize+intsize
 
        end;
@@ -616,7 +615,7 @@ begin
           getstr(params+ptrsize+intsize, s);
           getstr(params, s2);
           pa_setenv(@s, @s2);
-          params := params+ptrsize+intsize
+          params := params+ptrsize+intsize+ptrsize+intsize
 
        end;
 
@@ -707,8 +706,8 @@ begin
 
        21: begin { getcur() }
 
-           pa_getcur(@s, getint(params+intsize+ptrsize));
-           putstr(s, getint(params+intsize), getadr(params));
+           pa_getcur(@s, getint(params+ptrsize));
+           putstr(s, getint(params+ptrsize), getadr(params));
            params := params+ptrsize+intsize
 
        end;
@@ -724,8 +723,8 @@ begin
        23: begin { brknam() }
 
           getstr(params+ptrsize*3+intsize*3, s);
-          pa_brknam(@s, @s2, getint(params+ptrsize*3+intsize*2),
-                    @s3, getint(params+ptrsize*2+intsize),
+          pa_brknam(@s, @s2, getint(params+ptrsize+intsize+ptrsize+intsize+ptrsize),
+                    @s3, getint(params+ptrsize+intsize+ptrsize),
                     @s4, getint(params+ptrsize));
           putstr(s2, getint(params+ptrsize*3+intsize*2), getadr(params+ptrsize*2+intsize*2));
           putstr(s3, getint(params+ptrsize*2+intsize), getadr(params+ptrsize+intsize));
@@ -736,12 +735,13 @@ begin
 
        24: begin { maknam() }
 
-          getstr(params+ptrsize*2+intsize*2, s2);
+          getstr(params+ptrsize+intsize+ptrsize+intsize, s2);
           getstr(params+ptrsize+intsize, s3);
           getstr(params, s4);
           pa_maknam(@s, getint(ptrsize*4+intsize*3), @s2, @s3, @s4);
-          putstr(s, getint(params+ptrsize*4+intsize*3), getadr(params+ptrsize*3+intsize*3));
-          params := params+(ptrsize+intsize)*4
+          putstr(s, getint(params+ptrsize+intsize+ptrsize+intsize+ptrsize+intsize+ptrsize),
+                    getadr(params+ptrsize+intsize+ptrsize+intsize+ptrsize+intsize));
+          params := params+ptrsize+intsize+ptrsize+intsize+ptrsize+intsize+ptrsize+intsize
 
        end;
 
@@ -870,30 +870,27 @@ begin
 
            pa_filchr(integer(@st));
            putsetchr(getadr(params), st);
-           params := params+setsize
+           params := params+ptrsize
 
        end;
 
        40: begin { optchr() }
 
            ch := pa_optchr();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        41: begin { pthchr() }
 
            ch := pa_pthchr();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        42: begin { latitude() }
 
            a := pa_latitude();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -901,7 +898,6 @@ begin
        43: begin { longitude() }
 
            a := pa_longitude();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -909,7 +905,6 @@ begin
        44: begin { altitude() }
 
            a := pa_altitude();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -917,15 +912,14 @@ begin
        45: begin { country() }
 
            a := pa_country();
-           params := params+intsize;
            putint(params, a)
 
        end;
 
        46: begin { countrys() }
 
-           pa_countrys(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           pa_countrys(@s, getint(params+intsize+ptrsize), getint(params));
+           putstr(s, getint(params+intsize+ptrsize), getadr(params+intsize));
            params := params+intsize+ptrsize+intsize
 
        end;
@@ -933,7 +927,6 @@ begin
        47: begin { timezone() }
 
            a := pa_timezone();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -941,7 +934,6 @@ begin
        48: begin { daysave() }
 
            a := pa_daysave();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -949,7 +941,6 @@ begin
        49: begin { time24hour() }
 
            a := pa_time24hour();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -964,8 +955,8 @@ begin
 
        51: begin { languages() }
 
-           pa_languages(@s, getint(params+intsize*2), getint(params));
-           putstr(s, getint(params+intsize*2), getadr(params+intsize));
+           pa_languages(@s, getint(params+intsize+ptrsize), getint(params));
+           putstr(s, getint(params+intsize+ptrsize), getadr(params+intsize));
            params := params+intsize+ptrsize+intsize
 
        end;
@@ -973,23 +964,20 @@ begin
        52: begin { decimal() }
 
            ch := pa_decimal();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        53: begin { numbersep() }
 
            ch := pa_numbersep();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        54: begin { timeorder() }
 
            a := pa_timeorder();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -997,7 +985,6 @@ begin
        55: begin { dateorder() }
 
            a := pa_dateorder();
-           params := params+intsize;
            putint(params, a)
 
        end;
@@ -1005,24 +992,21 @@ begin
        56: begin { datesep() }
 
            ch := pa_datesep();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        57: begin { timesep() }
 
            ch := pa_timesep();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
        58: begin { currchr() }
 
            ch := pa_currchr();
-           params := params+intsize;
-           putchr(params, ch)
+           putint(params, ord(ch))
 
        end;
 
