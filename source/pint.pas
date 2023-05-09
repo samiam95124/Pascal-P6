@@ -404,7 +404,7 @@ const
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
-      fillen      = 4000; { maximum length of filenames }
+      fillen      = 20000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
       brkins      = 19;   { breakpoint instruction no. }
       mrkins      = 174;  { source line marker instruction executed }

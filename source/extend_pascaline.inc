@@ -165,6 +165,11 @@ begin
   until bufcommand <> '-'
 end;
 
+function chkbrk: boolean;
+begin
+  chkbrk := false
+end;
+
 procedure exitprogram(ec: integer);
 begin
   ec := ec
