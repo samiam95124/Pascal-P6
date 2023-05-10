@@ -2231,10 +2231,8 @@ begin cmdpos := maxcmd end;
               single character, we store it as an integer even though the
               symbol stays a string }
             val.intval := true; val.ival := ord(string[1])
-          end else if lgth = 0 then begin
-            { can't let zero length propagate up, we change to space }
-            error(205); val.intval := true; val.ival := ord(' '); lgth := 1
           end else begin
+            if lgth = 0 then chkstd;
             new(lvp,strg); pshcst(lvp);
             lvp^.cclass:=strg;
             if lgth > strglgth then
@@ -3582,13 +3580,15 @@ begin cmdpos := maxcmd end;
     if fsp <> nil then
       if (fsp^.form = arrays) or (fsp^.form = arrayc) then
         if fsp^.packing then begin
-        { if the index is nil, either the array is a string constant or the
-          index type was in error. Either way, we call it a string }
         if fsp^.form = arrays then begin
-          if fsp^.inxtype = nil then begin fmin := 1; fmax := fsp^.size end
-          else getbounds(fsp^.inxtype,fmin,fmax);
-          stringt :=
-            (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
+          { if the index is nil, either the array is a string constant or the
+            index type was in error. Either way, we call it a string }
+          if fsp^.inxtype = nil then stringt := true
+          else begin 
+            { common string must pass test of 1..N where N>1 }
+            getbounds(fsp^.inxtype,fmin,fmax);
+            stringt := (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
+          end
         end else stringt := fsp^.abstype = charptr
       end
   end (*stringt*);
