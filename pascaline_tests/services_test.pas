@@ -105,10 +105,10 @@ begin
    ta := clock;
    writeln('test 11: ', elapsed(ta):1, ' s/b <a small amount of time>');
    writeln('test 12: ', validfile('/just/fargle.com'), ' s/b true');
-   writeln('test 13: ', validfile('/fargle.com'), ' s/b false');
+   writeln('test 13: ', validfile(''), ' s/b false');
    writeln('test 14: ', wild('/fargle.c?m'), ' s/b true');
    writeln('test 15: ', validfile('/far*gle.com'), ' s/b true');
-   writeln('test 16: ', validfile('/fargle.com'), ' s/b false');
+   writeln('test 16: ', validfile('      '), ' s/b false');
    writeln('test 17: ', wild('/for?.txt'), ' s/b true');
    writeln('test 18: ', wild('/for*.txt'), ' s/b true');
    writeln('test 19: ', wild('/fork.txt'), ' s/b false');

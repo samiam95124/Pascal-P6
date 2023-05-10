@@ -3375,7 +3375,7 @@ begin
    len := len; { shut up compiler check }
    if blk = 0 then errorv(DisposeOfUninitalizedPointer)
    else if blk = nilval then errorv(DisposeOfNilPointer)
-   else if (blk < gbtop) or (blk >= np) then errorv(BadPointerValue);
+   else if (blk < gbtop) or (blk > np) then errorv(BadPointerValue);
    ad := blk-adrsize; { index header }
    if getadr(ad) >= 0 then errorv(BlockAlreadyFreed);
    if dorecycl and not dochkrpt and not donorecpar then begin
