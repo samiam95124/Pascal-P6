@@ -28,6 +28,7 @@ pmach=0
 cmach=0
 progfile=""
 package=0
+options=""
 
 for param in "$@" 
 do
@@ -69,6 +70,11 @@ do
 		echo
 		exit 0
 		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
 	elif [ ! -z "$param.pas" ]; then
 
 	
@@ -80,7 +86,7 @@ do
 		fi
 		echo Compiling $param...
 	    cp $param.pas prd
-	    pcom >> temp.err
+	    pcom $options >> temp.err
 	    mv prr $param.p6
 	    cat $param.p6 >> temp.p6
 		progfile="$param"

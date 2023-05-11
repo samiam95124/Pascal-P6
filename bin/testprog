@@ -108,7 +108,7 @@ do
 			
 			fi
     		echo "Compiling $param..."
-    		compile $pmachoption $cmachoption $param
+    		compile $options $pmachoption $cmachoption $param
     		if [ $? -ne 0 ]; then
     		
     		    if [ "$noerrmsg" = "0" ]; then

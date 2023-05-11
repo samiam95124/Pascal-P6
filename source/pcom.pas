@@ -2232,7 +2232,7 @@ begin cmdpos := maxcmd end;
               symbol stays a string }
             val.intval := true; val.ival := ord(string[1])
           end else begin
-            if lgth = 0 then chkstd;
+            if (lgth = 0) and iso7185 then error(205);
             new(lvp,strg); pshcst(lvp);
             lvp^.cclass:=strg;
             if lgth > strglgth then

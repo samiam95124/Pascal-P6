@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Tue 09 May 2023 12:09:54 AM PDT
+Wed 10 May 2023 11:50:19 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -24,13 +24,6 @@ Pascaline run
 0 pascaline_tests/pascaline.dif
 Debug test run
 0 pascaline_tests/debug_test.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-1248 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
 pmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -52,13 +45,6 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline_pmach.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-0 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
 cmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -80,19 +66,12 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline_cmach.dif
-Pascal-P5 run
-0 standard_tests/iso7185pat.dif
-Pascal-P6 run
-0 standard_tests/iso7185pat.dif
-pcom self compile
-0 source/pcom.mpp.dif
-pint self compile
-Tue 09 May 2023 03:41:48 AM PDT
+Wed 10 May 2023 11:52:52 PM PDT
 Files md5sum ***************************************
 Source files
-29864387d736948e9f65abe3e3f9770e  -
+356c69fbc926944f092d8ad34191e8b5  -
 batch files
-fcb1b914dba169240c1b4eba1a2d5c47  -
+163c6d4fb8d662fedb6beee1f67565fa  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files

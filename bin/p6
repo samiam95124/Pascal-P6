@@ -88,7 +88,7 @@ do
 		fi
 		echo Compiling $param...
 	    cp $param.pas prd
-	    pcom
+	    pcom $options
 	    mv prr $param.p6
 	    cat $param.p6 >> temp.p6
 		progfile="$param"

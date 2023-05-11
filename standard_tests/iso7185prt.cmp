@@ -15419,8 +15419,8 @@ and the following annexes: A,B,C,E.
     13        5    writeln('') 
     13   ****               ^205
     13   ****  205 Zero string not allowed
-    14       10  
-    15       10 end. 
+    14       12  
+    15       12 end. 
 
 Errors in program: 1
 
