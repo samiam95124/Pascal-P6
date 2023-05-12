@@ -1,28 +1,26 @@
-******************************* NEWS FOR 2023-02-06 ****************************
+******************************* NEWS FOR 2023-05-11 ****************************
 
-Welcome to the 0.1 release!
+Welcome to the v0.2 release!
 
-This is the first (beta) release of Pascal-P6. Although Pascal-P6 is still very
-much in development, I get complaints about there not being a release. This is
-a legitimate complaint, and I have made it about other projects.
+This is the second beta release of Pascal-P6. I wanted to get a release in 
+before taking on the pgen module again, which I expect to take a minimum of a
+month or two.
 
-The occasion for the release is that a significant portion of the Pascaline
-language standard has been implemented, and a regression test exists for that.
-In addition, I have run many tests on the project, and the stability has been
-greatly improved.
+A lot has been done since the v0.1 release:
 
-The language guide is pascaline.docx as usual. And as usual, I assume you have
-resources for the ISO 7185 Pascal language.
+* The debugger has been dramatically improved. There are no outstanding bugs,
+  although there is a functional issue (next).
 
-What follows is a list of unimplemented features, and this superceeds the 
-documentation. It is mostly a list of points from pascaline_tests/pascaline.pas,
-the acceptance test for Pascaline. It may be (and probably is) incomplete.
+* Overloads work from uses/joins modules. The only remaining issue is the
+  debugger does not know how to deal with them.
 
-There is a lot that works here in Pascaline! And of course the entire ISO 7185
-language is here. The biggest lack is the set of outcalls or system calls, which
-I haven't had time to connect to Pascal-P6, outside of the services module.
+* The debugger has a regression test.
 
-Pascaline features not implemented in Pascal-P6 0.1:
+* Options to pcom and pint can now be passed on the command line.
+
+* Pulldown marks are implemented. This was a huge amount of work.
+
+Pascaline features not implemented in Pascal-P6 v0.2:
 
 * 6.16 Constant strings on read/ln is not implemented (specifying text to skip).
 
@@ -31,8 +29,6 @@ Pascaline features not implemented in Pascal-P6 0.1:
 * 6.16.2 Radix specifiers in read/ln statements.
 
 * 6.26 The operator overload for assignment (:=) is not implemented correctly.
-
-* 6.26 Operator overloads from used and joined modules is not implemented.
 
 * 6.26 Inherited operator overloads is not implemented or not tested (I don't
        actually recall which).
@@ -45,18 +41,11 @@ Pascaline features not implemented in Pascal-P6 0.1:
 
 * 6.37 Properties are not implemented.
 
-* 6.39.2 Joined module overrides are do not work.
-
 * 6.41 Classes and all operations with respect to classes are not implemented.
 
 * The pgen module is in development, and does not work at present. The 
 documentation covering it is a preview of how it is expected to work, and could
 be changed by the time it is implemented.
-
-* Linking external modules is in development, and further documentation on this
-will be forthcoming.
-
-* Debug mode has several issues. It needs work before it becomes useful.
 
 * 64 bit Linux is the only supported version. At this time, only 64 bit Linux is
 tested and supported.
@@ -65,3 +54,24 @@ That's it! Enjoy playing around with the system.
 
 Scott Franco
 San Jose, CA
+
+Outstanding issues at this release *********************************************
+(does not include feature/improvement requests)
+
+* Debugger does not handle overloads.
+
+* Exception handling on module destructor is not implemented.
+
+* Inherited operator overloads is not implemented or not tested.
+
+* The operator overload for assignment (:=) is not implemented correctly.
+
+* Radix specifiers in read/ln statements.
+
+* Radix convertion on input.
+
+* Constant strings on read/ln is not implemented.
+
+* Clean up overload/override tests in pascaline.pas.
+
+* Debug p 'a'$ does not print hex value.
