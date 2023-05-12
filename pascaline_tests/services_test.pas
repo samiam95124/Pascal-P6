@@ -14,6 +14,8 @@
 program services_test(output);
 
 uses services;
+
+const second = 10_000;
                                                           
 var sa, sb:     packed array 1000 of char;
     sp:         pstring;
@@ -28,6 +30,7 @@ var sa, sb:     packed array 1000 of char;
     ft:         text;
     sc:         schar;
     err:        integer;
+    t:          integer;
 
 function copy(view s: string) { source }
              : pstring; { result }
@@ -130,44 +133,10 @@ begin
    end;
    writeln('s/b <10 entries from the current environment>');
    writeln('test24: ');
+   t := clock;
    exec('services_test1');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('s/b This is services_test1: '''' (mixed with ''waiting'' lines above)');
+   while elapsed(t) < second do;
+   writeln('s/b This is services_test1: ''''');
    writeln('test25: ');
    execw('services_test1', err);
    writeln(err:1);
@@ -179,33 +148,10 @@ begin
    ep^.name := copy('bark');
    ep^.data := copy('hi there');
    ep^.next := nil;
+   t := clock;
    exece('services_test1', ep);
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('waiting');
-   writeln('s/b This is services_test1: ''hi there'' (mixed with ''waiting'' lines above)');
+   while elapsed(t) < second do;
+   writeln('s/b This is services_test1: ''hi there''');
    writeln('test27: ');
    execew('services_test1', ep, err);
    writeln(err:1);
@@ -237,6 +183,7 @@ begin
    assign(ft, 'junk');
    rewrite(ft);
    close(ft);
+   { note: Unix cannot set attributes }
    write('test 42: ');
    setatr('junk', [atarc]);
    list('junk', fla);
@@ -257,6 +204,7 @@ begin
    list('junk', fla);
    if fla <> nil then write(fla^.name^, ' ', atsys in fla^.attr);
    writeln(' s/b junk false');
+   { end of Unix test fails }
    write('test 46: ');
    setuper('junk', [pmwrite]);
    list('junk', fla);
