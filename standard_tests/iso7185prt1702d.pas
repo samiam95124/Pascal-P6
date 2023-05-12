@@ -1,4 +1,3 @@
-{$u,i}
 {
 
 PRT test 1702: It is an error unless a variant is active for the entirety of

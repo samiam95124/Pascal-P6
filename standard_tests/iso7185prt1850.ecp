@@ -3,23 +3,22 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1850: Unreferenced variable 
-     5       -8  
-     6       -8    Variable without reference in program. Note that this is technically not an 
-     7       -8    error. Its just a compiler quality test if it can detect this. 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1850; 
-    12       -8  
-    13       -8 var i: integer; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1850: Unreferenced variable 
+     4       -8  
+     5       -8    Variable without reference in program. Note that this is technically not an 
+     6       -8    error. Its just a compiler quality test if it can detect this. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1850; 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5 end. 
 i          unreferenced
 
 

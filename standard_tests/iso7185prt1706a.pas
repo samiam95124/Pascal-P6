@@ -1,4 +1,3 @@
-{$i}
 {
 
 PRT test 1706a: It is an error to alter the value of a file-variable f when a

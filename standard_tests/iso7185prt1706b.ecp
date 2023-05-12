@@ -3,38 +3,37 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1706: It is an error to alter the value of a file-variable f when a 
-     5       -8                reference to the buffer-variable f^ exists. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.5 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1706(output); 
-    12       -8  
-    13       -8 var a: text; 
-    14       -8  
-    15       -8 procedure b(var c: char); 
-    16      -16  
-    17      -16 begin 
-    18        7  
-    19        7    get(a); 
-    20        9  
-    21        9 end; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1706: It is an error to alter the value of a file-variable f when a 
+     4       -8                reference to the buffer-variable f^ exists. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.5 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1706(output); 
+    11       -8  
+    12       -8 var a: text; 
+    13       -8  
+    14       -8 procedure b(var c: char); 
+    15      -16  
+    16      -16 begin 
+    17        7  
+    18        7    get(a); 
+    19        9  
+    20        9 end; 
 c          unreferenced
 
-    22       11  
-    23       11 begin 
-    24       11  
-    25       11    rewrite(a); 
-    26       13    a^ := 'x'; 
-    27       19    put(a); 
-    28       21    reset(a); 
-    29       23    b(a^) 
-    30       26  
-    31       26 end. 
+    21       11  
+    22       11 begin 
+    23       11  
+    24       11    rewrite(a); 
+    25       13    a^ := 'x'; 
+    26       19    put(a); 
+    27       21    reset(a); 
+    28       23    b(a^) 
+    29       26  
+    30       26 end. 
 
 Errors in program: 0

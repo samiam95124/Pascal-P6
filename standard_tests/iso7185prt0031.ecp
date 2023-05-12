@@ -3,29 +3,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 31: Reverse order between const and type 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0031(output); 
-     9       -8  
-    10       -8 type  integer = char; 
-    11       -8  
-    12       -8 const one = 1; 
-    12   ****       ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 var i: integer; 
-    15       -8  
-    16       -8 begin 
-    17        5  
-    18        5    i := 'a'; 
-    19        8    writeln(one, i) 
-    20       16  
-    21       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 31: Reverse order between const and type 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0031(output); 
+     8       -8  
+     9       -8 type  integer = char; 
+    10       -8  
+    11       -8 const one = 1; 
+    11   ****       ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 var i: integer; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    i := 'a'; 
+    18        8    writeln(one, i) 
+    19       16  
+    20       16 end. 
 
 Errors in program: 1
 

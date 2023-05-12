@@ -3,37 +3,36 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1705: It is an error to remove from its pointer-type the 
-     5       -8                identifying-value of an identified-variable when a reference to 
-     6       -8                the identified-variable exists. 
-     7       -8  
-     8       -8                ISO 7185 reference: 6.5.4 
-     9       -8  
-    10       -8 } 
-    11       -8  
-    12       -8 program iso7185prt1705(output); 
-    13       -8  
-    14       -8 var a: ^integer; 
-    15       -8  
-    16       -8 procedure b(var c: integer); 
-    17      -16  
-    18      -16 begin 
-    19        7  
-    20        7    c := 1; 
-    21       10    dispose(a) 
-    22       13  
-    23       13 end; 
-    24       15  
-    25       15 begin 
-    26       15  
-    27       15    { allocate integer value and pass that as reference, then change the value 
-    28       15      of the pointer } 
-    29       15    new(a); 
-    30       18    b(a^) 
-    31       20  
-    32       20 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1705: It is an error to remove from its pointer-type the 
+     4       -8                identifying-value of an identified-variable when a reference to 
+     5       -8                the identified-variable exists. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.5.4 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1705(output); 
+    12       -8  
+    13       -8 var a: ^integer; 
+    14       -8  
+    15       -8 procedure b(var c: integer); 
+    16      -16  
+    17      -16 begin 
+    18        7  
+    19        7    c := 1; 
+    20       10    dispose(a) 
+    21       13  
+    22       13 end; 
+    23       15  
+    24       15 begin 
+    25       15  
+    26       15    { allocate integer value and pass that as reference, then change the value 
+    27       15      of the pointer } 
+    28       15    new(a); 
+    29       18    b(a^) 
+    30       20  
+    31       20 end. 
 
 Errors in program: 0

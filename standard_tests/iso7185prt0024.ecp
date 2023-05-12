@@ -3,30 +3,29 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 24: Reverse order between label and const 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0024(output); 
-     9       -8  
-    10       -8 const one = 1; 
-    11       -8  
-    12       -8 label 1; 
-    12   ****       ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    writeln(one); 
-    17       12  
-    18       12    goto 1; 
-    19       13  
-    20       13    1: 
-    21       13  
-    22       13 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 24: Reverse order between label and const 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0024(output); 
+     8       -8  
+     9       -8 const one = 1; 
+    10       -8  
+    11       -8 label 1; 
+    11   ****       ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    writeln(one); 
+    16       12  
+    17       12    goto 1; 
+    18       13  
+    19       13    1: 
+    20       13  
+    21       13 end. 
 
 Errors in program: 1
 

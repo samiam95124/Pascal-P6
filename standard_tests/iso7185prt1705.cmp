@@ -4,6 +4,6 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [21]: Dispose of VAR referenced block
+*** Runtime error [20]: Dispose of VAR referenced block
 
 program complete

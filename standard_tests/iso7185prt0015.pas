@@ -1,4 +1,3 @@
-{$s+}
 {
 
 PRT test 15: Non-numeric label

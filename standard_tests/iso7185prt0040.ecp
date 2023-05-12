@@ -3,27 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 40: Reverse order between type and var 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0040(output); 
-     9       -8  
-    10       -8 var   one: boolean; 
-    11       -8  
-    12       -8 type  integer = char; 
-    12   ****      ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    one := true; 
-    17        8    writeln(one) 
-    18       13  
-    19       13 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 40: Reverse order between type and var 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0040(output); 
+     8       -8  
+     9       -8 var   one: boolean; 
+    10       -8  
+    11       -8 type  integer = char; 
+    11   ****      ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    one := true; 
+    16        8    writeln(one) 
+    17       13  
+    18       13 end. 
 integer    unreferenced
 
 

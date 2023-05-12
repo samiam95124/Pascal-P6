@@ -3,27 +3,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 55: Reverse order between var and function 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0055(output); 
-     9       -8  
-    10       -8 function x: integer; begin x := 1 end; 
-    11        8  
-    12        8 var y: integer; 
-    12   ****     ^6,18
-    12   ****    6 Illegal symbol
-    12   ****   18 Error in declaration part
-    13        8  
-    14        8 begin 
-    15        8  
-    16        8    writeln(x, y) 
-    17       16  
-    18       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 55: Reverse order between var and function 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0055(output); 
+     8       -8  
+     9       -8 function x: integer; begin x := 1 end; 
+    10        8  
+    11        8 var y: integer; 
+    11   ****     ^6,18
+    11   ****    6 Illegal symbol
+    11   ****   18 Error in declaration part
+    12        8  
+    13        8 begin 
+    14        8  
+    15        8    writeln(x, y) 
+    16       16  
+    17       16 end. 
 
 Errors in program: 2
 

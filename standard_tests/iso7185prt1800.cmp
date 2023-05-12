@@ -4,6 +4,6 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [21]: Pointer used after dispose
+*** Runtime error [20]: Pointer used after dispose
 
 program complete

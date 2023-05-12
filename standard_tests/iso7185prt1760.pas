@@ -1,4 +1,3 @@
-{$s}
 {
 
 PRT test 1760: Alphanumeric label.

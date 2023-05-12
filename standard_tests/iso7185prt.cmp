@@ -886,25 +886,24 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 15: Non-numeric label 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0015; 
-     9       -8  
-    10       -8 label one; 
-    10   ****           ^397
-    10   ****  397 Feature not valid in ISO 7185 Pascal
-    11       -8  
-    12       -8 begin 
-    13        5 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 15: Non-numeric label 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0015; 
+     8       -8  
+     9       -8 label one; 
+     9   ****           ^397
+     9   ****  397 Feature not valid in ISO 7185 Pascal
+    10       -8  
+    11       -8 begin 
+    12        5 end. 
 label           0 unreferenced
                      
-    13   ****      ^168
-    13   ****  168 Undefined label
+    12   ****      ^168
+    12   ****  168 Undefined label
 
 Errors in program: 2
 
@@ -1212,30 +1211,29 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 24: Reverse order between label and const 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0024(output); 
-     9       -8  
-    10       -8 const one = 1; 
-    11       -8  
-    12       -8 label 1; 
-    12   ****       ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    writeln(one); 
-    17       12  
-    18       12    goto 1; 
-    19       13  
-    20       13    1: 
-    21       13  
-    22       13 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 24: Reverse order between label and const 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0024(output); 
+     8       -8  
+     9       -8 const one = 1; 
+    10       -8  
+    11       -8 label 1; 
+    11   ****       ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    writeln(one); 
+    16       12  
+    17       12    goto 1; 
+    18       13  
+    19       13    1: 
+    20       13  
+    21       13 end. 
 
 Errors in program: 1
 
@@ -1484,29 +1482,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 31: Reverse order between const and type 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0031(output); 
-     9       -8  
-    10       -8 type  integer = char; 
-    11       -8  
-    12       -8 const one = 1; 
-    12   ****       ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 var i: integer; 
-    15       -8  
-    16       -8 begin 
-    17        5  
-    18        5    i := 'a'; 
-    19        8    writeln(one, i) 
-    20       16  
-    21       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 31: Reverse order between const and type 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0031(output); 
+     8       -8  
+     9       -8 type  integer = char; 
+    10       -8  
+    11       -8 const one = 1; 
+    11   ****       ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 var i: integer; 
+    14       -8  
+    15       -8 begin 
+    16        5  
+    17        5    i := 'a'; 
+    18        8    writeln(one, i) 
+    19       16  
+    20       16 end. 
 
 Errors in program: 1
 
@@ -1824,27 +1821,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 40: Reverse order between type and var 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0040(output); 
-     9       -8  
-    10       -8 var   one: boolean; 
-    11       -8  
-    12       -8 type  integer = char; 
-    12   ****      ^18
-    12   ****   18 Error in declaration part
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    one := true; 
-    17        8    writeln(one) 
-    18       13  
-    19       13 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 40: Reverse order between type and var 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0040(output); 
+     8       -8  
+     9       -8 var   one: boolean; 
+    10       -8  
+    11       -8 type  integer = char; 
+    11   ****      ^18
+    11   ****   18 Error in declaration part
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    one := true; 
+    16        8    writeln(one) 
+    17       13  
+    18       13 end. 
 integer    unreferenced
 
 
@@ -2360,28 +2356,27 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 54: Reverse order between var and procedure 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0054(output); 
-     9       -8  
-    10       -8 procedure x; begin end; 
-    11        6  
-    12        6 var y: integer; 
-    12   ****     ^6,18
-    12   ****    6 Illegal symbol
-    12   ****   18 Error in declaration part
-    13        6  
-    14        6 begin 
-    15        6  
-    16        6    x; 
-    17        7    writeln(y) 
-    18       12  
-    19       12 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 54: Reverse order between var and procedure 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0054(output); 
+     8       -8  
+     9       -8 procedure x; begin end; 
+    10        6  
+    11        6 var y: integer; 
+    11   ****     ^6,18
+    11   ****    6 Illegal symbol
+    11   ****   18 Error in declaration part
+    12        6  
+    13        6 begin 
+    14        6  
+    15        6    x; 
+    16        7    writeln(y) 
+    17       12  
+    18       12 end. 
 
 Errors in program: 2
 
@@ -2401,27 +2396,26 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 55: Reverse order between var and function 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0055(output); 
-     9       -8  
-    10       -8 function x: integer; begin x := 1 end; 
-    11        8  
-    12        8 var y: integer; 
-    12   ****     ^6,18
-    12   ****    6 Illegal symbol
-    12   ****   18 Error in declaration part
-    13        8  
-    14        8 begin 
-    15        8  
-    16        8    writeln(x, y) 
-    17       16  
-    18       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 55: Reverse order between var and function 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0055(output); 
+     8       -8  
+     9       -8 function x: integer; begin x := 1 end; 
+    10        8  
+    11        8 var y: integer; 
+    11   ****     ^6,18
+    11   ****    6 Illegal symbol
+    11   ****   18 Error in declaration part
+    12        8  
+    13        8 begin 
+    14        8  
+    15        8    writeln(x, y) 
+    16       16  
+    17       16 end. 
 
 Errors in program: 2
 
@@ -6526,24 +6520,23 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 503: Missing '[' on array 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0503; 
-     9       -8  
-    10       -8 var a: array 1..10] of integer; 
-    10   ****                ^11
-    10   ****   11 '[' expected
-    11       -8  
-    12       -8 begin 
-    13        5  
-    14        5    a[1] := 1 
-    15       10  
-    16       10 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 503: Missing '[' on array 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0503; 
+     8       -8  
+     9       -8 var a: array 1..10] of integer; 
+     9   ****                ^11
+     9   ****   11 '[' expected
+    10       -8  
+    11       -8 begin 
+    12        5  
+    13        5    a[1] := 1 
+    14       10  
+    15       10 end. 
 
 Errors in program: 1
 
@@ -10770,53 +10763,52 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     5       -8                each reference and access to each component of the variant. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.3.3 
-     8       -8  
-     9       -8                There are four possible cases for active variants: 
-    10       -8  
-    11       -8                   A: Reference to discriminated variant. 
-    12       -8                   B: Change to the tagfield of a discriminated variant with 
-    13       -8                      an outstanding reference. 
-    14       -8                   C: Read of an undiscriminated variant after a write. 
-    15       -8                   D: Write of an undiscriminated variant with outstanding 
-    16       -8                      reference. 
-    17       -8  
-    18       -8                This is case B. 
-    19       -8 } 
-    20       -8  
-    21       -8 program iso7185prt1702(output); 
-    22       -8  
-    23       -8 var a: record case val: boolean of 
-    24       -8  
-    25       -8           true: (i: integer); 
-    26       -8           false: (c: char); 
-    27       -8  
-    28       -8        end; 
-    29       -8  
-    30       -8 procedure b(var i: integer); 
-    31      -16  
-    32      -16 begin 
-    33        7  
-    34        7    { Outstanding references are dificult to track. The error should occur 
-    35        7      when the variant is changed, but could also be differed to the time the bad 
-    36        7      variant is assigned. } 
-    37        7    a.val := false; 
-    38       12    i := 1 
-    39       13  
-    40       13 end; 
-    41       17  
-    42       17 begin 
-    43       17  
-    44       17    a.val := true; 
-    45       22    b(a.i) 
-    46       27  
-    47       27 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     4       -8                each reference and access to each component of the variant. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.3.3 
+     7       -8  
+     8       -8                There are four possible cases for active variants: 
+     9       -8  
+    10       -8                   A: Reference to discriminated variant. 
+    11       -8                   B: Change to the tagfield of a discriminated variant with 
+    12       -8                      an outstanding reference. 
+    13       -8                   C: Read of an undiscriminated variant after a write. 
+    14       -8                   D: Write of an undiscriminated variant with outstanding 
+    15       -8                      reference. 
+    16       -8  
+    17       -8                This is case B. 
+    18       -8 } 
+    19       -8  
+    20       -8 program iso7185prt1702(output); 
+    21       -8  
+    22       -8 var a: record case val: boolean of 
+    23       -8  
+    24       -8           true: (i: integer); 
+    25       -8           false: (c: char); 
+    26       -8  
+    27       -8        end; 
+    28       -8  
+    29       -8 procedure b(var i: integer); 
+    30      -16  
+    31      -16 begin 
+    32        7  
+    33        7    { Outstanding references are dificult to track. The error should occur 
+    34        7      when the variant is changed, but could also be differed to the time the bad 
+    35        7      variant is assigned. } 
+    36        7    a.val := false; 
+    37       12    i := 1 
+    38       13  
+    39       13 end; 
+    40       17  
+    41       17 begin 
+    42       17  
+    43       17    a.val := true; 
+    44       22    b(a.i) 
+    45       27  
+    46       27 end. 
 
 Errors in program: 0
 
@@ -10828,7 +10820,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [37]: Change to VAR referenced variant
+*** Runtime error [36]: Change to VAR referenced variant
 
 program complete
 
@@ -10841,44 +10833,43 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$u} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     5       -8                each reference and access to each component of the variant. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.3.3 
-     8       -8  
-     9       -8                There are four possible cases for active variants: 
-    10       -8  
-    11       -8                   A: Reference to discriminated variant. 
-    12       -8                   B: Change to the tagfield of a discriminated variant with 
-    13       -8                      an outstanding reference. 
-    14       -8                   C: Read of an undiscriminated variant after a write. 
-    15       -8                   D: Write of an undiscriminated variant with outstanding 
-    16       -8                      reference. 
-    17       -8  
-    18       -8                This is case C. 
-    19       -8 } 
-    20       -8  
-    21       -8 program iso7185prt1702(output); 
-    22       -8  
-    23       -8 var a: record case boolean of 
-    24       -8  
-    25       -8           true: (i: integer); 
-    26       -8           false: (c: char); 
-    27       -8  
-    28       -8        end; 
-    29       -8     c: char; 
-    30       -8  
-    31       -8 begin 
-    32        5  
-    33        5    { This could fail if the compiler allocates tagfields even on undiscriminated 
-    34        5      variants and writes to the tagfield on a write to member. } 
-    35        5    a.i := 1; 
-    36       16    c := a.c 
-    37       25  
-    38       25 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     4       -8                each reference and access to each component of the variant. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.3.3 
+     7       -8  
+     8       -8                There are four possible cases for active variants: 
+     9       -8  
+    10       -8                   A: Reference to discriminated variant. 
+    11       -8                   B: Change to the tagfield of a discriminated variant with 
+    12       -8                      an outstanding reference. 
+    13       -8                   C: Read of an undiscriminated variant after a write. 
+    14       -8                   D: Write of an undiscriminated variant with outstanding 
+    15       -8                      reference. 
+    16       -8  
+    17       -8                This is case C. 
+    18       -8 } 
+    19       -8  
+    20       -8 program iso7185prt1702(output); 
+    21       -8  
+    22       -8 var a: record case boolean of 
+    23       -8  
+    24       -8           true: (i: integer); 
+    25       -8           false: (c: char); 
+    26       -8  
+    27       -8        end; 
+    28       -8     c: char; 
+    29       -8  
+    30       -8 begin 
+    31        5  
+    32        5    { This could fail if the compiler allocates tagfields even on undiscriminated 
+    33        5      variants and writes to the tagfield on a write to member. } 
+    34        5    a.i := 1; 
+    35       16    c := a.c 
+    36       25  
+    37       25 end. 
 
 Errors in program: 0
 
@@ -10890,7 +10881,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [36]: Undefined location access
+*** Runtime error [35]: Undefined location access
 
 program complete
 
@@ -10903,54 +10894,53 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$u,i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     5       -8                each reference and access to each component of the variant. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.3.3 
-     8       -8  
-     9       -8                There are four possible cases for active variants: 
-    10       -8  
-    11       -8                   A: Reference to discriminated variant. 
-    12       -8                   B: Change to the tagfield of a discriminated variant with 
-    13       -8                      an outstanding reference. 
-    14       -8                   C: Read of an undiscriminated variant after a write. 
-    15       -8                   D: Write of an undiscriminated variant with outstanding 
-    16       -8                      reference. 
-    17       -8  
-    18       -8                This is case D. 
-    19       -8  
-    20       -8 } 
-    21       -8  
-    22       -8 program iso7185prt1702(output); 
-    23       -8  
-    24       -8 var a: record case boolean of 
-    25       -8  
-    26       -8           true: (i: integer); 
-    27       -8           false: (c: char); 
-    28       -8  
-    29       -8        end; 
-    30       -8  
-    31       -8 procedure b(var i: integer); 
-    32      -16  
-    33      -16 begin 
-    34        7  
-    35        7    { change the undiscriminated variant, then print the refered variable to be 
-    36        7      sure the compiler sees it. This would rely on the compiler both allocating 
-    37        7      a tagfield, and automatically assigning it on write. } 
-    38        7    a.c := 'c'; 
-    39       19    writeln('i: ', i) 
-    40       30  
-    41       30 end; 
-    42       34  
-    43       34 begin 
-    44       34  
-    45       34    a.i := 1; 
-    46       45    b(a.i) 
-    47       55  
-    48       55 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
+     4       -8                each reference and access to each component of the variant. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.3.3 
+     7       -8  
+     8       -8                There are four possible cases for active variants: 
+     9       -8  
+    10       -8                   A: Reference to discriminated variant. 
+    11       -8                   B: Change to the tagfield of a discriminated variant with 
+    12       -8                      an outstanding reference. 
+    13       -8                   C: Read of an undiscriminated variant after a write. 
+    14       -8                   D: Write of an undiscriminated variant with outstanding 
+    15       -8                      reference. 
+    16       -8  
+    17       -8                This is case D. 
+    18       -8  
+    19       -8 } 
+    20       -8  
+    21       -8 program iso7185prt1702(output); 
+    22       -8  
+    23       -8 var a: record case boolean of 
+    24       -8  
+    25       -8           true: (i: integer); 
+    26       -8           false: (c: char); 
+    27       -8  
+    28       -8        end; 
+    29       -8  
+    30       -8 procedure b(var i: integer); 
+    31      -16  
+    32      -16 begin 
+    33        7  
+    34        7    { change the undiscriminated variant, then print the refered variable to be 
+    35        7      sure the compiler sees it. This would rely on the compiler both allocating 
+    36        7      a tagfield, and automatically assigning it on write. } 
+    37        7    a.c := 'c'; 
+    38       19    writeln('i: ', i) 
+    39       30  
+    40       30 end; 
+    41       34  
+    42       34 begin 
+    43       34  
+    44       34    a.i := 1; 
+    45       45    b(a.i) 
+    46       55  
+    47       55 end. 
 
 Errors in program: 0
 
@@ -10962,7 +10952,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [38]: Change to VAR referenced variant
+*** Runtime error [37]: Change to VAR referenced variant
 
 program complete
 
@@ -11063,38 +11053,37 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1705: It is an error to remove from its pointer-type the 
-     5       -8                identifying-value of an identified-variable when a reference to 
-     6       -8                the identified-variable exists. 
-     7       -8  
-     8       -8                ISO 7185 reference: 6.5.4 
-     9       -8  
-    10       -8 } 
-    11       -8  
-    12       -8 program iso7185prt1705(output); 
-    13       -8  
-    14       -8 var a: ^integer; 
-    15       -8  
-    16       -8 procedure b(var c: integer); 
-    17      -16  
-    18      -16 begin 
-    19        7  
-    20        7    c := 1; 
-    21       10    dispose(a) 
-    22       13  
-    23       13 end; 
-    24       15  
-    25       15 begin 
-    26       15  
-    27       15    { allocate integer value and pass that as reference, then change the value 
-    28       15      of the pointer } 
-    29       15    new(a); 
-    30       18    b(a^) 
-    31       20  
-    32       20 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1705: It is an error to remove from its pointer-type the 
+     4       -8                identifying-value of an identified-variable when a reference to 
+     5       -8                the identified-variable exists. 
+     6       -8  
+     7       -8                ISO 7185 reference: 6.5.4 
+     8       -8  
+     9       -8 } 
+    10       -8  
+    11       -8 program iso7185prt1705(output); 
+    12       -8  
+    13       -8 var a: ^integer; 
+    14       -8  
+    15       -8 procedure b(var c: integer); 
+    16      -16  
+    17      -16 begin 
+    18        7  
+    19        7    c := 1; 
+    20       10    dispose(a) 
+    21       13  
+    22       13 end; 
+    23       15  
+    24       15 begin 
+    25       15  
+    26       15    { allocate integer value and pass that as reference, then change the value 
+    27       15      of the pointer } 
+    28       15    new(a); 
+    29       18    b(a^) 
+    30       20  
+    31       20 end. 
 
 Errors in program: 0
 
@@ -11106,7 +11095,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [21]: Dispose of VAR referenced block
+*** Runtime error [20]: Dispose of VAR referenced block
 
 program complete
 
@@ -11119,39 +11108,38 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1706a: It is an error to alter the value of a file-variable f when a 
-     5       -8                 reference to the buffer-variable f^ exists. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.5 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1706a(output); 
-    12       -8  
-    13       -8 var a: file of integer; 
-    14       -8  
-    15       -8 procedure b(var c: integer); 
-    16      -16  
-    17      -16 begin 
-    18        7  
-    19        7    get(a); 
-    20       10  
-    21       10 end; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1706a: It is an error to alter the value of a file-variable f when a 
+     4       -8                 reference to the buffer-variable f^ exists. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.5 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1706a(output); 
+    11       -8  
+    12       -8 var a: file of integer; 
+    13       -8  
+    14       -8 procedure b(var c: integer); 
+    15      -16  
+    16      -16 begin 
+    17        7  
+    18        7    get(a); 
+    19       10  
+    20       10 end; 
 c          unreferenced
 
-    22       12  
-    23       12 begin 
-    24       12  
-    25       12    rewrite(a); 
-    26       14    a^ := 1; 
-    27       20    put(a); 
-    28       23    reset(a); 
-    29       25    b(a^) 
-    30       29  
-    31       29 end. 
+    21       12  
+    22       12 begin 
+    23       12  
+    24       12    rewrite(a); 
+    25       14    a^ := 1; 
+    26       20    put(a); 
+    27       23    reset(a); 
+    28       25    b(a^) 
+    29       29  
+    30       29 end. 
 
 Errors in program: 0
 
@@ -11163,7 +11151,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [19]: VAR referenced file buffer modified
+*** Runtime error [18]: VAR referenced file buffer modified
 
 program complete
 
@@ -11176,39 +11164,38 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$i} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1706: It is an error to alter the value of a file-variable f when a 
-     5       -8                reference to the buffer-variable f^ exists. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.5.5 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1706(output); 
-    12       -8  
-    13       -8 var a: text; 
-    14       -8  
-    15       -8 procedure b(var c: char); 
-    16      -16  
-    17      -16 begin 
-    18        7  
-    19        7    get(a); 
-    20        9  
-    21        9 end; 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1706: It is an error to alter the value of a file-variable f when a 
+     4       -8                reference to the buffer-variable f^ exists. 
+     5       -8  
+     6       -8                ISO 7185 reference: 6.5.5 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1706(output); 
+    11       -8  
+    12       -8 var a: text; 
+    13       -8  
+    14       -8 procedure b(var c: char); 
+    15      -16  
+    16      -16 begin 
+    17        7  
+    18        7    get(a); 
+    19        9  
+    20        9 end; 
 c          unreferenced
 
-    22       11  
-    23       11 begin 
-    24       11  
-    25       11    rewrite(a); 
-    26       13    a^ := 'x'; 
-    27       19    put(a); 
-    28       21    reset(a); 
-    29       23    b(a^) 
-    30       26  
-    31       26 end. 
+    21       11  
+    22       11 begin 
+    23       11  
+    24       11    rewrite(a); 
+    25       13    a^ := 'x'; 
+    26       19    put(a); 
+    27       21    reset(a); 
+    28       23    b(a^) 
+    29       26  
+    30       26 end. 
 
 Errors in program: 0
 
@@ -11220,7 +11207,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [19]: VAR referenced file buffer modified
+*** Runtime error [18]: VAR referenced file buffer modified
 
 program complete
 
@@ -13596,32 +13583,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1760: Alphanumeric label. 
-     5       -8  
-     6       -8                Attempt to use alphanumeric label instead of number. 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1760(output); 
-    11       -8  
-    12       -8 label skip; 
-    12   ****            ^397
-    12   ****  397 Feature not valid in ISO 7185 Pascal
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    goto skip; 
-    16   ****              ^397
-    16   ****  397 Feature not valid in ISO 7185 Pascal
-    17        6  
-    18        6    writeln('*** Should not execute this'); 
-    19       15     
-    20       15    skip: writeln('At label'); 
-    21       24  
-    22       24 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1760: Alphanumeric label. 
+     4       -8  
+     5       -8                Attempt to use alphanumeric label instead of number. 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1760(output); 
+    10       -8  
+    11       -8 label skip; 
+    11   ****            ^397
+    11   ****  397 Feature not valid in ISO 7185 Pascal
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    goto skip; 
+    15   ****              ^397
+    15   ****  397 Feature not valid in ISO 7185 Pascal
+    16        6  
+    17        6    writeln('*** Should not execute this'); 
+    18       15     
+    19       15    skip: writeln('At label'); 
+    20       24  
+    21       24 end. 
 
 Errors in program: 2
 
@@ -13880,29 +13866,28 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$m} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1800: Access to dynamic variable after dispose. 
-     5       -8  
-     6       -8     ISO 7185 6.6.5.3 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1800; 
-    11       -8  
-    12       -8 var p, p2: ^char; 
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    new(p); 
-    17        8    { on P5, this is required otherwise disposing of the single variable will 
-    18        8      cause all space to be removed } 
-    19        8    new(p2); 
-    20       11    dispose(p); 
-    21       14    p^ := 'a' 
-    22       16  
-    23       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1800: Access to dynamic variable after dispose. 
+     4       -8  
+     5       -8     ISO 7185 6.6.5.3 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1800; 
+    10       -8  
+    11       -8 var p, p2: ^char; 
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    new(p); 
+    16        8    { on P5, this is required otherwise disposing of the single variable will 
+    17        8      cause all space to be removed } 
+    18        8    new(p2); 
+    19       11    dispose(p); 
+    20       14    p^ := 'a' 
+    21       16  
+    22       16 end. 
 
 Errors in program: 0
 
@@ -13914,7 +13899,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [21]: Pointer used after dispose
+*** Runtime error [20]: Pointer used after dispose
 
 program complete
 
@@ -15317,26 +15302,25 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1839: Write with invalid fields 
-     5       -8  
-     6       -8     Write with zero field. 
-     7       -8     ISO 7185 6.9.3 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1839(output); 
-    12       -8  
-    13       -8 var i: integer; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    i := 1; 
-    18        7    writeln(i:0) 
-    19       12  
-    20       12 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1839: Write with invalid fields 
+     4       -8  
+     5       -8     Write with zero field. 
+     6       -8     ISO 7185 6.9.3 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1839(output); 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5    i := 1; 
+    17        7    writeln(i:0) 
+    18       12  
+    19       12 end. 
 
 Errors in program: 0
 
@@ -15348,7 +15332,7 @@ Assembling/loading program
 Running program
 
 
-*** Runtime error [18]: Invalid field specification
+*** Runtime error [17]: Invalid field specification
 
 program complete
 
@@ -15821,23 +15805,22 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1850: Unreferenced variable 
-     5       -8  
-     6       -8    Variable without reference in program. Note that this is technically not an 
-     7       -8    error. Its just a compiler quality test if it can detect this. 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1850; 
-    12       -8  
-    13       -8 var i: integer; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1850: Unreferenced variable 
+     4       -8  
+     5       -8    Variable without reference in program. Note that this is technically not an 
+     6       -8    error. Its just a compiler quality test if it can detect this. 
+     7       -8  
+     8       -8 } 
+     9       -8  
+    10       -8 program iso7185prt1850; 
+    11       -8  
+    12       -8 var i: integer; 
+    13       -8  
+    14       -8 begin 
+    15        5  
+    16        5 end. 
 i          unreferenced
 
 

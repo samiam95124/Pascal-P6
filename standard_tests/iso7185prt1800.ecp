@@ -3,28 +3,27 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$m} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 1800: Access to dynamic variable after dispose. 
-     5       -8  
-     6       -8     ISO 7185 6.6.5.3 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1800; 
-    11       -8  
-    12       -8 var p, p2: ^char; 
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    new(p); 
-    17        8    { on P5, this is required otherwise disposing of the single variable will 
-    18        8      cause all space to be removed } 
-    19        8    new(p2); 
-    20       11    dispose(p); 
-    21       14    p^ := 'a' 
-    22       16  
-    23       16 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 1800: Access to dynamic variable after dispose. 
+     4       -8  
+     5       -8     ISO 7185 6.6.5.3 
+     6       -8  
+     7       -8 } 
+     8       -8  
+     9       -8 program iso7185prt1800; 
+    10       -8  
+    11       -8 var p, p2: ^char; 
+    12       -8  
+    13       -8 begin 
+    14        5  
+    15        5    new(p); 
+    16        8    { on P5, this is required otherwise disposing of the single variable will 
+    17        8      cause all space to be removed } 
+    18        8    new(p2); 
+    19       11    dispose(p); 
+    20       14    p^ := 'a' 
+    21       16  
+    22       16 end. 
 
 Errors in program: 0

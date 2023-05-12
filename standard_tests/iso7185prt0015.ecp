@@ -3,25 +3,24 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 {$s+} 
-     2       -8 { 
-     3       -8  
-     4       -8 PRT test 15: Non-numeric label 
-     5       -8  
-     6       -8 } 
-     7       -8  
-     8       -8 program iso7185prt0015; 
-     9       -8  
-    10       -8 label one; 
-    10   ****           ^397
-    10   ****  397 Feature not valid in ISO 7185 Pascal
-    11       -8  
-    12       -8 begin 
-    13        5 end. 
+     1       -8 { 
+     2       -8  
+     3       -8 PRT test 15: Non-numeric label 
+     4       -8  
+     5       -8 } 
+     6       -8  
+     7       -8 program iso7185prt0015; 
+     8       -8  
+     9       -8 label one; 
+     9   ****           ^397
+     9   ****  397 Feature not valid in ISO 7185 Pascal
+    10       -8  
+    11       -8 begin 
+    12        5 end. 
 label           0 unreferenced
                      
-    13   ****      ^168
-    13   ****  168 Undefined label
+    12   ****      ^168
+    12   ****  168 Undefined label
 
 Errors in program: 2
 

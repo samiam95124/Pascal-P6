@@ -1,4 +1,3 @@
-{$s+}
 {
 
 PRT test 503: Missing '[' on array

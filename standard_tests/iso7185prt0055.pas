@@ -1,4 +1,3 @@
-{$s+}
 {
 
 PRT test 55: Reverse order between var and function
