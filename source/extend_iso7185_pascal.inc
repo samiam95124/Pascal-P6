@@ -136,6 +136,10 @@ procedure paroptions;
 begin
 end;
 
+procedure capture;
+begin
+end;
+
 function chkbrk: boolean;
 begin
   chkbrk := false
