@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Fri 12 May 2023 12:19:14 AM PDT
+Fri 12 May 2023 09:24:36 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -90,12 +90,12 @@ pcom self compile
 0 source/pcom.mpp.dif
 pint self compile
 0 standard_tests/iso7185pats.dif
-Fri 12 May 2023 04:13:53 AM PDT
+Fri 12 May 2023 01:19:18 PM PDT
 Files md5sum ***************************************
 Source files
-acf012e0a4bf2dff715663e6ae31e641  -
+2a8296e391332efd218d5bcdb41876a8  -
 batch files
-163c6d4fb8d662fedb6beee1f67565fa  -
+7846708586e6a3cfa816e8f9004559c4  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
