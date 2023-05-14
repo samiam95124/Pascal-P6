@@ -261,9 +261,9 @@ const
 
       { version numbers }
 
-      majorver   = 1; { major version number }
+      majorver   = 0; { major version number }
       minorver   = 2; { minor version number }
-      experiment = false; { is version experimental? }
+      experiment = true; { is version experimental? }
 
 type
       { These equates define the instruction layout. I have choosen a 32 bit
@@ -542,6 +542,21 @@ begin i := 1;
   end
 end;
 
+{ write padded string to file }
+procedure writevp(var f: text; s: strvsp);
+var l: integer;
+begin
+  while s <> nil do begin
+    l := varsqt; 
+    if s^.next = nil then begin
+      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
+      if s^.str[l] = ' ' then l := 0;
+    end;
+    if l > 0 then write(f, s^.str:l);
+    s := s^.next
+  end;
+end;
+
 { align address, upwards }
 procedure alignu(algn: address; var flc: address);
   var l: integer;
@@ -572,7 +587,8 @@ procedure xlate;
          labelrg  = 0..maxlabel;       (*label range*)
          labelrec = record
                           val: address;
-                           st: labelst
+                          st: labelst;
+                          ref: strvsp
                     end;
          flabelp = ^flabel;
          flabel = record
@@ -592,7 +608,7 @@ procedure xlate;
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p:   lvltyp; q, q1, q2: address; { p and q parameters }
-                    r1, r2: reg; { result registers }
+                    r1, r2, r3: reg; { result registers }
                     t1, t2: reg; { temporary registers }
                     l, r: expptr; { right and left links }
                     x1:   expptr; { extra link }
@@ -645,16 +661,16 @@ procedure xlate;
          instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;
          instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;
          instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;
-         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := 0;
-         instr[ 12]:='cup       '; insp[ 12] := true;  insq[ 12] := intsize;
-         instr[ 13]:='ents      '; insp[ 13] := false; insq[ 13] := intsize;
-         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := 0;
+         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize*2;
+         instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;
+         instr[ 13]:='rip       '; insp[ 13] := false; insq[ 13] := adrsize;
+         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;
          instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;
          instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;
          instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;
          instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;
-         instr[ 19]:='---       '; insp[ 19] := false; insq[ 19] := 0;
-         instr[ 20]:='---       '; insp[ 20] := false; insq[ 20] := intsize;
+         instr[ 19]:='brk*      '; insp[ 19] := false; insq[ 19] := 0;
+         instr[ 20]:='lnp*      '; insp[ 20] := false; insq[ 20] := intsize;
          instr[ 21]:='cal       '; insp[ 21] := false; insq[ 21] := intsize;
          instr[ 22]:='ret       '; insp[ 22] := false; insq[ 22] := 0;
          instr[ 23]:='ujp       '; insp[ 23] := false; insq[ 23] := intsize;
@@ -676,7 +692,7 @@ procedure xlate;
          instr[ 39]:='sqr       '; insp[ 39] := false; insq[ 39] := 0;
          instr[ 40]:='abi       '; insp[ 40] := false; insq[ 40] := 0;
          instr[ 41]:='abr       '; insp[ 41] := false; insq[ 41] := 0;
-         instr[ 42]:='not       '; insp[ 42] := false; insq[ 42] := 0;
+         instr[ 42]:='notb      '; insp[ 42] := false; insq[ 42] := 0;
          instr[ 43]:='and       '; insp[ 43] := false; insq[ 43] := 0;
          instr[ 44]:='ior       '; insp[ 44] := false; insq[ 44] := 0;
          instr[ 45]:='dif       '; insp[ 45] := false; insq[ 45] := 0;
@@ -692,7 +708,7 @@ procedure xlate;
          instr[ 55]:='mov       '; insp[ 55] := false; insq[ 55] := intsize;
          instr[ 56]:='lca       '; insp[ 56] := false; insq[ 56] := intsize;
          instr[ 57]:='deci      '; insp[ 57] := false; insq[ 57] := intsize;
-         instr[ 58]:='stp       '; insp[ 58] := false; insq[ 58] := 0;
+         instr[ 58]:='stp*      '; insp[ 58] := false; insq[ 58] := 0;
          instr[ 59]:='ordi      '; insp[ 59] := false; insq[ 59] := 0;
          instr[ 60]:='chr       '; insp[ 60] := false; insq[ 60] := 0;
          instr[ 61]:='ujc       '; insp[ 61] := false; insq[ 61] := intsize;
@@ -747,7 +763,7 @@ procedure xlate;
          instr[110]:='rgs       '; insp[110] := false; insq[110] := 0;
          instr[111]:='ivtc      '; insp[111] := false; insq[111] := intsize*3;
          instr[112]:='ipj       '; insp[112] := true;  insq[112] := intsize;
-         instr[113]:='cip       '; insp[113] := true;  insq[113] := 0;
+         instr[113]:='cip       '; insp[113] := false; insq[113] := 0;
          instr[114]:='lpa       '; insp[114] := true;  insq[114] := intsize;
          instr[115]:='cvbx      '; insp[115] := false; insq[115] := intsize*3;
          instr[116]:='cvbb      '; insp[116] := false; insq[116] := intsize*3;
@@ -762,11 +778,11 @@ procedure xlate;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;
          instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;
          instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;
-         instr[128]:='reti      '; insp[128] := false; insq[128] := 0;
-         instr[129]:='retr      '; insp[129] := false; insq[129] := 0;
-         instr[130]:='retc      '; insp[130] := false; insq[130] := 0;
-         instr[131]:='retb      '; insp[131] := false; insq[131] := 0;
-         instr[132]:='reta      '; insp[132] := false; insq[132] := 0;
+         instr[128]:='reti      '; insp[128] := false; insq[128] := intsize;
+         instr[129]:='retr      '; insp[129] := false; insq[129] := intsize;
+         instr[130]:='retc      '; insp[130] := false; insq[130] := intsize;
+         instr[131]:='retb      '; insp[131] := false; insq[131] := intsize;
+         instr[132]:='reta      '; insp[132] := false; insq[132] := intsize;
          instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;
          instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;
          instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;
@@ -807,8 +823,8 @@ procedure xlate;
          instr[170]:='less      '; insp[170] := false; insq[170] := 0;
          instr[171]:='lesc      '; insp[171] := false; insq[171] := 0;
          instr[172]:='lesm      '; insp[172] := false; insq[172] := intsize;
-         instr[173]:='ente      '; insp[173] := false; insq[173] := intsize;
-         instr[174]:='---       '; insp[174] := false; insq[174] := intsize;
+         instr[173]:='---       '; insp[173] := false; insq[173] := 0;
+         instr[174]:='mrkl*     '; insp[174] := false; insq[174] := intsize;
          instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;
          instr[176]:='cps       '; insp[176] := false; insq[176] := 0;
          instr[177]:='cpc       '; insp[177] := false; insq[177] := intsize;
@@ -825,8 +841,8 @@ procedure xlate;
          instr[188]:='cke       '; insp[188] := false; insq[188] := 0;
          instr[189]:='inv       '; insp[189] := false; insq[189] := 0;
          instr[190]:='ckla      '; insp[190] := false; insq[190] := intsize;
-         instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*2;
-         instr[192]:='ivt       '; insp[192] := false; insq[192] := intsize*2;
+         instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*3;
+         instr[192]:='ivti      '; insp[192] := false; insq[192] := intsize*3;
          instr[193]:='lodx      '; insp[193] := true;  insq[193] := intsize;
          instr[194]:='ldox      '; insp[194] := false; insq[194] := intsize;
          instr[195]:='strx      '; insp[195] := true;  insq[195] := intsize;
@@ -838,7 +854,7 @@ procedure xlate;
          instr[201]:='incx      '; insp[201] := false; insq[201] := intsize;
          instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;
          instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;
-         instr[204]:='retx      '; insp[204] := false; insq[204] := 0;
+         instr[204]:='retx      '; insp[204] := false; insq[204] := intsize;
          instr[205]:='noti      '; insp[205] := false; insq[205] := 0;
          instr[206]:='xor       '; insp[206] := false; insq[206] := 0;
          instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;
@@ -871,13 +887,16 @@ procedure xlate;
          instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;
          instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;
          instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;
-         instr[236]:='rets      '; insp[236] := false; insq[236] := 0;
-         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize;
+         instr[236]:='rets      '; insp[236] := false; insq[236] := intsize;
+         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize*2;
          instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;
          instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;
          instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;
          instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;
-         instr[242]:='---       '; insp[242] := false; insq[242] := 0;
+         instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;
+         instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;
+         instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
+         instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1;   
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1;
@@ -1004,6 +1023,20 @@ procedure xlate;
 
    end;
 
+   procedure putlabel(x: labelrg);
+   var i, p: integer;
+   begin
+     strassvf(labeltab[x].ref, sn); strchrass(labeltab[x].ref, snl+1, '.'); i := snl+2;
+     p := maxpow10;
+     while p > 0 do begin
+       if ((x div p) mod 10 <> 0) or (p = 1) then begin
+         strchrass(labeltab[x].ref, i, chr((x div p) mod 10+ord('0'))); 
+         i := i+1;
+       end;
+       p := p div 10
+     end
+   end;
+
    procedure update(x: labelrg); (*when a label definition lx is found*)
       var curr,succ,ad: address; (*resp. current element and successor element
                                of a list of future references*)
@@ -1015,6 +1048,7 @@ procedure xlate;
              curr:= labeltab[x].val;
              labeltab[x].st := defined;
              labeltab[x].val:= labelvalue;
+             putlabel(x)
       end
    end;(*update*)
 
@@ -1083,11 +1117,16 @@ procedure xlate;
 
    procedure assemble; forward;
 
+   procedure prtline;
+   begin
+     write(prr, '# ', sline:6, ': ', iline:6, ': ')
+   end;
+
    procedure generate;(*generate segment of code*)
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
-          ls: strvsp;
+          ls: strvsp;         
    begin
       again := true;
       while again do begin
@@ -1097,12 +1136,12 @@ procedure xlate;
                        't']) then
           errorl('unexpected line start    ');
         case ch of
-          '!': begin write(prr, '# '); while not eoln(prd) do 
+          '!': begin prtline; write(prr, ' ':13, '!'); while not eoln(prd) do
                  begin read(prd, ch); write(prr, ch) end;
                  writeln(prr);
                end;
           'l': begin getnxt; parlab(x,ls); 
-                     write(prr, '# l ', sn:snl, '.', x:1);
+                     prtline; write(prr, ' ':13, 'l ', sn:snl, '.', x:1);
                      if ls <> nil then
                        errorl('Invalid intermediate     ');
                      getnxt;
@@ -1121,7 +1160,7 @@ procedure xlate;
           ':': begin { source line }
 
                   read(prd,x); { get source line number }
-                  sline := x; writeln(prr, '# :', x:1);
+                  sline := x; prtline; writeln(prr, ' ':13, ':', x:1);
                   { skip the rest of the line, which would be the
                     contents of the source line if included }
                   while not eoln(prd) do
@@ -1130,7 +1169,7 @@ procedure xlate;
 
                end;
           'o': begin { option }
-                 write(prr, '# o ');
+                 prtline; write(prr, ' ':13, 'o ');
                  getnxt;
                  while not eoln(prd) and (ch = ' ') do getnxt;
                  repeat
@@ -1167,7 +1206,7 @@ procedure xlate;
      end
    end; (*generate*)
 
-   procedure assemble; (*translate symbolic code into machine code and store*)
+    procedure assemble; (*translate symbolic code into machine code and store*)
 
       var name :alfa; r :real; s :settype;
           i,x,s1,lb,ub,l:integer; c: char;
@@ -1177,6 +1216,7 @@ procedure xlate;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
+          flp: flabelp;
 
       procedure lookup(x: labelrg); (* search in label table*)
       begin case labeltab[x].st of
@@ -1187,15 +1227,24 @@ procedure xlate;
             end(*case label..*)
       end;(*lookup*)
 
-      procedure labelsearch;
-         var x: integer; sp: strvsp; flp: flabelp;
-      begin skpspc; if ch <> 'l' then errorl('Label format error       ');
-            getnxt; parlab(x,sp);
-            if sp <> nil then begin { far label }
-              new(flp); flp^.next := flablst; flablst := flp;
-              flp^.val := pc; flp^.ref := sp; q := 0
-            end else lookup(x) { near label }
+      procedure labelsearch(var x: integer; var flp: flabelp);
+         var sp: strvsp;
+      begin flp := nil; skpspc; 
+        if ch <> 'l' then errorl('Label format error       ');
+        getnxt; parlab(x,sp);
+        if sp <> nil then begin { far label }
+          new(flp); flp^.next := flablst; flablst := flp;
+          flp^.val := pc; flp^.ref := sp; q := 0
+        end else begin { near label }
+          lookup(x); if labeltab[x].ref = nil then putlabel(x)
+        end
       end;(*labelsearch*)
+
+      procedure prtlabel(var f: text; x: integer; flp: flabelp);
+      begin
+        if flp <> nil then writevp(f, flp^.ref)
+        else writevp(f, labeltab[x].ref)
+      end;
 
       procedure getname;
       var i: alfainx;
@@ -1567,7 +1616,7 @@ procedure xlate;
           41: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
             assreg(ep^.l, rf, ep^.r1, r2);
-            getreg(ep^.t1, rf); getfreg(ep^.t2) 
+            getreg(ep^.t1, rf); getfreg(ep^.t2, rf) 
           end;
 
           {noti}
@@ -2191,6 +2240,7 @@ procedure xlate;
 
       procedure callsppar(p: integer; var sc: alfa; r: boolean);
       var si: insstr20;
+          i: integer;
       begin
         if p >= 1 then popstk(ep);
         if p >= 2 then popstk(ep2);
@@ -2204,11 +2254,11 @@ procedure xlate;
           if p >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
           if p >= 1 then assreg(ep, frereg, rgrcx, rgnull);
         end;
-        if p >= 1 then begin dmptrel(ep); genexp(ep) end;
-        if p >= 2 then begin dmptrel(ep2); genexp(ep) end;
-        if p >= 3 then begin dmptrel(ep3); genexp(ep) end;
-        if p >= 4 then begin dmptrel(ep4); genexp(ep) end;
-        if p >= 5 then begin dmptrel(ep5); genexp(ep) end;
+        if p >= 1 then begin dmptrel(ep, 1); genexp(ep) end;
+        if p >= 2 then begin dmptrel(ep2, 1); genexp(ep) end;
+        if p >= 3 then begin dmptrel(ep3, 1); genexp(ep) end;
+        if p >= 4 then begin dmptrel(ep4, 1); genexp(ep) end;
+        if p >= 5 then begin dmptrel(ep5, 1); genexp(ep) end;
         if p >= 1 then deltre(ep);
         if p >= 2 then deltre(ep2);
         if p >= 3 then deltre(ep3);
@@ -2220,7 +2270,7 @@ procedure xlate;
         if r then begin
           if ep^.r1 <> rgrax then 
             wrtins20('movq %rax,%r1       ', ep^.p, 0, ep^.r1, rgnull);
-          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx)
+          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
             wrtins20('movq %rdx,%r1       ', ep^.p, 0, ep^.r2, rgnull);
         end
       end;
@@ -2229,28 +2279,28 @@ procedure xlate;
       procedure pushpar(ep: expptr; p: integer);
       begin
         if (ep <> nil) and (p < 6) then pushpar(ep^.next, p+1);
-        if p > 6 then assreg(ep, frereg, rgnull, rgnull); 
+        if p > 6 then assreg(ep, frereg, rgnull, rgnull)
         else case p of
-          1: assreg(ep, frereg, rgdi, rgnull);
-          2: assreg(ep, frereg, rgsi, rgnull);
-          3: assreg(ep, frereg, rgdx, rgnull);
-          4: assreg(ep, frereg, rgcx, rgnull);
-          5: assreg(ep, frereg, rg8, rgnull);
-          1: assreg(ep, frereg, rg9, rgnull);
+          1: assreg(ep, frereg, rgrdi, rgnull);
+          2: assreg(ep, frereg, rgrsi, rgnull);
+          3: assreg(ep, frereg, rgrdx, rgnull);
+          4: assreg(ep, frereg, rgrcx, rgnull);
+          5: assreg(ep, frereg, rgr8, rgnull);
+          6: assreg(ep, frereg, rgr9, rgnull);
         end;
-        dmptrel(ep); genexp(ep);
+        dmptrel(ep, 1); genexp(ep);
         if ep^.r2 <> rgnull then
           wrtins20('pushq %r1 ', 0, 0, ep^.r2, rgnull);
         if ep^.r1 in [rgrax..rgr15] then
           wrtins20('pushq %r1 ', 0, 0, ep^.r1, rgnull);
         if ep^.r1 in [rgxmm0..rgxmm15] then begin
           wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull);
-          wrtins20('movsd %r1,(%esp)    ', 0, 0, e[^.r1, rgnull)
-        end
+          wrtins20('movsd %r1,(%esp)    ', 0, 0, ep^.r1, rgnull)
+        end;
         deltre(ep)
       end;
 
-      procedure callsp(ep: expptr);
+      procedure callsp{(ep: expptr)};
       begin
         if ep^.q > maxsp then errorl('Invalid std proc or func ');
         writeln(prr, '# ', sline:6, ': ', iline:6, ': ', q:3, ': -> ', sptable[q]);
@@ -2259,7 +2309,7 @@ procedure xlate;
           assreg(ep, frereg, rgrsi, rgnull);
           assreg(ep2, frereg, rgrcx, rgnull);
           pushpar(ep2^.next, maxint);
-          dmptrel(ep); genexp(ep); dmptrel(ep2); genexp(ep2);
+          dmptrel(ep, 1); genexp(ep); dmptrel(ep2, 1); genexp(ep2);
           wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull);
           wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull);
           wrtins20('addq %rsp,%rax      ', 0, 0, rgnull, rgnull);
@@ -2278,14 +2328,14 @@ procedure xlate;
         end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q]);
       end;
 
-   begin { assemble } 
+    begin { assemble } 
       p := 0;  q := 0;  op := 0;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
        
-      write(prr, '# ', sline:6, ': ', iline:6, ': ', op:3, ': ', name:4, ' ');
+      prtline; write(prr, op:3, ': ', name:8);
       case op of
 
         { *** non-terminals *** }
@@ -2398,24 +2448,20 @@ procedure xlate;
                 begin i := i*10+ord(ch)-ord('0'); getnxt end;
               c := chr(i);
             end else begin
-              if ch <> '''' then
-                errorl('illegal character        ');
+              if ch <> '''' then errorl('illegal character        ');
               getnxt;  c := ch;
               getnxt;
-              if ch <> '''' then
-                errorl('illegal character        ');
+              if ch <> '''' then errorl('illegal character        ');
             end;
             getexp(ep); ep^.vali := ord(ch); pshstk(ep);
             writeln(prr)
           end;
 
           7: begin skpspc;
-            if ch <> '(' then
-              errorl('ldcs() expected          ');
+            if ch <> '(' then errorl('ldcs() expected          ');
             s := [ ];  getnxt;
             while ch<>')' do
-            begin read(prd,s1); getnxt; s := s + [s1]
-            end;
+              begin read(prd,s1); getnxt; s := s + [s1] end;
             getexp(ep);
             pshstk(ep);
             writeln(prr)
@@ -2554,7 +2600,7 @@ procedure xlate;
           wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
           wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
           wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull);
           deltre(ep); botstk 
         end;
 
@@ -2566,7 +2612,7 @@ procedure xlate;
           wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
           wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
           wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          wrtins20('movq %r1,(%rax)      ', 0, 0, ep^.r1, rgnull);
           deltre(ep); botstk 
         end;
 
@@ -2577,7 +2623,7 @@ procedure xlate;
           wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull);
           wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull);
           wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull);
-          wrtins20('movsd %r1,(%rax)      ', 0, 0, ep^.r1, rgnull)
+          wrtins20('movsd %r1,(%rax)      ', 0, 0, ep^.r1, rgnull);
           deltre(ep); botstk 
         end;
 
@@ -2598,15 +2644,21 @@ procedure xlate;
           deltre(ep); botstk 
         end;
 
+        {sfr}
+        245: begin labelsearch(x, flp); write(prr, 'l '); prtlabel(prr, x, flp);
+          writeln(prr)
+        end;
+
         {cup,cuv}
-        12, 27: begin read(prd,p); labelsearch; writeln(prr,p:1);
-          i = 1; pushpar(stack, 1);
+        12, 27: begin labelsearch(x, flp); write(prr, 'l '); 
+          prtlabel(prr, x, flp); writeln(prr);
+          i := 1; pushpar(ep, 1);
           wrtins10('movq %rsp,%rbp      ', 0, 0, rgnull, rgnull);
           wrtins10('addq $0,%rbp        ', p+marksize, 0, rgnull, rgnull);
           wrtins10('call .+5  ', 0, 0, rgnull, rgnull);
           wrtins10('popq %rax ', 0, 0, rgnull, rgnull);
-          wrtins10('movq %rax,+0(%ebp)  ', markra, 0, rgnull, rgnull);
-          wrtins10('call                ', 0, 0, rgnull, rgnull);
+          wrtins10('movq %rax,+0(%ebp)  ', sp{+markra}, 0, rgnull, rgnull);
+          wrtins10('call                ', 0, 0, rgnull, rgnull)
         end;
 
         {mst}
@@ -2654,18 +2706,18 @@ procedure xlate;
         end;
 
         {ents}
-        13: begin labelsearch; writeln(prr) 
+        13: begin labelsearch(x, flp); writeln(prr) 
         end;
 
         {ente}
         173: ; { we don't do stack overflow checking in this version }
 
         {ipj}
-        112: begin read(prd,p); labelsearch; writeln(prr, p:1) 
+        112: begin read(prd,p); labelsearch(x, flp); writeln(prr, p:1) 
         end;
 
         {lpa}
-        114: begin read(prd,p); labelsearch; writeln(prr); getexp(ep); 
+        114: begin read(prd,p); labelsearch(x, flp); writeln(prr); getexp(ep); 
           pshstk(ep);
         end;
 
@@ -2722,81 +2774,79 @@ procedure xlate;
         { these are all Pascaline unimplemented }
 
         {suv}
-        91:
+        91,
         {cjp}
-        8:
+        8,
         {cal}
-        21:
+        21,
         {bge}
-        207:
+        207,
         {ede}
-        208:
+        208,
         {mse}
-        209:
+        209,
         {apc}
-        210:
+        210,
         {cxs}
-        211:
+        211,
         {cxc}
-        212:
+        212,
         {lft} 
-        213:
+        213,
         {max} 
-        214:
+        214,
         {equv} 
-        215:
+        215,
         {neqv} 
-        216: 
+        216,
         {lesv} 
-        217: 
+        217, 
         {grtv} 
-        218: 
+        218, 
         {leqv} 
-        219: 
+        219, 
         {geqv} 
-        220: 
+        220, 
         {vdp} 
-        221: 
+        221, 
         {spc} 
-        222: 
+        222, 
         {ccs} 
-        223: 
+        223, 
         {scp} 
-        224: 
+        224, 
         {ldp} 
-        225: 
-        {vin} 
-        226: 
+        225, 
         {vdd} 
-        227: 
+        227, 
         {ltci} 
-        228: 
+        228, 
         {ltcr} 
-        229:
+        229,
         {ltcs} 
-        230: 
+        230, 
         {ltcb} 
-        231: 
+        231, 
         {ltcc} 
-        232: 
+        232, 
         {ltcx} 
-        233: 
+        233, 
         {lto} 
-        234: 
+        234, 
         {stom} 
-        235: 
+        235, 
         {rets} 
-        236: 
+        236, 
         {retm} 
-        237: 
+        237, 
         {ctb} 
-        238: 
+        238, 
         {cpp} 
-        239: 
+        239, 
         {cpr} 
-        240: 
+        240, 
         {lsa} 
-        241: error("Intermediate not implemented");
+        241: errorl('Intermediate not implemented');
 
       end; (*case*)
 
