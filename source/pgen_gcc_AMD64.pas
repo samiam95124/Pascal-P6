@@ -1037,18 +1037,19 @@ procedure xlate;
      end
    end;
 
-   procedure update(x: labelrg); (*when a label definition lx is found*)
+   procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
       var curr,succ,ad: address; (*resp. current element and successor element
                                of a list of future references*)
           op: instyp; q : address;  (*instruction register*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
       else begin
-             if labeltab[x].val<>-1 then (*forward reference(s)*)
-             curr:= labeltab[x].val;
-             labeltab[x].st := defined;
-             labeltab[x].val:= labelvalue;
-             putlabel(x)
+        labeltab[x].st := defined;
+        labeltab[x].val:= labelvalue;
+        putlabel(x);
+        writevp(prr, labeltab[x].ref);
+        if pc then  writeln(prr, ':') 
+        else writeln(prr, ' equ ', labeltab[x].val:1)
       end
    end;(*update*)
 
@@ -1098,8 +1099,6 @@ procedure xlate;
      writeln(prr, '        .globl  main');
      writeln(prr, '        .type   main, @function');
      writeln(prr, 'main:');
-     writeln(prr, '        pushq   %rbp');
-     writeln(prr, '        movq    %rsp, %rbp');
      writeln(prr, '# Set up default files');
      writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
      writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
@@ -1126,7 +1125,8 @@ procedure xlate;
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
-          ls: strvsp;         
+          ls: strvsp;    
+          ispc: boolean;     
    begin
       again := true;
       while again do begin
@@ -1147,9 +1147,10 @@ procedure xlate;
                      getnxt;
                      if ch='=' then 
                        begin read(prd,labelvalue); 
-                             write(prr, '=', labelvalue:1) end
-                       else labelvalue:= pc;
-                     update(x); getlin; writeln(prr)
+                         write(prr, '=', labelvalue:1);
+                         ispc := false
+                       end else ispc := true;
+                     getlin; writeln(prr); update(x, ispc)
                end;
           'q': begin again := false; getlin end;
           ' ': begin getnxt; 
@@ -2657,10 +2658,16 @@ procedure xlate;
           wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp)
         end;
 
-        {cup,cuv}
-        12, 27: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
+        {cup}
+        12: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp)
+        end;
+
+        {cuv}
+        27: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
+          writeln(prr);
+          wrtins10('call *@   ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {mst}
@@ -2736,7 +2743,9 @@ procedure xlate;
         96: wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
 
         {ret}
-        22: writeln(prr);
+        22: begin writeln(prr);
+          wrtins20('ret       ', 0, 0, rgnull, rgnull, nil);
+        end;
 
         {retp}
         14: begin writeln(prr); botstk
