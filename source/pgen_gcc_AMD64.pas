@@ -1730,15 +1730,19 @@ procedure xlate;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else if si[i] = 's' then writevp(prr, sn)
+            else write(prr, si[i])
           end else if si[i] = '%' then begin next; write(prr, '%');
             if si[i] = '1' then wrtreg(prr, r1) 
             else if si[i] = '2' then wrtreg(prr, r2)
+            else write(prr, si[i])
           end else if si[i] = '+' then begin next; write(prr, '+');
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
+            else write(prr, si[i])
           end else if si[i] = '-' then begin next; write(prr, '-');
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
+            else write(prr, si[i])
           end else write(prr, si[i]);
           i := i+1
         end;
