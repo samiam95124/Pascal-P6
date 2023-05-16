@@ -1713,6 +1713,15 @@ procedure xlate;
         end
       end;
 
+      { Interpret instruction macro string.
+        The macros are:
+        $0 - Immediate integer 1
+        $1 - Immediate integer 2
+        $s - Immediate symbol
+        %1 - Register 1
+        %2 - register 2
+        @  - Symbol
+      }
       procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
       var i,j: 1..insmax40; n: integer;
       procedure next;
@@ -1743,7 +1752,8 @@ procedure xlate;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
-          end else write(prr, si[i]);
+          end else if si[i] = '@' then begin next; writevp(prr, sn) end
+          else write(prr, si[i]);
           i := i+1
         end;
         writeln(prr)
@@ -2650,13 +2660,7 @@ procedure xlate;
         {cup,cuv}
         12, 27: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
-          i := 1; pushpar(ep, 1);
-          wrtins10('movq %rsp,%rbp      ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('addq $0,%rbp        ', p+marksize, 0, rgnull, rgnull, nil);
-          wrtins10('call .+5  ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rax ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movq %rax,+0(%ebp)  ', 0{sp+markra}, 0, rgnull, rgnull, nil);
-          wrtins10('call                ', 0, 0, rgnull, rgnull, nil)
+          wrtins10('call @    ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {mst}
