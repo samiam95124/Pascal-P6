@@ -1136,12 +1136,12 @@ procedure xlate;
                        't']) then
           errorl('unexpected line start    ');
         case ch of
-          '!': begin prtline; write(prr, ' ':13, '!'); while not eoln(prd) do
+          '!': begin prtline; write(prr, ' ', '!'); while not eoln(prd) do
                  begin read(prd, ch); write(prr, ch) end;
                  writeln(prr);
                end;
           'l': begin getnxt; parlab(x,ls); 
-                     prtline; write(prr, ' ':13, 'l ', sn:snl, '.', x:1);
+                     prtline; write(prr, ' ', 'l ', sn:snl, '.', x:1);
                      if ls <> nil then
                        errorl('Invalid intermediate     ');
                      getnxt;
@@ -1161,7 +1161,7 @@ procedure xlate;
           ':': begin { source line }
 
                   read(prd,x); { get source line number }
-                  sline := x; prtline; writeln(prr, ' ':13, ':', x:1);
+                  sline := x; prtline; writeln(prr, ' ', ':', x:1);
                   { skip the rest of the line, which would be the
                     contents of the source line if included }
                   while not eoln(prd) do
@@ -1170,7 +1170,7 @@ procedure xlate;
 
                end;
           'o': begin { option }
-                 prtline; write(prr, ' ':13, 'o ');
+                 prtline; write(prr, ' ', 'o ');
                  getnxt;
                  while not eoln(prd) and (ch = ' ') do getnxt;
                  repeat
@@ -1218,6 +1218,7 @@ procedure xlate;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
           sp: strvsp;
+          def: boolean; val: integer;
 
       procedure lookup(x: labelrg); (* search in label table*)
       begin case labeltab[x].st of
@@ -1228,9 +1229,9 @@ procedure xlate;
             end(*case label..*)
       end;(*lookup*)
 
-      procedure labelsearch(var sp: strvsp);
+      procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
-      begin flp := nil; skpspc; 
+      begin def := false; val := 0; flp := nil; skpspc; 
         if ch <> 'l' then errorl('Label format error       ');
         getnxt; parlab(x,sp);
         if sp <> nil then begin { far label }
@@ -1238,7 +1239,8 @@ procedure xlate;
           flp^.val := pc; flp^.ref := sp; q := 0
         end else begin { near label }
           lookup(x); if labeltab[x].ref = nil then putlabel(x);
-          sp := labeltab[x].ref
+          sp := labeltab[x].ref; def := labeltab[x].st = defined; 
+          val := labeltab[x].val
         end
       end;(*labelsearch*)
 
@@ -2653,19 +2655,20 @@ procedure xlate;
         end;
 
         {sfr}
-        245: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp);
+        245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
           writeln(prr);
-          wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp)
+          if def and (val <> 0) then
+            wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {cup}
-        12: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
+        12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {cuv}
-        27: begin labelsearch(sp); write(prr, 'l '); writevp(prr, sp); 
+        27: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           wrtins10('call *@   ', 0, 0, rgnull, rgnull, sp)
         end;
@@ -2715,18 +2718,18 @@ procedure xlate;
         end;
 
         {ents}
-        13: begin labelsearch(sp); writeln(prr) 
+        13: begin labelsearch(def, val, sp); writeln(prr) 
         end;
 
         {ente}
         173: ; { we don't do stack overflow checking in this version }
 
         {ipj}
-        112: begin read(prd,p); labelsearch(sp); writeln(prr, p:1) 
+        112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1) 
         end;
 
         {lpa}
-        114: begin read(prd,p); labelsearch(sp); writeln(prr); getexp(ep); 
+        114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); getexp(ep); 
           pshstk(ep);
         end;
 
