@@ -1217,8 +1217,8 @@ procedure xlate;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           totreg: integer;
-          sp: strvsp;
-          def: boolean; val: integer;
+          sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
+
 
       procedure lookup(x: labelrg); (* search in label table*)
       begin case labeltab[x].st of
@@ -2657,7 +2657,7 @@ procedure xlate;
         {sfr}
         245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
           writeln(prr);
-          if def and (val <> 0) then
+          if (def and (val <> 0)) or not def then
             wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp)
         end;
 
@@ -2674,7 +2674,21 @@ procedure xlate;
         end;
 
         {mst}
-        11: begin read(prd,p); writeln(prr,p:1)
+        11: begin read(prd,p); labelsearch(def, val, sp); 
+          labelsearch(def2, val2, sp2); writeln(prr,p:1);
+          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { save old mp }
+          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
+          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
+          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
+          wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil); { save old mp }
+          wrtins20('movq %rsp,%rbp     ', 0, 0, rgnull, rgnull, nil); { set new mp }
+          wrtins20('movq $0,%rbx       ', p, 0, rgnull, rgnull, nil); { set number of levels }
+          wrtins20('orq %rbx,%rbx      ', 0, 0, rgnull, rgnull, nil); { check done }
+          wrtins20('jz .+xx            ', 0, 0, rgnull, rgnull, nil); { skip if so }
+          wrtins20('subq $ptrsize,%rax ', 0, 0, rgnull, rgnull, nil); { next display }
+          wrtins20('pushq (%rax)       ', 0, 0, rgnull, rgnull, nil); { push display pointer }
+          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { push new mp }
+          
         end;
 
         {cip} 
