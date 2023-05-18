@@ -57,6 +57,6 @@
   16: EP from current frame. Used for interprocedural gotos.
 
 */
-#define MARKEP              0 /* (old) maximum frame size */
-#define MARKSB              8 /* stack bottom */
-#define MARKET              16 /* current ep */
+#define MARKEP              8 /* (old) maximum frame size */
+#define MARKSB              16 /* stack bottom */
+#define MARKET              24 /* current ep */

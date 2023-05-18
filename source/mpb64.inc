@@ -63,6 +63,6 @@
         16: EP from current frame. Used for interprocedural gotos.
 
       }
-      markep      =        0;  { (old) maximum frame size }
-      marksb      =        8;  { stack bottom }
-      market      =        16; { current ep }
+      markep      =        8;  { (old) maximum frame size }
+      marksb      =        16; { stack bottom }
+      market      =        24; { current ep }

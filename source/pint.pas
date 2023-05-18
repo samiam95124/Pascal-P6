@@ -4702,10 +4702,10 @@ begin
                    for j := 1 to q do putdef(sp+j-1, false)
                  end;
     11 (*mst*): begin getp; getq; getq1;
-                  pshadr(mp); { save old mp on stack }
                   pshadr(0); { place current ep }
                   pshadr(0); { place bottom of stack }
                   pshadr(ep); { previous ep }
+                  pshadr(mp); { save old mp on stack }
                   ad1 := mp; { save old mp }
                   mp := sp; { set new mp }
                   { copy old display to stack }
@@ -4735,9 +4735,9 @@ begin
       only the lower 8 bits were stored to. }
     130 (*retc*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below function result }
-                   sp := mp+marksize;
+                   sp := mp; { index old mark }
                    popadr(mp); { restore old mp }
+                   sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
                    sp := sp+q; { remove parameters }
                    { clean result }
@@ -4745,9 +4745,9 @@ begin
                  end;
     131 (*retb*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below function result }
-                   sp := mp+marksize;
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
+                   sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
                    sp := sp+q; { remove parameters }
                    { clean result }
@@ -4760,18 +4760,18 @@ begin
     129 (*retr*),
     132 (*reta*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below parameters }
-                   sp := mp+marksize;
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
+                   sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
-                   sp := sp+q { remove parameters }
+                   sp := sp+q { remove parameters and mark }
                  end;
 
     237 (*retm*): begin getq; evict(ep, mp);
                    ep := getadr(mp+markep);
-                   { set stack below parameters }
-                   sp := mp+marksize;
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
+                   sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
                    sp := sp+q { remove parameters }
                  end;

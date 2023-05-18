@@ -2676,6 +2676,8 @@ procedure xlate;
         {mst}
         11: begin read(prd,p); labelsearch(def, val, sp); 
           labelsearch(def2, val2, sp2); writeln(prr,p:1);
+          { We limit to the enter instruction }
+          if p >= 32 then errorl('Too many nested levels   ');
           wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { save old mp }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }

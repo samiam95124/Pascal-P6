@@ -2583,10 +2583,10 @@ void sinins()
                  break;
 
     case 11 /*mst*/: getp(); getq(); getq1();
-                  pshadr(mp); /* save old mp on stack */
                   pshadr(0); /* place current ep */
                   pshadr(0); /* place bottom of stack */
                   pshadr(ep); /* previous ep */
+                  pshadr(mp); /* save old mp on stack */
                   ad1 = mp; /* save old mp */
                   mp = sp; /* set new mp */
                   /* copy old display to stack */
@@ -2616,9 +2616,9 @@ void sinins()
       only the lower 8 bits were stored to. */
     case 130 /*retc*/: getq();
                    ep = getadr(mp+MARKEP);
-                   /* set stack below function result */
-                   sp = mp+MARKSIZE;
+                   sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
+                   sp = sp+MARKSIZE; /* skip mark */
                    popadr(pc); /* load return address */
                    sp = sp+q; /* remove parameters */
                    /* clean result */
@@ -2627,9 +2627,9 @@ void sinins()
 
     case 131 /*retb*/:  getq();
                    ep = getadr(mp+MARKEP);
-                   /* set stack below function result */
-                   sp = mp+MARKSIZE;
+                   sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
+                   sp = sp+MARKSIZE; /* skip mark */
                    popadr(pc); /* load return address */
                    sp = sp+q; /* remove parameters */
                    /* clean result */
@@ -2642,18 +2642,18 @@ void sinins()
     case 129 /*retr*/:
     case 132 /*reta*/: getq();
                    ep = getadr(mp+MARKEP);
-                   /* set stack below function result, if any */
-                   sp = mp+MARKSIZE;
+                   sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
+                   sp = sp+MARKSIZE; /* skip mark */
                    popadr(pc); /* load return address */
                    sp = sp+q; /* remove parameters */
                    break;
 
     case 237 /*retm*/: getq();
                    ep = getadr(mp+MARKEP);
-                   /* set stack below function result, if any */
-                   sp = mp+MARKSIZE;
+                   sp = mp; /* index old mark */
                    popadr(mp); /* restore old mp */
+                   sp = sp+MARKSIZE; /* skip mark */
                    popadr(pc); /* load return address */
                    sp = sp+q; /* remove parameters */
                    break;
