@@ -5592,7 +5592,7 @@ end;
 { test if last frame }
 function lastframe(ma: address): boolean;
 begin
-  lastframe := getadr(ma+marksize) = maxtop { ma at top of memory }
+  lastframe := getadr(ma) = maxtop { ma at top of memory }
 end;
 
 { find active symbol }
@@ -5623,8 +5623,8 @@ begin
     repeat
       fndsym; { find in this frame }
       if fs = nil then begin
-        cpc := getadr(ma+marksize+adrsize); { get next frame pc }
-        ma := getadr(ma+marksize)
+        cpc := getadr(ma+adrsize+marksize); { get next frame pc }
+        ma := getadr(ma)
       end
     until (fs <> nil) or (ma = maxtop); { found or no next frame }
   end
@@ -5696,8 +5696,8 @@ begin
           ma := mp; ad := pc;
           while not ((ad >= bp^.bstart) and (ad < bp^.bend)) and
                 (ma <> maxtop) do begin
-            ad := getadr(ma+marksize+adrsize);
-            ma := getadr(ma+marksize)
+            ad := getadr(ma+adrsize+marksize);
+            ma := getadr(ma)
           end;
           if ma = maxtop then error(eblkmba)
         end
@@ -6729,7 +6729,7 @@ begin
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp;
-      repeat dmpdsp(s); e := s; s := getadr(s+marksize); i := i-1
+      repeat dmpdsp(s); e := s; s := getadr(s); i := i-1
       until (i = 0) or lastframe(e) or chkbrk
     end
   end else if (cn = 'df        ') then begin
@@ -6738,8 +6738,8 @@ begin
     else begin
       i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := mp; pcs := pc; eps := getadr(s+market);
-      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+marksize+ptrsize);
-        e := s; s := getadr(s+marksize);
+      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+adrsize+marksize);
+        e := s; s := getadr(s);
         if not lastframe(e) then begin eps := getadr(s+market); i := i-1 end
       until (i = 0) or lastframe(e) or chkbrk
     end
@@ -7044,7 +7044,7 @@ begin
           end;
           writeln
         end;
-        pcs := getadr(s+marksize+ptrsize); e := s; s := getadr(s+marksize); i := i-1
+        pcs := getadr(s+adrsize+marksize); e := s; s := getadr(s); i := i-1
       until (i = 0) or lastframe(e) or brk
     end
   end else if cn = 'hs        ' then repspc { report heap space }
