@@ -1086,7 +1086,7 @@ procedure xlate;
    var i,j: integer;
    begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
-     if prd^ in ['0'..'9'] then read(prd, x) { near label }
+     if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
      else begin { far label }
        getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab;
        for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
@@ -2674,23 +2674,23 @@ procedure xlate;
         end;
 
         {mst}
-        11: begin read(prd,p); labelsearch(def, val, sp); 
-          labelsearch(def2, val2, sp2); writeln(prr,p:1);
+        11: begin read(prd,p); labelsearch(def, val, sp); labelsearch(def2, val2, sp2);
+          write(prr,p:1, ' l '); writevp(prr, sp); write(prr, ' l '); 
+          writevp(prr, sp2); writeln(prr);
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
           wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { save old mp }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
-          wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil); { save old mp }
-          wrtins20('movq %rsp,%rbp     ', 0, 0, rgnull, rgnull, nil); { set new mp }
-          wrtins20('movq $0,%rbx       ', p, 0, rgnull, rgnull, nil); { set number of levels }
-          wrtins20('orq %rbx,%rbx      ', 0, 0, rgnull, rgnull, nil); { check done }
-          wrtins20('jz .+xx            ', 0, 0, rgnull, rgnull, nil); { skip if so }
-          wrtins20('subq $ptrsize,%rax ', 0, 0, rgnull, rgnull, nil); { next display }
-          wrtins20('pushq (%rax)       ', 0, 0, rgnull, rgnull, nil); { push display pointer }
-          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { push new mp }
-          
+          wrtins20('enter $1,$0        ', p, 0, rgnull, rgnull, nil); { enter frame }
+          wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('je .+xx   ', 0, 0, rgnull, rgnull, nil);     
+          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('jmp .+xx  ', 0, 0, rgnull, rgnull, nil);
+          { note stack bottom and ep are unused at this time }
         end;
 
         {cip} 
