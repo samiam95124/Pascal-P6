@@ -12,12 +12,9 @@
 #
 ################################################################################
 
-        marksl = -8  # static link
-        markdl = -16 # dynamic link
-        markep = -24 # (old) maximum frame size
-        marksb = -32 # stack bottom
-        market = -40 # current ep
-        markra = -48 # return address
+        markep = 8  # (old) maximum frame size
+        marksb = 16 # stack bottom
+        market = 24 # current ep
 
         .text
 #

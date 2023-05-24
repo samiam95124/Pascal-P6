@@ -1878,10 +1878,10 @@ code to verify access to the variants used.
 *******************************************************************************/
 
 void psystem_nwl(
-    /** Address of pointer */  unsigned char** p,  rdi
-    /** length to allocate */  unsigned long   l,  rsi
-    /** pointer to tag list */ long*           tl, rdx
-    /** number of tags */      unsigned long   tc  rcx
+    /** Address of pointer */  unsigned char** p,
+    /** length to allocate */  unsigned long   l,
+    /** pointer to tag list */ long*           tl,
+    /** number of tags */      unsigned long   tc
 )
 
 {
@@ -2372,7 +2372,7 @@ Reads an integer from the given text file and returns it.
 
 void psystem_rdi(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         int*    i
+    /* integer to read */         long*    i
 )
 
 {
@@ -2400,7 +2400,7 @@ be used, even if followed by other digits.
 
 void psystem_rdif(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         int*    i,
+    /* integer to read */         long*    i,
     /* Field */                   long    w
 )
 
@@ -2428,7 +2428,7 @@ maximum. Out of range integers will result in an error.
 
 void psystem_rib(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         int*    i,
+    /* integer to read */         long*    i,
     /* Bounds for integer */      long mn, long mx
 )
 
@@ -2461,7 +2461,7 @@ maximum. Out of range integers will result in an error.
 
 void psystem_ribf(
     /* Pascal file to write to */ pasfil* f,
-    /* integer to read */         int* i,
+    /* integer to read */         long* i,
     /* Bounds for integer */      long mn, long mx,
     /* Field to read */           long w
 )
@@ -2546,7 +2546,6 @@ void psystem_rdc(
 {
 
     int  fn;
-    char c;
     
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -2574,7 +2573,6 @@ void psystem_rdcf(
 {
 
     int  fn;
-    char c;
     
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -2602,7 +2600,6 @@ void psystem_rcb(
 {
 
     int  fn;
-    char c;
     
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -2634,7 +2631,6 @@ char psystem_rcbf(
 {
 
     int  fn;
-    char c;
     
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
@@ -4025,7 +4021,6 @@ void psystem_rdre(
 {
 
     long w;
-    double r;
 
     w = INT_MAX; 
     readr(COMMANDFN, r, w, FALSE);
@@ -4270,7 +4265,7 @@ void psystem_setdif(
 
     long i;
 
-    for (i = 0; i < SETSIZE; i++) a[i] = a[i] & ~b[i];
+    for (i = 0; i < SETSIZE; i++) d[i] = d[i] & ~b[i];
 
 }
 
@@ -4291,7 +4286,7 @@ void psystem_setint(
 
     long i;
 
-    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
+    for (i = 0; i < SETSIZE; i++) d[i] = d[i] & b[i];
 
 }
 
@@ -4312,7 +4307,7 @@ void psystem_setuni(
 
     long i;
 
-    for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
+    for (i = 0; i < SETSIZE; i++) d[i] = d[i] | b[i];
 
 }
 

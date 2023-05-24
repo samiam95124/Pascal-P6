@@ -2703,11 +2703,11 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
           wrtins20('enter $1,$0        ', p, 0, rgnull, rgnull, nil); { enter frame }
           wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp);
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('je .+xx   ', 0, 0, rgnull, rgnull, nil);     
+          wrtins10('je .+0   ', 11, 0, rgnull, rgnull, nil);     
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('jmp .+xx  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('jmp .-0  ', 15, 0, rgnull, rgnull, nil);
           { note stack bottom and ep are unused at this time }
         end;
 
