@@ -35,7 +35,7 @@
 *                                                                              *
 * Adaption from P4 to P6 by:                                                   *
 *                                                                              *
-*    Scott A. Franco                                                            *
+*    Scott A. Franco                                                           *
 *    samiam@moorecad.com                                                       *
 *                                                                              *
 * AMD64 code generator for GCC                                                 *
@@ -378,6 +378,7 @@ var   pc          : address;   (*program address register*)
                                                   is function*)
       sppar       : array[sctyp] of integer; (*standard functions and procedures
                                                   number of parameters*)
+      spkeep      : array[sctyp] of boolean; { keep the file parameter }
       srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
       csttbl      : cstptr; { constants table }
@@ -616,6 +617,7 @@ procedure xlate;
                     realn: integer; { real number }
                     vali: integer; { integer value }
                     rs: regset; { push/pop mask }
+                    keep: boolean; { hold this value }
                   end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
@@ -898,88 +900,88 @@ procedure xlate;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
 
-         sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1;   
-         sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1;
-         sptable[ 2]:='thw       '; spfunc[ 2]:=false; sppar[ 2]:=1;   
-         sptable[ 3]:='rln       '; spfunc[ 3]:=false; sppar[ 3]:=1;
-         sptable[ 4]:='new       '; spfunc[ 4]:=false; sppar[ 4]:=2;   
-         sptable[ 5]:='wln       '; spfunc[ 5]:=false; sppar[ 5]:=1;
-         sptable[ 6]:='wrs       '; spfunc[ 6]:=false; sppar[ 6]:=4;   
-         sptable[ 7]:='eln       '; spfunc[ 7]:=false; sppar[ 7]:=1;
-         sptable[ 8]:='wri       '; spfunc[ 8]:=false; sppar[ 8]:=3;   
-         sptable[ 9]:='wrr       '; spfunc[ 9]:=false; sppar[ 9]:=3;
-         sptable[10]:='wrc       '; spfunc[10]:=false; sppar[10]:=3;   
-         sptable[11]:='rdi       '; spfunc[11]:=false; sppar[11]:=2;
-         sptable[12]:='rdr       '; spfunc[12]:=false; sppar[12]:=2;   
-         sptable[13]:='rdc       '; spfunc[13]:=false; sppar[13]:=2;
-         sptable[14]:='sin       '; spfunc[14]:=true;  sppar[14]:=1;   
-         sptable[15]:='cos       '; spfunc[15]:=true;  sppar[15]:=1;
-         sptable[16]:='exp       '; spfunc[16]:=true;  sppar[16]:=1;   
-         sptable[17]:='log       '; spfunc[17]:=true;  sppar[17]:=1;
-         sptable[18]:='sqt       '; spfunc[18]:=true;  sppar[18]:=1;   
-         sptable[19]:='atn       '; spfunc[19]:=true;  sppar[19]:=1;
-         sptable[20]:='---       '; spfunc[20]:=false; sppar[20]:=1;   
-         sptable[21]:='pag       '; spfunc[21]:=false; sppar[21]:=1;
-         sptable[22]:='rsf       '; spfunc[22]:=false; sppar[22]:=1;   
-         sptable[23]:='rwf       '; spfunc[23]:=false; sppar[23]:=1;
-         sptable[24]:='wrb       '; spfunc[24]:=false; sppar[24]:=3;   
-         sptable[25]:='wrf       '; spfunc[25]:=false; sppar[25]:=4;
-         sptable[26]:='dsp       '; spfunc[26]:=false; sppar[26]:=2;   
-         sptable[27]:='wbf       '; spfunc[27]:=false; sppar[27]:=3;
-         sptable[28]:='wbi       '; spfunc[28]:=false; sppar[28]:=2;   
-         sptable[29]:='wbr       '; spfunc[29]:=false; sppar[29]:=2;
-         sptable[30]:='wbc       '; spfunc[30]:=false; sppar[30]:=2;   
-         sptable[31]:='wbb       '; spfunc[31]:=false; sppar[31]:=2;
-         sptable[32]:='rbf       '; spfunc[32]:=false; sppar[32]:=3;   
-         sptable[33]:='rsb       '; spfunc[33]:=false; sppar[33]:=1;
-         sptable[34]:='rwb       '; spfunc[34]:=false; sppar[34]:=1;   
-         sptable[35]:='gbf       '; spfunc[35]:=false; sppar[35]:=2;
-         sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2;   
-         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=3;
-         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=3;   
-         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=0; { special }
-         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=0; { special }
-         sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1;
-         sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1;   
-         sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1;
-         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=1;
-         sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2;
-         sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3;
-         sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1;
-         sptable[48]:='pos       '; spfunc[48]:=false; sppar[48]:=2;
-         sptable[49]:='upd       '; spfunc[49]:=false; sppar[49]:=1;
-         sptable[50]:='appt      '; spfunc[50]:=false; sppar[50]:=1;
-         sptable[51]:='del       '; spfunc[51]:=false; sppar[51]:=2;
-         sptable[52]:='chg       '; spfunc[52]:=false; sppar[52]:=4;
-         sptable[53]:='len       '; spfunc[53]:=true;  sppar[53]:=1;
-         sptable[54]:='loc       '; spfunc[54]:=true;  sppar[54]:=1;
-         sptable[55]:='exs       '; spfunc[55]:=true;  sppar[55]:=2;
-         sptable[56]:='assb      '; spfunc[56]:=false; sppar[56]:=3;
-         sptable[57]:='clsb      '; spfunc[57]:=false; sppar[57]:=1;
-         sptable[58]:='appb      '; spfunc[58]:=false; sppar[58]:=1;
-         sptable[59]:='hlt       '; spfunc[59]:=false; sppar[59]:=0;
-         sptable[60]:='ast       '; spfunc[60]:=false; sppar[60]:=1;
-         sptable[61]:='asts      '; spfunc[61]:=false; sppar[61]:=3;
-         sptable[62]:='wrih      '; spfunc[62]:=false; sppar[62]:=3;
-         sptable[63]:='wrio      '; spfunc[63]:=false; sppar[63]:=3;
-         sptable[64]:='wrib      '; spfunc[64]:=false; sppar[64]:=3;
-         sptable[65]:='wrsp      '; spfunc[65]:=false; sppar[65]:=3;
-         sptable[66]:='wiz       '; spfunc[66]:=false; sppar[66]:=3;
-         sptable[67]:='wizh      '; spfunc[67]:=false; sppar[67]:=3;
-         sptable[68]:='wizo      '; spfunc[68]:=false; sppar[68]:=3;
-         sptable[69]:='wizb      '; spfunc[69]:=false; sppar[69]:=3;
-         sptable[70]:='rds       '; spfunc[70]:=false; sppar[70]:=3;
-         sptable[71]:='ribf      '; spfunc[71]:=false; sppar[71]:=5;
-         sptable[72]:='rdif      '; spfunc[72]:=false; sppar[72]:=3;
-         sptable[73]:='rdrf      '; spfunc[73]:=false; sppar[73]:=3;
-         sptable[74]:='rcbf      '; spfunc[74]:=false; sppar[74]:=5;
-         sptable[75]:='rdcf      '; spfunc[75]:=false; sppar[75]:=3;
-         sptable[76]:='rdsf      '; spfunc[76]:=false; sppar[76]:=4;
-         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=4;
-         sptable[78]:='aeft      '; spfunc[78]:=false; sppar[78]:=3;
-         sptable[79]:='aefb      '; spfunc[79]:=false; sppar[79]:=3;
-         sptable[80]:='rdie      '; spfunc[80]:=false; sppar[80]:=3;
-         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=1;
+         sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
+         sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
+         sptable[ 2]:='thw       '; spfunc[ 2]:=false; sppar[ 2]:=1; spkeep[ 2]:=false;   
+         sptable[ 3]:='rln       '; spfunc[ 3]:=false; sppar[ 3]:=1; spkeep[ 3]:=true;
+         sptable[ 4]:='new       '; spfunc[ 4]:=false; sppar[ 4]:=2; spkeep[ 4]:=false;   
+         sptable[ 5]:='wln       '; spfunc[ 5]:=false; sppar[ 5]:=1; spkeep[ 5]:=true;
+         sptable[ 6]:='wrs       '; spfunc[ 6]:=false; sppar[ 6]:=4; spkeep[ 6]:=true;   
+         sptable[ 7]:='eln       '; spfunc[ 7]:=false; sppar[ 7]:=1; spkeep[ 7]:=false;
+         sptable[ 8]:='wri       '; spfunc[ 8]:=false; sppar[ 8]:=3; spkeep[ 8]:=true;   
+         sptable[ 9]:='wrr       '; spfunc[ 9]:=false; sppar[ 9]:=3; spkeep[ 9]:=true;
+         sptable[10]:='wrc       '; spfunc[10]:=false; sppar[10]:=3; spkeep[10]:=true;   
+         sptable[11]:='rdi       '; spfunc[11]:=false; sppar[11]:=2; spkeep[11]:=true;
+         sptable[12]:='rdr       '; spfunc[12]:=false; sppar[12]:=2; spkeep[12]:=true;   
+         sptable[13]:='rdc       '; spfunc[13]:=false; sppar[13]:=2; spkeep[13]:=true;
+         sptable[14]:='sin       '; spfunc[14]:=true;  sppar[14]:=1; spkeep[14]:=false;   
+         sptable[15]:='cos       '; spfunc[15]:=true;  sppar[15]:=1; spkeep[15]:=false;
+         sptable[16]:='exp       '; spfunc[16]:=true;  sppar[16]:=1; spkeep[16]:=false;
+         sptable[17]:='log       '; spfunc[17]:=true;  sppar[17]:=1; spkeep[17]:=false;
+         sptable[18]:='sqt       '; spfunc[18]:=true;  sppar[18]:=1; spkeep[18]:=false;   
+         sptable[19]:='atn       '; spfunc[19]:=true;  sppar[19]:=1; spkeep[19]:=false;
+         sptable[20]:='---       '; spfunc[20]:=false; sppar[20]:=1; spkeep[20]:=false;   
+         sptable[21]:='pag       '; spfunc[21]:=false; sppar[21]:=1; spkeep[21]:=false;
+         sptable[22]:='rsf       '; spfunc[22]:=false; sppar[22]:=1; spkeep[22]:=false;   
+         sptable[23]:='rwf       '; spfunc[23]:=false; sppar[23]:=1; spkeep[23]:=false;
+         sptable[24]:='wrb       '; spfunc[24]:=false; sppar[24]:=3; spkeep[24]:=true;   
+         sptable[25]:='wrf       '; spfunc[25]:=false; sppar[25]:=4; spkeep[25]:=true;
+         sptable[26]:='dsp       '; spfunc[26]:=false; sppar[26]:=2; spkeep[26]:=false;   
+         sptable[27]:='wbf       '; spfunc[27]:=false; sppar[27]:=3; spkeep[27]:=true;
+         sptable[28]:='wbi       '; spfunc[28]:=false; sppar[28]:=2; spkeep[28]:=true;   
+         sptable[29]:='wbr       '; spfunc[29]:=false; sppar[29]:=2; spkeep[29]:=true;
+         sptable[30]:='wbc       '; spfunc[30]:=false; sppar[30]:=2; spkeep[30]:=true;   
+         sptable[31]:='wbb       '; spfunc[31]:=false; sppar[31]:=2; spkeep[31]:=true;
+         sptable[32]:='rbf       '; spfunc[32]:=false; sppar[32]:=3; spkeep[32]:=true;   
+         sptable[33]:='rsb       '; spfunc[33]:=false; sppar[33]:=1; spkeep[33]:=false;
+         sptable[34]:='rwb       '; spfunc[34]:=false; sppar[34]:=1; spkeep[34]:=false;   
+         sptable[35]:='gbf       '; spfunc[35]:=false; sppar[35]:=2; spkeep[35]:=false;
+         sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2; spkeep[36]:=false;   
+         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=3; spkeep[37]:=true;
+         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=3; spkeep[38]:=true;   
+         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=0; spkeep[39]:=false; { special }
+         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=0; spkeep[40]:=false; { special }
+         sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
+         sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
+         sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=false;
+         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=1; spkeep[44]:=false;
+         sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2; spkeep[45]:=true;
+         sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3; spkeep[46]:=false;
+         sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1; spkeep[47]:=false;
+         sptable[48]:='pos       '; spfunc[48]:=false; sppar[48]:=2; spkeep[48]:=false;
+         sptable[49]:='upd       '; spfunc[49]:=false; sppar[49]:=1; spkeep[49]:=false;
+         sptable[50]:='appt      '; spfunc[50]:=false; sppar[50]:=1; spkeep[50]:=false;
+         sptable[51]:='del       '; spfunc[51]:=false; sppar[51]:=2; spkeep[51]:=false;
+         sptable[52]:='chg       '; spfunc[52]:=false; sppar[52]:=4; spkeep[52]:=false;
+         sptable[53]:='len       '; spfunc[53]:=true;  sppar[53]:=1; spkeep[53]:=false;
+         sptable[54]:='loc       '; spfunc[54]:=true;  sppar[54]:=1; spkeep[54]:=false;
+         sptable[55]:='exs       '; spfunc[55]:=true;  sppar[55]:=2; spkeep[55]:=false;
+         sptable[56]:='assb      '; spfunc[56]:=false; sppar[56]:=3; spkeep[56]:=false;
+         sptable[57]:='clsb      '; spfunc[57]:=false; sppar[57]:=1; spkeep[57]:=false;
+         sptable[58]:='appb      '; spfunc[58]:=false; sppar[58]:=1; spkeep[58]:=false;
+         sptable[59]:='hlt       '; spfunc[59]:=false; sppar[59]:=0; spkeep[59]:=false;
+         sptable[60]:='ast       '; spfunc[60]:=false; sppar[60]:=1; spkeep[60]:=false;
+         sptable[61]:='asts      '; spfunc[61]:=false; sppar[61]:=3; spkeep[61]:=false;
+         sptable[62]:='wrih      '; spfunc[62]:=false; sppar[62]:=3; spkeep[62]:=true;
+         sptable[63]:='wrio      '; spfunc[63]:=false; sppar[63]:=3; spkeep[63]:=true;
+         sptable[64]:='wrib      '; spfunc[64]:=false; sppar[64]:=3; spkeep[64]:=true;
+         sptable[65]:='wrsp      '; spfunc[65]:=false; sppar[65]:=3; spkeep[65]:=true;
+         sptable[66]:='wiz       '; spfunc[66]:=false; sppar[66]:=3; spkeep[66]:=true;
+         sptable[67]:='wizh      '; spfunc[67]:=false; sppar[67]:=3; spkeep[67]:=true;
+         sptable[68]:='wizo      '; spfunc[68]:=false; sppar[68]:=3; spkeep[68]:=true;
+         sptable[69]:='wizb      '; spfunc[69]:=false; sppar[69]:=3; spkeep[69]:=true;
+         sptable[70]:='rds       '; spfunc[70]:=false; sppar[70]:=3; spkeep[70]:=true;
+         sptable[71]:='ribf      '; spfunc[71]:=false; sppar[71]:=5; spkeep[71]:=true;
+         sptable[72]:='rdif      '; spfunc[72]:=false; sppar[72]:=3; spkeep[72]:=true;
+         sptable[73]:='rdrf      '; spfunc[73]:=false; sppar[73]:=3; spkeep[73]:=true;
+         sptable[74]:='rcbf      '; spfunc[74]:=false; sppar[74]:=5; spkeep[74]:=true;
+         sptable[75]:='rdcf      '; spfunc[75]:=false; sppar[75]:=3; spkeep[75]:=true;
+         sptable[76]:='rdsf      '; spfunc[76]:=false; sppar[76]:=4; spkeep[76]:=true;
+         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=4; spkeep[77]:=true;
+         sptable[78]:='aeft      '; spfunc[78]:=false; sppar[78]:=3; spkeep[78]:=false;
+         sptable[79]:='aefb      '; spfunc[79]:=false; sppar[79]:=3; spkeep[79]:=false;
+         sptable[80]:='rdie      '; spfunc[80]:=false; sppar[80]:=3; spkeep[80]:=false;
+         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=1; spkeep[81]:=false;
 
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
@@ -994,7 +996,10 @@ procedure xlate;
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          estack := nil; efree := nil;
-         frereg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15];
+         frereg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
+                    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
+                    rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
+                    rgxmm14, rgxmm15 ];
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -1109,9 +1114,6 @@ procedure xlate;
 
    procedure postamble;
    begin
-     writeln(prr, '        movq    $0,%rax');
-     writeln(prr, '        popq    %rbp');
-     writeln(prr, '        ret');
    end;
 
    procedure assemble; forward;
@@ -1305,7 +1307,7 @@ procedure xlate;
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
         ep^.r := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
-        ep^.rs := []
+        ep^.rs := []; ep^.keep := false
       end;
       
       procedure putexp(ep: expptr);
@@ -2248,7 +2250,7 @@ procedure xlate;
         end
       end;
 
-      procedure callsppar(p: integer; var sc: alfa; r: boolean);
+      procedure callsppar(p: integer; var sc: alfa; r, k: boolean);
       var si: insstr20;
           i: integer;
       begin
@@ -2257,27 +2259,42 @@ procedure xlate;
         if p >= 3 then popstk(ep3);
         if p >= 2 then popstk(ep2);
         if p >= 1 then popstk(ep);
+        { put keep file back on stack }
+        if k then pshstk(ep);
 
-        if p >= 5 then assreg(ep5, frereg, rgr8, rgnull);
-        if p >= 4 then assreg(ep4, frereg, rgrcx, rgnull);
-        if p >= 3 then assreg(ep3, frereg, rgrdx, rgnull);
+        { if kept, restore from stack before evaluating others }
+        if ep^.keep then wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);
+
+        { assign registers if not held }
+        if (p >= 1) and not ep^.keep then assreg(ep, frereg, rgrdi, rgnull);
         if p >= 2 then assreg(ep2, frereg, rgrsi, rgnull);
-        if p >= 1 then assreg(ep, frereg, rgrdi, rgnull);
+        if p >= 3 then assreg(ep3, frereg, rgrdx, rgnull);
+        if p >= 4 then assreg(ep4, frereg, rgrcx, rgnull);
+        if p >= 5 then assreg(ep5, frereg, rgr8, rgnull);
 
-        if p >= 1 then begin dmptrel(ep, 1); genexp(ep) end;
+        { print expression tree and generate if not held }
+        if (p >= 1) and not ep^.keep then begin dmptrel(ep, 1); genexp(ep) end;
         if p >= 2 then begin dmptrel(ep2, 1); genexp(ep2) end;
         if p >= 3 then begin dmptrel(ep3, 1); genexp(ep3) end;
         if p >= 4 then begin dmptrel(ep4, 1); genexp(ep4) end;
         if p >= 5 then begin dmptrel(ep5, 1); genexp(ep5) end;
 
-        if p >= 1 then deltre(ep);
+        { remove tree if not held }
+        if (p >= 1) and not ep^.keep then deltre(ep);
         if p >= 2 then deltre(ep2);
         if p >= 3 then deltre(ep3);
         if p >= 4 then deltre(ep4);
         if p >= 5 then deltre(ep5);
+
+        { if keep, push held value and flag }
+        if k then begin
+           wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
+           ep^.keep := true
+        end;
+
         si := 'call psystem_       ';
-        for i := 1 to maxalfa do si[13+i-1] := sc[i];
-        wrtins20(sc, 0, 0, rgnull, rgnull, nil);
+        for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
+        wrtins20(si, 0, 0, rgnull, rgnull, nil);
         if r then begin
           if ep^.r1 <> rgrax then 
             wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
@@ -2336,7 +2353,7 @@ procedure xlate;
           wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
           wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
-        end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q]);
+        end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q], spkeep[ep^.q]);
       end;
 
     begin { assemble } 
@@ -2705,8 +2722,9 @@ procedure xlate;
         end;
 
         {dmp}
-        117: begin read(prd,q); writeln(prr,q:1); popstk(ep); dmptrel(ep, 19);
-          deltre(ep); botstk 
+        117: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
+          wrtins10('popq %1   ', 0, 0, ep^.r1, rgnull, nil);
+          dmptrel(ep, 19); deltre(ep); botstk 
         end;
 
         {sro}
@@ -2768,7 +2786,14 @@ procedure xlate;
         end;
 
         {retp}
-        14: begin writeln(prr); botstk
+        14: begin read(prd,q); writeln(prr, q:1);
+          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rax ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          botstk
         end;
 
         {reti,retr,retc,retb,reta,retx}
