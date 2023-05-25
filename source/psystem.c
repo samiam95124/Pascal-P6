@@ -1947,8 +1947,8 @@ the field specification.
 
 void psystem_wrs(
     /* Pascal file to write to */ pasfil* f,
-    /* String to write */         char    s[],
     /* Length of string */        int     l,
+    /* String to write */         char    s[],
     /* Width of field */          int     w
 )
 
