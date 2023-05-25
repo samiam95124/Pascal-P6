@@ -2696,7 +2696,6 @@ procedure xlate;
           writevp(prr, sp2); writeln(prr);
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
-          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { save old mp }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
@@ -2704,9 +2703,9 @@ procedure xlate;
           wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp);
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('je .+0   ', 11, 0, rgnull, rgnull, nil);     
+          wrtins10('je .+0   ', 6, 0, rgnull, rgnull, nil);     
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('jmp .-0  ', 15, 0, rgnull, rgnull, nil);
+          wrtins10('jmp .-0  ', 7, 0, rgnull, rgnull, nil);
           { note stack bottom and ep are unused at this time }
         end;
 
