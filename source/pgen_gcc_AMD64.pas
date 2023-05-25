@@ -1199,11 +1199,22 @@ procedure xlate;
                  until not (ch in ['a'..'z']);
                  getlin; writeln(prr);
                end;
-          'b': begin getlin; preamble end; { block start }
-          'e': begin getlin; postamble end; { block end }
           'g': begin read(prd, gblsiz); getlin end; { set globals space }
+          'b': begin { block start }
+                 getnxt; skpspc;
+                 if not (ch in ['p', 'm', 'r', 'f']) then
+                   errorl('Block type is invalid    ');
+                 if ch = 'p' then preamble;
+                 getlin
+               end;
+          'e': begin getlin; postamble end; { block end }
+          's': getlin; { symbol }
           'f': getlin; { source error count }
+          'v': getlin; { variant logical table }
           't': getlin; { template }
+          'n': getlin; { start constant table }
+          'x': getlin;
+          'c': getlin;
        end
      end
    end; (*generate*)
