@@ -634,6 +634,7 @@ procedure xlate;
         flablst: flabelp; { list of far labels }
         estack, efree: expptr;
         frereg: regset;
+        stacklvl: integer;
 
    procedure init;
       var i: integer;
@@ -995,7 +996,7 @@ procedure xlate;
          sline := 0; { set no line of source }
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
-         estack := nil; efree := nil;
+         estack := nil; stacklvl := 0; efree := nil;
          frereg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
                     rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
                     rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
@@ -1134,8 +1135,8 @@ procedure xlate;
       while again do begin
         if eof(prd) then errorl('unexpected eof on input  ');
         getnxt;(* first character of line*)
-        if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'b', 'e', 'g', 'f', 
-                       't']) then
+        if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
+                       'v', 't', 'n', 'x', 'c']) then
           errorl('unexpected line start    ');
         case ch of
           '!': begin prtline; write(prr, ' ', '!'); while not eoln(prd) do
@@ -1327,13 +1328,14 @@ procedure xlate;
       
       procedure pshstk(ep: expptr);
       begin
-        ep^.next := estack; estack := ep
+        ep^.next := estack; estack := ep; stacklvl := stacklvl+1
       end;
       
       procedure popstk(var ep: expptr);
       begin
         if estack = nil then errorl('Expression underflow     ');
-        ep := estack; estack := estack^.next; ep^.next := nil
+        ep := estack; estack := estack^.next; ep^.next := nil; 
+        stacklvl := stacklvl-1
       end;
 
       procedure botstk;
@@ -2289,6 +2291,9 @@ procedure xlate;
         if p >= 4 then begin dmptrel(ep4, 1); genexp(ep4) end;
         if p >= 5 then begin dmptrel(ep5, 1); genexp(ep5) end;
 
+        { keep parameter evaluated, now set keep }
+        if k then ep^.keep := true;
+
         { remove tree if not held }
         if (p >= 1) and not ep^.keep then deltre(ep);
         if p >= 2 then deltre(ep2);
@@ -2297,10 +2302,7 @@ procedure xlate;
         if p >= 5 then deltre(ep5);
 
         { if keep, push held value and flag }
-        if k then begin
-           wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
-           ep^.keep := true
-        end;
+        if k then wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
 
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
