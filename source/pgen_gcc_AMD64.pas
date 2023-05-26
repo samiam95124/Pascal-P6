@@ -2695,7 +2695,8 @@ procedure xlate;
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
-          while stacklvl > parlvl do popstk(ep); { remove parameters }
+          { remove parameters }
+          while stacklvl > parlvl do begin popstk(ep); deltre(ep) end;
           parlvl := maxint { set parameter level inactive }
         end;
 
