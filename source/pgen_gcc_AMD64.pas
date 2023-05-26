@@ -384,6 +384,7 @@ var   pc          : address;   (*program address register*)
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
+      parlvl      : integer; { parameter level }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -1229,9 +1230,7 @@ procedure xlate;
           ep, ep2, ep3, ep4, ep5: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
-          totreg: integer;
           sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
-
 
       procedure lookup(x: labelrg); (* search in label table*)
       begin case labeltab[x].st of
@@ -2688,13 +2687,16 @@ procedure xlate;
         245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
           writeln(prr);
           if (def and (val <> 0)) or not def then
-            wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp)
+            wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp);
+          parlvl := stacklvl { set parameter level active }
         end;
 
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
-          wrtins10('call @    ', 0, 0, rgnull, rgnull, sp)
+          wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
+          while stacklvl > parlvl do popstk(ep); { remove parameters }
+          parlvl := maxint { set parameter level inactive }
         end;
 
         {cuv}
@@ -2995,7 +2997,7 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  csttbl := nil; strnum := 0; realnum := 0; gblsiz := 0;
+  csttbl := nil; strnum := 0; realnum := 0; gblsiz := 0; parlvl := maxint;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
