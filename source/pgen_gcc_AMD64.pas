@@ -1315,9 +1315,9 @@ procedure xlate;
       begin
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
-        ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.l := nil; 
-        ep^.r := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
-        ep^.rs := []; ep^.keep := false
+        ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
+        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.r1 := rgnull; 
+        ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; ep^.keep := false
       end;
       
       procedure putexp(ep: expptr);
@@ -1413,15 +1413,18 @@ procedure xlate;
         case ep^.op of
 
           {lodi,lodx,loda,lodb,lodc,lda}
-          0,193,105,108,109,4: begin resreg(rgrax); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+          0,193,105,108,109,4: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
 
           {lodr}
-          106: begin resreg(rgrax); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+          106: begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            getreg(ep^.t1, rf)
+          end;
 
           {lods}
-          107: begin resreg(rgrax); resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
+          107: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
           {adr,sbr}
@@ -1736,6 +1739,12 @@ procedure xlate;
         $s - Immediate symbol
         %1 - Register 1
         %2 - register 2
+        +0 - Immediate integer 1
+        +1 - Immediate integer 2
+        -0 - Immediate integer 1
+        -1 - Immediate integer 2
+        ^0 - Immediate integer 1 without leader
+        ^1 - Immediate integer 2 without leader
         @  - Symbol
       }
       procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
@@ -1765,6 +1774,10 @@ procedure xlate;
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
           end else if si[i] = '-' then begin next; write(prr, '-');
+            if si[i] = '0' then write(prr, i1:1) 
+            else if si[i] = '1' then write(prr, i2:1)
+            else write(prr, si[i])
+          end else if si[i] = '^' then begin next;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
@@ -1815,33 +1828,26 @@ procedure xlate;
 
             {lodi,loda}
             0,105: begin
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movq (%rax),%2      ', 0, 0, rgnull, ep^.r1, nil)
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movzx (%rax),%2     ', 0, 0, rgnull, ep^.r1, nil)
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('movzx +0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movsd (%rax),%2     ', 0, 0, rgnull, ep^.r1, nil)
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
+              wrtins20('movsd (%rax),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
             {lods}
             107: begin
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20('movq +0(%rbp),%rsi  ', ep^.p, 0, rgnull, rgnull, nil);
+              wrtins20('lea +0(%rsi),%rsi   ', ep^.q, 0, ep^.r1, rgnull, nil);
               wrtins20('add $0,%rsp         ', -setsize, 0, rgnull, rgnull, nil);
               wrtins20('movq %rax,%rsi      ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull, nil);
@@ -1854,10 +1860,8 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('add $0,%rgrax       ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rax,%2        ', 0, 0, rgnull, ep^.l^.r1, nil)
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('lea +0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {adi}
@@ -2382,7 +2386,7 @@ procedure xlate;
         {lodi,lodx,loda,lodr,lods,lodb,lodc,loda}
         0,193,105,106,107,108,109,4: begin 
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          getexp(ep); pshstk(ep) 
+          q1 := -p*ptrsize; getexp(ep); pshstk(ep) 
         end;
 
         {adi,adr,sbi,sbr}
