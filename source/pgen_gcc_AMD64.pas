@@ -2737,12 +2737,13 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
           wrtins20('enter $1,$0        ', p, 0, rgnull, rgnull, nil); { enter frame }
-          wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp);
-          wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('je .+0   ', 6, 0, rgnull, rgnull, nil);     
-          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('jmp .-0  ', 7, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { push new mp }
+          wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy mp }
+          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp); { find mp-locals }
+          wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }
+          wrtins10('je .+0    ', 6, 0, rgnull, rgnull, nil); { skip if so }
+          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
+          wrtins10('jmp .-0   ', 7, 0, rgnull, rgnull, nil); { loop }
           { note stack bottom and ep are unused at this time }
         end;
 
