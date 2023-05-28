@@ -1341,6 +1341,14 @@ procedure xlate;
       begin
         if estack <> nil then errorl('Stack balance             ');
       end;
+
+      function depth: integer;
+      var ep: expptr; c: integer;
+      begin
+        c := 0; ep := estack;
+        while ep <> nil do begin c := c+1; ep := ep^.next end;
+        depth := c
+      end;
       
       procedure deltre(ep: expptr);
       begin
@@ -2319,11 +2327,12 @@ procedure xlate;
       end;
 
       { evaluate and push a parameter list, right to left }
-      procedure pushpar(ep: expptr; p: integer);
+      procedure pshpar(ep: expptr; pn, pc: integer);
       begin
-        if (ep <> nil) and (p < 6) then pushpar(ep^.next, p+1);
-        if p > 6 then assreg(ep, frereg, rgnull, rgnull)
-        else case p of
+        if (ep <> nil) and (pn < 6) and (pc > 1) then 
+          pshpar(ep^.next, pn+1, pc-1);
+        if pn > 6 then assreg(ep, frereg, rgnull, rgnull)
+        else case pn of
           1: assreg(ep, frereg, rgrdi, rgnull);
           2: assreg(ep, frereg, rgrsi, rgnull);
           3: assreg(ep, frereg, rgrdx, rgnull);
@@ -2339,8 +2348,14 @@ procedure xlate;
         if ep^.r1 in [rgxmm0..rgxmm15] then begin
           wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull, nil);
           wrtins20('movsd %1,(%esp)     ', 0, 0, ep^.r1, rgnull, nil)
-        end;
-        deltre(ep)
+        end
+      end;
+
+      { remove parameter list }
+      procedure poppar(pc: integer);
+      var ep: expptr;
+      begin
+        while (estack <> nil) and (pc >= 1) do begin popstk(ep); deltre(ep) end
       end;
 
       procedure callsp{(ep: expptr)};
@@ -2351,7 +2366,7 @@ procedure xlate;
           popstk(ep); popstk(ep2);
           assreg(ep, frereg, rgrsi, rgnull);
           assreg(ep2, frereg, rgrcx, rgnull);
-          pushpar(ep2^.next, maxint);
+          pshpar(ep2^.next, maxint, maxint);
           dmptrel(ep, 1); genexp(ep); dmptrel(ep2, 1); genexp(ep2);
           wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
           wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
@@ -2368,6 +2383,7 @@ procedure xlate;
           wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
           wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
+          poppar(maxint)
         end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q], spkeep[ep^.q]);
       end;
 
@@ -2698,9 +2714,10 @@ procedure xlate;
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
+          { process parameters }
+          if stacklvl > parlvl then pshpar(estack, 1, stacklvl-parlvl);
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
-          { remove parameters }
-          while stacklvl > parlvl do begin popstk(ep); deltre(ep) end;
+          poppar(stacklvl-parlvl);
           parlvl := maxint { set parameter level inactive }
         end;
 
