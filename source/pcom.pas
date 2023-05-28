@@ -8988,7 +8988,7 @@ begin cmdpos := maxcmd end;
         else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
-          begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
+          begin prtlabel(segsize); writeln(prr,'=',lcmin+level*ptrsize:1);
             prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end
       end
@@ -8997,7 +8997,7 @@ begin cmdpos := maxcmd end;
         alignd(parmptr,lcmin);
         if prcode then
           begin
-            prtlabel(segsize); writeln(prr,'=',lcmin:1);
+            prtlabel(segsize); writeln(prr,'=',lcmin+level*ptrsize:1);
             prtlabel(stackbot); writeln(prr,'=',topmin:1)
           end;
         ic := 0;
