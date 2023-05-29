@@ -2338,7 +2338,7 @@ procedure xlate;
           3: assreg(ep, frereg, rgrdx, rgnull);
           4: assreg(ep, frereg, rgrcx, rgnull);
           5: assreg(ep, frereg, rgr8, rgnull);
-          6: assreg(ep, frereg, rgr9, rgnull);
+          6: assreg(ep, frereg, rgr9, rgnull)
         end;
         dmptrel(ep, 1); genexp(ep);
         if ep^.r2 <> rgnull then
@@ -2765,7 +2765,11 @@ procedure xlate;
 
         {sro}
         3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
-          popstk(ep); dmptre(ep); deltre(ep); botstk 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          genexp(ep);
+          wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
+          deltre(ep); 
+          botstk 
         end;
 
         {apc}
