@@ -1452,7 +1452,7 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;  
 
-          120{lip}: begin resreg(rgrax); ep^.r1 := r1;
+          120{lip}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r2 := r2; if ep^.r2 = rgnull then getreg(ep^.r2, rf) end; 
 
@@ -1889,21 +1889,20 @@ procedure xlate;
               wrtins20('subsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {equr}
-            128: begin 
+            138: begin 
               wrtins20('cmpeqsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               wrtins20('movq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r1, nil);
               wrtins20('andq %1,$0          ', 1, 0, ep^.r1, rgnull, nil) 
             end;
 
             120{lip}: begin 
-              wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq +0(%rax),%1    ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq +0(%rax),%1    ', ep^.q+ptrsize, 0, ep^.r2, rgnull, nil);
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
+              wrtins20('movq +0(%1),%1    ', ep^.q+ptrsize, 0, ep^.r2, rgnull, nil);
+              wrtins20('movq +0(%1),%1    ', ep^.q, 0, ep^.r1, rgnull, nil)
             end;  
 
-            {equm}
-            142: begin 
+            {equm,neqm,geqm,gtrm,leqm,lesm}
+            142,148,154,160,166,172: begin 
               wrtins20('movq $0,%rdx        ', q, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_strcmp ', 0, 0, rgnull, rgnull, nil); 
               wrtins20('cmpq $0,%rax        ', 0, 0, rgnull, rgnull, nil);
@@ -1930,7 +1929,7 @@ procedure xlate;
 
             {ldoi,loda}
             1,65:
-              wrtins40('movzx globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40('movq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox}
             68,69,194:
@@ -2028,7 +2027,6 @@ procedure xlate;
               wrtins30('call psystem_cmptmp            ', 0, 0, rgnull, rgnull, nil)
             end;
 
-
             {cta}
             191: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
@@ -2095,15 +2093,34 @@ procedure xlate;
               end
             end;
 
+            56 {lca}: wrtins30('leaq string^0(%rip),%1        ', ep^.strn, 0, ep^.r1, rgnull, nil); 
 
-            56 {lca}: begin 
-               write(prr, '        leaq    string', ep^.strn:1, '(%rip),%'); 
-               wrtreg(prr, ep^.r1); writeln(prr)
+{reals and sets need to be treated separately.}
+            {equa,equi,equr,equb,equs,equc}
+            17, 137, 139, 140, 141,
+            {neqa,neqi,neqr,neqb,neqs,neqc}
+            18, 143, 144, 145, 146, 147,
+            {geqi,geqr,geqb,geqs,geqc}
+            149, 150, 151, 152, 153,
+            {grti,grtr,grtb,grts,grtc}
+            20, 155, 156, 157, 158, 159,
+            {leqi,leqr,leqb,leqs,leqc}
+            161, 162, 163, 164, 165,
+            {lesi,lesr,lesb,less,lesc}
+            167, 168, 169, 170, 171: begin 
+              wrtins10('cmp %1,%2 ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              case ep^.op of
+                17,137,138,139,140,141: wrtins10('sete %1   ', 0, 0, ep^.r1, rgnull, nil);
+                18,143,144,145,146,147: wrtins10('setne %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                149,150,151,152,153: wrtins10('setae %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                20,155,156,157,158,159: wrtins10('seta %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
+                161,162,163,164,165: wrtins10('setbe %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                167,168,169,170,171: wrtins10('setb %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
+              end
             end;
 
             {ord}
             59, 134, 136, 200: ; { ord is a no-op }
-
 
             {lcp}
             135: begin 
@@ -2399,7 +2416,7 @@ procedure xlate;
 
         { *** non-terminals *** }
 
-        {lodi,lodx,loda,lodr,lods,lodb,lodc,loda}
+        {lodi,lodx,loda,lodr,lods,lodb,lodc,loda,lda}
         0,193,105,106,107,108,109,4: begin 
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           q1 := -p*ptrsize; getexp(ep); pshstk(ep) 
@@ -2434,20 +2451,20 @@ procedure xlate;
           popstk(ep2); pshstk(ep); pshstk(ep2) 
         end;
 
-        {ldo}
+        {ldoi,loda,lodr,lods,lodb,lodc,lodx}
         1, 65, 66, 67, 68, 69, 194: begin read(prd,q); writeln(prr,q:1);
           getexp(ep); pshstk(ep) 
         end;
 
-        {ind}
+        {indi,inda,indr,inds,indb,indc,indx}
         9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) end;
 
-        {inc,dec}
-        10, 90, 93, 94, 57, 103, 104, 201, 202: begin read(prd,q); 
+        {inci,inca,incb,incc,incx,deci,deca,decb,decc,decx}
+        10, 90, 93, 94, 201, 57, 103, 104, 202: begin read(prd,q); 
           writeln(prr,q:1); getexp(ep); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {ckv}
+        {ckvi,chvb,ckvc,ckvx}
         175, 179, 180, 203: begin read(prd,q); writeln(prr,q:1); getexp(ep);
           popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
         end;
@@ -2479,7 +2496,12 @@ procedure xlate;
           popstk(ep^.l); popstk(ep^.r); popstk(ep^.x1); pshstk(ep) 
         end;
 
-        {ldc}
+        {lpa}
+        114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); getexp(ep); 
+          pshstk(ep);
+        end;
+
+        {ldcs,ldci,ldcr,ldcn,ldcb,ldcc}
         7, 123, 124, 125, 126, 127: begin case op of
 
           123: begin read(prd,i); writeln(prr, i:1); 
@@ -2559,15 +2581,25 @@ procedure xlate;
           cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
         end;
 
-        { equ,neq,geq,grt,leq,les with no parameter }
+{************}
+
+        {equa,equi,equr,equb,equs,equc}
         17, 137, 138, 139, 140, 141,
+        {neqa,neqi,neqr,neqb,neqs,neqc}
         18, 143, 144, 145, 146, 147,
-        19, 149, 150, 151, 152, 153,
+        {geqi,geqr,geqb,geqs,geqc}
+        149, 150, 151, 152, 153,
+        {grti,grtr,grtb,grts,grtc}
         20, 155, 156, 157, 158, 159,
+        {leqi,leqr,leqb,leqs,leqc}
         161, 162, 163, 164, 165,
+        {lesi,lesr,lesb,less,lesc}
         167, 168, 169, 170, 171: begin writeln(prr); getexp(ep); 
           popstk(ep^.r); popstk(ep^.l); pshstk(ep)
         end;
+
+        {brk}
+        19: ; { unused }
 
         {ord}
         59, 134, 136, 200: begin writeln(prr); getexp(ep); popstk(ep^.l);
@@ -2801,11 +2833,6 @@ procedure xlate;
 
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1) 
-        end;
-
-        {lpa}
-        114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); getexp(ep); 
-          pshstk(ep);
         end;
 
         {vbs}
