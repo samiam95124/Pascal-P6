@@ -16,15 +16,21 @@
 #
 # --pmach	  Generate mach code and run the result through pmach.
 # --cmach	  Generate mach code and run the result through cmach.
-# --package Generate a packaged application and run.
+# --package   Generate a packaged application and run.
 #
-# The intermediate code is placed in <file>.p6.
+# The intermediate code is placed in <file>.p6, where the <file> is the last
+# filename on the command line, which is considered the name of the program.
+# If a binary intermediate is selected (pmach, cmach or package mode), then the
+# intel hex format binary form of the P-machine code will be placed in
+# <file>.p6o, where <file> is the program name. For package mode, the final
+# executable will be placed under the program name.
 #
 
 pmach=0
 cmach=0
 progfile=""
 package=0
+options=""
 
 for param in "$@" 
 do
@@ -66,6 +72,11 @@ do
 		echo
 		exit 0
 		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
 	elif [ ! -z "$param.pas" ]; then
 
 	
@@ -76,30 +87,8 @@ do
 			
 		fi
 		echo Compiling $param...
-		if [ "$pmach" = "1" ]; then
-
-	        echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-	
-        elif [ "$cmach" = "1" ]; then
-
-            echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-
-        elif [ "$package" = "1" ]; then
-
-            echo "{\$e+}" > temp
-	        cat temp $param.pas > prd
-	        rm temp
-	        
-	    else
-	    
-	    	cp $param.pas prd
-	    	
-	    fi
-	    pcom
+	    cp $param.pas prd
+	    pcom $options
 	    mv prr $param.p6
 	    cat $param.p6 >> temp.p6
 		progfile="$param"
@@ -116,38 +105,52 @@ if [ -z "$progfile" ]; then
 fi
 
 #
+# Put intermediate under the program filename
+#
+mv temp.p6 $progfile.p6
+
+#
 # Run combined file
 #
 if [ "$pmach" = "1" ]; then
 
-	mv temp.p6 prd
-	pint
-    cp prr progfile.p6o
+	echo Running with pmach
+    echo "o e+" > temp
+	cat temp $progfile.p6 > prd
+    rm temp
+	pint $options
+    cp prr $progfile.p6o
 	mv prr prd
 	pmach
 	
 elif [ "$cmach" = "1" ]; then
 
-	mv temp.p6 prd
+	echo Running with cmach
+    echo "o e+" > temp
+	cat temp $progfile.p6 > prd
+    rm temp
 	pint
     cp prr $progfile.p6o
 	mv prr prd
-	cmach
+	cmach $options
 	
 elif [ "$package" = "1" ]; then
 
-	mv temp.p6 prd
+    echo Running in packaged mode
+    echo "o e+" > temp
+	cat temp $progfile.p6 > prd
+    rm temp
 	pint
     cp prr $progfile.p6o
 	mv $progfile.p6o prd
 	genobj
 	cp prr program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
-	./$progfile
+	./$progfile $options
 	
 else
 
-	mv temp.p6 prd
-	pint
+	cp $progfile.p6 prd
+	pint $options
 
 fi

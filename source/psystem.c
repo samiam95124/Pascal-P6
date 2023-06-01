@@ -4313,14 +4313,14 @@ void psystem_setuni(
 
 /** ****************************************************************************
 
-Find set inclusion
+Find set membership
 
 Finds if the element of the set exists. Expects the element number and the set.
 Returns true if the element is included, otherwise false.
 
 *******************************************************************************/
 
-boolean psystem_setinc(
+boolean psystem_setsin(
     /* set element */ long i,
     /* set  */        settype s
 )
@@ -4328,6 +4328,52 @@ boolean psystem_setinc(
 {
 
     return (!!(s[i/8] & 1<<i%8));
+
+}
+
+/** ****************************************************************************
+
+Find set equal
+
+Finds if the sets are equal. Returns true if the sets are equal, otherwise 
+false.
+
+*******************************************************************************/
+
+boolean psystem_setequ(
+    /* a set */ settype d,
+    /* set b */ settype b
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
+    return (TRUE);
+
+}
+
+/** ****************************************************************************
+
+Find set inclusion
+
+Finds if all of the elements of a are in b.
+
+*******************************************************************************/
+
+void psystem_setinc(
+    /* a set */ settype a,
+    /* set b */ settype b
+)
+
+{
+
+    long i;
+
+    for (i = 0; i < SETSIZE; i++)
+        if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
+    return (TRUE);
 
 }
 

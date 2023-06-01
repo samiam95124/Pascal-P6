@@ -79,7 +79,8 @@ cp prr %progfile%.p6o
 mv %progfile%.p6o prd
 genobj
 cp prr program_code.c
-gcc -DPACKAGE -DGPC=0 -DDOSRCLIN=0 -DDOCHKDEF=0 -I. -o %progfile% source/cmach.c
+rem gcc -DPACKAGE -DGPC=1 -DDORECYCL=0 -DDOSRCLIN=0 -DDOCHKDEF=1 -I. -o %progfile% source/cmach.c
+gcc -DPACKAGE -DGPC=1 -DDOSRCLIN=0 -DDOCHKDEF=1 -DDOCHKRPT=1 -g3 -I. -o %progfile% source/cmach.c
 	
 rem
 rem Terminate program

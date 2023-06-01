@@ -43,7 +43,7 @@ CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
-all: pcom pint pmach cmach genobj spew
+all: pcom pint pmach cmach pgen_gcc_AMD64 genobj spew
 
 pcom: source/pcom.pas
 	pascpp --linemacro source/pcom $(CPPFLAGS64LE)

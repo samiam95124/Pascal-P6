@@ -6,7 +6,7 @@
 #
 # Execution:
 #
-# run <file> [pmach|cmach|pint] [<inpfile>] <file>
+# run <file> [--pmach|--cmach|--pint] [<inpfile>] <file>
 #
 # <file> is the filename without extention.
 #
@@ -29,6 +29,7 @@ pmach=0
 cmach=0
 progfile=""
 inpfile=""
+options=""
 
 for param in "$@" 
 do
@@ -50,7 +51,7 @@ do
 		echo ""
 		echo "Execution:"
 		echo ""
-		echo "run <file> [pmach|cmach|pint] [<inpfile>] <file>"
+		echo "run <file> [--pmach|--cmach|--pint] [<inpfile>] <file>"
 		echo ""
 		echo "<file> is the filename without extention."
 		echo ""
@@ -73,6 +74,11 @@ do
         echo ""
 		goto stop
 		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
 	else
 	
 		inpfile="$progfile"
@@ -89,15 +95,15 @@ if [ -z "$progfile" ]; then
 	
 fi
 
-if [ ! -f "$param.p6" ]; then
+if [ ! -f "$progfile.p6" ]; then
 	
-	echo "$param.p6 does not exist"
+	echo "$progfile.p6 does not exist"
 	exit 1
 			
 fi
-if [ ! -f "$param.inp" ]; then
+if [ ! -f "$progfile.inp" ]; then
 		
-	echo "$param.inp does not exist"
+	echo "$progfile.inp does not exist"
 	exit 1
 			
 fi
@@ -105,28 +111,30 @@ fi
 if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
-    cp $progfile.p6 prd
+    echo "o e+" > temp
+    cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
     cat $progfile.p6o $inpfile > prd
-    pmach < $progfile.inp &> $progfile.lst
+    pmach $options < $progfile.inp &> $progfile.lst
     rm temp
     
 elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
-    cp $progfile.p6 prd
+    echo "o e+" > temp
+    cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
     cat $progfile.p6o $inpfile > prd
-    cmach < $progfile.inp &> $progfile.lst
+    cmach $options < $progfile.inp &> $progfile.lst
     rm temp
     
 else
 
 	echo Running with pint
     cat $progfile.p6 $inpfile > prd
-    pint < $progfile.inp &> $progfile.lst
+    pint $options < $progfile.inp &> $progfile.lst
     
 fi
 
