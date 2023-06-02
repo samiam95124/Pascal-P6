@@ -4341,7 +4341,7 @@ false.
 *******************************************************************************/
 
 boolean psystem_setequ(
-    /* a set */ settype d,
+    /* a set */ settype a,
     /* set b */ settype b
 )
 
@@ -4349,7 +4349,7 @@ boolean psystem_setequ(
 
     long i;
 
-    for (i = 0; i < SETSIZE; i++) if (s1[i] != s2[i]) return (FALSE);
+    for (i = 0; i < SETSIZE; i++) if (a[i] != b[i]) return (FALSE);
     return (TRUE);
 
 }
@@ -4362,7 +4362,7 @@ Finds if all of the elements of a are in b.
 
 *******************************************************************************/
 
-void psystem_setinc(
+boolean psystem_setinc(
     /* a set */ settype a,
     /* set b */ settype b
 )
@@ -4372,7 +4372,7 @@ void psystem_setinc(
     long i;
 
     for (i = 0; i < SETSIZE; i++)
-        if ((s1[i] & s2[i]) != s2[i]) return (FALSE);
+        if ((a[i] & b[i]) != b[i]) return (FALSE);
     return (TRUE);
 
 }
