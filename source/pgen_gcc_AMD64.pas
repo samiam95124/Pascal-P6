@@ -1590,9 +1590,10 @@ procedure xlate;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) 
           end;
 
-          {ord}
+          {ordi,ordb,ordc,ordx}
           59, 134, 136, 200: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, r1, r2)
           end;
 
           {lcp}
@@ -2232,8 +2233,7 @@ procedure xlate;
             62: wrtins20('cvtsd2si %1,%2      ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {chr}
-            60: ; { no-op }
-
+            60: ; { chr is no-op }
 
             {and,ior,xor}
             43,44,206: begin 
@@ -2636,7 +2636,6 @@ procedure xlate;
         {brk}
         19: ; { unused }
 
-************
         {ord}
         59, 134, 136, 200: begin writeln(prr); getexp(ep); popstk(ep^.l);
           pshstk(ep);
@@ -2654,7 +2653,7 @@ procedure xlate;
         33: begin writeln(prr); getexp(ep); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {flo]
+        {flo}
         34: begin writeln(prr); getexp(ep); popstk(ep^.l); popstk(ep^.r);
           pshstk(ep)
         end;
@@ -2676,7 +2675,7 @@ procedure xlate;
         40,41: begin writeln(prr); getexp(ep); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {notb,noti,odd,rnd,chr}
+        {notb,odd,chr,rnd,noti}
         42,50,60,62,205: begin writeln(prr); getexp(ep); popstk(ep^.l); 
           pshstk(ep)
         end;
@@ -2722,46 +2721,37 @@ procedure xlate;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movq %1,(%rax)       ', 0, 0, ep^.r1, rgnull, nil);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); getreg(ep^.t1, frereg);
+          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
 
         {strx,strb,strc} 
         195,73,74: begin
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movq %1,(%rax)       ', 0, 0, ep^.r1, rgnull, nil);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); getreg(ep^.t1, frereg);
+          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movb %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
 
         {strr}
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
-          genexp(ep);
-          wrtins20('movq $0,%rax         ', p, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('add $0,%rax          ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movsd %1,(%rax)      ', 0, 0, ep^.r1, rgnull, nil);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); getreg(ep^.t1, frereg);
+          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movsd %1,(%2)      ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
 
         {strs} 
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg-[rgrax], rgnull, rgnull); dmptre(ep);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep);
-          wrtins20('movq $0,%rax        ', ep^.p, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_base   ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('add $0,%rax         ', ep^.q, 0, rgnull, rgnull, nil);
-          wrtins20('movq %rax,%rdi      ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%rdi  ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
