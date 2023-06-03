@@ -2559,14 +2559,15 @@ procedure xlate;
               while ch in ['0'..'9'] do
                 begin i := i*10+ord(ch)-ord('0'); getnxt end;
               c := chr(i);
+              writeln(prr, i)
             end else begin
               if ch <> '''' then errorl('illegal character        ');
               getnxt;  c := ch;
               getnxt;
               if ch <> '''' then errorl('illegal character        ');
+              writeln(prr, '''', c, '''')
             end;
-            getexp(ep); ep^.vali := ord(ch); pshstk(ep);
-            writeln(prr)
+            getexp(ep); ep^.vali := ord(c); pshstk(ep)
           end;
 
           7: begin skpspc;
