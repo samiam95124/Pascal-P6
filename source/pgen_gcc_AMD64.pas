@@ -1853,13 +1853,13 @@ procedure xlate;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
-              wrtins20('movzx +0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('movzx ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
               wrtins20('movsd (%rax),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
@@ -1879,8 +1879,8 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
-              wrtins20('lea +0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('lea ^0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {adi}
@@ -2853,12 +2853,14 @@ procedure xlate;
         end;
 
         {ujp}
-        23: begin read(prd,q); writeln(prr, q:1);
+        23: begin labelsearch(def, val, sp); write(prr, 'l '); 
+          writevp(prr, sp); writeln(prr);
           frereg := allreg
         end;
 
         {fjp,tjp,xjp}
-        24,25,119: begin read(prd,q); writeln(prr, q:1); 
+        24,25,119: begin labelsearch(def, val, sp); write(prr, 'l '); 
+          writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
           dmptre(ep); deltre(ep); botstk 
         end;
