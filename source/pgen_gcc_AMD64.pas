@@ -634,7 +634,7 @@ procedure xlate;
         snl: 1..lablen;
         flablst: flabelp; { list of far labels }
         estack, efree: expptr;
-        frereg: regset;
+        frereg, allreg: regset;
         stacklvl: integer;
 
    procedure init;
@@ -998,10 +998,11 @@ procedure xlate;
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          estack := nil; stacklvl := 0; efree := nil;
-         frereg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
+         allreg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
                     rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
                     rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
-                    rgxmm14, rgxmm15 ];
+                    rgxmm14, rgxmm15];
+         frereg := allreg;
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -2722,8 +2723,8 @@ procedure xlate;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-          genexp(ep); getreg(ep^.t1, frereg);
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
           wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
@@ -2732,8 +2733,8 @@ procedure xlate;
         {strx,strb,strc} 
         195,73,74: begin
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-          genexp(ep); getreg(ep^.t1, frereg);
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
           wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movb %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
@@ -2741,8 +2742,8 @@ procedure xlate;
 
         {strr}
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-          genexp(ep); getreg(ep^.t1, frereg);
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
           wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movsd %1,(%2)      ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
@@ -2750,8 +2751,8 @@ procedure xlate;
 
         {strs} 
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-          genexp(ep);
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep);
           wrtins20('movq ^0(%rbp),%rdi  ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -2765,6 +2766,7 @@ procedure xlate;
         {sfr}
         245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
           writeln(prr);
+          frereg := allreg;
           if (def and (val <> 0)) or not def then
             wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp);
           parlvl := stacklvl { set parameter level active }
@@ -2773,6 +2775,7 @@ procedure xlate;
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
+          frereg := allreg;
           { process parameters }
           if stacklvl > parlvl then pshpar(estack, 1, stacklvl-parlvl);
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
@@ -2783,6 +2786,7 @@ procedure xlate;
         {cuv}
         27: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
+          frereg := allreg;
           wrtins10('call *@   ', 0, 0, rgnull, rgnull, sp)
         end;
 
@@ -2790,6 +2794,7 @@ procedure xlate;
         11: begin read(prd,p); labelsearch(def, val, sp); labelsearch(def2, val2, sp2);
           write(prr,p:1, ' l '); writevp(prr, sp); write(prr, ' l '); 
           writevp(prr, sp2); writeln(prr);
+          frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
@@ -2807,23 +2812,26 @@ procedure xlate;
         end;
 
         {cip} 
-        113: begin read(prd,p); writeln(prr,p:1); popstk(ep); dmptre(ep);
-          deltre(ep); botstk 
+        113: begin read(prd,p); writeln(prr,p:1); 
+          frereg := allreg; popstk(ep); dmptre(ep); deltre(ep); botstk 
         end;
 
         {mov}
-        55: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
-          popstk(ep2); dmptre(ep); dmptre(ep2); deltre(ep); deltre(ep2) 
+        55: begin read(prd,q); writeln(prr,q:1); 
+          frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
+          deltre(ep); deltre(ep2) 
         end;
 
         {dmp}
-        117: begin read(prd,q); writeln(prr,q:1); popstk(ep); 
+        117: begin read(prd,q); writeln(prr,q:1); 
+          frereg := allreg; popstk(ep); 
           wrtins10('popq %1   ', 0, 0, ep^.r1, rgnull, nil);
           dmptrel(ep, 19); deltre(ep); botstk 
         end;
 
         {sro}
         3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
+          frereg := allreg;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
@@ -2832,38 +2840,42 @@ procedure xlate;
         end;
 
         {apc}
-        178: begin writeln(prr); popstk(ep); popstk(ep2); dmptre(ep2); 
+        178: begin writeln(prr); 
+          frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep2); 
           dmptre(ep); deltre(ep2); deltre(ep); botstk  
         end; 
 
         {pck, upk}
-        63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); popstk(ep);
+        63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
+          frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
           deltre(ep); deltre(ep2); deltre(ep3); botstk 
         end;
 
         {ujp}
-        23: begin read(prd,q); writeln(prr, q:1) 
+        23: begin read(prd,q); writeln(prr, q:1);
+          frereg := allreg
         end;
 
         {fjp,tjp,xjp}
-        24,25,119: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
+        24,25,119: begin read(prd,q); writeln(prr, q:1); 
+          frereg := allreg; popstk(ep); 
           dmptre(ep); deltre(ep); botstk 
         end;
 
-        {ents}
-        13: begin labelsearch(def, val, sp); writeln(prr) 
+        {rip}
+        13: begin read(prd,q); writeln(prr);
+          frereg := allreg
         end;
 
-        {ente}
-        173: ; { we don't do stack overflow checking in this version }
-
         {ipj}
-        112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1) 
+        112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1);
+          frereg := allreg
         end;
 
         {vbs}
-        92: begin read(prd,q); writeln(prr, q:1); popstk(ep); 
+        92: begin read(prd,q); writeln(prr, q:1); 
+          frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
           wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull, nil);
@@ -2872,15 +2884,20 @@ procedure xlate;
         end;
 
         {vbe}
-        96: wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
+        96: begin 
+          frereg := allreg;
+          wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
+        end;
 
         {ret}
         22: begin writeln(prr);
+          frereg := allreg;
           wrtins20('ret       ', 0, 0, rgnull, rgnull, nil);
         end;
 
         {retp}
         14: begin read(prd,q); writeln(prr, q:1);
+          frereg := allreg;
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
@@ -2891,35 +2908,45 @@ procedure xlate;
         end;
 
         {reti,retr,retc,retb,reta,retx}
-        128, 129, 130, 131, 132, 204: begin writeln(prr); popstk(ep); 
-          dmptre(ep); deltre(ep); botstk
+        128, 129, 130, 131, 132, 204: begin writeln(prr); 
+          frereg := allreg;
+          botstk
         end;
 
         {vip,vis}
-        133, 122: writeln(prr); { ??? fill me in }
+        133, 122: begin writeln(prr); { ??? fill me in }
+          frereg := allreg
+        end;
 
         {vin}
-        226: writeln(prr); { ??? fill me in }
+        226: begin writeln(prr); { ??? fill me in }
+          frereg := allreg
+        end;
 
         {sto}
-        6, 80, 81, 82, 83, 84, 197: begin writeln(prr); popstk(ep); 
+        6, 80, 81, 82, 83, 84, 197: begin writeln(prr); 
+          frereg := allreg; popstk(ep); 
           popstk(ep2); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); 
           botstk
         end;
 
         {stp}
-        58:;
+        58:; { unused }
 
         {cke}
-        188: begin writeln(prr); popstk(ep); popstk(ep2); dmptre(ep2); 
+        188: begin writeln(prr); 
+          frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep2);
           dmptre(ep); deltre(ep); deltre(ep2); botstk 
         end;
 
         {inv}
-        189: begin writeln(prr); popstk(ep); dmptre(ep); deltre(ep); botstk
+        189: begin writeln(prr); 
+          frereg := allreg; popstk(ep); dmptre(ep); deltre(ep); botstk
         end;
 
-        61 {ujc}: writeln(prr);
+        61 {ujc}: begin writeln(prr);
+          frereg := allreg
+        end;
 
         { these are all Pascaline unimplemented }
 
