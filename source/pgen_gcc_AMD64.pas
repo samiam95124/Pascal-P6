@@ -1007,7 +1007,7 @@ procedure xlate;
 
    procedure errorl(string: beta); (*error in loading*)
    begin writeln;
-      writeln('*** Program load error: [', iline:1, '] ', string);
+      writeln('*** Program load error: [', sline:1, ',', iline:1, '] ', string);
       goto 1
    end; (*errorl*)
 
@@ -1758,12 +1758,10 @@ procedure xlate;
         $s - Immediate symbol
         %1 - Register 1
         %2 - register 2
-        +0 - Immediate integer 1
-        +1 - Immediate integer 2
+        +0 - Immediate integer 1 without leader
+        +1 - Immediate integer 2 without leader
         -0 - Immediate integer 1
         -1 - Immediate integer 2
-        ^0 - Immediate integer 1 without leader
-        ^1 - Immediate integer 2 without leader
         @  - Symbol
       }
       procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
@@ -1788,15 +1786,11 @@ procedure xlate;
             if si[i] = '1' then wrtreg(prr, r1) 
             else if si[i] = '2' then wrtreg(prr, r2)
             else write(prr, si[i])
-          end else if si[i] = '+' then begin next; write(prr, '+');
+          end else if si[i] = '+' then begin next;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
           end else if si[i] = '-' then begin next; write(prr, '-');
-            if si[i] = '0' then write(prr, i1:1) 
-            else if si[i] = '1' then write(prr, i2:1)
-            else write(prr, si[i])
-          end else if si[i] = '^' then begin next;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
@@ -1847,19 +1841,19 @@ procedure xlate;
 
             {lodi,loda}
             0,105: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq +0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq +0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
-              wrtins20('movzx ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('movzx +0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
               wrtins20('movsd (%rax),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
@@ -1879,8 +1873,8 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
-              wrtins20('lea ^0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq +0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('lea +0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {adi}
@@ -2725,7 +2719,7 @@ procedure xlate;
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq +0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
@@ -2735,7 +2729,7 @@ procedure xlate;
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq +0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movb %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
@@ -2744,7 +2738,7 @@ procedure xlate;
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq +0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movsd %1,(%2)      ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); botstk 
         end;
@@ -2753,7 +2747,7 @@ procedure xlate;
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          wrtins20('movq ^0(%rbp),%rdi  ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq +0(%rbp),%rdi  ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
