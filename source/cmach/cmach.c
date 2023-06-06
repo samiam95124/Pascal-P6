@@ -2602,7 +2602,8 @@ void sinins()
                   putadr(mp+MARKET, ep); /* place current ep */
                   break;
 
-    case 12 /*cup*/: /* q=entry point */
+    case 12 /*cup*/:
+    case 246 /*cuf*/: /* q=entry point */
                  getq(); pshadr(pc); pc = q;
                  break;
 
@@ -3155,7 +3156,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 
        252, 253, 254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

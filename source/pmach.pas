@@ -2712,7 +2712,8 @@ begin
                   putadr(mp+market, ep) { place current ep }
                 end;
 
-    12 (*cup*): begin (*q=entry point*)
+    12 (*cup*),
+    246 (*cup*): begin (*q=entry point*)
                  getq; pshadr(pc); pc := q
                 end;
 
@@ -3269,7 +3270,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
+    173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 252,
     253, 254, 255: errorv(InvalidInstruction)
 
   end

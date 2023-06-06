@@ -2129,6 +2129,7 @@ procedure load;
          instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
+         instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2821,7 +2822,8 @@ procedure load;
                                              storeq
                                        end;
 
-          12(*cup*): begin storeop; labelsearch; storeq end;
+          (*cup,cuf*)
+          12,246: begin storeop; labelsearch; storeq end;
 
           245(*sfr*): begin storeop; labelsearch; storeq end;
           11(*mst*): begin read(prd,p); storeop; storep; labelsearch; storeq;
@@ -4721,7 +4723,8 @@ begin
                   putadr(mp+market, ep) { place current ep }
                 end;
 
-    12 (*cup*): begin (*q=entry point*)
+    12 (*cup*),
+    246 (*cuf*): begin (*q=entry point*)
                  getq; pshadr(pc); pc := q
                 end;
 
@@ -5289,7 +5292,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 246, 247, 248, 249, 250, 251, 252,
+    173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 252,
     253, 254, 255: errorv(InvalidInstruction)
 
   end

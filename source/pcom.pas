@@ -182,7 +182,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 121;  { maximum number of instructions }
+   maxins     = 122;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3436,7 +3436,7 @@ begin cmdpos := maxcmd end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
-  procedure gencup(fop: oprange; fp1,fp2: integer; fcp: ctp);
+  procedure gencupcuf(fop: oprange; fp1,fp2: integer; fcp: ctp);
   begin
     if prcode then
       begin
@@ -5735,7 +5735,10 @@ begin cmdpos := maxcmd end;
                   end
                 end else begin
                   if inherit then error(234);
-                  gencup(46(*cup*),locpar,pfname,fcp)
+                  if fcp^.klass = func then 
+                    gencupcuf(122(*cuf*),locpar,pfname,fcp)
+                  else
+                    gencupcuf(46(*cup*),locpar,pfname,fcp)
                 end;
                 mesl(-lsize)
               end
@@ -5852,7 +5855,7 @@ begin cmdpos := maxcmd end;
       begin gen0(10(*flt*)); gattr.typtr := realptr end;
     fixpar(sp,gattr.typtr);
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencup(46(*cup*),locpar,fcp^.pfname,fcp);
+    gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp);
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -5910,7 +5913,7 @@ begin cmdpos := maxcmd end;
       fixpar(rsp,gattr.typtr);
     end else gen2(116(*cpp*),lsize,locpar); { get both params }
     if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
-    gencup(46(*cup*),locpar,fcp^.pfname,fcp);
+    gencupcuf(122(*cuf*),locpar,fcp^.pfname,fcp);
     gen2(117(*cpr*),lsize,locpars);
     gattr.typtr := fcp^.idtype
   end;
@@ -9148,12 +9151,12 @@ begin cmdpos := maxcmd end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
-          gencup(46(*cup*),0,entname,nil);
+          gencupcuf(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname);
-            gencup(46(*cup*),0,extname,nil)
+            gencupcuf(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
@@ -9855,7 +9858,7 @@ begin cmdpos := maxcmd end;
       mn[108] :='spc'; mn[109] :='ccs'; mn[110] :='scp'; mn[111] :='ldp';
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
-      mn[120] :='wbe'; mn[121] :='sfr';
+      mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf';
 
     end (*instrmnemonics*) ;
 
@@ -10046,6 +10049,7 @@ begin cmdpos := maxcmd end;
       cdx[116] := 0;                    cdx[117] := 0;
       cdx[118] := -adrsize;             cdx[119] := 0;
       cdx[120] := 0;                    cdx[121] := 0;
+      cdx[122] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
