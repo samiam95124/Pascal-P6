@@ -613,12 +613,14 @@ procedure xlate;
                     r1, r2, r3: reg; { result registers }
                     t1, t2: reg; { temporary registers }
                     l, r: expptr; { right and left links }
-                    x1:   expptr; { extra link }
+                    x1: expptr; { extra link }
+                    pl: expptr; { parameter link for functions }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
                     rs: regset; { push/pop mask }
                     keep: boolean; { hold this value }
+                    fn: strvsp; { function call name }
                   end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
@@ -901,6 +903,7 @@ procedure xlate;
          instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
+         instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -1317,8 +1320,9 @@ procedure xlate;
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
-        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.r1 := rgnull; 
-        ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; ep^.keep := false
+        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.pl := nil;
+        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; 
+        ep^.keep := false
       end;
       
       procedure putexp(ep: expptr);
@@ -1355,11 +1359,14 @@ procedure xlate;
       begin
         if ep^.l <> nil then deltre(ep^.l);
         if ep^.r <> nil then deltre(ep^.r);
+        if ep^.pl <> nil then deltre(ep^.pl);
         putexp(ep)
       end;
       
       procedure dmptrel(ep: expptr; lvl: integer);
+      var l: expptr;
       begin
+        writeln(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
         if ep^.l <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'Left:');
           dmptrel(ep^.l, lvl+3);
@@ -1372,7 +1379,14 @@ procedure xlate;
           writeln(prr, '# ', ' ': lvl, 'xtra1:');
           dmptrel(ep^.x1, lvl+3);
         end;
-        writeln(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
+        if ep^.pl <> nil then begin
+          l := ep^.pl;
+          while l <> nil do begin
+            writeln(prr, '# ', ' ': lvl, 'Parameter:');
+            dmptrel(l, lvl+3);
+            l := l^.pl
+          end
+        end
       end;
 
       procedure dmptre(ep: expptr);
@@ -1414,6 +1428,24 @@ procedure xlate;
       begin
         if not (r in rf) and (r <> r1) and (r <> r2) then 
           begin ep^.rs := ep^.rs+[r]; rf := rf-[r] end
+      end;
+
+      { assign registers to parameters in call }
+      procedure asspar(ep: expptr; pn, pc: integer);
+      begin
+        if pc > 0 then begin { there are parameters }
+          if (ep <> nil) and (pn < 6) and (pc > 1) then 
+            asspar(ep^.pl, pn+1, pc-1);
+          if pn > 6 then assreg(ep, rf, rgnull, rgnull)
+          else case pn of
+            1: assreg(ep, rf, rgrdi, rgnull);
+            2: assreg(ep, rf, rgrsi, rgnull);
+            3: assreg(ep, rf, rgrdx, rgnull);
+            4: assreg(ep, rf, rgrcx, rgnull);
+            5: assreg(ep, rf, rgr8, rgnull);
+            6: assreg(ep, rf, rgr9, rgnull)
+          end
+        end
       end;
 
       begin
@@ -1747,6 +1779,13 @@ procedure xlate;
             if sppar[ep^.q] >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
             if sppar[ep^.q] >= 1 then assreg(ep, frereg, rgrcx, rgnull)
           end;
+ 
+          {cuf}
+          246: begin 
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
+            asspar(ep^.pl, 1, ep^.q)
+          end;
 
         end
       end;
@@ -1832,6 +1871,24 @@ procedure xlate;
 
       procedure genexp(ep: expptr);
       var r: reg;
+
+      { push parameters to call depth first }
+      procedure pshpar(ep: expptr);
+      begin
+        if ep <> nil then begin
+          pshpar(ep^.pl);
+          dmptrel(ep, 1); genexp(ep);
+          if ep^.r2 <> rgnull then
+            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil);
+          if ep^.r1 in [rgrax..rgr15] then
+            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil);
+          if ep^.r1 in [rgxmm0..rgxmm15] then begin
+            wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull, nil);
+            wrtins20('movsd %1,(%esp)     ', 0, 0, ep^.r1, rgnull, nil)
+          end
+        end
+      end;
+
       begin
         if ep <> nil then begin
           genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
@@ -2310,6 +2367,12 @@ procedure xlate;
             {csp}
             15: callsp(ep);
 
+            {cuf}
+            246: begin
+              pshpar(ep^.pl); { process parameters first }
+              wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
+            end;
+
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
             wrtins20('pop %1              ', 0, 0, r, rgnull, nil)
@@ -2696,8 +2759,27 @@ procedure xlate;
         184: errorl('Operator not implemented');
 
         {cks}
-        187: begin writeln(prr); getexp(ep); popstk(ep^.l); getexp(ep^.r); 
-          pshstk(ep)
+        187: begin writeln(prr); 
+          getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep)
+        end;
+
+        {cuf}
+        246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
+          writeln(prr);
+          getexp(ep);
+          ep^.q := stacklvl-parlvl; ep^.fn := sp;
+          { pull parameters into list }
+          ep2 := nil;
+          i := ep^.q;
+          while i > 0 do 
+            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
+          { reverse into parameter list }
+          while ep2 <> nil do
+            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
+                  ep^.pl := ep3 
+            end;
+          pshstk(ep);
+          parlvl := maxint { set parameter level inactive }
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -2731,7 +2813,6 @@ procedure xlate;
           wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
           poppar(stacklvl-parlvl);
           parlvl := maxint { set parameter level inactive }
-{how does cup push a result?}
         end;
 
         {cuv}
