@@ -6,4 +6,4 @@ compile $1
 cp $1.p6 prd
 pgen
 cp prr $1.s
-#gcc -g3 source/psystem.c $1.s -o $1 -lm
+gcc -g3 source/psystem.c $1.s -o $1 -lm

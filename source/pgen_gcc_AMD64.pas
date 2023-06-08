@@ -1800,10 +1800,12 @@ procedure xlate;
         $s - Immediate symbol
         %1 - Register 1
         %2 - register 2
-        +0 - Immediate integer 1 without leader
-        +1 - Immediate integer 2 without leader
+        +0 - Immediate integer 1
+        +1 - Immediate integer 2
         -0 - Immediate integer 1
         -1 - Immediate integer 2
+        ^0 - Immediate integer 1 without leader
+        ^1 - Immediate integer 2 without leader
         @  - Symbol
       }
       procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
@@ -1828,11 +1830,15 @@ procedure xlate;
             if si[i] = '1' then wrtreg(prr, r1) 
             else if si[i] = '2' then wrtreg(prr, r2)
             else write(prr, si[i])
-          end else if si[i] = '+' then begin next;
+          end else if si[i] = '+' then begin next; write(prr, '+');
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
           end else if si[i] = '-' then begin next; write(prr, '-');
+            if si[i] = '0' then write(prr, i1:1) 
+            else if si[i] = '1' then write(prr, i2:1)
+            else write(prr, si[i])
+          end else if si[i] = '^' then begin next;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
@@ -2770,7 +2776,8 @@ procedure xlate;
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           getexp(ep);
-          ep^.q := stacklvl-parlvl; ep^.fn := sp;
+          ep^.q := 0;
+          if stacklvl > parlvl then ep^.q := stacklvl-parlvl; ep^.fn := sp;
           { pull parameters into list }
           ep2 := nil;
           i := ep^.q;
@@ -2836,7 +2843,8 @@ procedure xlate;
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           getexp(ep);
-          ep^.q := stacklvl-parlvl; ep^.fn := sp;
+          ep^.q := 0;
+          if stacklvl > parlvl then ep^.q := stacklvl-parlvl; ep^.fn := sp;
           { pull parameters into list }
           ep2 := nil;
           i := ep^.q;
@@ -2853,14 +2861,12 @@ procedure xlate;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-;writeln(prr, 'stri: begin: ', depth:1);
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
           wrtins20('movq +0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
           wrtins20('movq %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); 
           botstk 
-;writeln(prr, 'stri: end: ');
         end;
 
         {strx,strb,strc} 
