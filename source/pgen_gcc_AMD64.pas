@@ -1787,6 +1787,9 @@ procedure xlate;
             asspar(ep^.pl, 1, ep^.q)
           end;
 
+          {cup}
+          12: asspar(ep^.pl, 1, ep^.q);
+
         end
       end;
 
@@ -2367,8 +2370,8 @@ procedure xlate;
             {csp}
             15: callsp(ep);
 
-            {cuf}
-            246: begin
+            {cup,cuf}
+            12, 246: begin
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
             end;
@@ -2804,17 +2807,6 @@ procedure xlate;
           parlvl := stacklvl { set parameter level active }
         end;
 
-        {cup}
-        12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          writeln(prr);
-          frereg := allreg;
-          { process parameters }
-          if stacklvl > parlvl then pshpar(estack, 1, stacklvl-parlvl);
-          wrtins10('call @    ', 0, 0, rgnull, rgnull, sp);
-          poppar(stacklvl-parlvl);
-          parlvl := maxint { set parameter level inactive }
-        end;
-
         {cuv}
         27: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
@@ -2839,6 +2831,25 @@ procedure xlate;
         end;
 
         { *** terminals *** }
+
+        {cup}
+        12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
+          writeln(prr);
+          getexp(ep);
+          ep^.q := stacklvl-parlvl; ep^.fn := sp;
+          { pull parameters into list }
+          ep2 := nil;
+          i := ep^.q;
+          while i > 0 do 
+            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
+          { reverse into parameter list }
+          while ep2 <> nil do
+            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
+                  ep^.pl := ep3 
+            end;
+          frereg := allreg; dmptre(ep); genexp(ep); deltre(ep);
+          parlvl := maxint { set parameter level inactive }
+        end;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
