@@ -3,6 +3,7 @@
 #
 
 compile $1
+cat $1.err
 cp $1.p6 prd
 pgen
 cp prr $1.s
