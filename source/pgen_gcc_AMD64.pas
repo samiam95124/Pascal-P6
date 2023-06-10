@@ -3010,6 +3010,7 @@ procedure xlate;
         22: begin writeln(prr);
           frereg := allreg;
           wrtins20('ret       ', 0, 0, rgnull, rgnull, nil);
+          botstk
         end;
 
         {retp}
@@ -3024,9 +3025,32 @@ procedure xlate;
           botstk
         end;
 
-        {reti,retr,retc,retb,reta,retx}
-        128, 129, 130, 131, 132, 204: begin writeln(prr); 
+        {reti,reta,retx,retc,retb}
+        128,132,204,130,131: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
+          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
+          if (op = 130{retc}) or (op = 131{retb}) then
+            wrtins20('andq $0,%rax        ', 255, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          botstk
+        end;
+
+        {retr}
+        129: begin read(prd,q); writeln(prr, q:1);
+          frereg := allreg;
+          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
+          wrtins20('movsd (%rsp),%xmm0  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
 
