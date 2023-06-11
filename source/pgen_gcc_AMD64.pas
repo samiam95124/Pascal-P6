@@ -615,12 +615,14 @@ procedure xlate;
                     l, r: expptr; { right and left links }
                     x1: expptr; { extra link }
                     pl: expptr; { parameter link for functions }
+                    sl: expptr; { sfr start link }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
                     rs: regset; { push/pop mask }
                     keep: boolean; { hold this value }
                     fn: strvsp; { function call name }
+                    lb: strvsp; { label for sfr }
                   end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
@@ -2368,18 +2370,26 @@ procedure xlate;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
             181, 182, 183, 184, 185, 186: 
-              wrtins20('movq %2,%1         ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
+              wrtins10('movq %2,%1', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
 
             {cks}
-            187: wrtins10('xorq %1,%1          ', 0, 0, ep^.r^.r1, rgnull, nil);
+            187: wrtins10('xorq %1,%1', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {csp}
             15: callsp(ep);
 
+            {sfr}
+            245:
+              if ep^.lb <> nil then 
+                wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, ep^.lb);
+
             {cup,cuf}
             12, 246: begin
+              genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
+              if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
+                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
           end;
@@ -2772,6 +2782,15 @@ procedure xlate;
           getexp(ep); popstk(ep^.l); getexp(ep^.r); pshstk(ep)
         end;
 
+        {sfr}
+        245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
+          writeln(prr);
+          getexp(ep); pshstk(ep); 
+          ep^.lb := nil;
+          if (def and (val <> 0)) or not def then ep^.lb := sp;
+          parlvl := stacklvl { set parameter level active }
+        end;
+
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
@@ -2788,6 +2807,8 @@ procedure xlate;
             begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
                   ep^.pl := ep3 
             end;
+          popstk(ep^.sl); { get sfr start }
+          if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
           pshstk(ep);
           parlvl := maxint { set parameter level inactive }
         end;
@@ -2803,15 +2824,6 @@ procedure xlate;
           getexp(ep); 
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else callsp(ep) { terminal, execute here }
-        end;
-
-        {sfr}
-        245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
-          writeln(prr);
-          frereg := allreg;
-          if (def and (val <> 0)) or not def then
-            wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, sp);
-          parlvl := stacklvl { set parameter level active }
         end;
 
         {cuv}
@@ -2855,6 +2867,8 @@ procedure xlate;
             begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
                   ep^.pl := ep3 
             end;
+          popstk(ep^.sl); { get sfr start }
+          if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
           parlvl := maxint { set parameter level inactive }

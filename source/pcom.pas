@@ -9125,6 +9125,7 @@ begin cmdpos := maxcmd end;
 
   procedure modulep{(fsys:setofsys)};
     var extfp,newfl:extfilep; segsize, stackbot: integer;
+        nulllab: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname);
     genlabel(extname); genlabel(nxtname);
@@ -9151,12 +9152,13 @@ begin cmdpos := maxcmd end;
           end;
           insymbol;
           { mark stack, generate call to startup block }
+          genlabel(nulllab); gensfr(nulllab);
           gencupcuf(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
               module }
             genujpxjpcal(89(*cal*),nxtname);
-            gencupcuf(46(*cup*),0,extname,nil)
+            gensfr(nulllab); gencupcuf(46(*cup*),0,extname,nil)
           end;
           gen0(90(*ret*)) { return last module stack }
         end;
