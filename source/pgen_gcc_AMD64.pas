@@ -1322,9 +1322,9 @@ procedure xlate;
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep); 
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
-        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.pl := nil;
-        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; 
-        ep^.keep := false
+        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
+        ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
+        ep^.rs := []; ep^.keep := false
       end;
       
       procedure putexp(ep: expptr);
@@ -1380,6 +1380,10 @@ procedure xlate;
         if ep^.x1 <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'xtra1:');
           dmptrel(ep^.x1, lvl+3);
+        end;
+        if ep^.sl <> nil then begin
+          writeln(prr, '# ', ' ': lvl, 'call start:');
+          dmptrel(ep^.sl, lvl+3);
         end;
         if ep^.pl <> nil then begin
           l := ep^.pl;
@@ -2878,8 +2882,8 @@ procedure xlate;
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
-          wrtins20('movq %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); 
           botstk 
         end;
@@ -2889,8 +2893,8 @@ procedure xlate;
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
-          wrtins20('movb %1,(%2)       ', 0, 0, ep^.r1, ep^.t1, nil);
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
+          wrtins20('movb %1,^0(%2)      ', q, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); 
           botstk 
         end;
@@ -2899,8 +2903,8 @@ procedure xlate;
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', q, 0, ep^.t1, rgnull, nil);
-          wrtins20('movsd %1,(%2)      ', 0, 0, ep^.r1, ep^.t1, nil);
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
+          wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, ep^.t1, nil);
           deltre(ep); 
           botstk 
         end;
@@ -2909,7 +2913,8 @@ procedure xlate;
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          wrtins20('movq ^0(%rbp),%rdi  ', q, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%rdi  ', p, 0, ep^.t1, rgnull, nil);
+          wrtins20('lea %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -2931,7 +2936,6 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
           wrtins20('enter $1,$0        ', p, 0, rgnull, rgnull, nil); { enter frame }
-          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, nil); { push new mp }
           wrtins20('movq %rbp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy mp }
           wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp); { find mp-locals }
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }

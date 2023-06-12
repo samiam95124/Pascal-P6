@@ -9153,6 +9153,7 @@ begin cmdpos := maxcmd end;
           insymbol;
           { mark stack, generate call to startup block }
           genlabel(nulllab); gensfr(nulllab);
+          if prcode then begin prtlabel(nulllab); writeln(prr,'=0') end;
           gencupcuf(46(*cup*),0,entname,nil);
           if curmod = mtmodule then begin
             { for module we need call next in module stack, then call exit
