@@ -5509,7 +5509,7 @@ begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
      ba := s; i := 1; f := true;
      while (s <= e) and (i <= 16) do begin
        if (bs[i] <> store[s]) or not bd[i] then f := false;
-       bs[i] := store[s]; bd[i] := true; s := s+1; i := i+1
+       bs[i] := store[s]; bd[i] := getdef(s); s := s+1; i := i+1
      end;
      if not f or (i < 16) then begin
        if l then begin
@@ -5518,8 +5518,11 @@ begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
          for x := 1 to 16 do write('** ');
        end;
        writeln; wrthex(output, ba, maxdigh, true); write(': ');
-       for x := 1 to i-1 do
-         begin wrthex(output, bs[x], 2, true); write(' ') end;
+       for x := 1 to i-1 do begin
+         if bd[x] then wrthex(output, bs[x], 2, true)
+         else write('UU');
+         write(' ') 
+       end;
        l := false
      end else l := true
    end;
@@ -6711,13 +6714,13 @@ begin
     skpspc(dbc); 
     if not chkend(dbc) then begin 
       expr(i); s := i; 
-      if maxtop-s+1 < 255 then e := maxtop-s+1 else e := s+255 
+      if s+255 > maxstr then e := maxstr else e := s+255 
     end;
     skpspc(dbc);
-    if chkchr(dbc) = ':' then
-      begin nxtchr(dbc); expr(i); e := s+i-1 end
-    else if not chkend(dbc) then begin expr(i); e := i end;
-    if e > maxstr then e := maxstr;
+    if chkchr(dbc) = ':' then begin
+      nxtchr(dbc); expr(i); 
+      if s+i-1 > maxstr then e := maxstr else e := s+i-1
+    end else if not chkend(dbc) then begin expr(i); e := i end;
     wrtnewline; writeln;
     dmpmem(s, e);
     writeln
