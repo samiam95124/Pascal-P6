@@ -231,7 +231,7 @@ lia
 s
 li @pc:20
 ! trace at the top of the for loop, and break the line after
-tpi $27de
+tpi $27f9
 b 222
 r
 
