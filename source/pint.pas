@@ -5532,6 +5532,15 @@ begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
          else write('UU');
          write(' ') 
        end;
+       for x := i to 16 do write('   ');
+       write('  ');
+       for x := 1 to i-1 do begin
+         if bd[x] then begin
+           if (bs[x] >= ord(' ')) and (bs[x] < 128) then write(chr(bs[x]))
+           else write('.')
+         end else write('U');
+         write(' ') 
+       end;       
        l := false
      end else l := true
    end;
