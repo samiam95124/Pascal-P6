@@ -536,6 +536,13 @@ type
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
       optinx = 1..optlen;
       optstr = packed array [optinx] of char;
+      { debug commands }
+      dbgcmd = (dcnone, dcli, dcd, dcds, dcdd, dcdf, dcb, dctp, dcbi, dctpi, 
+                dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss, dcp, dce, dcst, 
+                dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp, dchs, dcti, 
+                dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic, dcnic, 
+                dcan, dcnan, dcps, dcr, dcq, dch, dchelp, dclistline, 
+                dcdumpsymbo);
 
 var   pc, pcs     : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -671,6 +678,7 @@ var   pc, pcs     : address;   (*program address register*)
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
       breakflag   : boolean; { user break signaled }
+      dbgcmds     : array [dbgcmd] of alfa; { debug command strings }
 
       i           : integer;
       c1          : char;
@@ -5321,7 +5329,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
 var dbc: parctl; cn: alfa; dbgend: boolean; i,x,l,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
-    fw: wthnum; undef: boolean; c: char;
+    fw: wthnum; undef: boolean; c: char; dc: dbgcmd;
 
 procedure error(e: errcod);
 
@@ -6679,517 +6687,532 @@ begin
   dotrcins := dotrcinss
 end;
 
-procedure dbgins;
+procedure dbgins(dc: dbgcmd);
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
     eres: expres; deffld: boolean; brk: boolean; sls: integer;
 begin
-  if cn = 'li        ' then begin { list instructions }
-    s := 0; e := lsttop-1; l := 10;
-    skpspc(dbc);
-    if not chkend(dbc) then begin expr(i); s := i end;
-    skpspc(dbc);
-    if chkchr(dbc) = ':' then
-      begin nxtchr(dbc); expr(i); l := i end
-    else if not chkend(dbc) then begin expr(i); e := i; l := maxint end;
-    if e > lsttop-1 then e := lsttop-1;
-    wrtnewline; writeln;
-    writeln('Addr    Op Ins            P  Q');
-    writeln('----------------------------------');
-    while (s <= e) and (l > 0) and not chkbrk do begin
-      if isbrk(s) then write('b')
-      else if istrc(s) then write('t')
-      else write(' ');
-      if pc = s then write('*') else write(' ');
-      if getcov(s) then write('c') else write(' ');
-      write(' ');
-      wrthex(output, s, maxdigh, true);
-      lstins(s);
+  case dc of { command }
+    dcli: begin { list instructions }
+      s := 0; e := lsttop-1; l := 10;
+      skpspc(dbc);
+      if not chkend(dbc) then begin expr(i); s := i end;
+      skpspc(dbc);
+      if chkchr(dbc) = ':' then
+        begin nxtchr(dbc); expr(i); l := i end
+      else if not chkend(dbc) then begin expr(i); e := i; l := maxint end;
+      if e > lsttop-1 then e := lsttop-1;
+      wrtnewline; writeln;
+      writeln('Addr    Op Ins            P  Q');
+      writeln('----------------------------------');
+      while (s <= e) and (l > 0) and not chkbrk do begin
+        if isbrk(s) then write('b')
+        else if istrc(s) then write('t')
+        else write(' ');
+        if pc = s then write('*') else write(' ');
+        if getcov(s) then write('c') else write(' ');
+        write(' ');
+        wrthex(output, s, maxdigh, true);
+        lstins(s);
+        writeln;
+        l := l-1
+      end
+    end;
+    dcd: begin { dump memory }
+      s := 0; e := 255;
+      skpspc(dbc); 
+      if not chkend(dbc) then begin 
+        expr(i); s := i; 
+        if s+255 > maxstr then e := maxstr else e := s+255 
+      end;
+      skpspc(dbc);
+      if chkchr(dbc) = ':' then begin
+        nxtchr(dbc); expr(i); 
+        if s+i-1 > maxstr then e := maxstr else e := s+i-1
+      end else if not chkend(dbc) then begin expr(i); e := i end;
+      wrtnewline; writeln;
+      dmpmem(s, e);
+      writeln
+    end;
+    dcds: begin { dump storage specs }
+      wrtnewline; writeln;
+      writeln('Storage areas occupied');
       writeln;
-      l := l-1
-    end
-  end else if cn = 'd         ' then begin { dump memory }
-    s := 0; e := 255;
-    skpspc(dbc); 
-    if not chkend(dbc) then begin 
-      expr(i); s := i; 
-      if s+255 > maxstr then e := maxstr else e := s+255 
+      write('Program     '); prtrng(0, cststr-1);
+      write('Constants   '); prtrng(cststr, pctop-1);
+      write('Globals     '); prtrng(pctop, gbtop-1);
+      write('Stack/Heap  '); prtrng(gbtop, maxstr);
+      writeln
     end;
-    skpspc(dbc);
-    if chkchr(dbc) = ':' then begin
-      nxtchr(dbc); expr(i); 
-      if s+i-1 > maxstr then e := maxstr else e := s+i-1
-    end else if not chkend(dbc) then begin expr(i); e := i end;
-    wrtnewline; writeln;
-    dmpmem(s, e);
-    writeln
-  end else if cn = 'ds        ' then begin { dump storage specs }
-    wrtnewline; writeln;
-    writeln('Storage areas occupied');
-    writeln;
-    write('Program     '); prtrng(0, cststr-1);
-    write('Constants   '); prtrng(cststr, pctop-1);
-    write('Globals     '); prtrng(pctop, gbtop-1);
-    write('Stack/Heap  '); prtrng(gbtop, maxstr);
-    writeln
-  end else if cn = 'dd        ' then begin { dump displays }
-    if noframe then
-      begin wrtnewline; writeln; writeln('No displays active'); writeln end
-    else begin
-      i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
-      s := mp;
-      repeat dmpdsp(s); e := s; s := getadr(s); i := i-1
-      until (i = 0) or lastframe(e) or chkbrk
-    end
-  end else if (cn = 'df        ') then begin
-    if noframe then
-      begin wrtnewline; writeln; writeln('No displays active'); writeln end
-    else begin
-      i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
-      s := mp; pcs := pc; eps := getadr(s+market);
-      repeat dmpfrm(s, eps, pcs); pcs := getadr(s+adrsize+marksize);
-        e := s; s := getadr(s);
-        if not lastframe(e) then begin eps := getadr(s+market); i := i-1 end
-      until (i = 0) or lastframe(e) or chkbrk
-    end
-  end else if (cn = 'b         ') or
-              (cn = 'tp        ') then begin
-    { place breakpoint/tracepoint source }
-    fndmnm(bp); { find if module specified }
-    if bp = nil then begin { none found }
-      setcur; bp := curmod; { set module as current }
-    end;
-    fndrot(bp2); { see if routine name }
-    if bp2 <> nil then s := bp2^.bstart
-    else begin { not a routine, get line no }
-      expr(l); if l > maxsrc then error(einvsln);
-      if bp^.lintrk^[l] < 0 then error(einvsln);
-      s := bp^.lintrk^[l]
-    end;
-    skplmk(s); { skip preceeding line markers }
-    skpmst(s); { skip mst instruction to start frame }
-    skplmk(s); { skip trailing line markers }
-    l := addr2line(bp, s);
-    x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-    if x = 0 then error(ebktblf);
-    brktbl[x].sa := s; brktbl[x].line := l;
-    brktbl[x].trace := cn = 'tp        '
-  end else if (cn = 'bi        ') or
-              (cn = 'tpi       ') then begin
-    { place breakpoint/tracepoint instruction }
-    expr(i); s := i;
-    x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-    if x = 0 then error(ebktblf);
-    l := 0;
-    if curmod <> nil then l := addr2line(curmod, s);
-    brktbl[x].sa := s; brktbl[x].line := l;
-    brktbl[x].trace := cn = 'tpi       '
-  end else if cn = 'c         ' then begin { clear breakpoint }
-    skpspc(dbc); if not chkend(dbc) then begin
-      expr(i); s := i; i := 0;
-      for i := 1 to maxbrk do if brktbl[i].sa = s then x := i;
-      if i = 0 then error(enbpaad);
-      brktbl[x].sa := -1
-    end else for i := 1 to maxbrk do brktbl[i].sa := -1
-  end else if cn = 'lb        ' then begin { list breakpoints }
-    wrtnewline; writeln;
-    writeln('Breakpoints:');
-    writeln;
-    writeln('No  Src  Addr   Trc/brk');
-    writeln('=======================');
-    for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
-      if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
-      else write(i:2, ':****', ': ');
-      wrthex(output, brktbl[i].sa, maxdigh, true); write(' ');
-      if brktbl[i].trace then write('t') else write('b'); writeln;
-    end;
-    writeln
-  end else if (cn = 'si        ') or
-              (cn = 'sis       ') then begin { step instruction }
-    i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
-    while (i > 0) and not chkbrk do begin
-      sinins;
-      if watchmatch then begin watchmatch := false; prtwth end;
-      if cn = 'si        ' then prthdr; i := i-1;
-      { if we hit break or stop, just stay on that instruction }
-      if breakins then begin
-        writeln('*** Break instruction hit');
-        pc := pc-1; i := 0
-      end else if stopins then begin
-        writeln('*** Stop instruction hit');
-        pc := pc-1; i := 0
+    dcdd: begin { dump displays }
+      if noframe then
+        begin wrtnewline; writeln; writeln('No displays active'); writeln end
+      else begin
+        i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
+        s := mp;
+        repeat dmpdsp(s); e := s; s := getadr(s); i := i-1
+        until (i = 0) or lastframe(e) or chkbrk
       end
-    end
-  end else if (cn = 'l         ') or
-              (cn = 'lc        ') then begin { list source }
-    fndmnm(bp); { find if module specified }
-    if bp = nil then { none found }
-      begin setcur; if curmod = nil then error(emodmba); bp := curmod end;
-    s := 0; e := 10;
-    skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i; e := s+10-1 end;
-    skpspc(dbc);
-    if chkchr(dbc) = ':' then
-      begin nxtchr(dbc); expr(i); e := s+i-1 end
-    else if not chkend(dbc) then begin expr(i); e := i end;
-    wrtnewline; writeln;
-    prtsrc(bp, s, e, cn = 'lc        ');
-    writeln
-  end else if (cn = 's         ') or
-              (cn = 'ss        ') then begin { step source line }
-    i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
-    sls := srclin; { save current source line }
-    while i > 0 do begin
-      repeat
-        stopins := false; { set no stop flag }
-        sourcemark := false; { set no source line instruction }
-        watchmatch := false; { set no watch was matched }
+    end;
+    dcdf: begin
+      if noframe then
+        begin wrtnewline; writeln; writeln('No displays active'); writeln end
+      else begin
+        i := maxint; skpspc(dbc); if not chkend(dbc) then expr(i);
+        s := mp; pcs := pc; eps := getadr(s+market);
+        repeat dmpfrm(s, eps, pcs); pcs := getadr(s+adrsize+marksize);
+          e := s; s := getadr(s);
+          if not lastframe(e) then begin eps := getadr(s+market); i := i-1 end
+        until (i = 0) or lastframe(e) or chkbrk
+      end
+    end;
+    dcb,dctp: begin
+      { place breakpoint/tracepoint source }
+      fndmnm(bp); { find if module specified }
+      if bp = nil then begin { none found }
+        setcur; bp := curmod; { set module as current }
+      end;
+      fndrot(bp2); { see if routine name }
+      if bp2 <> nil then s := bp2^.bstart
+      else begin { not a routine, get line no }
+        expr(l); if l > maxsrc then error(einvsln);
+        if bp^.lintrk^[l] < 0 then error(einvsln);
+        s := bp^.lintrk^[l]
+      end;
+      skplmk(s); { skip preceeding line markers }
+      skpmst(s); { skip mst instruction to start frame }
+      skplmk(s); { skip trailing line markers }
+      l := addr2line(bp, s);
+      x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
+      if x = 0 then error(ebktblf);
+      brktbl[x].sa := s; brktbl[x].line := l;
+      brktbl[x].trace := dc = dctp
+    end;
+    dcbi, dctpi: begin
+      { place breakpoint/tracepoint instruction }
+      expr(i); s := i;
+      x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
+      if x = 0 then error(ebktblf);
+      l := 0;
+      if curmod <> nil then l := addr2line(curmod, s);
+      brktbl[x].sa := s; brktbl[x].line := l;
+      brktbl[x].trace := dc = dctpi
+    end;
+    dcc: begin { clear breakpoint }
+      skpspc(dbc); if not chkend(dbc) then begin
+        expr(i); s := i; i := 0;
+        for i := 1 to maxbrk do if brktbl[i].sa = s then x := i;
+        if i = 0 then error(enbpaad);
+        brktbl[x].sa := -1
+      end else for i := 1 to maxbrk do brktbl[i].sa := -1
+    end;
+    dclb: begin { list breakpoints }
+      wrtnewline; writeln;
+      writeln('Breakpoints:');
+      writeln;
+      writeln('No  Src  Addr   Trc/brk');
+      writeln('=======================');
+      for i := 1 to maxbrk do if brktbl[i].sa >= 0 then begin
+        if brktbl[i].line > 0 then write(i:2, ':', brktbl[i].line:4, ': ')
+        else write(i:2, ':****', ': ');
+        wrthex(output, brktbl[i].sa, maxdigh, true); write(' ');
+        if brktbl[i].trace then write('t') else write('b'); writeln;
+      end;
+      writeln
+    end;
+    dcsi, dcsis: begin { step instruction }
+      i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
+      while (i > 0) and not chkbrk do begin
         sinins;
-        brk := chkbrk;
-        if watchmatch then begin watchmatch := false; prtwth end
-      until stopins or (sourcemark and (srclin <> sls)) or brk;
-      { advance over any other source markers }
-      while store[pc] = mrkins do sinins;
-      { advance over mst if present }
-      if store[pc] = mstins then sinins;
-      { advance over any source markers }
-      while store[pc] = mrkins do sinins;
-      if cn = 's         ' then prthdr; i := i-1;
-      if brk then begin
-        writeln('*** Program stopped by user break');
-        i := 0
-      { if we hit break or stop, just stay on that instruction }
-      end else if breakins then begin
-        writeln('*** Break instruction hit');
-        i := 0
-      end else if stopins then begin
-        writeln('*** Stop instruction hit');
-        i := 0
-      end
-    end
-  end else if cn = 'p         ' then begin { print (various) }
-    { process variable/expression reference }
-    exptyp(syp, s, p, eres, sim, undef);
-    skpspc(dbc); r := 10; fl := 1; lz := false; deffld := true;
-    { get any print radix }
-    if chkchr(dbc) = '$' then begin r := 16; nxtchr(dbc) end
-    else if chkchr(dbc) = '&' then begin r := 8; nxtchr(dbc) end
-    else if chkchr(dbc) = '%' then begin r := 2; nxtchr(dbc) end;
-    skpspc(dbc);
-    if chkchr(dbc) = ':' then begin { there is a field }
-      nxtchr(dbc); skpspc(dbc);
-      if chkchr(dbc) = '#' then begin nxtchr(dbc); lz := true end;
-      getnum(dbc, fl);
-      deffld := false
-    end;
-    wrtnewline; writeln;
-    if undef then write('*') { can't print, undefined }
-    else if sim then begin { write simple result }
-      setpar(tdc, syp^.digest, p);
-      prtsim(eres, tdc, r, fl, deffld, lz)
-    end else
-      { print the resulting tail }
-      prttyp(s, syp^.digest, p, false, r, fl, deffld, lz, 0);
-    writeln;
-    writeln
-  end else if cn = 'e         ' then begin { enter (hex) }
-    expr(i); s := i; { get address }
-    repeat
-      expr(i);
-      if (i > 255) or (i < 0) then error(ebadbv);
-      store[s] := i;
-      s := s+1
-    until chkend(dbc) or (s < 0);
-  end else if cn = 'st        ' then begin { set (variable) }
-    skpspc(dbc); if chkchr(dbc) = '@' then begin nxtchr(dbc); getlab(dbc);
-      if cn = 'pc        ' then begin expr(i); pc := i end
-      else if cn = 'sp        ' then begin expr(i); sp := i end
-      else if cn = 'mp        ' then begin expr(i); mp := i end
-      else if cn = 'np        ' then begin expr(i); np := i end
-      else if (cn = 'constants ') or (cn = 'globals   ') or 
-              (cn = 'heapbotto ') then error(enomodss)
-      else error(enospcs)
-    end else begin
-      vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
-      exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
-      if undef then error(esrcudf);
-      if sim then begin { simple }
-        if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
-          case chkchr(tdc) of
-            'i','p': begin if eres.t <> rtint then error(etypmis);
-                       putint(ad, eres.i)
-                     end;
-            'b','c': begin if eres.t <> rtint then error(etypmis);
-                       if (eres.i < 0) or (eres.i > 255) then error(echrrng);
-                       putbyt(ad, eres.i mod 256)
-                     end;
-            'x': begin if eres.t <> rtint then error(etypmis);
-                   getrng(tdc, enum, si, ei);
-                   if not enum then nxtchr(tdc);
-                   if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
-                   else putint(ad, eres.i)
-                 end;
-            'n': begin float(eres); if eres.t <> rtreal then error(etypmis);
-                   putrel(ad, eres.r)
-                 end;
-            's': begin if eres.t <> rtreal then error(etypmis);
-                   skpsub(tdc); skpsub(stdc);
-                   if not mattyp(tdc, stdc) then error(etypmat);
-                   putset(ad, eres.s)
-                 end;
-            'a': begin if eres.t <> rtstrg then error(etypmis);
-                   if not mattyp(tdc, stdc) then error(etypmat);
-                   nxtchr(stdc); getrng(stdc, enum, si, ei);
-                   if not enum then nxtchr(stdc);
-                   if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
-                     for i := 1 to ei do
-                       begin putbyt(ad, ord(strchr(eres.sc, i)));
-                             ad := ad+charsize end;
-                   end else error(etypmis)
-                 end;
-          end
-        end else error(etypmis)
-      end else begin { set complex }
-        if not mattyp(tdc, stdc) then error(etypmat);
-        case chkchr(stdc) of
-          'i','b','c','n','x','p','s','e','f': error(esystem);
-          'a','r': begin x := siztyp(stdc);
-                     for i := 1 to x do
-                       begin store[ad] := store[s]; putdef(ad, getdef(s));
-                             ad := ad+1; s := s+1 end;
-                   end
+        if watchmatch then begin watchmatch := false; prtwth end;
+        if dc = dcsi then prthdr; i := i-1;
+        { if we hit break or stop, just stay on that instruction }
+        if breakins then begin
+          writeln('*** Break instruction hit');
+          pc := pc-1; i := 0
+        end else if stopins then begin
+          writeln('*** Stop instruction hit');
+          pc := pc-1; i := 0
         end
       end
-    end
-  end else if cn = 'w         ' then begin { watch (variable) }
-    vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
-    { find free watch entry }
-    fw := 0; for wi := maxwth downto 1 do if wthtbl[wi] < 0 then fw := wi;
-    if fw = 0 then error(ewtblf);
-    wthtbl[fw] := ad; wthsym[fw].sp := syp; wthsym[fw].p := p
-  end else if cn = 'lw        ' then begin { list watch table }
-    wrtnewline; writeln;
-    writeln('Watch table:');
-    writeln;
-    for wi := 1 to maxwth do if wthtbl[wi] >= 0 then
-      begin write(wi:1, ': '); wrthex(output, wthtbl[wi], 8, true); writeln end;
-    writeln
-  end else if cn = 'cw        ' then begin { clear watch table }
-    if not chkend(dbc) then begin expr(i);
-      if (i < 1) or (i > maxwth) then error(einvwnm);
-      { move entries down to gap }
-      for x := 1 to maxwth-1 do wthtbl[x] := wthtbl[x+1];
-      wthtbl[maxwth] := -1
-    end else for wi := 1 to maxwth do wthtbl[wi] := -1
-  end else if cn = 'lia       ' then begin { list instruction analysis }
-    i := lstana(aniptr); writeln; writeln('last instructions executed:');
-    wrtnewline; writeln;
-    while (i > 0) and not chkbrk do begin
-      if anitbl[i] < 0 then i := 0
-      else begin
-        s := anitbl[i]; lstinsa(s); i := lstana(i);
-        if i = lstana(aniptr) then i := 0
-      end
     end;
-    writeln
-  end else if cn = 'lsa       ' then begin { list source analysis }
-    i := lstana(ansptr); writeln; writeln('last source lines executed:');
-    wrtnewline; writeln;
-    while (i > 0) and not chkbrk do begin
-      if anstbl[i] <= 0 then i := 0
-      else begin
-        prtsrc(ansmtbl[i], anstbl[i], anstbl[i], false); i := lstana(i);
-        if i = lstana(ansptr) then i := 0
-      end
+    dcl, dclc: begin { list source }
+      fndmnm(bp); { find if module specified }
+      if bp = nil then { none found }
+        begin setcur; if curmod = nil then error(emodmba); bp := curmod end;
+      s := 0; e := 10;
+      skpspc(dbc); if not chkend(dbc) then begin expr(i); s := i; e := s+10-1 end;
+      skpspc(dbc);
+      if chkchr(dbc) = ':' then
+        begin nxtchr(dbc); expr(i); e := s+i-1 end
+      else if not chkend(dbc) then begin expr(i); e := i end;
+      wrtnewline; writeln;
+      prtsrc(bp, s, e, cn = 'lc        ');
+      writeln
     end;
-    writeln
-  end else if cn = 'pg        ' then begin { print globals }
-    wrtnewline; writeln; writeln('Globals:'); writeln;
-    bp := blklst; { index top of block list }
-    brk := false; { set no break }
-    while (bp <> nil) and not brk do begin
-      syp := bp^.symbols;
-      while (syp <> nil) and not brk do begin { traverse symbols list }
-        if syp^.styp = stglobal then begin
-          writev(output, syp^.name, 20); write(' ');
-          s := syp^.off; p := 1;
-          prttyp(s, syp^.digest, p, false, 10, 1, true, false, 0);
-          writeln;
-        end;
-        syp := syp^.next;
-        brk := chkbrk
-      end;
-      bp := bp^.next
-    end;
-    writeln
-  end else if (cn = 'pl        ') or
-              (cn = 'pp        ') then begin { print locals }
-    if noframe then
-      begin wrtnewline; writeln; writeln('No displays active'); writeln end
-    else begin
+    dcs, dcss: begin { step source line }
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
-      s := mp; pcs := pc;
-      wrtnewline;
-      brk := false;
+      sls := srclin; { save current source line }
+      while i > 0 do begin
+        repeat
+          stopins := false; { set no stop flag }
+          sourcemark := false; { set no source line instruction }
+          watchmatch := false; { set no watch was matched }
+          sinins;
+          brk := chkbrk;
+          if watchmatch then begin watchmatch := false; prtwth end
+        until stopins or (sourcemark and (srclin <> sls)) or brk;
+        { advance over any other source markers }
+        while store[pc] = mrkins do sinins;
+        { advance over mst if present }
+        if store[pc] = mstins then sinins;
+        { advance over any source markers }
+        while store[pc] = mrkins do sinins;
+        if dc = dcs then prthdr; i := i-1;
+        if brk then begin
+          writeln('*** Program stopped by user break');
+          i := 0
+        { if we hit break or stop, just stay on that instruction }
+        end else if breakins then begin
+          writeln('*** Break instruction hit');
+          i := 0
+        end else if stopins then begin
+          writeln('*** Stop instruction hit');
+          i := 0
+        end
+      end
+    end;
+    dcp: begin { print (various) }
+      { process variable/expression reference }
+      exptyp(syp, s, p, eres, sim, undef);
+      skpspc(dbc); r := 10; fl := 1; lz := false; deffld := true;
+      { get any print radix }
+      if chkchr(dbc) = '$' then begin r := 16; nxtchr(dbc) end
+      else if chkchr(dbc) = '&' then begin r := 8; nxtchr(dbc) end
+      else if chkchr(dbc) = '%' then begin r := 2; nxtchr(dbc) end;
+      skpspc(dbc);
+      if chkchr(dbc) = ':' then begin { there is a field }
+        nxtchr(dbc); skpspc(dbc);
+        if chkchr(dbc) = '#' then begin nxtchr(dbc); lz := true end;
+        getnum(dbc, fl);
+        deffld := false
+      end;
+      wrtnewline; writeln;
+      if undef then write('*') { can't print, undefined }
+      else if sim then begin { write simple result }
+        setpar(tdc, syp^.digest, p);
+        prtsim(eres, tdc, r, fl, deffld, lz)
+      end else
+        { print the resulting tail }
+        prttyp(s, syp^.digest, p, false, r, fl, deffld, lz, 0);
+      writeln;
+      writeln
+    end;
+    dce: begin { enter (hex) }
+      expr(i); s := i; { get address }
       repeat
-        bp := fndblk(pcs);
-        if bp = nil then error(eblknf);
-        if (bp^.btyp = btproc) or (bp^.btyp = btfunc) then begin
-          writeln;
-          if (cn = 'pl        ') then write('Locals for block: ')
-          else write('Parameters for block: ');
-          writev(output, bp^.name, lenpv(bp^.name));
-          writeln; writeln;
-          syp := bp^.symbols;
-          while (syp <> nil) and not brk do begin { traverse symbols list }
-            if ((syp^.styp = stlocal) and (cn = 'pl        ')) or
-               ((syp^.styp = stparam) and (cn = 'pp        ')) then begin
-              writev(output, syp^.name, 20); write(' ');
-              e := s+syp^.off; p := 1;
-              prttyp(e, syp^.digest, p, false, 10, 1, true, false, 0);
-              writeln
-            end;
-            syp := syp^.next;
-            brk := chkbrk
+        expr(i);
+        if (i > 255) or (i < 0) then error(ebadbv);
+        store[s] := i;
+        s := s+1
+      until chkend(dbc) or (s < 0)
+    end;
+    dcst: begin { set (variable) }
+      skpspc(dbc); if chkchr(dbc) = '@' then begin nxtchr(dbc); getlab(dbc);
+        if cn = 'pc        ' then begin expr(i); pc := i end
+        else if cn = 'sp        ' then begin expr(i); sp := i end
+        else if cn = 'mp        ' then begin expr(i); mp := i end
+        else if cn = 'np        ' then begin expr(i); np := i end
+        else if (cn = 'constants ') or (cn = 'globals   ') or 
+                (cn = 'heapbotto ') then error(enomodss)
+        else error(enospcs)
+      end else begin
+        vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
+        exptyp(syp, s, p, eres, sim, undef); setpar(stdc, syp^.digest, p);
+        if undef then error(esrcudf);
+        if sim then begin { simple }
+          if chkchr(tdc) in ['i', 'b','c','p','x','n','s','a'] then begin
+            case chkchr(tdc) of
+              'i','p': begin if eres.t <> rtint then error(etypmis);
+                         putint(ad, eres.i)
+                       end;
+              'b','c': begin if eres.t <> rtint then error(etypmis);
+                         if (eres.i < 0) or (eres.i > 255) then error(echrrng);
+                         putbyt(ad, eres.i mod 256)
+                       end;
+              'x': begin if eres.t <> rtint then error(etypmis);
+                     getrng(tdc, enum, si, ei);
+                     if not enum then nxtchr(tdc);
+                     if isbyte(si) and isbyte(ei) then putbyt(ad, eres.i)
+                     else putint(ad, eres.i)
+                   end;
+              'n': begin float(eres); if eres.t <> rtreal then error(etypmis);
+                     putrel(ad, eres.r)
+                   end;
+              's': begin if eres.t <> rtreal then error(etypmis);
+                     skpsub(tdc); skpsub(stdc);
+                     if not mattyp(tdc, stdc) then error(etypmat);
+                     putset(ad, eres.s)
+                   end;
+              'a': begin if eres.t <> rtstrg then error(etypmis);
+                     if not mattyp(tdc, stdc) then error(etypmat);
+                     nxtchr(stdc); getrng(stdc, enum, si, ei);
+                     if not enum then nxtchr(stdc);
+                     if (chkchr(stdc) = 'c') and (si = 1) then begin { string }
+                       for i := 1 to ei do
+                         begin putbyt(ad, ord(strchr(eres.sc, i)));
+                               ad := ad+charsize end;
+                     end else error(etypmis)
+                   end;
+            end
+          end else error(etypmis)
+        end else begin { set complex }
+          if not mattyp(tdc, stdc) then error(etypmat);
+          case chkchr(stdc) of
+            'i','b','c','n','x','p','s','e','f': error(esystem);
+            'a','r': begin x := siztyp(stdc);
+                       for i := 1 to x do
+                         begin store[ad] := store[s]; putdef(ad, getdef(s));
+                               ad := ad+1; s := s+1 end;
+                     end
+          end
+        end
+      end
+    end;
+    dcw: begin { watch (variable) }
+      vartyp(syp, ad, p); setpar(tdc, syp^.digest, p);
+      { find free watch entry }
+      fw := 0; for wi := maxwth downto 1 do if wthtbl[wi] < 0 then fw := wi;
+      if fw = 0 then error(ewtblf);
+      wthtbl[fw] := ad; wthsym[fw].sp := syp; wthsym[fw].p := p
+    end;
+    dclw: begin { list watch table }
+      wrtnewline; writeln;
+      writeln('Watch table:');
+      writeln;
+      for wi := 1 to maxwth do if wthtbl[wi] >= 0 then
+        begin write(wi:1, ': '); wrthex(output, wthtbl[wi], 8, true); writeln end;
+      writeln
+    end;
+    dccw: begin { clear watch table }
+      if not chkend(dbc) then begin expr(i);
+        if (i < 1) or (i > maxwth) then error(einvwnm);
+        { move entries down to gap }
+        for x := 1 to maxwth-1 do wthtbl[x] := wthtbl[x+1];
+        wthtbl[maxwth] := -1
+      end else for wi := 1 to maxwth do wthtbl[wi] := -1
+    end;
+    dclia: begin { list instruction analysis }
+      i := lstana(aniptr); writeln; writeln('last instructions executed:');
+      wrtnewline; writeln;
+      while (i > 0) and not chkbrk do begin
+        if anitbl[i] < 0 then i := 0
+        else begin
+          s := anitbl[i]; lstinsa(s); i := lstana(i);
+          if i = lstana(aniptr) then i := 0
+        end
+      end;
+      writeln
+    end;
+    dclsa: begin { list source analysis }
+      i := lstana(ansptr); writeln; writeln('last source lines executed:');
+      wrtnewline; writeln;
+      while (i > 0) and not chkbrk do begin
+        if anstbl[i] <= 0 then i := 0
+        else begin
+          prtsrc(ansmtbl[i], anstbl[i], anstbl[i], false); i := lstana(i);
+          if i = lstana(ansptr) then i := 0
+        end
+      end;
+      writeln
+    end;
+    dcpg: begin { print globals }
+      wrtnewline; writeln; writeln('Globals:'); writeln;
+      bp := blklst; { index top of block list }
+      brk := false; { set no break }
+      while (bp <> nil) and not brk do begin
+        syp := bp^.symbols;
+        while (syp <> nil) and not brk do begin { traverse symbols list }
+          if syp^.styp = stglobal then begin
+            writev(output, syp^.name, 20); write(' ');
+            s := syp^.off; p := 1;
+            prttyp(s, syp^.digest, p, false, 10, 1, true, false, 0);
+            writeln;
           end;
-          writeln
+          syp := syp^.next;
+          brk := chkbrk
         end;
-        pcs := getadr(s+adrsize+marksize); e := s; s := getadr(s); i := i-1
-      until (i = 0) or lastframe(e) or brk
-    end
-  end else if cn = 'hs        ' then repspc { report heap space }
-  else if cn = 'ti        ' then
-    dotrcins := true { trace instructions }
-  else if cn = 'nti       ' then
-    dotrcins := false { no trace instructions }
-  else if cn = 'tr        ' then
-    dotrcrot := true { trace routine executions }
-  else if cn = 'ntr       ' then
-    dotrcrot := false { no trace routine executions }
-  else if cn = 'ts        ' then
-    dotrcsrc := true { trace source lines }
-  else if cn = 'nts       ' then
-    dotrcsrc := false { no trace source lines }
-  else if cn = 'spf       ' then
-    dosrcprf := true { source level profiling }
-  else if cn = 'nspf      ' then
-    dosrcprf := false { no source level profiling }
-  else if cn = 'ic        ' then
-    dochkcov := true { instruction level coverage }
-  else if cn = 'nic       ' then
-    dochkcov := false { no instruction level coverage }
-  else if cn = 'an        ' then
-    doanalys := true { do analyze }
-  else if cn = 'nan       ' then
-    doanalys := false { no analyze }
-  else if cn = 'ps        ' then prthdr { print status }
-  else if cn = 'r         ' then dbgend := true
-  else if cn = 'q         ' then goto 99
-  else if (cn = 'h         ') or
-          (cn = 'help      ') then begin
-    wrtnewline; writeln;
-    writeln('Commands:');
-    writeln;
-    writeln('h|help             Help (this command)');
-    writeln('l   [m] [s[ e|:l]  List source lines');
-    writeln('lc  [m] [s[ e|:l]  List source and machine lines coordinated');
-    writeln('li  [s[ e|:l]      List machine instructions');
-    writeln('p   v              Print expression');
-    writeln('d   [s[ e|:l]      Dump memory');
-    writeln('e   a v[ v]...     Enter byte values to memory address');
-    writeln('st  d v            Set program variable');
-    writeln('pg                 Print all globals');
-    writeln('pl  [n]            print locals for current/number of enclosing ',
-            'blocks');
-    writeln('pp  [n]            print parameters for current/number of enclosing ',
-            'blocks');
-    writeln('ds                 Dump storage parameters');
-    writeln('dd  [n]            Dump display frames');
-    writeln('df  [n]            Dump frames formatted (call trace)');
-    writeln('b   [m] a          Place breakpoint at source line number/routine');
-    writeln('tp  [m] a          Place tracepoint at source line number/routine');
-    writeln('bi  a              Place breakpoint at instruction');
-    writeln('tpi a              Place tracepoint at instruction');
-    writeln('c   [a]            Clear breakpoint/all breakpoints');
-    writeln('lb                 List active breakpoints');
-    writeln('w   a              Watch variable');
-    writeln('lw                 List watch table');
-    writeln('cw  [n]            Clear watch table entry/all watch entries');
-    writeln('lia                List instruction analyzer buffer');
-    writeln('lsa                List source analyzer buffer');
-    writeln('s   [n]            Step next source line execution');
-    writeln('ss  [n]            Step next source line execution silently');
-    writeln('si  [n]            Step instructions');
-    writeln('sis [n]            Step instructions silently');
-    writeln('hs                 Report heap space');
-    writeln('ti                 Turn instruction tracing on');
-    writeln('nti                Turn instruction tracing off');
-    writeln('tr                 Turn system routine tracing on');
-    writeln('ntr                Turn system routine tracing off');
-    writeln('ts                 Turn source line tracing on');
-    writeln('nts                Turn source line tracing off');
-    writeln('spf                Turn on source level profiling');
-    writeln('nspf               Turn off source level profiling');
-    writeln('an                 Turn on analyzer mode');
-    writeln('nan                Turn off analyzer mode');
-    writeln('r                  Run program from current pc');
-    writeln('ps                 Print current registers and instruction');
-    writeln('q                  Quit interpreter');
-    writeln;
-    writeln('!                  Anywhere in line starts a comment');
-    writeln
-  end
+        bp := bp^.next
+      end;
+      writeln
+    end;
+    dcpl, dcpp: begin { print locals }
+      if noframe then
+        begin wrtnewline; writeln; writeln('No displays active'); writeln end
+      else begin
+        i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
+        s := mp; pcs := pc;
+        wrtnewline;
+        brk := false;
+        repeat
+          bp := fndblk(pcs);
+          if bp = nil then error(eblknf);
+          if (bp^.btyp = btproc) or (bp^.btyp = btfunc) then begin
+            writeln;
+            if (cn = 'pl        ') then write('Locals for block: ')
+            else write('Parameters for block: ');
+            writev(output, bp^.name, lenpv(bp^.name));
+            writeln; writeln;
+            syp := bp^.symbols;
+            while (syp <> nil) and not brk do begin { traverse symbols list }
+              if ((syp^.styp = stlocal) and (cn = 'pl        ')) or
+                 ((syp^.styp = stparam) and (cn = 'pp        ')) then begin
+                writev(output, syp^.name, 20); write(' ');
+                e := s+syp^.off; p := 1;
+                prttyp(e, syp^.digest, p, false, 10, 1, true, false, 0);
+                writeln
+              end;
+              syp := syp^.next;
+              brk := chkbrk
+            end;
+            writeln
+          end;
+          pcs := getadr(s+adrsize+marksize); e := s; s := getadr(s); i := i-1
+        until (i = 0) or lastframe(e) or brk
+      end
+    end;
+    dchs: repspc; { report heap space }
+    dcti: dotrcins := true; { trace instructions }
+    dcnti: dotrcins := false; { no trace instructions }
+    dctr: dotrcrot := true; { trace routine executions }
+    dcntr: dotrcrot := false; { no trace routine executions }
+    dcts: dotrcsrc := true; { trace source lines }
+    dcnts: dotrcsrc := false; { no trace source lines }
+    dcspf: dosrcprf := true; { source level profiling }
+    dcnspf: dosrcprf := false; { no source level profiling }
+    dcic: dochkcov := true; { instruction level coverage }
+    dcnic: dochkcov := false; { no instruction level coverage }
+    dcan: doanalys := true; { do analyze }
+    dcnan: doanalys := false; { no analyze }
+    dcps: prthdr; { print status }
+    dcr: dbgend := true; { run }
+    dcq: goto 99; { quit }
+    dch, dchelp: begin
+      wrtnewline; writeln;
+      writeln('Commands:');
+      writeln;
+      writeln('h|help             Help (this command)');
+      writeln('l   [m] [s[ e|:l]  List source lines');
+      writeln('lc  [m] [s[ e|:l]  List source and machine lines coordinated');
+      writeln('li  [s[ e|:l]      List machine instructions');
+      writeln('p   v              Print expression');
+      writeln('d   [s[ e|:l]      Dump memory');
+      writeln('e   a v[ v]...     Enter byte values to memory address');
+      writeln('st  d v            Set program variable');
+      writeln('pg                 Print all globals');
+      writeln('pl  [n]            print locals for current/number of enclosing ',
+              'blocks');
+      writeln('pp  [n]            print parameters for current/number of enclosing ',
+              'blocks');
+      writeln('ds                 Dump storage parameters');
+      writeln('dd  [n]            Dump display frames');
+      writeln('df  [n]            Dump frames formatted (call trace)');
+      writeln('b   [m] a          Place breakpoint at source line number/routine');
+      writeln('tp  [m] a          Place tracepoint at source line number/routine');
+      writeln('bi  a              Place breakpoint at instruction');
+      writeln('tpi a              Place tracepoint at instruction');
+      writeln('c   [a]            Clear breakpoint/all breakpoints');
+      writeln('lb                 List active breakpoints');
+      writeln('w   a              Watch variable');
+      writeln('lw                 List watch table');
+      writeln('cw  [n]            Clear watch table entry/all watch entries');
+      writeln('lia                List instruction analyzer buffer');
+      writeln('lsa                List source analyzer buffer');
+      writeln('s   [n]            Step next source line execution');
+      writeln('ss  [n]            Step next source line execution silently');
+      writeln('si  [n]            Step instructions');
+      writeln('sis [n]            Step instructions silently');
+      writeln('hs                 Report heap space');
+      writeln('ti                 Turn instruction tracing on');
+      writeln('nti                Turn instruction tracing off');
+      writeln('tr                 Turn system routine tracing on');
+      writeln('ntr                Turn system routine tracing off');
+      writeln('ts                 Turn source line tracing on');
+      writeln('nts                Turn source line tracing off');
+      writeln('spf                Turn on source level profiling');
+      writeln('nspf               Turn off source level profiling');
+      writeln('an                 Turn on analyzer mode');
+      writeln('nan                Turn off analyzer mode');
+      writeln('r                  Run program from current pc');
+      writeln('ps                 Print current registers and instruction');
+      writeln('q                  Quit interpreter');
+      writeln;
+      writeln('!                  Anywhere in line starts a comment');
+      writeln
+    end;
   { these are internal debugger commands }
-  else if cn = 'listline  ' then begin
-    setcur; if curmod = nil then error(emodmba);
-    wrtnewline; writeln;
-    writeln('Defined line to address entries:');
-    writeln;
-    for i := 1 to maxsrc do if curmod^.lintrk^[i] >= 0 then begin
-      write(i:4, ':'); wrthex(output, curmod^.lintrk^[i], 8, true); writeln
-    end;
-    writeln
-  end else if cn = 'dumpsymbo ' then begin
-    wrtnewline; writeln;
-    writeln('Symbols:');
-    writeln;
-    bp := blklst;
-    brk := false;
-    while (bp <> nil) and not brk do begin
-      write('Block: '); writev(output, bp^.name, 20);
-      write(' ');
-      case bp^.btyp of
-        btprog: write('program');
-        btmod:  write('module');
-        btproc: write('procedure');
-        btfunc: write('function')
+    dclistline: begin
+      setcur; if curmod = nil then error(emodmba);
+      wrtnewline; writeln;
+      writeln('Defined line to address entries:');
+      writeln;
+      for i := 1 to maxsrc do if curmod^.lintrk^[i] >= 0 then begin
+        write(i:4, ':'); wrthex(output, curmod^.lintrk^[i], 8, true); writeln
       end;
-      write(' ');
-      wrthex(output, bp^.bestart, 8, true); write(' ');
-      wrthex(output, bp^.bstart, 8, true); write(' ');
-      wrthex(output, bp^.bend, 8, true);
+      writeln
+    end;
+    dcdumpsymbo: begin
+      wrtnewline; writeln;
+      writeln('Symbols:');
       writeln;
-      writeln;
-      syp := bp^.symbols;
-      while (syp <> nil) and not brk do begin
-        write('   Symbol: '); writev(output, syp^.name, 40);
+      bp := blklst;
+      brk := false;
+      while (bp <> nil) and not brk do begin
+        write('Block: '); writev(output, bp^.name, 20);
         write(' ');
-        case syp^.styp of
-          stglobal: write('global');
-          stlocal: write('local ');
-          stparam:  write('param ')
+        case bp^.btyp of
+          btprog: write('program');
+          btmod:  write('module');
+          btproc: write('procedure');
+          btfunc: write('function')
         end;
-        write(' '); prthex(syp^.off); write(' ');
-        writev(output, syp^.digest, lenpv(syp^.digest));
-        writeln; syp := syp^.next;
-        brk := chkbrk
+        write(' ');
+        wrthex(output, bp^.bestart, 8, true); write(' ');
+        wrthex(output, bp^.bstart, 8, true); write(' ');
+        wrthex(output, bp^.bend, 8, true);
+        writeln;
+        writeln;
+        syp := bp^.symbols;
+        while (syp <> nil) and not brk do begin
+          write('   Symbol: '); writev(output, syp^.name, 40);
+          write(' ');
+          case syp^.styp of
+            stglobal: write('global');
+            stlocal: write('local ');
+            stparam:  write('param ')
+          end;
+          write(' '); prthex(syp^.off); write(' ');
+          writev(output, syp^.digest, lenpv(syp^.digest));
+          writeln; syp := syp^.next;
+          brk := chkbrk
+        end;
+        writeln;
+        bp := bp^.next
       end;
-      writeln;
-      bp := bp^.next
+      writeln
     end;
-    writeln
-  end else error(ecmderr);
+    dcnone: error(ecmderr)
+  end;
   puttmps { clear any temps }
+end;
+
+{ find debug command }
+procedure fndcmd(var dc: dbgcmd);
+var dci: dbgcmd;
+begin
+  dc := dcnone;
+  for dci := dcnone to dcdumpsymbo do if cn = dbgcmds[dci] then dc := dci;
 end;
 
 begin { debug }
@@ -7232,7 +7255,8 @@ begin { debug }
         if chkchr(dbc) <> '!' then begin
           if not chkend(dbc) then begin
             getnam(dbc);
-            dbgins
+            fndcmd(dc);
+            dbgins(dc)
           end;
           c := chkchr(dbc);
           if c = ';' then nxtchr(dbc)
@@ -7404,6 +7428,57 @@ begin (* main *)
   optsl[24] := 'prtlex    ';
   optsl[25] := 'prtdisplay';
   optsl[26] := '          ';
+
+  { initialize command table }
+  dbgcmds[dcnone]      := '           ';
+  dbgcmds[dcli]        := 'li         '; 
+  dbgcmds[dcd]         := 'd          '; 
+  dbgcmds[dcds]        := 'ds         '; 
+  dbgcmds[dcdd]        := 'dd         '; 
+  dbgcmds[dcdf]        := 'df         '; 
+  dbgcmds[dcb]         := 'b          '; 
+  dbgcmds[dctp]        := 'tp         '; 
+  dbgcmds[dcbi]        := 'bi         '; 
+  dbgcmds[dctpi]       := 'tpi        ';
+  dbgcmds[dcc]         := 'c          '; 
+  dbgcmds[dclb]        := 'lb         ';
+  dbgcmds[dcsi]        := 'si         '; 
+  dbgcmds[dcsis]       := 'sis        '; 
+  dbgcmds[dcl]         := 'l          '; 
+  dbgcmds[dclc]        := 'lc         '; 
+  dbgcmds[dcs]         := 's          '; 
+  dbgcmds[dcss]        := 'ss         '; 
+  dbgcmds[dcp]         := 'p          '; 
+  dbgcmds[dce]         := 'e          '; 
+  dbgcmds[dcst]        := 'st         '; 
+  dbgcmds[dcw]         := 'w          '; 
+  dbgcmds[dclw]        := 'lw         ';
+  dbgcmds[dccw]        := 'cw         '; 
+  dbgcmds[dclia]       := 'lia        '; 
+  dbgcmds[dclsa]       := 'lsa        '; 
+  dbgcmds[dcpg]        := 'pg         '; 
+  dbgcmds[dcpl]        := 'pl         '; 
+  dbgcmds[dcpp]        := 'pp         '; 
+  dbgcmds[dchs]        := 'hs         '; 
+  dbgcmds[dcti]        := 'ti         '; 
+  dbgcmds[dcnti]       := 'ti         '; 
+  dbgcmds[dctr]        := 'tr         ';
+  dbgcmds[dcntr]       := 'ntr        '; 
+  dbgcmds[dcts]        := 'ts         '; 
+  dbgcmds[dcnts]       := 'nts        '; 
+  dbgcmds[dcspf]       := 'spf        '; 
+  dbgcmds[dcnspf]      := 'nspf       ';
+  dbgcmds[dcic]        := 'ic         ';
+  dbgcmds[dcnic]       := 'nic        '; 
+  dbgcmds[dcan]        := 'an         '; 
+  dbgcmds[dcnan]       := 'nan        '; 
+  dbgcmds[dcps]        := 'ps         '; 
+  dbgcmds[dcr]         := 'r          '; 
+  dbgcmds[dcq]         := 'q          '; 
+  dbgcmds[dch]         := 'h          '; 
+  dbgcmds[dchelp]      := 'help       '; 
+  dbgcmds[dclistline]  := 'listline   '; 
+  dbgcmds[dcdumpsymbo] := 'dumpsymbo  ';
 
   exitcode:= 0; { clear program exit code }
   { endian flip status is set if the host processor and the target disagree on
