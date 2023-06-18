@@ -537,11 +537,12 @@ type
       optinx = 1..optlen;
       optstr = packed array [optinx] of char;
       { debug commands }
-      dbgcmd = (dcnone, dcli, dcd, dcds, dcdd, dcdf, dcb, dctp, dcbi, dctpi, 
-                dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss, dcp, dce, dcst, 
-                dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp, dchs, dcti, 
-                dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic, dcnic, 
-                dcan, dcnan, dcps, dcr, dcq, dch, dchelp, dclistline, 
+      dbgcmd = (dcnone, dcli, dcd, dcd8, dcd16, dcd32, dcd64, dcdb16, dcdb32,
+                dcdb64, dcdl16, dcdl32, dcdl64, dcds, dcdd, dcdf, dcb, dctp,
+                dcbi, dctpi, dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss, dcp,
+                dce, dcst, dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp,
+                dchs, dcti, dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic,
+                dcnic, dcan, dcnan, dcps, dcr, dcq, dch, dchelp, dclistline, 
                 dcdumpsymbo);
 
 var   pc, pcs     : address;   (*program address register*)
@@ -5507,7 +5508,7 @@ begin
   writeln(' (',b+1-a:1,')')
 end;
 
-procedure dmpmem(s, e: address);
+procedure dmpmem(s, e: address; bl: integer; be: boolean);
    var i, x: integer;
        bs: array [1..16] of ibyte; bd: array [1..16] of boolean;
        f, l: boolean;
@@ -6692,6 +6693,7 @@ var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
     eres: expres; deffld: boolean; brk: boolean; sls: integer;
+    bl: integer; be: boolean;
 begin
   case dc of { command }
     dcli: begin { list instructions }
@@ -6719,7 +6721,8 @@ begin
         l := l-1
       end
     end;
-    dcd: begin { dump memory }
+    dcd, dcd8, dcd16, dcd32, dcd64, dcdb16, dcdb32, dcdb64, dcdl16, dcdl32, 
+    dcdl64: begin { dump memory }
       s := 0; e := 255;
       skpspc(dbc); 
       if not chkend(dbc) then begin 
@@ -6731,8 +6734,21 @@ begin
         nxtchr(dbc); expr(i); 
         if s+i-1 > maxstr then e := maxstr else e := s+i-1
       end else if not chkend(dbc) then begin expr(i); e := i end;
+      case dc of { format }
+        dcd:    begin bl := 1; be := false end;
+        dcd8:   begin bl := 1; be := false end;
+        dcd16:  begin bl := 2; be := false end;
+        dcd32:  begin bl := 4; be := false end;
+        dcd64:  begin bl := 8; be := false end;
+        dcdb16: begin bl := 2; be := true end;
+        dcdb32: begin bl := 4; be := true end;
+        dcdb64: begin bl := 8; be := true end;
+        dcdl16: begin bl := 2; be := false end;
+        dcdl32: begin bl := 4; be := false end;
+        dcdl64: begin bl := 8; be := false end
+      end;
       wrtnewline; writeln;
-      dmpmem(s, e);
+      dmpmem(s, e, bl, be);
       writeln
     end;
     dcds: begin { dump storage specs }
@@ -7433,6 +7449,16 @@ begin (* main *)
   dbgcmds[dcnone]      := '           ';
   dbgcmds[dcli]        := 'li         '; 
   dbgcmds[dcd]         := 'd          '; 
+  dbgcmds[dcd8]        := 'd8         '; 
+  dbgcmds[dcd16]       := 'd16        '; 
+  dbgcmds[dcd32]       := 'd32        '; 
+  dbgcmds[dcd64]       := 'd64        '; 
+  dbgcmds[dcdb16]      := 'db16       '; 
+  dbgcmds[dcdb32]      := 'db32       '; 
+  dbgcmds[dcdb64]      := 'db64       '; 
+  dbgcmds[dcdl16]      := 'dl16       '; 
+  dbgcmds[dcdl32]      := 'dl32       '; 
+  dbgcmds[dcdl64]      := 'dl64       '; 
   dbgcmds[dcds]        := 'ds         '; 
   dbgcmds[dcdd]        := 'dd         '; 
   dbgcmds[dcdf]        := 'df         '; 
