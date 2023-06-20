@@ -5509,11 +5509,14 @@ begin
 end;
 
 procedure dmpmem(s, e: address; bl: integer; be: boolean);
-   var i, x: integer;
+   var i, x, xw, dl, rb: integer;
        bs: array [1..16] of ibyte; bd: array [1..16] of boolean;
        f, l: boolean;
        ba: address;
 begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
+   dl := e-s+1; 
+   if (dl mod bl) <> 0 then dl := dl-(dl mod bl)+bl else dl := dl-(dl mod bl);
+   e := s+dl-1;
    while (s <= e) and not chkbrk do begin
      ba := s; i := 1; f := true;
      while (s <= e) and (i <= 16) do begin
@@ -5524,23 +5527,53 @@ begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
        if l then begin
          writeln;
          for x := 1 to maxdigh do write('*'); write(': ');
-         for x := 1 to 16 do write('** ');
+         for x := 1 to 16 do begin
+           write('**');
+           if (x mod bl) = 0 then write(' ')
+         end;
+         write('  ');
+         for x := 1 to 16 do begin
+           write('*');
+           if (bl > 1) and ((x mod bl) = 0) then write(' ')
+         end
        end;
        writeln; wrthex(output, ba, maxdigh, true); write(': ');
-       for x := 1 to i-1 do begin
-         if bd[x] then wrthex(output, bs[x], 2, true)
-         else write('UU');
-         write(' ') 
+       if bl = 1 then begin
+         for x := 1 to i-1 do begin
+           if bd[x] then wrthex(output, bs[x], 2, true)
+           else write('UU');
+           write(' ') 
+         end;
+         for x := i to 16 do write('   ');
+         write('  ');
+         for x := 1 to i-1 do begin
+           if bd[x] then begin
+             if (bs[x] >= ord(' ')) and (bs[x] < 128) then write(chr(bs[x]))
+             else write('.')
+           end else write('U')
+         end
+       end else begin
+         for x := 1 to i-1 do begin
+           xw := x;
+           if not be then 
+             begin xw := x-1; xw := (xw-xw mod bl)+(bl-1-(xw mod bl))+1 end;
+           if bd[xw] then wrthex(output, bs[xw], 2, true)
+           else write('UU');
+           if (x mod bl) = 0 then write(' ')
+         end;
+         rb := 16-i+1;
+         if rb >= 1 then write(' ':rb div bl+rb*2);
+         write('  ');
+         for x := 1 to i-1 do begin
+           if not be then 
+             begin xw := x-1; xw := (xw-xw mod bl)+(bl-1-(xw mod bl))+1 end;
+           if bd[xw] then begin
+             if (bs[xw] >= ord(' ')) and (bs[xw] < 128) then write(chr(bs[xw]))
+             else write('.')
+           end else write('U');
+           if (x mod bl) = 0 then write(' ')
+         end
        end;
-       for x := i to 16 do write('   ');
-       write('  ');
-       for x := 1 to i-1 do begin
-         if bd[x] then begin
-           if (bs[x] >= ord(' ')) and (bs[x] < 128) then write(chr(bs[x]))
-           else write('.')
-         end else write('U');
-         write(' ') 
-       end;       
        l := false
      end else l := true
    end;
