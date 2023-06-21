@@ -478,7 +478,8 @@ type
                       ss: ibyte; { byte under breakpoint }
                       sa: address; { code address }
                       line: 0..maxsrc; { source line if associated, or 0 }
-                      trace: boolean { is a tracepoint }
+                      trace: boolean; { is a tracepoint }
+                      temp: boolean { is a temporary breakpoint }
                     end;
       brkinx      = 1..maxbrk;
       brknum      = 0..maxbrk;
@@ -5499,6 +5500,13 @@ begin
     if sa > 0 then begin ss := store[sa]; store[sa] := brkins end
 end;
 
+procedure clrtmp;
+var i: 1..maxbrk;
+begin
+  for i := 1 to maxbrk do
+    if brktbl[i].temp then brktbl[i].sa := -1
+end;
+
 procedure prtrng(a, b: address);
 var i: 1..maxdigh;
 begin
@@ -6848,7 +6856,8 @@ begin
       x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
       if x = 0 then error(ebktblf);
       brktbl[x].sa := s; brktbl[x].line := l;
-      brktbl[x].trace := dc = dctp
+      brktbl[x].trace := dc = dctp;
+      brktbl[x].temp := false
     end;
     dcbi, dctpi: begin
       { place breakpoint/tracepoint instruction }
@@ -6858,7 +6867,8 @@ begin
       l := 0;
       if curmod <> nil then l := addr2line(curmod, s);
       brktbl[x].sa := s; brktbl[x].line := l;
-      brktbl[x].trace := dc = dctpi
+      brktbl[x].trace := dc = dctpi;
+      brktbl[x].temp := false
     end;
     dcc: begin { clear breakpoint }
       skpspc(dbc); if not chkend(dbc) then begin
@@ -7304,6 +7314,7 @@ begin { debug }
   dbgend := false;
   debugstart := true; { set we started }
   prthdr;
+  clrtmp; { clear temp breakpoints }
 
   2: { error reenter interpreter }
   puttmps; { clear any temps }
@@ -7632,7 +7643,7 @@ begin (* main *)
       lno := addr2line(curmod, ad)
     end;
     begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
-          store[ad] := brkins end;
+          store[ad] := brkins; brktbl[1].temp := true end
   end;
 
   debugstart := false; setcur;
