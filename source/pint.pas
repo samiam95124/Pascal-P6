@@ -5510,18 +5510,21 @@ end;
 
 procedure dmpmem(s, e: address; bl: integer; be: boolean);
    var i, x, xw, dl, rb: integer;
-       bs: array [1..16] of ibyte; bd: array [1..16] of boolean;
+       bs: array [1..16] of ibyte; bd, br: array [1..16] of boolean;
        f, l: boolean;
        ba: address;
-begin l := false; for i := 1 to 16 do begin bs[i] := 0; bd[i] := false end;
+begin l := false; 
+   for i := 1 to 16 do begin bs[i] := 0; bd[i] := false; br[i] := false end;
    dl := e-s+1; 
    if (dl mod bl) <> 0 then dl := dl-(dl mod bl)+bl else dl := dl-(dl mod bl);
    e := s+dl-1;
    while (s <= e) and not chkbrk do begin
      ba := s; i := 1; f := true;
      while (s <= e) and (i <= 16) do begin
-       if (bs[i] <> store[s]) or not bd[i] then f := false;
-       bs[i] := store[s]; bd[i] := getdef(s); s := s+1; i := i+1
+       if ((bs[i] <> store[s]) and bd[i] and getdef(s)) or not br[i] then 
+         f := false;
+       if (bd[i] <> getdef(s)) and br[i] then f := false;
+       bs[i] := store[s]; bd[i] := getdef(s); br[i] := true; s := s+1; i := i+1
      end;
      if not f or (i < 16) then begin
        if l then begin
