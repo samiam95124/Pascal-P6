@@ -543,8 +543,8 @@ type
                 dcbi, dctpi, dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss, dcp,
                 dce, dcst, dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp,
                 dchs, dcti, dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic,
-                dcnic, dcan, dcnan, dcps, dcr, dcq, dch, dchelp, dclistline, 
-                dcdumpsymbo);
+                dcnic, dcan, dcnan, dcps, dcr, dcq, dcso, dcsso, dcsio, dcsiso,
+                dcret, dchelp, dch, dclistline, dcdumpsymbo);
 
 var   pc, pcs     : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -6892,7 +6892,7 @@ begin
       end;
       writeln
     end;
-    dcsi, dcsis: begin { step instruction }
+    dcsi, dcsis, dcsio, dcsiso: begin { step instruction }
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
       while (i > 0) and not chkbrk do begin
         sinins;
@@ -6922,7 +6922,7 @@ begin
       prtsrc(bp, s, e, cn = 'lc        ');
       writeln
     end;
-    dcs, dcss: begin { step source line }
+    dcs, dcss, dcso, dcsso: begin { step source line }
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
       sls := srclin; { save current source line }
       while i > 0 do begin
@@ -6954,6 +6954,7 @@ begin
         end
       end
     end;
+    dcret: ; { return subroutine }
     dcp: begin { print (various) }
       { process variable/expression reference }
       exptyp(syp, s, p, eres, sim, undef);
@@ -7557,7 +7558,12 @@ begin (* main *)
   dbgcmds[dcps]        := 'ps         '; 
   dbgcmds[dcr]         := 'r          '; 
   dbgcmds[dcq]         := 'q          '; 
-  dbgcmds[dch]         := 'h          '; 
+  dbgcmds[dch]         := 'h          ';
+  dbgcmds[dcso]        := 'so         ';
+  dbgcmds[dcsso]       := 'sso        ';
+  dbgcmds[dcsio]       := 'sio        ';
+  dbgcmds[dcsiso]      := 'siso       ';
+  dbgcmds[dcret]       := 'ret        ';
   dbgcmds[dchelp]      := 'help       '; 
   dbgcmds[dclistline]  := 'listline   '; 
   dbgcmds[dcdumpsymbo] := 'dumpsymbo  ';
