@@ -6741,12 +6741,49 @@ begin
   dotrcins := dotrcinss
 end;
 
+{ set breakpoint/tracepoint at address }
+procedure setbrk(ad: address; line: integer; trace, temp: boolean);
+var i, x: integer;
+begin
+  x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
+  if x = 0 then error(ebktblf);
+  brktbl[x].sa := ad; brktbl[x].line := line;
+  brktbl[x].trace := trace;
+  brktbl[x].temp := temp
+end;
+
+{ skip over call instruction }
+procedure skpovr;
+var ra: address; stop: boolean;
+begin
+  if store[pc] in [21{cal},12{cup},246{cuf},27{cuv},113{cip}] then begin
+    sinins; { let the call place return on stack }
+    ra := getadr(sp); { get the return address }
+    stop := false;
+    while (pc <> ra) and not chkbrk and not stop do begin
+      stopins := false; { set no stop flag }
+      watchmatch := false; { set no watch was matched }
+      sinins;
+      if watchmatch then begin watchmatch := false; prtwth end;
+      { if we hit break or stop, just stay on that instruction }
+      if breakins then begin
+        writeln('*** Break instruction hit');
+        pc := pc-1; stop := true
+      end else if stopins then begin
+        writeln('*** Stop instruction hit');
+        pc := pc-1; stop := true
+      end
+    end
+  end else sinins
+end;
+
+{ execute debug command }
 procedure dbgins(dc: dbgcmd);
 var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
     eres: expres; deffld: boolean; brk: boolean; sls: integer;
-    bl: integer; be: boolean;
+    bl: integer; be: boolean; incall: boolean;
 begin
   case dc of { command }
     dcli: begin { list instructions }
@@ -6853,22 +6890,14 @@ begin
       skpmst(s); { skip mst instruction to start frame }
       skplmk(s); { skip trailing line markers }
       l := addr2line(bp, s);
-      x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-      if x = 0 then error(ebktblf);
-      brktbl[x].sa := s; brktbl[x].line := l;
-      brktbl[x].trace := dc = dctp;
-      brktbl[x].temp := false
+      setbrk(s, l, dc = dctp, false)
     end;
     dcbi, dctpi: begin
       { place breakpoint/tracepoint instruction }
       expr(i); s := i;
-      x := 0; for i := maxbrk downto 1 do if brktbl[i].sa < 0 then x := i;
-      if x = 0 then error(ebktblf);
       l := 0;
       if curmod <> nil then l := addr2line(curmod, s);
-      brktbl[x].sa := s; brktbl[x].line := l;
-      brktbl[x].trace := dc = dctpi;
-      brktbl[x].temp := false
+      setbrk(s, l, dc = dctpi, false)
     end;
     dcc: begin { clear breakpoint }
       skpspc(dbc); if not chkend(dbc) then begin
@@ -6895,7 +6924,9 @@ begin
     dcsi, dcsis, dcsio, dcsiso: begin { step instruction }
       i := 1; skpspc(dbc); if not chkend(dbc) then expr(i);
       while (i > 0) and not chkbrk do begin
-        sinins;
+        stopins := false; { set no stop flag }
+        watchmatch := false; { set no watch was matched }
+        if (dc = dcsio) or (dc = dcsiso) then skpovr else sinins;
         if watchmatch then begin watchmatch := false; prtwth end;
         if dc = dcsi then prthdr; i := i-1;
         { if we hit break or stop, just stay on that instruction }
@@ -6930,7 +6961,7 @@ begin
           stopins := false; { set no stop flag }
           sourcemark := false; { set no source line instruction }
           watchmatch := false; { set no watch was matched }
-          sinins;
+          if (dc = dcso) or (dc = dcsso) then skpovr else sinins;
           brk := chkbrk;
           if watchmatch then begin watchmatch := false; prtwth end
         until stopins or (sourcemark and (srclin <> sls)) or brk;
@@ -7648,8 +7679,9 @@ begin (* main *)
       skplmk(ad); { skip trailing line markers }
       lno := addr2line(curmod, ad)
     end;
-    begin brktbl[1].sa := ad; brktbl[1].ss := store[ad]; brktbl[1].line := lno;
-          store[ad] := brkins; brktbl[1].temp := true end
+    brktbl[1].sa := ad; brktbl[1].line := lno;
+    brktbl[1].trace := false; brktbl[1].temp := true;
+    brktbl[1].ss := store[ad]; store[ad] := brkins
   end;
 
   debugstart := false; setcur;
