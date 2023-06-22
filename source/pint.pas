@@ -6928,7 +6928,7 @@ begin
         watchmatch := false; { set no watch was matched }
         if (dc = dcsio) or (dc = dcsiso) then skpovr else sinins;
         if watchmatch then begin watchmatch := false; prtwth end;
-        if dc = dcsi then prthdr; i := i-1;
+        if (dc = dcsi) or (dc = dcsio) then prthdr; i := i-1;
         { if we hit break or stop, just stay on that instruction }
         if breakins then begin
           writeln('*** Break instruction hit');
@@ -6971,7 +6971,7 @@ begin
         if store[pc] = mstins then sinins;
         { advance over any source markers }
         while store[pc] = mrkins do sinins;
-        if dc = dcs then prthdr; i := i-1;
+        if (dc = dcs) or (dc = dcso) then prthdr; i := i-1;
         if brk then begin
           writeln('*** Program stopped by user break');
           i := 0
@@ -7236,6 +7236,10 @@ begin
       writeln('ss  [n]            Step next source line execution silently');
       writeln('si  [n]            Step instructions');
       writeln('sis [n]            Step instructions silently');
+      writeln('so   [n]           Step over next source line execution');
+      writeln('sso  [n]           Step over next source line execution silently');
+      writeln('sio  [n]           Step over instructions');
+      writeln('siso [n]           Step over instructions silently');
       writeln('hs                 Report heap space');
       writeln('ti                 Turn instruction tracing on');
       writeln('nti                Turn instruction tracing off');
