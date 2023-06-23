@@ -6986,13 +6986,18 @@ begin
       end
     end;
     dcret: begin { return subroutine }
-      setcur; bp := curmod; { set module as current }
-      s := getadr(mp+adrsize+marksize);
-      { skip any source markers }
-      while store[s] = mrkins do skplmk(s);
-      l := addr2line(bp, s);
-      setbrk(s, l, false, true);
-      dbgend := true
+      if lastframe(mp) then 
+        begin wrtnewline; writeln('*** Nothing to return to') end
+      else begin
+        setcur; bp := curmod; { set module as current }
+        s := getadr(mp+adrsize+marksize);
+        { skip any source markers }
+        while store[s] = mrkins do skplmk(s);
+    ;writeln;write('return address: '); prthex(s); writeln;
+        l := addr2line(bp, s);
+        setbrk(s, l, false, true);
+        dbgend := true
+      end
     end;
     dcp: begin { print (various) }
       { process variable/expression reference }
