@@ -313,6 +313,11 @@ s   [n]            Step next source line execution
 ss  [n]            Step next source line execution silently
 si  [n]            Step instructions
 sis [n]            Step instructions silently
+so   [n]           Step over next source line execution
+sso  [n]           Step over next source line execution silently
+sio  [n]           Step over instructions
+siso [n]           Step over instructions silently
+ret                Return from subroutine
 hs                 Report heap space
 ti                 Turn instruction tracing on
 nti                Turn instruction tracing off

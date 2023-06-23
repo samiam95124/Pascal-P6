@@ -6985,7 +6985,15 @@ begin
         end
       end
     end;
-    dcret: ; { return subroutine }
+    dcret: begin { return subroutine }
+      setcur; bp := curmod; { set module as current }
+      s := getadr(mp+adrsize+marksize);
+      { skip any source markers }
+      while store[s] = mrkins do skplmk(s);
+      l := addr2line(bp, s);
+      setbrk(s, l, false, true);
+      dbgend := true
+    end;
     dcp: begin { print (various) }
       { process variable/expression reference }
       exptyp(syp, s, p, eres, sim, undef);
@@ -7240,6 +7248,7 @@ begin
       writeln('sso  [n]           Step over next source line execution silently');
       writeln('sio  [n]           Step over instructions');
       writeln('siso [n]           Step over instructions silently');
+      writeln('ret                Return from subroutine');
       writeln('hs                 Report heap space');
       writeln('ti                 Turn instruction tracing on');
       writeln('nti                Turn instruction tracing off');
