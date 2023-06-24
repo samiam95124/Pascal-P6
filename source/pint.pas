@@ -539,9 +539,9 @@ type
       optstr = packed array [optinx] of char;
       { debug commands }
       dbgcmd = (dcnone, dcli, dcd, dcd8, dcd16, dcd32, dcd64, dcdb16, dcdb32,
-                dcdb64, dcdl16, dcdl32, dcdl64, dcds, dcdd, dcdf, dcb, dctp,
-                dcbi, dctpi, dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss, dcp,
-                dce, dcst, dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp,
+                dcdb64, dcdl16, dcdl32, dcdl64, dcds, dcdd, dcdf, dcdst, dcb, 
+                dctp, dcbi, dctpi, dcc, dclb, dcsi, dcsis, dcl, dclc, dcs, dcss,
+                dcp, dce, dcst, dcw, dclw, dccw, dclia, dclsa, dcpg, dcpl, dcpp,
                 dchs, dcti, dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic,
                 dcnic, dcan, dcnan, dcps, dcr, dcq, dcso, dcsso, dcsio, dcsiso,
                 dcret, dchelp, dch, dclistline, dcdumpsymbo);
@@ -6873,6 +6873,19 @@ begin
         until (i = 0) or lastframe(e) or chkbrk
       end
     end;
+    dcdst: begin { dump stack }
+      i := 10; skpspc(dbc); if not chkend(dbc) then expr(i);
+      s := sp;
+      while (i > 0) and (s <= maxstr) and not chkbrk do begin
+        wrthex(output, s, adrsize, true); write(': '); 
+        if not getdef(s) then writeln('UUUUUUUU: (U)')
+        else begin
+          wrthex(output, getint(s), intsize, true); 
+          writeln(' (', getint(s):1, ')')
+        end;
+        s := s+intsize; i := i-1
+      end
+    end;
     dcb,dctp: begin
       { place breakpoint/tracepoint source }
       fndmnm(bp); { find if module specified }
@@ -7218,58 +7231,59 @@ begin
       wrtnewline; writeln;
       writeln('Commands:');
       writeln;
-      writeln('h|help             Help (this command)');
-      writeln('l   [m] [s[ e|:l]  List source lines');
-      writeln('lc  [m] [s[ e|:l]  List source and machine lines coordinated');
-      writeln('li  [s[ e|:l]      List machine instructions');
-      writeln('p   v              Print expression');
-      writeln('d   [s[ e|:l]      Dump memory');
-      writeln('e   a v[ v]...     Enter byte values to memory address');
-      writeln('st  d v            Set program variable');
-      writeln('pg                 Print all globals');
-      writeln('pl  [n]            print locals for current/number of enclosing ',
+      writeln('h|help              Help (this command)');
+      writeln('l    [m] [s[ e|:l]  List source lines');
+      writeln('lc   [m] [s[ e|:l]  List source and machine lines coordinated');
+      writeln('li   [s[ e|:l]      List machine instructions');
+      writeln('p    v              Print expression');
+      writeln('d    [s[ e|:l]      Dump memory');
+      writeln('e    a v[ v]...     Enter byte values to memory address');
+      writeln('st   d v            Set program variable');
+      writeln('pg                  Print all globals');
+      writeln('pl   [n]            print locals for current/number of enclosing ',
               'blocks');
-      writeln('pp  [n]            print parameters for current/number of enclosing ',
+      writeln('pp   [n]            print parameters for current/number of enclosing ',
               'blocks');
-      writeln('ds                 Dump storage parameters');
-      writeln('dd  [n]            Dump display frames');
-      writeln('df  [n]            Dump frames formatted (call trace)');
-      writeln('b   [m] a          Place breakpoint at source line number/routine');
-      writeln('tp  [m] a          Place tracepoint at source line number/routine');
-      writeln('bi  a              Place breakpoint at instruction');
-      writeln('tpi a              Place tracepoint at instruction');
-      writeln('c   [a]            Clear breakpoint/all breakpoints');
-      writeln('lb                 List active breakpoints');
-      writeln('w   a              Watch variable');
-      writeln('lw                 List watch table');
-      writeln('cw  [n]            Clear watch table entry/all watch entries');
-      writeln('lia                List instruction analyzer buffer');
-      writeln('lsa                List source analyzer buffer');
-      writeln('s   [n]            Step next source line execution');
-      writeln('ss  [n]            Step next source line execution silently');
-      writeln('si  [n]            Step instructions');
-      writeln('sis [n]            Step instructions silently');
-      writeln('so   [n]           Step over next source line execution');
-      writeln('sso  [n]           Step over next source line execution silently');
-      writeln('sio  [n]           Step over instructions');
-      writeln('siso [n]           Step over instructions silently');
-      writeln('ret                Return from subroutine');
-      writeln('hs                 Report heap space');
-      writeln('ti                 Turn instruction tracing on');
-      writeln('nti                Turn instruction tracing off');
-      writeln('tr                 Turn system routine tracing on');
-      writeln('ntr                Turn system routine tracing off');
-      writeln('ts                 Turn source line tracing on');
-      writeln('nts                Turn source line tracing off');
-      writeln('spf                Turn on source level profiling');
-      writeln('nspf               Turn off source level profiling');
-      writeln('an                 Turn on analyzer mode');
-      writeln('nan                Turn off analyzer mode');
-      writeln('r                  Run program from current pc');
-      writeln('ps                 Print current registers and instruction');
-      writeln('q                  Quit interpreter');
+      writeln('ds                  Dump storage parameters');
+      writeln('dd   [n]            Dump display frames');
+      writeln('df   [n]            Dump frames formatted (call trace)');
+      writeln('dst  [n]            Dump stack words');
+      writeln('b    [m] a          Place breakpoint at source line number/routine');
+      writeln('tp   [m] a          Place tracepoint at source line number/routine');
+      writeln('bi   a              Place breakpoint at instruction');
+      writeln('tpi  a              Place tracepoint at instruction');
+      writeln('c    [a]            Clear breakpoint/all breakpoints');
+      writeln('lb                  List active breakpoints');
+      writeln('w    a              Watch variable');
+      writeln('lw                  List watch table');
+      writeln('cw   [n]            Clear watch table entry/all watch entries');
+      writeln('lia                 List instruction analyzer buffer');
+      writeln('lsa                 List source analyzer buffer');
+      writeln('s    [n]            Step next source line execution');
+      writeln('ss   [n]            Step next source line execution silently');
+      writeln('si   [n]            Step instructions');
+      writeln('sis  [n]            Step instructions silently');
+      writeln('so   [n]            Step over next source line execution');
+      writeln('sso  [n]            Step over next source line execution silently');
+      writeln('sio  [n]            Step over instructions');
+      writeln('siso [n]            Step over instructions silently');
+      writeln('ret                 Return from subroutine');
+      writeln('hs                  Report heap space');
+      writeln('ti                  Turn instruction tracing on');
+      writeln('nti                 Turn instruction tracing off');
+      writeln('tr                  Turn system routine tracing on');
+      writeln('ntr                 Turn system routine tracing off');
+      writeln('ts                  Turn source line tracing on');
+      writeln('nts                 Turn source line tracing off');
+      writeln('spf                 Turn on source level profiling');
+      writeln('nspf                Turn off source level profiling');
+      writeln('an                  Turn on analyzer mode');
+      writeln('nan                 Turn off analyzer mode');
+      writeln('r                   Run program from current pc');
+      writeln('ps                  Print current registers and instruction');
+      writeln('q                   Quit interpreter');
       writeln;
-      writeln('!                  Anywhere in line starts a comment');
+      writeln('!                   Anywhere in line starts a comment');
       writeln
     end;
   { these are internal debugger commands }
@@ -7568,6 +7582,7 @@ begin (* main *)
   dbgcmds[dcds]        := 'ds         '; 
   dbgcmds[dcdd]        := 'dd         '; 
   dbgcmds[dcdf]        := 'df         '; 
+  dbgcmds[dcdst]       := 'dst        '; 
   dbgcmds[dcb]         := 'b          '; 
   dbgcmds[dctp]        := 'tp         '; 
   dbgcmds[dcbi]        := 'bi         '; 
