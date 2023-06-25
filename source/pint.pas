@@ -1743,6 +1743,15 @@ begin m := false;
   istrcl := m
 end;
 
+function istmp(a: address): boolean;
+var i: brkinx;
+    m: boolean;
+begin m := false;
+  for i := 1 to maxbrk do if (brktbl[i].sa = a) and brktbl[i].temp then
+    m := true;
+  istmp := m
+end;
+
 { list single instruction at address }
 
 procedure lstins{(var ad: address)};
@@ -7006,7 +7015,6 @@ begin
         s := getadr(mp+adrsize+marksize);
         { skip any source markers }
         while store[s] = mrkins do skplmk(s);
-    ;writeln;write('return address: '); prthex(s); writeln;
         l := addr2line(bp, s);
         setbrk(s, l, false, true);
         dbgend := true
@@ -7377,8 +7385,8 @@ begin { debug }
   if store[pc] = mrkins then begin sinins; pc := pc-(mrkinsl+intsize) end;
   dbgend := false;
   debugstart := true; { set we started }
-  prthdr;
   clrtmp; { clear temp breakpoints }
+  prthdr;
 
   2: { error reenter interpreter }
   puttmps; { clear any temps }
@@ -7737,7 +7745,7 @@ begin (* main *)
         if stopins then
           begin wrtnewline; writeln; writeln('*** Stop instruction hit') end;
         breakins := false; stopins := false; writeln;
-        if not watchmatch and not istrc(pc) then
+        if not watchmatch and not istrc(pc) and not istmp(pc) then
           begin wrtnewline; writeln('=== break ===') end;
         debug
       end
