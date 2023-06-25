@@ -267,7 +267,6 @@ Assembling/loading program
 Running program
 
 
-
 P6 debug mode
 
 
@@ -3123,7 +3122,7 @@ debug> r
   29:      0:    
 
 debug> ! step out of the stop
-debug> s
+debug> ret
 
  159:      1:    
  160:      1:  *     proc2(74, 'j');
@@ -4524,7 +4523,7 @@ debug> r
   30:      1: b* procedure stop3; begin end;
   31:      0:    
 
-debug> s
+debug> ret
 
   67:      1:    
   68:      1:  *     writeln('Step past me!');
@@ -5025,7 +5024,6 @@ debug> b stop4
 debug> r
 3
 
-
   31:      0:    
   32:      1: t* procedure traceme; begin end;
   33:      0:    
@@ -5038,7 +5036,7 @@ debug> r
   34:      1: b* procedure stop4; begin end;
   35:      0:    
 
-debug> s
+debug> ret
 
   75:      2:        stop4;
   76:      1:  *     writeln('5');
@@ -5069,7 +5067,6 @@ debug> w b
 debug> b stop5
 debug> r
 5
-
 Watch variable: @000008CD: a@00FFEB48: 75 -> 12
 6
 
@@ -5218,7 +5215,7 @@ iteration:           4
   38:      1: b* procedure stop6; begin end;
   39:      0:    
 
-debug> s
+debug> ret
 
   84:      1:        writeln('10');
   85:      2:  *     stop6;
@@ -5249,7 +5246,7 @@ iteration:           4
   40:      1: b* procedure stop7; begin end;
   41:      0:    
 
-debug> s
+debug> ret
 
   87:      2:        stop7;
   88:      1:  *     new(d);
@@ -5318,7 +5315,7 @@ debug> r
   42:      1: b* procedure stop8; begin end;
   43:      0:    
 
-debug> s
+debug> ret
 
   93:      1:    
   94:      1:  * end;
@@ -5595,20 +5592,17 @@ debug> tpi $27f9
 debug> b 222
 debug> r
 
-
  219:      1: b      writeln('Step me!');
  220:      2: t*     for i := 1 to 3 do writeln('Hi there!');    
  221:      0:    
 
 Hi there!
 
-
  219:      1: b      writeln('Step me!');
  220:      3: t*     for i := 1 to 3 do writeln('Hi there!');    
  221:      0:    
 
 Hi there!
-
 
  219:      1: b      writeln('Step me!');
  220:      4: t*     for i := 1 to 3 do writeln('Hi there!');    
