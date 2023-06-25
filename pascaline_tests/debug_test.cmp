@@ -267,13 +267,12 @@ Assembling/loading program
 Running program
 
 
-=== break ===
 
 P6 debug mode
 
 
  165:      1:    
- 166:      1: b*     writeln('This is debug test');
+ 166:      1:  *     writeln('This is debug test');
  167:      0:        debug_test1.writehi;
 
 debug> !
