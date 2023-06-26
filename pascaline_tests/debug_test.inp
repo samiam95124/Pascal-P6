@@ -197,9 +197,9 @@ r
 ret
 ntr
 ! step out of proc2
-s
+ret
 ! step out of proc1
-s
+ret
 
 ! Test source profiling.
 ! Compare this listing with the one at program start to see if the counters have
@@ -222,7 +222,8 @@ sis
 p @pc$
 li @pc
 an
-bi $2772
+! set this address near the end of the instructions just listed
+bi $2784
 r
 p @pc$
 li @pc

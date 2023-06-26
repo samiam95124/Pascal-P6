@@ -5323,14 +5323,14 @@ debug> ret
 
 debug> ntr
 debug> ! step out of proc2
-debug> s
+debug> ret
 
  161:      1:    
  162:      1:  * end;
  163:      1:    
 
 debug> ! step out of proc1
-debug> s
+debug> ret
 
  218:      1:    
  219:      1:  *     writeln('Step me!');
@@ -5513,7 +5513,8 @@ Addr    Op Ins            P  Q
     0027A3: 7B ldci           0000000000000001
     0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
 debug> an
-debug> bi $2772
+debug> ! set this address near the end of the instructions just listed
+debug> bi $2784
 debug> r
 
 === break ===
@@ -5524,15 +5525,13 @@ debug> r
 
 debug> p @pc$
 
-2772
+2784
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
-b*  002772: 7B ldci           0000000000000008
-    00277B: 76 swp            0000000000000008
-    002784: 7B ldci           0000000000000008
+b*  002784: 7B ldci           0000000000000008
     00278D: 0F csp            0000000000000006
     00278F: 0F csp            0000000000000005
     002791: 75 dmp            0000000000000008
@@ -5540,11 +5539,14 @@ b*  002772: 7B ldci           0000000000000008
     0027A3: 7B ldci           0000000000000001
     0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
     0027B6: 7B ldci           0000000000000003
+    0027BF: 02 stri        01,FFFFFFFFFFFFFFE8
+    0027C9: 00 lodi        01,FFFFFFFFFFFFFFF0
 debug> lia
 
 last instructions executed:
 
-b * 002772: 7B ldci           0000000000000008
+    00277B: 76 swp            0000000000000008
+    002772: 7B ldci           0000000000000008
     002769: 76 swp            0000000000000008
     002760: 05 lao            0000000000002F0A
     002757: 38 lca            00000000000028C5
@@ -5553,7 +5555,6 @@ b * 002772: 7B ldci           0000000000000008
     00273C: AE mrkl*          00000000000000D9
     001996: 0E retp           0000000000000040
     00198D: AE mrkl*          00000000000000A2
-    001984: AE mrkl*          00000000000000A1
 
 debug> ! Now step to for loop
 debug> s

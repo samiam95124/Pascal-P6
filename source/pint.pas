@@ -4562,7 +4562,7 @@ begin
   end;
 
   { process instruction analysis }
-  if doanalys then putani(pcs);
+  if doanalys and (op <> 19{brk}) then putani(pcs);
 
   case op of
 
