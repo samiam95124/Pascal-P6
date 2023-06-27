@@ -1,4 +1,8 @@
 !
+! Debug mode test input file.
+!
+
+!
 ! This first part is source level only. I put the machine level commands at the
 ! end because they can move around with changes to the program.
 !
@@ -221,9 +225,14 @@ li @pc
 sis
 p @pc$
 li @pc
+! run to start of wri call
+bi $278d
+r
+! dump stack should have parameters on it.
+dst
 an
 ! set this address near the end of the instructions just listed
-bi $2784
+bi $278f
 r
 p @pc$
 li @pc

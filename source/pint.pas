@@ -6926,7 +6926,8 @@ begin
       { place breakpoint/tracepoint source }
       fndmnm(bp); { find if module specified }
       if bp = nil then begin { none found }
-        setcur; bp := curmod; { set module as current }
+        setcur; if curmod = nil then error(emodmba);
+        bp := curmod; { set module as current }
       end;
       fndrot(bp2); { see if routine name }
       if bp2 <> nil then s := bp2^.bstart
@@ -7028,7 +7029,8 @@ begin
       if lastframe(mp) then 
         begin wrtnewline; writeln('*** Nothing to return to') end
       else begin
-        setcur; bp := curmod; { set module as current }
+        setcur; if curmod = nil then error(emodmba);
+        bp := curmod; { set module as current }
         s := getadr(mp+adrsize+marksize);
         { skip any source markers }
         while store[s] = mrkins do skplmk(s);

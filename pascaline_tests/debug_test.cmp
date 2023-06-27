@@ -275,6 +275,10 @@ P6 debug mode
  167:      0:        debug_test1.writehi;
 
 debug> !
+debug> ! Debug mode test input file.
+debug> !
+debug> 
+debug> !
 debug> ! This first part is source level only. I put the machine level commands at the
 debug> ! end because they can move around with changes to the program.
 debug> !
@@ -5512,10 +5516,33 @@ Addr    Op Ins            P  Q
     00279A: AE mrkl*          00000000000000DC
     0027A3: 7B ldci           0000000000000001
     0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
+debug> ! run to start of wri call
+debug> bi $278d
+debug> r
+
+=== break ===
+
+ 218:      1:    
+ 219:      1: b*     writeln('Step me!');
+ 220:      0:        for i := 1 to 3 do writeln('Hi there!');    
+
+debug> ! dump stack should have parameters on it.
+debug> dst
+00FFFF80: 00000008 (8)
+00FFFF88: 000028C5 (10437)
+00FFFF90: 00000008 (8)
+00FFFF98: 00002F0A (12042)
+00FFFFA0: 0000000A (10)
+00FFFFA8: 00000001 (1)
+00FFFFB0: 0000000A (10)
+00FFFFB8: 00000001 (1)
+00FFFFC0: 00FFFFC8 (16777160)
+00FFFFC8: 01000000 (16777216)
 debug> an
 debug> ! set this address near the end of the instructions just listed
-debug> bi $2784
+debug> bi $278f
 debug> r
+Step me!
 
 === break ===
 
@@ -5525,15 +5552,13 @@ debug> r
 
 debug> p @pc$
 
-2784
+278F
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
-b*  002784: 7B ldci           0000000000000008
-    00278D: 0F csp            0000000000000006
-    00278F: 0F csp            0000000000000005
+b*  00278F: 0F csp            0000000000000005
     002791: 75 dmp            0000000000000008
     00279A: AE mrkl*          00000000000000DC
     0027A3: 7B ldci           0000000000000001
@@ -5541,10 +5566,14 @@ b*  002784: 7B ldci           0000000000000008
     0027B6: 7B ldci           0000000000000003
     0027BF: 02 stri        01,FFFFFFFFFFFFFFE8
     0027C9: 00 lodi        01,FFFFFFFFFFFFFFF0
+    0027D3: 03 sroi           0000000000002F71
+    0027DC: AE mrkl*          00000000000000DC
 debug> lia
 
 last instructions executed:
 
+b   00278D: 0F csp            0000000000000006
+    002784: 7B ldci           0000000000000008
     00277B: 76 swp            0000000000000008
     002772: 7B ldci           0000000000000008
     002769: 76 swp            0000000000000008
@@ -5553,12 +5582,10 @@ last instructions executed:
     00274E: AE mrkl*          00000000000000DB
     002745: AE mrkl*          00000000000000DA
     00273C: AE mrkl*          00000000000000D9
-    001996: 0E retp           0000000000000040
-    00198D: AE mrkl*          00000000000000A2
 
 debug> ! Now step to for loop
 debug> s
-Step me!
+
 
  219:      1: b      writeln('Step me!');
  220:      1:  *     for i := 1 to 3 do writeln('Hi there!');    
