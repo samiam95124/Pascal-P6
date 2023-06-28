@@ -68,128 +68,130 @@ and the following annexes: A,B,C,E.
     41        9  
     42        9 procedure stop8; begin end; 
     43       10  
-    44       10 procedure dostuff; 
-    45       10  
-    46       10 var i: integer; 
-    47      -24  
-    48      -24 begin 
-    49       10  
-    50       10     for i := 1 to 4 do writeln('iteration: ', i); 
-    51       42  
-    52       42 end; 
+    44       10 procedure stop9; begin end; 
+    45       11  
+    46       11 procedure dostuff; 
+    47       11  
+    48       11 var i: integer; 
+    49      -24  
+    50      -24 begin 
+    51       11  
+    52       11     for i := 1 to 4 do writeln('iteration: ', i); 
     53       43  
-    54       43 procedure proc2(i: integer; c: char); 
-    55       43  
-    56       43 var a: integer; 
-    57      -24     b: char; 
-    58      -25     d: ^integer; 
-    59      -36     e: ^integer; 
-    60      -44  
-    61      -44 begin 
-    62       43  
-    63       43     a := 75; 
-    64       45     b := '6'; 
-    65       48  
-    66       48     stop3; 
+    54       43 end; 
+    55       44  
+    56       44 procedure proc2(i: integer; c: char); 
+    57       44  
+    58       44 var a: integer; 
+    59      -24     b: char; 
+    60      -25     d: ^integer; 
+    61      -36     e: ^integer; 
+    62      -44  
+    63      -44 begin 
+    64       44  
+    65       44     a := 75; 
+    66       46     b := '6'; 
     67       49  
-    68       49     writeln('Step past me!'); 
-    69       58     writeln('And me too!'); 
-    70       67     writeln('1'); 
-    71       74     writeln('2'); 
-    72       81     writeln('3'); 
-    73       88     traceme; 
-    74       89     writeln('4'); 
-    75       96     stop4; 
-    76       97     writeln('5'); 
-    77      104     a := 12; 
-    78      106     writeln('6'); 
-    79      113     stop5; 
-    80      114     writeln('7'); 
-    81      121     writeln('8'); 
-    82      128     dostuff; 
-    83      129     writeln('9'); 
-    84      136     writeln('10'); 
-    85      145     stop6; 
-    86      146     dostuff; 
-    87      147     stop7; 
-    88      148     new(d); 
-    89      151     new(e); 
-    90      154     dispose(d); 
-    91      157     writeln('11'); 
-    92      166     stop8; 
-    93      167  
-    94      167 end; 
+    68       49     stop3; 
+    69       50  
+    70       50     writeln('Step past me!'); 
+    71       59     writeln('And me too!'); 
+    72       68     writeln('1'); 
+    73       75     writeln('2'); 
+    74       82     writeln('3'); 
+    75       89     traceme; 
+    76       90     writeln('4'); 
+    77       97     stop4; 
+    78       98     writeln('5'); 
+    79      105     a := 12; 
+    80      107     writeln('6'); 
+    81      114     stop5; 
+    82      115     writeln('7'); 
+    83      122     writeln('8'); 
+    84      129     dostuff; 
+    85      130     writeln('9'); 
+    86      137     writeln('10'); 
+    87      146     stop6; 
+    88      147     dostuff; 
+    89      148     stop7; 
+    90      149     new(d); 
+    91      152     new(e); 
+    92      155     dispose(d); 
+    93      158     writeln('11'); 
+    94      167     stop8; 
+    95      168  
+    96      168 end; 
 c          unreferenced
 i          unreferenced
 
-    95      168  
-    96      168 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2); 
-    97      168  
-    98      168 var i, x, i2: integer; 
-    99    -2464     c: char; 
-   100    -2465     b: boolean; 
-   101    -2466     e: enum; 
-   102    -2468     sr: sub; 
-   103    -2472     f: real; 
-   104    -2480     rv: r2; 
-   105    -2704     a: a10; 
-   106    -2784     ar: a2; 
-   107    -4984     ip: ^integer; 
-   108    -4992  
-   109    -4992 begin 
-   110      174  
-   111      174     x := 43; 
-   112      176     c := 'b'; 
-   113      179     b := false; 
-   114      182     e := three; 
-   115      185     sr := 8; 
-   116      188     f := 56.78e10; 
-   117      190  
-   118      190     rv.i := 13; 
-   119      192     rv.c := 'd'; 
-   120      195     rv.b := false; 
-   121      198     rv.e := one; 
-   122      201     rv.sr := 4; 
-   123      204     rv.r := 87.65e20; 
-   124      206     rv.rec.i := 85; 
-   125      208     rv.rec.c := 'x'; 
-   126      211     rv.rec.b := true; 
-   127      214     rv.rec.e := two; 
-   128      217     rv.rec.sr := 4; 
-   129      220     rv.rec.r := 36.32e8; 
-   130      222     for i := 1 to 10 do rv.rec.a[i] := i+40; 
-   131      251     for i := 1 to 10 do rv.a[i] := i+50; 
-   132      280  
-   133      280     for i := 1 to 10 do a[i] := i+20; 
-   134      309  
-   135      309     for i := 1 to 10 do begin 
-   136      319  
-   137      319         ar[i].i := 16; 
-   138      326         ar[i].c := 'z'; 
-   139      335         ar[i].b := false; 
-   140      344         ar[i].e := three; 
-   141      353         ar[i].sr := 2; 
-   142      362         ar[i].r := 43.32e20; 
-   143      370  
-   144      370         ar[i].rec.i := 85; 
-   145      378         ar[i].rec.c := 'k'; 
-   146      387         ar[i].rec.b := true; 
-   147      396         ar[i].rec.e := two; 
-   148      405         ar[i].rec.sr := 7; 
-   149      414         ar[i].rec.r := 23.65e8; 
-   150      422         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+60; 
-   151      456         for i2 := 1 to 10 do ar[i].a[i2] := i2+70; 
-   152      490  
-   153      490     end; 
-   154      500  
-   155      500     new(ip); 
-   156      503     ip^ := 76; 
-   157      507  
-   158      507     stop2; 
+    97      169  
+    98      169 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2); 
+    99      169  
+   100      169 var i, x, i2: integer; 
+   101    -2464     c: char; 
+   102    -2465     b: boolean; 
+   103    -2466     e: enum; 
+   104    -2468     sr: sub; 
+   105    -2472     f: real; 
+   106    -2480     rv: r2; 
+   107    -2704     a: a10; 
+   108    -2784     ar: a2; 
+   109    -4984     ip: ^integer; 
+   110    -4992  
+   111    -4992 begin 
+   112      175  
+   113      175     x := 43; 
+   114      177     c := 'b'; 
+   115      180     b := false; 
+   116      183     e := three; 
+   117      186     sr := 8; 
+   118      189     f := 56.78e10; 
+   119      191  
+   120      191     rv.i := 13; 
+   121      193     rv.c := 'd'; 
+   122      196     rv.b := false; 
+   123      199     rv.e := one; 
+   124      202     rv.sr := 4; 
+   125      205     rv.r := 87.65e20; 
+   126      207     rv.rec.i := 85; 
+   127      209     rv.rec.c := 'x'; 
+   128      212     rv.rec.b := true; 
+   129      215     rv.rec.e := two; 
+   130      218     rv.rec.sr := 4; 
+   131      221     rv.rec.r := 36.32e8; 
+   132      223     for i := 1 to 10 do rv.rec.a[i] := i+40; 
+   133      252     for i := 1 to 10 do rv.a[i] := i+50; 
+   134      281  
+   135      281     for i := 1 to 10 do a[i] := i+20; 
+   136      310  
+   137      310     for i := 1 to 10 do begin 
+   138      320  
+   139      320         ar[i].i := 16; 
+   140      327         ar[i].c := 'z'; 
+   141      336         ar[i].b := false; 
+   142      345         ar[i].e := three; 
+   143      354         ar[i].sr := 2; 
+   144      363         ar[i].r := 43.32e20; 
+   145      371  
+   146      371         ar[i].rec.i := 85; 
+   147      379         ar[i].rec.c := 'k'; 
+   148      388         ar[i].rec.b := true; 
+   149      397         ar[i].rec.e := two; 
+   150      406         ar[i].rec.sr := 7; 
+   151      415         ar[i].rec.r := 23.65e8; 
+   152      423         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+60; 
+   153      457         for i2 := 1 to 10 do ar[i].a[i2] := i2+70; 
+   154      491  
+   155      491     end; 
+   156      501  
+   157      501     new(ip); 
+   158      504     ip^ := 76; 
    159      508  
-   160      508     proc2(74, 'j'); 
-   161      512  
-   162      512 end; 
+   160      508     stop2; 
+   161      509  
+   162      509     proc2(74, 'j'); 
+   163      513  
+   164      513 end; 
 pa         unreferenced
 pb         unreferenced
 pe         unreferenced
@@ -199,66 +201,88 @@ pr         unreferenced
 psr        unreferenced
 pi         unreferenced
 
-   163      513  
-   164      513 begin 
-   165      513  
-   166      513     writeln('This is debug test'); 
-   167      522     debug_test1.writehi; 
-   168      523     x := 42; 
-   169      525     c := 'a'; 
-   170      528     b := true; 
-   171      531     e := two; 
-   172      534     sr := 5; 
-   173      537     f := 12.34e10; 
-   174      539  
-   175      539     rv.i := 12; 
-   176      541     rv.c := 'c'; 
-   177      544     rv.b := false; 
-   178      547     rv.e := three; 
-   179      550     rv.sr := 6; 
-   180      553     rv.r := 56.78e20; 
-   181      555     rv.rec.i := 84; 
-   182      557     rv.rec.c := 'u'; 
-   183      560     rv.rec.b := true; 
-   184      563     rv.rec.e := one; 
-   185      566     rv.rec.sr := 3; 
-   186      569     rv.rec.r := 54.32e8; 
-   187      571     for i := 1 to 10 do rv.rec.a[i] := i+20; 
-   188      600     for i := 1 to 10 do rv.a[i] := i+30; 
-   189      629  
-   190      629     for i := 1 to 10 do a[i] := i+10; 
-   191      658  
-   192      658     for i := 1 to 10 do begin 
-   193      668  
-   194      668         ar[i].i := 12; 
-   195      675         ar[i].c := 'c'; 
-   196      684         ar[i].b := false; 
-   197      693         ar[i].e := three; 
-   198      702         ar[i].sr := 1; 
-   199      711         ar[i].r := 56.78e20; 
-   200      719  
-   201      719         ar[i].rec.i := 84; 
-   202      727         ar[i].rec.c := 'u'; 
-   203      736         ar[i].rec.b := true; 
-   204      745         ar[i].rec.e := one; 
-   205      754         ar[i].rec.sr := 3; 
-   206      763         ar[i].rec.r := 54.32e8; 
-   207      771         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+20; 
-   208      805         for i2 := 1 to 10 do ar[i].a[i2] := i2+30; 
-   209      839  
-   210      839     end; 
-   211      849  
-   212      849     new(pi); 
-   213      852     pi^ := 42; 
-   214      856  
-   215      856     stop1; 
-   216      857  
-   217      857     proc1(83, 'g', true, two, 7, 98.76, rv, ar); 
-   218      870  
-   219      870     writeln('Step me!'); 
-   220      879     for i := 1 to 3 do writeln('Hi there!');     
-   221      908  
-   222      908 end. 
+   165      514  
+   166      514 procedure stepover1; 
+   167      514  
+   168      514 begin 
+   169      514  
+   170      514     writeln('I am stepover proc 1') 
+   171      521  
+   172      521 end; 
+   173      524  
+   174      524 procedure stepover2; 
+   175      524  
+   176      524 begin 
+   177      524  
+   178      524     writeln('I am stepover proc 2') 
+   179      531  
+   180      531 end; 
+   181      534  
+   182      534 begin 
+   183      534  
+   184      534     writeln('This is debug test'); 
+   185      543     debug_test1.writehi; 
+   186      544     x := 42; 
+   187      546     c := 'a'; 
+   188      549     b := true; 
+   189      552     e := two; 
+   190      555     sr := 5; 
+   191      558     f := 12.34e10; 
+   192      560  
+   193      560     rv.i := 12; 
+   194      562     rv.c := 'c'; 
+   195      565     rv.b := false; 
+   196      568     rv.e := three; 
+   197      571     rv.sr := 6; 
+   198      574     rv.r := 56.78e20; 
+   199      576     rv.rec.i := 84; 
+   200      578     rv.rec.c := 'u'; 
+   201      581     rv.rec.b := true; 
+   202      584     rv.rec.e := one; 
+   203      587     rv.rec.sr := 3; 
+   204      590     rv.rec.r := 54.32e8; 
+   205      592     for i := 1 to 10 do rv.rec.a[i] := i+20; 
+   206      621     for i := 1 to 10 do rv.a[i] := i+30; 
+   207      650  
+   208      650     for i := 1 to 10 do a[i] := i+10; 
+   209      679  
+   210      679     for i := 1 to 10 do begin 
+   211      689  
+   212      689         ar[i].i := 12; 
+   213      696         ar[i].c := 'c'; 
+   214      705         ar[i].b := false; 
+   215      714         ar[i].e := three; 
+   216      723         ar[i].sr := 1; 
+   217      732         ar[i].r := 56.78e20; 
+   218      740  
+   219      740         ar[i].rec.i := 84; 
+   220      748         ar[i].rec.c := 'u'; 
+   221      757         ar[i].rec.b := true; 
+   222      766         ar[i].rec.e := one; 
+   223      775         ar[i].rec.sr := 3; 
+   224      784         ar[i].rec.r := 54.32e8; 
+   225      792         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+20; 
+   226      826         for i2 := 1 to 10 do ar[i].a[i2] := i2+30; 
+   227      860  
+   228      860     end; 
+   229      870  
+   230      870     new(pi); 
+   231      873     pi^ := 42; 
+   232      877  
+   233      877     stop1; 
+   234      878  
+   235      878     proc1(83, 'g', true, two, 7, 98.76, rv, ar); 
+   236      891  
+   237      891     stepover1; 
+   238      892  
+   239      892     stepover2; 
+   240      893  
+   241      893     writeln('Step me!'); 
+   242      902     for i := 1 to 3 do writeln('Hi there!');     
+   243      931  
+   244      931     stop9; 
+   245      932  
+   246      932 end. 
 
 Errors in program: 0
 P6 Pascal interpreter vs. 0.2.x
@@ -270,9 +294,9 @@ Running program
 P6 debug mode
 
 
- 165:      1:    
- 166:      1:  *     writeln('This is debug test');
- 167:      0:        debug_test1.writehi;
+ 183:      1:    
+ 184:      1:  *     writeln('This is debug test');
+ 185:      0:        debug_test1.writehi;
 
 debug> !
 debug> ! Debug mode test input file.
@@ -398,63 +422,63 @@ debug> l debug_test 1 100
   41:      0:    
   42:      0:    procedure stop8; begin end;
   43:      0:    
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
   45:      0:    
-  46:      0:    var i: integer;
+  46:      0:    procedure dostuff;
   47:      0:    
-  48:      0:    begin
+  48:      0:    var i: integer;
   49:      0:    
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      0:    begin
   51:      0:    
-  52:      0:    end;
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
   53:      0:    
-  54:      0:    procedure proc2(i: integer; c: char);
+  54:      0:    end;
   55:      0:    
-  56:      0:    var a: integer;
-  57:      0:        b: char;
-  58:      0:        d: ^integer;
-  59:      0:        e: ^integer;
-  60:      0:    
-  61:      0:    begin
+  56:      0:    procedure proc2(i: integer; c: char);
+  57:      0:    
+  58:      0:    var a: integer;
+  59:      0:        b: char;
+  60:      0:        d: ^integer;
+  61:      0:        e: ^integer;
   62:      0:    
-  63:      0:        a := 75;
-  64:      0:        b := '6';
-  65:      0:    
-  66:      0:        stop3;
+  63:      0:    begin
+  64:      0:    
+  65:      0:        a := 75;
+  66:      0:        b := '6';
   67:      0:    
-  68:      0:        writeln('Step past me!');
-  69:      0:        writeln('And me too!');
-  70:      0:        writeln('1');
-  71:      0:        writeln('2');
-  72:      0:        writeln('3');
-  73:      0:        traceme;
-  74:      0:        writeln('4');
-  75:      0:        stop4;
-  76:      0:        writeln('5');
-  77:      0:        a := 12;
-  78:      0:        writeln('6');
-  79:      0:        stop5;
-  80:      0:        writeln('7');
-  81:      0:        writeln('8');
-  82:      0:        dostuff;
-  83:      0:        writeln('9');
-  84:      0:        writeln('10');
-  85:      0:        stop6;
-  86:      0:        dostuff;
-  87:      0:        stop7;
-  88:      0:        new(d);
-  89:      0:        new(e);
-  90:      0:        dispose(d);
-  91:      0:        writeln('11');
-  92:      0:        stop8;
-  93:      0:    
-  94:      0:    end;
+  68:      0:        stop3;
+  69:      0:    
+  70:      0:        writeln('Step past me!');
+  71:      0:        writeln('And me too!');
+  72:      0:        writeln('1');
+  73:      0:        writeln('2');
+  74:      0:        writeln('3');
+  75:      0:        traceme;
+  76:      0:        writeln('4');
+  77:      0:        stop4;
+  78:      0:        writeln('5');
+  79:      0:        a := 12;
+  80:      0:        writeln('6');
+  81:      0:        stop5;
+  82:      0:        writeln('7');
+  83:      0:        writeln('8');
+  84:      0:        dostuff;
+  85:      0:        writeln('9');
+  86:      0:        writeln('10');
+  87:      0:        stop6;
+  88:      0:        dostuff;
+  89:      0:        stop7;
+  90:      0:        new(d);
+  91:      0:        new(e);
+  92:      0:        dispose(d);
+  93:      0:        writeln('11');
+  94:      0:        stop8;
   95:      0:    
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  96:      0:    end;
   97:      0:    
-  98:      0:    var i, x, i2: integer;
-  99:      0:        c: char;
- 100:      0:        b: boolean;
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  99:      0:    
+ 100:      0:    var i, x, i2: integer;
 
 debug> l debug_test 1:100
 
@@ -501,63 +525,63 @@ debug> l debug_test 1:100
   41:      0:    
   42:      0:    procedure stop8; begin end;
   43:      0:    
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
   45:      0:    
-  46:      0:    var i: integer;
+  46:      0:    procedure dostuff;
   47:      0:    
-  48:      0:    begin
+  48:      0:    var i: integer;
   49:      0:    
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      0:    begin
   51:      0:    
-  52:      0:    end;
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
   53:      0:    
-  54:      0:    procedure proc2(i: integer; c: char);
+  54:      0:    end;
   55:      0:    
-  56:      0:    var a: integer;
-  57:      0:        b: char;
-  58:      0:        d: ^integer;
-  59:      0:        e: ^integer;
-  60:      0:    
-  61:      0:    begin
+  56:      0:    procedure proc2(i: integer; c: char);
+  57:      0:    
+  58:      0:    var a: integer;
+  59:      0:        b: char;
+  60:      0:        d: ^integer;
+  61:      0:        e: ^integer;
   62:      0:    
-  63:      0:        a := 75;
-  64:      0:        b := '6';
-  65:      0:    
-  66:      0:        stop3;
+  63:      0:    begin
+  64:      0:    
+  65:      0:        a := 75;
+  66:      0:        b := '6';
   67:      0:    
-  68:      0:        writeln('Step past me!');
-  69:      0:        writeln('And me too!');
-  70:      0:        writeln('1');
-  71:      0:        writeln('2');
-  72:      0:        writeln('3');
-  73:      0:        traceme;
-  74:      0:        writeln('4');
-  75:      0:        stop4;
-  76:      0:        writeln('5');
-  77:      0:        a := 12;
-  78:      0:        writeln('6');
-  79:      0:        stop5;
-  80:      0:        writeln('7');
-  81:      0:        writeln('8');
-  82:      0:        dostuff;
-  83:      0:        writeln('9');
-  84:      0:        writeln('10');
-  85:      0:        stop6;
-  86:      0:        dostuff;
-  87:      0:        stop7;
-  88:      0:        new(d);
-  89:      0:        new(e);
-  90:      0:        dispose(d);
-  91:      0:        writeln('11');
-  92:      0:        stop8;
-  93:      0:    
-  94:      0:    end;
+  68:      0:        stop3;
+  69:      0:    
+  70:      0:        writeln('Step past me!');
+  71:      0:        writeln('And me too!');
+  72:      0:        writeln('1');
+  73:      0:        writeln('2');
+  74:      0:        writeln('3');
+  75:      0:        traceme;
+  76:      0:        writeln('4');
+  77:      0:        stop4;
+  78:      0:        writeln('5');
+  79:      0:        a := 12;
+  80:      0:        writeln('6');
+  81:      0:        stop5;
+  82:      0:        writeln('7');
+  83:      0:        writeln('8');
+  84:      0:        dostuff;
+  85:      0:        writeln('9');
+  86:      0:        writeln('10');
+  87:      0:        stop6;
+  88:      0:        dostuff;
+  89:      0:        stop7;
+  90:      0:        new(d);
+  91:      0:        new(e);
+  92:      0:        dispose(d);
+  93:      0:        writeln('11');
+  94:      0:        stop8;
   95:      0:    
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  96:      0:    end;
   97:      0:    
-  98:      0:    var i, x, i2: integer;
-  99:      0:        c: char;
- 100:      0:        b: boolean;
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  99:      0:    
+ 100:      0:    var i, x, i2: integer;
 
 debug> l debug_test 5
 
@@ -613,63 +637,63 @@ debug> l debug_test 5 100
   41:      0:    
   42:      0:    procedure stop8; begin end;
   43:      0:    
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
   45:      0:    
-  46:      0:    var i: integer;
+  46:      0:    procedure dostuff;
   47:      0:    
-  48:      0:    begin
+  48:      0:    var i: integer;
   49:      0:    
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      0:    begin
   51:      0:    
-  52:      0:    end;
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
   53:      0:    
-  54:      0:    procedure proc2(i: integer; c: char);
+  54:      0:    end;
   55:      0:    
-  56:      0:    var a: integer;
-  57:      0:        b: char;
-  58:      0:        d: ^integer;
-  59:      0:        e: ^integer;
-  60:      0:    
-  61:      0:    begin
+  56:      0:    procedure proc2(i: integer; c: char);
+  57:      0:    
+  58:      0:    var a: integer;
+  59:      0:        b: char;
+  60:      0:        d: ^integer;
+  61:      0:        e: ^integer;
   62:      0:    
-  63:      0:        a := 75;
-  64:      0:        b := '6';
-  65:      0:    
-  66:      0:        stop3;
+  63:      0:    begin
+  64:      0:    
+  65:      0:        a := 75;
+  66:      0:        b := '6';
   67:      0:    
-  68:      0:        writeln('Step past me!');
-  69:      0:        writeln('And me too!');
-  70:      0:        writeln('1');
-  71:      0:        writeln('2');
-  72:      0:        writeln('3');
-  73:      0:        traceme;
-  74:      0:        writeln('4');
-  75:      0:        stop4;
-  76:      0:        writeln('5');
-  77:      0:        a := 12;
-  78:      0:        writeln('6');
-  79:      0:        stop5;
-  80:      0:        writeln('7');
-  81:      0:        writeln('8');
-  82:      0:        dostuff;
-  83:      0:        writeln('9');
-  84:      0:        writeln('10');
-  85:      0:        stop6;
-  86:      0:        dostuff;
-  87:      0:        stop7;
-  88:      0:        new(d);
-  89:      0:        new(e);
-  90:      0:        dispose(d);
-  91:      0:        writeln('11');
-  92:      0:        stop8;
-  93:      0:    
-  94:      0:    end;
+  68:      0:        stop3;
+  69:      0:    
+  70:      0:        writeln('Step past me!');
+  71:      0:        writeln('And me too!');
+  72:      0:        writeln('1');
+  73:      0:        writeln('2');
+  74:      0:        writeln('3');
+  75:      0:        traceme;
+  76:      0:        writeln('4');
+  77:      0:        stop4;
+  78:      0:        writeln('5');
+  79:      0:        a := 12;
+  80:      0:        writeln('6');
+  81:      0:        stop5;
+  82:      0:        writeln('7');
+  83:      0:        writeln('8');
+  84:      0:        dostuff;
+  85:      0:        writeln('9');
+  86:      0:        writeln('10');
+  87:      0:        stop6;
+  88:      0:        dostuff;
+  89:      0:        stop7;
+  90:      0:        new(d);
+  91:      0:        new(e);
+  92:      0:        dispose(d);
+  93:      0:        writeln('11');
+  94:      0:        stop8;
   95:      0:    
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  96:      0:    end;
   97:      0:    
-  98:      0:    var i, x, i2: integer;
-  99:      0:        c: char;
- 100:      0:        b: boolean;
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  99:      0:    
+ 100:      0:    var i, x, i2: integer;
 
 debug> l debug_test 5:100
 
@@ -712,67 +736,67 @@ debug> l debug_test 5:100
   41:      0:    
   42:      0:    procedure stop8; begin end;
   43:      0:    
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
   45:      0:    
-  46:      0:    var i: integer;
+  46:      0:    procedure dostuff;
   47:      0:    
-  48:      0:    begin
+  48:      0:    var i: integer;
   49:      0:    
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      0:    begin
   51:      0:    
-  52:      0:    end;
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
   53:      0:    
-  54:      0:    procedure proc2(i: integer; c: char);
+  54:      0:    end;
   55:      0:    
-  56:      0:    var a: integer;
-  57:      0:        b: char;
-  58:      0:        d: ^integer;
-  59:      0:        e: ^integer;
-  60:      0:    
-  61:      0:    begin
+  56:      0:    procedure proc2(i: integer; c: char);
+  57:      0:    
+  58:      0:    var a: integer;
+  59:      0:        b: char;
+  60:      0:        d: ^integer;
+  61:      0:        e: ^integer;
   62:      0:    
-  63:      0:        a := 75;
-  64:      0:        b := '6';
-  65:      0:    
-  66:      0:        stop3;
+  63:      0:    begin
+  64:      0:    
+  65:      0:        a := 75;
+  66:      0:        b := '6';
   67:      0:    
-  68:      0:        writeln('Step past me!');
-  69:      0:        writeln('And me too!');
-  70:      0:        writeln('1');
-  71:      0:        writeln('2');
-  72:      0:        writeln('3');
-  73:      0:        traceme;
-  74:      0:        writeln('4');
-  75:      0:        stop4;
-  76:      0:        writeln('5');
-  77:      0:        a := 12;
-  78:      0:        writeln('6');
-  79:      0:        stop5;
-  80:      0:        writeln('7');
-  81:      0:        writeln('8');
-  82:      0:        dostuff;
-  83:      0:        writeln('9');
-  84:      0:        writeln('10');
-  85:      0:        stop6;
-  86:      0:        dostuff;
-  87:      0:        stop7;
-  88:      0:        new(d);
-  89:      0:        new(e);
-  90:      0:        dispose(d);
-  91:      0:        writeln('11');
-  92:      0:        stop8;
-  93:      0:    
-  94:      0:    end;
+  68:      0:        stop3;
+  69:      0:    
+  70:      0:        writeln('Step past me!');
+  71:      0:        writeln('And me too!');
+  72:      0:        writeln('1');
+  73:      0:        writeln('2');
+  74:      0:        writeln('3');
+  75:      0:        traceme;
+  76:      0:        writeln('4');
+  77:      0:        stop4;
+  78:      0:        writeln('5');
+  79:      0:        a := 12;
+  80:      0:        writeln('6');
+  81:      0:        stop5;
+  82:      0:        writeln('7');
+  83:      0:        writeln('8');
+  84:      0:        dostuff;
+  85:      0:        writeln('9');
+  86:      0:        writeln('10');
+  87:      0:        stop6;
+  88:      0:        dostuff;
+  89:      0:        stop7;
+  90:      0:        new(d);
+  91:      0:        new(e);
+  92:      0:        dispose(d);
+  93:      0:        writeln('11');
+  94:      0:        stop8;
   95:      0:    
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  96:      0:    end;
   97:      0:    
-  98:      0:    var i, x, i2: integer;
-  99:      0:        c: char;
- 100:      0:        b: boolean;
- 101:      0:        e: enum;
- 102:      0:        sr: sub;
- 103:      0:        f: real;
- 104:      0:        rv: r2;
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  99:      0:    
+ 100:      0:    var i, x, i2: integer;
+ 101:      0:        c: char;
+ 102:      0:        b: boolean;
+ 103:      0:        e: enum;
+ 104:      0:        sr: sub;
 
 debug> lc debug_test1 1
 
@@ -796,8 +820,8 @@ debug> lc debug_test1 1
     0000CD: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -839,8 +863,8 @@ debug> lc debug_test1 1 100
     0000CD: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -895,8 +919,8 @@ debug> lc debug_test1 1:100
     0000CD: AE mrkl*          0000000000000007
    7:      0:        writeln('this is debug test1')
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -1108,359 +1132,362 @@ debug> lc debug_test 5 100
   43:      0:    
     000468: AE mrkl*          000000000000002B
     000471: AE mrkl*          000000000000002C
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
     000471: AE mrkl*          000000000000002C
-    00047A: AE mrkl*          000000000000002D
+    00047A: AE mrkl*          000000000000002C
+    000483: 0B mst         01,FFFFFFFFFFFFFFF0,0000000000000000
+    000495: 0E retp           0000000000000000
+    00049E: AE mrkl*          000000000000002D
   45:      0:    
-    00047A: AE mrkl*          000000000000002D
-    000483: AE mrkl*          000000000000002E
-  46:      0:    var i: integer;
-    000483: AE mrkl*          000000000000002E
-    00048C: AE mrkl*          000000000000002F
+    00049E: AE mrkl*          000000000000002D
+    0004A7: AE mrkl*          000000000000002E
+  46:      0:    procedure dostuff;
+    0004A7: AE mrkl*          000000000000002E
+    0004B0: AE mrkl*          000000000000002F
   47:      0:    
-    00048C: AE mrkl*          000000000000002F
-    000495: AE mrkl*          0000000000000030
-  48:      0:    begin
-    000495: AE mrkl*          0000000000000030
-    00049E: AE mrkl*          0000000000000030
-    0004A7: 0B mst         01,FFFFFFFFFFFFFFD8,FFFFFFFFFFFFFFE0
-    0004B9: AE mrkl*          0000000000000031
+    0004B0: AE mrkl*          000000000000002F
+    0004B9: AE mrkl*          0000000000000030
+  48:      0:    var i: integer;
+    0004B9: AE mrkl*          0000000000000030
+    0004C2: AE mrkl*          0000000000000031
   49:      0:    
-    0004B9: AE mrkl*          0000000000000031
-    0004C2: AE mrkl*          0000000000000032
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
-    0004C2: AE mrkl*          0000000000000032
-    0004CB: 7B ldci           0000000000000001
-    0004D4: 02 stri        02,FFFFFFFFFFFFFFE0
-    0004DE: 7B ldci           0000000000000004
-    0004E7: 02 stri        02,FFFFFFFFFFFFFFD8
-    0004F1: 00 lodi        02,FFFFFFFFFFFFFFE0
-    0004FB: 02 stri        02,FFFFFFFFFFFFFFE8
-    000505: AE mrkl*          0000000000000032
-    00050E: 00 lodi        02,FFFFFFFFFFFFFFE8
-    000518: 00 lodi        02,FFFFFFFFFFFFFFD8
-    000522: A1 leqi        
-    000523: 18 fjp            00000000000005C8
-    00052C: 38 lca            0000000000002EC7
-    000535: 05 lao            0000000000002F0A
-    00053E: 76 swp            0000000000000008
-    000547: 7B ldci           000000000000000B
-    000550: 76 swp            0000000000000008
-    000559: 7B ldci           000000000000000B
-    000562: 0F csp            0000000000000006
-    000564: 00 lodi        02,FFFFFFFFFFFFFFE8
-    00056E: 7B ldci           000000000000000B
-    000577: 0F csp            0000000000000008
-    000579: 0F csp            0000000000000005
-    00057B: 75 dmp            0000000000000008
-    000584: 00 lodi        02,FFFFFFFFFFFFFFE8
-    00058E: 00 lodi        02,FFFFFFFFFFFFFFD8
-    000598: 89 equi        
-    000599: 77 tjp            00000000000005C8
-    0005A2: 00 lodi        02,FFFFFFFFFFFFFFE8
-    0005AC: 0A inci           0000000000000001
-    0005B5: 02 stri        02,FFFFFFFFFFFFFFE8
-    0005BF: 17 ujp            0000000000000505
-    0005C8: AE mrkl*          0000000000000032
-    0005D1: 04 lda         02,FFFFFFFFFFFFFFE8
-    0005DB: BD inv         
-    0005DC: AE mrkl*          0000000000000033
+    0004C2: AE mrkl*          0000000000000031
+    0004CB: AE mrkl*          0000000000000032
+  50:      0:    begin
+    0004CB: AE mrkl*          0000000000000032
+    0004D4: AE mrkl*          0000000000000032
+    0004DD: 0B mst         01,FFFFFFFFFFFFFFD8,FFFFFFFFFFFFFFE0
+    0004EF: AE mrkl*          0000000000000033
   51:      0:    
-    0005DC: AE mrkl*          0000000000000033
-    0005E5: AE mrkl*          0000000000000034
-  52:      0:    end;
-    0005E5: AE mrkl*          0000000000000034
-    0005EE: 0E retp           0000000000000000
-    0005F7: AE mrkl*          0000000000000035
+    0004EF: AE mrkl*          0000000000000033
+    0004F8: AE mrkl*          0000000000000034
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+    0004F8: AE mrkl*          0000000000000034
+    000501: 7B ldci           0000000000000001
+    00050A: 02 stri        02,FFFFFFFFFFFFFFE0
+    000514: 7B ldci           0000000000000004
+    00051D: 02 stri        02,FFFFFFFFFFFFFFD8
+    000527: 00 lodi        02,FFFFFFFFFFFFFFE0
+    000531: 02 stri        02,FFFFFFFFFFFFFFE8
+    00053B: AE mrkl*          0000000000000034
+    000544: 00 lodi        02,FFFFFFFFFFFFFFE8
+    00054E: 00 lodi        02,FFFFFFFFFFFFFFD8
+    000558: A1 leqi        
+    000559: 18 fjp            00000000000005FE
+    000562: 38 lca            000000000000311B
+    00056B: 05 lao            000000000000315E
+    000574: 76 swp            0000000000000008
+    00057D: 7B ldci           000000000000000B
+    000586: 76 swp            0000000000000008
+    00058F: 7B ldci           000000000000000B
+    000598: 0F csp            0000000000000006
+    00059A: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005A4: 7B ldci           000000000000000B
+    0005AD: 0F csp            0000000000000008
+    0005AF: 0F csp            0000000000000005
+    0005B1: 75 dmp            0000000000000008
+    0005BA: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005C4: 00 lodi        02,FFFFFFFFFFFFFFD8
+    0005CE: 89 equi        
+    0005CF: 77 tjp            00000000000005FE
+    0005D8: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005E2: 0A inci           0000000000000001
+    0005EB: 02 stri        02,FFFFFFFFFFFFFFE8
+    0005F5: 17 ujp            000000000000053B
+    0005FE: AE mrkl*          0000000000000034
+    000607: 04 lda         02,FFFFFFFFFFFFFFE8
+    000611: BD inv         
+    000612: AE mrkl*          0000000000000035
   53:      0:    
-    0005F7: AE mrkl*          0000000000000035
-    000600: AE mrkl*          0000000000000036
-  54:      0:    procedure proc2(i: integer; c: char);
-    000600: AE mrkl*          0000000000000036
-    000609: AE mrkl*          0000000000000037
+    000612: AE mrkl*          0000000000000035
+    00061B: AE mrkl*          0000000000000036
+  54:      0:    end;
+    00061B: AE mrkl*          0000000000000036
+    000624: 0E retp           0000000000000000
+    00062D: AE mrkl*          0000000000000037
   55:      0:    
-    000609: AE mrkl*          0000000000000037
-    000612: AE mrkl*          0000000000000038
-  56:      0:    var a: integer;
-    000612: AE mrkl*          0000000000000038
-    00061B: AE mrkl*          0000000000000039
-  57:      0:        b: char;
-    00061B: AE mrkl*          0000000000000039
-    000624: AE mrkl*          000000000000003A
-  58:      0:        d: ^integer;
-    000624: AE mrkl*          000000000000003A
-    00062D: AE mrkl*          000000000000003B
-  59:      0:        e: ^integer;
-    00062D: AE mrkl*          000000000000003B
-    000636: AE mrkl*          000000000000003C
-  60:      0:    
-    000636: AE mrkl*          000000000000003C
-    00063F: AE mrkl*          000000000000003D
-  61:      0:    begin
-    00063F: AE mrkl*          000000000000003D
-    000648: AE mrkl*          000000000000003D
-    000651: 0B mst         01,FFFFFFFFFFFFFFD0,FFFFFFFFFFFFFFE0
-    000663: AE mrkl*          000000000000003E
+    00062D: AE mrkl*          0000000000000037
+    000636: AE mrkl*          0000000000000038
+  56:      0:    procedure proc2(i: integer; c: char);
+    000636: AE mrkl*          0000000000000038
+    00063F: AE mrkl*          0000000000000039
+  57:      0:    
+    00063F: AE mrkl*          0000000000000039
+    000648: AE mrkl*          000000000000003A
+  58:      0:    var a: integer;
+    000648: AE mrkl*          000000000000003A
+    000651: AE mrkl*          000000000000003B
+  59:      0:        b: char;
+    000651: AE mrkl*          000000000000003B
+    00065A: AE mrkl*          000000000000003C
+  60:      0:        d: ^integer;
+    00065A: AE mrkl*          000000000000003C
+    000663: AE mrkl*          000000000000003D
+  61:      0:        e: ^integer;
+    000663: AE mrkl*          000000000000003D
+    00066C: AE mrkl*          000000000000003E
   62:      0:    
-    000663: AE mrkl*          000000000000003E
-    00066C: AE mrkl*          000000000000003F
-  63:      0:        a := 75;
-    00066C: AE mrkl*          000000000000003F
-    000675: 7B ldci           000000000000004B
-    00067E: 02 stri        02,FFFFFFFFFFFFFFE8
-    000688: AE mrkl*          0000000000000040
-  64:      0:        b := '6';
-    000688: AE mrkl*          0000000000000040
-    000691: 7F ldcc           0000000000000036
-    000693: 63 chkc           0000000000002EB7
-    00069C: 4A strc        02,FFFFFFFFFFFFFFE7
-    0006A6: AE mrkl*          0000000000000041
-  65:      0:    
-    0006A6: AE mrkl*          0000000000000041
-    0006AF: AE mrkl*          0000000000000042
-  66:      0:        stop3;
-    0006AF: AE mrkl*          0000000000000042
-    0006B8: F5 sfr            0000000000000000
-    0006C1: 0C cup            0000000000000300
-    0006CA: AE mrkl*          0000000000000042
-    0006D3: AE mrkl*          0000000000000043
+    00066C: AE mrkl*          000000000000003E
+    000675: AE mrkl*          000000000000003F
+  63:      0:    begin
+    000675: AE mrkl*          000000000000003F
+    00067E: AE mrkl*          000000000000003F
+    000687: 0B mst         01,FFFFFFFFFFFFFFD0,FFFFFFFFFFFFFFE0
+    000699: AE mrkl*          0000000000000040
+  64:      0:    
+    000699: AE mrkl*          0000000000000040
+    0006A2: AE mrkl*          0000000000000041
+  65:      0:        a := 75;
+    0006A2: AE mrkl*          0000000000000041
+    0006AB: 7B ldci           000000000000004B
+    0006B4: 02 stri        02,FFFFFFFFFFFFFFE8
+    0006BE: AE mrkl*          0000000000000042
+  66:      0:        b := '6';
+    0006BE: AE mrkl*          0000000000000042
+    0006C7: 7F ldcc           0000000000000036
+    0006C9: 63 chkc           000000000000310B
+    0006D2: 4A strc        02,FFFFFFFFFFFFFFE7
+    0006DC: AE mrkl*          0000000000000043
   67:      0:    
-    0006D3: AE mrkl*          0000000000000043
-    0006DC: AE mrkl*          0000000000000044
-  68:      0:        writeln('Step past me!');
-    0006DC: AE mrkl*          0000000000000044
-    0006E5: 38 lca            0000000000002EA2
-    0006EE: 05 lao            0000000000002F0A
-    0006F7: 76 swp            0000000000000008
-    000700: 7B ldci           000000000000000D
-    000709: 76 swp            0000000000000008
-    000712: 7B ldci           000000000000000D
-    00071B: 0F csp            0000000000000006
-    00071D: 0F csp            0000000000000005
-    00071F: 75 dmp            0000000000000008
-    000728: AE mrkl*          0000000000000045
-  69:      0:        writeln('And me too!');
-    000728: AE mrkl*          0000000000000045
-    000731: 38 lca            0000000000002E8F
-    00073A: 05 lao            0000000000002F0A
-    000743: 76 swp            0000000000000008
-    00074C: 7B ldci           000000000000000B
-    000755: 76 swp            0000000000000008
-    00075E: 7B ldci           000000000000000B
-    000767: 0F csp            0000000000000006
-    000769: 0F csp            0000000000000005
-    00076B: 75 dmp            0000000000000008
-    000774: AE mrkl*          0000000000000046
-  70:      0:        writeln('1');
-    000774: AE mrkl*          0000000000000046
-    00077D: 7F ldcc           0000000000000031
-    00077F: 05 lao            0000000000002F0A
-    000788: 76 swp            0000000000000008
-    000791: 7B ldci           0000000000000001
-    00079A: 0F csp            000000000000000A
-    00079C: 0F csp            0000000000000005
-    00079E: 75 dmp            0000000000000008
-    0007A7: AE mrkl*          0000000000000047
-  71:      0:        writeln('2');
-    0007A7: AE mrkl*          0000000000000047
-    0007B0: 7F ldcc           0000000000000032
-    0007B2: 05 lao            0000000000002F0A
-    0007BB: 76 swp            0000000000000008
-    0007C4: 7B ldci           0000000000000001
-    0007CD: 0F csp            000000000000000A
-    0007CF: 0F csp            0000000000000005
-    0007D1: 75 dmp            0000000000000008
-    0007DA: AE mrkl*          0000000000000048
-  72:      0:        writeln('3');
-    0007DA: AE mrkl*          0000000000000048
-    0007E3: 7F ldcc           0000000000000033
-    0007E5: 05 lao            0000000000002F0A
-    0007EE: 76 swp            0000000000000008
-    0007F7: 7B ldci           0000000000000001
-    000800: 0F csp            000000000000000A
-    000802: 0F csp            0000000000000005
-    000804: 75 dmp            0000000000000008
-    00080D: AE mrkl*          0000000000000049
-  73:      0:        traceme;
-    00080D: AE mrkl*          0000000000000049
-    000816: F5 sfr            0000000000000000
-    00081F: 0C cup            0000000000000336
-    000828: AE mrkl*          0000000000000049
-    000831: AE mrkl*          000000000000004A
-  74:      0:        writeln('4');
-    000831: AE mrkl*          000000000000004A
-    00083A: 7F ldcc           0000000000000034
-    00083C: 05 lao            0000000000002F0A
-    000845: 76 swp            0000000000000008
-    00084E: 7B ldci           0000000000000001
-    000857: 0F csp            000000000000000A
-    000859: 0F csp            0000000000000005
-    00085B: 75 dmp            0000000000000008
-    000864: AE mrkl*          000000000000004B
-  75:      0:        stop4;
-    000864: AE mrkl*          000000000000004B
-    00086D: F5 sfr            0000000000000000
-    000876: 0C cup            000000000000036C
-    00087F: AE mrkl*          000000000000004B
-    000888: AE mrkl*          000000000000004C
-  76:      0:        writeln('5');
-    000888: AE mrkl*          000000000000004C
-    000891: 7F ldcc           0000000000000035
-    000893: 05 lao            0000000000002F0A
-    00089C: 76 swp            0000000000000008
-    0008A5: 7B ldci           0000000000000001
-    0008AE: 0F csp            000000000000000A
-    0008B0: 0F csp            0000000000000005
-    0008B2: 75 dmp            0000000000000008
-    0008BB: AE mrkl*          000000000000004D
-  77:      0:        a := 12;
-    0008BB: AE mrkl*          000000000000004D
-    0008C4: 7B ldci           000000000000000C
-    0008CD: 02 stri        02,FFFFFFFFFFFFFFE8
-    0008D7: AE mrkl*          000000000000004E
-  78:      0:        writeln('6');
-    0008D7: AE mrkl*          000000000000004E
-    0008E0: 7F ldcc           0000000000000036
-    0008E2: 05 lao            0000000000002F0A
-    0008EB: 76 swp            0000000000000008
-    0008F4: 7B ldci           0000000000000001
-    0008FD: 0F csp            000000000000000A
-    0008FF: 0F csp            0000000000000005
-    000901: 75 dmp            0000000000000008
-    00090A: AE mrkl*          000000000000004F
-  79:      0:        stop5;
-    00090A: AE mrkl*          000000000000004F
-    000913: F5 sfr            0000000000000000
-    00091C: 0C cup            00000000000003A2
-    000925: AE mrkl*          000000000000004F
-    00092E: AE mrkl*          0000000000000050
-  80:      0:        writeln('7');
-    00092E: AE mrkl*          0000000000000050
-    000937: 7F ldcc           0000000000000037
-    000939: 05 lao            0000000000002F0A
-    000942: 76 swp            0000000000000008
-    00094B: 7B ldci           0000000000000001
-    000954: 0F csp            000000000000000A
-    000956: 0F csp            0000000000000005
-    000958: 75 dmp            0000000000000008
-    000961: AE mrkl*          0000000000000051
-  81:      0:        writeln('8');
-    000961: AE mrkl*          0000000000000051
-    00096A: 7F ldcc           0000000000000038
-    00096C: 05 lao            0000000000002F0A
-    000975: 76 swp            0000000000000008
-    00097E: 7B ldci           0000000000000001
-    000987: 0F csp            000000000000000A
-    000989: 0F csp            0000000000000005
-    00098B: 75 dmp            0000000000000008
-    000994: AE mrkl*          0000000000000052
-  82:      0:        dostuff;
-    000994: AE mrkl*          0000000000000052
-    00099D: F5 sfr            0000000000000000
-    0009A6: 0C cup            000000000000048C
-    0009AF: AE mrkl*          0000000000000052
-    0009B8: AE mrkl*          0000000000000053
-  83:      0:        writeln('9');
-    0009B8: AE mrkl*          0000000000000053
-    0009C1: 7F ldcc           0000000000000039
-    0009C3: 05 lao            0000000000002F0A
-    0009CC: 76 swp            0000000000000008
-    0009D5: 7B ldci           0000000000000001
-    0009DE: 0F csp            000000000000000A
-    0009E0: 0F csp            0000000000000005
-    0009E2: 75 dmp            0000000000000008
-    0009EB: AE mrkl*          0000000000000054
-  84:      0:        writeln('10');
-    0009EB: AE mrkl*          0000000000000054
-    0009F4: 38 lca            0000000000002E85
-    0009FD: 05 lao            0000000000002F0A
-    000A06: 76 swp            0000000000000008
-    000A0F: 7B ldci           0000000000000002
-    000A18: 76 swp            0000000000000008
-    000A21: 7B ldci           0000000000000002
-    000A2A: 0F csp            0000000000000006
-    000A2C: 0F csp            0000000000000005
-    000A2E: 75 dmp            0000000000000008
-    000A37: AE mrkl*          0000000000000055
-  85:      0:        stop6;
-    000A37: AE mrkl*          0000000000000055
-    000A40: F5 sfr            0000000000000000
-    000A49: 0C cup            00000000000003D8
-    000A52: AE mrkl*          0000000000000055
-    000A5B: AE mrkl*          0000000000000056
-  86:      0:        dostuff;
-    000A5B: AE mrkl*          0000000000000056
-    000A64: F5 sfr            0000000000000000
-    000A6D: 0C cup            000000000000048C
-    000A76: AE mrkl*          0000000000000056
-    000A7F: AE mrkl*          0000000000000057
-  87:      0:        stop7;
-    000A7F: AE mrkl*          0000000000000057
-    000A88: F5 sfr            0000000000000000
-    000A91: 0C cup            000000000000040E
-    000A9A: AE mrkl*          0000000000000057
-    000AA3: AE mrkl*          0000000000000058
-  88:      0:        new(d);
-    000AA3: AE mrkl*          0000000000000058
-    000AAC: 04 lda         02,FFFFFFFFFFFFFFDC
-    000AB6: 7B ldci           0000000000000008
-    000ABF: 0F csp            0000000000000004
-    000AC1: AE mrkl*          0000000000000059
-  89:      0:        new(e);
-    000AC1: AE mrkl*          0000000000000059
-    000ACA: 04 lda         02,FFFFFFFFFFFFFFD4
-    000AD4: 7B ldci           0000000000000008
-    000ADD: 0F csp            0000000000000004
-    000ADF: AE mrkl*          000000000000005A
-  90:      0:        dispose(d);
-    000ADF: AE mrkl*          000000000000005A
-    000AE8: 69 loda        02,FFFFFFFFFFFFFFDC
-    000AF2: 7B ldci           0000000000000008
-    000AFB: 0F csp            000000000000001A
-    000AFD: AE mrkl*          000000000000005B
-  91:      0:        writeln('11');
-    000AFD: AE mrkl*          000000000000005B
-    000B06: 38 lca            0000000000002E7B
-    000B0F: 05 lao            0000000000002F0A
-    000B18: 76 swp            0000000000000008
-    000B21: 7B ldci           0000000000000002
-    000B2A: 76 swp            0000000000000008
-    000B33: 7B ldci           0000000000000002
-    000B3C: 0F csp            0000000000000006
-    000B3E: 0F csp            0000000000000005
-    000B40: 75 dmp            0000000000000008
-    000B49: AE mrkl*          000000000000005C
-  92:      0:        stop8;
-    000B49: AE mrkl*          000000000000005C
-    000B52: F5 sfr            0000000000000000
-    000B5B: 0C cup            0000000000000444
-    000B64: AE mrkl*          000000000000005C
-    000B6D: AE mrkl*          000000000000005D
-  93:      0:    
-    000B6D: AE mrkl*          000000000000005D
-    000B76: AE mrkl*          000000000000005E
-  94:      0:    end;
-    000B76: AE mrkl*          000000000000005E
-    000B7F: 0E retp           0000000000000010
-    000B88: AE mrkl*          000000000000005F
+    0006DC: AE mrkl*          0000000000000043
+    0006E5: AE mrkl*          0000000000000044
+  68:      0:        stop3;
+    0006E5: AE mrkl*          0000000000000044
+    0006EE: F5 sfr            0000000000000000
+    0006F7: 0C cup            0000000000000300
+    000700: AE mrkl*          0000000000000044
+    000709: AE mrkl*          0000000000000045
+  69:      0:    
+    000709: AE mrkl*          0000000000000045
+    000712: AE mrkl*          0000000000000046
+  70:      0:        writeln('Step past me!');
+    000712: AE mrkl*          0000000000000046
+    00071B: 38 lca            00000000000030F6
+    000724: 05 lao            000000000000315E
+    00072D: 76 swp            0000000000000008
+    000736: 7B ldci           000000000000000D
+    00073F: 76 swp            0000000000000008
+    000748: 7B ldci           000000000000000D
+    000751: 0F csp            0000000000000006
+    000753: 0F csp            0000000000000005
+    000755: 75 dmp            0000000000000008
+    00075E: AE mrkl*          0000000000000047
+  71:      0:        writeln('And me too!');
+    00075E: AE mrkl*          0000000000000047
+    000767: 38 lca            00000000000030E3
+    000770: 05 lao            000000000000315E
+    000779: 76 swp            0000000000000008
+    000782: 7B ldci           000000000000000B
+    00078B: 76 swp            0000000000000008
+    000794: 7B ldci           000000000000000B
+    00079D: 0F csp            0000000000000006
+    00079F: 0F csp            0000000000000005
+    0007A1: 75 dmp            0000000000000008
+    0007AA: AE mrkl*          0000000000000048
+  72:      0:        writeln('1');
+    0007AA: AE mrkl*          0000000000000048
+    0007B3: 7F ldcc           0000000000000031
+    0007B5: 05 lao            000000000000315E
+    0007BE: 76 swp            0000000000000008
+    0007C7: 7B ldci           0000000000000001
+    0007D0: 0F csp            000000000000000A
+    0007D2: 0F csp            0000000000000005
+    0007D4: 75 dmp            0000000000000008
+    0007DD: AE mrkl*          0000000000000049
+  73:      0:        writeln('2');
+    0007DD: AE mrkl*          0000000000000049
+    0007E6: 7F ldcc           0000000000000032
+    0007E8: 05 lao            000000000000315E
+    0007F1: 76 swp            0000000000000008
+    0007FA: 7B ldci           0000000000000001
+    000803: 0F csp            000000000000000A
+    000805: 0F csp            0000000000000005
+    000807: 75 dmp            0000000000000008
+    000810: AE mrkl*          000000000000004A
+  74:      0:        writeln('3');
+    000810: AE mrkl*          000000000000004A
+    000819: 7F ldcc           0000000000000033
+    00081B: 05 lao            000000000000315E
+    000824: 76 swp            0000000000000008
+    00082D: 7B ldci           0000000000000001
+    000836: 0F csp            000000000000000A
+    000838: 0F csp            0000000000000005
+    00083A: 75 dmp            0000000000000008
+    000843: AE mrkl*          000000000000004B
+  75:      0:        traceme;
+    000843: AE mrkl*          000000000000004B
+    00084C: F5 sfr            0000000000000000
+    000855: 0C cup            0000000000000336
+    00085E: AE mrkl*          000000000000004B
+    000867: AE mrkl*          000000000000004C
+  76:      0:        writeln('4');
+    000867: AE mrkl*          000000000000004C
+    000870: 7F ldcc           0000000000000034
+    000872: 05 lao            000000000000315E
+    00087B: 76 swp            0000000000000008
+    000884: 7B ldci           0000000000000001
+    00088D: 0F csp            000000000000000A
+    00088F: 0F csp            0000000000000005
+    000891: 75 dmp            0000000000000008
+    00089A: AE mrkl*          000000000000004D
+  77:      0:        stop4;
+    00089A: AE mrkl*          000000000000004D
+    0008A3: F5 sfr            0000000000000000
+    0008AC: 0C cup            000000000000036C
+    0008B5: AE mrkl*          000000000000004D
+    0008BE: AE mrkl*          000000000000004E
+  78:      0:        writeln('5');
+    0008BE: AE mrkl*          000000000000004E
+    0008C7: 7F ldcc           0000000000000035
+    0008C9: 05 lao            000000000000315E
+    0008D2: 76 swp            0000000000000008
+    0008DB: 7B ldci           0000000000000001
+    0008E4: 0F csp            000000000000000A
+    0008E6: 0F csp            0000000000000005
+    0008E8: 75 dmp            0000000000000008
+    0008F1: AE mrkl*          000000000000004F
+  79:      0:        a := 12;
+    0008F1: AE mrkl*          000000000000004F
+    0008FA: 7B ldci           000000000000000C
+    000903: 02 stri        02,FFFFFFFFFFFFFFE8
+    00090D: AE mrkl*          0000000000000050
+  80:      0:        writeln('6');
+    00090D: AE mrkl*          0000000000000050
+    000916: 7F ldcc           0000000000000036
+    000918: 05 lao            000000000000315E
+    000921: 76 swp            0000000000000008
+    00092A: 7B ldci           0000000000000001
+    000933: 0F csp            000000000000000A
+    000935: 0F csp            0000000000000005
+    000937: 75 dmp            0000000000000008
+    000940: AE mrkl*          0000000000000051
+  81:      0:        stop5;
+    000940: AE mrkl*          0000000000000051
+    000949: F5 sfr            0000000000000000
+    000952: 0C cup            00000000000003A2
+    00095B: AE mrkl*          0000000000000051
+    000964: AE mrkl*          0000000000000052
+  82:      0:        writeln('7');
+    000964: AE mrkl*          0000000000000052
+    00096D: 7F ldcc           0000000000000037
+    00096F: 05 lao            000000000000315E
+    000978: 76 swp            0000000000000008
+    000981: 7B ldci           0000000000000001
+    00098A: 0F csp            000000000000000A
+    00098C: 0F csp            0000000000000005
+    00098E: 75 dmp            0000000000000008
+    000997: AE mrkl*          0000000000000053
+  83:      0:        writeln('8');
+    000997: AE mrkl*          0000000000000053
+    0009A0: 7F ldcc           0000000000000038
+    0009A2: 05 lao            000000000000315E
+    0009AB: 76 swp            0000000000000008
+    0009B4: 7B ldci           0000000000000001
+    0009BD: 0F csp            000000000000000A
+    0009BF: 0F csp            0000000000000005
+    0009C1: 75 dmp            0000000000000008
+    0009CA: AE mrkl*          0000000000000054
+  84:      0:        dostuff;
+    0009CA: AE mrkl*          0000000000000054
+    0009D3: F5 sfr            0000000000000000
+    0009DC: 0C cup            00000000000004C2
+    0009E5: AE mrkl*          0000000000000054
+    0009EE: AE mrkl*          0000000000000055
+  85:      0:        writeln('9');
+    0009EE: AE mrkl*          0000000000000055
+    0009F7: 7F ldcc           0000000000000039
+    0009F9: 05 lao            000000000000315E
+    000A02: 76 swp            0000000000000008
+    000A0B: 7B ldci           0000000000000001
+    000A14: 0F csp            000000000000000A
+    000A16: 0F csp            0000000000000005
+    000A18: 75 dmp            0000000000000008
+    000A21: AE mrkl*          0000000000000056
+  86:      0:        writeln('10');
+    000A21: AE mrkl*          0000000000000056
+    000A2A: 38 lca            00000000000030D9
+    000A33: 05 lao            000000000000315E
+    000A3C: 76 swp            0000000000000008
+    000A45: 7B ldci           0000000000000002
+    000A4E: 76 swp            0000000000000008
+    000A57: 7B ldci           0000000000000002
+    000A60: 0F csp            0000000000000006
+    000A62: 0F csp            0000000000000005
+    000A64: 75 dmp            0000000000000008
+    000A6D: AE mrkl*          0000000000000057
+  87:      0:        stop6;
+    000A6D: AE mrkl*          0000000000000057
+    000A76: F5 sfr            0000000000000000
+    000A7F: 0C cup            00000000000003D8
+    000A88: AE mrkl*          0000000000000057
+    000A91: AE mrkl*          0000000000000058
+  88:      0:        dostuff;
+    000A91: AE mrkl*          0000000000000058
+    000A9A: F5 sfr            0000000000000000
+    000AA3: 0C cup            00000000000004C2
+    000AAC: AE mrkl*          0000000000000058
+    000AB5: AE mrkl*          0000000000000059
+  89:      0:        stop7;
+    000AB5: AE mrkl*          0000000000000059
+    000ABE: F5 sfr            0000000000000000
+    000AC7: 0C cup            000000000000040E
+    000AD0: AE mrkl*          0000000000000059
+    000AD9: AE mrkl*          000000000000005A
+  90:      0:        new(d);
+    000AD9: AE mrkl*          000000000000005A
+    000AE2: 04 lda         02,FFFFFFFFFFFFFFDC
+    000AEC: 7B ldci           0000000000000008
+    000AF5: 0F csp            0000000000000004
+    000AF7: AE mrkl*          000000000000005B
+  91:      0:        new(e);
+    000AF7: AE mrkl*          000000000000005B
+    000B00: 04 lda         02,FFFFFFFFFFFFFFD4
+    000B0A: 7B ldci           0000000000000008
+    000B13: 0F csp            0000000000000004
+    000B15: AE mrkl*          000000000000005C
+  92:      0:        dispose(d);
+    000B15: AE mrkl*          000000000000005C
+    000B1E: 69 loda        02,FFFFFFFFFFFFFFDC
+    000B28: 7B ldci           0000000000000008
+    000B31: 0F csp            000000000000001A
+    000B33: AE mrkl*          000000000000005D
+  93:      0:        writeln('11');
+    000B33: AE mrkl*          000000000000005D
+    000B3C: 38 lca            00000000000030CF
+    000B45: 05 lao            000000000000315E
+    000B4E: 76 swp            0000000000000008
+    000B57: 7B ldci           0000000000000002
+    000B60: 76 swp            0000000000000008
+    000B69: 7B ldci           0000000000000002
+    000B72: 0F csp            0000000000000006
+    000B74: 0F csp            0000000000000005
+    000B76: 75 dmp            0000000000000008
+    000B7F: AE mrkl*          000000000000005E
+  94:      0:        stop8;
+    000B7F: AE mrkl*          000000000000005E
+    000B88: F5 sfr            0000000000000000
+    000B91: 0C cup            0000000000000444
+    000B9A: AE mrkl*          000000000000005E
+    000BA3: AE mrkl*          000000000000005F
   95:      0:    
-    000B88: AE mrkl*          000000000000005F
-    000B91: AE mrkl*          0000000000000060
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
-    000B91: AE mrkl*          0000000000000060
-    000B9A: AE mrkl*          0000000000000061
+    000BA3: AE mrkl*          000000000000005F
+    000BAC: AE mrkl*          0000000000000060
+  96:      0:    end;
+    000BAC: AE mrkl*          0000000000000060
+    000BB5: 0E retp           0000000000000010
+    000BBE: AE mrkl*          0000000000000061
   97:      0:    
-    000B9A: AE mrkl*          0000000000000061
-    000BA3: AE mrkl*          0000000000000062
-  98:      0:    var i, x, i2: integer;
-    000BA3: AE mrkl*          0000000000000062
-    000BAC: AE mrkl*          0000000000000063
-  99:      0:        c: char;
-    000BAC: AE mrkl*          0000000000000063
-    000BB5: AE mrkl*          0000000000000064
- 100:      0:        b: boolean;
-    000BB5: AE mrkl*          0000000000000064
-    000BBE: AE mrkl*          0000000000000065
+    000BBE: AE mrkl*          0000000000000061
+    000BC7: AE mrkl*          0000000000000062
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+    000BC7: AE mrkl*          0000000000000062
+    000BD0: AE mrkl*          0000000000000063
+  99:      0:    
+    000BD0: AE mrkl*          0000000000000063
+    000BD9: AE mrkl*          0000000000000064
+ 100:      0:    var i, x, i2: integer;
+    000BD9: AE mrkl*          0000000000000064
+    000BE2: AE mrkl*          0000000000000065
 
 debug> lc debug_test 5:100
 
@@ -1608,377 +1635,380 @@ debug> lc debug_test 5:100
   43:      0:    
     000468: AE mrkl*          000000000000002B
     000471: AE mrkl*          000000000000002C
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
     000471: AE mrkl*          000000000000002C
-    00047A: AE mrkl*          000000000000002D
+    00047A: AE mrkl*          000000000000002C
+    000483: 0B mst         01,FFFFFFFFFFFFFFF0,0000000000000000
+    000495: 0E retp           0000000000000000
+    00049E: AE mrkl*          000000000000002D
   45:      0:    
-    00047A: AE mrkl*          000000000000002D
-    000483: AE mrkl*          000000000000002E
-  46:      0:    var i: integer;
-    000483: AE mrkl*          000000000000002E
-    00048C: AE mrkl*          000000000000002F
+    00049E: AE mrkl*          000000000000002D
+    0004A7: AE mrkl*          000000000000002E
+  46:      0:    procedure dostuff;
+    0004A7: AE mrkl*          000000000000002E
+    0004B0: AE mrkl*          000000000000002F
   47:      0:    
-    00048C: AE mrkl*          000000000000002F
-    000495: AE mrkl*          0000000000000030
-  48:      0:    begin
-    000495: AE mrkl*          0000000000000030
-    00049E: AE mrkl*          0000000000000030
-    0004A7: 0B mst         01,FFFFFFFFFFFFFFD8,FFFFFFFFFFFFFFE0
-    0004B9: AE mrkl*          0000000000000031
+    0004B0: AE mrkl*          000000000000002F
+    0004B9: AE mrkl*          0000000000000030
+  48:      0:    var i: integer;
+    0004B9: AE mrkl*          0000000000000030
+    0004C2: AE mrkl*          0000000000000031
   49:      0:    
-    0004B9: AE mrkl*          0000000000000031
-    0004C2: AE mrkl*          0000000000000032
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
-    0004C2: AE mrkl*          0000000000000032
-    0004CB: 7B ldci           0000000000000001
-    0004D4: 02 stri        02,FFFFFFFFFFFFFFE0
-    0004DE: 7B ldci           0000000000000004
-    0004E7: 02 stri        02,FFFFFFFFFFFFFFD8
-    0004F1: 00 lodi        02,FFFFFFFFFFFFFFE0
-    0004FB: 02 stri        02,FFFFFFFFFFFFFFE8
-    000505: AE mrkl*          0000000000000032
-    00050E: 00 lodi        02,FFFFFFFFFFFFFFE8
-    000518: 00 lodi        02,FFFFFFFFFFFFFFD8
-    000522: A1 leqi        
-    000523: 18 fjp            00000000000005C8
-    00052C: 38 lca            0000000000002EC7
-    000535: 05 lao            0000000000002F0A
-    00053E: 76 swp            0000000000000008
-    000547: 7B ldci           000000000000000B
-    000550: 76 swp            0000000000000008
-    000559: 7B ldci           000000000000000B
-    000562: 0F csp            0000000000000006
-    000564: 00 lodi        02,FFFFFFFFFFFFFFE8
-    00056E: 7B ldci           000000000000000B
-    000577: 0F csp            0000000000000008
-    000579: 0F csp            0000000000000005
-    00057B: 75 dmp            0000000000000008
-    000584: 00 lodi        02,FFFFFFFFFFFFFFE8
-    00058E: 00 lodi        02,FFFFFFFFFFFFFFD8
-    000598: 89 equi        
-    000599: 77 tjp            00000000000005C8
-    0005A2: 00 lodi        02,FFFFFFFFFFFFFFE8
-    0005AC: 0A inci           0000000000000001
-    0005B5: 02 stri        02,FFFFFFFFFFFFFFE8
-    0005BF: 17 ujp            0000000000000505
-    0005C8: AE mrkl*          0000000000000032
-    0005D1: 04 lda         02,FFFFFFFFFFFFFFE8
-    0005DB: BD inv         
-    0005DC: AE mrkl*          0000000000000033
+    0004C2: AE mrkl*          0000000000000031
+    0004CB: AE mrkl*          0000000000000032
+  50:      0:    begin
+    0004CB: AE mrkl*          0000000000000032
+    0004D4: AE mrkl*          0000000000000032
+    0004DD: 0B mst         01,FFFFFFFFFFFFFFD8,FFFFFFFFFFFFFFE0
+    0004EF: AE mrkl*          0000000000000033
   51:      0:    
-    0005DC: AE mrkl*          0000000000000033
-    0005E5: AE mrkl*          0000000000000034
-  52:      0:    end;
-    0005E5: AE mrkl*          0000000000000034
-    0005EE: 0E retp           0000000000000000
-    0005F7: AE mrkl*          0000000000000035
+    0004EF: AE mrkl*          0000000000000033
+    0004F8: AE mrkl*          0000000000000034
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+    0004F8: AE mrkl*          0000000000000034
+    000501: 7B ldci           0000000000000001
+    00050A: 02 stri        02,FFFFFFFFFFFFFFE0
+    000514: 7B ldci           0000000000000004
+    00051D: 02 stri        02,FFFFFFFFFFFFFFD8
+    000527: 00 lodi        02,FFFFFFFFFFFFFFE0
+    000531: 02 stri        02,FFFFFFFFFFFFFFE8
+    00053B: AE mrkl*          0000000000000034
+    000544: 00 lodi        02,FFFFFFFFFFFFFFE8
+    00054E: 00 lodi        02,FFFFFFFFFFFFFFD8
+    000558: A1 leqi        
+    000559: 18 fjp            00000000000005FE
+    000562: 38 lca            000000000000311B
+    00056B: 05 lao            000000000000315E
+    000574: 76 swp            0000000000000008
+    00057D: 7B ldci           000000000000000B
+    000586: 76 swp            0000000000000008
+    00058F: 7B ldci           000000000000000B
+    000598: 0F csp            0000000000000006
+    00059A: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005A4: 7B ldci           000000000000000B
+    0005AD: 0F csp            0000000000000008
+    0005AF: 0F csp            0000000000000005
+    0005B1: 75 dmp            0000000000000008
+    0005BA: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005C4: 00 lodi        02,FFFFFFFFFFFFFFD8
+    0005CE: 89 equi        
+    0005CF: 77 tjp            00000000000005FE
+    0005D8: 00 lodi        02,FFFFFFFFFFFFFFE8
+    0005E2: 0A inci           0000000000000001
+    0005EB: 02 stri        02,FFFFFFFFFFFFFFE8
+    0005F5: 17 ujp            000000000000053B
+    0005FE: AE mrkl*          0000000000000034
+    000607: 04 lda         02,FFFFFFFFFFFFFFE8
+    000611: BD inv         
+    000612: AE mrkl*          0000000000000035
   53:      0:    
-    0005F7: AE mrkl*          0000000000000035
-    000600: AE mrkl*          0000000000000036
-  54:      0:    procedure proc2(i: integer; c: char);
-    000600: AE mrkl*          0000000000000036
-    000609: AE mrkl*          0000000000000037
+    000612: AE mrkl*          0000000000000035
+    00061B: AE mrkl*          0000000000000036
+  54:      0:    end;
+    00061B: AE mrkl*          0000000000000036
+    000624: 0E retp           0000000000000000
+    00062D: AE mrkl*          0000000000000037
   55:      0:    
-    000609: AE mrkl*          0000000000000037
-    000612: AE mrkl*          0000000000000038
-  56:      0:    var a: integer;
-    000612: AE mrkl*          0000000000000038
-    00061B: AE mrkl*          0000000000000039
-  57:      0:        b: char;
-    00061B: AE mrkl*          0000000000000039
-    000624: AE mrkl*          000000000000003A
-  58:      0:        d: ^integer;
-    000624: AE mrkl*          000000000000003A
-    00062D: AE mrkl*          000000000000003B
-  59:      0:        e: ^integer;
-    00062D: AE mrkl*          000000000000003B
-    000636: AE mrkl*          000000000000003C
-  60:      0:    
-    000636: AE mrkl*          000000000000003C
-    00063F: AE mrkl*          000000000000003D
-  61:      0:    begin
-    00063F: AE mrkl*          000000000000003D
-    000648: AE mrkl*          000000000000003D
-    000651: 0B mst         01,FFFFFFFFFFFFFFD0,FFFFFFFFFFFFFFE0
-    000663: AE mrkl*          000000000000003E
+    00062D: AE mrkl*          0000000000000037
+    000636: AE mrkl*          0000000000000038
+  56:      0:    procedure proc2(i: integer; c: char);
+    000636: AE mrkl*          0000000000000038
+    00063F: AE mrkl*          0000000000000039
+  57:      0:    
+    00063F: AE mrkl*          0000000000000039
+    000648: AE mrkl*          000000000000003A
+  58:      0:    var a: integer;
+    000648: AE mrkl*          000000000000003A
+    000651: AE mrkl*          000000000000003B
+  59:      0:        b: char;
+    000651: AE mrkl*          000000000000003B
+    00065A: AE mrkl*          000000000000003C
+  60:      0:        d: ^integer;
+    00065A: AE mrkl*          000000000000003C
+    000663: AE mrkl*          000000000000003D
+  61:      0:        e: ^integer;
+    000663: AE mrkl*          000000000000003D
+    00066C: AE mrkl*          000000000000003E
   62:      0:    
-    000663: AE mrkl*          000000000000003E
-    00066C: AE mrkl*          000000000000003F
-  63:      0:        a := 75;
-    00066C: AE mrkl*          000000000000003F
-    000675: 7B ldci           000000000000004B
-    00067E: 02 stri        02,FFFFFFFFFFFFFFE8
-    000688: AE mrkl*          0000000000000040
-  64:      0:        b := '6';
-    000688: AE mrkl*          0000000000000040
-    000691: 7F ldcc           0000000000000036
-    000693: 63 chkc           0000000000002EB7
-    00069C: 4A strc        02,FFFFFFFFFFFFFFE7
-    0006A6: AE mrkl*          0000000000000041
-  65:      0:    
-    0006A6: AE mrkl*          0000000000000041
-    0006AF: AE mrkl*          0000000000000042
-  66:      0:        stop3;
-    0006AF: AE mrkl*          0000000000000042
-    0006B8: F5 sfr            0000000000000000
-    0006C1: 0C cup            0000000000000300
-    0006CA: AE mrkl*          0000000000000042
-    0006D3: AE mrkl*          0000000000000043
+    00066C: AE mrkl*          000000000000003E
+    000675: AE mrkl*          000000000000003F
+  63:      0:    begin
+    000675: AE mrkl*          000000000000003F
+    00067E: AE mrkl*          000000000000003F
+    000687: 0B mst         01,FFFFFFFFFFFFFFD0,FFFFFFFFFFFFFFE0
+    000699: AE mrkl*          0000000000000040
+  64:      0:    
+    000699: AE mrkl*          0000000000000040
+    0006A2: AE mrkl*          0000000000000041
+  65:      0:        a := 75;
+    0006A2: AE mrkl*          0000000000000041
+    0006AB: 7B ldci           000000000000004B
+    0006B4: 02 stri        02,FFFFFFFFFFFFFFE8
+    0006BE: AE mrkl*          0000000000000042
+  66:      0:        b := '6';
+    0006BE: AE mrkl*          0000000000000042
+    0006C7: 7F ldcc           0000000000000036
+    0006C9: 63 chkc           000000000000310B
+    0006D2: 4A strc        02,FFFFFFFFFFFFFFE7
+    0006DC: AE mrkl*          0000000000000043
   67:      0:    
-    0006D3: AE mrkl*          0000000000000043
-    0006DC: AE mrkl*          0000000000000044
-  68:      0:        writeln('Step past me!');
-    0006DC: AE mrkl*          0000000000000044
-    0006E5: 38 lca            0000000000002EA2
-    0006EE: 05 lao            0000000000002F0A
-    0006F7: 76 swp            0000000000000008
-    000700: 7B ldci           000000000000000D
-    000709: 76 swp            0000000000000008
-    000712: 7B ldci           000000000000000D
-    00071B: 0F csp            0000000000000006
-    00071D: 0F csp            0000000000000005
-    00071F: 75 dmp            0000000000000008
-    000728: AE mrkl*          0000000000000045
-  69:      0:        writeln('And me too!');
-    000728: AE mrkl*          0000000000000045
-    000731: 38 lca            0000000000002E8F
-    00073A: 05 lao            0000000000002F0A
-    000743: 76 swp            0000000000000008
-    00074C: 7B ldci           000000000000000B
-    000755: 76 swp            0000000000000008
-    00075E: 7B ldci           000000000000000B
-    000767: 0F csp            0000000000000006
-    000769: 0F csp            0000000000000005
-    00076B: 75 dmp            0000000000000008
-    000774: AE mrkl*          0000000000000046
-  70:      0:        writeln('1');
-    000774: AE mrkl*          0000000000000046
-    00077D: 7F ldcc           0000000000000031
-    00077F: 05 lao            0000000000002F0A
-    000788: 76 swp            0000000000000008
-    000791: 7B ldci           0000000000000001
-    00079A: 0F csp            000000000000000A
-    00079C: 0F csp            0000000000000005
-    00079E: 75 dmp            0000000000000008
-    0007A7: AE mrkl*          0000000000000047
-  71:      0:        writeln('2');
-    0007A7: AE mrkl*          0000000000000047
-    0007B0: 7F ldcc           0000000000000032
-    0007B2: 05 lao            0000000000002F0A
-    0007BB: 76 swp            0000000000000008
-    0007C4: 7B ldci           0000000000000001
-    0007CD: 0F csp            000000000000000A
-    0007CF: 0F csp            0000000000000005
-    0007D1: 75 dmp            0000000000000008
-    0007DA: AE mrkl*          0000000000000048
-  72:      0:        writeln('3');
-    0007DA: AE mrkl*          0000000000000048
-    0007E3: 7F ldcc           0000000000000033
-    0007E5: 05 lao            0000000000002F0A
-    0007EE: 76 swp            0000000000000008
-    0007F7: 7B ldci           0000000000000001
-    000800: 0F csp            000000000000000A
-    000802: 0F csp            0000000000000005
-    000804: 75 dmp            0000000000000008
-    00080D: AE mrkl*          0000000000000049
-  73:      0:        traceme;
-    00080D: AE mrkl*          0000000000000049
-    000816: F5 sfr            0000000000000000
-    00081F: 0C cup            0000000000000336
-    000828: AE mrkl*          0000000000000049
-    000831: AE mrkl*          000000000000004A
-  74:      0:        writeln('4');
-    000831: AE mrkl*          000000000000004A
-    00083A: 7F ldcc           0000000000000034
-    00083C: 05 lao            0000000000002F0A
-    000845: 76 swp            0000000000000008
-    00084E: 7B ldci           0000000000000001
-    000857: 0F csp            000000000000000A
-    000859: 0F csp            0000000000000005
-    00085B: 75 dmp            0000000000000008
-    000864: AE mrkl*          000000000000004B
-  75:      0:        stop4;
-    000864: AE mrkl*          000000000000004B
-    00086D: F5 sfr            0000000000000000
-    000876: 0C cup            000000000000036C
-    00087F: AE mrkl*          000000000000004B
-    000888: AE mrkl*          000000000000004C
-  76:      0:        writeln('5');
-    000888: AE mrkl*          000000000000004C
-    000891: 7F ldcc           0000000000000035
-    000893: 05 lao            0000000000002F0A
-    00089C: 76 swp            0000000000000008
-    0008A5: 7B ldci           0000000000000001
-    0008AE: 0F csp            000000000000000A
-    0008B0: 0F csp            0000000000000005
-    0008B2: 75 dmp            0000000000000008
-    0008BB: AE mrkl*          000000000000004D
-  77:      0:        a := 12;
-    0008BB: AE mrkl*          000000000000004D
-    0008C4: 7B ldci           000000000000000C
-    0008CD: 02 stri        02,FFFFFFFFFFFFFFE8
-    0008D7: AE mrkl*          000000000000004E
-  78:      0:        writeln('6');
-    0008D7: AE mrkl*          000000000000004E
-    0008E0: 7F ldcc           0000000000000036
-    0008E2: 05 lao            0000000000002F0A
-    0008EB: 76 swp            0000000000000008
-    0008F4: 7B ldci           0000000000000001
-    0008FD: 0F csp            000000000000000A
-    0008FF: 0F csp            0000000000000005
-    000901: 75 dmp            0000000000000008
-    00090A: AE mrkl*          000000000000004F
-  79:      0:        stop5;
-    00090A: AE mrkl*          000000000000004F
-    000913: F5 sfr            0000000000000000
-    00091C: 0C cup            00000000000003A2
-    000925: AE mrkl*          000000000000004F
-    00092E: AE mrkl*          0000000000000050
-  80:      0:        writeln('7');
-    00092E: AE mrkl*          0000000000000050
-    000937: 7F ldcc           0000000000000037
-    000939: 05 lao            0000000000002F0A
-    000942: 76 swp            0000000000000008
-    00094B: 7B ldci           0000000000000001
-    000954: 0F csp            000000000000000A
-    000956: 0F csp            0000000000000005
-    000958: 75 dmp            0000000000000008
-    000961: AE mrkl*          0000000000000051
-  81:      0:        writeln('8');
-    000961: AE mrkl*          0000000000000051
-    00096A: 7F ldcc           0000000000000038
-    00096C: 05 lao            0000000000002F0A
-    000975: 76 swp            0000000000000008
-    00097E: 7B ldci           0000000000000001
-    000987: 0F csp            000000000000000A
-    000989: 0F csp            0000000000000005
-    00098B: 75 dmp            0000000000000008
-    000994: AE mrkl*          0000000000000052
-  82:      0:        dostuff;
-    000994: AE mrkl*          0000000000000052
-    00099D: F5 sfr            0000000000000000
-    0009A6: 0C cup            000000000000048C
-    0009AF: AE mrkl*          0000000000000052
-    0009B8: AE mrkl*          0000000000000053
-  83:      0:        writeln('9');
-    0009B8: AE mrkl*          0000000000000053
-    0009C1: 7F ldcc           0000000000000039
-    0009C3: 05 lao            0000000000002F0A
-    0009CC: 76 swp            0000000000000008
-    0009D5: 7B ldci           0000000000000001
-    0009DE: 0F csp            000000000000000A
-    0009E0: 0F csp            0000000000000005
-    0009E2: 75 dmp            0000000000000008
-    0009EB: AE mrkl*          0000000000000054
-  84:      0:        writeln('10');
-    0009EB: AE mrkl*          0000000000000054
-    0009F4: 38 lca            0000000000002E85
-    0009FD: 05 lao            0000000000002F0A
-    000A06: 76 swp            0000000000000008
-    000A0F: 7B ldci           0000000000000002
-    000A18: 76 swp            0000000000000008
-    000A21: 7B ldci           0000000000000002
-    000A2A: 0F csp            0000000000000006
-    000A2C: 0F csp            0000000000000005
-    000A2E: 75 dmp            0000000000000008
-    000A37: AE mrkl*          0000000000000055
-  85:      0:        stop6;
-    000A37: AE mrkl*          0000000000000055
-    000A40: F5 sfr            0000000000000000
-    000A49: 0C cup            00000000000003D8
-    000A52: AE mrkl*          0000000000000055
-    000A5B: AE mrkl*          0000000000000056
-  86:      0:        dostuff;
-    000A5B: AE mrkl*          0000000000000056
-    000A64: F5 sfr            0000000000000000
-    000A6D: 0C cup            000000000000048C
-    000A76: AE mrkl*          0000000000000056
-    000A7F: AE mrkl*          0000000000000057
-  87:      0:        stop7;
-    000A7F: AE mrkl*          0000000000000057
-    000A88: F5 sfr            0000000000000000
-    000A91: 0C cup            000000000000040E
-    000A9A: AE mrkl*          0000000000000057
-    000AA3: AE mrkl*          0000000000000058
-  88:      0:        new(d);
-    000AA3: AE mrkl*          0000000000000058
-    000AAC: 04 lda         02,FFFFFFFFFFFFFFDC
-    000AB6: 7B ldci           0000000000000008
-    000ABF: 0F csp            0000000000000004
-    000AC1: AE mrkl*          0000000000000059
-  89:      0:        new(e);
-    000AC1: AE mrkl*          0000000000000059
-    000ACA: 04 lda         02,FFFFFFFFFFFFFFD4
-    000AD4: 7B ldci           0000000000000008
-    000ADD: 0F csp            0000000000000004
-    000ADF: AE mrkl*          000000000000005A
-  90:      0:        dispose(d);
-    000ADF: AE mrkl*          000000000000005A
-    000AE8: 69 loda        02,FFFFFFFFFFFFFFDC
-    000AF2: 7B ldci           0000000000000008
-    000AFB: 0F csp            000000000000001A
-    000AFD: AE mrkl*          000000000000005B
-  91:      0:        writeln('11');
-    000AFD: AE mrkl*          000000000000005B
-    000B06: 38 lca            0000000000002E7B
-    000B0F: 05 lao            0000000000002F0A
-    000B18: 76 swp            0000000000000008
-    000B21: 7B ldci           0000000000000002
-    000B2A: 76 swp            0000000000000008
-    000B33: 7B ldci           0000000000000002
-    000B3C: 0F csp            0000000000000006
-    000B3E: 0F csp            0000000000000005
-    000B40: 75 dmp            0000000000000008
-    000B49: AE mrkl*          000000000000005C
-  92:      0:        stop8;
-    000B49: AE mrkl*          000000000000005C
-    000B52: F5 sfr            0000000000000000
-    000B5B: 0C cup            0000000000000444
-    000B64: AE mrkl*          000000000000005C
-    000B6D: AE mrkl*          000000000000005D
-  93:      0:    
-    000B6D: AE mrkl*          000000000000005D
-    000B76: AE mrkl*          000000000000005E
-  94:      0:    end;
-    000B76: AE mrkl*          000000000000005E
-    000B7F: 0E retp           0000000000000010
-    000B88: AE mrkl*          000000000000005F
+    0006DC: AE mrkl*          0000000000000043
+    0006E5: AE mrkl*          0000000000000044
+  68:      0:        stop3;
+    0006E5: AE mrkl*          0000000000000044
+    0006EE: F5 sfr            0000000000000000
+    0006F7: 0C cup            0000000000000300
+    000700: AE mrkl*          0000000000000044
+    000709: AE mrkl*          0000000000000045
+  69:      0:    
+    000709: AE mrkl*          0000000000000045
+    000712: AE mrkl*          0000000000000046
+  70:      0:        writeln('Step past me!');
+    000712: AE mrkl*          0000000000000046
+    00071B: 38 lca            00000000000030F6
+    000724: 05 lao            000000000000315E
+    00072D: 76 swp            0000000000000008
+    000736: 7B ldci           000000000000000D
+    00073F: 76 swp            0000000000000008
+    000748: 7B ldci           000000000000000D
+    000751: 0F csp            0000000000000006
+    000753: 0F csp            0000000000000005
+    000755: 75 dmp            0000000000000008
+    00075E: AE mrkl*          0000000000000047
+  71:      0:        writeln('And me too!');
+    00075E: AE mrkl*          0000000000000047
+    000767: 38 lca            00000000000030E3
+    000770: 05 lao            000000000000315E
+    000779: 76 swp            0000000000000008
+    000782: 7B ldci           000000000000000B
+    00078B: 76 swp            0000000000000008
+    000794: 7B ldci           000000000000000B
+    00079D: 0F csp            0000000000000006
+    00079F: 0F csp            0000000000000005
+    0007A1: 75 dmp            0000000000000008
+    0007AA: AE mrkl*          0000000000000048
+  72:      0:        writeln('1');
+    0007AA: AE mrkl*          0000000000000048
+    0007B3: 7F ldcc           0000000000000031
+    0007B5: 05 lao            000000000000315E
+    0007BE: 76 swp            0000000000000008
+    0007C7: 7B ldci           0000000000000001
+    0007D0: 0F csp            000000000000000A
+    0007D2: 0F csp            0000000000000005
+    0007D4: 75 dmp            0000000000000008
+    0007DD: AE mrkl*          0000000000000049
+  73:      0:        writeln('2');
+    0007DD: AE mrkl*          0000000000000049
+    0007E6: 7F ldcc           0000000000000032
+    0007E8: 05 lao            000000000000315E
+    0007F1: 76 swp            0000000000000008
+    0007FA: 7B ldci           0000000000000001
+    000803: 0F csp            000000000000000A
+    000805: 0F csp            0000000000000005
+    000807: 75 dmp            0000000000000008
+    000810: AE mrkl*          000000000000004A
+  74:      0:        writeln('3');
+    000810: AE mrkl*          000000000000004A
+    000819: 7F ldcc           0000000000000033
+    00081B: 05 lao            000000000000315E
+    000824: 76 swp            0000000000000008
+    00082D: 7B ldci           0000000000000001
+    000836: 0F csp            000000000000000A
+    000838: 0F csp            0000000000000005
+    00083A: 75 dmp            0000000000000008
+    000843: AE mrkl*          000000000000004B
+  75:      0:        traceme;
+    000843: AE mrkl*          000000000000004B
+    00084C: F5 sfr            0000000000000000
+    000855: 0C cup            0000000000000336
+    00085E: AE mrkl*          000000000000004B
+    000867: AE mrkl*          000000000000004C
+  76:      0:        writeln('4');
+    000867: AE mrkl*          000000000000004C
+    000870: 7F ldcc           0000000000000034
+    000872: 05 lao            000000000000315E
+    00087B: 76 swp            0000000000000008
+    000884: 7B ldci           0000000000000001
+    00088D: 0F csp            000000000000000A
+    00088F: 0F csp            0000000000000005
+    000891: 75 dmp            0000000000000008
+    00089A: AE mrkl*          000000000000004D
+  77:      0:        stop4;
+    00089A: AE mrkl*          000000000000004D
+    0008A3: F5 sfr            0000000000000000
+    0008AC: 0C cup            000000000000036C
+    0008B5: AE mrkl*          000000000000004D
+    0008BE: AE mrkl*          000000000000004E
+  78:      0:        writeln('5');
+    0008BE: AE mrkl*          000000000000004E
+    0008C7: 7F ldcc           0000000000000035
+    0008C9: 05 lao            000000000000315E
+    0008D2: 76 swp            0000000000000008
+    0008DB: 7B ldci           0000000000000001
+    0008E4: 0F csp            000000000000000A
+    0008E6: 0F csp            0000000000000005
+    0008E8: 75 dmp            0000000000000008
+    0008F1: AE mrkl*          000000000000004F
+  79:      0:        a := 12;
+    0008F1: AE mrkl*          000000000000004F
+    0008FA: 7B ldci           000000000000000C
+    000903: 02 stri        02,FFFFFFFFFFFFFFE8
+    00090D: AE mrkl*          0000000000000050
+  80:      0:        writeln('6');
+    00090D: AE mrkl*          0000000000000050
+    000916: 7F ldcc           0000000000000036
+    000918: 05 lao            000000000000315E
+    000921: 76 swp            0000000000000008
+    00092A: 7B ldci           0000000000000001
+    000933: 0F csp            000000000000000A
+    000935: 0F csp            0000000000000005
+    000937: 75 dmp            0000000000000008
+    000940: AE mrkl*          0000000000000051
+  81:      0:        stop5;
+    000940: AE mrkl*          0000000000000051
+    000949: F5 sfr            0000000000000000
+    000952: 0C cup            00000000000003A2
+    00095B: AE mrkl*          0000000000000051
+    000964: AE mrkl*          0000000000000052
+  82:      0:        writeln('7');
+    000964: AE mrkl*          0000000000000052
+    00096D: 7F ldcc           0000000000000037
+    00096F: 05 lao            000000000000315E
+    000978: 76 swp            0000000000000008
+    000981: 7B ldci           0000000000000001
+    00098A: 0F csp            000000000000000A
+    00098C: 0F csp            0000000000000005
+    00098E: 75 dmp            0000000000000008
+    000997: AE mrkl*          0000000000000053
+  83:      0:        writeln('8');
+    000997: AE mrkl*          0000000000000053
+    0009A0: 7F ldcc           0000000000000038
+    0009A2: 05 lao            000000000000315E
+    0009AB: 76 swp            0000000000000008
+    0009B4: 7B ldci           0000000000000001
+    0009BD: 0F csp            000000000000000A
+    0009BF: 0F csp            0000000000000005
+    0009C1: 75 dmp            0000000000000008
+    0009CA: AE mrkl*          0000000000000054
+  84:      0:        dostuff;
+    0009CA: AE mrkl*          0000000000000054
+    0009D3: F5 sfr            0000000000000000
+    0009DC: 0C cup            00000000000004C2
+    0009E5: AE mrkl*          0000000000000054
+    0009EE: AE mrkl*          0000000000000055
+  85:      0:        writeln('9');
+    0009EE: AE mrkl*          0000000000000055
+    0009F7: 7F ldcc           0000000000000039
+    0009F9: 05 lao            000000000000315E
+    000A02: 76 swp            0000000000000008
+    000A0B: 7B ldci           0000000000000001
+    000A14: 0F csp            000000000000000A
+    000A16: 0F csp            0000000000000005
+    000A18: 75 dmp            0000000000000008
+    000A21: AE mrkl*          0000000000000056
+  86:      0:        writeln('10');
+    000A21: AE mrkl*          0000000000000056
+    000A2A: 38 lca            00000000000030D9
+    000A33: 05 lao            000000000000315E
+    000A3C: 76 swp            0000000000000008
+    000A45: 7B ldci           0000000000000002
+    000A4E: 76 swp            0000000000000008
+    000A57: 7B ldci           0000000000000002
+    000A60: 0F csp            0000000000000006
+    000A62: 0F csp            0000000000000005
+    000A64: 75 dmp            0000000000000008
+    000A6D: AE mrkl*          0000000000000057
+  87:      0:        stop6;
+    000A6D: AE mrkl*          0000000000000057
+    000A76: F5 sfr            0000000000000000
+    000A7F: 0C cup            00000000000003D8
+    000A88: AE mrkl*          0000000000000057
+    000A91: AE mrkl*          0000000000000058
+  88:      0:        dostuff;
+    000A91: AE mrkl*          0000000000000058
+    000A9A: F5 sfr            0000000000000000
+    000AA3: 0C cup            00000000000004C2
+    000AAC: AE mrkl*          0000000000000058
+    000AB5: AE mrkl*          0000000000000059
+  89:      0:        stop7;
+    000AB5: AE mrkl*          0000000000000059
+    000ABE: F5 sfr            0000000000000000
+    000AC7: 0C cup            000000000000040E
+    000AD0: AE mrkl*          0000000000000059
+    000AD9: AE mrkl*          000000000000005A
+  90:      0:        new(d);
+    000AD9: AE mrkl*          000000000000005A
+    000AE2: 04 lda         02,FFFFFFFFFFFFFFDC
+    000AEC: 7B ldci           0000000000000008
+    000AF5: 0F csp            0000000000000004
+    000AF7: AE mrkl*          000000000000005B
+  91:      0:        new(e);
+    000AF7: AE mrkl*          000000000000005B
+    000B00: 04 lda         02,FFFFFFFFFFFFFFD4
+    000B0A: 7B ldci           0000000000000008
+    000B13: 0F csp            0000000000000004
+    000B15: AE mrkl*          000000000000005C
+  92:      0:        dispose(d);
+    000B15: AE mrkl*          000000000000005C
+    000B1E: 69 loda        02,FFFFFFFFFFFFFFDC
+    000B28: 7B ldci           0000000000000008
+    000B31: 0F csp            000000000000001A
+    000B33: AE mrkl*          000000000000005D
+  93:      0:        writeln('11');
+    000B33: AE mrkl*          000000000000005D
+    000B3C: 38 lca            00000000000030CF
+    000B45: 05 lao            000000000000315E
+    000B4E: 76 swp            0000000000000008
+    000B57: 7B ldci           0000000000000002
+    000B60: 76 swp            0000000000000008
+    000B69: 7B ldci           0000000000000002
+    000B72: 0F csp            0000000000000006
+    000B74: 0F csp            0000000000000005
+    000B76: 75 dmp            0000000000000008
+    000B7F: AE mrkl*          000000000000005E
+  94:      0:        stop8;
+    000B7F: AE mrkl*          000000000000005E
+    000B88: F5 sfr            0000000000000000
+    000B91: 0C cup            0000000000000444
+    000B9A: AE mrkl*          000000000000005E
+    000BA3: AE mrkl*          000000000000005F
   95:      0:    
-    000B88: AE mrkl*          000000000000005F
-    000B91: AE mrkl*          0000000000000060
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
-    000B91: AE mrkl*          0000000000000060
-    000B9A: AE mrkl*          0000000000000061
+    000BA3: AE mrkl*          000000000000005F
+    000BAC: AE mrkl*          0000000000000060
+  96:      0:    end;
+    000BAC: AE mrkl*          0000000000000060
+    000BB5: 0E retp           0000000000000010
+    000BBE: AE mrkl*          0000000000000061
   97:      0:    
-    000B9A: AE mrkl*          0000000000000061
-    000BA3: AE mrkl*          0000000000000062
-  98:      0:    var i, x, i2: integer;
-    000BA3: AE mrkl*          0000000000000062
-    000BAC: AE mrkl*          0000000000000063
-  99:      0:        c: char;
-    000BAC: AE mrkl*          0000000000000063
-    000BB5: AE mrkl*          0000000000000064
- 100:      0:        b: boolean;
-    000BB5: AE mrkl*          0000000000000064
-    000BBE: AE mrkl*          0000000000000065
- 101:      0:        e: enum;
-    000BBE: AE mrkl*          0000000000000065
-    000BC7: AE mrkl*          0000000000000066
- 102:      0:        sr: sub;
-    000BC7: AE mrkl*          0000000000000066
-    000BD0: AE mrkl*          0000000000000067
- 103:      0:        f: real;
-    000BD0: AE mrkl*          0000000000000067
-    000BD9: AE mrkl*          0000000000000068
- 104:      0:        rv: r2;
-    000BD9: AE mrkl*          0000000000000068
-    000BE2: AE mrkl*          0000000000000069
+    000BBE: AE mrkl*          0000000000000061
+    000BC7: AE mrkl*          0000000000000062
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+    000BC7: AE mrkl*          0000000000000062
+    000BD0: AE mrkl*          0000000000000063
+  99:      0:    
+    000BD0: AE mrkl*          0000000000000063
+    000BD9: AE mrkl*          0000000000000064
+ 100:      0:    var i, x, i2: integer;
+    000BD9: AE mrkl*          0000000000000064
+    000BE2: AE mrkl*          0000000000000065
+ 101:      0:        c: char;
+    000BE2: AE mrkl*          0000000000000065
+    000BEB: AE mrkl*          0000000000000066
+ 102:      0:        b: boolean;
+    000BEB: AE mrkl*          0000000000000066
+    000BF4: AE mrkl*          0000000000000067
+ 103:      0:        e: enum;
+    000BF4: AE mrkl*          0000000000000067
+    000BFD: AE mrkl*          0000000000000068
+ 104:      0:        sr: sub;
+    000BFD: AE mrkl*          0000000000000068
+    000C06: AE mrkl*          0000000000000069
 
 debug> li $0
 
 Addr    Op Ins            P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003964
+    000000: 14 lnp*           0000000000003BB8
     000009: 15 cal            000000000000004E
     000012: 3A stp*        
     000013: F2 eext*       
@@ -1992,7 +2022,7 @@ debug> li $0 $100
 
 Addr    Op Ins            P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003964
+    000000: 14 lnp*           0000000000003BB8
     000009: 15 cal            000000000000004E
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2069,8 +2099,8 @@ Addr    Op Ins            P  Q
     0000B2: 0B mst         01,FFFFFFFFFFFFFFF0,FFFFFFFFFFFFFFE0
     0000C4: AE mrkl*          0000000000000006
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -2078,7 +2108,7 @@ debug> li $0:100
 
 Addr    Op Ins            P  Q
 ----------------------------------
-    000000: 14 lnp*           0000000000003964
+    000000: 14 lnp*           0000000000003BB8
     000009: 15 cal            000000000000004E
     000012: 3A stp*        
     000013: F2 eext*       
@@ -2155,8 +2185,8 @@ Addr    Op Ins            P  Q
     0000B2: 0B mst         01,FFFFFFFFFFFFFFF0,FFFFFFFFFFFFFFE0
     0000C4: AE mrkl*          0000000000000006
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -2211,8 +2241,8 @@ Addr    Op Ins            P  Q
     0000B2: 0B mst         01,FFFFFFFFFFFFFFF0,FFFFFFFFFFFFFFE0
     0000C4: AE mrkl*          0000000000000006
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -2235,8 +2265,8 @@ Addr    Op Ins            P  Q
     0000B2: 0B mst         01,FFFFFFFFFFFFFFF0,FFFFFFFFFFFFFFE0
     0000C4: AE mrkl*          0000000000000006
     0000CD: AE mrkl*          0000000000000007
-    0000D6: 38 lca            0000000000002EEA
-    0000DF: 05 lao            0000000000002F0A
+    0000D6: 38 lca            000000000000313E
+    0000DF: 05 lao            000000000000315E
     0000E8: 76 swp            0000000000000008
     0000F1: 7B ldci           0000000000000013
     0000FA: 76 swp            0000000000000008
@@ -2258,7 +2288,7 @@ Addr    Op Ins            P  Q
     00018E: 0E retp           0000000000000000
     000197: AE mrkl*          0000000000000001
     0001A0: F5 sfr            0000000000000000
-    0001A9: 0C cup            000000000000199F
+    0001A9: 0C cup            0000000000001B33
     0001B2: 16 ret         
     0001B3: AE mrkl*          0000000000000002
     0001BC: AE mrkl*          0000000000000003
@@ -2766,7 +2796,7 @@ debug> p ar[6].rec.a[5]
 
 debug> p pi$
 
-396C
+3BC0
 
 debug> p pi^
 
@@ -2776,7 +2806,7 @@ debug>
 debug> d 0
 
 
-000000: 14 64 39 00 00 00 00 00 00 15 4E 00 00 00 00 00   .d9.......N.....
+000000: 14 B8 3B 00 00 00 00 00 00 15 4E 00 00 00 00 00   ..;.......N.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -2789,15 +2819,15 @@ debug> d 0
 0000A0: AE 05 00 00 00 00 00 00 00 AE 05 00 00 00 00 00   ................
 0000B0: 00 00 0B 01 F0 FF FF FF FF FF FF FF E0 FF FF FF   ................
 0000C0: FF FF FF FF AE 06 00 00 00 00 00 00 00 AE 07 00   ................
-0000D0: 00 00 00 00 00 00 38 EA 2E 00 00 00 00 00 00 05   ......8.........
-0000E0: 0A 2F 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ./......v.......
+0000D0: 00 00 00 00 00 00 38 3E 31 00 00 00 00 00 00 05   ......8>1.......
+0000E0: 5E 31 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ^1......v.......
 0000F0: 00 7B 13 00 00 00 00 00 00 00 76 08 00 00 00 00   .{........v.....
 
 
 debug> d 0 $100
 
 
-000000: 14 64 39 00 00 00 00 00 00 15 4E 00 00 00 00 00   .d9.......N.....
+000000: 14 B8 3B 00 00 00 00 00 00 15 4E 00 00 00 00 00   ..;.......N.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -2810,8 +2840,8 @@ debug> d 0 $100
 0000A0: AE 05 00 00 00 00 00 00 00 AE 05 00 00 00 00 00   ................
 0000B0: 00 00 0B 01 F0 FF FF FF FF FF FF FF E0 FF FF FF   ................
 0000C0: FF FF FF FF AE 06 00 00 00 00 00 00 00 AE 07 00   ................
-0000D0: 00 00 00 00 00 00 38 EA 2E 00 00 00 00 00 00 05   ......8.........
-0000E0: 0A 2F 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ./......v.......
+0000D0: 00 00 00 00 00 00 38 3E 31 00 00 00 00 00 00 05   ......8>1.......
+0000E0: 5E 31 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ^1......v.......
 0000F0: 00 7B 13 00 00 00 00 00 00 00 76 08 00 00 00 00   .{........v.....
 000100: 00                                                .
 
@@ -2819,7 +2849,7 @@ debug> d 0 $100
 debug> d 0:$100
 
 
-000000: 14 64 39 00 00 00 00 00 00 15 4E 00 00 00 00 00   .d9.......N.....
+000000: 14 B8 3B 00 00 00 00 00 00 15 4E 00 00 00 00 00   ..;.......N.....
 000010: 00 00 3A F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ..:.............
 000020: F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2 F2   ................
 ******: ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **   ****************
@@ -2832,8 +2862,8 @@ debug> d 0:$100
 0000A0: AE 05 00 00 00 00 00 00 00 AE 05 00 00 00 00 00   ................
 0000B0: 00 00 0B 01 F0 FF FF FF FF FF FF FF E0 FF FF FF   ................
 0000C0: FF FF FF FF AE 06 00 00 00 00 00 00 00 AE 07 00   ................
-0000D0: 00 00 00 00 00 00 38 EA 2E 00 00 00 00 00 00 05   ......8.........
-0000E0: 0A 2F 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ./......v.......
+0000D0: 00 00 00 00 00 00 38 3E 31 00 00 00 00 00 00 05   ......8>1.......
+0000E0: 5E 31 00 00 00 00 00 00 76 08 00 00 00 00 00 00   ^1......v.......
 0000F0: 00 7B 13 00 00 00 00 00 00 00 76 08 00 00 00 00   .{........v.....
 
 
@@ -2850,7 +2880,7 @@ debug> d $100
 000170: 00 00 00 0E 00 00 00 00 00 00 00 00 0B 01 00 00   ................
 000180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 00   ................
 000190: 00 00 00 00 00 00 00 AE 01 00 00 00 00 00 00 00   ................
-0001A0: F5 00 00 00 00 00 00 00 00 0C 9F 19 00 00 00 00   ................
+0001A0: F5 00 00 00 00 00 00 00 00 0C 33 1B 00 00 00 00   ..........3.....
 0001B0: 00 00 16 AE 02 00 00 00 00 00 00 00 AE 03 00 00   ................
 0001C0: 00 00 00 00 00 AE 04 00 00 00 00 00 00 00 AE 05   ................
 0001D0: 00 00 00 00 00 00 00 AE 06 00 00 00 00 00 00 00   ................
@@ -2877,7 +2907,7 @@ debug> d $100:$100
 000170: 00 00 00 0E 00 00 00 00 00 00 00 00 0B 01 00 00   ................
 000180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0E 00   ................
 000190: 00 00 00 00 00 00 00 AE 01 00 00 00 00 00 00 00   ................
-0001A0: F5 00 00 00 00 00 00 00 00 0C 9F 19 00 00 00 00   ................
+0001A0: F5 00 00 00 00 00 00 00 00 0C 33 1B 00 00 00 00   ..........3.....
 0001B0: 00 00 16 AE 02 00 00 00 00 00 00 00 AE 03 00 00   ................
 0001C0: 00 00 00 00 00 AE 04 00 00 00 00 00 00 00 AE 05   ................
 0001D0: 00 00 00 00 00 00 00 AE 06 00 00 00 00 00 00 00   ................
@@ -3128,9 +3158,9 @@ debug> r
 debug> ! step out of the stop
 debug> ret
 
- 159:      1:    
- 160:      1:  *     proc2(74, 'j');
- 161:      0:    
+ 161:      1:    
+ 162:      1:  *     proc2(74, 'j');
+ 163:      0:    
 
 debug> 
 debug> ! print parameters
@@ -3626,7 +3656,7 @@ debug> p ar[6].rec.a[5]
 
 debug> p ip$
 
-397C
+3BD0
 
 debug> p ip^
 
@@ -4491,10 +4521,10 @@ debug> ds
 
 Storage areas occupied
 
-Program     000000-0028B3 (10420)
-Constants   0028B4-002F07 (1620)
-Globals     002F08-003963 (2652)
-Stack/Heap  003964-FFFFFF (16762524)
+Program     000000-002ACF (10960)
+Constants   002AD0-00315B (1676)
+Globals     00315C-003BB7 (2652)
+Stack/Heap  003BB8-FFFFFF (16761928)
 
 debug> dd
 
@@ -4529,9 +4559,9 @@ debug> r
 
 debug> ret
 
-  67:      1:    
-  68:      1:  *     writeln('Step past me!');
-  69:      0:        writeln('And me too!');
+  69:      1:    
+  70:      1:  *     writeln('Step past me!');
+  71:      0:        writeln('And me too!');
 
 debug> 
 debug> pl 2
@@ -5010,15 +5040,15 @@ debug> ! step over some writes
 debug> s 2
 Step past me!
 
-  68:      1:        writeln('Step past me!');
-  69:      1:  *     writeln('And me too!');
-  70:      0:        writeln('1');
+  70:      1:        writeln('Step past me!');
+  71:      1:  *     writeln('And me too!');
+  72:      0:        writeln('1');
 
 And me too!
 
-  69:      1:        writeln('And me too!');
-  70:      1:  *     writeln('1');
-  71:      0:        writeln('2');
+  71:      1:        writeln('And me too!');
+  72:      1:  *     writeln('1');
+  73:      0:        writeln('2');
 
 debug> ss 2
 1
@@ -5042,9 +5072,9 @@ debug> r
 
 debug> ret
 
-  75:      2:        stop4;
-  76:      1:  *     writeln('5');
-  77:      0:        a := 12;
+  77:      2:        stop4;
+  78:      1:  *     writeln('5');
+  79:      0:        a := 12;
 
 debug> lb
 
@@ -5071,7 +5101,7 @@ debug> w b
 debug> b stop5
 debug> r
 5
-Watch variable: @000008CD: a@00FFEB48: 75 -> 12
+Watch variable: @00000903: a@00FFEB48: 75 -> 12
 6
 
 === break ===
@@ -5082,9 +5112,9 @@ Watch variable: @000008CD: a@00FFEB48: 75 -> 12
 
 debug> s
 
-  79:      2:        stop5;
-  80:      1:  *     writeln('7');
-  81:      0:        writeln('8');
+  81:      2:        stop5;
+  82:      1:  *     writeln('7');
+  83:      0:        writeln('8');
 
 debug> lw
 
@@ -5111,101 +5141,101 @@ debug> b stop6
 debug> r
 7
 
-  80:      1:        writeln('7');
-  81:      1:  *     writeln('8');
-  82:      0:        dostuff;
+  82:      1:        writeln('7');
+  83:      1:  *     writeln('8');
+  84:      0:        dostuff;
 
 8
 
-  81:      1:        writeln('8');
-  82:      1:  *     dostuff;
-  83:      0:        writeln('9');
+  83:      1:        writeln('8');
+  84:      1:  *     dostuff;
+  85:      0:        writeln('9');
 
 
-  46:      0:    var i: integer;
-  47:      1:  * 
-  48:      0:    begin
-
-
-  47:      1:    
-  48:      1:  * begin
-  49:      0:    
-
-
-  47:      1:    
-  48:      2:  * begin
-  49:      0:    
-
-
-  48:      2:    begin
+  48:      0:    var i: integer;
   49:      1:  * 
-  50:      0:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      0:    begin
 
 
   49:      1:    
-  50:      1:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  50:      1:  * begin
   51:      0:    
 
 
   49:      1:    
-  50:      2:  *     for i := 1 to 4 do writeln('iteration: ', i);
-  51:      0:    
-
-iteration:           1
-
-  49:      1:    
-  50:      3:  *     for i := 1 to 4 do writeln('iteration: ', i);
-  51:      0:    
-
-iteration:           2
-
-  49:      1:    
-  50:      4:  *     for i := 1 to 4 do writeln('iteration: ', i);
-  51:      0:    
-
-iteration:           3
-
-  49:      1:    
-  50:      5:  *     for i := 1 to 4 do writeln('iteration: ', i);
-  51:      0:    
-
-iteration:           4
-
-  49:      1:    
-  50:      6:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  50:      2:  * begin
   51:      0:    
 
 
-  50:      6:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      2:    begin
   51:      1:  * 
-  52:      0:    end;
+  52:      0:        for i := 1 to 4 do writeln('iteration: ', i);
 
 
   51:      1:    
-  52:      1:  * end;
+  52:      1:  *     for i := 1 to 4 do writeln('iteration: ', i);
   53:      0:    
 
 
-  81:      1:        writeln('8');
-  82:      2:  *     dostuff;
-  83:      0:        writeln('9');
+  51:      1:    
+  52:      2:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  53:      0:    
+
+iteration:           1
+
+  51:      1:    
+  52:      3:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  53:      0:    
+
+iteration:           2
+
+  51:      1:    
+  52:      4:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  53:      0:    
+
+iteration:           3
+
+  51:      1:    
+  52:      5:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  53:      0:    
+
+iteration:           4
+
+  51:      1:    
+  52:      6:  *     for i := 1 to 4 do writeln('iteration: ', i);
+  53:      0:    
 
 
-  82:      2:        dostuff;
-  83:      1:  *     writeln('9');
-  84:      0:        writeln('10');
+  52:      6:        for i := 1 to 4 do writeln('iteration: ', i);
+  53:      1:  * 
+  54:      0:    end;
+
+
+  53:      1:    
+  54:      1:  * end;
+  55:      0:    
+
+
+  83:      1:        writeln('8');
+  84:      2:  *     dostuff;
+  85:      0:        writeln('9');
+
+
+  84:      2:        dostuff;
+  85:      1:  *     writeln('9');
+  86:      0:        writeln('10');
 
 9
 
-  83:      1:        writeln('9');
-  84:      1:  *     writeln('10');
-  85:      0:        stop6;
+  85:      1:        writeln('9');
+  86:      1:  *     writeln('10');
+  87:      0:        stop6;
 
 10
 
-  84:      1:        writeln('10');
-  85:      1:  *     stop6;
-  86:      0:        dostuff;
+  86:      1:        writeln('10');
+  87:      1:  *     stop6;
+  88:      0:        dostuff;
 
 
   37:      0:    
@@ -5221,19 +5251,19 @@ iteration:           4
 
 debug> ret
 
-  84:      1:        writeln('10');
-  85:      2:  *     stop6;
-  86:      0:        dostuff;
+  86:      1:        writeln('10');
+  87:      2:  *     stop6;
+  88:      0:        dostuff;
 
 
-  85:      2:        stop6;
-  86:      1:  *     dostuff;
-  87:      0:        stop7;
+  87:      2:        stop6;
+  88:      1:  *     dostuff;
+  89:      0:        stop7;
 
 
-  85:      2:        stop6;
-  86:      1:  *     dostuff;
-  87:      0:        stop7;
+  87:      2:        stop6;
+  88:      1:  *     dostuff;
+  89:      0:        stop7;
 
 debug> nts
 debug> an
@@ -5252,65 +5282,65 @@ iteration:           4
 
 debug> ret
 
-  87:      2:        stop7;
-  88:      1:  *     new(d);
-  89:      0:        new(e);
+  89:      2:        stop7;
+  90:      1:  *     new(d);
+  91:      0:        new(e);
 
 debug> lsa
 
 last source lines executed:
 
-  88:      1:  *     new(d);
-  87:      2:        stop7;
+  90:      1:  *     new(d);
+  89:      2:        stop7;
   40:      1: b  procedure stop7; begin end;
-  87:      2:        stop7;
-  86:      2:        dostuff;
-  52:      2:    end;
-  51:      2:    
-  50:     12:        for i := 1 to 4 do writeln('iteration: ', i);
-  50:     12:        for i := 1 to 4 do writeln('iteration: ', i);
-  50:     12:        for i := 1 to 4 do writeln('iteration: ', i);
+  89:      2:        stop7;
+  88:      2:        dostuff;
+  54:      2:    end;
+  53:      2:    
+  52:     12:        for i := 1 to 4 do writeln('iteration: ', i);
+  52:     12:        for i := 1 to 4 do writeln('iteration: ', i);
+  52:     12:        for i := 1 to 4 do writeln('iteration: ', i);
 
 debug> s
 
-  88:      1:        new(d);
-  89:      1:  *     new(e);
-  90:      0:        dispose(d);
+  90:      1:        new(d);
+  91:      1:  *     new(e);
+  92:      0:        dispose(d);
 
 debug> s
 
-  89:      1:        new(e);
-  90:      1:  *     dispose(d);
-  91:      0:        writeln('11');
+  91:      1:        new(e);
+  92:      1:  *     dispose(d);
+  93:      0:        writeln('11');
 
 debug> hs
 
 Heap space breakdown
 
-addr: 003964:     16: alloc
-addr: 003974:     16: alloc
-addr: 003984:     16: alloc
-addr: 003994:     16: alloc
+addr: 003BB8:     16: alloc
+addr: 003BC8:     16: alloc
+addr: 003BD8:     16: alloc
+addr: 003BE8:     16: alloc
 debug> s
 
-  90:      1:        dispose(d);
-  91:      1:  *     writeln('11');
-  92:      0:        stop8;
+  92:      1:        dispose(d);
+  93:      1:  *     writeln('11');
+  94:      0:        stop8;
 
 debug> hs
 
 Heap space breakdown
 
-addr: 003964:     16: alloc
-addr: 003974:     16: alloc
-addr: 003984:     16: free
-addr: 003994:     16: alloc
+addr: 003BB8:     16: alloc
+addr: 003BC8:     16: alloc
+addr: 003BD8:     16: free
+addr: 003BE8:     16: alloc
 debug> tr
 debug> b stop8
 debug> r
-  2878/16771856->  6
+  2932/16771856->  6
 11
-  2880/16771880->  5
+  2934/16771880->  5
 
 
 === break ===
@@ -5321,24 +5351,42 @@ debug> r
 
 debug> ret
 
-  93:      1:    
-  94:      1:  * end;
-  95:      0:    
+  95:      1:    
+  96:      1:  * end;
+  97:      0:    
 
 debug> ntr
 debug> ! step out of proc2
 debug> ret
 
- 161:      1:    
- 162:      1:  * end;
  163:      1:    
+ 164:      1:  * end;
+ 165:      0:    
 
 debug> ! step out of proc1
 debug> ret
 
- 218:      1:    
- 219:      1:  *     writeln('Step me!');
- 220:      0:        for i := 1 to 3 do writeln('Hi there!');    
+ 236:      1:    
+ 237:      1:  *     stepover1;
+ 238:      0:    
+
+debug> ! step over next verbose
+debug> so
+I am stepover proc 1
+
+ 238:      1:    
+ 239:      1:  *     stepover2;
+ 240:      0:    
+
+debug> ! step over next silently
+debug> sso
+I am stepover proc 2
+debug> ! but now show where you are
+debug> ps
+
+ 240:      1:    
+ 241:      1:  *     writeln('Step me!');
+ 242:      0:        for i := 1 to 3 do writeln('Hi there!');    
 
 debug> 
 debug> ! Test source profiling.
@@ -5389,149 +5437,150 @@ debug> l debug_test 1 100
   41:      0:    
   42:      1: b  procedure stop8; begin end;
   43:      0:    
-  44:      0:    procedure dostuff;
+  44:      0:    procedure stop9; begin end;
   45:      0:    
-  46:      0:    var i: integer;
-  47:      2:    
-  48:      4:    begin
+  46:      0:    procedure dostuff;
+  47:      0:    
+  48:      0:    var i: integer;
   49:      2:    
-  50:     12:        for i := 1 to 4 do writeln('iteration: ', i);
+  50:      4:    begin
   51:      2:    
-  52:      2:    end;
-  53:      0:    
-  54:      0:    procedure proc2(i: integer; c: char);
+  52:     12:        for i := 1 to 4 do writeln('iteration: ', i);
+  53:      2:    
+  54:      2:    end;
   55:      0:    
-  56:      0:    var a: integer;
-  57:      0:        b: char;
-  58:      0:        d: ^integer;
-  59:      0:        e: ^integer;
-  60:      1:    
-  61:      2:    begin
+  56:      0:    procedure proc2(i: integer; c: char);
+  57:      0:    
+  58:      0:    var a: integer;
+  59:      0:        b: char;
+  60:      0:        d: ^integer;
+  61:      0:        e: ^integer;
   62:      1:    
-  63:      1:        a := 75;
-  64:      1:        b := '6';
-  65:      1:    
-  66:      2:        stop3;
+  63:      2:    begin
+  64:      1:    
+  65:      1:        a := 75;
+  66:      1:        b := '6';
   67:      1:    
-  68:      1:        writeln('Step past me!');
-  69:      1:        writeln('And me too!');
-  70:      1:        writeln('1');
-  71:      1:        writeln('2');
-  72:      1:        writeln('3');
-  73:      2:        traceme;
-  74:      1:        writeln('4');
-  75:      2:        stop4;
-  76:      1:        writeln('5');
-  77:      1:        a := 12;
-  78:      1:        writeln('6');
-  79:      2:        stop5;
-  80:      1:        writeln('7');
-  81:      1:        writeln('8');
-  82:      2:        dostuff;
-  83:      1:        writeln('9');
-  84:      1:        writeln('10');
-  85:      2:        stop6;
-  86:      2:        dostuff;
-  87:      2:        stop7;
-  88:      1:        new(d);
-  89:      1:        new(e);
-  90:      1:        dispose(d);
-  91:      1:        writeln('11');
-  92:      2:        stop8;
-  93:      1:    
-  94:      1:    end;
-  95:      0:    
-  96:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  68:      2:        stop3;
+  69:      1:    
+  70:      1:        writeln('Step past me!');
+  71:      1:        writeln('And me too!');
+  72:      1:        writeln('1');
+  73:      1:        writeln('2');
+  74:      1:        writeln('3');
+  75:      2:        traceme;
+  76:      1:        writeln('4');
+  77:      2:        stop4;
+  78:      1:        writeln('5');
+  79:      1:        a := 12;
+  80:      1:        writeln('6');
+  81:      2:        stop5;
+  82:      1:        writeln('7');
+  83:      1:        writeln('8');
+  84:      2:        dostuff;
+  85:      1:        writeln('9');
+  86:      1:        writeln('10');
+  87:      2:        stop6;
+  88:      2:        dostuff;
+  89:      2:        stop7;
+  90:      1:        new(d);
+  91:      1:        new(e);
+  92:      1:        dispose(d);
+  93:      1:        writeln('11');
+  94:      2:        stop8;
+  95:      1:    
+  96:      1:    end;
   97:      0:    
-  98:      0:    var i, x, i2: integer;
-  99:      0:        c: char;
- 100:      0:        b: boolean;
+  98:      0:    procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+  99:      0:    
+ 100:      0:    var i, x, i2: integer;
 
 debug> 
 debug> ! machine commands can be tested in source mode, we just don't get a machine
 debug> ! level status print. Note li @pc can be a defacto assembly status, since it
 debug> ! shows where the execution point is.
 debug> !
-debug> ! Note the test can need to be recalibrated if the source changes.
+debug> ! Note the test can need to be recalibrated if the source changes. If it hits
+debug> ! the stop instruction, it means you missed a breakpoint (it ran off the end).
 debug> !
-debug> ! Test si, sis, lia, bi, tpi
+debug> ! Test si, sio, sis, siso, lia, bi, tpi
 debug> p @pc$
 
-2757
+2945
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
- *  002757: 38 lca            00000000000028C5
-    002760: 05 lao            0000000000002F0A
-    002769: 76 swp            0000000000000008
-    002772: 7B ldci           0000000000000008
-    00277B: 76 swp            0000000000000008
-    002784: 7B ldci           0000000000000008
-    00278D: 0F csp            0000000000000006
-    00278F: 0F csp            0000000000000005
-    002791: 75 dmp            0000000000000008
-    00279A: AE mrkl*          00000000000000DC
+ *  002945: 38 lca            0000000000002AE1
+    00294E: 05 lao            000000000000315E
+    002957: 76 swp            0000000000000008
+    002960: 7B ldci           0000000000000008
+    002969: 76 swp            0000000000000008
+    002972: 7B ldci           0000000000000008
+    00297B: 0F csp            0000000000000006
+    00297D: 0F csp            0000000000000005
+    00297F: 75 dmp            0000000000000008
+    002988: AE mrkl*          00000000000000F2
 debug> si
 
- 218:      1:    
- 219:      1:  *     writeln('Step me!');
- 220:      0:        for i := 1 to 3 do writeln('Hi there!');    
+ 240:      1:    
+ 241:      1:  *     writeln('Step me!');
+ 242:      0:        for i := 1 to 3 do writeln('Hi there!');    
 
 debug> p @pc$
 
-2760
+294E
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
- *  002760: 05 lao            0000000000002F0A
-    002769: 76 swp            0000000000000008
-    002772: 7B ldci           0000000000000008
-    00277B: 76 swp            0000000000000008
-    002784: 7B ldci           0000000000000008
-    00278D: 0F csp            0000000000000006
-    00278F: 0F csp            0000000000000005
-    002791: 75 dmp            0000000000000008
-    00279A: AE mrkl*          00000000000000DC
-    0027A3: 7B ldci           0000000000000001
+ *  00294E: 05 lao            000000000000315E
+    002957: 76 swp            0000000000000008
+    002960: 7B ldci           0000000000000008
+    002969: 76 swp            0000000000000008
+    002972: 7B ldci           0000000000000008
+    00297B: 0F csp            0000000000000006
+    00297D: 0F csp            0000000000000005
+    00297F: 75 dmp            0000000000000008
+    002988: AE mrkl*          00000000000000F2
+    002991: 7B ldci           0000000000000001
 debug> sis
 debug> p @pc$
 
-2769
+2957
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
- *  002769: 76 swp            0000000000000008
-    002772: 7B ldci           0000000000000008
-    00277B: 76 swp            0000000000000008
-    002784: 7B ldci           0000000000000008
-    00278D: 0F csp            0000000000000006
-    00278F: 0F csp            0000000000000005
-    002791: 75 dmp            0000000000000008
-    00279A: AE mrkl*          00000000000000DC
-    0027A3: 7B ldci           0000000000000001
-    0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
+ *  002957: 76 swp            0000000000000008
+    002960: 7B ldci           0000000000000008
+    002969: 76 swp            0000000000000008
+    002972: 7B ldci           0000000000000008
+    00297B: 0F csp            0000000000000006
+    00297D: 0F csp            0000000000000005
+    00297F: 75 dmp            0000000000000008
+    002988: AE mrkl*          00000000000000F2
+    002991: 7B ldci           0000000000000001
+    00299A: 02 stri        01,FFFFFFFFFFFFFFF0
 debug> ! run to start of wri call
-debug> bi $278d
+debug> bi $297b
 debug> r
 
 === break ===
 
- 218:      1:    
- 219:      1: b*     writeln('Step me!');
- 220:      0:        for i := 1 to 3 do writeln('Hi there!');    
+ 240:      1:    
+ 241:      1: b*     writeln('Step me!');
+ 242:      0:        for i := 1 to 3 do writeln('Hi there!');    
 
 debug> ! dump stack should have parameters on it.
 debug> dst
 00FFFF80: 00000008 (8)
-00FFFF88: 000028C5 (10437)
+00FFFF88: 00002AE1 (10977)
 00FFFF90: 00000008 (8)
-00FFFF98: 00002F0A (12042)
+00FFFF98: 0000315E (12638)
 00FFFFA0: 0000000A (10)
 00FFFFA8: 00000001 (1)
 00FFFFB0: 0000000A (10)
@@ -5540,115 +5589,121 @@ debug> dst
 00FFFFC8: 01000000 (16777216)
 debug> an
 debug> ! set this address near the end of the instructions just listed
-debug> bi $278f
+debug> bi $297d
 debug> r
 Step me!
 
 === break ===
 
- 218:      1:    
- 219:      1: b*     writeln('Step me!');
- 220:      0:        for i := 1 to 3 do writeln('Hi there!');    
+ 240:      1:    
+ 241:      1: b*     writeln('Step me!');
+ 242:      0:        for i := 1 to 3 do writeln('Hi there!');    
 
 debug> p @pc$
 
-278F
+297D
 
 debug> li @pc
 
 Addr    Op Ins            P  Q
 ----------------------------------
-b*  00278F: 0F csp            0000000000000005
-    002791: 75 dmp            0000000000000008
-    00279A: AE mrkl*          00000000000000DC
-    0027A3: 7B ldci           0000000000000001
-    0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
-    0027B6: 7B ldci           0000000000000003
-    0027BF: 02 stri        01,FFFFFFFFFFFFFFE8
-    0027C9: 00 lodi        01,FFFFFFFFFFFFFFF0
-    0027D3: 03 sroi           0000000000002F71
-    0027DC: AE mrkl*          00000000000000DC
+b*  00297D: 0F csp            0000000000000005
+    00297F: 75 dmp            0000000000000008
+    002988: AE mrkl*          00000000000000F2
+    002991: 7B ldci           0000000000000001
+    00299A: 02 stri        01,FFFFFFFFFFFFFFF0
+    0029A4: 7B ldci           0000000000000003
+    0029AD: 02 stri        01,FFFFFFFFFFFFFFE8
+    0029B7: 00 lodi        01,FFFFFFFFFFFFFFF0
+    0029C1: 03 sroi           00000000000031C5
+    0029CA: AE mrkl*          00000000000000F2
 debug> lia
 
 last instructions executed:
 
-b   00278D: 0F csp            0000000000000006
-    002784: 7B ldci           0000000000000008
-    00277B: 76 swp            0000000000000008
-    002772: 7B ldci           0000000000000008
-    002769: 76 swp            0000000000000008
-    002760: 05 lao            0000000000002F0A
-    002757: 38 lca            00000000000028C5
-    00274E: AE mrkl*          00000000000000DB
-    002745: AE mrkl*          00000000000000DA
-    00273C: AE mrkl*          00000000000000D9
+b   00297B: 0F csp            0000000000000006
+    002972: 7B ldci           0000000000000008
+    002969: 76 swp            0000000000000008
+    002960: 7B ldci           0000000000000008
+    002957: 76 swp            0000000000000008
+    00294E: 05 lao            000000000000315E
+    002945: 38 lca            0000000000002AE1
+    00293C: AE mrkl*          00000000000000F1
+    002933: AE mrkl*          00000000000000F0
+    00292A: AE mrkl*          00000000000000EF
 
 debug> ! Now step to for loop
 debug> s
 
 
- 219:      1: b      writeln('Step me!');
- 220:      1:  *     for i := 1 to 3 do writeln('Hi there!');    
- 221:      0:    
+ 241:      1: b      writeln('Step me!');
+ 242:      1:  *     for i := 1 to 3 do writeln('Hi there!');    
+ 243:      0:    
 
 debug> li @pc:20
 
 Addr    Op Ins            P  Q
 ----------------------------------
- *  0027A3: 7B ldci           0000000000000001
-    0027AC: 02 stri        01,FFFFFFFFFFFFFFF0
-    0027B6: 7B ldci           0000000000000003
-    0027BF: 02 stri        01,FFFFFFFFFFFFFFE8
-    0027C9: 00 lodi        01,FFFFFFFFFFFFFFF0
-    0027D3: 03 sroi           0000000000002F71
-    0027DC: AE mrkl*          00000000000000DC
-    0027E5: 01 ldoi           0000000000002F71
-    0027EE: 00 lodi        01,FFFFFFFFFFFFFFE8
-    0027F8: A1 leqi        
-    0027F9: 18 fjp            0000000000002886
-    002802: 38 lca            00000000000028B4
-    00280B: 05 lao            0000000000002F0A
-    002814: 76 swp            0000000000000008
-    00281D: 7B ldci           0000000000000009
-    002826: 76 swp            0000000000000008
-    00282F: 7B ldci           0000000000000009
-    002838: 0F csp            0000000000000006
-    00283A: 0F csp            0000000000000005
-    00283C: 75 dmp            0000000000000008
+ *  002991: 7B ldci           0000000000000001
+    00299A: 02 stri        01,FFFFFFFFFFFFFFF0
+    0029A4: 7B ldci           0000000000000003
+    0029AD: 02 stri        01,FFFFFFFFFFFFFFE8
+    0029B7: 00 lodi        01,FFFFFFFFFFFFFFF0
+    0029C1: 03 sroi           00000000000031C5
+    0029CA: AE mrkl*          00000000000000F2
+    0029D3: 01 ldoi           00000000000031C5
+    0029DC: 00 lodi        01,FFFFFFFFFFFFFFE8
+    0029E6: A1 leqi        
+    0029E7: 18 fjp            0000000000002A74
+    0029F0: 38 lca            0000000000002AD0
+    0029F9: 05 lao            000000000000315E
+    002A02: 76 swp            0000000000000008
+    002A0B: 7B ldci           0000000000000009
+    002A14: 76 swp            0000000000000008
+    002A1D: 7B ldci           0000000000000009
+    002A26: 0F csp            0000000000000006
+    002A28: 0F csp            0000000000000005
+    002A2A: 75 dmp            0000000000000008
 debug> ! trace at the top of the for loop, and break the line after
-debug> tpi $27f9
-debug> b 222
+debug> tpi $29e7
+debug> b stop9
 debug> r
 
- 219:      1: b      writeln('Step me!');
- 220:      2: t*     for i := 1 to 3 do writeln('Hi there!');    
- 221:      0:    
+ 241:      1: b      writeln('Step me!');
+ 242:      2: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 243:      0:    
 
 Hi there!
 
- 219:      1: b      writeln('Step me!');
- 220:      3: t*     for i := 1 to 3 do writeln('Hi there!');    
- 221:      0:    
+ 241:      1: b      writeln('Step me!');
+ 242:      3: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 243:      0:    
 
 Hi there!
 
- 219:      1: b      writeln('Step me!');
- 220:      4: t*     for i := 1 to 3 do writeln('Hi there!');    
- 221:      0:    
+ 241:      1: b      writeln('Step me!');
+ 242:      4: t*     for i := 1 to 3 do writeln('Hi there!');    
+ 243:      0:    
 
 Hi there!
 
 === break ===
 
- 221:      1:    
- 222:      1:  * end.
+  43:      0:    
+  44:      1: b* procedure stop9; begin end;
+  45:      0:    
+
+debug> ret
+
+ 245:      1:    
+ 246:      1:  * end.
 
 debug> 
 debug> ! Test system variables
 debug> ! This must be done at the end since it corrups the variables.
 debug> p @pc$
 
-28AB
+2AC6
 
 debug> st @pc $1234
 debug> p @pc$
@@ -5678,7 +5733,7 @@ debug> p @mp$
 debug> 
 debug> p @np$
 
-39A4
+3BF8
 
 debug> st @np $1234
 debug> p @np$
@@ -5689,11 +5744,11 @@ debug>
 debug> ! these variables can't be changed
 debug> p @constants
 
-10420
+10960
 
 debug> p @heapbottom
 
-14692
+15288
 
 debug> 
 debug> ! exit complete

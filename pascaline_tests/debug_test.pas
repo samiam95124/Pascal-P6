@@ -41,6 +41,8 @@ procedure stop7; begin end;
 
 procedure stop8; begin end;
 
+procedure stop9; begin end;
+
 procedure dostuff;
 
 var i: integer;
@@ -161,6 +163,22 @@ begin
 
 end;
 
+procedure stepover1;
+
+begin
+
+    writeln('I am stepover proc 1')
+
+end;
+
+procedure stepover2;
+
+begin
+
+    writeln('I am stepover proc 2')
+
+end;
+
 begin
 
     writeln('This is debug test');
@@ -216,7 +234,13 @@ begin
 
     proc1(83, 'g', true, two, 7, 98.76, rv, ar);
 
+    stepover1;
+
+    stepover2;
+
     writeln('Step me!');
     for i := 1 to 3 do writeln('Hi there!');    
+
+    stop9;
 
 end.

@@ -204,6 +204,12 @@ ntr
 ret
 ! step out of proc1
 ret
+! step over next verbose
+so
+! step over next silently
+sso
+! but now show where you are
+ps
 
 ! Test source profiling.
 ! Compare this listing with the one at program start to see if the counters have
@@ -214,9 +220,10 @@ l debug_test 1 100
 ! level status print. Note li @pc can be a defacto assembly status, since it 
 ! shows where the execution point is.
 !
-! Note the test can need to be recalibrated if the source changes.
+! Note the test can need to be recalibrated if the source changes. If it hits
+! the stop instruction, it means you missed a breakpoint (it ran off the end).
 !
-! Test si, sis, lia, bi, tpi
+! Test si, sio, sis, siso, lia, bi, tpi
 p @pc$
 li @pc
 si
@@ -226,13 +233,13 @@ sis
 p @pc$
 li @pc
 ! run to start of wri call
-bi $278d
+bi $297b
 r
 ! dump stack should have parameters on it.
 dst
 an
 ! set this address near the end of the instructions just listed
-bi $278f
+bi $297d
 r
 p @pc$
 li @pc
@@ -241,9 +248,10 @@ lia
 s
 li @pc:20
 ! trace at the top of the for loop, and break the line after
-tpi $27f9
-b 222
+tpi $29e7
+b stop9
 r
+ret
 
 ! Test system variables
 ! This must be done at the end since it corrups the variables.
