@@ -302,6 +302,9 @@ debug> !
 debug> ! Debug mode test input file.
 debug> !
 debug> 
+debug> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+debug> !
+debug> ! Source level section
 debug> !
 debug> ! This first part is source level only. I put the machine level commands at the
 debug> ! end because they can move around with changes to the program.
@@ -5496,6 +5499,13 @@ debug> l debug_test 1 100
  100:      0:    var i, x, i2: integer;
 
 debug> 
+debug> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+debug> !
+debug> ! Machine level section
+debug> !
+debug> ! This section contains hard addresses that need to be moved when the source
+debug> ! test program has changed or the compiler has changed.
+debug> !
 debug> ! machine commands can be tested in source mode, we just don't get a machine
 debug> ! level status print. Note li @pc can be a defacto assembly status, since it
 debug> ! shows where the execution point is.
@@ -5565,6 +5575,8 @@ Addr    Op Ins            P  Q
     002988: AE mrkl*          00000000000000F2
     002991: 7B ldci           0000000000000001
     00299A: 02 stri        01,FFFFFFFFFFFFFFF0
+debug> ! set this address near the end of the instructions just listed
+debug> bi $297d
 debug> ! run to start of wri call
 debug> bi $297b
 debug> r
@@ -5588,8 +5600,6 @@ debug> dst
 00FFFFC0: 00FFFFC8 (16777160)
 00FFFFC8: 01000000 (16777216)
 debug> an
-debug> ! set this address near the end of the instructions just listed
-debug> bi $297d
 debug> r
 Step me!
 
@@ -5700,7 +5710,7 @@ debug> ret
 
 debug> 
 debug> ! Test system variables
-debug> ! This must be done at the end since it corrups the variables.
+debug> ! This must be done at the end since it corrupts the variables.
 debug> p @pc$
 
 2AC6
