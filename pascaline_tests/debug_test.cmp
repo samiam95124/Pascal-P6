@@ -5517,6 +5517,11 @@ debug> !
 debug> ! Note the test can need to be recalibrated if the source changes. If it hits
 debug> ! the stop instruction, it means you missed a breakpoint (it ran off the end).
 debug> !
+debug> ! The machine level instructions are indicated as relative offsets from the
+debug> ! top of a machine level listing performed before the instruction and indicated
+debug> ! in the comment above. This means the location won't change unless the
+debug> ! instruction sequence we are indicating has changed.
+debug> !
 debug> ! Test si, sio, sis, siso, lia, bi, tpi
 debug> 
 debug> ! should be at writeln('Step me!');
@@ -5588,7 +5593,8 @@ Addr    Op Ins            P  Q
     002991: AE mrkl*          00000000000000F3
     00299A: 7B ldci           0000000000000001
 debug> ! run to start of wrs call
-debug> bi $297b
+debug> ! this is the csp instruction 5th from the top of the above listing
+debug> bi @pc+36
 debug> r
 
 === break ===
@@ -5665,7 +5671,8 @@ Addr    Op Ins            P  Q
     0029D1: AE mrkl*          00000000000000F5
 debug> ! load analyzer buffer
 debug> an
-debug> bi $29d1
+debug> ! break at mrkl instruction, 11th from the top of the above listing
+debug> bi @pc+82
 debug> r
 
 === break ===
@@ -5739,7 +5746,8 @@ Addr    Op Ins            P  Q
     002A7A: 0F csp            0000000000000005
     002A7C: 75 dmp            0000000000000008
 debug> ! trace at the top of the for loop, and break the line after
-debug> tpi $2a39
+debug> ! This is the fjp, 11th instruction from the top of the above listing
+debug> tpi @pc+86
 debug> b stop9
 debug> r
 

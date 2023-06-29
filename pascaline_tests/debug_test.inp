@@ -233,6 +233,11 @@ l debug_test 1 100
 ! Note the test can need to be recalibrated if the source changes. If it hits
 ! the stop instruction, it means you missed a breakpoint (it ran off the end).
 !
+! The machine level instructions are indicated as relative offsets from the
+! top of a machine level listing performed before the instruction and indicated
+! in the comment above. This means the location won't change unless the 
+! instruction sequence we are indicating has changed.
+!
 ! Test si, sio, sis, siso, lia, bi, tpi
 
 ! should be at writeln('Step me!');
@@ -246,7 +251,8 @@ sis
 p @pc$
 li @pc
 ! run to start of wrs call
-bi $297b
+! this is the csp instruction 5th from the top of the above listing
+bi @pc+36
 r
 li @pc
 ! dump stack should have parameters on it.
@@ -259,7 +265,8 @@ siso
 li @pc:11
 ! load analyzer buffer
 an
-bi $29d1
+! break at mrkl instruction, 11th from the top of the above listing
+bi @pc+82
 r
 p @pc$
 li @pc
@@ -268,7 +275,8 @@ lia
 s
 li @pc:20
 ! trace at the top of the for loop, and break the line after
-tpi $2a39
+! This is the fjp, 11th instruction from the top of the above listing
+tpi @pc+86
 b stop9
 r
 ret
