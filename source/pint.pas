@@ -5367,7 +5367,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
 var dbc: parctl; cn: alfa; dbgend: boolean; i,x,l,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
-    fw: wthnum; undef: boolean; c: char; dc: dbgcmd;
+    fw: wthnum; undef: boolean; c: char; dc: dbgcmd; doanalyss: boolean;
 
 procedure error(e: errcod);
 
@@ -7401,7 +7401,13 @@ begin { debug }
   { if we broke on a source marker, execute it then back up.
     This is because break on source line always will do this, and we need the
     source line from the instruction. }
-  if store[pc] = mrkins then begin sinins; pc := pc-(mrkinsl+intsize) end;
+  if store[pc] = mrkins then begin 
+    doanalyss := doanalys; { supress analysis on this }
+    doanalys := false;
+    sinins; 
+    doanalys := doanalyss;
+    pc := pc-(mrkinsl+intsize) 
+  end;
   dbgend := false;
   debugstart := true; { set we started }
   clrtmp; { clear temp breakpoints }

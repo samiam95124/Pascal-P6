@@ -234,6 +234,9 @@ l debug_test 1 100
 ! the stop instruction, it means you missed a breakpoint (it ran off the end).
 !
 ! Test si, sio, sis, siso, lia, bi, tpi
+
+! should be at writeln('Step me!');
+ps
 p @pc$
 li @pc
 si
@@ -242,23 +245,30 @@ li @pc
 sis
 p @pc$
 li @pc
-! set this address near the end of the instructions just listed
-bi $297d
-! run to start of wri call
+! run to start of wrs call
 bi $297b
 r
+li @pc
 ! dump stack should have parameters on it.
 dst
+! step over wrs call
+sio
+li @pc
+! step over wln call
+siso
+li @pc:11
+! load analyzer buffer
 an
+bi $29d1
 r
 p @pc$
 li @pc
 lia
-! Now step to for loop
+! Now step to for loop (sourcewise)
 s
 li @pc:20
 ! trace at the top of the for loop, and break the line after
-tpi $29e7
+tpi $2a39
 b stop9
 r
 ret

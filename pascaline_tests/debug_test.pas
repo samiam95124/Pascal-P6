@@ -239,6 +239,10 @@ begin
     stepover2;
 
     writeln('Step me!');
+
+    x := 1;
+    x := x+1;
+
     for i := 1 to 3 do writeln('Hi there!');    
 
     stop9;
