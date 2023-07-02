@@ -317,57 +317,61 @@ debug> h
 
 Commands:
 
-h|help              Help (this command)
-l    [m] [s[ e|:l]  List source lines
-lc   [m] [s[ e|:l]  List source and machine lines coordinated
-li   [s[ e|:l]      List machine instructions
-p    v              Print expression
-d    [s[ e|:l]      Dump memory
-e    a v[ v]...     Enter byte values to memory address
-st   d v            Set program variable
-pg                  Print all globals
-pl   [n]            print locals for current/number of enclosing blocks
-pp   [n]            print parameters for current/number of enclosing blocks
-ds                  Dump storage parameters
-dd   [n]            Dump display frames
-df   [n]            Dump frames formatted (call trace)
-dst  [n]            Dump stack words
-b    [m] a          Place breakpoint at source line number/routine
-tp   [m] a          Place tracepoint at source line number/routine
-bi   a              Place breakpoint at instruction
-tpi  a              Place tracepoint at instruction
-c    [a]            Clear breakpoint/all breakpoints
-lb                  List active breakpoints
-w    a              Watch variable
-lw                  List watch table
-cw   [n]            Clear watch table entry/all watch entries
-lia                 List instruction analyzer buffer
-lsa                 List source analyzer buffer
-s    [n]            Step next source line execution
-ss   [n]            Step next source line execution silently
-si   [n]            Step instructions
-sis  [n]            Step instructions silently
-so   [n]            Step over next source line execution
-sso  [n]            Step over next source line execution silently
-sio  [n]            Step over instructions
-siso [n]            Step over instructions silently
-ret                 Return from subroutine
-hs                  Report heap space
-ti                  Turn instruction tracing on
-nti                 Turn instruction tracing off
-tr                  Turn system routine tracing on
-ntr                 Turn system routine tracing off
-ts                  Turn source line tracing on
-nts                 Turn source line tracing off
-spf                 Turn on source level profiling
-nspf                Turn off source level profiling
-an                  Turn on analyzer mode
-nan                 Turn off analyzer mode
-r                   Run program from current pc
-ps                  Print current registers and instruction
-q                   Quit interpreter
+h|help                             Help (this command)
+l                   [m] [s[ e|:l]  List source lines
+lc                  [m] [s[ e|:l]  List source and machine lines coordinated
+li                  [s[ e|:l]      List machine instructions
+p                   v              Print expression
+d[b|l][8|16|32|64]  [s[ e|:l]      Dump memory
+e                   a v[ v]...     Enter byte values to memory address
+st                  d v            Set program variable
+pg                                 Print all globals
+pl                  [n]            print locals for current/number of enclosing
+                                   blocks
+pp                  [n]            print parameters for current/number of
+                                   enclosing blocks
+ds                                 Dump storage parameters
+dd                  [n]            Dump display frames
+df                  [n]            Dump frames formatted (call trace)
+dst                 [n]            Dump stack words
+b                   [m] a          Place breakpoint at source line
+                                   number/routine
+tp                  [m] a          Place tracepoint at source line
+                                   number/routine
+bi                  a              Place breakpoint at instruction
+tpi                 a              Place tracepoint at instruction
+c                   [a]            Clear breakpoint/all breakpoints
+lb                                 List active breakpoints
+w                   a              Watch variable
+lw                                 List watch table
+cw                  [n]            Clear watch table entry/all watch entries
+lia                                List instruction analyzer buffer
+lsa                                List source analyzer buffer
+s                   [n]            Step next source line execution
+ss                  [n]            Step next source line execution silently
+si                  [n]            Step instructions
+sis                 [n]            Step instructions silently
+so                  [n]            Step over next source line execution
+sso                 [n]            Step over next source line execution silently
+sio                 [n]            Step over instructions
+siso                [n]            Step over instructions silently
+ret                                Return from subroutine
+hs                                 Report heap space
+ti                                 Turn instruction tracing on
+nti                                Turn instruction tracing off
+tr                                 Turn system routine tracing on
+ntr                                Turn system routine tracing off
+ts                                 Turn source line tracing on
+nts                                Turn source line tracing off
+spf                                Turn on source level profiling
+nspf                               Turn off source level profiling
+an                                 Turn on analyzer mode
+nan                                Turn off analyzer mode
+r                                  Run program from current pc
+ps                                 Print current registers and instruction
+q                                  Quit interpreter
 
-!                   Anywhere in line starts a comment
+!                                  Anywhere in line starts a comment
 
 debug> ! turn on source profiling for later test
 debug> spf
@@ -2013,7 +2017,7 @@ debug> lc debug_test 5:100
 
 debug> li $0
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     000000: 14 lnp*           0000000000003C0C
     000009: 15 cal            000000000000004E
@@ -2027,7 +2031,7 @@ Addr    Op Ins            P  Q
     000019: F2 eext*       
 debug> li $0 $100
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     000000: 14 lnp*           0000000000003C0C
     000009: 15 cal            000000000000004E
@@ -2113,7 +2117,7 @@ Addr    Op Ins            P  Q
     0000FA: 76 swp            0000000000000008
 debug> li $0:100
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     000000: 14 lnp*           0000000000003C0C
     000009: 15 cal            000000000000004E
@@ -2217,7 +2221,7 @@ Addr    Op Ins            P  Q
     0001A0: F5 sfr            0000000000000000
 debug> li $4e
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     00004E: AE mrkl*          0000000000000001
     000057: F5 sfr            0000000000000000
@@ -2231,7 +2235,7 @@ Addr    Op Ins            P  Q
     000097: AE mrkl*          0000000000000004
 debug> li $4e $100
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     00004E: AE mrkl*          0000000000000001
     000057: F5 sfr            0000000000000000
@@ -2255,7 +2259,7 @@ Addr    Op Ins            P  Q
     0000FA: 76 swp            0000000000000008
 debug> li $4e:100
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
     00004E: AE mrkl*          0000000000000001
     000057: F5 sfr            0000000000000000
@@ -5537,7 +5541,7 @@ debug> p @pc$
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  002945: 38 lca            0000000000002B35
     00294E: 05 lao            00000000000031B2
@@ -5561,7 +5565,7 @@ debug> p @pc$
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  00294E: 05 lao            00000000000031B2
     002957: 76 swp            0000000000000008
@@ -5580,7 +5584,7 @@ debug> p @pc$
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  002957: 76 swp            0000000000000008
     002960: 7B ldci           0000000000000008
@@ -5605,7 +5609,7 @@ debug> r
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
 b*  00297B: 0F csp            0000000000000006
     00297D: 0F csp            0000000000000005
@@ -5639,7 +5643,7 @@ Step me!
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  00297D: 0F csp            0000000000000005
     00297F: 75 dmp            0000000000000008
@@ -5656,7 +5660,7 @@ debug> siso
 
 debug> li @pc:11
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  00297F: 75 dmp            0000000000000008
     002988: AE mrkl*          00000000000000F2
@@ -5687,7 +5691,7 @@ debug> p @pc$
 
 debug> li @pc
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
 b*  0029D1: AE mrkl*          00000000000000F5
     0029DA: AE mrkl*          00000000000000F6
@@ -5723,7 +5727,7 @@ debug> s
 
 debug> li @pc:20
 
-Addr    Op Ins            P  Q
+    Addr    Op Ins         P  Q
 ----------------------------------
  *  0029E3: 7B ldci           0000000000000001
     0029EC: 02 stri        01,FFFFFFFFFFFFFFF0
