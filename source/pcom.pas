@@ -9929,63 +9929,6 @@ begin cmdpos := maxcmd end;
       ordint['F'] := 15;
     end;
 
-    procedure initoptions;
-    begin
-      opts[1]  := 'a         ';
-      opts[2]  := 'b         ';
-      opts[3]  := 'c         ';
-      opts[4]  := 'd         ';
-      opts[5]  := 'e         ';
-      opts[6]  := 'f         ';
-      opts[7]  := 'g         ';
-      opts[8]  := 'h         ';
-      opts[9]  := 'i         ';
-      opts[10] := 'ee        ';
-      opts[11] := '          ';
-      opts[12] := 'l         ';
-      opts[13] := 'm         ';
-      opts[14] := 'n         ';
-      opts[15] := 'o         ';
-      opts[16] := 'p         ';
-      opts[17] := 'q         ';
-      opts[18] := 'r         ';
-      opts[19] := 's         ';
-      opts[20] := 't         ';
-      opts[21] := 'u         ';
-      opts[22] := 'v         ';
-      opts[23] := 'w         ';
-      opts[24] := 'x         ';
-      opts[25] := 'y         ';
-      opts[26] := 'z         ';
-
-      optsl[1]  := 'debugflt  ';
-      optsl[2]  := 'prtlab    ';
-      optsl[3]  := 'lstcod    ';
-      optsl[4]  := 'chk       ';
-      optsl[5]  := 'machdeck  ';
-      optsl[6]  := 'debugsrc  ';
-      optsl[7]  := 'prtlabdef ';
-      optsl[8]  := 'sourceset ';
-      optsl[9]  := 'varblk    ';
-      optsl[10] := 'experror  ';
-      optsl[11] := 'echoline  ';
-      optsl[12] := 'list      ';
-      optsl[13] := 'breakheap ';
-      optsl[14] := 'recycle   ';
-      optsl[15] := 'chkoverflo';
-      optsl[16] := 'chkreuse  ';
-      optsl[17] := 'chkundef  ';
-      optsl[18] := 'reference ';
-      optsl[19] := 'iso7185   ';
-      optsl[20] := 'prttables ';
-      optsl[21] := 'undestag  ';
-      optsl[22] := 'chkvar    ';
-      optsl[23] := 'debug     ';
-      optsl[24] := 'prtlex    ';
-      optsl[25] := 'prtdisplay';
-      optsl[26] := '          ';
-    end;
-
     procedure initdx;
     begin
       { [sam] if your sizes are not even multiples of
@@ -10159,10 +10102,12 @@ begin cmdpos := maxcmd end;
   begin (*inittables*)
     reswords; symbols; rators;
     instrmnemonics; procmnemonics;
-    chartypes; initoptions; initdx;
+    chartypes; initdx;
   end (*inittables*) ;
 
 begin
+
+  extendinit; { initialize extentions package }
 
   { Suppress unreferenced errors. These are all MPB (machine parameter
     block) equations that need to stay the same between front end and backend. }
