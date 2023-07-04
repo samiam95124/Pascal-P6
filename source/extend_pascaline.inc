@@ -142,23 +142,8 @@ begin
         oi := oi+1;
       if (optst = opts[oi]) or (optst = optsl[oi]) then begin
         option[oi] := true; if bufcommand = '-' then option[oi] := false;
+        options[oi] := true;
         if (bufcommand = '+') or (bufcommand = '-') then getcommand;
-        case oi of
-          7:  dodmplab   := option[oi];
-          8:  dosrclin   := option[oi];
-          14: dorecycl   := option[oi];
-          15: dochkovf   := option[oi];
-          16: dochkrpt   := option[oi];
-          13: donorecpar := option[oi];
-          17: dochkdef   := option[oi];
-          19: iso7185    := option[oi];
-          23: dodebug    := option[oi];
-          1:  dodbgflt   := option[oi];
-          6:  dodbgsrc   := option[oi];
-          5:  dodckout   := option[oi];
-          9:  dochkvbk   := option[oi];
-          2:; 3:; 4:; 12:; 20:; 21:; 22:;
-          24:; 25:; 26:; 11:; 10:; 18:;
         end
       end;
     end
