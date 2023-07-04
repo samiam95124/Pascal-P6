@@ -9656,9 +9656,23 @@ begin cmdpos := maxcmd end;
   begin
     for oi := 1 to 26 do if options[oi] then
       case oi of
+        2: doprtlab := option[oi];
+        3: prcode := option[oi];
+        4: debug := option[oi];
+        9: chkvbk := option[oi];
+        10: experr := option[oi];
+        12: list := option[oi];
+        18: chkref := option[oi];
         19: iso7185 := option[oi];
-        1:; 2:; 3:; 4:; 5:; 6:; 7:; 8:; 9:; 10:; 11:; 12:; 13:; 14:; 15:; 16:; 
-        17:; 18:; 20:; 21:; 22:; 23:; 24:; 25:; 26:;
+
+        20: prtables := option[oi];
+        21: chkudtc := option[oi];
+        22: chkvar := option[oi];
+        24: dodmplex := option[oi];
+        25: dodmpdsp := option[oi];
+        { these are backend options }
+        1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:; 
+        17:; 23:; 26:;
       end
   end;
 
