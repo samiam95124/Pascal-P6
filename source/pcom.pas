@@ -516,28 +516,6 @@ var
     experr: boolean;                { -- ee/experror: expanded error 
                                          descriptions }
 
-    { debug flags from backend, these are not set here }
-    dochkovf: boolean; { check arithmetic overflow }
-    dodmplab: boolean; { dump label definitions }
-    dotrcrot: boolean; { trace routine executions }
-    dotrcins: boolean; { trace instruction executions }
-    dosrclin: boolean; { add source line sets to code }
-    dotrcsrc: boolean; { trace source line executions (requires dosrclin) }
-    dorecycl: boolean; { obey heap space recycle requests }
-    dodebug:  boolean; { start up debug on entry }
-    dodbgflt: boolean; { enter debug on fault }
-    dodbgsrc: boolean; { do source file debugging }
-    dochkrpt: boolean; { check reuse of freed entry (automatically }
-    donorecpar: boolean; { break returned blocks as occupied, not free }
-    dochkdef: boolean; { check undefined accesses }
-    dosrcprf: boolean; { do source level profiling }
-    dochkcov: boolean; { do code coverage }
-    doanalys: boolean; { do analyze }
-    dodckout: boolean; { do output code deck }
-    dochkvbk: boolean; { do check VAR blocks }
-    doechlin: boolean; { do echo command line for testing (unused) }
-   
-
     { switches passed through to pint }
 
     { -- o: check arithmetic overflow }
@@ -559,6 +537,8 @@ var
     { -- z }
 
     option: array [1..maxopt] of    { option array }
+              boolean;
+    options: array [1..maxopt] of   { option set array }
               boolean;
 
                                     (*pointers:*)
@@ -9670,9 +9650,23 @@ begin cmdpos := maxcmd end;
     putnam(ufctptr);
   end (*exitundecl*) ;
 
+  { place options in flags }
+  procedure plcopt;
+  var oi: 1..maxopt;
+  begin
+    for oi := 1 to 26 do if options[oi] then
+      case oi of
+        19: iso7185 := option[oi];
+        1:; 2:; 3:; 4:; 5:; 6:; 7:; 8:; 9:; 10:; 11:; 12:; 13:; 14:; 15:; 16:; 
+        17:; 18:; 20:; 21:; 22:; 23:; 24:; 25:; 26:;
+      end
+  end;
+
   procedure initscalars;
   var i: integer; oi: 1..maxopt;
-  begin fwptr := nil; for oi := 1 to maxopt do option[oi] := false;
+  begin fwptr := nil; 
+    for oi := 1 to maxopt do 
+      begin option[oi] := false; options[oi] := false end;
     prtables := false; option[20] := false; list := true; option[12] := true;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
@@ -10107,8 +10101,6 @@ begin cmdpos := maxcmd end;
 
 begin
 
-  extendinit; { initialize extentions package }
-
   { Suppress unreferenced errors. These are all MPB (machine parameter
     block) equations that need to stay the same between front end and backend. }
   if heapal = 0 then;
@@ -10121,6 +10113,8 @@ begin
   (*initialize*)
   (************)
   initscalars; initsets; inittables;
+
+  extendinit; { initialize extentions package };
 
   write('P6 Pascal compiler vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
@@ -10147,8 +10141,8 @@ begin
   { get command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
-  { load command line options }
-  paroptions;
+  paroptions; { load command line options }
+  plcopt; { place options in flags }
 
   (*compile:*)
   (**********)

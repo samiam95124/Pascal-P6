@@ -178,8 +178,8 @@ then
 fi
 
 echo "Running $progfile..."
-echo "run $pmachoption $cmachoption $progfile $options"
-run $pmachoption $cmachoption $progfile $options
+# echo "run $pmachoption $cmachoption $options $progfile"
+run $pmachoption $cmachoption $options $progfile
 if [ $? -eq 0 ]; then
 
     #

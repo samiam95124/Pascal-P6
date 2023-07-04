@@ -620,6 +620,7 @@ var   pc, pcs     : address;   (*program address register*)
       insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
       option      : array [1..maxopt] of boolean; { option array }
+      options     : array [1..maxopt] of boolean; { option was set array }
       cmdlin      : cmdbuf; { command line }
       cmdlen      : cmdnum; { length of command line }
       cmdpos      : cmdinx; { current position in command line }
@@ -7479,9 +7480,32 @@ begin
   while m < maxint div p do begin m := m*p; d := d+1 end
 end;
 
-begin (* main *)
+{ place options in flags }
+procedure plcopt;
+var oi: 1..maxopt;
+begin
+  for oi := 1 to 26 do if options[oi] then
+    case oi of
+      7:  dodmplab   := option[oi];
+      8:  dosrclin   := option[oi];
+      11: doechlin   := option[oi];
+      14: dorecycl   := option[oi];
+      15: dochkovf   := option[oi];
+      16: dochkrpt   := option[oi];
+      13: donorecpar := option[oi];
+      17: dochkdef   := option[oi];
+      19: iso7185    := option[oi];
+      23: dodebug    := option[oi];
+      1:  dodbgflt   := option[oi];
+      6:  dodbgsrc   := option[oi];
+      5:  dodckout   := option[oi];
+      9:  dochkvbk   := option[oi];
+      2:; 3:; 4:; 12:; 20:; 21:; 22:;
+      24:; 25:; 26:; 10:; 18:;
+    end
+end;
 
-  extendinit; { initialize extentions package }
+begin (* main *)
 
   { Suppress unreferenced errors. }
   if adral = 0 then;
@@ -7509,7 +7533,7 @@ begin (* main *)
   i := maxint;  maxdig := 0;
   while i > 0 do begin maxdig := maxdig+1; i := i div 10 end;
 
-  for oi := 1 to maxopt do option[oi] := false;
+  for oi := 1 to maxopt do begin option[oi] := false; options[oi] := false end;
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dodmplab := false; { dump label definitions }
@@ -7531,6 +7555,8 @@ begin (* main *)
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
   doechlin := false; { don't echo command lines }
+
+  extendinit; { initialize extentions package }
 
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
@@ -7632,6 +7658,7 @@ begin (* main *)
   cmdpos := 1;
   { load command line options }
   paroptions;
+  plcopt; { place options }
 
   for bi := 1 to maxbrk do brktbl[bi].sa := -1; { clear breakpoint table }
   for wi := 1 to maxwth do wthtbl[wi] := -1; { clear watch table }

@@ -496,6 +496,7 @@ var   pc          : address;   (*program address register*)
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of ibyte; { bits in byte }
       option      : array [1..maxopt] of boolean; { option array }
+      options     : array [1..maxopt] of boolean; { option was set array }
       opts        : array [1..maxopt] of optstr;
       optsl       : array [1..maxopt] of optstr;
       
@@ -571,6 +572,7 @@ var   pc          : address;   (*program address register*)
       c1          : char;
       ad          : address;
       bai         : integer;
+      oi          : 1..maxopt;
 
 (*--------------------------------------------------------------------*)
 
@@ -3282,6 +3284,31 @@ begin
   while m < maxint div p do begin m := m*p; d := d+1 end
 end;
 
+{ place options in flags }
+procedure plcopt;
+var oi: 1..maxopt;
+begin
+  for oi := 1 to 26 do if options[oi] then
+    case oi of
+      7:  dodmplab   := option[oi];
+      8:  dosrclin   := option[oi];
+      11: doechlin   := option[oi];
+      14: dorecycl   := option[oi];
+      15: dochkovf   := option[oi];
+      16: dochkrpt   := option[oi];
+      13: donorecpar := option[oi];
+      17: dochkdef   := option[oi];
+      19: iso7185    := option[oi];
+      23: dodebug    := option[oi];
+      1:  dodbgflt   := option[oi];
+      6:  dodbgsrc   := option[oi];
+      5:  dodckout   := option[oi];
+      9:  dochkvbk   := option[oi];
+      2:; 3:; 4:; 12:; 20:; 21:; 22:;
+      24:; 25:; 26:; 10:; 18:;
+    end
+end;
+
 begin (* main *)
 
   { Suppress unreferenced errors. }
@@ -3302,6 +3329,7 @@ begin (* main *)
   writeln;
   writeln;
 
+  for oi := 1 to maxopt do begin option[oi] := false; options[oi] := false end;
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
   dosrclin := true;  { add source line sets to code }
@@ -3386,6 +3414,7 @@ begin (* main *)
   cmdpos := 1;
   { load command line options }
   paroptions;
+  plcopt; { place options }
   
   { !!! remove this next statement for self compile }
 #ifndef SELF_COMPILE
