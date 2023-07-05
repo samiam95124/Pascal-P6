@@ -6914,10 +6914,10 @@ begin
       i := 10; skpspc(dbc); if not chkend(dbc) then expr(i);
       s := sp;
       while (i > 0) and (s <= maxstr) and not chkbrk do begin
-        wrthex(output, s, adrsize, true); write(': '); 
-        if not getdef(s) then writeln('UUUUUUUU: (U)')
+        wrthex(output, s, 8, true); write(': '); 
+        if not getdef(s) then writeln('UUUUUUUUUUUUUUUU: (U)')
         else begin
-          wrthex(output, getint(s), intsize, true); 
+          wrthex(output, getint(s), intsize*2, true); 
           writeln(' (', getint(s):1, ')')
         end;
         s := s+intsize; i := i-1
