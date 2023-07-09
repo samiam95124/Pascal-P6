@@ -8971,8 +8971,8 @@ begin cmdpos := maxcmd end;
         else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
         alignd(parmptr,lcmin);
         if prcode then
-          begin prtlabel(segsize); writeln(prr,'=',lcmin:1);
-            prtlabel(stackbot); writeln(prr,'=',topmin:1)
+          begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lcmin:1);
+            prtlabel(stackbot); writeln(prr,'=',-topmin:1)
           end
       end
     else
@@ -8980,8 +8980,8 @@ begin cmdpos := maxcmd end;
         alignd(parmptr,lcmin);
         if prcode then
           begin
-            prtlabel(segsize); writeln(prr,'=',lcmin:1);
-            prtlabel(stackbot); writeln(prr,'=',topmin:1)
+            prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lcmin:1);
+            prtlabel(stackbot); writeln(prr,'=',-topmin:1)
           end;
         ic := 0;
         if prtables then
@@ -9689,6 +9689,7 @@ begin cmdpos := maxcmd end;
     chkvbk := true; option[9] := true; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
+    { single display entry for top level }
     lc := -ptrsize; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0;

@@ -2704,13 +2704,13 @@ begin
                   { copy old display to stack }
                   for i := 1 to p do begin ad1 := ad1-ptrsize; pshadr(getadr(ad1)) end;
                   pshadr(mp); { push new mp to complete display } 
-                  ad := mp+q; (*q = length of dataseg*)
+                  ad := sp-q; (*q = length of dataseg*)
                   if ad <= np then errorv(StoreOverflow);
                   { clear allocated memory and set undefined }
                   while sp > ad do 
                     begin sp := sp-1; store[sp] := 0; putdef(sp, false) end;
                   putadr(mp+marksb, sp); { set bottom of stack }
-                  ep := sp+q1; if ep <= np then errorv(StoreOverFlow);
+                  ep := sp-q1; if ep <= np then errorv(StoreOverFlow);
                   putadr(mp+market, ep) { place current ep }
                 end;
 

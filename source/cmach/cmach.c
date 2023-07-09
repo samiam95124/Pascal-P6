@@ -2592,13 +2592,13 @@ void sinins()
                   /* copy old display to stack */
                   for (i = 1; i <= p; i++) { ad1 = ad1-PTRSIZE; pshadr(getadr(ad1)); }
                   pshadr(mp); /* push new mp to complete display */
-                  ad = mp+q; /* q = length of dataseg */
+                  ad = sp-q; /* q = length of dataseg */
                   if (ad <= np) errorv(STOREOVERFLOW);
                   /* clear allocated memory and set undefined */
                   while (sp > ad) 
                     { sp = sp-1; store[sp] = 0; putdef(sp, FALSE); }
                   putadr(mp+MARKSB, sp); /* set bottom of stack */
-                  ep = sp+q1; if (ep <= np) errorv(STOREOVERFLOW);
+                  ep = sp-q1; if (ep <= np) errorv(STOREOVERFLOW);
                   putadr(mp+MARKET, ep); /* place current ep */
                   break;
 
