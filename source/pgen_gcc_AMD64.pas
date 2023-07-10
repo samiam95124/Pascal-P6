@@ -1317,6 +1317,17 @@ procedure xlate;
         end
       end;
 
+      procedure wrtregs(var f: text; rs: regset);
+      var first: boolean; r: reg;
+      begin
+        first := true; write(prr, '['); 
+        for r := rgrax to rgxmm15 do if r in rs then begin 
+          if not first then write(f, ', ');
+          wrtreg(f, r); first := false
+        end;
+        write(prr, ']')
+      end;
+
       procedure getexp(var ep: expptr);
       begin
         if efree <> nil then begin ep := efree; efree := ep^.next end
@@ -2535,8 +2546,8 @@ procedure xlate;
         end;
 
         {adi,adr,sbi,sbr}
-        28, 29, 30, 31: begin writeln(prr); getexp(ep); popstk(ep^.r); 
-          popstk(ep^.l); pshstk(ep);  
+        28, 29, 30, 31: begin writeln(prr); getexp(ep); popstk(ep^.r);
+          popstk(ep^.l); pshstk(ep)
         end;
 
         {lip} 
@@ -2880,10 +2891,11 @@ procedure xlate;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
-          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
-          wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
+          frereg := allreg; getreg(r1, frereg); 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull);
+          dmptre(ep); genexp(ep);
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
         end;
@@ -2891,20 +2903,22 @@ procedure xlate;
         {strx,strb,strc} 
         195,73,74: begin
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
-          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
-          wrtins20('movb %1,^0(%2)      ', q, 0, ep^.r1, ep^.t1, nil);
+          frereg := allreg; getreg(r1, frereg);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep);
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movb %1,^0(%2)      ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
         end;
 
         {strr}
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
-          dmptre(ep); genexp(ep); getreg(ep^.t1, frereg);
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, ep^.t1, rgnull, nil);
-          wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, ep^.t1, nil);
+          frereg := allreg; getreg(r1, frereg);
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); 
+          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
         end;
