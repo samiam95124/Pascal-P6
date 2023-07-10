@@ -2894,7 +2894,7 @@ procedure xlate;
           frereg := allreg; getreg(r1, frereg); 
           popstk(ep); assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
@@ -2906,7 +2906,7 @@ procedure xlate;
           frereg := allreg; getreg(r1, frereg);
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movb %1,^0(%2)      ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
@@ -2917,7 +2917,7 @@ procedure xlate;
           frereg := allreg; getreg(r1, frereg);
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
-          wrtins20('movq ^0(%rbp),%1    ', p, 0, r1, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
@@ -2927,7 +2927,7 @@ procedure xlate;
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          wrtins20('movq ^0(%rbp),%rdi  ', p, 0, ep^.t1, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
           wrtins20('lea %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
