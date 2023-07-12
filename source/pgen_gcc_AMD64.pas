@@ -1488,7 +1488,7 @@ procedure xlate;
           {adr,sbr}
           29, 31: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
+            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
 
           {equr,neqr,geqr,grtr,leqr,lesr}
           138,144,150,156,162,168: begin ep^.r1 := r1;
@@ -1509,7 +1509,8 @@ procedure xlate;
           147, 19, 149, 151, 153, 20, 155, 157, 159, 21, 
           161, 163, 165, 167, 169, 171: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;  
+            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) 
+          end;
 
           120{lip}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
