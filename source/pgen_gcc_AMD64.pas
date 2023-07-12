@@ -1452,7 +1452,7 @@ procedure xlate;
       begin
         if pc > 0 then begin { there are parameters }
           if (ep <> nil) and (pn < 6) and (pc > 1) then 
-            asspar(ep^.pl, pn+1, pc-1);
+            asspar(ep^.next, pn+1, pc-1);
           if pn > 6 then assreg(ep, rf, rgnull, rgnull)
           else case pn of
             1: assreg(ep, rf, rgrdi, rgnull);
@@ -1902,7 +1902,7 @@ procedure xlate;
       procedure pshpar(ep: expptr);
       begin
         if ep <> nil then begin
-          pshpar(ep^.pl);
+          pshpar(ep^.next);
           dmptrel(ep, 1); genexp(ep);
           if ep^.r2 <> rgnull then
             wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil);
