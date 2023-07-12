@@ -1527,7 +1527,7 @@ procedure xlate;
 
           16{ixa}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, r1, rgnull);
+            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, ep^.r1, rgnull);
             resreg(rgrdx) end;
 
           118{swp}: ; { done at top level }
