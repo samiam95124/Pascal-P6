@@ -1335,7 +1335,7 @@ procedure xlate;
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
-        ep^.rs := []; ep^.keep := false
+        ep^.rs := []; ep^.keep := false; ep^.fn := nil; ep^.lb := nil
       end;
       
       procedure putexp(ep: expptr);
@@ -2528,6 +2528,28 @@ procedure xlate;
         end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q], spkeep[ep^.q]);
       end;
 
+      { get parameters of procedure/function/system call to parameters list }
+      procedure getpar(ep: expptr);
+      var i: integer; ep2, ep3: expptr;
+      begin
+          { sfr starts the list }
+          ep^.q := 0;
+          if stacklvl > parlvl then ep^.q := stacklvl-parlvl;
+          { pull parameters into list }
+          ep2 := nil;
+          i := ep^.q;
+          while i > 0 do 
+            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
+          { reverse into parameter list }
+          while ep2 <> nil do
+            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
+                  ep^.pl := ep3 
+            end;
+          popstk(ep^.sl); { get sfr start }
+          if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
+          parlvl := maxint { set parameter level inactive }
+      end;
+
     begin { assemble } 
       p := 0;  q := 0;  op := 0;
       getname;
@@ -2810,23 +2832,8 @@ procedure xlate;
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
-          getexp(ep);
-          ep^.q := 0;
-          if stacklvl > parlvl then ep^.q := stacklvl-parlvl; ep^.fn := sp;
-          { pull parameters into list }
-          ep2 := nil;
-          i := ep^.q;
-          while i > 0 do 
-            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
-          { reverse into parameter list }
-          while ep2 <> nil do
-            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
-                  ep^.pl := ep3 
-            end;
-          popstk(ep^.sl); { get sfr start }
-          if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
+          getexp(ep); ep^.fn := sp; getpar(ep);
           pshstk(ep);
-          parlvl := maxint { set parameter level inactive }
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -2870,24 +2877,9 @@ procedure xlate;
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
-          getexp(ep);
-          ep^.q := 0;
-          if stacklvl > parlvl then ep^.q := stacklvl-parlvl; ep^.fn := sp;
-          { pull parameters into list }
-          ep2 := nil;
-          i := ep^.q;
-          while i > 0 do 
-            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
-          { reverse into parameter list }
-          while ep2 <> nil do
-            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
-                  ep^.pl := ep3 
-            end;
-          popstk(ep^.sl); { get sfr start }
-          if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
+          getexp(ep); ep^.fn := sp; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
-          parlvl := maxint { set parameter level inactive }
         end;
 
         {stri,stra}
