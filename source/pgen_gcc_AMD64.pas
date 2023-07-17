@@ -1233,7 +1233,7 @@ procedure xlate;
           i,x,s1,lb,ub,l:integer; c: char;
           str: strbuf; { buffer for string constants }
           cstp: cstptr;
-          ep, ep2, ep3, ep4, ep5: expptr;
+          ep, ep2, ep3, ep4, ep5, pp: expptr;
           r1, r2: reg; ors: set of reg; rage: array [reg] of integer;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
@@ -1441,7 +1441,7 @@ procedure xlate;
       end;
 
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
-      var rs: regset;
+      var rs: regset; pp: expptr;
 
       procedure resreg(r: reg);
       begin
@@ -1789,7 +1789,12 @@ procedure xlate;
 
           {csp}
           15: begin
-            if spfunc[ep^.q] then begin { function }
+            if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
+              { need irregular allocation for nwl and dsl }
+              pp := ep^.pl; assreg(pp, frereg, rgrsi, rgnull);
+              pp := pp^.next; assreg(pp, frereg, rgrcx, rgnull);
+              resreg(rgrax); resreg(rgrbx); resreg(rgrcx); resreg(rgrdi)
+            end else if spfunc[ep^.q] then begin { function }
               if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
               else begin resreg(rgrax); ep^.r1 := r1 end;
               if ep^.r1 = rgnull then getreg(ep^.r1, rf)
@@ -1893,8 +1898,6 @@ procedure xlate;
         wrtins40(s, i1, i2, r1, r2, sn)
       end;
 
-      procedure callsp(ep: expptr); forward;
-
       procedure genexp(ep: expptr);
       var r: reg;
 
@@ -1920,7 +1923,12 @@ procedure xlate;
       begin
         { evaluate all parameters }
         pp := ep^.pl;
-        while pp <> nil do begin genexp(pp); pp := pp^.next; pc := pc+1 end;
+        while pp <> nil do begin 
+          { restore kept from stack }
+          if pp^.keep then wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil)
+          else genexp(pp); 
+          pp := pp^.next; pc := pc+1 
+        end;
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
@@ -2408,7 +2416,28 @@ procedure xlate;
             187: wrtins10('xorq %1,%1', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {csp}
-            15: callsp(ep, sptable[ep^.q], spfunc[ep^.q]);
+            15: begin
+              if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
+                { need irregular handling for nwl and dsl }
+                pp := ep^.pl; genexp(pp);
+                pp := pp^.next; genexp(pp);
+                wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
+                wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('addq %rsp,%rax      ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('movq (%rax),%rdi    ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('movq %rcx,%rbx      ', 0, 0, rgnull, rgnull, nil);
+                if ep^.q = 39 then
+                  wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
+                else
+                  wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('orq %rbx,%rbx       ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('jz .+16   ', 0, 0, rgnull, rgnull, nil);  
+                wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
+              end else callsp(ep, sptable[ep^.q], spfunc[ep^.q]);
+            end;
 
             {sfr}
             245:
@@ -2427,59 +2456,6 @@ procedure xlate;
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
             wrtins20('pop %1              ', 0, 0, r, rgnull, nil)
-        end
-      end;
-
-      procedure callsppar(p: integer; var sc: alfa; r, k: boolean);
-      var si: insstr20;
-          i: integer;
-      begin
-        if p >= 5 then popstk(ep5);
-        if p >= 4 then popstk(ep4);
-        if p >= 3 then popstk(ep3);
-        if p >= 2 then popstk(ep2);
-        if p >= 1 then popstk(ep);
-        { put keep file back on stack }
-        if k then pshstk(ep);
-
-        { if kept, restore from stack before evaluating others }
-        if ep^.keep then wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);
-
-        { assign registers if not held }
-        if (p >= 1) and not ep^.keep then assreg(ep, frereg, rgrdi, rgnull);
-        if p >= 2 then assreg(ep2, frereg, rgrsi, rgnull);
-        if p >= 3 then assreg(ep3, frereg, rgrdx, rgnull);
-        if p >= 4 then assreg(ep4, frereg, rgrcx, rgnull);
-        if p >= 5 then assreg(ep5, frereg, rgr8, rgnull);
-
-        { print expression tree and generate if not held }
-        if (p >= 1) and not ep^.keep then begin dmptrel(ep, 1); genexp(ep) end;
-        if p >= 2 then begin dmptrel(ep2, 1); genexp(ep2) end;
-        if p >= 3 then begin dmptrel(ep3, 1); genexp(ep3) end;
-        if p >= 4 then begin dmptrel(ep4, 1); genexp(ep4) end;
-        if p >= 5 then begin dmptrel(ep5, 1); genexp(ep5) end;
-
-        { keep parameter evaluated, now set keep }
-        if k then ep^.keep := true;
-
-        { remove tree if not held }
-        if (p >= 1) and not ep^.keep then deltre(ep);
-        if p >= 2 then deltre(ep2);
-        if p >= 3 then deltre(ep3);
-        if p >= 4 then deltre(ep4);
-        if p >= 5 then deltre(ep5);
-
-        { if keep, push held value and flag }
-        if k then wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
-
-        si := 'call psystem_       ';
-        for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
-        wrtins20(si, 0, 0, rgnull, rgnull, nil);
-        if r then begin
-          if ep^.r1 <> rgrax then 
-            wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
-          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
-            wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil);
         end
       end;
 
@@ -2513,35 +2489,6 @@ procedure xlate;
       var ep: expptr;
       begin
         while (estack <> nil) and (pc >= 1) do begin popstk(ep); deltre(ep) end
-      end;
-
-      procedure callsp{(ep: expptr)};
-      begin
-        if ep^.q > maxsp then errorl('Invalid std proc or func ');
-        writeln(prr, '# ', sline:6, ': ', iline:6, ': ', q:3, ': -> ', sptable[q]);
-        if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
-          popstk(ep); popstk(ep2);
-          assreg(ep, frereg, rgrsi, rgnull);
-          assreg(ep2, frereg, rgrcx, rgnull);
-          pshpar(ep2^.next, maxint, maxint);
-          dmptrel(ep, 1); genexp(ep); dmptrel(ep2, 1); genexp(ep2);
-          wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
-          wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq %rsp,%rax      ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('movq (%rax),%rdi    ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('movq %rcx,%rbx      ', 0, 0, rgnull, rgnull, nil);
-          if ep^.q = 39 then
-            wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
-          else
-            wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('orq %rbx,%rbx       ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('jz .+16   ', 0, 0, rgnull, rgnull, nil);  
-          wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
-          poppar(maxint)
-        end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q], spkeep[ep^.q]);
       end;
 
       { get number of parameters of procedure/function/system call to parameters
@@ -2867,7 +2814,15 @@ procedure xlate;
           writeln(prr, sptable[q]);
           getexp(ep); getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
-          else callsp(ep) { terminal, execute here }
+          else begin { terminal, execute here }
+            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+            genexp(ep); if spkeep[ep^.q] then begin { hold over file parameter }
+              pp := ep^.pl; ep^.pl := ep^.pl^.next; pp^.keep := true;
+              { stack it }
+              wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil)
+            end;
+            deltre(ep)
+          end
         end;
 
         {cuv}
