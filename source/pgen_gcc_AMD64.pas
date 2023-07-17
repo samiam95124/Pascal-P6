@@ -1372,6 +1372,8 @@ procedure xlate;
       begin
         if ep^.l <> nil then deltre(ep^.l);
         if ep^.r <> nil then deltre(ep^.r);
+        if ep^.x1 <> nil then deltre(ep^.pl);
+        if ep^.sl <> nil then deltre(ep^.pl);
         if ep^.pl <> nil then deltre(ep^.pl);
         putexp(ep)
       end;
@@ -1448,21 +1450,20 @@ procedure xlate;
       end;
 
       { assign registers to parameters in call }
-      procedure asspar(ep: expptr; pn, pc: integer);
+      procedure asspar(ep: expptr);
+      var pp: expptr; pc: integer;
       begin
-        if pc > 0 then begin { there are parameters }
-          if (ep <> nil) and (pn < 6) and (pc > 1) then 
-            asspar(ep^.next, pn+1, pc-1);
-          if pn > 6 then assreg(ep, rf, rgnull, rgnull)
-          else case pn of
-            1: assreg(ep, rf, rgrdi, rgnull);
-            2: assreg(ep, rf, rgrsi, rgnull);
-            3: assreg(ep, rf, rgrdx, rgnull);
-            4: assreg(ep, rf, rgrcx, rgnull);
-            5: assreg(ep, rf, rgr8, rgnull);
-            6: assreg(ep, rf, rgr9, rgnull)
+        pp := ep^.pl; pc := 1;
+        while pp <> nil do
+          case pc of 
+            1: assreg(ep, frereg, rgrdi, rgnull);
+            2: assreg(ep, frereg, rgrsi, rgnull);
+            3: assreg(ep, frereg, rgrdx, rgnull);
+            4: assreg(ep, frereg, rgrcx, rgnull);
+            5: assreg(ep, frereg, rgr8, rgnull);
+            6: assreg(ep, frereg, rgr9, rgnull);
+            7: errorl('system error             ')
           end
-        end
       end;
 
       begin
@@ -1788,25 +1789,23 @@ procedure xlate;
 
           {csp}
           15: begin
-            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-            else begin resreg(rgrax); ep^.r1 := r1 end;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            if sppar[ep^.q] >= 5 then assreg(ep5, frereg, rgrdi, rgnull);
-            if sppar[ep^.q] >= 4 then assreg(ep4, frereg, rgrdi, rgnull);
-            if sppar[ep^.q] >= 3 then assreg(ep3, frereg, rgrsi, rgnull);
-            if sppar[ep^.q] >= 2 then assreg(ep2, frereg, rgrdx, rgnull);
-            if sppar[ep^.q] >= 1 then assreg(ep, frereg, rgrcx, rgnull)
+            if spfunc[ep^.q] then begin { function }
+              if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+              else begin resreg(rgrax); ep^.r1 := r1 end;
+              if ep^.r1 = rgnull then getreg(ep^.r1, rf)
+            end;
+            asspar(ep)
           end;
  
           {cuf}
           246: begin 
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else begin resreg(rgrax); ep^.r1 := r1 end;
-            asspar(ep^.pl, 1, ep^.q)
+            asspar(ep)
           end;
 
           {cup}
-          12: asspar(ep^.pl, 1, ep^.q);
+          12: asspar(ep);
 
         end
       end;
@@ -1913,6 +1912,23 @@ procedure xlate;
             wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull, nil);
             wrtins20('movsd %1,(%esp)     ', 0, 0, ep^.r1, rgnull, nil)
           end
+        end
+      end;
+
+      procedure callsp(ep: expptr; var sc: alfa; r: boolean);
+      var si: insstr20; i: integer; pp: expptr; pc: integer;
+      begin
+        { evaluate all parameters }
+        pp := ep^.pl;
+        while pp <> nil do begin genexp(pp); pp := pp^.next; pc := pc+1 end;
+        si := 'call psystem_       ';
+        for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
+        wrtins20(si, 0, 0, rgnull, rgnull, nil);
+        if r then begin
+          if ep^.r1 <> rgrax then 
+            wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
+          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
+            wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil);
         end
       end;
 
@@ -2392,7 +2408,7 @@ procedure xlate;
             187: wrtins10('xorq %1,%1', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {csp}
-            15: callsp(ep);
+            15: callsp(ep, sptable[ep^.q], spfunc[ep^.q]);
 
             {sfr}
             245:
@@ -2528,23 +2544,29 @@ procedure xlate;
         end else callsppar(sppar[ep^.q], sptable[ep^.q], spfunc[ep^.q], spkeep[ep^.q]);
       end;
 
+      { get number of parameters of procedure/function/system call to parameters
+        list }
+      procedure getparn(ep: expptr; pn: integer);
+      var pl, pp: expptr;
+      begin
+          { pull parameters into list }
+          pl := nil;
+          while pn > 0 do 
+            begin popstk(pp); pp^.next := pl; pl := pp; pn := pn-1 end;
+          { reverse into parameter list }
+          while pl <> nil do
+            begin pp := pl; pl := pl^.next; pp^.next := ep^.pl; 
+                  ep^.pl := pp 
+            end;
+      end;
+
       { get parameters of procedure/function/system call to parameters list }
       procedure getpar(ep: expptr);
-      var i: integer; ep2, ep3: expptr;
       begin
           { sfr starts the list }
           ep^.q := 0;
           if stacklvl > parlvl then ep^.q := stacklvl-parlvl;
-          { pull parameters into list }
-          ep2 := nil;
-          i := ep^.q;
-          while i > 0 do 
-            begin popstk(ep3); ep3^.next := ep2; ep2 := ep3; i := i-1 end;
-          { reverse into parameter list }
-          while ep2 <> nil do
-            begin ep3 := ep2; ep2 := ep2^.next; ep3^.next := ep^.pl; 
-                  ep^.pl := ep3 
-            end;
+          getparn(ep, ep^.q); { get those parameters into list }
           popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
           parlvl := maxint { set parameter level inactive }
@@ -2832,8 +2854,7 @@ procedure xlate;
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
-          getexp(ep); ep^.fn := sp; getpar(ep);
-          pshstk(ep);
+          getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -2844,7 +2865,7 @@ procedure xlate;
             q := q+1; if q > maxsp then errorl('std proc/func not found  ')
           end; 
           writeln(prr, sptable[q]);
-          getexp(ep); 
+          getexp(ep); getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else callsp(ep) { terminal, execute here }
         end;
