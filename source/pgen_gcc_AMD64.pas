@@ -1372,8 +1372,8 @@ procedure xlate;
       begin
         if ep^.l <> nil then deltre(ep^.l);
         if ep^.r <> nil then deltre(ep^.r);
-        if ep^.x1 <> nil then deltre(ep^.pl);
-        if ep^.sl <> nil then deltre(ep^.pl);
+        if ep^.x1 <> nil then deltre(ep^.x1);
+        if ep^.sl <> nil then deltre(ep^.sl);
         if ep^.pl <> nil then deltre(ep^.pl);
         putexp(ep)
       end;
@@ -1403,7 +1403,7 @@ procedure xlate;
           while l <> nil do begin
             writeln(prr, '# ', ' ': lvl, 'Parameter:');
             dmptrel(l, lvl+3);
-            l := l^.pl
+            l := l^.next
           end
         end
       end;
@@ -1454,16 +1454,18 @@ procedure xlate;
       var pp: expptr; pc: integer;
       begin
         pp := ep^.pl; pc := 1;
-        while pp <> nil do
+        while pp <> nil do begin
           case pc of 
-            1: assreg(ep, frereg, rgrdi, rgnull);
-            2: assreg(ep, frereg, rgrsi, rgnull);
-            3: assreg(ep, frereg, rgrdx, rgnull);
-            4: assreg(ep, frereg, rgrcx, rgnull);
-            5: assreg(ep, frereg, rgr8, rgnull);
-            6: assreg(ep, frereg, rgr9, rgnull);
+            1: assreg(pp, frereg, rgrdi, rgnull);
+            2: assreg(pp, frereg, rgrsi, rgnull);
+            3: assreg(pp, frereg, rgrdx, rgnull);
+            4: assreg(pp, frereg, rgrcx, rgnull);
+            5: assreg(pp, frereg, rgr8, rgnull);
+            6: assreg(pp, frereg, rgr9, rgnull);
             7: errorl('system error             ')
-          end
+          end;
+          pp := pp^.next; pc := pc+1
+        end
       end;
 
       begin
@@ -2819,7 +2821,8 @@ procedure xlate;
             genexp(ep); if spkeep[ep^.q] then begin { hold over file parameter }
               pp := ep^.pl; ep^.pl := ep^.pl^.next; pp^.keep := true;
               { stack it }
-              wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil)
+              wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
+              pshstk(pp)
             end;
             deltre(ep)
           end
