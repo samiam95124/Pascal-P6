@@ -620,6 +620,7 @@ procedure xlate;
                     realn: integer; { real number }
                     vali: integer; { integer value }
                     rs: regset; { push/pop mask }
+                    wkeep: boolean; { will hold this value }
                     keep: boolean; { hold this value }
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
@@ -1331,11 +1332,12 @@ procedure xlate;
       procedure getexp(var ep: expptr);
       begin
         if efree <> nil then begin ep := efree; efree := ep^.next end
-        else new(ep); 
+        else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
-        ep^.rs := []; ep^.keep := false; ep^.fn := nil; ep^.lb := nil
+        ep^.rs := []; ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; 
+        ep^.lb := nil
       end;
       
       procedure putexp(ep: expptr);
@@ -1939,6 +1941,11 @@ procedure xlate;
           else genexp(pp); 
           pp := pp^.next; pc := pc+1 
         end;
+        { activate keep }
+        if ep^.pl <> nil then ep^.pl^.keep := ep^.pl^.wkeep;
+        { must do this after parameter eval }
+        if ep^.pl <> nil then if ep^.pl^.keep then { stack kept }
+          wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
@@ -2819,11 +2826,12 @@ procedure xlate;
           getexp(ep); getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
-            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-            genexp(ep); if spkeep[ep^.q] then begin { hold over file parameter }
-              pp := ep^.pl; ep^.pl := ep^.pl^.next; pp^.keep := true;
-              { stack it }
-              wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
+            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+            dmptre(ep); 
+            if spkeep[ep^.q] then ep^.pl^.wkeep := true;
+            genexp(ep); 
+            if spkeep[ep^.q] then begin { hold over file parameter }
+              pp := ep^.pl; ep^.pl := ep^.pl^.next;
               pshstk(pp)
             end;
             deltre(ep)
