@@ -1096,6 +1096,17 @@ procedure xlate;
      snl := snl-1
    end;
 
+   procedure getsds;
+   var i: 1..lablen;
+   begin skpspc; for i := 1 to lablen do sn[i] := ' '; snl := 1;
+     if ch = ' ' then errorl('Symbols format error     ');
+     while ch <> ' ' do begin
+       if snl >= lablen then errorl('Symbols format error     ');
+       sn[snl] := ch; getnxt; snl := snl+1
+     end;
+     snl := snl-1
+   end;
+
    procedure parlab(var x: integer; var fl: strvsp);
    var i,j: integer;
    begin fl := nil;
@@ -1137,7 +1148,8 @@ procedure xlate;
           again: boolean;
           c,ch1: char;
           ls: strvsp;    
-          ispc: boolean;     
+          ispc: boolean;  
+          i: 1..lablen;   
    begin
       again := true;
       while again do begin
@@ -1169,7 +1181,6 @@ procedure xlate;
                      else getlin 
                end;
           ':': begin { source line }
-
                   read(prd,x); { get source line number }
                   sline := x; prtline; writeln(prr, ' ', ':', x:1);
                   { skip the rest of the line, which would be the
@@ -1177,7 +1188,6 @@ procedure xlate;
                   while not eoln(prd) do
                      read(prd, c); { get next character }
                   getlin { source line }
-
                end;
           'o': begin { option }
                  prtline; write(prr, ' ', 'o ');
@@ -1213,7 +1223,14 @@ procedure xlate;
                  getnxt; skpspc;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
+                 ch1 := ch; { save block type }
                  if ch = 'p' then preamble;
+                 getnxt; skpspc; getsds;
+                 prtline; writeln(prr, ' b ', ch1, ' ', sn:snl);
+                 for i := 1 to snl do 
+                   { translate '@' to '$' for type spagetti demarcate }
+                   if sn[i] = '@' then write(prr, '$') else write(prr, sn[i]);
+                 writeln(prr, ':');
                  getlin
                end;
           'e': begin getlin; postamble end; { block end }
