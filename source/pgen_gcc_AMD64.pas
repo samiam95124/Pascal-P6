@@ -1419,7 +1419,15 @@ procedure xlate;
       begin
         ep := estack;
         while ep <> nil do begin
-          writeln('Stack: ', ep^.op:3, ': ', instr[ep^.op]);
+          writeln(prr, '# Stack: ', ep^.op:3, ': ', instr[ep^.op]);
+          ep := ep^.next
+        end
+      end;
+
+      procedure dmplst(ep: expptr);
+      begin
+        while ep <> nil do begin
+          dmptre(ep);
           ep := ep^.next
         end
       end;
@@ -2496,17 +2504,11 @@ procedure xlate;
       { get number of parameters of procedure/function/system call to parameters
         list }
       procedure getparn(ep: expptr; pn: integer);
-      var pl, pp: expptr;
+      var pp: expptr;
       begin
           { pull parameters into list }
-          pl := nil;
           while pn > 0 do 
-            begin popstk(pp); pp^.next := pl; pl := pp; pn := pn-1 end;
-          { reverse into parameter list }
-          while pl <> nil do
-            begin pp := pl; pl := pl^.next; pp^.next := ep^.pl; 
-                  ep^.pl := pp 
-            end;
+            begin popstk(pp); pp^.next := ep^.pl; ep^.pl := pp; pn := pn-1 end
       end;
 
       { get parameters of procedure/function/system call to parameters list }
