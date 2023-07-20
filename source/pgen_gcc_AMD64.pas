@@ -306,6 +306,13 @@ type
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
       end;
+      pblock       = ^block;
+      block        = record
+                       next:    pblock; { next list block }
+                       name:    strvsp; { name of block, including type }
+                       bname:   strvsp; { name of block, not including type }
+                       en:      integer { encounter number }
+                     end;
 
 var   pc          : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
@@ -385,6 +392,8 @@ var   pc          : address;   (*program address register*)
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
       parlvl      : integer; { parameter level }
+      blkstk      : pblock; { stack of symbol blocks }
+      blklst      : pblock; { discard list of symbols blocks }
 
       filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
@@ -497,6 +506,22 @@ begin
    end;
    p^.str[q] := c
  end;
+
+{ assign symbol identifier fixed to variable length string, including
+  allocation, with length specified }
+procedure strassvfl(var a: strvsp; var b: labbuf; l: integer);
+var i, j: integer; p, lp: strvsp;
+begin p := nil; a := nil; j := 1;
+  for i := 1 to l do begin
+    if j > varsqt then p := nil;
+    if p = nil then begin
+      getstr(p); p^.next := nil; j := 1;
+      if a = nil then a := p else lp^.next := p; lp := p
+    end;
+    p^.str[j] := b[i]; j := j+1
+  end;
+  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
 
 { assign symbol identifier fixed to variable length string, including
   allocation }
@@ -1149,7 +1174,16 @@ procedure xlate;
           c,ch1: char;
           ls: strvsp;    
           ispc: boolean;  
-          i: 1..lablen;   
+          i, l: 1..lablen;   
+          bp: pblock;
+   procedure wrtmods(bp: pblock);
+   begin
+     if bp <> nil then begin
+       wrtmods(bp^.next);
+       writevp(prr, bp^.name);
+       write(prr, '.')
+     end
+   end;
    begin
       again := true;
       while again do begin
@@ -1224,16 +1258,36 @@ procedure xlate;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
                  ch1 := ch; { save block type }
-                 if ch = 'p' then preamble;
+                 if ch in  ['p','m'] then preamble;
                  getnxt; skpspc; getsds;
-                 prtline; writeln(prr, ' b ', ch1, ' ', sn:snl);
                  for i := 1 to snl do 
                    { translate '@' to '$' for type spagetti demarcate }
-                   if sn[i] = '@' then write(prr, '$') else write(prr, sn[i]);
-                 writeln(prr, ':');
+                   if sn[i] = '@' then sn[i] := '$';
+                 new(bp); strassvf(bp^.name, sn);
+                 { get basename, without type }
+                 l := 1;
+                 while (l < lablen) and (sn[l] <> '$') do l := l+1;
+                 if sn[l] = '$' then strassvfl(bp^.bname, sn, l-1)
+                 else strassvf(bp^.bname, sn); { just use whole name }
+                 bp^.en := 1; { set encounter number }
+                 { put onto block stack }
+                 bp^.next := blkstk; blkstk := bp;
+                 prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
+                 writeln(prr);
+                 wrtmods(bp^.next);
+                 writevp(prr, bp^.name); writeln(prr, ':');
                  getlin
                end;
-          'e': begin getlin; postamble end; { block end }
+          'e': begin 
+                 getnxt; skpspc;
+                 if not (ch in ['p', 'm', 'r', 'f']) then
+                   errorl('Block type is invalid    ');
+                 prtline; writeln(prr, ' e ', ch);
+                 if ch = 'p' then postamble;
+                 if blkstk = nil then errorl('System error             ');
+                 blkstk := blkstk^.next;
+                 getlin
+               end;
           's': getlin; { symbol }
           'f': getlin; { source error count }
           'v': getlin; { variant logical table }
@@ -3305,6 +3359,9 @@ begin (* main *)
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
+
+  blkstk := nil; { clear symbols block stack }
+  blklst := nil; { clear symbols block discard list }
 
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
