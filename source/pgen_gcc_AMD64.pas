@@ -311,6 +311,8 @@ type
                        next:    pblock; { next list block }
                        name:    strvsp; { name of block, including type }
                        bname:   strvsp; { name of block, not including type }
+                       { block type }
+                       btyp:    (btprog, btmod, btproc, btfunc);
                        en:      integer { encounter number }
                      end;
 
@@ -1168,6 +1170,15 @@ procedure xlate;
      write(prr, '# ', sline:6, ': ', iline:6, ': ')
    end;
 
+   procedure wrtmods(bp: pblock);
+   begin
+     if bp <> nil then begin
+       wrtmods(bp^.next);
+       writevp(prr, bp^.name);
+       write(prr, '.')
+     end
+   end;
+
    procedure generate;(*generate segment of code*)
       var x: integer; (* label number *)
           again: boolean;
@@ -1179,14 +1190,6 @@ procedure xlate;
           sgn: boolean;
           sn2: labbuf;
           snl2: 1..lablen;
-   procedure wrtmods(bp: pblock);
-   begin
-     if bp <> nil then begin
-       wrtmods(bp^.next);
-       writevp(prr, bp^.name);
-       write(prr, '.')
-     end
-   end;
    begin
       again := true;
       while again do begin
@@ -1257,7 +1260,6 @@ procedure xlate;
                end;
           'g': begin read(prd, gblsiz); getlin end; { set globals space }
           'b': begin { block start }
-{Need to relocate block labels to correct location.}
                  getnxt; skpspc;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
@@ -1273,13 +1275,21 @@ procedure xlate;
                  while (l < lablen) and (sn[l] <> '$') do l := l+1;
                  if sn[l] = '$' then strassvfl(bp^.bname, sn, l-1)
                  else strassvf(bp^.bname, sn); { just use whole name }
+                 case ch1 of { block type }
+                   'p': bp^.btyp := btprog;
+                   'm': bp^.btyp := btmod;
+                   'r': bp^.btyp := btproc;
+                   'f': bp^.btyp := btfunc
+                 end;
                  bp^.en := 1; { set encounter number }
                  { put onto block stack }
                  bp^.next := blkstk; blkstk := bp;
                  prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
                  writeln(prr);
-                 wrtmods(bp^.next);
-                 writevp(prr, bp^.name); writeln(prr, ':');
+                 if ch1 in ['p', 'm'] then begin
+                   wrtmods(bp^.next);
+                   writevp(prr, bp^.name); writeln(prr, ':');
+                 end;
                  getlin
                end;
           'e': begin 
@@ -3027,6 +3037,11 @@ procedure xlate;
         11: begin read(prd,p); labelsearch(def, val, sp); labelsearch(def2, val2, sp2);
           write(prr,p:1, ' l '); writevp(prr, sp); write(prr, ' l '); 
           writevp(prr, sp2); writeln(prr);
+          if blkstk <> nil then
+            if blkstk^.btyp in [btproc, btfunc] then begin
+              wrtmods(blkstk^.next);
+              writevp(prr, blkstk^.name); writeln(prr, ':');
+          end;
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
