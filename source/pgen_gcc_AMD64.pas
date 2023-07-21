@@ -1176,6 +1176,9 @@ procedure xlate;
           ispc: boolean;  
           i, l: 1..lablen;   
           bp: pblock;
+          sgn: boolean;
+          sn2: labbuf;
+          snl2: 1..lablen;
    procedure wrtmods(bp: pblock);
    begin
      if bp <> nil then begin
@@ -1254,6 +1257,7 @@ procedure xlate;
                end;
           'g': begin read(prd, gblsiz); getlin end; { set globals space }
           'b': begin { block start }
+{Need to relocate block labels to correct location.}
                  getnxt; skpspc;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
@@ -1288,7 +1292,34 @@ procedure xlate;
                  blkstk := blkstk^.next;
                  getlin
                end;
-          's': getlin; { symbol }
+         's': begin { symbol }
+                prtline; write(prr, ' s ');
+                getnxt; getlab;
+                write(prr, sn:snl); 
+                sn2 := sn; snl2 := snl;
+                skpspc;
+                if not (ch in ['g', 'l','p']) then
+                  errorl('Symbol type is invalid   ');
+                write(prr, ' ', ch, ' ');
+                getnxt;
+                skpspc;
+                if not (ch in ['0'..'9','-']) then
+                  errorl('No offset found          ');
+                sgn := ch = '-'; if ch = '-' then getnxt;
+                ad := 0; while ch in ['0'..'9'] do
+                  begin
+                    if ad <= maxstr div 10 then
+                      ad := ad*10+ord(ch)-ord('0')
+                    else errorl('Symbol offset > max      ');
+                    getnxt
+                  end;
+                if sgn then ad := -ad;
+                write(prr, ad:1, ' ');
+                getsds; writeln(prr, sn:snl);
+                write(prr, ' ':tabspc); wrtmods(blkstk); 
+                writeln(prr, sn2:snl2, ' = ', ad:1);
+                getlin
+              end;
           'f': getlin; { source error count }
           'v': getlin; { variant logical table }
           't': getlin; { template }
