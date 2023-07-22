@@ -311,6 +311,7 @@ type
                        next:    pblock; { next list block }
                        name:    strvsp; { name of block, including type }
                        bname:   strvsp; { name of block, not including type }
+                       short:   boolean; { there is a short name }
                        { block type }
                        btyp:    (btprog, btmod, btproc, btfunc);
                        en:      integer { encounter number }
@@ -1170,13 +1171,24 @@ procedure xlate;
      write(prr, '# ', sline:6, ': ', iline:6, ': ')
    end;
 
-   procedure wrtmods(bp: pblock);
+   procedure wrtmods(bp: pblock; s: boolean);
    begin
      if bp <> nil then begin
-       wrtmods(bp^.next);
-       writevp(prr, bp^.name);
+       wrtmods(bp^.next, s);
+       if s then writevp(prr, bp^.bname) else writevp(prr, bp^.name);
        write(prr, '.')
      end
+   end;
+
+   function anyshort(bp: pblock): boolean;
+   var short: boolean;
+   begin
+     short := false;
+     while bp <> nil do begin
+       if bp^.short then short := true;
+       bp := bp^.next
+     end;
+     anyshort := short
    end;
 
    procedure generate;(*generate segment of code*)
@@ -1271,10 +1283,13 @@ procedure xlate;
                    if sn[i] = '@' then sn[i] := '$';
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
-                 l := 1;
+                 l := 1; bp^.short := true;
                  while (l < lablen) and (sn[l] <> '$') do l := l+1;
                  if sn[l] = '$' then strassvfl(bp^.bname, sn, l-1)
-                 else strassvf(bp^.bname, sn); { just use whole name }
+                 else begin
+                   strassvf(bp^.bname, sn); { just use whole name }
+                   bp^.short := false
+                 end;
                  case ch1 of { block type }
                    'p': bp^.btyp := btprog;
                    'm': bp^.btyp := btmod;
@@ -1287,8 +1302,12 @@ procedure xlate;
                  prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
                  writeln(prr);
                  if ch1 in ['p', 'm'] then begin
-                   wrtmods(bp^.next);
-                   writevp(prr, bp^.name); writeln(prr, ':');
+                   if anyshort(bp) then begin
+                     wrtmods(bp^.next, true);
+                     writevp(prr, bp^.bname); writeln(prr, ':')
+                   end;
+                   wrtmods(bp^.next, false);
+                   writevp(prr, bp^.name); writeln(prr, ':')
                  end;
                  getlin
                end;
@@ -1310,6 +1329,7 @@ procedure xlate;
                 skpspc;
                 if not (ch in ['g', 'l','p']) then
                   errorl('Symbol type is invalid   ');
+                ch1 := ch;
                 write(prr, ' ', ch, ' ');
                 getnxt;
                 skpspc;
@@ -1326,8 +1346,18 @@ procedure xlate;
                 if sgn then ad := -ad;
                 write(prr, ad:1, ' ');
                 getsds; writeln(prr, sn:snl);
-                write(prr, ' ':tabspc); wrtmods(blkstk); 
-                writeln(prr, sn2:snl2, ' = ', ad:1);
+                if anyshort(blkstk) then begin
+                  wrtmods(blkstk, true); 
+                  if ch1 = 'g' then 
+                    writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
+                  else
+                    writeln(prr, sn2:snl2, ' = ', ad:1);
+                end;
+                wrtmods(blkstk, false); 
+                if ch1 = 'g' then
+                  writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
+                else
+                  writeln(prr, sn2:snl2, ' = ', ad:1);
                 getlin
               end;
           'f': getlin; { source error count }
@@ -3039,8 +3069,12 @@ procedure xlate;
           writevp(prr, sp2); writeln(prr);
           if blkstk <> nil then
             if blkstk^.btyp in [btproc, btfunc] then begin
-              wrtmods(blkstk^.next);
-              writevp(prr, blkstk^.name); writeln(prr, ':');
+              if anyshort(blkstk) then begin
+                wrtmods(blkstk^.next, true);
+                writevp(prr, blkstk^.bname); writeln(prr, ':')
+              end;
+              wrtmods(blkstk^.next, false);
+              writevp(prr, blkstk^.name); writeln(prr, ':')
           end;
           frereg := allreg;
           { We limit to the enter instruction }
@@ -3326,18 +3360,18 @@ begin (*xlate*)
 
    init;
    writeln(prr, '# Header file locations');
-   writeln(prr, '        inputoff   = 0');
-   writeln(prr, '        outputoff  = 2');
-   writeln(prr, '        erroroff   = 4');
-   writeln(prr, '        listoff    = 6');
-   writeln(prr, '        commandoff = 8');
+   writeln(prr, 'inputoff = 0');
+   writeln(prr, 'outputoff = 2');
+   writeln(prr, 'erroroff = 4');
+   writeln(prr, 'listoff = 6');
+   writeln(prr, 'commandoff = 8');
    writeln(prr);
    writeln(prr, '# Logical file numbers for header files');
-   writeln(prr, '        inputfn   = 1');
-   writeln(prr, '        outputfn  = 2');
-   writeln(prr, '        errorfn   = 3');
-   writeln(prr, '        listfn    = 4');
-   writeln(prr, '        commandfn = 5');
+   writeln(prr, 'inputfn = 1');
+   writeln(prr, 'outputfn = 2');
+   writeln(prr, 'errorfn = 3');
+   writeln(prr, 'listfn = 4');
+   writeln(prr, 'commandfn = 5');
    writeln(prr);
    writeln(prr, '        .text');
    writeln(prr, '#');
