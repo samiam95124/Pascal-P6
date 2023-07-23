@@ -2127,11 +2127,12 @@ procedure xlate;
         { evaluate all parameters }
         pp := ep^.pl;
         while pp <> nil do begin 
-          { restore kept from stack }
-          if pp^.keep then wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil)
-          else genexp(pp); 
+          if not pp^.keep then genexp(pp); 
           pp := pp^.next; pc := pc+1 
         end;
+        if ep^.pl <> nil then if ep^.pl^.keep then
+          { restore kept from stack }
+          wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);
         { activate keep }
         if ep^.pl <> nil then ep^.pl^.keep := ep^.pl^.wkeep;
         { must do this after parameter eval }
