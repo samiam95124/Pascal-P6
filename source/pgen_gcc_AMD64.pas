@@ -309,6 +309,7 @@ type
       pblock       = ^block;
       block        = record
                        next:    pblock; { next list block }
+                       incnxt:  pblock; { included blocks list }
                        name:    strvsp; { name of block, including type }
                        bname:   strvsp; { name of block, not including type }
                        short:   boolean; { there is a short name }
@@ -483,6 +484,13 @@ begin
   wrtnum(tf, v, 16, f, lz)
 end;
 
+{ find lower case of character }
+function lcase(c: char): char;
+begin
+  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
+  lcase := c
+end { lcase };
+
 { get string quanta }
 procedure getstr(var p: strvsp);
 begin
@@ -559,6 +567,19 @@ begin l := strlen; p := nil; a := nil; j := 1;
     p^.str[j] := b[i]; j := j+1
   end;
   if p <> nil then for j := j to varsqt do p^.str[j] := ' '
+end;
+
+{ compare variable length id strings }
+function strequvv(a, b: strvsp): boolean;
+var m: boolean; i: integer;
+begin
+  m := true;
+  while (a <> nil) and (b <> nil) do begin
+    for i := 1 to varsqt do if lcase(a^.str[i]) <> lcase(b^.str[i]) then m := false;
+    a := a^.next; b := b^.next
+  end;
+  if a <> b then m := false;
+  strequvv := m
 end;
 
 { write variable length string to file }
@@ -1175,7 +1196,10 @@ procedure xlate;
    begin
      if bp <> nil then begin
        wrtmods(bp^.next, s);
-       if s then writevp(prr, bp^.bname) else writevp(prr, bp^.name);
+       if s then begin
+         writevp(prr, bp^.bname);
+         if bp^.en > 1 then write(prr, '$', bp^.en:1)
+       end else writevp(prr, bp^.name);
        write(prr, '.')
      end
    end;
@@ -1189,6 +1213,31 @@ procedure xlate;
        bp := bp^.next
      end;
      anyshort := short
+   end;
+
+   function fndovrmax(bn: strvsp; bp: pblock): integer;
+   var ovrmax: integer;
+   begin
+     ovrmax := 0;
+     while bp <> nil do begin
+       if strequvv(bn, bp^.bname) and (bp^.en > ovrmax) then ovrmax := bp^.en;
+       bp := bp^.incnxt
+     end;
+     fndovrmax := ovrmax 
+   end;
+
+   procedure wrtblklab(bp: pblock);
+   begin
+     if bp <> nil then begin
+       if anyshort(bp) then begin
+         wrtmods(bp^.next, true);
+         writevp(prr, bp^.bname); 
+         if bp^.en > 1 then write(prr, '$', bp^.en:1);
+         writeln(prr, ':')
+       end;
+       wrtmods(bp^.next, false);
+       writevp(prr, bp^.name); writeln(prr, ':')
+     end
    end;
 
    procedure generate;(*generate segment of code*)
@@ -1290,25 +1339,25 @@ procedure xlate;
                    strassvf(bp^.bname, sn); { just use whole name }
                    bp^.short := false
                  end;
+                 bp^.incnxt := nil;
                  case ch1 of { block type }
                    'p': bp^.btyp := btprog;
                    'm': bp^.btyp := btmod;
                    'r': bp^.btyp := btproc;
                    'f': bp^.btyp := btfunc
                  end;
-                 bp^.en := 1; { set encounter number }
+                 bp^.en := 1; { set default encounter number }
+                 if blkstk <> nil then begin
+                   { process block inclusions }
+                   bp^.en := fndovrmax(bp^.bname, blkstk^.incnxt)+1;
+                   bp^.incnxt := blkstk^.incnxt; { insert to list }
+                   blkstk^.incnxt := bp
+                 end;
                  { put onto block stack }
                  bp^.next := blkstk; blkstk := bp;
                  prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
                  writeln(prr);
-                 if ch1 in ['p', 'm'] then begin
-                   if anyshort(bp) then begin
-                     wrtmods(bp^.next, true);
-                     writevp(prr, bp^.bname); writeln(prr, ':')
-                   end;
-                   wrtmods(bp^.next, false);
-                   writevp(prr, bp^.name); writeln(prr, ':')
-                 end;
+                 if ch1 in ['p', 'm'] then wrtblklab(bp);
                  getlin
                end;
           'e': begin 
@@ -3068,14 +3117,7 @@ procedure xlate;
           write(prr,p:1, ' l '); writevp(prr, sp); write(prr, ' l '); 
           writevp(prr, sp2); writeln(prr);
           if blkstk <> nil then
-            if blkstk^.btyp in [btproc, btfunc] then begin
-              if anyshort(blkstk) then begin
-                wrtmods(blkstk^.next, true);
-                writevp(prr, blkstk^.bname); writeln(prr, ':')
-              end;
-              wrtmods(blkstk^.next, false);
-              writevp(prr, blkstk^.name); writeln(prr, ':')
-          end;
+            if blkstk^.btyp in [btproc, btfunc] then wrtblklab(blkstk);
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
