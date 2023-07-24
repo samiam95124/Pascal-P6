@@ -3132,7 +3132,8 @@ procedure xlate;
           wrtins10('je .+0    ', 6, 0, rgnull, rgnull, nil); { skip if so }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
           wrtins10('jmp .-0   ', 7, 0, rgnull, rgnull, nil); { loop }
-          { note stack bottom and ep are unused at this time }
+          wrtins20('movq %rsp,^0(%rbp) ', marksb, 0, rgnull, rgnull, nil);
+          { note ep is unused at this time }
           botstk
         end;
 
