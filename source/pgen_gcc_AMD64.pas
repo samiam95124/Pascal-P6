@@ -3127,7 +3127,7 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
           wrtins20('enter $1,$0        ', p+1, 0, rgnull, rgnull, nil); { enter frame }
           wrtins20('movq %rsp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy sp }
-          wrtins20('addq $s,%rax       ', 0, 0, rgnull, rgnull, sp); { find sp-locals }
+          wrtins20('subq $s,%rax       ', 0, 0, rgnull, rgnull, sp); { find sp-locals }
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }
           wrtins10('je .+0    ', 6, 0, rgnull, rgnull, nil); { skip if so }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
