@@ -2918,7 +2918,6 @@ void sinins()
                       break;
     case 112 /*ipj*/: getp(); getq(); pc = q;
                  mp = getadr(mp-p*PTRSIZE); /* index the mark to restore */
-                 /* restore marks until we reach the destination level */
                  sp = getadr(mp+MARKSB); /* get the stack bottom */
                  ep = getadr(mp+MARKET); /* get the mark ep */
                  break;

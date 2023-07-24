@@ -5092,7 +5092,6 @@ begin
     110 (*rgs*): begin popint(i2); popint(i1); pshset([i1..i2]) end;
     112 (*ipj*): begin getp; getq; pc := q;
                  mp := getadr(mp-p*ptrsize); { index the mark to restore }
-                 { restore marks until we reach the destination level }
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
                end;
