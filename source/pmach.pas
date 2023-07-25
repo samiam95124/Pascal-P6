@@ -1636,7 +1636,7 @@ begin
      ad1 := np; { save address }
      alignu(heapal, np); { align to arena }
      len := len+(np-ad1); { adjust length upwards for alignment }
-     if np > sp then errore(SpaceAllocateFail);
+     if np > ep then errore(SpaceAllocateFail);
      putadr(ad, -(len+adrsize)); { allocate block }
      blk := ad+adrsize { index start of block }
   end;

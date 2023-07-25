@@ -1481,7 +1481,7 @@ void newspc(address len, address* blk)
         ad1 = np; /* save address */
         alignu(HEAPAL, &np); /* align to arena */
         len = len+(np-ad1); /* adjust length upwards for alignment */
-        if (np > sp) errore(SPACEALLOCATEFAIL);
+        if (np > ep) errore(SPACEALLOCATEFAIL);
         putadr(ad, -(len+ADRSIZE)); /* allocate block */
         *blk = ad+ADRSIZE; /* index start of block */
     }
