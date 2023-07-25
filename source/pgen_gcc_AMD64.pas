@@ -3193,9 +3193,9 @@ procedure xlate;
 
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1);
-          frereg := allreg; getreg(r1, frereg); 
-          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins20('movq ^0(%1),%rsp    ', marksb, 0, r1, rgnull, nil);
+          frereg := allreg;
+          wrtins20('movq ^0(%rbp),%rbp    ', -p*ptrsize, 0, rgnull, rgnull, nil);
+          wrtins20('movq ^0(%rbp),%rsp    ', marksb, 0, rgnull, rgnull, nil);
           wrtins10('jmp @s    ', 0, 0, rgnull, rgnull, sp);
           botstk 
         end;
