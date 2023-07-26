@@ -2366,10 +2366,8 @@ procedure xlate;
 
             {lpa}
             114: begin 
-              wrtins20('movq $0,%rax         ', ep^.p, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_base    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rax,%1         ', 0, 0, ep^.r2, rgnull, nil);
-              wrtins20('movq $0,%rax         ', ep^.q, 0, ep^.r1, rgnull, nil)
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq $s,%1          ', 0, 0, ep^.r2, rgnull, ep^.fn)
             end;
 
             {ldci,ldcc,ldcb}
@@ -2815,8 +2813,8 @@ procedure xlate;
         end;
 
         {lpa}
-        114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); getexp(ep); 
-          pshstk(ep);
+        114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); 
+          q1 := -p*ptrsize; getexp(ep); ep^.fn := sp; pshstk(ep);
         end;
 
         {ldcs,ldci,ldcr,ldcn,ldcb,ldcc}
