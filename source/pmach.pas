@@ -3034,7 +3034,8 @@ begin
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
                end;
-    113 (*cip*): begin popadr(ad); ad1 := mp;
+    113 (*cip*),
+    247 (*cif*): begin popadr(ad); ad1 := mp;
                 mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
     13 (*rip*): begin getq; mp := getadr(sp+q) end;
@@ -3271,8 +3272,8 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 252,
-    253, 254, 255: errorv(InvalidInstruction)
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253, 254,
+    255: errorv(InvalidInstruction)
 
   end
 end;

@@ -182,7 +182,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 122;  { maximum number of instructions }
+   maxins     = 123;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -5726,7 +5726,8 @@ begin cmdpos := maxcmd end;
         end
       else begin { call procedure or function parameter }
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
-        gen0(67(*cip*));
+        if fcp^.klass = func then gen0(123(*cif*))
+        else gen0(67(*cip*));
         gen1(32(*rip*),lcs+lsize+soff);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
@@ -9870,7 +9871,7 @@ begin cmdpos := maxcmd end;
       mn[108] :='spc'; mn[109] :='ccs'; mn[110] :='scp'; mn[111] :='ldp';
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
-      mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf';
+      mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
 
     end (*instrmnemonics*) ;
 
@@ -10004,7 +10005,7 @@ begin cmdpos := maxcmd end;
       cdx[116] := 0;                    cdx[117] := 0;
       cdx[118] := -adrsize;             cdx[119] := 0;
       cdx[120] := 0;                    cdx[121] := 0;
-      cdx[122] := 0;
+      cdx[122] := 0;                    cdx[123] := +ptrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

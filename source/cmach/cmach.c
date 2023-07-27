@@ -2921,7 +2921,8 @@ void sinins()
                  sp = getadr(mp+MARKSB); /* get the stack bottom */
                  ep = getadr(mp+MARKET); /* get the mark ep */
                  break;
-    case 113 /*cip*/: popadr(ad); ad1 = mp;
+    case 113 /*cip*/: 
+    case 247 /*cif*/: popadr(ad); ad1 = mp;
                 mp = getadr(ad+1*PTRSIZE); pshadr(pc); pc = getadr(ad);
                 break;
     case 13 /*rip*/: getq(); mp = getadr(sp+q); break;
@@ -3155,8 +3156,8 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 
-       252, 253, 254, 255 */
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253,
+       254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }

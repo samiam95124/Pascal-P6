@@ -2177,6 +2177,7 @@ procedure load;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
          instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
+         instr[247]:='cif       '; insp[247] := false; insq[247] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -3093,8 +3094,9 @@ procedure load;
           205,206,208,209,135,176,215,216,217,218,219,220,221,222,224,225,227,
           243,244,
 
-          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip }
-          181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113: storeop;
+          { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip, 
+            cif }
+          181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113, 247: storeop;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
@@ -5095,7 +5097,8 @@ begin
                  sp := getadr(mp+marksb); { get the stack bottom }
                  ep := getadr(mp+market) { get the mark ep }
                end;
-    113 (*cip*): begin popadr(ad); ad1 := mp;
+    113 (*cip*),
+    247 (*cif*): begin popadr(ad); ad1 := mp;
                 mp := getadr(ad+1*ptrsize); pshadr(pc); pc := getadr(ad)
               end;
     13 (*rip*): begin getq; mp := getadr(sp+q) end;
@@ -5338,8 +5341,8 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 247, 248, 249, 250, 251, 252,
-    253, 254, 255: errorv(InvalidInstruction)
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253, 254,
+    255: errorv(InvalidInstruction)
 
   end
 end;
