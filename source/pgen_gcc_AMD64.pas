@@ -956,6 +956,7 @@ procedure xlate;
          instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
          instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
+         instr[247]:='cif       '; insp[247] := false; insq[247] := 0;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -2015,6 +2016,11 @@ procedure xlate;
           {cup}
           12: asspar(ep);
 
+          {cip}
+          113: begin
+            asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
+          end;
+
         end
       end;
 
@@ -2151,7 +2157,8 @@ procedure xlate;
 
       begin
         if ep <> nil then begin
-          genexp(ep^.l); genexp(ep^.r); genexp(ep^.x1);
+          if ep^.op <> 113{cip} then genexp(ep^.l); genexp(ep^.r); 
+          genexp(ep^.x1);
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           case ep^.op of
@@ -2660,6 +2667,15 @@ procedure xlate;
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
+            {cip}
+            113: begin
+              genexp(ep^.sl); { process sfr start link }
+              pshpar(ep^.pl); { process parameters first }
+              genexp(ep^.l); { load procedure address }
+              wrtins20('movq ^0(%r1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
+              wrtins10('call (%r1)    ', 0, 0, ep^.l^.r1, rgnull, nil);
+            end;
+
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
             wrtins20('pop %1              ', 0, 0, r, rgnull, nil)
@@ -3005,6 +3021,12 @@ procedure xlate;
           getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
+        {cif}
+        247: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
+          writeln(prr);
+          getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
+        end;
+
         { *** calls can be terminal or non-terminal *** }
 
         {csp} 
@@ -3035,22 +3057,6 @@ procedure xlate;
           wrtins10('call *@   ', 0, 0, rgnull, rgnull, sp)
         end;
 
-        {cip} 
-        113: begin writeln(prr); 
-          frereg := allreg; popstk(ep); 
-          { process parameters }
-          if stacklvl > parlvl then pshpar(estack, 1, stacklvl-parlvl);
-          { need to fill in the actual call here }
-          poppar(stacklvl-parlvl);
-          dmptre(ep); deltre(ep);
-          parlvl := maxint { set parameter level inactive }
-        end;
-
-        {rip}
-        13: begin read(prd,q); writeln(prr);
-          frereg := allreg
-        end;
-
         { *** terminals *** }
 
         {cup}
@@ -3059,6 +3065,18 @@ procedure xlate;
           getexp(ep); ep^.fn := sp; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
+        end;
+
+        {cip}
+        113: begin writeln(prr);
+          getexp(ep); popstk(ep^.l); getpar(ep);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); deltre(ep);
+        end;
+
+        {rip}
+        13: begin read(prd,q); writeln(prr);
+          frereg := allreg
         end;
 
         {stri,stra}
