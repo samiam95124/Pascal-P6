@@ -3076,7 +3076,8 @@ procedure xlate;
 
         {rip}
         13: begin read(prd,q); writeln(prr);
-          frereg := allreg
+          frereg := allreg;
+          wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
         end;
 
         {stri,stra}
