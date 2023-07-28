@@ -2377,7 +2377,7 @@ procedure xlate;
             {lpa}
             114: begin 
               wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq @s(%rip),%1    ', 0, 0, ep^.r2, rgnull, ep^.fn)
+              wrtins20('leaq @s(%rip),%1    ', 0, 0, ep^.r2, rgnull, ep^.fn)
             end;
 
             {ldci,ldcc,ldcb}
