@@ -1328,9 +1328,12 @@ procedure xlate;
                  ch1 := ch; { save block type }
                  if ch in  ['p','m'] then preamble;
                  getnxt; skpspc; getsds;
-                 for i := 1 to snl do 
-                   { translate '@' to '$' for type spagetti demarcate }
-                   if sn[i] = '@' then sn[i] := '$';
+                 for i := 1 to snl do begin
+                   { translate '@' to '$' for type spagetti demarcate, and '(' 
+                     or ')' to '_' because they are invalid }
+                   if sn[i] = '@' then sn[i] := '$'
+                   else if (sn[i] = '(') or (sn[i] = ')') then sn[i] := '_'
+                 end;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
                  l := 1; bp^.short := true;
@@ -2672,8 +2675,8 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
-              wrtins20('movq ^0(%r1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
-              wrtins10('call (%r1)    ', 0, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
+              wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
             end;
 
           end;

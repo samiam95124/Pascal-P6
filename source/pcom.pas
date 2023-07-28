@@ -3092,7 +3092,12 @@ begin cmdpos := maxcmd end;
   begin
     plst := fcp^.pflist;
     while plst <> nil do begin
-      wrttyp(prr, plst^.idtype);
+      if plst^.klass in [proc, func] then begin
+        write(prr, 'q('); prtpartyp(plst); write(prr, ')');
+        if plst^.klass = func then begin
+          write(prr, ':'); wrttyp(prr, plst^.idtype)
+        end
+      end else wrttyp(prr, plst^.idtype);
       if plst^.next <> nil then write(prr, '_');
       plst := plst^.next
     end
@@ -7107,7 +7112,14 @@ begin cmdpos := maxcmd end;
         with lcp^ do begin
           write(prr, 's',' ':7);
           writev(prr, name, lenpv(name)); write(prr, ' ', typ);
-          write(prr, ' ', vaddr:1, ' '); wrttyp(prr, idtype); writeln(prr)
+          write(prr, ' ', vaddr:1, ' '); 
+          if klass in [proc, func] then begin
+            write(prr, 'q('); prtpartyp(lcp); write(prr, ')');
+            if klass = func then begin
+              write(prr, ':'); wrttyp(prr, idtype)
+            end
+          end else wrttyp(prr, idtype);
+          writeln(prr)
         end
       end
     end;
