@@ -2213,7 +2213,7 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
               wrtins20('lea ^0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
