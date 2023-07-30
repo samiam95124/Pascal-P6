@@ -1347,7 +1347,9 @@ procedure xlate;
                    { translate '@' to '$' for type spagetti demarcate, and '(' 
                      or ')' to '_' because they are invalid }
                    if sn[i] = '@' then sn[i] := '$'
-                   else if (sn[i] = '(') or (sn[i] = ')') then sn[i] := '_'
+                   else 
+                     if (sn[i] = '(') or (sn[i] = ')') or (sn[i] = ',') then 
+                       sn[i] := '_'
                  end;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
