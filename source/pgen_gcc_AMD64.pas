@@ -1675,15 +1675,13 @@ procedure xlate;
       begin
         pp := ep^.pl; pc := 1;
         while pp <> nil do begin
-          case pc of 
-            1: assreg(pp, frereg, rgrdi, rgnull);
-            2: assreg(pp, frereg, rgrsi, rgnull);
-            3: assreg(pp, frereg, rgrdx, rgnull);
-            4: assreg(pp, frereg, rgrcx, rgnull);
-            5: assreg(pp, frereg, rgr8, rgnull);
-            6: assreg(pp, frereg, rgr9, rgnull);
-            7: errorl('system error             ')
-          end;
+          if insr[pp^.op] = 2 then begin { double register }
+            assreg(pp, frereg, parreg[pc], parreg[pc+1]);
+            pc := pc+2
+          end else begin { single register }
+            assreg(pp, frereg, parreg[pc], rgnull);
+            pc := pc+1
+          end;            
           pp := pp^.next; pc := pc+1
         end
       end;
