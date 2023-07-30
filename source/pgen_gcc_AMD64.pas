@@ -1682,7 +1682,7 @@ procedure xlate;
             assreg(pp, frereg, parreg[pc], rgnull);
             pc := pc+1
           end;            
-          pp := pp^.next; pc := pc+1
+          pp := pp^.next
         end
       end;
 
