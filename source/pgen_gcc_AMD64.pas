@@ -2189,14 +2189,14 @@ procedure xlate;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
               wrtins20('movzx ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
-              wrtins20('movsd (%rax),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.t1, rgnull, nil);
+              wrtins20('movsd (%1),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
             {lods}
