@@ -693,6 +693,7 @@ procedure xlate;
         frereg, allreg: regset;
         stacklvl: integer;
         parreg: array [1..12] of reg; { parameter registers }
+        parregf: array [1..16] of reg; { floating point parameter registers }
 
    procedure init;
       var i: integer;
@@ -740,19 +741,19 @@ procedure xlate;
          instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;    insr[ 26] := 1; insf[ 26] := false;
          instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;    insr[ 27] := 0; insf[ 27] := false;
          instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;          insr[ 28] := 1; insf[ 28] := false;
-         instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;          insr[ 29] := 1; insf[ 29] := false;
+         instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;          insr[ 29] := 1; insf[ 29] := true;
          instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;          insr[ 30] := 1; insf[ 30] := false;
-         instr[ 31]:='sbr       '; insp[ 31] := false; insq[ 31] := 0;          insr[ 31] := 1; insf[ 31] := false;
+         instr[ 31]:='sbr       '; insp[ 31] := false; insq[ 31] := 0;          insr[ 31] := 1; insf[ 31] := true;
          instr[ 32]:='sgs       '; insp[ 32] := false; insq[ 32] := 0;          insr[ 32] := 1; insf[ 32] := false;
          instr[ 33]:='flt       '; insp[ 33] := false; insq[ 33] := 0;          insr[ 33] := 1; insf[ 33] := false;
          instr[ 34]:='flo       '; insp[ 34] := false; insq[ 34] := 0;          insr[ 34] := 2; insf[ 34] := false;
          instr[ 35]:='trc       '; insp[ 35] := false; insq[ 35] := 0;          insr[ 35] := 1; insf[ 35] := false;
          instr[ 36]:='ngi       '; insp[ 36] := false; insq[ 36] := 0;          insr[ 36] := 1; insf[ 36] := false;
-         instr[ 37]:='ngr       '; insp[ 37] := false; insq[ 37] := 0;          insr[ 37] := 1; insf[ 37] := false;
+         instr[ 37]:='ngr       '; insp[ 37] := false; insq[ 37] := 0;          insr[ 37] := 1; insf[ 37] := true;
          instr[ 38]:='sqi       '; insp[ 38] := false; insq[ 38] := 0;          insr[ 38] := 1; insf[ 38] := false;
-         instr[ 39]:='sqr       '; insp[ 39] := false; insq[ 39] := 0;          insr[ 39] := 1; insf[ 39] := false;
+         instr[ 39]:='sqr       '; insp[ 39] := false; insq[ 39] := 0;          insr[ 39] := 1; insf[ 39] := true;
          instr[ 40]:='abi       '; insp[ 40] := false; insq[ 40] := 0;          insr[ 40] := 1; insf[ 40] := false;
-         instr[ 41]:='abr       '; insp[ 41] := false; insq[ 41] := 0;          insr[ 41] := 1; insf[ 41] := false;
+         instr[ 41]:='abr       '; insp[ 41] := false; insq[ 41] := 0;          insr[ 41] := 1; insf[ 41] := true;
          instr[ 42]:='notb      '; insp[ 42] := false; insq[ 42] := 0;          insr[ 42] := 1; insf[ 42] := false;
          instr[ 43]:='and       '; insp[ 43] := false; insq[ 43] := 0;          insr[ 43] := 1; insf[ 43] := false;
          instr[ 44]:='ior       '; insp[ 44] := false; insq[ 44] := 0;          insr[ 44] := 1; insf[ 44] := false;
@@ -763,9 +764,9 @@ procedure xlate;
          instr[ 49]:='mod       '; insp[ 49] := false; insq[ 49] := 0;          insr[ 49] := 1; insf[ 49] := false;
          instr[ 50]:='odd       '; insp[ 50] := false; insq[ 50] := 0;          insr[ 50] := 1; insf[ 50] := false;
          instr[ 51]:='mpi       '; insp[ 51] := false; insq[ 51] := 0;          insr[ 51] := 1; insf[ 51] := false;
-         instr[ 52]:='mpr       '; insp[ 52] := false; insq[ 52] := 0;          insr[ 52] := 1; insf[ 52] := false;
+         instr[ 52]:='mpr       '; insp[ 52] := false; insq[ 52] := 0;          insr[ 52] := 1; insf[ 52] := true;
          instr[ 53]:='dvi       '; insp[ 53] := false; insq[ 53] := 0;          insr[ 53] := 1; insf[ 53] := false;
-         instr[ 54]:='dvr       '; insp[ 54] := false; insq[ 54] := 0;          insr[ 54] := 1; insf[ 54] := false;
+         instr[ 54]:='dvr       '; insp[ 54] := false; insq[ 54] := 0;          insr[ 54] := 1; insf[ 54] := true;
          instr[ 55]:='mov       '; insp[ 55] := false; insq[ 55] := intsize;    insr[ 55] := 0; insf[ 55] := false;
          instr[ 56]:='lca       '; insp[ 56] := false; insq[ 56] := intsize;    insr[ 56] := 1; insf[ 56] := false;
          instr[ 57]:='deci      '; insp[ 57] := false; insq[ 57] := intsize;    insr[ 57] := 1; insf[ 57] := false;
@@ -777,7 +778,7 @@ procedure xlate;
          instr[ 63]:='pck       '; insp[ 63] := false; insq[ 63] := intsize*2;  insr[ 63] := 0; insf[ 63] := false;
          instr[ 64]:='upk       '; insp[ 64] := false; insq[ 64] := intsize*2;  insr[ 64] := 0; insf[ 64] := false;
          instr[ 65]:='ldoa      '; insp[ 65] := false; insq[ 65] := intsize;    insr[ 65] := 1; insf[ 65] := false;
-         instr[ 66]:='ldor      '; insp[ 66] := false; insq[ 66] := intsize;    insr[ 66] := 1; insf[ 66] := false;
+         instr[ 66]:='ldor      '; insp[ 66] := false; insq[ 66] := intsize;    insr[ 66] := 1; insf[ 66] := true;
          instr[ 67]:='ldos      '; insp[ 67] := false; insq[ 67] := intsize;    insr[ 67] := 1; insf[ 67] := false;
          instr[ 68]:='ldob      '; insp[ 68] := false; insq[ 68] := intsize;    insr[ 68] := 1; insf[ 68] := false;
          instr[ 69]:='ldoc      '; insp[ 69] := false; insq[ 69] := intsize;    insr[ 69] := 1; insf[ 69] := false;
@@ -787,7 +788,7 @@ procedure xlate;
          instr[ 73]:='strb      '; insp[ 73] := true;  insq[ 73] := intsize;    insr[ 73] := 0; insf[ 73] := false;
          instr[ 74]:='strc      '; insp[ 74] := true;  insq[ 74] := intsize;    insr[ 74] := 0; insf[ 74] := false;
          instr[ 75]:='sroa      '; insp[ 75] := false; insq[ 75] := intsize;    insr[ 75] := 0; insf[ 75] := false;
-         instr[ 76]:='sror      '; insp[ 76] := false; insq[ 76] := intsize;    insr[ 76] := 1; insf[ 76] := false;
+         instr[ 76]:='sror      '; insp[ 76] := false; insq[ 76] := intsize;    insr[ 76] := 1; insf[ 76] := true;
          instr[ 77]:='sros      '; insp[ 77] := false; insq[ 77] := intsize;    insr[ 77] := 1; insf[ 77] := false;
          instr[ 78]:='srob      '; insp[ 78] := false; insq[ 78] := intsize;    insr[ 78] := 0; insf[ 78] := false;
          instr[ 79]:='sroc      '; insp[ 79] := false; insq[ 79] := intsize;    insr[ 79] := 0; insf[ 79] := false;
@@ -797,7 +798,7 @@ procedure xlate;
          instr[ 83]:='stob      '; insp[ 83] := false; insq[ 83] := 0;          insr[ 83] := 0; insf[ 83] := false;
          instr[ 84]:='stoc      '; insp[ 84] := false; insq[ 84] := 0;          insr[ 84] := 0; insf[ 84] := false;
          instr[ 85]:='inda      '; insp[ 85] := false; insq[ 85] := intsize;    insr[ 85] := 1; insf[ 85] := false;
-         instr[ 86]:='indr      '; insp[ 86] := false; insq[ 86] := intsize;    insr[ 86] := 1; insf[ 86] := false;
+         instr[ 86]:='indr      '; insp[ 86] := false; insq[ 86] := intsize;    insr[ 86] := 1; insf[ 86] := true;
          instr[ 87]:='inds      '; insp[ 87] := false; insq[ 87] := intsize;    insr[ 87] := 1; insf[ 87] := false;
          instr[ 88]:='indb      '; insp[ 88] := false; insq[ 88] := intsize;    insr[ 88] := 1; insf[ 88] := false;
          instr[ 89]:='indc      '; insp[ 89] := false; insq[ 89] := intsize;    insr[ 89] := 1; insf[ 89] := false;
@@ -817,7 +818,7 @@ procedure xlate;
          instr[103]:='decb      '; insp[103] := false; insq[103] := intsize;    insr[103] := 1; insf[103] := false;
          instr[104]:='decc      '; insp[104] := false; insq[104] := intsize;    insr[104] := 1; insf[104] := false;
          instr[105]:='loda      '; insp[105] := true;  insq[105] := intsize;    insr[105] := 1; insf[105] := false;
-         instr[106]:='lodr      '; insp[106] := true;  insq[106] := intsize;    insr[106] := 1; insf[106] := false;
+         instr[106]:='lodr      '; insp[106] := true;  insq[106] := intsize;    insr[106] := 1; insf[106] := true;
          instr[107]:='lods      '; insp[107] := true;  insq[107] := intsize;    insr[107] := 1; insf[107] := false;
          instr[108]:='lodb      '; insp[108] := true;  insq[108] := intsize;    insr[108] := 1; insf[108] := false;
          instr[109]:='lodc      '; insp[109] := true;  insq[109] := intsize;    insr[109] := 1; insf[109] := false;
@@ -835,7 +836,7 @@ procedure xlate;
          instr[121]:='cvbc      '; insp[121] := false; insq[121] := intsize*3;  insr[121] := 2; insf[121] := false;
          instr[122]:='vis       '; insp[122] := false; insq[122] := intsize*2;  insr[122] := 1; insf[122] := false;
          instr[123]:='ldci      '; insp[123] := false; insq[123] := intsize;    insr[123] := 1; insf[123] := false;
-         instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;    insr[124] := 1; insf[124] := false;
+         instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;    insr[124] := 1; insf[124] := true;
          instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;          insr[125] := 1; insf[125] := false;
          instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;   insr[126] := 1; insf[126] := false;
          instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;   insr[127] := 1; insf[127] := false;
@@ -894,7 +895,7 @@ procedure xlate;
          instr[180]:='ckvc      '; insp[180] := false; insq[180] := intsize;    insr[180] := 2; insf[180] := false;
          instr[181]:='dupi      '; insp[181] := false; insq[181] := 0;          insr[181] := 1; insf[181] := false;
          instr[182]:='dupa      '; insp[182] := false; insq[182] := 0;          insr[182] := 2; insf[182] := false;
-         instr[183]:='dupr      '; insp[183] := false; insq[183] := 0;          insr[183] := 1; insf[183] := false;
+         instr[183]:='dupr      '; insp[183] := false; insq[183] := 0;          insr[183] := 1; insf[183] := true;
          instr[184]:='dups      '; insp[184] := false; insq[184] := 0;          insr[184] := 1; insf[184] := false;
          instr[185]:='dupb      '; insp[185] := false; insq[185] := 0;          insr[185] := 1; insf[185] := false;
          instr[186]:='dupc      '; insp[186] := false; insq[186] := 0;          insr[186] := 1; insf[186] := false;
@@ -941,7 +942,7 @@ procedure xlate;
          instr[227]:='vdd       '; insp[227] := false; insq[227] := 0;          insr[227] := 0; insf[227] := false;
          { ltc and lto are aliases to ldo and lao instructions }
          instr[228]:='ltci      '; insp[228] := false; insq[228] := intsize;    insr[228] := 1; insf[228] := false;
-         instr[229]:='ltcr      '; insp[229] := false; insq[229] := intsize;    insr[229] := 1; insf[229] := false;
+         instr[229]:='ltcr      '; insp[229] := false; insq[229] := intsize;    insr[229] := 1; insf[229] := true;
          instr[230]:='ltcs      '; insp[230] := false; insq[230] := intsize;    insr[230] := 1; insf[230] := false;
          instr[231]:='ltcb      '; insp[231] := false; insq[231] := intsize;    insr[231] := 1; insf[231] := false;
          instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;    insr[232] := 1; insf[232] := false;
@@ -1075,6 +1076,23 @@ procedure xlate;
          parreg[10] :=rgnull;
          parreg[11] :=rgnull;
          parreg[12] :=rgnull;
+
+         parregf[1] :=rgxmm0;
+         parregf[2] :=rgxmm1;
+         parregf[3] :=rgxmm2;
+         parregf[4] :=rgxmm3;
+         parregf[5] :=rgxmm4;
+         parregf[6] :=rgxmm5;
+         parregf[7] :=rgxmm6;
+         parregf[8] :=rgxmm7;
+         parregf[9] :=rgnull;
+         parregf[10] :=rgnull;
+         parregf[11] :=rgnull;
+         parregf[12] :=rgnull;
+         parregf[13] :=rgnull;
+         parregf[14] :=rgnull;
+         parregf[15] :=rgnull;
+         parregf[16] :=rgnull;
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -1657,7 +1675,7 @@ procedure xlate;
 
       procedure getfreg(var r: reg; var rf: regset);
       begin
-        r := rgxmm0;
+        r := rgxmm8;
         while not (r in rf) and (r < rgxmm15) do r := succ(r);
         if not (r in rf) then errorl('Out of registers         ');
         rf := rf-[r];
@@ -1674,15 +1692,18 @@ procedure xlate;
 
       { assign registers to parameters in call }
       procedure asspar(ep: expptr);
-      var pp: expptr; pc: integer;
+      var pp: expptr; pc: integer; fpc: integer;
       begin
-        pp := ep^.pl; pc := 1;
+        pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
-          if insr[pp^.op] = 2 then begin { double register }
-            assreg(pp, frereg, parreg[pc], parreg[pc+1]);
+          if insf[pp^.op] then begin { floating result }
+            assreg(pp, rf, parregf[fpc], rgnull);
+            fpc := fpc+1
+          end else if insr[pp^.op] = 2 then begin { double register }
+            assreg(pp, rf, parreg[pc], parreg[pc+1]);
             pc := pc+2
           end else begin { single register }
-            assreg(pp, frereg, parreg[pc], rgnull);
+            assreg(pp, rf, parreg[pc], rgnull);
             pc := pc+1
           end;            
           pp := pp^.next
