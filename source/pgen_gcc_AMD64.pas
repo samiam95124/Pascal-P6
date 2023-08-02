@@ -2446,7 +2446,7 @@ procedure xlate;
               wrtins20('movq $0,%1          ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('cmpq (%1),%2        ', 0, 0, ep^.r2, ep^.r1, nil);
               wrtins20('jae .+21            ', 0, 0, ep^.r2, rgnull, nil);
-              wrtins20('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call errore         ', 0, 0, rgnull, rgnull, nil);
               wrtins20('cmpq ^0(%1),%2      ', intsize, 0, ep^.r2, ep^.r1, nil);
               wrtins20('jbe .+11            ', 0, 0, ep^.r2, rgnull, nil);
