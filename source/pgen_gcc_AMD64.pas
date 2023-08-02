@@ -1547,6 +1547,45 @@ procedure xlate;
         end
       end;
 
+      procedure wrtbreg(var f: text; r: reg);
+      begin
+        case r of
+          rgnull:  write(f, '<null>');
+          rgrax:   write(f, 'al');
+          rgrbx:   write(f, 'bl');
+          rgrcx:   write(f, 'cl');
+          rgrdx:   write(f, 'dl');
+          rgrsi:   write(f, 'sil');
+          rgrdi:   write(f, 'dil');
+          rgrbp:   write(f, 'bpl');
+          rgrsp:   write(f, 'spl');
+          rgr8:    write(f, '8l');
+          rgr9:    write(f, '9l');
+          rgr10:   write(f, '10l');
+          rgr11:   write(f, '11l');
+          rgr12:   write(f, '12l');
+          rgr13:   write(f, '13l');
+          rgr14:   write(f, '14l');
+          rgr15:   write(f, '15l');
+          rgxmm0:  write(f, 'xmm0'); 
+          rgxmm1:  write(f, 'xmm1'); 
+          rgxmm2:  write(f, 'xmm2'); 
+          rgxmm3:  write(f, 'xmm3'); 
+          rgxmm4:  write(f, 'xmm4'); 
+          rgxmm5:  write(f, 'xmm5'); 
+          rgxmm6:  write(f, 'xmm6'); 
+          rgxmm7:  write(f, 'xmm7');
+          rgxmm8:  write(f, 'xmm8');
+          rgxmm9:  write(f, 'xmm9'); 
+          rgxmm10: write(f, 'xmm10'); 
+          rgxmm11: write(f, 'xmm11'); 
+          rgxmm12: write(f, 'xmm12'); 
+          rgxmm13: write(f, 'xmm13'); 
+          rgxmm14: write(f, 'xmm14'); 
+          rgxmm15: write(f, 'xmm15');
+        end
+      end;
+
       procedure wrtregs(var f: text; rs: regset);
       var first: boolean; r: reg;
       begin
@@ -2072,8 +2111,8 @@ procedure xlate;
         $0 - Immediate integer 1
         $1 - Immediate integer 2
         $s - Immediate symbol
-        %1 - Register 1
-        %2 - register 2
+        %1 - Register 1, l postfix means lower
+        %2 - register 2, l postfix means lower
         +0 - Immediate integer 1
         +1 - Immediate integer 2
         -0 - Immediate integer 1
@@ -2101,9 +2140,13 @@ procedure xlate;
             else if si[i] = 's' then writevp(prr, sn)
             else write(prr, si[i])
           end else if si[i] = '%' then begin next; write(prr, '%');
-            if si[i] = '1' then wrtreg(prr, r1) 
-            else if si[i] = '2' then wrtreg(prr, r2)
-            else write(prr, si[i])
+            if si[i] = '1' then begin
+              if si[i+1] = 'l' then begin wrtbreg(prr, r1); i := i+1 end
+              else wrtreg(prr, r1) 
+            end else if si[i] = '2' then begin
+              if si[i+1] = 'l' then begin wrtbreg(prr, r2); i := i+1 end
+              else wrtreg(prr, r2)
+            end else write(prr, si[i])
           end else if si[i] = '+' then begin next; write(prr, '+');
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
@@ -3140,7 +3183,7 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins20('movb %1,^0(%2)      ', q, 0, ep^.r1, r1, nil);
+          wrtins20('movb %1l,^0(%2)      ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
           botstk 
         end;
