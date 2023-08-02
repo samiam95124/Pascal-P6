@@ -1059,9 +1059,8 @@ procedure xlate;
          flablst := nil; { clear far label list }
          estack := nil; stacklvl := 0; efree := nil;
          allreg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
-                    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
-                    rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
-                    rgxmm14, rgxmm15];
+                    rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14,
+                    rgxmm15];
          frereg := allreg;
          { set parameter registers }
          parreg[1] :=rgrdi;
@@ -1773,13 +1772,15 @@ procedure xlate;
           16{ixa}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, ep^.r1, rgnull);
-            resreg(rgrdx) end;
+            resreg(rgrdx) 
+          end;
 
           118{swp}: ; { done at top level }
 
           {ldoi,ldoa,ldor,ldob,ldoc,ldox}
           1,65,66,68,69,194:begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
 
           {ldos}
           67: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
@@ -1794,17 +1795,20 @@ procedure xlate;
           {indr}
           86: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf); 
-            assreg(ep^.l, rf, rgnull, rgnull) 
+            assreg(ep^.l, rf, ep^.r1, rgnull) 
           end;
 
           {inds}
           87: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
+          end;
 
           {inc,dec}
           10, 90, 93, 94, 57, 103, 104, 201, 202: begin 
             ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           {suv}
@@ -1866,7 +1870,7 @@ procedure xlate;
           7: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
-          {chk}
+          {chk,chka,chkb,chkc,chkx}
           26, 95, 98, 99, 199: begin resreg(rgrax); ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             getreg(ep^.r2, rf); assreg(ep^.l, rf, rgnull, rgnull);
@@ -2195,7 +2199,7 @@ procedure xlate;
         end
       end;
 
-      begin
+      begin { genexp }
         if ep <> nil then begin
           if ep^.op <> 113{cip} then genexp(ep^.l); genexp(ep^.r); 
           genexp(ep^.x1);
