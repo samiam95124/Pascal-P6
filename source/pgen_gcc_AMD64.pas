@@ -1366,8 +1366,7 @@ procedure xlate;
                      or ')' to '_' because they are invalid }
                    if sn[i] = '@' then sn[i] := '$'
                    else 
-                     if (sn[i] = '(') or (sn[i] = ')') or (sn[i] = ',') then 
-                       sn[i] := '_'
+                     if sn[i] in ['(',')',',',':'] then sn[i] := '_'
                  end;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
@@ -3066,8 +3065,7 @@ procedure xlate;
         end;
 
         {cif}
-        247: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          writeln(prr);
+        247: begin writeln(prr);
           getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
