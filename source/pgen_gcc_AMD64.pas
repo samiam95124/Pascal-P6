@@ -2103,6 +2103,13 @@ procedure xlate;
             asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
+          {cif}
+          247: begin
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else begin resreg(rgrax); ep^.r1 := r1 end;
+            asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
+          end;
+
         end
       end;
 
@@ -2243,8 +2250,8 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
-          if ep^.op <> 113{cip} then genexp(ep^.l); genexp(ep^.r); 
-          genexp(ep^.x1);
+          if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
+          genexp(ep^.r); genexp(ep^.x1);
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           case ep^.op of
@@ -2753,13 +2760,15 @@ procedure xlate;
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
-            {cip}
-            113: begin
+            {cip,cif}
+            113,247: begin
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
+              if (ep^.op = 247{cuf}) and (ep^.r1 <> rgrax) then
+                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
           end;
@@ -3109,7 +3118,7 @@ procedure xlate;
 
         {cif}
         247: begin writeln(prr);
-          getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
+          getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
         end;
 
         { *** calls can be terminal or non-terminal *** }
