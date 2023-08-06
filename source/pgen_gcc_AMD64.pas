@@ -675,6 +675,7 @@ procedure xlate;
                     keep: boolean; { hold this value }
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
+                    lt: strvsp; { label for table }
                   end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
@@ -1605,7 +1606,7 @@ procedure xlate;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
         ep^.rs := []; ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; 
-        ep^.lb := nil
+        ep^.lb := nil; ep^.lt := nil;
       end;
       
       procedure putexp(ep: expptr);
@@ -2422,19 +2423,19 @@ procedure xlate;
             100, 115, 116, 121: begin
               wrtins20('movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdx        ', ep^.q2, 0, rgnull, rgnull, nil);
+              wrtins20('movq $0,%rdx        ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
-                wrtins20('movq (%1),%r8       ', ep^.q, 0, ep^.r^.r1, rgnull, nil)
+                wrtins20('movq (%1),%r8       ', 0, 0, ep^.r^.r1, rgnull, nil)
               else
                 wrtins20('movzx (%1),%r8      ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
-              wrtins30('call psystem_tagchgvar         ', 0, 0, rgnull, rgnull, nil)
+              wrtins30('call psystem_tagchgvar        ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {ivti,ivtx,ivtb,ivtc}
             192,101,102,111: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull, nil);
+              wrtins20('movq $0,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.r^.r1, rgnull, nil)
               else
@@ -2831,6 +2832,15 @@ procedure xlate;
           parlvl := maxint { set parameter level inactive }
       end;
 
+      { get left and right links from transparent operator or stack }
+      procedure gettop(var epl, epr: expptr);
+      begin
+        if estack = nil then errorl('Expression underflow     ');
+        if estack^.op in [100,115,116,121,192,101,102,111] then begin
+          epl := estack^.l; epr := ep^.r
+        end else begin popstk(epr); popstk(epl) end;
+      end;
+
     begin { assemble } 
       p := 0;  q := 0;  op := 0;
       getname;
@@ -2897,14 +2907,11 @@ procedure xlate;
         end;
 
         {cvbi,cvbx,cvbb,cvbc}
-        100, 115, 116, 121: begin read(prd,q, q1, q2); 
-          writeln(prr,q:1, ' ', q1:1, ' ', q2:1); getexp(ep); popstk(ep^.r); 
-          popstk(ep^.l); pshstk(ep) 
-        end;
-
+        100, 115, 116, 121,
         {ivti,ivtx,ivtb,ivtc}
-        192,101,102,111: begin read(prd,q, q1); writeln(prr,q:1, ' ', q1:1);
-          getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
+        192,101,102,111: begin read(prd,q, q1); labelsearch(def, val, sp); 
+          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
+          getexp(ep); ep^.lt := sp; gettop(ep^.l, ep^.r); pshstk(ep) 
         end;
 
         {cps}
@@ -3389,29 +3396,43 @@ procedure xlate;
           botstk
         end;
 
-        {sto}
+        {stoi,stoa,stor,stos,stob,stoc,stox} { ??? fill me in }
         6, 80, 81, 82, 83, 84, 197: begin writeln(prr); 
-          frereg := allreg; popstk(ep); 
-          popstk(ep2); dmptre(ep2); dmptre(ep); deltre(ep); deltre(ep2); 
+          frereg := allreg; gettop(ep, ep2); 
+          ep3 := nil;
+          if estack <> nil then 
+            while estack^.op in [100,115,116,121,192,101,102,111] do begin
+            popstk(ep4); ep4^.next := ep3; ep3 := ep4 
+          end;
+          assreg(ep2, frereg, rgnull,  rgnull); 
+          assreg(ep, frereg, rgnull, rgnull);
+          dmptre(ep2); dmptre(ep); 
+          genexp(ep); genexp(ep2);
+          ep4 := ep3; 
+          while ep4 <> nil do begin genexp(ep4); ep := ep4^.next end;
+          wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
+          deltre(ep); deltre(ep2);
+          while ep3 <> nil do 
+            begin ep4 := ep3; ep3 := ep3^.next; putexp(ep4) end;
           botstk
         end;
 
         {stp}
         58:; { unused }
 
-        {cke}
+        {cke} { ??? fill me in }
         188: begin writeln(prr); 
           frereg := allreg; popstk(ep); dmptre(ep); deltre(ep);
           botstk 
         end;
 
-        {inv}
+        {inv} { ??? fill me in }
         189: begin writeln(prr); 
           frereg := allreg; popstk(ep); dmptre(ep); deltre(ep); 
           botstk
         end;
 
-        61 {ujc}: begin writeln(prr);
+        61 {ujc}: begin writeln(prr); { ??? fill me in }
           frereg := allreg;
           botstk
         end;
