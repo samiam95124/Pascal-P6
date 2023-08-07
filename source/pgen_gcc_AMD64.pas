@@ -2251,8 +2251,10 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
-          if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
-          genexp(ep^.r); genexp(ep^.x1);
+          if not (ep^.op in [100,115,116,121,192,101,102,111]) then begin
+            if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
+            genexp(ep^.r); genexp(ep^.x1);
+          end;
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           case ep^.op of
@@ -2837,7 +2839,7 @@ procedure xlate;
       begin
         if estack = nil then errorl('Expression underflow     ');
         if estack^.op in [100,115,116,121,192,101,102,111] then begin
-          epl := estack^.l; epr := ep^.r
+          epl := estack^.l; epr := estack^.r
         end else begin popstk(epr); popstk(epl) end;
       end;
 
@@ -3396,20 +3398,22 @@ procedure xlate;
           botstk
         end;
 
-        {stoi,stoa,stor,stos,stob,stoc,stox} { ??? fill me in }
+        {stoi,stoa,stor,stos,stob,stoc,stox}
         6, 80, 81, 82, 83, 84, 197: begin writeln(prr); 
           frereg := allreg; gettop(ep, ep2); 
           ep3 := nil;
-          if estack <> nil then 
-            while estack^.op in [100,115,116,121,192,101,102,111] do begin
-            popstk(ep4); ep4^.next := ep3; ep3 := ep4 
+          ep4 := estack;
+          while ep4 <> nil do begin
+            if estack^.op in [100,115,116,121,192,101,102,111] then begin
+              popstk(ep5); ep5^.next := ep3; ep3 := ep5; ep4 := estack
+            end else ep4 := nil
           end;
           assreg(ep2, frereg, rgnull,  rgnull); 
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep2); dmptre(ep); 
           genexp(ep); genexp(ep2);
           ep4 := ep3; 
-          while ep4 <> nil do begin genexp(ep4); ep := ep4^.next end;
+          while ep4 <> nil do begin genexp(ep4); ep4 := ep4^.next end;
           wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
           deltre(ep); deltre(ep2);
           while ep3 <> nil do 
