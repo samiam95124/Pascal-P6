@@ -3300,7 +3300,7 @@ procedure xlate;
         23: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg;
-          botstk
+          { note ujp jumps with non-empty stack }
         end;
 
         {fjp,tjp,xjp}
