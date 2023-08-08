@@ -1097,7 +1097,7 @@ procedure xlate;
 
    procedure errorl(string: beta); (*error in loading*)
    begin writeln;
-      writeln('*** Program load error: [', sline:1, ',', iline:1, '] ', string);
+      writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', string);
       goto 1
    end; (*errorl*)
 
@@ -1614,6 +1614,16 @@ procedure xlate;
         ep^.next := efree; efree := ep
       end;
       
+      procedure dmpstk;
+      var ep: expptr;
+      begin
+        ep := estack;
+        while ep <> nil do begin
+          writeln('Stack: ', ep^.op:3, ': ', instr[ep^.op]);
+          ep := ep^.next
+        end
+      end;
+
       procedure pshstk(ep: expptr);
       begin
         ep^.next := estack; estack := ep; stacklvl := stacklvl+1
@@ -1628,7 +1638,14 @@ procedure xlate;
 
       procedure botstk;
       begin
-        if estack <> nil then errorl('Stack balance             ');
+        if estack <> nil then begin
+          writeln;
+          writeln('*** Program translation error: [', sline:1, ',', iline:1, '] Stack balance');
+          writeln;
+          writeln('Contents of stack:');
+          dmpstk;
+          goto 1
+        end
       end;
 
       function depth: integer;
@@ -1683,16 +1700,6 @@ procedure xlate;
       begin
         writeln(prr, '#    expr:');
         dmptrel(ep, 1)
-      end;
-
-      procedure dmpstk;
-      var ep: expptr;
-      begin
-        ep := estack;
-        while ep <> nil do begin
-          writeln(prr, '# Stack: ', ep^.op:3, ': ', instr[ep^.op]);
-          ep := ep^.next
-        end
       end;
 
       procedure dmplst(ep: expptr);
@@ -3300,7 +3307,7 @@ procedure xlate;
         23: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg;
-          { note ujp jumps with non-empty stack }
+          botstk
         end;
 
         {fjp,tjp,xjp}

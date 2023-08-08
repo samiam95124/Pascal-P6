@@ -8271,7 +8271,7 @@ begin cmdpos := maxcmd end;
         label 1;
         var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
             laddr, lcix, lcix1, lelse, lelse2, lmin, lmax: integer;
-            test: boolean; i,occ: integer;
+            test: boolean; i,occ: integer; llc: addrrange;
       function casecount(cp: cip): integer;
       var c: integer;
       begin c := 0;
@@ -8279,15 +8279,17 @@ begin cmdpos := maxcmd end;
           begin c := c+cp^.cslabe-cp^.cslabs+1; cp := cp^.next end;
         casecount := c
       end;
-      begin expression(fsys + [ofsy,comma,colon], false);
-        load; genlabel(lcix); lelse := 0;
+      begin llc := lc; expression(fsys + [ofsy,comma,colon], false);
+        load; alignd(intptr,lc); lc := lc-intsize;
+        { store start to temp }
+        gen2t(56(*str*),level,lc,intptr);
+        genlabel(lcix); lelse := 0;
         lsp := gattr.typtr;
         if lsp <> nil then
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end
           else if not comptypes(lsp,intptr) then gen0t(58(*ord*),lsp);
         genujpxjpcal(57(*ujp*),lcix);
-        mesl(+intsize); { remove selector from stack }
         if sy = ofsy then insymbol else error(8);
         fstptr := nil; genlabel(laddr);
         repeat
@@ -8343,7 +8345,6 @@ begin cmdpos := maxcmd end;
         until test;
         if sy = elsesy then begin chkstd; insymbol; genlabel(lelse);
           genlabel(lelse2); putlabel(lelse2);
-          mesl(-intsize); { put selector on stack }
           gen1(71(*dmp*),intsize);
           putlabel(lelse);
           markline;
@@ -8355,7 +8356,8 @@ begin cmdpos := maxcmd end;
         end;
         putlabel(lcix);
         markline;
-        mesl(-intsize); { put selector back on stack }
+        { put selector back on stack }
+        gen2t(54(*lod*),level,lc,intptr);
         if fstptr <> nil then
           begin lmax := fstptr^.cslabe;
             (*reverse pointers*)
@@ -8405,7 +8407,6 @@ begin cmdpos := maxcmd end;
                     putcas(lpt1)
                   until fstptr = nil;
                   if lelse > 0 then genujpxjpcal(57(*ujp*),lelse2);
-                  mesl(+intsize) { remove selector from stack }
                 end;
                 putlabel(laddr);
                 markline
@@ -8419,7 +8420,8 @@ begin cmdpos := maxcmd end;
               until fstptr = nil
             end
           end;
-        if sy = endsy then insymbol else error(13)
+        if sy = endsy then insymbol else error(13);
+        lc := llc
       end (*casestatement*) ;
 
       procedure repeatstatement;
@@ -8458,7 +8460,7 @@ begin cmdpos := maxcmd end;
       procedure forstatement;
         var lattr: attr;  lsy: symbol;
             lcix, laddr: integer;
-                  llc, lcs: addrrange;
+            llc, lcs: addrrange;
             typind: char; (* added for typing [sam] *)
             typ: stp;
       begin lcp := nil; llc := lc;
