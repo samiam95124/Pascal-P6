@@ -553,7 +553,6 @@ for f in standard_tests/iso7185prt*.pas ; do
 
     fi
 
-
 done
 
 exit $error

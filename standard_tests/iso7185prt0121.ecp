@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -16,15 +16,15 @@ and the following annexes: A,B,C,E.
     11       -8 begin 
     12        5  
     13        5    case x of 
-    14        7  
-    15        7       1,: a := 1; 
+    14        8  
+    15        8       1,: a := 1; 
     15   ****           ^50
     15   ****   50 Error in constant
-    16       10       2: a := 2 
-    17       10  
-    18       10    end 
-    19       20  
-    20       20 end. 
+    16       11       2: a := 2 
+    17       11  
+    18       11    end 
+    19       22  
+    20       22 end. 
 
 Errors in program: 1
 

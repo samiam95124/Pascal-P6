@@ -34,7 +34,7 @@ function do_test {
     runprt $option
     diffnole standard_tests/iso7185prt.lst standard_tests/iso7185prt.cmp > \
         standard_tests/iso7185prt.dif
-    wc -l standard_tests/iso7185prt.dif >> regress_report.txt
+    wc -l standard_tests/iso7185prt.dif
 
 }
 

@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -19,15 +19,15 @@ and the following annexes: A,B,C,E.
     14        5  
     15        5    i := 1; 
     16        7    case i of 
-    17        9     
-    18        9       1.1: writeln('one'); 
+    17       10     
+    18       10       1.1: writeln('one'); 
     18   ****            ^147
     18   ****  147 Label type incompatible with selecting expression
-    19       18       2: writeln('two') 
-    20       25        
-    21       25    end 
-    22       33  
-    23       33 end. 
+    19       19       2: writeln('two') 
+    20       26        
+    21       26    end 
+    22       35  
+    23       35 end. 
 
 Errors in program: 1
 
