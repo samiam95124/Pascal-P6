@@ -1,559 +1,121 @@
 #!/bin/bash
 #
+# iso7185prt test
 #
-# Run rejection tests
+# Execution:
 #
-# The rejection tests use the same format as the acceptance tests, but there
-# is no positive go/no go indication for them. Each test should generate a
-# failure, and all you can say is that the test has failed if there were no
-# error(s).
+# testiso7185prt [--pint|--pmach|--cmach]...
+#
+# Runs the iso7185prt or "Pascal Rejectance Test".
+#
+# flags:
+#
+# --pint    Run with pint interpreter.
+# --pmach   Run with pmach interpreter.
+# --cmach   Run with cmach interpreter.
+#
+# If a particular machine option is selected, the test is run on that machine
+# type only. Otherwise, all machine types will be selected.
 #
 
-error=0
+pint="0"
+pmach="0"
+cmach="0"
+option=""
 
-function dotestprog {
+#
+# Run regression with current options
+#
+function do_test {
 
-    testprog $1 $3 --noerrmsg $2
-    if [ $? -ne 0 ]
-    then
-
-        error=1
-
-    fi
+    #
+    # Run the ISO7185pat compliance test
+    #
+    runprt $option
+    diffnole standard_tests/iso7185prt.lst standard_tests/iso7185prt.cmp > \
+        standard_tests/iso7185prt.dif
+    wc -l standard_tests/iso7185prt.dif >> regress_report.txt
 
 }
 
-echo Running tests
+for param in "$@" 
+do
 
-option="$1"
-if [ "$1" = "" ]; then
+    if [ "$param" = "--pint" ]; then
+    
+        pint=1
+
+    elif [ "$param" = "--pmach" ]; then
+    
+        pmach=1
+
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+
+    elif [ "$param" = "--help" ]; then
+
+        echo ""
+        echo "Pascal rejectance test"
+        echo ""
+        echo "Execution:"
+        echo ""
+        echo "testiso7185prt [--pint|--pmach|--cmach]..."
+        echo ""
+        echo "Runs the Pascal rejectance test"
+        echo ""
+        echo "The flags are one of:"
+        echo ""
+        echo "--pint  Run only pint mode."
+        echo "--pmach Run only pmach mode."
+        echo "--cmach Run only cmach mode."
+        echo ""
+		exit 0
+		
+    elif [ ! -z "$param" ]; then
+    
+    	echo ""
+    	echo "*** Option not recognized"
+    	echo ""
+		echo "Execution:"
+		echo ""
+		echo "testiso7185prt [--pint|--pmach|--cmach]..."
+		echo ""
+		exit 1
+		
+    fi
+    
+done
+
+if [ "$pint" = "1" ]; then
 
     option="--pint"
+    echo "pint run ***************************************"
+    do_test
+
+elif [ "$pmach" = "1" ]; then
+
+    option="--pmach"
+    echo "pmach run ***************************************"
+    do_test
+
+elif [ "$cmach" = "1" ]; then
+
+    option="--cmach"
+    echo "cmach run ***************************************"
+    do_test
+
+else
+
+    # run all modes
+    option=""
+    echo "pint run ***************************************"
+    do_test
+    option="--pmach"
+    echo "pmach run ***************************************"
+    do_test
+    option="--cmach"
+    echo "cmach run ***************************************"
+    do_test
 
 fi
-
-#
-# Note some of the tests need options to run.
-#
-dotestprog $option standard_tests/iso7185prt0001
-dotestprog $option standard_tests/iso7185prt0002
-dotestprog $option standard_tests/iso7185prt0003
-dotestprog $option standard_tests/iso7185prt0006
-dotestprog $option standard_tests/iso7185prt0007
-dotestprog $option standard_tests/iso7185prt0008
-dotestprog $option standard_tests/iso7185prt0009
-dotestprog $option standard_tests/iso7185prt0010
-dotestprog $option standard_tests/iso7185prt0011
-dotestprog $option standard_tests/iso7185prt0012
-dotestprog $option standard_tests/iso7185prt0013
-dotestprog $option standard_tests/iso7185prt0014
-dotestprog $option standard_tests/iso7185prt0015 -s
-dotestprog $option standard_tests/iso7185prt0016
-dotestprog $option standard_tests/iso7185prt0017
-dotestprog $option standard_tests/iso7185prt0018
-dotestprog $option standard_tests/iso7185prt0019
-dotestprog $option standard_tests/iso7185prt0020
-dotestprog $option standard_tests/iso7185prt0021
-dotestprog $option standard_tests/iso7185prt0022
-dotestprog $option standard_tests/iso7185prt0023
-dotestprog $option standard_tests/iso7185prt0024 -s
-dotestprog $option standard_tests/iso7185prt0025
-dotestprog $option standard_tests/iso7185prt0026
-dotestprog $option standard_tests/iso7185prt0027
-dotestprog $option standard_tests/iso7185prt0028
-dotestprog $option standard_tests/iso7185prt0029
-dotestprog $option standard_tests/iso7185prt0030
-dotestprog $option standard_tests/iso7185prt0031 -s
-dotestprog $option standard_tests/iso7185prt0032
-dotestprog $option standard_tests/iso7185prt0033
-dotestprog $option standard_tests/iso7185prt0034
-dotestprog $option standard_tests/iso7185prt0035
-dotestprog $option standard_tests/iso7185prt0036
-dotestprog $option standard_tests/iso7185prt0037
-dotestprog $option standard_tests/iso7185prt0038
-dotestprog $option standard_tests/iso7185prt0039
-dotestprog $option standard_tests/iso7185prt0040 -s
-dotestprog $option standard_tests/iso7185prt0041
-dotestprog $option standard_tests/iso7185prt0042
-dotestprog $option standard_tests/iso7185prt0043
-dotestprog $option standard_tests/iso7185prt0044
-dotestprog $option standard_tests/iso7185prt0045
-dotestprog $option standard_tests/iso7185prt0046
-dotestprog $option standard_tests/iso7185prt0047
-dotestprog $option standard_tests/iso7185prt0048
-dotestprog $option standard_tests/iso7185prt0049
-dotestprog $option standard_tests/iso7185prt0050
-dotestprog $option standard_tests/iso7185prt0051
-dotestprog $option standard_tests/iso7185prt0052
-dotestprog $option standard_tests/iso7185prt0053
-dotestprog $option standard_tests/iso7185prt0054 -s
-dotestprog $option standard_tests/iso7185prt0055 -s
-dotestprog $option standard_tests/iso7185prt0056
-dotestprog $option standard_tests/iso7185prt0057
-dotestprog $option standard_tests/iso7185prt0100
-dotestprog $option standard_tests/iso7185prt0101
-dotestprog $option standard_tests/iso7185prt0102
-dotestprog $option standard_tests/iso7185prt0103
-dotestprog $option standard_tests/iso7185prt0104
-dotestprog $option standard_tests/iso7185prt0105
-dotestprog $option standard_tests/iso7185prt0106
-dotestprog $option standard_tests/iso7185prt0107
-dotestprog $option standard_tests/iso7185prt0108
-dotestprog $option standard_tests/iso7185prt0109
-dotestprog $option standard_tests/iso7185prt0110
-dotestprog $option standard_tests/iso7185prt0111
-dotestprog $option standard_tests/iso7185prt0112
-dotestprog $option standard_tests/iso7185prt0113
-dotestprog $option standard_tests/iso7185prt0114
-dotestprog $option standard_tests/iso7185prt0115
-dotestprog $option standard_tests/iso7185prt0116
-dotestprog $option standard_tests/iso7185prt0117
-dotestprog $option standard_tests/iso7185prt0118
-dotestprog $option standard_tests/iso7185prt0119
-dotestprog $option standard_tests/iso7185prt0120
-dotestprog $option standard_tests/iso7185prt0121
-dotestprog $option standard_tests/iso7185prt0122
-dotestprog $option standard_tests/iso7185prt0123
-dotestprog $option standard_tests/iso7185prt0124
-dotestprog $option standard_tests/iso7185prt0125
-dotestprog $option standard_tests/iso7185prt0126
-dotestprog $option standard_tests/iso7185prt0127
-dotestprog $option standard_tests/iso7185prt0128
-dotestprog $option standard_tests/iso7185prt0129
-dotestprog $option standard_tests/iso7185prt0130
-dotestprog $option standard_tests/iso7185prt0131
-dotestprog $option standard_tests/iso7185prt0132
-dotestprog $option standard_tests/iso7185prt0133
-dotestprog $option standard_tests/iso7185prt0134
-dotestprog $option standard_tests/iso7185prt0135
-dotestprog $option standard_tests/iso7185prt0136
-dotestprog $option standard_tests/iso7185prt0137
-dotestprog $option standard_tests/iso7185prt0138
-dotestprog $option standard_tests/iso7185prt0139
-dotestprog $option standard_tests/iso7185prt0140
-dotestprog $option standard_tests/iso7185prt0141
-dotestprog $option standard_tests/iso7185prt0142
-dotestprog $option standard_tests/iso7185prt0143
-dotestprog $option standard_tests/iso7185prt0144
-dotestprog $option standard_tests/iso7185prt0145
-dotestprog $option standard_tests/iso7185prt0146
-dotestprog $option standard_tests/iso7185prt0147
-dotestprog $option standard_tests/iso7185prt0148
-dotestprog $option standard_tests/iso7185prt0149
-dotestprog $option standard_tests/iso7185prt0150
-dotestprog $option standard_tests/iso7185prt0151
-dotestprog $option standard_tests/iso7185prt0152
-dotestprog $option standard_tests/iso7185prt0153
-dotestprog $option standard_tests/iso7185prt0154
-dotestprog $option standard_tests/iso7185prt0155
-dotestprog $option standard_tests/iso7185prt0156
-dotestprog $option standard_tests/iso7185prt0157
-dotestprog $option standard_tests/iso7185prt0200
-dotestprog $option standard_tests/iso7185prt0201
-dotestprog $option standard_tests/iso7185prt0202
-dotestprog $option standard_tests/iso7185prt0203
-dotestprog $option standard_tests/iso7185prt0204
-dotestprog $option standard_tests/iso7185prt0205
-dotestprog $option standard_tests/iso7185prt0206
-dotestprog $option standard_tests/iso7185prt0207
-dotestprog $option standard_tests/iso7185prt0208
-dotestprog $option standard_tests/iso7185prt0209
-dotestprog $option standard_tests/iso7185prt0210
-dotestprog $option standard_tests/iso7185prt0211
-dotestprog $option standard_tests/iso7185prt0212
-dotestprog $option standard_tests/iso7185prt0213
-dotestprog $option standard_tests/iso7185prt0214
-dotestprog $option standard_tests/iso7185prt0215
-dotestprog $option standard_tests/iso7185prt0216
-dotestprog $option standard_tests/iso7185prt0217
-dotestprog $option standard_tests/iso7185prt0218
-dotestprog $option standard_tests/iso7185prt0219
-dotestprog $option standard_tests/iso7185prt0220
-dotestprog $option standard_tests/iso7185prt0221
-dotestprog $option standard_tests/iso7185prt0222
-dotestprog $option standard_tests/iso7185prt0300
-dotestprog $option standard_tests/iso7185prt0301
-dotestprog $option standard_tests/iso7185prt0302
-dotestprog $option standard_tests/iso7185prt0303
-dotestprog $option standard_tests/iso7185prt0304
-dotestprog $option standard_tests/iso7185prt0305
-dotestprog $option standard_tests/iso7185prt0306
-dotestprog $option standard_tests/iso7185prt0400
-dotestprog $option standard_tests/iso7185prt0401
-dotestprog $option standard_tests/iso7185prt0402
-dotestprog $option standard_tests/iso7185prt0403
-dotestprog $option standard_tests/iso7185prt0404
-dotestprog $option standard_tests/iso7185prt0405
-dotestprog $option standard_tests/iso7185prt0406
-dotestprog $option standard_tests/iso7185prt0407
-dotestprog $option standard_tests/iso7185prt0408
-dotestprog $option standard_tests/iso7185prt0500
-dotestprog $option standard_tests/iso7185prt0501
-dotestprog $option standard_tests/iso7185prt0502
-dotestprog $option standard_tests/iso7185prt0503 -s
-dotestprog $option standard_tests/iso7185prt0504
-dotestprog $option standard_tests/iso7185prt0505
-dotestprog $option standard_tests/iso7185prt0506
-dotestprog $option standard_tests/iso7185prt0507
-dotestprog $option standard_tests/iso7185prt0508
-dotestprog $option standard_tests/iso7185prt0509
-dotestprog $option standard_tests/iso7185prt0510
-dotestprog $option standard_tests/iso7185prt0511
-dotestprog $option standard_tests/iso7185prt0512
-dotestprog $option standard_tests/iso7185prt0513
-dotestprog $option standard_tests/iso7185prt0514
-dotestprog $option standard_tests/iso7185prt0515
-dotestprog $option standard_tests/iso7185prt0516
-dotestprog $option standard_tests/iso7185prt0517
-dotestprog $option standard_tests/iso7185prt0518
-dotestprog $option standard_tests/iso7185prt0519
-dotestprog $option standard_tests/iso7185prt0520
-dotestprog $option standard_tests/iso7185prt0521
-dotestprog $option standard_tests/iso7185prt0522
-dotestprog $option standard_tests/iso7185prt0600
-dotestprog $option standard_tests/iso7185prt0601
-dotestprog $option standard_tests/iso7185prt0602
-dotestprog $option standard_tests/iso7185prt0603
-dotestprog $option standard_tests/iso7185prt0604
-dotestprog $option standard_tests/iso7185prt0605
-dotestprog $option standard_tests/iso7185prt0606
-dotestprog $option standard_tests/iso7185prt0607
-dotestprog $option standard_tests/iso7185prt0608
-dotestprog $option standard_tests/iso7185prt0700
-dotestprog $option standard_tests/iso7185prt0701
-dotestprog $option standard_tests/iso7185prt0702
-dotestprog $option standard_tests/iso7185prt0703
-dotestprog $option standard_tests/iso7185prt0704
-dotestprog $option standard_tests/iso7185prt0705
-dotestprog $option standard_tests/iso7185prt0706
-dotestprog $option standard_tests/iso7185prt0707
-dotestprog $option standard_tests/iso7185prt0708
-dotestprog $option standard_tests/iso7185prt0709
-dotestprog $option standard_tests/iso7185prt0710
-dotestprog $option standard_tests/iso7185prt0711
-dotestprog $option standard_tests/iso7185prt0712
-dotestprog $option standard_tests/iso7185prt0713
-dotestprog $option standard_tests/iso7185prt0714
-dotestprog $option standard_tests/iso7185prt0715
-dotestprog $option standard_tests/iso7185prt0716
-dotestprog $option standard_tests/iso7185prt0717
-dotestprog $option standard_tests/iso7185prt0800
-dotestprog $option standard_tests/iso7185prt0801
-dotestprog $option standard_tests/iso7185prt0802
-dotestprog $option standard_tests/iso7185prt0803
-dotestprog $option standard_tests/iso7185prt0804
-dotestprog $option standard_tests/iso7185prt0805
-dotestprog $option standard_tests/iso7185prt0900
-dotestprog $option standard_tests/iso7185prt0901
-dotestprog $option standard_tests/iso7185prt0902
-dotestprog $option standard_tests/iso7185prt0903
-dotestprog $option standard_tests/iso7185prt0904
-dotestprog $option standard_tests/iso7185prt0905
-dotestprog $option standard_tests/iso7185prt0906
-dotestprog $option standard_tests/iso7185prt0907
-dotestprog $option standard_tests/iso7185prt0908
-dotestprog $option standard_tests/iso7185prt1000
-dotestprog $option standard_tests/iso7185prt1001
-dotestprog $option standard_tests/iso7185prt1002
-dotestprog $option standard_tests/iso7185prt1003
-dotestprog $option standard_tests/iso7185prt1004
-dotestprog $option standard_tests/iso7185prt1006
-dotestprog $option standard_tests/iso7185prt1007
-dotestprog $option standard_tests/iso7185prt1008
-dotestprog $option standard_tests/iso7185prt1009
-dotestprog $option standard_tests/iso7185prt1010
-dotestprog $option standard_tests/iso7185prt1100
-dotestprog $option standard_tests/iso7185prt1101
-dotestprog $option standard_tests/iso7185prt1102
-dotestprog $option standard_tests/iso7185prt1103
-dotestprog $option standard_tests/iso7185prt1104
-dotestprog $option standard_tests/iso7185prt1105
-dotestprog $option standard_tests/iso7185prt1106
-dotestprog $option standard_tests/iso7185prt1107
-dotestprog $option standard_tests/iso7185prt1108
-dotestprog $option standard_tests/iso7185prt1109
-dotestprog $option standard_tests/iso7185prt1200
-dotestprog $option standard_tests/iso7185prt1201
-dotestprog $option standard_tests/iso7185prt1203
-dotestprog $option standard_tests/iso7185prt1205
-dotestprog $option standard_tests/iso7185prt1206
-dotestprog $option standard_tests/iso7185prt1207
-dotestprog $option standard_tests/iso7185prt1300
-dotestprog $option standard_tests/iso7185prt1400
-dotestprog $option standard_tests/iso7185prt1401
-dotestprog $option standard_tests/iso7185prt1402
-dotestprog $option standard_tests/iso7185prt1403
-dotestprog $option standard_tests/iso7185prt1404
-dotestprog $option standard_tests/iso7185prt1405
-dotestprog $option standard_tests/iso7185prt1406
-dotestprog $option standard_tests/iso7185prt1407
-dotestprog $option standard_tests/iso7185prt1500
-dotestprog $option standard_tests/iso7185prt1501
-dotestprog $option standard_tests/iso7185prt1502
-dotestprog $option standard_tests/iso7185prt1503
-dotestprog $option standard_tests/iso7185prt1504
-dotestprog $option standard_tests/iso7185prt1505
-dotestprog $option standard_tests/iso7185prt1506
-dotestprog $option standard_tests/iso7185prt1507
-dotestprog $option standard_tests/iso7185prt1508
-dotestprog $option standard_tests/iso7185prt1600
-dotestprog $option standard_tests/iso7185prt1620
-dotestprog $option standard_tests/iso7185prt1621
-dotestprog $option standard_tests/iso7185prt1622
-dotestprog $option standard_tests/iso7185prt1701
-dotestprog $option standard_tests/iso7185prt1702A
-dotestprog $option standard_tests/iso7185prt1702b -i
-dotestprog $option standard_tests/iso7185prt1702c -u
-dotestprog $option standard_tests/iso7185prt1702d -u -i
-dotestprog $option standard_tests/iso7185prt1703
-dotestprog $option standard_tests/iso7185prt1704
-dotestprog $option standard_tests/iso7185prt1705 -i
-dotestprog $option standard_tests/iso7185prt1706a -i
-dotestprog $option standard_tests/iso7185prt1706b -i
-dotestprog $option standard_tests/iso7185prt1707a
-dotestprog $option standard_tests/iso7185prt1707b
-dotestprog $option standard_tests/iso7185prt1708
-dotestprog $option standard_tests/iso7185prt1709
-dotestprog $option standard_tests/iso7185prt1710
-dotestprog $option standard_tests/iso7185prt1712
-dotestprog $option standard_tests/iso7185prt1713
-dotestprog $option standard_tests/iso7185prt1714
-dotestprog $option standard_tests/iso7185prt1715
-dotestprog $option standard_tests/iso7185prt1716
-dotestprog $option standard_tests/iso7185prt1717
-dotestprog $option standard_tests/iso7185prt1718
-dotestprog $option standard_tests/iso7185prt1719
-dotestprog $option standard_tests/iso7185prt1720
-dotestprog $option standard_tests/iso7185prt1721
-dotestprog $option standard_tests/iso7185prt1722
-dotestprog $option standard_tests/iso7185prt1723
-dotestprog $option standard_tests/iso7185prt1724
-dotestprog $option standard_tests/iso7185prt1726
-dotestprog $option standard_tests/iso7185prt1727
-dotestprog $option standard_tests/iso7185prt1728
-dotestprog $option standard_tests/iso7185prt1729
-dotestprog $option standard_tests/iso7185prt1730
-dotestprog $option standard_tests/iso7185prt1731
-dotestprog $option standard_tests/iso7185prt1732
-dotestprog $option standard_tests/iso7185prt1733
-dotestprog $option standard_tests/iso7185prt1734
-dotestprog $option standard_tests/iso7185prt1735
-dotestprog $option standard_tests/iso7185prt1736
-dotestprog $option standard_tests/iso7185prt1737
-dotestprog $option standard_tests/iso7185prt1738
-dotestprog $option standard_tests/iso7185prt1739
-dotestprog $option standard_tests/iso7185prt1740
-dotestprog $option standard_tests/iso7185prt1741
-dotestprog $option standard_tests/iso7185prt1743
-dotestprog $option standard_tests/iso7185prt1744
-dotestprog $option standard_tests/iso7185prt1745
-dotestprog $option standard_tests/iso7185prt1746A
-dotestprog $option standard_tests/iso7185prt1746b
-dotestprog $option standard_tests/iso7185prt1748
-dotestprog $option standard_tests/iso7185prt1749
-dotestprog $option standard_tests/iso7185prt1750
-dotestprog $option standard_tests/iso7185prt1751
-dotestprog $option standard_tests/iso7185prt1752
-dotestprog $option standard_tests/iso7185prt1753
-dotestprog $option standard_tests/iso7185prt1754
-dotestprog $option standard_tests/iso7185prt1755
-dotestprog $option standard_tests/iso7185prt1756
-dotestprog $option standard_tests/iso7185prt1757
-dotestprog $option standard_tests/iso7185prt1758a
-dotestprog $option standard_tests/iso7185prt1758b
-dotestprog $option standard_tests/iso7185prt1759
-dotestprog $option standard_tests/iso7185prt1760 -s
-dotestprog $option standard_tests/iso7185prt1761
-dotestprog $option standard_tests/iso7185prt1762
-dotestprog $option standard_tests/iso7185prt1763
-dotestprog $option standard_tests/iso7185prt1764
-dotestprog $option standard_tests/iso7185prt1765
-dotestprog $option standard_tests/iso7185prt1767
-dotestprog $option standard_tests/iso7185prt1800 -m
-dotestprog $option standard_tests/iso7185prt1801
-dotestprog $option standard_tests/iso7185prt1802
-dotestprog $option standard_tests/iso7185prt1803
-dotestprog $option standard_tests/iso7185prt1804
-dotestprog $option standard_tests/iso7185prt1805
-dotestprog $option standard_tests/iso7185prt1806
-dotestprog $option standard_tests/iso7185prt1807
-dotestprog $option standard_tests/iso7185prt1808
-dotestprog $option standard_tests/iso7185prt1809
-dotestprog $option standard_tests/iso7185prt1810
-dotestprog $option standard_tests/iso7185prt1811
-dotestprog $option standard_tests/iso7185prt1820
-dotestprog $option standard_tests/iso7185prt1821
-dotestprog $option standard_tests/iso7185prt1822
-dotestprog $option standard_tests/iso7185prt1823
-dotestprog $option standard_tests/iso7185prt1824
-dotestprog $option standard_tests/iso7185prt1825
-dotestprog $option standard_tests/iso7185prt1826
-dotestprog $option standard_tests/iso7185prt1827
-dotestprog $option standard_tests/iso7185prt1828
-dotestprog $option standard_tests/iso7185prt1829
-dotestprog $option standard_tests/iso7185prt1830
-dotestprog $option standard_tests/iso7185prt1831
-dotestprog $option standard_tests/iso7185prt1832
-dotestprog $option standard_tests/iso7185prt1833
-dotestprog $option standard_tests/iso7185prt1834
-dotestprog $option standard_tests/iso7185prt1835
-dotestprog $option standard_tests/iso7185prt1836
-dotestprog $option standard_tests/iso7185prt1837
-dotestprog $option standard_tests/iso7185prt1838
-dotestprog $option standard_tests/iso7185prt1839 -s
-dotestprog $option standard_tests/iso7185prt1840
-dotestprog $option standard_tests/iso7185prt1841 -s
-dotestprog $option standard_tests/iso7185prt1842
-dotestprog $option standard_tests/iso7185prt1843
-dotestprog $option standard_tests/iso7185prt1844
-dotestprog $option standard_tests/iso7185prt1845
-dotestprog $option standard_tests/iso7185prt1846
-dotestprog $option standard_tests/iso7185prt1847
-dotestprog $option standard_tests/iso7185prt1848
-dotestprog $option standard_tests/iso7185prt1849
-dotestprog $option standard_tests/iso7185prt1850 -s
-dotestprog $option standard_tests/iso7185prt1851
-dotestprog $option standard_tests/iso7185prt1852
-dotestprog $option standard_tests/iso7185prt1900
-dotestprog $option standard_tests/iso7185prt1901
-dotestprog $option standard_tests/iso7185prt1902
-dotestprog $option standard_tests/iso7185prt1903
-dotestprog $option standard_tests/iso7185prt1904
-dotestprog $option standard_tests/iso7185prt1905
-dotestprog $option standard_tests/iso7185prt1906
-dotestprog $option standard_tests/iso7185prt1907a
-dotestprog $option standard_tests/iso7185prt1907b
-dotestprog $option standard_tests/iso7185prt1908
-dotestprog $option standard_tests/iso7185prt1909
-dotestprog $option standard_tests/iso7185prt1911
-dotestprog $option standard_tests/iso7185prt1912
-dotestprog $option standard_tests/iso7185prt1913
-dotestprog $option standard_tests/iso7185prt1914
-dotestprog $option standard_tests/iso7185prt1915
-dotestprog $option standard_tests/iso7185prt1916
-dotestprog $option standard_tests/iso7185prt1917
-dotestprog $option standard_tests/iso7185prt1918
-
-echo Creating combined listing
-echo "*******************************************************************************" > standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-echo "Pascal Rejection test run for iso7185prt" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-echo "*******************************************************************************" >> standard_tests/iso7185prt.lst
-#
-# Make a list of files WITHOUT compile errors
-#
-echo "Creating error accounting listings"
-grep -l "Errors in program: 0" standard_tests/iso7185prt*.err > standard_tests/iso7185prt.nocerr
-#
-# Make a list of files WITHOUT runtime errors. This is probably p5c specific.
-#
-grep -L "\*\*\*" standard_tests/iso7185prt*.lst > standard_tests/iso7185prt.norerr
-#
-# Find files with NO errors either at compile time or runtime. This is done
-# by concatenating the files, sorting and finding duplicate filenames. That
-# is, if the filename list in both the no compile error and no runtime error
-# lists, then no error at all occurred on the file and it needs to be looked
-# at.
-#
-cat standard_tests/iso7185prt.nocerr standard_tests/iso7185prt.norerr > temp
-sort temp | uniq -d -w 30 > standard_tests/iso7185prt.noerr
-#
-# Place in combined listing as report
-#
-echo >> standard_tests/iso7185prt.lst
-echo "Tests for which no compile or runtime error was flagged: **********************" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-cat standard_tests/iso7185prt.noerr >> standard_tests/iso7185prt.lst
-
-#
-# Make a listing of compiler output difference files to look at. If you are
-# satisfied with each of the prt output runs, then you can copy the .err file
-# to the .ecp file and get a 0 dif length file. Then this file will show you
-# the files that don't converge. Note DIFFERENT DOES NOT MEAN *** WRONG ***.
-# It simply may mean the error handling has changed. The purpose of diffing
-# the output files is that it allows you to check that simple changes have
-# not broken anything.
-#
-echo creating compile time difference list
-echo > standard_tests/iso7185prt.ecdlst
-for a in `basename --suffix=.err standard_tests/iso7185prt*.err` ; do
-    diffnole standard_tests/$a.err standard_tests/$a.ecp > standard_tests/$a.ecd
-    if [ -s standard_tests/$a.ecd ] ; then
-        #kdiff3 standard_tests/$a.{err,ecp}
-        echo "*** compare standard_tests/$a.err failed" >> standard_tests/iso7185prt.ecdlst
-        error=1
-    else
-        echo "    compare standard_tests/$a.err OK" >> standard_tests/iso7185prt.ecdlst
-    fi
-done
-
-#ls -o -g standard_tests/iso7185prt*.ecd > standard_tests/iso7185prt.ecdlst
-#
-# Place in combined listing
-#
-echo >> standard_tests/iso7185prt.lst
-echo "Compile output differences: **********************" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-cat standard_tests/iso7185prt.ecdlst >> standard_tests/iso7185prt.lst
-
-#
-# Make a listing of run output difference files to look at. If you are satisfied
-# with each of the prt output runs, then you can copy the .lst file to the .cmp
-# file and get a 0 dif length file. Then this file will show you the files that
-# don't converge. Note DIFFERENT DOES NOT MEAN *** WRONG ***. It simply may
-# mean the error handling has changed. The purpose of diffing the output files
-# is that it allows you to check that simple changes have not broken anything.
-#
-echo creating runtime difference list
-echo > standard_tests/iso7185prt.diflst
-for f in `basename --suffix=.dif standard_tests/iso7185prt????.dif` ; do
-    if [ -s standard_tests/$f.dif ] ; then
-        #kdiff3 standard_tests/$f.{lst,cmp}
-        echo "*** run standard_tests/$f.dif failed" >> standard_tests/iso7185prt.diflst
-        error=1
-    else
-        echo "    run standard_tests/$f.dif OK" >> standard_tests/iso7185prt.diflst
-    fi
-done
-
-#
-# Place in combined listing
-#
-echo >> standard_tests/iso7185prt.lst
-echo "Run output differences: **********************" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-cat standard_tests/iso7185prt.diflst >> standard_tests/iso7185prt.lst
-
-#
-# Add individual program compiles and runs
-#
-echo Adding program compile and runs
-echo >> standard_tests/iso7185prt.lst
-echo "*******************************************************************************" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-echo "Listings for compile and run of iso7185prt" >> standard_tests/iso7185prt.lst
-echo >> standard_tests/iso7185prt.lst
-echo "*******************************************************************************" >> standard_tests/iso7185prt.lst
-
-for f in standard_tests/iso7185prt*.pas ; do
-
-    echo >> standard_tests/iso7185prt.lst
-    echo "Listing for standard_tests/$f *************************************" >> standard_tests/iso7185prt.lst
-    echo >> standard_tests/iso7185prt.lst
-    echo Compile: >> standard_tests/iso7185prt.lst
-    echo >> standard_tests/iso7185prt.lst
-    cat standard_tests/`basename $f .pas`.err >> standard_tests/iso7185prt.lst
-    echo >> standard_tests/iso7185prt.lst
-    if [ -e "standard_tests/`basename $f .pas`.lst" ] ; then
-
-        echo Run: >> standard_tests/iso7185prt.lst
-        echo >> standard_tests/iso7185prt.lst
-        cat standard_tests/`basename $f .pas`.lst >> standard_tests/iso7185prt.lst
-
-    fi
-
-
-done
-
-exit $error
