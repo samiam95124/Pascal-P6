@@ -8345,6 +8345,7 @@ begin cmdpos := maxcmd end;
         until test;
         if sy = elsesy then begin chkstd; insymbol; genlabel(lelse);
           genlabel(lelse2); putlabel(lelse2);
+          mesl(-intsize); { put selector on stack }
           gen1(71(*dmp*),intsize);
           putlabel(lelse);
           markline;
@@ -8356,8 +8357,6 @@ begin cmdpos := maxcmd end;
         end;
         putlabel(lcix);
         markline;
-        { put selector back on stack }
-        gen2t(54(*lod*),level,lc,intptr);
         if fstptr <> nil then
           begin lmax := fstptr^.cslabe;
             (*reverse pointers*)
@@ -8370,6 +8369,8 @@ begin cmdpos := maxcmd end;
             occ := casecount(fstptr)*100 div (lmax-lmin+1);
             if lmax - lmin < cixmax then
               begin
+                { put selector back on stack }
+                gen2t(54(*lod*),level,lc,intptr);
                 if occ >= minocc then begin { build straight vector table }
                   if lelse > 0 then begin
                     gen0t(76(*dup*),intptr);
@@ -8407,6 +8408,8 @@ begin cmdpos := maxcmd end;
                     putcas(lpt1)
                   until fstptr = nil;
                   if lelse > 0 then genujpxjpcal(57(*ujp*),lelse2);
+                  gen1(71(*dmp*),intsize);
+                  gen0(60(*ujc error*))
                 end;
                 putlabel(laddr);
                 markline
