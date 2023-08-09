@@ -3447,13 +3447,24 @@ procedure xlate;
           frereg := allreg;
           botstk
         end;
+     
+        {cjp}
+        8: begin read(prd,q,q1); labelsearch(def, val, sp); 
+          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull);
+          dmptre(ep); genexp(ep);
+          wrtins10('cmpq $1,%1', q, 0, ep^.r1, rgnull, nil);
+          wrtins20('jl @      ', 0, 0, rgnull, rgnull, sp);
+          wrtins10('cmpq $1,%1', q1, 0, ep^.r1, rgnull, nil);
+          wrtins20('jg @      ', 0, 0, rgnull, rgnull, sp);
+          deltre(ep); putexp(ep);
+          botstk
+        end;
 
         { these are all Pascaline unimplemented }
 
         {suv}
         91,
-        {cjp}
-        8,
         {cal}
         21,
         {bge}
@@ -3523,7 +3534,7 @@ procedure xlate;
         {cpr} 
         240, 
         {lsa} 
-        241: errorl('Intermediate not implemented');
+        241: errorl('Intermediate unimplement ');
 
       end; (*case*)
 
