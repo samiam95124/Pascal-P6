@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Script to test debug mode
+#
+# Execution:
+#
+# testdebug
+#
+# Note this only runs in ping mode, and so has no flags.
+#
+cd pascaline_tests
+
+p6 debug_test1 debug_test --debug --debugsrc --echoline < debug_test.inp > debug_test.lst
+diffnole debug_test.lst debug_test.cmp > debug_test.dif
+wc -l debug_test.dif
