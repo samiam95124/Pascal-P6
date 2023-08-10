@@ -2659,11 +2659,11 @@ procedure xlate;
             43,44,206: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
               wrtins20('jns .+17            ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq $BooleanOperatorOfNegative,%rax      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins20('jns .+17            ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq $BooleanOperatorOfNegative,%rax      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
                 43: wrtins20('andq %1,%2           ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
@@ -3273,9 +3273,11 @@ procedure xlate;
 
         {dmp}
         117: begin read(prd,q); writeln(prr,q:1); 
-          frereg := allreg; popstk(ep); 
-          wrtins10('popq %1   ', 0, 0, ep^.r1, rgnull, nil);
-          dmptrel(ep, 19); deltre(ep); 
+          popstk(ep); 
+          if not ep^.keep then begin 
+            deltre(ep); putexp(ep);
+            wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
+          end;
           botstk 
         end;
 
@@ -3443,22 +3445,26 @@ procedure xlate;
           botstk
         end;
 
-        61 {ujc}: begin writeln(prr); { ??? fill me in }
-          frereg := allreg;
+        61 {ujc}: begin writeln(prr);
+          wrtins30('movq $CASEVALUENOTFOUND,%rax  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
      
         {cjp}
         8: begin read(prd,q,q1); labelsearch(def, val, sp); 
           write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull);
-          dmptre(ep); genexp(ep);
+          frereg := allreg; popstk(ep); 
+          if not ep^.keep then begin
+            assreg(ep, frereg, rgnull, rgnull);
+            dmptre(ep); genexp(ep);
+            ep^.keep := true
+          end;
           wrtins10('cmpq $1,%1', q, 0, ep^.r1, rgnull, nil);
           wrtins20('jl @      ', 0, 0, rgnull, rgnull, sp);
           wrtins10('cmpq $1,%1', q1, 0, ep^.r1, rgnull, nil);
           wrtins20('jg @      ', 0, 0, rgnull, rgnull, sp);
-          deltre(ep); putexp(ep);
-          botstk
+          pshstk(ep)
         end;
 
         { these are all Pascaline unimplemented }

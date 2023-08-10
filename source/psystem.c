@@ -553,6 +553,13 @@ void errorv(address ea)
   exit(1);
 }
 
+void errore(long ei)
+{
+
+    errorv(ei);
+
+}
+
 /** ****************************************************************************
 
 Get command line
