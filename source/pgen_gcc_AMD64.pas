@@ -1794,7 +1794,7 @@ procedure xlate;
             assreg(ep^.r, rf, rgrsi, rgnull)
           end;
 
-          {adi,adr,sbi,sbr,equ,neq,geq,grt,leq,les}
+          {adi,sbi,equ,neq,geq,grt,leq,les}
           28, 30, 17, 137, 139, 141, 18, 143, 145, 
           147, 19, 149, 151, 153, 20, 155, 157, 159, 21, 
           161, 163, 165, 167, 169, 171: begin ep^.r1 := r1;
@@ -3067,8 +3067,8 @@ procedure xlate;
         end;
 
         {flo}
-        34: begin writeln(prr); getexp(ep); popstk(ep^.l); popstk(ep^.r);
-          pshstk(ep)
+        34: begin writeln(prr); getexp(ep); popstk(ep2); popstk(ep^.l);
+          pshstk(ep); pshstk(ep2)
         end;
 
         {trc}
