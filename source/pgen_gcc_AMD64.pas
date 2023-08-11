@@ -2571,7 +2571,7 @@ procedure xlate;
               end
             end;
 
-            {ord}
+            {ordi,ordb,ordc,ordx}
             59, 134, 136, 200: ; { ord is a no-op }
 
             {lcp}
@@ -3080,8 +3080,7 @@ procedure xlate;
         end;
 
         {sqi,sqr}
-        38,39: begin writeln(prr); getexp(ep); popstk(ep^.l); popstk(ep^.r);
-          pshstk(ep)
+        38,39: begin writeln(prr); getexp(ep); popstk(ep^.l); pshstk(ep)
         end;
 
         {abi,abr}
