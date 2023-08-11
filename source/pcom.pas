@@ -8279,16 +8279,16 @@ begin cmdpos := maxcmd end;
           begin c := c+cp^.cslabe-cp^.cslabs+1; cp := cp^.next end;
         casecount := c
       end;
-      begin llc := lc; expression(fsys + [ofsy,comma,colon], false);
-        load; alignd(intptr,lc); lc := lc-intsize;
-        { store start to temp }
-        gen2t(56(*str*),level,lc,intptr);
+      begin llc := lc; expression(fsys + [ofsy,comma,colon], false); load; 
         genlabel(lcix); lelse := 0;
         lsp := gattr.typtr;
         if lsp <> nil then
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end
           else if not comptypes(lsp,intptr) then gen0t(58(*ord*),lsp);
+        alignd(intptr,lc); lc := lc-intsize;
+        { store start to temp }
+        gen2t(56(*str*),level,lc,intptr);
         genujpxjpcal(57(*ujp*),lcix);
         if sy = ofsy then insymbol else error(8);
         fstptr := nil; genlabel(laddr);
