@@ -2387,7 +2387,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, rgnull, ep^.l^.r1, nil);
+              wrtins20('movq %rsp,%1        ', 0, 0, rgnull, ep^.r1, nil);
             end;
 
             {indi,inda}
@@ -2897,7 +2897,7 @@ procedure xlate;
           popstk(ep2); pshstk(ep); pshstk(ep2) 
         end;
 
-        {ldoi,loda,lodr,lods,lodb,lodc,lodx}
+        {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox}
         1, 65, 66, 67, 68, 69, 194: begin read(prd,q); writeln(prr,q:1);
           getexp(ep); pshstk(ep) 
         end;
@@ -3093,8 +3093,8 @@ procedure xlate;
         end;
 
         {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
-        43,44,46,47,48,49,51,52,53,54,110,206: begin writeln(prr); getexp(ep);
-          popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
+        43,44,45,46,47,48,49,51,52,53,54,110,206: begin writeln(prr); 
+          getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
         end;
 
         { duplicate is a stack operator. We emulate it with a dummy entry that
