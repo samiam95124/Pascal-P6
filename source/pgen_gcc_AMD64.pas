@@ -1000,14 +1000,14 @@ procedure xlate;
          sptable[34]:='rwb       '; spfunc[34]:=false; sppar[34]:=1; spkeep[34]:=false;   
          sptable[35]:='gbf       '; spfunc[35]:=false; sppar[35]:=2; spkeep[35]:=false;
          sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2; spkeep[36]:=false;   
-         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=3; spkeep[37]:=true;
-         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=3; spkeep[38]:=true;   
+         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=4; spkeep[37]:=true;
+         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=4; spkeep[38]:=true;   
          sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=0; spkeep[39]:=false; { special }
          sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=0; spkeep[40]:=false; { special }
          sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
          sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
          sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=false;
-         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=1; spkeep[44]:=false;
+         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=2; spkeep[44]:=false;
          sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2; spkeep[45]:=true;
          sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3; spkeep[46]:=false;
          sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1; spkeep[47]:=false;
@@ -1040,11 +1040,11 @@ procedure xlate;
          sptable[74]:='rcbf      '; spfunc[74]:=false; sppar[74]:=5; spkeep[74]:=true;
          sptable[75]:='rdcf      '; spfunc[75]:=false; sppar[75]:=3; spkeep[75]:=true;
          sptable[76]:='rdsf      '; spfunc[76]:=false; sppar[76]:=4; spkeep[76]:=true;
-         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=4; spkeep[77]:=true;
+         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=3; spkeep[77]:=true;
          sptable[78]:='aeft      '; spfunc[78]:=false; sppar[78]:=3; spkeep[78]:=false;
          sptable[79]:='aefb      '; spfunc[79]:=false; sppar[79]:=3; spkeep[79]:=false;
          sptable[80]:='rdie      '; spfunc[80]:=false; sppar[80]:=3; spkeep[80]:=false;
-         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=1; spkeep[81]:=false;
+         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=3; spkeep[81]:=false;
 
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
