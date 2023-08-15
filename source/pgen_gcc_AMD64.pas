@@ -3433,7 +3433,8 @@ procedure xlate;
           while ep4 <> nil do begin
             if estack^.op in [187,179,180,175,203] then begin
               popstk(ep5); 
-              if ep5^.op <> 187 then begin ep5^.next := ep3; ep3 := ep5 end;
+              if ep5^.op <> 187 then begin ep5^.next := ep3; ep3 := ep5 end
+              else putexp(ep5);
               ep4 := estack
             end else ep4 := nil
           end;
