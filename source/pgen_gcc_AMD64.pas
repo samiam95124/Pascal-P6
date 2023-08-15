@@ -2418,7 +2418,7 @@ procedure xlate;
             175, 179, 180, 203: begin 
               wrtins20('cmpq $0,%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
               wrtins20('sete %1             ', 0, 0, ep^.t1, rgnull, nil);
-              wrtins20('orq %1,%2           ', 0, 0, ep^.r^.r2, ep^.r1, nil);
+              wrtins20('orq %1,%2           ', 0, 0, ep^.t1, ep^.r2, nil);
             end;
 
             {cvbi,cvbx,cvbb,cvbc}
@@ -3433,25 +3433,26 @@ procedure xlate;
           while ep4 <> nil do begin
             if estack^.op in [187,179,180,175,203] then begin
               popstk(ep5); 
-              if estack^.op <> 187 then begin ep5^.next := ep3; ep3 := ep5 end;
+              if ep5^.op <> 187 then begin ep5^.next := ep3; ep3 := ep5 end;
               ep4 := estack
             end else ep4 := nil
           end;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); r1 := ep^.r1;
-          dmptre(ep); genexp(ep); getreg(r2, frereg); getreg(t1, frereg);
+          popstk(ep); getreg(r2, frereg); getreg(t1, frereg); 
+          assreg(ep, frereg, rgnull, rgnull); r1 := ep^.r1;
+          dmptre(ep); genexp(ep); 
           wrtins10('movq $0,%1', 0, 0, r2, rgnull, nil);
           ep4 := ep3; 
           while ep4 <> nil do begin 
             ep4^.r1 := r1; ep4^.r2 := r2; ep4^.t1 := t1; genexp(ep4); 
             ep4 := ep4^.next 
           end;   
-          wrtins10('jnz .+21  ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
+          wrtins10('jnz .+21  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('movq $0,%rdi      ', VariantNotActive, 0, rgnull, rgnull, nil);
           wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);               
           deltre(ep);
           while ep3 <> nil do 
             begin ep4 := ep3; ep3 := ep3^.next; putexp(ep4) end;
-          botstk 
+          botstk
         end;
 
         {inv} { ??? fill me in }
