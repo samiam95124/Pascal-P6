@@ -667,6 +667,7 @@ procedure xlate;
                     x1: expptr; { extra link }
                     pl: expptr; { parameter link for functions }
                     sl: expptr; { sfr start link }
+                    cl: expptr; { cke chain }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
@@ -1604,9 +1605,9 @@ procedure xlate;
         else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
-        ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull;
-        ep^.rs := []; ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; 
-        ep^.lb := nil; ep^.lt := nil;
+        ep^.cl := nil; ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; 
+        ep^.r3 := rgnull; ep^.rs := []; ep^.wkeep := false; ep^.keep := false; 
+        ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
       end;
       
       procedure putexp(ep: expptr);
@@ -1662,7 +1663,9 @@ procedure xlate;
         if ep^.r <> nil then deltre(ep^.r);
         if ep^.x1 <> nil then deltre(ep^.x1);
         if ep^.sl <> nil then deltre(ep^.sl);
+        if ep^.sl <> nil then deltre(ep^.cl);
         if ep^.pl <> nil then deltre(ep^.pl);
+        if ep^.sl <> nil then deltre(ep^.next);
         putexp(ep)
       end;
       
@@ -1685,6 +1688,14 @@ procedure xlate;
         if ep^.sl <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'call start:');
           dmptrel(ep^.sl, lvl+3);
+        end;
+        if ep^.cl <> nil then begin
+          writeln(prr, '# ', ' ': lvl, 'tag checks:');
+          l := ep^.pl;
+          while l <> nil do begin
+            dmptrel(l, lvl+3);
+            l := l^.next
+          end
         end;
         if ep^.pl <> nil then begin
           l := ep^.pl;
@@ -2111,6 +2122,12 @@ procedure xlate;
             asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
+          {cke}
+          188: begin
+            getreg(ep^.r1, frereg); getreg(ep^.t1, frereg);
+            assreg(ep^.l, rf, rgnull, rgnull);
+          end;
+
         end
       end;
 
@@ -2202,7 +2219,7 @@ procedure xlate;
       end;
 
       procedure genexp(ep: expptr);
-      var r: reg;
+      var r: reg; ep2: expptr;
 
       { push parameters to call depth first }
       procedure pshpar(ep: expptr);
@@ -2774,6 +2791,18 @@ procedure xlate;
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
+            {cke}
+            188: begin
+              ep2 := ep^.cl; 
+              while ep2 <> nil do begin 
+                ep2^.r1 := ep^.l^.r1; ep2^.r2 := ep^.r1; ep2^.t1 := ep^.t1; 
+                genexp(ep2); ep2 := ep2^.next 
+              end;   
+              wrtins10('jnz .+21  ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('movq $0,%rdi      ', VariantNotActive, 0, rgnull, rgnull, nil);
+              wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);
+            end;
+
           end;
           for r := rgr15 downto rgrax do if r in ep^.rs then 
             wrtins20('pop %1              ', 0, 0, r, rgnull, nil)
@@ -2843,13 +2872,19 @@ procedure xlate;
         end else begin popstk(epr); popstk(epl) end;
       end;
 
+      { attach tag chk sequence to leaf }
+      procedure attach(ep: expptr);
+      begin
+        if estack <> nil then
+          if estack^.op = 188{cke} then popstk(ep^.cl)
+      end;
+
     begin { assemble } 
       p := 0;  q := 0;  op := 0;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
-       
       prtline; write(prr, op:3, ': ', name:8);
       case op of
 
@@ -2858,7 +2893,7 @@ procedure xlate;
         {lodi,lodx,loda,lodr,lods,lodb,lodc,loda,lda}
         0,193,105,106,107,108,109,4: begin 
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          q1 := -p*ptrsize; getexp(ep); pshstk(ep) 
+          q1 := -p*ptrsize; getexp(ep); attach(ep); pshstk(ep) 
         end;
 
         {adi,adr,sbi,sbr}
@@ -2877,7 +2912,8 @@ procedure xlate;
         end;
 
         {lao} 
-        5: begin read(prd,q); writeln(prr,q:1); getexp(ep); pshstk(ep)
+        5: begin read(prd,q); writeln(prr,q:1); getexp(ep); attach(ep); 
+          pshstk(ep)
         end;
 
         {ixa}
@@ -2892,11 +2928,12 @@ procedure xlate;
 
         {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox}
         1, 65, 66, 67, 68, 69, 194: begin read(prd,q); writeln(prr,q:1);
-          getexp(ep); pshstk(ep) 
+          getexp(ep); attach(ep); pshstk(ep) 
         end;
 
         {indi,inda,indr,inds,indb,indc,indx}
-        9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) end;
+        9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) 
+        end;
 
         {inci,inca,incb,incc,incx,deci,deca,decb,decc,decx}
         10, 90, 93, 94, 201, 57, 103, 104, 202: begin read(prd,q); 
@@ -3127,6 +3164,21 @@ procedure xlate;
         {cif}
         247: begin writeln(prr);
           getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
+        end;
+
+        {cke}
+        188: begin writeln(prr); 
+          getexp(ep);
+          ep4 := estack;
+          while ep4 <> nil do begin
+            if estack^.op in [187,179,180,175,203] then begin
+              popstk(ep5); 
+              if ep5^.op <> 187 then begin ep5^.next := ep^.cl; ep^.cl := ep5 end
+              else putexp(ep5);
+              ep4 := estack
+            end else ep4 := nil
+          end;
+          popstk(ep^.l); pshstk(ep)
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -3424,37 +3476,6 @@ procedure xlate;
 
         {stp}
         58:; { unused }
-
-        {cke}
-        188: begin writeln(prr); 
-          frereg := allreg; 
-          ep3 := nil;
-          ep4 := estack;
-          while ep4 <> nil do begin
-            if estack^.op in [187,179,180,175,203] then begin
-              popstk(ep5); 
-              if ep5^.op <> 187 then begin ep5^.next := ep3; ep3 := ep5 end
-              else putexp(ep5);
-              ep4 := estack
-            end else ep4 := nil
-          end;
-          popstk(ep); getreg(r2, frereg); getreg(t1, frereg); 
-          assreg(ep, frereg, rgnull, rgnull); r1 := ep^.r1;
-          dmptre(ep); genexp(ep); 
-          wrtins10('movq $0,%1', 0, 0, r2, rgnull, nil);
-          ep4 := ep3; 
-          while ep4 <> nil do begin 
-            ep4^.r1 := r1; ep4^.r2 := r2; ep4^.t1 := t1; genexp(ep4); 
-            ep4 := ep4^.next 
-          end;   
-          wrtins10('jnz .+21  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('movq $0,%rdi      ', VariantNotActive, 0, rgnull, rgnull, nil);
-          wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);               
-          deltre(ep);
-          while ep3 <> nil do 
-            begin ep4 := ep3; ep3 := ep3^.next; putexp(ep4) end;
-          botstk
-        end;
 
         {inv} { ??? fill me in }
         189: begin writeln(prr); 
