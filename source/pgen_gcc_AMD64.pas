@@ -668,6 +668,7 @@ procedure xlate;
                     pl: expptr; { parameter link for functions }
                     sl: expptr; { sfr start link }
                     cl: expptr; { cke chain }
+                    al: expptr; { attachment link }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
@@ -1605,9 +1606,9 @@ procedure xlate;
         else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
-        ep^.cl := nil; ep^.pl := nil; ep^.r1 := rgnull; ep^.r2 := rgnull; 
-        ep^.r3 := rgnull; ep^.rs := []; ep^.wkeep := false; ep^.keep := false; 
-        ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
+        ep^.cl := nil; ep^.al := nil; ep^.pl := nil; ep^.r1 := rgnull; 
+        ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; ep^.wkeep := false;
+        ep^.keep := false; ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
       end;
       
       procedure putexp(ep: expptr);
@@ -1663,9 +1664,10 @@ procedure xlate;
         if ep^.r <> nil then deltre(ep^.r);
         if ep^.x1 <> nil then deltre(ep^.x1);
         if ep^.sl <> nil then deltre(ep^.sl);
-        if ep^.sl <> nil then deltre(ep^.cl);
+        if ep^.cl <> nil then deltre(ep^.cl);
+        if ep^.al <> nil then deltre(ep^.al);
         if ep^.pl <> nil then deltre(ep^.pl);
-        if ep^.sl <> nil then deltre(ep^.next);
+        if ep^.next <> nil then deltre(ep^.next);
         putexp(ep)
       end;
       
@@ -1696,6 +1698,10 @@ procedure xlate;
             dmptrel(l, lvl+3);
             l := l^.next
           end
+        end;
+        if ep^.al <> nil then begin
+          writeln(prr, '# ', ' ': lvl, 'attached:');
+          dmptrel(ep^.al, lvl+3);
         end;
         if ep^.pl <> nil then begin
           l := ep^.pl;
@@ -1767,6 +1773,7 @@ procedure xlate;
       end;
 
       begin
+        if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
         if r1 <> rgnull then rf := rf-[r1];
         if r2 <> rgnull then rf := rf-[r2];
         case ep^.op of
@@ -2124,8 +2131,8 @@ procedure xlate;
 
           {cke}
           188: begin
-            getreg(ep^.r1, frereg); getreg(ep^.t1, frereg);
-            assreg(ep^.l, rf, rgnull, rgnull);
+            getreg(ep^.r1, frereg); getreg(ep^.r2, frereg); 
+            getreg(ep^.t1, frereg); assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
         end
@@ -2268,6 +2275,7 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
+          genexp(ep^.al);
           if not (ep^.op in [100,115,116,121,192,101,102,111]) then begin
             if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
             genexp(ep^.r); genexp(ep^.x1);
@@ -2793,9 +2801,10 @@ procedure xlate;
 
             {cke}
             188: begin
+              wrtins10('movq $0,%1', 0, 0, ep^.r2, rgnull, nil);
               ep2 := ep^.cl; 
               while ep2 <> nil do begin 
-                ep2^.r1 := ep^.l^.r1; ep2^.r2 := ep^.r1; ep2^.t1 := ep^.t1; 
+                ep2^.r1 := ep^.r1; ep2^.r2 := ep^.r2; ep2^.t1 := ep^.t1; 
                 genexp(ep2); ep2 := ep2^.next 
               end;   
               wrtins10('jnz .+21  ', 0, 0, rgnull, rgnull, nil);
@@ -2876,7 +2885,7 @@ procedure xlate;
       procedure attach(ep: expptr);
       begin
         if estack <> nil then
-          if estack^.op = 188{cke} then popstk(ep^.cl)
+          if estack^.op = 188{cke} then popstk(ep^.al)
       end;
 
     begin { assemble } 
