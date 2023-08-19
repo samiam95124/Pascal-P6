@@ -3512,6 +3512,12 @@ procedure xlate;
           pshstk(ep)
         end;
 
+        {wbs}
+        243: ;
+        
+        {wbe}
+        244: ;
+
         { these are all Pascaline unimplemented }
 
         {suv}
