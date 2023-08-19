@@ -2987,10 +2987,10 @@ procedure xlate;
         7, 123, 124, 125, 126, 127: begin case op of
 
           123: begin read(prd,i); writeln(prr, i:1); 
-            getexp(ep); ep^.vali := i; pshstk(ep) 
+            getexp(ep); attach(ep); ep^.vali := i; pshstk(ep) 
           end;
 
-          124: begin read(prd,r); writeln(prr, r); getexp(ep);
+          124: begin read(prd,r); writeln(prr, r); getexp(ep); attach(ep);
             pshstk(ep); new(cstp); cstp^.ct := creal; 
             cstp^.r := r; realnum := realnum+1; 
             cstp^.realn := realnum; cstp^.next := csttbl; 
@@ -3001,7 +3001,7 @@ procedure xlate;
           end;
 
           126: begin read(prd,i); writeln(prr, i:1); 
-            getexp(ep); ep^.vali := i; pshstk(ep) 
+            getexp(ep); attach(ep); ep^.vali := i; pshstk(ep) 
           end;
 
           127: begin
@@ -3018,7 +3018,7 @@ procedure xlate;
               if ch <> '''' then errorl('illegal character        ');
               writeln(prr, '''', c, '''')
             end;
-            getexp(ep); ep^.vali := ord(c); pshstk(ep)
+            getexp(ep); attach(ep); ep^.vali := ord(c); pshstk(ep)
           end;
 
           7: begin skpspc;
@@ -3026,8 +3026,7 @@ procedure xlate;
             s := [ ];  getnxt;
             while ch<>')' do
               begin read(prd,s1); getnxt; s := s + [s1] end;
-            getexp(ep);
-            pshstk(ep);
+            getexp(ep); attach(ep); pshstk(ep);
             writeln(prr)
           end
 
@@ -3056,8 +3055,7 @@ procedure xlate;
               i := i+1
             end
           until c = '''';
-          getexp(ep);
-          pshstk(ep);
+          getexp(ep); attach(ep); pshstk(ep);
           writeln(prr, '"', str:l,'"');
           new(cstp); cstp^.ct := cstr; strassvsb(cstp^.str, str); 
           cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
