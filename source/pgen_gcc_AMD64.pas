@@ -318,9 +318,7 @@ type
                        en:      integer { encounter number }
                      end;
 
-var   pc          : address;   (*program address register*)
-      pctop,lsttop: address;   { top of code store }
-      op : instyp; p : lvltyp; q : address;  (*instruction register*)
+var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1,q2: address; { extra parameter }
       gblsiz: address; { size of globals }
       sdi         : 0..maxdef; { index for that }
@@ -1471,25 +1469,15 @@ procedure xlate;
           rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
           sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
 
-      procedure lookup(x: labelrg); (* search in label table*)
-      begin case labeltab[x].st of
-                entered: begin q := labeltab[x].val;
-                           labeltab[x].val := pc
-                         end;
-                defined: q:= labeltab[x].val
-            end(*case label..*)
-      end;(*lookup*)
-
       procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
       begin def := false; val := 0; flp := nil; skpspc; 
         if ch <> 'l' then errorl('Label format error       ');
         getnxt; parlab(x,sp);
         if sp <> nil then begin { far label }
-          new(flp); flp^.next := flablst; flablst := flp;
-          flp^.val := pc; flp^.ref := sp; q := 0
+          new(flp); flp^.next := flablst; flablst := flp; flp^.ref := sp
         end else begin { near label }
-          lookup(x); if labeltab[x].ref = nil then putlabel(x);
+          if labeltab[x].ref = nil then putlabel(x);
           sp := labeltab[x].ref; def := labeltab[x].st = defined; 
           val := labeltab[x].val
         end
@@ -2462,7 +2450,7 @@ procedure xlate;
             192,101,102,111: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20('movq $s,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.r^.r1, rgnull, nil)
               else
@@ -2488,7 +2476,7 @@ procedure xlate;
             191: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdx         ', ep^.q2, 0, rgnull, rgnull, nil);
+              wrtins20('movq $s,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
               wrtins30('call psystem_tagchkass           ', 0, 0, rgnull, rgnull, nil)
             end;
 
@@ -2973,9 +2961,9 @@ procedure xlate;
         end;
 
         {cta}
-        191: begin read(prd,q, q1, q2); 
-          writeln(prr,q:1, ' ', q1:1, ' ', q1:1, ' ', q2:1); getexp(ep); 
-          popstk(ep^.l); popstk(ep^.r); popstk(ep^.x1); pshstk(ep) 
+        191: begin read(prd,q, q1); labelsearch(def, val, sp);
+          write(prr,q:1, ' ', q1:1, ' '); writevp(prr, sp); writeln(prr);
+          getexp(ep); ep^.lt := sp; popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
         end;
 
         {lpa}
