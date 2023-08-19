@@ -1004,8 +1004,8 @@ procedure xlate;
          sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2; spkeep[36]:=false;   
          sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=4; spkeep[37]:=true;
          sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=4; spkeep[38]:=true;   
-         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=0; spkeep[39]:=false; { special }
-         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=0; spkeep[40]:=false; { special }
+         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=2; spkeep[39]:=false; { special }
+         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=2; spkeep[40]:=false; { special }
          sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
          sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
          sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=false;
@@ -2771,7 +2771,7 @@ procedure xlate;
                 wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
-              end else callsp(ep, sptable[ep^.q], spfunc[ep^.q]);
+              end else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
             end;
 
             {sfr}
@@ -3207,7 +3207,9 @@ procedure xlate;
               pp := ep^.pl; ep^.pl := ep^.pl^.next;
               pshstk(pp)
             end;
-            deltre(ep)
+            deltre(ep);
+            if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then
+              while estack <> nil do begin popstk(ep); deltre(ep) end
           end
         end;
 
