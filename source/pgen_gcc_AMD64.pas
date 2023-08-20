@@ -667,6 +667,7 @@ procedure xlate;
                     sl: expptr; { sfr start link }
                     cl: expptr; { cke chain }
                     al: expptr; { attachment link }
+                    ndl: expptr; { new/dispose link }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
@@ -1002,8 +1003,8 @@ procedure xlate;
          sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2; spkeep[36]:=false;   
          sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=4; spkeep[37]:=true;
          sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=4; spkeep[38]:=true;   
-         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=2; spkeep[39]:=false; { special }
-         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=2; spkeep[40]:=false; { special }
+         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=4; spkeep[39]:=false; { special }
+         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=4; spkeep[40]:=false; { special }
          sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
          sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
          sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=false;
@@ -1581,8 +1582,9 @@ procedure xlate;
         else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
-        ep^.cl := nil; ep^.al := nil; ep^.pl := nil; ep^.r1 := rgnull; 
-        ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; ep^.wkeep := false;
+        ep^.cl := nil; ep^.al := nil; ep^.ndl := nil; ep^.pl := nil; 
+        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; 
+        ep^.wkeep := false;
         ep^.keep := false; ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
       end;
       
@@ -1719,7 +1721,7 @@ procedure xlate;
       end;
 
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
-      var rs: regset; pp: expptr;
+      var rs: regset; pp: expptr; pn: integer;
 
       procedure resreg(r: reg);
       begin
@@ -1728,7 +1730,7 @@ procedure xlate;
       end;
 
       { assign registers to parameters in call }
-      procedure asspar(ep: expptr);
+      procedure asspar(ep: expptr; mi: integer);
       var pp: expptr; pc: integer; fpc: integer;
       begin
         pp := ep^.pl; pc := 1; fpc := 1;
@@ -1738,11 +1740,11 @@ procedure xlate;
             else assreg(pp, rf, rgnull, rgnull);
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            if pc <= 6 then assreg(pp, rf, parreg[pc], parreg[pc+1])
+            if pc <= mi then assreg(pp, rf, parreg[pc], parreg[pc+1])
             else
             pc := pc+2
           end else begin { single register }
-            if pc <= 6 then assreg(pp, rf, parreg[pc], rgnull)
+            if pc <= mi then assreg(pp, rf, parreg[pc], rgnull)
             else assreg(pp, rf, rgnull, rgnull);
             pc := pc+1
           end;            
@@ -2072,39 +2074,34 @@ procedure xlate;
 
           {csp}
           15: begin
-            if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
-              { need irregular allocation for nwl and dsl }
-              pp := ep^.pl; assreg(pp, frereg, rgrsi, rgnull);
-              pp := pp^.next; assreg(pp, frereg, rgrcx, rgnull);
-              resreg(rgrax); resreg(rgrbx); resreg(rgrcx); resreg(rgrdi)
-            end else if spfunc[ep^.q] then begin { function }
+            asspar(ep, sppar[ep^.q])
+            if spfunc[ep^.q] then begin { function }
               if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
               else begin resreg(rgrax); ep^.r1 := r1 end;
               if ep^.r1 = rgnull then getreg(ep^.r1, rf)
-            end;
-            asspar(ep)
+            end
           end;
  
           {cuf}
           246: begin 
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else begin resreg(rgrax); ep^.r1 := r1 end;
-            asspar(ep)
+            asspar(ep, ep^.q)
           end;
 
           {cup}
-          12: asspar(ep);
+          12: asspar(ep, ep^.q);
 
           {cip}
           113: begin
-            asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cif}
           247: begin
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else begin resreg(rgrax); ep^.r1 := r1 end;
-            asspar(ep); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cke}
@@ -2732,23 +2729,20 @@ procedure xlate;
             15: begin
               if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
                 { need irregular handling for nwl and dsl }
-                pp := ep^.pl; genexp(pp);
-                pp := pp^.next; genexp(pp);
-                wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
-                wrtins20('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('addq %rsp,%rax      ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('movq (%rax),%rdi    ', 0, 0, rgnull, rgnull, nil);
+                pshpar(ep^.ndl);
+                pp := ep^.pl; genexp(pp); { addr rdi }
+                pp := pp^.next; genexp(pp); { size rsi }
+                pp := pp^.next; genexp(pp); { tagcnt rdx }
                 wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('movq %rcx,%rbx      ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('pushq %rcx', 0, 0, rgnull, rgnull, nil);
                 if ep^.q = 39 then
                   wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
                 else
                   wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('orq %rbx,%rbx       ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('jz .+16   ', 0, 0, rgnull, rgnull, nil);  
-                wrtins20('popq %rax ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('decq %rbx ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('jmp .-12  ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
+                wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
               end else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
             end;
 
@@ -3175,6 +3169,13 @@ procedure xlate;
           end; 
           writeln(prr, sptable[q]);
           getexp(ep); getparn(ep, sppar[q]);
+          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
+            begin ep^.ndl := estack; estack := nil end;
+          ep2 := ep^.ndl; ep3 := nil; 
+          if ep2 = nil then errorl('system error             ');
+          while ep2^.next <> nil do begin ep3 := ep2; ep2 := ep2^.next end;
+          if ep3 = nil then ep^.ndl := nil else ep3^.next := nil;
+          ep2^.next := ep^.pl; ep^.pl := ep2;
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
             frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -3187,7 +3188,8 @@ procedure xlate;
             end;
             deltre(ep);
             if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then
-              while estack <> nil do begin popstk(ep); deltre(ep) end
+              while ep^.ndl <> nil do 
+                begin ep2 := ep^.ndl; ep^.ndl := ep2^.next; deltre(ep2) end
           end
         end;
 

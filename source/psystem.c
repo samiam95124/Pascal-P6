@@ -1887,8 +1887,8 @@ code to verify access to the variants used.
 void psystem_nwl(
     /** Address of pointer */  unsigned char** p,
     /** length to allocate */  unsigned long   l,
-    /** pointer to tag list */ long*           tl,
-    /** number of tags */      unsigned long   tc
+    /** number of tags */      unsigned long   tc,
+    /** pointer to tag list */ long*           tl
 )
 
 {
@@ -2992,8 +2992,8 @@ the variant record.
 void psystem_dsl(
     /** Address of block */    unsigned char* p,
     /** length to allocate */  unsigned long  l,
-    /** pointer to tag list */ long*          tl,
-    /** number of tags */      unsigned long  tc
+    /** number of tags */      unsigned long  tc,
+    /** pointer to tag list */ long*          tl
 )
 
 {
