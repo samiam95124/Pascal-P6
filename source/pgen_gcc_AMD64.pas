@@ -693,8 +693,8 @@ procedure xlate;
         estack, efree: expptr;
         frereg, allreg: regset;
         stacklvl: integer;
-        parreg: array [1..12] of reg; { parameter registers }
-        parregf: array [1..16] of reg; { floating point parameter registers }
+        parreg: array [1..7] of reg; { parameter registers }
+        parregf: array [1..8] of reg; { floating point parameter registers }
 
    procedure init;
       var i: integer;
@@ -1071,11 +1071,6 @@ procedure xlate;
          parreg[5] :=rgr8;
          parreg[6] :=rgr9;
          parreg[7] :=rgnull;
-         parreg[8] :=rgnull;
-         parreg[9] :=rgnull;
-         parreg[10] :=rgnull;
-         parreg[11] :=rgnull;
-         parreg[12] :=rgnull;
 
          parregf[1] :=rgxmm0;
          parregf[2] :=rgxmm1;
@@ -1085,14 +1080,6 @@ procedure xlate;
          parregf[6] :=rgxmm5;
          parregf[7] :=rgxmm6;
          parregf[8] :=rgxmm7;
-         parregf[9] :=rgnull;
-         parregf[10] :=rgnull;
-         parregf[11] :=rgnull;
-         parregf[12] :=rgnull;
-         parregf[13] :=rgnull;
-         parregf[14] :=rgnull;
-         parregf[15] :=rgnull;
-         parregf[16] :=rgnull;
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -1747,13 +1734,16 @@ procedure xlate;
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
           if insf[pp^.op] then begin { floating result }
-            assreg(pp, rf, parregf[fpc], rgnull);
+            if fpc <= 8 then assreg(pp, rf, parregf[fpc], rgnull)
+            else assreg(pp, rf, rgnull, rgnull);
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            assreg(pp, rf, parreg[pc], parreg[pc+1]);
+            if pc <= 6 then assreg(pp, rf, parreg[pc], parreg[pc+1])
+            else
             pc := pc+2
           end else begin { single register }
-            assreg(pp, rf, parreg[pc], rgnull);
+            if pc <= 6 then assreg(pp, rf, parreg[pc], rgnull)
+            else assreg(pp, rf, rgnull, rgnull);
             pc := pc+1
           end;            
           pp := pp^.next
