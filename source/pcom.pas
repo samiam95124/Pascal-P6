@@ -8032,7 +8032,6 @@ begin cmdpos := maxcmd end;
         fp: extfilep;
         test: boolean;
         printed: boolean;
-        lsize: addrrange;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
 
@@ -8662,7 +8661,7 @@ begin cmdpos := maxcmd end;
               insymbol;
               gen0t(76(*dup*),nilptr);{ make copy of original vector }
               gattr := lattr; loadaddress; { load compare vector }
-              gen2(47(*equ*),ord('a'),lsize);
+              gen2(47(*equ*),ord('a'),0);
               genujpxjpcal(73(*tjp*),onstalbl);
             end else begin error(2); skip(fsys+[onsy,exceptsy,elsesy]) end;
             test := sy <> comma;
