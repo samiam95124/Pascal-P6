@@ -1864,7 +1864,7 @@ begin cmdpos := maxcmd end;
     (*read next basic symbol of source program and return its
     description in the global variables sy, op, id, val and lgth*)
     label 1, 2;
-    var i,j,k,v,r: integer;
+    var i,k,v,r: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
         iscmte: boolean;
@@ -2171,7 +2171,7 @@ begin cmdpos := maxcmd end;
               nextch; { skip '\' }
               if ch in ['$','&','%','0'..'9'] then begin 
                 { character code }
-                j := i+1; v := 0; k := 1;
+                v := 0; k := 1;
                 { parse in radix and only correct number of digits to keep from
                   eating follow on characters }
                 if ch = '$' then begin nextch;
