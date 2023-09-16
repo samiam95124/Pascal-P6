@@ -1059,7 +1059,7 @@ var
   { assign identifier fixed to variable length string, including allocation }
   procedure strassvf(var a: strvsp; var b: idstr);
   var i, j, l: integer; p, lp: strvsp;
-  begin l := maxids; p := nil; a := nil; j := 1;
+  begin l := maxids; p := nil; a := nil; j := 1; lp := nil;
     while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
     if b[l] = ' ' then l := 0;
     for i := 1 to l do begin
@@ -1177,9 +1177,9 @@ var
 
   { compare variable length id string to fixed, a < b }
   function strltnvf(a: strvsp; var b: idstr): boolean;
-  var m: boolean; i, j, f: integer; c: char;
+  var i, j, f: integer; c: char;
   begin
-    m := true; i := 1; j := 1;
+    i := 1; j := 1;
     while i < maxids do begin
       c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
       if lcase(c) <> lcase(b[i]) then begin f := i; i := maxids end else i := i+1;
@@ -4689,9 +4689,7 @@ begin cmdpos := maxcmd end;
     end (*getputresetrewrite*) ;
 
     procedure pageprocedure;
-    var llev:levrange;
     begin
-      llev := 1;
       if sy = lparent then
       begin insymbol; chkhdr;
         variable(fsys + [rparent], false); loadaddress;
@@ -10142,6 +10140,10 @@ begin
   if markep = 0 then;
   if marksb = 0 then;
   if maxsize = 0 then;
+
+  { supress errors on breakflag, only used in extention packages }
+  breakflag := false;
+  if breakflag = true then;
 
   (*initialize*)
   (************)
