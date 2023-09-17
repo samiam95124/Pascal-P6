@@ -412,9 +412,19 @@ const
       maxopt      = 26;   { number of options }
       optlen      = 10;   { maximum length of option words }
 
+{ if FPC and 64 bit, override 32 bit integer }
+#if defined(BIT_64) && defined(FPC_PASCAL)
+   maxint = 9223372036854775807;
+#endif
+
 #include "version.inc"
 
 type
+
+{ if FPC and 64 bit, override 32 bit integer }
+#if defined(BIT_64) && defined(FPC_PASCAL)
+     integer = int64;
+#endif
 
 #if defined(WRDSIZ16) && defined(GNU_PASCAL)
       /* for GNU 16 bit mode, use both 16 bit defines and redefine integer and
