@@ -1,4 +1,6 @@
+#ifndef FPC_PASCAL
 {$l-}
+#endif
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -208,6 +210,11 @@ const
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
 
+{ if FPC and 64 bit, override 32 bit integer }
+#if defined(BIT_64) && defined(FPC_PASCAL)
+   maxint = 9223372036854775807;
+#endif
+
 #include  "version.inc"
 
    { standard exceptions. Used for extension routines, this is a subset. }
@@ -216,7 +223,14 @@ const
    FileDeleteFail          = 3;
    FileNameChangeFail      = 4;
 
-type                                                        (*describing:*)
+type
+
+{ if FPC and 64 bit, override 32 bit integer }
+#if defined(BIT_64) && defined(FPC_PASCAL)
+     integer = int64;
+#endif
+
+                                                            (*describing:*)
                                                             (*************)
 
                                                             (*basic symbols*)
