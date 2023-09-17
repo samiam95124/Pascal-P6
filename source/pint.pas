@@ -684,7 +684,6 @@ var   pc, pcs     : address;   (*program address register*)
       dbgcmds     : array [dbgcmd] of alfa; { debug command strings }
 
       i           : integer;
-      c1          : char;
       ad          : address;
       bai         : integer;
       ai          : 1..maxana;
@@ -1307,7 +1306,7 @@ begin
   allocation, with length specified }
 procedure strassvfl(var a: strvsp; var b: filnam; l: integer);
 var i, j: integer; p, lp: strvsp;
-begin p := nil; a := nil; j := 1;
+begin p := nil; a := nil; j := 1; lp := nil;
   for i := 1 to l do begin
     if j > varsqt then p := nil;
     if p = nil then begin
@@ -2265,7 +2264,7 @@ procedure load;
       var curr,succ,ad: address; (*resp. current element and successor element
                                of a list of future references*)
           endlist: boolean;
-          op: instyp; q : address;  (*instruction register*)
+          q : address;  (*instruction register*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
       else begin
@@ -2273,7 +2272,6 @@ procedure load;
              begin curr:= labeltab[x].val; endlist:= false;
                 while not endlist do begin
                       ad := curr;
-                      op := store[ad]; { get instruction }
                       q := getadr(ad);
                       succ:= q; { get target address from that }
                       q:= labelvalue; { place new target address }
@@ -2359,7 +2357,7 @@ procedure load;
 
    { relocate far labels }
    procedure flabrlc;
-   var ad: address; op: instyp; flp: flabelp; c: char; rt: integer; symerr: boolean;
+   var ad: address; flp: flabelp; c: char; rt: integer; symerr: boolean;
    { find symbols reference }
    function symref(lsp: strvsp): address;
    var mods, syms: filnam; i,x: 1..fillen; bp, fbp: pblock; sp, fsp: psymbol;
@@ -4536,7 +4534,7 @@ end;
 
 procedure sinins;
 var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,i1,i2 : integer; c1: char;
-    i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype;
+    i3,i4: integer; r1,r2: real; b1: boolean; s1,s2: settype;
     a1,a2,a3: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
@@ -5017,7 +5015,7 @@ begin
                       popint(i1);
                       if i1 < 0 then errore(BooleanOperatorOfNegative);
                       pshint(bor(i1, i2)) end;
-    206 (*xor*): begin popint(i2); b2 := i2 <> 0;
+    206 (*xor*): begin popint(i2);
                       if i2 < 0 then errore(BooleanOperatorOfNegative);
                       popint(i1); b1 := i1 <> 0;
                       if i1 < 0 then errore(BooleanOperatorOfNegative);
@@ -5367,7 +5365,7 @@ type errcod = (enumexp, edigbrx,elinnf,esyntax,eblknf,esymnam,esymntl,esnficc,
                        rtstrg: (sc: strvsp; l: integer);
               end;
 
-var dbc: parctl; cn: alfa; dbgend: boolean; i,x,l,p: integer;
+var dbc: parctl; cn: alfa; dbgend: boolean; x,p: integer;
     sn, sn2: filnam; snl: 1..fillen;
     ens: array [1..100] of integer; ad: address;
     fw: wthnum; undef: boolean; c: char; dc: dbgcmd; doanalyss: boolean;
@@ -6377,7 +6375,7 @@ var l: expres; c: char; f: real; ldc, rdc: parctl;
 
 procedure term(var syp: psymbol; var ad: address; var p: integer;
                var r: expres; var simple: boolean; var undef: boolean);
-var l: expres; f: real; ldc, rdc: parctl; c: char; lsp: psymbol;
+var l: expres; f: real; ldc, rdc: parctl;
 
 procedure factor(var syp: psymbol; var ad: address; var p: integer;
                  var r: expres; var simple: boolean; var undef: boolean);
@@ -6562,7 +6560,7 @@ begin { term }
      matop('and ', true) do begin { operator }
     if undef then error(eoprudf);
     if not simple then error(estropr);
-    l := r; lsp := syp; setpar(ldc, syp^.digest, p); c := chkchr(dbc);
+    l := r; setpar(ldc, syp^.digest, p); c := chkchr(dbc);
     if chkchr(dbc) = '*' then begin nxtchr(dbc); right;
       if (l.t = rtstrg) or (r.t = rtstrg) then error(etypmirs);
       if (l.t = rtreal) or (r.t = rtreal) then
@@ -6822,7 +6820,7 @@ var i, x, p: integer; wi: wthinx; tdc, stdc: parctl; bp, bp2: pblock;
     syp: psymbol; si,ei: integer; sim: boolean; enum: boolean;
     s,e,pcs,eps: address; r: integer; fl: integer; lz: boolean; l: integer;
     eres: expres; deffld: boolean; brk: boolean; sls: integer;
-    bl: integer; be: boolean; incall: boolean;
+    bl: integer; be: boolean;
 begin
   case dc of { command }
     dcli: begin { list instructions }
@@ -7521,6 +7519,7 @@ begin (* main *)
   if ordminchar = 0 then;
   if ordmaxchar = 0 then;
   if stackelsize = 0 then;
+  if dochkvbk = true then;
 
   write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
@@ -7530,6 +7529,9 @@ begin (* main *)
   { capture user breaks, if possible }
   breakflag := false;
   capture;
+
+  { supress errors on breakflag, only used in extention packages }
+  if breakflag = true then;
 
   { find integer parameters }
   i := maxint;  maxdig := 0;
