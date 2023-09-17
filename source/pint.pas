@@ -7510,7 +7510,7 @@ end;
 
 begin (* main *)
 
-  { Suppress unreferenced errors. }
+  { suppress unreferenced errors. }
   if adral = 0 then;
   if adral = 0 then;
   if boolal = 0 then;
@@ -7522,7 +7522,7 @@ begin (* main *)
   if ordminchar = 0 then;
   if ordmaxchar = 0 then;
   if stackelsize = 0 then;
-  if dochkvbk = true then;
+  if dochkvbk then;
 
   write('P6 Pascal interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
