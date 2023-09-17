@@ -6902,7 +6902,7 @@ begin cmdpos := maxcmd end;
                           begin lvalu.intval := true; lvalu.ival := 1 end;
                         if lvalu.ival <= 0 then
                           begin error(238); lvalu.ival := 1 end;
-                        lsp1^.size := lsize;
+                        lsp1^.size := 0;
                         { build subrange type based on 1..n }
                         new(lsp2,subrange); pshstc(lsp2);
                           with lsp2^ do
