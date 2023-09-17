@@ -2416,6 +2416,9 @@ procedure load;
 #ifdef EXTERNALS
      LookupExternal(mods, syms, rt);
 #endif
+     { supress fpc warnings }
+     if mods[1] = ' ' then;
+     if syms[1] = ' ' then;
      extref := rt
    end;
 
