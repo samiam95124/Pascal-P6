@@ -563,14 +563,11 @@ var   pc          : address;   (*program address register*)
       octdig      : integer; { digits in unsigned octal }
       maxpow2     : integer; { maximum power of 2 }
       bindig      : integer; { digits in unsigned binary }
-      newline     : boolean; { output is on new line (unused) }
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
       breakflag   : boolean; { user break signaled }
       
       i           : integer;
-      c1          : char;
-      ad          : address;
       bai         : integer;
       oi          : 1..maxopt;
 
@@ -1595,8 +1592,7 @@ end;
 { coalesce space in heap }
 
 procedure cscspc;
-var done: boolean;
-    ad, ad1, l, l1: address;
+var ad, ad1, l, l1: address;
 begin
    { first, colapse all free blocks at the heap top }
    l := 0; 
@@ -1682,8 +1678,7 @@ end;
 { system routine call}
 
 procedure callsp;
-   var line: boolean;
-       i, j, k, w, l, f: integer;
+   var i, j, k, w, l, f: integer;
        c: char;
        b: boolean;
        ad,ad1,ad2: address;
@@ -2578,8 +2573,8 @@ begin (*callsp*)
 end;(*callsp*)
 
 procedure sinins;
-var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,k,i1,i2 : integer; c, c1: char;
-    i3,i4: integer; r1,r2: real; b1,b2: boolean; s1,s2: settype; 
+var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,i1,i2 : integer; c1: char;
+    i3,i4: integer; r1,r2: real; b1: boolean; s1,s2: settype; 
     a1,a2,a3: address;
 begin
   if pc >= pctop then errorv(PCOutOfRange);
@@ -2954,7 +2949,7 @@ begin
                       popint(i1);
                       if i1 < 0 then errore(BooleanOperatorOfNegative);
                       pshint(bor(i1, i2)) end;
-    206 (*xor*): begin popint(i2); b2 := i2 <> 0;
+    206 (*xor*): begin popint(i2);
                       if i2 < 0 then errore(BooleanOperatorOfNegative);
                       popint(i1); b1 := i1 <> 0;
                       if i1 < 0 then errore(BooleanOperatorOfNegative);
@@ -3324,10 +3319,28 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
+  { supress unreferenced fpc warnings }
+  if opts[1,1] = ' ' then;
+  if optsl[1, 1] = ' ' then;
+  if dosrclin then;
+  if dodmplab then;
+  if dodebug then;
+  if dodbgflt then;
+  if dodbgsrc then;
+  if dodckout then;
+  if dochkvbk then;
+  if doechlin then;
+  extvecbase := 0;
+  if extvecbase = 0 then;
+
   write('P6 Pascal pmach interpreter vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   writeln;
+
+  { supress errors on breakflag, only used in extention packages }
+  breakflag := false;
+  if breakflag = true then;
 
   for oi := 1 to maxopt do begin option[oi] := false; options[oi] := false end;
   { preset options }
