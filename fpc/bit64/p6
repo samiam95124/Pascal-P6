@@ -1,0 +1,150 @@
+#!/bin/bash
+#
+# Compile and run with P6 using GPC
+#
+# Execute with:
+#
+# p6 [flags] [<sourcefile>]...
+#
+# Where <sourcefile> is the name of the source file without
+# extention. The Pascal input file(s) are compiled and run
+# as a group. Any compiler errors are output to the screen.
+# Input and output to and from the running program are from
+# and to the console.
+#
+# The flags are one of:
+#
+# --pmach	  Generate mach code and run the result through pmach.
+# --cmach	  Generate mach code and run the result through cmach.
+# --package   Generate a packaged application and run.
+#
+# The intermediate code is placed in <file>.p6, where the <file> is the last
+# filename on the command line, which is considered the name of the program.
+# If a binary intermediate is selected (pmach, cmach or package mode), then the
+# intel hex format binary form of the P-machine code will be placed in
+# <file>.p6o, where <file> is the program name. For package mode, the final
+# executable will be placed under the program name.
+#
+
+pmach=0
+cmach=0
+progfile=""
+package=0
+options=""
+
+for param in "$@" 
+do
+
+    if [ "$param" = "--pmach" ]; then
+	
+        pmach=1
+        
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+        
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+      
+    elif [ "$param" = "--help" ]; then
+    
+		echo
+		echo "Compile with P6 using GPC"
+		echo
+		echo "Execute with:"
+		echo
+		echo "p6 [--pmach|--cmach] [<sourcefile>]..."
+		echo
+		echo "where <sourcefile> is the name of the source file without"
+		echo "extention. The Pascal input file\(s\) are compiled and run"
+		echo "as a group. Any compiler errors are output to the screen."
+		echo "Input and output to and from the running program are from"
+		echo "and to the console."
+		echo
+		echo "The flags are one of:"
+		echo
+		echo "--pmach	Generate mach code and run the result through pmach."
+		echo "--cmach	Generate mach code and run the result through cmach."
+        echo "--package Generate a packaged application and run."
+		echo
+		echo "The intermediate code is placed in <file>.p6."
+		echo
+		exit 0
+		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
+	elif [ ! -z "$param.pas" ]; then
+
+	
+		if [ ! -f "$param.pas" ]; then
+		
+			echo "$param.pas does not exist"
+			exit 1
+			
+		fi
+		echo Compiling $param...
+	    pcom $param.pas $param.p6 $options
+	    cat $param.p6 >> temp.p6
+		progfile="$param"
+		
+    fi
+    
+done
+
+if [ -z "$progfile" ]; then
+
+	echo "*** Error: No compile file specified"
+	exit 1
+	
+fi
+
+#
+# Put intermediate under the program filename
+#
+mv temp.p6 $progfile.p6
+
+#
+# Run combined file
+#
+if [ "$pmach" = "1" ]; then
+
+	echo Running with pmach
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o $options
+    rm temp2
+	pmach $progfile.p6o
+	
+elif [ "$cmach" = "1" ]; then
+
+	echo Running with cmach
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o
+    rm temp2
+	mv $progfile.p6 prd
+	cmach $options
+	
+elif [ "$package" = "1" ]; then
+
+    echo Running in packaged mode
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o
+    cp prr $progfile.p6o
+	genobj $progfile.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
+	./$progfile $options
+	
+else
+
+	pint $progfile.p6 $options
+
+fi

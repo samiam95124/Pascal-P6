@@ -1,0 +1,149 @@
+#!/bin/bash
+#
+# Compile file in batch mode using GPC Pascal.
+#
+# Runs a compile with the input and output coming from/going to files.
+#
+# Execution:
+#
+# Compile [--pmach|--cmach] <file>
+#
+# <file> is the filename without extention.
+#
+# The files are:
+#
+# <file>.pas - The Pascal source file
+# <file>.p6  - The intermediate file produced
+# <file>.err - The errors output from the compiler
+#
+# Note that the l+ option must be specified to get a full
+# listing in the .err file (or just a lack of l-).
+#
+# The flags are one of:
+#
+# --pmach	Generate mach code and run the result through pmach.
+# --cmach	Generate mach code and run the result through cmach.
+#
+pmach=0
+cmach=0
+progfile=""
+package=0
+options=""
+
+for param in "$@" 
+do
+
+    if [ "$param" = "--pmach" ]; then
+	
+        pmach=1
+        
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+        
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+      
+    elif [ "$param" = "--help" ]; then
+    
+		echo
+		echo "Compile with P6 using GPC"
+		echo
+		echo "Execute with:"
+		echo
+		echo "p6 [--pmach|--cmach] [<sourcefile>]..."
+		echo
+		echo "where <sourcefile> is the name of the source file without"
+		echo "extention. The Pascal input file\(s\) are compiled and run"
+		echo "as a group. Any compiler errors are output to the screen."
+		echo "Input and output to and from the running program are from"
+		echo "and to the console."
+		echo
+		echo "The flags are one of:"
+		echo
+		echo "--pmach	Generate mach code and run the result through pmach."
+		echo "--cmach	Generate mach code and run the result through cmach."
+        echo "--package Generate a packaged application and run."
+		echo
+		echo "The intermediate code is placed in <file>.p6."
+		echo
+		exit 0
+		
+    elif [ "${param:0:1}" = "-" ]; then
+
+        # concatentate unrecognized options in option string
+        options="$options $param"
+
+	elif [ ! -z "$param.pas" ]; then
+
+	
+		if [ ! -f "$param.pas" ]; then
+		
+			echo "$param.pas does not exist"
+			exit 1
+			
+		fi
+		echo Compiling $param...
+	    pcom $param.pas $param.p6 $options >> temp.err
+	    cat $param.p6 >> temp.p6
+		progfile="$param"
+		
+    fi
+    
+done
+
+if [ -z "$progfile" ]; then
+
+	echo "*** Error: No compile file specified"
+	exit 1
+	
+fi
+
+#
+# Put intermediate under the program filename
+#
+mv temp.p6 $progfile.p6
+mv temp.err $progfile.err
+
+#
+# The status of the compile is not returned, so convert a non-zero
+# error message to fail status
+#
+grep -q "Errors in program: 0" $progfile.err
+rc=$?
+if [[ $rc != 0 ]] ; then
+
+    exit 1
+        
+fi
+
+#
+# Construct combined intermediate under the program filename
+#
+if [ "$pmach" = "1" ]; then
+
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o
+    rm temp2
+	
+elif [ "$cmach" = "1" ]; then
+
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o
+    rm temp2
+	
+elif [ "$package" = "1" ]; then
+
+    echo "o e+" > temp
+	cat temp $progfile.p6 > temp2
+    rm temp
+	pint temp2 $progfile.p6o
+	genobj $progfile.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
+
+fi
