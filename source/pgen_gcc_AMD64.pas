@@ -1,4 +1,6 @@
+#ifndef FPC_PASCAL
 (*$c+,t-,d-,l+,s+*)
+#endif
 {*******************************************************************************
 *                                                                              *
 *                           Portable Pascal compiler                           *
@@ -319,16 +321,8 @@ type
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1,q2: address; { extra parameter }
+      q1 : address; { extra parameter }
       gblsiz: address; { size of globals }
-      sdi         : 0..maxdef; { index for that }
-      cp          : address;  (* pointer to next free constant position *)
-      mp,sp,np,ep : address;  (* address registers *)
-      (*mp  points to beginning of a data segment
-        sp  points to top of the stack
-        ep  points to the maximum extent of the stack
-        np  points to top of the dynamically allocated area*)
-      bitmsk      : packed array [0..7] of byte; { bits in byte }
       hexdig      : integer; { digits in unsigned hex }
       decdig      : integer; { digits in unsigned decimal }
       octdig      : integer; { digits in unsigned octal }
@@ -372,16 +366,11 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
 
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
-      flipend: boolean; { endian mode is opposing }
-
-      interpreting: boolean;
 
       { !!! remove this next statement for self compile }
       {elide}prd,prr     : text;{noelide}(*prd for read only, prr for write only *)
 
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
-      insp        : array[instyp] of boolean; { instruction includes a p parameter }
-      insq        : array[instyp] of 0..32; { length of q parameter }
       insr        : array[instyp] of integer; { number of stack words in result }
       insf        : array[instyp] of boolean; { result is real }
       sptable     : array[sctyp] of alfa; (*standard functions and procedures*)
@@ -390,7 +379,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       sppar       : array[sctyp] of integer; (*standard functions and procedures
                                                   number of parameters*)
       spkeep      : array[sctyp] of boolean; { keep the file parameter }
-      srclin      : integer; { current source line executing }
       option      : array ['a'..'z'] of boolean; { option array }
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
@@ -399,28 +387,9 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
 
-      filtable    : array [1..maxfil] of text; { general (temp) text file holders }
-      { general (temp) binary file holders }
-      bfiltable   : array [1..maxfil] of bytfil;
-      { file state holding }
-      filstate    : array [1..maxfil] of (fclosed, fread, fwrite);
-      { file buffer full status }
-      filbuff     : array [1..maxfil] of boolean;
-
       (*locally used for interpreting one instruction*)
-      ad,ad1,ad2,
-      ad3         : address;
-      b           : boolean;
-      i,j,k,i1,i2 : integer;
-      c           : char;
-      i3, i4      : integer;
-      r1, r2      : real;
-      b1, b2      : boolean;
-      s1, s2      : settype;
+      ad          : address;
       c1          : char;
-      a1, a2, a3  : address;
-      pcs         : address;
-      bai         : integer;
 
 procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
 const digmax = 64; { maximum total digits }
@@ -522,7 +491,7 @@ begin
   allocation, with length specified }
 procedure strassvfl(var a: strvsp; var b: labbuf; l: integer);
 var i, j: integer; p, lp: strvsp;
-begin p := nil; a := nil; j := 1;
+begin p := nil; a := nil; j := 1; lp := nil;
   for i := 1 to l do begin
     if j > varsqt then p := nil;
     if p = nil then begin
@@ -538,7 +507,7 @@ end;
   allocation }
 procedure strassvf(var a: strvsp; var b: labbuf);
 var i, j, l: integer; p, lp: strvsp;
-begin l := lablen; p := nil; a := nil; j := 1;
+begin l := lablen; p := nil; a := nil; j := 1; lp := nil;
   while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
   if b[l] = ' ' then l := 0;
   for i := 1 to l do begin
@@ -555,7 +524,7 @@ end;
 { assign fixed string to variable length string, including allocation }
 procedure strassvsb(var a: strvsp; var b: strbuf);
 var i, j, l: integer; p, lp: strvsp;
-begin l := strlen; p := nil; a := nil; j := 1;
+begin l := strlen; p := nil; a := nil; j := 1; lp := nil;
   while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
   if b[l] = ' ' then l := 0;
   for i := 1 to l do begin
@@ -714,255 +683,255 @@ procedure xlate;
               assigned to other instructions if the space is needed.
 
          }
-         instr[  0]:='lodi      '; insp[  0] := true;  insq[  0] := intsize;    insr[  0] := 1; insf[  0] := false; 
-         instr[  1]:='ldoi      '; insp[  1] := false; insq[  1] := intsize;    insr[  1] := 1; insf[  1] := false;
-         instr[  2]:='stri      '; insp[  2] := true;  insq[  2] := intsize;    insr[  2] := 0; insf[  2] := false; 
-         instr[  3]:='sroi      '; insp[  3] := false; insq[  3] := intsize;    insr[  3] := 0; insf[  3] := false;
-         instr[  4]:='lda       '; insp[  4] := true;  insq[  4] := intsize;    insr[  4] := 1; insf[  4] := false; 
-         instr[  5]:='lao       '; insp[  5] := false; insq[  5] := intsize;    insr[  5] := 1; insf[  5] := false;
-         instr[  6]:='stoi      '; insp[  6] := false; insq[  6] := 0;          insr[  6] := 0; insf[  6] := false;
-         instr[  7]:='ldcs      '; insp[  7] := false; insq[  7] := intsize;    insr[  7] := 1; insf[  7] := false;
-         instr[  8]:='cjp       '; insp[  8] := false; insq[  8] := intsize*2;  insr[  8] := 0; insf[  8] := false;
-         instr[  9]:='indi      '; insp[  9] := false; insq[  9] := intsize;    insr[  9] := 1; insf[  9] := false;
-         instr[ 10]:='inci      '; insp[ 10] := false; insq[ 10] := intsize;    insr[ 10] := 1; insf[ 10] := false;
-         instr[ 11]:='mst       '; insp[ 11] := true;  insq[ 11] := intsize*2;  insr[ 11] := 0; insf[ 11] := false; 
-         instr[ 12]:='cup       '; insp[ 12] := false; insq[ 12] := intsize;    insr[ 12] := 0; insf[ 12] := false;
-         instr[ 13]:='rip       '; insp[ 13] := false; insq[ 13] := adrsize;    insr[ 13] := 0; insf[ 13] := false;
-         instr[ 14]:='retp      '; insp[ 14] := false; insq[ 14] := intsize;    insr[ 14] := 0; insf[ 14] := false;
-         instr[ 15]:='csp       '; insp[ 15] := false; insq[ 15] := 1;          insr[ 15] := 0; insf[ 15] := false;
-         instr[ 16]:='ixa       '; insp[ 16] := false; insq[ 16] := intsize;    insr[ 16] := 1; insf[ 16] := false;
-         instr[ 17]:='equa      '; insp[ 17] := false; insq[ 17] := 0;          insr[ 17] := 1; insf[ 17] := false;
-         instr[ 18]:='neqa      '; insp[ 18] := false; insq[ 18] := 0;          insr[ 18] := 1; insf[ 18] := false;
-         instr[ 19]:='brk*      '; insp[ 19] := false; insq[ 19] := 0;          insr[ 19] := 0; insf[ 19] := false;
-         instr[ 20]:='lnp*      '; insp[ 20] := false; insq[ 20] := intsize;    insr[ 20] := 0; insf[ 20] := false;
-         instr[ 21]:='cal       '; insp[ 21] := false; insq[ 21] := intsize;    insr[ 21] := 1; insf[ 21] := false;
-         instr[ 22]:='ret       '; insp[ 22] := false; insq[ 22] := 0;          insr[ 22] := 0; insf[ 22] := false;
-         instr[ 23]:='ujp       '; insp[ 23] := false; insq[ 23] := intsize;    insr[ 23] := 0; insf[ 23] := false;
-         instr[ 24]:='fjp       '; insp[ 24] := false; insq[ 24] := intsize;    insr[ 24] := 0; insf[ 24] := false;
-         instr[ 25]:='xjp       '; insp[ 25] := false; insq[ 25] := intsize;    insr[ 25] := 0; insf[ 25] := false;
-         instr[ 26]:='chki      '; insp[ 26] := false; insq[ 26] := intsize;    insr[ 26] := 1; insf[ 26] := false;
-         instr[ 27]:='cuv       '; insp[ 27] := false; insq[ 27] := intsize;    insr[ 27] := 0; insf[ 27] := false;
-         instr[ 28]:='adi       '; insp[ 28] := false; insq[ 28] := 0;          insr[ 28] := 1; insf[ 28] := false;
-         instr[ 29]:='adr       '; insp[ 29] := false; insq[ 29] := 0;          insr[ 29] := 1; insf[ 29] := true;
-         instr[ 30]:='sbi       '; insp[ 30] := false; insq[ 30] := 0;          insr[ 30] := 1; insf[ 30] := false;
-         instr[ 31]:='sbr       '; insp[ 31] := false; insq[ 31] := 0;          insr[ 31] := 1; insf[ 31] := true;
-         instr[ 32]:='sgs       '; insp[ 32] := false; insq[ 32] := 0;          insr[ 32] := 1; insf[ 32] := false;
-         instr[ 33]:='flt       '; insp[ 33] := false; insq[ 33] := 0;          insr[ 33] := 1; insf[ 33] := false;
-         instr[ 34]:='flo       '; insp[ 34] := false; insq[ 34] := 0;          insr[ 34] := 2; insf[ 34] := false;
-         instr[ 35]:='trc       '; insp[ 35] := false; insq[ 35] := 0;          insr[ 35] := 1; insf[ 35] := false;
-         instr[ 36]:='ngi       '; insp[ 36] := false; insq[ 36] := 0;          insr[ 36] := 1; insf[ 36] := false;
-         instr[ 37]:='ngr       '; insp[ 37] := false; insq[ 37] := 0;          insr[ 37] := 1; insf[ 37] := true;
-         instr[ 38]:='sqi       '; insp[ 38] := false; insq[ 38] := 0;          insr[ 38] := 1; insf[ 38] := false;
-         instr[ 39]:='sqr       '; insp[ 39] := false; insq[ 39] := 0;          insr[ 39] := 1; insf[ 39] := true;
-         instr[ 40]:='abi       '; insp[ 40] := false; insq[ 40] := 0;          insr[ 40] := 1; insf[ 40] := false;
-         instr[ 41]:='abr       '; insp[ 41] := false; insq[ 41] := 0;          insr[ 41] := 1; insf[ 41] := true;
-         instr[ 42]:='notb      '; insp[ 42] := false; insq[ 42] := 0;          insr[ 42] := 1; insf[ 42] := false;
-         instr[ 43]:='and       '; insp[ 43] := false; insq[ 43] := 0;          insr[ 43] := 1; insf[ 43] := false;
-         instr[ 44]:='ior       '; insp[ 44] := false; insq[ 44] := 0;          insr[ 44] := 1; insf[ 44] := false;
-         instr[ 45]:='dif       '; insp[ 45] := false; insq[ 45] := 0;          insr[ 45] := 1; insf[ 45] := false;
-         instr[ 46]:='int       '; insp[ 46] := false; insq[ 46] := 0;          insr[ 46] := 1; insf[ 46] := false;
-         instr[ 47]:='uni       '; insp[ 47] := false; insq[ 47] := 0;          insr[ 47] := 1; insf[ 47] := false;
-         instr[ 48]:='inn       '; insp[ 48] := false; insq[ 48] := 0;          insr[ 48] := 1; insf[ 48] := false;
-         instr[ 49]:='mod       '; insp[ 49] := false; insq[ 49] := 0;          insr[ 49] := 1; insf[ 49] := false;
-         instr[ 50]:='odd       '; insp[ 50] := false; insq[ 50] := 0;          insr[ 50] := 1; insf[ 50] := false;
-         instr[ 51]:='mpi       '; insp[ 51] := false; insq[ 51] := 0;          insr[ 51] := 1; insf[ 51] := false;
-         instr[ 52]:='mpr       '; insp[ 52] := false; insq[ 52] := 0;          insr[ 52] := 1; insf[ 52] := true;
-         instr[ 53]:='dvi       '; insp[ 53] := false; insq[ 53] := 0;          insr[ 53] := 1; insf[ 53] := false;
-         instr[ 54]:='dvr       '; insp[ 54] := false; insq[ 54] := 0;          insr[ 54] := 1; insf[ 54] := true;
-         instr[ 55]:='mov       '; insp[ 55] := false; insq[ 55] := intsize;    insr[ 55] := 0; insf[ 55] := false;
-         instr[ 56]:='lca       '; insp[ 56] := false; insq[ 56] := intsize;    insr[ 56] := 1; insf[ 56] := false;
-         instr[ 57]:='deci      '; insp[ 57] := false; insq[ 57] := intsize;    insr[ 57] := 1; insf[ 57] := false;
-         instr[ 58]:='stp*      '; insp[ 58] := false; insq[ 58] := 0;          insr[ 58] := 0; insf[ 58] := false;
-         instr[ 59]:='ordi      '; insp[ 59] := false; insq[ 59] := 0;          insr[ 59] := 1; insf[ 59] := false;
-         instr[ 60]:='chr       '; insp[ 60] := false; insq[ 60] := 0;          insr[ 60] := 1; insf[ 60] := false;
-         instr[ 61]:='ujc       '; insp[ 61] := false; insq[ 61] := intsize;    insr[ 61] := 0; insf[ 61] := false;
-         instr[ 62]:='rnd       '; insp[ 62] := false; insq[ 62] := 0;          insr[ 62] := 1; insf[ 62] := false;
-         instr[ 63]:='pck       '; insp[ 63] := false; insq[ 63] := intsize*2;  insr[ 63] := 0; insf[ 63] := false;
-         instr[ 64]:='upk       '; insp[ 64] := false; insq[ 64] := intsize*2;  insr[ 64] := 0; insf[ 64] := false;
-         instr[ 65]:='ldoa      '; insp[ 65] := false; insq[ 65] := intsize;    insr[ 65] := 1; insf[ 65] := false;
-         instr[ 66]:='ldor      '; insp[ 66] := false; insq[ 66] := intsize;    insr[ 66] := 1; insf[ 66] := true;
-         instr[ 67]:='ldos      '; insp[ 67] := false; insq[ 67] := intsize;    insr[ 67] := 1; insf[ 67] := false;
-         instr[ 68]:='ldob      '; insp[ 68] := false; insq[ 68] := intsize;    insr[ 68] := 1; insf[ 68] := false;
-         instr[ 69]:='ldoc      '; insp[ 69] := false; insq[ 69] := intsize;    insr[ 69] := 1; insf[ 69] := false;
-         instr[ 70]:='stra      '; insp[ 70] := true;  insq[ 70] := intsize;    insr[ 70] := 0; insf[ 70] := false;
-         instr[ 71]:='strr      '; insp[ 71] := true;  insq[ 71] := intsize;    insr[ 71] := 0; insf[ 71] := false;
-         instr[ 72]:='strs      '; insp[ 72] := true;  insq[ 72] := intsize;    insr[ 72] := 0; insf[ 72] := false;
-         instr[ 73]:='strb      '; insp[ 73] := true;  insq[ 73] := intsize;    insr[ 73] := 0; insf[ 73] := false;
-         instr[ 74]:='strc      '; insp[ 74] := true;  insq[ 74] := intsize;    insr[ 74] := 0; insf[ 74] := false;
-         instr[ 75]:='sroa      '; insp[ 75] := false; insq[ 75] := intsize;    insr[ 75] := 0; insf[ 75] := false;
-         instr[ 76]:='sror      '; insp[ 76] := false; insq[ 76] := intsize;    insr[ 76] := 1; insf[ 76] := true;
-         instr[ 77]:='sros      '; insp[ 77] := false; insq[ 77] := intsize;    insr[ 77] := 1; insf[ 77] := false;
-         instr[ 78]:='srob      '; insp[ 78] := false; insq[ 78] := intsize;    insr[ 78] := 0; insf[ 78] := false;
-         instr[ 79]:='sroc      '; insp[ 79] := false; insq[ 79] := intsize;    insr[ 79] := 0; insf[ 79] := false;
-         instr[ 80]:='stoa      '; insp[ 80] := false; insq[ 80] := 0;          insr[ 80] := 0; insf[ 80] := false;
-         instr[ 81]:='stor      '; insp[ 81] := false; insq[ 81] := 0;          insr[ 81] := 0; insf[ 81] := false;
-         instr[ 82]:='stos      '; insp[ 82] := false; insq[ 82] := 0;          insr[ 82] := 0; insf[ 82] := false;
-         instr[ 83]:='stob      '; insp[ 83] := false; insq[ 83] := 0;          insr[ 83] := 0; insf[ 83] := false;
-         instr[ 84]:='stoc      '; insp[ 84] := false; insq[ 84] := 0;          insr[ 84] := 0; insf[ 84] := false;
-         instr[ 85]:='inda      '; insp[ 85] := false; insq[ 85] := intsize;    insr[ 85] := 1; insf[ 85] := false;
-         instr[ 86]:='indr      '; insp[ 86] := false; insq[ 86] := intsize;    insr[ 86] := 1; insf[ 86] := true;
-         instr[ 87]:='inds      '; insp[ 87] := false; insq[ 87] := intsize;    insr[ 87] := 1; insf[ 87] := false;
-         instr[ 88]:='indb      '; insp[ 88] := false; insq[ 88] := intsize;    insr[ 88] := 1; insf[ 88] := false;
-         instr[ 89]:='indc      '; insp[ 89] := false; insq[ 89] := intsize;    insr[ 89] := 1; insf[ 89] := false;
-         instr[ 90]:='inca      '; insp[ 90] := false; insq[ 90] := intsize;    insr[ 90] := 1; insf[ 90] := false;
-         instr[ 91]:='suv       '; insp[ 91] := false; insq[ 91] := intsize*2;  insr[ 91] := 0; insf[ 91] := false;
-         instr[ 92]:='vbs       '; insp[ 92] := false; insq[ 92] := intsize;    insr[ 92] := 0; insf[ 92] := false;
-         instr[ 93]:='incb      '; insp[ 93] := false; insq[ 93] := intsize;    insr[ 93] := 1; insf[ 93] := false;
-         instr[ 94]:='incc      '; insp[ 94] := false; insq[ 94] := intsize;    insr[ 94] := 1; insf[ 94] := false;
-         instr[ 95]:='chka      '; insp[ 95] := false; insq[ 95] := intsize;    insr[ 95] := 1; insf[ 95] := false;
-         instr[ 96]:='vbe       '; insp[ 96] := false; insq[ 96] := 0;          insr[ 96] := 0; insf[ 96] := false;
-         instr[ 97]:='chks      '; insp[ 97] := false; insq[ 97] := intsize;    insr[ 97] := 0; insf[ 97] := false;
-         instr[ 98]:='chkb      '; insp[ 98] := false; insq[ 98] := intsize;    insr[ 98] := 1; insf[ 98] := false;
-         instr[ 99]:='chkc      '; insp[ 99] := false; insq[ 99] := intsize;    insr[ 99] := 1; insf[ 99] := false;
-         instr[100]:='cvbi      '; insp[100] := false; insq[100] := intsize*3;  insr[100] := 2; insf[100] := false;
-         instr[101]:='ivtx      '; insp[101] := false; insq[101] := intsize*3;  insr[101] := 2; insf[101] := false;
-         instr[102]:='ivtb      '; insp[102] := false; insq[102] := intsize*3;  insr[102] := 2; insf[102] := false;
-         instr[103]:='decb      '; insp[103] := false; insq[103] := intsize;    insr[103] := 1; insf[103] := false;
-         instr[104]:='decc      '; insp[104] := false; insq[104] := intsize;    insr[104] := 1; insf[104] := false;
-         instr[105]:='loda      '; insp[105] := true;  insq[105] := intsize;    insr[105] := 1; insf[105] := false;
-         instr[106]:='lodr      '; insp[106] := true;  insq[106] := intsize;    insr[106] := 1; insf[106] := true;
-         instr[107]:='lods      '; insp[107] := true;  insq[107] := intsize;    insr[107] := 1; insf[107] := false;
-         instr[108]:='lodb      '; insp[108] := true;  insq[108] := intsize;    insr[108] := 1; insf[108] := false;
-         instr[109]:='lodc      '; insp[109] := true;  insq[109] := intsize;    insr[109] := 1; insf[109] := false;
-         instr[110]:='rgs       '; insp[110] := false; insq[110] := 0;          insr[110] := 1; insf[110] := false;
-         instr[111]:='ivtc      '; insp[111] := false; insq[111] := intsize*3;  insr[111] := 2; insf[111] := false;
-         instr[112]:='ipj       '; insp[112] := true;  insq[112] := intsize;    insr[112] := 0; insf[112] := false;
-         instr[113]:='cip       '; insp[113] := false; insq[113] := 0;          insr[113] := 0; insf[113] := false;
-         instr[114]:='lpa       '; insp[114] := true;  insq[114] := intsize;    insr[114] := 2; insf[114] := false;
-         instr[115]:='cvbx      '; insp[115] := false; insq[115] := intsize*3;  insr[115] := 2; insf[115] := false;
-         instr[116]:='cvbb      '; insp[116] := false; insq[116] := intsize*3;  insr[116] := 2; insf[116] := false;
-         instr[117]:='dmp       '; insp[117] := false; insq[117] := intsize;    insr[117] := 0; insf[117] := false;
-         instr[118]:='swp       '; insp[118] := false; insq[118] := intsize;    insr[118] := 2; insf[118] := false;
-         instr[119]:='tjp       '; insp[119] := false; insq[119] := intsize;    insr[119] := 0; insf[119] := false;
-         instr[120]:='lip       '; insp[120] := true;  insq[120] := intsize;    insr[120] := 2; insf[120] := false;
-         instr[121]:='cvbc      '; insp[121] := false; insq[121] := intsize*3;  insr[121] := 2; insf[121] := false;
-         instr[122]:='vis       '; insp[122] := false; insq[122] := intsize*2;  insr[122] := 1; insf[122] := false;
-         instr[123]:='ldci      '; insp[123] := false; insq[123] := intsize;    insr[123] := 1; insf[123] := false;
-         instr[124]:='ldcr      '; insp[124] := false; insq[124] := intsize;    insr[124] := 1; insf[124] := true;
-         instr[125]:='ldcn      '; insp[125] := false; insq[125] := 0;          insr[125] := 1; insf[125] := false;
-         instr[126]:='ldcb      '; insp[126] := false; insq[126] := boolsize;   insr[126] := 1; insf[126] := false;
-         instr[127]:='ldcc      '; insp[127] := false; insq[127] := charsize;   insr[127] := 1; insf[127] := false;
-         instr[128]:='reti      '; insp[128] := false; insq[128] := intsize;    insr[128] := 1; insf[128] := false;
-         instr[129]:='retr      '; insp[129] := false; insq[129] := intsize;    insr[129] := 1; insf[129] := false;
-         instr[130]:='retc      '; insp[130] := false; insq[130] := intsize;    insr[130] := 1; insf[130] := false;
-         instr[131]:='retb      '; insp[131] := false; insq[131] := intsize;    insr[131] := 1; insf[131] := false;
-         instr[132]:='reta      '; insp[132] := false; insq[132] := intsize;    insr[132] := 1; insf[132] := false;
-         instr[133]:='vip       '; insp[133] := false; insq[133] := intsize*2;  insr[133] := 0; insf[133] := false;
-         instr[134]:='ordb      '; insp[134] := false; insq[134] := 0;          insr[134] := 1; insf[134] := false;
-         instr[135]:='lcp       '; insp[135] := false; insq[135] := 0;          insr[135] := 2; insf[135] := false;
-         instr[136]:='ordc      '; insp[136] := false; insq[136] := 0;          insr[136] := 1; insf[136] := false;
-         instr[137]:='equi      '; insp[137] := false; insq[137] := 0;          insr[137] := 1; insf[137] := false;
-         instr[138]:='equr      '; insp[138] := false; insq[138] := 0;          insr[138] := 1; insf[138] := false;
-         instr[139]:='equb      '; insp[139] := false; insq[139] := 0;          insr[139] := 1; insf[139] := false;
-         instr[140]:='equs      '; insp[140] := false; insq[140] := 0;          insr[140] := 1; insf[140] := false;
-         instr[141]:='equc      '; insp[141] := false; insq[141] := 0;          insr[141] := 1; insf[141] := false;
-         instr[142]:='equm      '; insp[142] := false; insq[142] := intsize;    insr[142] := 1; insf[142] := false;
-         instr[143]:='neqi      '; insp[143] := false; insq[143] := 0;          insr[143] := 1; insf[143] := false;
-         instr[144]:='neqr      '; insp[144] := false; insq[144] := 0;          insr[144] := 1; insf[144] := false;
-         instr[145]:='neqb      '; insp[145] := false; insq[145] := 0;          insr[145] := 1; insf[145] := false;
-         instr[146]:='neqs      '; insp[146] := false; insq[146] := 0;          insr[146] := 1; insf[146] := false;
-         instr[147]:='neqc      '; insp[147] := false; insq[147] := 0;          insr[147] := 1; insf[147] := false;
-         instr[148]:='neqm      '; insp[148] := false; insq[148] := intsize;    insr[148] := 1; insf[148] := false;
-         instr[149]:='geqi      '; insp[149] := false; insq[149] := 0;          insr[149] := 1; insf[149] := false;
-         instr[150]:='geqr      '; insp[150] := false; insq[150] := 0;          insr[150] := 1; insf[150] := false;
-         instr[151]:='geqb      '; insp[151] := false; insq[151] := 0;          insr[151] := 1; insf[151] := false;
-         instr[152]:='geqs      '; insp[152] := false; insq[152] := 0;          insr[152] := 1; insf[152] := false;
-         instr[153]:='geqc      '; insp[153] := false; insq[153] := 0;          insr[153] := 1; insf[153] := false;
-         instr[154]:='geqm      '; insp[154] := false; insq[154] := intsize;    insr[154] := 1; insf[154] := false;
-         instr[155]:='grti      '; insp[155] := false; insq[155] := 0;          insr[155] := 1; insf[155] := false;
-         instr[156]:='grtr      '; insp[156] := false; insq[156] := 0;          insr[156] := 1; insf[156] := false;
-         instr[157]:='grtb      '; insp[157] := false; insq[157] := 0;          insr[157] := 1; insf[157] := false;
-         instr[158]:='grts      '; insp[158] := false; insq[158] := 0;          insr[158] := 1; insf[158] := false;
-         instr[159]:='grtc      '; insp[159] := false; insq[159] := 0;          insr[159] := 1; insf[159] := false;
-         instr[160]:='grtm      '; insp[160] := false; insq[160] := intsize;    insr[160] := 1; insf[160] := false;
-         instr[161]:='leqi      '; insp[161] := false; insq[161] := 0;          insr[161] := 1; insf[161] := false;
-         instr[162]:='leqr      '; insp[162] := false; insq[162] := 0;          insr[162] := 1; insf[162] := false;
-         instr[163]:='leqb      '; insp[163] := false; insq[163] := 0;          insr[163] := 1; insf[163] := false;
-         instr[164]:='leqs      '; insp[164] := false; insq[164] := 0;          insr[164] := 1; insf[164] := false;
-         instr[165]:='leqc      '; insp[165] := false; insq[165] := 0;          insr[165] := 1; insf[165] := false;
-         instr[166]:='leqm      '; insp[166] := false; insq[166] := intsize;    insr[166] := 1; insf[166] := false;
-         instr[167]:='lesi      '; insp[167] := false; insq[167] := 0;          insr[167] := 1; insf[167] := false;
-         instr[168]:='lesr      '; insp[168] := false; insq[168] := 0;          insr[168] := 1; insf[168] := false;
-         instr[169]:='lesb      '; insp[169] := false; insq[169] := 0;          insr[169] := 1; insf[169] := false;
-         instr[170]:='less      '; insp[170] := false; insq[170] := 0;          insr[170] := 1; insf[170] := false;
-         instr[171]:='lesc      '; insp[171] := false; insq[171] := 0;          insr[171] := 1; insf[171] := false;
-         instr[172]:='lesm      '; insp[172] := false; insq[172] := intsize;    insr[172] := 1; insf[172] := false;
-         instr[173]:='---       '; insp[173] := false; insq[173] := 0;          insr[173] := 0; insf[173] := false;
-         instr[174]:='mrkl*     '; insp[174] := false; insq[174] := intsize;    insr[174] := 0; insf[174] := false;
-         instr[175]:='ckvi      '; insp[175] := false; insq[175] := intsize;    insr[175] := 2; insf[175] := false;
-         instr[176]:='cps       '; insp[176] := false; insq[176] := 0;          insr[176] := 3; insf[176] := false;
-         instr[177]:='cpc       '; insp[177] := false; insq[177] := intsize;    insr[177] := 3; insf[177] := false;
-         instr[178]:='aps       '; insp[178] := false; insq[178] := intsize;    insr[178] := 0; insf[178] := false;
-         instr[179]:='ckvb      '; insp[179] := false; insq[179] := intsize;    insr[179] := 2; insf[179] := false;
-         instr[180]:='ckvc      '; insp[180] := false; insq[180] := intsize;    insr[180] := 2; insf[180] := false;
-         instr[181]:='dupi      '; insp[181] := false; insq[181] := 0;          insr[181] := 1; insf[181] := false;
-         instr[182]:='dupa      '; insp[182] := false; insq[182] := 0;          insr[182] := 2; insf[182] := false;
-         instr[183]:='dupr      '; insp[183] := false; insq[183] := 0;          insr[183] := 1; insf[183] := true;
-         instr[184]:='dups      '; insp[184] := false; insq[184] := 0;          insr[184] := 1; insf[184] := false;
-         instr[185]:='dupb      '; insp[185] := false; insq[185] := 0;          insr[185] := 1; insf[185] := false;
-         instr[186]:='dupc      '; insp[186] := false; insq[186] := 0;          insr[186] := 1; insf[186] := false;
-         instr[187]:='cks       '; insp[187] := false; insq[187] := 0;          insr[187] := 2; insf[187] := false;
-         instr[188]:='cke       '; insp[188] := false; insq[188] := 0;          insr[188] := 0; insf[188] := false;
-         instr[189]:='inv       '; insp[189] := false; insq[189] := 0;          insr[189] := 0; insf[189] := false;
-         instr[190]:='ckla      '; insp[190] := false; insq[190] := intsize;    insr[190] := 1; insf[190] := false;
-         instr[191]:='cta       '; insp[191] := false; insq[191] := intsize*3;  insr[191] := 2; insf[191] := false;
-         instr[192]:='ivti      '; insp[192] := false; insq[192] := intsize*3;  insr[192] := 2; insf[192] := false;
-         instr[193]:='lodx      '; insp[193] := true;  insq[193] := intsize;    insr[193] := 1; insf[193] := false;
-         instr[194]:='ldox      '; insp[194] := false; insq[194] := intsize;    insr[194] := 1; insf[194] := false;
-         instr[195]:='strx      '; insp[195] := true;  insq[195] := intsize;    insr[195] := 0; insf[195] := false;
-         instr[196]:='srox      '; insp[196] := false; insq[196] := intsize;    insr[196] := 1; insf[196] := false;
-         instr[197]:='stox      '; insp[197] := false; insq[197] := 0;          insr[197] := 0; insf[197] := false;
-         instr[198]:='indx      '; insp[198] := false; insq[198] := intsize;    insr[198] := 1; insf[198] := false;
-         instr[199]:='chkx      '; insp[199] := false; insq[199] := intsize;    insr[199] := 1; insf[199] := false;
-         instr[200]:='ordx      '; insp[200] := false; insq[200] := 0;          insr[200] := 1; insf[200] := false;
-         instr[201]:='incx      '; insp[201] := false; insq[201] := intsize;    insr[201] := 1; insf[201] := false;
-         instr[202]:='decx      '; insp[202] := false; insq[202] := intsize;    insr[202] := 1; insf[202] := false;
-         instr[203]:='ckvx      '; insp[203] := false; insq[203] := intsize;    insr[203] := 2; insf[203] := false;
-         instr[204]:='retx      '; insp[204] := false; insq[204] := intsize;    insr[204] := 1; insf[204] := false;
-         instr[205]:='noti      '; insp[205] := false; insq[205] := 0;          insr[205] := 1; insf[205] := false;
-         instr[206]:='xor       '; insp[206] := false; insq[206] := 0;          insr[206] := 1; insf[206] := false;
-         instr[207]:='bge       '; insp[207] := false; insq[207] := intsize;    insr[207] := 4; insf[207] := false;
-         instr[208]:='ede       '; insp[208] := false; insq[208] := 0;          insr[208] := 0; insf[208] := false;
-         instr[209]:='mse       '; insp[209] := false; insq[209] := 0;          insr[209] := 0; insf[209] := false;
-         instr[210]:='apc       '; insp[210] := false; insq[210] := intsize*2;  insr[210] := 0; insf[210] := false;
-         instr[211]:='cxs       '; insp[211] := false; insq[211] := intsize;    insr[211] := 1; insf[211] := false;
-         instr[212]:='cxc       '; insp[212] := false; insq[212] := intsize*2;  insr[212] := 2; insf[212] := false;
-         instr[213]:='lft       '; insp[213] := false; insq[213] := intsize;    insr[213] := 2; insf[213] := false;
-         instr[214]:='max       '; insp[214] := false; insq[214] := intsize;    insr[214] := 1; insf[214] := false;
-         instr[215]:='equv      '; insp[215] := false; insq[215] := 0;          insr[215] := 1; insf[215] := false;
-         instr[216]:='neqv      '; insp[216] := false; insq[216] := 0;          insr[216] := 1; insf[216] := false;
-         instr[217]:='lesv      '; insp[217] := false; insq[217] := 0;          insr[217] := 1; insf[217] := false;
-         instr[218]:='grtv      '; insp[218] := false; insq[218] := 0;          insr[218] := 1; insf[218] := false;
-         instr[219]:='leqv      '; insp[219] := false; insq[219] := 0;          insr[219] := 1; insf[219] := false;
-         instr[220]:='geqv      '; insp[220] := false; insq[220] := 0;          insr[220] := 1; insf[220] := false;
-         instr[221]:='vdp       '; insp[221] := false; insq[221] := 0;          insr[221] := 0; insf[221] := false;
-         instr[222]:='spc       '; insp[222] := false; insq[222] := 0;          insr[222] := 2; insf[222] := false;
-         instr[223]:='ccs       '; insp[223] := false; insq[223] := intsize*2;  insr[223] := 2; insf[223] := false;
-         instr[224]:='scp       '; insp[224] := false; insq[224] := 0;          insr[224] := 0; insf[224] := false;
-         instr[225]:='ldp       '; insp[225] := false; insq[225] := 0;          insr[225] := 2; insf[225] := false;
-         instr[226]:='vin       '; insp[226] := false; insq[226] := intsize*2;  insr[226] := 0; insf[226] := false;
-         instr[227]:='vdd       '; insp[227] := false; insq[227] := 0;          insr[227] := 0; insf[227] := false;
+         instr[  0]:='lodi      '; insr[  0] := 1; insf[  0] := false; 
+         instr[  1]:='ldoi      '; insr[  1] := 1; insf[  1] := false;
+         instr[  2]:='stri      '; insr[  2] := 0; insf[  2] := false; 
+         instr[  3]:='sroi      '; insr[  3] := 0; insf[  3] := false;
+         instr[  4]:='lda       '; insr[  4] := 1; insf[  4] := false; 
+         instr[  5]:='lao       '; insr[  5] := 1; insf[  5] := false;
+         instr[  6]:='stoi      '; insr[  6] := 0; insf[  6] := false;
+         instr[  7]:='ldcs      '; insr[  7] := 1; insf[  7] := false;
+         instr[  8]:='cjp       '; insr[  8] := 0; insf[  8] := false;
+         instr[  9]:='indi      '; insr[  9] := 1; insf[  9] := false;
+         instr[ 10]:='inci      '; insr[ 10] := 1; insf[ 10] := false;
+         instr[ 11]:='mst       '; insr[ 11] := 0; insf[ 11] := false; 
+         instr[ 12]:='cup       '; insr[ 12] := 0; insf[ 12] := false;
+         instr[ 13]:='rip       '; insr[ 13] := 0; insf[ 13] := false;
+         instr[ 14]:='retp      '; insr[ 14] := 0; insf[ 14] := false;
+         instr[ 15]:='csp       '; insr[ 15] := 0; insf[ 15] := false;
+         instr[ 16]:='ixa       '; insr[ 16] := 1; insf[ 16] := false;
+         instr[ 17]:='equa      '; insr[ 17] := 1; insf[ 17] := false;
+         instr[ 18]:='neqa      '; insr[ 18] := 1; insf[ 18] := false;
+         instr[ 19]:='brk*      '; insr[ 19] := 0; insf[ 19] := false;
+         instr[ 20]:='lnp*      '; insr[ 20] := 0; insf[ 20] := false;
+         instr[ 21]:='cal       '; insr[ 21] := 1; insf[ 21] := false;
+         instr[ 22]:='ret       '; insr[ 22] := 0; insf[ 22] := false;
+         instr[ 23]:='ujp       '; insr[ 23] := 0; insf[ 23] := false;
+         instr[ 24]:='fjp       '; insr[ 24] := 0; insf[ 24] := false;
+         instr[ 25]:='xjp       '; insr[ 25] := 0; insf[ 25] := false;
+         instr[ 26]:='chki      '; insr[ 26] := 1; insf[ 26] := false;
+         instr[ 27]:='cuv       '; insr[ 27] := 0; insf[ 27] := false;
+         instr[ 28]:='adi       '; insr[ 28] := 1; insf[ 28] := false;
+         instr[ 29]:='adr       '; insr[ 29] := 1; insf[ 29] := true;
+         instr[ 30]:='sbi       '; insr[ 30] := 1; insf[ 30] := false;
+         instr[ 31]:='sbr       '; insr[ 31] := 1; insf[ 31] := true;
+         instr[ 32]:='sgs       '; insr[ 32] := 1; insf[ 32] := false;
+         instr[ 33]:='flt       '; insr[ 33] := 1; insf[ 33] := false;
+         instr[ 34]:='flo       '; insr[ 34] := 2; insf[ 34] := false;
+         instr[ 35]:='trc       '; insr[ 35] := 1; insf[ 35] := false;
+         instr[ 36]:='ngi       '; insr[ 36] := 1; insf[ 36] := false;
+         instr[ 37]:='ngr       '; insr[ 37] := 1; insf[ 37] := true;
+         instr[ 38]:='sqi       '; insr[ 38] := 1; insf[ 38] := false;
+         instr[ 39]:='sqr       '; insr[ 39] := 1; insf[ 39] := true;
+         instr[ 40]:='abi       '; insr[ 40] := 1; insf[ 40] := false;
+         instr[ 41]:='abr       '; insr[ 41] := 1; insf[ 41] := true;
+         instr[ 42]:='notb      '; insr[ 42] := 1; insf[ 42] := false;
+         instr[ 43]:='and       '; insr[ 43] := 1; insf[ 43] := false;
+         instr[ 44]:='ior       '; insr[ 44] := 1; insf[ 44] := false;
+         instr[ 45]:='dif       '; insr[ 45] := 1; insf[ 45] := false;
+         instr[ 46]:='int       '; insr[ 46] := 1; insf[ 46] := false;
+         instr[ 47]:='uni       '; insr[ 47] := 1; insf[ 47] := false;
+         instr[ 48]:='inn       '; insr[ 48] := 1; insf[ 48] := false;
+         instr[ 49]:='mod       '; insr[ 49] := 1; insf[ 49] := false;
+         instr[ 50]:='odd       '; insr[ 50] := 1; insf[ 50] := false;
+         instr[ 51]:='mpi       '; insr[ 51] := 1; insf[ 51] := false;
+         instr[ 52]:='mpr       '; insr[ 52] := 1; insf[ 52] := true;
+         instr[ 53]:='dvi       '; insr[ 53] := 1; insf[ 53] := false;
+         instr[ 54]:='dvr       '; insr[ 54] := 1; insf[ 54] := true;
+         instr[ 55]:='mov       '; insr[ 55] := 0; insf[ 55] := false;
+         instr[ 56]:='lca       '; insr[ 56] := 1; insf[ 56] := false;
+         instr[ 57]:='deci      '; insr[ 57] := 1; insf[ 57] := false;
+         instr[ 58]:='stp*      '; insr[ 58] := 0; insf[ 58] := false;
+         instr[ 59]:='ordi      '; insr[ 59] := 1; insf[ 59] := false;
+         instr[ 60]:='chr       '; insr[ 60] := 1; insf[ 60] := false;
+         instr[ 61]:='ujc       '; insr[ 61] := 0; insf[ 61] := false;
+         instr[ 62]:='rnd       '; insr[ 62] := 1; insf[ 62] := false;
+         instr[ 63]:='pck       '; insr[ 63] := 0; insf[ 63] := false;
+         instr[ 64]:='upk       '; insr[ 64] := 0; insf[ 64] := false;
+         instr[ 65]:='ldoa      '; insr[ 65] := 1; insf[ 65] := false;
+         instr[ 66]:='ldor      '; insr[ 66] := 1; insf[ 66] := true;
+         instr[ 67]:='ldos      '; insr[ 67] := 1; insf[ 67] := false;
+         instr[ 68]:='ldob      '; insr[ 68] := 1; insf[ 68] := false;
+         instr[ 69]:='ldoc      '; insr[ 69] := 1; insf[ 69] := false;
+         instr[ 70]:='stra      '; insr[ 70] := 0; insf[ 70] := false;
+         instr[ 71]:='strr      '; insr[ 71] := 0; insf[ 71] := false;
+         instr[ 72]:='strs      '; insr[ 72] := 0; insf[ 72] := false;
+         instr[ 73]:='strb      '; insr[ 73] := 0; insf[ 73] := false;
+         instr[ 74]:='strc      '; insr[ 74] := 0; insf[ 74] := false;
+         instr[ 75]:='sroa      '; insr[ 75] := 0; insf[ 75] := false;
+         instr[ 76]:='sror      '; insr[ 76] := 1; insf[ 76] := true;
+         instr[ 77]:='sros      '; insr[ 77] := 1; insf[ 77] := false;
+         instr[ 78]:='srob      '; insr[ 78] := 0; insf[ 78] := false;
+         instr[ 79]:='sroc      '; insr[ 79] := 0; insf[ 79] := false;
+         instr[ 80]:='stoa      '; insr[ 80] := 0; insf[ 80] := false;
+         instr[ 81]:='stor      '; insr[ 81] := 0; insf[ 81] := false;
+         instr[ 82]:='stos      '; insr[ 82] := 0; insf[ 82] := false;
+         instr[ 83]:='stob      '; insr[ 83] := 0; insf[ 83] := false;
+         instr[ 84]:='stoc      '; insr[ 84] := 0; insf[ 84] := false;
+         instr[ 85]:='inda      '; insr[ 85] := 1; insf[ 85] := false;
+         instr[ 86]:='indr      '; insr[ 86] := 1; insf[ 86] := true;
+         instr[ 87]:='inds      '; insr[ 87] := 1; insf[ 87] := false;
+         instr[ 88]:='indb      '; insr[ 88] := 1; insf[ 88] := false;
+         instr[ 89]:='indc      '; insr[ 89] := 1; insf[ 89] := false;
+         instr[ 90]:='inca      '; insr[ 90] := 1; insf[ 90] := false;
+         instr[ 91]:='suv       '; insr[ 91] := 0; insf[ 91] := false;
+         instr[ 92]:='vbs       '; insr[ 92] := 0; insf[ 92] := false;
+         instr[ 93]:='incb      '; insr[ 93] := 1; insf[ 93] := false;
+         instr[ 94]:='incc      '; insr[ 94] := 1; insf[ 94] := false;
+         instr[ 95]:='chka      '; insr[ 95] := 1; insf[ 95] := false;
+         instr[ 96]:='vbe       '; insr[ 96] := 0; insf[ 96] := false;
+         instr[ 97]:='chks      '; insr[ 97] := 0; insf[ 97] := false;
+         instr[ 98]:='chkb      '; insr[ 98] := 1; insf[ 98] := false;
+         instr[ 99]:='chkc      '; insr[ 99] := 1; insf[ 99] := false;
+         instr[100]:='cvbi      '; insr[100] := 2; insf[100] := false;
+         instr[101]:='ivtx      '; insr[101] := 2; insf[101] := false;
+         instr[102]:='ivtb      '; insr[102] := 2; insf[102] := false;
+         instr[103]:='decb      '; insr[103] := 1; insf[103] := false;
+         instr[104]:='decc      '; insr[104] := 1; insf[104] := false;
+         instr[105]:='loda      '; insr[105] := 1; insf[105] := false;
+         instr[106]:='lodr      '; insr[106] := 1; insf[106] := true;
+         instr[107]:='lods      '; insr[107] := 1; insf[107] := false;
+         instr[108]:='lodb      '; insr[108] := 1; insf[108] := false;
+         instr[109]:='lodc      '; insr[109] := 1; insf[109] := false;
+         instr[110]:='rgs       '; insr[110] := 1; insf[110] := false;
+         instr[111]:='ivtc      '; insr[111] := 2; insf[111] := false;
+         instr[112]:='ipj       '; insr[112] := 0; insf[112] := false;
+         instr[113]:='cip       '; insr[113] := 0; insf[113] := false;
+         instr[114]:='lpa       '; insr[114] := 2; insf[114] := false;
+         instr[115]:='cvbx      '; insr[115] := 2; insf[115] := false;
+         instr[116]:='cvbb      '; insr[116] := 2; insf[116] := false;
+         instr[117]:='dmp       '; insr[117] := 0; insf[117] := false;
+         instr[118]:='swp       '; insr[118] := 2; insf[118] := false;
+         instr[119]:='tjp       '; insr[119] := 0; insf[119] := false;
+         instr[120]:='lip       '; insr[120] := 2; insf[120] := false;
+         instr[121]:='cvbc      '; insr[121] := 2; insf[121] := false;
+         instr[122]:='vis       '; insr[122] := 1; insf[122] := false;
+         instr[123]:='ldci      '; insr[123] := 1; insf[123] := false;
+         instr[124]:='ldcr      '; insr[124] := 1; insf[124] := true;
+         instr[125]:='ldcn      '; insr[125] := 1; insf[125] := false;
+         instr[126]:='ldcb      '; insr[126] := 1; insf[126] := false;
+         instr[127]:='ldcc      '; insr[127] := 1; insf[127] := false;
+         instr[128]:='reti      '; insr[128] := 1; insf[128] := false;
+         instr[129]:='retr      '; insr[129] := 1; insf[129] := false;
+         instr[130]:='retc      '; insr[130] := 1; insf[130] := false;
+         instr[131]:='retb      '; insr[131] := 1; insf[131] := false;
+         instr[132]:='reta      '; insr[132] := 1; insf[132] := false;
+         instr[133]:='vip       '; insr[133] := 0; insf[133] := false;
+         instr[134]:='ordb      '; insr[134] := 1; insf[134] := false;
+         instr[135]:='lcp       '; insr[135] := 2; insf[135] := false;
+         instr[136]:='ordc      '; insr[136] := 1; insf[136] := false;
+         instr[137]:='equi      '; insr[137] := 1; insf[137] := false;
+         instr[138]:='equr      '; insr[138] := 1; insf[138] := false;
+         instr[139]:='equb      '; insr[139] := 1; insf[139] := false;
+         instr[140]:='equs      '; insr[140] := 1; insf[140] := false;
+         instr[141]:='equc      '; insr[141] := 1; insf[141] := false;
+         instr[142]:='equm      '; insr[142] := 1; insf[142] := false;
+         instr[143]:='neqi      '; insr[143] := 1; insf[143] := false;
+         instr[144]:='neqr      '; insr[144] := 1; insf[144] := false;
+         instr[145]:='neqb      '; insr[145] := 1; insf[145] := false;
+         instr[146]:='neqs      '; insr[146] := 1; insf[146] := false;
+         instr[147]:='neqc      '; insr[147] := 1; insf[147] := false;
+         instr[148]:='neqm      '; insr[148] := 1; insf[148] := false;
+         instr[149]:='geqi      '; insr[149] := 1; insf[149] := false;
+         instr[150]:='geqr      '; insr[150] := 1; insf[150] := false;
+         instr[151]:='geqb      '; insr[151] := 1; insf[151] := false;
+         instr[152]:='geqs      '; insr[152] := 1; insf[152] := false;
+         instr[153]:='geqc      '; insr[153] := 1; insf[153] := false;
+         instr[154]:='geqm      '; insr[154] := 1; insf[154] := false;
+         instr[155]:='grti      '; insr[155] := 1; insf[155] := false;
+         instr[156]:='grtr      '; insr[156] := 1; insf[156] := false;
+         instr[157]:='grtb      '; insr[157] := 1; insf[157] := false;
+         instr[158]:='grts      '; insr[158] := 1; insf[158] := false;
+         instr[159]:='grtc      '; insr[159] := 1; insf[159] := false;
+         instr[160]:='grtm      '; insr[160] := 1; insf[160] := false;
+         instr[161]:='leqi      '; insr[161] := 1; insf[161] := false;
+         instr[162]:='leqr      '; insr[162] := 1; insf[162] := false;
+         instr[163]:='leqb      '; insr[163] := 1; insf[163] := false;
+         instr[164]:='leqs      '; insr[164] := 1; insf[164] := false;
+         instr[165]:='leqc      '; insr[165] := 1; insf[165] := false;
+         instr[166]:='leqm      '; insr[166] := 1; insf[166] := false;
+         instr[167]:='lesi      '; insr[167] := 1; insf[167] := false;
+         instr[168]:='lesr      '; insr[168] := 1; insf[168] := false;
+         instr[169]:='lesb      '; insr[169] := 1; insf[169] := false;
+         instr[170]:='less      '; insr[170] := 1; insf[170] := false;
+         instr[171]:='lesc      '; insr[171] := 1; insf[171] := false;
+         instr[172]:='lesm      '; insr[172] := 1; insf[172] := false;
+         instr[173]:='---       '; insr[173] := 0; insf[173] := false;
+         instr[174]:='mrkl*     '; insr[174] := 0; insf[174] := false;
+         instr[175]:='ckvi      '; insr[175] := 2; insf[175] := false;
+         instr[176]:='cps       '; insr[176] := 3; insf[176] := false;
+         instr[177]:='cpc       '; insr[177] := 3; insf[177] := false;
+         instr[178]:='aps       '; insr[178] := 0; insf[178] := false;
+         instr[179]:='ckvb      '; insr[179] := 2; insf[179] := false;
+         instr[180]:='ckvc      '; insr[180] := 2; insf[180] := false;
+         instr[181]:='dupi      '; insr[181] := 1; insf[181] := false;
+         instr[182]:='dupa      '; insr[182] := 2; insf[182] := false;
+         instr[183]:='dupr      '; insr[183] := 1; insf[183] := true;
+         instr[184]:='dups      '; insr[184] := 1; insf[184] := false;
+         instr[185]:='dupb      '; insr[185] := 1; insf[185] := false;
+         instr[186]:='dupc      '; insr[186] := 1; insf[186] := false;
+         instr[187]:='cks       '; insr[187] := 2; insf[187] := false;
+         instr[188]:='cke       '; insr[188] := 0; insf[188] := false;
+         instr[189]:='inv       '; insr[189] := 0; insf[189] := false;
+         instr[190]:='ckla      '; insr[190] := 1; insf[190] := false;
+         instr[191]:='cta       '; insr[191] := 2; insf[191] := false;
+         instr[192]:='ivti      '; insr[192] := 2; insf[192] := false;
+         instr[193]:='lodx      '; insr[193] := 1; insf[193] := false;
+         instr[194]:='ldox      '; insr[194] := 1; insf[194] := false;
+         instr[195]:='strx      '; insr[195] := 0; insf[195] := false;
+         instr[196]:='srox      '; insr[196] := 1; insf[196] := false;
+         instr[197]:='stox      '; insr[197] := 0; insf[197] := false;
+         instr[198]:='indx      '; insr[198] := 1; insf[198] := false;
+         instr[199]:='chkx      '; insr[199] := 1; insf[199] := false;
+         instr[200]:='ordx      '; insr[200] := 1; insf[200] := false;
+         instr[201]:='incx      '; insr[201] := 1; insf[201] := false;
+         instr[202]:='decx      '; insr[202] := 1; insf[202] := false;
+         instr[203]:='ckvx      '; insr[203] := 2; insf[203] := false;
+         instr[204]:='retx      '; insr[204] := 1; insf[204] := false;
+         instr[205]:='noti      '; insr[205] := 1; insf[205] := false;
+         instr[206]:='xor       '; insr[206] := 1; insf[206] := false;
+         instr[207]:='bge       '; insr[207] := 4; insf[207] := false;
+         instr[208]:='ede       '; insr[208] := 0; insf[208] := false;
+         instr[209]:='mse       '; insr[209] := 0; insf[209] := false;
+         instr[210]:='apc       '; insr[210] := 0; insf[210] := false;
+         instr[211]:='cxs       '; insr[211] := 1; insf[211] := false;
+         instr[212]:='cxc       '; insr[212] := 2; insf[212] := false;
+         instr[213]:='lft       '; insr[213] := 2; insf[213] := false;
+         instr[214]:='max       '; insr[214] := 1; insf[214] := false;
+         instr[215]:='equv      '; insr[215] := 1; insf[215] := false;
+         instr[216]:='neqv      '; insr[216] := 1; insf[216] := false;
+         instr[217]:='lesv      '; insr[217] := 1; insf[217] := false;
+         instr[218]:='grtv      '; insr[218] := 1; insf[218] := false;
+         instr[219]:='leqv      '; insr[219] := 1; insf[219] := false;
+         instr[220]:='geqv      '; insr[220] := 1; insf[220] := false;
+         instr[221]:='vdp       '; insr[221] := 0; insf[221] := false;
+         instr[222]:='spc       '; insr[222] := 2; insf[222] := false;
+         instr[223]:='ccs       '; insr[223] := 2; insf[223] := false;
+         instr[224]:='scp       '; insr[224] := 0; insf[224] := false;
+         instr[225]:='ldp       '; insr[225] := 2; insf[225] := false;
+         instr[226]:='vin       '; insr[226] := 0; insf[226] := false;
+         instr[227]:='vdd       '; insr[227] := 0; insf[227] := false;
          { ltc and lto are aliases to ldo and lao instructions }
-         instr[228]:='ltci      '; insp[228] := false; insq[228] := intsize;    insr[228] := 1; insf[228] := false;
-         instr[229]:='ltcr      '; insp[229] := false; insq[229] := intsize;    insr[229] := 1; insf[229] := true;
-         instr[230]:='ltcs      '; insp[230] := false; insq[230] := intsize;    insr[230] := 1; insf[230] := false;
-         instr[231]:='ltcb      '; insp[231] := false; insq[231] := intsize;    insr[231] := 1; insf[231] := false;
-         instr[232]:='ltcc      '; insp[232] := false; insq[232] := intsize;    insr[232] := 1; insf[232] := false;
-         instr[233]:='ltcx      '; insp[233] := false; insq[233] := intsize;    insr[233] := 1; insf[233] := false;
-         instr[234]:='lto       '; insp[234] := false; insq[234] := intsize;    insr[234] := 1; insf[234] := false;
-         instr[235]:='stom      '; insp[235] := false; insq[235] := intsize*2;  insr[235] := 0; insf[235] := false;
-         instr[236]:='rets      '; insp[236] := false; insq[236] := intsize;    insr[236] := 1; insf[236] := false;
-         instr[237]:='retm      '; insp[237] := false; insq[237] := intsize*2;  insr[237] := 1; insf[237] := false;
-         instr[238]:='ctb       '; insp[238] := false; insq[238] := intsize*2;  insr[238] := 0; insf[238] := false;
-         instr[239]:='cpp       '; insp[239] := false; insq[239] := intsize*2;  insr[239] := 1; insf[239] := false;
-         instr[240]:='cpr       '; insp[240] := false; insq[240] := intsize*2;  insr[240] := 1; insf[240] := false;
-         instr[241]:='lsa       '; insp[241] := false; insq[241] := intsize;    insr[241] := 1; insf[241] := false;
-         instr[242]:='eext*     '; insp[242] := false; insq[242] := 0;          insr[242] := 0; insf[242] := false;
-         instr[243]:='wbs       '; insp[243] := false; insq[243] := 0;          insr[243] := 1; insf[243] := false;
-         instr[244]:='wbe       '; insp[244] := false; insq[244] := 0;          insr[244] := 0; insf[244] := false;
-         instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;    insr[245] := 0; insf[245] := false;
-         instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;    insr[246] := 0; insf[246] := false;
-         instr[247]:='cif       '; insp[247] := false; insq[247] := 0;          insr[247] := 0; insf[247] := false;
+         instr[228]:='ltci      '; insr[228] := 1; insf[228] := false;
+         instr[229]:='ltcr      '; insr[229] := 1; insf[229] := true;
+         instr[230]:='ltcs      '; insr[230] := 1; insf[230] := false;
+         instr[231]:='ltcb      '; insr[231] := 1; insf[231] := false;
+         instr[232]:='ltcc      '; insr[232] := 1; insf[232] := false;
+         instr[233]:='ltcx      '; insr[233] := 1; insf[233] := false;
+         instr[234]:='lto       '; insr[234] := 1; insf[234] := false;
+         instr[235]:='stom      '; insr[235] := 0; insf[235] := false;
+         instr[236]:='rets      '; insr[236] := 1; insf[236] := false;
+         instr[237]:='retm      '; insr[237] := 1; insf[237] := false;
+         instr[238]:='ctb       '; insr[238] := 0; insf[238] := false;
+         instr[239]:='cpp       '; insr[239] := 1; insf[239] := false;
+         instr[240]:='cpr       '; insr[240] := 1; insf[240] := false;
+         instr[241]:='lsa       '; insr[241] := 1; insf[241] := false;
+         instr[242]:='eext*     '; insr[242] := 0; insf[242] := false;
+         instr[243]:='wbs       '; insr[243] := 1; insf[243] := false;
+         instr[244]:='wbe       '; insr[244] := 0; insf[244] := false;
+         instr[245]:='sfr       '; insr[245] := 0; insf[245] := false;
+         instr[246]:='cuf       '; insr[246] := 0; insf[246] := false;
+         instr[247]:='cif       '; insr[247] := 0; insf[247] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -1050,8 +1019,6 @@ procedure xlate;
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered end;
-         { initalize file state }
-         for i := 1 to maxfil do filstate[i] := fclosed;
 
          { !!! remove this next statement for self compile }
          {elide}reset(prd);{noelide}
@@ -1124,9 +1091,6 @@ procedure xlate;
    end;
 
    procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
-      var curr,succ,ad: address; (*resp. current element and successor element
-                               of a list of future references*)
-          op: instyp; q : address;  (*instruction register*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
       else begin
@@ -1449,13 +1413,11 @@ procedure xlate;
     procedure assemble; (*translate symbolic code into machine code and store*)
 
       var name :alfa; r :real; s :settype;
-          i,x,s1,lb,ub,l:integer; c: char;
+          i,s1,lb,ub,l:integer; c: char;
           str: strbuf; { buffer for string constants }
           cstp: cstptr;
           ep, ep2, ep3, ep4, ep5, pp: expptr;
-          r1, r2, t1, t2: reg; ors: set of reg; rage: array [reg] of integer;
-          rcon: array [reg] of expptr; domains: array [1..maxreg] of expptr;
-          sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
+          r1: reg; sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
 
       procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
@@ -1581,7 +1543,7 @@ procedure xlate;
         if efree <> nil then begin ep := efree; efree := ep^.next end
         else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
-        ep^.q2 := q2; ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
+        ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.cl := nil; ep^.al := nil; ep^.ndl := nil; ep^.pl := nil; 
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; 
         ep^.wkeep := false;
@@ -1721,7 +1683,6 @@ procedure xlate;
       end;
 
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
-      var rs: regset; pp: expptr; pn: integer;
 
       procedure resreg(r: reg);
       begin
@@ -2074,7 +2035,7 @@ procedure xlate;
 
           {csp}
           15: begin
-            asspar(ep, sppar[ep^.q])
+            asspar(ep, sppar[ep^.q]);
             if spfunc[ep^.q] then begin { function }
               if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
               else begin resreg(rgrax); ep^.r1 := r1 end;
@@ -2129,7 +2090,7 @@ procedure xlate;
         @  - Symbol
       }
       procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
-      var i,j: 1..insmax40; n: integer;
+      var i,j: 1..insmax40;
       procedure next;
       begin if i = insmax40 then errorl('Error in instruction     '); i := i+1
       end;
@@ -2221,13 +2182,13 @@ procedure xlate;
       end;
 
       procedure callsp(ep: expptr; var sc: alfa; r: boolean);
-      var si: insstr20; i: integer; pp: expptr; pc: integer;
+      var si: insstr20; i: integer; pp: expptr;
       begin
         { evaluate all parameters }
         pp := ep^.pl;
         while pp <> nil do begin 
           if not pp^.keep then genexp(pp); 
-          pp := pp^.next; pc := pc+1 
+          pp := pp^.next
         end;
         if ep^.pl <> nil then if ep^.pl^.keep then
           { restore kept from stack }
@@ -3680,8 +3641,32 @@ begin (* main *)
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
 
+  { supress warnings }
+  if dochkovf then;
+  if dodmplab then;
+  if dotrcrot then;
+  if dotrcins then;
+  if dosrclin then;
+  if dotrcsrc then;
+  if dorecycl then;
+  if dochkrpt then;
+  if donorecpar then;
+  if dochkdef then;
+  if iso7185 then;
+  if dodebug then;
+  if dodbgflt then;
+  if dodbgsrc then;
+  if dosrcprf then;
+  if dochkcov then;
+  if doanalys then;
+  if dodckout then;
+  if dochkvbk then;
+
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
+
+  { supress warning }
+  if blklst = nil then;
 
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
