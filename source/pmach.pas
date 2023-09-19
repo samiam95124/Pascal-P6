@@ -1235,7 +1235,7 @@ function getadr(a: address): address;
 
 var r: record case boolean of
 
-          true:  (a: address);
+          true:  (a: integer{address});
           false: (b: packed array [1..adrsize] of ibyte);
 
        end;
@@ -1255,7 +1255,7 @@ procedure putadr(a: address; ad: address);
 
 var r: record case boolean of
 
-          true:  (a: address);
+          true:  (a: integer{address});
           false: (b: packed array [1..adrsize] of ibyte);
 
        end;
