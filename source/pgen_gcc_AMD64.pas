@@ -3130,13 +3130,14 @@ procedure xlate;
           end; 
           writeln(prr, sptable[q]);
           getexp(ep); getparn(ep, sppar[q]);
-          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
-            begin ep^.ndl := estack; estack := nil end;
-          ep2 := ep^.ndl; ep3 := nil; 
-          if ep2 = nil then errorl('system error             ');
-          while ep2^.next <> nil do begin ep3 := ep2; ep2 := ep2^.next end;
-          if ep3 = nil then ep^.ndl := nil else ep3^.next := nil;
-          ep2^.next := ep^.pl; ep^.pl := ep2;
+          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
+            ep^.ndl := estack; estack := nil;
+            ep2 := ep^.ndl; ep3 := nil; 
+            if ep2 = nil then errorl('system error             ');
+            while ep2^.next <> nil do begin ep3 := ep2; ep2 := ep2^.next end;
+            if ep3 = nil then ep^.ndl := nil else ep3^.next := nil;
+            ep2^.next := ep^.pl; ep^.pl := ep2;
+          end;
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
             frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
