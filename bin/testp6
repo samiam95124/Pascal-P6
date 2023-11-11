@@ -38,7 +38,7 @@ echo > source/pint.mpp.inp
 #
 # Now run pint(p6) on pint(p6), which runs the test program.
 #
-echo "Running pint\(p6\) on pint\(p6\) to execute test program"
+echo "Running pint(p6) on pint(p6) to execute test program"
 run $1 standard_tests/iso7185pat.p6 source/pint.mpp
 #
 # Copy the result listing back to standardp.lst, again for neatness
