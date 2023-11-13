@@ -2212,7 +2212,7 @@ procedure xlate;
       begin { genexp }
         if ep <> nil then begin
           genexp(ep^.al);
-          if not (ep^.op in [100,115,116,121,192,101,102,111]) then begin
+          if not (ep^.op in [100,115,116,121,192,101,102,111,191]) then begin
             if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
             genexp(ep^.r); genexp(ep^.x1);
           end;
@@ -3111,7 +3111,7 @@ procedure xlate;
           getexp(ep);
           ep4 := estack;
           while ep4 <> nil do begin
-            if estack^.op in [187,179,180,175,203] then begin
+            if estack^.op in [{cks}187,{ckvb}179,{ckvc}180,{ckvi}175,{ckvx}203] then begin
               popstk(ep5); 
               if ep5^.op <> 187 then begin ep5^.next := ep^.cl; ep^.cl := ep5 end
               else putexp(ep5);
@@ -3408,7 +3408,8 @@ procedure xlate;
           ep3 := nil;
           ep4 := estack;
           while ep4 <> nil do begin
-            if estack^.op in [100,115,116,121,192,101,102,111] then begin
+            if estack^.op in [{cvbi}100,{cvbx}115,{cvbb}116,{cvbc}121,{ivti}192,
+                              {ivtx}101,{ivtb}102,{itvc}111,{cta}191] then begin
               popstk(ep5); ep5^.next := ep3; ep3 := ep5; ep4 := estack
             end else ep4 := nil
           end;
