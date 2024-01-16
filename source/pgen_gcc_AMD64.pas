@@ -976,8 +976,8 @@ procedure xlate;
          sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=3; spkeep[40]:=false; { special }
          sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
          sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
-         sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=false;
-         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=2; spkeep[44]:=false;
+         sptable[43]:='fbv       '; spfunc[43]:=false; sppar[43]:=1; spkeep[43]:=true;
+         sptable[44]:='fvb       '; spfunc[44]:=false; sppar[44]:=2; spkeep[44]:=true;
          sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2; spkeep[45]:=true;
          sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3; spkeep[46]:=false;
          sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1; spkeep[47]:=false;
@@ -1547,8 +1547,8 @@ procedure xlate;
         ep^.cl := nil; ep^.al := nil; ep^.ndl := nil; ep^.pl := nil; 
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
-        ep^.wkeep := false;
-        ep^.keep := false; ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
+        ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; ep^.lb := nil; 
+        ep^.lt := nil;
       end;
       
       procedure putexp(ep: expptr);
