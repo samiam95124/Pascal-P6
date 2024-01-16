@@ -940,7 +940,7 @@ procedure xlate;
          sptable[ 4]:='new       '; spfunc[ 4]:=false; sppar[ 4]:=2; spkeep[ 4]:=false;   
          sptable[ 5]:='wln       '; spfunc[ 5]:=false; sppar[ 5]:=1; spkeep[ 5]:=true;
          sptable[ 6]:='wrs       '; spfunc[ 6]:=false; sppar[ 6]:=4; spkeep[ 6]:=true;   
-         sptable[ 7]:='eln       '; spfunc[ 7]:=false; sppar[ 7]:=1; spkeep[ 7]:=false;
+         sptable[ 7]:='eln       '; spfunc[ 7]:=true;  sppar[ 7]:=1; spkeep[ 7]:=false;
          sptable[ 8]:='wri       '; spfunc[ 8]:=false; sppar[ 8]:=3; spkeep[ 8]:=true;   
          sptable[ 9]:='wrr       '; spfunc[ 9]:=false; sppar[ 9]:=3; spkeep[ 9]:=true;
          sptable[10]:='wrc       '; spfunc[10]:=false; sppar[10]:=3; spkeep[10]:=true;   
