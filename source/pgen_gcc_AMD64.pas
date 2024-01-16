@@ -1545,7 +1545,8 @@ procedure xlate;
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.cl := nil; ep^.al := nil; ep^.ndl := nil; ep^.pl := nil; 
-        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; ep^.rs := []; 
+        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
+        ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.wkeep := false;
         ep^.keep := false; ep^.fn := nil; ep^.lb := nil; ep^.lt := nil;
       end;
@@ -1555,12 +1556,12 @@ procedure xlate;
         ep^.next := efree; efree := ep
       end;
       
-      procedure dmpstk;
+      procedure dmpstk(var f: text);
       var ep: expptr;
       begin
         ep := estack;
         while ep <> nil do begin
-          writeln('Stack: ', ep^.op:3, ': ', instr[ep^.op]);
+          writeln(f, 'Stack: ', ep^.op:3, ': ', instr[ep^.op]);
           ep := ep^.next
         end
       end;
@@ -1584,7 +1585,7 @@ procedure xlate;
           writeln('*** Program translation error: [', sline:1, ',', iline:1, '] Stack balance');
           writeln;
           writeln('Contents of stack:');
-          dmpstk;
+          dmpstk(output);
           goto 1
         end
       end;
@@ -1613,7 +1614,13 @@ procedure xlate;
       procedure dmptrel(ep: expptr; lvl: integer);
       var l: expptr;
       begin
-        writeln(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
+        write(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
+        if ep^.r1 <> rgnull then begin write(prr, ' r1: '); wrtreg(prr, ep^.r1) end;
+        if ep^.r2 <> rgnull then begin write(prr, ' r2: '); wrtreg(prr, ep^.r2) end;
+        if ep^.r3 <> rgnull then begin write(prr, ' r3: '); wrtreg(prr, ep^.r3) end;
+        if ep^.t1 <> rgnull then begin write(prr, ' t1: '); wrtreg(prr, ep^.t1) end;
+        if ep^.t2 <> rgnull then begin write(prr, ' t2: '); wrtreg(prr, ep^.t2) end;
+        writeln(prr);
         if ep^.l <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'Left:');
           dmptrel(ep^.l, lvl+3);
@@ -1632,7 +1639,7 @@ procedure xlate;
         end;
         if ep^.cl <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'tag checks:');
-          l := ep^.pl;
+          l := ep^.cl;
           while l <> nil do begin
             dmptrel(l, lvl+3);
             l := l^.next
@@ -2024,11 +2031,7 @@ procedure xlate;
           end;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
-          181, 182, 183, 184, 185, 186: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); 
-            assreg(ep^.r, rf, rgnull, rgnull)
-          end;
+          181, 182, 183, 184, 185, 186: ;
 
           {cks}
           187:;
@@ -2680,8 +2683,7 @@ procedure xlate;
             end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
-            181, 182, 183, 184, 185, 186: 
-              wrtins10('movq %2,%1', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
+            181, 182, 183, 184, 185, 186: ;
 
             {cks}
             187: ;
@@ -2809,7 +2811,7 @@ procedure xlate;
       procedure gettop(var epl, epr: expptr);
       begin
         if estack = nil then errorl('Expression underflow     ');
-        if estack^.op in [100,115,116,121,192,101,102,111] then begin
+        if estack^.op in [100,115,116,121,192,101,102,111,191] then begin
           epl := estack^.l; epr := estack^.r
         end else begin popstk(epr); popstk(epl) end;
       end;
@@ -2819,6 +2821,15 @@ procedure xlate;
       begin
         if estack <> nil then
           if estack^.op = 188{cke} then popstk(ep^.al)
+      end;
+
+      { duplicate subtree }
+      procedure duptre(s: expptr; var d: expptr);
+      begin
+        if s = nil then d := nil else begin
+          getexp(d); d^ := s^; duptre(s^.l, d^.l); duptre(s^.r, d^.r);
+          duptre(s^.x1, d^.x1)
+        end
       end;
 
     begin { assemble } 
@@ -2874,12 +2885,13 @@ procedure xlate;
         end;
 
         {indi,inda,indr,inds,indb,indc,indx}
-        9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1) 
+        9, 85, 86, 87, 88, 89, 198: begin read(prd,q); writeln(prr,q:1);
+          getexp(ep); attach(ep); popstk(ep^.l); pshstk(ep)
         end;
 
         {inci,inca,incb,incc,incx,deci,deca,decb,decc,decx}
         10, 90, 93, 94, 201, 57, 103, 104, 202: begin read(prd,q); 
-          writeln(prr,q:1); getexp(ep); popstk(ep^.l); pshstk(ep) 
+          writeln(prr,q:1); getexp(ep); attach(ep); popstk(ep^.l); pshstk(ep) 
         end;
 
         {ckvi,ckvb,ckvc,ckvx}
@@ -2908,7 +2920,7 @@ procedure xlate;
         {cta}
         191: begin read(prd,q, q1); labelsearch(def, val, sp);
           write(prr,q:1, ' ', q1:1, ' '); writevp(prr, sp); writeln(prr);
-          getexp(ep); ep^.lt := sp; popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
+          getexp(ep); ep^.lt := sp; gettop(ep^.l, ep^.r); pshstk(ep) 
         end;
 
         {lpa}
@@ -3067,19 +3079,13 @@ procedure xlate;
           getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
         end;
 
-        { duplicate is a stack operator. We emulate it with a dummy entry that
-          gets copied from the original. }
+        { At this level we just duplicate the tree. At lower levels we can
+          optimize this. }
 
-        { dupi, dupa, dupr, dupb, dupc }
-        181, 182, 183, 185, 186: begin writeln(prr); getexp(ep);
-          popstk(ep^.l); getexp(ep^.r); pshstk(ep); pshstk(ep) 
+        { dupi, dupa, dupr, dups, dupb, dupc }
+        181, 182, 183, 184, 185, 186: begin writeln(prr); 
+          duptre(estack, ep); pshstk(ep);
         end;
-
-        { duplicate set is possible, but not used anywhere in the compiler,
-          so we don't implement it here. }
-
-        {dups}
-        184: errorl('Operator not implemented');
 
         {cks}
         187: begin writeln(prr); 
@@ -3413,11 +3419,13 @@ procedure xlate;
               popstk(ep5); ep5^.next := ep3; ep3 := ep5; ep4 := estack
             end else ep4 := nil
           end;
-          assreg(ep2, frereg, rgnull,  rgnull); 
+          ep4 := ep3;
+          assreg(ep2, frereg, rgnull,  rgnull);
           assreg(ep, frereg, rgnull, rgnull);
-          dmptre(ep2); dmptre(ep); 
+          dmptre(ep); dmptre(ep2);
+          if ep4 <> nil then writeln(prr, '# Transparent operators:');
+          dmplst(ep4);
           genexp(ep); genexp(ep2);
-          ep4 := ep3; 
           while ep4 <> nil do begin genexp(ep4); ep4 := ep4^.next end;
           wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
           deltre(ep); deltre(ep2);
