@@ -603,6 +603,9 @@ procedure xlate;
       insmax20 = 20;
       insmax30 = 30;
       insmax40 = 40;
+      maxintreg = 6; { maximum number of integer/pointer parameter regs }
+      maxfltreg = 8; { maximum number of floating parameter regs }
+
    type  labelst  = (entered,defined); (*label situation*)
          labelrg  = 0..maxlabel;       (*label range*)
          labelrec = record
@@ -1704,16 +1707,18 @@ procedure xlate;
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
           if insf[pp^.op] then begin { floating result }
-            if fpc <= 8 then assreg(pp, rf, parregf[fpc], rgnull)
-            else assreg(pp, rf, rgnull, rgnull);
+            if pc <= maxfltreg then
+              if fpc <= 8 then assreg(pp, rf, parregf[fpc], rgnull)
+              else assreg(pp, rf, rgnull, rgnull);
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            if pc <= mi then assreg(pp, rf, parreg[pc], parreg[pc+1])
-            else
-            pc := pc+2
+            if pc <= maxintreg-1 then
+              if pc <= mi then assreg(pp, rf, parreg[pc], parreg[pc+1])
+              else pc := pc+2
           end else begin { single register }
-            if pc <= mi then assreg(pp, rf, parreg[pc], rgnull)
-            else assreg(pp, rf, rgnull, rgnull);
+            if pc <= maxintreg then
+              if pc <= mi then assreg(pp, rf, parreg[pc], rgnull)
+              else assreg(pp, rf, rgnull, rgnull);
             pc := pc+1
           end;            
           pp := pp^.next
