@@ -1775,7 +1775,9 @@ procedure xlate;
 
           120{lip}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            ep^.r2 := r2; if ep^.r2 = rgnull then getreg(ep^.r2, rf) end; 
+            ep^.r2 := r2; if ep^.r2 = rgnull then getreg(ep^.r2, rf);
+            getreg(ep^.t1, rf) 
+          end; 
 
           {equm,neqm,geqm,grtm,leqm,lesm}
           142, 148, 154, 160, 166, 172: begin resreg(rgrax); resreg(rgrdx); 
@@ -2226,6 +2228,9 @@ procedure xlate;
           end;
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
+{
+writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
+}
           case ep^.op of
 
             {lodi,loda}
