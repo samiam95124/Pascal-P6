@@ -1503,14 +1503,14 @@ procedure xlate;
           rgrdi:   write(f, 'dil');
           rgrbp:   write(f, 'bpl');
           rgrsp:   write(f, 'spl');
-          rgr8:    write(f, '8l');
-          rgr9:    write(f, '9l');
-          rgr10:   write(f, '10l');
-          rgr11:   write(f, '11l');
-          rgr12:   write(f, '12l');
-          rgr13:   write(f, '13l');
-          rgr14:   write(f, '14l');
-          rgr15:   write(f, '15l');
+          rgr8:    write(f, 'r8b');
+          rgr9:    write(f, 'r9b');
+          rgr10:   write(f, 'r10b');
+          rgr11:   write(f, 'r11b');
+          rgr12:   write(f, 'r12b');
+          rgr13:   write(f, 'r13b');
+          rgr14:   write(f, 'r14b');
+          rgr15:   write(f, 'r15b');
           rgxmm0:  write(f, 'xmm0'); 
           rgxmm1:  write(f, 'xmm1'); 
           rgxmm2:  write(f, 'xmm2'); 
@@ -2308,12 +2308,12 @@ procedure xlate;
               wrtins20('call psystem_strcmp ', 0, 0, rgnull, rgnull, nil); 
               wrtins20('cmpq $0,%rax        ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
-                142{equm}: wrtins10('sete %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
-                148{neqm}: wrtins10('setne %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                154{geqm}: wrtins10('setae %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                160{grtm}: wrtins10('seta %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
-                166{leqm}: wrtins10('setbe %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                172{lesm}: wrtins10('setb %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
+                142{equm}: wrtins10('sete %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                148{neqm}: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                154{geqm}: wrtins10('setae %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                160{grtm}: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                166{leqm}: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                172{lesm}: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
               end
             end;
 
@@ -2386,7 +2386,7 @@ procedure xlate;
             {ckvi,ckvb,ckvc,ckvx}
             175, 179, 180, 203: begin 
               wrtins20('cmpq $0,%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins20('sete %1             ', 0, 0, ep^.t1, rgnull, nil);
+              wrtins20('sete %1l            ', 0, 0, ep^.t1, rgnull, nil);
               wrtins20('orq %1,%2           ', 0, 0, ep^.t1, ep^.r2, nil);
             end;
 
@@ -2524,12 +2524,12 @@ procedure xlate;
             167, 169, 171: begin 
               wrtins10('cmp %1,%2 ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               case ep^.op of
-                17,137,138,139,141: wrtins10('sete %1   ', 0, 0, ep^.r1, rgnull, nil);
-                18,143,144,145,147: wrtins10('setne %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                149,150,151,153: wrtins10('setae %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                155,156,157,159: wrtins10('seta %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
-                161,162,163,165: wrtins10('setbe %1  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                167,168,169,171: wrtins10('setb %1   ', 0, 0, ep^.l^.r1, rgnull, nil);
+                17,137,138,139,141: wrtins10('sete %1l  ', 0, 0, ep^.r1, rgnull, nil);
+                18,143,144,145,147: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                149,150,151,153: wrtins10('setae %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                155,156,157,159: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                161,162,163,165: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                167,168,169,171: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
               end
             end;
 
