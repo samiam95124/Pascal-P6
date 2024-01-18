@@ -2125,7 +2125,7 @@ procedure xlate;
               if si[i+1] = 'l' then begin wrtbreg(prr, r2); i := i+1 end
               else wrtreg(prr, r2)
             end else write(prr, si[i])
-          end else if si[i] = '+' then begin next; write(prr, '+');
+          end else if si[i] = '+' then begin next;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
@@ -2740,7 +2740,7 @@ writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
               genexp(ep^.l); { load procedure address }
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
-              if (ep^.op = 247{cuf}) and (ep^.r1 <> rgrax) then
+              if (ep^.op = 247{cif}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
