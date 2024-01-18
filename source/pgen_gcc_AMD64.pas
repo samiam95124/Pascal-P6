@@ -2110,6 +2110,7 @@ procedure xlate;
         write(prr, ' ':tabspc);
         i := 1; while si[i] <> ' ' do begin write(prr, si[i]); next end;
         j := i;
+        if j >= tabspc then write(prr, ' ');
         while j <= tabspc do begin write(prr, ' '); j := j+1 end;
         while (i < insmax40) and (si[i] = ' ') do next;
         while i < insmax40 do begin
