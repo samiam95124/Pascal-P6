@@ -2675,13 +2675,13 @@ writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
             end;
 
             {mpi}
-            51: wrtins10('imulq %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
+            51: wrtins20('imulq %1,%2         ', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {mpr}
-            52: wrtins10('imulsd %1,%2       ', 0, 0, ep^.r^.r1, rgnull, nil);
+            52: wrtins20('imulsd %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {dvr}
-            54: wrtins10('idivsd %1,%2       ', 0, 0, ep^.r^.r1, rgnull, nil);
+            54: wrtins20('idivsd %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
 
             {rgs}
             110: begin 
@@ -3469,9 +3469,9 @@ writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
             ep^.keep := true
           end;
           wrtins10('cmpq $1,%1', q, 0, ep^.r1, rgnull, nil);
-          wrtins20('jl @      ', 0, 0, rgnull, rgnull, sp);
+          wrtins10('jl @      ', 0, 0, rgnull, rgnull, sp);
           wrtins10('cmpq $1,%1', q1, 0, ep^.r1, rgnull, nil);
-          wrtins20('jg @      ', 0, 0, rgnull, rgnull, sp);
+          wrtins10('jg @      ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
         end;
 
