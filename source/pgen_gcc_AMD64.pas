@@ -2018,7 +2018,7 @@ procedure xlate;
           {mpi}
           51: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.l, rf, ep^.r1, rgnull);
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
@@ -2675,7 +2675,7 @@ writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
             end;
 
             {mpi}
-            51: wrtins20('imulq %1,%2         ', 0, 0, ep^.r^.r1, rgnull, nil);
+            51: wrtins20('imulq %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {mpr}
             52: wrtins20('imulsd %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
