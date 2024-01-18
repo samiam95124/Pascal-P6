@@ -1080,14 +1080,15 @@ procedure xlate;
    end;
 
    procedure putlabel(x: labelrg);
-   var i, p: integer;
+   var i, p: integer; digit: boolean;
    begin
      strassvf(labeltab[x].ref, sn); strchrass(labeltab[x].ref, snl+1, '.'); i := snl+2;
      p := maxpow10;
+     digit := false;
      while p > 0 do begin
-       if ((x div p) mod 10 <> 0) or (p = 1) then begin
+       if ((x div p) mod 10 <> 0) or (p = 1) or digit then begin
          strchrass(labeltab[x].ref, i, chr((x div p) mod 10+ord('0'))); 
-         i := i+1;
+         i := i+1; digit := true
        end;
        p := p div 10
      end
