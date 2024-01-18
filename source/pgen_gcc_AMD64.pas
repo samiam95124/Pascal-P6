@@ -1797,9 +1797,14 @@ procedure xlate;
 
           118{swp}: ; { done at top level }
 
-          {ldoi,ldoa,ldor,ldob,ldoc,ldox}
-          1,65,66,68,69,194:begin ep^.r1 := r1;
+          {ldoi,ldoa,ldob,ldoc,ldox}
+          1,65,68,69,194:begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
+
+          {ldor}
+          66:begin ep^.r1 := r1;
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) 
           end;
 
           {ldos}
@@ -2231,7 +2236,7 @@ procedure xlate;
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
 {
-writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
+;writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
 }
           case ep^.op of
 
@@ -2680,10 +2685,10 @@ writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
             51: wrtins20('imulq %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {mpr}
-            52: wrtins20('imulsd %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
+            52: wrtins20('mulsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
-            54: wrtins20('idivsd %1,%2        ', 0, 0, ep^.r^.r1, rgnull, nil);
+            54: wrtins20('divsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {rgs}
             110: begin 
