@@ -2367,7 +2367,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, rgnull, ep^.r1, nil);
+              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
             {indi,inda}
@@ -2390,7 +2390,7 @@ procedure xlate;
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, rgnull, ep^.l^.r1, nil)
+              wrtins20('movq %rsp,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
 
             {inci,inca,incb,incc,incx}
@@ -2523,7 +2523,7 @@ procedure xlate;
                 end;
                 152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins20('movq %eax,%1        ', 0, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20('movq %rax,%1        ', 0, 0, ep^.l^.r1, rgnull, nil);
             end;
 
             {equa,equi,equb,equc}
@@ -2794,8 +2794,8 @@ procedure xlate;
         if ep^.r1 in [rgrax..rgr15] then
           wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil);
         if ep^.r1 in [rgxmm0..rgxmm15] then begin
-          wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull, nil);
-          wrtins20('movsd %1,(%esp)     ', 0, 0, ep^.r1, rgnull, nil)
+          wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+          wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
         end
       end;
 
