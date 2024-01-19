@@ -1878,11 +1878,12 @@ procedure xlate;
 
           {ldci,ldcc,ldcb}
           123,127,126: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
 
           {ldcn}
           125: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           {ldcr}
           124: begin ep^.r1 := r1; 
@@ -2726,7 +2727,7 @@ procedure xlate;
                 wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
                 wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
               end else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
             end;
 
