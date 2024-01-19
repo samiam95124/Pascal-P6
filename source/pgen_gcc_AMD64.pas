@@ -1799,7 +1799,7 @@ procedure xlate;
 
           {ldoi,ldoa,ldob,ldoc,ldox}
           1,65,68,69,194:begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
           {ldor}
@@ -1908,7 +1908,8 @@ procedure xlate;
 
           {ckla}
           190: begin resreg(rgrax); ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           56 {lca}: begin ep^.r1 := r1;
@@ -2201,8 +2202,8 @@ procedure xlate;
           if ep^.r1 in [rgrax..rgr15] then
             wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil);
           if ep^.r1 in [rgxmm0..rgxmm15] then begin
-            wrtins20('subq -0,%esp        ', realsize, 0, rgnull, rgnull, nil);
-            wrtins20('movsd %1,(%esp)     ', 0, 0, ep^.r1, rgnull, nil)
+            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+            wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
           end
         end
       end;
