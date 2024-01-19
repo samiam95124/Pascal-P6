@@ -1979,10 +1979,16 @@ procedure xlate;
             assreg(ep^.l, rf, ep^.r1, r2) 
           end;
 
-          {notb,odd,rnd,chr}
-          42,50,60,62: begin ep^.r1 := r1; 
+          {notb,odd,chr}
+          42,50,60: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, ep^.r1, r2) 
+          end;
+
+          {rnd}
+          62: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgnull, rgnull) 
           end;
 
           {and,ior,xor}
@@ -2235,9 +2241,7 @@ procedure xlate;
           end;
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
-{
-;writeln(prr, '# genexp: ', ep^.op:3, ': ', instr[ep^.op]);
-}
+          writeln(prr, '# generating: ', ep^.op:3, ': ', instr[ep^.op]);
           case ep^.op of
 
             {lodi,loda}
