@@ -1890,7 +1890,8 @@ procedure xlate;
 
           {ldcs}
           7: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
 
           {chk,chka,chkb,chkc,chkx}
           26, 95, 98, 99, 199: begin resreg(rgrax); ep^.r1 := r1;
@@ -1900,7 +1901,8 @@ procedure xlate;
 
           {chks}
           97: begin resreg(rgrdi); resreg(rgrsi); ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            assreg(ep^.l, rf, rgrsi, rgnull)
           end;
 
           {ckla}
@@ -2473,10 +2475,8 @@ procedure xlate;
             end;
 
             {ldcs}
-            7: begin 
-               write(prr, '        leaq    set', ep^.realn:1, '(%rip),%'); 
-               wrtreg(prr, ep^.r1); writeln(prr)
-            end;
+            7: 
+              wrtins20('leaq set^0(%rip),%1 ', ep^.realn, 0, ep^.r1, rgnull, nil);
 
             {chki,chka,chkb,chkc,chkx}
             26, 95, 98, 99, 199: begin 
