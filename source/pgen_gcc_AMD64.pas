@@ -2071,9 +2071,9 @@ procedure xlate;
  
           {cuf}
           246: begin 
-            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-            else begin resreg(rgrax); ep^.r1 := r1 end;
-            asspar(ep, ep^.q)
+            if r1 = rgnull then
+              if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf);
+            resreg(rgrax); asspar(ep, ep^.q)
           end;
 
           {cup}
@@ -2742,6 +2742,7 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
+;write(prr, '# genexp: cuf: r1: ');  wrtreg(prr, ep^.r1); writeln(prr);
               if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
@@ -3211,14 +3212,16 @@ procedure xlate;
         {rip}
         13: begin read(prd,q); writeln(prr);
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
         end;
 
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
-          frereg := allreg; getreg(r1, frereg); 
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull);
+          frereg := allreg;
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); getreg(r1, frereg);
           dmptre(ep); genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
@@ -3231,6 +3234,7 @@ procedure xlate;
           frereg := allreg; getreg(r1, frereg);
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movb %1l,^0(%2)      ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
@@ -3242,6 +3246,7 @@ procedure xlate;
           frereg := allreg; getreg(r1, frereg);
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, r1, nil);
           deltre(ep); 
@@ -3252,6 +3257,7 @@ procedure xlate;
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
           wrtins20('lea %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
           wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
@@ -3273,6 +3279,7 @@ procedure xlate;
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
@@ -3300,6 +3307,7 @@ procedure xlate;
           popstk(ep); 
           if not ep^.keep then begin 
             deltre(ep); putexp(ep);
+            writeln(prr, '# generating: ', op:3, ': ', instr[op]);
             wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
           end;
           botstk 
@@ -3310,6 +3318,7 @@ procedure xlate;
           frereg := allreg;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
           deltre(ep); 
           botstk 
@@ -3347,6 +3356,7 @@ procedure xlate;
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1);
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rbp    ', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins20('movq ^0(%rbp),%rsp    ', marksb, 0, rgnull, rgnull, nil);
           wrtins10('jmp @s    ', 0, 0, rgnull, rgnull, sp);
@@ -3357,6 +3367,7 @@ procedure xlate;
         92: begin read(prd,q); writeln(prr, q:1); 
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull, nil);
           wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
@@ -3367,6 +3378,7 @@ procedure xlate;
         {vbe}
         96: begin 
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
@@ -3381,6 +3393,7 @@ procedure xlate;
         {retp}
         14: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
@@ -3393,6 +3406,7 @@ procedure xlate;
         {reti,reta,retx,retc,retb}
         128,132,204,130,131: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
@@ -3408,6 +3422,7 @@ procedure xlate;
         {retr}
         129: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
@@ -3450,6 +3465,7 @@ procedure xlate;
           dmplst(ep4);
           genexp(ep); genexp(ep2);
           while ep4 <> nil do begin genexp(ep4); ep4 := ep4^.next end;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
           deltre(ep); deltre(ep2);
           while ep3 <> nil do 
@@ -3467,6 +3483,7 @@ procedure xlate;
         end;
 
         61 {ujc}: begin writeln(prr);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins30('movq $CASEVALUENOTFOUND,%rax  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
           botstk
@@ -3481,6 +3498,7 @@ procedure xlate;
             dmptre(ep); genexp(ep);
             ep^.keep := true
           end;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('cmpq $1,%1', q, 0, ep^.r1, rgnull, nil);
           wrtins10('jl @      ', 0, 0, rgnull, rgnull, sp);
           wrtins10('cmpq $1,%1', q1, 0, ep^.r1, rgnull, nil);
