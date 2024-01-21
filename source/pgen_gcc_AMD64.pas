@@ -639,7 +639,6 @@ procedure xlate;
                     sl: expptr; { sfr start link }
                     cl: expptr; { cke chain }
                     al: expptr; { attachment link }
-                    ndl: expptr; { new/dispose link }
                     strn: integer; { string number }
                     realn: integer; { real number }
                     vali: integer; { integer value }
@@ -1548,7 +1547,7 @@ procedure xlate;
         else new(ep);
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
-        ep^.cl := nil; ep^.al := nil; ep^.ndl := nil; ep^.pl := nil; 
+        ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; ep^.lb := nil; 
@@ -1708,18 +1707,18 @@ procedure xlate;
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
           if insf[pp^.op] then begin { floating result }
-            if pc <= maxfltreg then
-              if fpc <= 8 then assreg(pp, rf, parregf[fpc], rgnull)
-              else assreg(pp, rf, rgnull, rgnull);
+            if fpc <= maxfltreg then assreg(pp, rf, parregf[fpc], rgnull)
+            else assreg(pp, rf, rgnull, rgnull);
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            if pc <= maxintreg-1 then
-              if pc <= mi then assreg(pp, rf, parreg[pc], parreg[pc+1])
-              else pc := pc+2
+            if (pc <= mi) and (pc <= maxintreg-1) then 
+              assreg(pp, rf, parreg[pc], parreg[pc+1])
+            else assreg(pp, rf, rgnull, rgnull);
+            pc := pc+2
           end else begin { single register }
-            if pc <= maxintreg then
-              if pc <= mi then assreg(pp, rf, parreg[pc], rgnull)
-              else assreg(pp, rf, rgnull, rgnull);
+            if (pc <= mi) and (pc <= maxintreg) then 
+              assreg(pp, rf, parreg[pc], rgnull)
+            else assreg(pp, rf, rgnull, rgnull);
             pc := pc+1
           end;            
           pp := pp^.next
@@ -1913,7 +1912,7 @@ procedure xlate;
           end;
 
           56 {lca}: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
           end;
 
           {ordi,ordb,ordc,ordx}
@@ -2190,7 +2189,7 @@ procedure xlate;
       end;
 
       procedure genexp(ep: expptr);
-      var r: reg; ep2: expptr;
+      var r: reg; ep2: expptr; i: integer;
 
       { push parameters to call depth first }
       procedure pshpar(ep: expptr);
@@ -2716,7 +2715,12 @@ procedure xlate;
             15: begin
               if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
                 { need irregular handling for nwl and dsl }
-                pshpar(ep^.ndl);
+                ep2 := ep^.pl;
+                for i := 1 to 3 do begin
+                  if ep2 = nil then errorl('system error             ');
+                  ep2 := ep2^.next
+                end;
+                pshpar(ep2);
                 pp := ep^.pl; genexp(pp); { addr rdi }
                 pp := pp^.next; genexp(pp); { size rsi }
                 pp := pp^.next; genexp(pp); { tagcnt rdx }
@@ -2743,7 +2747,6 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
-;write(prr, '# genexp: cuf: r1: ');  wrtreg(prr, ep^.r1); writeln(prr);
               if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
@@ -2816,7 +2819,7 @@ procedure xlate;
       var pp: expptr;
       begin
           { pull parameters into list }
-          while pn > 0 do 
+          while (pn > 0) and (estack <> nil) do 
             begin popstk(pp); pp^.next := ep^.pl; ep^.pl := pp; pn := pn-1 end
       end;
 
@@ -3160,15 +3163,9 @@ procedure xlate;
             q := q+1; if q > maxsp then errorl('std proc/func not found  ')
           end; 
           writeln(prr, sptable[q]);
-          getexp(ep); getparn(ep, sppar[q]);
-          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
-            ep^.ndl := estack; estack := nil;
-            ep2 := ep^.ndl; ep3 := nil; 
-            if ep2 = nil then errorl('system error             ');
-            while ep2^.next <> nil do begin ep3 := ep2; ep2 := ep2^.next end;
-            if ep3 = nil then ep^.ndl := nil else ep3^.next := nil;
-            ep2^.next := ep^.pl; ep^.pl := ep2;
-          end;
+          getexp(ep); 
+          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then getparn(ep, maxint)
+          else getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
             frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -3179,10 +3176,7 @@ procedure xlate;
               pp := ep^.pl; ep^.pl := ep^.pl^.next;
               pshstk(pp)
             end;
-            deltre(ep);
-            if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then
-              while ep^.ndl <> nil do 
-                begin ep2 := ep^.ndl; ep^.ndl := ep2^.next; deltre(ep2) end
+            deltre(ep)
           end
         end;
 
