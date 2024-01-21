@@ -2071,8 +2071,9 @@ procedure xlate;
  
           {cuf}
           246: begin 
-            if r1 = rgnull then
-              if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf);
+            if r1 = rgnull then begin
+              if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
+            end else ep^.r1 := r1;
             resreg(rgrax); asspar(ep, ep^.q)
           end;
 
