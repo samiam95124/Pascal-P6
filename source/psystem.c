@@ -437,7 +437,7 @@ static void error(char* es)
 }
 
 /* handle exception vector */
-void errorv(address ea)
+void psystem_errorv(address ea)
 { printf("\n*** Runtime error");
   if (srclin > 0) printf(" [%ld]: ", srclin);
   switch (ea) {
@@ -553,10 +553,10 @@ void errorv(address ea)
   exit(1);
 }
 
-void errore(long ei)
+void psystem_errore(long ei)
 {
 
-    errorv(ei);
+    psystem_errorv(ei);
 
 }
 
@@ -4115,12 +4115,12 @@ void psystem_tagchgvar(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
     taddr += size; /* offset to variant */
     /* translate both tags to a logical variant, then check has changed */
     if (lvt[ntag+1] != lvt[otag+1])
         /* if changed, see if the variant is in a VAR referenced region */
-        if (varlap(taddr, taddr+size)) errorv(CHANGETOVARREFERENCEDVARIANT);
+        if (varlap(taddr, taddr+size)) psystem_errorv(CHANGETOVARREFERENCEDVARIANT);
 
 }
 
@@ -4149,7 +4149,7 @@ void psystem_tagchginv(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -4169,7 +4169,7 @@ void psystem_cmptmp(
 )
 {
 
-    while (lvl--) if (*tmp1++ != *tmp2++) errorv(CONTAINERMISMATCH);
+    while (lvl--) if (*tmp1++ != *tmp2++) psystem_errorv(CONTAINERMISMATCH);
 
 }
 
@@ -4199,8 +4199,8 @@ void psystem_tagchkass(
 
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
-        if (ntag < 0 || ntag >= lvt[0]) errorv(VALUEOUTOFRANGE);
-        if (tcp[lvl-1] != lvt[lvl+ntag+1]) errorv(CHANGETOALLOCATEDTAGFIELD);
+        if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
+        if (tcp[lvl-1] != lvt[lvl+ntag+1]) psystem_errorv(CHANGETOALLOCATEDTAGFIELD);
 
     }
 
@@ -4227,9 +4227,9 @@ void psystem_chksetbnd(
     long j;
 
     for (j = SETLOW; j < low; j++)
-        if (sisin(j, s)) errorv(SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) psystem_errorv(SETELEMENTOUTOFRANGE);
     for (j = high+1; j <= SETHIGH; j++)
-        if (sisin(j, s)) errorv(SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) psystem_errorv(SETELEMENTOUTOFRANGE);
 
 }
 

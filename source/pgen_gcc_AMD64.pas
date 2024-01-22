@@ -1175,6 +1175,121 @@ procedure xlate;
    begin
    end;
 
+   procedure errorcode;
+   begin
+
+     writeln(prr, '# Error codes');
+     writeln(prr, 'ValueOutOfRange                    = 14');
+     writeln(prr, 'ArrayLengthMatch                   = 15');
+     writeln(prr, 'CaseValueNotFound                  = 16');
+     writeln(prr, 'ZeroDivide                         = 17');
+     writeln(prr, 'InvalidOperand                     = 18');
+     writeln(prr, 'NilPointerDereference              = 19');
+     writeln(prr, 'RealOverflow                       = 20');
+     writeln(prr, 'RealUnderflow                      = 21');
+     writeln(prr, 'RealProcessingFault                = 22');
+     writeln(prr, 'TagValueNotActive                  = 23');
+     writeln(prr, 'TooManyFiles                       = 24');
+     writeln(prr, 'FileIsOpen                         = 25');
+     writeln(prr, 'FileAlreadyNamed                   = 26');
+     writeln(prr, 'FileNotOpen                        = 27');
+     writeln(prr, 'FileModeIncorrect                  = 28');
+     writeln(prr, 'InvalidFieldSpecification          = 29');
+     writeln(prr, 'InvalidRealNumber                  = 30');
+     writeln(prr, 'InvalidFractionSpecification       = 31');
+     writeln(prr, 'InvalidIntegerFormat               = 32');
+     writeln(prr, 'IntegerValueOverflow               = 33');
+     writeln(prr, 'InvalidRealFormat                  = 34');
+     writeln(prr, 'EndOfFile                          = 35');
+     writeln(prr, 'InvalidFilePosition                = 36');
+     writeln(prr, 'FilenameTooLong                    = 37');
+     writeln(prr, 'FileOpenFail                       = 38');
+     writeln(prr, 'FileSIzeFail                       = 39');
+     writeln(prr, 'FileCloseFail                      = 40');
+     writeln(prr, 'FileReadFail                       = 41');
+     writeln(prr, 'FileWriteFail                      = 42');
+     writeln(prr, 'FilePositionFail                   = 43');
+     writeln(prr, 'FileDeleteFail                     = 44');
+     writeln(prr, 'FileNameChangeFail                 = 45');
+     writeln(prr, 'SpaceAllocateFail                  = 46');
+     writeln(prr, 'SpaceReleaseFail                   = 47');
+     writeln(prr, 'SpaceAllocateNegative              = 48');
+     writeln(prr, 'CannotPerformSpecial               = 49');
+     writeln(prr, 'CommandLineTooLong                 = 50');
+     writeln(prr, 'ReadPastEOF                        = 51');
+     writeln(prr, 'FileTransferLengthZero             = 52');
+     writeln(prr, 'FileSizeTooLarge                   = 53');
+     writeln(prr, 'FilenameEmpty                      = 54');
+     writeln(prr, 'CannotOpenStandard                 = 55');
+     writeln(prr, 'TooManyTemporaryFiles              = 56');
+     writeln(prr, 'InputBufferOverflow                = 57');
+     writeln(prr, 'TooManyThreads                     = 58');
+     writeln(prr, 'CannotStartThread                  = 59');
+     writeln(prr, 'InvalidThreadHandle                = 60');
+     writeln(prr, 'CannotStopThread                   = 61');
+     writeln(prr, 'TooManyIntertaskLocks              = 62');
+     writeln(prr, 'InvalidLockHandle                  = 63');
+     writeln(prr, 'LockSequenceFail                   = 64');
+     writeln(prr, 'TooManySignals                     = 65');
+     writeln(prr, 'CannotCreateSignal                 = 66');
+     writeln(prr, 'InvalidSignalHandle                = 67');
+     writeln(prr, 'CannotDeleteSignal                 = 68');
+     writeln(prr, 'CannotSendSignal                   = 69');
+     writeln(prr, 'WaitForSignalFail                  = 70');
+     writeln(prr, 'FieldNotBlank                      = 71');
+     writeln(prr, 'ReadOnWriteOnlyFile                = 72');
+     writeln(prr, 'WriteOnReadOnlyFile                = 73');
+     writeln(prr, 'FileBufferVariableUndefined        = 74');
+     writeln(prr, 'NondecimalRadixOfNegative          = 75');
+     writeln(prr, 'InvalidArgumentToLn                = 76');
+     writeln(prr, 'InvalidArgumentToSqrt              = 77');
+     writeln(prr, 'CannotResetOrRewriteStandardFile   = 78');
+     writeln(prr, 'CannotResetWriteOnlyFile           = 79');
+     writeln(prr, 'CannotRewriteReadOnlyFile          = 80');
+     writeln(prr, 'SetElementOutOfRange               = 81');
+     writeln(prr, 'RealArgumentTooLarge               = 82');
+     writeln(prr, 'BooleanOperatorOfNegative          = 83');
+     writeln(prr, 'InvalidDivisorToMod                = 84');
+     writeln(prr, 'PackElementsOutOfBounds            = 85');
+     writeln(prr, 'UnpackElementsOutOfBounds          = 86');
+     writeln(prr, 'CannotResetClosedTempFile          = 87');
+     writeln(prr, 'UndefinedLocationAccess            = 88');
+     writeln(prr, 'FunctionNotImplemented             = 89');
+     writeln(prr, 'InvalidInISO7185Mode               = 90');
+     writeln(prr, 'HeapFormatInvalid                  = 91');
+     writeln(prr, 'DisposeOfUninitalizedPointer       = 92');
+     writeln(prr, 'DisposeOfNilPointer                = 93');
+     writeln(prr, 'BadPointerValue                    = 94');
+     writeln(prr, 'BlockAlreadyFreed                  = 95');
+     writeln(prr, 'InvalidStandardProcedureOrFunction = 96');
+     writeln(prr, 'InvalidInstruction                 = 97');
+     writeln(prr, 'NewDisposeTagsMismatch             = 98');
+     writeln(prr, 'PCOutOfRange                       = 99');
+     writeln(prr, 'StoreOverflow                      = 100');
+     writeln(prr, 'StackBalance                       = 101');
+     writeln(prr, 'SetInclusion                       = 102');
+     writeln(prr, 'UninitializedPointer               = 103');
+     writeln(prr, 'DereferenceOfNilPointer            = 104');
+     writeln(prr, 'PointerUsedAfterDispose            = 105');
+     writeln(prr, 'VariantNotActive                   = 106');
+     writeln(prr, 'InvalidCase                        = 107');
+     writeln(prr, 'SystemError                        = 108');
+     writeln(prr, 'ChangeToAllocatedTagfield          = 109');
+     writeln(prr, 'UnhandledException                 = 110');
+     writeln(prr, 'ProgramCodeAssertion               = 111');
+     writeln(prr, 'VarListEmpty                       = 112');
+     writeln(prr, 'ChangeToVarReferencedVariant       = 113');
+     writeln(prr, 'DisposeOfVarReferencedBlock        = 114');
+     writeln(prr, 'VarReferencedFileBufferModified    = 115');
+     writeln(prr, 'ContainerMismatch                  = 116');
+     writeln(prr, 'InvalidContainerLevel              = 117');
+     writeln(prr, 'DisposeOfWithReferencedBlock       = 118');
+     writeln(prr, 'WithBaseListEmpty                  = 119');
+     writeln(prr, 'ExternalsNotEnabled                = 120');
+     writeln(prr);
+
+   end;
+
    procedure assemble; forward;
 
    procedure prtline;
@@ -1241,6 +1356,8 @@ procedure xlate;
           sgn: boolean;
           sn2: labbuf;
           snl2: 1..lablen;
+          vt: array [1..100] of integer;
+          vi, vl: integer;
    begin
       again := true;
       while again do begin
@@ -1404,7 +1521,20 @@ procedure xlate;
                 getlin
               end;
           'f': getlin; { source error count }
-          'v': getlin; { variant logical table }
+          'v': begin { variant logical table }
+                getnxt; skpspc;
+                if ch <> 'l' then errorl('Label format error       ');
+                getnxt; parlab(x,ls); 
+                prtline; write(prr, ' ', 'v l ', sn:snl, '.', x:1, ' ');
+                read(prd, vl); write(prr, vl:1, ' '); vi := 1; 
+                for vi := 1 to vl do 
+                  begin read(prd, vt[vi]); write(prr, vt[vi]:1, ' ') end;
+                writeln(prr); update(x, true); getlin;
+                write(prr, '        .quad   ', vl:1);
+                for vi := 1 to vl do
+                  write(prr, ',', vt[vi]:1);
+                writeln(prr)
+               end;
           't': getlin; { template }
           'n': getlin; { start constant table }
           'x': getlin;
@@ -2338,7 +2468,7 @@ procedure xlate;
             end;
 
             5{lao}:
-              wrtins40('leaq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40('leaq globals_start+++0(%rip),%1        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               wrtins20('movq $0,%rax        ', ep^.q, 0, rgnull, rgnull, nil);
@@ -2350,19 +2480,19 @@ procedure xlate;
 
             {ldoi,loda}
             1,65:
-              wrtins40('movq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40('movq globals_start+++0(%rip),%1        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins40('movzx globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40('movzx globals_start+++0(%rip),%1        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor}
             66: 
-              wrtins40('movsd globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40('movsd globals_start+++0(%rip),%1        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
-              wrtins40('leaq globals_start+0(%rip),%rsi         ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins40('leaq globals_start+++0(%rip),%rsi       ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('add $0,%rsp         ', -setsize, 0, rgnull, rgnull, nil);
               wrtins20('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -2437,7 +2567,7 @@ procedure xlate;
             {cps}
             176: begin 
               wrtins10('cmpq %1,%2', 0, 0, ep^.r^.r2, ep^.l^.r2, nil);
-              wrtins10('je .+21   ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('je .++21  ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins20('movq $0,%rdi      ', ContainerMismatch, 0, rgnull, rgnull, nil);
               wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil)
             end;
@@ -2484,11 +2614,11 @@ procedure xlate;
             26, 95, 98, 99, 199: begin 
               wrtins20('movq $0,%1          ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('cmpq (%1),%2        ', 0, 0, ep^.r2, ep^.r1, nil);
-              wrtins20('jae .+21            ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins20('jae .++21            ', 0, 0, ep^.r2, rgnull, nil);
               wrtins30('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call errore         ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('cmpq ^0(%1),%2      ', intsize, 0, ep^.r2, ep^.r1, nil);
-              wrtins20('jbe .+11            ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins20('jbe .++11           ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil)
             end;
 
@@ -2504,7 +2634,7 @@ procedure xlate;
             190: begin
               if ep^.q <> 0 then begin
                 wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-                wrtins20('jbe .+17            ', 0, 0, ep^.r2, rgnull, nil);
+                wrtins20('jbe .++17           ', 0, 0, ep^.r2, rgnull, nil);
                 wrtins20('movq $DereferenceOfNilPointer,%rax      ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('call psystem_errorv ', 0, 0, rgnull, rgnull, nil)
               end
@@ -2596,7 +2726,7 @@ procedure xlate;
             {abi}
             40: begin
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('jns .+8             ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('jns .++8            ', 0, 0, ep^.r1, rgnull, nil);
               wrtins20('negq %1             ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
@@ -2611,14 +2741,14 @@ procedure xlate;
             42: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
               wrtins20('movq $1%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('jz .+17             ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins20('jz .++17            ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('movq $0%1           ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {noti}
             205: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('jns .+17            ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jns .++17           ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movq $BooleanOperatorOfNegative,%rax      ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('not %1              ', 0, 0, ep^.r1, rgnull, nil)
@@ -2638,11 +2768,11 @@ procedure xlate;
             {and,ior,xor}
             43,44,206: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
-              wrtins20('jns .+17            ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jns .++17           ', 0, 0, rgnull, rgnull, nil);
               wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins20('jns .+17            ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jns .++17           ', 0, 0, rgnull, rgnull, nil);
               wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
@@ -2770,7 +2900,7 @@ procedure xlate;
                 ep2^.r1 := ep^.r1; ep2^.r2 := ep^.r2; ep2^.t1 := ep^.t1; 
                 genexp(ep2); ep2 := ep2^.next 
               end;   
-              wrtins10('jnz .+21  ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('jnz .++21 ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rdi      ', VariantNotActive, 0, rgnull, rgnull, nil);
               wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);
             end;
@@ -3282,7 +3412,7 @@ procedure xlate;
           wrtins20('movq %rsp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy sp }
           wrtins20('subq $s,%rax       ', 0, 0, rgnull, rgnull, sp); { find sp-locals }
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }
-          wrtins10('je .+0    ', 6, 0, rgnull, rgnull, nil); { skip if so }
+          wrtins10('je .++6   ', 0, 0, rgnull, rgnull, nil); { skip if so }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
           wrtins10('jmp .-0   ', 7, 0, rgnull, rgnull, nil); { loop }
           wrtins20('movq %rsp,^0(%rbp) ', marksb, 0, rgnull, rgnull, nil);
@@ -3314,7 +3444,7 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
+          wrtins40('movq %1,globals_start+++0(%rip) ', q, 0, ep^.r1, rgnull, nil);
           deltre(ep); 
           botstk 
         end;
@@ -3620,6 +3750,7 @@ begin (*xlate*)
    writeln(prr, 'listfn = 4');
    writeln(prr, 'commandfn = 5');
    writeln(prr);
+   errorcode;
    writeln(prr, '        .text');
    writeln(prr, '#');
    writeln(prr, '# Code section');
