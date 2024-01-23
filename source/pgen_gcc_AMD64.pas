@@ -383,6 +383,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
+      setnum      : integer; { set constants label count }
       parlvl      : integer; { parameter level }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
@@ -641,6 +642,7 @@ procedure xlate;
                     al: expptr; { attachment link }
                     strn: integer; { string number }
                     realn: integer; { real number }
+                    setn: integer; { set number }
                     vali: integer; { integer value }
                     rs: regset; { push/pop mask }
                     wkeep: boolean; { will hold this value }
@@ -2608,7 +2610,7 @@ procedure xlate;
 
             {ldcs}
             7: 
-              wrtins20('leaq set^0(%rip),%1 ', ep^.realn, 0, ep^.r1, rgnull, nil);
+              wrtins20('leaq set^0(%rip),%1 ', ep^.setn, 0, ep^.r1, rgnull, nil);
 
             {chki,chka,chkb,chkc,chkx}
             26, 95, 98, 99, 199: begin 
@@ -3130,7 +3132,10 @@ procedure xlate;
             while ch<>')' do
               begin read(prd,s1); getnxt; s := s + [s1] end;
             getexp(ep); attach(ep); pshstk(ep);
-            writeln(prr)
+            writeln(prr);
+            new(cstp); cstp^.ct := cset; cstp^.s := s;
+            setnum := setnum+1; cstp^.setn := setnum;
+            cstp^.next := csttbl; csttbl := cstp; ep^.setn := setnum
           end
 
           end (*case*)
@@ -3484,7 +3489,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rbp    ', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins20('movq ^0(%rbp),%rsp    ', marksb, 0, rgnull, rgnull, nil);
-          wrtins10('jmp @s    ', 0, 0, rgnull, rgnull, sp);
+          wrtins10('jmp @     ', 0, 0, rgnull, rgnull, sp);
           botstk 
         end;
 
@@ -3718,7 +3723,14 @@ procedure xlate;
 
    end; (*assemble*)
 
-   procedure genstrcst;
+   procedure gencst;
+   var r: record case boolean of
+
+          true:  (s: settype);
+          false: (b: packed array [1..setsize] of byte);
+
+       end;
+       i: 1..setsize;
    begin
      while csttbl <> nil do begin
        case csttbl^.ct of
@@ -3727,7 +3739,15 @@ procedure xlate;
            writev(prr, csttbl^.str, csttbl^.strl);
            writeln(prr, '"') end;
          creal: begin writeln(prr, 'real', csttbl^.realn:1, ':');
-           writeln(prr, '        .double ', csttbl^.r) end
+           writeln(prr, '        .double ', csttbl^.r) end;
+         cset: begin writeln(prr, 'set', csttbl^.setn:1, ':');
+           write(prr, '        .byte   ');
+           r.s := csttbl^.s;
+           for i := 1 to setsize do begin
+             write(prr, r.b[i]:1); if i < setsize then write(prr, ',') 
+           end;
+           writeln(prr)
+         end;
        end;
        csttbl := csttbl^.next
      end
@@ -3759,7 +3779,7 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '# Constants section');
    writeln(prr, '#');
-   genstrcst;
+   gencst;
 
    writeln(prr, '        .bss');
    writeln(prr, '#');
@@ -3793,7 +3813,8 @@ begin (* main *)
   if ordmaxchar = 0 then; 
   if stackelsize = 0 then; 
 
-  csttbl := nil; strnum := 0; realnum := 0; gblsiz := 0; parlvl := maxint;
+  csttbl := nil; strnum := 0; realnum := 0; setnum := 0; gblsiz := 0; 
+  parlvl := maxint;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
