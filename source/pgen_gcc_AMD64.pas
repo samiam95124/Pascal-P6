@@ -2284,7 +2284,7 @@ procedure xlate;
             if si[i] = '0' then write(prr, i1:1) 
             else if si[i] = '1' then write(prr, i2:1)
             else write(prr, si[i])
-          end else if si[i] = '@' then begin next; writevp(prr, sn) end
+          end else if si[i] = '@' then writevp(prr, sn)
           else write(prr, si[i]);
           i := i+1
         end;
@@ -2556,7 +2556,7 @@ procedure xlate;
             192,101,102,111: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $s,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20('movq @(%rip),%rdx    ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.r^.r1, rgnull, nil)
               else
@@ -2582,7 +2582,7 @@ procedure xlate;
             191: begin
               wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $s,%rdx         ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20('movq @(%rip),%rdx    ', 0, 0, rgnull, rgnull, ep^.lt);
               wrtins30('call psystem_tagchkass           ', 0, 0, rgnull, rgnull, nil)
             end;
 
@@ -3609,7 +3609,7 @@ procedure xlate;
 
         61 {ujc}: begin writeln(prr);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30('movq $CASEVALUENOTFOUND,%rax  ', 0, 0, rgnull, rgnull, nil);
+          wrtins30('movq $CaseValueNotFound,%rax  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
