@@ -2588,7 +2588,7 @@ procedure xlate;
 
             {lpa}
             114: begin 
-              wrtins20('leaq @s(%rip),%1    ', 0, 0, ep^.r1, rgnull, ep^.fn);
+              wrtins20('leaq @(%rip),%1    ', 0, 0, ep^.r1, rgnull, ep^.fn);
               wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r2, rgnull, nil)
             end;
 
@@ -2616,7 +2616,7 @@ procedure xlate;
               wrtins20('cmpq (%1),%2        ', 0, 0, ep^.r2, ep^.r1, nil);
               wrtins20('jae .+21            ', 0, 0, ep^.r2, rgnull, nil);
               wrtins30('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call errore         ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('call psystem_errore         ', 0, 0, rgnull, rgnull, nil);
               wrtins20('cmpq ^0(%1),%2      ', intsize, 0, ep^.r2, ep^.r1, nil);
               wrtins20('jbe .+11            ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil)
