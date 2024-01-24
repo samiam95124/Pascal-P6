@@ -1031,7 +1031,8 @@ procedure xlate;
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          estack := nil; stacklvl := 0; efree := nil;
-         allreg := [rgrax, rgrbx, rgr11, rgr12, rgr13, rgr14, rgr15,
+         allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
+                    rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
                     rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14,
                     rgxmm15];
          frereg := allreg;
@@ -1828,8 +1829,8 @@ procedure xlate;
 
       procedure resreg(r: reg);
       begin
-        if not (r in rf) and (r <> r1) and (r <> r2) then 
-          begin ep^.rs := ep^.rs+[r]; rf := rf-[r] end
+        if not (r in rf) and (r <> r1) and (r <> r2) then ep^.rs := ep^.rs+[r];
+        rf := rf-[r]
       end;
 
       { assign registers to parameters in call }
@@ -1920,10 +1921,9 @@ procedure xlate;
           5{lao}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
-          16{ixa}: begin ep^.r1 := r1;
+          16{ixa}: begin resreg(rgrax); resreg(rgrdx); ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, ep^.r1, rgnull);
-            resreg(rgrdx) 
           end;
 
           118{swp}: ; { done at top level }
