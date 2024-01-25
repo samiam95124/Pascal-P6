@@ -1923,7 +1923,7 @@ procedure xlate;
 
           16{ixa}: begin resreg(rgrax); resreg(rgrdx); ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, ep^.r1, rgnull);
+            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
           118{swp}: ; { done at top level }
@@ -2474,8 +2474,8 @@ procedure xlate;
 
             16{ixa}: begin 
               wrtins20('movq $0,%rax        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins10('mul %1    ', 0, 0, ep^.l^.r1, rgnull, nil);
-              wrtins20('add %rax,%1         ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('mul %1    ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins20('add %rax,%1         ', 0, 0, ep^.l^.r1, rgnull, nil);
             end;
 
             118{swp}: ; { done at top level }
@@ -3589,7 +3589,8 @@ procedure xlate;
             end else ep4 := nil
           end;
           ep4 := ep3;
-          assreg(ep2, frereg, rgnull,  rgnull);
+          getreg(ep2^.r1, frereg);
+          assreg(ep2, frereg, ep2^.r1,  rgnull);
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
           if ep4 <> nil then writeln(prr, '# Transparent operators:');
