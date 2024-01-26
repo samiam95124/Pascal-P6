@@ -2665,10 +2665,8 @@ procedure xlate;
               wrtins20('movq $0,%1          ', 0, 0, ep^.r1, rgnull, nil);
 
             {ldcr}
-            124: begin 
-               write(prr, '        movsd   real', ep^.realn:1, '(%rip),%'); 
-               wrtreg(prr, ep^.r1); writeln(prr)
-            end;
+            124:
+              wrtins30('movsd real^0(%rip),%1         ', ep^.realn, 0, ep^.r1, rgnull, nil);
 
             {ldcs}
             7: 
@@ -3651,7 +3649,7 @@ procedure xlate;
             end else ep4 := nil
           end;
           ep4 := ep3;
-          getreg(ep2^.r1, frereg);
+          if op = 81{stor} then getfreg(ep2^.r1, frereg) else getreg(ep2^.r1, frereg);
           assreg(ep2, frereg, ep2^.r1,  rgnull);
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
