@@ -2022,16 +2022,22 @@ procedure xlate;
 
           {cvbi,cvbx,cvbb,cvbc}
           100, 115, 116, 121: begin 
-            assreg(ep^.l, rf, rgrcx, rgnull); assreg(ep^.r, rf, rgr9, rgnull);
+            assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
             ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax;
             resreg(rgrdi); resreg(rgrsi); resreg(rgrdx); resreg(rgr8)
           end;
 
           {ivti,ivtx,ivtb,ivtc}
           192,101,102,111: begin 
-            assreg(ep^.l, rf, rgrcx, rgnull); assreg(ep^.r, rf, rgr9, rgnull);
+            assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
             ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax;
             resreg(rgrdi); resreg(rgrsi); resreg(rgrdx); resreg(rgr8)
+          end;
+
+          {cta}
+          191: begin
+            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rgr8);
+            resreg(rgrdi); resreg(rgrsi); resreg(rgrdx)
           end;
 
           {cps}
@@ -2045,12 +2051,6 @@ procedure xlate;
           177: begin 
             assreg(ep^.l, rf, rgnull, rgrsi); assreg(ep^.r, rf, rgnull, rgrdx);
             resreg(rgrdi)
-          end;
-
-          {cta}
-          191: begin
-            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rgr8);
-            resreg(rgrdi); resreg(rgrsi); resreg(rgrdx)
           end;
 
           {lpa}
@@ -2608,7 +2608,7 @@ procedure xlate;
             100, 115, 116, 121: begin
               wrtins20('movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdx        ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20('movq @(%rip),%rdx   ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins20('movq (%1),%r8       ', 0, 0, ep^.r^.r1, rgnull, nil)
               else
@@ -3032,7 +3032,8 @@ procedure xlate;
       procedure gettop(var epl, epr: expptr);
       begin
         if estack = nil then errorl('Expression underflow     ');
-        if estack^.op in [100,115,116,121,192,101,102,111,191] then begin
+        if estack^.op in [{cvbi}100,{cvbx}115,{cvbb}116,{cvbc}121,{ivti}192,
+                          {ivtx}101,{ivtb}102,{itvc}111,{cta}191] then begin
           epl := estack^.l; epr := estack^.r
         end else begin popstk(epr); popstk(epl) end;
       end;
@@ -3653,9 +3654,9 @@ procedure xlate;
           assreg(ep2, frereg, ep2^.r1,  rgnull);
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
+          genexp(ep); genexp(ep2);
           if ep4 <> nil then writeln(prr, '# Transparent operators:');
           dmplst(ep4);
-          genexp(ep); genexp(ep2);
           while ep4 <> nil do begin genexp(ep4); ep4 := ep4^.next end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
