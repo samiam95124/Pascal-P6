@@ -1,5 +1,5 @@
 #ifndef FPC_PASCAL
-(*$c+,t-,d-,l+,s+*)
+(*$c+,t-,d-,l-,s+*)
 #endif
 {*******************************************************************************
 *                                                                              *
@@ -105,7 +105,7 @@ const
 
       }
 
-#include "mpb64.inc"
+#include <mpb64.inc>
 
       { internal constants }
 
