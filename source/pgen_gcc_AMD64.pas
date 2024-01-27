@@ -1773,7 +1773,7 @@ procedure xlate;
       
       procedure deltre(ep: expptr);
       begin
-        if ep^.l <> nil then deltre(ep^.l);
+        if ep^.l <> nil then deltre(ep^.l); 
         if ep^.r <> nil then deltre(ep^.r);
         if ep^.x1 <> nil then deltre(ep^.x1);
         if ep^.sl <> nil then deltre(ep^.sl);
@@ -2433,10 +2433,8 @@ procedure xlate;
       begin { genexp }
         if ep <> nil then begin
           genexp(ep^.al);
-          if not (ep^.op in [100,115,116,121,192,101,102,111,191]) then begin
-            if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
-            genexp(ep^.r); genexp(ep^.x1);
-          end;
+          if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
+          genexp(ep^.r); genexp(ep^.x1);
           for r := rgrax to rgr15 do if r in ep^.rs then
               wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           writeln(prr, '# generating: ', ep^.op:3, ': ', instr[ep^.op]);
@@ -3028,16 +3026,6 @@ procedure xlate;
           parlvl := maxint { set parameter level inactive }
       end;
 
-      { get left and right links from transparent operator or stack }
-      procedure gettop(var epl, epr: expptr);
-      begin
-        if estack = nil then errorl('Expression underflow     ');
-        if estack^.op in [{cvbi}100,{cvbx}115,{cvbb}116,{cvbc}121,{ivti}192,
-                          {ivtx}101,{ivtb}102,{itvc}111,{cta}191] then begin
-          epl := estack^.l; epr := estack^.r
-        end else begin popstk(epr); popstk(epl) end;
-      end;
-
       { attach tag chk sequence to leaf }
       procedure attach(ep: expptr);
       begin
@@ -3048,9 +3036,10 @@ procedure xlate;
       { duplicate subtree }
       procedure duptre(s: expptr; var d: expptr);
       begin
-        if s = nil then d := nil else begin
-          getexp(d); d^ := s^; duptre(s^.l, d^.l); duptre(s^.r, d^.r);
-          duptre(s^.x1, d^.x1)
+        if s = nil then d := nil else begin { only copy tree components }
+          getexp(d); d^ := s^; d^.next := nil; d^.sl := nil; d^.cl := nil; 
+          d^.al := nil; d^.pl := nil;
+          duptre(s^.l, d^.l); duptre(s^.r, d^.r); duptre(s^.x1, d^.x1)
         end
       end;
 
@@ -3121,14 +3110,6 @@ procedure xlate;
           getexp(ep); pshstk(ep) 
         end;
 
-        {cvbi,cvbx,cvbb,cvbc}
-        100, 115, 116, 121,
-        {ivti,ivtx,ivtb,ivtc}
-        192,101,102,111: begin read(prd,q, q1); labelsearch(def, val, sp); 
-          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
-          getexp(ep); ep^.lt := sp; gettop(ep^.l, ep^.r); pshstk(ep) 
-        end;
-
         {cps}
         176: begin writeln(prr); getexp(ep); popstk(ep^.r); popstk(ep^.l); 
           pshstk(ep) 
@@ -3139,11 +3120,6 @@ procedure xlate;
           pshstk(ep) 
         end;
 
-        {cta}
-        191: begin read(prd,q, q1); labelsearch(def, val, sp);
-          write(prr,q:1, ' ', q1:1, ' '); writevp(prr, sp); writeln(prr);
-          getexp(ep); ep^.lt := sp; gettop(ep^.l, ep^.r); pshstk(ep) 
-        end;
 
         {lpa}
         114: begin read(prd,p); labelsearch(def, val, sp); writeln(prr); 
@@ -3385,6 +3361,17 @@ procedure xlate;
         end;
 
         { *** terminals *** }
+
+        {cvbi,cvbx,cvbb,cvbc}
+        100, 115, 116, 121,
+        {ivti,ivtx,ivtb,ivtc,cta}
+        192,101,102,111,191: begin read(prd,q, q1); labelsearch(def, val, sp); 
+          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
+          getexp(ep); ep^.lt := sp; popstk(ep2); popstk(ep3); 
+          duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); deltre(ep)
+        end;
 
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
@@ -3640,29 +3627,13 @@ procedure xlate;
 
         {stoi,stoa,stor,stos,stob,stoc,stox}
         6, 80, 81, 82, 83, 84, 197: begin writeln(prr); 
-          frereg := allreg; gettop(ep, ep2); 
-          ep3 := nil;
-          ep4 := estack;
-          while ep4 <> nil do begin
-            if estack^.op in [{cvbi}100,{cvbx}115,{cvbb}116,{cvbc}121,{ivti}192,
-                              {ivtx}101,{ivtb}102,{itvc}111,{cta}191] then begin
-              popstk(ep5); ep5^.next := ep3; ep3 := ep5; ep4 := estack
-            end else ep4 := nil
-          end;
-          ep4 := ep3;
+          frereg := allreg; popstk(ep2); popstk(ep);
           if op = 81{stor} then getfreg(ep2^.r1, frereg) else getreg(ep2^.r1, frereg);
           assreg(ep2, frereg, ep2^.r1,  rgnull);
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          if ep4 <> nil then writeln(prr, '# Transparent operators:');
-          dmplst(ep4);
-          while ep4 <> nil do begin genexp(ep4); ep4 := ep4^.next end;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq %1,(%2)        ', 0, 0, ep2^.r1, ep^.r1, nil);
           deltre(ep); deltre(ep2);
-          while ep3 <> nil do 
-            begin ep4 := ep3; ep3 := ep3^.next; putexp(ep4) end;
           botstk
         end;
 
