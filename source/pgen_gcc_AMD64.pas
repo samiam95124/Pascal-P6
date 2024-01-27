@@ -2608,9 +2608,9 @@ procedure xlate;
               wrtins20('movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins20('movq @(%rip),%rdx   ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
-                wrtins20('movq (%1),%r8       ', 0, 0, ep^.r^.r1, rgnull, nil)
+                wrtins20('movq (%1),%r8       ', 0, 0, ep^.l^.r1, rgnull, nil)
               else
-                wrtins20('movzx (%1),%r8      ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
+                wrtins20('movzx (%1),%r8      ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
               wrtins30('call psystem_tagchgvar        ', 0, 0, rgnull, rgnull, nil)
             end;
 
@@ -2620,9 +2620,9 @@ procedure xlate;
               wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins20('movq @(%rip),%rdx    ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
-                wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.r^.r1, rgnull, nil)
+                wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.l^.r1, rgnull, nil)
               else
-                wrtins20('movzx (%1),%r8       ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
+                wrtins20('movzx (%1),%r8       ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
               wrtins30('call psystem_tagchginv         ', 0, 0, rgnull, rgnull, nil)
             end;
 
