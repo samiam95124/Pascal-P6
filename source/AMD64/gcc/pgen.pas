@@ -2831,11 +2831,11 @@ procedure xlate;
             43,44,206: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
               wrtins20('jns .+ 17           ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins20('jns .+ 17           ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
                 43: wrtins20('andq %1,%2           ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
