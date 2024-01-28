@@ -1920,7 +1920,8 @@ procedure xlate;
 
           {lods}
           107: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
+          end;
 
           {adr,sbr}
           29, 31: begin ep^.r1 := r1;
@@ -2469,7 +2470,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, rgnull, ep^.r1, nil)
+              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {lda}
