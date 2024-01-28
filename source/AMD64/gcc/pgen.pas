@@ -3532,7 +3532,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('orb %1l,%1l         ', 0, 0, ep^.r1, rgnull, nil);
           if op = 24{fjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
-          else if op = 119{tjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
+          else if op = 119{tjp} then wrtins10('jnz @     ', 0, 0, rgnull, rgnull, sp)
           else {xjp}; /* ??? fill me in */
           deltre(ep); 
           botstk 
