@@ -3398,7 +3398,7 @@ procedure xlate;
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
           frereg := allreg;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); getreg(r1, frereg);
+          popstk(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -3520,21 +3520,26 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
-          frereg := allreg;
+          wrtins10('jmp @     ', 0, 0, rgnull, rgnull, sp);
           botstk
         end;
 
         {fjp,tjp,xjp}
-        24,25,119: begin labelsearch(def, val, sp); write(prr, 'l '); 
+        24,119,25: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
-          dmptre(ep); deltre(ep); 
+          assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins20('orb %1l,%1l         ', 0, 0, ep^.r1, rgnull, nil);
+          if op = 24{fjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
+          else if op = 119{tjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
+          else {xjp}; /* ??? fill me in */
+          deltre(ep); 
           botstk 
         end;
 
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp); writeln(prr, p:1);
-          frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rbp    ', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins20('movq ^0(%rbp),%rsp    ', marksb, 0, rgnull, rgnull, nil);
