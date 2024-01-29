@@ -2675,12 +2675,12 @@ procedure xlate;
             26, 95, 98, 99, 199: begin 
               wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jae .+ 21           ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jae .+ 14           ', 0, 0, rgnull, rgnull, nil);
               wrtins30('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%1          ', ep^.vi2, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jbe .+ 11           ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jbe .+ 7           ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil)
             end;
 
