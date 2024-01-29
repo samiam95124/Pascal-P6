@@ -3525,16 +3525,32 @@ procedure xlate;
           botstk
         end;
 
-        {fjp,tjp,xjp}
-        24,119,25: begin labelsearch(def, val, sp); write(prr, 'l '); 
+        {fjp,tjp}
+        24,119: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('orb %1l,%1l         ', 0, 0, ep^.r1, rgnull, nil);
           if op = 24{fjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
-          else if op = 119{tjp} then wrtins10('jnz @     ', 0, 0, rgnull, rgnull, sp)
-          else {xjp}; /* ??? fill me in */
+          else {tjp} wrtins10('jnz @     ', 0, 0, rgnull, rgnull, sp);
+          deltre(ep); 
+          botstk 
+        end;
+
+        {xjp}
+        25: begin labelsearch(def, val, sp); write(prr, 'l '); 
+          writevp(prr, sp); writeln(prr);
+          frereg := allreg; popstk(ep); getreg(r1, frereg);
+          assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); 
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins10('movq %1,%2', 0, 0, ep^.r1, r1, sp);
+          wrtins10('salq $2,%1', 0, 0, ep^.r1, rgnull, sp);
+          wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
+          wrtins20('movq @(%rip),%1     ', 0, 0, r1, rgnull, sp);
+          wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
+          wrtins10('jmp *%1   ', 0, 0, ep^.r1, rgnull, sp);
           deltre(ep); 
           botstk 
         end;
