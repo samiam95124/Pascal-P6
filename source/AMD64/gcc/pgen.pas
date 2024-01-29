@@ -3548,7 +3548,7 @@ procedure xlate;
           wrtins10('movq %1,%2', 0, 0, ep^.r1, r1, sp);
           wrtins10('salq $2,%1', 0, 0, ep^.r1, rgnull, sp);
           wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
-          wrtins20('movq @(%rip),%1     ', 0, 0, r1, rgnull, sp);
+          wrtins20('leaq @(%rip),%1     ', 0, 0, r1, rgnull, sp);
           wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
           wrtins10('jmp *%1   ', 0, 0, ep^.r1, rgnull, sp);
           deltre(ep); 
