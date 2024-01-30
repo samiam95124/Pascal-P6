@@ -2782,7 +2782,7 @@ procedure xlate;
 
             {sqi}
             38: begin 
-              wrtins20('addq %1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('imulq %1,%1          ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
             {sqr}

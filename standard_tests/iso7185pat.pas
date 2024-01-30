@@ -958,7 +958,7 @@ begin
       1: write('*** bad ***');
       10000: write('good')
    end;
-   writeln(' start s/b start good');
+   writeln(' s/b start good');
    write('Control18: start ');
    repeat(*comment(*comment*)
       goto 004;
