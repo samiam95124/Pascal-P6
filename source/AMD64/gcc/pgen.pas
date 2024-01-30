@@ -2676,13 +2676,13 @@ procedure xlate;
             26, 95, 98, 99, 199: begin 
               wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jae 1f              ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jge 1f              ', 0, 0, rgnull, rgnull, nil);
               wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins20('movq $0,%1          ', ep^.vi2, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jbe 1f              ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('jle 1f              ', 0, 0, rgnull, rgnull, nil);
               wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
@@ -2700,7 +2700,7 @@ procedure xlate;
             190: begin
               if ep^.q <> 0 then begin
                 wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-                wrtins20('jbe 1f              ', 0, 0, ep^.r2, rgnull, nil);
+                wrtins20('jge 1f              ', 0, 0, ep^.r2, rgnull, nil);
                 wrtins40('movq $DereferenceOfNilPointer,%rdi      ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
