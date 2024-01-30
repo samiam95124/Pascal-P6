@@ -2631,15 +2631,15 @@ procedure xlate;
             176: begin 
               wrtins10('cmpq %1,%2', 0, 0, ep^.r^.r2, ep^.l^.r2, nil);
               wrtins10('je 1f     ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
-              wrtins20('movq $0,%rdi      ', ContainerMismatch, 0, rgnull, rgnull, nil);
-              wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ContainerMismatch,%rdi  ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
 
             {cpc}
             177: begin 
-              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins30('call psystem_cmptmp            ', 0, 0, rgnull, rgnull, nil)
+              wrtins20('movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20('call psystem_cmptmp ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {cta}
@@ -2677,12 +2677,13 @@ procedure xlate;
               wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
               wrtins20('jae 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ValueOutOfRange,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins20('movq $0,%1          ', ep^.vi2, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
               wrtins20('jbe 1f              ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
@@ -2700,8 +2701,8 @@ procedure xlate;
               if ep^.q <> 0 then begin
                 wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
                 wrtins20('jbe 1f              ', 0, 0, ep^.r2, rgnull, nil);
-                wrtins20('movq $DereferenceOfNilPointer,%rax      ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('call psystem_errorv ', 0, 0, rgnull, rgnull, nil);
+                wrtins40('movq $DereferenceOfNilPointer,%rdi      ', 0, 0, rgnull, rgnull, nil);
+                wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
               end
             end;
@@ -2818,7 +2819,7 @@ procedure xlate;
             205: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
               wrtins20('jns 1f           ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq $BooleanOperatorOfNegative,%rax      ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('movq $BooleanOperatorOfNegative,%rdi      ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('not %1              ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
@@ -2839,12 +2840,12 @@ procedure xlate;
             43,44,206: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
               wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rax    ', 0, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rdi    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               case ep^.op of
@@ -2973,8 +2974,8 @@ procedure xlate;
                 genexp(ep2); ep2 := ep2^.next 
               end;   
               wrtins10('jnz 1f    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rdi      ', VariantNotActive, 0, rgnull, rgnull, nil);
-              wrtins30('call psystem_errorv         ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $VariantNotActive,%rdi   ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
 
@@ -3683,7 +3684,7 @@ procedure xlate;
 
         61 {ujc}: begin writeln(prr);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30('movq $CaseValueNotFound,%rax  ', 0, 0, rgnull, rgnull, nil);
+          wrtins30('movq $CaseValueNotFound,%rdi  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;

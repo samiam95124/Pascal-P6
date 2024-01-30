@@ -438,7 +438,7 @@ static void error(char* es)
 
 /* handle exception vector */
 void psystem_errorv(address ea)
-{ printf("\n*** Runtime error");
+{ printf("\n*** Runtime error: ");
   if (srclin > 0) printf(" [%ld]: ", srclin);
   switch (ea) {
 
