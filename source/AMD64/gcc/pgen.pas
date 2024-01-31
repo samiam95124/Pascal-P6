@@ -2527,7 +2527,8 @@ procedure xlate;
                 160{grtm}: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
                 166{leqm}: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
                 172{lesm}: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-              end
+              end;
+              wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
 
             5{lao}:
@@ -2745,7 +2746,8 @@ procedure xlate;
                 155,156,157,159: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
                 161,162,163,165: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
                 167,168,169,171: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil)
-              end
+              end;
+              wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
 
             {ordi,ordb,ordc,ordx}
@@ -2827,7 +2829,7 @@ procedure xlate;
 
             {odd}
             50: begin 
-              wrtins20('andq $1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('andq $0,%1          ', 1, 0, ep^.r1, rgnull, nil);
             end;
 
             {rnd}
@@ -2885,6 +2887,10 @@ procedure xlate;
             {dvi}
             53: begin 
               wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('subq $0,%rax        ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('jns 1f    ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('decq %rdx ', 0, 0, rgnull, rgnull, sp);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins10('idivq %1  ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrax then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
