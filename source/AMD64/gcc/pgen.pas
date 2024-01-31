@@ -3290,7 +3290,7 @@ procedure xlate;
 
         {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
         43,44,45,46,47,48,49,51,52,53,54,110,206: begin writeln(prr); 
-          getexp(ep); popstk(ep^.l); popstk(ep^.r); pshstk(ep) 
+          getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
         end;
 
         { At this level we just duplicate the tree. At lower levels we can
