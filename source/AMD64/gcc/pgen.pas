@@ -3498,6 +3498,11 @@ procedure xlate;
         {mov}
         55: begin read(prd,q); writeln(prr,q:1); 
           frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
+          assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
+          genexp(ep2); genexp(ep);
+          wrtins20('movq $0,%rcx        ', q, 0, rgnull, rgnull, nil);
+          wrtins10('repnz     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('movsb     ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2);
           botstk
         end;
