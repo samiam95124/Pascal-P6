@@ -3513,13 +3513,17 @@ procedure xlate;
           botstk 
         end;
 
-        {sro}
+        {sroi,sroa,sror,sros,srob,srox}
         3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
           frereg := allreg;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
+          if (op = 79){srob} or (op = 196){srox} then
+            wrtins40('movb %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
+          else if op = 76{sror} then
+            wrtins40('movsd %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
+          else wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
           deltre(ep); 
           botstk 
         end;
