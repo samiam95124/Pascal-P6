@@ -2523,10 +2523,10 @@ procedure xlate;
               case ep^.op of
                 142{equm}: wrtins10('sete %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
                 148{neqm}: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                154{geqm}: wrtins10('setae %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                160{grtm}: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                166{leqm}: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                172{lesm}: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                154{geqm}: wrtins10('setge %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                160{grtm}: wrtins10('setg %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                166{leqm}: wrtins10('setle %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                172{lesm}: wrtins10('setl %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
               end;
               wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
@@ -2742,10 +2742,10 @@ procedure xlate;
               case ep^.op of
                 17,137,138,139,141: wrtins10('sete %1l  ', 0, 0, ep^.r1, rgnull, nil);
                 18,143,144,145,147: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                149,150,151,153: wrtins10('setae %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                155,156,157,159: wrtins10('seta %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                161,162,163,165: wrtins10('setbe %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                167,168,169,171: wrtins10('setb %1l  ', 0, 0, ep^.l^.r1, rgnull, nil)
+                149,150,151,153: wrtins10('setge %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                155,156,157,159: wrtins10('setg %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                161,162,163,165: wrtins10('setle %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                167,168,169,171: wrtins10('setl %1l  ', 0, 0, ep^.l^.r1, rgnull, nil)
               end;
               wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
