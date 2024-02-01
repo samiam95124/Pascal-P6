@@ -1878,23 +1878,31 @@ procedure xlate;
 
       { assign registers to parameters in call }
       procedure asspar(ep: expptr; mi: integer);
-      var pp: expptr; pc: integer; fpc: integer;
+      var pp: expptr; pc: integer; fpc: integer; r1, r2: reg; fr: reg;
       begin
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
           if insf[pp^.op] then begin { floating result }
-            if fpc <= maxfltparreg then assreg(pp, rf, parregf[fpc], rgnull)
-            else assreg(pp, rf, rgnull, rgnull);
+            if fpc <= maxfltparreg then begin
+              resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull)
+            end else begin
+              getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
+            end;
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            if (pc <= mi) and (pc <= maxintparreg-1) then 
+            if (pc <= mi) and (pc <= maxintparreg-1) then begin
+              resreg(parreg[pc]); resreg(parreg[pc+1]); 
               assreg(pp, rf, parreg[pc], parreg[pc+1])
-            else assreg(pp, rf, rgnull, rgnull);
+            end else begin
+              getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
+            end;
             pc := pc+2
           end else begin { single register }
-            if (pc <= mi) and (pc <= maxintparreg) then 
-              assreg(pp, rf, parreg[pc], rgnull)
-            else assreg(pp, rf, rgnull, rgnull);
+            if (pc <= mi) and (pc <= maxintparreg) then begin
+              resreg(parreg[pc]); assreg(pp, rf, parreg[pc], rgnull)
+            end else begin 
+              getreg(r1, rf); assreg(pp, rf, r1, rgnull) 
+            end;
             pc := pc+1
           end;            
           pp := pp^.next
