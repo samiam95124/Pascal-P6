@@ -1976,7 +1976,8 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           16{ixa}: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf); ep^.t1 := ep^.r1;
+            if (ep^.r1 = rgrax) or (ep^.r1 = rgrdx) then getreg(ep^.t1, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
             resreg(rgrax); resreg(rgrdx)
           end;
@@ -2543,9 +2544,13 @@ procedure xlate;
               wrtins40('leaq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
+              if ep^.r1 <> ep^.t1 then
+                wrtins10('movq %1,%2', 0, 0, ep^.r1, ep^.t1, nil);
               wrtins20('movq $0,%rax        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins10('mul %1    ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins20('add %rax,%1         ', 0, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20('add %rax,%1         ', 0, 0, ep^.t1, rgnull, nil);
+              if ep^.r1 <> ep^.t1 then
+                wrtins10('movq %1,%2', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
             118{swp}: ; { done at top level }
