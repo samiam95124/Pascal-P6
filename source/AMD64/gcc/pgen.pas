@@ -1946,6 +1946,7 @@ procedure xlate;
 
           {equs,neqs,geqs,leqs}
           140,146,152,164: begin 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
             assreg(ep^.r, rf, rgrsi, rgnull);
             resreg(rgrax)
@@ -1967,9 +1968,10 @@ procedure xlate;
 
           {equm,neqm,geqm,grtm,leqm,lesm}
           142, 148, 154, 160, 166, 172: begin  
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
             assreg(ep^.r, rf, rgrsi, rgnull);  
-            resreg(rgrax); resreg(rgrdx)
+            resreg(rgrax); resreg(rgrdx); resreg(rgrdi); resreg(rgrsi)
           end;
 
           5{lao}: begin ep^.r1 := r1;
@@ -2530,14 +2532,14 @@ procedure xlate;
               wrtins20('call psystem_strcmp ', 0, 0, rgnull, rgnull, nil); 
               wrtins20('cmpq $0,%rax        ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
-                142{equm}: wrtins10('sete %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                148{neqm}: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                154{geqm}: wrtins10('setge %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                160{grtm}: wrtins10('setg %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                166{leqm}: wrtins10('setle %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                172{lesm}: wrtins10('setl %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
+                142{equm}: wrtins10('sete %1l  ', 0, 0, ep^.r1, rgnull, nil);
+                148{neqm}: wrtins10('setne %1l ', 0, 0, ep^.r1, rgnull, nil);
+                154{geqm}: wrtins10('setge %1l ', 0, 0, ep^.r1, rgnull, nil);
+                160{grtm}: wrtins10('setg %1l  ', 0, 0, ep^.r1, rgnull, nil);
+                166{leqm}: wrtins10('setle %1l ', 0, 0, ep^.r1, rgnull, nil);
+                172{lesm}: wrtins10('setl %1l  ', 0, 0, ep^.r1, rgnull, nil);
               end;
-              wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
+              wrtins20('movsx %1l,%1        ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             5{lao}:
@@ -2599,7 +2601,7 @@ procedure xlate;
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
+              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {inci,inca,incb,incc,incx}
@@ -2736,7 +2738,7 @@ procedure xlate;
                 end;
                 152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins20('movq %rax,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
+              wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {equa,equi,equb,equc}
