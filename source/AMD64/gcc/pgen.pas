@@ -1967,7 +1967,7 @@ procedure xlate;
           end; 
 
           {equm,neqm,geqm,grtm,leqm,lesm}
-          142, 148, 154, 160, 166, 172: begin  
+          142, 148, 154, 160, 166, 172: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
             assreg(ep^.r, rf, rgrsi, rgnull);  

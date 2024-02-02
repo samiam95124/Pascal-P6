@@ -817,7 +817,7 @@ boolean varlap(unsigned char* s, unsigned char* e)
 {
 
     varptr vp;
-    long f;
+    boolean f;
 
     vp = varlst; f = FALSE;
     while (vp && !f) {
@@ -2628,7 +2628,7 @@ character.
 
 *******************************************************************************/
 
-char psystem_rcbf(
+void psystem_rcbf(
     /* Pascal file to read from */ pasfil* f,
     /* character to read */        char*   c,
     /* Range of values          */ long mn, long mx,
@@ -3841,7 +3841,7 @@ The number of characters in the string are read.
 
 *******************************************************************************/
 
-long psystem_rds(
+void psystem_rds(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
     /* Length */      long    l
@@ -3871,7 +3871,7 @@ filled, then the rest of the field characters are expected to be blank.
 
 *******************************************************************************/
 
-long psystem_rdsf(
+void psystem_rdsf(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
     /* Length */      long    l,
@@ -3901,7 +3901,7 @@ the rest of the string is filled with blanks.
 
 *******************************************************************************/
 
-long psystem_rdsp(
+void psystem_rdsp(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
     /* Length */      long    l,
@@ -3932,7 +3932,7 @@ possible, like using the variable name.
 
 *******************************************************************************/
 
-long psystem_aeft(
+void psystem_aeft(
     /* Pascal file */     pasfil* f,
     /* Filename String */ char*   s,
     /* Length */          long    l
@@ -3964,7 +3964,7 @@ possible, like using the variable name.
 
 *******************************************************************************/
 
-long psystem_aefb(
+void psystem_aefb(
     /* Pascal file */     pasfil* f,
     /* Filename String */ char*   s,
     /* Length */          long    l
@@ -4063,7 +4063,7 @@ specified, and both strings must be of the same length.
 
 *******************************************************************************/
 
-int psystem_strcmp(
+long psystem_strcmp(
     /** First string */  char* s1,
     /** Second string */ char* s2, 
     /** Length */        int l
@@ -4073,7 +4073,7 @@ int psystem_strcmp(
 
     int     i;
     boolean b;
-    int     r;
+    long    r;
 
     i = 0;
     b = TRUE;
@@ -4083,13 +4083,14 @@ int psystem_strcmp(
         else b = FALSE;
 
     }
-    if (i == l) i = i-1;
     s1--;
     s2--;
 
     if (b) r = 0;
     else if (*s1 < *s2) r = -1;
     else r = 1;
+
+    return r;
 
 }
 
@@ -4393,7 +4394,7 @@ high index, and the set to operate on.
 
 *******************************************************************************/
 
-boolean psystem_setrgs(
+void psystem_setrgs(
     /* set element low */  long l,
     /* set element high */ long h,
     /* set  */             settype s
