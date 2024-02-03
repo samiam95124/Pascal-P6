@@ -2116,7 +2116,7 @@ procedure xlate;
           {ordi,ordb,ordc,ordx}
           59, 134, 136, 200: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, r1, r2)
+            assreg(ep^.l, rf, ep^.r1, r2)
           end;
 
           {lcp}
@@ -2196,14 +2196,14 @@ procedure xlate;
           {and,ior,xor}
           43,44,206: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
             resreg(rgrax)
           end;
 
           {dif,int,uni}
           45,46,47: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then ep^.r1 := rgrdi;
-            assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull) 
+            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull) 
           end;
 
           {inn}
@@ -2211,7 +2211,7 @@ procedure xlate;
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
             if ep^.r1 <> rgrax then resreg(rgrax)
           end;
 
@@ -2220,7 +2220,7 @@ procedure xlate;
             if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
             if ep^.r1 <> rgrax then resreg(rgrax)
           end;
 
@@ -2229,7 +2229,7 @@ procedure xlate;
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, r2); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
             if ep^.r1 <> rgrax then resreg(rgrax)
           end;
 
@@ -2252,7 +2252,7 @@ procedure xlate;
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrdi, r2); assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
             if ep^.r1 <> rgrax then resreg(rgrax)
           end;
 
@@ -3539,7 +3539,7 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          if (op = 78{stob}) or (op = 79){sroc} or (op = 196){srox} then
+          if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
             wrtins40('movb %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
           else if op = 76{sror} then
             wrtins40('movsd %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
