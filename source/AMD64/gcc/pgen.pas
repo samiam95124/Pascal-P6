@@ -940,6 +940,8 @@ procedure xlate;
          instr[245]:='sfr       '; insr[245] := 0; insf[245] := false;
          instr[246]:='cuf       '; insr[246] := 0; insf[246] := false;
          instr[247]:='cif       '; insr[247] := 0; insf[247] := false;
+         instr[248]:='lfs       '; insr[248] := 0; insf[248] := false;
+         instr[249]:='lfe       '; insr[249] := 0; insf[249] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -3735,6 +3737,17 @@ procedure xlate;
           wrtins10('jle @     ', 0, 0, rgnull, rgnull, sp);
           wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
+        end;
+
+        {lfs}
+        248: begin writeln(prr);
+          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, sp);
+          wrtins20('movq %rsp,%rbp      ', 0, 0, rgnull, rgnull, sp)
+        end;
+
+        {lfe}
+        249: begin writeln(prr);
+          wrtins10('popq %rbp ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {wbs}
