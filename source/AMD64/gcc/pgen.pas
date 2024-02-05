@@ -631,6 +631,8 @@ procedure xlate;
          { stack and expression tree entries }
          expptr = ^expstk;
          expstk = record
+                    sn: integer; { serial number for entry }
+                    free: boolean; { allocated/free }
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p:   lvltyp; q, q1, q2: address; { p and q parameters }
@@ -647,8 +649,6 @@ procedure xlate;
                     setn: integer; { set number }
                     vi, vi2: integer; { integer value }
                     rs: regset; { push/pop mask }
-                    wkeep: boolean; { will hold this value }
-                    keep: boolean; { hold this value }
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
@@ -673,6 +673,7 @@ procedure xlate;
         stacklvl: integer;
         parreg: array [1..7] of reg; { parameter registers }
         parregf: array [1..8] of reg; { floating point parameter registers }
+        expsn: integer; { expression entries sn }
 
    procedure init;
       var i: integer;
@@ -1036,6 +1037,7 @@ procedure xlate;
          sline := 0; { set no line of source }
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
+         expsn := 0; { expression entries serial number start }
          estack := nil; stacklvl := 0; efree := nil;
          allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
                     rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
@@ -1716,19 +1718,19 @@ procedure xlate;
       procedure getexp(var ep: expptr);
       begin
         if efree <> nil then begin ep := efree; efree := ep^.next end
-        else new(ep);
+        else begin new(ep); expsn := expsn+1; ep^.sn := expsn end;
         ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
         ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
         ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
-        ep^.wkeep := false; ep^.keep := false; ep^.fn := nil; ep^.lb := nil; 
-        ep^.lt := nil;
+        ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false
       end;
       
       procedure putexp(ep: expptr);
       begin
-        ep^.next := efree; efree := ep
+        if ep^.free then errorl('System fault: dbl free   ');
+        ep^.next := efree; efree := ep; ep^.free := true
       end;
       
       procedure dmpstk(var f: text);
@@ -2421,18 +2423,7 @@ procedure xlate;
       begin
         { evaluate all parameters }
         pp := ep^.pl;
-        while pp <> nil do begin 
-          if not pp^.keep then genexp(pp); 
-          pp := pp^.next
-        end;
-        if ep^.pl <> nil then if ep^.pl^.keep then
-          { restore kept from stack }
-          wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);
-        { activate keep }
-        if ep^.pl <> nil then ep^.pl^.keep := ep^.pl^.wkeep;
-        { must do this after parameter eval }
-        if ep^.pl <> nil then if ep^.pl^.keep then { stack kept }
-          wrtins10('pushq %rdi', 0, 0, rgrdi, rgnull, nil);
+        while pp <> nil do begin genexp(pp); pp := pp^.next end;
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
@@ -3377,14 +3368,12 @@ procedure xlate;
           else getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
-            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
-            dmptre(ep); 
-            if spkeep[ep^.q] then ep^.pl^.wkeep := true;
-            genexp(ep); 
-            if spkeep[ep^.q] then begin { hold over file parameter }
-              pp := ep^.pl; ep^.pl := ep^.pl^.next;
-              pshstk(pp)
+            if spkeep[ep^.q] then begin
+              if ep^.pl = nil then errorl('System error             ');
+              duptre(ep^.pl, ep2); pshstk(ep2)
             end;
+            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+            dmptre(ep); genexp(ep);
             deltre(ep)
           end
         end;
@@ -3526,13 +3515,7 @@ procedure xlate;
 
         {dmp}
         117: begin read(prd,q); writeln(prr,q:1); 
-          popstk(ep); 
-          if not ep^.keep then begin 
-            deltre(ep); putexp(ep);
-            writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-            wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
-          end;
-          botstk 
+          popstk(ep); deltre(ep)
         end;
 
         {sroi,sroa,sror,sros,srob,sroc,srox}
@@ -3626,7 +3609,7 @@ procedure xlate;
         96: begin 
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('call varexit        ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
 
@@ -3725,11 +3708,8 @@ procedure xlate;
         8: begin read(prd,q,q1); labelsearch(def, val, sp); 
           write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
-          if not ep^.keep then begin
-            assreg(ep, frereg, rgnull, rgnull);
-            dmptre(ep); genexp(ep);
-            ep^.keep := true
-          end;
+          assreg(ep, frereg, rgnull, rgnull);
+          dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('cmpq $0,%1', q, 0, ep^.r1, rgnull, nil);
           wrtins10('jl 1f     ', 0, 0, rgnull, rgnull, sp);

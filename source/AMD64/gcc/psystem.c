@@ -1684,6 +1684,7 @@ void resetfn(filnum fn, boolean bin)
 
 {
 
+    if (fn <= COMMANDFN) error("Attempt to reset system file");
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
@@ -1710,6 +1711,7 @@ void rewritefn(filnum fn, boolean bin)
 
 {
 
+    if (fn <= COMMANDFN) error("Attempt to rewrite system file");
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
@@ -4429,6 +4431,7 @@ static void psystem_init(int argc, char* argv[])
     for (i = 1; i <= MAXFIL; i++) {
         filstate[i] = fsclosed; /* closed */
         filanamtab[i] = FALSE; /* no name assigned */
+        filtable[i] = NULL; /* clear Unix file pointer */
     }
 
     /* set status of standard files */
