@@ -2437,11 +2437,11 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
+          for r := rgrax to rgr15 do if r in ep^.rs then
+              wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
-          for r := rgrax to rgr15 do if r in ep^.rs then
-              wrtins10('push %1   ', 0, 0, r, rgnull, nil);
           writeln(prr, '# generating: ', ep^.op:3, ': ', instr[ep^.op]);
           case ep^.op of
 
