@@ -2787,7 +2787,7 @@ procedure xlate;
             {ngr}
             37: begin 
               wrtins20('subsd %1,%1         ', 0, 0, ep^.r1, ep^.r1, nil);
-              wrtins20('subsd %1,%2         ', 0, 0, ep^.r1, ep^.l^.r1, nil)
+              wrtins20('subsd %1,%2         ', 0, 0, ep^.l^.r1, ep^.r1, nil)
             end;
 
             {sqi}
