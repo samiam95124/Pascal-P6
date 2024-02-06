@@ -2506,9 +2506,9 @@ procedure xlate;
               case ep^.op of
                 138{equr}: wrtins20('cmpeqsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
                 144{neqr}: wrtins20('cmpneqsd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                150{geqr}: wrtins20('cmpnltsd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                150{geqr}: wrtins20('cmplesd %2,%1       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
                 156{grtr}: wrtins20('cmpltsd %2,%1       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                162{leqr}: wrtins20('cmpltsd %2,%1       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                162{leqr}: wrtins20('cmplesd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
                 168{lesr}: wrtins20('cmpltsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               end;
               wrtins20('movq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r1, nil);
