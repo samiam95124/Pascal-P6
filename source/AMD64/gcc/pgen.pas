@@ -1943,7 +1943,9 @@ procedure xlate;
           {equr,neqr,geqr,grtr,leqr,lesr}
           138,144,150,156,162,168: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull); assreg(ep^.r, rf, rgnull, rgnull) end;
+            assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
 
           {grts,less}
           158,170: ; { are invalid }
