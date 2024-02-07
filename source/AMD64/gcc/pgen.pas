@@ -1787,17 +1787,23 @@ procedure xlate;
         if ep^.next <> nil then deltre(ep^.next);
         putexp(ep)
       end;
+
+      procedure dmpety(var f: text; ep: expptr);
+      begin
+        write(f, ep^.op:3, ': ', instr[ep^.op]:4, ' ');
+        if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
+        else write(f, ep^.q:1);
+        if ep^.r1 <> rgnull then begin write(f, ' r1: '); wrtreg(f, ep^.r1) end;
+        if ep^.r2 <> rgnull then begin write(f, ' r2: '); wrtreg(f, ep^.r2) end;
+        if ep^.r3 <> rgnull then begin write(f, ' r3: '); wrtreg(f, ep^.r3) end;
+        if ep^.t1 <> rgnull then begin write(f, ' t1: '); wrtreg(f, ep^.t1) end;
+        if ep^.t2 <> rgnull then begin write(f, ' t2: '); wrtreg(f, ep^.t2) end;
+      end;
       
       procedure dmptrel(ep: expptr; lvl: integer);
       var l: expptr;
       begin
-        write(prr, '# ', ' ': lvl, ep^.op:3, ': ', instr[ep^.op]);
-        if ep^.r1 <> rgnull then begin write(prr, ' r1: '); wrtreg(prr, ep^.r1) end;
-        if ep^.r2 <> rgnull then begin write(prr, ' r2: '); wrtreg(prr, ep^.r2) end;
-        if ep^.r3 <> rgnull then begin write(prr, ' r3: '); wrtreg(prr, ep^.r3) end;
-        if ep^.t1 <> rgnull then begin write(prr, ' t1: '); wrtreg(prr, ep^.t1) end;
-        if ep^.t2 <> rgnull then begin write(prr, ' t2: '); wrtreg(prr, ep^.t2) end;
-        writeln(prr);
+        write(prr, '# ', ' '); dmpety(prr, ep); writeln(prr);
         if ep^.l <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'Left:');
           dmptrel(ep^.l, lvl+3);
@@ -1872,6 +1878,16 @@ procedure xlate;
         rf := rf-[r];
       end;
 
+      function isfltres(ep: expptr): boolean;
+      var isf: boolean;
+      begin
+        isf := false; if insf[ep^.op] then isf := true
+        else if ep^.op = 15{csp} then
+          if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
+            isf := true;
+        isfltres := isf
+      end;
+
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
 
       procedure resreg(r: reg);
@@ -1886,7 +1902,7 @@ procedure xlate;
       begin
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
-          if insf[pp^.op] then begin { floating result }
+          if isfltres(pp) then begin { floating result }
             if fpc <= maxfltparreg then begin
               resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull)
             end else begin
@@ -2272,10 +2288,17 @@ procedure xlate;
           15: begin
             asspar(ep, sppar[ep^.q]);
             if spfunc[ep^.q] then begin { function }
-              if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-              else ep^.r1 := r1;
-              if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-              if ep^.r1 <> rgrax then resreg(rgrax)
+              if isfltres(ep) then begin
+                if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
+                else ep^.r1 := r1;
+                if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+                if ep^.r1 <> rgxmm0 then resreg(rgxmm0)
+              end else begin
+                if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+                else ep^.r1 := r1;
+                if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+                if ep^.r1 <> rgrax then resreg(rgrax)
+              end
             end
           end;
  
@@ -2430,10 +2453,15 @@ procedure xlate;
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
         if r then begin
-          if ep^.r1 <> rgrax then 
-            wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
-          if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
-            wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil);
+          if isfltres(ep) then begin
+            if ep^.r1 <> rgxmm0 then 
+              wrtins20('movsd %xmm0,%1      ', ep^.p, 0, ep^.r1, rgnull, nil)
+          end else begin 
+            if ep^.r1 <> rgrax then 
+              wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
+            if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
+              wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil)
+          end
         end
       end;
 
@@ -2444,7 +2472,7 @@ procedure xlate;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
-          writeln(prr, '# generating: ', ep^.op:3, ': ', instr[ep^.op]);
+          write(prr, '# generating: '); dmpety(prr, ep); writeln(prr);
           case ep^.op of
 
             {lodi,loda}
