@@ -2998,10 +2998,8 @@ procedure xlate;
 
             {sfr}
             245:
-              if ep^.lb <> nil then begin
+              if ep^.lb <> nil then
                 wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, ep^.lb);
-                wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
-              end;
 
             {cup,cuf}
             12, 246: begin
