@@ -2449,9 +2449,13 @@ procedure xlate;
         { evaluate all parameters }
         pp := ep^.pl;
         while pp <> nil do begin genexp(pp); pp := pp^.next end;
+        if stkadr mod 16 <> 0 then
+          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
+        if stkadr mod 16 <> 0 then
+          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
         if r then begin
           if isfltres(ep) then begin
             if ep^.r1 <> rgxmm0 then 
@@ -2976,10 +2980,14 @@ procedure xlate;
                 wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('pushq %rcx', 0, 0, rgnull, rgnull, nil); 
                 stkadr := stkadr-intsize;
+                if stkadr mod 16 <> 0 then
+                  wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
                 if ep^.q = 39 then
                   wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
                 else
                   wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
+                if stkadr mod 16 <> 0 then
+                  wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil); 
                 stkadr := stkadr+intsize;
                 wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
