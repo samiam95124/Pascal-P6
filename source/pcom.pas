@@ -184,7 +184,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 125;  { maximum number of instructions }
+   maxins     = 123;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -9162,7 +9162,6 @@ begin cmdpos := maxcmd end;
           insymbol;
           { mark stack, generate call to startup block }
           genlabel(nulllab); 
-          if prcode then begin write(prr,mn[124(*lfs*)]:11); writeln(prr) end;
           gensfr(nulllab);
           if prcode then begin prtlabel(nulllab); writeln(prr,'=0') end;
           gencupcuf(46(*cup*),0,entname,nil);
@@ -9172,7 +9171,6 @@ begin cmdpos := maxcmd end;
             genujpxjpcal(89(*cal*),nxtname);
             gensfr(nulllab); gencupcuf(46(*cup*),0,extname,nil)
           end;
-          if prcode then begin write(prr,mn[125(*lfe*)]:11); writeln(prr) end;
           gen0(90(*ret*)) { return last module stack }
         end;
         if not (sy in [lparent,semicolon]) then error(14);
@@ -9903,7 +9901,6 @@ begin cmdpos := maxcmd end;
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
-      mn[124] :='lfs'; mn[125] :='lfe';
 
     end (*instrmnemonics*) ;
 

@@ -941,8 +941,6 @@ procedure xlate;
          instr[245]:='sfr       '; insr[245] := 0; insf[245] := false;
          instr[246]:='cuf       '; insr[246] := 0; insf[246] := false;
          instr[247]:='cif       '; insr[247] := 0; insf[247] := false;
-         instr[248]:='lfs       '; insr[248] := 0; insf[248] := false;
-         instr[249]:='lfe       '; insr[249] := 0; insf[249] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -1595,6 +1593,7 @@ procedure xlate;
           cstp: cstptr;
           ep, ep2, ep3, ep4, ep5, pp: expptr;
           r1: reg; sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
+          stkadr: integer; { stack address tracking }
 
       procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
@@ -2433,11 +2432,12 @@ procedure xlate;
           pshpar(ep^.next);
           dmptrel(ep, 1); genexp(ep);
           if ep^.r2 <> rgnull then
-            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil);
+            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); stkadr := stkadr-intsize;
           if ep^.r1 in [rgrax..rgr15] then
-            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil);
+            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); stkadr := stkadr-intsize;
           if ep^.r1 in [rgxmm0..rgxmm15] then begin
-            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+            stkadr := stkadr-realsize;
             wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
           end
         end
@@ -2467,8 +2467,10 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
-          for r := rgrax to rgr15 do if r in ep^.rs then
-              wrtins10('push %1   ', 0, 0, r, rgnull, nil);
+          for r := rgrax to rgr15 do if r in ep^.rs then begin
+              wrtins10('pushq %1  ', 0, 0, r, rgnull, nil); 
+              stkadr := stkadr-intsize
+          end;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
@@ -2972,12 +2974,14 @@ procedure xlate;
                 pp := pp^.next; genexp(pp); { size rsi }
                 pp := pp^.next; genexp(pp); { tagcnt rdx }
                 wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('pushq %rcx', 0, 0, rgnull, rgnull, nil);
+                wrtins10('pushq %rcx', 0, 0, rgnull, rgnull, nil); 
+                stkadr := stkadr-intsize;
                 if ep^.q = 39 then
                   wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
                 else
                   wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil); 
+                stkadr := stkadr+intsize;
                 wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
                 wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
@@ -2986,8 +2990,10 @@ procedure xlate;
 
             {sfr}
             245:
-              if ep^.lb <> nil then 
+              if ep^.lb <> nil then begin
                 wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, ep^.lb);
+                wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
+              end;
 
             {cup,cuf}
             12, 246: begin
@@ -3024,8 +3030,10 @@ procedure xlate;
             end;
 
           end;
-          for r := rgr15 downto rgrax do if r in ep^.rs then 
-            wrtins20('pop %1              ', 0, 0, r, rgnull, nil)
+          for r := rgr15 downto rgrax do if r in ep^.rs then begin
+            wrtins20('popq %1             ', 0, 0, r, rgnull, nil);
+            stkadr := stkadr-intsize
+          end
         end
       end;
 
@@ -3045,11 +3053,12 @@ procedure xlate;
         end;
         dmptrel(ep, 1); genexp(ep);
         if ep^.r2 <> rgnull then
-          wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil);
+          wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); stkadr := stkadr-intsize;
         if ep^.r1 in [rgrax..rgr15] then
-          wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil);
+          wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); stkadr := stkadr-intsize;
         if ep^.r1 in [rgxmm0..rgxmm15] then begin
-          wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+          wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+          stkadr := stkadr-realsize;
           wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
         end
       end;
@@ -3101,7 +3110,7 @@ procedure xlate;
       end;
 
     begin { assemble } 
-      p := 0;  q := 0;  op := 0;
+      p := 0;  q := 0;  op := 0; stkadr := 0;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
@@ -3526,7 +3535,8 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
           wrtins10('jmp 1b    ', 7, 0, rgnull, rgnull, nil); { loop }
           wrtins10('2:        ', 0, 0, rgnull, rgnull, sp);
-          wrtins20('movq %rsp,^0(%rbp) ', marksb, 0, rgnull, rgnull, nil);
+          wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
+          wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
           { note ep is unused at this time }
           botstk
         end;
@@ -3747,17 +3757,6 @@ procedure xlate;
           wrtins10('jle @     ', 0, 0, rgnull, rgnull, sp);
           wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
-        end;
-
-        {lfs}
-        248: begin writeln(prr);
-          wrtins10('pushq %rbp', 0, 0, rgnull, rgnull, sp);
-          wrtins20('movq %rsp,%rbp      ', 0, 0, rgnull, rgnull, sp)
-        end;
-
-        {lfe}
-        249: begin writeln(prr);
-          wrtins10('popq %rbp ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {wbs}
