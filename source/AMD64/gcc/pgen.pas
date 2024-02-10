@@ -2586,7 +2586,10 @@ procedure xlate;
                 162{leqr}: wrtins20('cmplesd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
                 168{lesr}: wrtins20('cmpltsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               end;
-              wrtins20('movq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+              if ep^.op in [150{geqr},156{grtr}] then 
+                wrtins20('movq %1,%2          ', 0, 0, ep^.r^.r1, ep^.r1, nil)
+              else
+                wrtins20('movq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r1, nil);
               wrtins20('andq $0,%1          ', 1, 0, ep^.r1, rgnull, nil) 
             end;
 
