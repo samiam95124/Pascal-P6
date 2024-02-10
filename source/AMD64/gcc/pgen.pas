@@ -2891,9 +2891,9 @@ procedure xlate;
 
             {abr}
             41: begin 
-              wrtins30('movq $8000000000000000,%1    ', 0, 0, ep^.t1, rgnull, nil);
+              wrtins30('movq $0x7fffffffffffffff,%1  ', 0, 0, ep^.t1, rgnull, nil);
               wrtins20('movq %1,%2          ', 0, 0, ep^.t1, ep^.t2, nil);
-              wrtins20('xorpd %1,%2         ', 0, 0, ep^.t2, ep^.r1, nil)
+              wrtins20('andpd %1,%2         ', 0, 0, ep^.t2, ep^.r1, nil)
             end;
 
             {notb}
