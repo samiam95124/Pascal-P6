@@ -1888,11 +1888,18 @@ procedure xlate;
       end;
 
       procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
+      var rfs: regset;
 
       procedure resreg(r: reg);
       begin
         if not (r in rf) and (r <> r1) and (r <> r2) then ep^.rs := ep^.rs+[r];
         rf := rf-[r]
+      end;
+
+      procedure dstreg(r: reg);
+      begin
+        if not (r in rfs) and (r <> r1) and (r <> r2) then ep^.rs := ep^.rs+[r];
+        rfs := rfs-[r]
       end;
 
       { assign registers to parameters in call }
@@ -1929,6 +1936,12 @@ procedure xlate;
       end;
 
       begin
+        { This diag is a bit verbose for me, but can be enabled for debugging }
+        {
+        write(prr, '# assigning: '); dmpety(prr, ep); write(prr, ' rf: ');
+        wrtregs(prr, rf); writeln(prr);
+        }
+        rfs := rf;
         if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
         if r1 <> rgnull then rf := rf-[r1];
         if r2 <> rgnull then rf := rf-[r2];
@@ -1967,10 +1980,10 @@ procedure xlate;
 
           {equs,neqs,geqs,leqs}
           140,146,152,164: begin 
+            dstreg(rgrax);
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull);
-            resreg(rgrax)
+            assreg(ep^.r, rf, rgrsi, rgnull)
           end;
 
           {adi,sbi,equ,neq,geq,grt,leq,les}
@@ -1988,21 +2001,23 @@ procedure xlate;
           end; 
 
           {equm,neqm,geqm,grtm,leqm,lesm}
-          142, 148, 154, 160, 166, 172: begin ep^.r1 := r1; 
+          142, 148, 154, 160, 166, 172: begin 
+            dstreg(rgrax); dstreg(rgrdx); dstreg(rgrdi); dstreg(rgrsi);
+            ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull);  
-            resreg(rgrax); resreg(rgrdx); resreg(rgrdi); resreg(rgrsi)
+            assreg(ep^.r, rf, rgrsi, rgnull)
           end;
 
           5{lao}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
-          16{ixa}: begin ep^.r1 := r1;
+          16{ixa}: begin 
+            dstreg(rgrax); dstreg(rgrdx);
+            ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); ep^.t1 := ep^.r1;
             if (ep^.r1 = rgrax) or (ep^.r1 = rgrdx) then getreg(ep^.t1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            resreg(rgrax); resreg(rgrdx)
+            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
           118{swp}: ; { done at top level }
@@ -2034,10 +2049,11 @@ procedure xlate;
           end;
 
           {inds}
-          87: begin ep^.r1 := r1;
+          87: begin 
+            dstreg(rgrsi); dstreg(rgrdi);
+            ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull);
-            resreg(rgrsi); resreg(rgrdi)
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           {inc,dec}
@@ -2055,35 +2071,36 @@ procedure xlate;
 
           {cvbi,cvbx,cvbb,cvbc}
           100, 115, 116, 121: begin 
+            dstreg(rgrdi); dstreg(rgrsi); dstreg(rgrdx); dstreg(rgr8);
             assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
-            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax;
-            resreg(rgrdi); resreg(rgrsi); resreg(rgrdx); resreg(rgr8)
+            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
           end;
 
           {ivti,ivtx,ivtb,ivtc}
           192,101,102,111: begin 
+            dstreg(rgrdi); dstreg(rgrsi); dstreg(rgrdx); dstreg(rgr8);
             assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
-            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax;
-            resreg(rgrdi); resreg(rgrsi); resreg(rgrdx); resreg(rgr8)
+            ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
           end;
 
           {cta}
           191: begin
-            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rgr8);
-            resreg(rgrdi); resreg(rgrsi); resreg(rgrdx)
+            dstreg(rgrdi); dstreg(rgrsi); dstreg(rgrdx);
+            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rgr8)
           end;
 
           {cps}
-          176: begin ep^.r1 := r1; ep^.r2 := r2;
+          176: begin 
+            dstreg(rgrdi);
+            ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); 
-            if ep^.r2 = rgnull then getreg(ep^.r2, rf);
-            resreg(rgrdi)
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf)
           end;
 
           {cpc}
           177: begin 
+            dstreg(rgrdi);
             assreg(ep^.l, rf, rgnull, rgrsi); assreg(ep^.r, rf, rgnull, rgrdx);
-            resreg(rgrdi)
           end;
 
           {lpa}
@@ -2111,23 +2128,28 @@ procedure xlate;
           end;
 
           {chki,chka,chkb,chkc,chkx}
-          26, 95, 98, 99, 199: begin ep^.r1 := r1;
+          26, 95, 98, 99, 199: begin 
+            dstreg(rgrax);
+            ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); getreg(ep^.t1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); resreg(rgrax)
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           {chks}
-          97: begin ep^.r1 := r1; 
+          97: begin 
+            dstreg(rgrdi); dstreg(rgrsi);
+            ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrsi, rgnull);
-            resreg(rgrdi); resreg(rgrsi)
+            assreg(ep^.l, rf, rgrsi, rgnull)
+            
           end;
 
           {ckla}
-          190: begin ep^.r1 := r1; 
+          190: begin 
+            dstreg(rgrax);
+            ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull);
-            resreg(rgrax)
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           56 {lca}: begin ep^.r1 := r1;
@@ -2198,8 +2220,7 @@ procedure xlate;
           {noti}
           205: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2);
-            resreg(rgrax)
+            assreg(ep^.l, rf, ep^.r1, r2)
           end;
 
           {notb,odd,chr}
@@ -2218,7 +2239,6 @@ procedure xlate;
           43,44,206: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            resreg(rgrax)
           end;
 
           {dif,int,uni}
@@ -2233,7 +2253,7 @@ procedure xlate;
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
-            if ep^.r1 <> rgrax then resreg(rgrax)
+            if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
           {mod}
@@ -2242,7 +2262,7 @@ procedure xlate;
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            if ep^.r1 <> rgrax then resreg(rgrax)
+            if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
           {dvi}
@@ -2251,7 +2271,7 @@ procedure xlate;
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            if ep^.r1 <> rgrax then resreg(rgrax)
+            if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
           {mpi}
@@ -2274,7 +2294,7 @@ procedure xlate;
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
-            if ep^.r1 <> rgrax then resreg(rgrax)
+            if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
@@ -2285,44 +2305,65 @@ procedure xlate;
 
           {csp}
           15: begin
+            { calling convention says can trash these }
+            dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
+            dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
+            dstreg(rgr11);
             asspar(ep, sppar[ep^.q]);
             if spfunc[ep^.q] then begin { function }
               if isfltres(ep) then begin
                 if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
                 else ep^.r1 := r1;
                 if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-                if ep^.r1 <> rgxmm0 then resreg(rgxmm0)
+                if ep^.r1 <> rgxmm0 then dstreg(rgxmm0)
               end else begin
                 if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
                 else ep^.r1 := r1;
                 if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-                if ep^.r1 <> rgrax then resreg(rgrax)
+                if ep^.r1 <> rgrax then dstreg(rgrax)
               end
             end
           end;
  
           {cuf}
           246: begin 
+            { calling convention says can trash these }
+            dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
+            dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
+            dstreg(rgr11);
             if r1 = rgnull then begin
               if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
             end else ep^.r1 := r1;
-            asspar(ep, ep^.q); resreg(rgrax)
+            asspar(ep, ep^.q)
           end;
 
           {cup}
-          12: asspar(ep, ep^.q);
+          12: begin
+            { calling convention says can trash these }
+            dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
+            dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
+            dstreg(rgr11);
+            asspar(ep, ep^.q)
+          end;
 
           {cip}
           113: begin
+            { calling convention says can trash these }
+            dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
+            dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
+            dstreg(rgr11);
             asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cif}
           247: begin
+            { calling convention says can trash these }
+            dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
+            dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
+            dstreg(rgr11);
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
-            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull);
-            if ep^.r1 <> rgrax then resreg(rgrax)
+            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cke}
