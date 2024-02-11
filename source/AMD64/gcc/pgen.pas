@@ -3797,9 +3797,25 @@ procedure xlate;
           frereg := allreg; popstk(ep2); popstk(ep);
           if op = 81{stor} then getfreg(ep2^.r1, frereg) else getreg(ep2^.r1, frereg);
           assreg(ep2, frereg, ep2^.r1,  rgnull);
-          assreg(ep, frereg, rgnull, rgnull);
+          if op = 82{stos} then assreg(ep, frereg, rgrdi, rgnull)
+          else assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          case op of
+            6{stoi},80{stoa}: wrtins20('movq %1,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil);
+            81{stor}: wrtins20('movsd %1,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil);
+            82{stos}: begin
+              wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('add $0,%rsp         ', setsize, 0, rgnull, rgnull, nil);
+            end;
+            83{stob},84{stoc},197{stox}:
+              wrtins20('movb %1l,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil)
+          end;
           deltre(ep); deltre(ep2);
           botstk
         end;
