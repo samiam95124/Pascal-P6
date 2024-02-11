@@ -2131,7 +2131,9 @@ procedure xlate;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) end;
 
           {ldcs}
-          7: begin ep^.r1 := r1; 
+          7: begin 
+            dstreg(rgrsi); dstreg(rgrdi);
+            ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) 
           end;
 
@@ -2753,8 +2755,16 @@ procedure xlate;
               wrtins30('movsd real^0(%rip),%1         ', ep^.realn, 0, ep^.r1, rgnull, nil);
 
             {ldcs}
-            7: 
-              wrtins20('leaq set^0(%rip),%1 ', ep^.setn, 0, ep^.r1, rgnull, nil);
+            7: begin
+              wrtins20('sub $0,%rsp         ', setsize, 0, rgnull, rgnull, nil);
+              wrtins20('mov set^0(%rip),%rsi', ep^.setn, 0, rgnull, rgnull, nil);
+              wrtins20('mov %rsp,%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('mov %rsp,%1         ', 0, 0, ep^.r1, rgnull, nil);
+            end;
 
             {chki,chka,chkb,chkc,chkx}
             26, 95, 98, 99, 199: begin 
@@ -2808,7 +2818,8 @@ procedure xlate;
                 end;
                 152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('addq $0,%rsp        ', setsize*2, 0, rgnull, rgnull, nil);
             end;
 
             {equa,equi,equb,equc}
@@ -3605,8 +3616,8 @@ procedure xlate;
           popstk(ep); deltre(ep)
         end;
 
-        {sroi,sroa,sror,sros,srob,sroc,srox}
-        3, 75, 76, 77, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
+        {sroi,sroa,sror,srob,sroc,srox}
+        3, 75, 76, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
           frereg := allreg;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
@@ -3616,6 +3627,23 @@ procedure xlate;
           else if op = 76{sror} then
             wrtins40('movsd %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
           else wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
+          deltre(ep); 
+          botstk 
+        end;
+
+        {sros}
+        77: begin read(prd,q); writeln(prr,q:1);
+          frereg := allreg;
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins20('movq %rsp,%rsi       ', 0, 0, rgnull, rgnull, nil);
+          wrtins40('leaq globals_start+0(%rip),%rdi         ', q, 0, rgnull, rgnull, nil);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20('add $0,%rsp         ', setsize, 0, rgnull, ep^.r1, nil);
           deltre(ep); 
           botstk 
         end;
