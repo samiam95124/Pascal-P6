@@ -638,6 +638,8 @@ procedure xlate;
                     p:   lvltyp; q, q1, q2: address; { p and q parameters }
                     r1, r2, r3: reg; { result registers }
                     t1, t2: reg; { temporary registers }
+                    r1a, r2a, r3a: address; { set temp tracking addresses }
+                    t1a, t2a: address;
                     l, r: expptr; { right and left links }
                     x1: expptr; { extra link }
                     pl: expptr; { parameter link for functions }
@@ -653,6 +655,13 @@ procedure xlate;
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
                   end;
+         { temp entries for sets }
+         setptr = ^setety;
+         setety = record
+           next: setptr; { next set temp in line }
+           occu: boolean; { occupied status }
+           off: address { stack offset }
+         end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
          insstr30 = packed array [1..insmax30] of char;
@@ -674,6 +683,9 @@ procedure xlate;
         parreg: array [1..7] of reg; { parameter registers }
         parregf: array [1..8] of reg; { floating point parameter registers }
         expsn: integer; { expression entries sn }
+        tmpoff: address; { starting address of set temps offset in stack }
+        tmplst: setptr; { list of active temps }
+        tmpfre: setptr; { free temp entries }
 
    procedure init;
       var i: integer;
@@ -1036,6 +1048,9 @@ procedure xlate;
          iline := 1; { set 1st line of intermediate }
          flablst := nil; { clear far label list }
          expsn := 0; { expression entries serial number start }
+         tmpoff := 0; { set temps stack offset }
+         tmplst := nil; { clear temps list }
+         tmpfre := nil; { clear temps free list }
          estack := nil; stacklvl := 0; efree := nil;
          allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
                     rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
@@ -1723,13 +1738,50 @@ procedure xlate;
         ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
-        ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false
+        ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false;
+        ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0; 
+        ep^.t1a := 0; ep^.t2a := 0;
       end;
       
       procedure putexp(ep: expptr);
       begin
         if ep^.free then errorl('System fault: dbl free   ');
         ep^.next := efree; efree := ep; ep^.free := true
+      end;
+
+      procedure gettmp(var a: address);
+      var p, fp: setptr;
+      begin
+        fp := nil; p := tmplst;
+        while p <> nil do if not p^.occu then fp := p;
+        if fp = nil then begin
+          if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
+          else new(fp); 
+          fp^.next := tmplst; tmplst := fp;
+          tmpoff := tmpoff-setsize; fp^.off := tmpoff
+        end;
+        fp^.occu := true; 
+        a := fp^.off
+      end;
+
+      procedure puttmp(a: address);
+      var p, fp: setptr;
+      begin
+        fp := nil; p := tmplst;
+        while p <> nil do if p^.off = a then fp := p;
+        if fp = nil then errorl('System error: tmp addr   ');
+        fp^.occu := false
+      end;
+
+      procedure deltmp;
+      var p: setptr;
+      begin
+        if tmplst <> nil then begin
+          p := tmplst;
+          while p^.next <> nil do p := p^.next;
+          p^.next := tmpfre
+        end else tmpfre := tmplst;
+        tmplst := nil
       end;
       
       procedure dmpstk(var f: text);
