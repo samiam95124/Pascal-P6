@@ -2148,11 +2148,11 @@ procedure xlate;
           {chks}
           97: begin 
             asscall;
-            resreg(rgrdi); resreg(rgrsi);
             if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdx, rgnull);
+            resreg(rgrdi); resreg(rgrsi)
           end;
 
           {ckla}
@@ -2757,13 +2757,13 @@ procedure xlate;
             {ldcs}
             7: begin
               wrtins20('sub $0,%rsp         ', setsize, 0, rgnull, rgnull, nil);
-              wrtins20('mov set^0(%rip),%rsi', ep^.setn, 0, rgnull, rgnull, nil);
-              wrtins20('mov %rsp,%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq set^0(%rip),%rsi         ', ep^.setn, 0, rgnull, rgnull, nil);
+              wrtins20('movq %rsp,%rdi       ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('mov %rsp,%1         ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq %rsp,%1         ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
             {chki,chka,chkb,chkc,chkx}
