@@ -35,7 +35,7 @@
 * Kruislaan 413, 1098 SJ Amsterdam, NL                                         *
 * Steven.Pemberton@cwi.nl                                                      *
 *                                                                              *
-* Adaption from P4 to P6 by:                                                   *
+* Adaption from Pascal-P5 to Pascal-P6 by:                                     *
 *                                                                              *
 *    Scott A. Franco                                                           *
 *    samiam@moorecad.com                                                       *
@@ -43,7 +43,9 @@
 * AMD64 code generator for GCC                                                 *
 *                                                                              *
 * This is the code generator backend for 64 bit AMD64 processor model running  *
-* with a gcc code base.                                                        *
+* with a gcc code base. It generates GAS (GNU Assembler) source according to   *
+* the System V Application Binary Interface, AMD64 Architecture Processor      *
+* supplement.                                                                  *
 *                                                                              *
 * ---------------------------------------------------------------------------- *
 *                                                                              *
@@ -1754,7 +1756,7 @@ procedure xlate;
       var p, fp: setptr;
       begin
         fp := nil; p := tmplst;
-        while p <> nil do if not p^.occu then fp := p;
+        while p <> nil do begin if not p^.occu then fp := p; p := p^.next end;
         if fp = nil then begin
           if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
           else new(fp); 
@@ -1769,7 +1771,7 @@ procedure xlate;
       var p, fp: setptr;
       begin
         fp := nil; p := tmplst;
-        while p <> nil do if p^.off = a then fp := p;
+        while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
         if fp = nil then errorl('System error: tmp addr   ');
         fp^.occu := false
       end;
@@ -2210,7 +2212,8 @@ procedure xlate;
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdx, rgnull);
-            resreg(rgrdi); resreg(rgrsi)
+            resreg(rgrdi); resreg(rgrsi);
+            ep^.r1a := ep^.l^.r1a
           end;
 
           {ckla}
@@ -2315,7 +2318,8 @@ procedure xlate;
           45,46,47: begin 
             asscall; ep^.r1 := r1;
             if ep^.r1 = rgnull then ep^.r1 := rgrdi;
-            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull) 
+            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            ep^.r1a := ep^.l^.r1a
           end;
 
           {inn}
@@ -2599,7 +2603,7 @@ procedure xlate;
             107: begin
               wrtins20('movq ^0(%rbp),%rsi  ', ep^.p, 0, rgnull, rgnull, nil);
               wrtins20('lea ^0(%rsi),%rsi   ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -2698,7 +2702,7 @@ procedure xlate;
             {ldos}
             67: begin
               wrtins40('leaq globals_start+0(%rip),%rsi         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -2719,7 +2723,7 @@ procedure xlate;
 
             {inds}
             87: begin 
-              wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
@@ -2810,7 +2814,7 @@ procedure xlate;
             {ldcs}
             7: begin
               wrtins30('leaq set^0(%rip),%rsi         ', ep^.setn, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3014,7 +3018,8 @@ procedure xlate;
               end;
               wrtins20('addq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
               if ep^.r1 <> ep^.l^.r1 then
-                wrtins20('movq %1,%1           ', 0, 0, rgrdi, ep^.l^.r1, nil)
+                wrtins20('movq %1,%1           ', 0, 0, rgrdi, ep^.l^.r1, nil);
+              puttmp(ep^.r^.r1a)
             end;
 
             {inn}
@@ -3613,7 +3618,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
           wrtins20('lea %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
-          wrtins30('leaq ^$^-@^0(%rbp),%rsi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3646,6 +3651,7 @@ procedure xlate;
           wrtins10('2:        ', 0, 0, rgnull, rgnull, lclspc);
           wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
           wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
+          tmpoff := -(p+1)*ptrsize;
           { note ep is unused at this time }
           botstk
         end;
@@ -3689,7 +3695,7 @@ procedure xlate;
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq %rsp,%rsi       ', 0, 0, rgnull, rgnull, nil);
-          wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3856,7 +3862,7 @@ procedure xlate;
             6{stoi},80{stoa}: wrtins20('movq %1,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil);
             81{stor}: wrtins20('movsd %1,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil);
             82{stos}: begin
-              wrtins30('leaq ^$^-@^0(%rbp),%rdi       ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
