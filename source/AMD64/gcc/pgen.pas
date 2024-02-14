@@ -2287,9 +2287,9 @@ procedure xlate;
 
           {sgs}
           32: begin 
-            asscall; ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrdi, rgnull)  
+            asscall; assreg(ep^.l, rf, rgrdi, rgnull);
+            ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            gettmp(ep^.r1a)
           end;
      
           {flt,flo}
@@ -2411,12 +2411,10 @@ procedure xlate;
 
           {rgs}
           110: begin 
-            asscall;
-            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-            else ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            asscall; 
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
-            if ep^.r1 <> rgrax then dstreg(rgrax)
+            ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            gettmp(ep^.r1a)
           end;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
@@ -2653,7 +2651,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {lda}
@@ -2920,7 +2918,7 @@ procedure xlate;
                 152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
               end;
               wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('addq $0,%rsp        ', setsize*2, 0, rgnull, rgnull, nil);
+              puttmp(ep^.l^.r1a); puttmp(ep^.r^.r1a)
             end;
 
             {equa,equi,equb,equc}
@@ -2958,10 +2956,9 @@ procedure xlate;
 
             {sgs}
             32: begin
-              wrtins20('add $0,%rsp         ', -setsize, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%rsi      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20('call psystem_setsgl ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins20('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {flt,flo}
@@ -3103,11 +3100,9 @@ procedure xlate;
 
             {rgs}
             110: begin 
-              wrtins20('subq ^0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%rdx      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq ^-@^0(%rbp),%rdx         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20('call psystem_setrgs ', 0, 0, rgnull, rgnull, nil);
-              if ep^.r1 <> rgrdx then
-                wrtins20('movq %rdx,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins20('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
