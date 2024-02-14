@@ -2752,7 +2752,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {indi,inda}
@@ -2773,7 +2773,7 @@ procedure xlate;
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {inci,inca,incb,incc,incx}
@@ -3061,9 +3061,7 @@ procedure xlate;
                 46: wrtins20('call psystem_setint ', 0, 0, rgnull, rgnull, nil);
                 47: wrtins20('call psystem_setuni ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins20('addq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
-              if ep^.r1 <> ep^.l^.r1 then
-                wrtins20('movq %1,%1           ', 0, 0, rgrdi, ep^.l^.r1, nil);
+              wrtins30('leaq ^-@^0(%rbp),%1         ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
               puttmp(ep^.r^.r1a)
             end;
 
