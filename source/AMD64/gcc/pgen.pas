@@ -316,6 +316,7 @@ type
                        incnxt:  pblock; { included blocks list }
                        name:    strvsp; { name of block, including type }
                        bname:   strvsp; { name of block, not including type }
+                       tmpnam:  strvsp; { name of temp allocation space }
                        short:   boolean; { there is a short name }
                        { block type }
                        btyp:    (btprog, btmod, btproc, btfunc);
@@ -469,6 +470,36 @@ begin
   new(p); { get new entry }
 end;
 
+{ find padded length of variable length id string }
+function lenpv(s: strvsp): integer;
+var l, tl: integer;
+begin tl := 0;
+  while s <> nil do begin
+    l := varsqt; 
+    if s^.next = nil then begin
+      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
+      if s^.str[l] = ' ' then l := 0;
+    end;
+    tl := tl+l;
+    s := s^.next
+  end;
+  lenpv := tl
+end;
+
+{ get character from variable length string }
+function strchr(a: strvsp; x: integer): char;
+var c: char; i: integer; q: integer;
+begin
+   c := ' '; i := 1; q := 1;
+   while i < x do begin
+      if q >= varsqt then begin q := 1; if a <> nil then a := a^.next end
+      else q := q+1;
+      i := i+1
+   end;
+   if a <> nil then c := a^.str[q];
+   strchr := c
+ end;
+
 { put character to variable length string }
 procedure strchrass(var a: strvsp; x: integer; c: char);
 var i: integer; q: integer; p, l: strvsp;
@@ -488,7 +519,15 @@ begin
       i := i+1
    end;
    p^.str[q] := c
- end;
+end;
+
+{ copy variable strings }
+procedure strassvv(var d: strvsp; s: strvsp);
+var i: integer;
+begin
+  d := nil;
+  for i := 1 to lenpv(s) do strchrass(d, i, strchr(s, i))
+end;
 
 { assign symbol identifier fixed to variable length string, including
   allocation, with length specified }
@@ -686,6 +725,7 @@ procedure xlate;
         parregf: array [1..8] of reg; { floating point parameter registers }
         expsn: integer; { expression entries sn }
         tmpoff: address; { starting address of set temps offset in stack }
+        tmpspc: address; { size of temps area }
         tmplst: setptr; { list of active temps }
         tmpfre: setptr; { free temp entries }
         lclspc: strvsp; { label for locals space }
@@ -1052,6 +1092,7 @@ procedure xlate;
          flablst := nil; { clear far label list }
          expsn := 0; { expression entries serial number start }
          tmpoff := 0; { set temps stack offset }
+         tmpspc := 0; { set temps total size }
          tmplst := nil; { clear temps list }
          tmpfre := nil; { clear temps free list }
          estack := nil; stacklvl := 0; efree := nil;
@@ -1418,6 +1459,7 @@ procedure xlate;
           snl2: 1..lablen;
           vt: array [1..100] of integer;
           vi, vl: integer;
+          ts: alfa;
    begin
       again := true;
       while again do begin
@@ -1510,6 +1552,9 @@ procedure xlate;
                    strassvf(bp^.bname, sn); { just use whole name }
                    bp^.short := false
                  end;
+                 strassvv(bp^.tmpnam, bp^.bname); { copy to temp id }
+                 ts := '$_tmpspc  '; l := lenpv(bp^.tmpnam);
+                 for i := 1 to 8 do strchrass(bp^.tmpnam, l+i, ts[i]); 
                  bp^.incnxt := nil;
                  case ch1 of { block type }
                    'p': bp^.btyp := btprog;
@@ -1761,7 +1806,7 @@ procedure xlate;
           if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
           else new(fp); 
           fp^.next := tmplst; tmplst := fp;
-          tmpoff := tmpoff-setsize; fp^.off := tmpoff
+          tmpspc := tmpspc+setsize; tmpoff := tmpoff-setsize; fp^.off := tmpoff
         end;
         fp^.occu := true; 
         a := fp^.off
@@ -2819,7 +2864,7 @@ procedure xlate;
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq %rsp,%1         ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('leaq ^-@^0(%rbp),%1  ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {chki,chka,chkb,chkc,chkx}
@@ -3642,7 +3687,9 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
           wrtins20('enter $1,$0        ', p+1, 0, rgnull, rgnull, nil); { enter frame }
           wrtins20('movq %rsp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy sp }
-          wrtins20('subq $s,%rax       ', 0, 0, rgnull, rgnull, lclspc); { find sp-locals }
+          { find sp-locals }
+          write(prr, '        subq    $'); writevp(prr, lclspc); write(prr, '+'); 
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ',%rax');
           wrtins10('1:        ', 0, 0, rgnull, rgnull, lclspc);
           wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }
           wrtins10('je 2f     ', 0, 0, rgnull, rgnull, nil); { skip if so }
@@ -3694,8 +3741,8 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq %rsp,%rsi       ', 0, 0, rgnull, rgnull, nil);
-          wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins40('leaq globals_start+0(%rip),%rdi         ', q, 0, ep^.r1, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3802,6 +3849,7 @@ procedure xlate;
           wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
           wrtins10('pushq %rax ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -3818,6 +3866,7 @@ procedure xlate;
             wrtins20('andq $0,%rax        ', 255, 0, rgnull, rgnull, nil);
           wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -3833,6 +3882,7 @@ procedure xlate;
           wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
           wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
