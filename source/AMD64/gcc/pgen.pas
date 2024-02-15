@@ -1797,6 +1797,15 @@ procedure xlate;
         ep^.next := efree; efree := ep; ep^.free := true
       end;
 
+      procedure dmptmp(var f: text);
+      var p: setptr;
+      begin 
+        write(f, 'Temps list: ');
+        p := tmplst;
+        while p <> nil do begin write(f, p^.off); p := p^.next end;
+        writeln(f)
+      end;
+
       procedure gettmp(var a: address);
       var p, fp: setptr;
       begin
@@ -1809,12 +1818,17 @@ procedure xlate;
           tmpspc := tmpspc+setsize; tmpoff := tmpoff-setsize; fp^.off := tmpoff
         end;
         fp^.occu := true; 
-        a := fp^.off
+        a := fp^.off;
+        { uncomment for diagnostic }
+        writeln(prr, '# gettmp: address: ', a:1)
       end;
 
       procedure puttmp(a: address);
       var p, fp: setptr;
       begin
+        { uncomment for diagnostic }
+        writeln(prr, '# puttmp: address: ', a:1);
+
         fp := nil; p := tmplst;
         while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
         if fp = nil then errorl('System error: tmp addr   ');
@@ -1831,7 +1845,7 @@ procedure xlate;
         end else tmpfre := tmplst;
         tmplst := nil
       end;
-      
+
       procedure dmpstk(var f: text);
       var ep: expptr;
       begin
@@ -1893,10 +1907,15 @@ procedure xlate;
         if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
         else write(f, ep^.q:1);
         if ep^.r1 <> rgnull then begin write(f, ' r1: '); wrtreg(f, ep^.r1) end;
+        if ep^.r1a <> 0 then write(f, ' r1a: ', ep^.r1a:1); 
         if ep^.r2 <> rgnull then begin write(f, ' r2: '); wrtreg(f, ep^.r2) end;
+        if ep^.r2a <> 0 then write(f, ' r2a: ', ep^.r2a:1);
         if ep^.r3 <> rgnull then begin write(f, ' r3: '); wrtreg(f, ep^.r3) end;
+        if ep^.r3a <> 0 then write(f, ' r3a: ', ep^.r3a:1);
         if ep^.t1 <> rgnull then begin write(f, ' t1: '); wrtreg(f, ep^.t1) end;
+        if ep^.t1a <> 0 then write(f, ' t1a: ', ep^.t1a:1);
         if ep^.t2 <> rgnull then begin write(f, ' t2: '); wrtreg(f, ep^.t2) end;
+        if ep^.t2a <> 0 then write(f, ' t2a: ', ep^.t2a:1)
       end;
       
       procedure dmptrel(ep: expptr; lvl: integer);
@@ -2067,8 +2086,9 @@ procedure xlate;
           end;
 
           {lods}
-          107: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+          107: begin 
+            resreg(rgrsi); resreg(rgrdi); 
+            ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
           end;
 
@@ -2090,9 +2110,11 @@ procedure xlate;
           {equs,neqs,geqs,leqs}
           140,146,152,164: begin 
             asscall;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull)
+            assreg(ep^.r, rf, rgrsi, rgnull);
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+            else ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
           {adi,sbi,equ,neq,geq,grt,leq,les}
@@ -2142,8 +2164,9 @@ procedure xlate;
           end;
 
           {ldos}
-          67: begin resreg(rgrsi); resreg(rgrdi); ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+          67: begin 
+            resreg(rgrsi); resreg(rgrdi); 
+            ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
           end;
 
@@ -2162,9 +2185,9 @@ procedure xlate;
           {inds}
           87: begin 
             dstreg(rgrsi); dstreg(rgrdi);
+            assreg(ep^.l, rf, rgrsi, rgnull);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull);
             gettmp(ep^.r1a)
           end;
 
@@ -2253,11 +2276,9 @@ procedure xlate;
           {chks}
           97: begin 
             asscall;
-            if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
-            else ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdx, rgnull);
-            resreg(rgrdi); resreg(rgrsi);
+            ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r1a := ep^.l^.r1a
           end;
 
@@ -2361,19 +2382,20 @@ procedure xlate;
 
           {dif,int,uni}
           45,46,47: begin 
-            asscall; ep^.r1 := r1;
-            if ep^.r1 = rgnull then ep^.r1 := rgrdi;
+            asscall; 
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r1a := ep^.l^.r1a
           end;
 
           {inn}
           48: begin 
             asscall;
-            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
-            ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
+            ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
@@ -2886,9 +2908,7 @@ procedure xlate;
               wrtins20('movq $0,%rdi         ', ep^.vi, 0, rgnull, rgnull, nil);
               wrtins20('movq $0,%rsi         ', ep^.vi2, 0, rgnull, rgnull, nil);
               wrtins30('call psystem_chksetbnd         ', 0, 0, rgnull, rgnull, nil);
-              if ep^.r1 <> rgrdx then
-                wrtins10('movq %1,%2', ep^.vi, 0, ep^.l^.r1, ep^.r1, nil);
-
+              wrtins20('leaq ^-@^0(%rbp),%1  ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {ckla}
@@ -2917,7 +2937,8 @@ procedure xlate;
                 end;
                 152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
+              if ep^.r1 <> rgrax then
+                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
               puttmp(ep^.l^.r1a); puttmp(ep^.r^.r1a)
             end;
 
@@ -3064,9 +3085,13 @@ procedure xlate;
 
             {inn}
             48: begin
+;writeln(prr, '# genexp: inn: begin');
               wrtins20('call psystem_setsin ', 0, 0, rgnull, rgnull, nil);
               if ep^.r1 <> rgrax then
-                wrtins20('movq %rax,%1          ', 0, 0, ep^.r1, rgnull, nil)
+                wrtins20('movq %rax,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              puttmp(ep^.r^.r1a)
+;writeln(prr, '# genexp: inn: tmplst <> nil: ', tmplst <> nil);
+;writeln(prr, '# genexp: inn: end');
             end;
 
             {mod}
@@ -3905,12 +3930,12 @@ procedure xlate;
             6{stoi},80{stoa}: wrtins20('movq %1,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil);
             81{stor}: wrtins20('movsd %1,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil);
             82{stos}: begin
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep2^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              puttmp(ep^.r1a)
+              puttmp(ep2^.r1a)
             end;
             83{stob},84{stoc},197{stox}:
               wrtins20('movb %1l,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil)
@@ -3950,11 +3975,16 @@ procedure xlate;
           pshstk(ep)
         end;
 
+        { standard unimplemented }
+
         {wbs}
         243: ;
         
         {wbe}
         244: ;
+
+        235, 
+        {rets}
 
         { these are all Pascaline unimplemented }
 
@@ -4017,8 +4047,6 @@ procedure xlate;
         {lto} 
         234, 
         {stom} 
-        235, 
-        {rets} 
         236, 
         {retm} 
         237, 
