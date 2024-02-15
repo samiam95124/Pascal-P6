@@ -1121,17 +1121,17 @@ procedure xlate;
          parregf[8] :=rgxmm7;
          { set assignment preference registers }
          intassord[1] := rgrbx;
-         intassord[2] := rgrcx; 
-         intassord[3] := rgrsi; 
-         intassord[4] := rgrdi; 
-         intassord[5] := rgr8;
-         intassord[6] := rgr9; 
-         intassord[7] := rgr10; 
-         intassord[8] := rgr11; 
-         intassord[9] := rgr12; 
-         intassord[10] := rgr13; 
-         intassord[11] := rgr14; 
-         intassord[12] := rgr15;
+         intassord[2] := rgr12; 
+         intassord[3] := rgr13; 
+         intassord[4] := rgr14; 
+         intassord[5] := rgr15;
+         intassord[6] := rgrcx; 
+         intassord[7] := rgr8;
+         intassord[8] := rgr9; 
+         intassord[9] := rgr10; 
+         intassord[10] := rgr11;
+         intassord[11] := rgrsi; 
+         intassord[12] := rgrdi; 
          intassord[13] := rgrdx;
          intassord[14] := rgrax;
 
