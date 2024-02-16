@@ -2396,11 +2396,11 @@ procedure xlate;
           {inn}
           48: begin 
             asscall;
-            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
+            assreg(ep^.r, rf, rgrsi, rgnull);
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
             ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            if ep^.r1 <> rgrax then dstreg(rgrax)
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
           {mod}
