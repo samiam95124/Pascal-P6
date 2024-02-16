@@ -1098,8 +1098,9 @@ procedure xlate;
          estack := nil; stacklvl := 0; efree := nil;
          allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
                     rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
-                    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm6, rgxmm7,
-                    rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14,
+                    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, 
+                    rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
+                    rgxmm14,
                     rgxmm15];
          frereg := allreg;
          { set parameter registers }
@@ -1770,7 +1771,8 @@ procedure xlate;
       var first: boolean; r: reg;
       begin
         first := true; write(prr, '['); 
-        for r := rgrax to rgxmm15 do if (r in rs) = n then begin 
+        for r := rgrax to rgxmm15 do 
+          if ((r in rs) = n) and not (r in [rgrbp, rgrsp]) then begin 
           if not first then write(f, ', ');
           wrtreg(f, r); first := false
         end;
@@ -1820,15 +1822,18 @@ procedure xlate;
         fp^.occu := true; 
         a := fp^.off;
         { uncomment for diagnostic }
+        {
         writeln(prr, '# gettmp: address: ', a:1)
+        }
       end;
 
       procedure puttmp(a: address);
       var p, fp: setptr;
       begin
         { uncomment for diagnostic }
+        {
         writeln(prr, '# puttmp: address: ', a:1);
-
+        }
         fp := nil; p := tmplst;
         while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
         if fp = nil then errorl('System error: tmp addr   ');
@@ -2064,7 +2069,7 @@ procedure xlate;
       end;
 
       begin
-        write(prr, '# assigning: '); dmpety(prr, ep); write(prr, ' ~rf: ');
+        write(prr, '# assigning:  '); dmpety(prr, ep); write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
         if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
@@ -2494,7 +2499,9 @@ procedure xlate;
             getreg(ep^.t1, frereg); assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
-        end
+        end;
+        write(prr, '# assigning~: '); dmpety(prr, ep); write(prr, ' ~rf: ');
+        wrtregs(prr, rf, false); writeln(prr)
       end;
 
       { Interpret instruction macro string.
