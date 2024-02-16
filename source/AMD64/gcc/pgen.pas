@@ -2075,8 +2075,6 @@ procedure xlate;
         write(prr, ' ~rf: '); wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
         if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
-        if r1 <> rgnull then rf := rf-[r1];
-        if r2 <> rgnull then rf := rf-[r2];
         case ep^.op of
 
           {lodi,lodx,loda,lodb,lodc,lda}
