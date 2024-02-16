@@ -1766,11 +1766,11 @@ procedure xlate;
         end
       end;
 
-      procedure wrtregs(var f: text; rs: regset);
+      procedure wrtregs(var f: text; rs: regset; n: boolean);
       var first: boolean; r: reg;
       begin
         first := true; write(prr, '['); 
-        for r := rgrax to rgxmm15 do if r in rs then begin 
+        for r := rgrax to rgxmm15 do if (r in rs) = n then begin 
           if not first then write(f, ', ');
           wrtreg(f, r); first := false
         end;
@@ -1915,7 +1915,8 @@ procedure xlate;
         if ep^.t1 <> rgnull then begin write(f, ' t1: '); wrtreg(f, ep^.t1) end;
         if ep^.t1a <> 0 then write(f, ' t1a: ', ep^.t1a:1);
         if ep^.t2 <> rgnull then begin write(f, ' t2: '); wrtreg(f, ep^.t2) end;
-        if ep^.t2a <> 0 then write(f, ' t2a: ', ep^.t2a:1)
+        if ep^.t2a <> 0 then write(f, ' t2a: ', ep^.t2a:1);
+        write(f, ' rs: '); wrtregs(f, ep^.rs, true) 
       end;
       
       procedure dmptrel(ep: expptr; lvl: integer);
@@ -2063,11 +2064,8 @@ procedure xlate;
       end;
 
       begin
-        { This diag is a bit verbose for me, but can be enabled for debugging }
-        {
-        write(prr, '# assigning: '); dmpety(prr, ep); write(prr, ' rf: ');
-        wrtregs(prr, rf); writeln(prr);
-        }
+        write(prr, '# assigning: '); dmpety(prr, ep); write(prr, ' ~rf: ');
+        wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
         if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
         if r1 <> rgnull then rf := rf-[r1];
@@ -2977,7 +2975,7 @@ procedure xlate;
 
             {sgs}
             32: begin
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20('call psystem_setsgl ', 0, 0, rgnull, rgnull, nil);
               wrtins20('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
