@@ -1906,11 +1906,13 @@ procedure xlate;
         putexp(ep)
       end;
 
-      procedure dmpety(var f: text; ep: expptr);
+      procedure dmpety(var f: text; ep: expptr; r1, r2: reg);
       begin
         write(f, ep^.op:3, ': ', instr[ep^.op]:4, ' ');
         if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
         else write(f, ep^.q:1);
+        if r1 <> rgnull then begin write(prr, ' dr1: '); wrtreg(prr, r1) end;
+        if r2 <> rgnull then begin write(prr, ' dr2: '); wrtreg(prr, r2) end;
         if ep^.r1 <> rgnull then begin write(f, ' r1: '); wrtreg(f, ep^.r1) end;
         if ep^.r1a <> 0 then write(f, ' r1a: ', ep^.r1a:1); 
         if ep^.r2 <> rgnull then begin write(f, ' r2: '); wrtreg(f, ep^.r2) end;
@@ -1927,7 +1929,7 @@ procedure xlate;
       procedure dmptrel(ep: expptr; lvl: integer);
       var l: expptr;
       begin
-        write(prr, '# ', ' '); dmpety(prr, ep); writeln(prr);
+        write(prr, '# ', ' '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
         if ep^.l <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'Left:');
           dmptrel(ep^.l, lvl+3);
@@ -2069,8 +2071,8 @@ procedure xlate;
       end;
 
       begin
-        write(prr, '# assigning:  '); dmpety(prr, ep); write(prr, ' ~rf: ');
-        wrtregs(prr, rf, false); writeln(prr);
+        write(prr, '# assigning:  '); dmpety(prr, ep, r1, r2); 
+        write(prr, ' ~rf: '); wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
         if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
         if r1 <> rgnull then rf := rf-[r1];
@@ -2386,7 +2388,8 @@ procedure xlate;
           {dif,int,uni}
           45,46,47: begin 
             asscall; 
-            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
+            assreg(ep^.r, rf, rgrsi, rgnull);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r1a := ep^.l^.r1a
@@ -2500,7 +2503,7 @@ procedure xlate;
           end;
 
         end;
-        write(prr, '# assigning~: '); dmpety(prr, ep); write(prr, ' ~rf: ');
+        write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr)
       end;
 
@@ -2648,7 +2651,7 @@ procedure xlate;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
-          write(prr, '# generating: '); dmpety(prr, ep); writeln(prr);
+          write(prr, '# generating: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
           case ep^.op of
 
             {lodi,loda}
@@ -3090,13 +3093,10 @@ procedure xlate;
 
             {inn}
             48: begin
-;writeln(prr, '# genexp: inn: begin');
               wrtins20('call psystem_setsin ', 0, 0, rgnull, rgnull, nil);
               if ep^.r1 <> rgrax then
                 wrtins20('movq %rax,%1          ', 0, 0, ep^.r1, rgnull, nil);
               puttmp(ep^.r^.r1a)
-;writeln(prr, '# genexp: inn: tmplst <> nil: ', tmplst <> nil);
-;writeln(prr, '# genexp: inn: end');
             end;
 
             {mod}
