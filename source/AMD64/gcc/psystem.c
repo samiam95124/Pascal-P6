@@ -4427,7 +4427,7 @@ void psystem_pack(
     /* size of unpacked array */           long  su,
     /* packed array */                     byte* pa,
     /* starting index of unpacked array */ long  usi,
-    /* unpacked array */                   long* upa
+    /* unpacked array */                   byte* upa
 )
 
 {
@@ -4456,7 +4456,7 @@ void psystem_unpack(
     /* size of packed array */             long  sp,
     /* size of unpacked array */           long  su,
     /* starting index of unpacked array */ long  usi,
-    /* unpacked array */                   long* upa,
+    /* unpacked array */                   byte* upa,
     /* packed array */                     byte* pa
 
 )

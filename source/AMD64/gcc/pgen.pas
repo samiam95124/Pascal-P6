@@ -3781,7 +3781,15 @@ procedure xlate;
         {pck}
         63: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
           frereg := allreg; popstk(ep);
-          popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
+          popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
+          assreg(ep, frereg, rgrdx, rgnull);
+          assreg(ep2, frereg, rgrcx, rgnull);
+          assreg(ep3, frereg, rgr8, rgnull);
+          genexp(ep); genexp(ep2); genexp(ep3);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
+          wrtins20('movq $0,%rsi        ', q1, 0, rgnull, rgnull, nil);
+          wrtins20('call psystem_pack   ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2); deltre(ep3); 
           botstk 
         end;
@@ -3790,6 +3798,14 @@ procedure xlate;
         64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
+          assreg(ep, frereg, rgrdx, rgnull);
+          assreg(ep2, frereg, rgrcx, rgnull);
+          assreg(ep3, frereg, rgr8, rgnull);
+          genexp(ep); genexp(ep2); genexp(ep3);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
+          wrtins20('movq $0,%rsi        ', q1, 0, rgnull, rgnull, nil);
+          wrtins20('call psystem_unpack ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2); deltre(ep3); 
           botstk 
         end;
