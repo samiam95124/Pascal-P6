@@ -4414,6 +4414,67 @@ void psystem_setrgs(
 
 /** ****************************************************************************
 
+Pack array
+
+Copies an array from source unpacked array to destination packed array. The 
+arrays are represented by byte arrays, regardless of their type. No packing is
+actually done.
+
+*******************************************************************************/
+
+void psystem_pack(
+    /* size of packed array */             long  sp,
+    /* size of unpacked array */           long  su,
+    /* packed array */                     byte* pa,
+    /* starting index of unpacked array */ long  usi,
+    /* unpacked array */                   long* upa
+)
+
+{
+
+    int i;
+
+    if (usi+sp > su) psystem_errore(PACKELEMENTSOUTOFBOUNDS);
+    for (i = 0; i <= sp-1; i++) {
+        *(pa+usi) = *(upa+usi);
+        usi++;
+    }
+
+}
+
+/** ****************************************************************************
+
+Unpack array
+
+Copies an array from source packed array to destination unpacked array. The 
+arrays are represented by byte arrays, regardless of their type. No packing is
+actually done.
+
+*******************************************************************************/
+
+void psystem_unpack(
+    /* size of packed array */             long  sp,
+    /* size of unpacked array */           long  su,
+    /* starting index of unpacked array */ long  usi,
+    /* unpacked array */                   long* upa,
+    /* packed array */                     byte* pa
+
+)
+
+{
+
+    int i;
+
+    if (usi+sp > su) psystem_errore(UNPACKELEMENTSOUTOFBOUNDS);
+    for (i = 0; i <= sp-1; i++) {
+        *(upa+usi) = *(pa+i);
+        usi++;
+    }
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/

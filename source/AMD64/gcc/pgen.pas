@@ -3778,8 +3778,16 @@ procedure xlate;
           dmptre(ep); deltre(ep2); deltre(ep); botstk  
         end; 
 
-        {pck, upk}
-        63, 64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
+        {pck}
+        63: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
+          frereg := allreg; popstk(ep);
+          popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
+          deltre(ep); deltre(ep2); deltre(ep3); 
+          botstk 
+        end;
+
+        {upk}
+        64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
           deltre(ep); deltre(ep2); deltre(ep3); 
@@ -3921,7 +3929,6 @@ procedure xlate;
 
         {stoi,stoa,stor,stob,stoc,stox}
         6, 80, 81, 83, 84, 197: begin writeln(prr); 
-                            { get value, get address }
           frereg := allreg; popstk(ep2); popstk(ep);
           getreg(ep^.r1, frereg);
           assreg(ep, frereg, ep^.r1, rgnull);
