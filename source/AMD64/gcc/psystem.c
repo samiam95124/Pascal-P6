@@ -4436,7 +4436,7 @@ void psystem_pack(
 
     if (usi+sp > su) psystem_errore(PACKELEMENTSOUTOFBOUNDS);
     for (i = 0; i <= sp-1; i++) {
-        *(pa+usi) = *(upa+usi);
+        *(pa+i) = *(upa+usi);
         usi++;
     }
 
