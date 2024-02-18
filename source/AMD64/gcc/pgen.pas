@@ -3921,10 +3921,11 @@ procedure xlate;
 
         {stoi,stoa,stor,stob,stoc,stox}
         6, 80, 81, 83, 84, 197: begin writeln(prr); 
+                            { get value, get address }
           frereg := allreg; popstk(ep2); popstk(ep);
-          if op = 81{stor} then getfreg(ep2^.r1, frereg) else getreg(ep2^.r1, frereg);
-          assreg(ep2, frereg, ep2^.r1,  rgnull);
-          assreg(ep, frereg, rgnull, rgnull);
+          getreg(ep^.r1, frereg);
+          assreg(ep, frereg, ep^.r1, rgnull);
+          assreg(ep2, frereg, rgnull,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -3941,13 +3942,11 @@ procedure xlate;
         {stos}
         82: begin writeln(prr); 
           frereg := allreg; popstk(ep2); popstk(ep);
-          getreg(ep2^.r1, frereg);
-          assreg(ep2, frereg, ep2^.r1,  rgnull);
-          assreg(ep, frereg, rgrdi, rgnull);
+          assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
+          assreg(ep2, frereg, rgrsi,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep2^.r1a, 0, rgnull, rgnull, lclspc);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
