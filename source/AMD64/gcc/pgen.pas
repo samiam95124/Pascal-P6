@@ -1910,6 +1910,7 @@ procedure xlate;
       begin
         write(f, ep^.op:3, ': ', instr[ep^.op]:4, ' ');
         if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
+        else if ep^.op in [123{ldci},126{ldcb},127{lccc}] then write(f, ep^.vi:1)
         else write(f, ep^.q:1);
         if r1 <> rgnull then begin write(prr, ' dr1: '); wrtreg(prr, r1) end;
         if r2 <> rgnull then begin write(prr, ' dr2: '); wrtreg(prr, r2) end;
@@ -2010,6 +2011,7 @@ procedure xlate;
         isf := false; if insf[ep^.op] then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
+
             isf := true;
         isfltres := isf
       end;
@@ -2452,6 +2454,7 @@ procedure xlate;
           {csp}
           15: begin
             asscall; asspar(ep, sppar[ep^.q]);
+            if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then resreg(rgrcx);
             if spfunc[ep^.q] then begin { function }
               if isfltres(ep) then begin
                 if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
@@ -3244,19 +3247,12 @@ procedure xlate;
         end
       end;
 
-      { remove parameter list }
-      procedure poppar(pc: integer);
-      var ep: expptr;
-      begin
-        while (estack <> nil) and (pc >= 1) do begin popstk(ep); deltre(ep) end
-      end;
-
       { get number of parameters of procedure/function/system call to parameters
         list }
       procedure getparn(ep: expptr; pn: integer);
       var pp: expptr;
       begin
-          { pull parameters into list }
+          { pull parameters into list in reverse }
           while (pn > 0) and (estack <> nil) do 
             begin popstk(pp); pp^.next := ep^.pl; ep^.pl := pp; pn := pn-1 end
       end;
@@ -3271,6 +3267,32 @@ procedure xlate;
           popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
           parlvl := maxint { set parameter level inactive }
+      end;
+
+      { reverse parameters list }
+      procedure revpar(ep: expptr);
+      var pl, pp: expptr;
+      begin
+        pl := nil;
+        while ep^.pl <> nil do begin 
+          pp := ep^.pl; ep^.pl := ep^.pl^.next;
+          pp^.next := pl; pl := pp
+        end;
+        ep^.pl := pl
+      end;
+
+      { reorder last parameter }
+      procedure ordpar(ep: expptr);
+      var lp, pp: expptr;
+      begin
+        pp := ep^.pl;
+        lp := nil;
+        if pp <> nil then 
+          while pp^.next <> nil do begin lp := pp; pp := pp^.next end;
+        if (pp = nil) or (lp = nil) then errorl('system error             ');
+        lp^.next := nil;
+        pp^.next := ep^.pl;
+        ep^.pl := pp
       end;
 
       { attach tag chk sequence to leaf }
@@ -3584,7 +3606,8 @@ procedure xlate;
           end; 
           writeln(prr, sptable[q]);
           getexp(ep); 
-          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then getparn(ep, maxint)
+          if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
+            begin getparn(ep, maxint); revpar(ep); ordpar(ep) end
           else getparn(ep, sppar[q]);
           if spfunc[q] then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
