@@ -2617,6 +2617,7 @@ procedure xlate;
         end
       end;
 
+      { call system procedure/function }
       procedure callsp(ep: expptr; var sc: alfa; r: boolean);
       var si: insstr20; i: integer; pp: expptr;
       begin
@@ -2641,6 +2642,42 @@ procedure xlate;
               wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil)
           end
         end
+      end;
+
+      { call nwl/dsl }
+      procedure callnwldsl(ep: expptr);
+      var aln: boolean; pp, ep2: expptr; i: integer;
+      begin
+        ep2 := ep^.pl;
+        for i := 1 to 3 do begin
+          if ep2 = nil then errorl('system error             ');
+          ep2 := ep2^.next
+        end;
+        pshpar(ep2);
+        pp := ep^.pl; genexp(pp); { addr rdi }
+        pp := pp^.next; genexp(pp); { size rsi }
+        pp := pp^.next; genexp(pp); { tagcnt rdx }
+        wrtins10('pushq %1  ', 0, 0, pp^.r1, rgnull, nil);
+        wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
+        stkadr := stkadr-adrsize;
+        aln := false;
+        if stkadr mod 16 <> 0 then begin
+          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil); 
+          stkadr := stkadr-adrsize; aln := true
+        end;
+        if ep^.q = 39 then
+          wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
+        else
+          wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
+        if aln then begin
+          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
+          stkadr := stkadr+adrsize
+        end;
+        wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
+        stkadr := stkadr+adrsize;
+        wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
+        wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
+        wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
       end;
 
       begin { genexp }
@@ -3144,38 +3181,9 @@ procedure xlate;
 
             {csp}
             15: begin
-              if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then begin
-                { need irregular handling for nwl and dsl }
-                ep2 := ep^.pl;
-                for i := 1 to 3 do begin
-                  if ep2 = nil then errorl('system error             ');
-                  ep2 := ep2^.next
-                end;
-                pshpar(ep2);
-                pp := ep^.pl; genexp(pp); { addr rdi }
-                pp := pp^.next; genexp(pp); { size rsi }
-                pp := pp^.next; genexp(pp); { tagcnt rdx }
-                wrtins10('pushq %1  ', 0, 0, pp^.r1, rgnull, nil);
-                wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-                stkadr := stkadr-adrsize;
-                if stkadr mod 16 <> 0 then begin
-                  wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil); 
-                  stkadr := stkadr-adrsize 
-                end;
-                if ep^.q = 39 then
-                  wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
-                else
-                  wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
-                if stkadr mod 16 <> 0 then begin
-                  wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
-                  stkadr := stkadr+adrsize
-                end;
-                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
-                stkadr := stkadr+adrsize;
-                wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
-                wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
-              end else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
+              { need irregular handling for nwl and dsl }
+              if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then callnwldsl(ep)
+              else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
             end;
 
             {sfr}

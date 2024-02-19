@@ -1900,7 +1900,7 @@ void psystem_nwl(
     unsigned long* ulp;
     long i;
 
-    p2 = calloc(l+tc+sizeof(unsigned long), 1); /* get whole allocation */
+    p2 = calloc(l+(tc+1)*sizeof(unsigned long), 1); /* get whole allocation */
     lp = (long*)p2;
     for (i = 0; i < tc; i++) *lp++ = *tl++; /* place tags */
     ulp = (unsigned long*)lp;
