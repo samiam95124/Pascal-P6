@@ -3155,19 +3155,23 @@ procedure xlate;
                 pp := ep^.pl; genexp(pp); { addr rdi }
                 pp := pp^.next; genexp(pp); { size rsi }
                 pp := pp^.next; genexp(pp); { tagcnt rdx }
+                wrtins10('pushq %1  ', 0, 0, pp^.r1, rgnull, nil);
                 wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('pushq %rcx', 0, 0, rgnull, rgnull, nil); 
-                stkadr := stkadr-intsize;
-                if stkadr mod 16 <> 0 then
-                  wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
+                stkadr := stkadr-adrsize;
+                if stkadr mod 16 <> 0 then begin
+                  wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil); 
+                  stkadr := stkadr-adrsize 
+                end;
                 if ep^.q = 39 then
                   wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
                 else
                   wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
-                if stkadr mod 16 <> 0 then
+                if stkadr mod 16 <> 0 then begin
                   wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil); 
-                stkadr := stkadr+intsize;
+                  stkadr := stkadr+adrsize
+                end;
+                wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
+                stkadr := stkadr+adrsize;
                 wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
                 wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
