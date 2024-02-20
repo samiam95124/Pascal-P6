@@ -2677,7 +2677,7 @@ procedure xlate;
         stkadr := stkadr+adrsize;
         wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
         wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-        wrtins20('addq %rcx,%rsp      ', 0, 0, rgnull, rgnull, nil);
+        wrtins20('addq %rax,%rsp      ', 0, 0, rgnull, rgnull, nil);
       end;
 
       begin { genexp }
