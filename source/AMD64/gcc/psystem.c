@@ -4201,11 +4201,11 @@ void psystem_tagchkass(
     tc = *tcp-ADRSIZE-1; 
     if (tc >= lvl) { /* if in tagfield constant list */
 
-        tcp -= tc*INTSIZE; /* index bottom of table */
+        tcp -= tc; /* index bottom of table */
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
         if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
-        if (tcp[lvl-1] != lvt[lvl+ntag+1]) psystem_errorv(CHANGETOALLOCATEDTAGFIELD);
+        if (tcp[lvl-1] != lvt[ntag+1]) psystem_errorv(CHANGETOALLOCATEDTAGFIELD);
 
     }
 
