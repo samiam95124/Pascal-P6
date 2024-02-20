@@ -2226,7 +2226,7 @@ procedure xlate;
           {cta}
           191: begin
             asscall;
-            assreg(ep^.l, rf, rgnull, rgrcx); assreg(ep^.r, rf, rgnull, rgr8)
+            assreg(ep^.l, rf, rgr8, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
           end;
 
           {cps}

@@ -4193,13 +4193,15 @@ void psystem_tagchkass(
 {
 
     unsigned long* tcp;
+    unsigned long tc;
 
     taddr = taddr-off-INTSIZE; /* index top of tag constant list on heap */
-    /* fetch table count adjusted for system bias */
-    taddr = taddr-ADRSIZE-1;
     tcp = (unsigned long*) taddr; /* put in word form */
-    if (*tcp >= lvl) { /* if in tagfield constant list */
+    /* fetch table count adjusted for system bias */
+    tc = *tcp-ADRSIZE-1; 
+    if (tc >= lvl) { /* if in tagfield constant list */
 
+        tcp -= tc*INTSIZE; /* index bottom of table */
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
         if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
