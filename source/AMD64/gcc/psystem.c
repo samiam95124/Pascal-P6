@@ -1904,7 +1904,7 @@ void psystem_nwl(
     lp = (long*)p2;
     for (i = 0; i < tc; i++) *lp++ = *tl++; /* place tags */
     ulp = (unsigned long*)lp;
-    *ulp++ = tc; /* place tag count */
+    *ulp++ = tc+ADRSIZE+1; /* place tag count */
     *p = (unsigned char*)ulp; /* place record base */
 
 }
