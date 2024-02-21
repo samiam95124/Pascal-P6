@@ -2992,10 +2992,10 @@ the variant record.
 *******************************************************************************/
 
 void psystem_dsl(
-    /** Address of block */    unsigned char* p,
-    /** length to allocate */  unsigned long  l,
-    /** number of tags */      unsigned long  tc,
-    /** pointer to tag list */ long*          tl
+    /** Address of block */     unsigned char* p,
+    /** length to deallocate */ unsigned long  l,
+    /** number of tags */       unsigned long  tc,
+    /** pointer to tag list */  long*          tl
 )
 
 {
@@ -3006,8 +3006,9 @@ void psystem_dsl(
 
     ulp = (unsigned long*) p; /* point to top */
     ulp--;
-    if (*ulp != tc) error("New/dispose tags do not match in number");
+    if (*ulp-ADRSIZE-1 != tc) error("New/dispose tags do not match in number");
     lp = (unsigned long*)ulp; /* point to bottom */
+    lp -= 2; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
 
