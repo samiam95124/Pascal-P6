@@ -2600,10 +2600,10 @@ procedure xlate;
       var r: reg; ep2: expptr; i: integer;
 
       { push parameters to call depth first }
-      procedure pshpar(ep: expptr);
+      procedure pshparr(ep: expptr);
       begin
         if ep <> nil then begin
-          pshpar(ep^.next);
+          pshparr(ep^.next);
           dmptrel(ep, 1); genexp(ep);
           if ep^.r2 <> rgnull then begin
             wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); 
@@ -2657,7 +2657,7 @@ procedure xlate;
           if ep2 = nil then errorl('system error             ');
           ep2 := ep2^.next
         end;
-        pshpar(ep2);
+        pshparr(ep2);
         pp := ep^.pl; genexp(pp); { addr rdi }
         pp := pp^.next; genexp(pp); { size rsi }
         pp := pp^.next; genexp(pp); { tagcnt rdx }
@@ -3199,7 +3199,7 @@ procedure xlate;
             {cup,cuf}
             12, 246: begin
               genexp(ep^.sl); { process sfr start link }
-              pshpar(ep^.pl); { process parameters first }
+              pshparr(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
               if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
@@ -3208,7 +3208,7 @@ procedure xlate;
             {cip,cif}
             113,247: begin
               genexp(ep^.sl); { process sfr start link }
-              pshpar(ep^.pl); { process parameters first }
+              pshparr(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
@@ -3235,32 +3235,6 @@ procedure xlate;
             wrtins20('popq %1             ', 0, 0, r, rgnull, nil);
             stkadr := stkadr-intsize
           end
-        end
-      end;
-
-      { evaluate and push a parameter list, right to left }
-      procedure pshpar(ep: expptr; pn, pc: integer);
-      begin
-        if (ep <> nil) and (pn < 6) and (pc > 1) then 
-          pshpar(ep^.next, pn+1, pc-1);
-        if pn > 6 then assreg(ep, frereg, rgnull, rgnull)
-        else case pn of
-          1: assreg(ep, frereg, rgrdi, rgnull);
-          2: assreg(ep, frereg, rgrsi, rgnull);
-          3: assreg(ep, frereg, rgrdx, rgnull);
-          4: assreg(ep, frereg, rgrcx, rgnull);
-          5: assreg(ep, frereg, rgr8, rgnull);
-          6: assreg(ep, frereg, rgr9, rgnull)
-        end;
-        dmptrel(ep, 1); genexp(ep);
-        if ep^.r2 <> rgnull then
-          wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); stkadr := stkadr-intsize;
-        if ep^.r1 in [rgrax..rgr15] then
-          wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); stkadr := stkadr-intsize;
-        if ep^.r1 in [rgxmm0..rgxmm15] then begin
-          wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
-          stkadr := stkadr-realsize;
-          wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
         end
       end;
 
