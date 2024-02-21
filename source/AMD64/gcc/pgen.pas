@@ -2599,6 +2599,27 @@ procedure xlate;
       procedure genexp(ep: expptr);
       var r: reg; ep2: expptr; i: integer;
 
+      { push parameters in order }
+      procedure pshpar(pp: expptr);
+      begin
+        while pp <> nil do begin
+          dmptrel(pp, 1); genexp(pp);
+          if pp^.r2 <> rgnull then begin
+            wrtins20('pushq %1  ', 0, 0, pp^.r2, rgnull, nil); 
+            stkadr := stkadr-intsize
+          end;
+          if pp^.r1 in [rgrax..rgr15] then begin
+            wrtins20('pushq %1  ', 0, 0, pp^.r1, rgnull, nil); 
+            stkadr := stkadr-intsize
+          end else if pp^.r1 in [rgxmm0..rgxmm15] then begin
+            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+            stkadr := stkadr-realsize;
+            wrtins20('movsd %1,(%rsp)     ', 0, 0, pp^.r1, rgnull, nil)
+          end;
+          pp := pp^.next
+        end
+      end;
+
       { push parameters to call depth first }
       procedure pshparr(ep: expptr);
       begin
@@ -3199,7 +3220,7 @@ procedure xlate;
             {cup,cuf}
             12, 246: begin
               genexp(ep^.sl); { process sfr start link }
-              pshparr(ep^.pl); { process parameters first }
+              pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
               if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
@@ -3208,7 +3229,7 @@ procedure xlate;
             {cip,cif}
             113,247: begin
               genexp(ep^.sl); { process sfr start link }
-              pshparr(ep^.pl); { process parameters first }
+              pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
