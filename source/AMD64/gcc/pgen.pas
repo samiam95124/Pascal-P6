@@ -3077,7 +3077,7 @@ procedure xlate;
             {notb}
             42: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq $1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq $1,%1          ', 0, 1, ep^.r1, rgnull, nil);
               wrtins20('jz 1f               ', 0, 0, ep^.r2, rgnull, nil);
               wrtins20('movq $0,%1          ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)

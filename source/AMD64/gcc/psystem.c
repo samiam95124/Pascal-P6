@@ -3068,7 +3068,7 @@ as bytes.
 
 void psystem_wbi(
     /* Pascal file to rewrite */ pasfil* f,
-    /* Variable to write */      long*   p
+    /* Variable to write */      long    v
 )
 
 {
@@ -3081,7 +3081,7 @@ void psystem_wbi(
     FILE* fp;    /* file pointer */
 
     fp = filtable[fn];
-    for (i = 0; i < INTSIZE; i++) fputc(*p++, fp);
+    for (i = 0; i < INTSIZE; i++) { fputc(v & 0xff, fp); v >>= 8; }
 
 }
 
@@ -3099,7 +3099,7 @@ as bytes.
 
 void psystem_wbx(
     /* Pascal file to rewrite */ pasfil*        f,
-    /* Variable to write */      unsigned char* p
+    /* Variable to write */      long    v
 )
 
 {
@@ -3110,7 +3110,7 @@ void psystem_wbx(
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
 
-    fputc(*p++, filtable[fn]);
+    fputc(v & 0xff, filtable[fn]);
 
 }
 
@@ -3128,20 +3128,22 @@ as bytes.
 
 void psystem_wbr(
     /* Pascal file to rewrite */ pasfil* f,
-    /* Variable to write */      double* p
+    /* Variable to write */      double  v
 )
 
 {
 
     int  fn;
     long i;
+    union { double r; byte ba[REALSIZE]; } r2b;
     
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
     FILE* fp;    /* file pointer */
 
     fp = filtable[fn];
-    for (i = 0; i < REALSIZE; i++) fputc(*p++, fp);
+    r2b.r = v;
+    for (i = 0; i < REALSIZE; i++) fputc(r2b.ba[i], fp);
 
 }
 
@@ -3158,8 +3160,8 @@ as bytes.
 *******************************************************************************/
 
 void psystem_wbc(
-    /* Pascal file to rewrite */ pasfil*        f,
-    /* Variable to write */      unsigned char* p
+    /* Pascal file to rewrite */ pasfil*       f,
+    /* Variable to write */      unsigned char v
 )
 
 {
@@ -3172,7 +3174,7 @@ void psystem_wbc(
     FILE* fp;    /* file pointer */
 
     fp = filtable[fn];
-    for (i = 0; i < CHARSIZE; i++) fputc(*p++, fp);
+    fputc(v & 0xff, fp);
 
 }
 
@@ -3189,8 +3191,8 @@ as bytes.
 *******************************************************************************/
 
 void psystem_wbb(
-    /* Pascal file to rewrite */ pasfil*  f,
-    /* Variable to write */      boolean* p
+    /* Pascal file to rewrite */ pasfil* f,
+    /* Variable to write */      boolean v
 )
 
 {
@@ -3201,7 +3203,7 @@ void psystem_wbb(
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
 
-    fputc(*p++, filtable[fn]);
+    fputc(v & 0xff, filtable[fn]);
 
 }
 
@@ -3228,7 +3230,7 @@ void psystem_rbf(
     int  fn;
     long i;
     
-    valfilwm(f); /* validate file for writing */
+    valfilrm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
     FILE* fp;    /* file pointer */
 
