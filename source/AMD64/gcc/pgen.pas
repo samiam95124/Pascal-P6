@@ -2605,11 +2605,14 @@ procedure xlate;
         if ep <> nil then begin
           pshpar(ep^.next);
           dmptrel(ep, 1); genexp(ep);
-          if ep^.r2 <> rgnull then
-            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); stkadr := stkadr-intsize;
-          if ep^.r1 in [rgrax..rgr15] then
-            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); stkadr := stkadr-intsize;
-          if ep^.r1 in [rgxmm0..rgxmm15] then begin
+          if ep^.r2 <> rgnull then begin
+            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); 
+            stkadr := stkadr-intsize
+          end;
+          if ep^.r1 in [rgrax..rgr15] then begin
+            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); 
+            stkadr := stkadr-intsize
+          end else if ep^.r1 in [rgxmm0..rgxmm15] then begin
             wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
             stkadr := stkadr-realsize;
             wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
@@ -2646,8 +2649,9 @@ procedure xlate;
 
       { call nwl/dsl }
       procedure callnwldsl(ep: expptr);
-      var aln: boolean; pp, ep2: expptr; i: integer;
+      var aln: boolean; pp, ep2: expptr; i: integer; stkadrs: integer;
       begin
+        stkadrs := stkadr; { save because we don't know tag count }
         ep2 := ep^.pl;
         for i := 1 to 3 do begin
           if ep2 = nil then errorl('system error             ');
@@ -2678,6 +2682,7 @@ procedure xlate;
         wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
         wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
         wrtins20('addq %rax,%rsp      ', 0, 0, rgnull, rgnull, nil);
+        stkadr := stkadrs { restore to entry }
       end;
 
       begin { genexp }

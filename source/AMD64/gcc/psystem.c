@@ -3008,7 +3008,7 @@ void psystem_dsl(
     ulp--;
     if (*ulp-ADRSIZE-1 != tc) error("New/dispose tags do not match in number");
     lp = (unsigned long*)ulp; /* point to bottom */
-    lp -= 2; /* start of tag list */
+    lp -= tc; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
 
