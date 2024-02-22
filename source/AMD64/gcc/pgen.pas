@@ -2610,6 +2610,7 @@ procedure xlate;
             stkadr := stkadr-intsize
           end;
           if inss[pp^.op] then begin
+            wrtins20('addq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
             wrtins10('pushq %rsi', 0, 0, rgnull, rgnull, nil);
             wrtins10('pushq %rdi', 0, 0, rgnull, rgnull, nil);
             if pp^.r1 <> rgrsi then
@@ -2621,7 +2622,8 @@ procedure xlate;
             wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
             wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);  
             wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);          
-            wrtins10('popq %rsi ', 0, 0, rgnull, rgnull, nil)
+            wrtins10('popq %rsi ', 0, 0, rgnull, rgnull, nil);
+            stkadr := stkadr-setsize
           end else if pp^.r1 in [rgrax..rgr15] then begin
             wrtins20('pushq %1  ', 0, 0, pp^.r1, rgnull, nil); 
             stkadr := stkadr-intsize
@@ -2657,17 +2659,20 @@ procedure xlate;
 
       { call system procedure/function }
       procedure callsp(ep: expptr; var sc: alfa; r: boolean);
-      var si: insstr20; i: integer; pp: expptr;
+      var si: insstr20; i: integer; pp: expptr; aln: boolean;
       begin
         { evaluate all parameters }
         pp := ep^.pl;
         while pp <> nil do begin genexp(pp); pp := pp^.next end;
-        if stkadr mod 16 <> 0 then
+        aln := false;
+        if stkadr mod 16 <> 0 then begin
           wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
+          aln := true
+        end;
         si := 'call psystem_       ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
-        if stkadr mod 16 <> 0 then
+        if aln then
           wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
         if r then begin
           if isfltres(ep) then begin
