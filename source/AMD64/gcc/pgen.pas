@@ -2612,7 +2612,7 @@ procedure xlate;
             wrtins20('pushq %1  ', 0, 0, pp^.r1, rgnull, nil); 
             stkadr := stkadr-intsize
           end else if pp^.r1 in [rgxmm0..rgxmm15] then begin
-            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+            wrtins20('subq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
             stkadr := stkadr-realsize;
             wrtins20('movsd %1,(%rsp)     ', 0, 0, pp^.r1, rgnull, nil)
           end;
@@ -3215,7 +3215,7 @@ procedure xlate;
             {sfr}
             245:
               if ep^.lb <> nil then
-                wrtins20('sub $s,%rsp         ', 0, 0, rgnull, rgnull, ep^.lb);
+                wrtins20('subq $s,%rsp        ', 0, 0, rgnull, rgnull, ep^.lb);
 
             {cup,cuf}
             12, 246: begin
