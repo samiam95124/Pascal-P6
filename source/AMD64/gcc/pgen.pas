@@ -2610,7 +2610,7 @@ procedure xlate;
             stkadr := stkadr-intsize
           end;
           if inss[pp^.op] then begin
-            wrtins20('addq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
+            wrtins20('subq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
             wrtins10('pushq %rsi', 0, 0, rgnull, rgnull, nil);
             wrtins10('pushq %rdi', 0, 0, rgnull, rgnull, nil);
             if pp^.r1 <> rgrsi then
