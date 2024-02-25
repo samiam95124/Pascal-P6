@@ -2807,9 +2807,9 @@ procedure xlate;
             end;
 
             120{lip}: begin 
-              wrtins20('movq ^0(%rbp),%1    ', ep^.p, 0, ep^.t1, rgnull, nil);
-              wrtins20('movq ^0(%1),%1    ', ep^.q+ptrsize, 0, ep^.r2, rgnull, nil);
-              wrtins20('movq ^0(%1),%1    ', ep^.q, 0, ep^.r1, rgnull, nil)
+              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.t1, rgnull, nil);
+              wrtins20('movq ^0(%2),%1    ', ep^.q+ptrsize, 0, ep^.r2, ep^.t1, nil);
+              wrtins20('movq ^0(%2),%1    ', ep^.q, 0, ep^.r1, ep^.t1, nil)
             end;  
 
             {equm,neqm,geqm,gtrm,leqm,lesm}
@@ -3367,8 +3367,8 @@ procedure xlate;
         end;
 
         {lip} 
-        120: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); getexp(ep);
-          pshstk(ep) 
+        120: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
+          q1 := -p*ptrsize; getexp(ep); pshstk(ep) 
         end;
 
         { equm,neqm,geqm,grtm,leqm,lesm take a parameter }
@@ -3759,7 +3759,7 @@ procedure xlate;
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
           wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
-          wrtins20('enter $1,$0        ', p+1, 0, rgnull, rgnull, nil); { enter frame }
+          wrtins20('enterq $1,$0       ', p+1, 0, rgnull, rgnull, nil); { enter frame }
           wrtins20('movq %rsp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy sp }
           { find sp-locals }
           write(prr, '        subq    $'); writevp(prr, lclspc); write(prr, '+'); 
