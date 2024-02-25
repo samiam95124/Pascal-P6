@@ -2757,7 +2757,7 @@ procedure xlate;
 
             {lods}
             107: begin
-              wrtins20('movq ^0(%rbp),%rsi  ', ep^.p, 0, rgnull, rgnull, nil);
+              wrtins20('movq ^0(%rbp),%rsi  ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins20('lea ^0(%rsi),%rsi   ', ep^.q, 0, ep^.r1, rgnull, nil);
               wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3354,7 +3354,7 @@ procedure xlate;
 
         { *** non-terminals *** }
 
-        {lodi,lodx,loda,lodr,lods,lodb,lodc,loda,lda}
+        {lodi,lodx,loda,lodr,lods,lodb,lodc,lda}
         0,193,105,106,107,108,109,4: begin 
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           q1 := -p*ptrsize; getexp(ep); attach(ep); pshstk(ep) 
@@ -3772,8 +3772,12 @@ procedure xlate;
           wrtins10('jmp 1b    ', 7, 0, rgnull, rgnull, nil); { loop }
           wrtins10('2:        ', 0, 0, rgnull, rgnull, lclspc);
           wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
+          { note there is no way to know locals space in advance }
           wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
+          { compensate for ipj offsets }
+          wrtins20('movq %rbp,(%rsp)  ', marksb, 0, rgnull, rgnull, nil);
           tmpoff := -(p+1)*ptrsize;
+          stkadr := 0;
           { note ep is unused at this time }
           botstk
         end;
