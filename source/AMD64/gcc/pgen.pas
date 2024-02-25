@@ -3254,6 +3254,7 @@ procedure xlate;
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
               if (ep^.op = 247{cif}) and (ep^.r1 <> rgrax) then
                 wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
             end;
 
             {cke}
@@ -3689,9 +3690,7 @@ procedure xlate;
 
         {rip}
         13: begin read(prd,q); writeln(prr);
-          frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
+          { executed at cip and cif }
         end;
 
         {stri,stra}
