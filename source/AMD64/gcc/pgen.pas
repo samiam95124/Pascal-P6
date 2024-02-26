@@ -2752,7 +2752,7 @@ procedure xlate;
             {lodr}
             106: begin
               wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins20('movsd (%1),%2     ', 0, 0, ep^.t1, ep^.r1, nil)
+              wrtins20('movsd ^0(%1),%2     ', ep^.q, 0, ep^.t1, ep^.r1, nil)
             end;
 
             {lods}
