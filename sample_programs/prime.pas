@@ -68,6 +68,26 @@
 (*      Size:                                                                 *)
 (*      Execution time: 11 sec., 0.00011 sec/iter                             *)
 (*                                                                            *)
+(* AMD® Ryzen 9 3950 100000 iterations GPC                                    *)
+(*                                                                            *)
+(*      Size:                                                                 *)
+(*      Execution time: 10.795 sec., 0.000108 sec/iter                        *)
+(*                                                                            *)
+(* AMD® Ryzen 9 3950 100000 iterations FPC                                    *)
+(*                                                                            *)
+(*      Size:                                                                 *)
+(*      Execution time: 8.423 sec., 0.0000842 sec/iter                        *)
+(*                                                                            *)
+(* AMD® Ryzen 9 3950 100000 iterations GCC                                    *)
+(*                                                                            *)
+(*      Size:                                                                 *)
+(*      Execution time: 6.815 sec., 0.00006815 sec/iter                       *)
+(*                                                                            *)
+(* AMD® Ryzen 9 3950 100000 iterations CLANG                                  *)
+(*                                                                            *)
+(*      Size:                                                                 *)
+(*      Execution time: 8.043 sec., 0.00008043 sec/iter                       *)
+(*                                                                            *)
 (******************************************************************************)
 
 program sieve(output);
@@ -75,6 +95,7 @@ program sieve(output);
 const
 
   size = 8190;
+  iterations = 100000;
 
 var
 
@@ -83,8 +104,8 @@ var
 
 begin
 
-   writeln('10 iterations');
-   for iter := 1 to 10 do begin { do program 10000 times }
+   writeln(iterations:1, ' iterations');
+   for iter := 1 to iterations do begin { do program iteration times }
 
       count := 0; { prime counter }
       for i := 0 to size do flags[i] := true; { set flags all true }

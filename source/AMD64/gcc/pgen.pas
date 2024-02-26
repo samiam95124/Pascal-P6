@@ -3157,9 +3157,9 @@ procedure xlate;
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               case ep^.op of
-                43: wrtins20('andq %1,%2           ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
-                44: wrtins20('orq %1,%2           ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil);
-                206: wrtins20('xorq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r^.r1, nil)
+                43: wrtins20('andq %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                44: wrtins20('orq %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                206: wrtins20('xorq %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
               end
             end;
 
