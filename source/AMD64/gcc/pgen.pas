@@ -2017,7 +2017,7 @@ procedure xlate;
         isfltres := isf
       end;
 
-      procedure assreg(ep: expptr; rf: regset; r1, r2: reg);
+      procedure assreg(ep: expptr; rf: regset; r1, r2: reg; rr: boolean);
       var rfs: regset;
 
       procedure resreg(r: reg);
@@ -2040,24 +2040,24 @@ procedure xlate;
         while pp <> nil do begin
           if isfltres(pp) then begin { floating result }
             if fpc <= maxfltparreg then begin
-              resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull)
+              resreg(parregf[fpc]); assreg(pp, rf, parregf[fpc], rgnull, false)
             end else begin
-              getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
+              getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull, false)
             end;
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
             if (pc <= mi) and (pc <= maxintparreg-1) then begin
               resreg(parreg[pc]); resreg(parreg[pc+1]); 
-              assreg(pp, rf, parreg[pc], parreg[pc+1])
+              assreg(pp, rf, parreg[pc], parreg[pc+1], false)
             end else begin
-              getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
+              getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2, false)
             end;
             pc := pc+2
           end else begin { single register }
             if (pc <= mi) and (pc <= maxintparreg) then begin
-              resreg(parreg[pc]); assreg(pp, rf, parreg[pc], rgnull)
+              resreg(parreg[pc]); assreg(pp, rf, parreg[pc], rgnull, false)
             end else begin 
-              getreg(r1, rf); assreg(pp, rf, r1, rgnull) 
+              getreg(r1, rf); assreg(pp, rf, r1, rgnull, false) 
             end;
             pc := pc+1
           end;            
@@ -2073,11 +2073,11 @@ procedure xlate;
         dstreg(rgr11)
       end;
 
-      begin
+      begin { assreg }
         write(prr, '# assigning:  '); dmpety(prr, ep, r1, r2); 
         write(prr, ' ~rf: '); wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
-        if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull);
+        if ep^.al <> nil then assreg(ep^.al, rf, rgnull, rgnull, false);
         case ep^.op of
 
           {lodi,lodx,loda,lodb,lodc,lda}
@@ -2101,13 +2101,15 @@ procedure xlate;
           {adr,sbr}
           29, 31: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) end;
+            assreg(ep^.l, rf, ep^.r1, r2, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false) 
+          end;
 
           {equr,neqr,geqr,grtr,leqr,lesr}
           138,144,150,156,162,168: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull); resreg(ep^.l^.r1);
-            assreg(ep^.r, rf, rgnull, rgnull)
+            assreg(ep^.l, rf, rgnull, rgnull, false); resreg(ep^.l^.r1);
+            assreg(ep^.r, rf, rgnull, rgnull, false)
           end;
 
           {grts,less}
@@ -2116,8 +2118,8 @@ procedure xlate;
           {equs,neqs,geqs,leqs}
           140,146,152,164: begin 
             asscall;
-            assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull, false); 
+            assreg(ep^.r, rf, rgrsi, rgnull, false);
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf)
@@ -2128,7 +2130,8 @@ procedure xlate;
           147, 19, 149, 151, 153, 20, 155, 157, 159, 21, 
           161, 163, 165, 167, 169, 171: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) 
+            assreg(ep^.l, rf, ep^.r1, r2, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false) 
           end;
 
           120{lip}: begin ep^.r1 := r1;
@@ -2142,8 +2145,8 @@ procedure xlate;
             asscall;
             ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrdi, rgnull); 
-            assreg(ep^.r, rf, rgrsi, rgnull)
+            assreg(ep^.l, rf, rgrdi, rgnull, false); 
+            assreg(ep^.r, rf, rgrsi, rgnull, false)
           end;
 
           5{lao}: begin ep^.r1 := r1;
@@ -2154,7 +2157,8 @@ procedure xlate;
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); ep^.t1 := ep^.r1;
             if (ep^.r1 = rgrax) or (ep^.r1 = rgrdx) then getreg(ep^.t1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false)
           end;
 
           118{swp}: ; { done at top level }
@@ -2179,19 +2183,19 @@ procedure xlate;
           {ind,inda,indb,indc,indx}
           9, 85,88,89,198: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); 
-            assreg(ep^.l, rf, ep^.r1, rgnull) 
+            assreg(ep^.l, rf, ep^.r1, rgnull, false) 
           end;
 
           {indr}
           86: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf); getreg(ep^.r2, rf);
-            assreg(ep^.l, rf, ep^.r2, rgnull) 
+            assreg(ep^.l, rf, ep^.r2, rgnull, false) 
           end;
 
           {inds}
           87: begin 
             dstreg(rgrsi); dstreg(rgrdi);
-            assreg(ep^.l, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrsi, rgnull, false);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
@@ -2201,7 +2205,7 @@ procedure xlate;
           10, 90, 93, 94, 57, 103, 104, 201, 202: begin 
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false)
           end;
 
           {suv}
@@ -2213,21 +2217,24 @@ procedure xlate;
           {cvbi,cvbx,cvbb,cvbc}
           100, 115, 116, 121: begin 
             asscall;
-            assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
+            assreg(ep^.l, rf, rgr9, rgnull, false); 
+            assreg(ep^.r, rf, rgrcx, rgnull, false);
             ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
           end;
 
           {ivti,ivtx,ivtb,ivtc}
           192,101,102,111: begin 
             asscall;
-            assreg(ep^.l, rf, rgr9, rgnull); assreg(ep^.r, rf, rgrcx, rgnull);
+            assreg(ep^.l, rf, rgr9, rgnull, false); 
+            assreg(ep^.r, rf, rgrcx, rgnull, false);
             ep^.r1 := r1; if ep^.r1 = rgnull then ep^.r1 := rgrax
           end;
 
           {cta}
           191: begin
             asscall;
-            assreg(ep^.l, rf, rgr8, rgnull); assreg(ep^.r, rf, rgrcx, rgnull)
+            assreg(ep^.l, rf, rgr8, rgnull, false); 
+            assreg(ep^.r, rf, rgrcx, rgnull, false)
           end;
 
           {cps}
@@ -2241,7 +2248,8 @@ procedure xlate;
           {cpc}
           177: begin
             asscall; 
-            assreg(ep^.l, rf, rgnull, rgrsi); assreg(ep^.r, rf, rgnull, rgrdx);
+            assreg(ep^.l, rf, rgnull, rgrsi, false); 
+            assreg(ep^.r, rf, rgnull, rgrdx, false);
           end;
 
           {lpa}
@@ -2276,13 +2284,13 @@ procedure xlate;
             dstreg(rgrax);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf); getreg(ep^.t1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false)
           end;
 
           {chks}
           97: begin 
             asscall;
-            assreg(ep^.l, rf, rgrdx, rgnull);
+            assreg(ep^.l, rf, rgrdx, rgnull, false);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r1a := ep^.l^.r1a
@@ -2293,7 +2301,7 @@ procedure xlate;
             dstreg(rgrax);
             ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false)
           end;
 
           56 {lca}: begin ep^.r1 := r1;
@@ -2303,7 +2311,7 @@ procedure xlate;
           {ordi,ordb,ordc,ordx}
           59, 134, 136, 200: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2)
+            assreg(ep^.l, rf, ep^.r1, r2, false)
           end;
 
           {lcp}
@@ -2314,7 +2322,7 @@ procedure xlate;
 
           {sgs}
           32: begin 
-            asscall; assreg(ep^.l, rf, rgrdi, rgnull);
+            asscall; assreg(ep^.l, rf, rgrdi, rgnull, false);
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
           end;
@@ -2322,75 +2330,76 @@ procedure xlate;
           {flt,flo}
           33,34: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull)  
+            assreg(ep^.l, rf, rgnull, rgnull, false)  
           end;
 
           {trc}
           35: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull)  
+            assreg(ep^.l, rf, rgnull, rgnull, false)  
           end;
 
           {ngi}
           36: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull)  
+            assreg(ep^.l, rf, ep^.r1, rgnull, false)  
           end;
 
           {ngr}
           37: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull)  
+            assreg(ep^.l, rf, rgnull, rgnull, false)  
           end;
 
           {abi,sqi}
           40,38: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2) 
+            assreg(ep^.l, rf, ep^.r1, r2, false) 
           end;
 
           {sqr}
           39: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2) 
+            assreg(ep^.l, rf, ep^.r1, r2, false) 
           end;
 
           {abr}
           41: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2);
+            assreg(ep^.l, rf, ep^.r1, r2, false);
             getreg(ep^.t1, rf); getfreg(ep^.t2, rf) 
           end;
 
           {noti}
           205: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2)
+            assreg(ep^.l, rf, ep^.r1, r2, false)
           end;
 
           {notb,odd,chr}
           42,50,60: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, r2) 
+            assreg(ep^.l, rf, ep^.r1, r2, false) 
           end;
 
           {rnd}
           62: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgnull, rgnull) 
+            assreg(ep^.l, rf, rgnull, rgnull, false) 
           end;
 
           {and,ior,xor}
           43,44,206: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, ep^.r1, rgnull, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false);
           end;
 
           {dif,int,uni}
           45,46,47: begin 
             asscall; 
-            assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
-            assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull, false); resreg(rgrdi);
+            assreg(ep^.r, rf, rgrsi, rgnull, false);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             ep^.r1a := ep^.l^.r1a
@@ -2399,8 +2408,8 @@ procedure xlate;
           {inn}
           48: begin 
             asscall;
-            assreg(ep^.l, rf, rgrdi, rgnull); resreg(rgrdi);
-            assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull, false); resreg(rgrdi);
+            assreg(ep^.r, rf, rgrsi, rgnull, false);
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax else 
             ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf)
@@ -2411,7 +2420,8 @@ procedure xlate;
             if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, rgrax, rgnull, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false);
             if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
@@ -2420,28 +2430,30 @@ procedure xlate;
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
+            assreg(ep^.l, rf, rgrax, rgnull, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false);
             if ep^.r1 <> rgrax then dstreg(rgrax)
           end;
 
           {mpi}
           51: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull);
-            assreg(ep^.r, rf, rgnull, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false);
+            assreg(ep^.r, rf, rgnull, rgnull, false)
           end;
 
           {mpr,dvr}
           52,54: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            assreg(ep^.l, rf, ep^.r1, rgnull); 
-            assreg(ep^.r, rf, rgnull, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull, false); 
+            assreg(ep^.r, rf, rgnull, rgnull, false)
           end;
 
           {rgs}
           110: begin 
             asscall; 
-            assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
+            assreg(ep^.l, rf, rgrdi, rgnull, false); 
+            assreg(ep^.r, rf, rgrsi, rgnull, false);
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
           end;
@@ -2487,7 +2499,8 @@ procedure xlate;
 
           {cip}
           113: begin
-            asscall; asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asscall; asspar(ep, ep^.q); 
+            assreg(ep^.l, rf, rgnull, rgnull, false)
           end;
 
           {cif}
@@ -2495,17 +2508,18 @@ procedure xlate;
             asscall;
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
-            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull, false)
           end;
 
           {cke}
           188: begin
             getreg(ep^.r1, frereg); getreg(ep^.r2, frereg); 
-            getreg(ep^.t1, frereg); assreg(ep^.l, rf, ep^.r1, rgnull)
+            getreg(ep^.t1, frereg); assreg(ep^.l, rf, ep^.r1, rgnull, false)
           end;
 
         end;
-        write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); write(prr, ' ~rf: ');
+        write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); 
+        write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr)
       end;
 
@@ -3647,7 +3661,7 @@ procedure xlate;
               if ep^.pl = nil then errorl('System error             ');
               duptre(ep^.pl, ep2); pshstk(ep2)
             end;
-            frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+            frereg := allreg; assreg(ep, frereg, rgnull, rgnull, false); 
             dmptre(ep); genexp(ep);
             deltre(ep)
           end
@@ -3669,7 +3683,7 @@ procedure xlate;
           write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
           getexp(ep); ep^.lt := sp; popstk(ep2); popstk(ep3); 
           duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
-          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep); deltre(ep)
         end;
 
@@ -3677,14 +3691,14 @@ procedure xlate;
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           writeln(prr);
           getexp(ep); ep^.fn := sp; getpar(ep);
-          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull, false); dmptre(ep);
           genexp(ep); deltre(ep);
         end;
 
         {cip}
         113: begin writeln(prr);
           getexp(ep); popstk(ep^.l); getpar(ep);
-          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull, false); dmptre(ep);
           genexp(ep); deltre(ep);
         end;
 
@@ -3696,7 +3710,7 @@ procedure xlate;
         {stri,stra}
         2,70: begin read(prd,p,q); writeln(prr,p:1,' ', q:1);
           frereg := allreg;
-          popstk(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -3709,7 +3723,7 @@ procedure xlate;
         195,73,74: begin
           read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; getreg(r1, frereg);
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -3721,7 +3735,7 @@ procedure xlate;
         {strr}
         71: begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
           frereg := allreg; getreg(r1, frereg);
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -3732,7 +3746,7 @@ procedure xlate;
 
         {strs} 
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
@@ -3784,7 +3798,8 @@ procedure xlate;
         {mov}
         55: begin read(prd,q); writeln(prr,q:1); 
           frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
-          assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
+          assreg(ep2, frereg, rgrdi, rgnull, false); 
+          assreg(ep, frereg, rgrsi, rgnull, false);
           genexp(ep2); genexp(ep);
           wrtins20('movq $0,%rcx        ', q, 0, rgnull, rgnull, nil);
           wrtins10('repnz     ', 0, 0, rgnull, rgnull, nil);
@@ -3801,7 +3816,7 @@ procedure xlate;
         {sroi,sroa,sror,srob,sroc,srox}
         3, 75, 76, 78, 79, 196: begin read(prd,q); writeln(prr,q:1);
           frereg := allreg;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull, false); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
@@ -3816,7 +3831,7 @@ procedure xlate;
         {sros}
         77: begin read(prd,q); writeln(prr,q:1);
           frereg := allreg;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          popstk(ep); assreg(ep, frereg, rgnull, rgnull, false); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
@@ -3839,9 +3854,9 @@ procedure xlate;
         63: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
-          assreg(ep, frereg, rgrdx, rgnull);
-          assreg(ep2, frereg, rgrcx, rgnull);
-          assreg(ep3, frereg, rgr8, rgnull);
+          assreg(ep, frereg, rgrdx, rgnull, false);
+          assreg(ep2, frereg, rgrcx, rgnull, false);
+          assreg(ep3, frereg, rgr8, rgnull, false);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
@@ -3855,9 +3870,9 @@ procedure xlate;
         64: begin read(prd,q,q1); writeln(prr,q:1, ' ', q1:1); 
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
-          assreg(ep, frereg, rgrdx, rgnull);
-          assreg(ep2, frereg, rgrcx, rgnull);
-          assreg(ep3, frereg, rgr8, rgnull);
+          assreg(ep, frereg, rgrdx, rgnull, false);
+          assreg(ep2, frereg, rgrcx, rgnull, false);
+          assreg(ep3, frereg, rgr8, rgnull, false);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
@@ -3878,7 +3893,7 @@ procedure xlate;
         24,119: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
-          assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
+          assreg(ep, frereg, rgnull, rgnull, false); dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('orb %1l,%1l         ', 0, 0, ep^.r1, rgnull, nil);
           if op = 24{fjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
@@ -3891,7 +3906,7 @@ procedure xlate;
         25: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); getreg(r1, frereg);
-          assreg(ep, frereg, rgnull, rgnull); 
+          assreg(ep, frereg, rgnull, rgnull, false); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('movq %1,%2', 0, 0, ep^.r1, r1, sp);
@@ -3917,7 +3932,7 @@ procedure xlate;
         {vbs}
         92: begin read(prd,q); writeln(prr, q:1); 
           frereg := allreg; popstk(ep); 
-          assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
+          assreg(ep, frereg, rgrdi, rgnull, false); dmptrel(ep, 19); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull, nil);
@@ -4004,8 +4019,8 @@ procedure xlate;
         6, 80, 81, 83, 84, 197: begin writeln(prr); 
           frereg := allreg; popstk(ep2); popstk(ep);
           getreg(ep^.r1, frereg);
-          assreg(ep, frereg, ep^.r1, rgnull);
-          assreg(ep2, frereg, rgnull,  rgnull);
+          assreg(ep, frereg, ep^.r1, rgnull, false);
+          assreg(ep2, frereg, rgnull,  rgnull, false);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -4022,8 +4037,8 @@ procedure xlate;
         {stos}
         82: begin writeln(prr); 
           frereg := allreg; popstk(ep2); popstk(ep);
-          assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
-          assreg(ep2, frereg, rgrsi,  rgnull);
+          assreg(ep, frereg, rgrdi, rgnull, false); frereg := frereg-[rgrdi];
+          assreg(ep2, frereg, rgrsi,  rgnull, false);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -4056,7 +4071,7 @@ procedure xlate;
         8: begin read(prd,q,q1); labelsearch(def, val, sp); 
           write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); writeln(prr);
           frereg := allreg; popstk(ep); 
-          assreg(ep, frereg, rgnull, rgnull);
+          assreg(ep, frereg, rgnull, rgnull, false);
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('cmpq $0,%1', q, 0, ep^.r1, rgnull, nil);
