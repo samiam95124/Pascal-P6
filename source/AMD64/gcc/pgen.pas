@@ -2493,8 +2493,13 @@ procedure xlate;
           {cif}
           247: begin
             asscall;
-            if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-            else ep^.r1 := r1;
+            if ep^.q1 = 1 then begin
+              if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
+              else ep^.r1 := r1
+            end else begin
+              if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
+              else ep^.r1 := r1
+            end;
             asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
@@ -3252,9 +3257,17 @@ procedure xlate;
               genexp(ep^.l); { load procedure address }
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
-              if (ep^.op = 247{cif}) and (ep^.r1 <> rgrax) then
-                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
+              if ep^.op = 247{cif} then begin 
+                if ep^.q1 = 1 then begin
+                  if ep^.r1 <> rgxmm0 then
+                    wrtins20('movq %xmm0,%1       ', 0, 0, ep^.r1, rgnull, nil)
+                end else begin
+                  if ep^.r1 <> rgrax then
+                    wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                end;
+                wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
+              end;
+              
             end;
 
             {cke}
@@ -3605,12 +3618,12 @@ procedure xlate;
 
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          writeln(prr);
+          read(prd,q1); writeln(prr, q1:1);
           getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
         {cif}
-        247: begin writeln(prr);
+        247: begin read(prd,q1); writeln(prr, q1:1);
           getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
         end;
 
@@ -3690,7 +3703,12 @@ procedure xlate;
 
         {rip}
         13: begin read(prd,q); writeln(prr);
-          { executed at cip and cif }
+          if estack <> nil then if estack^.op = 247{cif} then estack^.q := q
+          else begin
+            frereg := allreg;
+            writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+            wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
+          end
         end;
 
         {stri,stra}

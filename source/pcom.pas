@@ -3449,11 +3449,20 @@ begin cmdpos := maxcmd end;
             prtpartyp(fcp)
           end
         end else prtlabel(fp2);
+        if fcp <> nil then write(prr, ' ', ord(fcp^.idtype = realptr):1);
         writeln(prr);
         mesl(fp1)
       end;
     ic := ic + 1
   end;
+
+  procedure gencif(fcp: ctp);
+  begin
+    if prcode then write(prr,mn[123(*cif*)]:11,' ':4);
+    if fcp <> nil then write(prr, ' ', ord(fcp^.idtype = realptr):1);
+    writeln(prr);
+    ic := ic + 1; mes(123(*cif*))
+  end (*gen0*) ;
 
   procedure gencuv(fp1,fp2: integer; fcp: ctp);
   begin
@@ -5743,7 +5752,7 @@ begin cmdpos := maxcmd end;
         end
       else begin { call procedure or function parameter }
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
-        if fcp^.klass = func then gen0(123(*cif*))
+        if fcp^.klass = func then gencif(fcp)
         else gen0(67(*cip*));
         gen1(32(*rip*),lcs+lsize+soff);
         mesl(locpar); { remove stack parameters }
