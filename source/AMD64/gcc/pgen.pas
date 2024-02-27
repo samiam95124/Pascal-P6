@@ -2009,10 +2009,11 @@ procedure xlate;
       function isfltres(ep: expptr): boolean;
       var isf: boolean;
       begin
-        isf := false; if insf[ep^.op] then isf := true
+        isf := false; 
+        if insf[ep^.op] then isf := true
+        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q1 = 1) then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
-
             isf := true;
         isfltres := isf
       end;
