@@ -2494,7 +2494,7 @@ procedure xlate;
 
           {cif}
           247: begin
-            asscall; resreg(rgrbx);
+            asscall; resreg(rgr15);
             if ep^.q = 1 then begin
               if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
               else ep^.r1 := r1
@@ -3257,8 +3257,8 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
-              wrtins20('movq %rbp,%rbx      ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20('movq %rbp,%r15      ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('movq ^0(%1),%rbp    ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
                 if ep^.q = 1 then begin
@@ -3269,7 +3269,7 @@ procedure xlate;
                     wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
-              wrtins20('movq %rbx,%rbp      ', 0, 0, rgnull, rgnull, nil)
+              wrtins20('movq %r15,%rbp      ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {cke}
@@ -3786,6 +3786,13 @@ procedure xlate;
           wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
           { note there is no way to know locals space in advance }
           wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
+          { save protected registers and keep aligned }
+          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %r13', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %r14', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %r15', 0, 0, rgnull, rgnull, nil);
           tmpoff := -(p+1)*ptrsize;
           tmpspc := 0; { clear temps }
           stkadr := 0;
@@ -3957,6 +3964,13 @@ procedure xlate;
         14: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          { restore protected registers and keep aligned }
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
@@ -3971,6 +3985,13 @@ procedure xlate;
         128,132,204,130,131: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          { restore protected registers }
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
