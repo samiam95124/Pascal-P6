@@ -696,6 +696,8 @@ procedure xlate;
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
+                    pc: integer; { number of parameters for function/procedure }
+                    roff: address; { rip offset }
                   end;
          { temp entries for sets }
          setptr = ^setety;
@@ -1659,6 +1661,7 @@ procedure xlate;
           ep, ep2, ep3, ep4, ep5, pp: expptr;
           r1: reg; sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
           stkadr: integer; { stack address tracking }
+          ops:   instyp; { operator type save }
 
       procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
@@ -1791,7 +1794,7 @@ procedure xlate;
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false;
         ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0; 
-        ep^.t1a := 0; ep^.t2a := 0;
+        ep^.t1a := 0; ep^.t2a := 0; ep^.pc := 0; ep^.roff := 0;
       end;
       
       procedure putexp(ep: expptr);
@@ -2011,7 +2014,7 @@ procedure xlate;
       begin
         isf := false; 
         if insf[ep^.op] then isf := true
-        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q1 = 1) then isf := true
+        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q = 1) then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
             isf := true;
@@ -2478,30 +2481,30 @@ procedure xlate;
             if r1 = rgnull then begin
               if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
             end else ep^.r1 := r1;
-            asspar(ep, ep^.q)
+            asspar(ep, ep^.pc)
           end;
 
           {cup}
           12: begin
-            asscall; asspar(ep, ep^.q)
+            asscall; asspar(ep, ep^.pc)
           end;
 
           {cip}
           113: begin
-            asscall; asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asscall; asspar(ep, ep^.pc); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cif}
           247: begin
             asscall;
-            if ep^.q1 = 1 then begin
+            if ep^.q = 1 then begin
               if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
               else ep^.r1 := r1
             end else begin
               if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
               else ep^.r1 := r1
             end;
-            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.pc); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cke}
@@ -3259,14 +3262,14 @@ procedure xlate;
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
-                if ep^.q1 = 1 then begin
+                if ep^.q = 1 then begin
                   if ep^.r1 <> rgxmm0 then
                     wrtins20('movq %xmm0,%1       ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
                   if ep^.r1 <> rgrax then
                     wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
                 end;
-                wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
+                wrtins20('movq ^0(%rsp),%rbp    ', ep^.roff, 0, rgnull, rgnull, nil)
               end;
               
             end;
@@ -3307,9 +3310,9 @@ procedure xlate;
       procedure getpar(ep: expptr);
       begin
           { sfr starts the list }
-          ep^.q := 0;
-          if stacklvl > parlvl then ep^.q := stacklvl-parlvl;
-          getparn(ep, ep^.q); { get those parameters into list }
+          ep^.pc := 0;
+          if stacklvl > parlvl then ep^.pc := stacklvl-parlvl;
+          getparn(ep, ep^.pc); { get those parameters into list }
           popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
           parlvl := maxint { set parameter level inactive }
@@ -3611,7 +3614,7 @@ procedure xlate;
         {sfr}
         245: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp);
           writeln(prr);
-          getexp(ep); pshstk(ep); 
+          getexp(ep); pshstk(ep);
           ep^.lb := nil;
           if (def and (val <> 0)) or not def then ep^.lb := sp;
           parlvl := stacklvl { set parameter level active }
@@ -3619,12 +3622,12 @@ procedure xlate;
 
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          read(prd,q1); writeln(prr, q1:1);
+          read(prd,q); writeln(prr, q:1);
           getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
         {cif}
-        247: begin read(prd,q1); writeln(prr, q1:1);
+        247: begin read(prd,q); writeln(prr, q:1);
           getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
         end;
 
@@ -3703,8 +3706,10 @@ procedure xlate;
         end;
 
         {rip}
-        13: begin read(prd,q); writeln(prr);
-          if estack <> nil then if estack^.op = 247{cif} then estack^.q := q
+        13: begin read(prd,q); writeln(prr, q:1);
+          ops := 0;
+          if estack <> nil then ops := estack^.op;
+          if ops = 247{cif} then estack^.roff := q
           else begin
             frereg := allreg;
             writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -3795,6 +3800,7 @@ procedure xlate;
           { compensate for ipj offsets }
           wrtins20('movq %rbp,(%rsp)  ', marksb, 0, rgnull, rgnull, nil);
           tmpoff := -(p+1)*ptrsize;
+          tmpspc := 0; { clear temps }
           stkadr := 0;
           { note ep is unused at this time }
           botstk
