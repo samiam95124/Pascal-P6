@@ -27,6 +27,8 @@
 
 pmach=0
 cmach=0
+package=0
+pgen=0
 progfile=""
 inpfile=""
 options=""
@@ -41,6 +43,14 @@ do
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+
+    elif [ "$param" = "--pgen" ]; then
+    
+        pgen=1
       
     elif [ "$param" = "--help" ]; then
 
@@ -90,7 +100,7 @@ done
 
 if [ -z "$progfile" ]; then
 
-	echo "*** Error: No compile file specified"
+	echo "*** Error: No run file specified"
 	exit 1
 	
 fi
@@ -129,7 +139,17 @@ elif [ "$cmach" = "1" ]; then
     cat $progfile.p6o $inpfile > prd
     cmach $options < $progfile.inp &> $progfile.lst
     rm temp
-    
+
+elif [ "$package" = "1" ]; then
+
+    echo Running with package
+    ./$progfile
+
+elif [ "$pgen" = "1" ]; then
+
+    echo Running with pgen
+    ./$progfile
+
 else
 
 	echo Running with pint
