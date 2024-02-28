@@ -697,7 +697,6 @@ procedure xlate;
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
                     pc: integer; { number of parameters for function/procedure }
-                    roff: address; { rip offset }
                   end;
          { temp entries for sets }
          setptr = ^setety;
@@ -1661,7 +1660,6 @@ procedure xlate;
           ep, ep2, ep3, ep4, ep5, pp: expptr;
           r1: reg; sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
           stkadr: integer; { stack address tracking }
-          ops:   instyp; { operator type save }
 
       procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp);
          var x: integer; flp: flabelp;
@@ -1794,7 +1792,7 @@ procedure xlate;
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false;
         ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0; 
-        ep^.t1a := 0; ep^.t2a := 0; ep^.pc := 0; ep^.roff := 0;
+        ep^.t1a := 0; ep^.t2a := 0; ep^.pc := 0;
       end;
       
       procedure putexp(ep: expptr);
@@ -2496,7 +2494,7 @@ procedure xlate;
 
           {cif}
           247: begin
-            asscall;
+            asscall; resreg(rgrbx);
             if ep^.q = 1 then begin
               if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
               else ep^.r1 := r1
@@ -3259,6 +3257,7 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
+              wrtins20('movq %rbp,%rbx      ', 0, 0, rgnull, rgnull, nil);
               wrtins20('movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
@@ -3268,10 +3267,9 @@ procedure xlate;
                 end else begin
                   if ep^.r1 <> rgrax then
                     wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
-                end;
-                wrtins20('movq ^0(%rsp),%rbp    ', ep^.roff, 0, rgnull, rgnull, nil)
+                end
               end;
-              
+              wrtins20('movq %rbx,%rbp      ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {cke}
@@ -3707,14 +3705,6 @@ procedure xlate;
 
         {rip}
         13: begin read(prd,q); writeln(prr, q:1);
-          ops := 0;
-          if estack <> nil then ops := estack^.op;
-          if ops = 247{cif} then estack^.roff := q
-          else begin
-            frereg := allreg;
-            writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-            wrtins20('movq ^0(%rsp),%rbp    ', q, 0, rgnull, rgnull, nil)
-          end
         end;
 
         {stri,stra}
@@ -3756,12 +3746,11 @@ procedure xlate;
 
         {strs} 
         72:begin read(prd,p,q); writeln(prr,p:1,' ', q:1); 
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          frereg := allreg; popstk(ep); assreg(ep, frereg, rgrsi, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
-          wrtins20('lea %1,^0(%2)       ', q, 0, ep^.r1, ep^.t1, nil);
-          wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins20('leaq ^0(%rdi),%rdi  ', q, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
@@ -3797,8 +3786,6 @@ procedure xlate;
           wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
           { note there is no way to know locals space in advance }
           wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
-          { compensate for ipj offsets }
-          wrtins20('movq %rbp,(%rsp)  ', marksb, 0, rgnull, rgnull, nil);
           tmpoff := -(p+1)*ptrsize;
           tmpspc := 0; { clear temps }
           stkadr := 0;
