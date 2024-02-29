@@ -18,6 +18,8 @@
 pint="0"
 pmach="0"
 cmach="0"
+package=0
+pgen=0
 full="0"
 option=""
 
@@ -173,6 +175,14 @@ do
     
         cmach=1
 
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+
+    elif [ "$param" = "--pgen" ]; then
+    
+        pgen=1
+
     elif [ "$param" = "--help" ]; then
 
         echo ""
@@ -180,18 +190,20 @@ do
         echo ""
         echo "Execution:"
         echo ""
-        echo "regress [--full|--short|--pint|--pmach|--cmach]..."
+        echo "regress [--full|--short|--pint|--pmach|--cmach|--package|--pgen]..."
         echo ""
         echo "Run the compiler through a few typical programs"
         echo "to a "gold" standard file. Each mode is cycled through in sequence."
         echo ""
         echo "The flags are one of:"
         echo ""
-        echo "--full  Run full test sequence."
-        echo "--short Run short test sequence."
-        echo "--pint  Run only pint mode."
-        echo "--pmach Run only pmach mode."
-        echo "--cmach Run only cmach mode."
+        echo "--full    Run full test sequence."
+        echo "--short   Run short test sequence."
+        echo "--pint    Run only pint mode."
+        echo "--pmach   Run only pmach mode."
+        echo "--cmach   Run only cmach mode."
+        echo "--package Run in package mode."
+        echo "--pgen    Run in pgen mode."
         echo ""
 		exit 0
 		
@@ -229,6 +241,18 @@ elif [ "$cmach" = "1" ]; then
 
     option="--cmach"
     echo "cmach run ***************************************" >> regress_report.txt
+    do_regress
+
+elif [ "$package" = "1" ]; then
+
+    option="--package"
+    echo "package run ***************************************" >> regress_report.txt
+    do_regress
+
+elif [ "$pgen" = "1" ]; then
+
+    option="--pgen"
+    echo "pgen run ***************************************" >> regress_report.txt
     do_regress
 
 else

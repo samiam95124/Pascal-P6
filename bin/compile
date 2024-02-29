@@ -23,7 +23,7 @@
 #
 # --pmach	Generate mach code and run the result through pmach.
 # --cmach	Generate mach code and run the result through cmach.
-# --pint  Generate mach code and run the result through pint (default).
+# --pint    Generate mach code and run the result through pint (default).
 # --package Generate a unified executable with mach code and interpreter.
 # --pgen    Generate assembly code via pgen for the current machine.
 #
@@ -61,7 +61,7 @@ do
 		echo
 		echo "Execute with:"
 		echo
-		echo "p6 [--pmach|--cmach|--pgen] [<sourcefile>]..."
+		echo "p6 [--pmach|--cmach|--package|--pgen] [<sourcefile>]..."
 		echo
 		echo "where <sourcefile> is the name of the source file without"
 		echo "extention. The Pascal input file\(s\) are compiled and run"
@@ -73,7 +73,7 @@ do
 		echo
 		echo "--pmach	Generate mach code and run the result through pmach."
 		echo "--cmach	Generate mach code and run the result through cmach."
-		echo "--pint  Generate mach code and run the result through pint (default)."
+		echo "--pint    Generate mach code and run the result through pint (default)."
         echo "--package Generate a packaged application and run."
         echo "--pgen    Generate assembly code with pgen for the current machine."
 		echo

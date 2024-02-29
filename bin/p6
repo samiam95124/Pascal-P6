@@ -17,6 +17,7 @@
 # --pmach	  Generate mach code and run the result through pmach.
 # --cmach	  Generate mach code and run the result through cmach.
 # --package   Generate a packaged application and run.
+# --pgen      Generate a native application and run.
 #
 # The intermediate code is placed in <file>.p6, where the <file> is the last
 # filename on the command line, which is considered the name of the program.
@@ -28,9 +29,11 @@
 
 pmach=0
 cmach=0
-progfile=""
 package=0
+pgen=0
+progfile=""
 options=""
+objects=""
 
 for param in "$@" 
 do
@@ -46,6 +49,10 @@ do
     elif [ "$param" = "--package" ]; then
     
         package=1
+
+    elif [ "$param" = "--pgen" ]; then
+    
+        pgen=1
       
     elif [ "$param" = "--help" ]; then
     
@@ -66,7 +73,9 @@ do
 		echo
 		echo "--pmach	Generate mach code and run the result through pmach."
 		echo "--cmach	Generate mach code and run the result through cmach."
+		echo "--pint    Generate mach code and run the result through pint (default)."
         echo "--package Generate a packaged application and run."
+        echo "--pgen    Generate assembly code with pgen for the current machine."
 		echo
 		echo "The intermediate code is placed in <file>.p6."
 		echo
@@ -78,7 +87,6 @@ do
         options="$options $param"
 
 	elif [ ! -z "$param.pas" ]; then
-
 	
 		if [ ! -f "$param.pas" ]; then
 		
@@ -90,7 +98,21 @@ do
 	    cp $param.pas prd
 	    pcom $options
 	    mv prr $param.p6
-	    cat $param.p6 >> temp.p6
+        if [ "$pgen" = "1" ]; then
+
+            # generate .s assembly files
+            cp $param.p6 prd
+            pgen
+            cp prr $param.s
+            # form list of objects
+            objects="$objects $param.s"
+
+        else
+
+            # generate concatenated intermediates
+	        cat $param.p6 >> temp.p6
+
+        fi
 		progfile="$param"
 		
     fi
@@ -105,9 +127,13 @@ if [ -z "$progfile" ]; then
 fi
 
 #
-# Put intermediate under the program filename
+# Put intermediate under the program filename (if not pgen)
 #
-mv temp.p6 $progfile.p6
+if [ "$pgen" = "0" ]; then
+
+    mv temp.p6 $progfile.p6
+
+fi
 
 #
 # Run combined file
@@ -148,6 +174,12 @@ elif [ "$package" = "1" ]; then
 	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
 	./$progfile $options
 	
+elif [ "$pgen" = "1" ]; then
+
+	echo Running with pgen
+    gcc -g3 -DWRDSIZ64 source/AMD64/gcc/psystem.c $objects -o $progfile -lm
+    ./$progfile
+
 else
 
 	cp $progfile.p6 prd

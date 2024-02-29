@@ -95,7 +95,7 @@ program sieve(output);
 const
 
   size = 8190;
-  iterations = 100000;
+  iterations = 10;
 
 var
 
