@@ -1,0 +1,9 @@
+#
+# Strip decorations from compiled listing files
+#
+grep -v -e 'P. Pascal .*interpreter vs. .\..\.x' $1 | \
+grep -v -e 'P. Pascal .*interpreter vs. .\..' $1 | \
+grep -v -e 'Assembling/loading program' | \
+grep -v -e 'loading program' | \
+grep -v -e 'Running program' | \
+grep -v -e 'program complete' > $2

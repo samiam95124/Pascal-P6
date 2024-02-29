@@ -205,7 +205,10 @@ if [ $? -eq 0 ]; then
     #
     # Check output matches the compare file
     #
-    diffnole $progfile.lst $cmpfile.cmp > $progfile.dif
+    strip $progfile.lst tmp1
+    strip $cmpfile.cmp tmp2
+    diff -B tmp1 tmp2 > $progfile.dif
+    # diffnole $progfile.lst $cmpfile.cmp > $progfile.dif
     ls -l $progfile.dif > $progfile.tmp
     grep ".dif" $progfile.tmp
     rm -f $progfile.tmp
