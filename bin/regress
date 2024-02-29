@@ -65,7 +65,7 @@ function do_regress {
     #
     # Run previous versions of the system and Pascal-S
     #
-    testpascals $option
+    testprog --noerrmsg $option sample_programs/pascals
     wc -l sample_programs/pascals.dif >> regress_report.txt
 
     echo "Running Pascal-P2"

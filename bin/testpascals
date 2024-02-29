@@ -8,7 +8,7 @@ compile $1 sample_programs/pascals
 #
 # Run that with the input file appended to the intermediate/object
 #
-run $1 sample_programs/pascals.inp sample_programs/pascals
+run $1 sample_programs/pascals
 if [ $? -eq 0 ]; then
 
     #

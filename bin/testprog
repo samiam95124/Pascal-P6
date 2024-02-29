@@ -10,6 +10,7 @@
 #
 # To do this, there must be the files:
 #
+# <file>.dat - The prd file to program.
 # <file>.inp - Contains all input to the program
 # <file>.cmp - Used to compare the <file>.lst program to, should
 #              contain an older, fully checked version of <file>.lst.
@@ -208,8 +209,8 @@ if [ $? -eq 0 ]; then
     strip $progfile.lst tmp1
     strip $cmpfile.cmp tmp2
     diff -B tmp1 tmp2 > $progfile.dif
-    rm tmp1
-    rm tmp2
+    rm -f tmp1
+    rm -f tmp2
     ls -l $progfile.dif > $progfile.tmp
     grep ".dif" $progfile.tmp
     rm -f $progfile.tmp
