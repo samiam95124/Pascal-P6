@@ -208,7 +208,8 @@ if [ $? -eq 0 ]; then
     strip $progfile.lst tmp1
     strip $cmpfile.cmp tmp2
     diff -B tmp1 tmp2 > $progfile.dif
-    # diffnole $progfile.lst $cmpfile.cmp > $progfile.dif
+    rm tmp1
+    rm tmp2
     ls -l $progfile.dif > $progfile.tmp
     grep ".dif" $progfile.tmp
     rm -f $progfile.tmp

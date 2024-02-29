@@ -143,11 +143,13 @@ elif [ "$cmach" = "1" ]; then
 elif [ "$package" = "1" ]; then
 
     echo Running with package
+    cp $inpfile prd
     ./$progfile < $progfile.inp &> $progfile.lst
 
 elif [ "$pgen" = "1" ]; then
 
     echo Running with pgen
+    cp $inpfile prd
     ./$progfile < $progfile.inp &> $progfile.lst
 
 else
