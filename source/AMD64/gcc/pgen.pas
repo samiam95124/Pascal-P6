@@ -2476,9 +2476,15 @@ procedure xlate;
           {cuf}
           246: begin 
             asscall;
-            if r1 = rgnull then begin
-              if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
-            end else ep^.r1 := r1;
+            if ep^.q = 1 then begin
+              if r1 = rgnull then begin
+                if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
+              end else ep^.r1 := r1
+            end else begin
+              if r1 = rgnull then begin
+                if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
+              end else ep^.r1 := r1
+            end;
             asspar(ep, ep^.pc)
           end;
 
@@ -2496,11 +2502,13 @@ procedure xlate;
           247: begin
             asscall; resreg(rgr15);
             if ep^.q = 1 then begin
-              if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
-              else ep^.r1 := r1
+              if r1 = rgnull then begin
+                if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
+              end else ep^.r1 := r1
             end else begin
-              if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
-              else ep^.r1 := r1
+              if r1 = rgnull then begin 
+                if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
+              end else ep^.r1 := r1
             end;
             asspar(ep, ep^.pc); assreg(ep^.l, rf, rgnull, rgnull)
           end;
@@ -3248,8 +3256,15 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
-              if (ep^.op = 246{cuf}) and (ep^.r1 <> rgrax) then
-                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
+              if ep^.op = 246{cuf} then begin
+                if ep^.q = 1 then begin
+                  if ep^.r1 <> rgxmm0 then
+                  wrtins20('movq %xmm0,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                end else begin
+                  if ep^.r1 <> rgrax then
+                    wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                end
+              end
             end;
 
             {cip,cif}
