@@ -51,8 +51,9 @@ function do_regress {
     #
     # Now run the ISO7185pat compliance test
     #
-    if [ "$option" = "--cmach" ]; then
+    if [ "$option" = "--cmach" ] || [ "$option" = "--package" ] || [ "$option" = "--pgen" ]; then
     
+        echo "Executing: testprog --noerrmsg $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat"
     	testprog --noerrmsg $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat
     	
     else

@@ -4,7 +4,7 @@
 #
 # Compile pascals
 #
-compile sample_programs/pascals $1
+compile $1 sample_programs/pascals
 #
 # Run that with the input file appended to the intermediate/object
 #
