@@ -140,13 +140,13 @@ elif [ "$package" = "1" ]; then
 
     echo Running with package
     cp $progfile.dat prd
-    ./$progfile < $progfile.inp &> $progfile.lst
+    ./$progfile $options < $progfile.inp &> $progfile.lst
 
 elif [ "$pgen" = "1" ]; then
 
     echo Running with pgen
     cp $progfile.dat prd
-    ./$progfile < $progfile.inp &> $progfile.lst
+    ./$progfile $options < $progfile.inp &> $progfile.lst
 
 else
 

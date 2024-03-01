@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Fri 01 Mar 2024 01:40:43 AM PST
+Fri 01 Mar 2024 10:31:41 AM PST
 Line counts should be 0 for pass
 package run ***************************************
 0 sample_programs/hello.dif
@@ -17,17 +17,17 @@ package run ***************************************
 Pascal-P2 run
 0 p2/roman.dif
 Pascal-P4 run
-237 p4/standardp.dif
+0 p4/standardp.dif
 PRT run
-444 standard_tests/iso7185prt.dif
+423 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
-Fri 01 Mar 2024 01:41:55 AM PST
+Fri 01 Mar 2024 10:32:46 AM PST
 Files md5sum ***************************************
 Source files
 1e0d706aa96a3b44b4a4e3bea6e46f20  -
 batch files
-1fba092860f6f20301d346f366ef7726  -
+94805db64e8e98433a6aff7235de019c  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
