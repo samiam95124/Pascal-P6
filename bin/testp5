@@ -48,7 +48,7 @@ cp p5/source/pint.mpp.lst standard_tests/iso7185pat.lst
 # Now compare with reference
 #
 echo "Comparing PAT result to reference"
-if [ "$1" = "--cmach" ]; then
+if [ "$1" = "--cmach" ] || [ "$1" = "--package" ]; then
 
 	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5c.cmp > standard_tests/iso7185pat.dif
 	

@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Script to test p2 compile and run
+#
+# Compile P2
+#
+echo "Compiling pcomp to intermediate code"
+compile $1 p2/pcomp
+cat p2/pcomp.err
+#
+# Copy the test file to the input file and compile it via interpreted p2
+#
+cp p2/roman.pas p2/pcomp.inp
+run $1 p2/pcomp
+cat p2/pcomp.lst
+#
+# For neatness sake, copy out the intermediate to .p2 file
+#
+cp p2/pcomp.out p2/roman.p2
+#
+# Compile pasint to intermediate code
+#
+echo Compiling pasint to intermediate
+compile $1 p2/pasint
+#
+# Add the final target program to the end of pasint.
+# This means that the version of pint will read and interpret
+# this.
+#
+# Create null input file
+#
+echo > p2/pasint.inp
+#
+# Now run pasint on pint, which runs the test program.
+#
+echo Running pasint on pint to execute test program
+cp p2/roman.p2 p2/pasint.dat
+run $1 p2/pasint
+#
+# Copy the result listing back to roman.lst, again for neatness
+#
+cp p2/pasint.lst p2/roman.lst
+#
+# Now compare with reference
+#
+echo Comparing PAT result to reference
+strip p2/roman.lst tmp1
+strip p2/roman.cmp tmp2
+diff -B tmp1 tmp2 > p2/roman.dif
+rm -f tmp1
+rm -f tmp2
+ls -l p2/roman.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s p2/roman.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi
+
+rm -f p2/pcomp.inp
+rm -f p2/pasint.inp
