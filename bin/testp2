@@ -5,13 +5,13 @@
 # Compile P2
 #
 echo "Compiling pcomp to intermediate code"
-compile p2/pcomp $1
+compile $1 p2/pcomp
 cat p2/pcomp.err
 #
 # Copy the test file to the input file and compile it via interpreted p2
 #
 cp p2/roman.pas p2/pcomp.inp
-run p2/pcomp $1
+run $1 p2/pcomp
 cat p2/pcomp.lst
 #
 # For neatness sake, copy out the intermediate to .p2 file
@@ -21,7 +21,7 @@ cp p2/pcomp.out p2/roman.p2
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
-compile p2/pasint $1
+compile $1 p2/pasint
 #
 # Add the final target program to the end of pasint.
 # This means that the version of pint will read and interpret
@@ -34,7 +34,8 @@ echo > p2/pasint.inp
 # Now run pasint on pint, which runs the test program.
 #
 echo Running pasint on pint to execute test program
-run $1 p2/roman.p2 p2/pasint
+cp p2/roman.p2 p2/pasint.dat
+run $1 p2/pasint
 #
 # Copy the result listing back to roman.lst, again for neatness
 #
