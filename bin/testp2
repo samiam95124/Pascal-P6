@@ -44,8 +44,6 @@ cp p2/pasint.lst p2/roman.lst
 # Now compare with reference
 #
 echo Comparing PAT result to reference
-diffnole p2/roman.lst p2/roman.cmp > p2/roman.dif
-
 strip p2/roman.lst tmp1
 strip p2/roman.cmp tmp2
 diff -B tmp1 tmp2 > p2/roman.dif
@@ -55,7 +53,7 @@ ls -l p2/roman.dif > tmp1
 grep ".dif" tmp1
 rm -f tmp1
 ## pass if diff file is empty
-if test -s roman.dif
+if test -s p2/roman.dif
 then
     echo "*** FAIL"
     exit 1

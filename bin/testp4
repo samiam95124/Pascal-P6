@@ -44,21 +44,30 @@ cp p4/pint.lst p4/standardp.lst
 # Now compare with reference
 #
 echo Comparing PAT result to reference
-if [ "$1" = "--cmach" ]; then
+strip p4/standardp.lst tmp1
+if [ "$1" = "--cmach" ] || [ "$1" = "--package" ]; then
 
-	diffnole p4/standardp.lst p4/standardpc.cmp > p4/standardp.dif
+    strip p4/standardpc.cmp tmp2
 	
 else
 
-	diffnole p4/standardp.lst p4/standardp.cmp > p4/standardp.dif
+    strip p4/standardp.cmp tmp2
 
 fi
-
-#
-# Show the file, so if the length is zero, it compared ok.
-#
-echo Resulting diff file length should be zero for pass
-wc -l p4/standardp.dif
+diff -B tmp1 tmp2 > p4/standardp.dif
+rm -f tmp1
+rm -f tmp2
+ls -l p4/standardp.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s p4/standardp.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi
 
 rm -f p4/pcom.inp
 rm -f p4/pint.inp
