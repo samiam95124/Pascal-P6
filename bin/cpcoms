@@ -10,7 +10,7 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas sour
 # Compile pcom to intermediate code using its binary version.
 #
 echo Compiling pcom to intermediate code
-compile source/pcom.mpp
+compile $1 source/pcom.mpp
 if [ $? -ne 0 ]
 then
 
@@ -31,7 +31,7 @@ mv source/pcom.mpp.p6 source/pcom.mpp.p6.org
 cp tmp.p6 source/pcom.mpp.p6
 echo > source/pcom.mpp.inp
 
-run source/pcom.mpp
+run $1 source/pcom.mpp
 cat source/pcom.mpp.lst
 #
 # Now we have the original intermediate from the binary version

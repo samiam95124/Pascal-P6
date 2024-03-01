@@ -10,7 +10,7 @@ cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas sour
 # Compile the final target, the PAT
 #
 echo Compiling the ISO 7185 PAT
-compile standard_tests/iso7185pat
+compile $1 standard_tests/iso7185pat
 if [ $? -ne 0 ]
 then
 
@@ -23,7 +23,7 @@ fi
 # Compile pint itself
 #
 echo Compiling pint to intermediate code
-compile source/pint.mpp
+compile $1 source/pint.mpp
 if [ $? -ne 0 ]
 then
 
@@ -48,7 +48,7 @@ echo > source/pint.mpp.inp
 # Now run pint on pint, which runs the PAT.
 #
 echo Running pint on itself, to run the ISO 7185 PAT
-run source/pint.mpp
+run $1 source/pint.mpp
 cp source/pint.mpp.lst standard_tests/iso7185pats.lst
 echo -n "Comparing PAT result to reference ... "
 diffnole standard_tests/iso7185pats.lst standard_tests/iso7185pats.cmp > standard_tests/iso7185pats.dif
