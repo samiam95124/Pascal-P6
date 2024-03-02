@@ -43,23 +43,23 @@ CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
-all: pcom pint pmach cmach pgen_gcc_AMD64 genobj spew
+all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen_gcc_AMD64 bin/genobj bin/spew
 
-pcom: source/pcom.pas
+bin/pcom: source/pcom.pas
 	pascpp --linemacro source/pcom $(CPPFLAGS64LE)
 	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
 	pascpp source/pcom $(CPPFLAGS16LE)
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom64 bin/pcom
 	
-pcom_immerr: source/pcom.pas
+bin/pcom_immerr: source/pcom.pas
 	pascpp --linemacro source/pcom $(CPPFLAGS64LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
 	pascpp --linemacro source/pcom $(CPPFLAGS16LE) -DIMM_ERR
 	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
 	cp bin/pcom64 bin/pcom
 	
-pint: source/pint.pas 
+bin/pint: source/pint.pas 
 	gcc -g -o source/externals.o -c source/externals.c
 	pascpp --linemacro source/pint  $(CPPFLAGS64LE) -DGNU_PASCAL -DEXTERNALS
 	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas $(EXTERNALLIBS)
@@ -71,30 +71,31 @@ pint: source/pint.pas
 	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas $(EXTERNALLIBS)
 	cp bin/pint64le bin/pint
 
-pmach: source/pmach.pas
+bin/pmach: source/pmach.pas
 	pascpp --linemacro source/pmach $(CPPFLAGS64LE) -DGNU_PASCAL
 	$(PC) $(PFLAGS) -o bin/pmach64le source/pmach.mpp.pas
 	cp bin/pmach64le bin/pmach
 
-cmach: source/cmach/cmach.c
+bin/cmach: source/cmach/cmach.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach/cmach.c -lm -lpthread
 	cp bin/cmach64le bin/cmach
 
-pgen_gcc_AMD64: source/pgen_gcc_AMD64.pas
-	pascpp --linemacro source/pgen_gcc_AMD64 $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pgen_gcc_AMD64 source/pgen_gcc_AMD64.mpp.pas
+bin/pgen_gcc_AMD64: source/AMD64/gcc/pgen.pas
+	pascpp --linemacro source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
+	$(PC) $(PFLAGS) -o bin/pgen_gcc_AMD64 source/AMD64/gcc/pgen.mpp.pas
 	cp bin/pgen_gcc_AMD64 bin/pgen
 
-pgen: pgen_gcc_AMD64
+bin/pgen: pgen_gcc_AMD64
 
-genobj: source/genobj.pas
+bin/genobj: source/genobj.pas
 	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas
 
-spew: source/spew.c
+bin/spew: source/spew.c
 	$(CC) $(CFLAGS) -o bin/spew source/spew.c
 	
 clean:
-	rm -f bin/pcom bin/pint 
+	rm -f bin/pcom bin/pcom64 bin/pcom16 bin/pint bin/pint64le bin/pint64be 
+	rm -f bin/pint64le bin/pint16be
 	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete
 	find . -name "*.lst" -type f -delete
