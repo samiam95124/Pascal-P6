@@ -82,8 +82,8 @@ do
         echo "Configure program for Pascal-p6"
         echo
         echo "--gpc:       Select GPC as target compiler"
-        echo "--p6c:       Select p6c as target compiler"
         echo "--ip_pascal: Select IP Pascal as target compiler"
+        echo "--iso7185:   Select ISO7185 self compile as target compiler"
         echo "--32:        Select 32 bit target"
         echo "--64:        Select 64 bit target"
         echo
@@ -94,15 +94,15 @@ do
 
         compiler="gpc"
 
-    elif [ $var = "--p6c" ]
-    then
-
-        compiler="p6c"
-
     elif [ $var = "--ip_pascal" ]
     then
 
         compiler="ip_pascal"
+
+    elif [ $var = "--iso7185" ]
+    then
+
+        compiler="iso7185"
 
     elif [ $var = "--32" ]
     then
@@ -121,21 +121,11 @@ done
 #
 # Process fixups for individual compilers
 #
-if [ $compiler = "p6c" ]; then
-    checkexists "$p6CDIR/$compiler" > /dev/null
-    if [[ $rc != 0 ]] ; then
-        echo "p6c not found - has environment variable p6CDIR been set?"
-        compiler=""
-        # fatal this for now
-        exit 1
-    fi
-else
-    checkexists $compiler
-    if [[ $rc != 0 ]] ; then
-        compiler=""
-        # fatal this for now
-        exit 1
-    fi
+checkexists $compiler
+if [[ $rc != 0 ]] ; then
+    compiler=""
+    # fatal this for now
+    exit 1
 fi
 
 if [ $compiler = "gpc" ]
@@ -186,7 +176,7 @@ then
    #
    #unixeol
 
-elif [ $compiler = "gpc" ] || [ $compiler = "p6c" ]
+elif [ $compiler = "gpc" ] || [ $compiler = "iso7185" ]
 then
 
    #
@@ -226,7 +216,6 @@ else
    echo "*** compilers"
    echo
    echo "IP Pascal  - use \"ip_pascal\""
-   echo "p6C Pascal - use \"p6C\""
    echo "GPC Pascal - use \"GPC\""
 
 fi
