@@ -8826,8 +8826,10 @@ begin cmdpos := maxcmd end;
             { check is a standard header file }
             if not (strequri('input    ', filename) or
                     strequri('output   ', filename) or
+#ifndef NOPRDPRR
                     strequri('prd      ', filename) or
                     strequri('prr      ', filename) or
+#endif
                     strequri('error    ', filename) or
                     strequri('list     ', filename) or
                     strequri('command  ', filename)) then begin
@@ -9198,8 +9200,10 @@ begin cmdpos := maxcmd end;
                   { check 'input' or 'output' appears in header for defaults }
                   if strequri('input    ', id) then inputptr^.hdr := true
                   else if strequri('output   ', id) then outputptr^.hdr := true
+#ifndef NOPRDPRR
                   else if strequri('prd      ', id) then prdptr^.hdr := true
                   else if strequri('prr      ', id) then prrptr^.hdr := true
+#endif
                   else if strequri('error    ', id) then errorptr^.hdr := true
                   else if strequri('list     ', id) then listptr^.hdr := true
                   else if strequri('command  ', id) then commandptr^.hdr := true;

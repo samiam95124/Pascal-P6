@@ -989,7 +989,7 @@ void assignexternal(filnum fn, char hfn[])
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;
     while (!eolncommand() && !eofcommand() &&
-           (isalnum(bufcommand()) || bufcommand() == '_')) {
+           (isalnum(bufcommand()) || bufcommand() == '_') || bufcommand() == '.') {
         if (i >= FILLEN) errorv(FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
