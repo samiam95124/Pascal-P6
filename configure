@@ -121,11 +121,16 @@ done
 #
 # Process fixups for individual compilers
 #
-checkexists $compiler
-if [[ $rc != 0 ]] ; then
-    compiler=""
-    # fatal this for now
-    exit 1
+if [ $compiler != "iso7185" ]
+then
+
+    checkexists $compiler
+    if [[ $rc != 0 ]] ; then
+        compiler=""
+        # fatal this for now
+        exit 1
+    fi
+
 fi
 
 if [ $compiler = "gpc" ]
