@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# Compile and run with P6 using GPC
+#
+# Execute with:
+#
+# p6 [flags] [<sourcefile>]...
+#
+# Where <sourcefile> is the name of the source file without
+# extention. The Pascal input file(s) are compiled and run
+# as a group. Any compiler errors are output to the screen.
+# Input and output to and from the running program are from
+# and to the console.
+#
+# The flags are one of:
+#
+# --pmach	  Generate mach code and run the result through pmach.
+# --cmach	  Generate mach code and run the result through cmach.
+# --package Generate a packaged application and run.
+#
+# The intermediate code is placed in <file>.p6.
+#
+
+pmach=0
+cmach=0
+progfile=""
+package=0
+
+for param in "$@" 
+do
+
+    if [ "$param" = "--pmach" ]; then
+	
+        pmach=1
+        
+    elif [ "$param" = "--cmach" ]; then
+    
+        cmach=1
+        
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+      
+    elif [ "$param" = "--help" ]; then
+    
+		echo
+		echo "Compile with P6 using GPC"
+		echo
+		echo "Execute with:"
+		echo
+		echo "p6 [--pmach|--cmach] [<sourcefile>]..."
+		echo
+		echo "where <sourcefile> is the name of the source file without"
+		echo "extention. The Pascal input file\(s\) are compiled and run"
+		echo "as a group. Any compiler errors are output to the screen."
+		echo "Input and output to and from the running program are from"
+		echo "and to the console."
+		echo
+		echo "The flags are one of:"
+		echo
+		echo "--pmach	Generate mach code and run the result through pmach."
+		echo "--cmach	Generate mach code and run the result through cmach."
+        echo "--package Generate a packaged application and run."
+		echo
+		echo "The intermediate code is placed in <file>.p6."
+		echo
+		exit 0
+		
+	elif [ ! -z "$param.pas" ]; then
+
+	
+		if [ ! -f "$param.pas" ]; then
+		
+			echo "$param.pas does not exist"
+			exit 1
+			
+		fi
+		echo Compiling $param...
+		if [ "$pmach" = "1" ]; then
+
+	        echo "{\$e+}" > temp
+	        cat temp $param.pas > prd
+	        rm temp
+	
+        elif [ "$cmach" = "1" ]; then
+
+            echo "{\$e+}" > temp
+	        cat temp $param.pas > prd
+	        rm temp
+
+        elif [ "$package" = "1" ]; then
+
+            echo "{\$e+}" > temp
+	        cat temp $param.pas > prd
+	        rm temp
+	        
+	    else
+	    
+	    	cp $param.pas prd
+	    	
+	    fi
+	    pcom
+	    mv prr $param.p6
+	    cat $param.p6 >> temp.p6
+		progfile="$param"
+		
+    fi
+    
+done
+
+if [ -z "$progfile" ]; then
+
+	echo "*** Error: No compile file specified"
+	exit 1
+	
+fi
+
+#
+# Run combined file
+#
+if [ "$pmach" = "1" ]; then
+
+	mv temp.p6 prd
+	pint
+    cp prr progfile.p6o
+	mv prr prd
+	pmach
+	
+elif [ "$cmach" = "1" ]; then
+
+	mv temp.p6 prd
+	pint
+    cp prr $progfile.p6o
+	mv prr prd
+	cmach
+	
+elif [ "$package" = "1" ]; then
+
+	mv temp.p6 prd
+	pint
+    cp prr $progfile.p6o
+	mv $progfile.p6o prd
+	genobj
+	cp prr program_code.c
+	gcc -DPACKAGE -DWRDSIZ32 -I. -o $progfile source/cmach/cmach.c -lm
+	./$progfile
+	
+else
+
+	mv temp.p6 prd
+	pint
+
+fi
