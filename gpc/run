@@ -12,11 +12,12 @@
 #
 # The files are:
 #
-# <file>.p6  - The intermediate file
-# <file>.out - The prr file produced
-# <file>.inp - The input file to the program
-# <file>.lst - The output file from the program
-# <file>.p6o - The object deck for mach, if selected
+# <file>.p6  - The intermediate file.
+# <file>.dat - The prd file to program.
+# <file>.out - The prr file produced.
+# <file>.inp - The input file to the program.
+# <file>.lst - The output file from the program.
+# <file>.p6o - The object deck for mach, if selected.
 #
 # The flags are one of:
 #
@@ -27,8 +28,9 @@
 
 pmach=0
 cmach=0
+package=0
+pgen=0
 progfile=""
-inpfile=""
 options=""
 
 for param in "$@" 
@@ -41,6 +43,14 @@ do
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+
+    elif [ "$param" = "--package" ]; then
+    
+        package=1
+
+    elif [ "$param" = "--pgen" ]; then
+    
+        pgen=1
       
     elif [ "$param" = "--help" ]; then
 
@@ -51,7 +61,7 @@ do
 		echo ""
 		echo "Execution:"
 		echo ""
-		echo "run <file> [--pmach|--cmach|--pint] [<inpfile>] <file>"
+		echo "run <file> [--pmach|--cmach|--pint] <file>"
 		echo ""
 		echo "<file> is the filename without extention."
 		echo ""
@@ -69,9 +79,6 @@ do
 		echo "--cmach Generate mach code and run the result through cmach."
 		echo "--pint  Generate mach code and run the result through pint (default)."
 		echo ""
-		echo "If the <inpfile> appears, it will be concatenated to the intermediate or"
-        echo "code file to be read by the target program."
-        echo ""
 		goto stop
 		
     elif [ "${param:0:1}" = "-" ]; then
@@ -81,7 +88,6 @@ do
 
 	else
 	
-		inpfile="$progfile"
 		progfile="$param"
 		
     fi
@@ -90,7 +96,7 @@ done
 
 if [ -z "$progfile" ]; then
 
-	echo "*** Error: No compile file specified"
+	echo "*** Error: No run file specified"
 	exit 1
 	
 fi
@@ -115,7 +121,7 @@ if [ "$pmach" = "1" ]; then
     cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
-    cat $progfile.p6o $inpfile > prd
+    cat $progfile.p6o $progfile.dat > prd
     pmach $options < $progfile.inp &> $progfile.lst
     rm temp
     
@@ -126,14 +132,26 @@ elif [ "$cmach" = "1" ]; then
     cat temp $progfile.p6 > prd
     pint > temp
     mv prr $progfile.p6o
-    cat $progfile.p6o $inpfile > prd
+    cat $progfile.p6o $progfile.dat > prd
     cmach $options < $progfile.inp &> $progfile.lst
     rm temp
-    
+
+elif [ "$package" = "1" ]; then
+
+    echo Running with package
+    cp $progfile.dat prd
+    ./$progfile $options < $progfile.inp &> $progfile.lst
+
+elif [ "$pgen" = "1" ]; then
+
+    echo Running with pgen
+    cp $progfile.dat prd
+    ./$progfile $options < $progfile.inp &> $progfile.lst
+
 else
 
 	echo Running with pint
-    cat $progfile.p6 $inpfile > prd
+    cat $progfile.p6 $progfile.dat > prd
     pint $options < $progfile.inp &> $progfile.lst
     
 fi

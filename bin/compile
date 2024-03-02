@@ -178,10 +178,10 @@ elif [ "$package" = "1" ]; then
 	mv $progfile.p6o prd
 	genobj
 	cp prr program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
 
 elif [ "$pgen" = "1" ]; then
 
-    gcc -g3 -DWRDSIZ64 source/AMD64/gcc/psystem.c $objects -o $progfile -lm
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c $objects -o $progfile -lm
 
 fi

@@ -6,3 +6,4 @@
 # need to set this each time.
 #
 PATH="$PWD/bin:$PATH"
+export PASCALP6="$PWD"
