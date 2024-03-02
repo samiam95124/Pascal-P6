@@ -167,18 +167,18 @@ then
    # Set up for IP Pascal
    #
    echo "Set up for IP Pascal"
-   cp ip_pascal/p6.bat      bin/p6.bat
-   cp ip_pascal/compile.bat bin/compile.bat
-   cp ip_pascal/run.bat     bin/run.bat
+   cp hosts/ip_pascal/p6.bat      bin/p6.bat
+   cp hosts/ip_pascal/compile.bat bin/compile.bat
+   cp hosts/ip_pascal/run.bat     bin/run.bat
 
-   cp ip_pascal/p6          bin/p6
-   cp ip_pascal/compile     bin/compile
-   cp ip_pascal/run         bin/run
+   cp hosts/ip_pascal/p6          bin/p6
+   cp hosts/ip_pascal/compile     bin/compile
+   cp hosts/ip_pascal/run         bin/run
 
-   cp ip_pascal/Makefile    .
+   cp hosts/ip_pascal/Makefile    .
 
-   cp ip_pascal/standard_tests/iso7185pat.cmp standard_tests
-   cp ip_pascal/standard_tests/iso7185pats.cmp standard_tests
+   cp hosts/ip_pascal/standard_tests/iso7185pat.cmp standard_tests
+   cp hosts/ip_pascal/standard_tests/iso7185pats.cmp standard_tests
 
    #
    # IP Pascal does not care about line endings, but returning to DOS mode
@@ -193,22 +193,22 @@ then
    # Set up for chosen Pascal compiler
    #
    echo "Set up for $compiler"
-   cp $compiler/bit$bits/p6.bat bin/p6.bat
-   cp $compiler/compile.bat     bin/compile.bat
-   cp $compiler/run.bat         bin/run.bat
+   cp hosts/$compiler/bit$bits/p6.bat bin/p6.bat
+   cp hosts/$compiler/compile.bat     bin/compile.bat
+   cp hosts/$compiler/run.bat         bin/run.bat
 
-   cp $compiler/bit$bits/p6     bin/p6
-   cp $compiler/compile         bin/compile
-   cp $compiler/run             bin/run
+   cp hosts/$compiler/bit$bits/p6     bin/p6
+   cp hosts/$compiler/compile         bin/compile
+   cp hosts/$compiler/run             bin/run
 
-   cp $compiler/bit$bits/Makefile    .
+   cp hosts/$compiler/bit$bits/Makefile    .
 
-   cp $compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
-   cp $compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
-   cp $compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
+   cp hosts/$compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
+   cp hosts/$compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
+   cp hosts/$compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
    
-   cp $compiler/bit$bits/p4/standardp.cmp p4
-   cp $compiler/bit$bits/p4/standardpc.cmp p4
+   cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
+   cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
 
    #
    # GPC has been problematic for line endings. This changes them
