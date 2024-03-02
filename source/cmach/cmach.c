@@ -3245,7 +3245,7 @@ void main (long argc, char *argv[])
 #else
 #ifndef PACKAGE
     if (argc < 2) {
-        printf("*** Usage: pmach <codefile> [<params>]...\n");
+        printf("*** Usage: cmach <codefile> [<params>]...\n");
         finish(1);
     }
     fp = fopen(*argv, "r");
