@@ -96,9 +96,7 @@ do
 			
 		fi
 		echo Compiling $param...
-	    cp $param.pas prd
-	    pcom $options >> temp.err
-	    mv prr $param.p6
+	    pcom $param.pas $param.p6 $options >> temp.err
         if [ "$pgen" = "1" ]; then
 
             # generate .s assembly files

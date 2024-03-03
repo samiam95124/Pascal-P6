@@ -847,7 +847,7 @@ void chkdef(address a)
 
 /* Command line processing */
 
-void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
+void getcommandline(int argc, char* argv[], cmdbuf cb, cmdnum* l)
 {
     cmdinx i;
     long x;
@@ -3163,7 +3163,7 @@ void sinins()
   }
 }
 
-void main (long argc, char *argv[])
+void main (int argc, char *argv[])
 
 {
     FILE* fp;
@@ -3250,10 +3250,10 @@ void main (long argc, char *argv[])
     }
     fp = fopen(*argv, "r");
     if (!fp) {
-        printf("*** Cannot open file %s\n", **argv);
+        printf("*** Cannot open file %s\n", *argv);
         finish(1);
     }
-    *argv++; *argc--; /* skip that parameter */
+    argv++; argc--; /* skip that parameter */
 #endif
 #endif
 #ifndef PACKAGE

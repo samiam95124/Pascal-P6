@@ -1,5 +1,5 @@
 #ifndef FPC_PASCAL
-(*$c+,t-,d-,l-*)
+(*$c+,t-,d-,l+*)
 #endif
 {*******************************************************************************
 *                                                                              *
@@ -240,6 +240,10 @@ const
       maxstr      = 31999;  { maximum size of addressing for program/var }
       maxtop      = 32000;  { maximum size of addressing for program/var+1 }
       maxdef      = 4000;   { maxstr / 8 for defined bits }
+#elif SHORT_STORE
+      maxstr     =  2000000;   { maximum size of addressing for program/var }
+      maxtop     =  2000001;   { maximum size of addressing for program/var+1 }
+      maxdef      = 250000;    { maxstr /8 for defined bits }
 #else
       maxstr      = 16777215;  { maximum size of addressing for program/var }
       maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
