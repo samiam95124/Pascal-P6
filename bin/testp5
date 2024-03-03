@@ -48,21 +48,29 @@ cp p5/source/pint.mpp.lst standard_tests/iso7185pat.lst
 # Now compare with reference
 #
 echo "Comparing PAT result to reference"
+strip standard_tests/iso7185pat.lst tmp1
 if [ "$1" = "--cmach" ] || [ "$1" = "--package" ]; then
 
-	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5c.cmp > standard_tests/iso7185pat.dif
+    strip standard_tests/iso7185patp5c.cmp tmp2
 	
 else
 
-	diffnole standard_tests/iso7185pat.lst standard_tests/iso7185patp5.cmp > standard_tests/iso7185pat.dif
+    strip standard_tests/iso7185patp5.cmp tmp2
 
 fi
-
-#
-# Show the file, so if the length is zero, it compared ok.
-#
-echo "Resulting diff file length should be zero for pass"
-wc -l standard_tests/iso7185pat.dif
+diff -B tmp1 tmp2 > standard_tests/iso7185pat.dif
+rm -f tmp1 tmp2
+ls -l standard_tests/iso7185pat.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s standard_tests/iso7185pat.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi
 
 rm -f p5/source/pcom.inp
 rm -f p5/source/pint.inp

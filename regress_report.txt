@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Sat 02 Mar 2024 11:57:28 PM PST
+Sun 03 Mar 2024 12:56:25 AM PST
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -24,6 +24,14 @@ Pascaline run
 0 pascaline_tests/pascaline.dif
 Debug test run
 0 pascaline_tests/debug_test.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+4 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
 pmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -45,6 +53,14 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline_pmach.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+134106 source/pcom.mpp.dif
+pint self compile
+0 standard_tests/iso7185pats.dif
 cmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -66,6 +82,14 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline_cmach.dif
+Pascal-P5 run
+0 standard_tests/iso7185pat.dif
+Pascal-P6 run
+0 standard_tests/iso7185pat.dif
+pcom self compile
+134106 source/pcom.mpp.dif
+pint self compile
+1158 standard_tests/iso7185pats.dif
 package run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
@@ -87,10 +111,18 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
-Sun 03 Mar 2024 12:01:04 AM PST
+Pascal-P5 run
+7 standard_tests/iso7185pat.dif
+Pascal-P6 run
+7 standard_tests/iso7185pat.dif
+pcom self compile
+134106 source/pcom.mpp.dif
+pint self compile
+1165 standard_tests/iso7185pats.dif
+Sun 03 Mar 2024 03:41:44 AM PST
 Files md5sum ***************************************
 Source files
-a3aceb6535fd27ba3e3bc69020d8eccd  -
+4d3687764d66a8b4f5533077a6b4c16a  -
 batch files
 70b6ae61bc365fc19fa4499758381fda  -
 P2 files
