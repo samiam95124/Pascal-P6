@@ -3471,12 +3471,12 @@ begin cmdpos := maxcmd end;
     ic := ic + 1; mes(123(*cif*))
   end (*gen0*) ;
 
-  procedure gencuv(fp1,fp2: integer; fcp: ctp);
+  procedure gencuv(fp1: integer; fcp: ctp);
   begin
     if prcode then
       begin
         write(prr,mn[91(*cuv*)]:11,' ':5);
-        if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp2:12);
+        if chkext(fcp) then prtflabel(fcp) else writeln(prr,fp1:12);
         writeln(prr);
         mes(91)
       end;
@@ -5740,11 +5740,11 @@ begin cmdpos := maxcmd end;
                     fcp := ovrpf(fcp); if fcp = nil then error(516);
                     if fcp^.pfattr <> fpaoverride then error(507);
                     { inherited calls will never be far }
-                    gencuv(locpar,fcp^.pfvaddr,nil)
+                    gencuv(fcp^.pfvaddr,nil)
                   end else begin
                     lcp := fcp^.grppar;
                     if lcp^.pfvid <> nil then 
-                      gencuv(locpar,lcp^.pfvid^.vaddr,lcp^.pfvid)
+                      gencuv(lcp^.pfvid^.vaddr,lcp^.pfvid)
                   end
                 end else begin
                   if inherit then error(234);
@@ -7494,7 +7494,9 @@ begin cmdpos := maxcmd end;
                     else error(2);
                     oldlev := level; oldtop := top; pushlvl(false, lcp);
                     lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy, false, noop);
-                    lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
+                    lc := lcs; 
+                    if lcp <> nil then 
+                      begin lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp) end;
                     if not (sy in fsys+[semicolon,rparent]) then
                       begin error(7);skip(fsys+[semicolon,rparent]) end;
                     level := oldlev; putdsps(oldtop); top := oldtop
@@ -7525,7 +7527,9 @@ begin cmdpos := maxcmd end;
                         oldlev := level; oldtop := top; pushlvl(false, lcp);
                         lcs := lc;
                         parameterlist([colon,semicolon,rparent],lcp2,dummy, false, noop);
-                        lc := lcs; if lcp <> nil then lcp^.pflist := lcp2;
+                        lc := lcs; 
+                        if lcp <> nil then 
+                          begin lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp) end;
                         if not (sy in fsys+[colon]) then
                           begin error(7);skip(fsys+[comma,semicolon,rparent]) end;
                         if sy = colon then
@@ -7923,9 +7927,9 @@ begin cmdpos := maxcmd end;
         parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
       else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
       if not forw then begin
-        lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist); 
+        lcp^.pflist := lcp1; lcp^.pfnum := parnum(lcp); 
+        lcp^.locpar := parmspc(lcp^.pflist);
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
-        lcp^.pfnum := parnum(lcp);
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
