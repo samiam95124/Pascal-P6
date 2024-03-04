@@ -388,7 +388,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
       setnum      : integer; { set constants label count }
-      parlvl      : integer; { parameter level }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
 
@@ -696,7 +695,6 @@ procedure xlate;
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
-                    pc: integer; { number of parameters for function/procedure }
                   end;
          { temp entries for sets }
          setptr = ^setety;
@@ -1792,7 +1790,7 @@ procedure xlate;
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.fn := nil; ep^.lb := nil; ep^.lt := nil; ep^.free := false;
         ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0; 
-        ep^.t1a := 0; ep^.t2a := 0; ep^.pc := 0;
+        ep^.t1a := 0; ep^.t2a := 0;
       end;
       
       procedure putexp(ep: expptr);
@@ -2476,7 +2474,7 @@ procedure xlate;
           {cuf}
           246: begin 
             asscall;
-            if ep^.q = 1 then begin
+            if ep^.q1 = 1 then begin
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
@@ -2485,17 +2483,17 @@ procedure xlate;
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
               end else ep^.r1 := r1
             end;
-            asspar(ep, ep^.pc)
+            asspar(ep, ep^.q)
           end;
 
           {cup}
           12: begin
-            asscall; asspar(ep, ep^.pc)
+            asscall; asspar(ep, ep^.q)
           end;
 
           {cip}
           113: begin
-            asscall; asspar(ep, ep^.pc); assreg(ep^.l, rf, rgnull, rgnull)
+            asscall; asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cif}
@@ -2510,7 +2508,7 @@ procedure xlate;
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
               end else ep^.r1 := r1
             end;
-            asspar(ep, ep^.pc); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cke}
@@ -3257,7 +3255,7 @@ procedure xlate;
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
-                if ep^.q = 1 then begin
+                if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
                   wrtins20('movq %xmm0,%1        ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
@@ -3322,13 +3320,9 @@ procedure xlate;
       { get parameters of procedure/function/system call to parameters list }
       procedure getpar(ep: expptr);
       begin
-          { sfr starts the list }
-          ep^.pc := 0;
-          if stacklvl > parlvl then ep^.pc := stacklvl-parlvl;
-          getparn(ep, ep^.pc); { get those parameters into list }
+          getparn(ep, ep^.q); { get those parameters into list }
           popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
-          parlvl := maxint { set parameter level inactive }
       end;
 
       { reverse parameters list }
@@ -3629,18 +3623,17 @@ procedure xlate;
           writeln(prr);
           getexp(ep); pshstk(ep);
           ep^.lb := nil;
-          if (def and (val <> 0)) or not def then ep^.lb := sp;
-          parlvl := stacklvl { set parameter level active }
+          if (def and (val <> 0)) or not def then ep^.lb := sp
         end;
 
         {cuf}
         246: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          read(prd,q); writeln(prr, q:1);
+          read(prd,q,q1); writeln(prr, ' ', q:1, ' ', q1:1);
           getexp(ep); ep^.fn := sp; getpar(ep); pshstk(ep);
         end;
 
         {cif}
-        247: begin read(prd,q); writeln(prr, q:1);
+        247: begin read(prd,q,q1); writeln(prr, q:1, ' ', q1:1);
           getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
         end;
 
@@ -3705,14 +3698,14 @@ procedure xlate;
 
         {cup}
         12: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
-          writeln(prr);
+          read(prd, q); writeln(prr, ' ', q:1);
           getexp(ep); ep^.fn := sp; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
         end;
 
         {cip}
-        113: begin writeln(prr);
+        113: begin read(prd, q); writeln(prr, q:1);
           getexp(ep); popstk(ep^.l); getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
@@ -4296,7 +4289,6 @@ begin (* main *)
   if stackelsize = 0 then; 
 
   csttbl := nil; strnum := 0; realnum := 0; setnum := 0; gblsiz := 0; 
-  parlvl := maxint;
 
   for c1 := 'a' to 'z' do option[c1] := false;
 
