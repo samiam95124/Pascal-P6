@@ -362,6 +362,7 @@ type
                              varsaddr: addrrange; varssize: addrrange;
                              vartl: integer);
                      proc, func:  (pfaddr: addrrange; pflist: ctp; { param list }
+                                   pfnum: integer; { number of parameters }
                                    locpar: addrrange; { size of parameters }
                                    locstr: addrrange; { start of locals }
                                    locspc: addrrange; { space occupied by locals }
@@ -3449,17 +3450,23 @@ begin cmdpos := maxcmd end;
             prtpartyp(fcp)
           end
         end else prtlabel(fp2);
-        if fcp <> nil then write(prr, ' ', ord(fcp^.idtype = realptr):1);
+        if fcp <> nil then begin
+          write(prr, ' ', fcp^.pfnum:1);
+          if fop = 122(*cuf*) then write(prr, ' ', ord(fcp^.idtype = realptr):1)
+        end;
         writeln(prr);
         mesl(fp1)
       end;
     ic := ic + 1
   end;
 
-  procedure gencif(fcp: ctp);
+  procedure gencipcif(fop: oprange; fcp: ctp);
   begin
-    if prcode then write(prr,mn[123(*cif*)]:11,' ':4);
-    if fcp <> nil then write(prr, ' ', ord(fcp^.idtype = realptr):1);
+    if prcode then write(prr,mn[fop]:11,' ':4);
+    if fcp <> nil then begin
+      write(prr, ' ', fcp^.pfnum:1);
+      if fop = 123(*cif*) then write(prr, ' ', ord(fcp^.idtype = realptr):1);
+    end;
     writeln(prr);
     ic := ic + 1; mes(123(*cif*))
   end (*gen0*) ;
@@ -5752,8 +5759,8 @@ begin cmdpos := maxcmd end;
         end
       else begin { call procedure or function parameter }
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
-        if fcp^.klass = func then gencif(fcp)
-        else gen0(67(*cip*));
+        if fcp^.klass = func then gencipcif(123(*cif*), fcp)
+        else gencipcif(67(*cip*), fcp);
         gen1(32(*rip*),lcs+lsize+soff);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
@@ -7918,6 +7925,7 @@ begin cmdpos := maxcmd end;
       if not forw then begin
         lcp^.pflist := lcp1; lcp^.locpar := parmspc(lcp^.pflist); 
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
+        lcp^.pfnum := parnum(lcp);
         if ovrl or (fsy = operatorsy) then begin { compare against overload group }
           lcp2 := lcp^.grppar; { index top of overload group }
           chkovlpar(lcp2, lcp)
