@@ -2419,20 +2419,22 @@ procedure xlate;
 
           {mod}
           49: begin 
+            dstreg(rgrax); dstreg(rgrdx);
             if (r1 = rgnull) and (rgrdx in rf) then ep^.r1 := rgrdx
             else ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            if ep^.r1 <> rgrax then dstreg(rgrax)
+            assreg(ep^.l, rf, rgrax, rgnull); resreg(rgrax); 
+            assreg(ep^.r, rf, rgnull, rgnull);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
           {dvi}
           53: begin 
+            dstreg(rgrax); dstreg(rgrdx);
             if (r1 = rgnull) and (rgrax in rf) then ep^.r1 := rgrax
             else ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            assreg(ep^.l, rf, rgrax, rgnull); assreg(ep^.r, rf, rgnull, rgnull);
-            if ep^.r1 <> rgrax then dstreg(rgrax)
+            assreg(ep^.l, rf, rgrax, rgnull); resreg(rgrax); 
+            assreg(ep^.r, rf, rgnull, rgnull);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
           {mpi}
@@ -3209,6 +3211,10 @@ procedure xlate;
             {mod}
             49: begin 
               wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull, nil);
+              wrtins20('subq $0,%rax        ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('jns 1f    ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10('decq %rdx ', 0, 0, rgnull, rgnull, sp);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins10('idivq %1  ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrdx then
                 wrtins20('movq %rdx,%1        ', 0, 0, ep^.r1, rgnull, nil)
