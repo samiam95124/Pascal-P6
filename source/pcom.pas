@@ -3453,7 +3453,7 @@ begin cmdpos := maxcmd end;
         if fcp <> nil then begin
           write(prr, ' ', fcp^.pfnum:1);
           if fop = 122(*cuf*) then write(prr, ' ', ord(fcp^.idtype = realptr):1)
-        end;
+        end else write(prr, ' 0');
         writeln(prr);
         mesl(fp1)
       end;

@@ -2010,7 +2010,7 @@ procedure xlate;
       begin
         isf := false; 
         if insf[ep^.op] then isf := true
-        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q = 1) then isf := true
+        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q1 = 1) then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
             isf := true;
@@ -3274,7 +3274,7 @@ procedure xlate;
               wrtins20('movq ^0(%1),%rbp    ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
-                if ep^.q = 1 then begin
+                if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
                     wrtins20('movq %xmm0,%1       ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
