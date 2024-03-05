@@ -604,6 +604,17 @@ begin i := 1;
   end
 end;
 
+{ write variable length string with escaped quotes to file }
+procedure writevq(var f: text; s: strvsp; fl: integer);
+var i: integer; c: char;
+begin i := 1;
+  while fl > 0 do begin
+    c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
+    if (c = '"') or (c = '\') then write(f, '\'); write(f, c); fl := fl-1;
+    if i > varsqt then begin s := s^.next; i := 1 end
+  end
+end;
+
 { write padded string to file }
 procedure writevp(var f: text; s: strvsp);
 var l: integer;
@@ -4002,12 +4013,12 @@ procedure xlate;
           wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
           wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
           if (op = 130{retc}) or (op = 131{retb}) then
             wrtins20('andq $0,%rax        ', 255, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rcx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
@@ -4019,11 +4030,11 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rbx  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
           wrtins20('movsd (%rsp),%xmm0  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('pushq %rcx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
@@ -4211,7 +4222,7 @@ procedure xlate;
        case csttbl^.ct of
          cstr: begin writeln(prr, 'string', csttbl^.strn:1, ':');
            write(prr, '        .string "');
-           writev(prr, csttbl^.str, csttbl^.strl);
+           writevq(prr, csttbl^.str, csttbl^.strl);
            writeln(prr, '"') end;
          creal: begin writeln(prr, 'real', csttbl^.realn:1, ':');
            writeln(prr, '        .double ', csttbl^.r) end;
