@@ -2624,7 +2624,7 @@ procedure xlate;
       end;
 
       procedure genexp(ep: expptr);
-      var r: reg; ep2: expptr; i: integer;
+      var r: reg; ep2: expptr; i: integer; stkadrs: integer;
 
       { push parameters in order }
       procedure pshpar(pp: expptr);
@@ -3269,6 +3269,7 @@ procedure xlate;
             {cup,cuf}
             12, 246: begin
               genexp(ep^.sl); { process sfr start link }
+              stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
               wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
@@ -3279,12 +3280,14 @@ procedure xlate;
                   if ep^.r1 <> rgrax then
                     wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
                 end
-              end
+              end;
+              stkadr := stkadrs { restore stack position }
             end;
 
             {cip,cif}
             113,247: begin
               genexp(ep^.sl); { process sfr start link }
+              stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
               wrtins20('movq %rbp,%r15      ', 0, 0, rgnull, rgnull, nil);
@@ -3299,7 +3302,8 @@ procedure xlate;
                     wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
-              wrtins20('movq %r15,%rbp      ', 0, 0, rgnull, rgnull, nil)
+              wrtins20('movq %r15,%rbp      ', 0, 0, rgnull, rgnull, nil);
+              stkadr := stkadrs { restore stack position }
             end;
 
             {cke}
