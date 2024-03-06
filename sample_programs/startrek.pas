@@ -87,7 +87,6 @@ FUNCTION random (low, hi : INTEGER) : INTEGER;
 const a = 16807;
       m = 2147483647;
 var gamma: integer;
-s: integer;
 BEGIN
   gamma := a*(rndseq mod (m div a))-(m mod a)*(rndseq div (m div a));
   if gamma > 0 then rndseq := gamma else rndseq := gamma+m;
@@ -170,7 +169,6 @@ BEGIN
              k := TRUNC (EXPp (-random (0, galaxysize)) * maxdigit) DIV 2
           until k <= maxdigit;
           klingnum := k;
-;writeln('Initialize: coordinates: ', i:1, ',', j:1, ' klingnum: ', klingnum:1);
           totalklingons := totalklingons + klingnum;
           IF random (0, SQR (galaxysize)) < 3 THEN
             fedbasenum := 1
@@ -226,13 +224,9 @@ PROCEDURE klingonattack;
 VAR hit, i : INTEGER;
     shiptype : packed array [1..8] of char;
 BEGIN
-;writeln('klingonattack: begin');
   WITH galaxy[curquad.x, curquad.y] DO
-begin
-;writeln('curquad: ', curquad.x, ',', curquad.y, ' klingbasenum: ', klingbasenum:1, ' klingnum: ', klingnum:1);
     IF (klingbasenum <> 0) OR (klingnum <> 0) THEN
       BEGIN
-;writeln('klingonattack: 1');
         IF condition = cdocked THEN
           WRITELN ('Starbase shields protect the Enterprise')
         ELSE
@@ -243,7 +237,6 @@ begin
                   hit := TRUNC (energyleft /
                                 distance (position.x, position.y, cursect) *
                                 (10 + random (0, 10)) / 10);
-;writeln('klingonattack: hit: ', hit);
                   curenergy := curenergy - hit;
                   IF energyleft = entenergy THEN
                     shiptype := 'Starbase'
@@ -255,7 +248,6 @@ begin
                           ' (', curenergy:1, ' left)');
                 END {of IF energyleft};
       END {of IF (};
-end
 END {of klingonattack};
 
 PROCEDURE printdigit (number : INTEGER; VAR mustprint : BOOLEAN);
@@ -445,12 +437,10 @@ VAR course : INTEGER;
   PROCEDURE moveintra (VAR xpos, ypos, xinc, yinc : REAL;
                         course : INTEGER; warp : REAL);
   BEGIN
-;writeln('moveintra: begin: ', radians (course));
     xinc := -COS (radians (course));
     yinc := SIN (radians (course));
     xpos := cursect.x;
     ypos := cursect.y;
-;writeln('moveintra: ', xinc:1, ' ', yinc:1, ' ', xpos:1, ' ', ypos:1);
     WHILE (ROUND (xpos) IN [0..quadsize]) AND
           (ROUND (ypos) IN [0..quadsize]) AND (warp >= 0.125) DO
       IF quadrant[ROUND (xpos), ROUND (ypos)] = snothing THEN
@@ -464,12 +454,10 @@ VAR course : INTEGER;
   END {of moveintra};
 
 BEGIN {of moveenterprise}
-;writeln('moveenterprise: begin: curquad: ', curquad.x:1, ',', curquad.y:1);
   WRITE ('Course: ');
   READLN (course);
   WRITE ('Warp factor (0-12): ');
   READLN (warp);
-;writeln('Warp: ', warp:1);
   IF (warp < 0.0) OR (warp > 12.0) OR
      ((warp > 0.2) AND (device[mindevice].downtime <> 0)) THEN
     WRITELN ('Can''t move that fast !!')
@@ -480,7 +468,6 @@ BEGIN {of moveenterprise}
       handledamage;
       quadrant[cursect.x, cursect.y] := snothing;
       moveintra (xpos, ypos, xinc, yinc, course, warp);
-;writeln('moveenterprise: 0: xpos: ', xpos:1);
       IF (ROUND (xpos) IN [0..quadsize]) AND
                                          (ROUND (ypos) IN [0..quadsize]) THEN
         IF quadrant[ROUND (xpos), ROUND (ypos)] = sfedbase THEN
@@ -489,7 +476,6 @@ BEGIN {of moveenterprise}
                      ROUND (xpos):1, '-', ROUND (ypos):1);
             moveintra (xpos, ypos, xinc, yinc, (course + 180) MOD 360, warp);
           END {of IF};
-;writeln('moveenterprise: 0.1: xpos: ', xpos:1, ' round(xpos): ', round(xpos):1);
       IF (ROUND (xpos) IN [0..quadsize]) AND
                                          (ROUND (ypos) IN [0..quadsize]) THEN
         BEGIN
@@ -507,19 +493,16 @@ BEGIN {of moveenterprise}
         END {of IF ROUND}
       ELSE
         BEGIN           {Inter-Quadrant moving}
-;writeln('moveenterprise: 1: curquad: ', curquad.x:1, ',', curquad.y:1);
           curquad.x := interval (TRUNC (curquad.x + warp * xinc +
                                          cursect.x * 0.125), 0, galaxysize);
           curquad.y := interval (TRUNC (curquad.y + warp * yinc +
                                          cursect.y * 0.125), 0, galaxysize);
-;writeln('moveenterprise: 2: curquad: ', curquad.x:1, ',', curquad.y:1);
           setupquad (curquad, cursect);
         END {of IF};
     END {of ELSE};
   setcondition;
   IF condition = cdocked THEN
     reinitialize;
-;writeln('moveenterprise: end: curquad: ', curquad.x:1, ',', curquad.y:1);
 END {of moveenterprise};
 
 PROCEDURE firephasers;
@@ -701,7 +684,7 @@ BEGIN
   REPEAT
     WRITE ('Command: ');
     READLN (ch);
-    WRITELN(ch);
+    WRITELN;
     validcommand := ch IN [mindevice..maxdevice];
     IF validcommand THEN
       BEGIN
@@ -731,15 +714,11 @@ BEGIN
         WRITELN ('7 = Self destruct');
       END {of ELSE};
   UNTIL validcommand;
-;writeln('command: 1');
   IF ch IN ['0', '3', '4'] THEN
     BEGIN
-;writeln('command: 1.1');
       klingonattack;
-;writeln('command: 1.2');
       printquadrant;
     END {of IF};
-;writeln('command: 2');
 END {of command};
 
 PROCEDURE instructions;
@@ -991,4 +970,3 @@ BEGIN {of startrek}
   99:
 
 END {of startrek}.
-
