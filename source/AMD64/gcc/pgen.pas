@@ -1549,11 +1549,12 @@ procedure xlate;
                  if ch in  ['p','m'] then preamble;
                  getnxt; skpspc; getsds;
                  for i := 1 to snl do begin
-                   { translate '@' to '$' for type spagetti demarcate, and '(' 
-                     or ')' to '_' because they are invalid }
+                   { translate '@' to '$' for type spagetti demarcate, and 
+                     characters in the set ['(',')',',',':','-','+'] to '_' 
+                     because they are invalid }
                    if sn[i] = '@' then sn[i] := '$'
                    else 
-                     if sn[i] in ['(',')',',',':'] then sn[i] := '_'
+                     if sn[i] in ['(',')',',',':','-','+'] then sn[i] := '_'
                  end;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
