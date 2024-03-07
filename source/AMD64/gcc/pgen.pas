@@ -2081,7 +2081,11 @@ procedure xlate;
         { calling convention says can trash these }
         dstreg(rgrax); dstreg(rgrcx); dstreg(rgrdx); dstreg(rgrsi); 
         dstreg(rgrdi); dstreg(rgr8); dstreg(rgr9); dstreg(rgr10); 
-        dstreg(rgr11)
+        dstreg(rgr11); dstreg(rgxmm0); dstreg(rgxmm1); dstreg(rgxmm2); 
+        dstreg(rgxmm3); dstreg(rgxmm4); dstreg(rgxmm5); dstreg(rgxmm6); 
+        dstreg(rgxmm7); dstreg(rgxmm8); dstreg(rgxmm9); dstreg(rgxmm10);
+        dstreg(rgxmm11); dstreg(rgxmm12); dstreg(rgxmm13); dstreg(rgxmm14); 
+        dstreg(rgxmm15)
       end;
 
       begin
@@ -2753,9 +2757,15 @@ procedure xlate;
 
       begin { genexp }
         if ep <> nil then begin
-          for r := rgrax to rgr15 do if r in ep^.rs then begin
-              wrtins10('pushq %1  ', 0, 0, r, rgnull, nil); 
-              stkadr := stkadr-intsize
+          for r := rgrax to rgxmm15 do if r in ep^.rs then begin
+              if r in [rgrax..rgr15] then begin
+                wrtins10('pushq %1  ', 0, 0, r, rgnull, nil); 
+                stkadr := stkadr-intsize
+              end else begin
+                wrtins20('subq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+                wrtins20('movsd %1,(%rsp)     ', 0, 0, r, rgnull, nil);
+                stkadr := stkadr-realsize
+              end
           end;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
@@ -3321,9 +3331,15 @@ procedure xlate;
             end;
 
           end;
-          for r := rgr15 downto rgrax do if r in ep^.rs then begin
-            wrtins20('popq %1             ', 0, 0, r, rgnull, nil);
-            stkadr := stkadr-intsize
+          for r := rgxmm15 downto rgrax do if r in ep^.rs then begin
+            if r in [rgrax..rgr15] then begin
+              wrtins20('popq %1             ', 0, 0, r, rgnull, nil);
+              stkadr := stkadr-intsize
+            end else begin
+              wrtins20('movsd (%rsp),%1     ', 0, 0, r, rgnull, nil);
+              wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+              stkadr := stkadr-intsize
+            end
           end
         end
       end;
