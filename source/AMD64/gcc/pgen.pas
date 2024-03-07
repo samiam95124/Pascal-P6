@@ -4038,6 +4038,13 @@ procedure xlate;
         129: begin read(prd,q); writeln(prr, q:1);
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          { restore protected registers }
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
           wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
