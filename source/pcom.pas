@@ -203,6 +203,7 @@ const
    maxftl     = 516; { maximum fatal error }
    maxcmd     = 250; { size of command line buffer }
    maxlin     = 250; { size of source line buffer }
+   parfld     = 24;  { field length for intermediate parameters }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -3083,6 +3084,14 @@ begin cmdpos := maxcmd end;
     wrttypsub(tp) { issue type }
   end;
 
+  function digits(i: integer): integer;
+  var dc: integer;
+  begin
+    dc := 1; if i < 0 then begin i := -i; dc := dc+1 end;
+    while i > 0 do begin i := i div 10; dc := dc+1 end;
+    digits := dc
+  end;
+
   procedure prtlabel(labname: integer);
   begin 
     if prcode then begin
@@ -3100,6 +3109,15 @@ begin cmdpos := maxcmd end;
       write(prr, '.');
       writevp(prr, fcp^.name)
     end
+  end;
+
+  function lenflabel(fcp: ctp): integer;
+  var ll: integer;
+  begin
+    ll := 2+1+lenpv(fcp^.name);
+    if fcp^.klass = vars then ll := ll+lenpv(fcp^.vmod^.mn)
+    else ll := ll+lenpv(fcp^.fmod^.mn);
+    lenflabel := ll
   end;
 
   procedure prtpartyp(fcp: ctp);
@@ -3122,6 +3140,11 @@ begin cmdpos := maxcmd end;
   begin
     if prcode then prtlabel(labname)
   end (*putlabel*);
+
+  function lenlabel(labnam: integer): integer;
+  begin
+    lenlabel := 2+lenpv(nammod)+1+digits(labnam)
+  end;
 
   procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
   var fllp: lbp; { found label entry }
@@ -3307,23 +3330,15 @@ begin cmdpos := maxcmd end;
     end
   end;
 
-  function digits(i: integer): integer;
-  var dc: integer;
-  begin
-    dc := 1; if i < 0 then begin i := -i; dc := dc+1 end;
-    while i > 0 do begin i := i div 10; dc := dc+1 end;
-    digits := dc
-  end;
-
   procedure par1(a: integer);
   begin
-    write(prr,a:1); if digits(a) < 16 then write(prr, ' ':16-digits(a));
+    write(prr,a:1); if digits(a) < parfld then write(prr, ' ':parfld-digits(a));
   end;
 
   procedure par2(a, b: integer);
   begin
     write(prr,a:1, ' ', b:1); 
-    if digits(a)+digits(b)+1 < 16 then write(prr, ' ':16-(digits(a)+digits(b)+1)+1)
+    if digits(a)+digits(b)+1 < parfld then write(prr, ' ':parfld-(digits(a)+digits(b)+1)+1)
   end;
 
   procedure mesl(i: integer);
@@ -3370,7 +3385,8 @@ begin cmdpos := maxcmd end;
 
   procedure gen0(fop: oprange);
   begin
-    if prcode then write(prr,mn[fop]:11); write(prr, ' ':5+16-1); intmsg(fop);
+    if prcode then 
+      begin write(prr,mn[fop]:11); write(prr, ' ':5+parfld-1); intmsg(fop) end;
     ic := ic + 1; mes(fop)
   end (*gen0*) ;
 
@@ -3380,7 +3396,7 @@ begin cmdpos := maxcmd end;
     if prcode then
       begin write(prr,mn[fop]:11);
         if fop = 30 then
-          begin writeln(prr,' ':5,sna[fp2]:4);
+          begin write(prr,' ':5,sna[fp2]:4); write(prr, ' ':parfld-1-4);
             mesl(pdx[fp2]);
           end
         else
@@ -3398,19 +3414,24 @@ begin cmdpos := maxcmd end;
                  end;
                  write(prr,'''')
                end
-            else if fop = 42 then write(prr,chr(fp2))
-            else if fop = 67 then write(prr,' ':5,fp2:1)
-            else if fop = 105 then begin write(prr,' ':5); putlabel(fp2) end
-            else if chkext(symptr) then
-              begin write(prr,' ':5); prtflabel(symptr) end
-            else if chkfix(symptr) then
-              begin write(prr,' ':5); prtlabel(symptr^.floc) end
-            else write(prr,' ':5,fp2:1);
-            intmsg(fop);
+            else if fop = 42 then 
+              begin write(prr,chr(fp2)); write(prr, ' ':4+parfld-1) end
+            else if fop = 67 then begin write(prr,' ':5); par1(fp2) end
+            else if fop = 105 then begin 
+              write(prr,' ':5); putlabel(fp2); 
+              write(prr, ' ':parfld-1-lenlabel(fp2))
+            end else if chkext(symptr) then begin
+              write(prr,' ':5); prtflabel(symptr);
+              write(prr, ' ':parfld-1-lenflabel(symptr))
+            end else if chkfix(symptr) then begin
+              write(prr,' ':5); prtlabel(symptr^.floc); 
+              write(prr, ' ':parfld-1-lenlabel(symptr^.floc))
+            end else begin write(prr,' ':5); par1(fp2) end;
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2)
             else mes(fop)
-          end
+          end;
+        intmsg(fop)
       end;
     ic := ic + 1
   end (*gen1s*) ;
@@ -3440,7 +3461,7 @@ begin cmdpos := maxcmd end;
           47,48,49,52,53,55:
             begin write(prr,chr(fp1));
               if chr(fp1) = 'm' then begin write(prr,' ':4); par1(fp2) end
-              else write(prr, ' ':4+16-1);
+              else write(prr, ' ':4+parfld-1);
               case chr(fp1) of
                 'i': mesl(cdxs[cdx[fop]][1]);
                 'r': mesl(cdxs[cdx[fop]][2]);
@@ -3523,7 +3544,7 @@ begin cmdpos := maxcmd end;
       begin
         write(prr,mn[fop]:11);
         gentypindicator(fsp);
-        write(prr, ' ':4+16-1);
+        write(prr, ' ':4+parfld-1);
         intmsg(fop)
       end;
     ic := ic + 1; mest(fop, fsp)
