@@ -3341,7 +3341,10 @@ procedure xlate;
               wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
               stkadr := stkadr-intsize
             end
-          end
+          end;
+          {
+          write(prr, '# ~generating: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr)
+          }
         end
       end;
 
@@ -4087,7 +4090,7 @@ procedure xlate;
         end;
 
         {stoi,stoa,stor,stob,stoc,stox}
-        6, 80, 81, 83, 84, 197: begin writeln(prr); 
+        6, 80, 81, 83, 84, 197: begin writeln(prr);
           frereg := allreg; popstk(ep2); popstk(ep);
           getreg(ep^.r1, frereg);
           assreg(ep, frereg, ep^.r1, rgnull);
