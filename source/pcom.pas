@@ -2968,7 +2968,7 @@ begin cmdpos := maxcmd end;
   end (*genlabel*);
 
   { write shorthand type }
-  procedure wrttyp(var f: text; tp: stp);
+  procedure wrttypc(var f: text; tp: stp; fl: integer);
   const maxtrk = 4000;
   var typtrk: array [1..maxtrk] of stp; cti: integer; err: boolean;
 
@@ -3078,10 +3078,17 @@ begin cmdpos := maxcmd end;
     end else wrtchr('?')
   end;
 
-  begin { wrttyp }
+  begin { wrttypc }
     cti := 1; { set 1st position in tracking }
     err := false; { set no error }
-    wrttypsub(tp) { issue type }
+    wrttypsub(tp); { issue type }
+    fl := fl+cti { count characters }
+  end;
+
+  procedure wrttyp(var f: text; tp: stp);
+  var fl: integer;
+  begin
+    fl := 0; wrttypc(f, tp, fl)
   end;
 
   function digits(i: integer): integer;
@@ -3136,20 +3143,26 @@ begin cmdpos := maxcmd end;
     prtflabel(fcp); fl := fl+lenflabel(fcp)
   end;
 
-  procedure prtpartyp(fcp: ctp);
+  procedure prtpartypc(fcp: ctp; fl: integer);
   var plst: ctp;
   begin
     plst := fcp^.pflist;
     while plst <> nil do begin
       if plst^.klass in [proc, func] then begin
-        write(prr, 'q('); prtpartyp(plst); write(prr, ')');
+        write(prr, 'q('); prtpartypc(plst, fl); write(prr, ')'); fl := fl+3;
         if plst^.klass = func then begin
-          write(prr, ':'); wrttyp(prr, plst^.idtype)
+          write(prr, ':'); fl := fl+1; wrttypc(prr, plst^.idtype, fl)
         end
-      end else wrttyp(prr, plst^.idtype);
-      if plst^.next <> nil then write(prr, '_');
+      end else wrttypc(prr, plst^.idtype, fl);
+      if plst^.next <> nil then begin write(prr, '_'); fl := fl+1 end;
       plst := plst^.next
     end
+  end;
+
+  procedure prtpartyp(fcp: ctp);
+  var fl: integer;
+  begin
+    fl := 0; prtpartypc(fcp, fl)
   end;
 
   procedure searchlabel(var llp: lbp; level: disprange; isid: boolean);
@@ -3343,13 +3356,13 @@ begin cmdpos := maxcmd end;
 
   procedure par1(a: integer);
   begin
-    write(prr,a:1); lftjst(parfld-digits(a)-1);
+    write(prr,a:1); lftjst(parfld-1-digits(a))
   end;
 
   procedure par2(a, b: integer);
   begin
     write(prr,a:1, ' ', b:1); 
-    lftjst(parfld-(digits(a)+digits(b)+1)-1)
+    lftjst(parfld-1-(digits(a)+digits(b)+1))
   end;
 
   procedure mesl(i: integer);
@@ -3402,46 +3415,46 @@ begin cmdpos := maxcmd end;
   end (*gen0*) ;
 
   procedure gen1s(fop: oprange; fp2: integer; symptr: ctp);
-    var k, j: integer; p: strvsp;
+    var k, j: integer; p: strvsp; fl: integer;
   begin
     if prcode then
       begin write(prr,mn[fop]:11);
         if fop = 30 then
-          begin write(prr,' ':5,sna[fp2]:4); write(prr, ' ':parfld-1-4);
+          begin write(prr,' ':5,sna[fp2]:4); fl := 4;
             mesl(pdx[fp2]);
           end
         else
           begin
             if fop = 38 then
                begin with cstptr[fp2]^ do begin p := sval; j := 1;
-                   write(prr,' ':5,slgth:1,' ''');
+                   write(prr,' ':5,slgth:1,' '''); fl := digits(slgth)+2;
                    for k := 1 to lenpv(p) do begin
-                     if p^.str[j] = '''' then write(prr, '''''')
-                     else write(prr,p^.str[j]:1);
+                     if p^.str[j] = '''' then 
+                       begin write(prr, ''''''); fl := fl+2 end
+                     else begin write(prr,p^.str[j]:1); fl := fl+1 end;
                      j := j+1; if j > varsqt then begin
                        p := p^.next; j := 1
                      end
                    end
                  end;
-                 write(prr,'''')
+                 write(prr,''''); fl := fl+1
                end
             else if fop = 42 then 
-              begin write(prr,chr(fp2)); write(prr, ' ':4+parfld-1) end
-            else if fop = 67 then begin write(prr,' ':5); par1(fp2) end
+              begin write(prr,chr(fp2)); write(prr, ' ':4); fl := 0 end
+            else if fop = 67 then 
+              begin write(prr,' ':5, fp2:1); fl := digits(fp2) end
             else if fop = 105 then begin 
-              write(prr,' ':5); prtlabel(fp2); 
-              lftjst(parfld-1-lenlabel(fp2))
+              write(prr,' ':5); fl := 0; prtlabelc(fp2, fl)
             end else if chkext(symptr) then begin
-              write(prr,' ':5); prtflabel(symptr);
-              lftjst(parfld-1-lenflabel(symptr))
+              write(prr,' ':5); fl := 0; prtflabelc(symptr, fl)
             end else if chkfix(symptr) then begin
-              write(prr,' ':5); prtlabel(symptr^.floc); 
-              lftjst(parfld-1-lenlabel(symptr^.floc))
-            end else begin write(prr,' ':5); par1(fp2) end;
+              write(prr,' ':5); fl := 0; prtlabelc(symptr^.floc, fl)
+            end else begin write(prr,' ':5, fp2:1); fl := digits(fp2) end;
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2)
             else mes(fop)
           end;
+        lftjst(parfld-1-fl);
         intmsg(fop)
       end;
     ic := ic + 1
@@ -3508,6 +3521,7 @@ begin cmdpos := maxcmd end;
                      begin write(prr,'c',' ':4); par1(fp2) end
                    else
                      write(prr,'c',' ':4, '''',chr(fp2),'''');
+                     lftjst(parfld-1-3);
                      mesl(cdxs[cdx[fop]][4])
                    end;
                 5: begin write(prr,'s',' ':4, '('); dc := 1;
@@ -3556,31 +3570,25 @@ begin cmdpos := maxcmd end;
 
   procedure gen0t(fop: oprange; fsp: stp);
   begin
-    if prcode then
-      begin
-        write(prr,mn[fop]:11);
-        gentypindicator(fsp);
-        lftjst(4+parfld-1);
-        intmsg(fop)
-      end;
+    if prcode then begin
+      write(prr,mn[fop]:11); gentypindicator(fsp); 
+      lftjst(4+parfld-1);
+      intmsg(fop)
+    end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen0t*);
 
   procedure gen1ts(fop: oprange; fp2: integer; fsp: stp; symptr: ctp);
+  var fl: integer;
   begin
-    if prcode then
-      begin
-        write(prr,mn[fop]:11);
-        gentypindicator(fsp);
-        write(prr, ' ':4);
-        if chkext(symptr) then begin
-          prtflabel(symptr); lftjst(parfld-1-lenflabel(symptr))
-        end else if chkfix(symptr) then begin 
-          prtlabel(symptr^.floc); 
-          lftjst(parfld-1-lenlabel(symptr^.floc))
-        end else par1(fp2);
-        intmsg(fop)
-      end;
+    if prcode then begin
+      write(prr,mn[fop]:11); gentypindicator(fsp); write(prr, ' ':4); fl := 0;
+      if chkext(symptr) then prtflabelc(symptr, fl)
+      else if chkfix(symptr) then prtlabelc(symptr^.floc, fl)
+      else begin write(prr,fp2:1); fl := digits(fp2) end;
+      lftjst(parfld-1-fl);
+      intmsg(fop)
+    end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen1ts*);
 
@@ -3591,42 +3599,46 @@ begin cmdpos := maxcmd end;
 
   procedure gen2t(fop: oprange; fp1,fp2: integer; fsp: stp);
   begin
-    if prcode then
-      begin
-        write(prr,mn[fop]:11);
-        gentypindicator(fsp);
-        write(prr,' ':4); par2(fp1, fp2);
-        intmsg(fop)
-      end;
+    if prcode then begin
+      write(prr,mn[fop]:11); gentypindicator(fsp); write(prr,' ':4); 
+      par2(fp1, fp2); intmsg(fop)
+    end;
     ic := ic + 1; mest(fop, fsp)
   end (*gen2t*);
 
   procedure genujpxjpcal(fop: oprange; fp2: integer);
+  var fl: integer;
   begin
-   if prcode then
-      begin write(prr,mn[fop]:11, ' ':5); prtlabel(fp2); 
-            lftjst(parfld-1-lenlabel(fp2)); intmsg(fop) end;
+    if prcode then begin
+      write(prr,mn[fop]:11, ' ':5); fl := 0;
+      prtlabelc(fp2, fl); 
+      lftjst(parfld-1-fl); 
+      intmsg(fop) 
+    end;
     ic := ic + 1; mes(fop)
   end (*genujpxjpcal*);
 
   procedure gencjp(fop: oprange; fp1,fp2,fp3: integer);
   var fl: integer;
   begin
-   if prcode then
-      begin
-        write(prr,mn[fop]:11, ' ':5, fp1:1,' ',fp2:1,' '); 
-        prtlabel(fp3); fl := (lenlabel(fp3)+digits(fp1)+1+digits(fp2)+1);
-        lftjst(parfld-1-fl);
-        intmsg(fop)
-      end;
+    if prcode then begin
+      write(prr,mn[fop]:11, ' ':5); fl := 0;
+      write(prr, fp1:1,' ',fp2:1,' '); fl := fl+digits(fp1)+1+digits(fp2)+1;
+      prtlabelc(fp3, fl);
+      lftjst(parfld-1-fl);
+      intmsg(fop)
+    end;
     ic := ic + 1; mes(fop)
   end (*gencjp*);
 
   procedure genipj(fop: oprange; fp1, fp2: integer);
+  var fl: integer;
   begin
-   if prcode then
-      begin write(prr,mn[fop]:11,' ':5,fp1:1,' '); prtlabel(fp2); 
-            lftjst(parfld-1-lenlabel(fp2)); intmsg(fop) end;
+    if prcode then begin
+      write(prr,mn[fop]:11,' ':5); fl := 0;
+      write(prr, fp1:1,' '); fl := fl+digits(fp1); prtlabelc(fp2, fl);
+      lftjst(parfld-1-fl); intmsg(fop) 
+    end;
     ic := ic + 1; mes(fop)
   end (*genipj*);
 
@@ -3637,15 +3649,15 @@ begin cmdpos := maxcmd end;
       begin
         write(prr,mn[fop]:11, ' ':5); fl := 0;
         if chkext(fcp) then begin
-          prtflabel(fcp); fl := fl+lenflabel(fcp);
+          prtflabelc(fcp, fl);
           write(prr, '@'); { this keeps the user from aliasing it }
           if fcp^.klass = proc then write(prr, 'p') else write(prr, 'f');
           fl := fl+2;
           if fcp^.pflist <> nil then begin
-            write(prr, '_');
-            prtpartyp(fcp)
+            write(prr, '_'); fl := fl+1;
+            prtpartypc(fcp, fl)
           end
-        end else begin prtlabel(fp2); fl := fl+lenlabel(fp2) end;
+        end else prtlabelc(fp2, fl);
         if fcp <> nil then begin
           write(prr, ' ', fcp^.pfnum:1); fl := fl+1+digits(fcp^.pfnum);
           if fop = 122(*cuf*) then 
