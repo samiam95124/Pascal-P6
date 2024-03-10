@@ -1230,6 +1230,12 @@ procedure xlate;
      while (ch = ' ') and not eoln(prd) do getnxt
    end;
 
+   procedure skpspcw; { skip spaces and write to output }
+   begin
+     while (ch = ' ') and (prd^ = ' ') and not eoln(prd) do 
+       begin getnxt; write(prr, ' ') end
+   end;
+
    procedure getlin; { get next line }
    begin
      readln(prd);
@@ -3343,7 +3349,7 @@ procedure xlate;
             end
           end;
           {
-          write(prr, '# ~generating: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr)
+          write(prr, '# generating~: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr)
           }
         end
       end;
@@ -3411,9 +3417,16 @@ procedure xlate;
 
       { pass though the rest of the line }
       procedure pass;
-      begin
+      begin getnxt;
         while not eoln(prd) do begin write(prr, ch); getnxt end;
         writeln(prr, ch)
+      end;
+     
+      { print alfa padded }
+      procedure prtalfp(var f: text; var s: alfa);
+      var i: alfainx;
+      begin
+        for i := 1 to maxalfa do if s[i] <> ' ' then write(f, s[i])
       end;
 
     begin { assemble } 
@@ -3422,7 +3435,8 @@ procedure xlate;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
-      prtline; write(prr, op:3, ': ', name:8);
+      prtline; write(prr, op:3, ': '); prtalfp(prr, name); write(prr, ' ');
+      skpspcw;
       case op of
 
         { *** non-terminals *** }
@@ -3724,7 +3738,7 @@ procedure xlate;
           while name<>sptable[q] do begin 
             q := q+1; if q > maxsp then errorl('std proc/func not found  ')
           end; 
-          write(prr, sptable[q]); pass;
+          prtalfp(prr, sptable[q]); pass;
           getexp(ep); 
           if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
             begin getparn(ep, maxint); revpar(ep); ordpar(ep) end
