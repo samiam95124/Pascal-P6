@@ -3847,8 +3847,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, r1, nil);
-          deltre(ep); 
-          botstk 
+          deltre(ep)
         end;
 
         {strx,strb,strc} 
@@ -3859,8 +3858,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movb %1l,^0(%2)      ', q, 0, ep^.r1, r1, nil);
-          deltre(ep); 
-          botstk 
+          deltre(ep)
         end;
 
         {strr}
@@ -3871,8 +3869,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, r1, nil);
-          deltre(ep); 
-          botstk 
+          deltre(ep)
         end;
 
         {strs} 
@@ -3886,8 +3883,7 @@ procedure xlate;
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          puttmp(ep^.r1a); deltre(ep); 
-          botstk 
+          puttmp(ep^.r1a); deltre(ep)
         end;
 
         {mst}
@@ -3959,8 +3955,7 @@ procedure xlate;
           else if op = 76{sror} then
             wrtins40('movsd %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
           else wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
-          deltre(ep); 
-          botstk 
+          deltre(ep)
         end;
 
         {sros}
@@ -3975,8 +3970,7 @@ procedure xlate;
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          puttmp(ep^.r1a); deltre(ep); 
-          botstk 
+          puttmp(ep^.r1a); deltre(ep)
         end;
 
         {apc}
@@ -4174,8 +4168,7 @@ procedure xlate;
             83{stob},84{stoc},197{stox}:
               wrtins20('movb %1l,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil)
           end;
-          deltre(ep); deltre(ep2);
-          botstk
+          deltre(ep); deltre(ep2)
         end;
 
         {stos}
@@ -4191,8 +4184,7 @@ procedure xlate;
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep2^.r1a);
-          deltre(ep); deltre(ep2);
-          botstk
+          deltre(ep); deltre(ep2)
         end;
 
         {stp}
