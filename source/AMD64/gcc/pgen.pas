@@ -75,6 +75,18 @@
 *                                                                              *
 *******************************************************************************}
 
+(*
+ * Enable GPC compatability mode
+ *
+ * Invokes creation and use of the prd (input) and prr (output) files.
+ * This is specific to GPC, which handles header files by taking the name of the
+ * header file as the literal name of the file.
+ *
+ *)
+#ifndef GPC
+#define GPC 1
+#endif
+
 program pcode(input,output,prd,prr);
 
 label 1;
@@ -1280,9 +1292,27 @@ procedure xlate;
      writeln(prr, '# Set up default files');
      writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
      writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
+     writeln(prr, '        movb    $prdfn,globals_start+prdoff(%rip)');
+     writeln(prr, '        movb    $prrfn,globals_start+prroff(%rip)');
      writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
      writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
      writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
+#if GPC == 1
+     writeln(prr, '# GPC compatability, open the prd and prr files');
+     writeln(prr, '        leaq    prdoff(%rip),%rdi');
+     writeln(prr, '        leaq    prdfilename(%rip),%rsi');
+     writeln(prr, '        movq    $3,%rdx');
+     writeln(prr, '        call    psystem_asst');
+     writeln(prr, '        leaq    prdoff(%rip),%rdi');
+     writeln(prr, '        call    psystem_rsf');
+     writeln(prr);
+     writeln(prr, '        leaq    prroff(%rip),%rdi');
+     writeln(prr, '        leaq    prrfilename(%rip),%rsi');
+     writeln(prr, '        movq    $3,%rdx');
+     writeln(prr, '        call    psystem_asst');
+     writeln(prr, '        leaq    prroff(%rip),%rdi');
+     writeln(prr, '        call    psystem_rwf');
+#endif
    end;
 
    procedure postamble;
@@ -4358,16 +4388,20 @@ begin (*xlate*)
    writeln(prr, '# Header file locations');
    writeln(prr, 'inputoff = 0');
    writeln(prr, 'outputoff = 2');
-   writeln(prr, 'erroroff = 4');
-   writeln(prr, 'listoff = 6');
-   writeln(prr, 'commandoff = 8');
+   writeln(prr, 'prdoff = 4');
+   writeln(prr, 'prroff = 6');
+   writeln(prr, 'erroroff = 8');
+   writeln(prr, 'listoff = 10');
+   writeln(prr, 'commandoff = 12');
    writeln(prr);
    writeln(prr, '# Logical file numbers for header files');
    writeln(prr, 'inputfn = 1');
    writeln(prr, 'outputfn = 2');
-   writeln(prr, 'errorfn = 3');
-   writeln(prr, 'listfn = 4');
-   writeln(prr, 'commandfn = 5');
+   writeln(prr, 'prdfn = 3');
+   writeln(prr, 'prrfn = 4');
+   writeln(prr, 'errorfn = 5');
+   writeln(prr, 'listfn = 6');
+   writeln(prr, 'commandfn = 7');
    writeln(prr);
    errorcode;
    writeln(prr, '        .text');
@@ -4378,6 +4412,12 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '# Constants section');
    writeln(prr, '#');
+#if GPC == 1
+   writeln(prr, 'prdfilename:');
+   writeln(prr, '        .string  "prd"');
+   writeln(prr, 'prrfilename:');
+   writeln(prr, '        .string  "prr"');
+#endif
    gencst;
 
    writeln(prr, '        .bss');
