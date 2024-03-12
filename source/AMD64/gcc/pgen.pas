@@ -4122,7 +4122,7 @@ procedure xlate;
           wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
           wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
           wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
-          if (op = 130{retc}) or (op = 131{retb}) then
+          if op in [204{retx},130{retc},131{retb}] then
             wrtins20('andq $0,%rax        ', 255, 0, rgnull, rgnull, nil);
           wrtins10('pushq %rcx ', 0, 0, rgnull, rgnull, nil);
           wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
