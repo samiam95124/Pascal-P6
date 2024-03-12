@@ -1784,13 +1784,13 @@ procedure xlate;
       procedure wrtregs(var f: text; rs: regset; n: boolean);
       var first: boolean; r: reg;
       begin
-        first := true; write(prr, '['); 
+        first := true; write(f, '['); 
         for r := rgrax to rgxmm15 do 
           if ((r in rs) = n) and not (r in [rgrbp, rgrsp]) then begin 
           if not first then write(f, ', ');
           wrtreg(f, r); first := false
         end;
-        write(prr, ']')
+        write(f, ']')
       end;
 
       procedure getexp(var ep: expptr);
@@ -1865,16 +1865,6 @@ procedure xlate;
         tmplst := nil
       end;
 
-      procedure dmpstk(var f: text);
-      var ep: expptr;
-      begin
-        ep := estack;
-        while ep <> nil do begin
-          writeln(f, 'Stack: ', ep^.op:3, ': ', instr[ep^.op]);
-          ep := ep^.next
-        end
-      end;
-
       procedure pshstk(ep: expptr);
       begin
         ep^.next := estack; estack := ep; stacklvl := stacklvl+1
@@ -1885,18 +1875,6 @@ procedure xlate;
         if estack = nil then errorl('Expression underflow     ');
         ep := estack; estack := estack^.next; ep^.next := nil; 
         stacklvl := stacklvl-1
-      end;
-
-      procedure botstk;
-      begin
-        if estack <> nil then begin
-          writeln;
-          writeln('*** Program translation error: [', sline:1, ',', iline:1, '] Stack balance');
-          writeln;
-          writeln('Contents of stack:');
-          dmpstk(output);
-          goto 1
-        end
       end;
 
       function depth: integer;
@@ -1994,6 +1972,28 @@ procedure xlate;
         while ep <> nil do begin
           dmptre(ep);
           ep := ep^.next
+        end
+      end;
+
+      procedure dmpstk(var f: text);
+      var ep: expptr; sl: integer;
+      begin
+        ep := estack; sl := -1;
+        while ep <> nil do begin
+          write('Stack ', sl:3); dmpety(output, ep, rgnull, rgnull); writeln(output);
+          ep := ep^.next; sl := sl-1
+        end
+      end;
+
+      procedure botstk;
+      begin
+        if estack <> nil then begin
+          writeln;
+          writeln('*** Program translation error: [', sline:1, ',', iline:1, '] Stack balance');
+          writeln;
+          writeln('Contents of stack:');
+          dmpstk(output);
+          goto 1
         end
       end;
 
