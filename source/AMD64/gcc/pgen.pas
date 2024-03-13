@@ -1289,8 +1289,8 @@ procedure xlate;
      writeln(prr, '        .globl  main');
      writeln(prr, '        .type   main, @function');
      writeln(prr, 'main:');
-     writeln(prr, '# Aign stack');
-     writeln(prr, '        andq    $0xfffffffffffffff0,%rsp');
+     writeln(prr, '# Align stack');
+     writeln(prr, '        pushq   %rax');
      writeln(prr, '# Set up default files');
      writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
      writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
@@ -1314,11 +1314,16 @@ procedure xlate;
      writeln(prr, '        call    psystem_asst');
      writeln(prr, '        leaq    globals_start+prroff(%rip),%rdi');
      writeln(prr, '        call    psystem_rwf');
+     writeln(prr, '        call    1f');
+     writeln(prr, '        popq    %rax');
+     writeln(prr, '        ret');
+     writeln(prr, '1:');
 #endif
    end;
 
    procedure postamble;
    begin
+
    end;
 
    procedure errorcode;
@@ -3618,7 +3623,7 @@ procedure xlate;
               while ch in ['0'..'9'] do
                 begin i := i*10+ord(ch)-ord('0'); getnxt end;
               c := chr(i);
-              write(prr, i); lftjst(parfld-digits(i)); pass
+              write(prr, i:1); lftjst(parfld-digits(i)); pass
             end else begin
               if ch <> '''' then errorl('illegal character        ');
               getnxt;  c := ch;
