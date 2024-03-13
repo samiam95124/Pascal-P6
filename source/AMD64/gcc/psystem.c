@@ -428,7 +428,7 @@ Prints the given error string and halts.
 
 *******************************************************************************/
 
-static void error(char* es)
+static void psystem_errors(char* es)
 
 {
 
@@ -669,12 +669,12 @@ void assignexternal(filnum fn, char hfn[])
     i = 0;
     while (!eolncommand() && !eofcommand() &&
            (isalnum(bufcommand()) || bufcommand() == '_')) {
-        if (i >= FILLEN) error("File name too long");
+        if (i >= FILLEN) psystem_errorv(FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
         i = i+1;
     }
-    if (i >= FILLEN) error("File name too long");
+    if (i >= FILLEN) psystem_errorv(FILENAMETOOLONG);
     filnamtab[fn][i] = 0; /* terminate */
 }
 
@@ -801,7 +801,7 @@ void varexit(void)
 
     varptr vp;
 
-    if (!varlst) error("Var list empty");
+    if (!varlst) psystem_errorv(VARLISTEMPTY);
     vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
 
 }
@@ -860,7 +860,7 @@ void valfil(
             i = i+1;
 
         }
-        if (ff == 0) error("Too many files");
+        if (ff == 0) psystem_errore(TOOMANYFILES);
         *f = ff;
 
     }
@@ -882,7 +882,7 @@ void valfilwm(
 {
 
     valfil(f); /* validate file address */
-    if (filstate[*f] != fswrite) error("File mode incorrect");
+    if (filstate[*f] != fswrite) psystem_errore(FILEMODEINCORRECT);
 
 }
 
@@ -901,7 +901,7 @@ void valfilrm(
 {
 
     valfil(f); /* validate file address */
-    if (filstate[*f] != fsread) error("File mode incorrect");
+    if (filstate[*f] != fsread) psystem_errore(FILEMODEINCORRECT);
 
 }
 
@@ -1021,8 +1021,8 @@ char buffn(
 
         case INPUTFN:   c = chkfile(stdin); break;
         case PRDFN:     c = chkfile(filtable[PRDFN]); break;
-        case OUTPUTFN: case ERRORFN:
-        case LISTFN:    error("Read on write only file"); break;
+        case OUTPUTFN: case PRRFN: case ERRORFN:
+        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
         case COMMANDFN: c = bufcommand(); break;
 
     } else {
@@ -1620,18 +1620,18 @@ void writeipf(pasfil* f, long i, long w, long r, long lz)
 
     valfil(f);
     fn = *f;
-    if (w < 1 && ISO7185) error("Invalid field specification");
+    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
          case OUTPUTFN: writei(stdout, i, w, r, lz); break;
          case ERRORFN: writei(stderr, i, w, r, lz); break;
          case LISTFN: writei(stdout, i, w, r, lz); break;
          case INPUTFN:
-         case COMMANDFN: error("Write on read only file"); break;
+         case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         writei(filtable[fn], i, w, r, lz);
 
     }
@@ -2327,20 +2327,21 @@ void psystem_wrr(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1) error("Invalid field specification");
+    if (w < 1) psystem_errore(INVALIDFIELDSPECIFICATION);
     if (w < REALEF) w = REALEF; /* set minimum width */
     l = w-REALEF+1; /* assign leftover to fractional digits w/o sign */
     if (fn <= COMMANDFN) switch (fn) {
 
          case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
+         case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); break;
          case ERRORFN: fprintf(stderr, "%*.*e", (int)w, l, r); break;
          case LISTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
-         case INPUTFN:
-         case COMMANDFN: error("Write on read only file");
+         case PRDFN: case INPUTFN:
+         case COMMANDFN: psystem_errore(WRITEONREADONLYFILE);
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*e", (int)w, l, r);
 
     }
@@ -2368,18 +2369,19 @@ void psystem_wrc(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) error("Invalid field specification");
+    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
+        case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
         case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
         case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
-        case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case PRDFN: case INPUTFN:
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*c", (int)w, c);
 
     }
@@ -2466,7 +2468,7 @@ void psystem_rib(
 
     w = INT_MAX; 
     readi(fn, i, &w, FALSE);
-    if (*i < mn || *i > mx) error("Value out of range");
+    if (*i < mn || *i > mx) psystem_errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -2498,7 +2500,7 @@ void psystem_ribf(
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
-    if (*i < mn || *i > mx) error("Value out of range");
+    if (*i < mn || *i > mx) psystem_errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -2629,7 +2631,7 @@ void psystem_rcb(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, INT_MAX, FALSE);
-    if (*c < mn || *c > mx) error("Value out of range");
+    if (*c < mn || *c > mx) psystem_errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -2660,7 +2662,7 @@ void psystem_rcbf(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, w, TRUE);
-    if (*c < mn || *c > mx) error("Value out of range");
+    if (*c < mn || *c > mx) psystem_errorv(VALUEOUTOFRANGE);
 
 }
 
@@ -2795,14 +2797,15 @@ void psystem_pag(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "\f"); break;
+        case PRRFN: fprintf(filtable[PRRFN], "\f"); break;
         case ERRORFN: fprintf(stderr, "\f"); break;
         case LISTFN: fprintf(stdout, "\f"); break;
-        case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case PRDFN: case INPUTFN:
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         fprintf(filtable[fn], "\f");
 
     }
@@ -2896,7 +2899,7 @@ void psystem_wrb(
     fn = *f; /* get logical file no. */
 
     b = b != 0;
-    if (w < 1) error("Invalid field specification");
+    if (w < 1) psystem_errore(INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: writeb(stdout, b, w); break;
@@ -2904,11 +2907,11 @@ void psystem_wrb(
         case ERRORFN: writeb(stderr, b, w); break;
         case LISTFN: writeb(stdout, b, w); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         writeb(filtable[fn], b, w);
 
     }
@@ -2938,8 +2941,8 @@ void psystem_wrf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) error("Invalid field specification");
-    if (fr < 1) error("Invalid fraction specification");
+    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (fr < 1) psystem_errore(INVALIDFRACTIONSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
@@ -2948,11 +2951,11 @@ void psystem_wrf(
         case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)fr, r); break;
         case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*f", (int)w, (int)fr, r);
 
     }
@@ -2975,7 +2978,7 @@ void psystem_dsp(
 
 {
 
-    if (varlap(p, p+s-1)) error("Dispose of varaible referenced block");
+    if (varlap(p, p+s-1)) psystem_errore(DISPOSEOFVARREFERENCEDBLOCK);
     free(p);
 
 }
@@ -3028,13 +3031,13 @@ void psystem_dsl(
 
     ulp = (unsigned long*) p; /* point to top */
     ulp--;
-    if (*ulp-ADRSIZE-1 != tc) error("New/dispose tags do not match in number");
+    if (*ulp-ADRSIZE-1 != tc) psystem_errore(NEWDISPOSETAGSMISMATCH);
     lp = (unsigned long*)ulp; /* point to bottom */
     lp -= tc; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
 
-        if (*lp != *tl) error("New/dispose tags do not match");
+        if (*lp != *tl) psystem_errore(NEWDISPOSETAGSMISMATCH);
         lp++; /* next tag */
         tl++;
         tc--;
@@ -3336,7 +3339,7 @@ void psystem_gbf(
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
     if (varlap(bp, bp+l-1))
-        error("Variable referenced file buffer modified");
+        psystem_errorv(VARREFERENCEDFILEBUFFERMODIFIED);
     if (filbuff[fn]) filbuff[fn] = FALSE; /* if buffer is full, just dump it */
     else /* fill buffer from file */
         for (i = 0; i < l; i++) *bp++ = fgetc(fp);
@@ -3369,7 +3372,7 @@ void psystem_pbf(
 
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
-    if (!filbuff[fn]) error("File buffer variable undefined");
+    if (!filbuff[fn]) psystem_errore(FILEBUFFERVARIABLEUNDEFINED);
     for (i = 0; i < l; i++) fputc(*bp++, fp);
     filbuff[fn] = FALSE; /* set buffer empty */
 
@@ -3465,7 +3468,7 @@ void psystem_asst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (l >= FILLEN) error("File name too long");
+    if (l >= FILLEN) psystem_errore(FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3495,7 +3498,7 @@ void psystem_assb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (l >= FILLEN) error("File name too long");
+    if (l >= FILLEN) psystem_errore(FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3520,7 +3523,7 @@ void psystem_clst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) error("File close fails");
+    if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3546,7 +3549,7 @@ void psystem_clsb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) error("File close fails");
+    if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3573,8 +3576,8 @@ void psystem_pos(
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
-    if (i < 1) error("Invalid file position");
-    if (fseek(filtable[fn], i-1, SEEK_SET)) error("File position fails");
+    if (i < 1) psystem_errore(INVALIDFILEPOSITION);
+    if (fseek(filtable[fn], i-1, SEEK_SET)) psystem_errore(FILEPOSITIONFAIL);
 
 }
 
@@ -3601,8 +3604,8 @@ void psystem_upd(
     if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
     else {
 
-      if (fclose(filtable[fn])) error("File close fails");
-      if (!fopen(filnamtab[fn], "wb")) error("File open fails");
+      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
+      if (!fopen(filnamtab[fn], "wb")) psystem_errore(FILEOPENFAIL);
 
     }
 
@@ -3631,8 +3634,8 @@ void psystem_appt(
     if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
     else {
 
-      if (fclose(filtable[fn])) error("File close fails");
-      if (!fopen(filnamtab[fn], "w")) error("File open fails");
+      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
+      if (!fopen(filnamtab[fn], "w")) psystem_errore(FILEOPENFAIL);
 
     }
 
@@ -3661,8 +3664,8 @@ void psystem_appb(
     if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
     else {
 
-      if (fclose(filtable[fn])) error("File close fails");
-      if (!fopen(filnamtab[fn], "w")) error("File open fails");
+      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
+      if (!fopen(filnamtab[fn], "w")) psystem_errore(FILEOPENFAIL);
 
     }
 
@@ -3688,7 +3691,7 @@ void psystem_del(
 
     strcpyl(fn, n, l); /* copy string to buffer */
     r = remove(fn); /* remove file */
-    if (r) error("File delete fails");
+    if (r) psystem_errorv(FILEDELETEFAIL);
 
 }
 
@@ -3716,7 +3719,7 @@ void psystem_chg(
     strcpyl(ofn, on, ol); /* copy strings to buffers */
     strcpyl(nfn, nn, nl);
     r = rename(ofn, nfn); /* rename file */
-    if (r) error("File name change fails");
+    if (r) psystem_errorv(FILENAMECHANGEFAIL);
 
 }
 
@@ -3768,7 +3771,7 @@ long psystem_loc(
     fn = *f; /* get logical file no. */
 
     i = ftell(filtable[fn]);
-    if (i < 0) error("File position fail");
+    if (i < 0) psystem_errorv(FILEPOSITIONFAIL);
 
     return (i+1);
 
@@ -3831,7 +3834,7 @@ void psystem_ast(
 
 {
 
-    if (i == 0) error("Program code assertion fails");
+    if (i == 0) psystem_errorv(PROGRAMCODEASSERTION);
 
 }
 
@@ -3855,7 +3858,7 @@ void psystem_asts(
     errmsg em;
     
     strcpyl(em, e, l); /* copy error string */
-    if (i == 0) error(em);
+    if (i == 0) psystem_errors(em);
 
 }
 
@@ -4071,7 +4074,7 @@ void psystem_thw(void)
 
 {
 
-    error("Throw function not implemented");
+    psystem_errore(FUNCTIONNOTIMPLEMENTED);
 
 }
 
