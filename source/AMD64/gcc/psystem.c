@@ -255,6 +255,8 @@ table is all you should need to adapt to any byte addressable machine.
 /* assigned logical channels for header files */
 #define INPUTFN   1 /* 'input' file no. */
 #define OUTPUTFN  2 /* 'output' file no. */
+#define PRDFN     3 /* 'prd' file no. */
+#define PRRFN     4 /* 'prr' file no. */
 #define ERRORFN   5 /* 'error' file no. */
 #define LISTFN    6 /* 'list' file no. */
 #define COMMANDFN 7 /* 'command' file no. */
@@ -1018,13 +1020,14 @@ char buffn(
     if (fn <= COMMANDFN) switch(fn) {
 
         case INPUTFN:   c = chkfile(stdin); break;
+        case PRDFN:     c = chkfile(filtable[PRDFN]); break;
         case OUTPUTFN: case ERRORFN:
         case LISTFN:    error("Read on write only file"); break;
         case COMMANDFN: c = bufcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) error("File mode incorrect");
+        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
         c = chkfile(filtable[fn]);
 
     }
@@ -1078,13 +1081,14 @@ void getfn(filnum fn)
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
-        case OUTPUTFN: case ERRORFN:
-        case LISTFN:    error("Read on write only file"); break;
+        case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
+        case OUTPUTFN: case PRRFN: case ERRORFN:
+        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
         case COMMANDFN: getcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) error("File mode incorrect");
+        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
         getfneoln(filtable[fn], fn);
 
     }
@@ -1118,7 +1122,7 @@ boolean chkeoffn(FILE* fp, filnum fn)
                 return (TRUE);
             else return (FALSE);
 
-        } else error("File not open");
+        } else psystem_errore(FILENOTOPEN);
 
     }
 
@@ -1142,6 +1146,8 @@ boolean eoffn(filnum fn)
 
         case INPUTFN:   eof = chkeoffn(stdin, INPUTFN); break;
         case OUTPUTFN:  eof = TRUE; break;
+        case PRDFN:     eof = chkeoffn(filtable[PRDFN], PRDFN); break;
+        case PRRFN:     eof = chkeoffn(filtable[PRRFN], PRRFN); break;
         case ERRORFN:   eof = TRUE; break;
         case LISTFN:    eof = TRUE; break;
         case COMMANDFN: eof = eofcommand(); break;
@@ -1184,13 +1190,15 @@ boolean eolnfn(filnum fn)
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN:   eoln = chkeolnfn(stdin, INPUTFN); break;
+        case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN); break;
+        case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN); break;
         case ERRORFN: case OUTPUTFN:
-        case LISTFN:    error("File mode incorrect"); break;
+        case LISTFN:    psystem_errore(FILEMODEINCORRECT); break;
         case COMMANDFN: eoln = eolncommand(); break;
 
     } else {
 
-        if (filstate[fn] == fsclosed) error("File not open");
+        if (filstate[fn] == fsclosed) psystem_errore(FILENOTOPEN);
         eoln = chkeolnfn(filtable[fn], fn);
 
     }
@@ -1209,9 +1217,10 @@ Reads and discards characters until EOLN is reached.
 void readline(filnum fn)
 
 {
+
     while (!eolnfn(fn)) {
 
-        if (eoffn(fn)) error("End of file");
+        if (eoffn(fn)) psystem_errore(ENDOFFILE);
         getfn(fn);
 
     }
@@ -1269,7 +1278,7 @@ void getbuf(filnum fn, long* w)
 
     if (*w > 0) {
 
-        if (eoffn(fn)) error("End of file");
+    if (eoffn(fn)) psystem_errore(ENDOFFILE);
         getfn(fn); *w = *w-1;
 
     }
@@ -1297,17 +1306,18 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* skip leading spaces */
     while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
     if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
-        isdigit(chkbuf(fn, *w)))) error("Invalid integer format");
+         isdigit(chkbuf(fn, *w)))) psystem_errore(INVALIDINTEGERFORMAT);
     if (chkbuf(fn, *w) == '+') getbuf(fn, w);
     else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
     if (!(isdigit(chkbuf(fn, *w))))
-        error("Invalid integer format");
+     psystem_errore(INVALIDINTEGERFORMAT);
     *i = 0; /* clear initial value */
     while (isdigit(chkbuf(fn, *w))) { /* parse digit */
 
         d = chkbuf(fn, *w)-'0';
-        if (*i > INT_MAX/10 || *i == INT_MAX/10 && d > INT_MAX%10)
-            error("Integer value overflow");
+     if (*i > LONG_MAX/10 ||
+         *i == LONG_MAX/10 && d > LONG_MAX%10)
+       psystem_errore(INTEGERVALUEOVERFLOW);
         *i = *i*10+d; /* add in new digit */
         getbuf(fn, w);
 
@@ -1316,7 +1326,7 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, *w)) {
 
-        if (chkbuf(fn, *w) != ' ') error("Field not blank");
+     if (chkbuf(fn, *w) != ' ') psystem_errore(FIELDNOTBLANK);
         getbuf(fn, w);
 
     }
@@ -1380,7 +1390,7 @@ void readr(filnum fn, double* r, long w, boolean fld)
     /* get any sign from number */
     if (chkbuf(fn, w) == '-') { getbuf(fn, &w); s = TRUE; }
     else if (chkbuf(fn, w) == '+') getbuf(fn, &w);
-    if (!(isdigit(chkbuf(fn, w)))) error("Invalid real number");
+    if (!(isdigit(chkbuf(fn, w)))) psystem_errore(INVALIDREALNUMBER);
     while (isdigit(chkbuf(fn, w))) { /* parse digit */
       d = chkbuf(fn, w)-'0';
       *r = *r*10+d; /* add in new digit */
@@ -1391,7 +1401,7 @@ void readr(filnum fn, double* r, long w, boolean fld)
       if (chkbuf(fn, w) == '.') { /* decimal point */
 
             getbuf(fn, &w); /* skip '.' */
-            if (!(isdigit(chkbuf(fn, w)))) error("Invalid real number");
+            if (!(isdigit(chkbuf(fn, w)))) psystem_errore(INVALIDREALNUMBER);
             while (isdigit(chkbuf(fn, w))) { /* parse digit */
 
                 d = chkbuf(fn, w)-'0';
@@ -1406,7 +1416,7 @@ void readr(filnum fn, double* r, long w, boolean fld)
 
             getbuf(fn, &w); /* skip 'e' */
             if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' || 
-                chkbuf(fn, w) == '-')) error("Invalid real number");
+                chkbuf(fn, w) == '-')) psystem_errore(INVALIDREALNUMBER);
             readi(fn, &i, &w, fld); /* get exponent */
             /* find with exponent */
             e = e+i;
@@ -1419,8 +1429,9 @@ void readr(filnum fn, double* r, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
         getbuf(fn, &w);
+
     }
 
 }
@@ -1444,7 +1455,7 @@ void readc(filnum fn, char* c, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
         getbuf(fn, &w);
 
     }
@@ -1476,7 +1487,7 @@ void reads(filnum fn, char* s, long l, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') error("Field not blank");
+        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
         getbuf(fn, &w);
 
     }
@@ -1501,7 +1512,7 @@ void readsp(filnum fn, char* s,  long l)
 
     while (l > 0 && !eolnfn(fn)) {
 
-        if (eoffn(fn)) error("End of file");
+        if (eoffn(fn)) psystem_errore(ENDOFFILE);
         c = fgetc(filtable[fn]); *s++ =  c; l--;
 
     }
@@ -1570,7 +1581,7 @@ void writei(FILE* f, long w, long fl, long r, long lz)
     if (w < 0) {
 
         sgn = TRUE; w = abs(w);
-        if (r != 10) error("Non-decimal radix of negative") ;
+        if (r != 10) psystem_errore(NONDECIMALRADIXOFNEGATIVE);
 
     } else sgn = FALSE;
     for (i = 0; i < MAXDBF; i++) digit[i] = ' ';
@@ -1665,7 +1676,7 @@ void putfile(FILE* f, pasfil* pf, filnum fn)
 
 {
 
-    if (!filbuff[fn]) error("File buffer variable undefined");
+    if (!filbuff[fn]) psystem_errore(FILEBUFFERVARIABLEUNDEFINED);
     fputc(*(pf+FILEIDSIZE), f);
     filbuff[fn] = FALSE;
 
@@ -1684,13 +1695,12 @@ void resetfn(filnum fn, boolean bin)
 
 {
 
-    if (fn <= COMMANDFN) error("Attempt to reset system file");
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) error("File close fails");
+        if (fclose(filtable[fn])) psystem_errore(FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
-        error("File open fails");
+        psystem_errore(FILEOPENFAIL);
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
     fileoln[fn] = FALSE;
@@ -1711,13 +1721,12 @@ void rewritefn(filnum fn, boolean bin)
 
 {
 
-    if (fn <= COMMANDFN) error("Attempt to rewrite system file");
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) error("File close fails");
+        if (fclose(filtable[fn])) psystem_errore(FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
-        error("File open fails");
+        psystem_errore(FILEOPENFAIL);
     filstate[fn] = fswrite;
     filbuff[fn] = FALSE;
 
@@ -1753,13 +1762,14 @@ void psystem_get(
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
+        case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN:  case ERRORFN:
-        case LISTFN:    error("Read on write file"); break;
+        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
         case COMMANDFN: getcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) error("File mode incorrect");
+        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
         getfneoln(filtable[fn], fn);
 
     }
@@ -1788,14 +1798,15 @@ void psystem_put(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: putfile(stdout, f, fn); break;
+        case PRRFN: putfile(filtable[PRRFN], f, fn); break;
         case ERRORFN: putfile(stderr, f, fn); break;
         case LISTFN: putfile(stdout, f, fn); break;
-        case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case INPUTFN: case PRDFN:
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         putfile(filtable[fn], f, fn);
 
     }
@@ -1823,13 +1834,14 @@ void psystem_rln(
     if (fn <= COMMANDFN) switch (fn) {
 
         case INPUTFN: readline(INPUTFN); break;
+        case PRDFN: readline(PRDFN); break;
         case OUTPUTFN: case ERRORFN:
-        case LISTFN: error("Read on write only file"); break;
+        case LISTFN: psystem_errore(READONWRITEONLYFILE); break;
         case COMMANDFN: readlncommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) error("File mode incorrect");
+        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
         readline(fn);
 
     }
@@ -1853,7 +1865,7 @@ void psystem_new(
 {
 
     *p = calloc(l, 1); /* allocate */
-    if (!*p) error("Could not allocate space");
+    if (!*p) psystem_errore(SPACEALLOCATEFAIL);
 
 }
 
@@ -1930,14 +1942,15 @@ void psystem_wln(
     if (fn <= COMMANDFN) switch (fn) {
 
        case OUTPUTFN: fprintf(stdout, "\n"); break;
+       case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
        case ERRORFN: fprintf(stderr, "\n"); break;
        case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
-       case INPUTFN:
-       case COMMANDFN: error("Write on read only file"); break;
+       case PRDFN: case INPUTFN:
+       case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-       if (filstate[fn] != fswrite) error("File mode incorrect");
+       if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
        fprintf(filtable[fn], "\n");
 
     }
@@ -1967,19 +1980,20 @@ void psystem_wrs(
  
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) error("Invalid field specification");
+    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
     if (l > w) l = w; /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*s", w, l, s); break;
+        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l, s); break;
         case ERRORFN: fprintf(stderr, "%*.*s", w, l, s); break;
         case LISTFN: fprintf(stdout, "%*.*s", w, l, s); break;
-        case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case PRDFN: case INPUTFN:
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*s", w, l, s);
 
     }
@@ -2012,14 +2026,15 @@ void psystem_wrsp(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: writestrp(stdout, s, l); break;
+        case PRRFN: writestrp(filtable[PRRFN], s, l); break;
         case ERRORFN: writestrp(stderr, s, l); break;
         case LISTFN: writestrp(stdout, s, l); break;
-        case INPUTFN:
-        case COMMANDFN: error("Write on read only file"); break;
+        case PRDFN: case INPUTFN:
+        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) error("File mode incorrect");
+        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
         writestrp(filtable[fn], s, l);
 
     }
@@ -2816,9 +2831,11 @@ void psystem_rsf(
 
     if (fn <= COMMANDFN) switch (fn) {
 
+        case PRDFN: resetfn(PRDFN, FALSE); break;
+        case PRRFN: psystem_errore(CANNOTRESETWRITEONLYFILE); break;
         case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
         case COMMANDFN:
-            error("Cannot reset or rewrite standardfile"); break;
+            psystem_errore(CANNOTRESETORREWRITESTANDARDFILE); break;
 
     } else resetfn(fn, FALSE);
 
@@ -2846,9 +2863,11 @@ void psystem_rwf(
 
     if (fn <= COMMANDFN) switch (fn) {
 
+        case PRRFN: rewritefn(PRRFN, FALSE); break;
+        case PRDFN: psystem_errore(CANNOTREWRITEREADONLYFILE); break;
         case ERRORFN: case LISTFN: case OUTPUTFN: case INPUTFN:
         case COMMANDFN:
-            error("Cannot reset or rewrite standardfile"); break;
+            psystem_errore(CANNOTRESETORREWRITESTANDARDFILE); break;
 
     } else rewritefn(fn, FALSE);
 
@@ -2881,9 +2900,10 @@ void psystem_wrb(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: writeb(stdout, b, w); break;
+        case PRRFN: writeb(filtable[PRRFN], b, w); break;
         case ERRORFN: writeb(stderr, b, w); break;
         case LISTFN: writeb(stdout, b, w); break;
-        case INPUTFN:
+        case PRDFN: case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
@@ -2923,9 +2943,11 @@ void psystem_wrf(
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
+        case PRRFN: fprintf(filtable[PRRFN], "%*.*f", (int)w, (int)fr, r); 
+            break;
         case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)fr, r); break;
         case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
-        case INPUTFN:
+        case PRDFN: case INPUTFN:
         case COMMANDFN: error("Write on read only file"); break;
 
     } else {
