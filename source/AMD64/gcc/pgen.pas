@@ -403,6 +403,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       setnum      : integer; { set constants label count }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
+      modnam      : strvsp; { block name }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -1496,7 +1497,7 @@ procedure xlate;
      end
    end;
 
-   procedure generate;(*generate segment of code*)
+   procedure generate; (*generate segment of code*)
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
@@ -1624,7 +1625,10 @@ procedure xlate;
                  bp^.next := blkstk; blkstk := bp;
                  prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
                  writeln(prr);
-                 if ch1 in ['p', 'm'] then wrtblklab(bp);
+                 if ch1 in ['p', 'm'] then begin
+                   wrtblklab(bp);
+                   modnam := bp^.bname
+                 end;
                  getlin
                end;
           'e': begin 
@@ -1634,6 +1638,8 @@ procedure xlate;
                  prtline; writeln(prr, ' e ', ch);
                  if ch = 'p' then postamble;
                  if blkstk = nil then errorl('System error             ');
+                 { this just tosses block structures into the trash, needs 
+                   fixing }
                  blkstk := blkstk^.next;
                  getlin
                end;
@@ -3006,7 +3012,9 @@ procedure xlate;
             176: begin 
               wrtins10('cmpq %1,%2', 0, 0, ep^.r^.r2, ep^.l^.r2, nil);
               wrtins10('je 1f     ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
-              wrtins30('movq $ContainerMismatch,%rdi  ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ContainerMismatch,%rdx  ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
@@ -3059,13 +3067,17 @@ procedure xlate;
               wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
               wrtins20('jge 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ValueOutOfRange,%rdx    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins20('movq $0,%1          ', ep^.vi2, 0, ep^.t1, rgnull, nil);
               wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
               wrtins20('jle 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ValueOutOfRange,%rdi    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins30('movq $ValueOutOfRange,%rdx    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
@@ -3083,7 +3095,9 @@ procedure xlate;
               if ep^.q <> 0 then begin
                 wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
                 wrtins20('jge 1f              ', 0, 0, ep^.r2, rgnull, nil);
-                wrtins40('movq $DereferenceOfNilPointer,%rdi      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+                wrtins40('movq $DereferenceOfNilPointer,%rdx      ', 0, 0, rgnull, rgnull, nil);
                 wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
               end
@@ -3203,7 +3217,9 @@ procedure xlate;
             205: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
               wrtins20('jns 1f           ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq $BooleanOperatorOfNegative,%rdi      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins20('movq $BooleanOperatorOfNegative,%rdx      ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins20('not %1              ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
@@ -3224,12 +3240,16 @@ procedure xlate;
             43,44,206: begin 
               wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
               wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rdi    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rdx    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rdi    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins40('movq $BooleanOperatorOfNegative,%rdx    ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               case ep^.op of
@@ -3365,7 +3385,9 @@ procedure xlate;
                 genexp(ep2); ep2 := ep2^.next 
               end;   
               wrtins10('jnz 1f    ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $VariantNotActive,%rdi   ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
+              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins30('movq $VariantNotActive,%rdx   ', 0, 0, rgnull, rgnull, nil);
               wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
@@ -4418,6 +4440,8 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '# Constants section');
    writeln(prr, '#');
+   writeln(prr, 'modnam:');
+   write(prr, '        .string  "'); writevp(prr, modnam); writeln(prr, '"');
 #if GPC == 1
    writeln(prr, 'prdfilename:');
    writeln(prr, '        .string  "prd"');

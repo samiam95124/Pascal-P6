@@ -405,6 +405,8 @@ typedef struct _varblk {
     unsigned char* e; 
 } varblk;
 
+static const char*modnam = "psystem"; /* name of this module */
+
 static FILE* filtable[MAXFIL+1]; /* general file holders */
 static filnam filnamtab[MAXFIL+1]; /* assigned name of files */
 static boolean filanamtab[MAXFIL+1]; /* name has been assigned flags */
@@ -414,7 +416,6 @@ static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
 static varptr varlst; /* active var block pushdown stack */
 static varptr varfre; /* free var block entries */
-static long srclin;  /* current source line executing */
 
 static cmdbuf  cmdlin;  /* command line */
 static cmdnum  cmdlen;  /* length of command line */
@@ -424,25 +425,47 @@ static cmdinx  cmdpos;  /* current position in command line */
 
 Output error
 
-Prints the given error string and halts.
+Prints the given error string and halts. Accepts a module name and line number.
+This is an alternative to the exception mechanisim, and is used when a formal
+error exception number does not exist.
 
 *******************************************************************************/
 
-static void psystem_errors(char* es)
+static void psystem_errors(
+    /* module name */  const char* modnam, 
+    /* line number */  int         line, 
+    /* error string */ char*       es
+)
 
 {
 
-    fprintf(stderr, "*** psystem error: %s\n", es);
+    fprintf(stderr, "*** Runtime error: %s:%d:%s\n", modnam, line, es);
 
     exit(1);
 
 }
 
+/** ****************************************************************************
+
+Handle exception vector
+
+Accepts a module name, line number, and exception vector number. A message is
+printed for the exception and the program halted. This call is used to bypass
+the exception vector mechanisim and directly print and fail the program.
+
+*******************************************************************************/
+
 /* handle exception vector */
-void psystem_errorv(address ea)
-{ printf("\n*** Runtime error: ");
-  if (srclin > 0) printf(" [%ld]: ", srclin);
-  switch (ea) {
+void psystem_errorv(
+    /* module name */         const char* modnam, 
+    /* line number */         int         line, 
+    /* error/vector number */ int         en
+)
+
+{ 
+
+    printf("\n*** Runtime error: %s:%d:", modnam, line);
+    switch (en) {
 
     /* Exceptions that can be intercepted */
     case VALUEOUTOFRANGE:                    printf("Value out of range\n"); break;
@@ -553,12 +576,28 @@ void psystem_errorv(address ea)
     case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
   }
   exit(1);
+
 }
 
-void psystem_errore(long ei)
+/** ****************************************************************************
+
+Handle exception vector
+
+Accepts a module name, line number, and exception vector number. A message is
+printed for the exception and the program halted. At the moment this is just
+passthrough to errorv(), but it will be used to process formal exceptions.
+
+*******************************************************************************/
+
+void psystem_errore(
+    /* module name */         const char* modnam,
+    /* line number */         int         line,
+    /* error/vector number */ int         en
+)
+
 {
 
-    psystem_errorv(ei);
+    psystem_errorv(modnam, line, en);
 
 }
 
@@ -669,12 +708,12 @@ void assignexternal(filnum fn, char hfn[])
     i = 0;
     while (!eolncommand() && !eofcommand() &&
            (isalnum(bufcommand()) || bufcommand() == '_')) {
-        if (i >= FILLEN) psystem_errorv(FILENAMETOOLONG);
+        if (i >= FILLEN) psystem_errorv(modnam, __LINE__, FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
         i = i+1;
     }
-    if (i >= FILLEN) psystem_errorv(FILENAMETOOLONG);
+    if (i >= FILLEN) psystem_errorv(modnam, __LINE__, FILENAMETOOLONG);
     filnamtab[fn][i] = 0; /* terminate */
 }
 
@@ -801,7 +840,7 @@ void varexit(void)
 
     varptr vp;
 
-    if (!varlst) psystem_errorv(VARLISTEMPTY);
+    if (!varlst) psystem_errorv(modnam, __LINE__, VARLISTEMPTY);
     vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
 
 }
@@ -860,7 +899,7 @@ void valfil(
             i = i+1;
 
         }
-        if (ff == 0) psystem_errore(TOOMANYFILES);
+        if (ff == 0) psystem_errore(modnam, __LINE__, TOOMANYFILES);
         *f = ff;
 
     }
@@ -882,7 +921,7 @@ void valfilwm(
 {
 
     valfil(f); /* validate file address */
-    if (filstate[*f] != fswrite) psystem_errore(FILEMODEINCORRECT);
+    if (filstate[*f] != fswrite) psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
 
 }
 
@@ -901,7 +940,7 @@ void valfilrm(
 {
 
     valfil(f); /* validate file address */
-    if (filstate[*f] != fsread) psystem_errore(FILEMODEINCORRECT);
+    if (filstate[*f] != fsread) psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
 
 }
 
@@ -1022,12 +1061,12 @@ char buffn(
         case INPUTFN:   c = chkfile(stdin); break;
         case PRDFN:     c = chkfile(filtable[PRDFN]); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
-        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
+        case LISTFN:    psystem_errore(modnam, __LINE__, READONWRITEONLYFILE); break;
         case COMMANDFN: c = bufcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         c = chkfile(filtable[fn]);
 
     }
@@ -1083,12 +1122,12 @@ void getfn(filnum fn)
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
         case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN: case PRRFN: case ERRORFN:
-        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
+        case LISTFN:    psystem_errore(modnam, __LINE__, READONWRITEONLYFILE); break;
         case COMMANDFN: getcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         getfneoln(filtable[fn], fn);
 
     }
@@ -1122,7 +1161,7 @@ boolean chkeoffn(FILE* fp, filnum fn)
                 return (TRUE);
             else return (FALSE);
 
-        } else psystem_errore(FILENOTOPEN);
+        } else psystem_errore(modnam, __LINE__, FILENOTOPEN);
 
     }
 
@@ -1193,12 +1232,12 @@ boolean eolnfn(filnum fn)
         case PRDFN:     eoln = chkeolnfn(filtable[PRDFN], PRDFN); break;
         case PRRFN:     eoln = chkeolnfn(filtable[PRRFN], PRRFN); break;
         case ERRORFN: case OUTPUTFN:
-        case LISTFN:    psystem_errore(FILEMODEINCORRECT); break;
+        case LISTFN:    psystem_errore(modnam, __LINE__, FILEMODEINCORRECT); break;
         case COMMANDFN: eoln = eolncommand(); break;
 
     } else {
 
-        if (filstate[fn] == fsclosed) psystem_errore(FILENOTOPEN);
+        if (filstate[fn] == fsclosed) psystem_errore(modnam, __LINE__, FILENOTOPEN);
         eoln = chkeolnfn(filtable[fn], fn);
 
     }
@@ -1220,7 +1259,7 @@ void readline(filnum fn)
 
     while (!eolnfn(fn)) {
 
-        if (eoffn(fn)) psystem_errore(ENDOFFILE);
+        if (eoffn(fn)) psystem_errore(modnam, __LINE__, ENDOFFILE);
         getfn(fn);
 
     }
@@ -1278,7 +1317,7 @@ void getbuf(filnum fn, long* w)
 
     if (*w > 0) {
 
-    if (eoffn(fn)) psystem_errore(ENDOFFILE);
+    if (eoffn(fn)) psystem_errore(modnam, __LINE__, ENDOFFILE);
         getfn(fn); *w = *w-1;
 
     }
@@ -1306,18 +1345,18 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* skip leading spaces */
     while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
     if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
-         isdigit(chkbuf(fn, *w)))) psystem_errore(INVALIDINTEGERFORMAT);
+         isdigit(chkbuf(fn, *w)))) psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
     if (chkbuf(fn, *w) == '+') getbuf(fn, w);
     else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
     if (!(isdigit(chkbuf(fn, *w))))
-     psystem_errore(INVALIDINTEGERFORMAT);
+     psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
     *i = 0; /* clear initial value */
     while (isdigit(chkbuf(fn, *w))) { /* parse digit */
 
         d = chkbuf(fn, *w)-'0';
      if (*i > LONG_MAX/10 ||
          *i == LONG_MAX/10 && d > LONG_MAX%10)
-       psystem_errore(INTEGERVALUEOVERFLOW);
+       psystem_errore(modnam, __LINE__, INTEGERVALUEOVERFLOW);
         *i = *i*10+d; /* add in new digit */
         getbuf(fn, w);
 
@@ -1326,7 +1365,7 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, *w)) {
 
-     if (chkbuf(fn, *w) != ' ') psystem_errore(FIELDNOTBLANK);
+     if (chkbuf(fn, *w) != ' ') psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
         getbuf(fn, w);
 
     }
@@ -1390,7 +1429,8 @@ void readr(filnum fn, double* r, long w, boolean fld)
     /* get any sign from number */
     if (chkbuf(fn, w) == '-') { getbuf(fn, &w); s = TRUE; }
     else if (chkbuf(fn, w) == '+') getbuf(fn, &w);
-    if (!(isdigit(chkbuf(fn, w)))) psystem_errore(INVALIDREALNUMBER);
+    if (!(isdigit(chkbuf(fn, w)))) 
+        psystem_errore(modnam, __LINE__, INVALIDREALNUMBER);
     while (isdigit(chkbuf(fn, w))) { /* parse digit */
       d = chkbuf(fn, w)-'0';
       *r = *r*10+d; /* add in new digit */
@@ -1401,7 +1441,8 @@ void readr(filnum fn, double* r, long w, boolean fld)
       if (chkbuf(fn, w) == '.') { /* decimal point */
 
             getbuf(fn, &w); /* skip '.' */
-            if (!(isdigit(chkbuf(fn, w)))) psystem_errore(INVALIDREALNUMBER);
+            if (!(isdigit(chkbuf(fn, w)))) 
+                psystem_errore(modnam, __LINE__, INVALIDREALNUMBER);
             while (isdigit(chkbuf(fn, w))) { /* parse digit */
 
                 d = chkbuf(fn, w)-'0';
@@ -1416,7 +1457,8 @@ void readr(filnum fn, double* r, long w, boolean fld)
 
             getbuf(fn, &w); /* skip 'e' */
             if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' || 
-                chkbuf(fn, w) == '-')) psystem_errore(INVALIDREALNUMBER);
+                chkbuf(fn, w) == '-')) 
+                psystem_errore(modnam, __LINE__, INVALIDREALNUMBER);
             readi(fn, &i, &w, fld); /* get exponent */
             /* find with exponent */
             e = e+i;
@@ -1429,7 +1471,8 @@ void readr(filnum fn, double* r, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
+        if (chkbuf(fn, w) != ' ') 
+            psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
         getbuf(fn, &w);
 
     }
@@ -1455,7 +1498,8 @@ void readc(filnum fn, char* c, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
+        if (chkbuf(fn, w) != ' ') 
+            psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
         getbuf(fn, &w);
 
     }
@@ -1487,7 +1531,8 @@ void reads(filnum fn, char* s, long l, long w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, w)) {
 
-        if (chkbuf(fn, w) != ' ') psystem_errore(FIELDNOTBLANK);
+        if (chkbuf(fn, w) != ' ') 
+            psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
         getbuf(fn, &w);
 
     }
@@ -1512,7 +1557,7 @@ void readsp(filnum fn, char* s,  long l)
 
     while (l > 0 && !eolnfn(fn)) {
 
-        if (eoffn(fn)) psystem_errore(ENDOFFILE);
+        if (eoffn(fn)) psystem_errore(modnam, __LINE__, ENDOFFILE);
         c = fgetc(filtable[fn]); *s++ =  c; l--;
 
     }
@@ -1581,7 +1626,8 @@ void writei(FILE* f, long w, long fl, long r, long lz)
     if (w < 0) {
 
         sgn = TRUE; w = abs(w);
-        if (r != 10) psystem_errore(NONDECIMALRADIXOFNEGATIVE);
+        if (r != 10) 
+            psystem_errore(modnam, __LINE__, NONDECIMALRADIXOFNEGATIVE);
 
     } else sgn = FALSE;
     for (i = 0; i < MAXDBF; i++) digit[i] = ' ';
@@ -1620,18 +1666,21 @@ void writeipf(pasfil* f, long i, long w, long r, long lz)
 
     valfil(f);
     fn = *f;
-    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (w < 1 && ISO7185) 
+        psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
-         case OUTPUTFN: writei(stdout, i, w, r, lz); break;
-         case ERRORFN: writei(stderr, i, w, r, lz); break;
-         case LISTFN: writei(stdout, i, w, r, lz); break;
-         case INPUTFN:
-         case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case OUTPUTFN: writei(stdout, i, w, r, lz); break;
+        case ERRORFN: writei(stderr, i, w, r, lz); break;
+        case LISTFN: writei(stdout, i, w, r, lz); break;
+        case INPUTFN:
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE);
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         writei(filtable[fn], i, w, r, lz);
 
     }
@@ -1676,7 +1725,8 @@ void putfile(FILE* f, pasfil* pf, filnum fn)
 
 {
 
-    if (!filbuff[fn]) psystem_errore(FILEBUFFERVARIABLEUNDEFINED);
+    if (!filbuff[fn]) 
+        psystem_errore(modnam, __LINE__, FILEBUFFERVARIABLEUNDEFINED);
     fputc(*(pf+FILEIDSIZE), f);
     filbuff[fn] = FALSE;
 
@@ -1698,9 +1748,10 @@ void resetfn(filnum fn, boolean bin)
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) psystem_errore(FILECLOSEFAIL);
+        if (fclose(filtable[fn])) 
+            psystem_errore(modnam, __LINE__, FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
-        psystem_errore(FILEOPENFAIL);
+        psystem_errore(modnam, __LINE__, FILEOPENFAIL);
     filstate[fn] = fsread;
     filbuff[fn] = FALSE;
     fileoln[fn] = FALSE;
@@ -1724,9 +1775,10 @@ void rewritefn(filnum fn, boolean bin)
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
     if (filstate[fn] != fsclosed)
-        if (fclose(filtable[fn])) psystem_errore(FILECLOSEFAIL);
+        if (fclose(filtable[fn])) 
+            psystem_errore(modnam, __LINE__, FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
-        psystem_errore(FILEOPENFAIL);
+        psystem_errore(modnam, __LINE__, FILEOPENFAIL);
     filstate[fn] = fswrite;
     filbuff[fn] = FALSE;
 
@@ -1764,12 +1816,14 @@ void psystem_get(
         case INPUTFN:   getfneoln(stdin, INPUTFN); break;
         case PRDFN:     getfneoln(filtable[PRDFN], PRDFN); break;
         case OUTPUTFN:  case ERRORFN:
-        case LISTFN:    psystem_errore(READONWRITEONLYFILE); break;
+        case LISTFN:    psystem_errore(modnam, __LINE__, READONWRITEONLYFILE); 
+            break;
         case COMMANDFN: getcommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         getfneoln(filtable[fn], fn);
 
     }
@@ -1802,11 +1856,13 @@ void psystem_put(
         case ERRORFN: putfile(stderr, f, fn); break;
         case LISTFN: putfile(stdout, f, fn); break;
         case INPUTFN: case PRDFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE); 
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         putfile(filtable[fn], f, fn);
 
     }
@@ -1836,12 +1892,14 @@ void psystem_rln(
         case INPUTFN: readline(INPUTFN); break;
         case PRDFN: readline(PRDFN); break;
         case OUTPUTFN: case ERRORFN:
-        case LISTFN: psystem_errore(READONWRITEONLYFILE); break;
+        case LISTFN: 
+            psystem_errore(modnam, __LINE__, READONWRITEONLYFILE); break;
         case COMMANDFN: readlncommand(); break;
 
     } else {
 
-        if (filstate[fn] != fsread) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fsread) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         readline(fn);
 
     }
@@ -1865,7 +1923,7 @@ void psystem_new(
 {
 
     *p = calloc(l, 1); /* allocate */
-    if (!*p) psystem_errore(SPACEALLOCATEFAIL);
+    if (!*p) psystem_errore(modnam, __LINE__, SPACEALLOCATEFAIL);
 
 }
 
@@ -1941,17 +1999,19 @@ void psystem_wln(
 
     if (fn <= COMMANDFN) switch (fn) {
 
-       case OUTPUTFN: fprintf(stdout, "\n"); break;
-       case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
-       case ERRORFN: fprintf(stderr, "\n"); break;
-       case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
-       case PRDFN: case INPUTFN:
-       case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case OUTPUTFN: fprintf(stdout, "\n"); break;
+        case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
+        case ERRORFN: fprintf(stderr, "\n"); break;
+        case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
+        case PRDFN: case INPUTFN:
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE);
+            break;
 
     } else {
 
-       if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
-       fprintf(filtable[fn], "\n");
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
+        fprintf(filtable[fn], "\n");
 
     }
 
@@ -1980,7 +2040,8 @@ void psystem_wrs(
  
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (w < 1 && ISO7185) 
+        psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (l > w) l = w; /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
 
@@ -1989,11 +2050,13 @@ void psystem_wrs(
         case ERRORFN: fprintf(stderr, "%*.*s", w, l, s); break;
         case LISTFN: fprintf(stdout, "%*.*s", w, l, s); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: 
+            psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE); break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*s", w, l, s);
 
     }
@@ -2030,11 +2093,13 @@ void psystem_wrsp(
         case ERRORFN: writestrp(stderr, s, l); break;
         case LISTFN: writestrp(stdout, s, l); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE);
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         writestrp(filtable[fn], s, l);
 
     }
@@ -2327,21 +2392,23 @@ void psystem_wrr(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (w < 1) psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (w < REALEF) w = REALEF; /* set minimum width */
     l = w-REALEF+1; /* assign leftover to fractional digits w/o sign */
     if (fn <= COMMANDFN) switch (fn) {
 
          case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
-         case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); break;
+         case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); 
+            break;
          case ERRORFN: fprintf(stderr, "%*.*e", (int)w, l, r); break;
          case LISTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
          case PRDFN: case INPUTFN:
-         case COMMANDFN: psystem_errore(WRITEONREADONLYFILE);
+         case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE);
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*e", (int)w, l, r);
 
     }
@@ -2369,7 +2436,8 @@ void psystem_wrc(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (w < 1 && ISO7185) 
+        psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
@@ -2377,11 +2445,13 @@ void psystem_wrc(
         case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
         case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE); 
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*c", (int)w, c);
 
     }
@@ -2468,7 +2538,7 @@ void psystem_rib(
 
     w = INT_MAX; 
     readi(fn, i, &w, FALSE);
-    if (*i < mn || *i > mx) psystem_errorv(VALUEOUTOFRANGE);
+    if (*i < mn || *i > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2500,7 +2570,7 @@ void psystem_ribf(
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
-    if (*i < mn || *i > mx) psystem_errorv(VALUEOUTOFRANGE);
+    if (*i < mn || *i > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2631,7 +2701,7 @@ void psystem_rcb(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, INT_MAX, FALSE);
-    if (*c < mn || *c > mx) psystem_errorv(VALUEOUTOFRANGE);
+    if (*c < mn || *c > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2662,7 +2732,7 @@ void psystem_rcbf(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, w, TRUE);
-    if (*c < mn || *c > mx) psystem_errorv(VALUEOUTOFRANGE);
+    if (*c < mn || *c > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2801,11 +2871,13 @@ void psystem_pag(
         case ERRORFN: fprintf(stderr, "\f"); break;
         case LISTFN: fprintf(stdout, "\f"); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE);
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         fprintf(filtable[fn], "\f");
 
     }
@@ -2835,10 +2907,12 @@ void psystem_rsf(
     if (fn <= COMMANDFN) switch (fn) {
 
         case PRDFN: resetfn(PRDFN, FALSE); break;
-        case PRRFN: psystem_errore(CANNOTRESETWRITEONLYFILE); break;
+        case PRRFN: psystem_errore(modnam, __LINE__, CANNOTRESETWRITEONLYFILE);
+            break;
         case OUTPUTFN: case ERRORFN: case LISTFN: case INPUTFN:
         case COMMANDFN:
-            psystem_errore(CANNOTRESETORREWRITESTANDARDFILE); break;
+            psystem_errore(modnam, __LINE__, CANNOTRESETORREWRITESTANDARDFILE);
+            break;
 
     } else resetfn(fn, FALSE);
 
@@ -2867,10 +2941,12 @@ void psystem_rwf(
     if (fn <= COMMANDFN) switch (fn) {
 
         case PRRFN: rewritefn(PRRFN, FALSE); break;
-        case PRDFN: psystem_errore(CANNOTREWRITEREADONLYFILE); break;
+        case PRDFN: psystem_errore(modnam, __LINE__, CANNOTREWRITEREADONLYFILE); 
+            break;
         case ERRORFN: case LISTFN: case OUTPUTFN: case INPUTFN:
         case COMMANDFN:
-            psystem_errore(CANNOTRESETORREWRITESTANDARDFILE); break;
+            psystem_errore(modnam, __LINE__, CANNOTRESETORREWRITESTANDARDFILE);
+            break;
 
     } else rewritefn(fn, FALSE);
 
@@ -2899,7 +2975,7 @@ void psystem_wrb(
     fn = *f; /* get logical file no. */
 
     b = b != 0;
-    if (w < 1) psystem_errore(INVALIDFIELDSPECIFICATION);
+    if (w < 1) psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: writeb(stdout, b, w); break;
@@ -2907,11 +2983,13 @@ void psystem_wrb(
         case ERRORFN: writeb(stderr, b, w); break;
         case LISTFN: writeb(stdout, b, w); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE); 
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         writeb(filtable[fn], b, w);
 
     }
@@ -2941,8 +3019,9 @@ void psystem_wrf(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (w < 1 && ISO7185) psystem_errore(INVALIDFIELDSPECIFICATION);
-    if (fr < 1) psystem_errore(INVALIDFRACTIONSPECIFICATION);
+    if (w < 1 && ISO7185) 
+        psystem_errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
+    if (fr < 1) psystem_errore(modnam, __LINE__, INVALIDFRACTIONSPECIFICATION);
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
@@ -2951,11 +3030,13 @@ void psystem_wrf(
         case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)fr, r); break;
         case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case PRDFN: case INPUTFN:
-        case COMMANDFN: psystem_errore(WRITEONREADONLYFILE); break;
+        case COMMANDFN: psystem_errore(modnam, __LINE__, WRITEONREADONLYFILE); 
+            break;
 
     } else {
 
-        if (filstate[fn] != fswrite) psystem_errore(FILEMODEINCORRECT);
+        if (filstate[fn] != fswrite) 
+            psystem_errore(modnam, __LINE__, FILEMODEINCORRECT);
         fprintf(filtable[fn], "%*.*f", (int)w, (int)fr, r);
 
     }
@@ -2978,7 +3059,8 @@ void psystem_dsp(
 
 {
 
-    if (varlap(p, p+s-1)) psystem_errore(DISPOSEOFVARREFERENCEDBLOCK);
+    if (varlap(p, p+s-1)) 
+        psystem_errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
     free(p);
 
 }
@@ -3031,13 +3113,15 @@ void psystem_dsl(
 
     ulp = (unsigned long*) p; /* point to top */
     ulp--;
-    if (*ulp-ADRSIZE-1 != tc) psystem_errore(NEWDISPOSETAGSMISMATCH);
+    if (*ulp-ADRSIZE-1 != tc) 
+        psystem_errore(modnam, __LINE__, NEWDISPOSETAGSMISMATCH);
     lp = (unsigned long*)ulp; /* point to bottom */
     lp -= tc; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
 
-        if (*lp != *tl) psystem_errore(NEWDISPOSETAGSMISMATCH);
+        if (*lp != *tl) 
+            psystem_errore(modnam, __LINE__, NEWDISPOSETAGSMISMATCH);
         lp++; /* next tag */
         tl++;
         tc--;
@@ -3339,7 +3423,7 @@ void psystem_gbf(
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
     if (varlap(bp, bp+l-1))
-        psystem_errorv(VARREFERENCEDFILEBUFFERMODIFIED);
+        psystem_errorv(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
     if (filbuff[fn]) filbuff[fn] = FALSE; /* if buffer is full, just dump it */
     else /* fill buffer from file */
         for (i = 0; i < l; i++) *bp++ = fgetc(fp);
@@ -3372,7 +3456,8 @@ void psystem_pbf(
 
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
-    if (!filbuff[fn]) psystem_errore(FILEBUFFERVARIABLEUNDEFINED);
+    if (!filbuff[fn]) 
+        psystem_errore(modnam, __LINE__, FILEBUFFERVARIABLEUNDEFINED);
     for (i = 0; i < l; i++) fputc(*bp++, fp);
     filbuff[fn] = FALSE; /* set buffer empty */
 
@@ -3468,7 +3553,7 @@ void psystem_asst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (l >= FILLEN) psystem_errore(FILENAMETOOLONG);
+    if (l >= FILLEN) psystem_errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3498,7 +3583,7 @@ void psystem_assb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (l >= FILLEN) psystem_errore(FILENAMETOOLONG);
+    if (l >= FILLEN) psystem_errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3523,7 +3608,7 @@ void psystem_clst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
+    if (fclose(filtable[fn])) psystem_errorv(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3549,7 +3634,7 @@ void psystem_clsb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
+    if (fclose(filtable[fn])) psystem_errorv(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3576,8 +3661,9 @@ void psystem_pos(
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
-    if (i < 1) psystem_errore(INVALIDFILEPOSITION);
-    if (fseek(filtable[fn], i-1, SEEK_SET)) psystem_errore(FILEPOSITIONFAIL);
+    if (i < 1) psystem_errore(modnam, __LINE__, INVALIDFILEPOSITION);
+    if (fseek(filtable[fn], i-1, SEEK_SET)) 
+        psystem_errore(modnam, __LINE__, FILEPOSITIONFAIL);
 
 }
 
@@ -3604,8 +3690,9 @@ void psystem_upd(
     if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
     else {
 
-      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
-      if (!fopen(filnamtab[fn], "wb")) psystem_errore(FILEOPENFAIL);
+        if (fclose(filtable[fn])) psystem_errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "wb")) 
+            psystem_errore(modnam, __LINE__, FILEOPENFAIL);
 
     }
 
@@ -3634,8 +3721,10 @@ void psystem_appt(
     if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
     else {
 
-      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
-      if (!fopen(filnamtab[fn], "w")) psystem_errore(FILEOPENFAIL);
+        if (fclose(filtable[fn])) 
+            psystem_errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "w")) 
+            psystem_errore(modnam, __LINE__, FILEOPENFAIL);
 
     }
 
@@ -3664,8 +3753,10 @@ void psystem_appb(
     if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
     else {
 
-      if (fclose(filtable[fn])) psystem_errorv(FILECLOSEFAIL);
-      if (!fopen(filnamtab[fn], "w")) psystem_errore(FILEOPENFAIL);
+        if (fclose(filtable[fn])) 
+            psystem_errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "w")) 
+            psystem_errore(modnam, __LINE__, FILEOPENFAIL);
 
     }
 
@@ -3691,7 +3782,7 @@ void psystem_del(
 
     strcpyl(fn, n, l); /* copy string to buffer */
     r = remove(fn); /* remove file */
-    if (r) psystem_errorv(FILEDELETEFAIL);
+    if (r) psystem_errorv(modnam, __LINE__, FILEDELETEFAIL);
 
 }
 
@@ -3719,7 +3810,7 @@ void psystem_chg(
     strcpyl(ofn, on, ol); /* copy strings to buffers */
     strcpyl(nfn, nn, nl);
     r = rename(ofn, nfn); /* rename file */
-    if (r) psystem_errorv(FILENAMECHANGEFAIL);
+    if (r) psystem_errorv(modnam, __LINE__, FILENAMECHANGEFAIL);
 
 }
 
@@ -3771,7 +3862,7 @@ long psystem_loc(
     fn = *f; /* get logical file no. */
 
     i = ftell(filtable[fn]);
-    if (i < 0) psystem_errorv(FILEPOSITIONFAIL);
+    if (i < 0) psystem_errorv(modnam, __LINE__, FILEPOSITIONFAIL);
 
     return (i+1);
 
@@ -3834,7 +3925,7 @@ void psystem_ast(
 
 {
 
-    if (i == 0) psystem_errorv(PROGRAMCODEASSERTION);
+    if (i == 0) psystem_errorv(modnam, __LINE__, PROGRAMCODEASSERTION);
 
 }
 
@@ -3858,7 +3949,7 @@ void psystem_asts(
     errmsg em;
     
     strcpyl(em, e, l); /* copy error string */
-    if (i == 0) psystem_errors(em);
+    if (i == 0) psystem_errors(modnam, __LINE__, em);
 
 }
 
@@ -4074,7 +4165,7 @@ void psystem_thw(void)
 
 {
 
-    psystem_errore(FUNCTIONNOTIMPLEMENTED);
+    psystem_errore(modnam, __LINE__, FUNCTIONNOTIMPLEMENTED);
 
 }
 
@@ -4146,12 +4237,14 @@ void psystem_tagchgvar(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) 
+        psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
     taddr += size; /* offset to variant */
     /* translate both tags to a logical variant, then check has changed */
     if (lvt[ntag+1] != lvt[otag+1])
         /* if changed, see if the variant is in a VAR referenced region */
-        if (varlap(taddr, taddr+size)) psystem_errorv(CHANGETOVARREFERENCEDVARIANT);
+        if (varlap(taddr, taddr+size)) 
+            psystem_errorv(modnam, __LINE__, CHANGETOVARREFERENCEDVARIANT);
 
 }
 
@@ -4180,7 +4273,8 @@ void psystem_tagchginv(
 
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
-    if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
+    if (ntag < 0 || ntag >= lvt[0]) 
+        psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -4200,7 +4294,8 @@ void psystem_cmptmp(
 )
 {
 
-    while (lvl--) if (*tmp1++ != *tmp2++) psystem_errorv(CONTAINERMISMATCH);
+    while (lvl--) if (*tmp1++ != *tmp2++) 
+        psystem_errorv(modnam, __LINE__, CONTAINERMISMATCH);
 
 }
 
@@ -4232,8 +4327,10 @@ void psystem_tagchkass(
         tcp -= tc; /* index bottom of table */
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
-        if (ntag < 0 || ntag >= lvt[0]) psystem_errorv(VALUEOUTOFRANGE);
-        if (tcp[lvl-1] != lvt[ntag+1]) psystem_errorv(CHANGETOALLOCATEDTAGFIELD);
+        if (ntag < 0 || ntag >= lvt[0]) 
+            psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+        if (tcp[lvl-1] != lvt[ntag+1]) 
+            psystem_errorv(modnam, __LINE__, CHANGETOALLOCATEDTAGFIELD);
 
     }
 
@@ -4260,9 +4357,9 @@ void psystem_chksetbnd(
     long j;
 
     for (j = SETLOW; j < low; j++)
-        if (sisin(j, s)) psystem_errorv(SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) psystem_errorv(modnam, __LINE__, SETELEMENTOUTOFRANGE);
     for (j = high+1; j <= SETHIGH; j++)
-        if (sisin(j, s)) psystem_errorv(SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) psystem_errorv(modnam, __LINE__, SETELEMENTOUTOFRANGE);
 
 }
 
@@ -4464,7 +4561,7 @@ void psystem_pack(
 
     int i;
 
-    if (usi+sp > su) psystem_errore(PACKELEMENTSOUTOFBOUNDS);
+    if (usi+sp > su) psystem_errore(modnam, __LINE__, PACKELEMENTSOUTOFBOUNDS);
     for (i = 0; i <= sp-1; i++) {
         *(pa+i) = *(upa+usi);
         usi++;
@@ -4495,7 +4592,8 @@ void psystem_unpack(
 
     int i;
 
-    if (usi+sp > su) psystem_errore(UNPACKELEMENTSOUTOFBOUNDS);
+    if (usi+sp > su) 
+        psystem_errore(modnam, __LINE__, UNPACKELEMENTSOUTOFBOUNDS);
     for (i = 0; i <= sp-1; i++) {
         *(upa+usi) = *(pa+i);
         usi++;
@@ -4509,7 +4607,7 @@ Initialize psystem support module
 
 *******************************************************************************/
 
-static void psystem_init (int argc, char* argv[]) __attribute__((constructor (110)));
+static void psystem_init(int argc, char* argv[]) __attribute__((constructor (110)));
 static void psystem_init(int argc, char* argv[])
 
 {
@@ -4544,7 +4642,7 @@ Deinitialize psystem support module
 
 *******************************************************************************/
 
-static void psystem_deinit (void) __attribute__((destructor (110)));
+static void psystem_deinit(void) __attribute__((destructor (110)));
 static void psystem_deinit()
 
 {
