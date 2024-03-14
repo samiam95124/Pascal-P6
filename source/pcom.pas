@@ -3134,7 +3134,8 @@ begin cmdpos := maxcmd end;
   begin
     ll := 2+1+lenpv(fcp^.name);
     if fcp^.klass = vars then ll := ll+lenpv(fcp^.vmod^.mn)
-    else ll := ll+lenpv(fcp^.fmod^.mn);
+    else if fcp^.klass = fixedt then ll := ll+lenpv(fcp^.fmod^.mn)
+    else ll := ll+lenpv(fcp^.pmod^.mn);
     lenflabel := ll
   end;
 
@@ -3785,7 +3786,7 @@ begin cmdpos := maxcmd end;
       begin
         write(prr,mn[91(*cuv*)]:11,' ':5); fl := 0;
         if chkext(fcp) then prtflabelc(fcp, fl)
-        else begin writeln(prr,fp1); fl := digits(fp1) end;
+        else begin write(prr,fp1:1); fl := digits(fp1) end;
         lftjst(parfld-1-fl);
         intmsg(91(*cuv*));
         mes(91)
@@ -3814,7 +3815,7 @@ begin cmdpos := maxcmd end;
       prtlabelc(fp1, fl);
       if chkext(sym) then
         begin write(prr, ' '); fl := fl+1; prtflabelc(sym, fl) end
-      else begin writeln(prr, ' ', fp2:1); fl := fl+digits(fp2)+1 end;
+      else begin write(prr, ' ', fp2:1); fl := fl+digits(fp2)+1 end;
       lftjst(parfld-1-fl);
       intmsg(92(*suv*))
     end;
