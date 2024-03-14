@@ -4235,8 +4235,7 @@ procedure xlate;
 
         61 {ujc}: begin par;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30('movq $CaseValueNotFound,%rdi  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+          wrtins30('jmp psystem_caseerror         ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
      

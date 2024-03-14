@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -12,17 +12,15 @@ and the following annexes: A,B,C,E.
      7       -8 program iso7185prt0037; 
      8       -8  
      9       -8 var : integer; 
-     9   ****       ^2       ^271
+     9   ****       ^2
      9   ****    2 Identifier expected
-     9   ****  271 Number of initializers does not match container array levels
     10       -8  
     11       -8 begin 
     12        5 end. 
 
-Errors in program: 2
+Errors in program: 1
 
 Error numbers in listing:
 -------------------------
   2   1 Identifier expected
-271   1 Number of initializers does not match container array levels
 

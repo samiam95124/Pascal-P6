@@ -8,13 +8,11 @@
 #
 # Functions:
 #
-# psystem_base - Finds the given frame by climbing the frame levels.
+# psystem_caserror - Processes a case not found error.
 #
 ################################################################################
 
-        markep = 8  # (old) maximum frame size
-        marksb = 16 # stack bottom
-        market = 24 # current ep
+        CaseValueNotFound = 16;
 
         .text
 #
@@ -23,22 +21,18 @@
 
 ################################################################################
 #
-# Find base address
+# Throw case not found error
 #
-# Climbs the stack frames until the given frame is found. Expects the number of
-# frames to climb in rdi. Returns the correct frame address in rax.
+# Simpy sends a case not found error back to psystem. The case table jump in the
+# code must be a fixed length to make the table math work out, so this serves
+# as an intermediate to call the formal error function.
 #
 ################################################################################
 
-        .globl  psystem_base
-        .type   psystem_base, @function
-psystem_base:
-        movq    %rbp,%rax           # get current frame pointer
-psystem_base01:
-        orq     %rdi,%rdi           # check zero
-        jz      psystem_base02      # exit if so
-        decq    %rdi                # count off frames
-        movq    marksl(%rax),%rax   # link to next frame up
-        jmp     psystem_base01
-psystem_base02:
-        ret
+        .globl  psystem_caseerror
+        .type   psystem_caseerror, @function
+psystem_caseerror:
+        andq    $0xfffffffffffffff0,%rsp # align stack
+        movq    $CaseValueNotFound,%rdi  # load case fault error
+        call    psystem_errore           # go handler
+        jmp     .                        # soft halt
