@@ -2712,27 +2712,6 @@ procedure xlate;
         end
       end;
 
-      { push parameters to call depth first }
-      procedure pshparr(ep: expptr);
-      begin
-        if ep <> nil then begin
-          pshparr(ep^.next);
-          dmptrel(ep, 1); genexp(ep);
-          if ep^.r2 <> rgnull then begin
-            wrtins20('pushq %1  ', 0, 0, ep^.r2, rgnull, nil); 
-            stkadr := stkadr-intsize
-          end;
-          if ep^.r1 in [rgrax..rgr15] then begin
-            wrtins20('pushq %1  ', 0, 0, ep^.r1, rgnull, nil); 
-            stkadr := stkadr-intsize
-          end else if ep^.r1 in [rgxmm0..rgxmm15] then begin
-            wrtins20('subq -0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
-            stkadr := stkadr-realsize;
-            wrtins20('movsd %1,(%rsp)     ', 0, 0, ep^.r1, rgnull, nil)
-          end
-        end
-      end;
-
       { call system procedure/function }
       procedure callsp(ep: expptr; var sc: alfa; r: boolean);
       var si: insstr20; i: integer; pp: expptr; aln: boolean;
@@ -2773,12 +2752,13 @@ procedure xlate;
           if ep2 = nil then errorl('system error             ');
           ep2 := ep2^.next
         end;
-        pshparr(ep2);
+        pshpar(ep2);
         pp := ep^.pl; genexp(pp); { addr rdi }
         pp := pp^.next; genexp(pp); { size rsi }
         pp := pp^.next; genexp(pp); { tagcnt rdx }
         wrtins10('pushq %1  ', 0, 0, pp^.r1, rgnull, nil);
         wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
+        wrtins20('addq $0,%rcx        ', intsize, 0, rgnull, rgnull, nil);
         stkadr := stkadr-adrsize;
         aln := false;
         if stkadr mod 16 <> 0 then begin
@@ -4280,16 +4260,15 @@ procedure xlate;
         { standard unimplemented }
 
         {wbs}
-        243: ;
+        243: par;
         
         {wbe}
-        244: ;
+        244: par;
 
-        235, 
         {rets}
+        235: ;
 
         { these are all Pascaline unimplemented }
-
 
         {vip,vis}
         133, 122: begin par; { ??? fill me in }
