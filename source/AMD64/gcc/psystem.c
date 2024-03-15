@@ -1345,18 +1345,19 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* skip leading spaces */
     while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
     if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
-         isdigit(chkbuf(fn, *w)))) psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
+        isdigit(chkbuf(fn, *w)))) 
+            psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
     if (chkbuf(fn, *w) == '+') getbuf(fn, w);
     else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
     if (!(isdigit(chkbuf(fn, *w))))
-     psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
+        psystem_errore(modnam, __LINE__, INVALIDINTEGERFORMAT);
     *i = 0; /* clear initial value */
     while (isdigit(chkbuf(fn, *w))) { /* parse digit */
 
         d = chkbuf(fn, *w)-'0';
-     if (*i > LONG_MAX/10 ||
-         *i == LONG_MAX/10 && d > LONG_MAX%10)
-       psystem_errore(modnam, __LINE__, INTEGERVALUEOVERFLOW);
+        if (*i > LONG_MAX/10 ||
+            *i == LONG_MAX/10 && d > LONG_MAX%10)
+            psystem_errore(modnam, __LINE__, INTEGERVALUEOVERFLOW);
         *i = *i*10+d; /* add in new digit */
         getbuf(fn, w);
 
@@ -1365,7 +1366,7 @@ void readi(filnum fn, long *i, long* w, boolean fld)
     /* if fielded, validate the rest of the field is blank */
     if (fld) while (!chkend(fn, *w)) {
 
-     if (chkbuf(fn, *w) != ' ') psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
+        if (chkbuf(fn, *w) != ' ') psystem_errore(modnam, __LINE__, FIELDNOTBLANK);
         getbuf(fn, w);
 
     }
@@ -1671,6 +1672,7 @@ void writeipf(pasfil* f, long i, long w, long r, long lz)
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: writei(stdout, i, w, r, lz); break;
+        case PRRFN: writei(filtable[PRRFN], i, w, r, lz); break;
         case ERRORFN: writei(stderr, i, w, r, lz); break;
         case LISTFN: writei(stdout, i, w, r, lz); break;
         case INPUTFN:
@@ -2479,7 +2481,7 @@ void psystem_rdi(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    w = INT_MAX;
+    w = LONG_MAX;
     readi(fn, i, &w, FALSE);
 
 }
@@ -2536,7 +2538,7 @@ void psystem_rib(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    w = INT_MAX; 
+    w = LONG_MAX; 
     readi(fn, i, &w, FALSE);
     if (*i < mn || *i > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
@@ -2595,7 +2597,7 @@ void psystem_rdr(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readr(fn, r, INT_MAX, FALSE); /* read real */
+    readr(fn, r, LONG_MAX, FALSE); /* read real */
 
 }
 
@@ -2646,7 +2648,7 @@ void psystem_rdc(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, c, INT_MAX, FALSE);
+    readc(fn, c, LONG_MAX, FALSE);
 
 }
 
@@ -2700,7 +2702,7 @@ void psystem_rcb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    readc(fn, c, INT_MAX, FALSE);
+    readc(fn, c, LONG_MAX, FALSE);
     if (*c < mn || *c > mx) psystem_errorv(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
@@ -3976,7 +3978,7 @@ void psystem_rds(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    reads(fn, s, l, INT_MAX, FALSE);
+    reads(fn, s, l, LONG_MAX, FALSE);
 
 }
 
@@ -4125,7 +4127,7 @@ void psystem_rdie(
 
     long w;
 
-    w = INT_MAX; 
+    w = LONG_MAX; 
     readi(COMMANDFN, i, &w, FALSE);
 
 }
@@ -4150,7 +4152,7 @@ void psystem_rdre(
 
     long w;
 
-    w = INT_MAX; 
+    w = LONG_MAX; 
     readr(COMMANDFN, r, w, FALSE);
 
 }
