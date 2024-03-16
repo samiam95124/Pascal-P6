@@ -274,7 +274,9 @@ const
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
       maxphy      = 6;       { maximum physical registers to allocate }
-      tabspc      = 8;       { tab spacing on assembly code }
+      opcspc      = 8;       { tab spacing on assembly code }
+      parspc      = 16;      { tab spacing to parameters }
+      cmtspc      = 40;      { tab spacing to comments }
 
       { version numbers }
 
@@ -478,6 +480,15 @@ begin
   lcase := c
 end { lcase };
 
+function digits(i: integer): integer;
+var dc: integer;
+begin
+  dc := 0; if i < 0 then begin i := -i; dc := dc+1 end;
+  if i = 0 then dc := 1
+  else while i > 0 do begin i := i div 10; dc := dc+1 end;
+  digits := dc
+end;
+
 { get string quanta }
 procedure getstr(var p: strvsp);
 begin
@@ -670,6 +681,8 @@ procedure xlate;
       insmax20 = 20;
       insmax30 = 30;
       insmax40 = 40;
+      insmax50 = 50;
+      insmax60 = 60;
       maxintreg = 14; { maximum number of assignable integer reg }
       maxfltreg = 16; { maximum number of assignable float reg }
       maxintparreg = 6; { maximum number of integer/pointer parameter regs }
@@ -732,6 +745,8 @@ procedure xlate;
          insstr20 = packed array [1..insmax20] of char;
          insstr30 = packed array [1..insmax30] of char;
          insstr40 = packed array [1..insmax40] of char;
+         insstr50 = packed array [1..insmax50] of char;
+         insstr60 = packed array [1..insmax60] of char;
 
    var  word : array[alfainx] of char; ch  : char;
         labeltab: array[labelrg] of labelrec;
@@ -1785,6 +1800,16 @@ procedure xlate;
         end
       end;
 
+      function regl(r: reg): integer;
+      begin
+        if r = rgnull then regl := 6
+        else if r in [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp,
+                      rgr10, rgr11, rgr12, rgr13, rgr14, rgr15] then regl := 3
+        else if r in [rgr8, rgr9] then regl := 2
+        else if r in [rgxmm0..rgxmm9] then regl := 4
+        else regl := 5
+      end;
+
       procedure wrtbreg(var f: text; r: reg);
       begin
         case r of
@@ -1822,6 +1847,15 @@ procedure xlate;
           rgxmm14: write(f, 'xmm14'); 
           rgxmm15: write(f, 'xmm15');
         end
+      end;
+
+      function bregl(r: reg): integer;
+      begin
+        if r = rgnull then bregl := 6
+        else if r in [rgrax, rgrbx, rgrcx, rgrdx] then bregl := 2
+        else if r in [rgrsi, rgrdi, rgrbp, rgrsp, rgr8, rgr9] then bregl := 3
+        else if r in [rgr10..rgr15, rgxmm0..rgxmm9] then bregl := 4
+        else bregl := 5
       end;
 
       procedure wrtregs(var f: text; rs: regset; n: boolean);
@@ -2600,77 +2634,110 @@ procedure xlate;
         ^1 - Immediate integer 2 without leader
         @  - Symbol
       }
-      procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
-      var i,j: 1..insmax40;
+      procedure wrtins60(si: insstr60; i1, i2: integer; r1, r2: reg; sn: strvsp);
+      var i: 1..insmax60; j: integer;
+
       procedure next;
-      begin if i = insmax40 then errorl('Error in instruction     '); i := i+1
+      begin if i = insmax60 then errorl('Error in instruction     '); i := i+1
       end;
         
       begin
-        write(prr, ' ':tabspc);
-        i := 1; while si[i] <> ' ' do begin write(prr, si[i]); next end;
-        j := i;
-        if j >= tabspc then write(prr, ' ');
-        while j <= tabspc do begin write(prr, ' '); j := j+1 end;
-        while (i < insmax40) and (si[i] = ' ') do next;
-        while i < insmax40 do begin
-          if si[i] = '$' then begin next; write(prr, '$');
-            if si[i] = '0' then write(prr, i1:1) 
-            else if si[i] = '1' then write(prr, i2:1)
-            else if si[i] = 's' then writevp(prr, sn)
-            else write(prr, si[i])
-          end else if si[i] = '%' then begin next; write(prr, '%');
-            if si[i] = '1' then begin
-              if si[i+1] = 'l' then begin wrtbreg(prr, r1); i := i+1 end
-              else wrtreg(prr, r1) 
-            end else if si[i] = '2' then begin
-              if si[i+1] = 'l' then begin wrtbreg(prr, r2); i := i+1 end
-              else wrtreg(prr, r2)
-            end else write(prr, si[i])
-          end else if si[i] = '+' then begin next; write(prr, '+');
-            if si[i] = '0' then write(prr, i1:1) 
-            else if si[i] = '1' then write(prr, i2:1)
-            else write(prr, si[i])
-          end else if si[i] = '-' then begin next; write(prr, '-');
-            if si[i] = '0' then write(prr, i1:1) 
-            else if si[i] = '1' then write(prr, i2:1)
-            else write(prr, si[i])
-          end else if si[i] = '^' then begin next;
-            if si[i] = '0' then write(prr, i1:1) 
-            else if si[i] = '1' then write(prr, i2:1)
-            else write(prr, si[i])
-          end else if si[i] = '@' then writevp(prr, sn)
-          else write(prr, si[i]);
-          i := i+1
+        i := 1; j := 1;
+        { write any label }
+        while si[i] <> ' ' do begin write(prr, si[i]); next; j := j+1 end;
+        write(prr, ' '); j := j+1;
+        while j <= opcspc do begin write(prr, ' '); j := j+1 end;
+        while (si[i] = ' ') and (i < insmax60) do next; { skip spaces }
+        { write opcode }
+        while si[i] <> ' ' do begin write(prr, si[i]); next; j := j+1 end;
+        write(prr, ' '); j := j+1;
+        while j <= parspc do begin write(prr, ' '); j := j+1 end;
+        while (si[i] = ' ') and (i < insmax60) do next; { skip spaces }
+        { parse parameters and macros }
+        while i < insmax60 do begin
+          if si[i] = '#' then begin
+            while j <= cmtspc do begin write(prr, ' '); j := j+1 end;
+            j := insmax60;
+            while (si[j] = ' ') and (j > 1) do j := j-1;
+            while i <= j do begin write(prr, si[i]); next end;
+            i := insmax60
+          end else begin
+            if si[i] = '$' then begin next; write(prr, '$'); j := j+1;
+              if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+              else if si[i] = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+              else if si[i] = 's' then begin writevp(prr, sn); j := j+lenpv(sn) end
+              else begin write(prr, si[i]); j := j+1 end
+            end else if si[i] = '%' then begin next; write(prr, '%'); j := j+1;
+              if si[i] = '1' then begin
+                if si[i+1] = 'l' then begin wrtbreg(prr, r1); next; j := j+bregl(r1) end
+                else begin wrtreg(prr, r1); j := j+regl(r1) end
+              end else if si[i] = '2' then begin
+                if si[i+1] = 'l' then begin wrtbreg(prr, r2); next; j := j+bregl(r2) end
+                else begin wrtreg(prr, r2); j := j+regl(r1) end
+              end else begin write(prr, si[i]); j := j+1 end
+            end else if si[i] = '+' then begin next; write(prr, '+'); j := j+1;
+              if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+              else if si[i] = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+              else begin write(prr, si[i]); j := j+1 end
+            end else if si[i] = '-' then begin next; write(prr, '-');j := j+1;
+              if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end 
+              else if si[i] = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+              else begin write(prr, si[i]); j := j+1 end
+            end else if si[i] = '^' then begin next;
+              if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+              else if si[i] = '1' then begin write(prr, i2:1); j := j+digits(i1) end
+              else begin write(prr, si[i]);  j := j+1 end
+            end else if si[i] = '@' then begin writevp(prr, sn); j := j+lenpv(sn) end
+            else begin write(prr, si[i]);  j := j+1 end;
+            next
+          end
         end;
         writeln(prr)
       end;
 
       procedure wrtins10(si: insstr10; i1, i2: integer; r1, r2: reg; sn: strvsp);
-      var s: insstr40;
-          i: 1..insmax40;
+      var s: insstr60;
+          i: 1..insmax60;
       begin
-        for i := 1 to insmax40 do s[i] := ' ';
+        for i := 1 to insmax60 do s[i] := ' ';
         for i := 1 to insmax10 do s[i] := si[i];
-        wrtins40(s, i1, i2, r1, r2, sn)
+        wrtins60(s, i1, i2, r1, r2, sn)
       end;
 
       procedure wrtins20(si: insstr20; i1, i2: integer; r1, r2: reg; sn: strvsp);
-      var s: insstr40;
-          i: 1..insmax40;
+      var s: insstr60;
+          i: 1..insmax60;
       begin
-        for i := 1 to insmax40 do s[i] := ' ';
+        for i := 1 to insmax60 do s[i] := ' ';
         for i := 1 to insmax20 do s[i] := si[i];
-        wrtins40(s, i1, i2, r1, r2, sn)
+        wrtins60(s, i1, i2, r1, r2, sn)
       end;
 
       procedure wrtins30(si: insstr30; i1, i2: integer; r1, r2: reg; sn: strvsp);
-      var s: insstr40;
-          i: 1..insmax40;
+      var s: insstr60;
+          i: 1..insmax60;
       begin
-        for i := 1 to insmax40 do s[i] := ' ';
+        for i := 1 to insmax60 do s[i] := ' ';
         for i := 1 to insmax30 do s[i] := si[i];
-        wrtins40(s, i1, i2, r1, r2, sn)
+        wrtins60(s, i1, i2, r1, r2, sn)
+      end;
+
+      procedure wrtins40(si: insstr40; i1, i2: integer; r1, r2: reg; sn: strvsp);
+      var s: insstr60;
+          i: 1..insmax60;
+      begin
+        for i := 1 to insmax60 do s[i] := ' ';
+        for i := 1 to insmax40 do s[i] := si[i];
+        wrtins60(s, i1, i2, r1, r2, sn)
+      end;
+
+      procedure wrtins50(si: insstr50; i1, i2: integer; r1, r2: reg; sn: strvsp);
+      var s: insstr60;
+          i: 1..insmax60;
+      begin
+        for i := 1 to insmax60 do s[i] := ' ';
+        for i := 1 to insmax50 do s[i] := si[i];
+        wrtins60(s, i1, i2, r1, r2, sn)
       end;
 
       procedure genexp(ep: expptr);
@@ -2682,31 +2749,31 @@ procedure xlate;
         while pp <> nil do begin
           dmptrel(pp, 1); genexp(pp);
           if pp^.r2 <> rgnull then begin
-            wrtins20('pushq %1  ', 0, 0, pp^.r2, rgnull, nil); 
+            wrtins20(' pushq %1 ', 0, 0, pp^.r2, rgnull, nil); 
             stkadr := stkadr-intsize
           end;
           if inss[pp^.op] then begin
-            wrtins20('subq $0,%rsp        ', setsize, 0, rgnull, rgnull, nil);
-            wrtins10('pushq %rsi', 0, 0, rgnull, rgnull, nil);
-            wrtins10('pushq %rdi', 0, 0, rgnull, rgnull, nil);
+            wrtins20(' subq $0,%rsp       ', setsize, 0, rgnull, rgnull, nil);
+            wrtins20(' pushq %rsi         ', 0, 0, rgnull, rgnull, nil);
+            wrtins20(' pushq %rdi         ', 0, 0, rgnull, rgnull, nil);
             if pp^.r1 <> rgrsi then
-              wrtins20('movq %1,%rsi        ', 0, 0, pp^.r1, rgnull, nil);
-            wrtins20('movq %rsp,%rdi      ', 0, 0, rgnull, rgnull, nil);
-            wrtins20('addq $0,%rdi        ', ptrsize*2, 0, rgnull, rgnull, nil);
-            wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-            wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-            wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-            wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);  
-            wrtins10('popq %rdi ', 0, 0, rgnull, rgnull, nil);          
-            wrtins10('popq %rsi ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq %1,%rsi       ', 0, 0, pp^.r1, rgnull, nil);
+            wrtins20(' movq %rsp,%rdi     ', 0, 0, rgnull, rgnull, nil);
+            wrtins20(' addq $0,%rdi       ', ptrsize*2, 0, rgnull, rgnull, nil);
+            wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+            wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+            wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+            wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);  
+            wrtins10(' popq %rdi', 0, 0, rgnull, rgnull, nil);          
+            wrtins10(' popq %rsi', 0, 0, rgnull, rgnull, nil);
             stkadr := stkadr-setsize
           end else if pp^.r1 in [rgrax..rgr15] then begin
-            wrtins20('pushq %1  ', 0, 0, pp^.r1, rgnull, nil); 
+            wrtins20(' pushq %1 ', 0, 0, pp^.r1, rgnull, nil); 
             stkadr := stkadr-intsize
           end else if pp^.r1 in [rgxmm0..rgxmm15] then begin
-            wrtins20('subq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
+            wrtins20(' subq $0,%rsp       ', realsize, 0, rgnull, rgnull, nil); 
             stkadr := stkadr-realsize;
-            wrtins20('movsd %1,(%rsp)     ', 0, 0, pp^.r1, rgnull, nil)
+            wrtins20(' movsd %1,(%rsp)    ', 0, 0, pp^.r1, rgnull, nil)
           end;
           pp := pp^.next
         end
@@ -2721,23 +2788,23 @@ procedure xlate;
         while pp <> nil do begin genexp(pp); pp := pp^.next end;
         aln := false;
         if stkadr mod 16 <> 0 then begin
-          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %rbx         ', 0, 0, rgnull, rgnull, nil);
           aln := true
         end;
-        si := 'call psystem_       ';
-        for i := 1 to maxalfa do if sc[i] <> ' ' then si[14+i-1] := sc[i];
+        si := ' call psystem_      ';
+        for i := 1 to maxalfa do if sc[i] <> ' ' then si[15+i-1] := sc[i];
         wrtins20(si, 0, 0, rgnull, rgnull, nil);
         if aln then
-          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
         if r then begin
           if isfltres(ep) then begin
             if ep^.r1 <> rgxmm0 then 
-              wrtins20('movsd %xmm0,%1      ', ep^.p, 0, ep^.r1, rgnull, nil)
+              wrtins20(' movsd %xmm0,%1     ', ep^.p, 0, ep^.r1, rgnull, nil)
           end else begin 
             if ep^.r1 <> rgrax then 
-              wrtins20('movq %rax,%1        ', ep^.p, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq %rax,%1       ', ep^.p, 0, ep^.r1, rgnull, nil);
             if (ep^.r2 <> rgnull) and (ep^.r2 <> rgrdx) then
-              wrtins20('movq %rdx,%1        ', ep^.p, 0, ep^.r2, rgnull, nil)
+              wrtins20(' movq %rdx,%1       ', ep^.p, 0, ep^.r2, rgnull, nil)
           end
         end
       end;
@@ -2756,28 +2823,28 @@ procedure xlate;
         pp := ep^.pl; genexp(pp); { addr rdi }
         pp := pp^.next; genexp(pp); { size rsi }
         pp := pp^.next; genexp(pp); { tagcnt rdx }
-        wrtins10('pushq %1  ', 0, 0, pp^.r1, rgnull, nil);
-        wrtins20('movq %rsp,%rcx      ', 0, 0, rgnull, rgnull, nil);
-        wrtins20('addq $0,%rcx        ', intsize, 0, rgnull, rgnull, nil);
+        wrtins10(' pushq %1 ', 0, 0, pp^.r1, rgnull, nil);
+        wrtins20(' movq %rsp,%rcx     ', 0, 0, rgnull, rgnull, nil);
+        wrtins20(' addq $0,%rcx       ', intsize, 0, rgnull, rgnull, nil);
         stkadr := stkadr-adrsize;
         aln := false;
         if stkadr mod 16 <> 0 then begin
-          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil); 
+          wrtins20(' pushq %rbx         ', 0, 0, rgnull, rgnull, nil); 
           stkadr := stkadr-adrsize; aln := true
         end;
         if ep^.q = 39 then
-          wrtins20('call psystem_nwl    ', 0, 0, rgnull, rgnull, nil)
+          wrtins20(' call psystem_nwl   ', 0, 0, rgnull, rgnull, nil)
         else
-          wrtins20('call psystem_dsl    ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' call psystem_dsl   ', 0, 0, rgnull, rgnull, nil);
         if aln then begin
-          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
           stkadr := stkadr+adrsize
         end;
-        wrtins10('popq %rcx ', 0, 0, rgnull, rgnull, nil);
+        wrtins10(' popq %rcx', 0, 0, rgnull, rgnull, nil);
         stkadr := stkadr+adrsize;
-        wrtins20('movq $0,%rax        ', intsize, 0, rgnull, rgnull, nil);
-        wrtins10('mulq %rcx ', 0, 0, rgnull, rgnull, nil);
-        wrtins20('addq %rax,%rsp      ', 0, 0, rgnull, rgnull, nil);
+        wrtins20(' movq $0,%rax       ', intsize, 0, rgnull, rgnull, nil);
+        wrtins10(' mulq %rcx', 0, 0, rgnull, rgnull, nil);
+        wrtins20(' addq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil);
         stkadr := stkadrs { restore to entry }
       end;
 
@@ -2785,11 +2852,11 @@ procedure xlate;
         if ep <> nil then begin
           for r := rgrax to rgxmm15 do if r in ep^.rs then begin
               if r in [rgrax..rgr15] then begin
-                wrtins10('pushq %1  ', 0, 0, r, rgnull, nil); 
+                wrtins10(' pushq %1 ', 0, 0, r, rgnull, nil); 
                 stkadr := stkadr-intsize
               end else begin
-                wrtins20('subq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil); 
-                wrtins20('movsd %1,(%rsp)     ', 0, 0, r, rgnull, nil);
+                wrtins20(' subq $0,%rsp       ', realsize, 0, rgnull, rgnull, nil); 
+                wrtins20(' movsd %1,(%rsp)    ', 0, 0, r, rgnull, nil);
                 stkadr := stkadr-realsize
               end
           end;
@@ -2801,289 +2868,289 @@ procedure xlate;
 
             {lodi,loda}
             0,105: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq ^0(%1),%1     ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins20('movzx ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movzx ^0(%1),%1    ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins20('movsd ^0(%1),%2     ', ep^.q, 0, ep^.t1, ep^.r1, nil)
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.t1, rgnull, nil);
+              wrtins20(' movsd ^0(%1),%2    ', ep^.q, 0, ep^.t1, ep^.r1, nil)
             end;
 
             {lods}
             107: begin
-              wrtins20('movq ^0(%rbp),%rsi  ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('lea ^0(%rsi),%rsi   ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins20(' movq ^0(%rbp),%rsi ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins20(' lea ^0(%rsi),%rsi  ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins30(' leaq ^-@^0(%rbp),%rdi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq ^-@^0(%rbp),%1', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {lda}
             4: begin
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins20('lea ^0(%1),%1       ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.r1, rgnull, nil);
+              wrtins20(' lea ^0(%1),%1      ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {adi}
             28: 
-              wrtins20('add %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              wrtins20(' add %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {adr}
             29: 
-              wrtins20('addsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              wrtins20(' addsd %1,%2        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {sbi}
             30: 
-              wrtins20('sub %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              wrtins20(' sub %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {sbr}
             31: 
-              wrtins20('subsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              wrtins20(' subsd %1,%2        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {equr,neqr,geqr,grtr,leqr,lesr}
             138,144,150,156,162,168: begin 
               case ep^.op of
-                138{equr}: wrtins20('cmpeqsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                144{neqr}: wrtins20('cmpneqsd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                150{geqr}: wrtins20('cmplesd %2,%1       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                156{grtr}: wrtins20('cmpltsd %2,%1       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                162{leqr}: wrtins20('cmplesd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                168{lesr}: wrtins20('cmpltsd %1,%2       ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                138{equr}: wrtins20(' cmpeqsd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                144{neqr}: wrtins20(' cmpneqsd %1,%2     ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                150{geqr}: wrtins20(' cmplesd %2,%1      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                156{grtr}: wrtins20(' cmpltsd %2,%1      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                162{leqr}: wrtins20(' cmplesd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                168{lesr}: wrtins20(' cmpltsd %1,%2      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               end;
               if ep^.op in [150{geqr},156{grtr}] then 
-                wrtins20('movq %1,%2          ', 0, 0, ep^.r^.r1, ep^.r1, nil)
+                wrtins20(' movq %1,%2         ', 0, 0, ep^.r^.r1, ep^.r1, nil)
               else
-                wrtins20('movq %1,%2          ', 0, 0, ep^.l^.r1, ep^.r1, nil);
-              wrtins20('andq $0,%1          ', 1, 0, ep^.r1, rgnull, nil) 
+                wrtins20(' movq %1,%2         ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+              wrtins20(' andq $0,%1         ', 1, 0, ep^.r1, rgnull, nil) 
             end;
 
             120{lip}: begin 
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins20('movq ^0(%2),%1    ', ep^.q+ptrsize, 0, ep^.r2, ep^.t1, nil);
-              wrtins20('movq ^0(%2),%1    ', ep^.q, 0, ep^.r1, ep^.t1, nil)
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.t1, rgnull, nil);
+              wrtins20(' movq ^0(%2),%1     ', ep^.q+ptrsize, 0, ep^.r2, ep^.t1, nil);
+              wrtins20(' movq ^0(%2),%1     ', ep^.q, 0, ep^.r1, ep^.t1, nil)
             end;  
 
             {equm,neqm,geqm,gtrm,leqm,lesm}
             142,148,154,160,166,172: begin 
-              wrtins20('movq $0,%rdx        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_strcmp ', 0, 0, rgnull, rgnull, nil); 
-              wrtins20('cmpq $0,%rax        ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%rdx       ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_strcmp', 0, 0, rgnull, rgnull, nil); 
+              wrtins20(' cmpq $0,%rax       ', 0, 0, rgnull, rgnull, nil);
               case ep^.op of
-                142{equm}: wrtins10('sete %1l  ', 0, 0, ep^.r1, rgnull, nil);
-                148{neqm}: wrtins10('setne %1l ', 0, 0, ep^.r1, rgnull, nil);
-                154{geqm}: wrtins10('setge %1l ', 0, 0, ep^.r1, rgnull, nil);
-                160{grtm}: wrtins10('setg %1l  ', 0, 0, ep^.r1, rgnull, nil);
-                166{leqm}: wrtins10('setle %1l ', 0, 0, ep^.r1, rgnull, nil);
-                172{lesm}: wrtins10('setl %1l  ', 0, 0, ep^.r1, rgnull, nil);
+                142{equm}: wrtins10(' sete %1l ', 0, 0, ep^.r1, rgnull, nil);
+                148{neqm}: wrtins10(' setne %1l', 0, 0, ep^.r1, rgnull, nil);
+                154{geqm}: wrtins10(' setge %1l', 0, 0, ep^.r1, rgnull, nil);
+                160{grtm}: wrtins10(' setg %1l ', 0, 0, ep^.r1, rgnull, nil);
+                166{leqm}: wrtins10(' setle %1l', 0, 0, ep^.r1, rgnull, nil);
+                172{lesm}: wrtins10(' setl %1l ', 0, 0, ep^.r1, rgnull, nil);
               end;
-              wrtins20('movsx %1l,%1        ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins20(' movsx %1l,%1       ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             5{lao}:
-              wrtins40('leaq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' leaq globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               if ep^.r1 <> ep^.t1 then
-                wrtins10('movq %1,%2', 0, 0, ep^.r1, ep^.t1, nil);
-              wrtins20('movq $0,%rax        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins10('mul %1    ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins20('add %rax,%1         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins20(' movq %1,%2         ', 0, 0, ep^.r1, ep^.t1, nil);
+              wrtins20(' movq $0,%rax       ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins10(' mul %1   ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins20(' add %rax,%1        ', 0, 0, ep^.t1, rgnull, nil);
               if ep^.r1 <> ep^.t1 then
-                wrtins10('movq %1,%2', 0, 0, ep^.t1, ep^.r1, nil)
+                wrtins20(' movq %1,%2         ', 0, 0, ep^.t1, ep^.r1, nil)
             end;
 
             118{swp}: ; { done at top level }
 
             {ldoi,loda}
             1,65:
-              wrtins40('movq globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movq globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins40('movzx globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movzx globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor}
             66: 
-              wrtins40('movsd globals_start+0(%rip),%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movsd globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
-              wrtins40('leaq globals_start+0(%rip),%rsi         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq globals_start+0(%rip),%rsi        ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq ^-@^0(%rbp),%rdi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq ^-@^0(%rbp),%1', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {indi,inda}
             9,85: 
-              wrtins20('movq ^0(%1),%1  ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20(' movq ^0(%1),%1 ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
 
             {indr}
             86: 
-              wrtins20('movsd ^0(%2),%1  ', ep^.q, 0, ep^.r1, ep^.r2, nil);
+              wrtins20(' movsd ^0(%2),%1 ', ep^.q, 0, ep^.r1, ep^.r2, nil);
 
             {indb,indc,indx}
-            88,89,198: wrtins20('movzx ^0(%1),%1  ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
+            88,89,198: wrtins20(' movzx ^0(%1),%1 ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
 
             {inds}
             87: begin 
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movsq               ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins30(' leaq ^-@^0(%rbp),%rdi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq ^-@^0(%rbp),%1', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {inci,inca,incb,incc,incx}
             10, 90, 93, 94, 201: 
-              wrtins20('addq $0,%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' addq $0,%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {deci,decb,decc,decx}
             57, 103, 104, 202: 
-              wrtins20('subq $0,%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' subq $0,%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ckvi,ckvb,ckvc,ckvx}
             175, 179, 180, 203: begin 
-              wrtins20('cmpq $0,%1          ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins20('sete %1l            ', 0, 0, ep^.t1, rgnull, nil);
-              wrtins20('orq %1,%2           ', 0, 0, ep^.t1, ep^.r2, nil);
+              wrtins20(' cmpq $0,%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins20(' sete %1l           ', 0, 0, ep^.t1, rgnull, nil);
+              wrtins20(' orq %1,%2          ', 0, 0, ep^.t1, ep^.r2, nil);
             end;
 
             {cvbi,cvbx,cvbb,cvbc}
             100, 115, 116, 121: begin
-              wrtins20('movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('leaq @(%rip),%rdx   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20(' movq $0,%rdi       ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%rsi       ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq @(%rip),%rdx  ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
-                wrtins20('movq (%1),%r8       ', 0, 0, ep^.l^.r1, rgnull, nil)
+                wrtins20(' movq (%1),%r8      ', 0, 0, ep^.l^.r1, rgnull, nil)
               else
-                wrtins20('movzx (%1),%r8      ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
-              wrtins30('call psystem_tagchgvar        ', 0, 0, rgnull, rgnull, nil)
+                wrtins20(' movzx (%1),%r8     ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
+              wrtins30(' call psystem_tagchgvar       ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {ivti,ivtx,ivtb,ivtc}
             192,101,102,111: begin
-              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('leaq @(%rip),%rdx    ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins20(' movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq @(%rip),%rdx   ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
-                wrtins20('movq (%1),%r8        ', ep^.q, 0, ep^.l^.r1, rgnull, nil)
+                wrtins20(' movq (%1),%r8       ', ep^.q, 0, ep^.l^.r1, rgnull, nil)
               else
-                wrtins20('movzx (%1),%r8       ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
-              wrtins30('call psystem_tagchginv         ', 0, 0, rgnull, rgnull, nil)
+                wrtins20(' movzx (%1),%r8      ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
+              wrtins30(' call psystem_tagchginv        ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {cps}
             176: begin 
-              wrtins10('cmpq %1,%2', 0, 0, ep^.r^.r2, ep^.l^.r2, nil);
-              wrtins10('je 1f     ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ContainerMismatch,%rdx  ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' cmpq %1,%2         ', 0, 0, ep^.r^.r2, ep^.l^.r2, nil);
+              wrtins10(' je 1f    ', ep^.q, 0, ep^.r^.r1, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $ContainerMismatch,%rdx ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
 
             {cpc}
             177: begin 
-              wrtins20('movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_cmptmp ', 0, 0, rgnull, rgnull, nil)
+              wrtins20(' movq $0,%rdi       ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_cmptmp', 0, 0, rgnull, rgnull, nil)
             end;
 
             {cta}
             191: begin
-              wrtins20('movq $0,%rdi         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rsi         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins20('leaq @(%rip),%rdx    ', 0, 0, rgnull, rgnull, ep^.lt);
-              wrtins30('call psystem_tagchkass           ', 0, 0, rgnull, rgnull, nil)
+              wrtins20(' movq $0,%rdi        ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%rsi        ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq @(%rip),%rdx   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins30(' call psystem_tagchkass          ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {lpa}
             114: begin 
-              wrtins20('leaq @(%rip),%1    ', 0, 0, ep^.r1, rgnull, ep^.fn);
-              wrtins20('movq ^0(%rbp),%1    ', ep^.q1, 0, ep^.r2, rgnull, nil)
+              wrtins20(' leaq @(%rip),%1    ', 0, 0, ep^.r1, rgnull, ep^.fn);
+              wrtins20(' movq ^0(%rbp),%1   ', ep^.q1, 0, ep^.r2, rgnull, nil)
             end;
 
             {ldci,ldcc,ldcb}
             123,127,126:
-              wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.r1, rgnull, nil); 
+              wrtins20(' movq $0,%1         ', ep^.vi, 0, ep^.r1, rgnull, nil); 
 
             {ldcn}
             125:
-              wrtins20('movq $0,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq $0,%1         ', 0, 0, ep^.r1, rgnull, nil);
 
             {ldcr}
             124:
-              wrtins30('movsd real^0(%rip),%1         ', ep^.realn, 0, ep^.r1, rgnull, nil);
+              wrtins30(' movsd real^0(%rip),%1        ', ep^.realn, 0, ep^.r1, rgnull, nil);
 
             {ldcs}
             7: begin
-              wrtins30('leaq set^0(%rip),%rsi         ', ep^.setn, 0, rgnull, rgnull, nil);
-              wrtins30('leaq ^-@^0(%rbp),%rdi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('leaq ^-@^0(%rbp),%1  ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins30(' leaq set^0(%rip),%rsi        ', ep^.setn, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq ^-@^0(%rbp),%rdi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {chki,chka,chkb,chkc,chkx}
             26, 95, 98, 99, 199: begin 
-              wrtins20('movq $0,%1          ', ep^.vi, 0, ep^.t1, rgnull, nil);
-              wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jge 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ValueOutOfRange,%rdx    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%1         ', ep^.vi, 0, ep^.t1, rgnull, nil);
+              wrtins20(' cmpq %1,%2         ', 0, 0, ep^.t1, ep^.r1, nil);
+              wrtins20(' jge 1f             ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $ValueOutOfRange,%rdx   ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins20('movq $0,%1          ', ep^.vi2, 0, ep^.t1, rgnull, nil);
-              wrtins20('cmpq %1,%2          ', 0, 0, ep^.t1, ep^.r1, nil);
-              wrtins20('jle 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins30('movq $ValueOutOfRange,%rdx    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%1         ', ep^.vi2, 0, ep^.t1, rgnull, nil);
+              wrtins20(' cmpq %1,%2         ', 0, 0, ep^.t1, ep^.r1, nil);
+              wrtins20(' jle 1f             ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $ValueOutOfRange,%rdx   ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
 
             {chks}
             97: begin
-              wrtins20('movq $0,%rdi         ', ep^.vi, 0, rgnull, rgnull, nil);
-              wrtins20('movq $0,%rsi         ', ep^.vi2, 0, rgnull, rgnull, nil);
-              wrtins30('call psystem_chksetbnd         ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('leaq ^-@^0(%rbp),%1  ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins20(' movq $0,%rdi        ', ep^.vi, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $0,%rsi        ', ep^.vi2, 0, rgnull, rgnull, nil);
+              wrtins30(' call psystem_chksetbnd        ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {ckla}
             190: begin
               if ep^.q <> 0 then begin
-                wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-                wrtins20('jge 1f              ', 0, 0, ep^.r2, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-                wrtins40('movq $DereferenceOfNilPointer,%rdx      ', 0, 0, rgnull, rgnull, nil);
-                wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+                wrtins20(' orq %1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+                wrtins20(' jge 1f             ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $DereferenceOfNilPointer,%rdx     ', 0, 0, rgnull, rgnull, nil);
+                wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
               end
             end;
 
-            56 {lca}: wrtins30('leaq string^0(%rip),%1        ', ep^.strn, 0, ep^.r1, rgnull, nil); 
+            56 {lca}: wrtins30(' leaq string^0(%rip),%1       ', ep^.strn, 0, ep^.r1, rgnull, nil); 
 
             {grts,less}
             158,170: ; { are invalid }
@@ -3091,15 +3158,15 @@ procedure xlate;
             {equs,neqs,geqs,leqs}
             140,146,152,164: begin 
               case ep^.op of
-                140: wrtins20('call psystem_setequ ', 0, 0, rgnull, rgnull, nil);
+                140: wrtins20(' call psystem_setequ', 0, 0, rgnull, rgnull, nil);
                 146: begin
-                  wrtins20('call psystem_setequ ', 0, 0, rgnull, rgnull, nil);
-                  wrtins20('xor $0,%rax         ', 1, 0, rgnull, rgnull, nil);
+                  wrtins20(' call psystem_setequ', 0, 0, rgnull, rgnull, nil);
+                  wrtins20(' xor $0,%rax        ', 1, 0, rgnull, rgnull, nil);
                 end;
-                152,164: wrtins20('call psystem_setinc ', 0, 0, rgnull, rgnull, nil);
+                152,164: wrtins20(' call psystem_setinc', 0, 0, rgnull, rgnull, nil);
               end;
               if ep^.r1 <> rgrax then
-                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil);
+                wrtins20(' movq %rax,%1       ', 0, 0, ep^.r1, rgnull, nil);
               puttmp(ep^.l^.r1a); puttmp(ep^.r^.r1a)
             end;
 
@@ -3115,16 +3182,16 @@ procedure xlate;
             161, 163, 165,
             {lesi,lesb,lesc}
             167, 169, 171: begin 
-              wrtins10('cmp %1,%2 ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              wrtins10(' cmp %1,%2', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
               case ep^.op of
-                17,137,138,139,141: wrtins10('sete %1l  ', 0, 0, ep^.r1, rgnull, nil);
-                18,143,144,145,147: wrtins10('setne %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                149,150,151,153: wrtins10('setge %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                155,156,157,159: wrtins10('setg %1l  ', 0, 0, ep^.l^.r1, rgnull, nil);
-                161,162,163,165: wrtins10('setle %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
-                167,168,169,171: wrtins10('setl %1l  ', 0, 0, ep^.l^.r1, rgnull, nil)
+                17,137,138,139,141: wrtins10(' sete %1l ', 0, 0, ep^.r1, rgnull, nil);
+                18,143,144,145,147: wrtins10(' setne %1l', 0, 0, ep^.l^.r1, rgnull, nil);
+                149,150,151,153: wrtins10(' setge %1l', 0, 0, ep^.l^.r1, rgnull, nil);
+                155,156,157,159: wrtins10(' setg %1l ', 0, 0, ep^.l^.r1, rgnull, nil);
+                161,162,163,165: wrtins10(' setle %1l', 0, 0, ep^.l^.r1, rgnull, nil);
+                167,168,169,171: wrtins10(' setl %1l ', 0, 0, ep^.l^.r1, rgnull, nil)
               end;
-              wrtins20('movsx %1l,%1        ', 0, 0, ep^.l^.r1, rgnull, nil)
+              wrtins20(' movsx %1l,%1       ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
 
             {ordi,ordb,ordc,ordx}
@@ -3132,170 +3199,170 @@ procedure xlate;
 
             {lcp}
             135: begin 
-              wrtins20('movq (%1),%2        ', 0, 0, ep^.l^.r1, ep^.r1, nil);
-              wrtins20('movq ^0(%1),%2      ', ptrsize, 0, ep^.l^.r1, ep^.r2, nil)
+              wrtins20(' movq (%1),%2       ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+              wrtins20(' movq ^0(%1),%2     ', ptrsize, 0, ep^.l^.r1, ep^.r2, nil)
             end;
 
             {sgs}
             32: begin
-              wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins20('call psystem_setsgl ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins30(' leaq ^-@^0(%rbp),%rsi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins20(' call psystem_setsgl', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq ^-@^0(%rbp),%1', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {flt,flo}
-            33,34: wrtins20('cvtsi2sd %1,%2      ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            33,34: wrtins20(' cvtsi2sd %1,%2     ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {trc}
-            35: wrtins20('cvttsd2si %1,%2     ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            35: wrtins20(' cvttsd2si %1,%2    ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {ngi}
-            36: wrtins20('negq %1     ', 0, 0, ep^.r1, rgnull, nil);
+            36: wrtins20(' negq %1    ', 0, 0, ep^.r1, rgnull, nil);
 
             {ngr}
             37: begin 
-              wrtins20('subsd %1,%1         ', 0, 0, ep^.r1, ep^.r1, nil);
-              wrtins20('subsd %1,%2         ', 0, 0, ep^.l^.r1, ep^.r1, nil)
+              wrtins20(' subsd %1,%1        ', 0, 0, ep^.r1, ep^.r1, nil);
+              wrtins20(' subsd %1,%2        ', 0, 0, ep^.l^.r1, ep^.r1, nil)
             end;
 
             {sqi}
             38: begin 
-              wrtins20('imulq %1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20(' imulq %1,%1         ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
             {sqr}
             39: begin 
-              wrtins20('mulsd %1,%1         ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20(' mulsd %1,%1        ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
             {abi}
             40: begin
-              wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('jns 1f              ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('negq %1             ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20(' orq %1,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins10(' negq %1  ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
 
             end;
 
             {abr}
             41: begin 
-              wrtins30('movq $0x7fffffffffffffff,%1  ', 0, 0, ep^.t1, rgnull, nil);
-              wrtins20('movq %1,%2          ', 0, 0, ep^.t1, ep^.t2, nil);
-              wrtins20('andpd %1,%2         ', 0, 0, ep^.t2, ep^.r1, nil)
+              wrtins30(' movq $0x7fffffffffffffff,%1 ', 0, 0, ep^.t1, rgnull, nil);
+              wrtins20(' movq %1,%2         ', 0, 0, ep^.t1, ep^.t2, nil);
+              wrtins20(' andpd %1,%2        ', 0, 0, ep^.t2, ep^.r1, nil)
             end;
 
             {notb}
             42: begin 
-              wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('movq $1,%1          ', 0, 1, ep^.r1, rgnull, nil);
-              wrtins20('jz 1f               ', 0, 0, ep^.r2, rgnull, nil);
-              wrtins20('movq $0,%1          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins10(' orq %1,%1', 0, 0, ep^.r1, rgnull, nil);
+              wrtins20(' movq $1,%1         ', 0, 1, ep^.r1, rgnull, nil);
+              wrtins10(' jz 1f    ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins20(' movq $0,%1         ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
 
             {noti}
             205: begin 
-              wrtins20('orq %1,%1           ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins20('jns 1f           ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins20('movq $BooleanOperatorOfNegative,%rdx      ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('not %1              ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins10(' orq %1,%1', 0, 0, ep^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins20(' movq $BooleanOperatorOfNegative,%rdx     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' not %1   ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
 
             {odd}
             50: begin 
-              wrtins20('andq $0,%1          ', 1, 0, ep^.r1, rgnull, nil);
+              wrtins20(' andq $0,%1         ', 1, 0, ep^.r1, rgnull, nil);
             end;
 
             {rnd}
-            62: wrtins20('cvtsd2si %1,%2      ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            62: wrtins20(' cvtsd2si %1,%2     ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {chr}
             60: ; { chr is no-op }
 
             {and,ior,xor}
             43,44,206: begin 
-              wrtins20('orq %1,%1           ', 0, 0, ep^.l^.r1, rgnull, nil);
-              wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rdx    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' orq %1,%1', 0, 0, ep^.l^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $BooleanOperatorOfNegative,%rdx   ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins20('orq %1,%1           ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins20('jns 1f              ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins40('movq $BooleanOperatorOfNegative,%rdx    ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' orq %1,%1', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $BooleanOperatorOfNegative,%rdx   ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               case ep^.op of
-                43: wrtins20('andq %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                44: wrtins20('orq %1,%2           ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
-                206: wrtins20('xorq %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
+                43: wrtins20(' andq %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                44: wrtins20(' orq %1,%2          ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+                206: wrtins20(' xorq %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
               end
             end;
 
             {dif,int,uni}
             45,46,47: begin
               case ep^.op of             
-                45: wrtins20('call psystem_setdif ', 0, 0, rgnull, rgnull, nil);
-                46: wrtins20('call psystem_setint ', 0, 0, rgnull, rgnull, nil);
-                47: wrtins20('call psystem_setuni ', 0, 0, rgnull, rgnull, nil);
+                45: wrtins20(' call psystem_setdif', 0, 0, rgnull, rgnull, nil);
+                46: wrtins20(' call psystem_setint', 0, 0, rgnull, rgnull, nil);
+                47: wrtins20(' call psystem_setuni', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins30('leaq ^-@^0(%rbp),%1         ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins30(' leaq ^-@^0(%rbp),%1        ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
               puttmp(ep^.r^.r1a)
             end;
 
             {inn}
             48: begin
-              wrtins20('call psystem_setsin ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_setsin', 0, 0, rgnull, rgnull, nil);
               if ep^.r1 <> rgrax then
-                wrtins20('movq %rax,%1          ', 0, 0, ep^.r1, rgnull, nil);
+                wrtins20(' movq %rax,%1         ', 0, 0, ep^.r1, rgnull, nil);
               puttmp(ep^.r^.r1a)
             end;
 
             {mod}
             49: begin 
-              wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('subq $0,%rax        ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins10('jns 1f    ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins10('decq %rdx ', 0, 0, rgnull, rgnull, sp);
+              wrtins20(' xorq %rdx,%rdx     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' subq $0,%rax       ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' decq %rdx', 0, 0, rgnull, rgnull, sp);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins10('idivq %1  ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' idivq %1 ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrdx then
-                wrtins20('movq %rdx,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                wrtins20(' movq %rdx,%1       ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {dvi}
             53: begin 
-              wrtins20('xorq %rdx,%rdx      ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('subq $0,%rax        ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins10('jns 1f    ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins10('decq %rdx ', 0, 0, rgnull, rgnull, sp);
+              wrtins20(' xorq %rdx,%rdx     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' subq $0,%rax       ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' jns 1f   ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' decq %rdx', 0, 0, rgnull, rgnull, sp);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins10('idivq %1  ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins10(' idivq %1 ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrax then
-                wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                wrtins20(' movq %rax,%1       ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {mpi}
-            51: wrtins20('imulq %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            51: wrtins20(' imulq %1,%2        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {mpr}
-            52: wrtins20('mulsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            52: wrtins20(' mulsd %1,%2        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
-            54: wrtins20('divsd %1,%2         ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            54: wrtins20(' divsd %1,%2        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {rgs}
             110: begin 
-              wrtins30('leaq ^-@^0(%rbp),%rdx         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-              wrtins20('call psystem_setrgs ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('leaq ^-@^0(%rbp),%1 ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins30(' leaq ^-@^0(%rbp),%rdx        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins20(' call psystem_setrgs', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' leaq ^-@^0(%rbp),%1', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
@@ -3314,21 +3381,21 @@ procedure xlate;
             {sfr}
             245:
               if ep^.lb <> nil then
-                wrtins20('subq $s,%rsp        ', 0, 0, rgnull, rgnull, ep^.lb);
+                wrtins20(' subq $s,%rsp       ', 0, 0, rgnull, rgnull, ep^.lb);
 
             {cup,cuf}
             12, 246: begin
               genexp(ep^.sl); { process sfr start link }
               stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
-              wrtins10('call @    ', 0, 0, rgnull, rgnull, ep^.fn);
+              wrtins10(' call @   ', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
                 if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
-                  wrtins20('movq %xmm0,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                  wrtins20(' movq %xmm0,%1       ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
                   if ep^.r1 <> rgrax then
-                    wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                    wrtins20(' movq %rax,%1       ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
               stkadr := stkadrs { restore stack position }
@@ -3340,46 +3407,46 @@ procedure xlate;
               stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
               genexp(ep^.l); { load procedure address }
-              wrtins20('movq %rbp,%r15      ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('movq ^0(%1),%rbp    ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
-              wrtins10('call *(%1)', 0, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20(' movq %rbp,%r15     ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq ^0(%1),%rbp   ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
+              wrtins20(' call *(%1)         ', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
                 if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
-                    wrtins20('movq %xmm0,%1       ', 0, 0, ep^.r1, rgnull, nil)
+                    wrtins20(' movq %xmm0,%1      ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
                   if ep^.r1 <> rgrax then
-                    wrtins20('movq %rax,%1        ', 0, 0, ep^.r1, rgnull, nil)
+                    wrtins20(' movq %rax,%1       ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
-              wrtins20('movq %r15,%rbp      ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' movq %r15,%rbp     ', 0, 0, rgnull, rgnull, nil);
               stkadr := stkadrs { restore stack position }
             end;
 
             {cke}
             188: begin
-              wrtins10('movq $0,%1', 0, 0, ep^.r2, rgnull, nil);
+              wrtins20(' movq $0,%1         ', 0, 0, ep^.r2, rgnull, nil);
               ep2 := ep^.cl; 
               while ep2 <> nil do begin 
                 ep2^.r1 := ep^.r1; ep2^.r2 := ep^.r2; ep2^.t1 := ep^.t1; 
                 genexp(ep2); ep2 := ep2^.next 
               end;   
-              wrtins10('jnz 1f    ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('leaq modnam(%rip),%rdi        ', 0, 0, rgnull, rgnull, nil);
-              wrtins30('movq $0,%rsi                  ', sline, 0, rgnull, rgnull, nil);
-              wrtins30('movq $VariantNotActive,%rdx   ', 0, 0, rgnull, rgnull, nil);
-              wrtins20('call psystem_errore ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' jnz 1f   ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' leaq modnam(%rip),%rdi       ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%rsi                 ', sline, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $VariantNotActive,%rdx  ', 0, 0, rgnull, rgnull, nil);
+              wrtins20(' call psystem_errore', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
             end;
 
           end;
           for r := rgxmm15 downto rgrax do if r in ep^.rs then begin
             if r in [rgrax..rgr15] then begin
-              wrtins20('popq %1             ', 0, 0, r, rgnull, nil);
+              wrtins20(' popq %1            ', 0, 0, r, rgnull, nil);
               stkadr := stkadr-intsize
             end else begin
-              wrtins20('movsd (%rsp),%1     ', 0, 0, r, rgnull, nil);
-              wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
+              wrtins20(' movsd (%rsp),%1    ', 0, 0, r, rgnull, nil);
+              wrtins20(' addq $0,%rsp       ', realsize, 0, rgnull, rgnull, nil);
               stkadr := stkadr-intsize
             end
           end;
@@ -3470,15 +3537,6 @@ procedure xlate;
         if fl > 0 then write(prr, ' ':fl)
       end;
      
-      function digits(i: integer): integer;
-      var dc: integer;
-      begin
-        dc := 0; if i < 0 then begin i := -i; dc := dc+1 end;
-        if i = 0 then dc := 1
-        else while i > 0 do begin i := i div 10; dc := dc+1 end;
-        digits := dc
-      end;
-
       procedure par;
       begin
         lftjst(parfld); pass
@@ -3884,8 +3942,8 @@ procedure xlate;
           popstk(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins20('movq %1,^0(%2)       ', q, 0, ep^.r1, r1, nil);
+          wrtins20(' movq ^0(%rbp),%1   ', -p*ptrsize, 0, r1, rgnull, nil);
+          wrtins20(' movq %1,^0(%2)      ', q, 0, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -3895,8 +3953,8 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins20('movb %1l,^0(%2)      ', q, 0, ep^.r1, r1, nil);
+          wrtins20(' movq ^0(%rbp),%1   ', -p*ptrsize, 0, r1, rgnull, nil);
+          wrtins20(' movb %1l,^0(%2)     ', q, 0, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -3906,8 +3964,8 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rbp),%1    ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins20('movsd %1,^0(%2)     ', q, 0, ep^.r1, r1, nil);
+          wrtins20(' movq ^0(%rbp),%1   ', -p*ptrsize, 0, r1, rgnull, nil);
+          wrtins20(' movsd %1,^0(%2)    ', q, 0, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -3916,12 +3974,12 @@ procedure xlate;
           frereg := allreg; popstk(ep); assreg(ep, frereg, rgrsi, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rbp),%rdi  ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
-          wrtins20('leaq ^0(%rdi),%rdi  ', q, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' movq ^0(%rbp),%rdi ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
+          wrtins20(' leaq ^0(%rdi),%rdi ', q, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep^.r1a); deltre(ep)
         end;
 
@@ -3935,30 +3993,33 @@ procedure xlate;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place current ep }
-          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { place bottom of stack }
-          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { previous ep }
-          wrtins20('enterq $1,$0       ', p+1, 0, rgnull, rgnull, nil); { enter frame }
-          wrtins20('movq %rsp,%rax     ', 0, 0, rgnull, rgnull, nil); { copy sp }
+          wrtins30(' pushq $0 # place current ep   ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq $0 # place bottom of stack        ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' pushq $0 # place previous ep  ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' enterq $1,$0 # enter frame    ', p+1, 0, rgnull, rgnull, nil);
+          wrtins30(' movq %rsp,%rax # copy sp      ', 0, 0, rgnull, rgnull, nil);
           { find sp-locals }
           write(prr, '        subq    $'); writevp(prr, lclspc); write(prr, '+'); 
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ',%rax');
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ',%rax # find sp-locals');
           wrtins10('1:        ', 0, 0, rgnull, rgnull, lclspc);
-          wrtins20('cmpq %rax,%rsp     ', 0, 0, rgnull, rgnull, nil); { check stack is there }
-          wrtins10('je 2f     ', 0, 0, rgnull, rgnull, nil); { skip if so }
-          wrtins10('pushq $0  ', 0, 0, rgnull, rgnull, nil); { push 0 word }
-          wrtins10('jmp 1b    ', 7, 0, rgnull, rgnull, nil); { loop }
+          wrtins50(' cmpq %rax,%rsp # check have reached stack         ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' je 2f # skip if so  ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq $0 # push 0 word for locals       ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' jmp 1b # loop       ', 7, 0, rgnull, rgnull, nil);
           wrtins10('2:        ', 0, 0, rgnull, rgnull, lclspc);
-          wrtins20('movq %rsp,^0(%rbp)  ', marksb, 0, rgnull, rgnull, nil);
+                   {         111111111122222222223333333333444444444455555555556
+                    123456789012345678901234567890123456789012345678901234567890}
+          wrtins50(' movq %rsp,^0(%rbp) # set bottom of stack         ', marksb, 0, rgnull, rgnull, nil);
           { note there is no way to know locals space in advance }
-          wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
+          wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack       ', 0, 0, rgnull, rgnull, nil);
           { save protected registers and keep aligned }
-          wrtins10('pushq %rbx', 0, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %r12', 0, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %r13', 0, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %r14', 0, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %r15', 0, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins60(' pushq %rbx # save protected registers and keep aligned      ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %r12         ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %r13         ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %r14         ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %r15         ', 0, 0, rgnull, rgnull, nil);
+
+          wrtins40(' pushq %r15 # second push aligns        ', 0, 0, rgnull, rgnull, nil);
           tmpoff := -(p+1)*ptrsize;
           tmpspc := 0; { clear temps }
           stkadr := 0;
@@ -3971,9 +4032,9 @@ procedure xlate;
           frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
           assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
           genexp(ep2); genexp(ep);
-          wrtins20('movq $0,%rcx        ', q, 0, rgnull, rgnull, nil);
-          wrtins10('repnz     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsb     ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' movq $0,%rcx       ', q, 0, rgnull, rgnull, nil);
+          wrtins10(' repnz    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2);
           botstk
         end;
@@ -3990,10 +4051,10 @@ procedure xlate;
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
-            wrtins40('movb %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
+            wrtins40(' movb %1l,globals_start+0(%rip)', q, 0, ep^.r1, rgnull, nil)
           else if op = 76{sror} then
-            wrtins40('movsd %1l,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil)
-          else wrtins40('movq %1,globals_start+0(%rip) ', q, 0, ep^.r1, rgnull, nil);
+            wrtins40(' movsd %1l,globals_start+0(%rip)', q, 0, ep^.r1, rgnull, nil)
+          else wrtins40(' movq %1,globals_start+0(%rip)', q, 0, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
@@ -4003,12 +4064,12 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30('leaq ^-@^0(%rbp),%rsi         ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-          wrtins40('leaq globals_start+0(%rip),%rdi         ', q, 0, ep^.r1, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' leaq ^-@^0(%rbp),%rsi        ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins40(' leaq globals_start+0(%rip),%rdi        ', q, 0, ep^.r1, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep^.r1a); deltre(ep)
         end;
 
@@ -4027,9 +4088,9 @@ procedure xlate;
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movq $0,%rsi        ', q1, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_pack   ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' movq $0,%rdi       ', q, 0, rgnull, rgnull, nil);
+          wrtins20(' movq $0,%rsi       ', q1, 0, rgnull, rgnull, nil);
+          wrtins20(' call psystem_pack  ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2); deltre(ep3); 
           botstk 
         end;
@@ -4043,9 +4104,9 @@ procedure xlate;
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq $0,%rdi        ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movq $0,%rsi        ', q1, 0, rgnull, rgnull, nil);
-          wrtins20('call psystem_unpack ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' movq $0,%rdi       ', q, 0, rgnull, rgnull, nil);
+          wrtins20(' movq $0,%rsi       ', q1, 0, rgnull, rgnull, nil);
+          wrtins20(' call psystem_unpack', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2); deltre(ep3); 
           botstk 
         end;
@@ -4053,7 +4114,7 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
-          wrtins10('jmp @     ', 0, 0, rgnull, rgnull, sp);
+          wrtins10(' jmp @    ', 0, 0, rgnull, rgnull, sp);
           botstk
         end;
 
@@ -4063,9 +4124,9 @@ procedure xlate;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('orb %1l,%1l         ', 0, 0, ep^.r1, rgnull, nil);
-          if op = 24{fjp} then wrtins10('jz @      ', 0, 0, rgnull, rgnull, sp)
-          else {tjp} wrtins10('jnz @     ', 0, 0, rgnull, rgnull, sp);
+          wrtins20(' orb %1l,%1l        ', 0, 0, ep^.r1, rgnull, nil);
+          if op = 24{fjp} then wrtins10(' jz @     ', 0, 0, rgnull, rgnull, sp)
+          else {tjp} wrtins10(' jnz @    ', 0, 0, rgnull, rgnull, sp);
           deltre(ep); 
           botstk 
         end;
@@ -4077,12 +4138,12 @@ procedure xlate;
           assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins10('movq %1,%2', 0, 0, ep^.r1, r1, sp);
-          wrtins10('salq $2,%1', 0, 0, ep^.r1, rgnull, sp);
-          wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
-          wrtins20('leaq @(%rip),%1     ', 0, 0, r1, rgnull, sp);
-          wrtins10('addq %2,%1', 0, 0, ep^.r1, r1, sp);
-          wrtins10('jmp *%1   ', 0, 0, ep^.r1, rgnull, sp);
+          wrtins20(' movq %1,%2         ', 0, 0, ep^.r1, r1, sp);
+          wrtins20(' salq $2,%1         ', 0, 0, ep^.r1, rgnull, sp);
+          wrtins20(' addq %2,%1         ', 0, 0, ep^.r1, r1, sp);
+          wrtins20(' leaq @(%rip),%1    ', 0, 0, r1, rgnull, sp);
+          wrtins20(' addq %2,%1         ', 0, 0, ep^.r1, r1, sp);
+          wrtins10(' jmp *%1  ', 0, 0, ep^.r1, rgnull, sp);
           deltre(ep); 
           botstk 
         end;
@@ -4091,10 +4152,10 @@ procedure xlate;
         112: begin read(prd,p); labelsearch(def, val, sp); write(prr, p:1, ' l '); 
           writevp(prr, sp); lftjst(parfld-(digits(p)+3+lenpv(sp))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq ^0(%rbp),%rbp    ', -p*ptrsize, 0, rgnull, rgnull, nil);
-          wrtins20('movq ^0(%rbp),%rsp    ', marksb, 0, rgnull, rgnull, nil);
-          wrtins30('andq $0xfffffffffffffff0,%rsp ', 0, 0, rgnull, rgnull, nil); { align stack }
-          wrtins10('jmp @     ', 0, 0, rgnull, rgnull, sp);
+          wrtins20(' movq ^0(%rbp),%rbp   ', -p*ptrsize, 0, rgnull, rgnull, nil);
+          wrtins20(' movq ^0(%rbp),%rsp   ', marksb, 0, rgnull, rgnull, nil);
+          wrtins30(' andq $0xfffffffffffffff0,%rsp', 0, 0, rgnull, rgnull, nil); { align stack }
+          wrtins10(' jmp @    ', 0, 0, rgnull, rgnull, sp);
           botstk 
         end;
 
@@ -4103,9 +4164,9 @@ procedure xlate;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('movq %rdi,%rsi         ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsi           ', ep^.q-1, 0, rgnull, rgnull, nil);
-          wrtins20('call varenter          ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' movq %rdi,%rsi        ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsi          ', ep^.q-1, 0, rgnull, rgnull, nil);
+          wrtins20(' call varenter         ', 0, 0, rgnull, rgnull, nil);
           deltre(ep);
           botstk
         end;
@@ -4113,14 +4174,14 @@ procedure xlate;
         {vbe}
         96: begin par;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins20('call varexit        ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' call varexit       ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
 
         {ret}
         22: begin par;
           frereg := allreg;
-          wrtins20('ret       ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' ret      ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
 
@@ -4129,18 +4190,18 @@ procedure xlate;
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           { restore protected registers and keep aligned }
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %rax ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r14', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r13', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' leave    ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rax ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', q, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %rax         ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' ret       ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
@@ -4150,21 +4211,21 @@ procedure xlate;
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           { restore protected registers }
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rax  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r14', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r13', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' leave    ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rcx ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', q, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rax ', 0, 0, rgnull, rgnull, nil);
           if op in [204{retx},130{retc},131{retb}] then
-            wrtins20('andq $0,%rax        ', 255, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %rcx ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+            wrtins20(' andq $0,%rax       ', 255, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %rcx         ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' ret       ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
@@ -4174,20 +4235,20 @@ procedure xlate;
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           { restore protected registers }
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r15 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r14 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r13 ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %r12', 0, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rbx ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('leave     ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', marksize, 0, rgnull, rgnull, nil);
-          wrtins10('popq %rcx  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', q, 0, rgnull, rgnull, nil);
-          wrtins20('movsd (%rsp),%xmm0  ', 0, 0, rgnull, rgnull, nil);
-          wrtins20('addq $0,%rsp        ', realsize, 0, rgnull, rgnull, nil);
-          wrtins10('pushq %rcx ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('ret        ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r15', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r14', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r13', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' leave    ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', marksize, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rcx ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', q, 0, rgnull, rgnull, nil);
+          wrtins20(' movsd (%rsp),%xmm0 ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' addq $0,%rsp       ', realsize, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %rcx         ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' ret       ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
@@ -4202,10 +4263,10 @@ procedure xlate;
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           case op of
-            6{stoi},80{stoa}: wrtins20('movq %1,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil);
-            81{stor}: wrtins20('movsd %1,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil);
+            6{stoi},80{stoa}: wrtins20(' movq %1,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil);
+            81{stor}: wrtins20(' movsd %1,(%2)      ', q, 0, ep2^.r1, ep^.r1, nil);
             83{stob},84{stoc},197{stox}:
-              wrtins20('movb %1l,(%2)        ', q, 0, ep2^.r1, ep^.r1, nil)
+              wrtins20(' movb %1l,(%2)       ', q, 0, ep2^.r1, ep^.r1, nil)
           end;
           deltre(ep); deltre(ep2)
         end;
@@ -4218,10 +4279,10 @@ procedure xlate;
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
-          wrtins10('movsq     ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep2^.r1a);
           deltre(ep); deltre(ep2)
         end;
@@ -4249,10 +4310,10 @@ procedure xlate;
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins10('cmpq $0,%1', q, 0, ep^.r1, rgnull, nil);
-          wrtins10('jl 1f     ', 0, 0, rgnull, rgnull, sp);
-          wrtins10('cmpq $0,%1', q1, 0, ep^.r1, rgnull, nil);
-          wrtins10('jle @     ', 0, 0, rgnull, rgnull, sp);
+          wrtins20(' cmpq $0,%1         ', q, 0, ep^.r1, rgnull, nil);
+          wrtins10(' jl 1f    ', 0, 0, rgnull, rgnull, sp);
+          wrtins20(' cmpq $0,%1         ', q1, 0, ep^.r1, rgnull, nil);
+          wrtins10(' jle @    ', 0, 0, rgnull, rgnull, sp);
           wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
         end;
