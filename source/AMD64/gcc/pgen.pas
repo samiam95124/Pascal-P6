@@ -2747,7 +2747,7 @@ procedure xlate;
           i: 1..insmax70;
       begin
         for i := 1 to insmax70 do s[i] := ' ';
-        for i := 1 to insmax50 do s[i] := si[i];
+        for i := 1 to insmax60 do s[i] := si[i];
         wrtins70(s, i1, i2, r1, r2, sn)
       end;
 
@@ -2800,14 +2800,12 @@ procedure xlate;
         while pp <> nil do begin genexp(pp); pp := pp^.next end;
         aln := false;
         if stkadr mod 16 <> 0 then begin
-
-          wrtins20(' pushq %rbx # align        ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' pushq %rbx # align ', 0, 0, rgnull, rgnull, nil);
           aln := true
         end;
-
         si := ' call psystem_     # call system procedure/function         ';
         for i := 1 to maxalfa do if sc[i] <> ' ' then si[15+i-1] := sc[i];
-        wrtins20(si, 0, 0, rgnull, rgnull, nil);
+        wrtins60(si, 0, 0, rgnull, rgnull, nil);
         if aln then
           wrtins30(' popq %rbx # drop alignment   ', 0, 0, rgnull, rgnull, nil);
         if r then begin
@@ -2973,7 +2971,7 @@ procedure xlate;
             end;
 
             5{lao}:
-              wrtins30(' leaq globals_start+0(%rip),%1', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins60(' leaq globals_start+0(%rip),%1 # load address of global     ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               if ep^.r1 <> ep^.t1 then
@@ -2989,15 +2987,17 @@ procedure xlate;
 
             {ldoi,loda}
             1,65:
-              wrtins40(' movq globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins50(' movq globals_start+0(%rip),%1 # load global quad ', glbsym(ep^.q), 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins40(' movzx globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins70(' movzx globals_start+0(%rip),%1 # load and zero extend global byte    ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor}
             66: 
-              wrtins40(' movsd globals_start+0(%rip),%1         ', ep^.q, 0, ep^.r1, rgnull, nil);
+                      {          1         2         3         4         5         6
+                        1234567890123456789012345678901234567890123456789012345678901234567890}
+              wrtins40(' movsd globals_start+0(%rip),%1 # load global real', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
