@@ -757,7 +757,7 @@ static void readlncommand(void)
 
 */
 
-void assignexternal(filnum fn, char hfn[])
+static void assignexternal(filnum fn, char hfn[])
 {
     long i;
 
@@ -778,7 +778,7 @@ void assignexternal(filnum fn, char hfn[])
 
 /* set operations */
 
-void sset(settype s, long b)
+static void sset(settype s, long b)
 {
     long i;
 
@@ -786,7 +786,7 @@ void sset(settype s, long b)
     s[b/8] |= 1<<b%8;
 }
 
-void rset(settype s, long b1, long b2)
+static void rset(settype s, long b1, long b2)
 {
     long i;
 
@@ -795,33 +795,33 @@ void rset(settype s, long b1, long b2)
     for (i = b1; i <= b2; i++) s[i/8] |= 1<<i%8;
 }
 
-void suni(settype s1, settype s2)
+static void suni(settype s1, settype s2)
 {
     long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] | s2[i];
 }
 
-void sint(settype s1, settype s2)
+static void sint(settype s1, settype s2)
 {
     long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & s2[i];
 }
 
-void sdif(settype s1, settype s2)
+static void sdif(settype s1, settype s2)
 {
     long i;
 
     for (i = 0; i < SETSIZE; i++) s1[i] = s1[i] & ~s2[i];
 }
 
-boolean sisin(long i, settype s)
+static boolean sisin(long i, settype s)
 {
     return (!!(s[i/8] & 1<<i%8));
 }
 
-boolean sequ(settype s1, settype s2)
+static boolean sequ(settype s1, settype s2)
 {
     long i;
 
@@ -829,7 +829,7 @@ boolean sequ(settype s1, settype s2)
     return (TRUE);
 }
 
-boolean sinc(settype s1, settype s2)
+static boolean sinc(settype s1, settype s2)
 {
     long i;
 
@@ -848,7 +848,7 @@ terminates the destination.
 
 *******************************************************************************/
 
-void strcpyl(
+static void strcpyl(
     /* destination string */ char* ds,
     /* source string */      char* ss,
     /* source string length */ long sl
@@ -873,7 +873,7 @@ Checks if the provided block overlaps any outstanding variable reference block.
 
 *******************************************************************************/
 
-boolean varlap(unsigned char* s, unsigned char* e)
+static boolean varlap(unsigned char* s, unsigned char* e)
 
 {
 
@@ -901,7 +901,7 @@ a file from the file table.
 
 *******************************************************************************/
 
-void valfil(
+static void valfil(
     /** Pascal file to validate */ pasfil* f
 )
 
@@ -934,7 +934,7 @@ Expects a Pascal file address. Validates the file is in write mode.
 
 *******************************************************************************/
 
-void valfilwm(
+static void valfilwm(
     /** Pascal file to validate */ pasfil* f
 )
 
@@ -953,7 +953,7 @@ Expects a Pascal file address. Validates the file is in read mode.
 
 *******************************************************************************/
 
-void valfilrm(
+static void valfilrm(
     /** Pascal file to validate */ pasfil* f
 )
 
@@ -974,7 +974,7 @@ Note: turns out this could be implemented by feof().
 
 *******************************************************************************/
 
-boolean eoffile(
+static boolean eoffile(
     /** File to check */ FILE* fp
 )
 
@@ -997,7 +997,7 @@ Expects a C file pointer, and returns true if the file is at EOLN.
 
 *******************************************************************************/
 
-boolean eolnfile(
+static boolean eolnfile(
     /** File to check */ FILE* fp
 )
 
@@ -1021,7 +1021,7 @@ character is EOLN or EOF, returns space.
 
 *******************************************************************************/
 
-char chkfile(
+static char chkfile(
     /** File to get character from */ FILE* fp
 )
 
@@ -1043,7 +1043,7 @@ Find file length
 
 *******************************************************************************/
 
-long lengthfile(
+static long lengthfile(
     /** File to get length */ FILE* fp
 )
 
@@ -1068,7 +1068,7 @@ according to file type. Errors on read to incorrect file type.
 
 *******************************************************************************/
 
-char buffn(
+static char buffn(
     /** Logical file number */ filnum fn
 )
 
@@ -1110,7 +1110,7 @@ is returned, followed by EOF status.
 
 *******************************************************************************/
 
-void getfneoln(
+static void getfneoln(
     /** C file to read */      FILE* fp,
     /** logical file number */ filnum fn
 )
@@ -1134,7 +1134,7 @@ Advances the character position for a text file.
 
 *******************************************************************************/
 
-void getfn(filnum fn)
+static void getfn(filnum fn)
 {
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -1162,7 +1162,7 @@ Returns true if file is at EOF. Handles EOLN insertion.
 
 *******************************************************************************/
 
-boolean chkeoffn(FILE* fp, filnum fn)
+static boolean chkeoffn(FILE* fp, filnum fn)
 
 {
 
@@ -1195,7 +1195,7 @@ Returns true if file is at EOF.
 
 *******************************************************************************/
 
-boolean eoffn(filnum fn)
+static boolean eoffn(filnum fn)
 
 {
 
@@ -1225,7 +1225,7 @@ Checks if the file given is at EOLN.
 
 *******************************************************************************/
 
-boolean chkeolnfn(FILE* fp, filnum fn)
+static boolean chkeolnfn(FILE* fp, filnum fn)
 
 {
 
@@ -1242,7 +1242,7 @@ Checks if the logical file number is at EOLN.
 
 *******************************************************************************/
 
-boolean eolnfn(filnum fn)
+static boolean eolnfn(filnum fn)
 {
     boolean eoln;
 
@@ -1273,7 +1273,7 @@ Reads and discards characters until EOLN is reached.
 
 *******************************************************************************/
 
-void readline(filnum fn)
+static void readline(filnum fn)
 
 {
 
@@ -1296,7 +1296,7 @@ space if past the field width.
 
 *******************************************************************************/
 
-char chkbuf(filnum fn, long w)
+static char chkbuf(filnum fn, long w)
 
 { 
 
@@ -1314,7 +1314,7 @@ or end of the field.
 
 *******************************************************************************/
 
-boolean chkend(filnum fn, long w)
+static boolean chkend(filnum fn, long w)
 
 { 
  
@@ -1331,7 +1331,7 @@ an EOF.
 
 *******************************************************************************/
 
-void getbuf(filnum fn, long* w)
+static void getbuf(filnum fn, long* w)
 
 {
 
@@ -1355,7 +1355,7 @@ is blank.
 
 *******************************************************************************/
 
-void readi(filnum fn, long *i, long* w, boolean fld)
+static void readi(filnum fn, long *i, long* w, boolean fld)
 {
 
     long s;
@@ -1401,7 +1401,7 @@ Finds the given power of 10.
 
 *******************************************************************************/
 
-double pwrten(long e)
+static double pwrten(long e)
 
 {
 
@@ -1433,7 +1433,7 @@ is blank.
 
 *******************************************************************************/
 
-void readr(filnum fn, double* r, long w, boolean fld)
+static void readr(filnum fn, double* r, long w, boolean fld)
 
 {
 
@@ -1511,7 +1511,7 @@ is blank.
 
 *******************************************************************************/
 
-void readc(filnum fn, char* c, long w, boolean fld)
+static void readc(filnum fn, char* c, long w, boolean fld)
 
 {
 
@@ -1538,7 +1538,7 @@ is blank.
 
 *******************************************************************************/
 
-void reads(filnum fn, char* s, long l, long w, boolean fld)
+static void reads(filnum fn, char* s, long l, long w, boolean fld)
 
 {
 
@@ -1571,7 +1571,7 @@ string are cleared to blanks.
 
 *******************************************************************************/
 
-void readsp(filnum fn, char* s,  long l)
+static void readsp(filnum fn, char* s,  long l)
 {
 
     char c;
@@ -1595,7 +1595,7 @@ string is the last non-space character in the string.
 
 *******************************************************************************/
 
-void writestrp(FILE* f, char* s, long l)
+static void writestrp(FILE* f, char* s, long l)
 {
 
     long i;
@@ -1615,7 +1615,7 @@ Writes n '0's to the file.
 
 *******************************************************************************/
 
-void filllz(FILE* f, long n)
+static void filllz(FILE* f, long n)
 
 { 
 
@@ -1637,7 +1637,7 @@ is negative and a non-decimal radix is specified, an error results.
 
 *******************************************************************************/
 
-void writei(FILE* f, long w, long fl, long r, long lz)
+static void writei(FILE* f, long w, long fl, long r, long lz)
 {
 
     long i, d, ds;
@@ -1679,7 +1679,7 @@ file.
 
 *******************************************************************************/
 
-void writeipf(pasfil* f, long i, long w, long r, long lz)
+static void writeipf(pasfil* f, long i, long w, long r, long lz)
 
 {
 
@@ -1720,7 +1720,7 @@ given field.
 
 *******************************************************************************/
 
-void writeb(FILE* f, boolean b, long w)
+static void writeb(FILE* f, boolean b, long w)
 {
 
     long l;
@@ -1748,7 +1748,7 @@ to the file and the buffer indicated as clear.
 
 *******************************************************************************/
 
-void putfile(FILE* f, pasfil* pf, filnum fn)
+static void putfile(FILE* f, pasfil* pf, filnum fn)
 
 {
 
@@ -1768,7 +1768,7 @@ a binary file, otherwise it is opened as a text file.
 
 *******************************************************************************/
 
-void resetfn(filnum fn, boolean bin)
+static void resetfn(filnum fn, boolean bin)
 
 {
 
@@ -1795,7 +1795,7 @@ a binary file, otherwise it is opened as a text file.
 
 *******************************************************************************/
 
-void rewritefn(filnum fn, boolean bin)
+static void rewritefn(filnum fn, boolean bin)
 
 {
 
