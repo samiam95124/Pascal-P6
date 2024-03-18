@@ -325,6 +325,14 @@ type
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
       end;
+      psymbol     = ^symbol;
+      symbol      = record
+                      next:   psymbol; { next list symbol }
+                      name:   strvsp; { name }
+                      styp:   (stglobal, stlocal, stparam); { area type }
+                      off:    address; { offset address }
+                      digest: strvsp; { type digest }
+                    end;
       pblock       = ^block;
       block        = record
                        next:    pblock; { next list block }
@@ -333,6 +341,7 @@ type
                        bname:   strvsp; { name of block, not including type }
                        tmpnam:  strvsp; { name of temp allocation space }
                        short:   boolean; { there is a short name }
+                       symbols: psymbol; { symbol list for block }
                        { block type }
                        btyp:    (btprog, btmod, btproc, btfunc);
                        en:      integer { encounter number }
@@ -1514,6 +1523,30 @@ procedure xlate;
      end
    end;
 
+   procedure wrtgbl(var f: text; a: address; fl: integer);
+   var bp, fbp: pblock; sp, fsp: psymbol;
+   begin
+     bp := blkstk; fbp := nil; fsp := nil;
+     while bp <> nil do begin
+       if bp^.btyp in [btprog, btmod] then fbp := bp;
+       bp := bp^.next
+     end;
+     if fbp <> nil then begin
+       sp := fbp^.symbols;
+       while sp <> nil do begin
+         if (sp^.off = a) and (sp^.styp = stglobal) then fsp := sp;
+         sp := sp^.next
+       end
+     end;
+     if fsp <> nil then begin
+       writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
+       fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
+     end else begin 
+       write(f, 'globals_start+'); fl := fl+14;
+       write(f, a:1); fl := fl+digits(a) 
+     end
+   end;
+
    procedure generate; (*generate segment of code*)
       var x: integer; (* label number *)
           again: boolean;
@@ -1522,6 +1555,7 @@ procedure xlate;
           ispc: boolean;  
           i, l: 1..lablen;   
           bp: pblock;
+          sp: psymbol;
           sgn: boolean;
           sn2: labbuf;
           snl2: 1..lablen;
@@ -1624,6 +1658,7 @@ procedure xlate;
                  strassvv(bp^.tmpnam, bp^.bname); { copy to temp id }
                  ts := '$_tmpspc  '; l := lenpv(bp^.tmpnam);
                  for i := 1 to 8 do strchrass(bp^.tmpnam, l+i, ts[i]); 
+                 bp^.symbols := nil;
                  bp^.incnxt := nil;
                  case ch1 of { block type }
                    'p': bp^.btyp := btprog;
@@ -1655,19 +1690,24 @@ procedure xlate;
                  prtline; writeln(prr, ' e ', ch);
                  if ch = 'p' then postamble;
                  if blkstk = nil then errorl('System error             ');
-                 { this just tosses block structures into the trash, needs 
-                   fixing }
+                 bp := blkstk;
                  blkstk := blkstk^.next;
+                 bp^.next := blklst;
+                 blklst := bp;
                  getlin
                end;
          's': begin { symbol }
                 prtline; write(prr, ' s ');
                 getnxt; getlab;
+                new(sp); strassvf(sp^.name, sn);
                 write(prr, sn:snl); 
                 sn2 := sn; snl2 := snl;
                 skpspc;
                 if not (ch in ['g', 'l','p']) then
                   errorl('Symbol type is invalid   ');
+                if ch = 'g' then sp^.styp := stglobal
+                else if ch = 'p' then sp^.styp := stparam
+                else sp^.styp := stlocal;
                 ch1 := ch;
                 write(prr, ' ', ch, ' ');
                 getnxt;
@@ -1684,7 +1724,8 @@ procedure xlate;
                   end;
                 if sgn then ad := -ad;
                 write(prr, ad:1, ' ');
-                getsds; writeln(prr, sn:snl);
+                sp^.off := ad; getsds; writeln(prr, sn:snl);
+                strassvf(sp^.digest, sn);
                 if anyshort(blkstk) then begin
                   wrtmods(blkstk, true); 
                   if ch1 = 'g' then 
@@ -1697,6 +1738,9 @@ procedure xlate;
                   writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
                 else
                   writeln(prr, sn2:snl2, ' = ', ad:1);
+                { place in block symbol list }
+                sp^.next := blkstk^.symbols;
+                blkstk^.symbols := sp;
                 getlin
               end;
           'f': getlin; { source error count }
@@ -2634,7 +2678,8 @@ procedure xlate;
         -1 - Immediate integer 2
         ^0 - Immediate integer 1 without leader
         ^1 - Immediate integer 2 without leader
-        @  - Symbol
+        @s - Symbol
+        @g - Global symbol from integer 1 (by offset)
       }
       procedure wrtins70(si: insstr70; i1, i2: integer; r1, r2: reg; sn: strvsp);
       var i: 1..insmax70; j: integer;
@@ -2689,8 +2734,11 @@ procedure xlate;
               if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end
               else if si[i] = '1' then begin write(prr, i2:1); j := j+digits(i1) end
               else begin write(prr, si[i]);  j := j+1 end
-            end else if si[i] = '@' then begin writevp(prr, sn); j := j+lenpv(sn) end
-            else begin write(prr, si[i]);  j := j+1 end;
+            end else if si[i] = '@' then begin next;
+              if si[i] = 's' then begin writevp(prr, sn); j := j+lenpv(sn) end
+              else if si[i] = 'g' then wrtgbl(prr, i1, j)
+              else begin write(prr, si[i]); j := j+1 end
+            end else begin write(prr, si[i]);  j := j+1 end;
             next
           end
         end;
@@ -2901,12 +2949,12 @@ procedure xlate;
 
               wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins40(' lea ^0(%rsi),%rsi # index local set    ', ep^.q, 0, ep^.r1, rgnull, nil);
-              wrtins50(' leaq ^-@^0(%rbp),%rdi # index destination temp   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # index temp again ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # index temp again ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {lda}
@@ -2987,7 +3035,7 @@ procedure xlate;
 
             {ldoi,loda}
             1,65:
-              wrtins50(' movq globals_start+0(%rip),%1 # load global quad ', glbsym(ep^.q), 0, ep^.r1, rgnull, nil);
+              wrtins40(' movq @g(%rip),%1 # load global quad    ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox}
             68,69,194:
@@ -2995,19 +3043,17 @@ procedure xlate;
 
             {ldor}
             66: 
-                      {          1         2         3         4         5         6
-                        1234567890123456789012345678901234567890123456789012345678901234567890}
               wrtins40(' movsd globals_start+0(%rip),%1 # load global real', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
               wrtins70(' leaq globals_start+0(%rip),%rsi # load address of global set         ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq ^-@^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {indi,inda}
@@ -3023,12 +3069,12 @@ procedure xlate;
 
             {inds}
             87: begin 
-              wrtins50(' leaq ^-@^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {inci,inca,incb,incc,incx}
@@ -3050,7 +3096,7 @@ procedure xlate;
             100, 115, 116, 121: begin
               wrtins40(' movq $0,%rdi # load tagfield offset    ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins50(' leaq @s(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins40(' movq (%1),%r8 # get existing tag value ', 0, 0, ep^.l^.r1, rgnull, nil)
               else
@@ -3062,7 +3108,7 @@ procedure xlate;
             192,101,102,111: begin
               wrtins20(' movq $0,%rdi # load tagfield offset    ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins20(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins50(' leaq @s(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins40(' movq (%1),%r8 # get existing tag value ', ep^.q, 0, ep^.l^.r1, rgnull, nil)
               else
@@ -3091,13 +3137,13 @@ procedure xlate;
             191: begin
               wrtins40(' movq $0,%rdi # get tag offset          ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # get tag nesting level   ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @(%rip),%rdx # index logical variant table  ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins50(' leaq @s(%rip),%rdx # index logical variant table  ', 0, 0, rgnull, rgnull, ep^.lt);
               wrtins50(' call psystem_tagchkass # check tag assignment    ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {lpa}
             114: begin 
-              wrtins60(' leaq @(%rip),%1 # load procedure/function address          ', 0, 0, ep^.r1, rgnull, ep^.fn);
+              wrtins60(' leaq @s(%rip),%1 # load procedure/function address          ', 0, 0, ep^.r1, rgnull, ep^.fn);
               wrtins40(' movq ^0(%rbp),%1 # load display pointer', ep^.q1, 0, ep^.r2, rgnull, nil)
             end;
 
@@ -3116,12 +3162,12 @@ procedure xlate;
             {ldcs}
             7: begin
               wrtins50(' leaq set^0(%rip),%rsi # index constant set       ', ep^.setn, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%rdi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rdi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {chki,chka,chkb,chkc,chkx}
@@ -3149,7 +3195,7 @@ procedure xlate;
               wrtins30(' movq $0,%rdi # load low bound', ep^.vi, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # load high bound         ', ep^.vi2, 0, rgnull, rgnull, nil);
               wrtins50(' call psystem_chksetbnd # check set in bounds     ', 0, 0, rgnull, rgnull, nil);
-              wrtins20(' leaq ^-@^0(%rbp),%1 # reindex temp set ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp set', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {ckla}
@@ -3222,9 +3268,9 @@ procedure xlate;
 
             {sgs}
             32: begin
-              wrtins40(' leaq ^-@^0(%rbp),%rsi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins50(' call psystem_setsgl # make singleton set         ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {flt,flo}
@@ -3334,7 +3380,7 @@ procedure xlate;
                 46: wrtins20(' call psystem_setint # find set intersection      ', 0, 0, rgnull, rgnull, nil);
                 47: wrtins20(' call psystem_setuni # find set union   ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins30(' leaq ^-@^0(%rbp),%1 # reindex the temp       ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins30(' leaq ^-@s^0(%rbp),%1 # reindex the temp       ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
               puttmp(ep^.r^.r1a)
             end;
 
@@ -3381,9 +3427,9 @@ procedure xlate;
 
             {rgs}
             110: begin 
-              wrtins40(' leaq ^-@^0(%rbp),%rdx # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rdx # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins50(' call psystem_setrgs # set range of values        ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
@@ -3409,7 +3455,7 @@ procedure xlate;
               genexp(ep^.sl); { process sfr start link }
               stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
-              wrtins30(' call @ # call user procedure ', 0, 0, rgnull, rgnull, ep^.fn);
+              wrtins30(' call @s # call user procedure ', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
                 if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
@@ -3921,7 +3967,7 @@ procedure xlate;
         27: begin labelsearch(def, val, sp); write(prr, 'l '); writevp(prr, sp); 
           lftjst(parfld-2+lenpv(sp)); pass;
           frereg := allreg;
-          wrtins10('call *@   ', 0, 0, rgnull, rgnull, sp)
+          wrtins10('call *@s   ', 0, 0, rgnull, rgnull, sp)
         end;
 
         { *** terminals *** }
@@ -4082,7 +4128,7 @@ procedure xlate;
           popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' leaq ^-@^0(%rbp),%rsi # index temp set ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp set ', ep^.r1a, 0, rgnull, rgnull, lclspc);
           wrtins60(' leaq globals_start+0(%rip),%rdi # index global destination ', q, 0, ep^.r1, rgnull, nil);
           wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -4132,7 +4178,7 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp); write(prr, 'l '); 
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
-          wrtins10(' jmp @    ', 0, 0, rgnull, rgnull, sp);
+          wrtins10(' jmp @s    ', 0, 0, rgnull, rgnull, sp);
           botstk
         end;
 
@@ -4143,8 +4189,8 @@ procedure xlate;
           assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' orb %1l,%1l # move boolean to flags    ', 0, 0, ep^.r1, rgnull, nil);
-          if op = 24{fjp} then wrtins20(' jz @ # go if false', 0, 0, rgnull, rgnull, sp)
-          else {tjp} wrtins20(' jnz @ # go if true ', 0, 0, rgnull, rgnull, sp);
+          if op = 24{fjp} then wrtins20(' jz @s # go if false', 0, 0, rgnull, rgnull, sp)
+          else {tjp} wrtins20(' jnz @s # go if true', 0, 0, rgnull, rgnull, sp);
           deltre(ep); 
           botstk 
         end;
@@ -4159,7 +4205,7 @@ procedure xlate;
           wrtins50(' movq %1,%2 # make factoring copy of index        ', 0, 0, ep^.r1, r1, sp);
           wrtins20(' salq $2,%1 # *4    ', 0, 0, ep^.r1, rgnull, sp);
           wrtins20(' addq %2,%1 # *5    ', 0, 0, ep^.r1, r1, sp);
-          wrtins40(' leaq @(%rip),%1 # index case jump table', 0, 0, r1, rgnull, sp);
+          wrtins40(' leaq @s(%rip),%1 # index case jump table', 0, 0, r1, rgnull, sp);
           wrtins40(' addq %2,%1 # add scaled index to base  ', 0, 0, ep^.r1, r1, sp);
           wrtins10(' jmp *%1  ', 0, 0, ep^.r1, rgnull, sp);
           deltre(ep); 
@@ -4173,7 +4219,7 @@ procedure xlate;
           wrtins50(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins50(' movq ^0(%rbp),%rsp # get stack for target        ', marksb, 0, rgnull, rgnull, nil);
           wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack      ', 0, 0, rgnull, rgnull, nil);
-          wrtins30(' jmp @ # goto jump target     ', 0, 0, rgnull, rgnull, sp);
+          wrtins30(' jmp @s # goto jump target     ', 0, 0, rgnull, rgnull, sp);
           botstk 
         end;
 
@@ -4331,7 +4377,7 @@ procedure xlate;
           wrtins40(' cmpq $0,%1 # check against low bound   ', q, 0, ep^.r1, rgnull, nil);
           wrtins30(' jl 1f # skip if lower        ', 0, 0, rgnull, rgnull, sp);
           wrtins40(' cmpq $0,%1 # check against high bound  ', q1, 0, ep^.r1, rgnull, nil);
-          wrtins50(' jle @ # if less or equal, jump to target         ', 0, 0, rgnull, rgnull, sp);
+          wrtins50(' jle @s # if less or equal, jump to target         ', 0, 0, rgnull, rgnull, sp);
           wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
         end;
