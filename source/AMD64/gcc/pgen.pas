@@ -1542,7 +1542,29 @@ procedure xlate;
        writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
        fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
      end else begin 
-       write(f, 'globals_start+'); fl := fl+14;
+       write(f, a:1); fl := fl+digits(a) 
+     end
+   end;
+
+   procedure wrtlcl(var f: text; a: address; fl: integer);
+   var bp, fbp: pblock; sp, fsp: psymbol;
+   begin
+     bp := blkstk; fbp := nil; fsp := nil;
+     while bp <> nil do begin
+       if bp^.btyp in [btproc, btfunc] then fbp := bp;
+       bp := bp^.next
+     end;
+     if fbp <> nil then begin
+       sp := fbp^.symbols;
+       while sp <> nil do begin
+         if (sp^.off = a) and (sp^.styp in [stlocal, stparam]) then fsp := sp;
+         sp := sp^.next
+       end
+     end;
+     if fsp <> nil then begin
+       writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
+       fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
+     end else begin 
        write(f, a:1); fl := fl+digits(a) 
      end
    end;
