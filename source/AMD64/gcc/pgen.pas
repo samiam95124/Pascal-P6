@@ -344,7 +344,8 @@ type
                        symbols: psymbol; { symbol list for block }
                        { block type }
                        btyp:    (btprog, btmod, btproc, btfunc);
-                       en:      integer { encounter number }
+                       en:      integer; { encounter number }
+                       lvl:     integer; { level of block }
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
@@ -414,6 +415,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       setnum      : integer; { set constants label count }
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
+      level       : integer; { level count of active blocks }
       modnam      : strvsp; { block name }
 
       (*locally used for interpreting one instruction*)
@@ -1546,12 +1548,12 @@ procedure xlate;
      end
    end;
 
-   procedure wrtlcl(var f: text; a: address; fl: integer);
+   procedure wrtlcl(var f: text; p: lvltyp; a: address; fl: integer);
    var bp, fbp: pblock; sp, fsp: psymbol;
    begin
      bp := blkstk; fbp := nil; fsp := nil;
      while bp <> nil do begin
-       if bp^.btyp in [btproc, btfunc] then fbp := bp;
+       if (bp^.btyp in [btproc, btfunc]) and (bp^.lvl = p) then fbp := bp;
        bp := bp^.next
      end;
      if fbp <> nil then begin
@@ -1562,7 +1564,7 @@ procedure xlate;
        end
      end;
      if fsp <> nil then begin
-       writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
+       wrtmods(fbp, true); writevp(f, fsp^.name); 
        fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
      end else begin 
        write(f, a:1); fl := fl+digits(a) 
@@ -1703,6 +1705,8 @@ procedure xlate;
                    wrtblklab(bp);
                    modnam := bp^.bname
                  end;
+                 level := level+1; { count block levels }
+                 bp^.lvl := level; { set }
                  getlin
                end;
           'e': begin 
@@ -1716,6 +1720,7 @@ procedure xlate;
                  blkstk := blkstk^.next;
                  bp^.next := blklst;
                  blklst := bp;
+                 level := level-1; { count block levels }
                  getlin
                end;
          's': begin { symbol }
@@ -2702,6 +2707,7 @@ procedure xlate;
         ^1 - Immediate integer 2 without leader
         @s - Symbol
         @g - Global symbol from integer 1 (by offset)
+        @l - Local symbol from integer 1 (by offset)
       }
       procedure wrtins70(si: insstr70; i1, i2: integer; r1, r2: reg; sn: strvsp);
       var i: 1..insmax70; j: integer;
@@ -2759,6 +2765,7 @@ procedure xlate;
             end else if si[i] = '@' then begin next;
               if si[i] = 's' then begin writevp(prr, sn); j := j+lenpv(sn) end
               else if si[i] = 'g' then wrtgbl(prr, i1, j)
+              else if si[i] = 'l' then wrtlcl(prr, i2, i1, j)
               else begin write(prr, si[i]); j := j+1 end
             end else begin write(prr, si[i]);  j := j+1 end;
             next
@@ -2951,7 +2958,7 @@ procedure xlate;
             {lodi,loda}
             0,105: begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins40(' movq ^0(%1),%1 # fetch local qword     ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movq @l(%1),%1 # fetch local qword     ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
             end;
 
             {lodx,lodb,lodc}
@@ -4656,6 +4663,7 @@ begin (* main *)
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
+  level := 0; { clear level count }
 
   { supress warning }
   if blklst = nil then;
