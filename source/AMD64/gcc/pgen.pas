@@ -1523,7 +1523,7 @@ procedure xlate;
      end
    end;
 
-   procedure wrtgbl(var f: text; a: address; fl: integer);
+   procedure wrtgbl(var f: text; a: address; var fl: integer);
    var bp, fbp: pblock; sp, fsp: psymbol;
    begin
      bp := blkstk; fbp := nil; fsp := nil;
@@ -1542,7 +1542,7 @@ procedure xlate;
        writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
        fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
      end else begin 
-       write(f, 'globals_start+', a:1); fl := fl+digits(a) 
+       write(f, 'globals_start+', a:1); fl := fl+14+digits(a) 
      end
    end;
 
@@ -3041,7 +3041,7 @@ procedure xlate;
             end;
 
             5{lao}:
-              wrtins60(' leaq globals_start+0(%rip),%1 # load address of global     ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins60(' leaq @g(%rip),%1 # load address of global     ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               if ep^.r1 <> ep^.t1 then
@@ -3061,15 +3061,15 @@ procedure xlate;
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins70(' movzx globals_start+0(%rip),%1 # load and zero extend global byte    ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins70(' movzx @g(%rip),%1 # load and zero extend global byte    ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor}
             66: 
-              wrtins40(' movsd globals_start+0(%rip),%1 # load global real', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movsd @g(%rip),%1 # load global real', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
-              wrtins70(' leaq globals_start+0(%rip),%rsi # load address of global set         ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins70(' leaq @(%rip),%rsi # load address of global set         ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -4137,10 +4137,10 @@ procedure xlate;
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
-            wrtins60(' movb %1l,globals_start+0(%rip) # store byte to global      ', q, 0, ep^.r1, rgnull, nil)
+            wrtins60(' movb %1l,@g(%rip) # store byte to global      ', q, 0, ep^.r1, rgnull, nil)
           else if op = 76{sror} then
-            wrtins60(' movsd %1l,globals_start+0(%rip) # store real to global     ', q, 0, ep^.r1, rgnull, nil)
-          else wrtins60(' movq %1,globals_start+0(%rip) # store quad to global       ', q, 0, ep^.r1, rgnull, nil);
+            wrtins60(' movsd %1l,@g(%rip) # store real to global     ', q, 0, ep^.r1, rgnull, nil)
+          else wrtins60(' movq %1,@g(%rip) # store quad to global       ', q, 0, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
@@ -4151,7 +4151,7 @@ procedure xlate;
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp set ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-          wrtins60(' leaq globals_start+0(%rip),%rdi # index global destination ', q, 0, ep^.r1, rgnull, nil);
+          wrtins60(' leaq @g(%rip),%rdi # index global destination ', q, 0, ep^.r1, rgnull, nil);
           wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
