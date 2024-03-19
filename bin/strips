@@ -1,0 +1,4 @@
+#
+# Strip comments from .s files
+#
+cat $1 | sed '/^#/d'
