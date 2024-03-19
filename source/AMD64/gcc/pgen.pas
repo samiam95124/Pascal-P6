@@ -1470,6 +1470,47 @@ procedure xlate;
 
    end;
 
+   procedure mpb;
+   begin
+     writeln(prr, '# machine parameters');
+     writeln(prr, 'lendian     = ', lendian:10,     ' # endian mode');
+     writeln(prr, 'intsize     = ', intsize:10,     ' # size of integer');
+     writeln(prr, 'intal       = ', intal:10,       ' # alignment of integer');
+     writeln(prr, 'intdig      = ', intdig:10,      ' # number of decimal digits in integer');
+     writeln(prr, 'inthex      = ', inthex:10,      ' # number of hex digits of integer');
+     writeln(prr, 'realsize    = ', realsize:10,    ' # size of real');
+     writeln(prr, 'realal      = ', realal:10,      ' # alignment of real');
+     writeln(prr, 'charsize    = ', charsize:10,    ' # size of char');
+     writeln(prr, 'charal      = ', charal:10,      ' # alignment of char');
+     writeln(prr, 'boolsize    = ', boolsize:10,    ' # size of boolean');
+     writeln(prr, 'boolal      = ', boolal:10,      ' # alignment of boolean');
+     writeln(prr, 'ptrsize     = ', ptrsize:10,     ' # size of pointer');
+     writeln(prr, 'adrsize     = ', adrsize:10,     ' # size of address');
+     writeln(prr, 'adral       = ', adral:10,       ' # alignment of address');
+     writeln(prr, 'setsize     = ', setsize:10,     ' # size of set');
+     writeln(prr, 'setal       = ', setal:10,       ' # alignment of set');
+     writeln(prr, 'filesize    = ', filesize:10,    ' # required runtime space for file (lfn)');
+     writeln(prr, 'fileidsize  = ', fileidsize:10,  ' # size of the lfn only');
+     writeln(prr, 'exceptsize  = ', exceptsize:10,  ' # size of exception variable');
+     writeln(prr, 'exceptal    = ', exceptal:10,    ' # alignment of exception');
+     writeln(prr, 'stackal     = ', stackal:10,     ' # alignment of stack');
+     writeln(prr, 'stackelsize = ', stackelsize:10, ' # stack element size');
+     writeln(prr, 'maxsize     = ', maxsize:10,     ' # this is the largest type that can be on the stack');
+     writeln(prr, 'heapal      = ', heapal:10,      ' # alignment for each heap arena');
+     writeln(prr, 'gbsal       = ', gbsal:10,       ' # globals area alignment');
+     writeln(prr, 'sethigh     = ', sethigh:10,     ' # set highest value');
+     writeln(prr, 'setlow      = ', setlow:10,      ' # set lowest value');
+     writeln(prr, 'ordmaxchar  = ', ordmaxchar:10,  ' # character highest value');
+     writeln(prr, 'ordminchar  = ', ordminchar:10,  ' # character lowest value');
+     writeln(prr, 'marksize    = ', marksize:10,    ' # size of mark');
+     writeln(prr, 'maxexp      = ', maxexp:10,      ' # maximum exponent of real');
+     writeln(prr, 'nilval      = ', nilval:10,      ' # value of nil');
+     writeln(prr, 'maxint      = ', maxint:10,      ' # value of maxint on target machine');
+     writeln(prr, 'markep      = ', markep:10,      ' # (old) maximum frame size');
+     writeln(prr, 'marksb      = ', marksb:10,      ' # stack bottom');
+     writeln(prr, 'market      = ', market:10,      ' # current ep');
+   end;
+
    procedure assemble; forward;
 
    procedure prtline;
@@ -2964,20 +3005,20 @@ procedure xlate;
             {lodx,lodb,lodc}
             193,108,109: begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins40(' movzx ^0(%1),%1 # fetch local byte     ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movzx @l(%1),%1 # fetch local byte     ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
             end;
 
             {lodr}
             106: begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins40(' movsd ^0(%1),%2 # fetch local real     ', ep^.q, 0, ep^.t1, ep^.r1, nil)
+              wrtins40(' movsd @l(%1),%2 # fetch local real     ', ep^.q, ep^.p, ep^.t1, ep^.r1, nil)
             end;
 
             {lods}
             107: begin
 
               wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins40(' lea ^0(%rsi),%rsi # index local set    ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' lea @l(%rsi),%rsi # index local set    ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -2989,7 +3030,7 @@ procedure xlate;
             {lda}
             4: begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins30(' lea ^0(%1),%1 # index local  ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins30(' lea @l(%1),%1 # index local  ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
             end;
 
             {adi}
@@ -3027,8 +3068,8 @@ procedure xlate;
 
             120{lip}: begin 
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins40(' movq ^0(%2),%1 # load frame pointer    ', ep^.q+ptrsize, 0, ep^.r2, ep^.t1, nil);
-              wrtins40(' movq ^0(%2),%1 # load procedure address', ep^.q, 0, ep^.r1, ep^.t1, nil)
+              wrtins40(' movq @l+ptrsize(%2),%1 # load frame pointer    ', ep^.q, ep^.p, ep^.r2, ep^.t1, nil);
+              wrtins40(' movq @l(%2),%1 # load procedure address', ep^.q, ep^.p, ep^.r1, ep^.t1, nil)
             end;  
 
             {equm,neqm,geqm,gtrm,leqm,lesm}
@@ -3173,7 +3214,7 @@ procedure xlate;
             {lpa}
             114: begin 
               wrtins60(' leaq @s(%rip),%1 # load procedure/function address          ', 0, 0, ep^.r1, rgnull, ep^.fn);
-              wrtins40(' movq ^0(%rbp),%1 # load display pointer', ep^.q1, 0, ep^.r2, rgnull, nil)
+              wrtins40(' movq @l(%rbp),%1 # load display pointer', ep^.q1, ep^.p, ep^.r2, rgnull, nil)
             end;
 
             {ldci,ldcc,ldcb}
@@ -4039,7 +4080,7 @@ procedure xlate;
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movq %1,^0(%2) # store qword ', q, 0, ep^.r1, r1, nil);
+          wrtins30(' movq %1,@l(%2) # store qword ', q, p, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -4050,7 +4091,7 @@ procedure xlate;
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movb %1l,^0(%2) # store byte ', q, 0, ep^.r1, r1, nil);
+          wrtins30(' movb %1l,@l(%2) # store byte ', q, p, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -4061,7 +4102,7 @@ procedure xlate;
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movsd %1,^0(%2) # store real ', q, 0, ep^.r1, r1, nil);
+          wrtins30(' movsd %1,@l(%2) # store real ', q, p, ep^.r1, r1, nil);
           deltre(ep)
         end;
 
@@ -4071,7 +4112,7 @@ procedure xlate;
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins50(' movq ^0(%rbp),%rdi # get display pointer         ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
-          wrtins40(' leaq ^0(%rdi),%rdi # index destination ', q, 0, rgnull, rgnull, nil);
+          wrtins40(' leaq @l(%rdi),%rdi # index destination ', q, p, rgnull, rgnull, nil);
           wrtins20(' movsq # move set   ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -4565,6 +4606,9 @@ begin (*xlate*)
    writeln(prr, 'commandfn = 7');
    writeln(prr);
    errorcode;
+   writeln(prr);
+   mpb;
+   writeln(prr);
    writeln(prr, '        .text');
    writeln(prr, '#');
    writeln(prr, '# Code section');
