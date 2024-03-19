@@ -1542,7 +1542,7 @@ procedure xlate;
        writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
        fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
      end else begin 
-       write(f, a:1); fl := fl+digits(a) 
+       write(f, 'globals_start+', a:1); fl := fl+digits(a) 
      end
    end;
 
