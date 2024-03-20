@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Tue 19 Mar 2024 05:17:37 AM PDT
+Wed 20 Mar 2024 12:11:11 AM PDT
 Line counts should be 0 for pass
 pgen run ***************************************
 0 sample_programs/hello.dif
@@ -9,9 +9,7 @@ pgen run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-100 basic/basic.dif
+304 sample_programs/startrek.dif
+21 sample_programs/basics.dif
+105 basic/basic.dif
 428 standard_tests/iso7185pat.dif
-40 sample_programs/pascals.dif
-Pascal-P2 run
