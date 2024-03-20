@@ -1736,7 +1736,7 @@ procedure xlate;
                    errorl('Block type is invalid    ');
                  ch1 := ch; { save block type }
                  if ch in  ['p','m'] then preamble;
-                 getnxt; skpspc; getsds;
+                 getnxt; skpspc; getsds; sn2 := sn; snl2 := snl;
                  for i := 1 to snl do begin
                    { translate '@' to '$' for type spagetti demarcate, and 
                      characters in the set ['(',')',',',':','-','+'] to '_' 
@@ -1775,8 +1775,7 @@ procedure xlate;
                  bp^.parent := blkstk; { set parent entry }
                  { put onto block stack }
                  bp^.next := blkstk; blkstk := bp;
-                 prtline; write(prr, ' b ', ch1, ' '); writevp(prr, bp^.name);
-                 writeln(prr);
+                 prtline; writeln(prr, ' b ', ch1, ' ', sn2:snl2);
                  if ch1 in ['p', 'm'] then begin
                    wrtblklab(bp);
                    modnam := bp^.bname
