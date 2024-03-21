@@ -3150,7 +3150,7 @@ procedure xlate;
 
             {ldos}
             67: begin
-              wrtins70(' leaq @(%rip),%rsi # load address of global set         ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins70(' leaq @g(%rip),%rsi # load address of global set        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -3483,7 +3483,7 @@ procedure xlate;
                 46: wrtins20(' call psystem_setint # find set intersection      ', 0, 0, rgnull, rgnull, nil);
                 47: wrtins20(' call psystem_setuni # find set union   ', 0, 0, rgnull, rgnull, nil);
               end;
-              wrtins30(' leaq ^-@s^0(%rbp),%1 # reindex the temp       ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%1 # reindex the temp          ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
               puttmp(ep^.r^.r1a)
             end;
 
