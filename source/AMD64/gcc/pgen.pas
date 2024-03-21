@@ -503,6 +503,11 @@ begin
   digits := dc
 end;
 
+procedure lftjst(fl: integer);
+begin
+  if fl > 0 then write(prr, ' ':fl)
+end;
+
 { get string quanta }
 procedure getstr(var p: strvsp);
 begin
@@ -1534,32 +1539,21 @@ procedure xlate;
      write(prr, '# ', sline:6, ': ', iline:6, ': ')
    end;
 
-   { write short block name }
-   procedure wrtblksht(bp: pblock);
+   { write short block name with field }
+   procedure wrtblksht(bp: pblock; var fl: integer);
    begin
-     writevp(prr, bp^.bname);
-     if bp^.en > 1 then write(prr, '$', bp^.en:1)
+     writevp(prr, bp^.bname); fl := fl+lenpv(bp^.bname);
+     if bp^.en > 1 then begin write(prr, '$', bp^.en:1); fl := fl+1+digits(bp^.en) end
    end;
 
-   procedure wrtmods(bp: pblock; s: boolean);
+   { write module/block scope reference with optional short and field}
+   procedure wrtblks(bp: pblock; s: boolean; var fl: integer);
    begin
      if bp <> nil then begin
-       wrtmods(bp^.next, s);
-       if s then begin
-         writevp(prr, bp^.bname);
-         if bp^.en > 1 then write(prr, '$', bp^.en:1)
-       end else writevp(prr, bp^.name);
-       write(prr, '.')
-     end
-   end;
-
-   { write whole scoped block reference with type }
-   procedure wrtblktyp(bp: pblock);
-   begin
-     if bp <> nil then begin
-       wrtblktyp(bp^.parent);
-       wrtblksht(bp);
-       write(prr, '.')
+       wrtblks(bp^.parent, s, fl);
+       if s then wrtblksht(bp, fl)
+       else begin writevp(prr, bp^.name); fl := fl+lenpv(bp^.name) end;
+       write(prr, '.'); fl := fl+1
      end
    end;
 
@@ -1586,16 +1580,17 @@ procedure xlate;
      fndovrmax := ovrmax 
    end;
 
-   procedure wrtblklab(bp: pblock);
+   procedure wrtblklabs(bp: pblock);
+   var fl: integer;
    begin
      if bp <> nil then begin
        if anyshort(bp) then begin
-         wrtmods(bp^.next, true);
+         wrtblks(bp^.parent, true, fl);
          writevp(prr, bp^.bname); 
          if bp^.en > 1 then write(prr, '$', bp^.en:1);
          writeln(prr, ':')
        end;
-       wrtmods(bp^.next, false);
+       wrtblks(bp^.next, false, fl);
        writevp(prr, bp^.name); writeln(prr, ':')
      end
    end;
@@ -1623,7 +1618,7 @@ procedure xlate;
      end
    end;
 
-   procedure wrtlcl(var f: text; p: lvltyp; a: address; fl: integer);
+   procedure wrtlcl(var f: text; p: lvltyp; a: address; var fl: integer);
    var bp, fbp: pblock; sp, fsp: psymbol;
    begin
      bp := blkstk; fbp := nil; fsp := nil;
@@ -1639,8 +1634,8 @@ procedure xlate;
        end
      end;
      if fsp <> nil then begin
-       wrtmods(fbp, true); writevp(f, fsp^.name); 
-       fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
+       wrtblks(fbp, true, fl); writevp(f, fsp^.name); 
+       fl := fl+lenpv(fsp^.name)
      end else begin 
        write(f, a:1); fl := fl+digits(a) 
      end
@@ -1661,6 +1656,7 @@ procedure xlate;
           vt: array [1..100] of integer;
           vi, vl: integer;
           ts: alfa;
+          fl: integer;
    begin
       again := true;
       while again do begin
@@ -1777,7 +1773,7 @@ procedure xlate;
                  bp^.next := blkstk; blkstk := bp;
                  prtline; writeln(prr, ' b ', ch1, ' ', sn2:snl2);
                  if ch1 in ['p', 'm'] then begin
-                   wrtblklab(bp);
+                   wrtblklabs(bp);
                    modnam := bp^.bname
                  end;
                  level := level+1; { count block levels }
@@ -1830,13 +1826,13 @@ procedure xlate;
                 sp^.off := ad; getsds; writeln(prr, sn:snl);
                 strassvf(sp^.digest, sn);
                 if anyshort(blkstk) then begin
-                  wrtmods(blkstk, true); 
+                  wrtblks(blkstk, true, fl); 
                   if ch1 = 'g' then 
                     writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
                   else
                     writeln(prr, sn2:snl2, ' = ', ad:1);
                 end;
-                wrtmods(blkstk, false); 
+                wrtblks(blkstk, false, fl); 
                 if ch1 = 'g' then
                   writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
                 else
@@ -2907,7 +2903,7 @@ procedure xlate;
       end;
 
       procedure genexp(ep: expptr);
-      var r: reg; ep2: expptr; i: integer; stkadrs: integer;
+      var r: reg; ep2: expptr; i: integer; stkadrs: integer; fl: integer;
 
       { push parameters in order }
       procedure pshpar(pp: expptr);
@@ -3563,8 +3559,9 @@ procedure xlate;
               stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
               if ep^.blk <> nil then begin
-                write(prr, '        call    '); wrtblktyp(ep^.blk^.parent); 
-                wrtblksht(ep^.blk); writeln(prr, ' # call user procedure')
+                write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
+                wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
+                lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
               end else wrtins30(' call @s # call user procedure ', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
                 if ep^.q1 = 1 then begin
@@ -3707,11 +3704,6 @@ procedure xlate;
       begin
         i := 1; while (i < maxalfa) and (s[i] <> ' ') do i := i+1;
         if s[i] = ' ' then alflen := i-1 else alflen := i
-      end;
-
-      procedure lftjst(fl: integer);
-      begin
-        if fl > 0 then write(prr, ' ':fl)
       end;
      
       procedure par;
@@ -4168,7 +4160,7 @@ procedure xlate;
           write(prr,p:1, ' l '); writevp(prr, lclspc); write(prr, ' l '); 
           writevp(prr, sp2); lftjst(parfld-(digits(p)+3+lenpv(lclspc)+3+lenpv(sp2))); pass;
           if blkstk <> nil then
-            if blkstk^.btyp in [btproc, btfunc] then wrtblklab(blkstk);
+            if blkstk^.btyp in [btproc, btfunc] then wrtblklabs(blkstk);
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
