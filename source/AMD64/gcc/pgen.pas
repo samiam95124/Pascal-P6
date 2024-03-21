@@ -2822,7 +2822,7 @@ procedure xlate;
                 else begin wrtreg(prr, r1); j := j+regl(r1) end
               end else if si[i] = '2' then begin
                 if si[i+1] = 'l' then begin wrtbreg(prr, r2); next; j := j+bregl(r2) end
-                else begin wrtreg(prr, r2); j := j+regl(r1) end
+                else begin wrtreg(prr, r2); j := j+regl(r2) end
               end else begin write(prr, si[i]); j := j+1 end
             end else if si[i] = '+' then begin next; write(prr, '+'); j := j+1;
               if si[i] = '0' then begin write(prr, i1:1); j := j+digits(i1) end
@@ -3526,7 +3526,7 @@ procedure xlate;
             52: wrtins20(' mulsd %1,%2 # multiply reals ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
-            54: wrtins20(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            54: wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {rgs}
             110: begin 
@@ -4202,7 +4202,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
           genexp(ep2); genexp(ep);
           wrtins20(' movq $0,%rcx # load the length of move ', q, 0, rgnull, rgnull, nil);
-          wrtins10(' repnz # move/copy  ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' repnz # move/copy  ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2);
           botstk
