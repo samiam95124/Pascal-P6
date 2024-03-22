@@ -3392,7 +3392,7 @@ begin cmdpos := maxcmd end;
       36: writeln(prr, 'Reset file binary');
       37: writeln(prr, 'Rewrite file binary');
       38: writeln(prr, 'Get file buffer binary');
-      39: writeln(prr, 'Get file binary');
+      39: writeln(prr, 'Put file buffer binary');
       40: writeln(prr, 'Read integer from text file with range check');
       41: writeln(prr, 'Read character from text file with range check');
       42: writeln(prr, 'Allocate dynamic tagged record');

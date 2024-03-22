@@ -347,7 +347,6 @@ type
                        btyp:    (btprog, btmod, btproc, btfunc);
                        en:      integer; { encounter number }
                        lvl:     integer; { level of block }
-                       ic:      integer; { intermediate encounter point }
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
@@ -419,7 +418,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       blklst      : pblock; { discard list of symbols blocks }
       level       : integer; { level count of active blocks }
       modnam      : strvsp; { block name }
-      intcnt      : integer; { intermediate counter }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -1103,8 +1101,8 @@ procedure xlate;
          sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=3; spkeep[40]:=false; { special }
          sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
          sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
-         sptable[43]:='fbv       '; spfunc[43]:=true;  sppar[43]:=1; spkeep[43]:=true;
-         sptable[44]:='fvb       '; spfunc[44]:=true;  sppar[44]:=2; spkeep[44]:=true;
+         sptable[43]:='fbv       '; spfunc[43]:=false;  sppar[43]:=1; spkeep[43]:=true;
+         sptable[44]:='fvb       '; spfunc[44]:=false;  sppar[44]:=2; spkeep[44]:=true;
          sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2; spkeep[45]:=true;
          sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3; spkeep[46]:=false;
          sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1; spkeep[47]:=false;
@@ -1258,16 +1256,6 @@ procedure xlate;
      end
    end;
 
-   procedure fndblk(var blk: pblock);
-   var bp: pblock;
-   begin
-     bp := blkstk; blk := nil;
-     while bp <> nil do begin
-       if (bp^.ic = intcnt) and (bp^.btyp in [btproc, btfunc]) then blk := bp;
-       bp := bp^.next
-     end
-   end;
-
    procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
@@ -1275,7 +1263,7 @@ procedure xlate;
         labeltab[x].st := defined;
         labeltab[x].val:= labelvalue;
         putlabel(x);
-        fndblk(labeltab[x].blk);
+        labeltab[x].blk := blkstk;
         writevp(prr, labeltab[x].ref);
         if pc then  writeln(prr, ':') 
         else writeln(prr, ' = ', labeltab[x].val:1)
@@ -1778,7 +1766,6 @@ procedure xlate;
                  end;
                  level := level+1; { count block levels }
                  bp^.lvl := level; { set }
-                 bp^.ic := intcnt; { set intermediate reference point }
                  getlin
                end;
           'e': begin 
@@ -3742,7 +3729,6 @@ procedure xlate;
       while (instr[op]<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction      ');
       prtline; write(prr, op:3, ': ', name:alflen(name)); lftjst(8-alflen(name));
-      intcnt := intcnt+1;
       case op of
 
         { *** non-terminals *** }
@@ -4743,7 +4729,6 @@ begin (* main *)
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
   level := 0; { clear level count }
-  intcnt := 0; { clear intermediate count }
 
   { supress warning }
   if blklst = nil then;
