@@ -9355,7 +9355,7 @@ begin cmdpos := maxcmd end;
         if fprocp^.idtype = nil then gen2(42(*ret*),ord('p'),fprocp^.locpar)
         else if fprocp^.idtype^.form in [records, arrays] then
           gen2t(42(*ret*),fprocp^.locpar,fprocp^.idtype^.size,basetype(fprocp^.idtype))
-        else gen1t(42(*ret*),fprocp^.locpar,basetype(fprocp^.idtype));
+        else gen1t(42(*ret*),fprocp^.locpar,fprocp^.idtype);
         alignd(parmptr,lcmin);
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lcmin:1);
