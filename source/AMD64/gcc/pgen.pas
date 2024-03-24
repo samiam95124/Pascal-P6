@@ -2381,7 +2381,8 @@ procedure xlate;
           16{ixa}: begin 
             dstreg(rgrax); dstreg(rgrdx);
             ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf); ep^.t1 := ep^.r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            ep^.t1 := ep^.r1;
             if (ep^.r1 = rgrax) or (ep^.r1 = rgrdx) then getreg(ep^.t1, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull); assreg(ep^.r, rf, rgnull, rgnull)
           end;
