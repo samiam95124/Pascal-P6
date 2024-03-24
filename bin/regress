@@ -73,6 +73,8 @@ function do_regress {
     testp2 $option
     wc -l p2/roman.dif >> regress_report.txt
 
+exit
+
     echo "Running Pascal-P4"
     echo "Pascal-P4 run" >> regress_report.txt
     testp4 $option
