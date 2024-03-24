@@ -2413,8 +2413,8 @@ procedure xlate;
 
           {indr}
           86: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf); getreg(ep^.r2, rf);
-            assreg(ep^.l, rf, ep^.r2, rgnull) 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf); getreg(ep^.t1, rf);
+            assreg(ep^.l, rf, ep^.t1, rgnull) 
           end;
 
           {inds}
@@ -2898,7 +2898,7 @@ procedure xlate;
         while pp <> nil do begin
           dmptrel(pp, 1); genexp(pp);
           if pp^.r2 <> rgnull then begin
-            wrtins20(' pushq %1 ', 0, 0, pp^.r2, rgnull, nil); 
+            wrtins40(' pushq %1 # place 2nd register on stack ', 0, 0, pp^.r2, rgnull, nil); 
             stkadr := stkadr-intsize
           end;
           if inss[pp^.op] then begin
@@ -3152,7 +3152,7 @@ procedure xlate;
 
             {indr}
             86: 
-              wrtins50(' movsd ^0(%2),%1 # load real from address         ', ep^.q, 0, ep^.r1, ep^.r2, nil);
+              wrtins50(' movsd ^0(%2),%1 # load real from address         ', ep^.q, 0, ep^.r1, ep^.t1, nil);
 
             {indb,indc,indx}
             88,89,198: wrtins50(' movzx ^0(%1),%1 # load byte from address         ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
