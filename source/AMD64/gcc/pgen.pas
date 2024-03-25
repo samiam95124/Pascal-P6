@@ -2747,8 +2747,8 @@ procedure xlate;
 
           {cke}
           188: begin
-            getreg(ep^.r1, frereg); getreg(ep^.r2, frereg); 
-            getreg(ep^.t1, frereg); assreg(ep^.l, rf, ep^.r1, rgnull)
+            getreg(ep^.r1, rf); getreg(ep^.r2, rf); 
+            getreg(ep^.t1, rf); assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
         end;
@@ -2899,7 +2899,7 @@ procedure xlate;
       procedure pshpar(pp: expptr);
       begin
         while pp <> nil do begin
-          dmptrel(pp, 1); genexp(pp);
+          genexp(pp);
           if pp^.r2 <> rgnull then begin
             wrtins40(' pushq %1 # place 2nd register on stack ', 0, 0, pp^.r2, rgnull, nil); 
             stkadr := stkadr-intsize
@@ -3614,9 +3614,7 @@ procedure xlate;
               stkadr := stkadr-intsize
             end
           end;
-          {
           write(prr, '# generating~: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr)
-          }
         end
       end;
 
