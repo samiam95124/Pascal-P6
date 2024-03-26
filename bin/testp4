@@ -45,7 +45,7 @@ cp p4/pint.lst p4/standardp.lst
 #
 echo Comparing PAT result to reference
 strip p4/standardp.lst tmp1
-if [ "$1" = "--cmach" ] || [ "$1" = "--package" ]; then
+if [ "$1" = "--cmach" ] || [ "$1" = "--package" ] || [ "$1" = "--pgen" ]; then
 
     strip p4/standardpc.cmp tmp2
 	

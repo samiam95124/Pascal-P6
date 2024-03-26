@@ -2380,7 +2380,7 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           16{ixa}: begin 
-            dstreg(rgrax); dstreg(rgrdx);
+            dstreg(rgrax); dstreg(rgrdx); resreg(rgrax);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             ep^.t1 := ep^.r1;
@@ -3416,7 +3416,7 @@ procedure xlate;
               wrtins30(' orq %1,%1 # test boolean     ', 0, 0, ep^.r1, rgnull, nil);
               wrtins30(' movq $1,%1 # set true        ', 0, 1, ep^.r1, rgnull, nil);
               wrtins20(' jz 1f # skip if so ', 0, 0, ep^.r2, rgnull, nil);
-              wrtins20(' movq $0,%1 # otherwise set false        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movq $0,%1 # otherwise set false       ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
 
