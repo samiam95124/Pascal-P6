@@ -133,7 +133,7 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel = 5000;       { total possible labels in intermediate }
+      maxlabel = 10000;       { total possible labels in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
       { locations of header files after program block mark, each header
@@ -267,7 +267,7 @@ const
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
-      lablen      = 4000;    { label maximum length }
+      lablen      = 8000;    { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
 
@@ -1143,7 +1143,7 @@ procedure xlate;
 
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
-             with labeltab[i] do begin val:=-1; st:= entered; blk := nil end;
+             with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;
 
          { !!! remove this next statement for self compile }
          {elide}reset(prd);{noelide}
