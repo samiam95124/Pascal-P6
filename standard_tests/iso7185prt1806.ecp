@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -21,29 +21,29 @@ and the following annexes: A,B,C,E.
     16      -16 procedure a(var i: integer); 
     17      -24  
     18      -24 begin 
-    19        7  
-    20        7    i := 1 
-    21        8  
-    22        8 end; 
-    23       12  
-    24       12 begin 
-    25       12  
-    26       12    a(i) 
-    27       13  
-    28       13 end; 
-    29       15  
-    30       15 begin 
-    31       15  
-    32       15    b; 
-    33       16    for i := 1 to 10 do begin 
+    19        5  
+    20        5    i := 1 
+    21        6  
+    22        6 end; 
+    23        9  
+    24        9 begin 
+    25        9  
+    26        9    a(i) 
+    27       10  
+    28       10 end; 
+    29       12  
+    30       12 begin 
+    31       12  
+    32       12    b; 
+    33       13    for i := 1 to 10 do begin 
     33   ****          ^195
     33   ****  195 For loop index is threatened
-    34       26  
-    35       26       write(i:1, ' ') 
-    36       34  
-    37       34    end 
-    38       35  
-    39       35 end. 
+    34       23  
+    35       23       write(i:1, ' ') 
+    36       31  
+    37       31    end 
+    38       32  
+    39       32 end. 
 
 Errors in program: 1
 

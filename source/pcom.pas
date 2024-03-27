@@ -10076,7 +10076,7 @@ begin cmdpos := maxcmd end;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
-    chkvbk := true; option[9] := true; experr := true; option[10] := true;
+    chkvbk := false; option[9] := false; experr := true; option[10] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     { single display entry for top level }

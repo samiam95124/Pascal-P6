@@ -10734,23 +10734,19 @@ and the following annexes: A,B,C,E.
     29       -8 begin 
     30        5  
     31        5    a.val := true; 
-    32       10    a.c := 'c'; 
-    33       17  
-    34       17 end. 
+    32        9    a.c := 'c'; 
+    33       16  
+    34       16 end. 
 
 Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [32]: Variant not active
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1702b.pas *************************************
 
@@ -10812,15 +10808,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [36]: Change to VAR referenced variant
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1702c.pas *************************************
 
@@ -10865,23 +10857,19 @@ and the following annexes: A,B,C,E.
     32        5    { This could fail if the compiler allocates tagfields even on undiscriminated 
     33        5      variants and writes to the tagfield on a write to member. } 
     34        5    a.i := 1; 
-    35       16    c := a.c 
-    36       25  
-    37       25 end. 
+    35       15    c := a.c 
+    36       23  
+    37       23 end. 
 
 Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [35]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1702d.pas *************************************
 
@@ -10944,15 +10932,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [37]: Change to VAR referenced variant
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1703.pas *************************************
 
@@ -10989,15 +10973,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [19]: Dereference of nil pointer
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1704.pas *************************************
 
@@ -11032,15 +11012,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1705.pas *************************************
 
@@ -11087,15 +11063,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [20]: Dispose of VAR referenced block
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1706a.pas *************************************
 
@@ -11143,15 +11115,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [18]: VAR referenced file buffer modified
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1706b.pas *************************************
 
@@ -11199,15 +11167,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [18]: VAR referenced file buffer modified
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1707a.pas *************************************
 
@@ -11345,15 +11309,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [20]: Set element out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1709.pas *************************************
 
@@ -11393,15 +11353,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [22]: File mode incorrect
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1710.pas *************************************
 
@@ -11435,15 +11391,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: File mode incorrect
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1712.pas *************************************
 
@@ -11478,15 +11430,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: File buffer variable undefined
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1713.pas *************************************
 
@@ -11520,15 +11468,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: Cannot reset closed temp file
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1714.pas *************************************
 
@@ -11564,15 +11508,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [18]: File mode incorrect
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1715.pas *************************************
 
@@ -11606,15 +11546,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: File mode incorrect
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1716.pas *************************************
 
@@ -11653,15 +11589,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [21]: End of file
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1717.pas *************************************
 
@@ -11787,15 +11719,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [26]: Change to allocated tag field
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1720.pas *************************************
 
@@ -11836,15 +11764,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [23]: New dispose tags mismatch
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1721.pas *************************************
 
@@ -11894,15 +11818,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [32]: New dispose tags mismatch
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1722.pas *************************************
 
@@ -11937,23 +11857,19 @@ and the following annexes: A,B,C,E.
     22        5  
     23        5    new(e, true); 
     24       10    e^.b := true; 
-    25       17    dispose(e, false) 
-    26       22  
-    27       22 end. 
+    25       16    dispose(e, false) 
+    26       21  
+    27       21 end. 
 
 Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [25]: New dispose tags mismatch
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1723.pas *************************************
 
@@ -11988,15 +11904,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Dispose of nil pointer
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1724.pas *************************************
 
@@ -12030,15 +11942,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1726.pas *************************************
 
@@ -12116,15 +12024,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1728.pas *************************************
 
@@ -12161,15 +12065,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [19]: Pack elements out of bounds
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1729.pas *************************************
 
@@ -12246,15 +12146,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1731.pas *************************************
 
@@ -12289,15 +12185,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Unpack elements out of bounds
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1732.pas *************************************
 
@@ -12332,15 +12224,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Integer value overflow
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1733.pas *************************************
 
@@ -12375,15 +12263,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Invalid argument to ln
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1734.pas *************************************
 
@@ -12418,15 +12302,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Invalid argument to sqrt
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1735.pas *************************************
 
@@ -12467,15 +12347,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [23]: Real argument too large
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1736.pas *************************************
 
@@ -12516,15 +12392,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [23]: Real argument too large
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1737.pas *************************************
 
@@ -12562,15 +12434,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [20]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1738.pas *************************************
 
@@ -12606,15 +12474,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [18]: Integer value overflow
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1739.pas *************************************
 
@@ -12655,15 +12519,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [22]: Integer value overflow
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1740.pas *************************************
 
@@ -12697,15 +12557,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: File mode incorrect
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1741.pas *************************************
 
@@ -12739,15 +12595,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [16]: File not open
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1743.pas *************************************
 
@@ -12784,15 +12636,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [19]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1744.pas *************************************
 
@@ -12830,15 +12678,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [20]: Zero divide
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1745.pas *************************************
 
@@ -12874,15 +12718,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [18]: Zero divide
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1746A.pas *************************************
 
@@ -12925,15 +12765,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [25]: Invalid divisor to mod
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1746b.pas *************************************
 
@@ -12976,15 +12812,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [25]: Invalid divisor to mod
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1748.pas *************************************
 
@@ -13100,15 +12932,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Set element out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1751.pas *************************************
 
@@ -13150,15 +12978,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [24]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1752.pas *************************************
 
@@ -13277,15 +13101,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [21]: Invalid integer format
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1755.pas *************************************
 
@@ -13324,15 +13144,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [21]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1756.pas *************************************
 
@@ -13371,15 +13187,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [21]: Invalid real number
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1757.pas *************************************
 
@@ -13419,15 +13231,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [22]: End of file
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1758a.pas *************************************
 
@@ -13469,15 +13277,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [24]: Invalid field specification
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1758b.pas *************************************
 
@@ -13519,15 +13323,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [24]: Invalid fraction specification
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1759.pas *************************************
 
@@ -13891,15 +13691,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [20]: Pointer used after dispose
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1801.pas *************************************
 
@@ -13969,23 +13765,23 @@ and the following annexes: A,B,C,E.
     14       -8 procedure a(var i: integer); 
     15      -16  
     16      -16 begin 
-    17        7  
-    18        7    i := 10 
-    19        8  
-    20        8 end; 
-    21       12  
-    22       12 begin 
-    23       12  
-    24       12    for i := 1 to 10 do begin 
-    25       22  
-    26       22       write(i:1, ' '); 
-    27       31       a(i) 
+    17        5  
+    18        5    i := 10 
+    19        6  
+    20        6 end; 
+    21        9  
+    22        9 begin 
+    23        9  
+    24        9    for i := 1 to 10 do begin 
+    25       19  
+    26       19       write(i:1, ' '); 
+    27       28       a(i) 
     27   ****            ^195
     27   ****  195 For loop index is threatened
-    28       32  
-    29       32    end 
-    30       33  
-    31       33 end. 
+    28       29  
+    29       29    end 
+    30       30  
+    31       30 end. 
 
 Errors in program: 1
 
@@ -14164,29 +13960,29 @@ and the following annexes: A,B,C,E.
     16      -16 procedure a(var i: integer); 
     17      -24  
     18      -24 begin 
-    19        7  
-    20        7    i := 1 
-    21        8  
-    22        8 end; 
-    23       12  
-    24       12 begin 
-    25       12  
-    26       12    a(i) 
-    27       13  
-    28       13 end; 
-    29       15  
-    30       15 begin 
-    31       15  
-    32       15    b; 
-    33       16    for i := 1 to 10 do begin 
+    19        5  
+    20        5    i := 1 
+    21        6  
+    22        6 end; 
+    23        9  
+    24        9 begin 
+    25        9  
+    26        9    a(i) 
+    27       10  
+    28       10 end; 
+    29       12  
+    30       12 begin 
+    31       12  
+    32       12    b; 
+    33       13    for i := 1 to 10 do begin 
     33   ****          ^195
     33   ****  195 For loop index is threatened
-    34       26  
-    35       26       write(i:1, ' ') 
-    36       34  
-    37       34    end 
-    38       35  
-    39       35 end. 
+    34       23  
+    35       23       write(i:1, ' ') 
+    36       31  
+    37       31    end 
+    38       32  
+    39       32 end. 
 
 Errors in program: 1
 
@@ -14429,15 +14225,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 1 2 3 4 5 6 7 8 9 10 
 *** Runtime error [21]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1820.pas *************************************
 
@@ -14599,18 +14391,18 @@ and the following annexes: A,B,C,E.
     14       -8 procedure a(var b: integer); 
     15      -16  
     16      -16 begin 
-    17        7  
-    18        7    b := 1 
-    19        8  
-    20        8 end; 
-    21       12  
-    22       12 begin 
-    23       12  
-    24       12    a(c) 
+    17        5  
+    18        5    b := 1 
+    19        6  
+    20        6 end; 
+    21        9  
+    22        9 begin 
+    23        9  
+    24        9    a(c) 
     24   ****         ^199
     24   ****  199 Var parameter must be same type
-    25       13  
-    26       13 end. 
+    25       10  
+    26       10 end. 
 
 Errors in program: 1
 
@@ -14821,15 +14613,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [19]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1829.pas *************************************
 
@@ -15105,10 +14893,7 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
           1
           2
@@ -15121,7 +14906,6 @@ Running program
           9
          10
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1835.pas *************************************
 
@@ -15324,15 +15108,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Invalid field specification
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1840.pas *************************************
 
@@ -15367,15 +15147,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Invalid fraction specification
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1841.pas *************************************
 
@@ -15483,18 +15259,18 @@ and the following annexes: A,B,C,E.
     18       -8 procedure a(var b: boolean); 
     19      -16  
     20      -16 begin 
-    21        7  
-    22        7    b := true 
-    23        8  
-    24        8 end; 
-    25       13  
-    26       13 begin 
-    27       13  
-    28       13    a(r.b) 
+    21        5  
+    22        5    b := true 
+    23        6  
+    24        6 end; 
+    25       10  
+    26       10 begin 
+    27       10  
+    28       10    a(r.b) 
     28   ****           ^198
     28   ****  198 Var parameter cannot be a tagfield
-    29       14  
-    30       14 end. 
+    29       11  
+    30       11 end. 
 
 Errors in program: 1
 
@@ -15533,18 +15309,18 @@ and the following annexes: A,B,C,E.
     18       -8 procedure a(var b: boolean); 
     19      -16  
     20      -16 begin 
-    21        7  
-    22        7    b := true 
-    23        8  
-    24        8 end; 
-    25       13  
-    26       13 begin 
-    27       13  
-    28       13    a(r.b) 
+    21        5  
+    22        5    b := true 
+    23        6  
+    24        6 end; 
+    25       10  
+    26       10 begin 
+    27       10  
+    28       10    a(r.b) 
     28   ****           ^197
     28   ****  197 Var parameter cannot be packed
-    29       14  
-    30       14 end. 
+    29       11  
+    30       11 end. 
 
 Errors in program: 1
 
@@ -15714,18 +15490,18 @@ and the following annexes: A,B,C,E.
     18       -8 procedure a(var b: boolean); 
     19      -16  
     20      -16 begin 
-    21        7  
-    22        7    b := true 
-    23        8  
-    24        8 end; 
-    25       13  
-    26       13 begin 
-    27       13  
-    28       13    with r do a(b) 
+    21        5  
+    22        5    b := true 
+    23        6  
+    24        6 end; 
+    25       10  
+    26       10 begin 
+    27       10  
+    28       10    with r do a(b) 
     28   ****                   ^197
     28   ****  197 Var parameter cannot be packed
-    29       14  
-    30       14 end. 
+    29       11  
+    30       11 end. 
 
 Errors in program: 1
 
@@ -15773,18 +15549,18 @@ and the following annexes: A,B,C,E.
     27       -8 procedure a(var b: boolean); 
     28      -16  
     29      -16 begin 
-    30        7  
-    31        7    b := true 
-    32        8  
-    33        8 end; 
-    34       13  
-    35       13 begin 
-    36       13  
-    37       13    a(r.r.d.b) 
+    30        5  
+    31        5    b := true 
+    32        6  
+    33        6 end; 
+    34       10  
+    35       10 begin 
+    36       10  
+    37       10    a(r.r.d.b) 
     37   ****               ^197
     37   ****  197 Var parameter cannot be packed
-    38       14  
-    39       14 end. 
+    38       11  
+    39       11 end. 
 
 Errors in program: 1
 
@@ -15826,13 +15602,9 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1851.pas *************************************
 
@@ -15867,27 +15639,23 @@ and the following annexes: A,B,C,E.
     22       -8 begin 
     23        5  
     24        5    r.b := true; 
-    25       10    r.i := 1; 
-    26       16    r.b := false; 
-    27       21    writeln('before error'); 
-    28       30    c := r.c 
-    29       34  
-    30       34 end. 
+    25        9    r.i := 1; 
+    26       15    r.b := false; 
+    27       19    writeln('before error'); 
+    28       28    c := r.c 
+    29       32  
+    30       32 end. 
 
 Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 before error
 
 *** Runtime error [28]: Undefined location access
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1852.pas *************************************
 
@@ -15922,15 +15690,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 
 *** Runtime error [17]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1900.pas *************************************
 
@@ -16395,15 +16159,11 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 The result is: 
 *** Runtime error [19]: Value out of range
 
-program complete
 
 Listing for standard_tests/standard_tests/iso7185prt1911.pas *************************************
 
@@ -16740,12 +16500,8 @@ Errors in program: 0
 
 Run:
 
-P6 Pascal interpreter vs. 0.2.x
-
-Assembling/loading program
-Running program
+P6 Pascal cmach interpreter vs. 0.2.x
 
 Value is: 
 *** Runtime error [25]: Undefined location access
 
-program complete

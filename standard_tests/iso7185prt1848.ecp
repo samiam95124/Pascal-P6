@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -23,18 +23,18 @@ and the following annexes: A,B,C,E.
     18       -8 procedure a(var b: boolean); 
     19      -16  
     20      -16 begin 
-    21        7  
-    22        7    b := true 
-    23        8  
-    24        8 end; 
-    25       13  
-    26       13 begin 
-    27       13  
-    28       13    with r do a(b) 
+    21        5  
+    22        5    b := true 
+    23        6  
+    24        6 end; 
+    25       10  
+    26       10 begin 
+    27       10  
+    28       10    with r do a(b) 
     28   ****                   ^197
     28   ****  197 Var parameter cannot be packed
-    29       14  
-    30       14 end. 
+    29       11  
+    30       11 end. 
 
 Errors in program: 1
 

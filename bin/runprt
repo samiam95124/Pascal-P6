@@ -304,7 +304,7 @@ dotestprog $option standard_tests/iso7185prt1701
 dotestprog $option standard_tests/iso7185prt1702A
 dotestprog $option standard_tests/iso7185prt1702b -i
 dotestprog $option standard_tests/iso7185prt1702c -u
-dotestprog $option standard_tests/iso7185prt1702d -u -i
+dotestprog $option standard_tests/iso7185prt1702d "-u -i"
 dotestprog $option standard_tests/iso7185prt1703
 dotestprog $option standard_tests/iso7185prt1704
 dotestprog $option standard_tests/iso7185prt1705 -i

@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -27,8 +27,8 @@ and the following annexes: A,B,C,E.
     22        5  
     23        5    new(e, true); 
     24       10    e^.b := true; 
-    25       17    dispose(e, false) 
-    26       22  
-    27       22 end. 
+    25       16    dispose(e, false) 
+    26       21  
+    27       21 end. 
 
 Errors in program: 0
