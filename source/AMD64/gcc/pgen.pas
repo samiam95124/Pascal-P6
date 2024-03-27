@@ -3162,6 +3162,7 @@ procedure xlate;
 
             {inds}
             87: begin 
+              wrtins30(' addq $0,%rsi # offset        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
