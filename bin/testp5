@@ -15,7 +15,6 @@ echo > p5/source/pcom.mpp.inp
 cp standard_tests/iso7185pat.pas p5/source/pcom.mpp.dat
 run $1 p5/source/pcom.mpp 
 cat p5/source/pcom.mpp.lst
-
 #
 # For neatness sake, copy out the intermediate to .p5 file
 #

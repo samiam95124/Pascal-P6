@@ -753,6 +753,8 @@ procedure xlate;
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
                     blk: pblock; { block called for cup }
+                    sline: integer; { source line }
+                    iline: integer; { intermediate line }
                   end;
          { temp entries for sets }
          setptr = ^setety;
@@ -2016,6 +2018,7 @@ procedure xlate;
         ep^.fn := nil; ep^.blk := nil; ep^.lb := nil; ep^.lt := nil; 
         ep^.free := false; ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0;
         ep^.t1a := 0; ep^.t2a := 0;
+        ep^.sline := sline; ep^.iline := iline;
       end;
       
       procedure putexp(ep: expptr);
@@ -2111,6 +2114,7 @@ procedure xlate;
 
       procedure dmpety(var f: text; ep: expptr; r1, r2: reg);
       begin
+        write(prr, ep^.sline:6, ': ', ep^.iline:6, ': ');
         write(f, ep^.op:3, ': ', instr[ep^.op]:4, ' ');
         if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
         else if ep^.op in [123{ldci},126{ldcb},127{lccc}] then write(f, ep^.vi:1)
@@ -3016,7 +3020,7 @@ procedure xlate;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
-          write(prr, '# generating: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
+          write(prr, '# generating:  '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
           case ep^.op of
 
             {lodi,loda}
@@ -3590,7 +3594,7 @@ procedure xlate;
 
             {cke}
             188: begin
-              wrtins20(' movq $0,%1 # start running boolean        ', 0, 0, ep^.r2, rgnull, nil);
+              wrtins40(' movq $0,%1 # start running boolean     ', 0, 0, ep^.r2, rgnull, nil);
               ep2 := ep^.cl; 
               while ep2 <> nil do begin 
                 ep2^.r1 := ep^.r1; ep2^.r2 := ep^.r2; ep2^.t1 := ep^.t1; 
@@ -3674,9 +3678,10 @@ procedure xlate;
       procedure duptre(s: expptr; var d: expptr);
       begin
         if s = nil then d := nil else begin { only copy tree components }
-          getexp(d); d^ := s^; d^.next := nil; d^.sl := nil; d^.cl := nil; 
-          d^.al := nil; d^.pl := nil;
-          duptre(s^.l, d^.l); duptre(s^.r, d^.r); duptre(s^.x1, d^.x1)
+          getexp(d); d^ := s^; d^.next := nil; d^.sl := nil; d^.al := nil; 
+          d^.pl := nil;
+          duptre(s^.l, d^.l); duptre(s^.r, d^.r); duptre(s^.x1, d^.x1);
+          duptre(s^.cl, d^.cl)
         end
       end;
 
@@ -3986,7 +3991,7 @@ procedure xlate;
 
         { dupi, dupa, dupr, dups, dupb, dupc }
         181, 182, 183, 184, 185, 186: begin par; 
-          duptre(estack, ep); pshstk(ep);
+          duptre(estack, ep); pshstk(ep)
         end;
 
         {cks}
