@@ -49,7 +49,7 @@ cp p5/source/pint.mpp.lst standard_tests/iso7185pat.lst
 #
 echo "Comparing PAT result to reference"
 strip standard_tests/iso7185pat.lst tmp1
-if [ "$1" = "--cmach" ] || [ "$1" = "--package" ]; then
+if [ "$1" = "--cmach" ] || [ "$1" = "--package" ] || [ "$1" = "--pgen" ]; then
 
     strip standard_tests/iso7185patp5c.cmp tmp2
 	

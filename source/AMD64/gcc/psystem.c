@@ -1646,7 +1646,7 @@ static void writei(FILE* f, long w, long fl, long r, long lz)
 
     if (w < 0) {
 
-        sgn = TRUE; w = abs(w);
+        sgn = TRUE; w = labs(w);
         if (r != 10) 
             errore(modnam, __LINE__, NONDECIMALRADIXOFNEGATIVE);
 
@@ -1661,12 +1661,12 @@ static void writei(FILE* f, long w, long fl, long r, long lz)
 
     } while (w != 0);
     if (sgn) ds = d+1; else ds = d; /* add sign */
-    if (ds > abs(fl)) if (fl < 0) fl = -ds; else fl = ds;
+    if (ds > labs(fl)) if (fl < 0) fl = -ds; else fl = ds;
     if (fl > 0 && fl > ds)
       if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' ');
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
-    if (fl < 1 && abs(fl) > ds) fprintf(f, "%*c", (int)(abs(fl)-ds), ' ');
+    if (fl < 1 && labs(fl) > ds) fprintf(f, "%*c", (int)(labs(fl)-ds), ' ');
 
 }
 
