@@ -3991,7 +3991,10 @@ procedure xlate;
 
         { dupi, dupa, dupr, dups, dupb, dupc }
         181, 182, 183, 184, 185, 186: begin par; 
-          duptre(estack, ep); pshstk(ep)
+          ep2 := nil;
+          if estack <> nil then if estack^.op = 188{cke} then popstk(ep2);
+          duptre(estack, ep); pshstk(ep);
+          if ep2 <> nil then pshstk(ep2)
         end;
 
         {cks}
