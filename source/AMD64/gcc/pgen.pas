@@ -133,7 +133,7 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel = 10000;       { total possible labels in intermediate }
+      maxlabel = 30000;      { total possible labels in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
 
       { locations of header files after program block mark, each header
@@ -267,7 +267,7 @@ const
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
-      lablen      = 8000;    { label maximum length }
+      lablen      = 20000;   { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
 
@@ -4106,7 +4106,7 @@ procedure xlate;
         {stri,stra}
         2,70: begin parpq;
           frereg := allreg;
-          popstk(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); attach(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -4117,7 +4117,7 @@ procedure xlate;
         {strx,strb,strc} 
         195,73,74: begin parpq;
           frereg := allreg; getreg(r1, frereg);
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -4128,7 +4128,7 @@ procedure xlate;
         {strr}
         71: begin parpq;
           frereg := allreg; getreg(r1, frereg);
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
@@ -4138,7 +4138,7 @@ procedure xlate;
 
         {strs} 
         72:begin parpq;
-          frereg := allreg; popstk(ep); assreg(ep, frereg, rgrsi, rgnull); 
+          frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins50(' movq ^0(%rbp),%rdi # get display pointer         ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
@@ -4212,7 +4212,7 @@ procedure xlate;
         {sroi,sroa,sror,srob,sroc,srox}
         3, 75, 76, 78, 79, 196: begin parq;
           frereg := allreg;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
@@ -4226,7 +4226,7 @@ procedure xlate;
         {sros}
         77: begin parq;
           frereg := allreg;
-          popstk(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
+          popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp set ', ep^.r1a, 0, rgnull, rgnull, lclspc);
@@ -4420,7 +4420,7 @@ procedure xlate;
 
         {stoi,stoa,stor,stob,stoc,stox}
         6, 80, 81, 83, 84, 197: begin par;
-          frereg := allreg; popstk(ep2); popstk(ep);
+          frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
           getreg(ep^.r1, frereg);
           assreg(ep, frereg, ep^.r1, rgnull);
           assreg(ep2, frereg, rgnull,  rgnull);
@@ -4438,7 +4438,7 @@ procedure xlate;
 
         {stos}
         82: begin par; 
-          frereg := allreg; popstk(ep2); popstk(ep);
+          frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
           assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
           assreg(ep2, frereg, rgrsi,  rgnull);
           dmptre(ep); dmptre(ep2);
