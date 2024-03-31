@@ -30,8 +30,8 @@ this can be used as a key to execute the correct routine.
 *******************************************************************************}
 
 procedure LookupExternal(
-    { name of module }           var module: symnam;
-    { symbol within module }     var symbol: symnam;
+    { name of module }           var modulen: symnam;
+    { symbol within module }     var symbol:  symnam;
     { resulting routine number } var routine: integer
     );
 
@@ -57,10 +57,9 @@ VAR and VIEW pameters have to be loaded into a buffer to transfer.
 *******************************************************************************}
 
 procedure ExecuteExternal(
-    { number of routine to execute} routine: integer
+    { number of routine to execute}             routine: integer;
+    { address of parameters bottom/result } var params:  address
     );
-
-var a, b, c: integer;
 
 begin
 

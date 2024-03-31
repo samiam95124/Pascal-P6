@@ -33,69 +33,72 @@
 # but without the bit or endian endings. Thus it is not necessary to 
 # specifically state the characteristics of the host.
 #
-PC=gpc
-PFLAGS=-g --classic-pascal-level-0 --no-warnings --transparent-file-names -L/usr/lib/gcc/x86_64-linux-gnu/9 -lpthread
-CFLAGS=
-CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DGNU_PASCAL
-CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DGNU_PASCAL
-CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DGNU_PASCAL
-CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DGNU_PASCAL
+
+#
+# Use of pgen_wrap is a temporary fix to accomodate the (rather odd) GPC 
+# treatment of header files as being connected to a file of the same name.
+# pgen uses the same method to stay compatible with GPC, at least for now.
+#
+CFLAGS=-g3 -DWRDSIZ64
+CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DISO7185_PASCAL -DSELF_COMPILE
+CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DISO7185_PASCAL -DSELF_COMPILE
+CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DISO7185_PASCAL -DSELF_COMPILE
+CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DISO7185_PASCAL -DSELF_COMPILE
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
 all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen_gcc_AMD64 bin/genobj bin/spew
 
 bin/pcom: source/pcom.pas
-	pascpp --linemacro source/pcom $(CPPFLAGS64LE)
-	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
-	pascpp source/pcom $(CPPFLAGS16LE)
-	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
-	cp bin/pcom64 bin/pcom
-	
+	pascpp source/pcom $(CPPFLAGS64LE)
+	pcom_wrap source/pcom.mpp.pas source/pcom.p6
+	pgen_wrap source/pcom.p6 source/pcom.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pcom.s -o bin/pcom -lm -lpthread
+
 bin/pcom_immerr: source/pcom.pas
-	pascpp --linemacro source/pcom $(CPPFLAGS64LE) -DIMM_ERR
-	$(PC) $(PFLAGS) -o bin/pcom64 source/pcom.mpp.pas
-	pascpp --linemacro source/pcom $(CPPFLAGS16LE) -DIMM_ERR
-	$(PC) $(PFLAGS) -o bin/pcom16 source/pcom.mpp.pas
-	cp bin/pcom64 bin/pcom
+	pascpp source/pcom $(CPPFLAGS64LE) -DIMM_ERR
+	pcom_wrap source/pcom.mpp.pas source/pcom.p6
+	pgen_wrap source/pcom.p6 source/pcom.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pcom.s -o bin/pcom -lm -lpthread
 	
 bin/pint: source/pint.pas 
 	gcc -g -o source/externals.o -c source/externals.c
-	pascpp --linemacro source/pint  $(CPPFLAGS64LE) -DGNU_PASCAL -DEXTERNALS
-	$(PC) $(PFLAGS) -o bin/pint64le source/pint.mpp.pas $(EXTERNALLIBS)
-	pascpp --linemacro source/pint $(CPPFLAGS64BE) -DGNU_PASCAL -DEXTERNALS
-	$(PC) $(PFLAGS) -o bin/pint64be source/pint.mpp.pas $(EXTERNALLIBS)
-	pascpp --linemacro source/pint $(CPPFLAGS16LE) -DGNU_PASCAL -DEXTERNALS
-	$(PC) $(PFLAGS) -o bin/pint16le source/pint.mpp.pas $(EXTERNALLIBS)
-	pascpp --linemacro source/pint $(CPPFLAGS16BE) -DGNU_PASCAL -DEXTERNALS
-	$(PC) $(PFLAGS) -o bin/pint16be source/pint.mpp.pas $(EXTERNALLIBS)
-	cp bin/pint64le bin/pint
+	pascpp source/pint  $(CPPFLAGS64LE) -DEXTERNALS
+	pcom_wrap source/pint.mpp.pas source/pint.p6
+	pgen_wrap source/pint.p6 source/pint.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pint.s -o bin/pint -lm -lpthread
 
 bin/pmach: source/pmach.pas
-	pascpp --linemacro source/pmach $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pmach64le source/pmach.mpp.pas
-	cp bin/pmach64le bin/pmach
+	pascpp source/pmach $(CPPFLAGS64LE)
+	pcom_wrap source/pmach.mpp.pas source/pmach.p6
+	pgen_wrap source/pmach.p6 source/pmach.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pmach.s -o bin/pmach -lm -lpthread
 
 bin/cmach: source/cmach/cmach.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach/cmach.c -lm -lpthread
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach/cmach.c -lm
 	cp bin/cmach64le bin/cmach
 
-bin/pgen_gcc_AMD64: source/AMD64/gcc/pgen.pas
-	pascpp --linemacro source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
-	$(PC) $(PFLAGS) -o bin/pgen_gcc_AMD64 source/AMD64/gcc/pgen.mpp.pas
-	cp bin/pgen_gcc_AMD64 bin/pgen
-
-bin/pgen: pgen_gcc_AMD64
+bin/pgen: source/AMD64/gcc/pgen.pas
+	pascpp source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
+	pcom_wrap source/AMD64/gcc/pgen.mpp.pas source/pgen.p6
+	pgen_wrap source/pgen.p6 source/pgen.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pgen.s -o bin/pgen -lm -lpthread
 
 bin/genobj: source/genobj.pas
-	$(PC) $(PFLAGS) -o bin/genobj source/genobj.pas
+	pcom_wrap source/genobj.pas source/genobj.p6
+	pgen_wrap source/genobj.p6 source/genobj.s
+	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/genobj.s -o bin/genobj -lm -lpthread
 
 bin/spew: source/spew.c
 	$(CC) $(CFLAGS) -o bin/spew source/spew.c
 	
 clean:
-	rm -f bin/pcom bin/pcom64 bin/pcom16 bin/pint bin/pint64le bin/pint64be 
-	rm -f bin/pint64le bin/pint16be
 	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete
 	find . -name "*.lst" -type f -delete
