@@ -47,7 +47,7 @@ CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DISO7185_PASCAL -DSELF_COMPILE
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
-all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen_gcc_AMD64 bin/genobj bin/spew
+all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 
 bin/pcom: source/pcom.pas
 	pascpp source/pcom $(CPPFLAGS64LE)
