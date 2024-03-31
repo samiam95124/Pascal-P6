@@ -95,7 +95,7 @@ bin/spew: source/spew.c
 	
 clean:
 	rm -f bin/pcom bin/pcom64 bin/pcom16 bin/pint bin/pint64le bin/pint64be 
-	rm -f bin/pint64le bin/pint16be
+	rm -f bin/pint64le bin/pint16be bin/pgen bin/pgen_gcc_AMD64
 	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete
 	find . -name "*.lst" -type f -delete

@@ -182,6 +182,8 @@ elif [ "$package" = "1" ]; then
 
 elif [ "$pgen" = "1" ]; then
 
-    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c $objects -o $progfile -lm
+    #echo "Will execute: gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm"
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+        $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm
 
 fi
