@@ -205,6 +205,8 @@ then
    cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
    cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
 
+   cp hosts/$compiler/linux_X86/* bin
+
    #
    # GPC has been problematic for line endings. This changes them
    # all to Unix mode for GPC compiles, which at this moment is
