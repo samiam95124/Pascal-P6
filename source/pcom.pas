@@ -108,6 +108,7 @@
   WRDSIZ32       - 32 bit compiler.
   ISO7185_PASCAL - uses ISO 7185 standard language only.
   PASCALINE      - uses the Pascaline standard language.
+  SELF_COMPILE   - Set to off, selects predefined prd and prr files.
 }
 #if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
 #define WRDSIZ32 1
@@ -1729,9 +1730,9 @@ begin cmdpos := maxcmd end;
     399: write('Feature not implemented');
 
     { * marks spared compiler errors }
-    400,401,402,403,404,406,407,
-    500,501,502,503,
-    504,505,506,507,508,509,510,511,512,513,514,515,516: write('Compiler internal error');
+    400,401,402,403,404,406,407, 500,501,502,503,
+    504,505,506,507,508,509,510,511,512,513,514,515,
+    516,517: write('Compiler internal error');
     end
   end;
 
@@ -7475,13 +7476,16 @@ begin cmdpos := maxcmd end;
         with lcp^ do begin
           write(prr, 's',' ':7);
           writev(prr, name, lenpv(name)); write(prr, ' ', typ);
-          write(prr, ' ', vaddr:1, ' '); 
           if klass in [proc, func] then begin
+            write(prr, ' ', pfvaddr:1, ' ');
             write(prr, 'q('); prtpartyp(lcp); write(prr, ')');
             if klass = func then begin
               write(prr, ':'); wrttyp(prr, idtype)
             end
-          end else wrttyp(prr, idtype);
+          end else if klass = vars then begin
+            write(prr, ' ', vaddr:1, ' ');
+            wrttyp(prr, idtype)
+          end else error(517);
           writeln(prr)
         end
       end
