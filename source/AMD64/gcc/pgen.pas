@@ -1,5 +1,5 @@
 #ifndef FPC_PASCAL
-(*$c+,t-,d-,l-,s+*)
+(*$c+,t-,d-,l+,s+*)
 #endif
 {*******************************************************************************
 *                                                                              *
@@ -397,7 +397,9 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       iso7185: boolean; { iso7185 standard flag }
 
       { !!! remove this next statement for self compile }
-      {elide}prd,prr     : text;{noelide}(*prd for read only, prr for write only *)
+#ifndef SELF_COMPILE
+      prd,prr     : text; (*prd for read only, prr for write only *)
+#endif
 
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       insr        : array[instyp] of integer; { number of stack words in result }
@@ -1148,7 +1150,9 @@ procedure xlate;
              with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;
 
          { !!! remove this next statement for self compile }
-         {elide}reset(prd);{noelide}
+#ifndef SELF_COMPILE
+         reset(prd);
+#endif
 
          sline := 0; { set no line of source }
          iline := 1; { set 1st line of intermediate }
@@ -3046,12 +3050,12 @@ procedure xlate;
 
               wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins40(' lea @l(%rsi),%rsi # index local set    ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
-              wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp  ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # index temp again ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # index temp again', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {lda}
@@ -3095,7 +3099,7 @@ procedure xlate;
 
             120{lip}: begin 
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins40(' movq @l+ptrsize(%2),%1 # load frame pointer    ', ep^.q, ep^.p, ep^.r2, ep^.t1, nil);
+              wrtins50(' movq @l+ptrsize(%2),%1 # load frame pointer      ', ep^.q, ep^.p, ep^.r2, ep^.t1, nil);
               wrtins40(' movq @l(%2),%1 # load procedure address', ep^.q, ep^.p, ep^.r1, ep^.t1, nil)
             end;  
 
@@ -3116,7 +3120,7 @@ procedure xlate;
             end;
 
             5{lao}:
-              wrtins60(' leaq @g(%rip),%1 # load address of global     ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins50(' leaq @g(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               if ep^.r1 <> ep^.t1 then
@@ -3136,21 +3140,21 @@ procedure xlate;
 
             {ldob,ldoc,ldox}
             68,69,194:
-              wrtins70(' movzx @g(%rip),%1 # load and zero extend global byte    ', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins60(' movzx @g(%rip),%1 # load and zero extend global byte       ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor}
             66: 
-              wrtins40(' movsd @g(%rip),%1 # load global real', ep^.q, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movsd @g(%rip),%1 # load global real   ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos}
             67: begin
-              wrtins70(' leaq @g(%rip),%rsi # load address of global set        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq @g(%rip),%rsi # load address of global set  ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {indi,inda}
@@ -3167,12 +3171,12 @@ procedure xlate;
             {inds}
             87: begin 
               wrtins30(' addq $0,%rsi # offset        ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
             {inci,inca,incb,incc,incx}
@@ -3193,8 +3197,8 @@ procedure xlate;
             {cvbi,cvbx,cvbb,cvbc}
             100, 115, 116, 121: begin
               wrtins40(' movq $0,%rdi # load tagfield offset    ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @s(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins40(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq @s(%rip),%rdx # load logical variant table  ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins40(' movq (%1),%r8 # get existing tag value ', 0, 0, ep^.l^.r1, rgnull, nil)
               else
@@ -3204,9 +3208,9 @@ procedure xlate;
 
             {ivti,ivtx,ivtb,ivtc}
             192,101,102,111: begin
-              wrtins20(' movq $0,%rdi # load tagfield offset    ', ep^.q, 0, rgnull, rgnull, nil);
-              wrtins20(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @s(%rip),%rdx # load logical variant table   ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins40(' movq $0,%rdi # load tagfield offset    ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $0,%rsi # load size of variant    ', ep^.q1, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq @s(%rip),%rdx # load logical variant table  ', 0, 0, rgnull, rgnull, ep^.lt);
               if ep^.op = 100 then
                 wrtins40(' movq (%1),%r8 # get existing tag value ', ep^.q, 0, ep^.l^.r1, rgnull, nil)
               else
@@ -3235,13 +3239,13 @@ procedure xlate;
             191: begin
               wrtins40(' movq $0,%rdi # get tag offset          ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # get tag nesting level   ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq @s(%rip),%rdx # index logical variant table  ', 0, 0, rgnull, rgnull, ep^.lt);
+              wrtins50(' leaq @s(%rip),%rdx # index logical variant table ', 0, 0, rgnull, rgnull, ep^.lt);
               wrtins50(' call psystem_tagchkass # check tag assignment    ', 0, 0, rgnull, rgnull, nil)
             end;
 
             {lpa}
             114: begin 
-              wrtins60(' leaq @s(%rip),%1 # load procedure/function address          ', 0, 0, ep^.r1, rgnull, ep^.fn);
+              wrtins60(' leaq @s(%rip),%1 # load procedure/function address         ', 0, 0, ep^.r1, rgnull, ep^.fn);
               wrtins40(' movq @l(%rbp),%1 # load display pointer', ep^.q1, ep^.p, ep^.r2, rgnull, nil)
             end;
 
@@ -3260,12 +3264,12 @@ procedure xlate;
             {ldcs}
             7: begin
               wrtins50(' leaq set^0(%rip),%rsi # index constant set       ', ep^.setn, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%rdi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rdi # index temp    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {chki,chka,chkb,chkc,chkx}
@@ -3275,7 +3279,7 @@ procedure xlate;
               wrtins40(' jge 1f # skip if greater or equal      ', 0, 0, rgnull, rgnull, nil);
               wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
-              wrtins30(' movq $ValueOutOfRange,%rdx # load error code  ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' movq $ValueOutOfRange,%rdx # load error code     ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins30(' movq $0,%1 # load high bound ', ep^.vi2, 0, ep^.t1, rgnull, nil);
@@ -3358,17 +3362,15 @@ procedure xlate;
 
             {lcp}
             135: begin 
-                       {         1111111111222222222233333333334444444444555555555566666666667
-                        1234567890123456789012345678901234567890123456789012345678901234567890}
               wrtins30(' movq (%1),%2 # get pointer   ', 0, 0, ep^.l^.r1, ep^.r1, nil);
               wrtins30(' movq ^0(%1),%2 # get length  ', ptrsize, 0, ep^.l^.r1, ep^.r2, nil)
             end;
 
             {sgs}
             32: begin
-              wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins50(' call psystem_setsgl # make singleton set         ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             {flt,flo}
@@ -3378,20 +3380,16 @@ procedure xlate;
             35: wrtins50(' cvttsd2si %1,%2 # trucate real to integer        ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {ngi}
-            36: wrtins30(' negq %1 # negate integer   ', 0, 0, ep^.r1, rgnull, nil);
+            36: wrtins30(' negq %1 # negate integer     ', 0, 0, ep^.r1, rgnull, nil);
 
             {ngr}
             37: begin
-                       {         1111111111222222222233333333334444444444555555555566666666667
-                        1234567890123456789012345678901234567890123456789012345678901234567890} 
               wrtins40(' subsd %1,%1  # subtract to find 0      ', 0, 0, ep^.r1, ep^.r1, nil);
               wrtins30(' subsd %1,%2  # find 0-real   ', 0, 0, ep^.l^.r1, ep^.r1, nil)
             end;
 
             {sqi}
             38: begin 
-                       {         1111111111222222222233333333334444444444555555555566666666667
-                        1234567890123456789012345678901234567890123456789012345678901234567890}
               wrtins30(' imulq %1,%1 # square integer ', 0, 0, ep^.r1, rgnull, nil);
             end;
 
@@ -3402,9 +3400,9 @@ procedure xlate;
 
             {abi}
             40: begin
-              wrtins20(' orq %1,%1 # check positive   ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins10(' jns 1f # skip if so          ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins10(' negq %1 # negate integer     ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins30(' orq %1,%1 # check positive   ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins30(' jns 1f # skip if so          ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins30(' negq %1 # negate integer     ', 0, 0, ep^.r1, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
 
             end;
@@ -3443,7 +3441,7 @@ procedure xlate;
             end;
 
             {rnd}
-            62: wrtins40(' cvtsd2si %1,%2 # round to integer    ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            62: wrtins40(' cvtsd2si %1,%2 # round to integer      ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {chr}
             60: ; { chr is no-op }
@@ -3452,8 +3450,8 @@ procedure xlate;
             43,44,206: begin 
               wrtins30(' orq %1,%1 # check signed     ', 0, 0, ep^.l^.r1, rgnull, nil);
               wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq modnam(%rip),%rdi # index module name      ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' movq $0,%rsi # get line number                  ', sline, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' movq $0,%rsi # get line number                   ', sline, 0, rgnull, rgnull, nil);
               wrtins60(' movq $BooleanOperatorOfNegative,%rdx # get error code      ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
@@ -3474,9 +3472,9 @@ procedure xlate;
             {dif,int,uni}
             45,46,47: begin
               case ep^.op of 
-                45: wrtins20(' call psystem_setdif # find set difference        ', 0, 0, rgnull, rgnull, nil);
-                46: wrtins20(' call psystem_setint # find set intersection      ', 0, 0, rgnull, rgnull, nil);
-                47: wrtins20(' call psystem_setuni # find set union   ', 0, 0, rgnull, rgnull, nil);
+                45: wrtins50(' call psystem_setdif # find set difference        ', 0, 0, rgnull, rgnull, nil);
+                46: wrtins50(' call psystem_setint # find set intersection      ', 0, 0, rgnull, rgnull, nil);
+                47: wrtins40(' call psystem_setuni # find set union   ', 0, 0, rgnull, rgnull, nil);
               end;
               wrtins50(' leaq ^-@s^0(%rbp),%1 # reindex the temp          ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
               puttmp(ep^.r^.r1a)
@@ -3497,7 +3495,7 @@ procedure xlate;
               wrtins30(' jns 1f # skip positive       ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins40(' decq %rdx # set sign of upper dividend ', 0, 0, rgnull, rgnull, sp);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins10(' idivq %1 # divide integer    ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins30(' idivq %1 # divide integer    ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrdx then
                 wrtins30(' movq %rdx,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
             end;
@@ -3508,7 +3506,7 @@ procedure xlate;
               wrtins40(' subq $0,%rax # find sign of dividend   ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins30(' jns 1f # skip positive       ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins40(' decq %rdx # set sign of upper dividend ', 0, 0, rgnull, rgnull, sp);
-              wrtins40('1:        ', 0, 0, rgnull, rgnull, sp);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins30(' idivq %1 # divide integer    ', 0, 0, ep^.r^.r1, rgnull, nil);
               if ep^.r1 <> rgrax then
                 wrtins40(' movq %rax,%1 # move result into place  ', 0, 0, ep^.r1, rgnull, nil)
@@ -3518,16 +3516,16 @@ procedure xlate;
             51: wrtins40(' imulq %1,%2 # multiply integers        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {mpr}
-            52: wrtins20(' mulsd %1,%2 # multiply reals ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            52: wrtins30(' mulsd %1,%2 # multiply reals ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
             54: wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {rgs}
             110: begin 
-              wrtins40(' leaq ^-@s^0(%rbp),%rdx # index temp     ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%rdx # index temp    ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins50(' call psystem_setrgs # set range of values        ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp     ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
             { dupi, dupa, dupr, dups, dupb, dupc }
@@ -3557,7 +3555,7 @@ procedure xlate;
                 write(prr, ' ':opcspc, 'call'); lftjst(parspc-(4+opcspc)); fl := parspc; 
                 wrtblks(ep^.blk^.parent, true, fl); wrtblksht(ep^.blk, fl); 
                 lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
-              end else wrtins30(' call @s # call user procedure ', 0, 0, rgnull, rgnull, ep^.fn);
+              end else wrtins30(' call @s # call user procedure', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
                 if ep^.q1 = 1 then begin
                   if ep^.r1 <> rgxmm0 then
@@ -3585,7 +3583,7 @@ procedure xlate;
                     wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
                   if ep^.r1 <> rgrax then
-                    wrtins20(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
+                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
               wrtins50(' movq %r15,%rbp # restore our frame pointer       ', 0, 0, rgnull, rgnull, nil);
@@ -4066,7 +4064,7 @@ procedure xlate;
         27: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
           writevp(prr, sp); lftjst(parfld-2+lenpv(sp)); pass;
           frereg := allreg;
-          wrtins10('call *@s   ', 0, 0, rgnull, rgnull, sp)
+          wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
         end;
 
         { *** terminals *** }
@@ -4161,25 +4159,25 @@ procedure xlate;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30(' pushq $0 # place current ep   ', 0, 0, rgnull, rgnull, nil);
-          wrtins40(' pushq $0 # place bottom of stack        ', 0, 0, rgnull, rgnull, nil);
-          wrtins30(' pushq $0 # place previous ep  ', 0, 0, rgnull, rgnull, nil);
-          wrtins30(' enterq $1,$0 # enter frame    ', p+1, 0, rgnull, rgnull, nil);
-          wrtins30(' movq %rsp,%rax # copy sp      ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' pushq $0 # place current ep  ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq $0 # place bottom of stack       ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' pushq $0 # place previous ep ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' enterq $1,$0 # enter frame   ', p+1, 0, rgnull, rgnull, nil);
+          wrtins30(' movq %rsp,%rax # copy sp     ', 0, 0, rgnull, rgnull, nil);
           { find sp-locals }
           write(prr, '        subq    $'); writevp(prr, lclspc); write(prr, '+'); 
           writevp(prr, blkstk^.tmpnam); writeln(prr, ',%rax # find sp-locals');
           wrtins10('1:        ', 0, 0, rgnull, rgnull, lclspc);
-          wrtins50(' cmpq %rax,%rsp # check have reached stack         ', 0, 0, rgnull, rgnull, nil);
-          wrtins20(' je 2f # skip if so  ', 0, 0, rgnull, rgnull, nil);
-          wrtins40(' pushq $0 # push 0 word for locals       ', 0, 0, rgnull, rgnull, nil);
-          wrtins20(' jmp 1b # loop       ', 7, 0, rgnull, rgnull, nil);
+          wrtins50(' cmpq %rax,%rsp # check have reached stack        ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' je 2f # skip if so ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq $0 # push 0 word for locals      ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' jmp 1b # loop      ', 7, 0, rgnull, rgnull, nil);
           wrtins10('2:        ', 0, 0, rgnull, rgnull, lclspc);
           wrtins50(' movq %rsp,^0(%rbp) # set bottom of stack         ', marksb, 0, rgnull, rgnull, nil);
           { note there is no way to know locals space in advance }
-          wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack       ', 0, 0, rgnull, rgnull, nil);
+          wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack      ', 0, 0, rgnull, rgnull, nil);
           { save protected registers and keep aligned }
-          wrtins60(' pushq %rbx # save protected registers and keep aligned      ', 0, 0, rgnull, rgnull, nil);
+          wrtins60(' pushq %rbx # save protected registers and keep aligned     ', 0, 0, rgnull, rgnull, nil);
           wrtins20(' pushq %r12         ', 0, 0, rgnull, rgnull, nil);
           wrtins20(' pushq %r13         ', 0, 0, rgnull, rgnull, nil);
           wrtins20(' pushq %r14         ', 0, 0, rgnull, rgnull, nil);
@@ -4197,7 +4195,7 @@ procedure xlate;
           frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
           assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
           genexp(ep2); genexp(ep);
-          wrtins20(' movq $0,%rcx # load the length of move ', q, 0, rgnull, rgnull, nil);
+          wrtins40(' movq $0,%rcx # load the length of move ', q, 0, rgnull, rgnull, nil);
           wrtins20(' repnz # move/copy  ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2);
@@ -4216,10 +4214,10 @@ procedure xlate;
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
-            wrtins60(' movb %1l,@g(%rip) # store byte to global      ', q, 0, ep^.r1, rgnull, nil)
+            wrtins50(' movb %1l,@g(%rip) # store byte to global         ', q, 0, ep^.r1, rgnull, nil)
           else if op = 76{sror} then
-            wrtins60(' movsd %1l,@g(%rip) # store real to global     ', q, 0, ep^.r1, rgnull, nil)
-          else wrtins60(' movq %1,@g(%rip) # store quad to global       ', q, 0, ep^.r1, rgnull, nil);
+            wrtins50(' movsd %1l,@g(%rip) # store real to global        ', q, 0, ep^.r1, rgnull, nil)
+          else wrtins40(' movq %1,@g(%rip) # store quad to global', q, 0, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
@@ -4229,8 +4227,8 @@ procedure xlate;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' leaq ^-@s^0(%rbp),%rsi # index temp set ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-          wrtins60(' leaq @g(%rip),%rdi # index global destination ', q, 0, ep^.r1, rgnull, nil);
+          wrtins50(' leaq ^-@s^0(%rbp),%rsi # index temp set          ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+          wrtins50(' leaq @g(%rip),%rdi # index global destination    ', q, 0, ep^.r1, rgnull, nil);
           wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -4279,7 +4277,7 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
-          wrtins10(' jmp @s    ', 0, 0, rgnull, rgnull, sp);
+          wrtins10(' jmp @s   ', 0, 0, rgnull, rgnull, sp);
           botstk
         end;
 
@@ -4306,7 +4304,7 @@ procedure xlate;
           wrtins50(' movq %1,%2 # make factoring copy of index        ', 0, 0, ep^.r1, r1, sp);
           wrtins20(' salq $2,%1 # *4    ', 0, 0, ep^.r1, rgnull, sp);
           wrtins20(' addq %2,%1 # *5    ', 0, 0, ep^.r1, r1, sp);
-          wrtins40(' leaq @s(%rip),%1 # index case jump table', 0, 0, r1, rgnull, sp);
+          wrtins50(' leaq @s(%rip),%1 # index case jump table         ', 0, 0, r1, rgnull, sp);
           wrtins40(' addq %2,%1 # add scaled index to base  ', 0, 0, ep^.r1, r1, sp);
           wrtins10(' jmp *%1  ', 0, 0, ep^.r1, rgnull, sp);
           deltre(ep); 
@@ -4320,7 +4318,7 @@ procedure xlate;
           wrtins50(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins50(' movq ^0(%rbp),%rsp # get stack for target        ', marksb, 0, rgnull, rgnull, nil);
           wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack      ', 0, 0, rgnull, rgnull, nil);
-          wrtins30(' jmp @s # goto jump target     ', 0, 0, rgnull, rgnull, sp);
+          wrtins30(' jmp @s # goto jump target    ', 0, 0, rgnull, rgnull, sp);
           botstk 
         end;
 
@@ -4388,7 +4386,7 @@ procedure xlate;
           if op in [204{retx},130{retc},131{retb}] then
             wrtins40(' andq $0,%rax # mask byte result        ', 255, 0, rgnull, rgnull, nil);
           wrtins40(' pushq %rcx # replace return address    ', 0, 0, rgnull, rgnull, nil);
-          wrtins10(' ret # return to caller       ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' ret # return to caller       ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
@@ -4398,8 +4396,6 @@ procedure xlate;
           frereg := allreg;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           { restore protected registers }
-                   {         1111111111222222222233333333334444444444555555555566666666667
-                    1234567890123456789012345678901234567890123456789012345678901234567890}
           wrtins40(' popq %r15 # undo alignment push        ', 0, 0, rgnull, rgnull, nil);
           wrtins40(' popq %r15 # restore protected registers', 0, 0, rgnull, rgnull, nil);
           wrtins10(' popq %r14', 0, 0, rgnull, rgnull, nil);
@@ -4478,7 +4474,7 @@ procedure xlate;
           wrtins40(' cmpq $0,%1 # check against low bound   ', q, 0, ep^.r1, rgnull, nil);
           wrtins30(' jl 1f # skip if lower        ', 0, 0, rgnull, rgnull, sp);
           wrtins40(' cmpq $0,%1 # check against high bound  ', q1, 0, ep^.r1, rgnull, nil);
-          wrtins50(' jle @s # if less or equal, jump to target         ', 0, 0, rgnull, rgnull, sp);
+          wrtins50(' jle @s # if less or equal, jump to target        ', 0, 0, rgnull, rgnull, sp);
           wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
           pshstk(ep)
         end;
@@ -4753,7 +4749,9 @@ begin (* main *)
   writeln;
   writeln;
 
+#ifndef SELF_COMPILE
   rewrite(prr);
+#endif
 
   writeln('Generating program');
 
