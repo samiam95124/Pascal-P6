@@ -26,7 +26,7 @@ cp source/pcom.mpp.out standard_tests/iso7185pat.p6
 #
 echo "Compiling pint to intermediate code"
 cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
-compile source/pint.mpp $1
+compile $1 source/pint.mpp
 cat source/pint.mpp.err
 #
 # Add the final target program to the end of pint.
