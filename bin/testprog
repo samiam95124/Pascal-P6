@@ -40,6 +40,7 @@ progfile=""
 cmpnext="0"
 cmpfile=""
 noerrmsg="0"
+noerrmsgoption=""
 options=""
 pint="0"
 
@@ -77,6 +78,7 @@ do
     elif [ "$param" = "--noerrmsg" ]; then
     
     	noerrmsg=1
+        noerrmsgoption="--noerrmsg"
     	
     elif [ "$param" = "--help" ]; then
 
@@ -129,7 +131,7 @@ do
 			
 			fi
     		echo "Compiling $param..."
-    		compile $options $pmachoption $cmachoption $packageoption $pgenoption $param
+    		compile $options $noerrmsgoption $pmachoption $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
     		    if [ "$noerrmsg" = "0" ]; then
