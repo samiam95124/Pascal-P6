@@ -5,7 +5,7 @@
 # Compile P2
 #
 echo "Compiling pcomp to intermediate code"
-compile $1 p2/pcomp
+compile --list- $1 p2/pcomp
 cat p2/pcomp.err
 #
 # Copy the test file to the input file and compile it via interpreted p2
@@ -21,7 +21,7 @@ cp p2/pcomp.out p2/roman.p2
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
-compile $1 p2/pasint
+compile --list- $1 p2/pasint
 #
 # Add the final target program to the end of pasint.
 # This means that the version of pint will read and interpret

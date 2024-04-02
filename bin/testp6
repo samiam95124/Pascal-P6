@@ -8,7 +8,7 @@
 #
 echo "Compiling pcom to intermediate code"
 cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas source/pcom.mpp.pas
-compile $1 source/pcom.mpp
+compile --list- $1 source/pcom.mpp
 cat source/pcom.mpp.err
 #
 # Run P6/pcom on P6
@@ -26,7 +26,7 @@ cp source/pcom.mpp.out standard_tests/iso7185pat.p6
 #
 echo "Compiling pint to intermediate code"
 cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
-compile $1 source/pint.mpp
+compile --list- $1 source/pint.mpp
 cat source/pint.mpp.err
 #
 # Add the final target program to the end of pint.

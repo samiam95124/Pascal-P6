@@ -186,9 +186,9 @@
 #endif
 
 program pmach(input,output,prd,prr
-              { Pascaline start !
+#ifdef PASCALINE
               ,command
-              ! Pascaline end }
+#endif
               );
 
 label 99;

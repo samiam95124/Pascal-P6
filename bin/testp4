@@ -5,7 +5,7 @@
 # Compile p4
 #
 echo "Compiling pcom to intermediate code"
-compile $1 p4/pcom
+compile --list- $1 p4/pcom
 cat p4/pcom.err
 #
 # Copy the test file to the input file and compile it via interpreted p4
@@ -21,7 +21,7 @@ cp p4/pcom.out p4/standardp.p4
 # Compile pint
 #
 echo Compiling pint to intermediate code
-compile $1 p4/pint
+compile --list- $1 p4/pint
 #
 # Add the final target program to the end of pint.
 # This means that the version of pint will read and interpret
