@@ -36,15 +36,11 @@ them tend to just be feedthrough implementations.
 }
   
 procedure assigntext(var f: text; var fn: filnam);
-var s: string(fillen);
-    i, l: integer;
 begin
   assign(f, fn);
 end;
 
 procedure assignbin(var f: bytfil; var fn: filnam);
-var s: string(fillen);
-    i, l: integer;
 begin
   assign(f, fn);
 end;
@@ -105,7 +101,7 @@ begin
 end;
 
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum);
-var i, j: cmdinx;
+var i, j: cmdinx; c: char;
 procedure putcmd(c: char);
 begin
   if i >= maxcmd-1 then errore(CommandLineTooLong);
@@ -143,10 +139,10 @@ begin
       if (optst = opts[oi]) or (optst = optsl[oi]) then begin
         option[oi] := true; if bufcommand = '-' then option[oi] := false;
         options[oi] := true;
-        if (bufcommand = '+') or (bufcommand = '-') then getcommand;
-        end
+        if (bufcommand = '+') or (bufcommand = '-') then getcommand
       end;
-    end
+    end;
+    while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand
   until bufcommand <> '-'
 end;
 
