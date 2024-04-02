@@ -235,7 +235,7 @@ const
 
       { !!! Need to use the small size memory to self compile, otherwise, by
         definition, pint cannot fit into its own memory. }
-#ifndef SELF_COMPILE
+#if !defined(SELF_COMPILE) || defined(BIG_STORE)
 #ifdef WRDSIZ16
       maxstr      = 31999;  { maximum size of addressing for program/var }
       maxtop      = 32000;  { maximum size of addressing for program/var+1 }

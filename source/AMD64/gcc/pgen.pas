@@ -123,11 +123,7 @@ const
 
       { internal constants }
 
-      { !!! Need to use the small size memory to self compile, otherwise, by
-        definition, pint cannot fit into its own memory. }
-      {elide}maxstr      = 16777215;{noelide}  { maximum size of addressing for program/var }
-      {remove maxstr     =  2000000; remove}  { maximum size of addressing for program/var }
-      maxdef      = 2097152; { maxstr / 8 for defined bits }
+      maxstr      = maxint;  { maximum size of addressing for program/var }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
 
