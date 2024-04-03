@@ -984,7 +984,6 @@ void assignexternal(filnum fn, char hfn[])
 {
     long i;
 
-    for (i = 0; i < FILLEN; i++) { filnamtab[fn][i] = ' '; }
     /* skip leading spaces */
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;

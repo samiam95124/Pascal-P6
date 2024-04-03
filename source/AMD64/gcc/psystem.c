@@ -762,7 +762,6 @@ static void assignexternal(filnum fn, char hfn[])
 {
     long i;
 
-    for (i = 0; i < FILLEN; i++) { filnamtab[fn][i] = ' '; }
     /* skip leading spaces */
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;
@@ -775,6 +774,7 @@ static void assignexternal(filnum fn, char hfn[])
     }
     if (i >= FILLEN) errorv(modnam, __LINE__, FILENAMETOOLONG);
     filnamtab[fn][i] = 0; /* terminate */
+    if (i == 0) errorv(modnam, __LINE__, FILENAMEEMPTY);
 }
 
 /* set operations */
@@ -4183,6 +4183,7 @@ void psystem_aeft(
 
     strcpyl(fs, s, l); /* make copy of string */
     assignexternal(fn, fs);
+    filanamtab[fn] = TRUE; /* set name assigned */
 
 }
 
@@ -4215,6 +4216,7 @@ void psystem_aefb(
 
     strcpyl(fs, s, l); /* make copy of string */
     assignexternal(fn, fs);
+    filanamtab[fn] = TRUE; /* set name assigned */
 
 }
 
@@ -4745,7 +4747,7 @@ static void init(int argc, char* argv[])
 
     /* get the command line */
     getcommandline(argc, argv, cmdlin, &cmdlen);
-    cmdpos = 1;
+    cmdpos = 0;
 
 }
 
