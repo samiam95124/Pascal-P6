@@ -53,74 +53,80 @@ bin/pcom: source/pcom.pas
 	@echo
 	@echo "Building pcom..."
 	@echo
-	pascpp source/pcom $(CPPFLAGS64LE)
-	pcom_wrap source/pcom.mpp.pas source/pcom.p6 --reference-
-	pgen_wrap source/pcom.p6 source/pcom.s
+	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE)
+	pcom_wrap $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pcom.s -o bin/pcom -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
+		-o $(PASCALP6)/bin/pcom -lm -lpthread
 
 bin/pcom_immerr: source/pcom.pas
 	@echo
 	@echo "Building pcom with immediate error..."
 	@echo
-	pascpp source/pcom $(CPPFLAGS64LE) -DIMM_ERR
-	pcom_wrap source/pcom.mpp.pas source/pcom.p6 --reference-
-	pgen_wrap source/pcom.p6 source/pcom.s
+	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE) -DIMM_ERR
+	pcom_wrap $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pcom.s -o bin/pcom -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
+		-o $(PASCALP6)/bin/pcom -lm -lpthread
 	
 bin/pint: source/pint.pas 
 	@echo
 	@echo "Building pint..."
 	@echo
-	gcc -g -o source/externals.o -c source/externals.c
-	pascpp source/pint $(CPPFLAGS64LE) -DEXTERNALS
-	pcom_wrap source/pint.mpp.pas source/pint.p6 --reference-
-	pgen_wrap source/pint.p6 source/pint.s
+	gcc -g -o $(PASCALP6)/source/externals.o -c $(PASCALP6)/source/externals.c
+	pascpp $(PASCALP6)/source/pint $(CPPFLAGS64LE) -DEXTERNALS
+	pcom_wrap $(PASCALP6)/source/pint.mpp.pas $(PASCALP6)/source/pint.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/pint.p6 $(PASCALP6)/source/pint.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pint.s -o bin/pint -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pint.s \
+		-o $(PASCALP6)/bin/pint -lm -lpthread
 
 bin/pmach: source/pmach.pas
 	@echo
 	@echo "Building pmach..."
 	@echo
-	pascpp source/pmach $(CPPFLAGS64LE)
-	pcom_wrap source/pmach.mpp.pas source/pmach.p6 --reference-
-	pgen_wrap source/pmach.p6 source/pmach.s
+	pascpp $(PASCALP6)/source/pmach $(CPPFLAGS64LE)
+	pcom_wrap $(PASCALP6)/source/pmach.mpp.pas $(PASCALP6)/source/pmach.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/pmach.p6 $(PASCALP6)/source/pmach.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pmach.s -o bin/pmach -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pmach.s \
+		-o $(PASCALP6)/bin/pmach -lm -lpthread
 
 bin/cmach: source/cmach/cmach.c
 	@echo
 	@echo "Building cmach..."
 	@echo
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o bin/cmach64le source/cmach/cmach.c -lm
-	cp bin/cmach64le bin/cmach
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(PASCALP6)/bin/cmach64le $(PASCALP6)/source/cmach/cmach.c -lm
+	cp $(PASCALP6)/bin/cmach64le $(PASCALP6)/bin/cmach
 
 bin/pgen: source/AMD64/gcc/pgen.pas
 	@echo
 	@echo "Building pgen..."
 	@echo
-	pascpp source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
-	pcom_wrap source/AMD64/gcc/pgen.mpp.pas source/pgen.p6 --reference-
-	pgen_wrap source/pgen.p6 source/pgen.s
+	pascpp $(PASCALP6)/source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
+	pcom_wrap $(PASCALP6)/source/AMD64/gcc/pgen.mpp.pas $(PASCALP6)/source/pgen.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/pgen.p6 $(PASCALP6)/source/pgen.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pgen.s -o bin/pgen -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pgen.s \
+		-o $(PASCALP6)/bin/pgen -lm -lpthread
 
 bin/genobj: source/genobj.pas
 	@echo
 	@echo "Building genobj..."
 	@echo
-	pcom_wrap source/genobj.pas source/genobj.p6 --reference-
-	pgen_wrap source/genobj.p6 source/genobj.s
+	pcom_wrap $(PASCALP6)/source/genobj.pas $(PASCALP6)/source/genobj.p6 --reference-
+	pgen_wrap $(PASCALP6)/source/genobj.p6 $(PASCALP6)/source/genobj.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/genobj.s -o bin/genobj -lm -lpthread
+		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/genobj.s \
+		-o $(PASCALP6)/bin/genobj -lm -lpthread
 
 bin/spew: source/spew.c
 	@echo
 	@echo "Building spew..."
 	@echo
-	$(CC) $(CFLAGS) -o bin/spew source/spew.c
+	$(CC) $(CFLAGS) -o $(PASCALP6)/bin/spew source/spew.c
 	
 clean:
 	find . -name "*.pint" -type f -delete
