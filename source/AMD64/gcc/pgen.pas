@@ -1354,11 +1354,12 @@ procedure xlate;
      writeln(prr, '        call    psystem_asst');
      writeln(prr, '        leaq    globals_start+prroff(%rip),%rdi');
      writeln(prr, '        call    psystem_rwf');
+     writeln(prr);
+#endif
      writeln(prr, '        call    1f');
      writeln(prr, '        popq    %rax');
      writeln(prr, '        ret');
      writeln(prr, '1:');
-#endif
    end;
 
    procedure postamble;
