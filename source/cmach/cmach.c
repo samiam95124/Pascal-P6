@@ -1877,7 +1877,7 @@ void resetfn(filnum fn, boolean bin)
 {
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
-    if (filstate[fn] != fsclosed)
+    if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
         if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
         errore(FILEOPENFAIL);
@@ -1891,7 +1891,7 @@ void rewritefn(filnum fn, boolean bin)
 {
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
-    if (filstate[fn] != fsclosed)
+    if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
         if (fclose(filtable[fn])) errore(FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
         errore(FILEOPENFAIL);

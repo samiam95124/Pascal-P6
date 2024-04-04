@@ -445,6 +445,7 @@ typedef char pasfil;  /* Pascal file */
 typedef long filnum;  /* logical file number */
 typedef char filnam[FILLEN]; /* filename strings */
 typedef enum {
+  fsnone,
   fsclosed,
   fsread,
   fswrite
@@ -765,8 +766,7 @@ static void assignexternal(filnum fn, char hfn[])
     /* skip leading spaces */
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;
-    while (!eolncommand() && !eofcommand() &&
-           (isalnum(bufcommand()) || bufcommand() == '_')) {
+    while (!eolncommand() && !eofcommand() && bufcommand() != ' ') {
         if (i >= FILLEN) errorv(modnam, __LINE__, FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
@@ -916,8 +916,9 @@ static void valfil(
         ff = 0;
         while (i <= MAXFIL) {
 
-            if (filstate[i] == fsclosed) { ff = i; i = MAXFIL; }
-            i = i+1;
+            if (filstate[i] == fsnone)
+                { ff = i; filstate[i] = fsclosed; i = MAXFIL+1; }
+            else i = i+1;
 
         }
         if (ff == 0) errore(modnam, __LINE__, TOOMANYFILES);
@@ -1775,7 +1776,7 @@ static void resetfn(filnum fn, boolean bin)
 
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
-    if (filstate[fn] != fsclosed)
+    if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
         if (fclose(filtable[fn])) 
             errore(modnam, __LINE__, FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"rb":"r")))
@@ -1802,7 +1803,7 @@ static void rewritefn(filnum fn, boolean bin)
 
     /* file was closed, no assigned name, give it a temp name */
     if (filstate[fn] == fsclosed && !filanamtab[fn]) tmpnam(filnamtab[fn]);
-    if (filstate[fn] != fsclosed)
+    if (filstate[fn] != fsclosed && filstate[fn] != fsnone)
         if (fclose(filtable[fn])) 
             errore(modnam, __LINE__, FILECLOSEFAIL);
     if (!(filtable[fn] = fopen(filnamtab[fn], bin?"wb":"w")))
@@ -4733,9 +4734,11 @@ static void init(int argc, char* argv[])
 
     /* initialize file state */
     for (i = 1; i <= MAXFIL; i++) {
-        filstate[i] = fsclosed; /* closed */
+
+        filstate[i] = fsnone; /* never opened */
         filanamtab[i] = FALSE; /* no name assigned */
         filtable[i] = NULL; /* clear Unix file pointer */
+
     }
 
     /* set status of standard files */
@@ -4764,9 +4767,12 @@ static void deinit()
 
     int i;
 
-    for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed) {
-        fclose(filtable[i]);
-        if (!filanamtab[i]) remove(filnamtab[i]);
+    for (i = COMMANDFN+1; i <= MAXFIL; i++) if (filstate[i] != fsclosed)
+        if (filstate[i] != fsclosed && filstate[i] != fsnone) {
+
+            fclose(filtable[i]);
+            if (!filanamtab[i]) remove(filnamtab[i]);
+
     }
 
 }
