@@ -95,15 +95,11 @@ do
 			
 		fi
 		echo Compiling $param...
-	    cp $param.pas prd
-	    pcom $options
-	    mv prr $param.p6
+	    pcom $param.pas $param.p6 $options
         if [ "$pgen" = "1" ]; then
 
             # generate .s assembly files
-            cp $param.p6 prd
-            pgen
-            cp prr $param.s
+            pgen $param.p6 $param.s
             # form list of objects
             objects="$objects $param.s"
 
@@ -142,35 +138,31 @@ if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint $options
-    cp prr $progfile.p6o
-	mv prr prd
-	pmach
+	pint temp2 $progfile.p6o $options
+	pmach $progfile.p6o $progfile.out
+    rm temp2
 	
 elif [ "$cmach" = "1" ]; then
 
 	echo Running with cmach
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint
-    cp prr $progfile.p6o
-	mv prr prd
-	cmach $options
+	pint temp2 $progfile.p6o
+	cmach $progfile.p6o $progfile.out $options
+    rm temp2
 	
 elif [ "$package" = "1" ]; then
 
     echo Running in packaged mode
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint
-    cp prr $progfile.p6o
+	pint temp2 $progfile.p6o
 	mv $progfile.p6o prd
-	genobj
-	cp prr program_code.c
+	genobj $progfile.p6o program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile source/cmach/cmach.c -lm
 	./$progfile $options
 	
@@ -182,7 +174,6 @@ elif [ "$pgen" = "1" ]; then
 
 else
 
-	cp $progfile.p6 prd
-	pint $options
+	pint $progfile.p6 $options
 
 fi

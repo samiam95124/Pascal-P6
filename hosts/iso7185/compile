@@ -96,15 +96,12 @@ do
 			
 		fi
 		echo Compiling $param...
-	    cp $param.pas prd
-	    pcom $options >> temp.err
-	    mv prr $param.p6
+	    pcom $param.pas $param.p6 $options >> temp.err
         if [ "$pgen" = "1" ]; then
 
             # generate .s assembly files
             cp $param.p6 prd
-            pgen >> temp.err
-            cp prr $param.s
+            pgen $param.p6 $param.s >> temp.err
             # form list of objects
             objects="$objects $param.s"
 
@@ -155,29 +152,25 @@ fi
 if [ "$pmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint
-    cp prr progfile.p6o
+	pint temp2 $progfile.p60
+    rm temp2
 	
 elif [ "$cmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint
-    cp prr $progfile.p6o
+	pint temp2 $progfile.p60
 	
 elif [ "$package" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > prd
+	cat temp $progfile.p6 > temp2
     rm temp
-	pint
-    cp prr $progfile.p6o
-	mv $progfile.p6o prd
-	genobj
-	cp prr program_code.c
+	pint temp2 $progfile.p60
+	genobj $progfile.p60 program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
 
 elif [ "$pgen" = "1" ]; then
