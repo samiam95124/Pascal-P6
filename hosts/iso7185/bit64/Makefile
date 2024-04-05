@@ -40,10 +40,10 @@
 # pgen uses the same method to stay compatible with GPC, at least for now.
 #
 CFLAGS=-g3 -DWRDSIZ64
-CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DSELF_COMPILE -DBIG_STORE
-CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DSELF_COMPILE -DBIG_STORE
-CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DSELF_COMPILE -DBIG_STORE
-CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DSELF_COMPILE -DBIG_STORE
+CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR
+CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR
+CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR
+CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
@@ -54,8 +54,8 @@ bin/pcom: source/pcom.pas
 	@echo "Building pcom..."
 	@echo
 	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE)
-	pcom_wrap $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
+	pcom $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
+	pgen $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
 		-o $(PASCALP6)/bin/pcom -lm -lpthread
@@ -65,8 +65,8 @@ bin/pcom_immerr: source/pcom.pas
 	@echo "Building pcom with immediate error..."
 	@echo
 	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE) -DIMM_ERR
-	pcom_wrap $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
+	pcom $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
+	pgen $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
 		-o $(PASCALP6)/bin/pcom -lm -lpthread
@@ -77,8 +77,8 @@ bin/pint: source/pint.pas
 	@echo
 	gcc -g -o $(PASCALP6)/source/externals.o -c $(PASCALP6)/source/externals.c
 	pascpp $(PASCALP6)/source/pint $(CPPFLAGS64LE) -DEXTERNALS
-	pcom_wrap $(PASCALP6)/source/pint.mpp.pas $(PASCALP6)/source/pint.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/pint.p6 $(PASCALP6)/source/pint.s
+	pcom $(PASCALP6)/source/pint.mpp.pas $(PASCALP6)/source/pint.p6 --reference-
+	pgen $(PASCALP6)/source/pint.p6 $(PASCALP6)/source/pint.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pint.s \
 		-o $(PASCALP6)/bin/pint -lm -lpthread
@@ -88,8 +88,8 @@ bin/pmach: source/pmach.pas
 	@echo "Building pmach..."
 	@echo
 	pascpp $(PASCALP6)/source/pmach $(CPPFLAGS64LE)
-	pcom_wrap $(PASCALP6)/source/pmach.mpp.pas $(PASCALP6)/source/pmach.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/pmach.p6 $(PASCALP6)/source/pmach.s
+	pcom $(PASCALP6)/source/pmach.mpp.pas $(PASCALP6)/source/pmach.p6 --reference-
+	pgen $(PASCALP6)/source/pmach.p6 $(PASCALP6)/source/pmach.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pmach.s \
 		-o $(PASCALP6)/bin/pmach -lm -lpthread
@@ -106,8 +106,8 @@ bin/pgen: source/AMD64/gcc/pgen.pas
 	@echo "Building pgen..."
 	@echo
 	pascpp $(PASCALP6)/source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
-	pcom_wrap $(PASCALP6)/source/AMD64/gcc/pgen.mpp.pas $(PASCALP6)/source/pgen.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/pgen.p6 $(PASCALP6)/source/pgen.s
+	pcom $(PASCALP6)/source/AMD64/gcc/pgen.mpp.pas $(PASCALP6)/source/pgen.p6 --reference-
+	pgen $(PASCALP6)/source/pgen.p6 $(PASCALP6)/source/pgen.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pgen.s \
 		-o $(PASCALP6)/bin/pgen -lm -lpthread
@@ -116,8 +116,8 @@ bin/genobj: source/genobj.pas
 	@echo
 	@echo "Building genobj..."
 	@echo
-	pcom_wrap $(PASCALP6)/source/genobj.pas $(PASCALP6)/source/genobj.p6 --reference-
-	pgen_wrap $(PASCALP6)/source/genobj.p6 $(PASCALP6)/source/genobj.s
+	pcom $(PASCALP6)/source/genobj.pas $(PASCALP6)/source/genobj.p6 --reference-
+	pgen $(PASCALP6)/source/genobj.p6 $(PASCALP6)/source/genobj.s
 	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
 		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/genobj.s \
 		-o $(PASCALP6)/bin/genobj -lm -lpthread

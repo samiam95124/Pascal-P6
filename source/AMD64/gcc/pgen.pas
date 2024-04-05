@@ -1358,6 +1358,7 @@ procedure xlate;
 #endif
      writeln(prr, '        call    1f');
      writeln(prr, '        popq    %rax');
+     writeln(prr, '        sub     %rax,%rax');
      writeln(prr, '        ret');
      writeln(prr, '1:');
    end;
