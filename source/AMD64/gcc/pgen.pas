@@ -2363,7 +2363,7 @@ procedure xlate;
           28, 30, 17, 137, 139, 141, 18, 143, 145, 
           147, 19, 149, 151, 153, 20, 155, 157, 159, 21, 
           161, 163, 165, 167, 169, 171: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, ep^.r1, r2); assreg(ep^.r, rf, rgnull, rgnull) 
           end;
 
@@ -2512,7 +2512,8 @@ procedure xlate;
           26, 95, 98, 99, 199: begin 
             dstreg(rgrax);
             ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf); getreg(ep^.t1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1); 
+            getreg(ep^.t1, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
@@ -2558,13 +2559,13 @@ procedure xlate;
      
           {flt,flo}
           33,34: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, rgnull, rgnull)  
           end;
 
           {trc}
           35: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, rgnull, rgnull)  
           end;
 
@@ -2576,7 +2577,7 @@ procedure xlate;
 
           {ngr}
           37: begin ep^.r1 := r1;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, rgnull, rgnull)  
           end;
 
@@ -2594,7 +2595,7 @@ procedure xlate;
 
           {abr}
           41: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, ep^.r1, r2);
             getreg(ep^.t1, rf); getfreg(ep^.t2, rf) 
           end;
@@ -2613,7 +2614,7 @@ procedure xlate;
 
           {rnd}
           62: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, rgnull, rgnull) 
           end;
 
@@ -2666,7 +2667,7 @@ procedure xlate;
 
           {mpi}
           51: begin ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             assreg(ep^.l, rf, ep^.r1, rgnull);
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
