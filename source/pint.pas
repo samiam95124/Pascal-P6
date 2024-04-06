@@ -1187,6 +1187,7 @@ begin
     getcommand;
     i := i+1
   end;
+  if fne[1] = ' ' then errorv(FileNameEmpty);
   assigntext(f, fne) { assign to that }
 end;
 

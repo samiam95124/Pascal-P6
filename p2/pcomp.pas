@@ -196,7 +196,7 @@ TYPE                                                        (*DESCRIBING:*)
 
 VAR
  (*PRD, PRR:                    TEXT; *)
-    { PRR: TEXT; }                      { DECLARES THE OUTPUT INTERMEDIATE FILE
+    PRR: TEXT;                      { DECLARES THE OUTPUT INTERMEDIATE FILE
                                       [SAM] }
 
                                     (*RETURNED BY SOURCE PROGRAM SCANNER
@@ -3737,7 +3737,7 @@ BEGIN
   (*COMPILE:*)
   (**********)
 
-  { REWRITE(PRR); } (* REQUIRED FOR ISO 7185 [SAM] *)
+  REWRITE(PRR); (* REQUIRED FOR ISO 7185 [SAM] *)
   INSYMBOL;
   PROGRAMME(BLOCKBEGSYS+STATBEGSYS-[CASESY]);
 
