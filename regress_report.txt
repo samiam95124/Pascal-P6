@@ -1,10 +1,11 @@
 ************ Regression Summary *************
-Tue 02 Apr 2024 02:03:06 PM PDT
+Fri 05 Apr 2024 04:38:26 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -18,17 +19,80 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-9456 standard_tests/iso7185prt.dif
+9368 standard_tests/iso7185prt.dif
 Pascaline run
-1129 pascaline_tests/pascaline.dif
+0 pascaline_tests/pascaline.dif
 Debug test run
-5817 pascaline_tests/debug_test.dif
-Tue 02 Apr 2024 02:04:18 PM PDT
+0 pascaline_tests/debug_test.dif
+pmach run ***************************************
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+PRT run
+9368 standard_tests/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/pascaline_pmach.dif
+cmach run ***************************************
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+PRT run
+9368 standard_tests/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/pascaline_cmach.dif
+package run ***************************************
+0 sample_programs/hello.dif
+0 sample_programs/roman.dif
+0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+0 sample_programs/pascals.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+0 p4/standardp.dif
+PRT run
+9368 standard_tests/iso7185prt.dif
+Pascaline run
+0 pascaline_tests/pascaline.dif
+Fri 05 Apr 2024 04:42:03 PM PDT
 Files md5sum ***************************************
 Source files
-ca387bd46b50f17dd200371c80d52eb1  -
+eb286f8c2a04f117b90c280c34f031e3  -
 batch files
-44bdeb099ad079c9b8a17b94c9c95bd8  -
+09809cc256e50d6e17f6309a5b17045d  -
 P2 files
 b4ab36c71cbae7b3115c05f1c68c70b1  -
 p4 files
@@ -38,4 +102,4 @@ b58bf6a6a49dc503daef62b2f101ee2c  -
 standard test files
 16c29521763bf703a36a3c8a03e95b4d  -
 other files
-52c9a17091f3ea6a5faa2a4417447204  -
+e1c77bfe96a3bf88fa4e798fe0e5b8a9  -
