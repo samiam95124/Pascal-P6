@@ -3662,11 +3662,14 @@ void psystem_asst(
 
 {
 
-    int            fn;
+    int fn;
+    int i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    i = l-1;
+    while (i > 0 && n[i] == ' ') i--,l--;
     if (l >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
@@ -3693,10 +3696,13 @@ void psystem_assb(
 {
 
     int fn;
+    int i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    i = l-1;
+    while (i > 0 && n[i] == ' ') i--,l--;
     if (l >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
