@@ -34,6 +34,8 @@ pgen=0
 progfile=""
 options=""
 objects=""
+noerrmsg="0"
+noerrmsgoption=""
 
 for param in "$@" 
 do
@@ -53,6 +55,11 @@ do
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+
+    elif [ "$param" = "--noerrmsg" ]; then
+    
+    	noerrmsg=1
+        noerrmsgoption="--noerrmsg"
       
     elif [ "$param" = "--help" ]; then
     
@@ -71,11 +78,13 @@ do
 		echo
 		echo "The flags are one of:"
 		echo
-		echo "--pmach	Generate mach code and run the result through pmach."
-		echo "--cmach	Generate mach code and run the result through cmach."
-		echo "--pint    Generate mach code and run the result through pint (default)."
-        echo "--package Generate a packaged application and run."
-        echo "--pgen    Generate assembly code with pgen for the current machine."
+		echo "--pmach	 Generate mach code and run the result through pmach."
+		echo "--cmach	 Generate mach code and run the result through cmach."
+		echo "--pint     Generate mach code and run the result through pint (default)."
+        echo "--package  Generate a packaged application and run."
+        echo "--pgen     Generate assembly code with pgen for the current machine."
+		echo "--noerrmsg Do not output failure message on compile, the .err file is"
+		echo "           sufficient."
 		echo
 		echo "The intermediate code is placed in <file>.p6."
 		echo
@@ -133,6 +142,15 @@ if [ "$pgen" = "0" ]; then
 
 fi
 mv temp.err $progfile.err
+
+#
+# Print errors unless supressed
+#
+if [ "$noerrmsg" = "0" ]; then
+
+    cat $progfile.err
+
+fi
 
 #
 # The status of the compile is not returned, so convert a non-zero
