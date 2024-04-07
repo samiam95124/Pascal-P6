@@ -195,6 +195,7 @@ then
    cp hosts/$compiler/bit$bits/p6     bin/p6
    cp hosts/$compiler/compile         bin/compile
    cp hosts/$compiler/run             bin/run
+   cp hosts/$compiler/testp2          bin/testp2
 
    cp hosts/$compiler/bit$bits/Makefile    .
 
