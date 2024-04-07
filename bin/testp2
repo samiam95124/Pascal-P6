@@ -8,38 +8,27 @@ echo "Compiling pcomp to intermediate code"
 compile --list- $1 p2/pcomp
 cat p2/pcomp.err
 #
-# Copy the test file to the input file and compile it via interpreted p2
+# Run the p2 interpreter via pint to get p2 intermediate
 #
-cp p2/roman.pas p2/pcomp.inp
-run $1 p2/pcomp
-cat p2/pcomp.lst
+# Note temp is unused (prr out), and roman.p2 is read from the command line 
+# at the second level.
 #
-# For neatness sake, copy out the intermediate to .p2 file
-#
-cp p2/pcomp.out p2/roman.p2
+pint p2/pcomp.p6 temp p2/roman.p2 < p2/roman.pas
 #
 # Compile pasint to intermediate code
 #
 echo Compiling pasint to intermediate
-compile --list- $1 p2/pasint
-#
-# Add the final target program to the end of pasint.
-# This means that the version of pint will read and interpret
-# this.
-#
-# Create null input file
-#
-echo > p2/pasint.inp
+compile --list- --reference- $1 p2/pasint
+cat p2/pasint.err
 #
 # Now run pasint on pint, which runs the test program.
 #
-echo Running pasint on pint to execute test program
-cp p2/roman.p2 p2/pasint.dat
-run $1 p2/pasint
+# Note that temp is unused (prr out), and roman.p2 and temp2 are read from the
+# command line at level 2. temp2 is unused (prr out, second level).
 #
-# Copy the result listing back to roman.lst, again for neatness
-#
-cp p2/pasint.lst p2/roman.lst
+echo > p2/pasint.inp
+pint p2/pasint.p6 temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+rm -f p2/pasint.inp
 #
 # Now compare with reference
 #
@@ -60,6 +49,3 @@ then
 else
     echo "PASS"
 fi
-
-rm -f p2/pcomp.inp
-rm -f p2/pasint.inp

@@ -83,7 +83,7 @@ VAR  CODE          : ARRAY[0..CODEMAX] OF   (* THE PROGRAM *)
       NP  POINTS TO TOP OF DYNAMICLY ALLOCATED AREA*)
 
      INTERPRETING  : BOOLEAN;
-     { PRD,PRR: TEXT; } (*PRD FOR READ ONLY, PRR FOR WRITE ONLY *)
+     PRD,PRR: TEXT; (*PRD FOR READ ONLY, PRR FOR WRITE ONLY *)
 
      INSTR         : ARRAY[BIT6] OF ALFA; (* MNEMONIC INSTRUCTION CODES *)
      SPTABLE       : ARRAY[0..20] OF ALFA; (* STANDARD FUNCTIONS AND  PROCEDURES *)
@@ -157,7 +157,7 @@ PROCEDURE LOAD;
          FOR I:= 1 TO 10 DO WORD[I]:= ' ';
          FOR I:= 0 TO MAXLABEL DO
              WITH LABELTAB[I] DO BEGIN VAL:=-1; ST:= ENTERED END;
-         { RESET(PRD); }
+         RESET(PRD);
    END;(*INIT*)
    PROCEDURE ERRORL(STRING: BETA); (*ERROR IN LOADING*)
    BEGIN WRITELN;
@@ -929,7 +929,7 @@ END; (*EX3*)
 (*------------------------------------------------------------------------*)
 
 BEGIN   (*  M A I N  *)
-   { REWRITE(PRR); }
+   REWRITE(PRR);
    LOAD;  (* ASSEMBLES AND STORES CODE *)
    WRITELN(OUTPUT); (*FOR TESTING*)
    PC := 0;  SP := -1;  MP := 0;  NP := MAXSTK+1;
