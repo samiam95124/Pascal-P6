@@ -27,7 +27,7 @@ function checkexists {
 #
 # Set default variables
 #
-compiler="gpc"
+compiler="iso7185"
 bits="64"
 host="linux"
 
