@@ -1,4 +1,4 @@
-(*$l-,u-,i+,d-*)
+(*$l-,u-,d-*)
  (***********************************************
   *                                             *
   *      Portable Pascal compiler               *
@@ -279,7 +279,7 @@ type                                                        (*describing:*)
 (*-------------------------------------------------------------------------*)
 
 var
-     {prr: text;}
+     prr: text;
                                     (*returned by source program scanner
                                      insymbol:
                                      **********)
@@ -4113,7 +4113,7 @@ begin
 
   (*compile:*)
   (**********)
-  {rewrite(prr);} (* Required for ISO 7185 [sam] *)
+  rewrite(prr); (* Required for ISO 7185 [sam] *)
   insymbol;
   programme(blockbegsys+statbegsys-[casesy]);
 

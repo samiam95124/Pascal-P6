@@ -1,4 +1,4 @@
-(*$c+,t-,d-,l+,u-*)
+(*$c+,t-,d-,u-*)
 (*Assembler and interpreter of Pascal code*)
 (*K. Jensen, N. Wirth, Ch. Jacobi, ETH May 76*)
 
@@ -120,7 +120,7 @@ var   code        : array[0..codemax] of   (* the program *)
          np  points to top of the dynamically allocated area*)
 
        interpreting: boolean;
-       {prd,prr     : text;}(*prd for read only, prr for write only *)
+       prd,prr     : text;(*prd for read only, prr for write only *)
 
        instr       : array[bit6] of alfa; (* mnemonic instruction codes *)
        cop         : array[bit6] of integer;
@@ -210,7 +210,7 @@ procedure load;
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered end;
-         {reset(prd);}
+         reset(prd);
    end;(*init*)
 
    procedure errorl(string: beta); (*error in loading*)
@@ -728,8 +728,7 @@ begin (*callsp*)
 end;(*callsp*)
 
 begin (* main *)
-  (* Must comment out the next for self compile *)
-  (* rewrite(prr); *)
+  rewrite(prr);
   load; (* assembles and stores code *)
   writeln(output); (* for testing *)
   pc := 0; sp := -1; mp := 0; np := maxstk+1; ep := 5;
