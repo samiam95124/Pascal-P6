@@ -32,6 +32,7 @@ package=0
 pgen=0
 progfile=""
 options=""
+nolist="0"
 
 for param in "$@" 
 do
@@ -51,6 +52,10 @@ do
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+
+    elif [ "$param" = "--nolist" ]; then
+    
+        nolist=1
       
     elif [ "$param" = "--help" ]; then
 
@@ -77,7 +82,9 @@ do
 		echo ""
 		echo "--pmach Generate mach code and run the result through pmach."
 		echo "--cmach Generate mach code and run the result through cmach."
-		echo "--pint  Generate mach code and run the result through pint (default)."
+		echo "--pint   Generate mach code and run the result through pint (default)."
+		echo "--nolist Do not output listing."
+
 		echo ""
 		goto stop
 		
@@ -148,7 +155,17 @@ else
 
 	echo Running with pint
     cat $progfile.p6 $progfile.dat > temp
+    # echo "Will execute: pint temp $progfile.out $options < $progfile.inp &> $progfile.lst"
     pint temp $progfile.out $options < $progfile.inp &> $progfile.lst
     rm temp
     
+fi
+
+#
+# Output listing if enabled
+#
+if [ "$nolist" = "0" ]; then
+
+    cat $progfile.lst
+
 fi
