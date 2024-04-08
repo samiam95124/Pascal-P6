@@ -131,7 +131,7 @@ do
 			
 			fi
     		echo "Compiling $param..."
-    		compile --list- $options $noerrmsgoption $pmachoption $cmachoption $packageoption $pgenoption $param
+    		compile --list- --noerrmsg $options $pmachoption $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
     		    if [ "$noerrmsg" = "0" ]; then
@@ -202,7 +202,7 @@ fi
 
 echo "Running $progfile..."
 # echo "run $pmachoption $cmachoption $options $progfile"
-run $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
+run --nolist $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
 if [ $? -eq 0 ]; then
 
     #
