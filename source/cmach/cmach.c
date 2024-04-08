@@ -987,14 +987,14 @@ void assignexternal(filnum fn, char hfn[])
     /* skip leading spaces */
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;
-    while (!eolncommand() && !eofcommand() &&
-           (isalnum(bufcommand()) || bufcommand() == '_') || bufcommand() == '.') {
+    while (!eolncommand() && !eofcommand() && bufcommand() != ' ') {
         if (i >= FILLEN) errorv(FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
         i = i+1;
     }
     if (i >= FILLEN) errorv(FILENAMETOOLONG);
+    if (i == 0) errorv(FILENAMEEMPTY);
     filnamtab[fn][i] = 0; /* terminate */
 }
 

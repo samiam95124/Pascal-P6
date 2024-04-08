@@ -26,9 +26,45 @@ cat p2/pasint.err
 # Note that temp is unused (prr out), and roman.p2 and temp2 are read from the
 # command line at level 2. temp2 is unused (prr out, second level).
 #
-echo > p2/pasint.inp
-pint p2/pasint.p6 temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
-rm -f p2/pasint.inp
+if [ "$1" = "--pmach" ]; then
+
+    echo > p2/pasint.inp
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    pmach p2/pasint.p6o temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+    rm -f p2/pasint.inp
+
+elif [ "$1" = "--cmach" ]; then
+
+    echo > p2/pasint.inp
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    cmach p2/pasint.p6o p2/roman.p2 temp < p2/pasint.inp > p2/roman.lst
+    rm -f p2/pasint.inp
+
+elif [ "$1" = "--package" ]; then
+
+    echo > p2/pasint.inp
+    pint p2/pasint.p6 p2/pasint.p6o --machdeck
+    genobj p2/pasint.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o p2/pasint $PASCALP6/source/cmach/cmach.c -lm
+	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
+    rm -f p2/pasint.inp
+
+elif [ "$1" = "--pgen" ]; then
+
+    echo > p2/pasint.inp
+    pgen p2/pasint.p6 p2/pasint.s
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+        $PASCALP6/source/AMD64/gcc/psystem_asm.s p2/pasint.s -o p2/pasint -lm
+	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
+    rm -f p2/pasint.inp
+
+else
+
+    echo > p2/pasint.inp
+    pint p2/pasint.p6 temp p2/roman.p2 temp2 < p2/pasint.inp > p2/roman.lst
+    rm -f p2/pasint.inp
+
+fi
 #
 # Now compare with reference
 #

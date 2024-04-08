@@ -1204,6 +1204,7 @@ begin
     getcommand;
     i := i+1
   end;
+  if fne[1] = ' ' then errorv(FileNameEmpty);
   assignbin(f, fne) { assign to that }
 end;
 
