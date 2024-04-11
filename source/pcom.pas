@@ -6523,6 +6523,7 @@ begin cmdpos := maxcmd end;
                       begin new(lvp,pset); pshcst(lvp);
                         lvp^.cclass := pset;
                         lvp^.pval := cstpart;
+                        gattr.kind := cst;
                         gattr.cval.intval := false;
                         gattr.cval.valp := lvp
                       end
