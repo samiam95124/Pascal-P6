@@ -4,62 +4,74 @@
 #
 # 48 minutes on AMD Ryzen 9 3950x 16-core processorx32
 #
-# Compile p6
+# Compile p6/pcom to p6 intermediate
 #
 echo "Compiling pcom to intermediate code"
-cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas source/pcom.mpp.pas
+cpp -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas source/pcom.mpp.pas
 compile --list- $1 source/pcom.mpp
 cat source/pcom.mpp.err
 #
-# Run P6/pcom on P6
+# Run P6/pcom on P6/pint to compile iso7185pat to P6/intermediate
 #
-echo > source/pcom.mpp.inp
-cp standard_tests/iso7185pat.pas source/pcom.mpp.dat
-run $1 source/pcom.mpp 
-cat source/pcom.mpp.lst
-#
-# For neatness sake, copy out the intermediate to .p6 file
-#
-cp source/pcom.mpp.out standard_tests/iso7185pat.p6
+pint source/pcom.mpp.p6 temp standard_tests/iso7185pat.pas source/iso7185pat.p6
 #
 # Compile pint
 #
 echo "Compiling pint to intermediate code"
-cpp -DSELF_COMPILE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
+cpp -DSHORT_STORE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
 compile --list- $1 source/pint.mpp
 cat source/pint.mpp.err
 #
-# Add the final target program to the end of pint.
-# This means that the version of pint will read and interpret
-# this.
-#
 # Create null input file
 #
-echo > source/pint.mpp.inp
+echo > source/pint.inp
 #
 # Now run pint(p6) on pint(p6), which runs the test program.
 #
-echo "Running pint(p6) on pint(p6) to execute test program"
-cp standard_tests/iso7185pat.p6 source/pint.mpp.dat
-run $1 source/pint.mpp
+# Note that temp is unused (prr out), and standardp.p6 and temp2 are read from the
+# command line at level 2. temp2 is unused (prr out, second level).
 #
-# Copy the result listing back to standardp.lst, again for neatness
-#
-cp source/pint.mpp.lst standard_tests/iso7185pat.lst
+if [ "$1" = "--pmach" ]; then
+
+    echo "Running pmach test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    pmach source/pint.p6o temp source/iso7185pat.p6 temp1 < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--cmach" ]; then
+
+    echo "Running cmach test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    cmach source/pint.p6o source/iso7185pat.p6 temp < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--package" ]; then
+
+    echo "Running package test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    genobj source/pint.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o source/pint $PASCALP6/source/cmach/cmach.c -lm
+	pint source/iso7185pat.p6 temp $options < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--pgen" ]; then
+
+    echo "Running pgen test..."
+    pgen source/pint.mpp.p6 source/pint.s
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+        $PASCALP6/source/AMD64/gcc/psystem_asm.s source/pint.s -o source/pint -lm
+	pint source/iso7185pat.p6 temp $options < source/pint.inp > source/iso7185pat.lst
+
+else
+
+    echo "Running pint test..."
+    pint source/pint.mpp.p6 temp source/iso7185pat.p6 temp2 \
+        < source/pint.inp > source/iso7185pat.lst
+
+fi
 #
 # Now compare with reference
 #
 echo "Comparing PAT result to reference"
 strip standard_tests/iso7185pat.lst tmp1
-if [ "$1" = "--cmach" ] || [ "$1" = "--package" ] || [ "$1" = "--pgen" ]; then
-
-    strip standard_tests/iso7185patp6c.cmp tmp2
-	
-else
-
-    strip standard_tests/iso7185patp6.cmp tmp2
-
-fi
+strip standard_tests/iso7185patp6c.cmp tmp2
 diff -B tmp1 tmp2 > standard_tests/iso7185pat.dif
 rm -f tmp1 tmp2
 ls -l standard_tests/iso7185pat.dif > tmp1
@@ -73,6 +85,3 @@ then
 else
     echo "PASS"
 fi
-
-rm -f source/pcom.inp
-rm -f source/pint.inp
