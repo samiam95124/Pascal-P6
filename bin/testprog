@@ -26,6 +26,7 @@
 # --cmpfile <file> Use filename following option for compare file
 # --noerrmsg       Do not output failure message on compile, the .err file is
 #                  sufficient. 
+# --list           Produce source listing (default is no listing)."
 # 
 
 pmach="0"
@@ -43,6 +44,8 @@ noerrmsg="0"
 noerrmsgoption=""
 options=""
 pint="0"
+list="0"
+listoption="--list-"
 
 for param in "$@" 
 do
@@ -79,6 +82,11 @@ do
     
     	noerrmsg=1
         noerrmsgoption="--noerrmsg"
+
+    elif [ "$param" = "--list" ]; then
+    
+    	list=1
+        listoption="--list+"
     	
     elif [ "$param" = "--help" ]; then
 
@@ -106,6 +114,7 @@ do
 		echo "--cmpfile <file> Use filename following option for compare file."
 		echo "--noerrmsg       Do not output failure message on compile, the .err file is"
 		echo "                 sufficient."
+        echo "--list           Produce source listing (default is no listing)."
 		echo ""
 		exit 0
 		
@@ -131,7 +140,7 @@ do
 			
 			fi
     		echo "Compiling $param..."
-    		compile --list- --noerrmsg $options $pmachoption $cmachoption $packageoption $pgenoption $param
+    		compile $listoption --noerrmsg $options $pmachoption $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
     		    if [ "$noerrmsg" = "0" ]; then

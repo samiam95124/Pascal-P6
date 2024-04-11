@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Sun 07 Apr 2024 10:21:03 PM PDT
+Thu 11 Apr 2024 05:25:55 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -17,26 +17,26 @@ pint run ***************************************
 Pascal-P2 run
 0 p2/roman.dif
 Pascal-P4 run
-981 p4/standardp.dif
+0 p4/standardp.dif
 PRT run
 9387 standard_tests/iso7185prt.dif
 Pascaline run
 1129 pascaline_tests/pascaline.dif
 Debug test run
 5817 pascaline_tests/debug_test.dif
-Sun 07 Apr 2024 10:21:59 PM PDT
+Thu 11 Apr 2024 05:27:04 AM PDT
 Files md5sum ***************************************
 Source files
-c797db2c886c01fd9bc4a76889900c41  -
+9534abe90495bc96a651c4e7b5e7edd0  -
 batch files
-bd2b7da1050af0d1b26d4da2422666d7  -
+1d1edeb7aba8a3472b0eeb3fcbb645be  -
 P2 files
 d9ae9c9665a20cf4de7a07958b70dbc7  -
 p4 files
-6b0c9de3a1938ead47c15da92f8a4dbd  -
+7fde3a84df157d5f5ac639c9fb342b70  -
 Sample program test files
 338111119462659a33b3e02a6140cd17  -
 standard test files
 16c29521763bf703a36a3c8a03e95b4d  -
 other files
-5c4b6424fc21c5baf59f732d2d6e4b8a  -
+270dcf2a232d2cc941764071cb15bd30  -
