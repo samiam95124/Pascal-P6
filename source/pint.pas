@@ -263,7 +263,7 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel  = 10000;      { total possible near labels in intermediate }
+      maxlabel  = 30000;      { total possible near labels in intermediate }
       maxcstfx  = 10000;     { maximum constant fixup in intermediate }
       maxgblfx  = 10000;     { maximum global access fixup in intermediate }
       resspc    = 0;         { reserve space in heap (if you want) }
@@ -1010,7 +1010,8 @@ end;
 
 procedure chkdef(a: address);
 begin
-   if dochkdef then if not getdef(a) then errorv(UndefinedLocationAccess)
+  if dochkdef then if not getdef(a) then 
+    errorv(UndefinedLocationAccess)
 end;
 
 { get bit from coverage array }

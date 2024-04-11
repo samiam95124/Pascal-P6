@@ -7481,7 +7481,7 @@ begin cmdpos := maxcmd end;
           write(prr, 's',' ':7);
           writev(prr, name, lenpv(name)); write(prr, ' ', typ);
           if klass in [proc, func] then begin
-            write(prr, ' ', pfvaddr:1, ' ');
+            write(prr, ' ', pfaddr:1, ' ');
             write(prr, 'q('); prtpartyp(lcp); write(prr, ')');
             if klass = func then begin
               write(prr, ':'); wrttyp(prr, idtype)
