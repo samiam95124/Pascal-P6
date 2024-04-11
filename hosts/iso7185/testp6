@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Script to test p6 compile and run
+#
+# 48 minutes on AMD Ryzen 9 3950x 16-core processorx32
+#
+# Compile p6/pcom to p6 intermediate
+#
+echo "Compiling pcom to intermediate code"
+cpp -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pcom.pas source/pcom.mpp.pas
+compile --list- $1 source/pcom.mpp
+cat source/pcom.mpp.err
+#
+# Run P6/pcom on P6/pint to compile iso7185pat to P6/intermediate
+#
+pint source/pcom.mpp.p6 temp standard_tests/iso7185pat.pas source/iso7185pat.p6
+#
+# Compile pint
+#
+echo "Compiling pint to intermediate code"
+cpp -DSHORT_STORE -DWRDSIZ64 -P -nostdinc -traditional-cpp source/pint.pas source/pint.mpp.pas
+compile --list- $1 source/pint.mpp
+cat source/pint.mpp.err
+#
+# Create null input file
+#
+echo > source/pint.inp
+#
+# Now run pint(p6) on pint(p6), which runs the test program.
+#
+# Note that temp is unused (prr out), and standardp.p6 and temp2 are read from the
+# command line at level 2. temp2 is unused (prr out, second level).
+#
+if [ "$1" = "--pmach" ]; then
+
+    echo "Running pmach test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    pmach source/pint.p6o temp source/iso7185pat.p6 temp1 < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--cmach" ]; then
+
+    echo "Running cmach test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    cmach source/pint.p6o source/iso7185pat.p6 temp < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--package" ]; then
+
+    echo "Running package test..."
+    pint source/pint.mpp.p6 source/pint.p6o --machdeck
+    genobj source/pint.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -I. -o source/pint $PASCALP6/source/cmach/cmach.c -lm
+	pint source/iso7185pat.p6 temp $options < source/pint.inp > source/iso7185pat.lst
+
+elif [ "$1" = "--pgen" ]; then
+
+    echo "Running pgen test..."
+    pgen source/pint.mpp.p6 source/pint.s
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+        $PASCALP6/source/AMD64/gcc/psystem_asm.s source/pint.s -o source/pint -lm
+	pint source/iso7185pat.p6 temp $options < source/pint.inp > source/iso7185pat.lst
+
+else
+
+    echo "Running pint test..."
+    pint source/pint.mpp.p6 temp source/iso7185pat.p6 temp2 \
+        < source/pint.inp > source/iso7185pat.lst
+
+fi
+#
+# Now compare with reference
+#
+echo "Comparing PAT result to reference"
+strip standard_tests/iso7185pat.lst tmp1
+strip standard_tests/iso7185patp6c.cmp tmp2
+diff -B tmp1 tmp2 > standard_tests/iso7185pat.dif
+rm -f tmp1 tmp2
+ls -l standard_tests/iso7185pat.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s standard_tests/iso7185pat.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi
