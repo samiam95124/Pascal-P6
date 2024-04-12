@@ -3243,7 +3243,7 @@ void main (int argc, char *argv[])
     fp = filtable[PRDFN]; /* set load file as prd */
 #else
 #ifndef PACKAGE
-    if (argc < 2) {
+    if (argc < 1) {
         printf("*** Usage: cmach <codefile> [<params>]...\n");
         finish(1);
     }
