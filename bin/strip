@@ -1,9 +1,44 @@
 #
 # Strip decorations from compiled listing files
 #
+# This script is used to prepare listing files for comparision. It strips out
+# all of the compiler/interpreter information messages so that different
+# interpreters or compilers don't generate different output results.
+#
+
+if [ -z "$1" ]
+then
+
+   echo "*** Error: Missing parameter 1"
+   echo "*** s/b \"strip <file1> <file2>\""
+   exit 1
+
+fi
+
+if [ ! -f $1 ]
+then
+   echo "*** Error: Missing $1 file"
+   exit 1
+fi
+
+if [ -z "$2" ]
+then
+
+   echo "*** Error: Missing parameter 2"
+   echo "*** s/b \"strip <file1> <file2>\""
+   exit 1
+
+fi
+
 grep -v -e 'P. Pascal .*interpreter vs. .\..\.x' $1 | \
-grep -v -e 'P. Pascal .*interpreter vs. .\..' $1 | \
+grep -v -e 'P. Pascal .*interpreter vs. .\..' | \
+grep -v -e 'P. Pascal .*code generator vs. .\..' | \
+grep -v -e 'P. Pascal .*code generator vs. .\..\.x' | \
+grep -v -e 'P. Pascal .*compiler vs. .\..' | \
+grep -v -e 'P. Pascal .*compiler vs. .\..\.x' | \
 grep -v -e 'Assembling/loading program' | \
 grep -v -e 'loading program' | \
 grep -v -e 'Running program' | \
+grep -v -e 'Generating program' | \
+grep -v -e 'Program generation complete' | \
 grep -v -e 'program complete' > $2

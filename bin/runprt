@@ -478,9 +478,8 @@ cat standard_tests/iso7185prt.noerr >> standard_tests/iso7185prt.lst
 echo creating compile time difference list
 echo > standard_tests/iso7185prt.ecdlst
 for a in `basename --suffix=.err standard_tests/iso7185prt*.err` ; do
-    diffnole standard_tests/$a.err standard_tests/$a.ecp > standard_tests/$a.ecd
+    diffnolestrip standard_tests/$a.err standard_tests/$a.ecp > standard_tests/$a.ecd
     if [ -s standard_tests/$a.ecd ] ; then
-        #kdiff3 standard_tests/$a.{err,ecp}
         echo "*** compare standard_tests/$a.err failed" >> standard_tests/iso7185prt.ecdlst
         error=1
     else
