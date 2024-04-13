@@ -95,7 +95,17 @@ do
 			
 		fi
 		echo Compiling $param...
-	    pcom $param.pas $param.p6 $options
+	    pcom $param.pas $param.p6 $options > temp
+        grep 'Errors in program: 0' temp > temp2
+        if [ "$?" != "0" ]; then
+
+            cat temp
+            rm temp temp2
+            exit 1
+
+        fi
+        cat temp
+        rm temp temp2
         if [ "$pgen" = "1" ]; then
 
             # generate .s assembly files
