@@ -36,6 +36,8 @@ options=""
 objects=""
 noerrmsg="0"
 noerrmsgoption=""
+fails="0"
+thisfail="0"
 
 for param in "$@" 
 do
@@ -105,8 +107,18 @@ do
 			
 		fi
 		echo Compiling $param...
-	    pcom $param.pas $param.p6 $options >> temp.err
-        if [ "$pgen" = "1" ]; then
+        thisfail=0
+        pcom $param.pas $param.p6 $options > temp
+        grep 'Errors in program: 0' temp > temp2
+        if [ "$?" != "0" ]; then
+
+            fails=1
+            thisfail=1
+
+        fi
+        cat temp >> temp.err
+        rm temp temp2
+        if [ "$pgen" = "1" ] && [ "$thisfail" = "0" ]; then
 
             # generate .s assembly files
             cp $param.p6 prd
@@ -153,12 +165,9 @@ if [ "$noerrmsg" = "0" ]; then
 fi
 
 #
-# The status of the compile is not returned, so convert a non-zero
-# error message to fail status
+# Exit with bad status if any fail
 #
-grep -q "Errors in program: 0" $progfile.err
-rc=$?
-if [[ $rc != 0 ]] ; then
+if [ "$fails" != "0" ]; then
 
     exit 1
         
