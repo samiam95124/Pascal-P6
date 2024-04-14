@@ -40,93 +40,122 @@
 # pgen uses the same method to stay compatible with GPC, at least for now.
 #
 CFLAGS=-g3 -DWRDSIZ64
-CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR -DGPC=0
-CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR -DGPC=0
-CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR -DGPC=0
-CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DBIG_STORE -DNOPRDPRR -DGPC=0
+SOURCE=$(PASCALP6)/source
+BUILD=$(PASCALP6)/build
+CPPFLAGS=-P -nostdinc -traditional-cpp
+CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
+CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
+CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
+CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
 all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 
+pcom: bin/pcom
 bin/pcom: source/pcom.pas
 	@echo
 	@echo "Building pcom..."
 	@echo
-	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE)
-	pcom $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
-	pgen $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
-		-o $(PASCALP6)/bin/pcom -lm -lpthread
+	mkdir -p $(BUILD)
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas
+	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
+	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/pcom.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+		-o $(BUILD)/pcom -lm -lpthread
+	cp $(BUILD)/pcom $(PASCALP6)/bin
 
 bin/pcom_immerr: source/pcom.pas
 	@echo
 	@echo "Building pcom with immediate error..."
 	@echo
-	pascpp $(PASCALP6)/source/pcom $(CPPFLAGS64LE) -DIMM_ERR
-	pcom $(PASCALP6)/source/pcom.mpp.pas $(PASCALP6)/source/pcom.p6 --reference-
-	pgen $(PASCALP6)/source/pcom.p6 $(PASCALP6)/source/pcom.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pcom.s \
+	mkdir -p $(BUILD)
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas \
+		-DIMM_ERR
+	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
+	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/pcom.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
 		-o $(PASCALP6)/bin/pcom -lm -lpthread
+	cp $(BUILD)/pcom $(PASCALP6)/bin
 	
+pint: bin/pint
 bin/pint: source/pint.pas 
 	@echo
 	@echo "Building pint..."
 	@echo
-	gcc -g -o $(PASCALP6)/source/externals.o -c $(PASCALP6)/source/externals.c
-	pascpp $(PASCALP6)/source/pint $(CPPFLAGS64LE) -DEXTERNALS
-	pcom $(PASCALP6)/source/pint.mpp.pas $(PASCALP6)/source/pint.p6 --reference-
-	pgen $(PASCALP6)/source/pint.p6 $(PASCALP6)/source/pint.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pint.s \
-		-o $(PASCALP6)/bin/pint -lm -lpthread
+	mkdir -p $(BUILD)
+	gcc -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pint.pas $(BUILD)/pint.mpp.pas \
+		-DEXTERNALS
+	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --reference-
+	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/pint.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+		-o $(BUILD)/pint -lm -lpthread
+	cp $(BUILD)/pint $(PASCALP6)/bin
 
+pmach: bin/pmach
 bin/pmach: source/pmach.pas
 	@echo
 	@echo "Building pmach..."
 	@echo
-	pascpp $(PASCALP6)/source/pmach $(CPPFLAGS64LE)
-	pcom $(PASCALP6)/source/pmach.mpp.pas $(PASCALP6)/source/pmach.p6 --reference-
-	pgen $(PASCALP6)/source/pmach.p6 $(PASCALP6)/source/pmach.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/pmach.s \
-		-o $(PASCALP6)/bin/pmach -lm -lpthread
+	mkdir -p $(BUILD)
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pmach.pas $(BUILD)/pmach.mpp.pas
+	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --reference-
+	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/pmach.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+		-o $(BUILD)/pmach -lm -lpthread
+	cp $(BUILD)/pmach $(PASCALP6)/bin
 
+cmach: bin/cmach
 bin/cmach: source/cmach/cmach.c
 	@echo
 	@echo "Building cmach..."
 	@echo
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(PASCALP6)/bin/cmach64le $(PASCALP6)/source/cmach/cmach.c -lm
-	cp $(PASCALP6)/bin/cmach64le $(PASCALP6)/bin/cmach
+	mkdir -p $(BUILD)
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/cmach64le $(SOURCE)/cmach/cmach.c -lm
+	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
 
+pgen: bin/pgen
 bin/pgen: source/AMD64/gcc/pgen.pas
 	@echo
 	@echo "Building pgen..."
 	@echo
-	pascpp $(PASCALP6)/source/AMD64/gcc/pgen -Isource $(CPPFLAGS64LE) -DGNU_PASCAL
-	pcom $(PASCALP6)/source/AMD64/gcc/pgen.mpp.pas $(PASCALP6)/source/pgen.p6 --reference-
-	pgen $(PASCALP6)/source/pgen.p6 $(PASCALP6)/source/pgen.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s source/pgen.s \
-		-o $(PASCALP6)/bin/pgen -lm -lpthread
+	mkdir -p $(BUILD)
+	mkdir -p $(BUILD)/AMD64/gcc
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/AMD64/gcc/pgen.pas \
+		-I$(PASCALP6)/source $(BUILD)/AMD64/gcc/pgen.mpp.pas
+	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/pgen.p6 --reference-
+	pgen $(BUILD)/pgen.p6 $(BUILD)/pgen.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/pgen.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+		-o $(BUILD)/pgen -lm -lpthread
+	cp $(BUILD)/pgen $(PASCALP6)/bin/pgen
 
+genobj: bin/genobj
 bin/genobj: source/genobj.pas
 	@echo
 	@echo "Building genobj..."
 	@echo
-	pcom $(PASCALP6)/source/genobj.pas $(PASCALP6)/source/genobj.p6 --reference-
-	pgen $(PASCALP6)/source/genobj.p6 $(PASCALP6)/source/genobj.s
-	gcc $(CFLAGS) $(PASCALP6)/source/AMD64/gcc/psystem.c \
-		$(PASCALP6)/source/AMD64/gcc/psystem_asm.s $(PASCALP6)/source/genobj.s \
-		-o $(PASCALP6)/bin/genobj -lm -lpthread
+	mkdir -p $(BUILD)
+	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --reference-
+	pgen $(BUILD)/genobj.p6 $(BUILD)/genobj.s
+	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
+		$(BUILD)/genobj.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+		-o $(BUILD)/genobj -lm -lpthread
+	cp $(BUILD)/genobj $(PASCALP6)/bin/genobj
 
+spew: bin/spew
 bin/spew: source/spew.c
 	@echo
 	@echo "Building spew..."
 	@echo
-	$(CC) $(CFLAGS) -o $(PASCALP6)/bin/spew source/spew.c
+	mkdir -p $(BUILD)
+	$(CC) $(CFLAGS) -o $(BUILD)/spew source/spew.c
+	cp $(BUILD)/spew $(PASCALP6)/bin/spew
 	
 clean:
 	find . -name "*.pint" -type f -delete
@@ -155,6 +184,7 @@ clean:
 	find . -name "*.p6" -type f -delete
 	find . -name "*.p6o" -type f -delete
 	find . -name "*.mpp.pas" -type f -delete
+	find . -name "*.s" -type f -delete
 	
 help:
 	@echo
