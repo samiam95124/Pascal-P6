@@ -269,6 +269,9 @@ else
     option="--package"
     echo "package run ***************************************" >> regress_report.txt
     do_regress
+    option="--pgen"
+    echo "pgen run ***************************************" >> regress_report.txt
+    do_regress
 
 fi
 
