@@ -46,7 +46,7 @@ elif [ "$1" = "--package" ]; then
     echo "Running package test..."
     pint p5/source/pint.mpp.p6 p5/source/pint.p6o --machdeck
     genobj p5/source/pint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o p5/source/pint $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p5/source/pint $PASCALP6/source/cmach/cmach.c -lm
 	p5/pint p5/source/iso7185pat.p5 temp $options < p5/source/pint.inp > p5/source/iso7185pat.lst
 
 elif [ "$1" = "--pgen" ]; then

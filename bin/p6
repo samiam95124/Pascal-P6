@@ -161,14 +161,14 @@ elif [ "$package" = "1" ]; then
     echo Running in packaged mode
 	pint $progfile.p6 $progfile.p6o --machdeck
 	genobj $progfile.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
 	./$progfile $options
 	
 elif [ "$pgen" = "1" ]; then
 
 	echo Running with pgen
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
-        $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $objects -o $progfile -lm
     ./$progfile
 
 else

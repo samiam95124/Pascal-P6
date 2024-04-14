@@ -44,7 +44,7 @@ elif [ "$1" = "--package" ]; then
 
     pint p2/pasint.p6 p2/pasint.p6o --machdeck
     genobj p2/pasint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o p2/pasint $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p2/pasint $PASCALP6/source/cmach/cmach.c -lm
 	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
 
 elif [ "$1" = "--pgen" ]; then

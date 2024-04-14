@@ -181,7 +181,7 @@ if [ "$pmach" = "1" ]; then
     echo "o e+" > temp
 	cat temp $progfile.p6 > temp2
     rm temp
-	pint temp2 $progfile.p60
+	pint temp2 $progfile.p6o
     rm temp2
 	
 elif [ "$cmach" = "1" ]; then
@@ -189,21 +189,21 @@ elif [ "$cmach" = "1" ]; then
     echo "o e+" > temp
 	cat temp $progfile.p6 > temp2
     rm temp
-	pint temp2 $progfile.p60
+	pint temp2 $progfile.p6o
 	
 elif [ "$package" = "1" ]; then
 
     echo "o e+" > temp
 	cat temp $progfile.p6 > temp2
     rm temp
-	pint temp2 $progfile.p60
-	genobj $progfile.p60 program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
+	pint temp2 $progfile.p6o
+	genobj $progfile.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
 
 elif [ "$pgen" = "1" ]; then
 
     #echo "Will execute: gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm"
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
-        $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $objects -o $progfile -lm
 
 fi

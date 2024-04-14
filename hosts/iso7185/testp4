@@ -36,7 +36,7 @@ echo > p4/pint.inp
 if [ "$1" = "--pmach" ]; then
 
     pint p4/pint.p6 p4/pint.p6o --machdeck
-    pmach p4/pint.p6o temp p4/standardp.p4 temp4 < p4/pint.inp > p4/standardp.lst
+    pmach p4/pint.p6o temp p4/standardp.p4 temp1 < p4/pint.inp > p4/standardp.lst
 
 elif [ "$1" = "--cmach" ]; then
 
@@ -47,7 +47,7 @@ elif [ "$1" = "--package" ]; then
 
     pint p4/pint.p6 p4/pint.p6o --machdeck
     genobj p4/pint.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -I. -o p4/pint $PASCALP6/source/cmach/cmach.c -lm
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o p4/pint $PASCALP6/source/cmach/cmach.c -lm
 	p4/pint p4/standardp.p4 temp $options < p4/pint.inp > p4/standardp.lst
 
 elif [ "$1" = "--pgen" ]; then
@@ -59,7 +59,6 @@ elif [ "$1" = "--pgen" ]; then
 
 else
 
-echo "Will execute: pint p4/pint.p6 temp p4/standardp.p4 temp4 < p4/pint.inp > p4/standardp.lst"
     pint p4/pint.p6 temp p4/standardp.p4 temp4 < p4/pint.inp > p4/standardp.lst
 
 fi
