@@ -2508,12 +2508,18 @@ procedure xlate;
             gettmp(ep^.r1a) 
           end;
 
-          {chki,chka,chkb,chkc,chkx}
-          26, 95, 98, 99, 199: begin 
-            dstreg(rgrax);
+          {chki,chkb,chkc,chkx}
+          26, 98, 99, 199: begin 
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1); 
             getreg(ep^.t1, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
+          end;
+
+          {chka}
+          95: begin 
+            ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1); 
             assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
@@ -3271,8 +3277,8 @@ procedure xlate;
               wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc);
             end;
 
-            {chki,chka,chkb,chkc,chkx}
-            26, 95, 98, 99, 199: begin 
+            {chki,chkb,chkc,chkx}
+            26, 98, 99, 199: begin 
               wrtins30(' movq $0,%1 # load low bound  ', ep^.vi, 0, ep^.t1, rgnull, nil);
               wrtins30(' cmpq %1,%2 # compare         ', 0, 0, ep^.t1, ep^.r1, nil);
               wrtins40(' jge 1f # skip if greater or equal      ', 0, 0, rgnull, rgnull, nil);
@@ -3287,6 +3293,17 @@ procedure xlate;
               wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
               wrtins50(' movq $ValueOutOfRange,%rdx # load error code     ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+            end;
+
+            {chka}
+            95: begin 
+              wrtins30(' orq %1,%1 # check nil        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins40(' jnz 1f # skip if greater or equal      ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+              wrtins60(' movq $DereferenceOfNilPointer,%rdx # load error code       ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
             end;
@@ -3871,12 +3888,19 @@ procedure xlate;
           end (*case*)
         end;
 
-        {chki,chka,chks,chkb,chkc,ckla,chkx}
-        26, 95, 97, 98, 99, 190, 199: begin read(prd,lb,ub); 
+        {chki,chks,chkb,chkc,ckla,chkx}
+        26, 97, 98, 99, 190, 199: begin read(prd,lb,ub); 
           write(prr, lb:1, ' ', ub:1); lftjst(parfld-(digits(lb)+1+digits(ub)));
           pass;
           getexp(ep); popstk(ep^.l); 
           pshstk(ep); ep^.vi := lb; ep^.vi2 := ub
+        end;
+
+        {chka}
+        95: begin read(prd,lb,ub); 
+          write(prr, lb:1, ' ', ub:1); lftjst(parfld-(digits(lb)+1+digits(ub)));
+          pass;
+          if lb <> 0 then begin getexp(ep); popstk(ep^.l); pshstk(ep) end
         end;
 
         {lca}
