@@ -2678,9 +2678,17 @@ procedure xlate;
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
-          {mpr,dvr}
-          52,54: begin ep^.r1 := r1; 
+          {mpr}
+          52: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
+            assreg(ep^.l, rf, ep^.r1, rgnull); 
+            assreg(ep^.r, rf, rgnull, rgnull)
+          end;
+
+          {dvr}
+          54: begin ep^.r1 := r1; 
+            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
+            getfreg(ep^.t1, rf); getreg(ep^.t2, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull); 
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
@@ -3535,7 +3543,19 @@ procedure xlate;
             52: wrtins30(' mulsd %1,%2 # multiply reals ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
-            54: wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            54: begin
+              wrtins50(' movsd real_zero(%rip),%1 # load real zero        ', 0, 0, ep^.t1, rgnull, nil);
+              wrtins40(' cmpeqsd %1,%2 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+              wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+              wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+              wrtins30(' jz 1f # skip not zero        ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $ZeroDivide,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
+            end;
 
             {rgs}
             110: begin 
@@ -4675,6 +4695,9 @@ begin (*xlate*)
    writeln(prr, 'prrfilename:');
    writeln(prr, '        .string  "prr"');
 #endif
+   writeln(prr, 'real_zero:');
+   writeln(prr, '        .double  0.0');
+
    gencst;
 
    writeln(prr, '        .bss');
