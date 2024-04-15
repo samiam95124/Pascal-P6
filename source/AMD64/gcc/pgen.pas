@@ -388,6 +388,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       doanalys: boolean; { do analyze }
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
+      dodbgchk: boolean; { do debug checks }
 
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -1698,6 +1699,7 @@ procedure xlate;
                    ch1 := ch; write(prr, ch); getnxt; write(prr, ch);
                    option[ch1] := ch = '+'; getnxt;
                    case ch1 of
+                     'd': dodbgchk := option[ch1];
                      'g': dodmplab := option[ch1];
                      'h': dosrclin := option[ch1];
                      'n': dorecycl := option[ch1];
@@ -1711,7 +1713,7 @@ procedure xlate;
                      'f': dodbgsrc := option[ch1];
                      'e': dodckout := option[ch1];
                      'i': dochkvbk := option[ch1];
-                     'b':; 'c':; 'd':; 'l':; 't':; 'u':; 'v':;
+                     'b':; 'c':; 'l':; 't':; 'u':; 'v':;
                      'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
                    end
                  until not (ch in ['a'..'z']);
@@ -2572,6 +2574,7 @@ procedure xlate;
           {trc}
           35: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if dochkovf then getfreg(ep^.t1, rf);
             assreg(ep^.l, rf, rgnull, rgnull)  
           end;
 
@@ -2621,6 +2624,7 @@ procedure xlate;
           {rnd}
           62: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if dochkovf then getfreg(ep^.t1, rf);
             assreg(ep^.l, rf, rgnull, rgnull) 
           end;
 
@@ -2688,7 +2692,7 @@ procedure xlate;
           {dvr}
           54: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
-            getfreg(ep^.t1, rf); getreg(ep^.t2, rf);
+            if dodbgchk then begin getfreg(ep^.t1, rf); getreg(ep^.t2, rf) end;
             assreg(ep^.l, rf, ep^.r1, rgnull); 
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
@@ -3060,7 +3064,6 @@ procedure xlate;
 
             {lods}
             107: begin
-
               wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins40(' lea @l(%rsi),%rsi # index local set    ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp  ', ep^.r1a, 0, rgnull, rgnull, lclspc);
@@ -3078,16 +3081,34 @@ procedure xlate;
             end;
 
             {adi}
-            28: 
+            28: begin
               wrtins30(' add %1,%2 # add integers     ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
+            end;
 
             {adr}
             29: 
               wrtins30(' addsd %1,%2 # add reals      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {sbi}
-            30: 
+            30: begin
               wrtins30(' sub %1,%2 # subtract integers', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
+            end;
 
             {sbr}
             31: 
@@ -3192,13 +3213,35 @@ procedure xlate;
               wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
-            {inci,inca,incb,incc,incx}
-            10, 90, 93, 94, 201: 
+            {inci,incb,incc,incx}
+            10, 93, 94, 201: begin
+              wrtins30(' addq $0,%1 # increment by n  ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
+            end;
+
+            {inca}
+            90: 
               wrtins30(' addq $0,%1 # increment by n  ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {deci,decb,decc,decx}
-            57, 103, 104, 202: 
+            57, 103, 104, 202: begin
               wrtins30(' subq $0,%1 # decrement by n  ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
+            end;
 
             {ckvi,ckvb,ckvc,ckvx}
             175, 179, 180, 203: begin 
@@ -3401,7 +3444,31 @@ procedure xlate;
             33,34: wrtins50(' cvtsi2sd %1,%2 # convert integer to real         ', 0, 0, ep^.l^.r1, ep^.r1, nil);
 
             {trc}
-            35: wrtins50(' cvttsd2si %1,%2 # trucate real to integer        ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            35: begin
+              if dochkovf then begin
+                wrtins60(' movsd real_int_max(%rip),%1 # load maximum int val         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins40(' cmplesd %2,%1 # compare real equal     ', 0, 0, ep^.l^.r1, ep^.t1, nil);
+                wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jnz 1f # skip not zero       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins60(' movsd real_int_min(%rip),%1 # load minimum int val         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins40(' cmplesd %1,%2 # compare real equal     ', 0, 0, ep^.l^.r1, ep^.t1, nil);
+                wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jnz 1f # skip not zero       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end;                            
+              wrtins50(' cvttsd2si %1,%2 # trucate real to integer        ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            end;
 
             {ngi}
             36: wrtins30(' negq %1 # negate integer     ', 0, 0, ep^.r1, rgnull, nil);
@@ -3415,6 +3482,14 @@ procedure xlate;
             {sqi}
             38: begin 
               wrtins30(' imulq %1,%1 # square integer ', 0, 0, ep^.r1, rgnull, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
             end;
 
             {sqr}
@@ -3449,14 +3524,16 @@ procedure xlate;
 
             {noti}
             205: begin 
-              wrtins30(' orq %1,%1 # test signed      ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
-              wrtins60(' movq $BooleanOperatorOfNegative,%rdx # set error code      ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-              wrtins30(' not %1 # not integer         ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              if dodbgchk then begin
+                wrtins30(' orq %1,%1 # test signed      ', 0, 0, ep^.r1, rgnull, nil);
+                wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins60(' movq $BooleanOperatorOfNegative,%rdx # set error code      ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              end;
+              wrtins30(' not %1 # not integer         ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
             {odd}
@@ -3465,27 +3542,53 @@ procedure xlate;
             end;
 
             {rnd}
-            62: wrtins40(' cvtsd2si %1,%2 # round to integer      ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            62: begin
+              if dochkovf then begin
+                wrtins60(' movsd real_int_max(%rip),%1 # load maximum int val         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins40(' cmplesd %2,%1 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+                wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jnz 1f # skip not zero       ', 0, 0, ep^.r^.r1, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins60(' movsd real_int_min(%rip),%1 # load minimum int val         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins40(' cmplesd %1,%2 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+                wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jnz 1f # skip not zero       ', 0, 0, ep^.r^.r1, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end;
+              wrtins40(' cvtsd2si %1,%2 # round to integer      ', 0, 0, ep^.l^.r1, ep^.r1, nil)
+            end;
 
             {chr}
             60: ; { chr is no-op }
 
             {and,ior,xor}
             43,44,206: begin 
-              wrtins30(' orq %1,%1 # check signed     ', 0, 0, ep^.l^.r1, rgnull, nil);
-              wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' movq $0,%rsi # get line number                   ', sline, 0, rgnull, rgnull, nil);
-              wrtins60(' movq $BooleanOperatorOfNegative,%rdx # get error code      ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-              wrtins30(' orq %1,%1 # check signed     ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
-              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' movq $0,%rsi # get line number         ', sline, 0, rgnull, rgnull, nil);
-              wrtins60(' movq $BooleanOperatorOfNegative,%rdx # get error code      ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              if dodbgchk then begin
+                wrtins30(' orq %1,%1 # check signed     ', 0, 0, ep^.l^.r1, rgnull, nil);
+                wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # get line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins60(' movq $BooleanOperatorOfNegative,%rdx # get error code      ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins30(' orq %1,%1 # check signed     ', 0, 0, ep^.r^.r1, rgnull, nil);
+                wrtins30(' jns 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # get line number         ', sline, 0, rgnull, rgnull, nil);
+                wrtins60(' movq $BooleanOperatorOfNegative,%rdx # get error code      ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              end;
               case ep^.op of
                 43: wrtins30(' andq %1,%2 # and integers    ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
                 44: wrtins30(' orq %1,%2 # or integers      ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
@@ -3537,23 +3640,35 @@ procedure xlate;
             end;
 
             {mpi}
-            51: wrtins40(' imulq %1,%2 # multiply integers        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+            51: begin
+              wrtins40(' imulq %1,%2 # multiply integers        ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
+              if dochkovf then begin
+                wrtins30(' jno 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+                wrtins50(' movq $IntegerValueOverflow,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp)
+              end
+            end;
 
             {mpr}
             52: wrtins30(' mulsd %1,%2 # multiply reals ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil);
 
             {dvr}
             54: begin
-              wrtins50(' movsd real_zero(%rip),%1 # load real zero        ', 0, 0, ep^.t1, rgnull, nil);
-              wrtins40(' cmpeqsd %1,%2 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
-              wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
-              wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
-              wrtins30(' jz 1f # skip not zero        ', 0, 0, ep^.r^.r1, rgnull, nil);
-              wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
-              wrtins40(' movq $ZeroDivide,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
-              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              if dodbgchk then begin
+                wrtins50(' movsd real_zero(%rip),%1 # load real zero        ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins40(' cmpeqsd %1,%2 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+                wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jz 1f # skip not zero        ', 0, 0, ep^.r^.r1, rgnull, nil);
+                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
+                wrtins40(' movq $ZeroDivide,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
+                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+              end;
               wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
             end;
 
@@ -4697,6 +4812,10 @@ begin (*xlate*)
 #endif
    writeln(prr, 'real_zero:');
    writeln(prr, '        .double  0.0');
+   writeln(prr, 'real_int_max:');
+   writeln(prr, '        .double  9223372036854775807');
+   writeln(prr, 'real_int_min:');
+   writeln(prr, '        .double  -9223372036854775807');
 
    gencst;
 
@@ -4756,6 +4875,7 @@ begin (* main *)
   doanalys := false; { don't do analyze mode }
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
+  dodbgchk := true;  { do debug checks }
 
   { supress warnings }
   if dochkovf then;
@@ -4777,6 +4897,7 @@ begin (* main *)
   if doanalys then;
   if dodckout then;
   if dochkvbk then;
+  if dodbgchk then;
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }

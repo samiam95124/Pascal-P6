@@ -3177,6 +3177,7 @@ void psystem_dsp(
 
 {
 
+    if (!p) errore(modnam, __LINE__, DISPOSEOFNILPOINTER);
     if (varlap(p, p+s-1)) 
         errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
     free(p);
@@ -3229,6 +3230,7 @@ void psystem_dsl(
     long *         lp;
     unsigned char* bp;
 
+    if (!p) errore(modnam, __LINE__, DISPOSEOFNILPOINTER);
     ulp = (unsigned long*) p; /* point to top */
     ulp--;
     if (*ulp-ADRSIZE-1 != tc) 
