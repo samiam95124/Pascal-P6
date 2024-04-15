@@ -2918,6 +2918,8 @@ double psystem_log(
 
 {
 
+    if (r <= 0) errore(modnam, __LINE__, INVALIDARGUMENTTOLN);
+
     return (log(r));
 
 }
@@ -2935,6 +2937,8 @@ double psystem_sqt(
 )
 
 {
+
+    if (r < 0) errore(modnam, __LINE__, INVALIDARGUMENTTOSQRT);
 
     return (sqrt(r));
 

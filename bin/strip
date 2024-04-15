@@ -30,7 +30,13 @@ then
 
 fi
 
-grep -v -e 'P. Pascal .*interpreter vs. .\..\.x' $1 | \
+#
+# The sed lines normalize different error message forms
+#
+cat $1 | \
+sed 's|^\*\*\* Runtime error: .*:|*** Runtime error: |g' | \
+sed 's|^\*\*\* Runtime error \[.*\]: |*** Runtime error: |g' | \
+grep -v -e 'P. Pascal .*interpreter vs. .\..\.x' | \
 grep -v -e 'P. Pascal .*interpreter vs. .\..' | \
 grep -v -e 'P. Pascal .*code generator vs. .\..' | \
 grep -v -e 'P. Pascal .*code generator vs. .\..\.x' | \
