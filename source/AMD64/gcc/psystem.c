@@ -1925,6 +1925,7 @@ void psystem_get(
 
     int fn;
  
+    valfilrm(f); /* validate file for reading */
     if (varlap(f+FILEIDSIZE, f+FILEIDSIZE))
         errorv(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
     fn = *f; /* get logical file no. */
@@ -1965,6 +1966,7 @@ void psystem_put(
 
     int fn;
  
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -2003,6 +2005,7 @@ void psystem_rln(
 
     int fn;
  
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -2113,6 +2116,7 @@ void psystem_wln(
 
     int fn;
  
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -2156,6 +2160,7 @@ void psystem_wrs(
 
     int fn;
  
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (w < 1 && ISO7185) 
@@ -2202,6 +2207,7 @@ void psystem_wrsp(
 
     int fn;
  
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -2240,6 +2246,7 @@ boolean psystem_eof(
 
     int fn;
  
+    valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     return (eoffn(fn));
@@ -2264,6 +2271,7 @@ boolean psystem_efb(
  
     fn = *f; /* get logical file no. */
 
+    valfilrm(f); /* validate file for reading */
     if (filstate[fn] == fswrite) return(TRUE);
     else if (filstate[fn] == fsread) 
         return (eoffile(filtable[fn]) && !filbuff[fn]);
@@ -2286,6 +2294,7 @@ boolean psystem_eln(
 
     int fn;
 
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     return (eolnfn(fn));
@@ -2507,7 +2516,7 @@ void psystem_wrr(
     int fn;
     int l;
 
-    valfil(f); /* validate file */
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (w < 1) errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
@@ -2551,7 +2560,7 @@ void psystem_wrc(
 
     int fn;
 
-    valfil(f); /* validate file */
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (w < 1 && ISO7185) 
@@ -2594,7 +2603,7 @@ void psystem_rdi(
     int fn;
     long w;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     w = LONG_MAX;
@@ -2622,7 +2631,7 @@ void psystem_rdif(
 
     int fn;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
@@ -2651,7 +2660,7 @@ void psystem_rib(
     int fn;
     long w;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     w = LONG_MAX; 
@@ -2684,7 +2693,7 @@ void psystem_ribf(
 
     int fn;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
@@ -2710,7 +2719,7 @@ void psystem_rdr(
 
     int fn;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readr(fn, r, LONG_MAX, FALSE); /* read real */
@@ -2737,7 +2746,7 @@ void psystem_rdrf(
 
     int    fn;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readr(fn, r, w, TRUE); /* read real */
@@ -2761,7 +2770,7 @@ void psystem_rdc(
 
     int  fn;
     
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readc(fn, c, LONG_MAX, FALSE);
@@ -2788,7 +2797,7 @@ void psystem_rdcf(
 
     int  fn;
     
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readc(fn, c, w, TRUE);
@@ -2815,7 +2824,7 @@ void psystem_rcb(
 
     int  fn;
     
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readc(fn, c, LONG_MAX, FALSE);
@@ -2846,7 +2855,7 @@ void psystem_rcbf(
 
     int  fn;
     
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
     readc(fn, c, w, TRUE);
@@ -2983,7 +2992,7 @@ void psystem_pag(
     int  fn;
     char c;
     
-    valfil(f); /* validate file */
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -3099,7 +3108,7 @@ void psystem_wrb(
     int  fn;
     char c;
     
-    valfil(f); /* validate file */
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     b = b != 0;
@@ -3144,7 +3153,7 @@ void psystem_wrf(
     int  fn;
     char c;
     
-    valfil(f); /* validate file */
+    valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
     if (w < 1 && ISO7185) 
@@ -3473,7 +3482,7 @@ void psystem_rbf(
     long  i;
     long  c;
     
-    valfilrm(f);       /* validate file for writing */
+    valfilrm(f);       /* validate file for reading */
     fn = *f;           /* get logical file no. */
     fp = filtable[fn]; /* get the file pointer */
 
@@ -3560,7 +3569,7 @@ void psystem_gbf(
     unsigned char* bp;
     FILE*          fp;
     
-    valfilrm(f); /* validate file */
+    valfilrm(f); /* validate file for reading */
     fn = *f;   /* get logical file no. */
 
     bp = f+FILEIDSIZE; /* index the file variable */
