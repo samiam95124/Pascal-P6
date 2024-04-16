@@ -127,6 +127,7 @@ policies, either expressed or implied, of the Pascal-P6 project.
 #include <ctype.h>
 #include <limits.h>
 #include <math.h>
+#include <string.h>
 
 /* Set default configuration flags. This gives proper behavior even if no
   preprocessor flags are passed in.
@@ -3035,7 +3036,13 @@ void psystem_rsf(
             errore(modnam, __LINE__, CANNOTRESETORREWRITESTANDARDFILE);
             break;
 
-    } else resetfn(fn, FALSE);
+    } else {
+
+        if (filstate[fn] == fsclosed && !filanamtab[fn])
+            errore(modnam, __LINE__, CANNOTRESETCLOSEDTEMPFILE);
+        resetfn(fn, FALSE);
+
+    }
 
 }
 
@@ -3461,15 +3468,24 @@ void psystem_rbf(
 
 {
 
-    int  fn;
-    long i;
-    
-    valfilrm(f); /* validate file for writing */
-    fn = *f;     /* get logical file no. */
     FILE* fp;    /* file pointer */
+    int   fn;
+    long  i;
+    long  c;
+    
+    valfilrm(f);       /* validate file for writing */
+    fn = *f;           /* get logical file no. */
+    fp = filtable[fn]; /* get the file pointer */
 
-    fp = filtable[fn];
-    for (i = 0; i < l; i++) *p++ = fgetc(fp);
+    /* check buffer data exists */
+    if (filbuff[fn]) memcpy(p, f+FILEIDSIZE, l);
+    else for (i = 0; i < l; i++) {
+
+        c = fgetc(fp);
+        if (c == EOF) errore(modnam, __LINE__, ENDOFFILE);
+        *p++ = fgetc(fp);
+
+    }
 
 }
 
@@ -3493,6 +3509,8 @@ void psystem_rsb(
     valfil(f); /* validate file */
     fn = *f;   /* get logical file no. */
 
+    if (filstate[fn] == fsclosed && !filanamtab[fn])
+        errore(modnam, __LINE__, CANNOTRESETCLOSEDTEMPFILE);
     resetfn(fn, TRUE);
 
 }
