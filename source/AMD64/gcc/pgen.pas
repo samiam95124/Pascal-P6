@@ -3617,6 +3617,13 @@ procedure xlate;
 
             {mod}
             49: begin 
+              wrtins40(' cmpq $0,%1 # check zero divide         ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins20(' jg 1f # skip <= 0  ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+              wrtins50(' movq $InvalidDivisorToMod,%rdx # set error code  ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins40(' xorq %rdx,%rdx # clear upper dividend  ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' subq $0,%rax # find sign of dividend   ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins30(' jns 1f # skip positive       ', 0, 0, ep^.r^.r1, rgnull, nil);
@@ -3629,6 +3636,13 @@ procedure xlate;
 
             {dvi}
             53: begin 
+              wrtins40(' cmpq $0,%1 # check zero divide         ', 0, 0, ep^.r^.r1, rgnull, nil);
+              wrtins30(' jne 1f # skip no overflow    ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq modnam(%rip),%rdi # index module name       ', 0, 0, rgnull, rgnull, nil);
+              wrtins50(' movq $0,%rsi # set line number                   ', sline, 0, rgnull, rgnull, nil);
+              wrtins40(' movq $ZeroDivide,%rdx # set error code ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins40(' xorq %rdx,%rdx # clear upper dividend  ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' subq $0,%rax # find sign of dividend   ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins30(' jns 1f # skip positive       ', 0, 0, ep^.r^.r1, rgnull, nil);

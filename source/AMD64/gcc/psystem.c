@@ -1906,6 +1906,7 @@ void psystem_varexit(void)
 
 }
 
+
 /** ****************************************************************************
 
 Get next file element
@@ -1923,6 +1924,8 @@ void psystem_get(
 
     int fn;
  
+    if (varlap(f+FILEIDSIZE, f+FILEIDSIZE))
+        errorv(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -3247,6 +3250,8 @@ void psystem_dsl(
         tc--;
 
     }
+    if (varlap(bp, bp+((tc+1)*sizeof(unsigned long))))
+                      errorv(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
     free(bp); /* free the net block */
 
 }
