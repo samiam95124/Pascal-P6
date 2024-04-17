@@ -7278,7 +7278,8 @@ begin cmdpos := maxcmd end;
                         new(lsp2,subrange); pshstc(lsp2);
                           with lsp2^ do
                             begin form := subrange; rangetype := intptr;
-                                  min.ival := 1; max := lvalu end;
+                                  min.intval := true; min.ival := 1; 
+                                  max.intval := true; max := lvalu end;
                         lsp^.inxtype := lsp2;
                         test := sy <> comma;
                         if not test then insymbol
