@@ -71,13 +71,13 @@ bin/pcom_immerr: source/pcom.pas
 	@echo "Building pcom with immediate error..."
 	@echo
 	mkdir -p $(BUILD)
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas \
-		-DIMM_ERR
+	cpp $(CPPFLAGS) $(CPPFLAGS64LE) -DIMM_ERR $(SOURCE)/pcom.pas \
+		$(BUILD)/pcom.mpp.pas
 	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
 	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
 		$(BUILD)/pcom.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
-		-o $(PASCALP6)/bin/pcom -lm -lpthread
+		-o $(BUILD)/pcom -lm -lpthread
 	cp $(BUILD)/pcom $(PASCALP6)/bin
 	
 pint: bin/pint

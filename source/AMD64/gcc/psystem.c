@@ -3770,6 +3770,7 @@ void psystem_clst(
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
+    filstate[fn] = fsclosed; /* set status closed */
 
 }
 
@@ -3796,6 +3797,7 @@ void psystem_clsb(
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
+    filstate[fn] = fsclosed; /* set status closed */
 
 }
 
@@ -4044,7 +4046,10 @@ boolean psystem_exs(
 
     filnam fn;
     FILE* fp;
+    int i;
 
+    i = l-1;
+    while (i > 0 && n[i] == ' ') i--,l--;
     strcpyl(fn, n, l); /* make a copy of the string */
     if (fp = fopen(fn, "r")) fclose(fp); /* test file exists */
 

@@ -115,6 +115,7 @@ do
 		fi
 		echo Compiling $param...
         thisfail=0
+        #echo "Will execute: pcom $param.pas $param.p6 $options"
         pcom $param.pas $param.p6 $options > temp
         grep 'Errors in program: 0' temp > temp2
         if [ "$?" != "0" ]; then

@@ -54,7 +54,7 @@ elif [ "$1" = "--pgen" ]; then
 
     pgen p4/pint.p6 p4/pint.s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
-        $PASCALP6/source/AMD64/gcc/psystem_asm.s p4/pint.s -o p4/pint -lm
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm p4/pint.s -o p4/pint -lm
 	p4/pint p4/standardp.p4 temp $options < p4/pint.inp > p4/standardp.lst
 
 else
