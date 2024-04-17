@@ -38,6 +38,8 @@ noerrmsg="0"
 noerrmsgoption=""
 fails="0"
 thisfail="0"
+iso7185="0"
+iso7185option=""
 
 for param in "$@" 
 do
@@ -62,6 +64,11 @@ do
     
     	noerrmsg=1
         noerrmsgoption="--noerrmsg"
+
+    elif [ "$param" = "--iso7185" ]; then
+    
+    	iso7185=1
+        iso7185option="-DISO7185=1"
       
     elif [ "$param" = "--help" ]; then
     
@@ -202,8 +209,8 @@ elif [ "$package" = "1" ]; then
 
 elif [ "$pgen" = "1" ]; then
 
-    #echo "Will execute: gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c $PASCALP6/source/AMD64/gcc/psystem_asm.s $objects -o $progfile -lm"
-    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+    echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $objects -o $progfile -lm"
+    gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
         -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $objects -o $progfile -lm
 
 fi

@@ -400,7 +400,7 @@ dotestprog $option standard_tests/iso7185prt1835
 dotestprog $option standard_tests/iso7185prt1836
 dotestprog $option standard_tests/iso7185prt1837
 dotestprog $option standard_tests/iso7185prt1838
-dotestprog $option standard_tests/iso7185prt1839 -s
+dotestprog $option standard_tests/iso7185prt1839 "-s --iso7185"
 dotestprog $option standard_tests/iso7185prt1840
 dotestprog $option standard_tests/iso7185prt1841 -s
 dotestprog $option standard_tests/iso7185prt1842
