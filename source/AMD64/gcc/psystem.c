@@ -3708,7 +3708,7 @@ void psystem_asst(
 
     i = l-1;
     while (i > 0 && n[i] == ' ') i--,l--;
-    if (l >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3741,7 +3741,7 @@ void psystem_assb(
 
     i = l-1;
     while (i > 0 && n[i] == ' ') i--,l--;
-    if (l >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(filnamtab[fn], n, l);
     filanamtab[fn] = TRUE; /* set name assigned */
 
@@ -3939,7 +3939,11 @@ void psystem_del(
 
     filnam fn;
     int    r;
+    int    i;
 
+    i = l-1;
+    while (i > 0 && n[i] == ' ') i--,l--;
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fn, n, l); /* copy string to buffer */
     r = remove(fn); /* remove file */
     if (r) errorv(modnam, __LINE__, FILEDELETEFAIL);
@@ -3966,8 +3970,15 @@ void psystem_chg(
 
     filnam ofn, nfn;
     int    r;
+    int    i;
 
+    i = ol-1;
+    while (i > 0 && on[i] == ' ') i--,ol--;
+    if (ol >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(ofn, on, ol); /* copy strings to buffers */
+    i = nl-1;
+    while (i > 0 && nn[i] == ' ') i--,nl--;
+    if (nl >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(nfn, nn, nl);
     r = rename(ofn, nfn); /* rename file */
     if (r) errorv(modnam, __LINE__, FILENAMECHANGEFAIL);
@@ -4050,6 +4061,7 @@ boolean psystem_exs(
 
     i = l-1;
     while (i > 0 && n[i] == ' ') i--,l--;
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fn, n, l); /* make a copy of the string */
     if (fp = fopen(fn, "r")) fclose(fp); /* test file exists */
 
@@ -4110,7 +4122,11 @@ void psystem_asts(
 {
 
     errmsg em;
+    int    j;
     
+    j = l-1;
+    while (j > 0 && em[j] == ' ') j--,l--;
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(em, e, l); /* copy error string */
     if (i == 0) errors(modnam, __LINE__, em);
 
@@ -4224,13 +4240,16 @@ void psystem_aeft(
 
 {
 
-    int fn;
-    long i;
+    int    fn;
     filnam fs;
+    int    i;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    i = l-1;
+    while (i > 0 && s[i] == ' ') i--,l--;
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fs, s, l); /* make copy of string */
     assignexternal(fn, fs);
     filanamtab[fn] = TRUE; /* set name assigned */
@@ -4257,13 +4276,16 @@ void psystem_aefb(
 
 {
 
-    int fn;
-    long i;
+    int    fn;
+    int    i;
     filnam fs;
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    i = l-1;
+    while (i > 0 && s[i] == ' ') i--,l--;
+    if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fs, s, l); /* make copy of string */
     assignexternal(fn, fs);
     filanamtab[fn] = TRUE; /* set name assigned */
