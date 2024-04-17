@@ -2294,7 +2294,7 @@ boolean psystem_eln(
 
     int fn;
 
-    valfilrm(f); /* validate file for reading */
+    valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     return (eolnfn(fn));
