@@ -9238,7 +9238,7 @@ begin cmdpos := maxcmd end;
                   gen1ts(39(*ldo*),lcp2^.vaddr,lcp2^.idtype,lcp2);
                   gen1t(43(*sro*),lcp^.pfvaddr,nilptr);
                   { place new vector }
-                  gensuv(lcp^.pfname,lcp2^.pfvaddr,lcp2);
+                  gensuv(lcp^.pfname,lcp2^.vaddr,lcp2);
                 end
               end
             end
