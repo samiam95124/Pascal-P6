@@ -6275,6 +6275,7 @@ begin cmdpos := maxcmd end;
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
         fcp: ctp; onstkl, onstkr, lschrcst, rschrcst, revcmp: boolean;
+        c: char;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -6706,6 +6707,7 @@ begin cmdpos := maxcmd end;
             gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
       onstkr := gattr.kind = expr; rschrcst := ischrcst(gattr);
+      if rschrcst then c := chr(gattr.cval.ival);
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
@@ -6768,7 +6770,7 @@ begin cmdpos := maxcmd end;
                           gen1(71(*dmp*),intsize); { discard char }
                           { rationalize character }
                           gen2(51(*ldc*),1,1);
-                          gensca(chr(gattr.cval.ival));
+                          gensca(c);
                           typind := 'v'
                         end else begin
                           lsizspc := lsize; alignu(parmptr,lsizspc);
