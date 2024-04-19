@@ -7791,7 +7791,7 @@ begin cmdpos := maxcmd end;
           lcs: addrrange; test: boolean; dummy: boolean; first: boolean;
       procedure joinlists;
       var lcp, lcp3: ctp;
-      begin first := true;
+      begin
         { we missed the type for this id list, meaning the types are nil. Add
           the new list as is for error recovery }
         if lcp2 <> nil then begin
@@ -7805,7 +7805,7 @@ begin cmdpos := maxcmd end;
         end
       end;
       begin { parameterlist }
-        plst := false;
+        plst := false; first := true;
         if forw then begin { isolate duplicated list in level }
           oldlevf := level; oldtopf := top; pushlvl(false, nil)
         end;
