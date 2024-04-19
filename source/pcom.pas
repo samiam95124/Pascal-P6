@@ -6275,7 +6275,7 @@ begin cmdpos := maxcmd end;
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
         fcp: ctp; onstkl, onstkr, lschrcst, rschrcst, revcmp: boolean;
-        c: char;
+        lc, rc: char;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -6696,6 +6696,7 @@ begin cmdpos := maxcmd end;
     revcmp := false;
     simpleexpression(fsys + [relop], threaten);
     onstkl := gattr.kind = expr; lschrcst := ischrcst(gattr);
+      if rschrcst then lc := chr(gattr.cval.ival);
     if sy = relop then begin
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
@@ -6707,7 +6708,7 @@ begin cmdpos := maxcmd end;
             gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
       onstkr := gattr.kind = expr; rschrcst := ischrcst(gattr);
-      if rschrcst then c := chr(gattr.cval.ival);
+      if rschrcst then rc := chr(gattr.cval.ival);
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
@@ -6744,7 +6745,7 @@ begin cmdpos := maxcmd end;
                         begin
                           { load char ptr under }
                           gen2(51(*ldc*),1,1);
-                          gensca(chr(gattr.cval.ival));
+                          gensca(lc);
                           typind := 'v';
                           revcmp := true
                         end
@@ -6770,7 +6771,7 @@ begin cmdpos := maxcmd end;
                           gen1(71(*dmp*),intsize); { discard char }
                           { rationalize character }
                           gen2(51(*ldc*),1,1);
-                          gensca(c);
+                          gensca(rc);
                           typind := 'v'
                         end else begin
                           lsizspc := lsize; alignu(parmptr,lsizspc);
