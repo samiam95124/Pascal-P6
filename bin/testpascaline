@@ -52,9 +52,8 @@ elif [ "$1" = "--cmach" ]; then
 else
 
 	echo Running with pint
-    cat pascaline.p6 $inpfile > prd
-    pint headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnole pascaline.lst pascaline.cmp > pascaline.dif
+    pint pascaline.p6 temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline.dif
     
 fi
