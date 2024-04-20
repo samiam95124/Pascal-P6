@@ -3960,10 +3960,10 @@ is changed on disk. Note that the path must match between the names.
 *******************************************************************************/
 
 void psystem_chg(
-    /* Old filename string */ char* on,
-    /* Length */              long  ol,
     /* New filename string */ char* nn,
-    /* Length */              long  nl
+    /* Length */              long  nl,
+    /* Old filename string */ char* on,
+    /* Length */              long  ol
 )
 
 {
