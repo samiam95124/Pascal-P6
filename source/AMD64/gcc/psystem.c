@@ -3492,7 +3492,7 @@ void psystem_rbf(
 
         c = fgetc(fp);
         if (c == EOF) errore(modnam, __LINE__, ENDOFFILE);
-        *p++ = fgetc(fp);
+        *p++ = c;
 
     }
 
