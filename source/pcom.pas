@@ -6696,7 +6696,7 @@ begin cmdpos := maxcmd end;
     revcmp := false;
     simpleexpression(fsys + [relop], threaten);
     onstkl := gattr.kind = expr; lschrcst := ischrcst(gattr);
-      if rschrcst then lc := chr(gattr.cval.ival);
+      if lschrcst then lc := chr(gattr.cval.ival);
     if sy = relop then begin
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
