@@ -1,4 +1,4 @@
-P6 Pascal cmach interpreter vs. 0.1.x
+P6 Pascal cmach interpreter vs. 0.2.x
 
 loading program
 Running program
@@ -41,10 +41,10 @@ glb1: start  stop s/b start stop
 nc1: 165 s/b 165
 nc2: 58 s/b 58
 nc3: 25 s/b 25
-nc3: 123456 s/b      123456
-nc4: 3418164 s/b     3418164
-nc5: 107482 s/b      107482
-nc6: 87 s/b          87
+nc3: 123456 s/b 123456
+nc4: 3418164 s/b 3418164
+nc5: 107482 s/b 107482
+nc6: 87 s/b 87
 ext15: 9223372036854775765 s/b 9223372036854775765
 ext16: 130 s/b 130
 ext17: 24 s/b 24
