@@ -3821,6 +3821,7 @@ void psystem_pos(
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
+
     if (i < 1) errore(modnam, __LINE__, INVALIDFILEPOSITION);
     if (fseek(filtable[fn], i-1, SEEK_SET)) 
         errore(modnam, __LINE__, FILEPOSITIONFAIL);
@@ -3847,14 +3848,20 @@ void psystem_upd(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (filstate[fn] == fsread) fseek(filtable[fn], 0, SEEK_SET);
-    else {
+    if (filstate[fn] == fswrite) {
 
-        if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
-        if (!fopen(filnamtab[fn], "wb")) 
+        if (fseek(filtable[fn], 0, SEEK_SET)) 
+            errore(modnam, __LINE__, FILEPOSITIONFAIL);
+
+    } else {
+
+        if (filstate[fn] == fsread)
+            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "rb+")) 
             errore(modnam, __LINE__, FILEOPENFAIL);
 
     }
+    filstate[fn] = fswrite; filbuff[fn] = FALSE;
 
 }
 
@@ -3878,15 +3885,21 @@ void psystem_appt(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-    else {
+    if (filstate[fn] == fswrite) {
 
-        if (fclose(filtable[fn])) 
-            errorv(modnam, __LINE__, FILECLOSEFAIL);
-        if (!fopen(filnamtab[fn], "w")) 
-            errore(modnam, __LINE__, FILEOPENFAIL);
+        if (fseek(filtable[fn], 0, SEEK_SET)) 
+            errore(modnam, __LINE__, FILEPOSITIONFAIL);
+
+    } else {
+
+        if (filstate[fn] == fsread)
+            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "r+")) errore(modnam, __LINE__, FILEOPENFAIL);
+        if (fseek(filtable[fn], 0, SEEK_END)) 
+            errore(modnam, __LINE__, FILEPOSITIONFAIL);
 
     }
+    filstate[fn] = fswrite; filbuff[fn] = FALSE;
 
 }
 
@@ -3910,15 +3923,22 @@ void psystem_appb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (filstate[fn] == fswrite) fseek(filtable[fn], 0, SEEK_END);
-    else {
+    if (filstate[fn] == fswrite) {
 
-        if (fclose(filtable[fn])) 
-            errorv(modnam, __LINE__, FILECLOSEFAIL);
-        if (!fopen(filnamtab[fn], "w")) 
+      if (fseek(filtable[fn], 0, SEEK_SET)) 
+        errore(modnam, __LINE__, FILEPOSITIONFAIL);
+
+    } else {
+
+        if (filstate[fn] == fsread)
+            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+        if (!fopen(filnamtab[fn], "rb+")) 
             errore(modnam, __LINE__, FILEOPENFAIL);
+        if (fseek(filtable[fn], 0, SEEK_END)) 
+            errore(modnam, __LINE__, FILEPOSITIONFAIL);
 
     }
+    filstate[fn] = fswrite; filbuff[fn] = FALSE;
 
 }
 
