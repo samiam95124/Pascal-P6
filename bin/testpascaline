@@ -39,12 +39,9 @@ if [ "$1" = "--pmach" ]; then
 elif [ "$1" = "--cmach" ]; then
 
 	echo Running with cmach
-    cp pascaline.p6 prd
-    pint --e
-    mv prr pascaline.p6o
-    cat pascaline.p6o $inpfile > prd
-    cmach headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnole pascaline.lst pascaline_cmach.cmp > pascaline_cmach.dif
+    pint pascaline.p6 pascaline.p6o --machdeck
+    cmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+    diffnolestrip pascaline.lst pascaline_cmach.cmp > pascaline_cmach.dif
     wc -l pascaline_cmach.dif
     
 elif [ "$1" = "--pgen" ]; then
