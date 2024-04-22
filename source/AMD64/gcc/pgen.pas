@@ -4423,7 +4423,6 @@ procedure xlate;
 
         {sros}
         77: begin parq;
-;writeln(prr, '# assemble: sros: begin');
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
@@ -4435,7 +4434,6 @@ procedure xlate;
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep^.r1a); deltre(ep)
-;writeln(prr, '# assemble: sros: end');
         end;
 
         {apc}

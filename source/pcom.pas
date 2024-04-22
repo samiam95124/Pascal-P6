@@ -3892,7 +3892,12 @@ begin cmdpos := maxcmd end;
     if fcp <> nil then begin
       write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
       if fop = 123(*cif*) then 
-        begin write(prr, ' ', ord(fcp^.idtype = realptr):1); fl := fl+2 end
+        begin write(prr, ' ');
+          if realt(fcp^.idtype) then write(prr, '1')
+          else if sett(fcp^.idtype) then write(prr, '2')
+          else write(prr, '0');
+          fl := fl+2 
+        end
     end;
     lftjst(parfld-1-fl);
     intmsg(fop);
