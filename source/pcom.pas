@@ -3447,6 +3447,116 @@ begin cmdpos := maxcmd end;
     end
   end;
 
+  { check integer or subrange of }
+  function intt(fsp: stp): boolean;
+    var t: stp;
+  begin intt := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = intptr then intt := true
+    end
+  end;
+
+  { check real }
+  function realt(fsp: stp): boolean;
+  begin realt := false;
+    if fsp <> nil then
+      if fsp = realptr then realt := true
+  end;
+
+  { the type test for character includes very broad definitions of char,
+    including packed character arrays of 1 length, and even packed character
+    array containers, because they could be length 1 }
+  function chart(fsp: stp): boolean;
+    var t: stp; fmin, fmax: integer;
+  begin chart := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = charptr then chart := true
+      else if (t^.form = arrays) and t^.packing then begin
+        if (t^.inxtype = nil) and (t^.size = 1) then chart := true
+        else if chart(t^.aeltype) and intt(t^.inxtype) then begin
+          getbounds(t^.inxtype,fmin,fmax);
+          if (fmin = 1) and (fmax = 1) then chart := true
+        end
+      end else if (t^.form = arrayc) and t^.packing then begin
+        if chart(t^.abstype) then chart := true
+      end
+    end
+  end;
+
+  { check boolean }
+  function bolt(fsp: stp): boolean;
+    var t: stp;
+  begin bolt := false;
+    if fsp <> nil then begin
+      t := basetype(fsp);
+      if t = boolptr then bolt := true
+    end
+  end;
+
+  function stringt(fsp: stp) : boolean;
+  var fmin, fmax: integer;
+  begin stringt := false;
+    if fsp <> nil then
+      if (fsp^.form = arrays) or (fsp^.form = arrayc) then
+        if fsp^.packing then begin
+        if fsp^.form = arrays then begin
+          { if the index is nil, either the array is a string constant or the
+            index type was in error. Either way, we call it a string }
+          if fsp^.inxtype = nil then stringt := true
+          else begin 
+            { common string must pass test of 1..N where N>1 }
+            getbounds(fsp^.inxtype,fmin,fmax);
+            stringt := (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
+          end
+        end else stringt := fsp^.abstype = charptr
+      end
+  end (*stringt*);
+
+  { check array type, fixed or container }
+  function arrayt(fsp: stp): boolean;
+  begin
+    if fsp = nil then arrayt := false
+    else arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
+  end;
+
+  { check set type }
+  function sett(fsp: stp): boolean;
+  begin
+    if fsp = nil then sett := false
+    else sett := fsp^.form = power
+  end;
+
+  { check pointer type }
+  function ptrt(fsp: stp): boolean;
+  begin
+    if fsp = nil then ptrt := false
+    else ptrt := fsp^.form = pointer
+  end;
+
+  { check simple type }
+  function simt(fsp: stp): boolean;
+  begin
+    if fsp = nil then simt := false
+    else simt := (fsp^.form = scalar) or (fsp^.form = subrange)
+  end;
+
+  { check ordinal type }
+  function ordt(fsp: stp): boolean;
+  begin
+    if fsp = nil then ordt := false
+    else ordt := ((fsp^.form = scalar) or (fsp^.form = subrange)) and
+                 not realt(fsp)
+  end;
+
+  { check file type }
+  function filet(fsp: stp): boolean;
+  begin
+    if fsp = nil then filet := false
+    else filet := fsp^.form = files
+  end;
+
   procedure lftjst(fl: integer);
   begin
     if fl > 0 then write(prr, ' ':fl)
@@ -3761,7 +3871,12 @@ begin cmdpos := maxcmd end;
         if fcp <> nil then begin
           write(prr, ' ', fcp^.pfnum:1); fl := fl+1+digits(fcp^.pfnum);
           if fop = 122(*cuf*) then 
-            begin write(prr, ' ', ord(fcp^.idtype = realptr):1); fl := fl+2 end
+            begin write(prr, ' ');
+              if realt(fcp^.idtype) then write(prr, '1')
+              else if sett(fcp^.idtype) then write(prr, '2')
+              else write(prr, '0');
+              fl := fl+2 
+            end
         end else begin write(prr, ' 0'); fl := fl+1 end;
         lftjst(parfld-1-fl);
         intmsg(fop);
@@ -3881,73 +3996,6 @@ begin cmdpos := maxcmd end;
 
   function comptypes(fsp1,fsp2: stp) : boolean; forward;
 
-  { check integer or subrange of }
-  function intt(fsp: stp): boolean;
-    var t: stp;
-  begin intt := false;
-    if fsp <> nil then begin
-      t := basetype(fsp);
-      if t = intptr then intt := true
-    end
-  end;
-
-  { check real }
-  function realt(fsp: stp): boolean;
-  begin realt := false;
-    if fsp <> nil then
-      if fsp = realptr then realt := true
-  end;
-
-  { the type test for character includes very broad definitions of char,
-    including packed character arrays of 1 length, and even packed character
-    array containers, because they could be length 1 }
-  function chart(fsp: stp): boolean;
-    var t: stp; fmin, fmax: integer;
-  begin chart := false;
-    if fsp <> nil then begin
-      t := basetype(fsp);
-      if t = charptr then chart := true
-      else if (t^.form = arrays) and t^.packing then begin
-        if (t^.inxtype = nil) and (t^.size = 1) then chart := true
-        else if chart(t^.aeltype) and intt(t^.inxtype) then begin
-          getbounds(t^.inxtype,fmin,fmax);
-          if (fmin = 1) and (fmax = 1) then chart := true
-        end
-      end else if (t^.form = arrayc) and t^.packing then begin
-        if chart(t^.abstype) then chart := true
-      end
-    end
-  end;
-
-  { check boolean }
-  function bolt(fsp: stp): boolean;
-    var t: stp;
-  begin bolt := false;
-    if fsp <> nil then begin
-      t := basetype(fsp);
-      if t = boolptr then bolt := true
-    end
-  end;
-
-  function stringt(fsp: stp) : boolean;
-  var fmin, fmax: integer;
-  begin stringt := false;
-    if fsp <> nil then
-      if (fsp^.form = arrays) or (fsp^.form = arrayc) then
-        if fsp^.packing then begin
-        if fsp^.form = arrays then begin
-          { if the index is nil, either the array is a string constant or the
-            index type was in error. Either way, we call it a string }
-          if fsp^.inxtype = nil then stringt := true
-          else begin 
-            { common string must pass test of 1..N where N>1 }
-            getbounds(fsp^.inxtype,fmin,fmax);
-            stringt := (fsp^.aeltype = charptr) and (fmin = 1) and (fmax > 1)
-          end
-        end else stringt := fsp^.abstype = charptr
-      end
-  end (*stringt*);
-
   { check structure is, or contains, a file }
   function filecomponent(fsp: stp): boolean;
   var f: boolean;
@@ -3979,49 +4027,6 @@ begin cmdpos := maxcmd end;
       exceptf:  ;
     end;
     filecomponent := f
-  end;
-
-  { check array type, fixed or container }
-  function arrayt(fsp: stp): boolean;
-  begin
-    if fsp = nil then arrayt := false
-    else arrayt := (fsp^.form = arrays) or (fsp^.form = arrayc);
-  end;
-
-  { check set type }
-  function sett(fsp: stp): boolean;
-  begin
-    if fsp = nil then sett := false
-    else sett := fsp^.form = power
-  end;
-
-  { check pointer type }
-  function ptrt(fsp: stp): boolean;
-  begin
-    if fsp = nil then ptrt := false
-    else ptrt := fsp^.form = pointer
-  end;
-
-  { check simple type }
-  function simt(fsp: stp): boolean;
-  begin
-    if fsp = nil then simt := false
-    else simt := (fsp^.form = scalar) or (fsp^.form = subrange)
-  end;
-
-  { check ordinal type }
-  function ordt(fsp: stp): boolean;
-  begin
-    if fsp = nil then ordt := false
-    else ordt := ((fsp^.form = scalar) or (fsp^.form = subrange)) and
-                 not realt(fsp)
-  end;
-
-  { check file type }
-  function filet(fsp: stp): boolean;
-  begin
-    if fsp = nil then filet := false
-    else filet := fsp^.form = files
   end;
 
   function comptypes{(fsp1,fsp2: stp) : boolean};

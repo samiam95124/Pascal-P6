@@ -2737,6 +2737,9 @@ procedure xlate;
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
+            end else if ep^.q1 = 2 then begin 
+              ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
+              gettmp(ep^.r1a)
             end else begin
               if r1 = rgnull then begin
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
@@ -2762,6 +2765,9 @@ procedure xlate;
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
+            end else if ep^.q1 = 2 then begin 
+              ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
+              gettmp(ep^.r1a)
             end else begin
               if r1 = rgnull then begin 
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
@@ -3726,8 +3732,19 @@ procedure xlate;
                   if ep^.r1 <> rgxmm0 then
                   wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
-                  if ep^.r1 <> rgrax then
-                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
+                  if ep^.q1 = 2 then begin { move set from stack to temp }
+                    wrtins40(' movq %rsp,%rsi # index set on stack    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins40(' addq $0,%rsp # remove set from stack   ', setsize, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
+                  end else begin
+                    if ep^.r1 <> rgrax then
+                      wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil);
+                  end                   
                 end
               end;
               stkadr := stkadrs { restore stack position }
@@ -3747,8 +3764,19 @@ procedure xlate;
                   if ep^.r1 <> rgxmm0 then
                     wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
-                  if ep^.r1 <> rgrax then
-                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
+                  if ep^.q1 = 2 then begin { move set from stack to temp }
+                    wrtins40(' movq %rsp,%rsi # index set on stack    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins40(' addq $0,%rsp # remove set from stack   ', setsize, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
+                  end else begin
+                    if ep^.r1 <> rgrax then
+                      wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
+                  end
                 end
               end;
               wrtins50(' movq %r15,%rbp # restore our frame pointer       ', 0, 0, rgnull, rgnull, nil);
@@ -4395,6 +4423,7 @@ procedure xlate;
 
         {sros}
         77: begin parq;
+;writeln(prr, '# assemble: sros: begin');
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
@@ -4406,6 +4435,7 @@ procedure xlate;
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep^.r1a); deltre(ep)
+;writeln(prr, '# assemble: sros: end');
         end;
 
         {apc}
@@ -4586,6 +4616,27 @@ procedure xlate;
           botstk; deltmp
         end;
 
+        {rets}
+        236: begin parq;
+          frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          { restore protected registers }
+          wrtins40(' popq %r15 # undo alignment push        ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' popq %r15 # restore protected registers', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r14', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r13', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %r12', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' leave # undo frame ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' addq $0,%rsp # remove frame data       ', marksize, 0, rgnull, rgnull, nil);
+          wrtins40(' popq %rcx # get return address         ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' addq $0,%rsp # remove caller parameters', q, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq %rcx # restore return address    ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' ret # return to caller       ', 0, 0, rgnull, rgnull, nil);
+          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
+          botstk; deltmp
+        end;
+
         {stoi,stoa,stor,stob,stoc,stox}
         6, 80, 81, 83, 84, 197: begin par;
           frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
@@ -4658,9 +4709,6 @@ procedure xlate;
         
         {wbe}
         244: par;
-
-        {rets}
-        235: ;
 
         { these are all Pascaline unimplemented }
 
@@ -4735,7 +4783,7 @@ procedure xlate;
         {lto} 
         234, 
         {stom} 
-        236, 
+        235, 
         {retm} 
         237, 
         {ctb} 
