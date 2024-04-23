@@ -440,7 +440,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define DISPOSEOFWITHREFERENCEDBLOCK        118
 #define WITHBASELISTEMPTY                   119
 #define EXTERNALSNOTENABLED                 120
-#define PRIVEXCEPTIONTOP                    119
+#define PRIVEXCEPTIONTOP                    120
 
 #define MAXSP        81   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -1304,7 +1304,7 @@ boolean withsch(address b)
 
     wp = wthlst; f = FALSE;
     while (wp && !f) {
-        f = wp->b = b;
+        f = wp->b == b;
         wp = wp->next;
     }
 
