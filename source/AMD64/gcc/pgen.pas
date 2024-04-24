@@ -3481,7 +3481,7 @@ procedure xlate;
 
             {ngr}
             37: begin
-              wrtins40(' subsd %1,%1  # subtract to find 0      ', 0, 0, ep^.r1, ep^.r1, nil);
+              wrtins30(' xorpd %1,%1  # clear register', 0, 0, ep^.r1, ep^.r1, nil);
               wrtins30(' subsd %1,%2  # find 0-real   ', 0, 0, ep^.l^.r1, ep^.r1, nil)
             end;
 

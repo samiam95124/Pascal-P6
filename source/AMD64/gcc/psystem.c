@@ -439,6 +439,10 @@ table is all you should need to adapt to any byte addressable machine.
 #define VARREFERENCEDFILEBUFFERMODIFIED     115
 #define CONTAINERMISMATCH                   116
 #define INVALIDCONTAINERLEVEL               117
+#define DISPOSEOFWITHREFERENCEDBLOCK        118
+#define WITHBASELISTEMPTY                   119
+#define EXTERNALSNOTENABLED                 120
+#define PRIVEXCEPTIONTOP                    120
 
 typedef unsigned char byte;    /* 8-bit byte */
 typedef long boolean; /* true/false */
@@ -635,6 +639,10 @@ static void errorv(
     case VARREFERENCEDFILEBUFFERMODIFIED:    printf("VAR referenced file buffer modified\n"); break;
     case CONTAINERMISMATCH:                  printf("Container length(s) do not match\n"); break;
     case INVALIDCONTAINERLEVEL:              printf("InvalidContainerLevel\n"); break;
+    case DISPOSEOFWITHREFERENCEDBLOCK:       printf("Dispose of with referenced block\n"); break;
+    case WITHBASELISTEMPTY:                  printf("With base list empty\n"); break;
+    case EXTERNALSNOTENABLED:                printf("Externals not enabled\n"); break;
+
   }
   exit(1);
 
