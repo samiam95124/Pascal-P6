@@ -256,6 +256,9 @@ const
       VarReferencedFileBufferModified    = 115;
       ContainerMismatch                  = 116;
       InvalidContainerLevel              = 117;
+      DisposeOfWithReferenedBlock        = 118;
+      WithBaseListEmpty                  = 119;
+      ExternalsNotEnabled                = 120;
       privexceptiontop                   = 117;
 
       strlen      = 1000;    { longest string length we can buffer }
@@ -4703,10 +4706,21 @@ procedure xlate;
         { standard unimplemented }
 
         {wbs}
-        243: par;
+        243: begin par;
+          frereg := allreg; popstk(ep); duptre(ep, ep2); pshstk(ep2);
+          assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins50(' call psystem_withenter # establish with reference', 0, 0, rgnull, rgnull, nil);
+          deltre(ep);
+        end;
         
         {wbe}
-        244: par;
+        244: begin par;
+          frereg := allreg;
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins50(' call psystem_withexit # remove last with         ', 0, 0, rgnull, rgnull, nil);
+          botstk
+        end;
 
         { these are all Pascaline unimplemented }
 

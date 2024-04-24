@@ -470,6 +470,13 @@ typedef struct _varblk {
     unsigned char* e; 
 } varblk;
 
+/* with reference block */
+typedef struct _wthblk *wthptr;
+typedef struct _wthblk {
+    wthptr next;      /* next entry */
+    unsigned char* b; /* address of block */
+} wthblk;
+
 static const char*modnam = "psystem"; /* name of this module */
 
 static FILE* filtable[MAXFIL+1]; /* general file holders */
@@ -481,6 +488,8 @@ static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
 static varptr varlst; /* active var block pushdown stack */
 static varptr varfre; /* free var block entries */
+wthptr wthlst; /* active with block pushdown stack */
+wthptr wthfre; /* free with block entries */
 
 static cmdbuf  cmdlin;  /* command line */
 static cmdnum  cmdlen;  /* length of command line */
@@ -895,6 +904,32 @@ static boolean varlap(unsigned char* s, unsigned char* e)
 
         f = (vp->e >= s && vp->s <= e);
         vp = vp->next;
+
+    }
+
+    return (f);
+
+}
+
+/** ****************************************************************************
+
+Check with reference included
+
+Checks if the given with reference address is active.
+
+*******************************************************************************/
+
+boolean withsch(unsigned char* b)
+{
+
+    wthptr  wp;
+    boolean f;
+
+    wp = wthlst; f = FALSE;
+    while (wp && !f) {
+
+        f = wp->b == b;
+        wp = wp->next;
 
     }
 
@@ -1915,6 +1950,43 @@ void psystem_varexit(void)
 
 }
 
+/** ****************************************************************************
+
+Enter with reference address
+
+Registers the address of a "with" record.
+
+*******************************************************************************/
+
+void psystem_withenter(unsigned char* b)
+{
+
+    wthptr wp;
+
+    if (wthfre) { wp = wthfre; wthfre = wp->next; }
+    else wp = (wthptr) malloc(sizeof(wthblk));
+    wp->b = b; wp->next = wthlst; wthlst = wp;
+
+}
+
+/** ****************************************************************************
+
+Remove "with" level
+
+Removes the latest/innermost with level.
+
+*******************************************************************************/
+
+void psystem_withexit(void)
+
+{
+
+    wthptr wp;
+
+    if (!wthlst) errorv(modnam, __LINE__, WITHBASELISTEMPTY);
+    wp = wthlst; wthlst = wp->next; wp->next = wthfre; wthfre = wp;
+
+}
 
 /** ****************************************************************************
 
@@ -3207,6 +3279,7 @@ void psystem_dsp(
     if (!p) errore(modnam, __LINE__, DISPOSEOFNILPOINTER);
     if (varlap(p, p+s-1)) 
         errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
+    if (withsch(p)) errorv(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
     free(p);
 
 }
@@ -3276,6 +3349,7 @@ void psystem_dsl(
     }
     if (varlap(bp, bp+((tc+1)*sizeof(unsigned long))))
                       errorv(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
+    if (withsch(p)) errorv(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
     free(bp); /* free the net block */
 
 }
@@ -4830,6 +4904,12 @@ static void init(int argc, char* argv[])
     int i;
 
     argc--; argv++; /* discard the program parameter */
+
+    /* initialize variables */
+    varlst = NULL; /* set no VAR block entries */
+    varfre = NULL;
+    wthlst = NULL; /* set no with block entries */
+    wthfre = NULL;
 
     /* initialize file state */
     for (i = 1; i <= MAXFIL; i++) {
