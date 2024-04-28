@@ -477,6 +477,12 @@ typedef struct _wthblk {
     unsigned char* b; /* address of block */
 } wthblk;
 
+/* externally accessable variables */
+address psystem_expadr; /* exception address of exception handler starts */
+address psystem_expstk; /* exception address of sp at handlers */
+address psystem_expmrk; /* exception address of mp at handlers */
+
+/* internal variables */
 static const char*modnam = "psystem"; /* name of this module */
 
 static FILE* filtable[MAXFIL+1]; /* general file holders */
@@ -488,8 +494,8 @@ static boolean fileoln[MAXFIL+1]; /* last file character read was eoln */
 static boolean filbof[MAXFIL+1]; /* beginning of file */
 static varptr varlst; /* active var block pushdown stack */
 static varptr varfre; /* free var block entries */
-wthptr wthlst; /* active with block pushdown stack */
-wthptr wthfre; /* free with block entries */
+static wthptr wthlst; /* active with block pushdown stack */
+static wthptr wthfre; /* free with block entries */
 
 static cmdbuf  cmdlin;  /* command line */
 static cmdnum  cmdlen;  /* length of command line */
@@ -4874,7 +4880,6 @@ void psystem_unpack(
     /* starting index of unpacked array */ long  usi,
     /* unpacked array */                   byte* upa,
     /* packed array */                     byte* pa
-
 )
 
 {
@@ -4887,6 +4892,148 @@ void psystem_unpack(
         *(upa+usi) = *(pa+i);
         usi++;
     }
+
+}
+
+/** ****************************************************************************
+
+Vector initialize global
+
+Initalizes and allocates a global vector. Expects the number of levels of the
+vector, the size of the base element, the address of the pointer and template,
+and the adress of a list of array dimensions.
+
+The template after the pointer is filled out, the sizes added up to find the
+total size of the allocation, and the variable allocated and the address
+placed in the pointer.
+
+*******************************************************************************/
+
+void psystem_vip(
+    /* number of levels */                long            nl,
+    /* size of base element */            long            size,
+    /* address of pointer/template */     unsigned char** pa,
+    /* address of array dimension list */ long*           al
+)
+
+{
+
+    long* tp;
+    int   i;
+    long  ts;
+    long  s;
+
+    tp = (long*)pa;
+    tp += nl;
+    ts = size;
+    for (i = 1; i < nl; i++) { s = *al++; *tp-- = s; ts += s; }
+    psystem_new(*pa, ts);
+
+}
+
+/** ****************************************************************************
+
+Vector initialize stack
+
+Initalizes and allocates a stack vector. Expects the number of levels of the
+vector, the size of the base element, the address of the pointer and template,
+and the adress of a list of array dimensions.
+
+The template after the pointer is filled out, the sizes added up to find the
+total size of the allocation, and the total size returned.
+
+*******************************************************************************/
+
+long psystem_vis(
+    /* number of levels */                long            nl,
+    /* size of base element */            long            size,
+    /* address of pointer/template */     unsigned char** pa,
+    /* address of array dimension list */ long*           al
+)
+
+{
+
+    long* tp;
+    int   i;
+    long  ts;
+    long  s;
+
+    tp = (long*)pa;
+    tp += nl;
+    ts = size;
+    for (i = 1; i < nl; i++) { s = *al++; *tp-- = s; ts += s; }
+
+    return ts;
+
+}
+
+/** ****************************************************************************
+
+Vector initialize dynamic
+
+Initalizes and allocates a global vector. Expects the number of levels of the
+vector, the size of the base element, the address of the pointer and template,
+and the adress of a list of array dimensions.
+
+The total size of allocation is found from the total sizes plus base size, plus
+the size of the required template, then that is allocated and a template
+filled out at the start of the allocation.
+
+*******************************************************************************/
+
+void psystem_vin(
+    /* number of levels */                long            nl,
+    /* size of base element */            long            size,
+    /* address of pointer/template */     unsigned char** pa,
+    /* address of array dimension list */ long*           al
+)
+
+{
+
+    long* tp;
+    int   i;
+    long  ts;
+    long  s;
+    long* alp;
+
+    ts = size; alp := al;
+    for (i = 1; i <= nl; i++) s = *alp++;
+    psystem_new(*pa, ts+nl*INTSIZE);
+    tp = *pa+nl*INTSIZE;
+    for (i = 1; i <= nl; i++) *--tp = al++;
+
+}
+
+/** ****************************************************************************
+
+Assign complex container arrays
+
+Given the number of index levels, the base element size, the source template, 
+the destination template, and the source and destination addresses, calculates
+the net size of the source and destination arrays and copies from source to
+destination.
+
+Only the destination template is used to find the net allocation. Checking if
+the two arrays match is done elsewhere.
+
+*******************************************************************************/
+
+void psystem_apc(
+    /* number of levels */       long            nl,
+    /* size of base element */   long            size,
+    /* address of source */      unsigned char*  sa,
+    /* address of destination */ unsigned char*  da,
+    /* address of template */    long*           tp
+)
+
+{
+
+    long ts;
+    long i;
+
+    ts = size;
+    for (i = 1; i <= nl; i++) ts += *tp++;
+    for (i = 0; i <= ts-1; i++) *da++ = *sa++;
 
 }
 
@@ -4910,6 +5057,11 @@ static void init(int argc, char* argv[])
     varfre = NULL;
     wthlst = NULL; /* set no with block entries */
     wthfre = NULL;
+
+    /* start exception system */
+    psystem_expadr = 0; 
+    psystem_expstk = 0; 
+    psystem_expmrk = 0;
 
     /* initialize file state */
     for (i = 1; i <= MAXFIL; i++) {
