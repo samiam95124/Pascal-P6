@@ -2391,7 +2391,7 @@ procedure xlate;
             assreg(ep^.r, rf, rgrsi, rgnull)
           end;
 
-          5{lao}: begin ep^.r1 := r1;
+          5{lao},234{lto}: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) end;
 
           16{ixa}: begin 
@@ -2405,18 +2405,18 @@ procedure xlate;
 
           118{swp}: ; { done at top level }
 
-          {ldoi,ldoa,ldob,ldoc,ldox}
-          1,65,68,69,194:begin ep^.r1 := r1;
+          {ldoi,ldoa,ldob,ldoc,ldox,ltci,ltcb,ltcc,ltcx}
+          1,65,68,69,194,228,231,232,233:begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf)
           end;
 
-          {ldor}
-          66:begin ep^.r1 := r1;
+          {ldor,ltcr}
+          66,229:begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) 
           end;
 
-          {ldos}
-          67: begin 
+          {ldos,ltcs}
+          67,230: begin 
             resreg(rgrsi); resreg(rgrdi); 
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
             gettmp(ep^.r1a)
@@ -2853,6 +2853,24 @@ procedure xlate;
 
           {ccs} 
           223: begin
+            dstreg(rgrsi); dstreg(rgrdi); dstreg(rgrcx); 
+            resreg(rgrsi); resreg(rgrdi); resreg(rgrcx);
+            ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
+            assreg(ep^.l, rf, ep^.r1, ep^.r2)
+          end;
+
+          {ldp} 
+          225: begin
+            ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
+          end;
+
+          {ltci,ltcr,ltcs,ltcb,ltcc,ltcx} 
+          228,229,230,231,232,233: begin
           end;
 
         end;
@@ -3235,7 +3253,7 @@ procedure xlate;
               wrtins40(' movsx %1l,%1 # sign extend boolean     ', 0, 0, ep^.r1, rgnull, nil)
             end;
 
-            5{lao}:
+            5{lao},234{lto}:
               wrtins50(' leaq @g(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
@@ -3251,20 +3269,20 @@ procedure xlate;
 
             118{swp}: ; { done at top level }
 
-            {ldoi,loda}
-            1,65:
+            {ldoi,loda,ltci}
+            1,65,228:
               wrtins40(' movq @g(%rip),%1 # load global quad    ', ep^.q, 0, ep^.r1, rgnull, nil);
 
-            {ldob,ldoc,ldox}
-            68,69,194:
+            {ldob,ldoc,ldox,ltcb,ltcc,ltcx}
+            68,69,194,231,232,233:
               wrtins60(' movzx @g(%rip),%1 # load and zero extend global byte       ', ep^.q, 0, ep^.r1, rgnull, nil);
 
-            {ldor}
-            66: 
+            {ldor,ltcr}
+            66,229: 
               wrtins40(' movsd @g(%rip),%1 # load global real   ', ep^.q, 0, ep^.r1, rgnull, nil);
 
-            {ldos}
-            67: begin
+            {ldos,ltcs}
+            67,230: begin
               wrtins50(' leaq @g(%rip),%rsi # load address of global set  ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
@@ -3982,6 +4000,49 @@ procedure xlate;
 
             {ccs} 
             223: begin
+              { q=lvl, q1=siz, left is adr/tmp, t1=lvl, t2=base size/total, t3=template copy }
+              { rax, rdx are clear for multply use }
+              { find net size }
+              if q = 1 then begin
+                wrtins40(' movq $0,%1 # get base element size', ep^.q1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' mulq %1 # find base size*len', 0, 0, ep^.r^.r2, rgnull, nil);
+                wrtins40(' movq %rax,%1 # move to total length', 0, 0, ep^.t2, rgnull, nil);
+              end else begin
+                wrtins30(' movq $0,%1 # get # levels    ', ep^.q, 0, ep^.t1, rgnull, nil);
+                wrtins40(' movq $0,%1 # get base element size   ', ep^.q1, 0, ep^.t2, rgnull, nil);
+                wrtins40(' movq %1,%2 # copy template address   ', 0, 0, ep^.l^.r2, ep^.t3, nil);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins40(' addq (%1),%2 # add template to size  ', 0, 0, ep^.t3, ep^.t2, nil);
+                wrtins40(' addq $0,%1 # next template location  ', intsize, 0, ep^.t3, rgnull, nil);
+                wrtins40(' decq %1 # count down levels         ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins30(' jnz 1b # loop over templates ', 0, 0, rgnull, rgnull, nil); 
+              end;
+              wrtins40(' subq %1,%rsp # allocate on stack  ', intsize, 0, ep^.t2, rgnull, nil);  
+              wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack      ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' movq %1,%rsi # move source', 0, 0, ep^.l^.r1, ep^.t3, nil);
+              wrtins40(' movq %rsp,%rdi # move dest', 0, 0, ep^.l^.r1, ep^.t3, nil);
+              wrtins40(' movq %1,%rcx # move source', 0, 0, ep^.t2, rgnull, nil);
+              wrtins40(' repnz # move', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' movsb', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' movq %rsp,%1 # index copy', 0, 0, ep^.r1, rgnull, nil);
+              wrtins40(' movq %1,%2 # index template', 0, 0, ep^.l^.r2, ep^.r2, nil)
+            end;
+
+            {ldp} 
+            225: begin
+              wrtins40(' movq ^0(%1),%2 # get adr', intsize, 0, ep^.l^.r1, ep^.r2, nil);
+              wrtins40(' movq (%1),%2 # get adr', 0, 0, ep^.l^.r1, ep^.r1, nil);
+            end;
+
+            {ldos}
+            67: begin
+              wrtins50(' leaq @g(%rip),%rsi # load address of global set  ', ep^.q, 0, rgnull, rgnull, nil);
+              wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+              wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)
             end;
 
           end;
@@ -4149,8 +4210,8 @@ procedure xlate;
           getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {lao} 
-        5: begin parq;
+        {lao,lto} 
+        5,234: begin parq;
           getexp(ep); attach(ep); pshstk(ep)
         end;
 
@@ -4164,8 +4225,8 @@ procedure xlate;
           popstk(ep); popstk(ep2); pshstk(ep); pshstk(ep2) 
         end;
 
-        {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox}
-        1, 65, 66, 67, 68, 69, 194: begin parq;
+        {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox,ltci,ltcr,ltcs,ltcb,ltcc,ltcx}
+        1, 65, 66, 67, 68, 69, 194,228,229,230,231,232,233: begin parq;
           getexp(ep); attach(ep); pshstk(ep) 
         end;
 
@@ -4478,11 +4539,21 @@ procedure xlate;
         222: begin par;
           getexp(ep);
           popstk(ep^.l);
-          pshstk(ep
+          pshstk(ep)
         end;
 
         {ccs} 
-        223: begin
+        223: begin parqq;
+          getexp(ep);
+          popstk(ep^.l);
+          pshstk(ep)
+        end;
+
+        {ldp} 
+        225: begin parl
+          getexp(ep);
+          popstk(ep^.l);
+          pshstk(ep)
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -4904,7 +4975,7 @@ procedure xlate;
         end;
 
         {stos}
-        82: begin par; 
+        82: begin parqq; 
           frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
           assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
           assreg(ep2, frereg, rgrsi,  rgnull);
@@ -4916,6 +4987,21 @@ procedure xlate;
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           puttmp(ep2^.r1a);
+          deltre(ep); deltre(ep2)
+        end;
+
+        {stom} 
+        235: begin parqq; 
+          frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+          assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
+          assreg(ep2, frereg, rgrsi,  rgnull);
+          dmptre(ep); dmptre(ep2);
+          genexp(ep); genexp(ep2);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins30(' movq $0,%rcx # set length', q, 0, rgnull, rgnull, nil);
+          wrtins30(' repnz # move structure to address', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' movsb', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' addq $0,%rsp # remove structure from stack', q1, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2)
         end;
 
@@ -5105,34 +5191,24 @@ procedure xlate;
           botstk
         end;
 
-        {ccs} 
-        223: begin
+        {scp} 
+        224: begin par;
+          frereg := allreg;
+          { complex pointer, store address }
+          popstk(ep2); popstk(ep);
+          getreg(ep^.r1, frereg);
+          assreg(ep, frereg, rgnull, rgnull);
+          assreg(ep, frereg, rgnull, rgnull);
+          dmptre(ep); dmptgre(ep2);
+          genexp(ep); genexp(ep2);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins40(' movq %1,(%2) # store array address', q, 0, ep2^.r1, ep^.r1, nil);
+          wrtins40(' addq $0,%1 # skip to template', intsize, 0, ep^.r1, rgnull, nil);
+          wrtins40(' movq %1,(%2) # store template', q, 0, ep2^.r1, ep^.r1, nil)
         end;
 
         { these are all Pascaline unimplemented }
 
-        {ccs} 
-        223, 
-        {scp} 
-        224, 
-        {ldp} 
-        225, 
-        {ltci} 
-        228, 
-        {ltcr} 
-        229,
-        {ltcs} 
-        230, 
-        {ltcb} 
-        231, 
-        {ltcc} 
-        232, 
-        {ltcx} 
-        233, 
-        {lto} 
-        234, 
-        {stom} 
-        235, 
         {retm} 
         237, 
         {ctb} 
