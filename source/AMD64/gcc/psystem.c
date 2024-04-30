@@ -4927,7 +4927,7 @@ void psystem_vip(
     tp += nl;
     ts = size;
     for (i = 1; i < nl; i++) { s = *al++; *tp-- = s; ts += s; }
-    psystem_new(*pa, ts);
+    psystem_new(pa, ts);
 
 }
 
@@ -4996,11 +4996,11 @@ void psystem_vin(
     long  s;
     long* alp;
 
-    ts = size; alp := al;
+    ts = size; alp = al;
     for (i = 1; i <= nl; i++) s = *alp++;
-    psystem_new(*pa, ts+nl*INTSIZE);
-    tp = *pa+nl*INTSIZE;
-    for (i = 1; i <= nl; i++) *--tp = al++;
+    psystem_new(pa, ts+nl*INTSIZE);
+    tp = (long*)(*pa)+nl;
+    for (i = 1; i <= nl; i++) *--tp = *al++;
 
 }
 
