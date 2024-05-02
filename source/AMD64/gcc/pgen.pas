@@ -2581,7 +2581,7 @@ procedure xlate;
           {trc}
           35: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
-            if dochkovf then getfreg(ep^.t1, rf);
+            if dochkovf then begin getfreg(ep^.t1, rf); getreg(ep^.t2, rf) end;
             assreg(ep^.l, rf, rgnull, rgnull)  
           end;
 
@@ -2631,7 +2631,7 @@ procedure xlate;
           {rnd}
           62: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
-            if dochkovf then getfreg(ep^.t1, rf);
+            if dochkovf then begin getfreg(ep^.t1, rf); getreg(ep^.t2, rf) end;
             assreg(ep^.l, rf, rgnull, rgnull) 
           end;
 
@@ -2793,7 +2793,8 @@ procedure xlate;
           243: begin 
             asscall;
             ep^.r1 := r1; 
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1)
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           {cxs}
@@ -3543,20 +3544,16 @@ procedure xlate;
             35: begin
               if dochkovf then begin
                 wrtins60(' movsd real_int_max(%rip),%1 # load maximum int val         ', 0, 0, ep^.t1, rgnull, nil);
-                wrtins40(' cmplesd %2,%1 # compare real equal     ', 0, 0, ep^.l^.r1, ep^.t1, nil);
+                wrtins50(' cmpnltsd %1,%2 # compare real less or equal      ', 0, 0, ep^.l^.r1, ep^.t1, nil);
                 wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
-                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
-                wrtins30(' jnz 1f # skip not zero       ', 0, 0, rgnull, rgnull, nil);
-                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
-                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
-                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
-                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins30(' orq %1,%1 # check zero       ', 0, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jz 2f # skip zero            ', 0, 0, rgnull, rgnull, nil);
                 wrtins60(' movsd real_int_min(%rip),%1 # load minimum int val         ', 0, 0, ep^.t1, rgnull, nil);
-                wrtins40(' cmplesd %1,%2 # compare real equal     ', 0, 0, ep^.l^.r1, ep^.t1, nil);
+                wrtins50(' cmplesd %1,%2 # compare real greater or equal    ', 0, 0, ep^.l^.r1, ep^.t1, nil);
                 wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
-                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 0, 0, ep^.t2, rgnull, nil);
                 wrtins30(' jnz 1f # skip not zero       ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('2:        ', 0, 0, rgnull, rgnull, sp);
                 wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
                 wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
                 wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
@@ -3641,20 +3638,16 @@ procedure xlate;
             62: begin
               if dochkovf then begin
                 wrtins60(' movsd real_int_max(%rip),%1 # load maximum int val         ', 0, 0, ep^.t1, rgnull, nil);
-                wrtins40(' cmplesd %2,%1 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+                wrtins50(' cmpnltsd %1,%2 # compare real less or equal      ', 0, 0, ep^.l^.r1, ep^.t1, nil);
                 wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
-                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
-                wrtins30(' jnz 1f # skip not zero       ', 0, 0, ep^.r^.r1, rgnull, nil);
-                wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
-                wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
-                wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
-                wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins30(' orq %1,%1 # check zero       ', 0, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jz 2f # skip zero            ', 0, 0, rgnull, rgnull, nil);
                 wrtins60(' movsd real_int_min(%rip),%1 # load minimum int val         ', 0, 0, ep^.t1, rgnull, nil);
-                wrtins40(' cmplesd %1,%2 # compare real equal     ', 0, 0, ep^.r^.r1, ep^.t1, nil);
+                wrtins50(' cmplesd %1,%2 # compare real greater or equal    ', 0, 0, ep^.l^.r1, ep^.t1, nil);
                 wrtins40(' movq %1,%2 # move result to temp       ', 0, 0, ep^.t1, ep^.t2, nil);
-                wrtins30(' orq %1,%1 # check zero       ', 1, 0, ep^.t2, rgnull, nil);
-                wrtins30(' jnz 1f # skip not zero       ', 0, 0, ep^.r^.r1, rgnull, nil);
+                wrtins30(' orq %1,%1 # check zero       ', 0, 0, ep^.t2, rgnull, nil);
+                wrtins30(' jnz 1f # skip not zero       ', 0, 0, rgnull, rgnull, nil);
+                wrtins10('2:        ', 0, 0, rgnull, rgnull, sp);
                 wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
                 wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
                 wrtins50(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
@@ -4951,7 +4944,7 @@ procedure xlate;
         end;
 
         {stos}
-        82: begin parqq; 
+        82: begin par; 
           frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
           assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
           assreg(ep2, frereg, rgrsi,  rgnull);

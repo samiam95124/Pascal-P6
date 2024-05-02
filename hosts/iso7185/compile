@@ -130,6 +130,7 @@ do
 
             # generate .s assembly files
             cp $param.p6 prd
+            #echo "Will execute: pgen $param.p6 $param.s >> temp.err"
             pgen $param.p6 $param.s >> temp.err
             # form list of objects
             objects="$objects $param.s"
