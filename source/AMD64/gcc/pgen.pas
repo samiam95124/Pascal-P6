@@ -1316,13 +1316,27 @@ procedure xlate;
      snl := snl-1
    end;
 
+   procedure cvtsds;
+   var i: 1..lablen;
+   begin
+     for i := 1 to snl do begin
+       { translate '@' to '$' for type spagetti demarcate, and 
+         characters in the set ['(',')',',',':','-','+'] to '$' 
+         because they are invalid }
+       if sn[i] = '@' then sn[i] := '$'
+       else 
+         if sn[i] in ['(',')',',',':','-','+'] then sn[i] := '$'
+     end;
+   end;
+
    procedure parlab(var x: integer; var fl: strvsp);
    var i,j: integer;
    begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
      if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
      else begin { far label }
-       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; getlab;
+       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; 
+       getsds; cvtsds;
        for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
      end
    end;
@@ -1360,6 +1374,7 @@ procedure xlate;
      writeln(prr, '        call    psystem_rwf');
      writeln(prr);
 #endif
+     writeln(prr, '# Call startup code');
      writeln(prr, '        call    1f');
      writeln(prr, '        popq    %rax');
      writeln(prr, '        sub     %rax,%rax');
@@ -1728,15 +1743,7 @@ procedure xlate;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
                  ch1 := ch; { save block type }
-                 getnxt; skpspc; getsds; sn2 := sn; snl2 := snl;
-                 for i := 1 to snl do begin
-                   { translate '@' to '$' for type spagetti demarcate, and 
-                     characters in the set ['(',')',',',':','-','+'] to '_' 
-                     because they are invalid }
-                   if sn[i] = '@' then sn[i] := '$'
-                   else 
-                     if sn[i] in ['(',')',',',':','-','+'] then sn[i] := '_'
-                 end;
+                 getnxt; skpspc; getsds; sn2 := sn; snl2 := snl; cvtsds;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
                  l := 1; bp^.short := true;
