@@ -1670,8 +1670,7 @@ procedure xlate;
           fl: integer;
    begin
       again := true;
-      while again do begin
-        if eof(prd) then errorl('unexpected eof on input  ');
+      while again and not eof(prd) do begin
         getnxt;(* first character of line*)
         if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
                        'v', 't', 'n', 'x', 'c']) then
