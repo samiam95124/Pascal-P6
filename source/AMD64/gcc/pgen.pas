@@ -1330,9 +1330,9 @@ procedure xlate;
    procedure preamble;
    begin
      { see how much of this is really required }
-     writeln(prr, '        .globl  main');
-     writeln(prr, '        .type   main, @function');
-     writeln(prr, 'main:');
+     write(prr, '        .globl  '); writevp(prr, modnam); writeln(prr);
+     write(prr, '        .type   '); writevp(prr, modnam); writeln(prr, ', @function');
+     writevp(prr, modnam); writeln(prr, ':');
      writeln(prr, '# Align stack');
      writeln(prr, '        pushq   %rax');
      writeln(prr, '# Set up default files');
@@ -1728,7 +1728,6 @@ procedure xlate;
                  if not (ch in ['p', 'm', 'r', 'f']) then
                    errorl('Block type is invalid    ');
                  ch1 := ch; { save block type }
-                 if ch in  ['p','m'] then preamble;
                  getnxt; skpspc; getsds; sn2 := sn; snl2 := snl;
                  for i := 1 to snl do begin
                    { translate '@' to '$' for type spagetti demarcate, and 
@@ -1770,8 +1769,8 @@ procedure xlate;
                  bp^.next := blkstk; blkstk := bp;
                  prtline; writeln(prr, ' b ', ch1, ' ', sn2:snl2);
                  if ch1 in ['p', 'm'] then begin
-                   wrtblklabs(bp);
-                   modnam := bp^.bname
+                   modnam := bp^.bname;
+                   preamble
                  end;
                  level := level+1; { count block levels }
                  bp^.lvl := level; { set }

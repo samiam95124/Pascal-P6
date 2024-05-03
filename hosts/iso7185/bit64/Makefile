@@ -1,7 +1,8 @@
+################################################################################
 #
-# Makefile for Pascal-p6
+# Makefile for Pascal-P6
 #
-# Makes the main compiler interpreter set.
+# Makes the main compiler/interpreter set.
 #
 # The generated executables are named according to:
 #
@@ -33,12 +34,13 @@
 # but without the bit or endian endings. Thus it is not necessary to 
 # specifically state the characteristics of the host.
 #
+# Note the convention used here is that .asm files are assembly files that were
+# manually generated and not to be erased, and .s files are assembly files that
+# were generated and can be erased.
+#
+################################################################################
 
-#
-# Use of pgen_wrap is a temporary fix to accomodate the (rather odd) GPC 
-# treatment of header files as being connected to a file of the same name.
-# pgen uses the same method to stay compatible with GPC, at least for now.
-#
+CC=gcc
 CFLAGS=-g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
@@ -52,8 +54,57 @@ EXTERNALLIBS=$(EXTERNAL)/services.o
 
 all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 
+################################################################################
+#
+# Build components
+#
+
+#
+# Build psystem, the Pascaline support library in C.
+#
+psystem: $(BUILD)/AMD64/gcc/psystem.o
+$(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
+	@echo
+	@echo "Building psystem..."
+	@echo
+	mkdir -p $(BUILD)/AMD64/gcc
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem.o \
+		-c $(SOURCE)/AMD64/gcc/psystem.c
+
+#
+# Build psystem_asm, the Pascaline support library in assembly.
+#
+psystem_asm: $(BUILD)/AMD64/gcc/psystem_asm.o
+$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c
+	@echo
+	@echo "Building psystem_asm..."
+	@echo
+	mkdir -p $(BUILD)/AMD64/gcc
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem_asm.o \
+		-c -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm
+
+#
+# Build main, the program stack startup shim.
+#
+main: $(BUILD)/AMD64/gcc/main.o
+$(BUILD)/AMD64/gcc/main.o: $(SOURCE)/AMD64/gcc/main.asm
+	@echo
+	@echo "Building main..."
+	@echo
+	mkdir -p $(BUILD)/AMD64/gcc
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/main.o \
+		-c -x assembler $(SOURCE)/AMD64/gcc/main.asm
+
+################################################################################
+#
+# Build programs
+#
+
+#
+# Build pcom, the source to intermediate compiler.
+#
 pcom: bin/pcom
-bin/pcom: source/pcom.pas
+bin/pcom: $(SOURCE)/pcom.pas psystem psystem_asm main
 	@echo
 	@echo "Building pcom..."
 	@echo
@@ -61,12 +112,19 @@ bin/pcom: source/pcom.pas
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas
 	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/pcom.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pcom.s \
 		-o $(BUILD)/pcom -lm -lpthread
 	cp $(BUILD)/pcom $(PASCALP6)/bin
 
-bin/pcom_immerr: source/pcom.pas
+#
+# Build pcom, the source to intermediate compiler.
+#
+# Has immediate error reporting turned on.
+#
+bin/pcom_immerr: $(SOURCE)/pcom.pas psystem psystem_asm main
 	@echo
 	@echo "Building pcom with immediate error..."
 	@echo
@@ -75,13 +133,18 @@ bin/pcom_immerr: source/pcom.pas
 		$(BUILD)/pcom.mpp.pas
 	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/pcom.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pcom.s \
 		-o $(BUILD)/pcom -lm -lpthread
 	cp $(BUILD)/pcom $(PASCALP6)/bin
 	
+#
+# Build pint, the intermediate interpreter and debug facillity.
+#
 pint: bin/pint
-bin/pint: source/pint.pas 
+bin/pint: $(SOURCE)/pint.pas psystem psystem_asm main
 	@echo
 	@echo "Building pint..."
 	@echo
@@ -91,13 +154,18 @@ bin/pint: source/pint.pas
 		-DEXTERNALS
 	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --reference-
 	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/pint.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pint.s \
 		-o $(BUILD)/pint -lm -lpthread
 	cp $(BUILD)/pint $(PASCALP6)/bin
 
+#
+# Build pmach, an intermediate interpreter without assembler.
+#
 pmach: bin/pmach
-bin/pmach: source/pmach.pas
+bin/pmach: $(SOURCE)/pmach.pas psystem psystem_asm main
 	@echo
 	@echo "Building pmach..."
 	@echo
@@ -105,13 +173,18 @@ bin/pmach: source/pmach.pas
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pmach.pas $(BUILD)/pmach.mpp.pas
 	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --reference-
 	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/pmach.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pmach.s \
 		-o $(BUILD)/pmach -lm -lpthread
 	cp $(BUILD)/pmach $(PASCALP6)/bin
 
+#
+# Build cmach, an intermediate interpreter written in C.
+#
 cmach: bin/cmach
-bin/cmach: source/cmach/cmach.c
+bin/cmach: $(SOURCE)/cmach/cmach.c
 	@echo
 	@echo "Building cmach..."
 	@echo
@@ -119,42 +192,55 @@ bin/cmach: source/cmach/cmach.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/cmach64le $(SOURCE)/cmach/cmach.c -lm
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
 
+#
+# Build pgen, the intermediate to assembly code generator for AMD64 mode 
+# processors.
+#
 pgen: bin/pgen
-bin/pgen: source/AMD64/gcc/pgen.pas
+bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas psystem psystem_asm main
 	@echo
 	@echo "Building pgen..."
 	@echo
-	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/AMD64/gcc
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/AMD64/gcc/pgen.pas \
 		-I$(PASCALP6)/source $(BUILD)/AMD64/gcc/pgen.mpp.pas
-	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/pgen.p6 --reference-
-	pgen $(BUILD)/pgen.p6 $(BUILD)/pgen.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/pgen.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
-		-o $(BUILD)/pgen -lm -lpthread
-	cp $(BUILD)/pgen $(PASCALP6)/bin/pgen
+	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/AMD64/gcc/pgen.p6 --reference-
+	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/AMD64/gcc/pgen.s \
+		-o $(BUILD)/AMD64/gcc/pgen -lm -lpthread
+	cp $(BUILD)/AMD64/gcc/pgen $(PASCALP6)/bin/pgen
 
+#
+# Build genobj, an object code to C array converter.
+#
 genobj: bin/genobj
-bin/genobj: source/genobj.pas
+bin/genobj: $(SOURCE)/genobj.pas psystem psystem_asm main
 	@echo
 	@echo "Building genobj..."
 	@echo
 	mkdir -p $(BUILD)
 	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --reference-
 	pgen $(BUILD)/genobj.p6 $(BUILD)/genobj.s
-	gcc $(CFLAGS) $(SOURCE)/AMD64/gcc/psystem.c \
-		$(BUILD)/genobj.s -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm \
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/genobj.s \
 		-o $(BUILD)/genobj -lm -lpthread
 	cp $(BUILD)/genobj $(PASCALP6)/bin/genobj
 
+#
+# Build spew, an automated test facillity.
+#
 spew: bin/spew
-bin/spew: source/spew.c
+bin/spew: $(SOURCE)/spew.c
 	@echo
 	@echo "Building spew..."
 	@echo
 	mkdir -p $(BUILD)
-	$(CC) $(CFLAGS) -o $(BUILD)/spew source/spew.c
+	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
 	
 clean:
@@ -204,10 +290,11 @@ help:
 	@echo
 	@echo cmach         Make cmach, the stand-alone interpreter written in C.
 	@echo
+	@echo pgen			Make pgen, a intermediate to AMD64 assembly language generator.
+	@echo
 	@echo genobj        Make genobj, the binary deck to C file generator.
 	@echo
 	@echo spew          Make spew, a fault generator test program.
 	@echo
 	@echo clean         Clean intermediate/temp files from tree.
 	@echo
-    

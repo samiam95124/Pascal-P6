@@ -168,7 +168,8 @@ elif [ "$pgen" = "1" ]; then
 
 	echo Running with pgen
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
-        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $objects -o $progfile -lm
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm
     ./$progfile
 
 else
