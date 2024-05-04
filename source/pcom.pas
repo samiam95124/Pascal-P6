@@ -9613,7 +9613,7 @@ begin cmdpos := maxcmd end;
         entname := extname; body(fsys, nil);
       end else begin { generate dummy terminator block }
         genlabel(segsize); genlabel(stackbot); prtlabel(extname); writeln(prr);
-        genmst(level,segsize,stackbot);
+        genmst(level-1,segsize,stackbot);
         gen2(42(*ret*),ord('p'),0);
         if prcode then begin
           prtlabel(segsize); writeln(prr,'=',0:1);

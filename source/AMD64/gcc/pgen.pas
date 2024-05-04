@@ -5293,6 +5293,7 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '# Constants section');
    writeln(prr, '#');
+   writeln(prr, '        jmp     1f');
    writeln(prr, 'modnam:');
    write(prr, '        .string  "'); writevp(prr, modnam); writeln(prr, '"');
 #if GPC == 1
@@ -5309,6 +5310,8 @@ begin (*xlate*)
    writeln(prr, '        .double  -9223372036854775807');
 
    gencst;
+
+   writeln(prr, '1:');
 
    writeln(prr, '        .bss');
    writeln(prr, '#');
