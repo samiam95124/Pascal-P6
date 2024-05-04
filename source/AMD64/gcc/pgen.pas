@@ -1591,6 +1591,16 @@ procedure xlate;
      fndovrmax := ovrmax 
    end;
 
+   procedure wrtblklng(bp: pblock);
+   var fl: integer;
+   begin
+     if bp <> nil then begin
+       wrtblks(bp^.next, false, fl);
+       writevp(prr, bp^.name)
+     end
+   end;
+
+   { write both short and long form labels }
    procedure wrtblklabs(bp: pblock);
    var fl: integer;
    begin
@@ -1601,8 +1611,8 @@ procedure xlate;
          if bp^.en > 1 then write(prr, '$', bp^.en:1);
          writeln(prr, ':')
        end;
-       wrtblks(bp^.next, false, fl);
-       writevp(prr, bp^.name); writeln(prr, ':')
+       wrtblklng(bp);
+       writeln(prr, ':')
      end
    end;
 
@@ -4649,7 +4659,11 @@ procedure xlate;
           write(prr,p:1, ' l '); writevp(prr, lclspc); write(prr, ' l '); 
           writevp(prr, sp2); lftjst(parfld-(digits(p)+3+lenpv(lclspc)+3+lenpv(sp2))); pass;
           if blkstk <> nil then
-            if blkstk^.btyp in [btproc, btfunc] then wrtblklabs(blkstk);
+            if blkstk^.btyp in [btproc, btfunc] then begin
+              write(prr, '        .globl   '); wrtblklng(blkstk); writeln(prr);
+              write(prr, '        .type    '); wrtblklng(blkstk); writeln(prr, '@function');
+              wrtblklabs(blkstk);
+            end;
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels   ');
@@ -5088,7 +5102,7 @@ procedure xlate;
         21: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' call # call routine/initializer        ', 0, 0, rgnull, rgnull, sp);
+          wrtins40(' call @s # call routine/initializer     ', 0, 0, rgnull, rgnull, sp);
         end;
 
         {bge}
