@@ -754,6 +754,7 @@ procedure xlate;
                     fn: strvsp; { function call name }
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
+                    fl: strvsp; { far label (where needed) }
                     blk: pblock; { block called for cup }
                     sline: integer; { source line }
                     iline: integer; { intermediate line }
@@ -1843,11 +1844,16 @@ procedure xlate;
                   else
                     writeln(prr, sn2:snl2, ' = ', ad:1);
                 end;
-                wrtblks(blkstk, false, fl); 
-                if ch1 = 'g' then
+                if ch1 = 'g' then begin
+                  write(prr, '        .globl   ');
+                  wrtblks(blkstk, false, fl);
+                  writeln(prr, sn2:snl2);
+                  wrtblks(blkstk, false, fl); 
                   writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
-                else
-                  writeln(prr, sn2:snl2, ' = ', ad:1);
+                end else begin
+                  wrtblks(blkstk, false, fl); 
+                  writeln(prr, sn2:snl2, ' = ', ad:1)
+                end;
                 { place in block symbol list }
                 sp^.next := blkstk^.symbols;
                 blkstk^.symbols := sp;
@@ -2038,8 +2044,8 @@ procedure xlate;
         ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
         ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
         ep^.fn := nil; ep^.blk := nil; ep^.lb := nil; ep^.lt := nil; 
-        ep^.free := false; ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0;
-        ep^.t1a := 0; ep^.t2a := 0;
+        ep^.fl := nil; ep^.free := false; ep^.r1a := 0; ep^.r2a := 0; 
+        ep^.r3a := 0; ep^.t1a := 0; ep^.t2a := 0;
         ep^.sline := sline; ep^.iline := iline;
       end;
       
@@ -3265,7 +3271,10 @@ procedure xlate;
             end;
 
             5{lao},234{lto}:
-              wrtins50(' leaq @g(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if ep^.fl <> nil then 
+                wrtins50(' leaq @s(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, ep^.fl)
+              else
+                wrtins50(' leaq @g(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             16{ixa}: begin 
               { left is address right is index, size is q }
@@ -4194,8 +4203,19 @@ procedure xlate;
           getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
         end;
 
-        {lao,lto} 
-        5,234: begin parq;
+        {lao} 
+        5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+          end else parq;
+          getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep)
+        end;
+
+        {lto} 
+        234: begin parq;
           getexp(ep); attach(ep); pshstk(ep)
         end;
 
