@@ -3272,7 +3272,7 @@ procedure xlate;
 
             5{lao},234{lto}:
               if ep^.fl <> nil then 
-                wrtins50(' leaq @s(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, ep^.fl)
+                wrtins50(' leaq @s(%rip),%1 # load address of global        ', 0, 0, ep^.r1, rgnull, ep^.fl)
               else
                 wrtins50(' leaq @g(%rip),%1 # load address of global        ', ep^.q, 0, ep^.r1, rgnull, nil);
 
@@ -3291,19 +3291,31 @@ procedure xlate;
 
             {ldoi,loda,ltci}
             1,65,228:
-              wrtins40(' movq @g(%rip),%1 # load global quad    ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if ep^.fl <> nil then
+                wrtins40(' movq @s(%rip),%1 # load global quad    ', 0, 0, ep^.r1, rgnull, ep^.fl)
+              else
+                wrtins40(' movq @g(%rip),%1 # load global quad    ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldob,ldoc,ldox,ltcb,ltcc,ltcx}
             68,69,194,231,232,233:
-              wrtins60(' movzx @g(%rip),%1 # load and zero extend global byte       ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if ep^.fl <> nil then
+                wrtins60(' movzx @s(%rip),%1 # load and zero extend global byte       ', 0, 0, ep^.r1, rgnull, ep^.fl)
+              else
+                wrtins60(' movzx @g(%rip),%1 # load and zero extend global byte       ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldor,ltcr}
             66,229: 
-              wrtins40(' movsd @g(%rip),%1 # load global real   ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if ep^.fl <> nil then
+                wrtins40(' movsd @s(%rip),%1 # load global real   ', 0, 0, ep^.r1, rgnull, ep^.fl)
+              else
+                wrtins40(' movsd @g(%rip),%1 # load global real   ', ep^.q, 0, ep^.r1, rgnull, nil);
 
             {ldos,ltcs}
             67,230: begin
-              wrtins50(' leaq @g(%rip),%rsi # load address of global set  ', ep^.q, 0, rgnull, rgnull, nil);
+              if ep^.fl <> nil then
+                wrtins50(' leaq @s(%rip),%rsi # load address of global set  ', 0, 0, rgnull, rgnull, ep^.fl)
+              else
+                wrtins50(' leaq @g(%rip),%rsi # load address of global set  ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
@@ -4230,8 +4242,15 @@ procedure xlate;
         end;
 
         {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox,ltci,ltcr,ltcs,ltcb,ltcc,ltcx}
-        1, 65, 66, 67, 68, 69, 194,228,229,230,231,232,233: begin parq;
-          getexp(ep); attach(ep); pshstk(ep) 
+        1, 65, 66, 67, 68, 69, 194,228,229,230,231,232,233: begin
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+          end else parq;
+          getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep) 
         end;
 
         {indi,inda,indr,inds,indb,indc,indx}
@@ -4586,10 +4605,19 @@ procedure xlate;
         end;
 
         {cuv}
-        27: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-2+lenpv(sp)); pass;
+        27: begin 
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+          end else parq;
           frereg := allreg;
-          wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
+          if sp <> nil then
+            wrtins10('call *@g  ', q, 0, rgnull, rgnull, nil)
+          else
+            wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
         end;
 
         { *** terminals *** }
@@ -4737,27 +4765,50 @@ procedure xlate;
         end;
 
         {sroi,sroa,sror,srob,sroc,srox}
-        3, 75, 76, 78, 79, 196: begin parq;
+        3, 75, 76, 78, 79, 196: begin
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+          end else parq;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then
-            wrtins50(' movb %1l,@g(%rip) # store byte to global         ', q, 0, ep^.r1, rgnull, nil)
-          else if op = 76{sror} then
-            wrtins50(' movsd %1l,@g(%rip) # store real to global        ', q, 0, ep^.r1, rgnull, nil)
-          else wrtins40(' movq %1,@g(%rip) # store quad to global', q, 0, ep^.r1, rgnull, nil);
+          if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then begin
+            if sp <> nil then
+              wrtins50(' movb %1l,@s(%rip) # store byte to global         ', 0, 0, ep^.r1, rgnull, sp)
+            else
+              wrtins50(' movb %1l,@g(%rip) # store byte to global         ', q, 0, ep^.r1, rgnull, nil)
+          end else if op = 76{sror} then begin
+            if sp <> nil then
+              wrtins50(' movsd %1l,@g(%rip) # store real to global        ', 0, 0, ep^.r1, rgnull, sp)
+            else
+              wrtins50(' movsd %1l,@g(%rip) # store real to global        ', q, 0, ep^.r1, rgnull, nil)
+          end else wrtins40(' movq %1,@g(%rip) # store quad to global', q, 0, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
         {sros}
-        77: begin parq;
+        77: begin
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+          end else parq;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins50(' leaq ^-@s^0(%rbp),%rsi # index temp set          ', ep^.r1a, 0, rgnull, rgnull, lclspc);
-          wrtins50(' leaq @g(%rip),%rdi # index global destination    ', q, 0, ep^.r1, rgnull, nil);
+          if sp <> nil then
+            wrtins50(' leaq @g(%rip),%rdi # index global destination    ', 0, 0, ep^.r1, rgnull, sp)
+          else
+            wrtins50(' leaq @g(%rip),%rdi # index global destination    ', q, 0, ep^.r1, rgnull, nil);
           wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
