@@ -11,18 +11,29 @@
 # --pmach Generate mach code and run the result through pmach.
 # --cmach Generate mach code and run the result through cmach.
 # --pint  Generate mach code and run the result through pint (default).
+# --pgen  Generate native code for AMD64.
 #
 cd pascaline_tests
 
 #
 # Compile sources
 #
-compile $1 pascaline2 pascaline1 pascaline
+if [ "$1" = "--pgen" ]; then
 
-#
-# Form combined deck
-#
-cat pascaline.p6 > prd
+    # compile each intermediate separately
+    pcom pascaline2.pas pascaline2.p6
+    pgen pascaline2.p6 pascaline2.s
+    pcom pascaline1.pas pascaline1.p6
+    pgen pascaline1.p6 pascaline1.s
+    pcom pascaline.pas pascaline.p6
+    pgen pascaline.p6 pascaline.s
+
+else
+
+    # form combined intermediate
+    compile $1 pascaline2 pascaline1 pascaline
+
+fi
 
 #
 # Run test with parameters
@@ -30,7 +41,6 @@ cat pascaline.p6 > prd
 if [ "$1" = "--pmach" ]; then
 
 	echo Running with pmach
-    cp pascaline.p6 prd
     pint pascaline.p6 pascaline.p6o --machdeck
     pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     diffnolestrip pascaline.lst pascaline_pmach.cmp > pascaline.dif
@@ -46,8 +56,12 @@ elif [ "$1" = "--cmach" ]; then
     
 elif [ "$1" = "--pgen" ]; then
 
-    Echo Cannot run with pgen
-    exit 0
+    echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
+    gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm
 
 else
 

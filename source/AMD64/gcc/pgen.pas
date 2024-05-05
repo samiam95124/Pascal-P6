@@ -2880,7 +2880,8 @@ procedure xlate;
             ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
-            assreg(ep^.l, rf, ep^.r1, ep^.r2)
+            assreg(ep^.l, rf, ep^.r1, ep^.r2);
+            getreg(ep^.t1, rf); getreg(ep^.t2, rf); getreg(ep^.t3, rf)
           end;
 
           {ldp} 
@@ -4019,9 +4020,11 @@ procedure xlate;
 
             {ccs} 
             223: begin
+              { q=lvl q1=siz l^.r1=dadr l^.r2=tadr }
+              { t1=number of levels, t2=total length, t3=template address }
               if q = 1 then begin
                 wrtins40(' movq $0,%1 # get base element size     ', ep^.q1, 0, ep^.t2, rgnull, nil);
-                wrtins30(' mulq %1 # find base size*len ', 0, 0, ep^.r^.r2, rgnull, nil);
+                wrtins30(' mulq %1 # find base size*len ', 0, 0, ep^.l^.r2, rgnull, nil);
                 wrtins40(' movq %rax,%1 # move to total length    ', 0, 0, ep^.t2, rgnull, nil);
               end else begin
                 wrtins30(' movq $0,%1 # get # levels    ', ep^.q, 0, ep^.t1, rgnull, nil);
@@ -5159,10 +5162,18 @@ procedure xlate;
 
         {suv}
         91: begin labelsearch(def, val, sp, blk); 
-          { pint allows the second to be a simple offset? }
-          labelsearch(def2, val2, sp2, blk);
-          write(prr,p:1, ' l '); writevp(prr, sp); write(prr, ' l '); 
-          writevp(prr, sp2); lftjst(parfld-(digits(p)+3+lenpv(lclspc)+3+lenpv(sp2))); pass;
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp2, blk);
+            write(prr,' l '); writevp(prr, sp);
+            write(prr,'l '); writevp(prr, sp2); 
+            lftjst(parfld-(3+lenpv(sp)+2+lenpv(sp2))); pass
+          end else begin
+            read(prd,p,q); write(prr,' l '); writevp(prr, sp);
+            write(prr,p:1,' ',q:1); 
+            lftjst(parfld-(3+lenpv(sp)+1+digits(q))); pass
+          end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq @s,%rax # get new vector address  ', 0, 0, rgnull, rgnull, sp);
           wrtins40(' movq @s,%rbx # get address of vector   ', q1, 0, rgnull, rgnull, sp2);
