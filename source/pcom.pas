@@ -4440,7 +4440,7 @@ begin cmdpos := maxcmd end;
                                  if chkfix(symptr) then
                                    gen1s(114(*lto*),dplmt,symptr)
                                  else gen1s(37(*lao*),dplmt,symptr);
-                                 gen1t(35(*ind*),0,typtr);
+                                 gen1t(35(*ind*),dplmt,typtr);
                                end else begin
                                  if chkfix(symptr) then
                                    gen1ts(8(*ltc*),dplmt,typtr,symptr)
