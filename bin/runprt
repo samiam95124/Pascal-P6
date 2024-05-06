@@ -558,9 +558,19 @@ done
 # Strip compiler specific messages out and compare the entire listing
 #
 strip standard_tests/iso7185prt.lst tmp1
-strip standard_tests/iso7185prt.cmp tmp2
-diff -B tmp1 tmp2 > standard_tests/iso7185prt.dif
+if [ "$option" = "--pgen" ]; then
+
+    strip standard_tests/iso7185prt_pgen.cmp tmp2
+    diff -B tmp1 tmp2 > standard_tests/iso7185prt_pgen.dif
+    wc -l standard_tests/iso7185prt_pgen.dif
+
+else
+
+    strip standard_tests/iso7185prt.cmp tmp2
+    diff -B tmp1 tmp2 > standard_tests/iso7185prt.dif
+    wc -l standard_tests/iso7185prt.dif
+
+fi
 rm -f tmp1 tmp2
-wc -l standard_tests/iso7185prt.dif
 
 exit $error

@@ -3807,7 +3807,7 @@ procedure xlate;
                 wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
                 wrtins40(' movq $ZeroDivide,%rdx # load error code', 0, 0, rgnull, rgnull, nil);
                 wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
-                wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
+                wrtins10('1:        ', 0, 0, rgnull, rgnull, nil);
               end;
               wrtins30(' divsd %1,%2 # divide reals   ', 0, 0, ep^.r^.r1, ep^.l^.r1, nil)
             end;
@@ -3834,8 +3834,19 @@ procedure xlate;
 
             {sfr}
             245:
-              if ep^.lb <> nil then
-                wrtins50(' subq $s,%rsp # allocate function result on stack ', 0, 0, rgnull, rgnull, ep^.lb);
+              if ep^.lb <> nil then begin
+                if dodbgchk then begin
+                  wrtins40(' movq %rsp,%rax # copy stack pointer    ', 0, 0, rgnull, rgnull, nil);
+                  wrtins40(' subq $s,%rax # set new stack depth     ', 0, 0, rgnull, rgnull, ep^.lb);
+                  wrtins10('1:        ', 0, 0, rgnull, rgnull, nil);
+                  wrtins30(' cmpq %rax,%rsp # check done  ', 0, 0, rgnull, rgnull, nil);
+                  wrtins30(' jbe 2f # skip if below stack ', 0, 0, rgnull, rgnull, nil);
+                  wrtins30(' pushq $0 # clear stack       ', 0, 0, rgnull, rgnull, nil); 
+                  wrtins20(' jmp 1b # loop      ', 0, 0, rgnull, rgnull, nil);
+                  wrtins10('2:        ', 0, 0, rgnull, rgnull, nil)
+                end else
+                  wrtins40(' subq $s,%rsp # set new stack depth     ', 0, 0, rgnull, rgnull, nil);
+              end;
 
             {cup,cuf}
             12, 246: begin
