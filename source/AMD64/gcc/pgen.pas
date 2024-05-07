@@ -1062,6 +1062,7 @@ procedure xlate;
          instr[245]:='sfr       '; insr[245] := 0; insf[245] := false; inss[245] := false;
          instr[246]:='cuf       '; insr[246] := 0; insf[246] := false; inss[246] := false;
          instr[247]:='cif       '; insr[247] := 0; insf[247] := false; inss[247] := false;
+         instr[248]:='mpc       '; insr[248] := 2; insf[248] := false; inss[248] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -2892,6 +2893,15 @@ procedure xlate;
             assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
+          {mpc} 
+          248: begin
+            ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
+            assreg(ep^.l, rf, ep^.r1, rgnull);
+            assreg(ep^.r, rf, ep^.r2, rgnull)
+          end;
+
         end;
         write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr)
@@ -4593,6 +4603,12 @@ procedure xlate;
           pshstk(ep)
         end;
 
+        248: begin par;
+          getexp(ep);
+          popstk(ep^.r); popstk(ep^.l);
+          pshstk(ep)
+        end;
+
         { *** calls can be terminal or non-terminal *** }
 
         {csp} 
@@ -4871,8 +4887,7 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
-          wrtins10(' jmp @s   ', 0, 0, rgnull, rgnull, sp);
-          botstk
+          wrtins10(' jmp @s   ', 0, 0, rgnull, rgnull, sp)
         end;
 
         {fjp,tjp}
@@ -5181,7 +5196,7 @@ procedure xlate;
             write(prr,'l '); writevp(prr, sp2); 
             lftjst(parfld-(3+lenpv(sp)+2+lenpv(sp2))); pass
           end else begin
-            read(prd,p,q); write(prr,' l '); writevp(prr, sp);
+            read(prd,q); write(prr,' l '); writevp(prr, sp);
             write(prr,p:1,' ',q:1); 
             lftjst(parfld-(3+lenpv(sp)+1+digits(q))); pass
           end;

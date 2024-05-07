@@ -189,7 +189,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 123;  { maximum number of instructions }
+   maxins     = 124;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3352,6 +3352,7 @@ begin cmdpos := maxcmd end;
       121: write(prr, 'Set function result');
       122: write(prr, 'Call user function');
       123: write(prr, 'Call indirect function');
+      124: write(prr, 'Make fat pointer from components');
     end
   end;
 
@@ -4551,18 +4552,21 @@ begin cmdpos := maxcmd end;
         if cc = 1 then begin
           { load simple template }
           gen2(51(*ldc*),1,spana(gattr.typtr));
-          gen1(72(*swp*),stackelsize)
+          gen1(72(*swp*),stackelsize);
+          gen0(124(*mpc*))
         end else
           { load complex fixed template }
           gen1(105(*lft*),gattr.typtr^.tmpl)
       end else if lattr.typtr^.form = arrays then begin
         { left is fixed }
-        if cc = 1 then
+        if cc = 1 then begin
           { load simple template }
-          gen2(51(*ldc*),1,spana(lattr.typtr))
-        { load complex fixed template }
-        else gen1(105(*lft*),lattr.typtr^.tmpl);
-        gen1(72(*swp*),ptrsize*3) { swap under right side and fix addr }
+          gen2(51(*ldc*),1,spana(lattr.typtr));
+          gen1(72(*swp*),ptrsize*3); { swap under right side and fix addr }
+          gen0(124(*mpc*))
+        end else 
+          { load complex fixed template }
+          gen1(105(*lft*),lattr.typtr^.tmpl)
       end;
       { compare templates }
       if cc = 1 then gen0(99(*cps*)) { simple compare }
@@ -4938,6 +4942,7 @@ begin cmdpos := maxcmd end;
                         gen0t(76(*dup*),nilptr); { copy that }
                         { index data }
                         gen1t(34(*inc*),containers(eltype)*intsize,nilptr);
+                        gen0(124(*mpc*));
                         { if level is at bottom, simplify the template }
                         if containers(eltype) = 1 then gen0(108(*spc*))
                       end;
@@ -10284,6 +10289,7 @@ begin cmdpos := maxcmd end;
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
+      mn[124] :='mpc';
 
     end (*instrmnemonics*) ;
 
@@ -10418,6 +10424,7 @@ begin cmdpos := maxcmd end;
       cdx[118] := -adrsize;             cdx[119] := 0;
       cdx[120] := 0;                    cdx[121] := 0;
       cdx[122] := 0;                    cdx[123] := +ptrsize;
+      cdx[124] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
