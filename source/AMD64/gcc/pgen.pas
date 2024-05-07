@@ -2224,7 +2224,7 @@ procedure xlate;
       begin
         ep := estack; sl := -1;
         while ep <> nil do begin
-          write('Stack ', sl:3); dmpety(output, ep, rgnull, rgnull); writeln(output);
+          write(f, 'Stack ', sl:3); dmpety(f, ep, rgnull, rgnull); writeln(f);
           ep := ep^.next; sl := sl-1
         end
       end;
@@ -2500,10 +2500,9 @@ procedure xlate;
 
           {cps}
           176: begin 
-            asscall;
-            ep^.r1 := r1; ep^.r2 := r2;
-            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1); 
-            if ep^.r2 = rgnull then getreg(ep^.r2, rf)
+            assreg(ep^.l, rf, rgnull, rgnull); 
+            resreg(ep^.l^.r1); resreg(ep^.l^.r2);
+            assreg(ep^.r, rf, rgnull, rgnull);
           end;
 
           {cpc}
@@ -2551,7 +2550,10 @@ procedure xlate;
           95: begin 
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1); 
-            assreg(ep^.l, rf, ep^.r1, rgnull)
+            assreg(ep^.l, rf, ep^.r1, rgnull);
+            { this gets copied back because sometimes chka is applied to fat 
+              pointer }
+            ep^.r2 := ep^.l^.r2
           end;
 
           {chks}
@@ -4074,6 +4076,9 @@ procedure xlate;
               wrtins30(' movq (%1),%2 # get adr       ', 0, 0, ep^.l^.r1, ep^.r1, nil);
             end;
 
+            {mpc}
+            248: ; { registers are all assigned }
+
           end;
           for r := rgxmm15 downto rgrax do if r in ep^.rs then begin
             if r in [rgrax..rgr15] then begin
@@ -4290,12 +4295,6 @@ procedure xlate;
         {ckvi,ckvb,ckvc,ckvx}
         175, 179, 180, 203: begin parq;
           getexp(ep); pshstk(ep) 
-        end;
-
-        {cps}
-        176: begin par; 
-          getexp(ep); popstk(ep^.r); popstk(ep^.l); 
-          pshstk(ep) 
         end;
 
         {cpc}
@@ -4603,6 +4602,7 @@ procedure xlate;
           pshstk(ep)
         end;
 
+        {mpc}
         248: begin par;
           getexp(ep);
           popstk(ep^.r); popstk(ep^.l);
@@ -4847,9 +4847,19 @@ procedure xlate;
         end;
 
         {aps}
-        178: begin par;
-          frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep2); 
-          dmptre(ep); deltre(ep2); deltre(ep); botstk  
+        178: begin parq;
+          frereg := allreg; popstk(ep); popstk(ep2);
+          assreg(ep, frereg, rgrdi, rgrcx);
+          assreg(ep2, frereg, rgrsi, rgnull);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          dmptre(ep); genexp(ep);
+          dmptre(ep2); genexp(ep2);
+          wrtins30(' movq $0,%rax # get length    ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' mulq %rcx # find len*size    ', 0, 0, rgnull, rgnull, nil);
+          wrtins20(' repnz # move data  ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+          dmptre(ep); deltre(ep2); deltre(ep); 
+          botstk  
         end; 
 
         {pck}
@@ -5134,7 +5144,6 @@ procedure xlate;
           botstk
         end;
 
-{ below here is untested }
         {vip}
         133: begin parqq;
           frereg := allreg;
@@ -5321,6 +5330,14 @@ procedure xlate;
           wrtins30(' repnz # copy to buffer       ', 0, 0, ep^.r1, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, ep^.r1, rgnull, nil);
           wrtins40(' addq $0,%1 # remove from stack         ', q1, 0, ep2^.r1, ep^.r1, nil)
+        end;
+
+        {cps}
+        176: begin par; 
+          getexp(ep); popstk(ep2); popstk(ep3);
+          duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); deltre(ep)
         end;
 
         { these are all Pascaline unimplemented }

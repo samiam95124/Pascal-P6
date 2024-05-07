@@ -2190,7 +2190,7 @@ procedure load;
          instr[245]:='sfr       '; insp[245] := false; insq[245] := intsize;
          instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
          instr[247]:='cif       '; insp[247] := false; insq[247] := 0;
-         instr[248]:='cif       '; insp[248] := false; insq[248] := 0;
+         instr[248]:='mpc       '; insp[248] := false; insq[248] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
