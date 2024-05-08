@@ -3908,14 +3908,14 @@ begin cmdpos := maxcmd end;
     ic := ic + 1; mes(123(*cif*))
   end (*gen0*) ;
 
-  procedure gencuvcvf(fop: oprange; fp1: integer; fcp, fcp2: ctp);
+  procedure gencuvcvf(fop: oprange; fp1,fp2: integer; fcp, fcp2: ctp);
   var fl: integer;
   begin
     if prcode then begin
       write(prr,mn[fop]:11,' ':5); fl := 0;
       if fcp <> nil then begin
         if chkext(fcp2) then prtflabelc(fcp2, fl)
-        else begin write(prr,fp1:1); fl := digits(fp1) end;
+        else begin write(prr,fp2:1); fl := digits(fp2) end;
         write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
         if fop = 125(*cvf*) then 
           begin write(prr, ' ');
@@ -3926,7 +3926,7 @@ begin cmdpos := maxcmd end;
           end;
         lftjst(parfld-1-fl);
         intmsg(fop);
-        mes(91)
+        mesl(fp1)
       end
     end;
     ic := ic + 1
@@ -6108,16 +6108,16 @@ begin cmdpos := maxcmd end;
                     if fcp^.pfattr <> fpaoverride then error(507);
                     { inherited calls will never be far }
                     if fcp^.klass = func then
-                      gencuvcvf(125(*cvf*), fcp^.pfvaddr,fcp,nil)
+                      gencuvcvf(125(*cvf*), locpar, fcp^.pfvaddr,fcp,nil)
                     else
-                      gencuvcvf(91(*cuv*), fcp^.pfvaddr,fcp,nil)
+                      gencuvcvf(91(*cuv*), locpar, fcp^.pfvaddr,fcp,nil)
                   end else begin
                     lcp := fcp^.grppar;
                     if lcp^.pfvid <> nil then begin
                       if fcp^.klass = func then
-                        gencuvcvf(125(*cvf*), lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
+                        gencuvcvf(125(*cvf*), locpar, lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
                       else
-                        gencuvcvf(91(*cuv*), lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
+                        gencuvcvf(91(*cuv*), locpar, lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
                     end
                   end
                 end else begin
