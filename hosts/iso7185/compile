@@ -23,14 +23,15 @@
 #
 # --pmach	Generate mach code and run the result through pmach.
 # --cmach	Generate mach code and run the result through cmach.
-# --pint    Generate mach code and run the result through pint (default).
+# --pint    Generate mach code and run the result through pint.
 # --package Generate a unified executable with mach code and interpreter.
-# --pgen    Generate assembly code via pgen for the current machine.
+# --pgen    Generate assembly code via pgen for the current machine (default).
 #
+pint=0
 pmach=0
 cmach=0
 package=0
-pgen=0
+pgen=1
 progfile=""
 options=""
 objects=""
@@ -41,24 +42,53 @@ thisfail="0"
 iso7185="0"
 iso7185option=""
 
+#echo "compile: command line: $@"
+
+catints=""
+caterrs=""
+
 for param in "$@" 
 do
 
-    if [ "$param" = "--pmach" ]; then
+    if [ "$param" = "--pint" ]; then
+	
+        pint=1
+        pmach=0
+        cmach=0
+        package=0
+        pgen=0
+        
+    elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
+        pint=0
+        cmach=0
+        package=0
+        pgen=0
         
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+        pint=0
+        pmach=0
+        package=0
+        pgen=0
         
     elif [ "$param" = "--package" ]; then
     
         package=1
+        pint=0
+        pmach=0
+        cmach=0
+        pgen=0
 
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+        pint=0
+        pmach=0
+        cmach=0
+        package=0
 
     elif [ "$param" = "--noerrmsg" ]; then
     
@@ -89,13 +119,14 @@ do
 		echo
 		echo "--pmach	 Generate mach code and run the result through pmach."
 		echo "--cmach	 Generate mach code and run the result through cmach."
-		echo "--pint     Generate mach code and run the result through pint (default)."
+		echo "--pint     Generate mach code and run the result through pint."
         echo "--package  Generate a packaged application and run."
-        echo "--pgen     Generate assembly code with pgen for the current machine."
+        echo "--pgen     Generate assembly code with pgen for the current machine (default)."
 		echo "--noerrmsg Do not output failure message on compile, the .err file is"
 		echo "           sufficient."
 		echo
-		echo "The intermediate code is placed in <file>.p6."
+		echo "The intermediate code, if used, is placed in <file>.p6. Otherwise"
+        echo "the executable is in <file>, the binary deck if used is in <file>.p6o."
 		echo
 		exit 0
 		
@@ -124,23 +155,20 @@ do
             thisfail=1
 
         fi
-        cat temp >> temp.err
+        cat temp >> caterrs.err
         rm temp temp2
         if [ "$pgen" = "1" ] && [ "$thisfail" = "0" ]; then
 
             # generate .s assembly files
             cp $param.p6 prd
             #echo "Will execute: pgen $param.p6 $param.s >> temp.err"
-            pgen $param.p6 $param.s >> temp.err
+            pgen $param.p6 $param.s >> caterrs.err
             # form list of objects
             objects="$objects $param.s"
 
-        else
-
-            # generate concatenated intermediates
-	        cat $param.p6 >> temp.p6
-
         fi
+        # generate concatenated intermediates
+	    cat $param.p6 >> catints.p6
 		progfile="$param"
 		
     fi
@@ -155,14 +183,10 @@ if [ -z "$progfile" ]; then
 fi
 
 #
-# Put intermediate under the program filename (if not pgen)
+# Put intermediate and error under the program filename
 #
-if [ "$pgen" = "0" ]; then
-
-    mv temp.p6 $progfile.p6
-
-fi
-mv temp.err $progfile.err
+mv catints.p6 $progfile.p6
+mv caterrs.err $progfile.err
 
 #
 # Print errors unless supressed

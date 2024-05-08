@@ -26,10 +26,11 @@
 # --pint  Generate mach code and run the result through pint (default).
 #
 
+pint=0
 pmach=0
 cmach=0
 package=0
-pgen=0
+pgen=1
 progfile=""
 options=""
 nolist="0"
@@ -37,21 +38,45 @@ nolist="0"
 for param in "$@" 
 do
 
-    if [ "$param" = "--pmach" ]; then
+    if [ "$param" = "--pint" ]; then
+	
+        pint=1
+        pmach=0
+        cmach=0
+        package=0
+        pgen=0
+
+    elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
+        pint=0
+        cmach=0
+        package=0
+        pgen=0
         
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+        pint=0
+        pmach=0
+        package=0
+        pgen=0
 
     elif [ "$param" = "--package" ]; then
     
         package=1
+        pint=0
+        pmach=0
+        cmach=0
+        pgen=0
 
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+        pint=0
+        pmach=0
+        cmach=0
+        package=0
 
     elif [ "$param" = "--nolist" ]; then
     
@@ -80,9 +105,10 @@ do
 		echo ""
 		echo "The flags are one of:"
 		echo ""
-		echo "--pmach Generate mach code and run the result through pmach."
-		echo "--cmach Generate mach code and run the result through cmach."
-		echo "--pint   Generate mach code and run the result through pint (default)."
+		echo "--pmach  Generate mach code and run the result through pmach."
+		echo "--cmach  Generate mach code and run the result through cmach."
+		echo "--pint   Generate mach code and run the result through pint."
+        echo "--pgen   Run binary code {default)."
 		echo "--nolist Do not output listing."
 
 		echo ""

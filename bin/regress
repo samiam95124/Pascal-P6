@@ -226,7 +226,7 @@ date >> regress_report.txt
 echo Line counts should be 0 for pass >> regress_report.txt
 if [ "$pint" = "1" ]; then
 
-    option=""
+    option="--pint"
     echo "pint run ***************************************" >> regress_report.txt
     do_regress
 
@@ -257,7 +257,7 @@ elif [ "$pgen" = "1" ]; then
 else
 
     # run all modes
-    option=""
+    option="--pint"
     echo "pint run ***************************************" >> regress_report.txt
     do_regress
     option="--pmach"

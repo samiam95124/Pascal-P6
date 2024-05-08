@@ -27,10 +27,11 @@
 # executable will be placed under the program name.
 #
 
+pint=0
 pmach=0
 cmach=0
 package=0
-pgen=0
+pgen=1
 progfile=""
 options=""
 objects=""
@@ -38,21 +39,45 @@ objects=""
 for param in "$@" 
 do
 
-    if [ "$param" = "--pmach" ]; then
+    if [ "$param" = "--pint" ]; then
+	
+        pint=1
+        pmach=0
+        cmach=0
+        package=0
+        pgen=0
+     
+    elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
+        pint=0
+        cmach=0
+        package=0
+        pgen=0
         
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+        pint=0
+        pmach=0
+        package=0
+        pgen=0
         
     elif [ "$param" = "--package" ]; then
     
         package=1
+        pint=0
+        pmach=0
+        cmach=0
+        pgen=0
 
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+        pint=0
+        pmach=0
+        cmach=0
+        package=0
       
     elif [ "$param" = "--help" ]; then
     
@@ -73,11 +98,12 @@ do
 		echo
 		echo "--pmach	Generate mach code and run the result through pmach."
 		echo "--cmach	Generate mach code and run the result through cmach."
-		echo "--pint    Generate mach code and run the result through pint (default)."
+		echo "--pint    Generate mach code and run the result through pint."
         echo "--package Generate a packaged application and run."
-        echo "--pgen    Generate assembly code with pgen for the current machine."
+        echo "--pgen    Generate assembly code with pgen for the current machine (default)."
 		echo
-		echo "The intermediate code is placed in <file>.p6."
+		echo "The intermediate code, if used, is placed in <file>.p6. Otherwise"
+        echo "the executable is in <file>, the binary deck if used is in <file>.p6o."
 		echo
 		exit 0
 		
@@ -113,12 +139,9 @@ do
             # form list of objects
             objects="$objects $param.s"
 
-        else
-
-            # generate concatenated intermediates
-	        cat $param.p6 >> temp.p6
-
         fi
+        # generate concatenated intermediates
+        cat $param.p6 >> temp.p6
 		progfile="$param"
 		
     fi
