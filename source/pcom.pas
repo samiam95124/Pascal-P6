@@ -189,7 +189,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 124;  { maximum number of instructions }
+   maxins     = 125;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3889,34 +3889,38 @@ begin cmdpos := maxcmd end;
   procedure gencipcif(fop: oprange; fcp: ctp);
   var fl: integer;
   begin
-    if prcode then write(prr,mn[fop]:11,' ':4); fl := 0;
-    if fcp <> nil then begin
-      write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
-      if fop = 123(*cif*) then 
-        begin write(prr, ' ');
-          if realt(fcp^.idtype) then write(prr, '1')
-          else if sett(fcp^.idtype) then write(prr, '2')
-          else write(prr, '0');
-          fl := fl+2 
-        end
+    if prcode then begin
+      write(prr,mn[fop]:11,' ':4); fl := 0;
+      if fcp <> nil then begin
+        write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
+        if fop = 123(*cif*) then 
+          begin write(prr, ' ');
+            if realt(fcp^.idtype) then write(prr, '1')
+            else if sett(fcp^.idtype) then write(prr, '2')
+            else write(prr, '0');
+            fl := fl+2 
+          end
+      end;
+      lftjst(parfld-1-fl);
+      intmsg(fop)
     end;
-    lftjst(parfld-1-fl);
-    intmsg(fop);
     ic := ic + 1; mes(123(*cif*))
   end (*gen0*) ;
 
-  procedure gencuv(fp1: integer; fcp: ctp);
+  procedure gencuvcvf(fop: oprange; fp1: integer; fcp, fcp2: ctp);
   var fl: integer;
   begin
-    if prcode then
-      begin
-        write(prr,mn[91(*cuv*)]:11,' ':5); fl := 0;
-        if chkext(fcp) then prtflabelc(fcp, fl)
+    if prcode then begin
+      write(prr,mn[fop]:11,' ':5); fl := 0;
+      if fcp <> nil then begin
+        if chkext(fcp2) then prtflabelc(fcp2, fl)
         else begin write(prr,fp1:1); fl := digits(fp1) end;
+        write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
         lftjst(parfld-1-fl);
         intmsg(91(*cuv*));
         mes(91)
-      end;
+      end
+    end;
     ic := ic + 1
   end;
 
@@ -6095,11 +6099,18 @@ begin cmdpos := maxcmd end;
                     fcp := ovrpf(fcp); if fcp = nil then error(516);
                     if fcp^.pfattr <> fpaoverride then error(507);
                     { inherited calls will never be far }
-                    gencuv(fcp^.pfvaddr,nil)
+                    if fcp^.klass = func then
+                      gencuvcvf(125(*cvf*), fcp^.pfvaddr,fcp,nil)
+                    else
+                      gencuvcvf(91(*cuv*), fcp^.pfvaddr,fcp,nil)
                   end else begin
                     lcp := fcp^.grppar;
-                    if lcp^.pfvid <> nil then 
-                      gencuv(lcp^.pfvid^.vaddr,lcp^.pfvid)
+                    if lcp^.pfvid <> nil then begin
+                      if fcp^.klass = func then
+                        gencuvcvf(125(*cvf*), lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
+                      else
+                        gencuvcvf(91(*cuv*), lcp^.pfvid^.vaddr,fcp, lcp^.pfvid)
+                    end
                   end
                 end else begin
                   if inherit then error(234);
@@ -10289,7 +10300,7 @@ begin cmdpos := maxcmd end;
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
-      mn[124] :='mpc';
+      mn[124] :='mpc'; mn[125] :='cvf';
 
     end (*instrmnemonics*) ;
 
@@ -10424,7 +10435,7 @@ begin cmdpos := maxcmd end;
       cdx[118] := -adrsize;             cdx[119] := 0;
       cdx[120] := 0;                    cdx[121] := 0;
       cdx[122] := 0;                    cdx[123] := +ptrsize;
-      cdx[124] := 0;
+      cdx[124] := 0;                    cdx[125] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

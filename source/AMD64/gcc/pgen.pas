@@ -2807,6 +2807,11 @@ procedure xlate;
             asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
+          {cuv}
+          27: begin
+            asscall
+          end;
+
           {cke}
           188: begin
             getreg(ep^.r1, rf); getreg(ep^.r2, rf); 
@@ -3926,6 +3931,16 @@ procedure xlate;
               stkadr := stkadrs { restore stack position }
             end;
 
+            {cuv}
+            27: begin
+              genexp(ep^.sl); { process sfr start link }
+              pshpar(ep^.pl); { process parameters first }
+              if sp <> nil then
+                wrtins10('call *@g  ', q, 0, rgnull, rgnull, nil)
+              else
+                wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
+            end;
+
             {cke}
             188: begin
               wrtins40(' movq $0,%1 # start running boolean     ', 0, 0, ep^.r2, rgnull, nil);
@@ -4643,11 +4658,9 @@ procedure xlate;
             write(prr, p:1, ' l '); writevp(prr, sp); 
             lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
           end else parq;
-          frereg := allreg;
-          if sp <> nil then
-            wrtins10('call *@g  ', q, 0, rgnull, rgnull, nil)
-          else
-            wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
+          getexp(ep); getpar(ep);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); deltre(ep)
         end;
 
         { *** terminals *** }
