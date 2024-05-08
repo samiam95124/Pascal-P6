@@ -2191,6 +2191,7 @@ procedure load;
          instr[246]:='cuf       '; insp[246] := false; insq[246] := intsize;
          instr[247]:='cif       '; insp[247] := false; insq[247] := 0;
          instr[248]:='mpc       '; insp[248] := false; insq[248] := 0;
+         instr[249]:='cvf       '; insp[249] := false; insq[249] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2920,8 +2921,8 @@ procedure load;
                    if q > exceptiontop then q := q+gbloff;
                    putgblfix; storeq end;
 
-          (*cuv*)
-          27: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          (*cuv,cvf*)
+          27, 249: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
                    storeop;
                    if prd^ = 'l' then begin getnxt; labelsearch end
                    else read(prd,q);
@@ -4794,7 +4795,8 @@ begin
                  getq; pshadr(pc); pc := q
                 end;
 
-    27 (*cuv*): begin (*q=vector entry point*)
+    27 (*cuv*),
+    249(*cvf*): begin (*q=vector entry point*)
                  getq; pshadr(pc); pc := getadr(q)
                 end;
 
@@ -5358,7 +5360,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

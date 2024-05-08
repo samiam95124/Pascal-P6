@@ -2606,7 +2606,8 @@ void sinins()
                  getq(); pshadr(pc); pc = q;
                  break;
 
-    case 27 /*cuv*/: /*q=vector entry point*/
+    case 27 /*cuv*/:
+    case 249/*cvf*/: /*q=vector entry point*/
                  getq(); pshadr(pc); pc = getadr(q);
                  break;
 
@@ -3155,7 +3156,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253,
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253,
        254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

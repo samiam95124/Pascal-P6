@@ -2726,7 +2726,8 @@ begin
                  getq; pshadr(pc); pc := q
                 end;
 
-    27 (*cuv*): begin (*q=vector entry point*)
+    27 (*cuv*),
+    249(*cvf*): begin (*q=vector entry point*)
                  getq; pshadr(pc); pc := getadr(q)
                 end;
 
@@ -3279,7 +3280,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 249, 250, 251, 252, 253, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

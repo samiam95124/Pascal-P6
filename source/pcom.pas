@@ -3319,7 +3319,7 @@ begin cmdpos := maxcmd end;
       87: write(prr, 'Compare and jump');
       89: write(prr, 'Call initializer code strip');
       90: write(prr, 'Return code strip');
-      91: write(prr, 'Call virtual procedure/function');
+      91: write(prr, 'Call virtual procedure');
       92: write(prr, 'Set virtual procedure/function vector');
       93: write(prr, 'Variable reference block start');
       94: write(prr, 'Variable reference block end');
@@ -3353,6 +3353,7 @@ begin cmdpos := maxcmd end;
       122: write(prr, 'Call user function');
       123: write(prr, 'Call indirect function');
       124: write(prr, 'Make fat pointer from components');
+      125: write(prr, 'Call virtual function');
     end
   end;
 
@@ -3916,8 +3917,15 @@ begin cmdpos := maxcmd end;
         if chkext(fcp2) then prtflabelc(fcp2, fl)
         else begin write(prr,fp1:1); fl := digits(fp1) end;
         write(prr, ' ', fcp^.pfnum:1); fl := fl+digits(fcp^.pfnum);
+        if fop = 125(*cvf*) then 
+          begin write(prr, ' ');
+            if realt(fcp^.idtype) then write(prr, '1')
+            else if sett(fcp^.idtype) then write(prr, '2')
+            else write(prr, '0');
+            fl := fl+2 
+          end;
         lftjst(parfld-1-fl);
-        intmsg(91(*cuv*));
+        intmsg(fop);
         mes(91)
       end
     end;
