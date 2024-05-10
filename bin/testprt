@@ -573,4 +573,5 @@ else
 fi
 rm -f tmp1 tmp2
 
-exit $error
+#exit $error
+exit

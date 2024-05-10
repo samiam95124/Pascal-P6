@@ -1,4 +1,6 @@
 #!/bin/bash
+
+################################################################################
 #
 # Regression test
 #
@@ -6,14 +8,20 @@
 #
 # regress [--full|--short|--pint|--pmach|--cmach]...
 #
-# Run the compiler through a few typical programs
-# to a "gold" standard file. Each mode is cycled through in sequence.
+# Run the compiler through a few typical programs to a "gold" standard file. 
+# Each mode is cycled through in sequence.
 #
 # The flags are one of:
 #
-# --full  Run full test sequence.
-# --short Run short test sequence.
+# --full    Run full test sequence.
+# --short   Run short test sequence.
+# --pint    Run only pint mode."
+# --pmach   Run only pmach mode."
+# --cmach   Run only cmach mode."
+# --package Run in package mode."
+# --pgen    Run in pgen mode."
 #
+################################################################################
 
 pint="0"
 pmach="0"
@@ -24,99 +32,129 @@ full="0"
 option=""
 
 #
+# dotestresult 
+#
+# Tests the error return and announces error if so. Takes the product files and
+# places them in the "test_results" directory in the destination under the
+# prefix, like:
+#
+#  sample_programs/pint/hello.lst
+#
+# If the .err file is produced, it is copied to the destination as well.
+#
+# Parameters:
+#
+# 1: source directory
+# 2: Desitination directioy (for test_results dir).
+# 3: test file name
+#
+
+# dotestresult sdirectory ddirectory testfile
+function dotestresult {
+
+    if [ $? -ne 0 ]; then
+
+        echo "*** $1/$3: compile/run fail"
+        echo "*** $1/$3: compile/run fail" >> regress_report.txt
+
+    else
+
+        mkdir -p $2/test_results/$prefix
+        cp $1/$3.lst $2/test_results/$prefix
+        cp $1/$3.dif $2/test_results/$prefix
+        if [ -f $1/$3.err ]; then
+
+            cp $1/$3.err $2/test_results/$prefix
+
+        fi
+        wc -l $1/$3.dif >> regress_report.txt
+
+    fi
+
+}
+
+#
+# dotestprog
+#
+# Runs a test via the testprog script. Includes annoucing the start of test and
+# dealing with the test result products.
+#
+# Parameters:
+#
+# 1: source directory
+# 2: Desitination directioy (for test_results dir).
+# 3: test file name
+# 4: Any extended options to pass to testprog (quote it for multiples)
+#
+
+# dotestprog sdirectory ddirectory testfile extraoptions
+function dotestprog {
+
+    #echo "Will run: testprog --noerrmsg $option $3 $1/$2"
+    echo "Testing $1/$3..."
+    testprog --noerrmsg $option $4 $1/$3
+    dotestresult $1 $2 $3
+
+}
+
+#
 # Run regression with current options
 #
 function do_regress {
 
-    testprog --noerrmsg $option sample_programs/hello
-    wc -l sample_programs/hello.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/roman
-    wc -l sample_programs/roman.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/match
-    wc -l sample_programs/match.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/prime
-    wc -l sample_programs/prime.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/qsort
-    wc -l sample_programs/qsort.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/fbench
-    wc -l sample_programs/fbench.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/drystone
-    wc -l sample_programs/drystone.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/startrek
-    wc -l sample_programs/startrek.dif >> regress_report.txt
-    testprog --noerrmsg $option sample_programs/basics
-    wc -l sample_programs/basics.dif >> regress_report.txt
-    testprog --noerrmsg $option basic/basic
-    wc -l basic/basic.dif >> regress_report.txt
+if [ 0 -ne 0 ]; then 
+    dotestprog sample_programs sample_programs hello
+    dotestprog sample_programs sample_programs roman
+    dotestprog sample_programs sample_programs match
+    dotestprog sample_programs sample_programs prime
+    dotestprog sample_programs sample_programs qsort
+    dotestprog sample_programs sample_programs fbench
+    dotestprog sample_programs sample_programs drystone
+    dotestprog sample_programs sample_programs startrek
+    dotestprog sample_programs sample_programs basics
+    dotestprog basic basic basic
     #
     # Now run the ISO7185pat compliance test
     #
-    if [ "$option" = "--cmach" ] || [ "$option" = "--package" ] || [ "$option" = "--pgen" ]; then
-    
-        echo "Executing: testprog --noerrmsg $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat"
-    	testprog --noerrmsg $option --cmpfile standard_tests/iso7185patc standard_tests/iso7185pat
-    	
-    else
-    
-		testprog --noerrmsg $option standard_tests/iso7185pat
-    	
-    fi
-    wc -l standard_tests/iso7185pat.dif >> regress_report.txt
+    dotestprog standard_tests standard_tests iso7185pat
+fi
     #
     # Run previous versions of the system and Pascal-S
     #
-    testprog --noerrmsg $option sample_programs/pascals
-    wc -l sample_programs/pascals.dif >> regress_report.txt
+    dotestprog sample_programs sample_programs pascals
 
-    echo "Running Pascal-P2"
+exit
+    echo "Testing Pascal-P2..."
     echo "Pascal-P2 run" >> regress_report.txt
     testp2 $option
-    wc -l p2/roman.dif >> regress_report.txt
+    dotestresult p2 p2 roman
 
-    echo "Running Pascal-P4"
+    echo "Testing Pascal-P4..."
     echo "Pascal-P4 run" >> regress_report.txt
     testp4 $option
-    wc -l p4/standardp.dif >> regress_report.txt
+    dotestresult p4 p4 standardp
 
-    echo "Running PRT..."
+    echo "Testing PRT..."
     echo "PRT run" >> regress_report.txt
-    #
-    # Run rejection test
-    #
-    runprt $option
-    wc -l standard_tests/iso7185prt.dif >> regress_report.txt
+    testprt $option
+    dotestresult standard_tests standard_tests iso7185prt
 
-    #
-    # Run Pascaline test
-    #
-    echo "Running Pascaline test"
+    echo "Testing Pascaline..."
     echo "Pascaline run" >> regress_report.txt
     testpascaline $option
-    if [ "$option" = "--pmach" ]; then
-
-        wc -l pascaline_tests/pascaline_pmach.dif >> regress_report.txt
-
-    elif [ "$option" = "--cmach" ]; then
-
-        wc -l pascaline_tests/pascaline_cmach.dif >> regress_report.txt
-
-    else
-
-        wc -l pascaline_tests/pascaline.dif >> regress_report.txt
-
-    fi
+    dotestresult pascaline_tests pascaline_tests pascaline
 
     #
     # Run debug test
     # 
     # Note debug test only runs in pint mode.
     #
-    if [ "$option" = "" ]; then
+    if [ "$option" = "--pint" ]; then
 
-        echo "Running debug test"
+        echo "Testing debug..."
         echo "Debug test run" >> regress_report.txt
         testdebug
-        wc -l pascaline_tests/debug_test.dif >> regress_report.txt
+        dotestresult pascaline_tests pascaline_tests debug_test
 
     fi
 
@@ -125,12 +163,12 @@ function do_regress {
         echo "Running Pascal-P5"
         echo "Pascal-P5 run" >> regress_report.txt
         testp5 $option
-        wc -l standard_tests/iso7185pat.dif >> regress_report.txt
+        dotestresult standard_tests p5 iso7185pat
 
         echo "Running Pascal-P6"
         echo "Pascal-P6 run" >> regress_report.txt
         testp6 $option
-        wc -l standard_tests/iso7185pat.dif >> regress_report.txt
+        dotestresult standard_tests build iso7185pat
 
         echo "Running self compile..."
         #
@@ -138,14 +176,14 @@ function do_regress {
         #
         echo "pcom self compile" >> regress_report.txt
         cpcoms $option
-        wc -l source/pcom.mpp.dif >> regress_report.txt
+        dotestresult source build pcom.mpp
         
         #
         # Run pint self compile \(note this runs on P5/P6 only\)
         #
         echo "pint self compile" >> regress_report.txt
         cpints $option
-        wc -l standard_tests/iso7185pats.dif >> regress_report.txt
+        dotestresult source build pcom.mpp
     
 	fi
 
@@ -258,18 +296,23 @@ else
 
     # run all modes
     option="--pint"
+    prefix="pint"
     echo "pint run ***************************************" >> regress_report.txt
     do_regress
     option="--pmach"
+    prefix="pmach"
     echo "pmach run ***************************************" >> regress_report.txt
     do_regress
     option="--cmach"
+    prefix="cmach"
     echo "cmach run ***************************************" >> regress_report.txt
     do_regress
     option="--package"
+    prefix="package"
     echo "package run ***************************************" >> regress_report.txt
     do_regress
     option="--pgen"
+    prefix="pgen"
     echo "pgen run ***************************************" >> regress_report.txt
     do_regress
 

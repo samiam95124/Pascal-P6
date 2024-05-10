@@ -238,7 +238,7 @@ var    sy: symbol;         (* last symbol read by insymbol *)
        rconst: array [1..c2max] of real;
        code: array [0..cmax] of order;
 
-       { prd: text; } { source input file [sam] }
+       prd: text; { source input file [sam] }
 
 procedure errormsg;
    var k: integer;
@@ -1812,7 +1812,7 @@ begin { main program }
 
   { [sam] If you need to associate 'prd' with an external file in the
     source, do that here }
-  { reset(prd); }
+  reset(prd);
 
   key[ 1] := 'and       '; key[ 2] := 'array     ';
   key[ 3] := 'begin     '; key[ 4] := 'case      ';

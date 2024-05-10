@@ -29,23 +29,27 @@
 # --list           Produce source listing (default is no listing)."
 # 
 
+pint="0"
+pintoption=""
 pmach="0"
 pmachoption=""
 cmach="0"
 cmachoption=""
 package="0"
 packageoption=""
-pgen="0"
-pgenoption=""
+pgen="1"
+pgenoption="--pgen"
 progfile=""
 cmpnext="0"
 cmpfile=""
 noerrmsg="0"
 noerrmsgoption=""
 options=""
-pint="0"
+
 list="0"
 listoption="--list-"
+
+#echo "testprog: command line: $@"
 
 for param in "$@" 
 do
@@ -53,33 +57,74 @@ do
     if [ "$param" = "--pint" ]; then
 
         pint=1
+        pmach=0
+        cmach=0
+        package=0
+        pgen=0
+        pintoption="--pint"
+        pmachoption=""
+        cmachoption=""
+        packageoption=""
+        pgenoption=""
 
     elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
+        pint=0
+        cmach=0
+        package=0
+        pgen=0
         pmachoption="--pmach"
+        pintoption=""
+        cmachoption=""
+        packageoption=""
+        pgenoption=""
         
     elif [ "$param" = "--cmach" ]; then
     
         cmach=1
+        pint=0
+        pmach=0
+        package=0
+        pgen=0
         cmachoption="--cmach"
+        pintoption=""
+        pmachoption=""
+        packageoption=""
+        pgenoption=""
 
     elif [ "$param" = "--package" ]; then
     
         package=1
+        pint=0
+        pmach=0
+        cmach=0
+        pgen=0
         packageoption="--package"
+        pintoption=""
+        pmachoption=""
+        cmachoption=""
+        pgenoption=""
       
     elif [ "$param" = "--pgen" ]; then
     
         pgen=1
+        pint=0
+        pmach=0
+        cmach=0
+        package=0
         pgenoption="--pgen"
+        pintoption=""
+        pmachoption=""
+        cmachoption=""
+        packageoption=""
 
     elif [ "$param" = "--cmpfile" ]; then
     
     	cmpnext=1
     	
     elif [ "$param" = "--noerrmsg" ]; then
-    
+
     	noerrmsg=1
         noerrmsgoption="--noerrmsg"
 
@@ -139,8 +184,9 @@ do
 				exit 1
 			
 			fi
-    		echo "Compiling $param..."
-    		compile $listoption --noerrmsg $options $pmachoption $cmachoption $packageoption $pgenoption $param
+    		#echo "Compiling $param..."
+    		compile $listoption --noerrmsg $options $pintoption $pmachoption \
+                $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
     		
     		    if [ "$noerrmsg" = "0" ]; then
@@ -211,7 +257,7 @@ fi
 
 echo "Running $progfile..."
 # echo "run $pmachoption $cmachoption $options $progfile"
-run --nolist $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
+run --nolist $pintoption $pmachoption $cmachoption $packageoption $pgenoption $options $progfile
 if [ $? -eq 0 ]; then
 
     #

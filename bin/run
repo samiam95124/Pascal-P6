@@ -35,6 +35,8 @@ progfile=""
 options=""
 nolist="0"
 
+#echo "run: command line: $@"
+
 for param in "$@" 
 do
 
