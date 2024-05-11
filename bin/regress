@@ -102,7 +102,6 @@ function dotestprog {
 #
 function do_regress {
 
-if [ 0 -ne 0 ]; then 
     dotestprog sample_programs sample_programs hello
     dotestprog sample_programs sample_programs roman
     dotestprog sample_programs sample_programs match
@@ -117,13 +116,14 @@ if [ 0 -ne 0 ]; then
     # Now run the ISO7185pat compliance test
     #
     dotestprog standard_tests standard_tests iso7185pat
-fi
     #
     # Run previous versions of the system and Pascal-S
     #
-    dotestprog sample_programs sample_programs pascals
+    echo "Testing Pascal-s..."
+    echo "Pascal-s run" >> regress_report.txt
+    testpascals $option
+    dotestresult sample_programs sample_programs roman
 
-exit
     echo "Testing Pascal-P2..."
     echo "Pascal-P2 run" >> regress_report.txt
     testp2 $option
