@@ -1904,7 +1904,7 @@ void callsp(void)
 {
     boolean line;
     long i, j, k, w, l, f;
-    char c;
+    unsigned char c;
     boolean b;
     address ad,ad1,ad2;
     double r, r1;

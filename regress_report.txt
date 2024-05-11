@@ -1,11 +1,11 @@
 ************ Regression Summary *************
-Sat 11 May 2024 08:27:59 AM PDT
+Sat 11 May 2024 10:03:04 AM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-*** sample_programs/prime: compile/run fail
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -29,7 +29,7 @@ pmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-*** sample_programs/prime: compile/run fail
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -51,7 +51,7 @@ cmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-*** sample_programs/prime: compile/run fail
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -73,7 +73,7 @@ package run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-*** sample_programs/prime: compile/run fail
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -95,7 +95,7 @@ pgen run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-*** sample_programs/prime: compile/run fail
+0 sample_programs/prime.dif
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -113,12 +113,12 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 *** pascaline_tests/pascaline: compile/run fail
-Sat 11 May 2024 08:33:52 AM PDT
+Sat 11 May 2024 10:09:04 AM PDT
 Files md5sum ***************************************
 Source files
 2d48d4668f7eefe69d140ad4386093e3  -
 batch files
-b8e7509573355c3a77ab65173147ce72  -
+235d6ed3584b78708fee24b5cfb9823c  -
 P2 files
 d9ae9c9665a20cf4de7a07958b70dbc7  -
 p4 files

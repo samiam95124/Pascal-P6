@@ -2901,9 +2901,9 @@ those two. Returns the character.
 *******************************************************************************/
 
 void psystem_rcb(
-    /* Pascal file to read from */ pasfil* f,
-    /* character to read */        char*   c,
-    /* Range of values          */ long mn, long mx
+    /* Pascal file to read from */ pasfil*        f,
+    /* character to read */        unsigned char* c,
+    /* Range of values          */ long           mn, long mx
 )
 
 {
@@ -2931,10 +2931,10 @@ character.
 *******************************************************************************/
 
 void psystem_rcbf(
-    /* Pascal file to read from */ pasfil* f,
-    /* character to read */        char*   c,
-    /* Range of values          */ long mn, long mx,
-    /* Field                    */ long w
+    /* Pascal file to read from */ pasfil*        f,
+    /* character to read */        unsigned char* c,
+    /* Range of values          */ long           mn, long mx,
+    /* Field                    */ long           w
 )
 
 {
