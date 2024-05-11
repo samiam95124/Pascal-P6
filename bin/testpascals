@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# Script to test pascal-s compile and run
+#
+# Compile pascals
+#
+echo "Compiling pascals to intermediate code"
+compile --list- $1 sample_programs/pascals
+cat sample_programs/pascals.err
+#
+# Create null input file
+#
+echo > sample_programs/pascals.inp
+#
+# Now run pascals on pint, which runs the test program.
+#
+# Note that temp is unused (prr out), and roman.p2 and temp2 are read from the
+# command line at level 2. temp2 is unused (prr out, second level).
+#
+if [ "$1" = "--pmach" ]; then
+
+    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
+    pmach sample_programs/pascals.p6o temp sample_programs/roman.pas temp2 < sample_programs/pascals.inp > sample_programs/pascals.lst
+
+elif [ "$1" = "--cmach" ]; then
+
+    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
+    cmach sample_programs/pascals.p6o sample_programs/roman.pas temp < sample_programs/pascals.inp > sample_programs/pascals.lst
+
+elif [ "$1" = "--package" ]; then
+
+    pint sample_programs/pascals.p6 sample_programs/pascals.p6o --machdeck
+    genobj sample_programs/pascals.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o sample_programs/pascals $PASCALP6/source/cmach/cmach.c -lm
+	sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst
+
+elif [ "$1" = "--pgen" ]; then
+
+    pgen sample_programs/pascals.p6 sample_programs/pascals.s
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        $PASCALP6/source/AMD64/gcc/main.asm sample_programs/pascals.s -o sample_programs/pascals -lm
+	sample_programs/pascals sample_programs/roman.p6 temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst
+
+else
+
+    pint sample_programs/pascals.p6 temp sample_programs/roman.pas < sample_programs/pascals.inp > sample_programs/pascals.lst
+
+fi
+#
+# Now compare with reference
+#
+echo Comparing PAT result to reference
+strip sample_programs/pascals.lst tmp1
+strip sample_programs/pascals.cmp tmp2
+diff -B tmp1 tmp2 > sample_programs/pascals.dif
+rm -f tmp1
+rm -f tmp2
+ls -l sample_programs/pascals.dif > tmp1
+grep ".dif" tmp1
+rm -f tmp1
+## pass if diff file is empty
+if test -s sample_programs/pascals.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi
