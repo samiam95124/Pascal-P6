@@ -1,5 +1,5 @@
 #ifndef FPC_PASCAL
-(*$c+,t-,d-,l-,s+*)
+(*$s+*)
 #endif
 {*******************************************************************************
 *                                                                              *
@@ -269,6 +269,8 @@ const
       lablen      = 20000;   { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
+      maxopt      = 26;      { number of options }
+      optlen      = 10;      { maximum length of option words }
 
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
@@ -308,6 +310,8 @@ type
       fileno      = 0..maxfil; { logical file number }
       labbuf      = packed array [1..lablen] of char; { label buffer }
       strbuf      = packed array [1..strlen] of char;
+      optinx      = 1..optlen;
+      optstr      = packed array [optinx] of char;
       { Here is the variable length string containment to save on space. strings
         are only stored in their length rounded to the nearest 10th. }
       strvsp = ^strvs; { pointer to variable length id string }
@@ -412,6 +416,8 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
                                                   number of parameters*)
       spkeep      : array[sctyp] of boolean; { keep the file parameter }
       option      : array ['a'..'z'] of boolean; { option array }
+      opts        : array [1..maxopt] of optstr;
+      optsl       : array [1..maxopt] of optstr;
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
@@ -1680,6 +1686,8 @@ procedure xlate;
           vi, vl: integer;
           ts: alfa;
           fl: integer;
+          os: optstr;
+          oi: 1..maxopt;
    begin
       again := true;
       while again and not eof(prd) do begin
@@ -1725,26 +1733,38 @@ procedure xlate;
                  repeat
                    if not (ch in ['a'..'z']) then
                      errorl('No valid option found    ');
-                   ch1 := ch; write(prr, ch); getnxt; write(prr, ch);
-                   option[ch1] := ch = '+'; getnxt;
-                   case ch1 of
-                     'd': dodbgchk := option[ch1];
-                     'g': dodmplab := option[ch1];
-                     'h': dosrclin := option[ch1];
-                     'n': dorecycl := option[ch1];
-                     'o': dochkovf := option[ch1];
-                     'p': dochkrpt := option[ch1];
-                     'm': donorecpar := option[ch1];
-                     'q': dochkdef := option[ch1];
-                     's': iso7185  := option[ch1];
-                     'w': dodebug  := option[ch1];
-                     'a': dodbgflt := option[ch1];
-                     'f': dodbgsrc := option[ch1];
-                     'e': dodckout := option[ch1];
-                     'i': dochkvbk := option[ch1];
-                     'b':; 'c':; 'l':; 't':; 'u':; 'v':;
-                     'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
-                   end
+                   getlab; if snl > optlen then errorl('Option is too long       ');
+                   write(prr, sn:snl);
+                   for i := 1 to optlen do os[i] := sn[i];
+                   oi := 1;
+                   while (oi < maxopt) and (os <> opts[oi]) and (os <> optsl[oi]) do
+                     oi := oi+1;
+                   if (os = opts[oi]) or (os = optsl[oi]) then begin
+                     ch1 := chr(oi+ord('a')-1);
+                     option[ch1] := true; 
+                     if ch = '-' then option[ch1] := false;
+                     if (ch = '-') or (ch = '+') then begin write(prr, ch); getnxt end;
+                     write(prr, ' ');
+                     case ch1 of
+                       'd': dodbgchk := option[ch1];
+                       'g': dodmplab := option[ch1];
+                       'h': dosrclin := option[ch1];
+                       'n': dorecycl := option[ch1];
+                       'o': dochkovf := option[ch1];
+                       'p': dochkrpt := option[ch1];
+                       'm': donorecpar := option[ch1];
+                       'q': dochkdef := option[ch1];
+                       's': iso7185  := option[ch1];
+                       'w': dodebug  := option[ch1];
+                       'a': dodbgflt := option[ch1];
+                       'f': dodbgsrc := option[ch1];
+                       'e': dodckout := option[ch1];
+                       'i': dochkvbk := option[ch1];
+                       'b':; 'c':; 'l':; 't':; 'u':; 'v':;
+                       'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
+                     end
+                   end else errorl('No valid option found    ');
+                   while not eoln(prd) and (ch = ' ') do getnxt
                  until not (ch in ['a'..'z']);
                  getlin; writeln(prr);
                end;
@@ -3862,7 +3882,7 @@ procedure xlate;
                   wrtins20(' jmp 1b # loop      ', 0, 0, rgnull, rgnull, nil);
                   wrtins10('2:        ', 0, 0, rgnull, rgnull, nil)
                 end else
-                  wrtins40(' subq $s,%rsp # set new stack depth     ', 0, 0, rgnull, rgnull, nil);
+                  wrtins40(' subq $s,%rsp # set new stack depth     ', 0, 0, rgnull, rgnull, ep^.lb);
               end;
 
             {cup,cuf}
@@ -5543,6 +5563,61 @@ begin (* main *)
   fndpow(maxpow8, 8, octdig);
   fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
 
+  { initialize options tables }
+  opts[1]  := 'a         ';
+  opts[2]  := 'b         ';
+  opts[3]  := 'c         ';
+  opts[4]  := 'd         ';
+  opts[5]  := 'e         ';
+  opts[6]  := 'f         ';
+  opts[7]  := 'g         ';
+  opts[8]  := 'h         ';
+  opts[9]  := 'i         ';
+  opts[10] := 'ee        ';
+  opts[11] := '          ';
+  opts[12] := 'l         ';
+  opts[13] := 'm         ';
+  opts[14] := 'n         ';
+  opts[15] := 'o         ';
+  opts[16] := 'p         ';
+  opts[17] := 'q         ';
+  opts[18] := 'r         ';
+  opts[19] := 's         ';
+  opts[20] := 't         ';
+  opts[21] := 'u         ';
+  opts[22] := 'v         ';
+  opts[23] := 'w         ';
+  opts[24] := 'x         ';
+  opts[25] := 'y         ';
+  opts[26] := 'z         ';
+
+  optsl[1]  := 'debugflt  ';
+  optsl[2]  := 'prtlab    ';
+  optsl[3]  := 'lstcod    ';
+  optsl[4]  := 'chk       ';
+  optsl[5]  := 'machdeck  ';
+  optsl[6]  := 'debugsrc  ';
+  optsl[7]  := 'prtlabdef ';
+  optsl[8]  := 'sourceset ';
+  optsl[9]  := 'varblk    ';
+  optsl[10] := 'experror  ';
+  optsl[11] := 'echoline  ';
+  optsl[12] := 'list      ';
+  optsl[13] := 'breakheap ';
+  optsl[14] := 'recycle   ';
+  optsl[15] := 'chkoverflo';
+  optsl[16] := 'chkreuse  ';
+  optsl[17] := 'chkundef  ';
+  optsl[18] := 'reference ';
+  optsl[19] := 'iso7185   ';
+  optsl[20] := 'prttables ';
+  optsl[21] := 'undestag  ';
+  optsl[22] := 'chkvar    ';
+  optsl[23] := 'debug     ';
+  optsl[24] := 'prtlex    ';
+  optsl[25] := 'prtdisplay';
+  optsl[26] := '          ';
+
   write('P6 Pascal AMD64/gcc 64 bit code generator vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
@@ -5560,7 +5635,7 @@ begin (* main *)
   writeln(prr);
   writeln(prr, '#');
   writeln(prr);
-  
+
   xlate; (* assembles and stores code *)
 
   1 : { abort run }
