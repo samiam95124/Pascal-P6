@@ -238,6 +238,6 @@ elif [ "$pgen" = "1" ]; then
     #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
         -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm
+        $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm >> $progfile.err 2>&1
 
 fi

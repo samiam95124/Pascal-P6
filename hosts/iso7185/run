@@ -35,6 +35,8 @@ progfile=""
 options=""
 nolist="0"
 
+#echo "run: command line: $@"
+
 for param in "$@" 
 do
 
@@ -178,7 +180,7 @@ else
 
 	echo Running with pint
     cat $progfile.p6 $progfile.dat > temp
-    # echo "Will execute: pint temp $progfile.out $options < $progfile.inp &> $progfile.lst"
+    #echo "Will execute: pint temp $progfile.out $options < $progfile.inp &> $progfile.lst"
     pint temp $progfile.out $options < $progfile.inp &> $progfile.lst
     rm temp
     

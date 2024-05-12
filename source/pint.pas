@@ -7675,7 +7675,8 @@ begin (* main *)
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
   fndpow(maxpow8, 8, octdig);
-  fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
+  { adding sign bit to bindig causes overflow }
+  fndpow(maxpow2, 2, bindig); {bindig := bindig+1;} { add sign bit }
 
   { get the command line }
   getcommandline(cmdlin, cmdlen);

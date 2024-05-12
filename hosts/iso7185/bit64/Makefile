@@ -110,7 +110,7 @@ bin/pcom: $(SOURCE)/pcom.pas psystem psystem_asm main
 	@echo
 	mkdir -p $(BUILD)
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas
-	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
+	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --list- --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -131,7 +131,7 @@ bin/pcom_immerr: $(SOURCE)/pcom.pas psystem psystem_asm main
 	mkdir -p $(BUILD)
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) -DIMM_ERR $(SOURCE)/pcom.pas \
 		$(BUILD)/pcom.mpp.pas
-	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --reference-
+	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --list- --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -152,7 +152,7 @@ bin/pint: $(SOURCE)/pint.pas psystem psystem_asm main
 	gcc -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pint.pas $(BUILD)/pint.mpp.pas \
 		-DEXTERNALS
-	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --reference-
+	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --list- --reference-
 	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -171,7 +171,7 @@ bin/pmach: $(SOURCE)/pmach.pas psystem psystem_asm main
 	@echo
 	mkdir -p $(BUILD)
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pmach.pas $(BUILD)/pmach.mpp.pas
-	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --reference-
+	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --list- --reference-
 	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -204,7 +204,7 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas psystem psystem_asm main
 	mkdir -p $(BUILD)/AMD64/gcc
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/AMD64/gcc/pgen.pas \
 		-I$(PASCALP6)/source $(BUILD)/AMD64/gcc/pgen.mpp.pas
-	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/AMD64/gcc/pgen.p6 --reference-
+	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/AMD64/gcc/pgen.p6 --list- --reference-
 	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -222,7 +222,7 @@ bin/genobj: $(SOURCE)/genobj.pas psystem psystem_asm main
 	@echo "Building genobj..."
 	@echo
 	mkdir -p $(BUILD)
-	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --reference-
+	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --list- --reference-
 	pgen $(BUILD)/genobj.p6 $(BUILD)/genobj.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \

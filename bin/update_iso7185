@@ -1,0 +1,15 @@
+cp bin/cmach hosts/iso7185/linux_X86
+cp bin/genobj hosts/iso7185/linux_X86
+cp bin/pcom hosts/iso7185/linux_X86
+cp bin/pgen hosts/iso7185/linux_X86
+cp bin/pint hosts/iso7185/linux_X86
+cp bin/pmach hosts/iso7185/linux_X86
+cp bin/spew hosts/iso7185/linux_X86
+cp bin/p6 hosts/iso7185
+cp bin/compile hosts/iso7185
+cp bin/run hosts/iso7185
+cp bin/testp2 hosts/iso7185
+cp bin/testp4 hosts/iso7185
+cp bin/testp5 hosts/iso7185
+cp bin/testp6 hosts/iso7185
+cp Makefile hosts/iso7185/bit64

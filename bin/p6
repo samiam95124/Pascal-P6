@@ -197,6 +197,7 @@ elif [ "$pgen" = "1" ]; then
 
 else
 
+    #echo "Will execute: pint $progfile.p6 $progfile.out $options"
 	pint $progfile.p6 $progfile.out $options
 
 fi
