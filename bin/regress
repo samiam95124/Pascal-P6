@@ -56,6 +56,11 @@ function dotestresult {
 
         echo "*** $1/$3: compile/run fail"
         echo "*** $1/$3: compile/run fail" >> regress_report.txt
+        if [ -f $1/$3.err ]; then
+
+            cp $1/$3.err $2/test_results/$prefix
+
+        fi
 
     else
 
