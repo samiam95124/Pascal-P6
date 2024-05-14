@@ -353,7 +353,7 @@ type
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1 : address; { extra parameter }
+      q1, q2 : address; { extra parameters }
       gblsiz: address; { size of globals }
       hexdig      : integer; { digits in unsigned hex }
       decdig      : integer; { digits in unsigned decimal }
@@ -741,7 +741,9 @@ procedure xlate;
                     free: boolean; { allocated/free }
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
-                    p:   lvltyp; q, q1, q2: address; { p and q parameters }
+                    p:   lvltyp; { p parameter } 
+                    q, q1, q2: address; { q parameters values }
+                    qs, qs1, qs2: strvsp; { q parameters symbols }
                     r1, r2, r3: reg; { result registers }
                     t1, t2, t3: reg; { temporary registers }
                     r1a, r2a, r3a: address; { set temp tracking addresses }
@@ -761,6 +763,8 @@ procedure xlate;
                     lb: strvsp; { label for sfr }
                     lt: strvsp; { label for table }
                     fl: strvsp; { far label (where needed) }
+                    pn: integer; { number of parameters for procedure/function }
+                    rc: integer; { return type code 0=integer, 1=real, 2=set }
                     blk: pblock; { block called for cup }
                     sline: integer; { source line }
                     iline: integer; { intermediate line }
@@ -788,7 +792,8 @@ procedure xlate;
         sn: labbuf;
         snl: 1..lablen;
         flablst: flabelp; { list of far labels }
-        estack, efree: expptr;
+        estack, efree: expptr; { expression stack }
+        jmpstr: expptr; { unresolved jump cache }
         frereg, allreg: regset;
         intassord: array [1..maxintreg] of reg; { integer register assignment order }
         fltassord: array [1..maxfltreg] of reg; { floating point register assignment order }
@@ -1170,7 +1175,7 @@ procedure xlate;
          tmpspc := 0; { set temps total size }
          tmplst := nil; { clear temps list }
          tmpfre := nil; { clear temps free list }
-         estack := nil; stacklvl := 0; efree := nil;
+         estack := nil; stacklvl := 0; efree := nil; jmpstr := nil;
          allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
                     rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
                     rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, 
@@ -1270,6 +1275,43 @@ procedure xlate;
      end
    end;
 
+   procedure getexp(var ep: expptr);
+   begin
+     if efree <> nil then begin ep := efree; efree := ep^.next end
+     else begin new(ep); expsn := expsn+1; ep^.sn := expsn end;
+     ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
+     ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
+     ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
+     ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
+     ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
+     ep^.fn := nil; ep^.blk := nil; ep^.lb := nil; ep^.lt := nil; 
+     ep^.fl := nil; ep^.pn := 0; ep^.rc := 0; ep^.free := false; 
+     ep^.r1a := 0; ep^.r2a := 0; ep^.r3a := 0; ep^.t1a := 0; ep^.t2a := 0;
+     ep^.sline := sline; ep^.iline := iline;
+   end;
+      
+   procedure putexp(ep: expptr);
+   begin
+     if ep^.free then errorl('System fault: dbl free   ');
+     ep^.next := efree; efree := ep; ep^.free := true
+   end;
+
+   { search and attach expression stack to jump cache }
+   procedure schjmp(s: strvsp);
+   var ep, lp, fp: expptr;
+   begin
+     ep := jmpstr; lp := nil; fp := nil;
+     while ep <> nil do begin
+       if strequvv(ep^.qs, s) then begin fp := ep; ep := nil end
+       else begin lp := ep; ep := ep^.next end
+     end;
+     if fp <> nil then if fp^.l <> nil then begin
+       estack := fp^.l;
+       if lp = nil then jmpstr := fp^.next else lp^.next := fp^.next;
+       putexp(fp)
+     end
+   end;
+
    procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
    begin
       if labeltab[x].st=defined then errorl('duplicated label         ')
@@ -1279,8 +1321,9 @@ procedure xlate;
         putlabel(x);
         labeltab[x].blk := blkstk;
         writevp(prr, labeltab[x].ref);
-        if pc then  writeln(prr, ':') 
-        else writeln(prr, ' = ', labeltab[x].val:1)
+        if pc then writeln(prr, ':') 
+        else writeln(prr, ' = ', labeltab[x].val:1);
+        schjmp(labeltab[x].ref);
       end
    end;(*update*)
 
@@ -1327,13 +1370,17 @@ procedure xlate;
    procedure cvtsds;
    var i: 1..lablen;
    begin
-     for i := 1 to snl do begin
+     i := 1;
+     { skip to type signature }
+     while (i <= snl) and (sn[i] <> '@') do i := i+1;
+     while i <= snl do begin
        { translate '@' to '$' for type spagetti demarcate, and 
          characters in the set ['(',')',',',':','-','+'] to '$' 
          because they are invalid }
        if sn[i] = '@' then sn[i] := '$'
        else 
-         if sn[i] in ['(',')',',',':','-','+'] then sn[i] := '$'
+         if sn[i] in ['(',')',',',':'] then sn[i] := '$';
+       i := i+1
      end;
    end;
 
@@ -2055,26 +2102,7 @@ procedure xlate;
         write(f, ']')
       end;
 
-      procedure getexp(var ep: expptr);
-      begin
-        if efree <> nil then begin ep := efree; efree := ep^.next end
-        else begin new(ep); expsn := expsn+1; ep^.sn := expsn end;
-        ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
-        ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
-        ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
-        ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
-        ep^.t1 := rgnull; ep^.t2 := rgnull; ep^.rs := []; 
-        ep^.fn := nil; ep^.blk := nil; ep^.lb := nil; ep^.lt := nil; 
-        ep^.fl := nil; ep^.free := false; ep^.r1a := 0; ep^.r2a := 0; 
-        ep^.r3a := 0; ep^.t1a := 0; ep^.t2a := 0;
-        ep^.sline := sline; ep^.iline := iline;
-      end;
-      
-      procedure putexp(ep: expptr);
-      begin
-        if ep^.free then errorl('System fault: dbl free   ');
-        ep^.next := efree; efree := ep; ep^.free := true
-      end;
+
 
       procedure dmptmp(var f: text);
       var p: setptr;
@@ -2288,7 +2316,7 @@ procedure xlate;
       begin
         isf := false; 
         if insf[ep^.op] then isf := true
-        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.q1 = 1) then isf := true
+        else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.rc = 1) then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
             isf := true;
@@ -2784,11 +2812,11 @@ procedure xlate;
           {cuf}
           246: begin 
             asscall;
-            if ep^.q1 = 1 then begin
+            if ep^.rc = 1 then begin
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
-            end else if ep^.q1 = 2 then begin 
+            end else if ep^.rc = 2 then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
               gettmp(ep^.r1a)
             end else begin
@@ -2796,27 +2824,27 @@ procedure xlate;
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
               end else ep^.r1 := r1
             end;
-            asspar(ep, ep^.q)
+            asspar(ep, ep^.pn)
           end;
 
           {cup}
           12: begin
-            asscall; asspar(ep, ep^.q)
+            asscall; asspar(ep, ep^.pn)
           end;
 
           {cip}
           113: begin
-            asscall; asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asscall; asspar(ep, ep^.pn); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cif}
           247: begin
             asscall; resreg(rgr15);
-            if ep^.q = 1 then begin
+            if ep^.rc = 1 then begin
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
-            end else if ep^.q1 = 2 then begin 
+            end else if ep^.rc = 2 then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
               gettmp(ep^.r1a)
             end else begin
@@ -2824,7 +2852,7 @@ procedure xlate;
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
               end else ep^.r1 := r1
             end;
-            asspar(ep, ep^.q); assreg(ep^.l, rf, rgnull, rgnull)
+            asspar(ep, ep^.pn); assreg(ep^.l, rf, rgnull, rgnull)
           end;
 
           {cuv}
@@ -3896,7 +3924,7 @@ procedure xlate;
                 lftjst(cmtspc-fl); writeln(prr, '# call user procedure')
               end else wrtins30(' call @s # call user procedure', 0, 0, rgnull, rgnull, ep^.fn);
               if ep^.op = 246{cuf} then begin
-                if ep^.q1 = 1 then begin
+                if ep^.rc = 1 then begin
                   if ep^.r1 <> rgxmm0 then
                   wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
                 end else begin
@@ -4142,7 +4170,7 @@ procedure xlate;
       { get parameters of procedure/function/system call to parameters list }
       procedure getpar(ep: expptr);
       begin
-          getparn(ep, ep^.q); { get those parameters into list }
+          getparn(ep, ep^.pn); { get those parameters into list }
           popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
       end;
@@ -4334,8 +4362,10 @@ procedure xlate;
 
         {cpc}
         177: begin par;
-          getexp(ep); popstk(ep^.r); popstk(ep^.l);
-          pshstk(ep) 
+          getexp(ep); popstk(ep2); popstk(ep3);
+          duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
+          dmptre(ep); genexp(ep); deltre(ep)
         end;
 
         {lpa}
@@ -4551,12 +4581,14 @@ procedure xlate;
         246: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
           writevp(prr, sp); read(prd,q,q1); write(prr, ' ', q:1, ' ', q1:1); 
           lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1))); pass;
-          getexp(ep); ep^.fn := sp; ep^.blk := blk; getpar(ep); pshstk(ep);
+          getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
+          getpar(ep); pshstk(ep);
         end;
 
         {cif}
         247: begin parqq;
-          getexp(ep); popstk(ep^.l); getpar(ep); pshstk(ep);
+          getexp(ep); ep^.pn := q; ep^.rc := q1; popstk(ep^.l); getpar(ep);
+          pshstk(ep);
         end;
 
         {cke}
@@ -4676,9 +4708,14 @@ procedure xlate;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
             write(prr, p:1, ' l '); writevp(prr, sp); 
-            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
-          end else parq;
-          getexp(ep); getpar(ep);
+            read(prd,q1); write(prr, q1:1);
+            lftjst(parfld-(3+lenpv(sp)+1+digits(q1)))
+          end else begin 
+            read(prd,q,q1); write(prr,q,' ',q1); 
+            lftjst(parfld-(digits(q)+1+digits(q1)))
+          end;
+          pass;
+          getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep)
         end;
@@ -4700,16 +4737,16 @@ procedure xlate;
 
         {cup}
         12: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd, q); write(prr, ' ', q:1); 
-          lftjst(parfld-(2+lenpv(sp)+1+digits(q))); pass;
-          getexp(ep); ep^.fn := sp; ep^.blk := blk; getpar(ep);
+          writevp(prr, sp); read(prd, q1); write(prr, ' ', q1:1); 
+          lftjst(parfld-(2+lenpv(sp)+1+digits(q1))); pass;
+          getexp(ep); ep^.fn := sp; ep^.pn := q1; ep^.blk := blk; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
         end;
 
         {cip}
         113: begin parq;
-          getexp(ep); popstk(ep^.l); getpar(ep);
+          getexp(ep); ep^.pn := q; popstk(ep^.l); getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
         end;
@@ -4930,7 +4967,11 @@ procedure xlate;
         {ujp}
         23: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
-          wrtins10(' jmp @s   ', 0, 0, rgnull, rgnull, sp)
+          wrtins10(' jmp @s   ', 0, 0, rgnull, rgnull, sp);
+          if estack <> nil then begin { put in unresolved cache }
+            getexp(ep); ep^.qs := sp;
+            ep^.l := estack; estack := nil; ep^.next := jmpstr; jmpstr := ep;
+          end
         end;
 
         {fjp,tjp}
@@ -5305,18 +5346,15 @@ procedure xlate;
         {apc}
         210: begin parqq;
           frereg := allreg;
-          popstk(ep); popstk(ep2); popstk(ep3); popstk(ep4);
-          assreg(ep, frereg, rgrdx, rgnull); assreg(ep3, frereg, rgrcx, rgnull); 
-          assreg(ep2, frereg, rgr8, rgnull);
+          popstk(ep); popstk(ep2);
+          assreg(ep, frereg, rgrdx, rgnull); assreg(ep2, frereg, rgrcx, rgr8); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          dmptre(ep); genexp(ep);
-          dmptre(ep3); genexp(ep3);
           dmptre(ep2); genexp(ep2);
-          dmptre(ep4); genexp(ep4);
+          dmptre(ep); genexp(ep);
           wrtins40(' movq $0,%rdi # load template size      ', q*intsize, 0, r1, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins40(' call psystem_apc # assign containers   ', 0, 0, rgnull, rgnull, nil);
-          deltre(ep); deltre(ep2); deltre(ep3); deltre(ep4);
+          deltre(ep); deltre(ep2);
           botstk
         end;
 
