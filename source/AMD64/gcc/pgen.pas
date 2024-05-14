@@ -1379,7 +1379,7 @@ procedure xlate;
          because they are invalid }
        if sn[i] = '@' then sn[i] := '$'
        else 
-         if sn[i] in ['(',')',',',':'] then sn[i] := '$';
+         if sn[i] in ['(',')',',',':','-','+'] then sn[i] := '$';
        i := i+1
      end;
    end;
