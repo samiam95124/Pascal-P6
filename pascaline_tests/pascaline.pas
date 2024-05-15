@@ -572,6 +572,8 @@ begin
 
 end;
 
+{
+assign not working at present
 operator :=(out a: enum_b; b: enum_b);
 
 begin
@@ -579,6 +581,7 @@ begin
    a := succ(b)
 
 end;
+}
 
 operator +(a: pinteger): pinteger;
 

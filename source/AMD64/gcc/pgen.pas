@@ -4170,8 +4170,11 @@ procedure xlate;
       { get parameters of procedure/function/system call to parameters list }
       procedure getpar(ep: expptr);
       begin
+          ep^.sl := nil;
+          { for function overloads, sfr can be on top }
+          if estack^.op = 245{sfr} then popstk(ep^.sl); { get sfr start }
           getparn(ep, ep^.pn); { get those parameters into list }
-          popstk(ep^.sl); { get sfr start }
+          if ep^.sl = nil then popstk(ep^.sl); { get sfr start }
           if ep^.sl^.op <> 245{sfr} then errorl('system error             ');
       end;
 
@@ -5411,14 +5414,16 @@ procedure xlate;
           dmptre(ep); genexp(ep); deltre(ep)
         end;
 
-        { these are all Pascaline unimplemented }
-
         {cpp} 
-        239, 
+        239: parqq; { this is a no-op to us }
+
         {cpr} 
-        240, 
+        240: parqq; { this is a no-op to us }
+
         {lsa} 
-        241: errorl('Intermediate unimplement ');
+        241: begin parq;
+          { errorl('Intermediate unimplement ') }
+        end;
 
       end; (*case*)
 
