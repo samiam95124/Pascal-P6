@@ -4322,8 +4322,9 @@ procedure xlate;
         end;
 
         {lto} 
-        234: begin parq;
-          getexp(ep); attach(ep); pshstk(ep)
+        234: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
+          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          getexp(ep); ep^.qs := sp; ep^.fl := sp; attach(ep); pshstk(ep)
         end;
 
         {ixa}
