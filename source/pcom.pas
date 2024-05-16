@@ -8518,7 +8518,8 @@ begin cmdpos := maxcmd end;
                 if (lattr.typtr^.form = arrayc) and schrcst then begin
                   { load as string }
                   gen2(51(*ldc*),1,1);
-                  gensca(chr(gattr.cval.ival))
+                  gensca(chr(gattr.cval.ival));
+                  gen0(124(*mpc*))
                 end else load
               end else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
