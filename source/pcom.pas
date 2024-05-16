@@ -5002,7 +5002,8 @@ begin cmdpos := maxcmd end;
         if cc = 1 then begin
           { load simple template }
           gen2(51(*ldc*),1,spana(asp));
-          gen1(72(*swp*),stackelsize)
+          gen1(72(*swp*),stackelsize);
+          gen0(124(*mpc*))
         end else
           { load complex fixed template }
           gen1(105(*lft*),asp^.tmpl)
