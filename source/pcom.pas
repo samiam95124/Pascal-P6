@@ -6045,6 +6045,7 @@ begin cmdpos := maxcmd end;
                                 begin { is char to string }
                                   gen2(51(*ldc*),1,1);
                                   gensca(chr(gattr.cval.ival));
+                                  gen0(124(*mpc*));
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin

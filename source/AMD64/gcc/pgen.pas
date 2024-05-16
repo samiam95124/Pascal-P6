@@ -3550,7 +3550,7 @@ procedure xlate;
             {chka}
             95: begin 
               wrtins30(' orq %1,%1 # check nil        ', 0, 0, ep^.r1, rgnull, nil);
-              wrtins40(' jnz 1f # skip if greater or equal      ', 0, 0, rgnull, rgnull, nil);
+              wrtins30(' jnz 1f # skip if not         ', 0, 0, rgnull, rgnull, nil);
               wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' movq $0,%rsi # load line number        ', sline, 0, rgnull, rgnull, nil);
               wrtins60(' movq $DereferenceOfNilPointer,%rdx # load error code       ', 0, 0, rgnull, rgnull, nil);
@@ -4865,7 +4865,8 @@ procedure xlate;
 
         {dmp}
         117: begin parq;
-          popstk(ep); deltre(ep)
+          { unfortunately case statements can jump to an expected dump }
+          if estack <> nil then begin popstk(ep); deltre(ep) end
         end;
 
         {sroi,sroa,sror,srob,sroc,srox}
@@ -4987,8 +4988,7 @@ procedure xlate;
           wrtins40(' orb %1l,%1l # move boolean to flags    ', 0, 0, ep^.r1, rgnull, nil);
           if op = 24{fjp} then wrtins20(' jz @s # go if false', 0, 0, rgnull, rgnull, sp)
           else {tjp} wrtins20(' jnz @s # go if true', 0, 0, rgnull, rgnull, sp);
-          deltre(ep); 
-          botstk 
+          deltre(ep)
         end;
 
         {xjp}
