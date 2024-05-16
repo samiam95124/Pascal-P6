@@ -6782,6 +6782,7 @@ begin cmdpos := maxcmd end;
                           { load char ptr under }
                           gen2(51(*ldc*),1,1);
                           gensca(lc);
+                          gen0(124(*mpc*));
                           typind := 'v';
                           revcmp := true
                         end
@@ -6808,6 +6809,7 @@ begin cmdpos := maxcmd end;
                           { rationalize character }
                           gen2(51(*ldc*),1,1);
                           gensca(rc);
+                          gen0(124(*mpc*));
                           typind := 'v'
                         end else begin
                           lsizspc := lsize; alignu(parmptr,lsizspc);
