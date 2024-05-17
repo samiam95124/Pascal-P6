@@ -62,7 +62,7 @@ elif [ "$1" = "--pgen" ]; then
     #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
         -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > $progfile.err 2>&1
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > pascalne.err 2>&1
     if [ "$?" == "0" ]; then
 
         ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
@@ -88,7 +88,7 @@ elif [ "$1" = "--package" ]; then
 	echo Running with pint
     pint pascaline.p6 pascaline.p6o --machdeck
     genobj pascaline.p6o program_code.c
-	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o pascaline $PASCALP6/source/cmach/cmach.c -lm > $progfile.err 2>&1
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o pascaline $PASCALP6/source/cmach/cmach.c -lm > pascaline.err 2>&1
     if [ "$?" == "0" ]; then
 
         ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
@@ -109,7 +109,7 @@ else
     #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
         -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > $progfile.err 2>&1
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > pascaline.err 2>&1
     if [ "$?" == "0" ]; then
 
         ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst

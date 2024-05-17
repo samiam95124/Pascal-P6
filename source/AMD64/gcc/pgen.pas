@@ -2908,7 +2908,7 @@ procedure xlate;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             getreg(ep^.t1, rf);
             { left is complex pointer, right is lvl, result is left }
-            assreg(ep^.l, rf, ep^.r1, rgnull);
+            assreg(ep^.l, rf, rgnull, ep^.r1);
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
@@ -3983,10 +3983,8 @@ procedure xlate;
             27: begin
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
-              if sp <> nil then
-                wrtins10('call *@g  ', q, 0, rgnull, rgnull, nil)
-              else
-                wrtins10('call *@s  ', 0, 0, rgnull, rgnull, sp)
+              if ep^.qs <> nil then wrtins10(' call *@s ', 0, 0, rgnull, rgnull, ep^.qs)
+              else wrtins10(' call *@g ', q, 0, rgnull, rgnull, nil)
             end;
 
             {cke}
@@ -4062,9 +4060,9 @@ procedure xlate;
             {max} 
             214: begin
               if dodbgchk then begin
-                wrtins30(' cmpq $0,%1 # chk lvl < 1     ', 1, 0, ep^.r1, rgnull, nil);
+                wrtins30(' cmpq $0,%1 # chk lvl < 1     ', 1, 0, ep^.l^.r2, rgnull, nil);
                 wrtins30(' jb 2f # skip if below        ', 0, 0, rgnull, rgnull, nil);
-                wrtins30(' cmpq $0,%1 # compare         ', ep^.q, 0, ep^.r1, rgnull, nil);
+                wrtins30(' cmpq $0,%1 # compare         ', ep^.q, 0, ep^.l^.r1, rgnull, nil);
                 wrtins40(' jbe 1f # skip if less or equal         ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('2:        ', 0, 0, rgnull, rgnull, sp);
                 wrtins50(' leaq modnam(%rip),%rdi # load module name        ', 0, 0, rgnull, rgnull, nil);
@@ -4079,8 +4077,8 @@ procedure xlate;
                 wrtins30(' movq $0,%1 # get total lvl   ', q, 0, ep^.t1, rgnull, nil);
                 wrtins30(' subq %1,%2 # find tl-al      ', 0, 0, ep^.r^.r1, ep^.t1, nil);
                 wrtins30(' salq $4,%1 # *16 (long)      ', 0, 0, ep^.t1, rgnull, nil);
-                wrtins40(' addq %1,%2 # add to base template      ', 0, 0, ep^.r2, ep^.t1, nil);
-                wrtins40(' movq (%1),%2 # add to base template    ', 0, 0, ep^.t1, ep^.r2, nil)
+                wrtins40(' addq %1,%2 # add to base template      ', 0, 0, ep^.l^.r2, ep^.t1, nil);
+                wrtins40(' movq (%1),%2 # add to base template    ', 0, 0, ep^.t1, ep^.l^.r2, nil)
               end
             end;
 
