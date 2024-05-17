@@ -4633,8 +4633,7 @@ procedure xlate;
 
         {lft} 
         213: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd,q,q1); write(prr, ' ', q:1, ' ', q1:1); 
-          lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1))); pass;
+          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
           getexp(ep);
           popstk(ep^.l); ep^.lt := sp;
           pshstk(ep)
@@ -5399,12 +5398,12 @@ procedure xlate;
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' movq %1,%rdi # index destination       ', q, 0, ep2^.r1, ep^.r1, nil);
-          wrtins40(' movq %rsp,%rsi # index stack data      ', q, 0, ep2^.r1, ep^.r1, nil);
-          wrtins30(' movq $0,%rcx # set length    ', q, 0, ep2^.r1, ep^.r1, nil);
-          wrtins30(' repnz # copy to buffer       ', 0, 0, ep^.r1, rgnull, nil);
-          wrtins10(' movsb    ', 0, 0, ep^.r1, rgnull, nil);
-          wrtins40(' addq $0,%1 # remove from stack         ', q1, 0, ep2^.r1, ep^.r1, nil)
+          wrtins40(' movq %1,%rdi # index destination       ', q, 0, ep^.r1, rgnull, nil);
+          wrtins40(' movq %rsp,%rsi # index stack data      ', q, 0, rgnull, rgnull, nil);
+          wrtins30(' movq $0,%rcx # set length    ', q, 0, rgnull, rgnull, nil);
+          wrtins30(' repnz # copy to buffer       ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' addq $0,%esp # remove from stack       ', q1, 0, rgnull, rgnull, nil)
         end;
 
         {cps}
