@@ -4046,7 +4046,7 @@ procedure xlate;
               wrtins40(' movq %1,%rdx # copy template address   ', 0, 0, ep^.l^.r2, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins40(' addq $0,%rdx # next template location  ', intsize, 0, rgnull, rgnull, nil);
-              wrtins40(' addq (%1),%rdx # add template to size  ', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' addq (%rdx),%rax # add template to size', 0, 0, rgnull, rgnull, nil);
               wrtins40(' subq $0,%1 # count down levels         ', 1, 0, ep^.t1, rgnull, nil);
               wrtins30(' jnz 1b # loop over templates ', 0, 0, rgnull, rgnull, nil);     
               wrtins40(' addq $0,%1 # advance template slot     ', intsize, 0, ep^.l^.r2, rgnull, nil);  
@@ -4078,7 +4078,7 @@ procedure xlate;
               else begin
                 wrtins30(' movq $0,%1 # get total lvl   ', q, 0, ep^.t1, rgnull, nil);
                 wrtins30(' subq %1,%2 # find tl-al      ', 0, 0, ep^.r^.r1, ep^.t1, nil);
-                wrtins30(' salq %1,$4 # *16 (long)      ', 0, 0, ep^.t1, rgnull, nil);
+                wrtins30(' salq $4,%1 # *16 (long)      ', 0, 0, ep^.t1, rgnull, nil);
                 wrtins40(' addq %1,%2 # add to base template      ', 0, 0, ep^.r2, ep^.t1, nil);
                 wrtins40(' movq (%1),%2 # add to base template    ', 0, 0, ep^.t1, ep^.r2, nil)
               end
@@ -5275,21 +5275,22 @@ procedure xlate;
         {suv}
         91: begin labelsearch(def, val, sp, blk); 
           while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
-          sp := nil;
+          sp2 := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp2, blk);
             write(prr,' l '); writevp(prr, sp);
             write(prr,'l '); writevp(prr, sp2); 
             lftjst(parfld-(3+lenpv(sp)+2+lenpv(sp2))); pass
           end else begin
-            read(prd,q); write(prr,' l '); writevp(prr, sp);
-            write(prr,p:1,' ',q:1); 
-            lftjst(parfld-(3+lenpv(sp)+1+digits(q))); pass
+            read(prd,q1); write(prr,' l '); writevp(prr, sp);
+            write(' ',q1:1); 
+            lftjst(parfld-(3+lenpv(sp)+1+digits(q1))); pass
           end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq @s,%rax # get new vector address  ', 0, 0, rgnull, rgnull, sp);
-          wrtins40(' movq @s,%rbx # get address of vector   ', q1, 0, rgnull, rgnull, sp2);
-          wrtins40(' movq %rax,(%rbx) # place new vector    ', q1, 0, rgnull, rgnull, nil);
+          if sp2 <> nil then wrtins40(' movq @s,%rbx # get address of vector   ', 0, 0, rgnull, rgnull, sp2)
+          else wrtins40(' movq @g,%rbx # get address of vector   ', q1, 0, rgnull, rgnull, nil);
+          wrtins40(' movq %rax,(%rbx) # place new vector    ', 0, 0, rgnull, rgnull, nil);
         end;
 
         {cal}

@@ -8,10 +8,11 @@
 #
 # The flags are one of:
 #
-# --pmach Generate mach code and run the result through pmach.
-# --cmach Generate mach code and run the result through cmach.
-# --pint  Generate mach code and run the result through pint (default).
-# --pgen  Generate native code for AMD64.
+# --pmach   Generate mach code and run the result through pmach.
+# --cmach   Generate mach code and run the result through cmach.
+# --pint    Generate mach code and run the result through pint.
+# --package Generate mach code and run as standalone package
+# --pgen    Generate native code for AMD64 (default).
 #
 cd pascaline_tests
 
@@ -56,18 +57,70 @@ elif [ "$1" = "--cmach" ]; then
     
 elif [ "$1" = "--pgen" ]; then
 
-    echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
-        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
+    #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
+    #    -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+    #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
         -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > $progfile.err 2>&1
+    if [ "$?" == "0" ]; then
 
-else
+        ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+        diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
+        wc -l pascaline.dif
+
+    else
+
+        echo "** Compile failed"
+        exit 1
+
+    fi
+
+elif [ "$1" = "--pint" ]; then
 
 	echo Running with pint
     pint pascaline.p6 temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline.dif
+
+elif [ "$1" = "--package" ]; then
+
+	echo Running with pint
+    pint pascaline.p6 pascaline.p6o --machdeck
+    genobj pascaline.p6o program_code.c
+	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o pascaline $PASCALP6/source/cmach/cmach.c -lm > $progfile.err 2>&1
+    if [ "$?" == "0" ]; then
+
+        ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+        diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
+        wc -l pascaline.dif
+
+    else
+
+        echo "** Compile failed"
+        exit 1
+
+    fi
+
+else 
+
+    #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
+    #    -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+    #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
+    gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > $progfile.err 2>&1
+    if [ "$?" == "0" ]; then
+
+        ./pascaline headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
+        diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
+        wc -l pascaline.dif
+
+    else
+
+        echo "** Compile failed"
+        exit 1
+
+    fi
     
 fi
