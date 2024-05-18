@@ -5285,9 +5285,9 @@ procedure xlate;
             lftjst(parfld-(3+lenpv(sp)+1+digits(q1))); pass
           end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' movq @s,%rax # get new vector address  ', 0, 0, rgnull, rgnull, sp);
-          if sp2 <> nil then wrtins40(' movq @s,%rbx # get address of vector   ', 0, 0, rgnull, rgnull, sp2)
-          else wrtins40(' movq @g,%rbx # get address of vector   ', q1, 0, rgnull, rgnull, nil);
+          wrtins50(' movq @s(%rip),%rax # get new vector address      ', 0, 0, rgnull, rgnull, sp);
+          if sp2 <> nil then wrtins50(' movq @s(%rip),%rbx # get address of vector       ', 0, 0, rgnull, rgnull, sp2)
+          else wrtins50(' movq @g(%rip),%rbx # get address of vector       ', q1, 0, rgnull, rgnull, nil);
           wrtins40(' movq %rax,(%rbx) # place new vector    ', 0, 0, rgnull, rgnull, nil);
         end;
 
