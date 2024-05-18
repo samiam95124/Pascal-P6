@@ -2634,7 +2634,8 @@ procedure xlate;
           {lcp}
           135: begin ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
-            if ep^.r2 = rgnull then getfreg(ep^.r2, rf)
+            if ep^.r2 = rgnull then getfreg(ep^.r2, rf);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
           {sgs}
@@ -3260,7 +3261,7 @@ procedure xlate;
             {lda}
             4: begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins30(' lea @l(%1),%1 # index local  ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
+              wrtins30(' lea @l(%1),%1 # index local  ', ep^.q, 0, ep^.r1, rgnull, nil);
             end;
 
             {adi}
