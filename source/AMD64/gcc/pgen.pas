@@ -4848,7 +4848,7 @@ procedure xlate;
           if blkstk <> nil then
             if blkstk^.btyp in [btproc, btfunc] then begin
               write(prr, '        .globl   '); wrtblklng(blkstk); writeln(prr);
-              write(prr, '        .type    '); wrtblklng(blkstk); writeln(prr, '@function');
+              write(prr, '        .type    '); wrtblklng(blkstk); writeln(prr, ', @function');
               wrtblklabs(blkstk);
             end;
           frereg := allreg;

@@ -8241,7 +8241,7 @@ begin cmdpos := maxcmd end;
                     case op of { operator }
                       mul:   ops := '*        '; rdiv:  ops := '/        ';
                       andop: ops := 'and      '; idiv:  ops := 'div      ';
-                      imod:  ops := 'div      '; plus:  ops := '+        ';
+                      imod:  ops := 'mod      '; plus:  ops := '+        ';
                       minus: ops := '-        '; orop:  ops := 'or       ';
                       ltop:  ops := '<        '; leop:  ops := '<=       ';
                       geop:  ops := '>        '; gtop:  ops := '>=       ';
