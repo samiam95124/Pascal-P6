@@ -18,7 +18,7 @@
 #
 # default to pgen
 #
-param1=$param1
+param1=$1
 if [ -z "$param1" ]; then
 
     param1="--pgen"
