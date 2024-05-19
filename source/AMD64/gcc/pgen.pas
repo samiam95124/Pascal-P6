@@ -1367,10 +1367,47 @@ procedure xlate;
      snl := snl-1
    end;
 
+   procedure coinfunc;
+   type inslab = packed array [1..6] of char;
+     procedure insert(s: inslab);
+     var cl, fl, i, d: integer;
+     begin
+       cl := 1; while (cl < 6) and (s[cl] <> ' ') do cl := cl+1;
+       if (cl > 1) and (s[cl] = ' ') then cl := cl-1;
+       fl := 1; while (fl < lablen) and (sn[fl] <> '@') do fl := fl+1;
+       if (fl > 1) and (sn[fl] = '@') then fl := fl-1;
+       d := abs(cl-fl);
+       if cl-fl < 0 then for i := cl+1 to lablen-1 do sn[i] := sn[i+d]
+       else if cl-fl > 0 then for i := lablen downto cl+1 do sn[i] := sn[i-d]; 
+       for i := 1 to cl do sn[i] := s[i];
+       snl := snl+(cl-fl)
+     end;
+   begin
+     case sn[1] of
+       '<':
+         if sn[2] = '>' then insert('$neq  ')
+         else if sn[2] = '=' then insert('$leq  ')
+         else insert('$ltn  ');
+       '>':
+          if sn[2] = '=' then insert('$geq  ')
+          else insert('$gtr  ');
+       '=':
+         if sn[2] = '>' then insert('$geq  ')
+         else if sn[2] = '<' then insert('$leq  ')
+         else insert('$equ  ');
+       '+': insert('$plus ');;
+       '-': insert('$minus');
+       ':': if sn[2] = '=' then insert('$bcms ');
+       '/': insert('$rdiv ');
+       '*': insert('$times');
+     end
+   end;
+
    procedure cvtsds;
    var i: 1..lablen;
    begin
      i := 1;
+     if sn[i] in ['<','>','=','+','-',':','*','/'] then coinfunc;
      { skip to type signature }
      while (i <= snl) and (sn[i] <> '@') do i := i+1;
      while i <= snl do begin
@@ -1824,7 +1861,7 @@ procedure xlate;
                  getnxt; skpspc; getsds; sn2 := sn; snl2 := snl; cvtsds;
                  new(bp); strassvf(bp^.name, sn);
                  { get basename, without type }
-                 l := 1; bp^.short := true;
+                 l := 2; bp^.short := true;
                  while (l < lablen) and (sn[l] <> '$') do l := l+1;
                  if sn[l] = '$' then strassvfl(bp^.bname, sn, l-1)
                  else begin
@@ -2633,8 +2670,8 @@ procedure xlate;
 
           {lcp}
           135: begin ep^.r1 := r1; ep^.r2 := r2;
-            if ep^.r1 = rgnull then getfreg(ep^.r1, rf) else resreg(ep^.r1);
-            if ep^.r2 = rgnull then getfreg(ep^.r2, rf);
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf);
             assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
