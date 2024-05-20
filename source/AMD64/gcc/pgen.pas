@@ -4709,10 +4709,19 @@ procedure xlate;
         end;
 
         {mpc}
-        248: begin par;
-          getexp(ep);
-          popstk(ep^.r); popstk(ep^.l);
-          pshstk(ep)
+        248: begin parqq;
+          ep4 := nil; popstk(ep2); i := q;
+          while i > 0 do begin
+            ep2^.next := ep4;
+            ep4 := ep2;
+            popstk(ep2);
+            i := i-1
+          end;
+          getexp(ep); popstk(ep3);
+          if q1 = 0 then begin ep^.l := ep2; ep^.r := ep3 end
+          else begin ep^.l := ep3; ep^.r := ep2 end;
+          pshstk(ep);
+          while ep4 <> nil do begin ep := ep4; ep4 := ep4^.next; pshstk(ep) end;
         end;
 
         { *** calls can be terminal or non-terminal *** }
@@ -5376,8 +5385,8 @@ procedure xlate;
           wrtins40(' call psystem_errorv # process error    ', 0, 0, rgnull, rgnull, nil);
 
           wrtins60(' movq psystem_expmrk(%rip),%rbp # throw to new frame        ', 0, 0, rgnull, rgnull, nil);
-          wrtins40(' popq psystem_expstk(%rip),%rsp         ', 0, 0, rgnull, rgnull, nil);
-          wrtins40(' popq psystem_expadr(%rip),%rip         ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' popq psystem_expstk(%rip)    ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' popq psystem_expadr(%rip)    ', 0, 0, rgnull, rgnull, nil);
           wrtins50(' popq %rax # dump dummy vector for this frame     ', 0, 0, rgnull, rgnull, nil);
           wrtins30(' pushq %rdx # set new vector  ', 0, 0, rgnull, rgnull, nil);
           botstk
@@ -5440,7 +5449,7 @@ procedure xlate;
           wrtins30(' movq $0,%rcx # set length    ', q, 0, rgnull, rgnull, nil);
           wrtins30(' repnz # copy to buffer       ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
-          wrtins40(' addq $0,%esp # remove from stack       ', q1, 0, rgnull, rgnull, nil)
+          wrtins40(' addq $0,%rsp # remove from stack       ', q1, 0, rgnull, rgnull, nil)
         end;
 
         {cps}

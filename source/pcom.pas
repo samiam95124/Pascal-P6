@@ -3687,7 +3687,7 @@ begin cmdpos := maxcmd end;
             write(prr,chr(fp1),' ':4); par1(fp2);
             mes(0)
           end;
-          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117:
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117,124:
             begin
               write(prr,' ':5); par2(fp1, fp2);
               if fop = 116 then mesl(-fp2)
@@ -4565,7 +4565,7 @@ begin cmdpos := maxcmd end;
           { load simple template }
           gen2(51(*ldc*),1,spana(gattr.typtr));
           gen1(72(*swp*),stackelsize);
-          gen0(124(*mpc*))
+          gen2(124(*mpc*),0,0)
         end else
           { load complex fixed template }
           gen1(105(*lft*),gattr.typtr^.tmpl)
@@ -4575,7 +4575,7 @@ begin cmdpos := maxcmd end;
           { load simple template }
           gen2(51(*ldc*),1,spana(lattr.typtr));
           gen1(72(*swp*),ptrsize*3); { swap under right side and fix addr }
-          gen0(124(*mpc*))
+          gen2(124(*mpc*),1,1)
         end else 
           { load complex fixed template }
           gen1(105(*lft*),lattr.typtr^.tmpl)
@@ -4954,7 +4954,7 @@ begin cmdpos := maxcmd end;
                         gen0t(76(*dup*),nilptr); { copy that }
                         { index data }
                         gen1t(34(*inc*),containers(eltype)*intsize,nilptr);
-                        gen0(124(*mpc*));
+                        gen2(124(*mpc*),0,0);
                         { if level is at bottom, simplify the template }
                         if containers(eltype) = 1 then gen0(108(*spc*))
                       end;
@@ -5003,7 +5003,7 @@ begin cmdpos := maxcmd end;
           { load simple template }
           gen2(51(*ldc*),1,spana(asp));
           gen1(72(*swp*),stackelsize);
-          gen0(124(*mpc*))
+          gen2(124(*mpc*),0,0)
         end else
           { load complex fixed template }
           gen1(105(*lft*),asp^.tmpl)
@@ -6045,7 +6045,7 @@ begin cmdpos := maxcmd end;
                                 begin { is char to string }
                                   gen2(51(*ldc*),1,1);
                                   gensca(chr(gattr.cval.ival));
-                                  gen0(124(*mpc*));
+                                  gen2(124(*mpc*),0,0);
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin
@@ -6782,7 +6782,7 @@ begin cmdpos := maxcmd end;
                           { load char ptr under }
                           gen2(51(*ldc*),1,1);
                           gensca(lc);
-                          gen0(124(*mpc*));
+                          gen2(124(*mpc*),0,0);
                           typind := 'v';
                           revcmp := true
                         end
@@ -6809,7 +6809,7 @@ begin cmdpos := maxcmd end;
                           { rationalize character }
                           gen2(51(*ldc*),1,1);
                           gensca(rc);
-                          gen0(124(*mpc*));
+                          gen2(124(*mpc*),0,0);
                           typind := 'v'
                         end else begin
                           lsizspc := lsize; alignu(parmptr,lsizspc);
@@ -8521,7 +8521,7 @@ begin cmdpos := maxcmd end;
                   { load as string }
                   gen2(51(*ldc*),1,1);
                   gensca(chr(gattr.cval.ival));
-                  gen0(124(*mpc*))
+                  gen2(124(*mpc*),0,0)
                 end else load
               end else loadaddress;
             if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
