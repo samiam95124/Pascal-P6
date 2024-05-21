@@ -4021,8 +4021,8 @@ procedure xlate;
             27: begin
               genexp(ep^.sl); { process sfr start link }
               pshpar(ep^.pl); { process parameters first }
-              if ep^.qs <> nil then wrtins10(' call *@s ', 0, 0, rgnull, rgnull, ep^.qs)
-              else wrtins10(' call *@g ', q, 0, rgnull, rgnull, nil)
+              if ep^.qs <> nil then wrtins20(' call *@s(%rip)     ', 0, 0, rgnull, rgnull, ep^.qs)
+              else wrtins20(' call *@g(%rip)     ', q, 0, rgnull, rgnull, nil)
             end;
 
             {cke}
@@ -5468,7 +5468,7 @@ procedure xlate;
 
         {lsa} 
         241: begin parq;
-          { errorl('Intermediate unimplement ') }
+          errorl('Intermediate unimplement ')
         end;
 
       end; (*case*)
