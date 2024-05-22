@@ -189,7 +189,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 125;  { maximum number of instructions }
+   maxins     = 126;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3354,6 +3354,7 @@ begin cmdpos := maxcmd end;
       123: write(prr, 'Call indirect function');
       124: write(prr, 'Make fat pointer from components');
       125: write(prr, 'Call virtual function');
+      126: write(prr, 'Load stack complex pointer');
     end
   end;
 
@@ -4556,7 +4557,7 @@ begin cmdpos := maxcmd end;
         len := gattr.typtr^.size;
         alignu(parmptr,len);
         gen1(118(*lsa*),len);
-        gen0(111(*ldp*));
+        gen0(126(*lsp*));
         gen1(118(*lsa*),ptrsize*2)
       end;
       if gattr.typtr^.form = arrays then begin
@@ -10313,7 +10314,7 @@ begin cmdpos := maxcmd end;
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
-      mn[124] :='mpc'; mn[125] :='cvf';
+      mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp';
 
     end (*instrmnemonics*) ;
 
@@ -10449,6 +10450,7 @@ begin cmdpos := maxcmd end;
       cdx[120] := 0;                    cdx[121] := 0;
       cdx[122] := 0;                    cdx[123] := +ptrsize;
       cdx[124] := 0;                    cdx[125] := 0;
+      cdx[126] := -adrsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

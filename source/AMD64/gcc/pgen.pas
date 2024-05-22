@@ -1074,6 +1074,8 @@ procedure xlate;
          instr[246]:='cuf       '; insr[246] := 0; insf[246] := false; inss[246] := false;
          instr[247]:='cif       '; insr[247] := 0; insf[247] := false; inss[247] := false;
          instr[248]:='mpc       '; insr[248] := 2; insf[248] := false; inss[248] := false;
+         instr[249]:='cvf       '; insr[249] := 0; insf[249] := false; inss[249] := false;
+         instr[250]:='lsp       '; insr[250] := 2; insf[250] := false; inss[250] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -4749,8 +4751,8 @@ procedure xlate;
           end
         end;
 
-        {cuv}
-        27: begin 
+        {cuv,cvf}
+        27,249: begin 
           while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
           sp := nil;
           if prd^ = 'l' then begin 
@@ -5466,10 +5468,13 @@ procedure xlate;
         {cpr} 
         240: parqq; { this is a no-op to us }
 
+        {*** These instructions are stack arragers in the interpreter and are ignored here *** }
+
         {lsa} 
-        241: begin parq;
-          errorl('Intermediate unimplement ')
-        end;
+        241: parq;
+
+        {lsp}
+        250: par;
 
       end; (*case*)
 

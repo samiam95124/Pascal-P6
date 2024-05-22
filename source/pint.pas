@@ -2192,6 +2192,7 @@ procedure load;
          instr[247]:='cif       '; insp[247] := false; insq[247] := 0;
          instr[248]:='mpc       '; insp[248] := false; insq[248] := 0;
          instr[249]:='cvf       '; insp[249] := false; insq[249] := intsize;
+         instr[250]:='lsp       '; insp[250] := false; insq[250] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -3113,6 +3114,9 @@ procedure load;
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip, 
             cif }
           181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113, 247: storeop;
+         
+          { lsp is same as ldp }
+          250: begin op := 225; storeop end;
 
                       (*ujc must have same length as ujp, so we output a dummy
                         q argument*)
