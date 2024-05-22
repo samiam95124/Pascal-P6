@@ -271,6 +271,7 @@ const
       parfld      = 24;      { field length for intermediate parameters }
       maxopt      = 26;      { number of options }
       optlen      = 10;      { maximum length of option words }
+      maxtmp      = 20;      { maximum number of template dimensions }
 
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
@@ -319,7 +320,7 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
-      ctype = (cstr, creal, cset);
+      ctype = (cstr, creal, cset, ctmp);
       cstptr = ^cstrec; { pointer to string constant entry table }
       cstrec = record 
         next: cstptr; 
@@ -327,6 +328,7 @@ type
             cstr:  (str: strvsp; strl: integer; strn: integer);
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
+            ctmp:  (ta:  array [1..maxtmp] of integer; tsize: integer; tn: integer);
       end;
       psymbol     = ^symbol;
       symbol      = record
@@ -1774,6 +1776,9 @@ procedure xlate;
           fl: integer;
           os: optstr;
           oi: 1..maxopt;
+          ti: 1..maxtmp;
+          tv: integer;
+          cstp: cstptr;
    begin
       again := true;
       while again and not eof(prd) do begin
@@ -1981,7 +1986,25 @@ procedure xlate;
                   write(prr, ',', vt[vi]:1);
                 writeln(prr)
                end;
-          't': getlin; { template }
+          't': begin { template }
+                getnxt; skpspc;
+                if ch <> 'l' then
+                  errorl('Label format error       ');
+                getnxt; parlab(x,ls);
+                if ls <> nil then
+                  errorl('Invalid intermediate     ');
+                read(prd,l); 
+                new(cstp); cstp^.ct := ctmp; cstp^.next := csttbl; 
+                csttbl := cstp;
+                cstp^.tsize := l; cstp^.tn := x; ti := 1;
+                while not eoln(prd) do begin
+                  if ti = maxtmp then errorl('Too many template indexes');
+                  read(prd,tv); cstp^.ta[ti] := tv; ti := ti+1;
+                  { this is a gpc compiler bug, \cr is passing the eoln filter }
+                  while not eoln(prd) and (prd^ <= ' ') do get(prd)
+                end;
+                getlin
+              end;
           'n': getlin; { start constant table }
           'x': getlin;
           'c': getlin;
@@ -5490,6 +5513,7 @@ procedure xlate;
 
        end;
        i: 1..setsize;
+       ti: 1..maxtmp;
    begin
      while csttbl <> nil do begin
        case csttbl^.ct of
@@ -5506,6 +5530,13 @@ procedure xlate;
              write(prr, r.b[i]:1); if i < setsize then write(prr, ',') 
            end;
            writeln(prr)
+         end;
+         ctmp: begin
+           writeln(prr, 'template', csttbl^.tn:1, ':');
+           writevp(prr, modnam); writeln(prr, '.', csttbl^.tn:1, ':');
+           writeln(prr, '        .quad    ', csttbl^.tsize);
+           for ti := 1 to csttbl^.tsize do
+             writeln(prr, '        .quad    ', csttbl^.ta[ti])
          end;
        end;
        csttbl := csttbl^.next
