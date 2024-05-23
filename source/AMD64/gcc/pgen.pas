@@ -320,7 +320,7 @@ type
                 str:   packed array [1..varsqt] of char; { data contained }
                 next:  strvsp { next }
               end;
-      ctype = (cstr, creal, cset, ctmp);
+      ctype = (cstr, creal, cset, ctmp, ctab, cint, cchr, cbol, cvalx);
       cstptr = ^cstrec; { pointer to string constant entry table }
       cstrec = record 
         next: cstptr; 
@@ -329,6 +329,11 @@ type
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
             ctmp:  (ta:  array [1..maxtmp] of integer; tsize: integer; tn: integer);
+            ctab:  (tb:  cstptr; csize: integer; cn: integer);
+            cint:  (i:   integer; intn: integer);
+            cchr:  (c:   integer; chrn: integer);
+            cbol:  (b:   integer; boln: integer);
+            cvalx: (x:   integer; valxn: integer);
       end;
       psymbol     = ^symbol;
       symbol      = record
@@ -1764,7 +1769,7 @@ procedure xlate;
           c,ch1: char;
           ls: strvsp;    
           ispc: boolean;  
-          i, l: 1..lablen;   
+          i, l: integer;   
           bp: pblock;
           sp: psymbol;
           sgn: boolean;
@@ -1778,9 +1783,13 @@ procedure xlate;
           oi: 1..maxopt;
           ti: 1..maxtmp;
           tv: integer;
-          cstp: cstptr;
+          cstp, cstp2: cstptr;
+          csttab: boolean;
+          v: integer;
+          r: real;
+          s: settype;
    begin
-      again := true;
+      again := true; csttab := false;
       while again and not eof(prd) do begin
         getnxt;(* first character of line*)
         if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
@@ -1994,20 +2003,98 @@ procedure xlate;
                 if ls <> nil then
                   errorl('Invalid intermediate     ');
                 read(prd,l); 
-                new(cstp); cstp^.ct := ctmp; cstp^.next := csttbl; 
-                csttbl := cstp;
-                cstp^.tsize := l; cstp^.tn := x; ti := 1;
+                new(cstp2); cstp2^.ct := ctmp; cstp2^.next := csttbl; 
+                csttbl := cstp2;
+                cstp2^.tsize := l; cstp2^.tn := x; ti := 1;
                 while not eoln(prd) do begin
                   if ti = maxtmp then errorl('Too many template indexes');
-                  read(prd,tv); cstp^.ta[ti] := tv; ti := ti+1;
+                  read(prd,tv); cstp2^.ta[ti] := tv; ti := ti+1;
                   { this is a gpc compiler bug, \cr is passing the eoln filter }
                   while not eoln(prd) and (prd^ <= ' ') do get(prd)
                 end;
                 getlin
               end;
-          'n': getlin; { start constant table }
-          'x': getlin;
-          'c': getlin;
+         'n': begin { start constant table }
+                if csttab then
+                  errorl('Already in constant table');
+                csttab := true; { flag in table }
+                getnxt; skpspc;
+                if ch <> 'l' then
+                  errorl('Label format error       ');
+                getnxt; parlab(x,ls);
+                if ls <> nil then
+                  errorl('Invalid intermediate     ');
+                read(prd,l); { note the size is unused }
+                new(cstp); cstp^.ct := ctab; cstp^.tb := nil; 
+                cstp^.next := csttbl; csttbl := cstp;
+                cstp^.csize := l; cstp^.cn := x;
+                getlin
+                { note mixed constants with other operands is
+                  neither encouraged nor forbidden }
+              end;
+         'x': begin
+                if not csttab then
+                  errorl('No constant table active ');
+                csttab := false;
+                getlin
+              end;
+         'c': begin
+                getnxt; skpspc;
+                if not (ch in ['i','r','p','s','c','b','x'])
+                  then errorl('Invalid const table type ');
+                case ch of { constant type }
+                  'i': begin
+                         getnxt; read(prd,v); new(cstp2); cstp2^.ct := cint; 
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.i := v; cstp2^.intn := 0
+                       end;
+                  'r': begin
+                         getnxt; read(prd,r); new(cstp2); cstp2^.ct := creal;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.r := r; cstp2^.realn := 0
+                       end;
+                  'p': begin
+                         getnxt; skpspc;
+                         if ch <> '(' then errorl('''('' expected for set     ');
+                         s := [ ]; getnxt;
+                         while ch<>')' do
+                           begin read(prd,i); getnxt; s := s + [i] end;
+                         new(cstp2); cstp2^.ct := cset;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.s := s; cstp2^.setn := 0
+                       end;
+                  's': begin
+                         getnxt; skpspc;
+                         if ch <> '''' then errorl('quote expected for string');
+                         getnxt; i := 1;
+                         while ch<>'''' do
+                           begin sn[i] := ch; i := i+1; getnxt end;
+                         new(cstp2); cstp2^.ct := cstr;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         strassvf(cstp2^.str,sn); cstp2^.strn := 0
+                       end;
+                  'c': begin
+                         getnxt;
+                         { chars are output as values }
+                         read(prd,i); new(cstp2); cstp2^.ct := cchr;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.c := i; cstp2^.chrn := 0
+                       end;
+                  'b': begin
+                         getnxt;
+                         { booleans are output as values }
+                         read(prd,i); new(cstp2); cstp2^.ct := cbol;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.b := i; cstp2^.boln := 0
+                       end;
+                  'x': begin
+                         getnxt; read(prd,i); new(cstp2); cstp2^.ct := cvalx;
+                         cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
+                         cstp2^.x := v; cstp2^.valxn := 0
+                       end;
+                end;
+                getlin
+              end;
        end
      end
    end; (*generate*)
@@ -5514,31 +5601,65 @@ procedure xlate;
        end;
        i: 1..setsize;
        ti: 1..maxtmp;
+   procedure gencstlst(cp: cstptr); forward;
+   procedure gencstety(cp: cstptr);
+   var i: integer;
+       ti: 1..maxtmp;
+   begin
+     case cp^.ct of
+       cstr: begin
+         write(prr, '        .string "');
+         writevq(prr, cp^.str, cp^.strl);
+         writeln(prr, '"') 
+       end;
+       creal: writeln(prr, '        .double ', cp^.r);
+       cset: begin
+         write(prr, '        .byte   ');
+         r.s := cp^.s;
+         for i := 1 to setsize do begin
+           write(prr, r.b[i]:1); if i < setsize then write(prr, ',') 
+         end;
+         writeln(prr)
+       end;
+       ctmp: begin
+         writeln(prr, '        .quad    ', cp^.tsize);
+         for ti := 1 to cp^.tsize do
+           writeln(prr, '        .quad    ', cp^.ta[ti])
+       end;
+       ctab: gencstlst(cp^.tb);
+       cint: writeln(prr, '        .quad   ', cp^.i:1);
+       cchr: writeln(prr, '        .byte   ', cp^.c:1);
+       cbol: writeln(prr, '        .byte   ', cp^.i:1);
+       cvalx: writeln(prr, '        .byte   ', cp^.i:1);
+     end
+   end;
+   procedure gencstlst{(cp: cstptr)};
+   begin
+     while cp <> nil do begin
+       gencstety(cp);
+       cp := cp^.next
+   end;
+   end;
    begin
      while csttbl <> nil do begin
        case csttbl^.ct of
-         cstr: begin writeln(prr, 'string', csttbl^.strn:1, ':');
-           write(prr, '        .string "');
-           writevq(prr, csttbl^.str, csttbl^.strl);
-           writeln(prr, '"') end;
-         creal: begin writeln(prr, 'real', csttbl^.realn:1, ':');
-           writeln(prr, '        .double ', csttbl^.r) end;
-         cset: begin writeln(prr, 'set', csttbl^.setn:1, ':');
-           write(prr, '        .byte   ');
-           r.s := csttbl^.s;
-           for i := 1 to setsize do begin
-             write(prr, r.b[i]:1); if i < setsize then write(prr, ',') 
-           end;
-           writeln(prr)
-         end;
+         cstr: writeln(prr, 'string', csttbl^.strn:1, ':');
+         creal: writeln(prr, 'real', csttbl^.realn:1, ':');
+         cset: writeln(prr, 'set', csttbl^.setn:1, ':');
          ctmp: begin
            writeln(prr, 'template', csttbl^.tn:1, ':');
-           writevp(prr, modnam); writeln(prr, '.', csttbl^.tn:1, ':');
-           writeln(prr, '        .quad    ', csttbl^.tsize);
-           for ti := 1 to csttbl^.tsize do
-             writeln(prr, '        .quad    ', csttbl^.ta[ti])
+           writevp(prr, modnam); writeln(prr, '.', csttbl^.tn:1, ':')
          end;
+         ctab: begin
+           writeln(prr, 'constant_table', csttbl^.cn:1, ':');
+           writevp(prr, modnam); writeln(prr, '.', csttbl^.cn:1, ':')
+         end;
+         cint: writeln(prr, 'value', csttbl^.intn:1, ':');
+         cchr: writeln(prr, 'character', csttbl^.chrn:1, ':');
+         cbol: writeln(prr, 'boolean', csttbl^.boln:1, ':');
+         cvalx: writeln(prr, 'byte_value', csttbl^.valxn:1, ':');
        end;
+       gencstety(csttbl);
        csttbl := csttbl^.next
      end
    end;
