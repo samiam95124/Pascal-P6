@@ -1783,7 +1783,7 @@ procedure xlate;
           oi: 1..maxopt;
           ti: 1..maxtmp;
           tv: integer;
-          cstp, cstp2: cstptr;
+          cstp, cstp2, cstp3: cstptr;
           csttab: boolean;
           v: integer;
           r: real;
@@ -2035,6 +2035,11 @@ procedure xlate;
          'x': begin
                 if not csttab then
                   errorl('No constant table active ');
+                cstp2 := cstp^.tb; cstp^.tb := nil;
+                while cstp2 <> nil do begin
+                  cstp3 := cstp2; cstp2 := cstp2^.next;
+                  cstp3^.next := cstp^.tb; cstp^.tb := cstp3
+                end;
                 csttab := false;
                 getlin
               end;
@@ -5634,8 +5639,28 @@ procedure xlate;
      end
    end;
    procedure gencstlst{(cp: cstptr)};
+   var ad: address;
+   procedure align(a: integer);
    begin
+     while (ad mod a) <> 0 do begin
+       writeln(prr, '        .byte   1');
+       ad := ad+1
+     end
+   end;
+   begin
+     ad := 0;
      while cp <> nil do begin
+       case cp^.ct of
+         cstr: ad := ad+cp^.strl;
+         creal: begin align(realal); ad := ad+realsize end;
+         cset: begin align(setal); ad := ad+setsize end;
+         ctmp: ad := ad+(cp^.tsize+1)*intsize;
+         ctab: ad := ad+cp^.csize;
+         cint: begin align(intal); ad := ad+intsize end;
+         cchr: begin align(charal); ad := ad+charsize end;
+         cbol: begin align(boolal); ad := ad+boolsize end;
+         cvalx: ad := ad+1;
+       end;
        gencstety(cp);
        cp := cp^.next
    end;
