@@ -5390,7 +5390,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-          wrtins40(' movq $0,%rdi # load template size      ', q*intsize, 0, r1, rgnull, nil);
+          wrtins30(' movq $0,%rdi # load # levels ', q, 0, rgnull, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins50(' movq %rsp,%rcx # load array dimension list       ', 0, 0, rgnull, rgnull, nil);
           wrtins60(' call psystem_vip # fill template and allocate variable     ', 0, 0, rgnull, rgnull, nil);
@@ -5449,10 +5449,10 @@ procedure xlate;
             lftjst(parfld-(3+lenpv(sp)+1+digits(q1))); pass
           end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins50(' movq @s(%rip),%rax # get new vector address      ', 0, 0, rgnull, rgnull, sp);
-          if sp2 <> nil then wrtins50(' movq @s(%rip),%rbx # get address of vector       ', 0, 0, rgnull, rgnull, sp2)
-          else wrtins50(' movq @g(%rip),%rbx # get address of vector       ', q1, 0, rgnull, rgnull, nil);
-          wrtins40(' movq %rax,(%rbx) # place new vector    ', 0, 0, rgnull, rgnull, nil);
+          wrtins50(' leaq @s(%rip),%rax # get new vector address      ', 0, 0, rgnull, rgnull, sp);
+
+          if sp2 <> nil then wrtins40(' movq %rax,@s(%rip) #  place new vector ', 0, 0, rgnull, rgnull, sp2)
+          else wrtins40(' movq %rax,@g(%rip) # place new vector  ', q1, 0, rgnull, rgnull, nil);
         end;
 
         {cal}
