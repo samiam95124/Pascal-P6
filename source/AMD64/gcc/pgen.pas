@@ -2847,6 +2847,7 @@ procedure xlate;
           {noti}
           205: begin ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
+            getreg(ep^.t1, rf);
             assreg(ep^.l, rf, ep^.r1, r2)
           end;
 
@@ -3884,7 +3885,9 @@ procedure xlate;
                 wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               end;
-              wrtins30(' not %1 # not integer         ', 0, 0, ep^.r1, rgnull, nil)
+              wrtins30(' notq %1 # not integer        ', 0, 0, ep^.r1, rgnull, nil);
+              wrtins30(' movq $0,%1 # clear sign bit  ', pmmaxint, 0, ep^.t1, rgnull, nil);
+              wrtins20(' andq %1,%2         ', pmmaxint, 0, ep^.t1, ep^.r1, nil)
             end;
 
             {odd}
