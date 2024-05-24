@@ -2076,7 +2076,8 @@ procedure xlate;
                            begin sn[i] := ch; i := i+1; getnxt end;
                          new(cstp2); cstp2^.ct := cstr;
                          cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                         strassvf(cstp2^.str,sn); cstp2^.strn := 0
+                         strassvf(cstp2^.str,sn); cstp2^.strl := i; 
+                         cstp2^.strn := 0
                        end;
                   'c': begin
                          getnxt;
