@@ -3136,6 +3136,10 @@ void sinins()
 
     case 241 /*lsa*/: getq(); ad = sp+q; pshadr(ad); break;
 
+    case 251 /*cpl*/: popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
+                      pshadr(ad2);
+                      break;
+
     case 242 /*eext*/:
 #ifdef EXTERNALS
                     ExecuteExternal(pc-extvecbase);
@@ -3156,7 +3160,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253,
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 252, 253,
        254, 255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

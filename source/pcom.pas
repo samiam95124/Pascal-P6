@@ -189,7 +189,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 126;  { maximum number of instructions }
+   maxins     = 127;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3355,6 +3355,7 @@ begin cmdpos := maxcmd end;
       124: write(prr, 'Make fat pointer from components');
       125: write(prr, 'Call virtual function');
       126: write(prr, 'Load stack complex pointer');
+      127: write(prr, 'Copy length from complex pointer');
     end
   end;
 
@@ -5385,13 +5386,10 @@ begin cmdpos := maxcmd end;
                           if lsp = nil then cpx := false
                           else cpx := lsp^.form = arrayc;
                           if cpx then begin { complex }
-                            if default then begin
+                            if default then
                               { no field, need to duplicate len to make the
                                 field }
-                              gen1(72(*swp*),stackelsize); { swap ptr and len }
-                              gen0t(76(*dup*),nilptr); { make copy len }
-                              gen1(72(*swp*),stackelsize*2); { back in order }
-                            end
+                              gen0(127(*cpl*)) { copy length }
                           end else begin { standard array }
                             len := lsp^.size div charmax;
                             if default then gen2(51(*ldc*),1,len)
@@ -10314,7 +10312,7 @@ begin cmdpos := maxcmd end;
       mn[112] :='vin'; mn[113] :='vdd'; mn[114] :='lto'; mn[115] :='ctb';
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
-      mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp';
+      mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp'; mn[127] :='cpl';
 
     end (*instrmnemonics*) ;
 
@@ -10450,7 +10448,7 @@ begin cmdpos := maxcmd end;
       cdx[120] := 0;                    cdx[121] := 0;
       cdx[122] := 0;                    cdx[123] := +ptrsize;
       cdx[124] := 0;                    cdx[125] := 0;
-      cdx[126] := -adrsize;
+      cdx[126] := -adrsize;             cdx[127] := -intsize;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

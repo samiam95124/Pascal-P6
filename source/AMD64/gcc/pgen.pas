@@ -1083,6 +1083,7 @@ procedure xlate;
          instr[248]:='mpc       '; insr[248] := 2; insf[248] := false; inss[248] := false;
          instr[249]:='cvf       '; insr[249] := 0; insf[249] := false; inss[249] := false;
          instr[250]:='lsp       '; insr[250] := 2; insf[250] := false; inss[250] := false;
+         instr[251]:='cpl       '; insr[250] := 1; insf[250] := false; inss[250] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -3114,6 +3115,13 @@ procedure xlate;
             assreg(ep^.r, rf, ep^.r2, rgnull)
           end;
 
+          {cpl} 
+          251: begin
+            ep^.r1 := r1;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            assreg(ep^.l, rf, rgnull, ep^.r1)
+          end;
+
         end;
         write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr)
@@ -4292,12 +4300,15 @@ procedure xlate;
 
             {ldp} 
             225: begin
-              wrtins30(' movq ^0(%1),%2 # get adr     ', intsize, 0, ep^.l^.r1, ep^.r2, nil);
-              wrtins30(' movq (%1),%2 # get adr       ', 0, 0, ep^.l^.r1, ep^.r1, nil);
+              wrtins40(' movq ^0(%1),%2 # get template adr      ', intsize, 0, ep^.l^.r1, ep^.r2, nil);
+              wrtins30(' movq (%1),%2 # get data adr  ', 0, 0, ep^.l^.r1, ep^.r1, nil);
             end;
 
             {mpc}
             248: ; { registers are all assigned }
+
+            {cpl}
+            251: ; { registers are all assigned }
 
           end;
           for r := rgxmm15 downto rgrax do if r in ep^.rs then begin
@@ -4843,6 +4854,13 @@ procedure xlate;
           else begin ep^.l := ep3; ep^.r := ep2 end;
           pshstk(ep);
           while ep4 <> nil do begin ep := ep4; ep4 := ep4^.next; pshstk(ep) end;
+        end;
+
+        { cpl }
+        251: begin par;
+          getexp(ep);
+          popstk(ep2); duptre(ep2, ep3); pshstk(ep2);
+          ep^.l := ep3; pshstk(ep)
         end;
 
         { *** calls can be terminal or non-terminal *** }

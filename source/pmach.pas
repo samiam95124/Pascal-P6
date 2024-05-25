@@ -3260,6 +3260,9 @@ begin
                  
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
+    251 (*cpl*): begin popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
+                       pshadr(ad2) end;
+
     242 (*eext*): begin
 #ifdef EXTERNALS
                     ExecuteExternal(pc-extvecbase);
@@ -3280,7 +3283,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end

@@ -2193,6 +2193,7 @@ procedure load;
          instr[248]:='mpc       '; insp[248] := false; insq[248] := 0;
          instr[249]:='cvf       '; insp[249] := false; insq[249] := intsize;
          instr[250]:='lsp       '; insp[250] := false; insq[250] := 0;
+         instr[251]:='cpl       '; insp[251] := false; insq[251] := 0;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -3112,8 +3113,8 @@ procedure load;
           243,244,
 
           { dupi, dupa, dupr, dups, dupb, dupc, cks, cke, inv, cal, vbe, cip, 
-            cif }
-          181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113, 247: storeop;
+            cif, cpl }
+          181, 182, 183, 184, 185, 186, 187, 188, 189, 22, 96, 113, 247, 251: storeop;
          
           { lsp is same as ldp }
           250: begin op := 225; storeop end;
@@ -5352,6 +5353,9 @@ begin
 
     241 (*lsa*): begin getq; pshadr(sp+q) end;
 
+    251 (*cpl*): begin popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
+                       pshadr(ad2) end;
+
     242 (*eext*): begin
 #ifdef EXTERNALS
                     ad := sp+adrsize; { index parameters }
@@ -5364,7 +5368,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 251, 252, 253, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 252, 253, 254,
     255: errorv(InvalidInstruction)
 
   end
