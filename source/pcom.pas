@@ -3561,6 +3561,12 @@ begin cmdpos := maxcmd end;
     else filet := fsp^.form = files
   end;
 
+  { check complex pointer }
+  function complext(fsp: stp): boolean;
+  begin complext := false;
+    if fsp <> nil then complext := fsp^.form = arrayc
+  end;
+
   procedure lftjst(fl: integer);
   begin
     if fl > 0 then write(prr, ' ':fl)
@@ -5237,7 +5243,6 @@ begin cmdpos := maxcmd end;
           r: integer; { radix of print }
           spad: boolean; { write space padded string }
           ledz: boolean; { use leading zeros }
-          cpx: boolean; { is complex pointer }
           onstk: boolean; { expression result on stack }
     begin llkey := lkey; txt := true; deffil := true; byt := false; 
       if sy = lparent then
@@ -5383,9 +5388,7 @@ begin cmdpos := maxcmd end;
                             gen1t(35(*ind*),0,nilptr);
                             gen1(72(*swp*),stackelsize*2)
                           end;
-                          if lsp = nil then cpx := false
-                          else cpx := lsp^.form = arrayc;
-                          if cpx then begin { complex }
+                          if complext(lsp) then begin { complex }
                             if default then
                               { no field, need to duplicate len to make the
                                 field }
@@ -5709,7 +5712,7 @@ begin cmdpos := maxcmd end;
       if not stringt(gattr.typtr) then error(208);
       if gattr.typtr <> nil then begin
         len := gattr.typtr^.size div charmax;
-        gen2(51(*ldc*),1,len);
+        if not complext(gattr.typtr) then gen2(51(*ldc*),1,len);
         if lattr.typtr = textptr then { text }
           gen1(30(*csp*),49(*asst*))
         else { binary }
