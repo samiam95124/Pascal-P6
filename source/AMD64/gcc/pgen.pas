@@ -5360,8 +5360,6 @@ procedure xlate;
           wrtins30(' movq $0,%rcx # set length    ', q, 0, rgnull, rgnull, nil);
           wrtins40(' repnz # move structure to address      ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
-        { string size scale: 11111111112222222222333333333344444444445555555555666666666677777777778
-                   '12345678901234567890123456789012345678901234567890123456789012345678901234567890' }
           wrtins50(' addq $0,%rsp # remove structure from stack       ', q1, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2)
         end;
@@ -5447,7 +5445,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-          wrtins40(' movq $0,%rdi # load template size      ', q*intsize, 0, r1, rgnull, nil);
+          wrtins30(' movq $0,%rdi # load # levels ', q, 0, r1, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins50(' movq %rsp,%rcx # load array dimension list       ', 0, 0, rgnull, rgnull, nil);
           wrtins60(' call psystem_vin # fill template and allocate variable     ', 0, 0, rgnull, rgnull, nil);
