@@ -4955,6 +4955,12 @@ begin cmdpos := maxcmd end;
                 with gattr,typtr^ do
                   if form = pointer then
                     begin load;
+                      typtr := eltype;
+                      if debug then begin
+                         if taggedrec(eltype) then
+                           gen2t(80(*ckl*),1,maxaddr,nilptr)
+                         else gen2t(45(*chk*),1,maxaddr,nilptr);
+                      end;
                       if eltype <> nil then
                         if eltype^.form = arrayc then begin
                         { it's a container, load a complex pointer based on
@@ -4965,12 +4971,6 @@ begin cmdpos := maxcmd end;
                         gen2(124(*mpc*),0,0);
                         { if level is at bottom, simplify the template }
                         if containers(eltype) = 1 then gen0(108(*spc*))
-                      end;
-                      typtr := eltype;
-                      if debug then begin
-                         if taggedrec(eltype) then
-                           gen2t(80(*ckl*),1,maxaddr,nilptr)
-                         else gen2t(45(*chk*),1,maxaddr,nilptr);
                       end;
                       with gattr do
                         begin kind := varbl; access := indrct; idplmt := 0;

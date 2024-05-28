@@ -4266,7 +4266,7 @@ procedure xlate;
 
             {spc} 
             222: begin
-              wrtins40(' movq (%1),%1 # fetch template length   ', 0, 0, ep^.l^.r1, rgnull, nil)
+              wrtins40(' movq (%1),%1 # fetch template length   ', 0, 0, ep^.l^.r2, rgnull, nil)
             end;
 
             {ccs} 
@@ -5106,13 +5106,13 @@ procedure xlate;
 
         {aps}
         178: begin parq;
-          frereg := allreg; popstk(ep); popstk(ep2);
+          frereg := allreg; popstk(ep2); popstk(ep);
           assreg(ep, frereg, rgrdi, rgrcx);
           assreg(ep2, frereg, rgrsi, rgnull);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           dmptre(ep); genexp(ep);
           dmptre(ep2); genexp(ep2);
-          wrtins30(' movq $0,%rax # get length    ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' movq $0,%rax # get size      ', q, 0, rgnull, rgnull, nil);
           wrtins30(' mulq %rcx # find len*size    ', 0, 0, rgnull, rgnull, nil);
           wrtins20(' repnz # move data  ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
