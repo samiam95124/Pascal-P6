@@ -3793,8 +3793,8 @@ procedure xlate;
 
             {lcp}
             135: begin 
-              wrtins30(' movq (%1),%2 # get pointer   ', 0, 0, ep^.l^.r1, ep^.r1, nil);
-              wrtins30(' movq ^0(%1),%2 # get length  ', ptrsize, 0, ep^.l^.r1, ep^.r2, nil)
+              wrtins40(' leaq ^0(%1),%2 # get length/template   ', ptrsize, 0, ep^.l^.r1, ep^.r2, nil);
+              wrtins30(' movq (%1),%1 # get pointer   ', 0, 0, ep^.l^.r1, rgnull, nil)
             end;
 
             {sgs}
