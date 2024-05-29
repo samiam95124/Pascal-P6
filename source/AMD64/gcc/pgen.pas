@@ -3038,7 +3038,7 @@ procedure xlate;
             ep^.r1 := r1;
             if ep^.r1 = rgnull then ep^.r1 := rgrax;
             resreg(ep^.r1);
-            assreg(ep^.l, rf, ep^.r1, rgnull);
+            assreg(ep^.l, rf, ep^.r1, rgnull); resreg(ep^.l^.r2);
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
 
@@ -4190,7 +4190,7 @@ procedure xlate;
               wrtins40(' movq $0,%rax # get element size        ', ep^.q, 0, rgnull, rgnull, nil);
               wrtins30(' mulq %1 # find index*size    ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins30(' addq %rax,%1 # add to base   ', 0, 0, ep^.l^.r1, rgnull, nil);
-              if (ep^.r1 <> rgrax) then
+              if ep^.r1 <> ep^.l^.r1 then
                 wrtins30(' movq %rax,%1 # move to result', 0, 0, ep^.r1, rgnull, nil)
             end;
 
