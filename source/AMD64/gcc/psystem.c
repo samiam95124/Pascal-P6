@@ -4961,7 +4961,7 @@ long psystem_vis(
     tp = (long*)pa;
     tp += nl;
     ts = size;
-    for (i = 1; i < nl; i++) { s = *al++; *tp-- = s; ts += s; }
+    for (i = 1; i <= nl; i++) { s = *al++; *tp-- = s; ts *= s; }
 
     return ts;
 

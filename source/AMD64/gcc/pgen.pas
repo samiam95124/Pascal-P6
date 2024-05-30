@@ -5426,7 +5426,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
-          wrtins40(' movq $0,%rdi # load template size      ', q*intsize, 0, r1, rgnull, nil);
+          wrtins30(' movq $0,%rdi # index level   ', q, 0, r1, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins50(' movq %rsp,%rcx # load array dimension list       ', 0, 0, rgnull, rgnull, nil);
           wrtins60(' call psystem_vis # fill template and allocate variable     ', 0, 0, rgnull, rgnull, nil);
