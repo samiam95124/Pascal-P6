@@ -5429,10 +5429,13 @@ procedure xlate;
           wrtins30(' movq $0,%rdi # index level   ', q, 0, r1, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins50(' movq %rsp,%rcx # load array dimension list       ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq %rdx # save variable address     ', 0, 0, rgnull, rgnull, nil);
           wrtins60(' call psystem_vis # fill template and allocate variable     ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' popq %rdx # restore variable address   ', 0, 0, rgnull, rgnull, nil);
           wrtins50(' addq $0,%rsp # dump dimensions from stack        ', q*intsize, 0, rgnull, rgnull, nil);
           wrtins40(' popq %rbx # get return address         ', 0, 0, rgnull, rgnull, nil);
           wrtins50(' subq %rax,%rsp # allocate vector on stack        ', q*intsize, 0, rgnull, rgnull, nil);
+          wrtins40(' movq %rsp,(%rdx) # set variable address', 0, 0, rgnull, rgnull, nil);
           wrtins40(' pushq %rbx # replace return address    ', 0, 0, rgnull, rgnull, nil);
           deltre(ep);
           botstk
