@@ -5114,6 +5114,7 @@ procedure xlate;
           dmptre(ep2); genexp(ep2);
           wrtins30(' movq $0,%rax # get size      ', q, 0, rgnull, rgnull, nil);
           wrtins30(' mulq %rcx # find len*size    ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' movq %rax,%rcx # place size  ', 0, 0, rgnull, rgnull, nil);
           wrtins20(' repnz # move data  ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
           dmptre(ep); deltre(ep2); deltre(ep); 
