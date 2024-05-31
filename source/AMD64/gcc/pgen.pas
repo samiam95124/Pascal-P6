@@ -3089,8 +3089,8 @@ procedure xlate;
 
           {ccs} 
           223: begin
-            dstreg(rgrsi); dstreg(rgrdi); dstreg(rgrcx); 
-            resreg(rgrsi); resreg(rgrdi); resreg(rgrcx);
+            dstreg(rgrsi); dstreg(rgrdi); dstreg(rgrcx); dstreg(rgrax);
+            resreg(rgrsi); resreg(rgrdi); resreg(rgrcx); resreg(rgrax);
             ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
@@ -4206,8 +4206,8 @@ procedure xlate;
                 wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               end;
-              wrtins30(' movq $0,%1 # get # levels    ', q, 0, ep^.t1, rgnull, nil);
-              wrtins40(' movq $0,%rax # get base element size   ', q1, 0, rgnull, rgnull, nil);
+              wrtins30(' movq $0,%1 # get # levels    ', ep^.q, 0, ep^.t1, rgnull, nil);
+              wrtins40(' movq $0,%rax # get base element size   ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins40(' movq %1,%rdx # copy template address   ', 0, 0, ep^.l^.r2, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins40(' addq $0,%rdx # next template location  ', intsize, 0, rgnull, rgnull, nil);
@@ -4217,8 +4217,6 @@ procedure xlate;
               wrtins40(' addq $0,%1 # advance template slot     ', intsize, 0, ep^.l^.r2, rgnull, nil);  
               wrtins30(' mulq %1 # find index*size    ', 0, 0, ep^.r^.r1, rgnull, nil);
               wrtins30(' addq %rax,%1 # add to base   ', 0, 0, ep^.l^.r1, rgnull, nil);   
-              if (ep^.r1 <> rgrax) then
-                wrtins30(' movq %rax,%1 # move to result', 0, 0, ep^.r1, rgnull, nil)  
             end;
 
             {lft} 
@@ -4241,7 +4239,7 @@ procedure xlate;
               if ep^.q = 1 then 
                 wrtins40(' movq %1,%2 # set max = lvl 1 len       ', 1, 0, ep^.l^.r2, ep^.r1, nil)
               else begin
-                wrtins30(' movq $0,%1 # get total lvl   ', q, 0, ep^.t1, rgnull, nil);
+                wrtins30(' movq $0,%1 # get total lvl   ', ep^.q, 0, ep^.t1, rgnull, nil);
                 wrtins30(' subq %1,%2 # find tl-al      ', 0, 0, ep^.r^.r1, ep^.t1, nil);
                 wrtins30(' salq $4,%1 # *16 (long)      ', 0, 0, ep^.t1, rgnull, nil);
                 wrtins40(' addq %1,%2 # add to base template      ', 0, 0, ep^.l^.r2, ep^.t1, nil);
@@ -4271,10 +4269,8 @@ procedure xlate;
 
             {ccs} 
             223: begin
-              { q=lvl q1=siz l^.r1=dadr l^.r2=tadr }
-              { t1=number of levels, t2=total length, t3=template address }
-              if q = 1 then begin
-                wrtins40(' movq $0,%1 # get base element size     ', ep^.q1, 0, ep^.t2, rgnull, nil);
+              if ep^.q = 1 then begin
+                wrtins40(' movq $0,%rax # get base element size   ', ep^.q1, 0, rgnull, rgnull, nil);
                 wrtins30(' mulq %1 # find base size*len ', 0, 0, ep^.l^.r2, rgnull, nil);
                 wrtins40(' movq %rax,%1 # move to total length    ', 0, 0, ep^.t2, rgnull, nil);
               end else begin
@@ -4287,7 +4283,7 @@ procedure xlate;
                 wrtins30(' decq %1 # count down levels  ', 0, 0, ep^.t1, rgnull, nil);
                 wrtins30(' jnz 1b # loop over templates ', 0, 0, rgnull, rgnull, nil); 
               end;
-              wrtins40(' subq %1,%rsp # allocate on stack       ', intsize, 0, ep^.t2, rgnull, nil);  
+              wrtins40(' subq %1,%rsp # allocate on stack       ', 0, 0, ep^.t2, rgnull, nil);  
               wrtins50(' andq $0xfffffffffffffff0,%rsp # align stack      ', 0, 0, rgnull, rgnull, nil);
               wrtins30(' movq %1,%rsi # move source   ', 0, 0, ep^.l^.r1, ep^.t3, nil);
               wrtins30(' movq %rsp,%rdi # move dest   ', 0, 0, ep^.l^.r1, ep^.t3, nil);
