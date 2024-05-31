@@ -4993,11 +4993,10 @@ void psystem_vin(
     long* tp;
     int   i;
     long  ts;
-    long  s;
     long* alp;
 
     ts = size; alp = al;
-    for (i = 1; i <= nl; i++) s = *alp++;
+    for (i = 1; i <= nl; i++) ts *= *alp++;
     psystem_new(pa, ts+nl*INTSIZE);
     tp = (long*)(*pa)+nl;
     for (i = 1; i <= nl; i++) *--tp = *al++;
