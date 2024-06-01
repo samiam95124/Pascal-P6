@@ -5031,7 +5031,7 @@ void psystem_apc(
     long i;
 
     ts = size;
-    for (i = 1; i <= nl; i++) ts += *tp++;
+    for (i = 1; i <= nl; i++) ts *= *tp++;
     for (i = 0; i <= ts-1; i++) *da++ = *sa++;
 
 }

@@ -5540,7 +5540,7 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           dmptre(ep2); genexp(ep2);
           dmptre(ep); genexp(ep);
-          wrtins40(' movq $0,%rdi # load template size      ', q*intsize, 0, r1, rgnull, nil);
+          wrtins30(' movq $0,%rdi # load # levels ', q, 0, r1, rgnull, nil);
           wrtins40(' movq $0,%rsi # base element size       ', q1, 0, rgnull, rgnull, nil);
           wrtins40(' call psystem_apc # assign containers   ', 0, 0, rgnull, rgnull, nil);
           deltre(ep); deltre(ep2);
