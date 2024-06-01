@@ -100,6 +100,7 @@ const not_exp = not 42;
 
 type iarr   = array of integer;
      miarr  = array of array of integer;
+     frange = -100..100;
 
 fixed f_i: integer = 432;
       f_c: char = 'Q';
@@ -116,6 +117,7 @@ fixed f_i: integer = 432;
 
       end;
       f_rc: record i: integer; c: char; r: real end = record 42, 'a', 1.234 end;
+      f_sr: frange = -42;
 
 type enum_a   = (one, two, three);
      enum_b   = (red, green, blue, cyan, purple, black, white);
@@ -1689,7 +1691,8 @@ begin
    for x := 1 to 3 do
       for y := 1 to 4 do write(f_ma[x, y]:1, ' ');
    writeln(' s/b 1 3 64 2 12 31 647 21 190 32 641 243');
-   writeln('ext37: ', f_rc.i:1, f_rc.c, f_rc.r:1:4, ' s/b 42a1.2340');
+   writeln('f5: ', f_rc.i:1, f_rc.c, f_rc.r:1:4, ' s/b 42a1.2340');
+   writeln('f6: ', f_sr:1, ' s/b -42');
 
 {*******************************************************************************
 
