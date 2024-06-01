@@ -7698,7 +7698,7 @@ begin cmdpos := maxcmd end;
                   end;
           subrange: begin fixeditem(fsys,lsp^.rangetype,lsp^.size,v,d);
                       if d then
-                        if (v < lsp^.min.ival) or (v > lsp^.min.ival) then
+                        if (v < lsp^.min.ival) or (v > lsp^.max.ival) then
                           error(246)
                     end;
           power: begin { get value to satisfy entry }
