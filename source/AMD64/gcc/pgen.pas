@@ -3047,7 +3047,9 @@ procedure xlate;
             dstreg(rgrax); dstreg(rgrdx); resreg(rgrax); resreg(rgrdx);
             ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then ep^.r1 := rgrax;
-            resreg(ep^.r1); getreg(ep^.r2, rf); getreg(ep^.t1, rf);
+            resreg(ep^.r1); 
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2); 
+            getreg(ep^.t1, rf);
             assreg(ep^.l, rf, ep^.r1, ep^.r2);
             assreg(ep^.r, rf, rgnull, rgnull)
           end;
@@ -4196,6 +4198,7 @@ procedure xlate;
 
             {cxc}
             212:begin
+              { ep^.l^.r1: base addr, ep^.l^.r2: template addr, ep^.t1: temp reg}
               wrtins30(' decq %1 # 0 base index       ', 0, 0, ep^.r^.r1, rgnull, nil);
               if dodbgchk then begin
                 wrtins40(' cmpq (%1),%2 # check index < length    ', 0, 0, ep^.l^.r2, ep^.r^.r1, nil);
@@ -4206,12 +4209,12 @@ procedure xlate;
                 wrtins40(' call psystem_errore # process error    ', 0, 0, rgnull, rgnull, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               end;
-              wrtins30(' movq $0,%1 # get # levels    ', ep^.q, 0, ep^.t1, rgnull, nil);
+              wrtins30(' movq $0,%1 # get # levels-1  ', ep^.q-1, 0, ep^.t1, rgnull, nil);
               wrtins40(' movq $0,%rax # get base element size   ', ep^.q1, 0, rgnull, rgnull, nil);
               wrtins40(' movq %1,%rdx # copy template address   ', 0, 0, ep^.l^.r2, rgnull, nil);
               wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
               wrtins40(' addq $0,%rdx # next template location  ', intsize, 0, rgnull, rgnull, nil);
-              wrtins40(' addq (%rdx),%rax # add template to size', 0, 0, rgnull, rgnull, nil);
+              wrtins40(' mulq (%rdx) # add template to size     ', 0, 0, rgnull, rgnull, nil);
               wrtins40(' subq $0,%1 # count down levels         ', 1, 0, ep^.t1, rgnull, nil);
               wrtins30(' jnz 1b # loop over templates ', 0, 0, rgnull, rgnull, nil);     
               wrtins40(' addq $0,%1 # advance template slot     ', intsize, 0, ep^.l^.r2, rgnull, nil);  
