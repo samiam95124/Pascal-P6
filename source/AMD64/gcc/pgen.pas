@@ -4223,7 +4223,7 @@ procedure xlate;
             end;
 
             {lft} 
-            213: wrtins40(' leaq @s(%rip),%1 # get # levels        ', q, 0, ep^.r2, rgnull, ep^.lt);
+            213: wrtins40(' leaq @s(%rip),%1 # index template      ', q, 0, ep^.r2, rgnull, ep^.lt);
 
             {max} 
             214: begin
@@ -5650,7 +5650,6 @@ procedure xlate;
          writeln(prr)
        end;
        ctmp: begin
-         writeln(prr, '        .quad    ', cp^.tsize);
          for ti := 1 to cp^.tsize do
            writeln(prr, '        .quad    ', cp^.ta[ti])
        end;
