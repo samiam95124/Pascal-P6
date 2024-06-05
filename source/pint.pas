@@ -4362,12 +4362,12 @@ begin (*callsp*)
                          if j = 0 then errors(ad, i);
                        end;
            70(*rds*),
-           76(*rdsf*): begin w := pmmaxint; fld := q = 76; popint(i);
-                         if fld then popint(w); popadr(ad1); popadr(ad);
-                         pshadr(ad); valfil(ad); fn := store[ad];
+           76(*rdsf*): begin w := pmmaxint; fld := q = 76; 
+                         if fld then popint(w); popadr(ad1); popint(i); 
+                         popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
                          reads(fn, ad1, i, w, fld);
                        end;
-           77(*rdsp*): begin popint(i); popadr(ad1); popadr(ad); pshadr(ad);
+           77(*rdsp*): begin popadr(ad1); popint(i); popadr(ad); pshadr(ad);
                          valfil(ad); fn := store[ad];
                          readsp(fn, ad1, i)
                        end;

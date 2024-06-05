@@ -5152,6 +5152,11 @@ begin cmdpos := maxcmd end;
             else if not inputptr^.hdr then error(175);
          if not test then
           repeat loadaddress;
+            if stringt(gattr.typtr) and not complext(gattr.typtr) then begin
+              { make common string pointer into complex }
+              len := gattr.typtr^.size div charmax;
+              gen2(51(*ldc*),1,len); gen1(72(*swp*),intsize)
+            end;
             if deffil then begin
               { file was not loaded, we load and swap so that it ends up
                 on the bottom.}
@@ -5202,9 +5207,6 @@ begin cmdpos := maxcmd end;
                         end else if fld then gen1(30(*csp*),78(*rdcf*))
                                  else gen1(30(*csp*),5(*rdc*))
                       end else if stringt(lsp) then begin
-                        len := lsp^.size div charmax;
-                        if not cp then gen2(51(*ldc*),1,len)
-                        else gen1(72(*swp*),intsize);
                         if fld then gen1(30(*csp*),79(*rdsf*))
                         else if spad then gen1(30(*csp*),80(*rdsp*))
                         else gen1(30(*csp*),73(*rds*))

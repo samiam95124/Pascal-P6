@@ -55,7 +55,7 @@ if [ "$param1" = "--pmach" ]; then
 	echo Running with pmach
     pint pascaline.p6 pascaline.p6o --machdeck
     pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnolestrip pascaline.lst pascaline_pmach.cmp > pascaline_pmach.dif
+    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline_pmach.dif
     
 elif [ "$param1" = "--cmach" ]; then
@@ -63,7 +63,7 @@ elif [ "$param1" = "--cmach" ]; then
 	echo Running with cmach
     pint pascaline.p6 pascaline.p6o --machdeck
     cmach pascaline.p6o headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
-    diffnolestrip pascaline.lst pascaline_cmach.cmp > pascaline_cmach.dif
+    diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline_cmach.dif
     
 elif [ "$param1" = "--pgen" ]; then
