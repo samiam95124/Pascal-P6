@@ -9,7 +9,7 @@ cat source/*.pas | md5sum
 echo batch files
 cat bin/chkfiles bin/cmach bin/compile bin/cpcoms bin/cpints bin/diffnole \
 bin/doseol bin/fixeol bin/make_flip bin/p6 bin/regress bin/repo_ready bin/run \
-bin/runprt bin/testp2 bin/testp4 bin/testprog bin/unixeol bin/zipp5 | md5sum
+bin/testprt bin/testp2 bin/testp4 bin/testprog bin/unixeol bin/zipp5 | md5sum
 
 echo P2 files
 cat p2/*.pas | md5sum
