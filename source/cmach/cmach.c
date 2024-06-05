@@ -2433,12 +2433,12 @@ void callsp(void)
                   if (j == 0) errors(ad, i);
                   break;
     case 70/*rds*/:
-    case 76/*rdsf*/: w = LONG_MAX; fld = q == 76; popint(i);
-                  if (fld) popint(w); popadr(ad1); popadr(ad);
-                  pshadr(ad); valfil(ad); fn = store[ad];
+    case 76/*rdsf*/: w = LONG_MAX; fld = q == 76;
+                  if (fld) popint(w); popadr(ad1); popint(i);
+                  popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
                   reads(fn, ad1, i, w, fld);
                   break;
-    case 77/*rdsp*/: popint(i); popadr(ad1); popadr(ad); pshadr(ad);
+    case 77/*rdsp*/: popadr(ad1); popint(i); popadr(ad); pshadr(ad);
                   valfil(ad); fn = store[ad];
                   readsp(fn, ad1, i);
                   break;
