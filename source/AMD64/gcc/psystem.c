@@ -2285,8 +2285,8 @@ the string, that are non-space.
 
 void psystem_wrsp(
     /* Pascal file to write to */ pasfil* f,
-    /* Length of string */        int     l,
-    /* String to write */         char*   s
+    /* String to write */         char*   s,
+    /* Length of string */        int     l
 )
 
 {
