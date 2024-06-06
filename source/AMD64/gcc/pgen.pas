@@ -2514,7 +2514,7 @@ procedure xlate;
           end else if insr[pp^.op] = 2 then begin { double register }
             if (pc <= mi) and (pc <= maxintparreg-1) then begin
               resreg(parreg[pc]); resreg(parreg[pc+1]); 
-              assreg(pp, rf, parreg[pc+1], parreg[pc])
+              assreg(pp, rf, parreg[pc], parreg[pc+1])
             end else begin
               getreg(r1, rf); getreg(r2, rf); assreg(pp, rf, r1, r2)
             end;
@@ -3278,7 +3278,6 @@ procedure xlate;
             stkadr := stkadr-intsize
           end;
           if inss[pp^.op] then begin
-
             wrtins30(' subq $0,%rsp # allocate set  ', setsize, 0, rgnull, rgnull, nil);
             wrtins30(' pushq %rsi # save source     ', 0, 0, rgnull, rgnull, nil);
             wrtins30(' pushq %rdi # save destination', 0, 0, rgnull, rgnull, nil);

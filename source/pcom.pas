@@ -5155,7 +5155,8 @@ begin cmdpos := maxcmd end;
             if stringt(gattr.typtr) and not complext(gattr.typtr) then begin
               { make common string pointer into complex }
               len := gattr.typtr^.size div charmax;
-              gen2(51(*ldc*),1,len); gen1(72(*swp*),intsize)
+              gen2(51(*ldc*),1,len); gen1(72(*swp*),intsize);
+              gen2(124(*mpc*),0,0)
             end;
             if deffil then begin
               { file was not loaded, we load and swap so that it ends up

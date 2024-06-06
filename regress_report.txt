@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Wed 05 Jun 2024 10:27:50 AM PDT
+Wed 05 Jun 2024 10:04:01 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -92,19 +92,19 @@ PRT run
 Pascaline run
 0 pascaline_tests/pascaline.dif
 pgen run ***************************************
-0 sample_programs/hello.dif
+*** sample_programs/hello: compile/run fail
 0 sample_programs/roman.dif
-0 sample_programs/match.dif
-0 sample_programs/prime.dif
-0 sample_programs/qsort.dif
-0 sample_programs/fbench.dif
-0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
-0 sample_programs/basics.dif
-0 basic/basic.dif
-0 standard_tests/iso7185pat.dif
+*** sample_programs/match: compile/run fail
+*** sample_programs/prime: compile/run fail
+*** sample_programs/qsort: compile/run fail
+*** sample_programs/fbench: compile/run fail
+*** sample_programs/drystone: compile/run fail
+*** sample_programs/startrek: compile/run fail
+*** sample_programs/basics: compile/run fail
+*** basic/basic: compile/run fail
+*** standard_tests/iso7185pat: compile/run fail
 Pascal-s run
-0 sample_programs/roman.dif
+*** sample_programs/roman: compile/run fail
 Pascal-P2 run
 0 p2/roman.dif
 Pascal-P4 run
@@ -112,11 +112,11 @@ Pascal-P4 run
 PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
-746 pascaline_tests/pascaline.dif
-Wed 05 Jun 2024 10:33:53 AM PDT
+1131 pascaline_tests/pascaline.dif
+Wed 05 Jun 2024 10:10:06 PM PDT
 Files md5sum ***************************************
 Source files
-c93ba92a4591104a53af50f9ea01e699  -
+1469796d27169abadb5ac8d742eb87e2  -
 batch files
 33ee47349eb56e007a78394ae838f480  -
 P2 files
