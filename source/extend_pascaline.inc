@@ -216,5 +216,5 @@ begin
   optsl[23] := 'debug     ';
   optsl[24] := 'prtlex    ';
   optsl[25] := 'prtdisplay';
-  optsl[26] := '          ';
+  optsl[26] := 'lineinfo  ';
 end;

@@ -521,6 +521,7 @@ var
 
     dp: boolean;                    (*declaration part*)
     list: boolean;                  { -- l: source program listing }
+    dolineinfo: boolean;            { -- z: Output line information on listing }
     prcode: boolean;                { -- c: print symbolic code }
     prtables: boolean;              { -- t: displaying ident and struct tables }
     chkvar: boolean;                { -- v: check variant records }
@@ -1779,7 +1780,7 @@ begin cmdpos := maxcmd end;
         errinx := 0;
       end;
     linecount := linecount + 1;
-    if list and (not eofinp) then
+    if list and (not eofinp) and dolineinfo then
       begin write(linecount:6,'  ':2);
         if dp then write(lc:7) else write(ic:7);
         write(' ')
@@ -10116,9 +10117,10 @@ begin cmdpos := maxcmd end;
         22: chkvar := option[oi];
         24: dodmplex := option[oi];
         25: dodmpdsp := option[oi];
+        26: dolineinfo := option[oi];
         { these are backend options }
         1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:; 
-        17:; 23:; 26:;
+        17:; 23:;
       end
   end;
 
@@ -10133,6 +10135,7 @@ begin cmdpos := maxcmd end;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;
     dodmplex := false; doprtryc := false; doprtlab := false; dodmpdsp := false;
     chkvbk := false; option[9] := false; experr := true; option[10] := true;
+    dolineinfo := true; option[26] := true;
     dp := true; errinx := 0;
     intlabel := 0; kk := maxids; fextfilep := nil; wthstk := nil;
     { single display entry for top level }
