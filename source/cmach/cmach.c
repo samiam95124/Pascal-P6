@@ -558,7 +558,7 @@ char* optsl[] = {
     "debug",
     "prtlex",
     "prtdisplay",
-    ""
+    "lineinfo"
 };
 
 /**************************** Global Variables ********************************/
