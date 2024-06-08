@@ -1370,7 +1370,7 @@ static boolean chkend(filnum fn, long w)
 
 { 
  
-    return (w = 0 || eoffn(fn)); 
+    return (w == 0 || eoffn(fn)); 
 
 }
 
@@ -2771,8 +2771,8 @@ maximum. Out of range integers will result in an error.
 void psystem_ribf(
     /* Pascal file to write to */ pasfil* f,
     /* integer to read */         long* i,
-    /* Bounds for integer */      long mn, long mx,
-    /* Field to read */           long w
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
 )
 
 {
@@ -2933,8 +2933,8 @@ character.
 void psystem_rcbf(
     /* Pascal file to read from */ pasfil*        f,
     /* character to read */        unsigned char* c,
-    /* Range of values          */ long           mn, long mx,
-    /* Field                    */ long           w
+    /* Field                    */ long           w,
+    /* Range of values          */ long           mn, long mx
 )
 
 {
