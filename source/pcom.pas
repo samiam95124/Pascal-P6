@@ -5318,7 +5318,8 @@ begin cmdpos := maxcmd end;
             if stringt(lsp) and not (lsp^.form = arrayc) then begin
             len := lsp^.size div charmax;
             gen2(51(*ldc*),1,len); { load len }
-            gen1(72(*swp*),stackelsize) { swap ptr and len }
+            gen1(72(*swp*),stackelsize); { swap ptr and len }
+            gen2(124(*mpc*),0,0)
           end;
           if sy = colon then
             begin insymbol;
