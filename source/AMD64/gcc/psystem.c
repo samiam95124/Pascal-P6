@@ -1389,7 +1389,7 @@ static void getbuf(filnum fn, long* w)
 
     if (*w > 0) {
 
-    if (eoffn(fn)) errore(modnam, __LINE__, ENDOFFILE);
+        if (eoffn(fn)) errore(modnam, __LINE__, ENDOFFILE);
         getfn(fn); *w = *w-1;
 
     }
@@ -1596,18 +1596,38 @@ static void reads(filnum fn, char* s, long l, long w, boolean fld)
 
     long c;
 
-    while (l > 0) {
+    if (w < 0) { 
 
-        c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--;
+        w = labs(w); if (w < l) l = w;
+        while (l > 0) {
 
-    }
-    /* if fielded, validate the rest of the field is blank */
-    if (fld) while (!chkend(fn, w)) {
+            c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--; 
+            l = l-1;
 
-        if (chkbuf(fn, w) != ' ') 
-            errore(modnam, __LINE__, FIELDNOTBLANK);
-        getbuf(fn, &w);
+        }
+        /* if fielded, validate the rest of the field is blank */
+        if (fld) while (!chkend(fn, w)) {
 
+            if (chkbuf(fn, w) != ' ') errore(modnam, __LINE__, FIELDNOTBLANK);
+            getbuf(fn, &w);
+
+        }
+
+    } else { 
+
+        if (w < l) l = w;
+        if (fld) while (w > l) {
+
+            if (chkbuf(fn, w) != ' ') errore(modnam, __LINE__, FIELDNOTBLANK);
+            getbuf(fn, &w);
+
+        }
+        while (l > 0) {
+
+            c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l = l-1;
+
+        }
+  
     }
 
 }
@@ -1760,7 +1780,6 @@ static void writeipf(pasfil* f, long i, long w, long r, long lz)
     }
 
 }
-
 
 /** ****************************************************************************
 
