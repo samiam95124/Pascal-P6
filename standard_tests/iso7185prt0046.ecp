@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 46: Missing final semicolon 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0046; 
-     8       -8  
-     9       -8 procedure x; begin end 
-    10        5  
-    11        5 begin 
+{ 
+ 
+PRT test 46: Missing final semicolon 
+ 
+} 
+ 
+program iso7185prt0046; 
+ 
+procedure x; begin end 
+ 
+begin 
     11   ****       ^14
     11   ****   14 ';' expected
-    12        6  
-    13        6    x 
-    14        6  
-    15        6 end. 
+ 
+   x 
+ 
+end. 
    *** eof encountered
 
     16   ****  ^18,17,6,13,21

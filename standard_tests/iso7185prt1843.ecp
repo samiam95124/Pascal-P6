@@ -3,38 +3,38 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1843: Variable reference to tagfield. 
-     4       -8  
-     5       -8    Pass of a tagfield as a variable reference. 
-     6       -8    ISO 7185 6.6.3.3 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1843; 
-    11       -8  
-    12       -8 var r: record 
-    13       -8           case b: boolean of 
-    14       -8              true:  (); 
-    15       -8              false: (); 
-    16       -8        end; 
-    17       -8  
-    18       -8 procedure a(var b: boolean); 
-    19      -16  
-    20      -16 begin 
-    21        5  
-    22        5    b := true 
-    23        6  
-    24        6 end; 
-    25       10  
-    26       10 begin 
-    27       10  
-    28       10    a(r.b) 
+{ 
+ 
+PRT test 1843: Variable reference to tagfield. 
+ 
+   Pass of a tagfield as a variable reference. 
+   ISO 7185 6.6.3.3 
+ 
+} 
+ 
+program iso7185prt1843; 
+ 
+var r: record 
+          case b: boolean of 
+             true:  (); 
+             false: (); 
+       end; 
+ 
+procedure a(var b: boolean); 
+ 
+begin 
+ 
+   b := true 
+ 
+end; 
+ 
+begin 
+ 
+   a(r.b) 
     28   ****           ^198
     28   ****  198 Var parameter cannot be a tagfield
-    29       11  
-    30       11 end. 
+ 
+end. 
 
 Errors in program: 1
 

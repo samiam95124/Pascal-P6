@@ -3,29 +3,29 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 123: Missing ";" between statements on case statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0123; 
-     8       -8  
-     9       -8 var x, a: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    case x of 
-    14        8  
-    15        8       1: a := 1 
-    16        8       2: a := 2 
+{ 
+ 
+PRT test 123: Missing ";" between statements on case statement 
+ 
+} 
+ 
+program iso7185prt0123; 
+ 
+var x, a: integer; 
+ 
+begin 
+ 
+   case x of 
+ 
+      1: a := 1 
+      2: a := 2 
     16   ****         ^6^6  ^59
     16   ****    6 Illegal symbol
     16   ****   59 Error in variable
-    17        8  
-    18        8    end 
-    19       17  
-    20       17 end. 
+ 
+   end 
+ 
+end. 
 
 Errors in program: 3
 

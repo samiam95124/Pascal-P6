@@ -1,27 +1,27 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 146: Misspelled "do" on for statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0146; 
-     8       -8  
-     9       -8 var i, a, b: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    for i := 1 to 10 od a := b 
+{ 
+ 
+PRT test 146: Misspelled "do" on for statement 
+ 
+} 
+ 
+program iso7185prt0146; 
+ 
+var i, a, b: integer; 
+ 
+begin 
+ 
+   for i := 1 to 10 od a := b 
     13   ****                        ^6,104^6^59
     13   ****    6 Illegal symbol
     13   ****  104 Identifier not declared
     13   ****   59 Error in variable
-    14        7  
-    15        7 end. 
+ 
+end. 
     15   ****     ^54
     15   ****   54 'do' expected
 

@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1761: Assign different length strings. 
-     4       -8  
-     5       -8                Assigns a string with different length than the destination. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1761; 
-    10       -8  
-    11       -8 var a: packed array [1..10] of char; 
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    a := 'h          ' 
-    16        6  
-    17        6 end. 
+{ 
+ 
+PRT test 1761: Assign different length strings. 
+ 
+               Assigns a string with different length than the destination. 
+ 
+} 
+ 
+program iso7185prt1761; 
+ 
+var a: packed array [1..10] of char; 
+ 
+begin 
+ 
+   a := 'h          ' 
+ 
+end. 
     17   ****     ^129
     17   ****  129 Type conflict of operands
 

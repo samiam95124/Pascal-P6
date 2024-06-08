@@ -1,33 +1,33 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1726: For pack, it is an error if the parameter of ordinal-type is  
-     4       -8                not assignment-compatible with the index-type of the unpacked  
-     5       -8                array parameter. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.6.5.4 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1726; 
-    12       -8  
-    13       -8 var a: array [1..10] of integer; 
-    14       -8     b: packed array [1..10] of integer; 
-    15       -8     i: integer; 
-    16       -8  
-    17       -8 begin 
-    18        5  
-    19        5    { define the array so that we are not invoking the undefined access rule } 
-    20        5    for i := 1 to 10 do a[i] := i; 
-    21       32    pack(a, 'a', b) 
+{ 
+ 
+PRT test 1726: For pack, it is an error if the parameter of ordinal-type is  
+               not assignment-compatible with the index-type of the unpacked  
+               array parameter. 
+ 
+               ISO 7185 reference: 6.6.5.4 
+ 
+} 
+ 
+program iso7185prt1726; 
+ 
+var a: array [1..10] of integer; 
+    b: packed array [1..10] of integer; 
+    i: integer; 
+ 
+begin 
+ 
+   { define the array so that we are not invoking the undefined access rule } 
+   for i := 1 to 10 do a[i] := i; 
+   pack(a, 'a', b) 
     21   ****                 ^116
     21   ****  116 Error in type of standard procedure parameter
-    22       40  
-    23       40 end. 
+ 
+end. 
 
 Errors in program: 1
 

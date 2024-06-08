@@ -1,29 +1,29 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1821: Double definitions 
-     4       -8  
-     5       -8     Double define with same type. 
-     6       -8     ISO 7185 6.2.2.7 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1821(output); 
-    11       -8  
-    12       -8 var i: integer; 
-    13       -8     i: integer; 
+{ 
+ 
+PRT test 1821: Double definitions 
+ 
+    Double define with same type. 
+    ISO 7185 6.2.2.7 
+ 
+} 
+ 
+program iso7185prt1821(output); 
+ 
+var i: integer; 
+    i: integer; 
     13   ****       ^101
     13   ****  101 Identifier declared twice
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    writeln(i) 
-    18       10  
-    19       10 end. 
+ 
+begin 
+ 
+   writeln(i) 
+ 
+end. 
 
 Errors in program: 1
 

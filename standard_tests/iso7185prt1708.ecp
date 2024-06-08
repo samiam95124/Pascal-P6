@@ -1,35 +1,35 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1708: For a value parameter, it is an error if the actual-parameter 
-     4       -8                is an expression of a set-type whose value is not 
-     5       -8                assignment-compatible with the type possessed by the 
-     6       -8                formal-parameter. 
-     7       -8  
-     8       -8                ISO 7185 reference: 6.6.3.2 
-     9       -8  
-    10       -8 } 
-    11       -8  
-    12       -8 program iso7185prt1708(output); 
-    13       -8  
-    14       -8 type a = set of 1..5; 
-    15       -8  
-    16       -8 procedure b(c: a); 
-    17      -16  
-    18      -16 begin 
-    19        5  
-    20        5    c := [3,6] 
-    21        5  
-    22        5 end; 
-    23        9  
-    24        9 begin 
-    25        9  
-    26        9    b([1, 2]) 
-    27       11  
-    28       11 end. 
+{ 
+ 
+PRT test 1708: For a value parameter, it is an error if the actual-parameter 
+               is an expression of a set-type whose value is not 
+               assignment-compatible with the type possessed by the 
+               formal-parameter. 
+ 
+               ISO 7185 reference: 6.6.3.2 
+ 
+} 
+ 
+program iso7185prt1708(output); 
+ 
+type a = set of 1..5; 
+ 
+procedure b(c: a); 
+ 
+begin 
+ 
+   c := [3,6] 
+ 
+end; 
+ 
+begin 
+ 
+   b([1, 2]) 
+ 
+end. 
 
 Errors in program: 0

@@ -3,34 +3,34 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1823: Invalid type substitutions 
-     4       -8  
-     5       -8     Use of subrange for VAR reference. 
-     6       -8     ISO 7185 6.6.3.3 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1823(input); 
-    11       -8  
-    12       -8 var c: 1..10; 
-    13       -8  
-    14       -8 procedure a(var b: integer); 
-    15      -16  
-    16      -16 begin 
-    17        5  
-    18        5    b := 1 
-    19        6  
-    20        6 end; 
-    21        9  
-    22        9 begin 
-    23        9  
-    24        9    a(c) 
+{ 
+ 
+PRT test 1823: Invalid type substitutions 
+ 
+    Use of subrange for VAR reference. 
+    ISO 7185 6.6.3.3 
+ 
+} 
+ 
+program iso7185prt1823(input); 
+ 
+var c: 1..10; 
+ 
+procedure a(var b: integer); 
+ 
+begin 
+ 
+   b := 1 
+ 
+end; 
+ 
+begin 
+ 
+   a(c) 
     24   ****         ^199
     24   ****  199 Var parameter must be same type
-    25       10  
-    26       10 end. 
+ 
+end. 
 
 Errors in program: 1
 

@@ -1,33 +1,33 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1760: Alphanumeric label. 
-     4       -8  
-     5       -8                Attempt to use alphanumeric label instead of number. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1760(output); 
-    10       -8  
-    11       -8 label skip; 
+{ 
+ 
+PRT test 1760: Alphanumeric label. 
+ 
+               Attempt to use alphanumeric label instead of number. 
+ 
+} 
+ 
+program iso7185prt1760(output); 
+ 
+label skip; 
     11   ****            ^397
     11   ****  397 Feature not valid in ISO 7185 Pascal
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    goto skip; 
+ 
+begin 
+ 
+   goto skip; 
     15   ****              ^397
     15   ****  397 Feature not valid in ISO 7185 Pascal
-    16        6  
-    17        6    writeln('*** Should not execute this'); 
-    18       15     
-    19       15    skip: writeln('At label'); 
-    20       24  
-    21       24 end. 
+ 
+   writeln('*** Should not execute this'); 
+    
+   skip: writeln('At label'); 
+ 
+end. 
 
 Errors in program: 2
 

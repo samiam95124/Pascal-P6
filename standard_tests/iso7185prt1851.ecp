@@ -3,35 +3,35 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1851: Reference to undefined variant 
-     4       -8  
-     5       -8    Test if undefined variant can be detected after the variant is changed. 
-     6       -8  
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1851(output); 
-    11       -8  
-    12       -8 var r: record 
-    13       -8  
-    14       -8           case b: boolean of 
-    15       -8  
-    16       -8              true:  (i: integer); 
-    17       -8              false: (c: char) 
-    18       -8  
-    19       -8        end; 
-    20       -8     c: char; 
-    21       -8  
-    22       -8 begin 
-    23        5  
-    24        5    r.b := true; 
-    25        9    r.i := 1; 
-    26       15    r.b := false; 
-    27       19    writeln('before error'); 
-    28       28    c := r.c 
-    29       32  
-    30       32 end. 
+{ 
+ 
+PRT test 1851: Reference to undefined variant 
+ 
+   Test if undefined variant can be detected after the variant is changed. 
+ 
+ 
+} 
+ 
+program iso7185prt1851(output); 
+ 
+var r: record 
+ 
+          case b: boolean of 
+ 
+             true:  (i: integer); 
+             false: (c: char) 
+ 
+       end; 
+    c: char; 
+ 
+begin 
+ 
+   r.b := true; 
+   r.i := 1; 
+   r.b := false; 
+   writeln('before error'); 
+   c := r.c 
+ 
+end. 
 
 Errors in program: 0

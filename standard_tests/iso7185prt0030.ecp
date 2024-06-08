@@ -1,32 +1,32 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 30: Missing semicolon in type 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0030; 
-     8       -8  
-     9       -8 type  integer = char 
-    10       -8       five = integer; 
+{ 
+ 
+PRT test 30: Missing semicolon in type 
+ 
+} 
+ 
+program iso7185prt0030; 
+ 
+type  integer = char 
+      five = integer; 
     10   ****            ^6
     10   ****    6 Illegal symbol
-    11       -8  
-    12       -8 var i: integer; 
-    13       -8     a: five; 
+ 
+var i: integer; 
+    a: five; 
     13   ****             ^104
     13   ****  104 Identifier not declared
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    i := 'a'; 
-    18        8    a := 1 
-    19        8  
-    20        8 end. 
+ 
+begin 
+ 
+   i := 'a'; 
+   a := 1 
+ 
+end. 
 
 Errors in program: 2
 

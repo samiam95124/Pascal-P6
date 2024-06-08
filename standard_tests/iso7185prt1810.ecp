@@ -1,38 +1,38 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1810: Validity of for loop index. 
-     4       -8  
-     5       -8     Index is part of structured type. 
-     6       -8     ISO 7185 6.8.3.9 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1810(output); 
-    11       -8  
-    12       -8 var r: record 
-    13       -8  
-    14       -8         i: integer; 
-    15       -8         b: boolean 
-    16       -8  
-    17       -8     end; 
-    18       -8  
-    19       -8 begin 
-    20        5  
-    21        5    for r.i := 1 to 10 do begin 
+{ 
+ 
+PRT test 1810: Validity of for loop index. 
+ 
+    Index is part of structured type. 
+    ISO 7185 6.8.3.9 
+ 
+} 
+ 
+program iso7185prt1810(output); 
+ 
+var r: record 
+ 
+        i: integer; 
+        b: boolean 
+ 
+    end; 
+ 
+begin 
+ 
+   for r.i := 1 to 10 do begin 
     21   ****          ^143^51
     21   ****  143 Illegal type of loop control variable
     21   ****   51 ':=' expected
-    22       11  
-    23       11       write(r.i:1, ' ') 
-    24       19  
-    25       19    end 
-    26       20  
-    27       20 end. 
+ 
+      write(r.i:1, ' ') 
+ 
+   end 
+ 
+end. 
 
 Errors in program: 2
 

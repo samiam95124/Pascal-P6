@@ -1,40 +1,40 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1917: Redefinition of same constant. 
-     4       -8  
-     5       -8     Defining a constant as itself is both a reference and a defining point, thus 
-     6       -8     it is inherently illegal. 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1917(output); 
-    11       -8  
-    12       -8 const one = 1; 
-    13       -8  
-    14       -8 procedure x; 
-    15      -16  
-    16      -16 const one = one; 
+{ 
+ 
+PRT test 1917: Redefinition of same constant. 
+ 
+    Defining a constant as itself is both a reference and a defining point, thus 
+    it is inherently illegal. 
+ 
+} 
+ 
+program iso7185prt1917(output); 
+ 
+const one = 1; 
+ 
+procedure x; 
+ 
+const one = one; 
     16   ****                  ^242
     16   ****  242 Identifier referenced before defining point
-    17      -16  
-    18      -16 begin 
-    19        5  
-    20        5    write(one) 
-    21       10     
-    22       10 end; 
+ 
+begin 
+ 
+   write(one) 
+    
+end; 
 one        unreferenced
 
-    23       12  
-    24       12 begin 
-    25       12  
-    26       12    writeln('Value is: ', one) 
-    27       22     
-    28       22 end. 
+ 
+begin 
+ 
+   writeln('Value is: ', one) 
+    
+end. 
 
 Errors in program: 1
 

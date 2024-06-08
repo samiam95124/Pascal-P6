@@ -1,43 +1,43 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1833: Goto/label issues 
-     4       -8  
-     5       -8     Intraprocedure Goto nested block. 
-     6       -8     ISO 7185 6.8.1 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1833(output); 
-    11       -8  
-    12       -8 label 1; 
-    13       -8  
-    14       -8 var i: integer; 
-    15       -8  
-    16       -8 procedure abort; 
-    17      -16  
-    18      -16 begin 
-    19        5  
-    20        5    goto 1 
-    21        6  
-    22        6 end; 
-    23        7  
-    24        7 begin 
-    25        7  
-    26        7    abort; 
-    27        8    for i := 1 to 10 do begin 
-    28       18  
-    29       18       1: writeln(i) 
+{ 
+ 
+PRT test 1833: Goto/label issues 
+ 
+    Intraprocedure Goto nested block. 
+    ISO 7185 6.8.1 
+ 
+} 
+ 
+program iso7185prt1833(output); 
+ 
+label 1; 
+ 
+var i: integer; 
+ 
+procedure abort; 
+ 
+begin 
+ 
+   goto 1 
+ 
+end; 
+ 
+begin 
+ 
+   abort; 
+   for i := 1 to 10 do begin 
+ 
+      1: writeln(i) 
     29   ****                  ^184
     29   ****  184 Interprocedure goto does not reference outter block of destination
-    30       23  
-    31       23    end 
-    32       25  
-    33       25 end. 
+ 
+   end 
+ 
+end. 
 
 Errors in program: 1
 

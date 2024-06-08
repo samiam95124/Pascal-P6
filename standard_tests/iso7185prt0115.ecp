@@ -1,32 +1,32 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 115: Missing "case" on case statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0115; 
-     8       -8  
-     9       -8 var x, a: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    x of  
+{ 
+ 
+PRT test 115: Missing "case" on case statement 
+ 
+} 
+ 
+program iso7185prt0115; 
+ 
+var x, a: integer; 
+ 
+begin 
+ 
+   x of  
     13   ****         ^59
     13   ****   59 Error in variable
-    14        5  
-    15        5       1: a := 1; 
-    16        7       2: a := 2 
+ 
+      1: a := 1; 
+      2: a := 2 
     16   ****            ^167
     16   ****  167 Undeclared label
-    17        7  
-    18        7    end 
-    19        9  
-    20        9 end.
+ 
+   end 
+ 
+end.
 label           2 unreferenced
                      
     20   ****     ^168,21

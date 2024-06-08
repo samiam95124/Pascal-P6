@@ -1,30 +1,30 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1764: String not packed. 
-     4       -8  
-     5       -8     String lacks packed modifier. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1764(output); 
-    10       -8  
-    11       -8 var s: array [1..10] of char; 
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    s := 'hello, you'; 
+{ 
+ 
+PRT test 1764: String not packed. 
+ 
+    String lacks packed modifier. 
+ 
+} 
+ 
+program iso7185prt1764(output); 
+ 
+var s: array [1..10] of char; 
+ 
+begin 
+ 
+   s := 'hello, you'; 
     15   ****                       ^129
     15   ****  129 Type conflict of operands
-    16        7    writeln('The string is: ''', s, ''''); 
+   writeln('The string is: ''', s, ''''); 
     16   ****                                    ^116
     16   ****  116 Error in type of standard procedure parameter
-    17       20  
-    18       20 end. 
+ 
+end. 
 
 Errors in program: 2
 

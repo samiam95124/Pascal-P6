@@ -1,20 +1,20 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 11: Improperly terminated header list 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0011(output,); 
+{ 
+ 
+PRT test 11: Improperly terminated header list 
+ 
+} 
+ 
+program iso7185prt0011(output,); 
      7   ****                                 ^2
      7   ****    2 Identifier expected
-     8       -8  
-     9       -8 begin 
-    10        5 end 
+ 
+begin 
+end 
    *** eof encountered
 
     11   ****  ^21

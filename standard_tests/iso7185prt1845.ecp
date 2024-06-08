@@ -1,46 +1,46 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1845: Goto/label issues 
-     4       -8  
-     5       -8     Label defined in outter block than use. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1845(output); 
-    10       -8  
-    11       -8 label 1; 
-    12       -8  
-    13       -8 procedure a; 
-    14      -16  
-    15      -16 var i: integer; 
-    16      -24  
-    17      -24 begin 
-    18        5  
-    19        5    goto 1; 
-    20        6    for i := 1 to 10 do begin 
-    21       16  
-    22       16       1: writeln(i) 
+{ 
+ 
+PRT test 1845: Goto/label issues 
+ 
+    Label defined in outter block than use. 
+ 
+} 
+ 
+program iso7185prt1845(output); 
+ 
+label 1; 
+ 
+procedure a; 
+ 
+var i: integer; 
+ 
+begin 
+ 
+   goto 1; 
+   for i := 1 to 10 do begin 
+ 
+      1: writeln(i) 
     22   ****                  ^167
     22   ****  167 Undeclared label
-    23       21  
-    24       21    end 
-    25       23  
-    26       23 end; 
+ 
+   end 
+ 
+end; 
 label           1 unreferenced
                      
     26   ****      ^168
     26   ****  168 Undefined label
-    27       34  
-    28       34 begin 
-    29       34  
-    30       34    a 
-    31       34  
-    32       34 end. 
+ 
+begin 
+ 
+   a 
+ 
+end. 
 label           1
                      
     32   ****      ^168

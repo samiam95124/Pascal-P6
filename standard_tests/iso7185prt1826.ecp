@@ -1,28 +1,28 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1826: Files of files 
-     4       -8  
-     5       -8     Direct specification of file of file. 
-     6       -8     ISO 7185 6.4.3.5 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1826; 
-    11       -8  
-    12       -8 var f: file of file of integer; 
+{ 
+ 
+PRT test 1826: Files of files 
+ 
+    Direct specification of file of file. 
+    ISO 7185 6.4.3.5 
+ 
+} 
+ 
+program iso7185prt1826; 
+ 
+var f: file of file of integer; 
     12   ****                                 ^190
     12   ****  190 File component may not contain other files
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    rewrite(f) 
-    17        7  
-    18        7 end. 
+ 
+begin 
+ 
+   rewrite(f) 
+ 
+end. 
 
 Errors in program: 1
 

@@ -1,26 +1,26 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 513: Misspelled 'file' on file type 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0513; 
-     8       -8  
-     9       -8 var a: filed of integer; 
+{ 
+ 
+PRT test 513: Misspelled 'file' on file type 
+ 
+} 
+ 
+program iso7185prt0513; 
+ 
+var a: filed of integer; 
      9   ****              ^104^6
      9   ****  104 Identifier not declared
      9   ****    6 Illegal symbol
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    rewrite(a) 
-    14        6  
-    15        6 end. 
+ 
+begin 
+ 
+   rewrite(a) 
+ 
+end. 
 
 Errors in program: 2
 

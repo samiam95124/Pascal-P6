@@ -1,29 +1,29 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 209: Missing type identifier without field identifier 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0209; 
-     8       -8  
-     9       -8 var a: record b, c: integer; 
-    10       -8               case of 
+{ 
+ 
+PRT test 209: Missing type identifier without field identifier 
+ 
+} 
+ 
+program iso7185prt0209; 
+ 
+var a: record b, c: integer; 
+              case of 
     10   ****                       ^2
     10   ****    2 Identifier expected
-    11       -8                  true: (); 
-    12       -8                  false: () 
-    13       -8        end; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    a.b := 1 
-    18        5  
-    19        5 end. 
+                 true: (); 
+                 false: () 
+       end; 
+ 
+begin 
+ 
+   a.b := 1 
+ 
+end. 
 
 Errors in program: 1
 

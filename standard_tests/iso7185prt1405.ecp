@@ -1,26 +1,26 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1405: Missing ',' in index list 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt1405(output); 
-     8       -8  
-     9       -8 var a: integer; 
-    10       -8     b: array [1..10, 1..10] of integer; 
-    11       -8  
-    12       -8 begin 
-    13        5  
-    14        5    a := b[5 6]   
+{ 
+ 
+PRT test 1405: Missing ',' in index list 
+ 
+} 
+ 
+program iso7185prt1405(output); 
+ 
+var a: integer; 
+    b: array [1..10, 1..10] of integer; 
+ 
+begin 
+ 
+   a := b[5 6]   
     14   ****               ^6
     14   ****    6 Illegal symbol
-    15       10  
-    16       10 end. 
+ 
+end. 
     16   ****     ^129
     16   ****  129 Type conflict of operands
 

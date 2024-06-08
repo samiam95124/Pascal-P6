@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 509: Missing 'of' on array 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0509; 
-     8       -8  
-     9       -8 var a: array [1..10] integer; 
+{ 
+ 
+PRT test 509: Missing 'of' on array 
+ 
+} 
+ 
+program iso7185prt0509; 
+ 
+var a: array [1..10] integer; 
      9   ****                              ^8
      9   ****    8 'of' expected
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    a[1] := 1 
-    14       10  
-    15       10 end. 
+ 
+begin 
+ 
+   a[1] := 1 
+ 
+end. 
 
 Errors in program: 1
 

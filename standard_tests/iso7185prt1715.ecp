@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1715: It is an error if the file is undefined immediately prior to  
-     4       -8                any use of get or read. 
-     5       -8  
-     6       -8                ISO 7185 reference: 6.6.5.2 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1715(output); 
-    11       -8  
-    12       -8 var a: file of integer; 
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    get(a) 
-    17        8  
-    18        8 end. 
+{ 
+ 
+PRT test 1715: It is an error if the file is undefined immediately prior to  
+               any use of get or read. 
+ 
+               ISO 7185 reference: 6.6.5.2 
+ 
+} 
+ 
+program iso7185prt1715(output); 
+ 
+var a: file of integer; 
+ 
+begin 
+ 
+   get(a) 
+ 
+end. 
 
 Errors in program: 0

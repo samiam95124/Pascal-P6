@@ -1,33 +1,33 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 600: Missing parameter identifier 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0600; 
-     8       -8  
-     9       -8 procedure a(: integer); 
+{ 
+ 
+PRT test 600: Missing parameter identifier 
+ 
+} 
+ 
+program iso7185prt0600; 
+ 
+procedure a(: integer); 
      9   ****               ^7       ^7,5
      9   ****    7 Error in parameter list
      9   ****    5 ':' expected
-    10      -16  
-    11      -16 begin 
-    12        5 end; 
+ 
+begin 
+end; 
 integer    unreferenced
 
-    13        6  
-    14        6 begin 
-    15        6  
-    16        6    a(1) 
+ 
+begin 
+ 
+   a(1) 
     16   ****         ^277
     16   ****  277 No overload found to match parameter
-    17        6  
-    18        6 end. 
+ 
+end. 
 
 Errors in program: 4
 

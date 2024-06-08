@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1908: Use real value as case constant 
-     4       -8  
-     5       -8     A real value is used as a case constant. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1908(output); 
-    10       -8  
-    11       -8 var i: integer; 
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    i := 1; 
-    16        7    case i of 
-    17       10     
-    18       10       1.1: writeln('one'); 
+{ 
+ 
+PRT test 1908: Use real value as case constant 
+ 
+    A real value is used as a case constant. 
+ 
+} 
+ 
+program iso7185prt1908(output); 
+ 
+var i: integer; 
+ 
+begin 
+ 
+   i := 1; 
+   case i of 
+    
+      1.1: writeln('one'); 
     18   ****            ^147
     18   ****  147 Label type incompatible with selecting expression
-    19       19       2: writeln('two') 
-    20       26        
-    21       26    end 
-    22       35  
-    23       35 end. 
+      2: writeln('two') 
+       
+   end 
+ 
+end. 
 
 Errors in program: 1
 

@@ -1,5 +1,9 @@
-P6 Pascal cmach interpreter vs. 0.2.x
+P6 Pascal interpreter vs. 0.2.x
+
+Assembling/loading program
+Running program
 
 
 *** Runtime error [32]: Variant not active
 
+program complete

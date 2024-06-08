@@ -3,47 +3,47 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1849: Variable reference to packed variable 
-     4       -8  
-     5       -8    Passing a packed element as a variable reference. 
-     6       -8    ISO 7185 6.6.3.3 
-     7       -8  
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1849; 
-    12       -8  
-    13       -8 type prec = packed record 
-    14       -8                i: integer; 
-    15       -8                b: boolean 
-    16       -8             end; 
-    17       -8  
-    18       -8 var r: record 
-    19       -8           i: integer; 
-    20       -8           b: boolean; 
-    21       -8           r: record 
-    22       -8              c: char; 
-    23       -8              d: prec 
-    24       -8           end 
-    25       -8        end; 
-    26       -8  
-    27       -8 procedure a(var b: boolean); 
-    28      -16  
-    29      -16 begin 
-    30        5  
-    31        5    b := true 
-    32        6  
-    33        6 end; 
-    34       10  
-    35       10 begin 
-    36       10  
-    37       10    a(r.r.d.b) 
+{ 
+ 
+PRT test 1849: Variable reference to packed variable 
+ 
+   Passing a packed element as a variable reference. 
+   ISO 7185 6.6.3.3 
+ 
+ 
+} 
+ 
+program iso7185prt1849; 
+ 
+type prec = packed record 
+               i: integer; 
+               b: boolean 
+            end; 
+ 
+var r: record 
+          i: integer; 
+          b: boolean; 
+          r: record 
+             c: char; 
+             d: prec 
+          end 
+       end; 
+ 
+procedure a(var b: boolean); 
+ 
+begin 
+ 
+   b := true 
+ 
+end; 
+ 
+begin 
+ 
+   a(r.r.d.b) 
     37   ****               ^197
     37   ****  197 Var parameter cannot be packed
-    38       11  
-    39       11 end. 
+ 
+end. 
 
 Errors in program: 1
 

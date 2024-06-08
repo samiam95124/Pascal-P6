@@ -1,32 +1,32 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 29: Incomplete second in type 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0029(output); 
-     8       -8  
-     9       -8 type  integer = char; 
-    10       -8       five; 
+{ 
+ 
+PRT test 29: Incomplete second in type 
+ 
+} 
+ 
+program iso7185prt0029(output); 
+ 
+type  integer = char; 
+      five; 
     10   ****             ^16,10
     10   ****   16 '=' expected
     10   ****   10 Error in type
-    11       -8  
-    12       -8 var c: integer; 
-    13       -8     d: five; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    c := 'a'; 
-    18        8    d := 1; 
-    19        8    writeln(c, d) 
-    20       13  
-    21       13 end. 
+ 
+var c: integer; 
+    d: five; 
+ 
+begin 
+ 
+   c := 'a'; 
+   d := 1; 
+   writeln(c, d) 
+ 
+end. 
 
 Errors in program: 2
 

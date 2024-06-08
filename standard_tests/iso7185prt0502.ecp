@@ -1,29 +1,29 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 502: Missing 'array' 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0502; 
-     8       -8  
-     9       -8 var a: [1..10] of integer; 
+{ 
+ 
+PRT test 502: Missing 'array' 
+ 
+} 
+ 
+program iso7185prt0502; 
+ 
+var a: [1..10] of integer; 
      9   ****          ^10   ^6
      9   ****   10 Error in type
      9   ****    6 Illegal symbol
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    a[1] := 1 
+ 
+begin 
+ 
+   a[1] := 1 
     13   ****       ^138 ^287
     13   ****  138 Type of variable is not array
     13   ****  287 Variable reference is not addressable
-    14        7  
-    15        7 end. 
+ 
+end. 
 
 Errors in program: 4
 

@@ -1,34 +1,34 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1905: repeat statement 
-     4       -8  
-     5       -8     the condition of the until part of a repeat statement must have boolean type 
-     6       -8     ISO 7185 6.8.3.8 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1905(output); 
-    11       -8  
-    12       -8 type myBoolean = (myFalse, myTrue); 
-    13       -8  
-    14       -8 var b: myBoolean; 
-    15       -8  
-    16       -8 begin 
-    17        5  
-    18        5    b := myTrue; 
-    19        8    repeat 
-    20        8       ; 
-    21        8    until b; 
+{ 
+ 
+PRT test 1905: repeat statement 
+ 
+    the condition of the until part of a repeat statement must have boolean type 
+    ISO 7185 6.8.3.8 
+ 
+} 
+ 
+program iso7185prt1905(output); 
+ 
+type myBoolean = (myFalse, myTrue); 
+ 
+var b: myBoolean; 
+ 
+begin 
+ 
+   b := myTrue; 
+   repeat 
+      ; 
+   until b; 
     21   ****             ^144
     21   ****  144 Illegal type of expression
-    22       10    writeln('error not detected'); 
-    23       19  
-    24       19 end. 
+   writeln('error not detected'); 
+ 
+end. 
 
 Errors in program: 1
 

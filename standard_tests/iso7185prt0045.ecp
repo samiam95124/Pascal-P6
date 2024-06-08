@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 45: Missing block 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0045; 
-     8       -8  
-     9       -8 procedure x; ; 
+{ 
+ 
+PRT test 45: Missing block 
+ 
+} 
+ 
+program iso7185prt0045; 
+ 
+procedure x; ; 
      9   ****                ^18
      9   ****   18 Error in declaration part
-    10      -16  
-    11      -16 begin 
-    12        5  
-    13        5    x 
-    14        5  
-    15        5 end. 
+ 
+begin 
+ 
+   x 
+ 
+end. 
     15   ****      ^14,18,17,6,13
     15   ****   14 ';' expected
     15   ****   18 Error in declaration part

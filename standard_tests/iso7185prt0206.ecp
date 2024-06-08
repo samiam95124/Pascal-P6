@@ -1,31 +1,31 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 206: Misspelled 'case' to variant 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0206; 
-     8       -8  
-     9       -8 var a: record b, c: integer; 
-    10       -8               csae d: boolean of 
+{ 
+ 
+PRT test 206: Misspelled 'case' to variant 
+ 
+} 
+ 
+program iso7185prt0206; 
+ 
+var a: record b, c: integer; 
+              csae d: boolean of 
     10   ****                      ^6          ^6
     10   ****    6 Illegal symbol
-    11       -8                  true: (); 
-    12       -8                  false: () 
+                 true: (); 
+                 false: () 
     12   ****                            ^2
     12   ****    2 Identifier expected
-    13       -8        end; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    a.b := 1 
-    18        5  
-    19        5 end. 
+       end; 
+ 
+begin 
+ 
+   a.b := 1 
+ 
+end. 
 
 Errors in program: 3
 

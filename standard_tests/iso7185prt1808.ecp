@@ -1,40 +1,40 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1808: Validity of for loop index. 
-     4       -8  
-     5       -8     Index out of current block. 
-     6       -8     ISO 7185 6.8.3.9 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1808(output); 
-    11       -8  
-    12       -8 var i: integer; 
-    13       -8  
-    14       -8 procedure a; 
-    15      -16  
-    16      -16 begin 
-    17        5  
-    18        5    for i := 1 to 10 do begin 
+{ 
+ 
+PRT test 1808: Validity of for loop index. 
+ 
+    Index out of current block. 
+    ISO 7185 6.8.3.9 
+ 
+} 
+ 
+program iso7185prt1808(output); 
+ 
+var i: integer; 
+ 
+procedure a; 
+ 
+begin 
+ 
+   for i := 1 to 10 do begin 
     18   ****          ^183
     18   ****  183 For index variable must be local to this block
-    19       15  
-    20       15       write(i:1, ' ') 
-    21       23  
-    22       23    end 
-    23       24  
-    24       24 end; 
-    25       35  
-    26       35 begin 
-    27       35  
-    28       35    a 
-    29       35  
-    30       35 end. 
+ 
+      write(i:1, ' ') 
+ 
+   end 
+ 
+end; 
+ 
+begin 
+ 
+   a 
+ 
+end. 
 
 Errors in program: 1
 

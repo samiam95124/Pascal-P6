@@ -1,41 +1,41 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1721: For dispose(p,k l ,...,k, ), it is an error unless the variable 
-     4       -8                had been created using the form new(p,c l ,...,c,,,) and m is 
-     5       -8                equal to n. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.6.5.3 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1721(output); 
-    12       -8  
-    13       -8 type 
-    14       -8  
-    15       -8      x = (one, two, three); 
-    16       -8      a = record case b: boolean of 
-    17       -8  
-    18       -8         true:  ( 
-    19       -8            case e: x of 
-    20       -8               one: (c: integer); 
-    21       -8               two: (f: char); 
-    22       -8               three: (g: boolean) 
-    23       -8         ); 
-    24       -8         false: (d: char) 
-    25       -8  
-    26       -8      end; 
-    27       -8 var e: ^a; 
-    28       -8  
-    29       -8 begin 
-    30        5  
-    31        5    new(e, true, one); 
-    32       11    dispose(e, false) 
-    33       16  
-    34       16 end. 
+{ 
+ 
+PRT test 1721: For dispose(p,k l ,...,k, ), it is an error unless the variable 
+               had been created using the form new(p,c l ,...,c,,,) and m is 
+               equal to n. 
+ 
+               ISO 7185 reference: 6.6.5.3 
+ 
+} 
+ 
+program iso7185prt1721(output); 
+ 
+type 
+ 
+     x = (one, two, three); 
+     a = record case b: boolean of 
+ 
+        true:  ( 
+           case e: x of 
+              one: (c: integer); 
+              two: (f: char); 
+              three: (g: boolean) 
+        ); 
+        false: (d: char) 
+ 
+     end; 
+var e: ^a; 
+ 
+begin 
+ 
+   new(e, true, one); 
+   dispose(e, false) 
+ 
+end. 
 
 Errors in program: 0

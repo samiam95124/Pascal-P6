@@ -1,31 +1,31 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1757: It is an error if the buffer-variable is undefined immediately 
-     4       -8                prior to any use of read. 
-     5       -8  
-     6       -8                ISO 7185 reference: 6.9.1 
-     7       -8  
-     8       -8                Other than eof being true, I don't know of another undefined 
-     9       -8                buffer variable condition. 
-    10       -8  
-    11       -8 } 
-    12       -8  
-    13       -8 program iso7185prt1757; 
-    14       -8  
-    15       -8 var a: file of integer; 
-    16       -8     b: integer; 
-    17       -8  
-    18       -8 begin 
-    19        5  
-    20        5    rewrite(a); 
-    21        7    reset(a); 
-    22        9    read(a, b) 
-    23       13  
-    24       13 end. 
+{ 
+ 
+PRT test 1757: It is an error if the buffer-variable is undefined immediately 
+               prior to any use of read. 
+ 
+               ISO 7185 reference: 6.9.1 
+ 
+               Other than eof being true, I don't know of another undefined 
+               buffer variable condition. 
+ 
+} 
+ 
+program iso7185prt1757; 
+ 
+var a: file of integer; 
+    b: integer; 
+ 
+begin 
+ 
+   rewrite(a); 
+   reset(a); 
+   read(a, b) 
+ 
+end. 
 
 Errors in program: 0

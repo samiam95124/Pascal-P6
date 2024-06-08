@@ -1,53 +1,53 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1702: It is an error unless a variant is active for the entirety of 
-     4       -8                each reference and access to each component of the variant. 
-     5       -8  
-     6       -8                ISO 7185 reference: 6.5.3.3 
-     7       -8  
-     8       -8                There are four possible cases for active variants: 
-     9       -8  
-    10       -8                   A: Reference to discriminated variant. 
-    11       -8                   B: Change to the tagfield of a discriminated variant with 
-    12       -8                      an outstanding reference. 
-    13       -8                   C: Read of an undiscriminated variant after a write. 
-    14       -8                   D: Write of an undiscriminated variant with outstanding 
-    15       -8                      reference. 
-    16       -8  
-    17       -8                This is case B. 
-    18       -8 } 
-    19       -8  
-    20       -8 program iso7185prt1702(output); 
-    21       -8  
-    22       -8 var a: record case val: boolean of 
-    23       -8  
-    24       -8           true: (i: integer); 
-    25       -8           false: (c: char); 
-    26       -8  
-    27       -8        end; 
-    28       -8  
-    29       -8 procedure b(var i: integer); 
-    30      -16  
-    31      -16 begin 
-    32        7  
-    33        7    { Outstanding references are dificult to track. The error should occur 
-    34        7      when the variant is changed, but could also be differed to the time the bad 
-    35        7      variant is assigned. } 
-    36        7    a.val := false; 
-    37       12    i := 1 
-    38       13  
-    39       13 end; 
-    40       17  
-    41       17 begin 
-    42       17  
-    43       17    a.val := true; 
-    44       22    b(a.i) 
-    45       27  
-    46       27 end. 
+{ 
+ 
+PRT test 1702: It is an error unless a variant is active for the entirety of 
+               each reference and access to each component of the variant. 
+ 
+               ISO 7185 reference: 6.5.3.3 
+ 
+               There are four possible cases for active variants: 
+ 
+                  A: Reference to discriminated variant. 
+                  B: Change to the tagfield of a discriminated variant with 
+                     an outstanding reference. 
+                  C: Read of an undiscriminated variant after a write. 
+                  D: Write of an undiscriminated variant with outstanding 
+                     reference. 
+ 
+               This is case B. 
+} 
+ 
+program iso7185prt1702(output); 
+ 
+var a: record case val: boolean of 
+ 
+          true: (i: integer); 
+          false: (c: char); 
+ 
+       end; 
+ 
+procedure b(var i: integer); 
+ 
+begin 
+ 
+   { Outstanding references are dificult to track. The error should occur 
+     when the variant is changed, but could also be differed to the time the bad 
+     variant is assigned. } 
+   a.val := false; 
+   i := 1 
+ 
+end; 
+ 
+begin 
+ 
+   a.val := true; 
+   b(a.i) 
+ 
+end. 
 
 Errors in program: 0

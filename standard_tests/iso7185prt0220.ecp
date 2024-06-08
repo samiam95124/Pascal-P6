@@ -1,40 +1,40 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 220: Standard field specification in variant 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0220; 
-     8       -8  
-     9       -8 type q = (one, two, three); 
-    10       -8  
-    11       -8 var a: record b, c: integer; 
-    12       -8               case d: q of 
-    13       -8                  one, two: (); 
-    14       -8                  three: (); 
-    15       -8                  e, f: char 
+{ 
+ 
+PRT test 220: Standard field specification in variant 
+ 
+} 
+ 
+program iso7185prt0220; 
+ 
+type q = (one, two, three); 
+ 
+var a: record b, c: integer; 
+              case d: q of 
+                 one, two: (); 
+                 three: (); 
+                 e, f: char 
     15   ****                    ^104^178^104^178,178^9
     15   ****  104 Identifier not declared
     15   ****  178 Multidefined record variant
     15   ****    9 '(' expected
-    16       -8        end; 
+       end; 
     16   ****            ^6,5,10,4,200
     16   ****    6 Illegal symbol
     16   ****    5 ':' expected
     16   ****   10 Error in type
     16   ****    4 ')' expected
     16   ****  200 Tagfield constants must cover entire tagfield type
-    17       -8  
-    18       -8 begin 
-    19        5  
-    20        5    a.b := 1 
-    21        5  
-    22        5 end. 
+ 
+begin 
+ 
+   a.b := 1 
+ 
+end. 
 
 Errors in program: 11
 

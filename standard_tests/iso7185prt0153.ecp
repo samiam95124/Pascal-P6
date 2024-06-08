@@ -1,29 +1,29 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 153: Missing unsigned integer in goto statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0153; 
-     8       -8  
-     9       -8 { Theoretically the compiler could determine that only one label is possible, 
-    10       -8   and use that to recover. } 
-    11       -8 label 1; 
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    goto ; 
+{ 
+ 
+PRT test 153: Missing unsigned integer in goto statement 
+ 
+} 
+ 
+program iso7185prt0153; 
+ 
+{ Theoretically the compiler could determine that only one label is possible, 
+  and use that to recover. } 
+label 1; 
+ 
+begin 
+ 
+   goto ; 
     15   ****           ^22
     15   ****   22 Integer or identifier expected
-    16        5  
-    17        5    1: 
-    18        5  
-    19        5 end. 
+ 
+   1: 
+ 
+end. 
 label           1 unreferenced
                      
 

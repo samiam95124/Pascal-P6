@@ -1,26 +1,26 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 141: Missing "to"/"downto" on for statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0141; 
-     8       -8  
-     9       -8 var i, a, b: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    for i := 10 1 do a := b 
+{ 
+ 
+PRT test 141: Missing "to"/"downto" on for statement 
+ 
+} 
+ 
+program iso7185prt0141; 
+ 
+var i, a, b: integer; 
+ 
+begin 
+ 
+   for i := 10 1 do a := b 
     13   ****                  ^6 ^55
     13   ****    6 Illegal symbol
     13   ****   55 'to'/'downto' expected
-    14        8  
-    15        8 end. 
+ 
+end. 
 
 Errors in program: 2
 

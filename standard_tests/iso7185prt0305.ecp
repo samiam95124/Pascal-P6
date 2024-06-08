@@ -1,33 +1,33 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 305: Missing function identifier 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0305; 
-     8       -8  
-     9       -8 function (one, two: integer): char; 
+{ 
+ 
+PRT test 305: Missing function identifier 
+ 
+} 
+ 
+program iso7185prt0305; 
+ 
+function (one, two: integer): char; 
      9   ****            ^2
      9   ****    2 Identifier expected
-    10      -16  
-    11      -16 begin 
-    12        5  
-    13        5    one := 1; 
-    14        7    two := 2; 
-    15        9    x := 'a' 
+ 
+begin 
+ 
+   one := 1; 
+   two := 2; 
+   x := 'a' 
     15   ****         ^104
     15   ****  104 Identifier not declared
-    16        9  
-    17        9 end; 
-    18       10  
-    19       10 begin 
-    20       10  
-    21       10 end. 
+ 
+end; 
+ 
+begin 
+ 
+end. 
 
 Errors in program: 2
 

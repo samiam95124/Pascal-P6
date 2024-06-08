@@ -1,26 +1,26 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1504: Missing 'e' in exponent 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt1504(output); 
-     8       -8  
-     9       -8 var a: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    { somewhat ambiguous, could be a number of missing tolkens } 
-    14        5    a := 5 5 
+{ 
+ 
+PRT test 1504: Missing 'e' in exponent 
+ 
+} 
+ 
+program iso7185prt1504(output); 
+ 
+var a: integer; 
+ 
+begin 
+ 
+   { somewhat ambiguous, could be a number of missing tolkens } 
+   a := 5 5 
     14   ****             ^6
     14   ****    6 Illegal symbol
-    15        5  
-    16        5 end. 
+ 
+end. 
 
 Errors in program: 1
 

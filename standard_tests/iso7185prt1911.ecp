@@ -1,27 +1,27 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1911: nil as tolken 
-     4       -8  
-     5       -8     In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
-     6       -8     as defined in ISO 7185. 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1911(output); 
-    11       -8  
-    12       -8 var nil: integer; 
+{ 
+ 
+PRT test 1911: nil as tolken 
+ 
+    In Pascal-P2, nil is defined as a system identifier, but not as a keyword 
+    as defined in ISO 7185. 
+ 
+} 
+ 
+program iso7185prt1911(output); 
+ 
+var nil: integer; 
     12   ****         ^2,6
     12   ****    2 Identifier expected
     12   ****    6 Illegal symbol
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5 end. 
+ 
+begin 
+ 
+end. 
 
 Errors in program: 2
 

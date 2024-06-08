@@ -1,23 +1,23 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1200: '+' with missing term 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt1200(output); 
-     8       -8  
-     9       -8 var a: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    a := +   
-    14        5  
-    15        5 end. 
+{ 
+ 
+PRT test 1200: '+' with missing term 
+ 
+} 
+ 
+program iso7185prt1200(output); 
+ 
+var a: integer; 
+ 
+begin 
+ 
+   a := +   
+ 
+end. 
     15   ****     ^58,134
     15   ****   58 Error in factor
     15   ****  134 Illegal type of operand(s)

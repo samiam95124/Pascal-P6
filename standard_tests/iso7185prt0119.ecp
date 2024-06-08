@@ -3,31 +3,31 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 119: Misspelled "of" on case statement 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0119; 
-     8       -8  
-     9       -8 var x, a: integer; 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    case x fo 
+{ 
+ 
+PRT test 119: Misspelled "of" on case statement 
+ 
+} 
+ 
+program iso7185prt0119; 
+ 
+var x, a: integer; 
+ 
+begin 
+ 
+   case x fo 
     13   ****              ^59
     13   ****   59 Error in variable
-    14        5  
-    15        5       1: a := 1; 
+ 
+      1: a := 1; 
     15   ****          ^8,50
     15   ****    8 'of' expected
     15   ****   50 Error in constant
-    16       11       2: a := 2 
-    17       11  
-    18       11    end 
-    19       22  
-    20       22 end. 
+      2: a := 2 
+ 
+   end 
+ 
+end. 
 
 Errors in program: 3
 

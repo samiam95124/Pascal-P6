@@ -1,26 +1,26 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1723: For dispose, it is an error if the parameter of a pointer-type 
-     4       -8                has a nil-value. 
-     5       -8  
-     6       -8                ISO 7185 reference: 6.6.5.3 
-     7       -8  
-     8       -8 } 
-     9       -8  
-    10       -8 program iso7185prt1723(output); 
-    11       -8  
-    12       -8 var a: ^integer; 
-    13       -8  
-    14       -8 begin 
-    15        5  
-    16        5    a := nil; 
-    17        8    dispose(a) 
-    18       11  
-    19       11 end. 
+{ 
+ 
+PRT test 1723: For dispose, it is an error if the parameter of a pointer-type 
+               has a nil-value. 
+ 
+               ISO 7185 reference: 6.6.5.3 
+ 
+} 
+ 
+program iso7185prt1723(output); 
+ 
+var a: ^integer; 
+ 
+begin 
+ 
+   a := nil; 
+   dispose(a) 
+ 
+end. 
 
 Errors in program: 0

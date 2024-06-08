@@ -1,24 +1,24 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1103: Missing second operand to '/' 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt1103(output); 
-     8       -8  
-     9       -8 var a: real; 
-    10       -8     b: integer; 
-    11       -8  
-    12       -8 begin 
-    13        5  
-    14        5    a := b/ 
-    15        6  
-    16        6 end. 
+{ 
+ 
+PRT test 1103: Missing second operand to '/' 
+ 
+} 
+ 
+program iso7185prt1103(output); 
+ 
+var a: real; 
+    b: integer; 
+ 
+begin 
+ 
+   a := b/ 
+ 
+end. 
     16   ****     ^58
     16   ****   58 Error in factor
 

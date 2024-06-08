@@ -1,38 +1,38 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 603: Missing ',' between parameter identifiers 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0603; 
-     8       -8  
-     9       -8 procedure a(b c: integer); 
+{ 
+ 
+PRT test 603: Missing ',' between parameter identifiers 
+ 
+} 
+ 
+program iso7185prt0603; 
+ 
+procedure a(b c: integer); 
      9   ****                 ^7        ^5
      9   ****    7 Error in parameter list
      9   ****    5 ':' expected
-    10      -16  
-    11      -16 begin 
-    12        5  
-    13        5    b := 1; 
-    14        5    c := 1 
+ 
+begin 
+ 
+   b := 1; 
+   c := 1 
     14   ****         ^104
     14   ****  104 Identifier not declared
-    15        5  
-    16        5 end; 
-    17        6  
-    18        6 begin 
-    19        6  
-    20        6    a(1, 2) 
+ 
+end; 
+ 
+begin 
+ 
+   a(1, 2) 
     20   ****         ^277^126^277
     20   ****  277 No overload found to match parameter
     20   ****  126 Number of parameters does not agree with declaration
-    21        6  
-    22        6 end. 
+ 
+end. 
 
 Errors in program: 6
 

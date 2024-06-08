@@ -1,38 +1,38 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 607: Misspelled 'var' 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0607; 
-     8       -8  
-     9       -8 var b: integer; 
-    10       -8  
-    11       -8 procedure a(vas b: integer); 
+{ 
+ 
+PRT test 607: Misspelled 'var' 
+ 
+} 
+ 
+program iso7185prt0607; 
+ 
+var b: integer; 
+ 
+procedure a(vas b: integer); 
     11   ****                   ^7        ^5
     11   ****    7 Error in parameter list
     11   ****    5 ':' expected
-    12      -16  
-    13      -16 begin 
-    14        5  
-    15        5    b := 1 
-    16        5  
-    17        5 end; 
+ 
+begin 
+ 
+   b := 1 
+ 
+end; 
 vas        unreferenced
 
-    18        8  
-    19        8 begin 
-    20        8  
-    21        8    a(b) 
+ 
+begin 
+ 
+   a(b) 
     21   ****         ^277
     21   ****  277 No overload found to match parameter
-    22        8  
-    23        8 end. 
+ 
+end. 
 
 Errors in program: 3
 

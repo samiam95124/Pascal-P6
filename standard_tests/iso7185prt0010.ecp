@@ -1,21 +1,21 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 10: Closing paren for program header only 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0010); 
+{ 
+ 
+PRT test 10: Closing paren for program header only 
+ 
+} 
+ 
+program iso7185prt0010); 
      7   ****                         ^14,18
      7   ****   14 ';' expected
      7   ****   18 Error in declaration part
-     8       -8  
-     9       -8 begin 
-    10        5 end 
+ 
+begin 
+end 
    *** eof encountered
 
     11   ****  ^21

@@ -1,33 +1,33 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1758a: On writing to a textfile, the values of TotalWidth and  
-     4       -8                 FracDigits are greater than or equal to one ; it is an error if 
-     5       -8                 either value is less than one. 
-     6       -8  
-     7       -8                 ISO 7185 reference: 6.9.3.1 
-     8       -8  
-     9       -8                 Divided into: 
-    10       -8  
-    11       -8                 A: TotalWidth is zero. 
-    12       -8  
-    13       -8                 B: FracDigits is zero. 
-    14       -8  
-    15       -8 } 
-    16       -8  
-    17       -8 program iso7185prt1758a(output); 
-    18       -8  
-    19       -8 var a: real; 
-    20       -8  
-    21       -8 begin 
-    22        5  
-    23        5    a := 1.0; 
-    24        7    write(a: 0) 
-    25       12  
-    26       12 end. 
+{ 
+ 
+PRT test 1758a: On writing to a textfile, the values of TotalWidth and  
+                FracDigits are greater than or equal to one ; it is an error if 
+                either value is less than one. 
+ 
+                ISO 7185 reference: 6.9.3.1 
+ 
+                Divided into: 
+ 
+                A: TotalWidth is zero. 
+ 
+                B: FracDigits is zero. 
+ 
+} 
+ 
+program iso7185prt1758a(output); 
+ 
+var a: real; 
+ 
+begin 
+ 
+   a := 1.0; 
+   write(a: 0) 
+ 
+end. 
 
 Errors in program: 0

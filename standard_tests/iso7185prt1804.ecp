@@ -1,34 +1,34 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1804: Threats to FOR statement index. 
-     4       -8  
-     5       -8     Threat within the controlled statement block, reuse of index in nested 
-     6       -8     FOR loop. 
-     7       -8     ISO 7185 6.8.3.9 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1804(output); 
-    12       -8  
-    13       -8 var i: integer; 
-    14       -8  
-    15       -8 begin 
-    16        5  
-    17        5    for i := 1 to 10 do begin 
-    18       15  
-    19       15       write(i:1, ' '); 
-    20       24       for i := 1 to 10 do write('hi') 
+{ 
+ 
+PRT test 1804: Threats to FOR statement index. 
+ 
+    Threat within the controlled statement block, reuse of index in nested 
+    FOR loop. 
+    ISO 7185 6.8.3.9 
+ 
+} 
+ 
+program iso7185prt1804(output); 
+ 
+var i: integer; 
+ 
+begin 
+ 
+   for i := 1 to 10 do begin 
+ 
+      write(i:1, ' '); 
+      for i := 1 to 10 do write('hi') 
     20   ****             ^195
     20   ****  195 For loop index is threatened
-    21       41  
-    22       41    end 
-    23       52  
-    24       52 end. 
+ 
+   end 
+ 
+end. 
 
 Errors in program: 1
 

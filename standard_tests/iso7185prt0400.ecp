@@ -1,34 +1,34 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 400: Missing '(' on enumeration 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0400; 
-     8       -8  
-     9       -8 var a: one, two, three); 
+{ 
+ 
+PRT test 400: Missing '(' on enumeration 
+ 
+} 
+ 
+program iso7185prt0400; 
+ 
+var a: one, two, three); 
      9   ****            ^104^6
      9   ****  104 Identifier not declared
      9   ****    6 Illegal symbol
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    a := one; 
+ 
+begin 
+ 
+   a := one; 
     13   ****             ^104
     13   ****  104 Identifier not declared
-    14        5    a := two; 
+   a := two; 
     14   ****             ^104
     14   ****  104 Identifier not declared
-    15        5    a := three 
+   a := three 
     15   ****               ^104
     15   ****  104 Identifier not declared
-    16        5  
-    17        5 end. 
+ 
+end. 
 
 Errors in program: 5
 

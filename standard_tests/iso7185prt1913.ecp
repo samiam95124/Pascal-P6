@@ -1,25 +1,25 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1913: Adjoining symbols. 
-     4       -8  
-     5       -8     Number directly adjoining a keyword. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1913(output); 
-    10       -8  
-    11       -8 begin 
-    12        5  
-    13        5    writeln('The result is: ', 42div 4); 
+{ 
+ 
+PRT test 1913: Adjoining symbols. 
+ 
+    Number directly adjoining a keyword. 
+ 
+} 
+ 
+program iso7185prt1913(output); 
+ 
+begin 
+ 
+   writeln('The result is: ', 42div 4); 
     13   ****                                  ^241
     13   ****  241 Invalid tolken separator
-    14       19  
-    15       19 end. 
+ 
+end. 
 
 Errors in program: 1
 

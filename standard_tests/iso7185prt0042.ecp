@@ -1,22 +1,22 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 42: Missing ident 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0042; 
-     8       -8  
-     9       -8 procedure ; begin end; 
+{ 
+ 
+PRT test 42: Missing ident 
+ 
+} 
+ 
+program iso7185prt0042; 
+ 
+procedure ; begin end; 
      9   ****             ^2
      9   ****    2 Identifier expected
-    10        6  
-    11        6 begin 
-    12        6 end. 
+ 
+begin 
+end. 
 
 Errors in program: 1
 

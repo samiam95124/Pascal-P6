@@ -1,30 +1,30 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1762: Invalid string index subrange. 
-     4       -8  
-     5       -8     String index starts with 0. 
-     6       -8  
-     7       -8 } 
-     8       -8  
-     9       -8 program iso7185prt1762(output); 
-    10       -8  
-    11       -8 var s: packed array [0..10] of char; 
-    12       -8  
-    13       -8 begin 
-    14        5  
-    15        5    s := 'h          '; 
+{ 
+ 
+PRT test 1762: Invalid string index subrange. 
+ 
+    String index starts with 0. 
+ 
+} 
+ 
+program iso7185prt1762(output); 
+ 
+var s: packed array [0..10] of char; 
+ 
+begin 
+ 
+   s := 'h          '; 
     15   ****                        ^129
     15   ****  129 Type conflict of operands
-    16        7    writeln('The string is: ''', s, ''''); 
+   writeln('The string is: ''', s, ''''); 
     16   ****                                    ^116
     16   ****  116 Error in type of standard procedure parameter
-    17       20  
-    18       20 end. 
+ 
+end. 
 
 Errors in program: 2
 

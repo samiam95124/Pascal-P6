@@ -3,32 +3,32 @@ Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 1722: For dispose(p,k l ,...,k, ), it is an error if the variants in 
-     4       -8                the variable identified by the pointer value of p are different 
-     5       -8                from those specified by the case-constants k l ,...,k,,,,. 
-     6       -8  
-     7       -8                ISO 7185 reference: 6.6.5.3 
-     8       -8  
-     9       -8 } 
-    10       -8  
-    11       -8 program iso7185prt1722; 
-    12       -8  
-    13       -8 type a = record case b: boolean of 
-    14       -8  
-    15       -8           true:  (c: integer); 
-    16       -8           false: (d: char) 
-    17       -8  
-    18       -8        end; 
-    19       -8 var e: ^a; 
-    20       -8  
-    21       -8 begin 
-    22        5  
-    23        5    new(e, true); 
-    24       10    e^.b := true; 
-    25       16    dispose(e, false) 
-    26       21  
-    27       21 end. 
+{ 
+ 
+PRT test 1722: For dispose(p,k l ,...,k, ), it is an error if the variants in 
+               the variable identified by the pointer value of p are different 
+               from those specified by the case-constants k l ,...,k,,,,. 
+ 
+               ISO 7185 reference: 6.6.5.3 
+ 
+} 
+ 
+program iso7185prt1722; 
+ 
+type a = record case b: boolean of 
+ 
+          true:  (c: integer); 
+          false: (d: char) 
+ 
+       end; 
+var e: ^a; 
+ 
+begin 
+ 
+   new(e, true); 
+   e^.b := true; 
+   dispose(e, false) 
+ 
+end. 
 
 Errors in program: 0

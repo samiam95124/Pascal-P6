@@ -1,23 +1,23 @@
-P6 Pascal compiler vs. 0.1.x
+P6 Pascal compiler vs. 0.2.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
 
-     1       -8 { 
-     2       -8  
-     3       -8 PRT test 41: Missing "procedure" or "function" 
-     4       -8  
-     5       -8 } 
-     6       -8  
-     7       -8 program iso7185prt0041; 
-     8       -8  
-     9       -8 x; begin end; 
+{ 
+ 
+PRT test 41: Missing "procedure" or "function" 
+ 
+} 
+ 
+program iso7185prt0041; 
+ 
+x; begin end; 
      9   ****   ^18         ^21
      9   ****   18 Error in declaration part
      9   ****   21 '.' expected
-    10        0  
-    11        0 begin 
-    12        0 end. 
+ 
+begin 
+end. 
 
 Errors in program: 2
 
