@@ -777,11 +777,12 @@ procedure xlate;
                     iline: integer; { intermediate line }
                   end;
          { temp entries for sets }
-         setptr = ^setety;
-         setety = record
-           next: setptr; { next set temp in line }
+         tmpptr = ^tmpety;
+         tmpety = record
+           next: tmpptr; { next set temp in line }
            occu: boolean; { occupied status }
-           off: address { stack offset }
+           off: address; { stack offset }
+           len: address { length }
          end;
          insstr10 = packed array [1..insmax10] of char;
          insstr20 = packed array [1..insmax20] of char;
@@ -810,8 +811,8 @@ procedure xlate;
         expsn: integer; { expression entries sn }
         tmpoff: address; { starting address of set temps offset in stack }
         tmpspc: address; { size of temps area }
-        tmplst: setptr; { list of active temps }
-        tmpfre: setptr; { free temp entries }
+        tmplst: tmpptr; { list of active temps }
+        tmpfre: tmpptr; { free temp entries }
         lclspc: strvsp; { label for locals space }
 
    procedure init;
@@ -2261,7 +2262,7 @@ procedure xlate;
 
 
       procedure dmptmp(var f: text);
-      var p: setptr;
+      var p: tmpptr;
       begin 
         write(f, 'Temps list: ');
         p := tmplst;
@@ -2269,16 +2270,17 @@ procedure xlate;
         writeln(f)
       end;
 
-      procedure gettmp(var a: address);
-      var p, fp: setptr;
+      procedure gettmp(var a: address; len: address);
+      var p, fp: tmpptr;
       begin
         fp := nil; p := tmplst;
         while p <> nil do begin if not p^.occu then fp := p; p := p^.next end;
         if fp = nil then begin
           if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
           else new(fp); 
-          fp^.next := tmplst; tmplst := fp;
-          tmpspc := tmpspc+setsize; tmpoff := tmpoff-setsize; fp^.off := tmpoff
+          fp^.next := tmplst; tmplst := fp; alignu(stackal, len);
+          tmpspc := tmpspc+setsize; tmpoff := tmpoff-setsize; fp^.off := tmpoff;
+          fp^.len := len
         end;
         fp^.occu := true; 
         a := fp^.off;
@@ -2289,7 +2291,7 @@ procedure xlate;
       end;
 
       procedure puttmp(a: address);
-      var p, fp: setptr;
+      var p, fp: tmpptr;
       begin
         { uncomment for diagnostic }
         {
@@ -2302,7 +2304,7 @@ procedure xlate;
       end;
 
       procedure deltmp;
-      var p: setptr;
+      var p: tmpptr;
       begin
         if tmplst <> nil then begin
           p := tmplst;
@@ -2565,7 +2567,7 @@ procedure xlate;
           107: begin 
             resreg(rgrsi); resreg(rgrdi); 
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a)
+            gettmp(ep^.r1a, setsize)
           end;
 
           {adr,sbr}
@@ -2645,7 +2647,7 @@ procedure xlate;
           67,230: begin 
             resreg(rgrsi); resreg(rgrdi); 
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a)
+            gettmp(ep^.r1a, setsize)
           end;
 
           {ind,inda,indb,indc,indx}
@@ -2666,7 +2668,7 @@ procedure xlate;
             assreg(ep^.l, rf, rgrsi, rgnull);
             ep^.r1 := r1;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a)
+            gettmp(ep^.r1a, setsize)
           end;
 
           {inc,dec}
@@ -2739,7 +2741,7 @@ procedure xlate;
             dstreg(rgrsi); dstreg(rgrdi);
             ep^.r1 := r1; 
             if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a) 
+            gettmp(ep^.r1a, setsize) 
           end;
 
           {chki,chkb,chkc,chkx}
@@ -2798,7 +2800,7 @@ procedure xlate;
           32: begin 
             asscall; assreg(ep^.l, rf, rgrdi, rgnull);
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a)
+            gettmp(ep^.r1a, setsize)
           end;
      
           {flt,flo}
@@ -2939,7 +2941,7 @@ procedure xlate;
             asscall; 
             assreg(ep^.l, rf, rgrdi, rgnull); assreg(ep^.r, rf, rgrsi, rgnull);
             ep^.r1 := r1; if ep^.r1 = rgnull then getreg(ep^.r1, rf);
-            gettmp(ep^.r1a)
+            gettmp(ep^.r1a, setsize)
           end;
 
           { dupi, dupa, dupr, dups, dupb, dupc }
@@ -2976,7 +2978,7 @@ procedure xlate;
               end else ep^.r1 := r1
             end else if ep^.rc = 2 then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
-              gettmp(ep^.r1a)
+              gettmp(ep^.r1a, setsize)
             end else begin
               if r1 = rgnull then begin
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
@@ -3004,7 +3006,7 @@ procedure xlate;
               end else ep^.r1 := r1
             end else if ep^.rc = 2 then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
-              gettmp(ep^.r1a)
+              gettmp(ep^.r1a, setsize)
             end else begin
               if r1 = rgnull then begin 
                 if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
