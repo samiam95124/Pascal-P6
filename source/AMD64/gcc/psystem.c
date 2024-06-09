@@ -1602,7 +1602,6 @@ static void reads(filnum fn, char* s, long l, long w, boolean fld)
         while (l > 0) {
 
             c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--; 
-            l = l-1;
 
         }
         /* if fielded, validate the rest of the field is blank */
@@ -1624,7 +1623,7 @@ static void reads(filnum fn, char* s, long l, long w, boolean fld)
         }
         while (l > 0) {
 
-            c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l = l-1;
+            c = chkbuf(fn, w); getbuf(fn, &w); *s++ = c; l--;
 
         }
   
@@ -2229,7 +2228,7 @@ void psystem_wln(
         case OUTPUTFN: fprintf(stdout, "\n"); break;
         case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
         case ERRORFN: fprintf(stderr, "\n"); break;
-        case LISTFN: fprintf(filtable[LISTFN], "\n"); break;
+        case LISTFN: fprintf(stdout, "\n"); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
             break;
