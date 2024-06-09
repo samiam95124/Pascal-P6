@@ -5239,9 +5239,11 @@ procedure xlate;
           wrtins10(' popq %rbx', 0, 0, rgnull, rgnull, nil);
           wrtins20(' leave # undo frame ', 0, 0, rgnull, rgnull, nil);
           wrtins40(' addq $0,%rsp # remove frame data       ', marksize, 0, rgnull, rgnull, nil);
-          wrtins40(' popq %rax # get return address         ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' popq %rcx # get return address         ', 0, 0, rgnull, rgnull, nil);
           wrtins40(' addq $0,%rsp # remove caller parameters', q, 0, rgnull, rgnull, nil);
-          wrtins40(' pushq %rax # replace return address    ', 0, 0, rgnull, rgnull, nil);
+          if op = 237{retm} then
+            wrtins40(' movq %rsp,%rax # index result in rax   ', 0, 0, rgnull, rgnull, nil);
+          wrtins40(' pushq %rcx # replace return address    ', 0, 0, rgnull, rgnull, nil);
           wrtins30(' ret # return to caller       ', 0, 0, rgnull, rgnull, nil);
           writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
