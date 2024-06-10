@@ -2259,8 +2259,6 @@ procedure xlate;
         write(f, ']')
       end;
 
-
-
       procedure dmptmp(var f: text);
       var p: tmpptr;
       begin 
@@ -2273,13 +2271,13 @@ procedure xlate;
       procedure gettmp(var a: address; len: address);
       var p, fp: tmpptr;
       begin
-        fp := nil; p := tmplst;
-        while p <> nil do begin if not p^.occu then fp := p; p := p^.next end;
+        fp := nil; p := tmplst; alignu(stackal, len);
+        while p <> nil do begin if not p^.occu and (p^.len = len) then fp := p; p := p^.next end;
         if fp = nil then begin
           if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
           else new(fp); 
-          fp^.next := tmplst; tmplst := fp; alignu(stackal, len);
-          tmpspc := tmpspc+setsize; tmpoff := tmpoff-setsize; fp^.off := tmpoff;
+          fp^.next := tmplst; tmplst := fp;
+          tmpspc := tmpspc+len; tmpoff := tmpoff-len; fp^.off := tmpoff;
           fp^.len := len
         end;
         fp^.occu := true; 
