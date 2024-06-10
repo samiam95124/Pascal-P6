@@ -2623,16 +2623,13 @@ begin cmdpos := maxcmd end;
     end
   end (*align*);
 
-  { align for stack }
-  function aligns(flc: addrrange): addrrange;
-    var l: integer;
-  begin
-    if (flc mod stackal) <> 0 then begin
-      l := flc+1;
-      flc := l - stackal  +  (stackal-l) mod stackal
-    end;
-    aligns := flc
-  end (*aligns*);
+{ align address, upwards }
+procedure alignau(algn: addrrange; var flc: addrrange);
+  var l: integer;
+begin
+  l := flc-1;
+  flc := l + algn  -  (algn+l) mod algn
+end (*alignau*);
 
   procedure wrtctp(ip: ctp);
   begin
@@ -3864,7 +3861,7 @@ begin cmdpos := maxcmd end;
   end (*genipj*);
 
   procedure gencupcuf(fop: oprange; fp1,fp2: integer; fcp: ctp);
-  var fl: integer;
+  var fl: integer; sizalg: addrrange;
   begin
     if prcode then
       begin
@@ -3885,8 +3882,11 @@ begin cmdpos := maxcmd end;
             begin write(prr, ' ');
               if realt(fcp^.idtype) then write(prr, '1')
               else if sett(fcp^.idtype) then write(prr, '2')
+              else if fcp^.idtype^.form > power then write(prr, '3')
               else write(prr, '0');
-              fl := fl+2 
+              sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
+              write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
+              fl := fl+2+1+digits(fcp^.idtype^.size)+1+digits(sizalg)
             end
         end else begin write(prr, ' 0'); fl := fl+1 end;
         lftjst(parfld-1-fl);
@@ -3897,7 +3897,7 @@ begin cmdpos := maxcmd end;
   end;
 
   procedure gencipcif(fop: oprange; fcp: ctp);
-  var fl: integer;
+  var fl: integer; sizalg: addrrange;
   begin
     if prcode then begin
       write(prr,mn[fop]:11,' ':4); fl := 0;
@@ -3907,8 +3907,11 @@ begin cmdpos := maxcmd end;
           begin write(prr, ' ');
             if realt(fcp^.idtype) then write(prr, '1')
             else if sett(fcp^.idtype) then write(prr, '2')
+            else if fcp^.idtype^.form > power then write(prr, '3')
             else write(prr, '0');
-            fl := fl+2 
+            sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
+            write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
+            fl := fl+2+1+digits(fcp^.idtype^.size)+1+digits(sizalg) 
           end
       end;
       lftjst(parfld-1-fl);
