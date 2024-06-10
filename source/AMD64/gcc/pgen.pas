@@ -360,7 +360,7 @@ type
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1, q2 : address; { extra parameters }
+      q1, q2, q3 : address; { extra parameters }
       gblsiz: address; { size of globals }
       hexdig      : integer; { digits in unsigned hex }
       decdig      : integer; { digits in unsigned decimal }
@@ -749,7 +749,7 @@ procedure xlate;
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p:   lvltyp; { p parameter } 
-                    q, q1, q2: address; { q parameters values }
+                    q, q1, q2, q3: address; { q parameters values }
                     qs, qs1, qs2: strvsp; { q parameters symbols }
                     r1, r2, r3: reg; { result registers }
                     t1, t2, t3: reg; { temporary registers }
@@ -1291,6 +1291,7 @@ procedure xlate;
      if efree <> nil then begin ep := efree; efree := ep^.next end
      else begin new(ep); expsn := expsn+1; ep^.sn := expsn end;
      ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
+     ep^.q2 := q2; ep^.q3 := q3;
      ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
      ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
      ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
@@ -2974,7 +2975,7 @@ procedure xlate;
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
-            end else if ep^.rc = 2 then begin 
+            end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
               gettmp(ep^.r1a, setsize)
             end else begin
@@ -3002,7 +3003,7 @@ procedure xlate;
               if r1 = rgnull then begin
                 if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
               end else ep^.r1 := r1
-            end else if ep^.rc = 2 then begin 
+            end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
               ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
               gettmp(ep^.r1a, setsize)
             end else begin
@@ -3016,6 +3017,24 @@ procedure xlate;
           {cuv}
           27: begin
             asscall
+          end;
+
+          {cvf}
+          249: begin 
+            asscall;
+            if ep^.rc = 1 then begin
+              if r1 = rgnull then begin
+                if rgxmm0 in rf then ep^.r1 := rgxmm0 else getfreg(ep^.r1, rf)
+              end else ep^.r1 := r1
+            end else if (ep^.rc = 2) or (ep^.rc = 3) then begin 
+              ep^.r1 := r1; if r1 = rgnull then getreg(ep^.r1, rf);
+              gettmp(ep^.r1a, setsize)
+            end else begin
+              if r1 = rgnull then begin
+                if rgrax in rf then ep^.r1 := rgrax else getreg(ep^.r1, rf)
+              end else ep^.r1 := r1
+            end;
+            asspar(ep, ep^.pn)
           end;
 
           {cke}
@@ -4094,9 +4113,8 @@ procedure xlate;
               if ep^.op = 246{cuf} then begin
                 if ep^.rc = 1 then begin
                   if ep^.r1 <> rgxmm0 then
-                  wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
-                end else begin
-                  if ep^.q1 = 2 then begin { move set from stack to temp }
+                    wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
+                end else if ep^.rc = 2 then begin { move set from stack to temp }
                     wrtins40(' movq %rsp,%rsi # index set on stack    ', 0, 0, rgnull, rgnull, nil);
                     wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
                     wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
@@ -4105,10 +4123,17 @@ procedure xlate;
                     wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
                     wrtins40(' addq $0,%rsp # remove set from stack   ', setsize, 0, rgnull, rgnull, nil);
                     wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
-                  end else begin
-                    if ep^.r1 <> rgrax then
-                      wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil);
-                  end                   
+                end else if ep^.rc = 3 then begin { move structure from stack to temp }
+                    wrtins50(' movq %rsp,%rsi # index structure on stack        ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins30(' movq $0,%rcx # load size     ', ep^.q2, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' repnz # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' addq $0,%rsp # remove structure from stack       ', ep^.q3, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)                
+                end else begin
+                  if ep^.r1 <> rgrax then
+                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil);
                 end
               end;
               stkadr := stkadrs { restore stack position }
@@ -4124,11 +4149,10 @@ procedure xlate;
               wrtins50(' movq ^0(%1),%rbp # set callee frame pointer      ', 1*ptrsize, 0, ep^.l^.r1, rgnull, nil);
               wrtins30(' call *(%1) # call indirect   ', 0, 0, ep^.l^.r1, rgnull, nil);
               if ep^.op = 247{cif} then begin 
-                if ep^.q1 = 1 then begin
+                if ep^.rc = 1 then begin
                   if ep^.r1 <> rgxmm0 then
                     wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
-                end else begin
-                  if ep^.q1 = 2 then begin { move set from stack to temp }
+                end else if ep^.rc = 2 then begin { move set from stack to temp }
                     wrtins40(' movq %rsp,%rsi # index set on stack    ', 0, 0, rgnull, rgnull, nil);
                     wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
                     wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
@@ -4137,22 +4161,57 @@ procedure xlate;
                     wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
                     wrtins40(' addq $0,%rsp # remove set from stack   ', setsize, 0, rgnull, rgnull, nil);
                     wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
-                  end else begin
-                    if ep^.r1 <> rgrax then
-                      wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
-                  end
+                end else if ep^.rc = 3 then begin { move structure from stack to temp }
+                    wrtins50(' movq %rsp,%rsi # index structure on stack        ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins30(' movq $0,%rcx # load size     ', ep^.q2, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' repnz # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' addq $0,%rsp # remove structure from stack       ', ep^.q3, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
+                end else begin
+                  if ep^.r1 <> rgrax then
+                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil)
                 end
               end;
               wrtins50(' movq %r15,%rbp # restore our frame pointer       ', 0, 0, rgnull, rgnull, nil);
               stkadr := stkadrs { restore stack position }
             end;
 
-            {cuv}
-            27: begin
+            {cuv,cvf}
+            27,249: begin
               genexp(ep^.sl); { process sfr start link }
+              stkadrs := stkadr; { save stack track here }
               pshpar(ep^.pl); { process parameters first }
-              if ep^.qs <> nil then wrtins20(' call *@s(%rip)     ', 0, 0, rgnull, rgnull, ep^.qs)
-              else wrtins20(' call *@g(%rip)     ', q, 0, rgnull, rgnull, nil)
+              if ep^.qs <> nil then wrtins40(' call *@s(%rip) # call vectored         ', 0, 0, rgnull, rgnull, ep^.qs)
+              else wrtins40(' call *@g(%rip) # call vectored         ', q, 0, rgnull, rgnull, nil);
+              if ep^.op = 249{cvf} then begin
+                if ep^.rc = 1 then begin
+                  if ep^.r1 <> rgxmm0 then
+                  wrtins30(' movq %xmm0,%1 # place result ', 0, 0, ep^.r1, rgnull, nil)
+                end else if ep^.rc = 2 then begin { move set from stack to temp }
+                    wrtins40(' movq %rsp,%rsi # index set on stack    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins40(' addq $0,%rsp # remove set from stack   ', setsize, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc) 
+                end else if ep^.rc = 3 then begin { move structure from stack to temp }
+                    wrtins50(' movq %rsp,%rsi # index structure on stack        ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' leaq ^-@s^0(%rbp),%rdi # load temp destination   ', ep^.r1a, 0, rgnull, rgnull, lclspc);
+                    wrtins30(' movq $0,%rcx # load size     ', ep^.q2, 0, rgnull, rgnull, lclspc);
+                    wrtins20(' repnz # move       ', 0, 0, rgnull, rgnull, nil);
+                    wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+                    wrtins50(' addq $0,%rsp # remove structure from stack       ', ep^.q3, 0, rgnull, rgnull, nil);
+                    wrtins40(' leaq ^-@s^0(%rbp),%1 # reindex temp    ', ep^.r1a, 0, ep^.r1, rgnull, lclspc)                
+                end else begin
+                  if ep^.r1 <> rgrax then
+                    wrtins30(' movq %rax,%1 # place result  ', 0, 0, ep^.r1, rgnull, nil);
+                end
+              end;
+              stkadr := stkadrs { restore stack position }
             end;
 
             {cke}
@@ -4749,7 +4808,7 @@ procedure xlate;
 
         {cuf}
         246: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd,q,q1); write(prr, ' ', q:1, ' ', q1:1); 
+          writevp(prr, sp); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1); 
           lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1))); pass;
           getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
           getpar(ep); pshstk(ep);

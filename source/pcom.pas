@@ -3933,8 +3933,11 @@ end (*alignau*);
           begin write(prr, ' ');
             if realt(fcp^.idtype) then write(prr, '1')
             else if sett(fcp^.idtype) then write(prr, '2')
+            else if fcp^.idtype^.form > power then write(prr, '3')
             else write(prr, '0');
-            fl := fl+2 
+            sizalg := fcp^.idtype^.size; alignau(stackal, sizalg);
+            write(prr, ' ', fcp^.idtype^.size:1, ' ', sizalg:1);
+            fl := fl+2+1+digits(fcp^.idtype^.size)+1+digits(sizalg) 
           end;
         lftjst(parfld-1-fl);
         intmsg(fop);
