@@ -360,7 +360,7 @@ type
                      end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
-      q1, q2, q3 : address; { extra parameters }
+      q1, q2, q3, q4 : address; { extra parameters }
       gblsiz: address; { size of globals }
       hexdig      : integer; { digits in unsigned hex }
       decdig      : integer; { digits in unsigned decimal }
@@ -749,7 +749,7 @@ procedure xlate;
                     next: expptr; { next entry link }
                     op:   instyp; { operator type }
                     p:   lvltyp; { p parameter } 
-                    q, q1, q2, q3: address; { q parameters values }
+                    q, q1, q2, q3, q4: address; { q parameters values }
                     qs, qs1, qs2: strvsp; { q parameters symbols }
                     r1, r2, r3: reg; { result registers }
                     t1, t2, t3: reg; { temporary registers }
@@ -1291,7 +1291,7 @@ procedure xlate;
      if efree <> nil then begin ep := efree; efree := ep^.next end
      else begin new(ep); expsn := expsn+1; ep^.sn := expsn end;
      ep^.next := nil; ep^.op := op; ep^.p := p; ep^.q := q; ep^.q1 := q1;
-     ep^.q2 := q2; ep^.q3 := q3;
+     ep^.q2 := q2; ep^.q3 := q3; ep^.q4 := q4;
      ep^.l := nil; ep^.r := nil; ep^.x1 := nil; ep^.sl := nil;
      ep^.cl := nil; ep^.al := nil; ep^.pl := nil; 
      ep^.r1 := rgnull; ep^.r2 := rgnull; ep^.r3 := rgnull; 
@@ -4504,7 +4504,7 @@ procedure xlate;
       end;
 
     begin { assemble } 
-      p := 0;  q := 0;  op := 0; stkadr := 0;
+      p := 0;  q := 0;  q1 := 0; q2 := 0; q3 := 0; q4 := 0; op := 0; stkadr := 0;
       getname;
       { note this search removes the top instruction from use }
       while (instr[op]<>name) and (op < maxins) do op := op+1;
@@ -4808,16 +4808,37 @@ procedure xlate;
 
         {cuf}
         246: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1); 
-          lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1))); pass;
+          writevp(prr, sp); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1, ' ', q2:1, ' ', q3:1); 
+          lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3))); pass;
           getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
           getpar(ep); pshstk(ep);
         end;
 
         {cif}
-        247: begin parqq;
+        247: begin 
+          read(prd,q,q1,q2, q3); write(prr,q:1,' ',q1:1, ' ', q2:1, ' ', q3:1); 
+          lftjst(parfld-digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)); pass;
           getexp(ep); ep^.pn := q; ep^.rc := q1; popstk(ep^.l); getpar(ep);
           pshstk(ep);
+        end;
+
+        {cvf}
+        249: begin 
+          while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+          sp := nil;
+          if prd^ = 'l' then begin 
+            getnxt; labelsearch(def, val, sp, blk);
+            write(prr, p:1, ' l '); writevp(prr, sp); 
+            read(prd,q1,q2,q3,q4); write(prr, q1:1, ' ', q2:1, ' ', q3:1, ' ', q4:1);
+            lftjst(parfld-(3+lenpv(sp)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
+          end else begin 
+            read(prd,q,q1,q2,q3,q4); write(prr,q,' ',q1, ' ', q2:1, ' ', q3:1, ' ', q4:1); 
+            lftjst(parfld-(digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
+          end;
+          pass;
+          getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
+          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
+          genexp(ep); deltre(ep)
         end;
 
         {cke}
@@ -4945,8 +4966,8 @@ procedure xlate;
           end
         end;
 
-        {cuv,cvf}
-        27,249: begin 
+        {cuv}
+        27: begin 
           while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
           sp := nil;
           if prd^ = 'l' then begin 
@@ -5420,7 +5441,7 @@ procedure xlate;
           wrtins30(' movq $0,%rcx # set length    ', q, 0, rgnull, rgnull, nil);
           wrtins40(' repnz # move structure to address      ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
-          wrtins50(' addq $0,%rsp # remove structure from stack       ', q1, 0, rgnull, rgnull, nil);
+          puttmp(ep2^.r1a);
           deltre(ep); deltre(ep2)
         end;
 

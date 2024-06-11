@@ -1,6 +1,3 @@
-#ifndef FPC_PASCAL
-{$l-}
-#endif
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -3921,7 +3918,7 @@ end (*alignau*);
   end (*gen0*) ;
 
   procedure gencuvcvf(fop: oprange; fp1,fp2: integer; fcp, fcp2: ctp);
-  var fl: integer;
+  var fl: integer; sizalg: addrrange;
   begin
     if prcode then begin
       write(prr,mn[fop]:11,' ':5); fl := 0;
