@@ -320,14 +320,6 @@ type
                                                             (*names*)
                                                             (*******)
 
-     { copyback buffers }
-     cbbufp =^cbbuf;
-     cbbuf = record next: cbbufp; { next link }
-               addr: addrrange;   { global address of buffer }
-               id: ctp;           { parameter occupying buffer }
-               size: addrrange    { size of variable in buffer }
-             end;
-
      idclass = (types,konst,fixedt,vars,field,proc,func,alias);
      setofids = set of idclass;
      idkind = (actual,formal);
@@ -350,7 +342,7 @@ type
                    snm: integer; { serial number }
                    name: strvsp; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean;
-                   refer: boolean; cbb: cbbufp;
+                   refer: boolean;
                    case klass: idclass of
                      types: ();
                      konst: (values: valu);
@@ -474,6 +466,14 @@ type
      cmdbuf = packed array [cmdinx] of char; { buffer for command line }
      lininx = 1..maxlin; { index for source line buffer }
      linbuf = packed array [lininx] of char; { buffer for source lines }
+     { temp entries for sets }
+     tmpptr = ^tmpety;
+     tmpety = record
+       next: tmpptr; { next set temp in line }
+       occu: boolean; { occupied status }
+       off: stkoff; { stack offset }
+       len: addrrange { length }
+     end;
 
 (*-------------------------------------------------------------------------*)
 
@@ -645,10 +645,11 @@ var
     nammod: strvsp; { name of current module }
     incstk: filptr; { stack of included files }
     inclst: filptr; { discard list for includes }
-    cbblst: cbbufp; { copyback buffer entry list }
     srclin: linbuf; { buffer for input source lines }
     srcinx: lininx; { index for input buffer }
     srclen: 0..maxlin; { size of input line }
+    tmplst: tmpptr; { list of active temps }
+    tmpfre: tmpptr; { free temp entries }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -775,7 +776,6 @@ var
      { clear fixed entries }
      p^.idtype := nil; p^.keep := false; p^.refer := false;
      p^.name := nil; p^.llink := nil; p^.rlink := nil; p^.next := nil;
-     p^.cbb := nil;
      ctpsnm := ctpsnm+1; { identify entry in dumps }
      p^.snm := ctpsnm
   end;
@@ -987,33 +987,6 @@ var
       dispose(p);
       wtpcnt := wtpcnt-1
     end
-  end;
-
-  { get copyback buffer }
-  procedure getcbb(var p: cbbufp; id: ctp; size: integer);
-    var lp, fp: cbbufp;
-  begin p := nil;
-    if id <> nil then if id^.idtype <> nil then begin
-      lp := cbblst; fp := nil;
-      { find a matching buffer }
-      while lp <> nil do begin
-        if (lp^.id = nil) and (lp^.size = size) then fp := lp;
-        lp := lp^.next
-      end;
-      if fp = nil then begin { no existing buffer, or all occupied, get new }
-        new(fp); fp^.next := lp; lp := fp; fp^.addr := gc;
-        gc := gc+size
-      end;
-      fp^.id := id;
-      fp^.size := size;
-      p := fp
-    end
-  end;
-
-  { release copyback buffer }
-  procedure putcbb(p: cbbufp);
-  begin
-    if p <> nil then p^.id := nil
   end;
 
 (*-------------------------------------------------------------------------*)
@@ -1734,7 +1707,7 @@ begin cmdpos := maxcmd end;
     { * marks spared compiler errors }
     400,401,402,403,404,406,407, 500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515,
-    516,517: write('Compiler internal error');
+    516,517,518: write('Compiler internal error');
     end
   end;
 
@@ -2620,13 +2593,13 @@ begin cmdpos := maxcmd end;
     end
   end (*align*);
 
-{ align address, upwards }
-procedure alignau(algn: addrrange; var flc: addrrange);
-  var l: integer;
-begin
-  l := flc-1;
-  flc := l + algn  -  (algn+l) mod algn
-end (*alignau*);
+  { align address, upwards }
+  procedure alignau(algn: addrrange; var flc: addrrange);
+    var l: integer;
+  begin
+    l := flc-1;
+    flc := l + algn  -  (algn+l) mod algn
+  end (*alignau*);
 
   procedure wrtctp(ip: ctp);
   begin
@@ -4477,7 +4450,7 @@ end (*alignau*);
                      indrct: gen1t(35(*ind*),idplmt,typtr);
                      inxd:   error(400)
                    end;
-            expr:
+            expr: ; { already loaded }
           end;
           kind := expr;
           { operand is loaded, and subranges are now normalized to their
@@ -4487,8 +4460,61 @@ end (*alignau*);
         end
   end (*load*) ;
 
-  procedure loadaddress;
+  procedure gettmp(var a: stkoff; len: addrrange);
+  var p, fp: tmpptr;
   begin
+    fp := nil; p := tmplst; alignau(stackal, len);
+    while p <> nil do begin if not p^.occu and (p^.len = len) then fp := p; p := p^.next end;
+    if fp = nil then begin
+      if tmpfre <> nil then begin fp := tmpfre; tmpfre := tmpfre^.next end
+      else new(fp); 
+      fp^.next := tmplst; tmplst := fp;
+      lc := lc-len; fp^.off := lc;
+      fp^.len := len
+    end;
+    fp^.occu := true; 
+    a := fp^.off;
+    { uncomment for diagnostic }
+    {
+    writeln(prr, '# gettmp: address: ', a:1)
+    }
+  end;
+
+  procedure puttmp(a: stkoff);
+  var p, fp: tmpptr;
+  begin
+    { uncomment for diagnostic }
+    {
+    writeln(prr, '# puttmp: address: ', a:1);
+    }
+    fp := nil; p := tmplst;
+    while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
+    if fp = nil then error(518);
+    fp^.occu := false
+  end;
+
+  procedure puttmps;
+  var p: tmpptr;
+  begin
+    if tmplst <> nil then begin
+      p := tmplst;
+      while p^.next <> nil do p := p^.next;
+      p^.next := tmpfre
+    end else tmpfre := tmplst;
+    tmplst := nil
+  end;
+
+  procedure clrtmp;
+  var p: tmpptr;
+  begin
+    p := tmplst;
+    while p <> nil do begin p^.occu := false; p := p^.next end;
+  end;
+
+  procedure loadaddress;
+  var tmpoff: stkoff; lsize: addrrange;
+  begin
+    tmpoff := 0; { set no temp }
     with gattr do
       if typtr <> nil then
         begin
@@ -4516,7 +4542,14 @@ end (*alignau*);
                                gen1t(34(*inc*),idplmt,nilptr);
                      inxd:   error(404)
                    end;
-            expr:  gen1(118(*lsa*),0)
+            expr:  begin
+                     gettmp(tmpoff, typtr^.size); lsize := typtr^.size; 
+                     gen2(50(*lda*),level-(level-vlevel),tmpoff);
+                     alignau(stackal,lsize);
+                     gen2t(26(*sto*),typtr^.size,lsize,typtr);
+                     mesl(lsize+ptrsize);
+                     gen2(50(*lda*),level-(level-vlevel),tmpoff)
+                   end;
           end;
           if typtr^.form = arrayc then if pickup then begin
             { it's a container, load a complex pointer based on that }
@@ -4526,7 +4559,7 @@ end (*alignau*);
               if containers(typtr) = 1 then gen0(108(*spc*))
             end
           end;
-          kind := varbl; access := indrct; idplmt := 0; packing := false;
+          kind := varbl; access := indrct; idplmt := tmpoff; packing := false;
           symptr := nil { break variable association }
         end
   end (*loadaddress*) ;
@@ -5251,6 +5284,7 @@ end (*alignau*);
           spad: boolean; { write space padded string }
           ledz: boolean; { use leading zeros }
           onstk: boolean; { expression result on stack }
+          lsize: addrrange;
     begin llkey := lkey; txt := true; deffil := true; byt := false; 
       if sy = lparent then
       begin insymbol; chkhdr;
@@ -5289,20 +5323,23 @@ end (*alignau*);
         if lsp <> nil then
           if lsp^.form <= subrange then load else loadaddress;
         lsp := basetype(lsp); { remove any subrange }
+        if stringt(lsp) and not complext(lsp) then begin
+          len := lsp^.size div charmax;
+          gen2(51(*ldc*),1,len);
+          gen1(72(*swp*),stackelsize); { swap ptr and len }
+          gen2(124(*mpc*),0,0)
+        end;
         if deffil then begin
           { file was not loaded, we load and swap so that it ends up
             on the bottom.}
           gen1(37(*lao*),outputptr^.vaddr);
           if lsp <> nil then begin
-            if lsp^.form <= subrange then begin
-              if lsp^.size < stackelsize then
-                { size of 2nd is minimum stack }
-                gen1(72(*swp*),stackelsize)
-              else
-                gen1(72(*swp*),lsp^.size) { size of 2nd is operand }
-            end else
+            lsize := lsp^.size; alignau(stackal, lsize);
+            if lsp^.form <= subrange then gen1(72(*swp*),lsize)
+            else
               { 2nd is pointer, either simple or complex }
-              if lsp^.form = arrayc then gen1(72(*swp*),ptrsize*2)
+              if (lsp^.form = arrayc) or stringt(lsp) then 
+                gen1(72(*swp*),ptrsize*2)
               else gen1(72(*swp*),ptrsize);
           end;
           deffil := false
@@ -5316,14 +5353,6 @@ end (*alignau*);
           if (r <> 10) and (lsp <> intptr) then error(214);
           spad := false; { set no padded string }
           ledz := false; { set no leading zero }
-          { if string and not container, convert to complex }
-          if lsp <> nil then
-            if stringt(lsp) and not (lsp^.form = arrayc) then begin
-            len := lsp^.size div charmax;
-            gen2(51(*ldc*),1,len); { load len }
-            gen1(72(*swp*),stackelsize); { swap ptr and len }
-            gen2(124(*mpc*),0,0)
-          end;
           if sy = colon then
             begin insymbol;
               if (sy = mulop) and (op = mul) then begin
@@ -5389,25 +5418,12 @@ end (*alignau*);
                       if lsp^.form = scalar then error(236)
                       else
                         if stringt(lsp) then begin
-                          if onstk then begin 
-                            strspc := lsp^.size;
-                            alignu(parmptr,strspc);
-                            gen1(118(*lsa*),strspc+ptrsize+intsize);
-                            gen1t(35(*ind*),0,nilptr);
-                            gen1(72(*swp*),stackelsize*2)
-                          end;
-                          if complext(lsp) then begin { complex }
-                            if default then
-                              { no field, need to duplicate len to make the
-                                field }
-                              gen0(127(*cpl*)) { copy length }
-                          end else begin { standard array }
-                            len := lsp^.size div charmax;
-                            if default then gen2(51(*ldc*),1,len)
-                          end;
+                          if default and not spad then
+                            { no field, need to duplicate len to make the 
+                              field }
+                              gen0(127(*cpl*)); { copy length }
                           if spad then gen1(30(*csp*),68(*wrsp*))
                           else gen1(30(*csp*),10(*wrs*));
-                          if onstk then gen1(71(*dmp*),strspc+ptrsize)
                         end else error(116)
                     end
         end else begin { binary file }
@@ -5872,19 +5888,6 @@ end (*alignau*);
       gattr.typtr := intptr
     end;
 
-    { assign buffer to id and copy top of stack to it, replacing with address }
-    procedure cpy2adr(id: ctp; var at: attr);
-      var lsize: addrrange;
-    begin
-      lsize := at.typtr^.size;
-      alignu(parmptr,lsize);
-      getcbb(id^.cbb,id,at.typtr^.size); { get a buffer }
-      gen1(37(*lao*),id^.cbb^.addr); { load address }
-      { store to that }
-      gen2(115(*ctb*),at.typtr^.size,lsize);
-      mesl(lsize)
-    end;
-
     procedure callnonstandard(fcp: ctp; inherit: boolean);
       var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
@@ -6059,8 +6062,7 @@ end (*alignau*);
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin
-                                  if gattr.kind = expr then cpy2adr(nxt,gattr)
-                                  else loadaddress;
+                                  loadaddress;
                                   fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then
                                     locpar := locpar+ptrsize*2
@@ -6071,8 +6073,7 @@ end (*alignau*);
                               if gattr.kind = varbl then
                                 begin if gattr.packcom then error(197);
                                   if gattr.tagfield then error(198);
-                                  if gattr.kind = expr then cpy2adr(nxt,gattr)
-                                  else loadaddress;
+                                  loadaddress;
                                   fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then
                                     locpar := locpar+ptrsize*2
@@ -6151,11 +6152,7 @@ end (*alignau*);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
       end;
-      gattr.typtr := fcp^.idtype;
-      { clean any copyback buffers out of list }
-      nxt := fcp^.pflist;
-      while nxt <> nil do
-        begin putcbb(nxt^.cbb); nxt^.cbb := nil; nxt := nxt^.next end
+      gattr.typtr := fcp^.idtype
     end (*callnonstandard*) ;
 
   begin (*call*)
@@ -8421,6 +8418,7 @@ end (*alignau*);
                 error(193) { no function result assign }
         end;
       level := oldlev; putdsps(oldtop); top := oldtop; lc := llc;
+      puttmps { free all local temps }
     end (*procdeclaration*) ;
 
   begin (*declare*)
@@ -8528,7 +8526,7 @@ end (*alignau*);
               { process expression rights as load }
               if (gattr.typtr^.form <= power) or (gattr.kind = expr) then begin
                 if (lattr.typtr^.form = arrayc) and schrcst then begin
-                  { load as string }
+                  { load as string pointer }
                   gen2(51(*ldc*),1,1);
                   gensca(chr(gattr.cval.ival));
                   gen2(124(*mpc*),0,0)
@@ -9201,7 +9199,8 @@ end (*alignau*);
             end
           end;
           if not (sy in [semicolon,endsy,elsesy,untilsy,exceptsy,onsy]) then
-            begin error(6); skip(fsys) end
+            begin error(6); skip(fsys) end;
+          clrtmp { free temps in this function/procedure }
         end
     end (*statement*) ;
 
@@ -10146,10 +10145,12 @@ end (*alignau*);
     lc := -ptrsize; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
     ic := 3; eol := true; linecount := 0; lineout := 0;
-    incstk := nil; inclst := nil; cbblst := nil;
+    incstk := nil; inclst := nil;
     ch := ' '; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
+    tmplst := nil; { clear temps list }
+    tmpfre := nil; { clear temps free list }
 
     for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
     toterr := 0; { clear error count }
@@ -10523,7 +10524,7 @@ end (*alignau*);
       pdx[ 3] := +adrsize;             pdx[ 4] := +adrsize;
       pdx[ 5] := +adrsize;             pdx[ 6] := +adrsize*2;
       pdx[ 7] := 0;                    pdx[ 8] := +(realsize+intsize);
-      pdx[ 9] := +intsize*2;           pdx[10] := +(adrsize+intsize*2);
+      pdx[ 9] := +intsize*2;           pdx[10] := +(intsize+adrsize+intsize);
       pdx[11] :=  0;                   pdx[12] := +ptrsize*2;
       pdx[13] :=  0;                   pdx[14] := +adrsize-intsize;
       pdx[15] :=  0;                   pdx[16] :=  0;
