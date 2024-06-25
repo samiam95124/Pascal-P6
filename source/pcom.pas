@@ -471,6 +471,7 @@ type
      tmpety = record
        next: tmpptr; { next set temp in line }
        occu: boolean; { occupied status }
+       auto: boolean; { clear automatically }
        off: stkoff; { stack offset }
        len: addrrange { length }
      end;
@@ -4461,7 +4462,7 @@ begin cmdpos := maxcmd end;
         end
   end (*load*) ;
 
-  procedure gettmp(var a: stkoff; len: addrrange);
+  procedure gettmp(var a: stkoff; len: addrrange; auto: boolean);
   var p, fp: tmpptr;
   begin
     fp := nil; p := tmplst; alignau(stackal, len);
@@ -4474,6 +4475,7 @@ begin cmdpos := maxcmd end;
       fp^.len := len
     end;
     fp^.occu := true; 
+    fp^.auto := auto;
     a := fp^.off;
     { uncomment for diagnostic }
     {
@@ -4509,7 +4511,8 @@ begin cmdpos := maxcmd end;
   var p: tmpptr;
   begin
     p := tmplst;
-    while p <> nil do begin p^.occu := false; p := p^.next end;
+    while p <> nil do 
+      begin if not p^.auto then p^.occu := false; p := p^.next end
   end;
 
   procedure loadaddress;
@@ -4544,7 +4547,7 @@ begin cmdpos := maxcmd end;
                      inxd:   error(404)
                    end;
             expr:  begin
-                     gettmp(tmpoff, typtr^.size); lsize := typtr^.size; 
+                     gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size; 
                      gen2(50(*lda*),level-(level-vlevel),tmpoff);
                      alignau(stackal,lsize);
                      gen2(128(*sfs*),typtr^.size,lsize);
@@ -8456,7 +8459,6 @@ begin cmdpos := maxcmd end;
   procedure body{(fsys: setofsys)};
     var
         segsize, gblsize, stackbot: integer;
-        lcmin: stkoff;
         llc1: stkoff; lcp: ctp;
         llp: lbp;
         fp: extfilep;
@@ -8891,10 +8893,12 @@ begin cmdpos := maxcmd end;
       procedure forstatement;
         var lattr: attr;  lsy: symbol;
             lcix, laddr: integer;
-            llc, lcs: addrrange;
             typind: char; (* added for typing [sam] *)
             typ: stp;
-      begin lcp := nil; llc := lc;
+            stradr: stkoff; { start value temp }
+            endadr: stkoff; { end value temp }
+      begin lcp := nil;
+        gettmp(stradr, intsize, false); gettmp(endadr, intsize, false);
         with lattr do
           begin symptr := nil; typtr := nil; kind := varbl;
             access := drct; vlevel := level; dplmt := 0; packing := false
@@ -8933,7 +8937,7 @@ begin cmdpos := maxcmd end;
                   if comptypes(lattr.typtr,gattr.typtr) then begin
                     load; alignd(intptr,lc);
                     { store start to temp }
-                    gen2t(56(*str*),level,lc-intsize,intptr);
+                    gen2t(56(*str*),level,stradr,intptr);
                   end else error(145)
           end
         else
@@ -8949,9 +8953,9 @@ begin cmdpos := maxcmd end;
                     load; alignd(intptr,lc);
                     if not comptypes(lattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
-                    gen2t(56(*str*),level,lc-intsize*2,intptr);
+                    gen2t(56(*str*),level,endadr,intptr);
                     { set initial value of index }
-                    gen2t(54(*lod*),level,lc-intsize,intptr);
+                    gen2t(54(*lod*),level,stradr,intptr);
                     if debug and (lattr.typtr <> nil) then
                       checkbnds(lattr.typtr);
                     store(lattr);
@@ -8959,10 +8963,7 @@ begin cmdpos := maxcmd end;
                     gattr := lattr; load;
                     if not comptypes(gattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
-                    gen2t(54(*lod*),level,lc-intsize*2,intptr);
-                    lcs := lc;
-                    lc := lc - intsize*2;
-                    if lc < lcmin then lcmin := lc;
+                    gen2t(54(*lod*),level,endadr,intptr);
                     if lsy = tosy then gen2(52(*leq*),ord(typind),1)
                     else gen2(48(*geq*),ord(typind),1);
                   end
@@ -8977,7 +8978,7 @@ begin cmdpos := maxcmd end;
         gattr := lattr; load;
         if not comptypes(gattr.typtr,intptr) then
           gen0t(58(*ord*),gattr.typtr);
-        gen2t(54(*lod*),level,lcs-intsize*2,intptr);
+        gen2t(54(*lod*),level,endadr,intptr);
         gen2(47(*equ*),ord(typind),1);
         genujpxjpcal(73(*tjp*),lcix);
         gattr := lattr; load;
@@ -8988,15 +8989,17 @@ begin cmdpos := maxcmd end;
         store(lattr);
         genujpxjpcal(57(*ujp*),laddr); prtlabel(lcix); writeln(prr); markline;
         gattr := lattr; loadaddress; gen0(79(*inv*));
-        lc := llc;
-        if lcp <> nil then lcp^.forcnt := lcp^.forcnt-1
+        if lcp <> nil then lcp^.forcnt := lcp^.forcnt-1;
+        puttmp(stradr); puttmp(endadr)
       end (*forstatement*) ;
 
       procedure withstatement;
-        var lcp: ctp; lcnt1: disprange; llc: addrrange;
+        var lcp: ctp; lcnt1: disprange;
             test: boolean;
             wbscnt: integer;
-      begin lcnt1 := 0; llc := lc; wbscnt := 0;
+            wthadr: stkoff; { with variable value temp }
+      begin lcnt1 := 0; wbscnt := 0;
+        gettmp(wthadr, intsize, false);
         repeat
           if sy = ident then
             begin searchid([vars,field],lcp); insymbol end
@@ -9022,12 +9025,9 @@ begin cmdpos := maxcmd end;
                     begin loadaddress;
                       if debug and gattr.ptrref then
                         begin gen0(119(*wbs*)); wbscnt := wbscnt+1; pshwth(stalvl) end;
-                      alignd(nilptr,lc);
-                      lc := lc-ptrsize;
-                      gen2t(56(*str*),level,lc,nilptr);
+                      gen2t(56(*str*),level,wthadr,nilptr);
                       with display[top] do
-                        begin occur := vrec; vdspl := lc end;
-                      if lc < lcmin then lcmin := lc
+                        begin occur := vrec; vdspl := wthadr end
                     end
                 end
               else error(250)
@@ -9047,7 +9047,7 @@ begin cmdpos := maxcmd end;
            putdsp(display[top]); { purge }
            top := top-1; lcnt1 := lcnt1-1; { count off }
         end;
-        lc := llc;
+        puttmp(wthadr)
       end (*withstatement*) ;
 
       procedure trystatement;
@@ -9359,7 +9359,6 @@ begin cmdpos := maxcmd end;
               lcp := lcp^.next;
             end;
       end;
-    lcmin := lc;
     addlvl;
     if (level = 1) and not incact then begin { perform module setup tasks }
       externalheader; { process external header files }
@@ -9418,18 +9417,18 @@ begin cmdpos := maxcmd end;
         else if fprocp^.idtype^.form in [records, arrays] then
           gen2t(42(*ret*),fprocp^.locpar,fprocp^.idtype^.size,basetype(fprocp^.idtype))
         else gen1t(42(*ret*),fprocp^.locpar,fprocp^.idtype);
-        alignd(parmptr,lcmin);
+        alignd(parmptr,lc);
         if prcode then
-          begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lcmin:1);
+          begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
             prtlabel(stackbot); writeln(prr,'=',-topmin:1)
           end
       end
     else
       begin gen2(42(*ret*),ord('p'),0);
-        alignd(parmptr,lcmin);
+        alignd(parmptr,lc);
         if prcode then
           begin
-            prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lcmin:1);
+            prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
             prtlabel(stackbot); writeln(prr,'=',-topmin:1)
           end;
         ic := 0;
