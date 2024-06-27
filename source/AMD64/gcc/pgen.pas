@@ -5456,7 +5456,7 @@ procedure xlate;
 
         61 {ujc}: begin par;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins30(' jmp psystem_caseerror        ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' call psystem_caseerror       ', 0, 0, rgnull, rgnull, nil);
           botstk
         end;
      

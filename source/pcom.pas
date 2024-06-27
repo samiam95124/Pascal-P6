@@ -4479,7 +4479,7 @@ begin cmdpos := maxcmd end;
     a := fp^.off;
     { uncomment for diagnostic }
     {
-    writeln(prr, '# gettmp: address: ', a:1)
+    writeln; writeln('gettmp: address: ', a:1, ' occu: ', fp^.occu, ' auto: ', fp^.auto)
     }
   end;
 
@@ -4488,7 +4488,7 @@ begin cmdpos := maxcmd end;
   begin
     { uncomment for diagnostic }
     {
-    writeln(prr, '# puttmp: address: ', a:1);
+    writeln; writeln('puttmp: address: ', a:1);
     }
     fp := nil; p := tmplst;
     while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
@@ -4512,7 +4512,9 @@ begin cmdpos := maxcmd end;
   begin
     p := tmplst;
     while p <> nil do 
-      begin if not p^.auto then p^.occu := false; p := p^.next end
+      begin if p^.auto then p^.occu := false; 
+            p := p^.next 
+      end
   end;
 
   procedure loadaddress;

@@ -1,7 +1,13 @@
 ************ Regression Summary *************
-Sun 23 Jun 2024 09:58:05 PM PDT
+Wed 26 Jun 2024 11:17:55 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
+0 sample_programs/prime.dif
+0 sample_programs/qsort.dif
+0 sample_programs/fbench.dif
+0 sample_programs/drystone.dif
+*** sample_programs/startrek: compile/run fail
+*** sample_programs/basics: compile/run fail
