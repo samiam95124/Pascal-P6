@@ -8704,6 +8704,7 @@ begin cmdpos := maxcmd end;
         var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
             laddr, lcix, lcix1, lelse, lelse2, lmin, lmax: integer;
             test: boolean; i,occ: integer; llc: addrrange;
+            csladr: stkoff; { case selector temp }
       function casecount(cp: cip): integer;
       var c: integer;
       begin c := 0;
@@ -8711,16 +8712,16 @@ begin cmdpos := maxcmd end;
           begin c := c+cp^.cslabe-cp^.cslabs+1; cp := cp^.next end;
         casecount := c
       end;
-      begin llc := lc; expression(fsys + [ofsy,comma,colon], false); load; 
+      begin gettmp(csladr, intsize, false);
+        expression(fsys + [ofsy,comma,colon], false); load; 
         genlabel(lcix); lelse := 0;
         lsp := gattr.typtr;
         if lsp <> nil then
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end
           else if not comptypes(lsp,intptr) then gen0t(58(*ord*),lsp);
-        alignd(intptr,lc); lc := lc-intsize;
         { store start to temp }
-        gen2t(56(*str*),level,lc,intptr);
+        gen2t(56(*str*),level,csladr,intptr);
         genujpxjpcal(57(*ujp*),lcix);
         if sy = ofsy then insymbol else error(8);
         fstptr := nil; genlabel(laddr);
@@ -8802,7 +8803,7 @@ begin cmdpos := maxcmd end;
             if lmax - lmin < cixmax then
               begin
                 { put selector back on stack }
-                gen2t(54(*lod*),level,lc,intptr);
+                gen2t(54(*lod*),level,csladr,intptr);
                 if occ >= minocc then begin { build straight vector table }
                   if lelse > 0 then begin
                     gen0t(76(*dup*),intptr);
@@ -8856,7 +8857,7 @@ begin cmdpos := maxcmd end;
             end
           end;
         if sy = endsy then insymbol else error(13);
-        lc := llc
+        puttmp(csladr)
       end (*casestatement*) ;
 
       procedure repeatstatement;

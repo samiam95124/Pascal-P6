@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Wed 26 Jun 2024 11:17:55 PM PDT
+Sun 30 Jun 2024 01:11:31 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -9,5 +9,35 @@ pint run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-*** sample_programs/startrek: compile/run fail
-*** sample_programs/basics: compile/run fail
+0 sample_programs/startrek.dif
+0 sample_programs/basics.dif
+0 basic/basic.dif
+0 standard_tests/iso7185pat.dif
+Pascal-s run
+0 sample_programs/roman.dif
+Pascal-P2 run
+0 p2/roman.dif
+Pascal-P4 run
+*** p4/standardp: compile/run fail
+PRT run
+0 standard_tests/iso7185prt.dif
+Pascaline run
+1130 pascaline_tests/pascaline.dif
+Debug test run
+3627 pascaline_tests/debug_test.dif
+Sun 30 Jun 2024 01:12:40 PM PDT
+Files md5sum ***************************************
+Source files
+a000bbdd409f24d6845269dfbb391b45  -
+batch files
+12a55b3dc3be5f03e040597d2bc30ce6  -
+P2 files
+d9ae9c9665a20cf4de7a07958b70dbc7  -
+p4 files
+7fde3a84df157d5f5ac639c9fb342b70  -
+Sample program test files
+e60adac6780ac34945f905cd4bf03875  -
+standard test files
+ea035337506e9f27c9402c86aaeaa612  -
+other files
+7a9d4bd095a26c349c9aa7eb2a85eace  -
