@@ -9002,7 +9002,6 @@ begin cmdpos := maxcmd end;
             wbscnt: integer;
             wthadr: stkoff; { with variable value temp }
       begin lcnt1 := 0; wbscnt := 0;
-        gettmp(wthadr, intsize, false);
         repeat
           if sy = ident then
             begin searchid([vars,field],lcp); insymbol end
@@ -9028,6 +9027,7 @@ begin cmdpos := maxcmd end;
                     begin loadaddress;
                       if debug and gattr.ptrref then
                         begin gen0(119(*wbs*)); wbscnt := wbscnt+1; pshwth(stalvl) end;
+                      gettmp(wthadr, intsize, false);
                       gen2t(56(*str*),level,wthadr,nilptr);
                       with display[top] do
                         begin occur := vrec; vdspl := wthadr end
@@ -9045,12 +9045,12 @@ begin cmdpos := maxcmd end;
           while wbscnt > 0 do begin gen0(120(*wbe*)); wbscnt := wbscnt-1; popwth end;
         { purge display levels }
         while lcnt1 > 0 do begin
+           if display[top].occur = vrec then puttmp(display[top].vdspl);
            { don't recycle the record context }
            display[top].fname := nil;
            putdsp(display[top]); { purge }
            top := top-1; lcnt1 := lcnt1-1; { count off }
-        end;
-        puttmp(wthadr)
+        end
       end (*withstatement*) ;
 
       procedure trystatement;
