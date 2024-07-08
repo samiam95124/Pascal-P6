@@ -6323,7 +6323,7 @@ begin cmdpos := maxcmd end;
 
   procedure expression{(fsys: setofsys; threaten: boolean)};
     var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
-        fcp: ctp; onstkl, onstkr, lschrcst, rschrcst, revcmp: boolean;
+        fcp: ctp; lschrcst, rschrcst, revcmp: boolean;
         lc, rc: char;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
@@ -6744,7 +6744,7 @@ begin cmdpos := maxcmd end;
   begin (*expression*)
     revcmp := false;
     simpleexpression(fsys + [relop], threaten);
-    onstkl := gattr.kind = expr; lschrcst := ischrcst(gattr);
+    lschrcst := ischrcst(gattr);
       if lschrcst then lc := chr(gattr.cval.ival);
     if sy = relop then begin
       if gattr.typtr <> nil then
@@ -6756,7 +6756,7 @@ begin cmdpos := maxcmd end;
           (gattr.typtr^.form <= subrange) then
             gen0t(58(*ord*),gattr.typtr);
       insymbol; simpleexpression(fsys, threaten);
-      onstkr := gattr.kind = expr; rschrcst := ischrcst(gattr);
+      rschrcst := ischrcst(gattr);
       if rschrcst then rc := chr(gattr.cval.ival);
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
@@ -6830,11 +6830,6 @@ begin cmdpos := maxcmd end;
                              (gattr.typtr^.form = arrayc) then typind := 'v'
                           else typind := 'm';
                           containerop(lattr); { rationalize binary container }
-                          if onstkr then begin { pull left up }
-                            gen1(118(*lsa*),ptrsize+lsizspc);
-                            gen1t(35(*ind*),0,nilptr);
-                            gen1(72(*swp*),stackelsize)
-                          end
                         end
                       end;
                     records:
@@ -6864,17 +6859,6 @@ begin cmdpos := maxcmd end;
                     geop: gen2(48(*geq*),ord(typind),lsize);
                     neop: gen2(55(*neq*),ord(typind),lsize);
                     eqop: gen2(47(*equ*),ord(typind),lsize)
-                  end;
-                  if lattr.typtr^.form = arrays then begin
-                    alignu(parmptr,lsize);
-                    if onstkl and onstkr then 
-                      begin gen1(72(*swp*),lsizspc*2); gen1(71(*dmp*),lsizspc*2) 
-                      end
-                    else if onstkr then 
-                      begin gen1(72(*swp*),lsizspc+ptrsize); 
-                            gen1(71(*dmp*),lsizspc+ptrsize) end
-                    else if onstkl then 
-                      begin gen1(72(*swp*),lsizspc); gen1(71(*dmp*),lsizspc) end
                   end
                 end
               else error(129)
