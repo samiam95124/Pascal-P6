@@ -4550,11 +4550,11 @@ begin cmdpos := maxcmd end;
                    end;
             expr:  begin
                      gettmp(tmpoff, typtr^.size, true); lsize := typtr^.size; 
-                     gen2(50(*lda*),level-(level-vlevel),tmpoff);
+                     gen2(50(*lda*),level,tmpoff);
                      alignau(stackal,lsize);
                      gen2(128(*sfs*),typtr^.size,lsize);
                      mesl(lsize+ptrsize);
-                     gen2(50(*lda*),level-(level-vlevel),tmpoff)
+                     gen2(50(*lda*),level,tmpoff)
                    end;
           end;
           if typtr^.form = arrayc then if pickup then begin

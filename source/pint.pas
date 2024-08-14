@@ -4574,7 +4574,7 @@ begin
   (*execute*)
 
   { trace executed instructions }
-  if true or dotrcins then begin wrtnewline; ad := pcs;
+  if dotrcins then begin wrtnewline; ad := pcs;
     if isbrk(ad) then write('b')
     else if istrc(ad) then write('t')
     else write(' ');
@@ -4758,15 +4758,7 @@ begin
     7   (*ldcs*): begin getq; getset(q, s1); pshset(s1) end;
 
     9   (*indi*): begin getq; popadr(ad); pshint(getint(ad+q)) end;
-    198 (*indx*): begin 
-;writeln;writeln('indx: begin');
-getq; 
-;writeln('indx: 1');
-popadr(ad); 
-;writeln('indx: 2');
-pshint(getbyt(ad+q)) 
-;writeln('indx: end');
-end;
+    198 (*indx*): begin getq; popadr(ad); pshint(getbyt(ad+q)) end;
     85  (*inda*): begin getq; popadr(ad); ad1 := getadr(ad+q);
                         pshadr(ad1) end;
     86  (*indr*): begin getq; popadr(ad); pshrel(getrel(ad+q)) end;
