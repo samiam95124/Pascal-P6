@@ -2548,6 +2548,12 @@ void sinins()
                     }
                     sp = sp+q1; pshadr(ad1);
                     break;
+    case 252 /*sfs*/: getq(); getq1(); popadr(ad1); ad2 = sp;
+                    for (i = 0; i < q; i++) {
+                      store[ad1+i] = store[ad2+i]; putdef(ad1+i, getdef(ad2+i));
+                    }
+                    sp = sp+q1;
+                    break;
 
     case 127 /*ldcc*/: pshint(getchr(pc)); pc = pc+1; break;
     case 126 /*ldcb*/: pshint(getbol(pc)); pc = pc+1; break;
@@ -3160,8 +3166,8 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 252, 253,
-       254, 255 */
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 253, 254, 
+       255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
   }
