@@ -908,8 +908,8 @@ procedure xlate;
          instr[ 73]:='strb      '; insr[ 73] := 0; insf[ 73] := false; inss[ 73] := false;
          instr[ 74]:='strc      '; insr[ 74] := 0; insf[ 74] := false; inss[ 74] := false;
          instr[ 75]:='sroa      '; insr[ 75] := 0; insf[ 75] := false; inss[ 75] := false;
-         instr[ 76]:='sror      '; insr[ 76] := 1; insf[ 76] := true;  inss[ 76] := false; 
-         instr[ 77]:='sros      '; insr[ 77] := 1; insf[ 77] := false; inss[ 77] := false;
+         instr[ 76]:='sror      '; insr[ 76] := 0; insf[ 76] := true;  inss[ 76] := false; 
+         instr[ 77]:='sros      '; insr[ 77] := 0; insf[ 77] := false; inss[ 77] := false;
          instr[ 78]:='srob      '; insr[ 78] := 0; insf[ 78] := false; inss[ 78] := false;
          instr[ 79]:='sroc      '; insr[ 79] := 0; insf[ 79] := false; inss[ 79] := false;
          instr[ 80]:='stoa      '; insr[ 80] := 0; insf[ 80] := false; inss[ 80] := false;
@@ -1084,7 +1084,8 @@ procedure xlate;
          instr[248]:='mpc       '; insr[248] := 2; insf[248] := false; inss[248] := false;
          instr[249]:='cvf       '; insr[249] := 0; insf[249] := false; inss[249] := false;
          instr[250]:='lsp       '; insr[250] := 2; insf[250] := false; inss[250] := false;
-         instr[251]:='cpl       '; insr[250] := 1; insf[250] := false; inss[250] := false;
+         instr[251]:='cpl       '; insr[251] := 1; insf[251] := false; inss[251] := false;
+         instr[252]:='sfs       '; insr[252] := 0; insf[252] := false; inss[252] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -5687,7 +5688,22 @@ procedure xlate;
         {cpr} 
         240: parqq; { this is a no-op to us }
 
-        {*** These instructions are stack arragers in the interpreter and are ignored here *** }
+        {sfs}
+        252: begin parqq; 
+          frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
+          assreg(ep2, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
+          assreg(ep, frereg, rgrsi,  rgnull);
+          dmptre(ep); dmptre(ep2);
+          genexp(ep); genexp(ep2);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          wrtins30(' movq $0,%rcx # set length    ', q, 0, rgnull, rgnull, nil);
+          wrtins40(' repnz # move structure to address      ', 0, 0, rgnull, rgnull, nil);
+          wrtins10(' movsb    ', 0, 0, rgnull, rgnull, nil);
+          puttmp(ep^.r1a);
+          deltre(ep); deltre(ep2)
+        end;
+
+        {*** These instructions are stack arrangers in the interpreter and are ignored here *** }
 
         {lsa} 
         241: parq;
