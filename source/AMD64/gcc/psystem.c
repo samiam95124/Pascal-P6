@@ -4470,20 +4470,6 @@ void psystem_rdre(
 
 /** ****************************************************************************
 
-Throw exception
-
-*******************************************************************************/
-
-void psystem_thw(void)
-
-{
-
-    errore(modnam, __LINE__, FUNCTIONNOTIMPLEMENTED);
-
-}
-
-/** ****************************************************************************
-
 Compare strings
 
 Compares two strings, and returns:

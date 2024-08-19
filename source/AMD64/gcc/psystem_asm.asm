@@ -42,6 +42,30 @@ psystem_caseerror:
         call    psystem_errore           # go handler
         jmp     .                        # soft halt
 
+################################################################################
+#
+# Throw exception
+#
+# Expects an exception variable address in rdi. The stack is cut by loading the
+# parameters of the current top exception frame, then that frame is executed
+# with the exception variable. The result is that the exception works its way
+# through the chain of handlers unti the bottom exception, which is the master
+# handler. The exception variable is only used for its address.
+#
+################################################################################
+
+        .globl  psystem_thw
+        .type   psystem_thw, @function
+psystem_thw:
+#
+# restore exception frame
+#
+        movq    psystem_expmrk(%rip),%rbp # frame pointer
+        movq    psystem_expstk(%rip),%rsp # stack
+        popq    %rax                      # dump exception vector
+        pushq   %rdi                      # establish new vector
+        jmp     *psystem_expmrk(%rip)     # go exception handler
+
 #
 # Constants section
 #

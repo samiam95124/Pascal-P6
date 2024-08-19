@@ -5568,13 +5568,15 @@ procedure xlate;
         end;
 
         {bge}
-        207: begin par;
+        207: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
+          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins60(' pushq psystem_expadr(%rip) # save current exception frame  ', 0, 0, rgnull, rgnull, nil);
           wrtins30(' pushq psystem_expstk(%rip)   ', 0, 0, rgnull, rgnull, nil);
           wrtins30(' pushq psystem_expmrk(%rip)   ', 0, 0, rgnull, rgnull, nil);          
-          wrtins30(' pushq $0 # placd dummy vector', 0, 0, rgnull, rgnull, nil);
-          wrtins60(' movq $0,psystem_expadr(%rip) # place new exception frame   ', 0, 0, rgnull, rgnull, nil);
+          wrtins30(' pushq $0 # place dummy vector', 0, 0, rgnull, rgnull, nil);
+          wrtins60(' leaq @s(%rip),%rax # place new exception frame             ', 0, 0, rgnull, rgnull, sp);
+          wrtins40(' movq %rax,psystem_expadr(%rip)         ', 0, 0, rgnull, rgnull, sp);
           wrtins40(' movq %rsp,psystem_expstk(%rip)         ', 0, 0, rgnull, rgnull, nil);
           wrtins40(' movq %rbp,psystem_expmrk(%rip)         ', 0, 0, rgnull, rgnull, nil);
           botstk

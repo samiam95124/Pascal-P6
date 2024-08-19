@@ -69,6 +69,7 @@ elif [ "$param1" = "--cmach" ]; then
     
 elif [ "$param1" = "--pgen" ]; then
 
+	echo Running with pgen
     #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
     #    -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
     #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
@@ -97,7 +98,7 @@ elif [ "$param1" = "--pint" ]; then
 
 elif [ "$param1" = "--package" ]; then
 
-	echo Running with pint
+	echo Running with package mode
     pint pascaline.p6 pascaline.p6o --machdeck
     genobj pascaline.p6o program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o pascaline $PASCALP6/source/cmach/cmach.c -lm > pascaline.err 2>&1
