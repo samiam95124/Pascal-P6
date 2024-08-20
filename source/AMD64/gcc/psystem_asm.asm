@@ -64,7 +64,7 @@ psystem_thw:
         movq    psystem_expstk(%rip),%rsp # stack
         popq    %rax                      # dump exception vector
         pushq   %rdi                      # establish new vector
-        jmp     *psystem_expmrk(%rip)     # go exception handler
+        jmp     *psystem_expadr(%rip)     # go exception handler
 
 #
 # Constants section
