@@ -5151,10 +5151,15 @@ procedure xlate;
               wrtins50(' movb %1l,@g(%rip) # store byte to global         ', q, 0, ep^.r1, rgnull, nil)
           end else if op = 76{sror} then begin
             if sp <> nil then
-              wrtins50(' movsd %1l,@g(%rip) # store real to global        ', 0, 0, ep^.r1, rgnull, sp)
+              wrtins50(' movsd %1l,@s(%rip) # store real to global        ', 0, 0, ep^.r1, rgnull, sp)
             else
               wrtins50(' movsd %1l,@g(%rip) # store real to global        ', q, 0, ep^.r1, rgnull, nil)
-          end else wrtins40(' movq %1,@g(%rip) # store quad to global', q, 0, ep^.r1, rgnull, nil);
+          end else begin {sroi, sroa}
+            if sp <> nil then
+              wrtins40(' movq %1,@s(%rip) # store quad to global', q, 0, ep^.r1, rgnull, sp)
+            else
+              wrtins40(' movq %1,@g(%rip) # store quad to global', q, 0, ep^.r1, rgnull, nil)
+          end;
           deltre(ep)
         end;
 

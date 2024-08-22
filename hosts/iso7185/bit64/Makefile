@@ -62,7 +62,7 @@ all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 #
 # Build psystem, the Pascaline support library in C.
 #
-psystem: $(BUILD)/AMD64/gcc/psystem.o
+psystem: $(SOURCE)/AMD64/gcc/psystem.c
 $(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
 	@echo
 	@echo "Building psystem..."
@@ -74,7 +74,7 @@ $(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
 #
 # Build psystem_asm, the Pascaline support library in assembly.
 #
-psystem_asm: $(BUILD)/AMD64/gcc/psystem_asm.o
+psystem_asm: $(SOURCE)/AMD64/gcc/psystem_asm.asm
 $(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c
 	@echo
 	@echo "Building psystem_asm..."
@@ -86,7 +86,7 @@ $(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c
 #
 # Build main, the program stack startup shim.
 #
-main: $(BUILD)/AMD64/gcc/main.o
+main: $(SOURCE)/AMD64/gcc/main.asm
 $(BUILD)/AMD64/gcc/main.o: $(SOURCE)/AMD64/gcc/main.asm
 	@echo
 	@echo "Building main..."
@@ -104,7 +104,8 @@ $(BUILD)/AMD64/gcc/main.o: $(SOURCE)/AMD64/gcc/main.asm
 # Build pcom, the source to intermediate compiler.
 #
 pcom: bin/pcom
-bin/pcom: $(SOURCE)/pcom.pas psystem psystem_asm main
+bin/pcom: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building pcom..."
 	@echo
@@ -124,7 +125,8 @@ bin/pcom: $(SOURCE)/pcom.pas psystem psystem_asm main
 #
 # Has immediate error reporting turned on.
 #
-bin/pcom_immerr: $(SOURCE)/pcom.pas psystem psystem_asm main
+bin/pcom_immerr: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building pcom with immediate error..."
 	@echo
@@ -144,7 +146,8 @@ bin/pcom_immerr: $(SOURCE)/pcom.pas psystem psystem_asm main
 # Build pint, the intermediate interpreter and debug facillity.
 #
 pint: bin/pint
-bin/pint: $(SOURCE)/pint.pas psystem psystem_asm main
+bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building pint..."
 	@echo
@@ -165,7 +168,8 @@ bin/pint: $(SOURCE)/pint.pas psystem psystem_asm main
 # Build pmach, an intermediate interpreter without assembler.
 #
 pmach: bin/pmach
-bin/pmach: $(SOURCE)/pmach.pas psystem psystem_asm main
+bin/pmach: $(SOURCE)/pmach.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building pmach..."
 	@echo
@@ -197,7 +201,8 @@ bin/cmach: $(SOURCE)/cmach/cmach.c
 # processors.
 #
 pgen: bin/pgen
-bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas psystem psystem_asm main
+bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building pgen..."
 	@echo
@@ -217,7 +222,8 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas psystem psystem_asm main
 # Build genobj, an object code to C array converter.
 #
 genobj: bin/genobj
-bin/genobj: $(SOURCE)/genobj.pas psystem psystem_asm main
+bin/genobj: $(SOURCE)/genobj.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building genobj..."
 	@echo
@@ -271,6 +277,7 @@ clean:
 	find . -name "*.p6o" -type f -delete
 	find . -name "*.mpp.pas" -type f -delete
 	find . -name "*.s" -type f -delete
+	find . -name "*.o" -type f -delete
 	
 help:
 	@echo
