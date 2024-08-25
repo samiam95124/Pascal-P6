@@ -3111,8 +3111,8 @@ procedure xlate;
 
           {ccs} 
           223: begin
-            dstreg(rgrsi); dstreg(rgrdi); dstreg(rgrcx); dstreg(rgrax);
-            resreg(rgrsi); resreg(rgrdi); resreg(rgrcx); resreg(rgrax);
+            dstreg(rgrsi); dstreg(rgrdi); dstreg(rgrcx); dstreg(rgrax); dstreg(rgrdx);
+            resreg(rgrsi); resreg(rgrdi); resreg(rgrcx); resreg(rgrax); resreg(rgrdx);
             ep^.r1 := r1; ep^.r2 := r2;
             if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
             if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
@@ -4340,7 +4340,9 @@ procedure xlate;
                 wrtins40(' movq $0,%1 # get base element size     ', ep^.q1, 0, ep^.t2, rgnull, nil);
                 wrtins40(' movq %1,%2 # copy template address     ', 0, 0, ep^.l^.r2, ep^.t3, nil);
                 wrtins10('1:        ', 0, 0, rgnull, rgnull, sp);
-                wrtins40(' addq (%1),%2 # add template to size    ', 0, 0, ep^.t3, ep^.t2, nil);
+                wrtins40(' movq (%1),%rax # get size from template', 0, 0, ep^.t3, rgnull, nil);
+                wrtins30(' mulq %1 # multiply by size   ', 0, 0, ep^.t2, rgnull, nil);
+                wrtins40(' movq %rax,%1 # add template to size    ', 0, 0, ep^.t2, rgnull, nil);
                 wrtins40(' addq $0,%1 # next template location    ', intsize, 0, ep^.t3, rgnull, nil);
                 wrtins30(' decq %1 # count down levels  ', 0, 0, ep^.t1, rgnull, nil);
                 wrtins30(' jnz 1b # loop over templates ', 0, 0, rgnull, rgnull, nil); 
@@ -5654,15 +5656,15 @@ procedure xlate;
           frereg := allreg;
           { complex pointer, store address }
           popstk(ep2); popstk(ep);
-          getreg(ep^.r1, frereg);
-          assreg(ep, frereg, rgnull, rgnull);
+          getreg(r1, frereg);
+          assreg(ep, frereg, r1, rgnull);
           assreg(ep2, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' movq %1,(%2) # store array address     ', 0, 0, ep2^.r1, ep^.r1, nil);
           wrtins30(' addq $0,%1 # skip to template', intsize, 0, ep^.r1, rgnull, nil);
-          wrtins30(' movq %1,(%2) # store template', 0, 0, ep2^.r1, ep^.r1, nil)
+          wrtins30(' movq %1,(%2) # store template', 0, 0, ep2^.r2, ep^.r1, nil)
         end;
 
         {ctb} 

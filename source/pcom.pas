@@ -3307,7 +3307,7 @@ begin cmdpos := maxcmd end;
       107: write(prr, 'Vector dispose array');
       108: write(prr, 'Simplify complex pointer');
       109: write(prr, 'Copy complex container to stack');
-      110: write(prr, 'Simplify complex pointer');
+      110: write(prr, 'Store complex pointer');
       111: write(prr, 'Load complex pointer');
       112: write(prr, 'Vector initialize dynamic');
       113: write(prr, 'Vector dispose array');
