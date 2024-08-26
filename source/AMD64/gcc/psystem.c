@@ -2269,7 +2269,7 @@ void psystem_wrs(
 
     if (w < 1 && ISO7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
-    if (l > w) l = w; /* limit string to field */
+    if (l > labs(w)) l = labs(w); /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
 
         case OUTPUTFN: fprintf(stdout, "%*.*s", w, l, s); break;
