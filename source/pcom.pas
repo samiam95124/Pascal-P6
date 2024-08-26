@@ -3850,7 +3850,7 @@ begin cmdpos := maxcmd end;
         end else prtlabelc(fp2, fl);
         if fcp <> nil then begin
           write(prr, ' ', fcp^.pfnum:1); fl := fl+1+digits(fcp^.pfnum);
-          if fop = 122(*cuf*) then 
+          if fop = 122(*cuf*) then if fcp <> nil then if fcp^.idtype <> nil then
             begin write(prr, ' ');
               if realt(fcp^.idtype) then write(prr, '1')
               else if sett(fcp^.idtype) then write(prr, '2')
