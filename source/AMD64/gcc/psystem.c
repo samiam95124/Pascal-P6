@@ -519,7 +519,7 @@ static void errors(
 
 {
 
-    fprintf(stderr, "*** Runtime error: %s:%d:%s\n", modnam, line, es);
+    fprintf(stdout, "*** Runtime error: %s:%d:%s\n", modnam, line, es);
 
     exit(1);
 
@@ -711,7 +711,7 @@ static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
 
             if (i >= MAXCMD) {
 
-                fprintf(stderr,
+                fprintf(stdout,
                         "*** Too many/too long command line parameters\n");
                 exit(1);
 
@@ -724,7 +724,7 @@ static void getcommandline(long argc, char* argv[], cmdbuf cb, cmdnum* l)
 
             if (i >= MAXCMD) {
 
-                fprintf(stderr,
+                fprintf(stdout,
                         "*** Too many/too long command line parameters\n");
                 exit(1);
 
@@ -1764,7 +1764,7 @@ static void writeipf(pasfil* f, long i, long w, long r, long lz)
 
         case OUTPUTFN: writei(stdout, i, w, r, lz); break;
         case PRRFN: writei(filtable[PRRFN], i, w, r, lz); break;
-        case ERRORFN: writei(stderr, i, w, r, lz); break;
+        case ERRORFN: writei(stdout, i, w, r, lz); break;
         case LISTFN: writei(stdout, i, w, r, lz); break;
         case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
@@ -2077,7 +2077,7 @@ void psystem_put(
 
         case OUTPUTFN: putfile(stdout, f, fn); break;
         case PRRFN: putfile(filtable[PRRFN], f, fn); break;
-        case ERRORFN: putfile(stderr, f, fn); break;
+        case ERRORFN: putfile(stdout, f, fn); break;
         case LISTFN: putfile(stdout, f, fn); break;
         case INPUTFN: case PRDFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE); 
@@ -2227,7 +2227,7 @@ void psystem_wln(
 
         case OUTPUTFN: fprintf(stdout, "\n"); break;
         case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
-        case ERRORFN: fprintf(stderr, "\n"); break;
+        case ERRORFN: fprintf(stdout, "\n"); break;
         case LISTFN: fprintf(stdout, "\n"); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
@@ -2274,7 +2274,7 @@ void psystem_wrs(
 
         case OUTPUTFN: fprintf(stdout, "%*.*s", w, l, s); break;
         case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l, s); break;
-        case ERRORFN: fprintf(stderr, "%*.*s", w, l, s); break;
+        case ERRORFN: fprintf(stdout, "%*.*s", w, l, s); break;
         case LISTFN: fprintf(stdout, "%*.*s", w, l, s); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: 
@@ -2318,7 +2318,7 @@ void psystem_wrsp(
 
         case OUTPUTFN: writestrp(stdout, s, l); break;
         case PRRFN: writestrp(filtable[PRRFN], s, l); break;
-        case ERRORFN: writestrp(stderr, s, l); break;
+        case ERRORFN: writestrp(stdout, s, l); break;
         case LISTFN: writestrp(stdout, s, l); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
@@ -2631,7 +2631,7 @@ void psystem_wrr(
          case OUTPUTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
          case PRRFN: fprintf(filtable[PRRFN], "%*.*e", (int)w, (int)l, r); 
             break;
-         case ERRORFN: fprintf(stderr, "%*.*e", (int)w, l, r); break;
+         case ERRORFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
          case LISTFN: fprintf(stdout, "%*.*e", (int)w, l, r); break;
          case PRDFN: case INPUTFN:
          case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
@@ -2673,7 +2673,7 @@ void psystem_wrc(
 
         case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
         case PRRFN: fprintf(filtable[PRRFN], "%*c", (int)w, c); break;
-        case ERRORFN: fprintf(stderr, "%*c", (int)w, c); break;
+        case ERRORFN: fprintf(stdout, "%*c", (int)w, c); break;
         case LISTFN: fprintf(stdout, "%*c", (int)w, c); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE); 
@@ -3103,7 +3103,7 @@ void psystem_pag(
 
         case OUTPUTFN: fprintf(stdout, "\f"); break;
         case PRRFN: fprintf(filtable[PRRFN], "\f"); break;
-        case ERRORFN: fprintf(stderr, "\f"); break;
+        case ERRORFN: fprintf(stdout, "\f"); break;
         case LISTFN: fprintf(stdout, "\f"); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
@@ -3221,7 +3221,7 @@ void psystem_wrb(
 
         case OUTPUTFN: writeb(stdout, b, w); break;
         case PRRFN: writeb(filtable[PRRFN], b, w); break;
-        case ERRORFN: writeb(stderr, b, w); break;
+        case ERRORFN: writeb(stdout, b, w); break;
         case LISTFN: writeb(stdout, b, w); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE); 
@@ -3268,7 +3268,7 @@ void psystem_wrf(
         case OUTPUTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case PRRFN: fprintf(filtable[PRRFN], "%*.*f", (int)w, (int)fr, r); 
             break;
-        case ERRORFN: fprintf(stderr, "%*.*f", (int)w, (int)fr, r); break;
+        case ERRORFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case LISTFN: fprintf(stdout, "%*.*f", (int)w, (int)fr, r); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE); 
