@@ -5118,7 +5118,8 @@ procedure xlate;
         {mov}
         55: begin parq;
           frereg := allreg; popstk(ep); popstk(ep2); dmptre(ep); dmptre(ep2);
-          assreg(ep2, frereg, rgrdi, rgnull); assreg(ep, frereg, rgrsi, rgnull);
+          assreg(ep2, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
+          assreg(ep, frereg, rgrsi, rgnull);
           genexp(ep2); genexp(ep);
           wrtins40(' movq $0,%rcx # load the length of move ', q, 0, rgnull, rgnull, nil);
           wrtins20(' repnz # move/copy  ', 0, 0, rgnull, rgnull, nil);
@@ -5193,11 +5194,11 @@ procedure xlate;
         {aps}
         178: begin parq;
           frereg := allreg; popstk(ep2); popstk(ep);
-          assreg(ep, frereg, rgrdi, rgrcx);
+          assreg(ep, frereg, rgrdi, rgrcx); frereg := frereg-[rgrdi, rgrcx];
           assreg(ep2, frereg, rgrsi, rgnull);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           dmptre(ep); genexp(ep);
           dmptre(ep2); genexp(ep2);
+          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins30(' movq $0,%rax # get size      ', q, 0, rgnull, rgnull, nil);
           wrtins30(' mulq %rcx # find len*size    ', 0, 0, rgnull, rgnull, nil);
           wrtins30(' movq %rax,%rcx # place size  ', 0, 0, rgnull, rgnull, nil);
@@ -5211,8 +5212,8 @@ procedure xlate;
         63: begin parqq;
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep);
-          assreg(ep, frereg, rgrdx, rgnull);
-          assreg(ep2, frereg, rgrcx, rgnull);
+          assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+          assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -5227,8 +5228,8 @@ procedure xlate;
         64: begin parqq;
           frereg := allreg; popstk(ep);
           popstk(ep2); popstk(ep3); dmptre(ep3); dmptre(ep2); dmptre(ep); 
-          assreg(ep, frereg, rgrdx, rgnull);
-          assreg(ep2, frereg, rgrcx, rgnull);
+          assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+          assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -5456,7 +5457,7 @@ procedure xlate;
         {stp}
         58: par; { unused }
 
-        {inv} { ??? fill me in }
+        {inv} { a no-op in pgen }
         189: begin par; 
           frereg := allreg; popstk(ep); dmptre(ep); deltre(ep); 
           botstk
@@ -5627,7 +5628,8 @@ procedure xlate;
         210: begin parqq;
           frereg := allreg;
           popstk(ep); popstk(ep2);
-          assreg(ep, frereg, rgrdx, rgnull); assreg(ep2, frereg, rgrcx, rgr8); 
+          assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
+          assreg(ep2, frereg, rgrcx, rgr8); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           dmptre(ep2); genexp(ep2);
           dmptre(ep); genexp(ep);
