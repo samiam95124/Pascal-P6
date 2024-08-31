@@ -252,7 +252,7 @@ p @pc$
 li @pc
 ! run to start of wrs call
 ! this is the csp instruction 5th from the top of the above listing
-bi @pc+36
+bi @pc+28
 r
 li @pc
 ! dump stack should have parameters on it.
