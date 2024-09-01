@@ -1,11 +1,11 @@
 ************ Regression Summary *************
-Sat 31 Aug 2024 12:01:07 AM PDT
+Sat 31 Aug 2024 11:21:06 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-0 sample_programs/prime.dif
+*** sample_programs/prime: compile/run fail
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -29,7 +29,7 @@ pmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-0 sample_programs/prime.dif
+*** sample_programs/prime: compile/run fail
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -51,7 +51,7 @@ cmach run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-0 sample_programs/prime.dif
+*** sample_programs/prime: compile/run fail
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -73,7 +73,7 @@ package run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-0 sample_programs/prime.dif
+*** sample_programs/prime: compile/run fail
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -95,7 +95,7 @@ pgen run ***************************************
 0 sample_programs/hello.dif
 0 sample_programs/roman.dif
 0 sample_programs/match.dif
-0 sample_programs/prime.dif
+*** sample_programs/prime: compile/run fail
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
@@ -113,7 +113,7 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
-Sat 31 Aug 2024 12:07:55 AM PDT
+Sat 31 Aug 2024 11:28:45 PM PDT
 Files md5sum ***************************************
 Source files
 2236ea060fc0582375450dd35fcc5e3c  -
@@ -124,7 +124,7 @@ d9ae9c9665a20cf4de7a07958b70dbc7  -
 p4 files
 7fde3a84df157d5f5ac639c9fb342b70  -
 Sample program test files
-e60adac6780ac34945f905cd4bf03875  -
+ed66ddeb15c611a55761827e2b7b7c24  -
 standard test files
 ea035337506e9f27c9402c86aaeaa612  -
 other files

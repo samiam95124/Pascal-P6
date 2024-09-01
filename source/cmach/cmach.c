@@ -182,7 +182,7 @@
  *
  */
 #ifndef GPC
-#define GPC 1
+#define GPC 0
 #endif
 
 /* Check flags: these turn on runtime checks
