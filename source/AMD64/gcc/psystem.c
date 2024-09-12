@@ -323,7 +323,7 @@ table is all you should need to adapt to any byte addressable machine.
 
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
-#define REALEF       9    /* real extra field in floating format -1.0e+000 */
+#define REALEF       8    /* real extra field in floating format -1.0e+00 */
 #define ERRLEN       250  /* maximum length of error messages */
 #define MAXCMD       250  /* size of command line buffer */
 #define MAXDBF       30   /* size of numeric conversion buffer */

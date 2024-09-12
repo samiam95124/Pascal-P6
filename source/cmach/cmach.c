@@ -446,7 +446,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
-#define REALEF       9    /* real extra field in floating format -1.0e+000 */
+#define REALEF       8    /* real extra field in floating format -1.0e+00 */
 #define MAXOPT       26   /* number of options */
 #define OPTLEN       10   /* maximum length of option words */
 
