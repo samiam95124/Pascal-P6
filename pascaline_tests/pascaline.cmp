@@ -17,9 +17,9 @@ Maxcrd: 9223372036854775807
 Maxlint: 9223372036854775807
 Maxlcrd: 9223372036854775807
 Maxchr: 255
-Maxreal:  1.79769313486231e+308
-Maxsreal:  1.79769313486231e+308
-Maxlreal:  1.79769313486231e+308
+Maxreal: 1.797693134862313e+308
+Maxsreal: 1.797693134862313e+308
+Maxlreal: 1.797693134862313e+308
 Bit length of cardinal appears to be: 63
 Bit length of long integer without sign appears to be: 63
 Bit length of long cardinal appears to be: 63
@@ -61,7 +61,7 @@ ext27: abcdz s/b abcdz
 ext28: 1 2 3 4 5 12  s/b 1 2 3 4 5 12
 ext29: 432 s/b 432
 ext30: Q s/b Q
-ext31:   1.23456000000000e+00 s/b 1.23456000e+000
+ext31:  1.234560000000000e+00 s/b 1.23456000e+000
 ext32: hi there s/b hi there
 vb1: 9223372036854775751 s/b 9223372036854775751
 vb2: 8 s/b 8
@@ -949,10 +949,10 @@ lcardinal23:  false s/b false
 lcardinal24:   true s/b true
 lcardinal25:   true s/b true
 lcardinal26:  false s/b false
-sreal1:    1.4189000e+03 s/b  1.418900e+03
-sreal2:    5.4844000e+02 s/b  5.484399e+02
-sreal3:    4.2812269e+05 s/b  4.281227e+05
-sreal4:    2.2601153e+00 s/b  2.260115e+00
+sreal1:   1.41890000e+03 s/b  1.418900e+03
+sreal2:   5.48440000e+02 s/b  5.484399e+02
+sreal3:   4.28122694e+05 s/b  4.281227e+05
+sreal4:   2.26011534e+00 s/b  2.260115e+00
 sreal5:   true s/b true
 sreal6:  false s/b false
 sreal7:   true s/b true
@@ -967,29 +967,29 @@ sreal15:  false s/b false
 sreal16:   true s/b true
 sreal17:   true s/b true
 sreal18:  false s/b false
-sreal19:    4.3523000e+02 s/b  4.35230e+02
-sreal20:    1.8942515e+05 s/b  1.89425e+05
-sreal21:    3.1363514e+01 s/b  3.13635e+01
-sreal22:   -3.4430594e-01 s/b -3.44290e-01
-sreal23:    1.5684987e+00 s/b  1.56850e+00
-sreal24:    1.4110019e+00 s/b  1.41100e+00
-sreal25:    6.0758746e+00 s/b  6.07587e+00
+sreal19:   4.35230000e+02 s/b  4.35230e+02
+sreal20:   1.89425153e+05 s/b  1.89425e+05
+sreal21:   3.13635138e+01 s/b  3.13635e+01
+sreal22:  -3.44305942e-01 s/b -3.44290e-01
+sreal23:   1.56849870e+00 s/b  1.56850e+00
+sreal24:   1.41100187e+00 s/b  1.41100e+00
+sreal25:   6.07587463e+00 s/b  6.07587e+00
 sreal26:  435 s/b 435
 sreal27:  984 s/b 984
 sreal28:  435 s/b 435
-sreal29:    3.0034000e+02 s/b  3.003400e+02
-sreal30:    3.0034000e+02 s/b  3.003400e+02
-sreal31:   -6.5999800e+03 s/b -6.599980e+03
-sreal32:   -8.3687200e+03 s/b -8.368720e+03
-sreal33:    1.7687400e+03 s/b  1.768740e+03
-sreal34:   -8.6690600e+03 s/b -8.669061e+03
-sreal35:   -6.9003200e+03 s/b -6.900320e+03
-sreal36:   -7.5955927e+05 s/b -7.595593e+05
-sreal37:   -7.5955927e+05 s/b -7.595593e+05
-sreal38:    5.6052646e+06 s/b  5.605265e+06
-sreal39:   -1.4090711e+00 s/b -1.409071e+00
-sreal40:   -7.3796277e+00 s/b -7.379627e+00
-sreal41:    1.0398420e+01 s/b  1.039842e+01
+sreal29:   3.00340000e+02 s/b  3.003400e+02
+sreal30:   3.00340000e+02 s/b  3.003400e+02
+sreal31:  -6.59998000e+03 s/b -6.599980e+03
+sreal32:  -8.36872000e+03 s/b -8.368720e+03
+sreal33:   1.76874000e+03 s/b  1.768740e+03
+sreal34:  -8.66906000e+03 s/b -8.669061e+03
+sreal35:  -6.90032000e+03 s/b -6.900320e+03
+sreal36:  -7.59559268e+05 s/b -7.595593e+05
+sreal37:  -7.59559268e+05 s/b -7.595593e+05
+sreal38:   5.60526458e+06 s/b  5.605265e+06
+sreal39:  -1.40907110e+00 s/b -1.409071e+00
+sreal40:  -7.37962766e+00 s/b -7.379627e+00
+sreal41:   1.03984200e+01 s/b  1.039842e+01
 sreal42:   true s/b true
 sreal43:  false s/b false
 sreal44:   true s/b true
@@ -1012,18 +1012,18 @@ sreal60:   true s/b true
 sreal61:  true s/b true
 sreal62: false s/b false
 sreal63: false s/b false
-sreal64:   7.3420000e+02 s/b  7.34200e+02
-sreal65:   5.3904964e+05 s/b  5.39050e+05
-sreal66:  -4.3483206e-01 s/b -4.34850e-01
-sreal67:  -1.5694343e+00 s/b -1.56943e+00
-sreal68:   6.8056632e-01 s/b  6.80566e-01
+sreal64:  7.34200000e+02 s/b  7.34200e+02
+sreal65:  5.39049640e+05 s/b  5.39050e+05
+sreal66: -4.34832062e-01 s/b -4.34850e-01
+sreal67: -1.56943430e+00 s/b -1.56943e+00
+sreal68:  6.80566323e-01 s/b  6.80566e-01
 sreal69:            -734 s/b -734
 sreal70:           -7635 s/b -7635
 sreal71:            -734 s/b -734
-lreal1:    1.4189000e+03 s/b  1.418900e+03
-lreal2:    5.4844000e+02 s/b  5.484399e+02
-lreal3:    4.2812269e+05 s/b  4.281227e+05
-lreal4:    2.2601153e+00 s/b  2.260115e+00
+lreal1:   1.41890000e+03 s/b  1.418900e+03
+lreal2:   5.48440000e+02 s/b  5.484399e+02
+lreal3:   4.28122694e+05 s/b  4.281227e+05
+lreal4:   2.26011534e+00 s/b  2.260115e+00
 lreal5:   true s/b true
 lreal6:  false s/b false
 lreal7:   true s/b true
@@ -1038,29 +1038,29 @@ lreal15:  false s/b false
 lreal16:   true s/b true
 lreal17:   true s/b true
 lreal18:  false s/b false
-lreal19:    4.3523000e+02 s/b  4.35230e+02
-lreal20:    1.8942515e+05 s/b  1.89425e+05
-lreal21:    3.1363514e+01 s/b  3.13635e+01
-lreal22:   -3.4430594e-01 s/b -3.44290e-01
-lreal23:    1.5684987e+00 s/b  1.56850e+00
-lreal24:    1.4110019e+00 s/b  1.41100e+00
-lreal25:    6.0758746e+00 s/b  6.07587e+00
+lreal19:   4.35230000e+02 s/b  4.35230e+02
+lreal20:   1.89425153e+05 s/b  1.89425e+05
+lreal21:   3.13635138e+01 s/b  3.13635e+01
+lreal22:  -3.44305942e-01 s/b -3.44290e-01
+lreal23:   1.56849870e+00 s/b  1.56850e+00
+lreal24:   1.41100187e+00 s/b  1.41100e+00
+lreal25:   6.07587463e+00 s/b  6.07587e+00
 lreal26:  435 s/b 435
 lreal27:  984 s/b 984
 lreal28:  435 s/b 435
-lreal29:    3.0034000e+02 s/b  3.003400e+02
-lreal30:    3.0034000e+02 s/b  3.003400e+02
-lreal31:   -6.5999800e+03 s/b -6.599980e+03
-lreal32:   -8.3687200e+03 s/b -8.368720e+03
-lreal33:    1.7687400e+03 s/b  1.768740e+03
-lreal34:   -8.6690600e+03 s/b -8.669061e+03
-lreal35:   -6.9003200e+03 s/b -6.900320e+03
-lreal36:   -7.5955927e+05 s/b -7.595593e+05
-lreal37:   -7.5955927e+05 s/b -7.595593e+05
-lreal38:    5.6052646e+06 s/b  5.605265e+06
-lreal39:   -1.4090711e+00 s/b -1.409071e+00
-lreal40:   -7.3796277e+00 s/b -7.379627e+00
-lreal41:    1.0398420e+01 s/b  1.039842e+01
+lreal29:   3.00340000e+02 s/b  3.003400e+02
+lreal30:   3.00340000e+02 s/b  3.003400e+02
+lreal31:  -6.59998000e+03 s/b -6.599980e+03
+lreal32:  -8.36872000e+03 s/b -8.368720e+03
+lreal33:   1.76874000e+03 s/b  1.768740e+03
+lreal34:  -8.66906000e+03 s/b -8.669061e+03
+lreal35:  -6.90032000e+03 s/b -6.900320e+03
+lreal36:  -7.59559268e+05 s/b -7.595593e+05
+lreal37:  -7.59559268e+05 s/b -7.595593e+05
+lreal38:   5.60526458e+06 s/b  5.605265e+06
+lreal39:  -1.40907110e+00 s/b -1.409071e+00
+lreal40:  -7.37962766e+00 s/b -7.379627e+00
+lreal41:   1.03984200e+01 s/b  1.039842e+01
 lreal42:   true s/b true
 lreal43:  false s/b false
 lreal44:   true s/b true
@@ -1083,11 +1083,11 @@ lreal60:   true s/b true
 lreal61:  true s/b true
 lreal62: false s/b false
 lreal63: false s/b false
-lreal64:   7.3420000e+02 s/b  7.34200e+02
-lreal65:   5.3904964e+05 s/b  5.39050e+05
-lreal66:  -4.3483206e-01 s/b -4.34850e-01
-lreal67:  -1.5694343e+00 s/b -1.56943e+00
-lreal68:   6.8056632e-01 s/b  6.80566e-01
+lreal64:  7.34200000e+02 s/b  7.34200e+02
+lreal65:  5.39049640e+05 s/b  5.39050e+05
+lreal66: -4.34832062e-01 s/b -4.34850e-01
+lreal67: -1.56943430e+00 s/b -1.56943e+00
+lreal68:  6.80566323e-01 s/b  6.80566e-01
 lreal69:            -734 s/b -734
 lreal70:           -7635 s/b -7635
 lreal71:            -734 s/b -734
