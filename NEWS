@@ -1,79 +1,66 @@
-******************************* NEWS FOR 2023-05-11 ****************************
+******************************* NEWS FOR 2024-09-12 ****************************
 
-Welcome to the v0.2 release!
+Welcome to the v0.3 release!
 
-This is the second beta release of Pascal-P6. I wanted to get a release in 
-before taking on the pgen module again, which I expect to take a minimum of a
-month or two.
+This is the third beta release of Pascal-P6. The v0.3 release is the first
+completely stand-alone release of Pascal-P6. This is due to the new program, 
+pgen, which generates a 64 bit x86 (AMD64) machine code runnable version
+of Pascal-P6.
 
-A lot has been done since the v0.1 release:
+What has been done since the v0.2 release:
 
-* The debugger has been dramatically improved. There are no outstanding bugs,
-  although there is a functional issue (next).
+* pgen brought up.
 
-* Overloads work from uses/joins modules. The only remaining issue is the
-  debugger does not know how to deal with them.
+* Pascal-P6 was recompiled with pgen, now self-hosted.
 
-* The debugger has a regression test.
+* User manual extensively updated.
 
-* Options to pcom and pint can now be passed on the command line.
+* Improvements to debug mode.
 
-* Pulldown marks are implemented. This was a huge amount of work.
-
-Pascaline features not implemented in Pascal-P6 v0.2:
-
-* 6.16 Constant strings on read/ln is not implemented (specifying text to skip).
-
-* 6.16.1 Radix convertion on input.
-
-* 6.16.2 Radix specifiers in read/ln statements.
-
-* 6.26 The operator overload for assignment (:=) is not implemented correctly.
-
-* 6.26 Inherited operator overloads is not implemented or not tested (I don't
-       actually recall which).
-
-* 6.29 Exception handling on module destructor is not implemented.
-
-* 6.35 Matrix math is not implemented.
-
-* 6.36 Saturated math operators are not implemented.
-
-* 6.37 Properties are not implemented.
-
-* 6.41 Classes and all operations with respect to classes are not implemented.
-
-* The pgen module is in development, and does not work at present. The 
-documentation covering it is a preview of how it is expected to work, and could
-be changed by the time it is implemented.
+Pascaline features not implemented in Pascal-P6 v0.3:
 
 * 64 bit Linux is the only supported version. At this time, only 64 bit Linux is
 tested and supported.
-
-* Many other bugs have been fixed.
 
 That's it! Enjoy playing around with the system.
 
 Scott Franco
 San Jose, CA
 
+Issues *************************************************************************
+
+The issues below are from https://github.com/samiam95124/Pascal-P6/issues. The
+numbers given are the issue numbers from there. Please see the issues list
+online for a full accounting.
+
+Outstanding bugs with this release *********************************************
+
+Functions with side effects can be reexecuted #161
+
+The operator overload for assignment is not implemented correctly #68
+
 Outstanding issues at this release *********************************************
+
 (does not include feature/improvement requests)
 
-* Debugger does not handle overloads.
+Debugger does not handle overloads #88
 
-* Exception handling on module destructor is not implemented.
+Exception handling on module destructor is not implemented #70
 
-* Inherited operator overloads is not implemented or not tested.
+Inherited operator overloads are not implemented #172
 
-* The operator overload for assignment (:=) is not implemented correctly.
+Radix specifiers in read statements #67
 
-* Radix specifiers in read/ln statements.
+Radix convertion on input #66
 
-* Radix convertion on input.
+Constant strings on read is not implemented #65
 
-* Constant strings on read/ln is not implemented.
+Clean up overload and override tests in pascaline.pas #64
 
-* Clean up overload/override tests in pascaline.pas.
+Matrix mathematics #45
 
-* Debug p 'a'$ does not print hex value.
+Implement saturated math operators #72
+
+Implement properties #73
+
+Classes #74
