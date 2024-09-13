@@ -453,8 +453,8 @@ table is all you should need to adapt to any byte addressable machine.
 /* version numbers */
 
 #define MAJORVER 0
-#define MINORVER 2
-#define EXPERIMENT 1
+#define MINORVER 3
+#define EXPERIMENT 0
 
 /* typedefs */
 

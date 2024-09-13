@@ -18,5 +18,5 @@ version is generated, then set back on after that.
 *******************************************************************************}
 
    majorver   = 0; { major version number }
-   minorver   = 2; { minor version number }
-   experiment = true; { is version experimental? }
+   minorver   = 3; { minor version number }
+   experiment = false; { is version experimental? }
