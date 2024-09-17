@@ -259,7 +259,8 @@ const
       DisposeOfWithReferenedBlock        = 118;
       WithBaseListEmpty                  = 119;
       ExternalsNotEnabled                = 120;
-      privexceptiontop                   = 117;
+      MasterException                    = 121;
+      privexceptiontop                   = 121;
 
       strlen      = 1000;    { longest string length we can buffer }
       maxsp       = 81;      { number of predefined procedures/functions }
@@ -283,8 +284,8 @@ const
       { version numbers }
 
       majorver   = 0; { major version number }
-      minorver   = 3; { minor version number }
-      experiment = false; { is version experimental? }
+      minorver   = 4; { minor version number }
+      experiment = true; { is version experimental? }
 
 type
       { These equates define the instruction layout. I have choosen a 32 bit

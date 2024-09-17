@@ -442,7 +442,8 @@ table is all you should need to adapt to any byte addressable machine.
 #define DISPOSEOFWITHREFERENCEDBLOCK        118
 #define WITHBASELISTEMPTY                   119
 #define EXTERNALSNOTENABLED                 120
-#define PRIVEXCEPTIONTOP                    120
+#define MASTEREXCEPTION                     121
+#define PRIVEXCEPTIONTOP                    121
 
 typedef unsigned char byte;    /* 8-bit byte */
 typedef long boolean; /* true/false */
@@ -657,6 +658,7 @@ static void errorv(
     case DISPOSEOFWITHREFERENCEDBLOCK:       printf("Dispose of with referenced block\n"); break;
     case WITHBASELISTEMPTY:                  printf("With base list empty\n"); break;
     case EXTERNALSNOTENABLED:                printf("Externals not enabled\n"); break;
+    case MASTEREXCEPTION:                    printf("Master exception\n"); break;
 
   }
   exit(1);
