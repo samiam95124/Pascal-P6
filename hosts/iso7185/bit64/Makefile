@@ -75,7 +75,7 @@ $(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
 # Build psystem_asm, the Pascaline support library in assembly.
 #
 psystem_asm: $(SOURCE)/AMD64/gcc/psystem_asm.asm
-$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c
+$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem_asm.asm
 	@echo
 	@echo "Building psystem_asm..."
 	@echo

@@ -1604,6 +1604,7 @@ procedure xlate;
      writeln(prr, 'DisposeOfWithReferencedBlock       = 118');
      writeln(prr, 'WithBaseListEmpty                  = 119');
      writeln(prr, 'ExternalsNotEnabled                = 120');
+     writeln(prr, 'MasterException                    = 121');
      writeln(prr);
 
    end;
