@@ -4540,7 +4540,7 @@ begin cmdpos := maxcmd end;
                                else gen1s(37(*lao*),dplmt,symptr);
                                { if there is an offset left in the address,
                                  apply it now }
-                               if (chkext(symptr) or chkfix(symptr)) and
+                               if ({chkext(symptr) or} chkfix(symptr)) and
                                   (dplmt <> 0) then
                                   gen1t(34(*inc*),idplmt,nilptr);
                              end else gen2(50(*lda*),level-(level-vlevel),dplmt);

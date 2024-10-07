@@ -12,7 +12,7 @@
 #
 ################################################################################
 
-        CaseValueNotFound = 16;
+        CaseValueNotFound = 16
 
         .text
 #
@@ -66,6 +66,19 @@ psystem_thw:
         pushq   %rdi                      # establish new vector
         jmp     *psystem_expadr(%rip)     # go exception handler
 
+################################################################################
+#
+# Exception vector table
+#
+# C cannot directly reference Pascaline dotted names. This set of equates gives
+# C code the exception vector addresses. We expose only the base and top of
+# exceptions. Each exception address is a one byte allocation, meaning that the
+# vector address can be found by base+(exception number-exeption base).
+#
+################################################################################
+
+        psystem_exceptionbase = exception.ValueOutOfRange
+        psystem_privexceptiontop = exception.MasterException
 #
 # Constants section
 #
