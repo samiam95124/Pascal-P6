@@ -129,6 +129,8 @@ policies, either expressed or implied, of the Pascal-P6 project.
 #include <math.h>
 #include <string.h>
 
+extern void psystem_unwind(const char* modnam, int line, int en);
+
 /* Set default configuration flags. This gives proper behavior even if no
   preprocessor flags are passed in.
 
@@ -329,121 +331,121 @@ table is all you should need to adapt to any byte addressable machine.
 #define MAXDBF       30   /* size of numeric conversion buffer */
 
 /* locations of standard exceptions */
-#define EXCEPTIONBASE                       14
-#define VALUEOUTOFRANGE                     14
-#define ARRAYLENGTHMATCH                    15
-#define CASEVALUENOTFOUND                   16
-#define ZERODIVIDE                          17
-#define INVALIDOPERAND                      18
-#define NILPOINTERDEREFERENCE               19
-#define REALOVERFLOW                        20
-#define REALUNDERFLOW                       21
-#define REALPROCESSINGFAULT                 22
-#define TAGVALUENOTACTIVE                   23
-#define TOOMANYFILES                        24
-#define FILEISOPEN                          25
-#define FILEALREADYNAMED                    26
-#define FILENOTOPEN                         27
-#define FILEMODEINCORRECT                   28
-#define INVALIDFIELDSPECIFICATION           29
-#define INVALIDREALNUMBER                   30
-#define INVALIDFRACTIONSPECIFICATION        31
-#define INVALIDINTEGERFORMAT                32
-#define INTEGERVALUEOVERFLOW                33
-#define INVALIDREALFORMAT                   34
-#define ENDOFFILE                           35
-#define INVALIDFILEPOSITION                 36
-#define FILENAMETOOLONG                     37
-#define FILEOPENFAIL                        38
-#define FILESIZEFAIL                        39
-#define FILECLOSEFAIL                       40
-#define FILEREADFAIL                        41
-#define FILEWRITEFAIL                       42
-#define FILEPOSITIONFAIL                    43
-#define FILEDELETEFAIL                      44
-#define FILENAMECHANGEFAIL                  45
-#define SPACEALLOCATEFAIL                   46
-#define SPACERELEASEFAIL                    47
-#define SPACEALLOCATENEGATIVE               48
-#define CANNOTPERFORMSPECIAL                49
-#define COMMANDLINETOOLONG                  50
-#define READPASTEOF                         51
-#define FILETRANSFERLENGTHZERO              52
-#define FILESIZETOOLARGE                    53
-#define FILENAMEEMPTY                       54
-#define CANNOTOPENSTANDARD                  55
-#define TOOMANYTEMPORARYFILES               56
-#define INPUTBUFFEROVERFLOW                 57
-#define TOOMANYTHREADS                      58
-#define CANNOTSTARTTHREAD                   59
-#define INVALIDTHREADHANDLE                 60
-#define CANNOTSTOPTHREAD                    61
-#define TOOMANYINTERTASKLOCKS               62
-#define INVALIDLOCKHANDLE                   63
-#define LOCKSEQUENCEFAIL                    64
-#define TOOMANYSIGNALS                      65
-#define CANNOTCREATESIGNAL                  66
-#define INVALIDSIGNALHANDLE                 67
-#define CANNOTDELETESIGNAL                  68
-#define CANNOTSENDSIGNAL                    69
-#define WAITFORSIGNALFAIL                   70
-#define FIELDNOTBLANK                       71
-#define READONWRITEONLYFILE                 72
-#define WRITEONREADONLYFILE                 73
-#define FILEBUFFERVARIABLEUNDEFINED         74
-#define NONDECIMALRADIXOFNEGATIVE           75
-#define INVALIDARGUMENTTOLN                 76
-#define INVALIDARGUMENTTOSQRT               77
-#define CANNOTRESETORREWRITESTANDARDFILE    78
-#define CANNOTRESETWRITEONLYFILE            79
-#define CANNOTREWRITEREADONLYFILE           80
-#define SETELEMENTOUTOFRANGE                81
-#define REALARGUMENTTOOLARGE                82
-#define BOOLEANOPERATOROFNEGATIVE           83
-#define INVALIDDIVISORTOMOD                 84
-#define PACKELEMENTSOUTOFBOUNDS             85
-#define UNPACKELEMENTSOUTOFBOUNDS           86
-#define CANNOTRESETCLOSEDTEMPFILE           87
-#define EXCEPTIONTOP                        87
+#define EXCEPTIONBASE                       0
+#define VALUEOUTOFRANGE                     0
+#define ARRAYLENGTHMATCH                    1
+#define CASEVALUENOTFOUND                   2
+#define ZERODIVIDE                          3
+#define INVALIDOPERAND                      4
+#define NILPOINTERDEREFERENCE               5
+#define REALOVERFLOW                        6
+#define REALUNDERFLOW                       7
+#define REALPROCESSINGFAULT                 8
+#define TAGVALUENOTACTIVE                   9
+#define TOOMANYFILES                        10
+#define FILEISOPEN                          11
+#define FILEALREADYNAMED                    12
+#define FILENOTOPEN                         13
+#define FILEMODEINCORRECT                   14
+#define INVALIDFIELDSPECIFICATION           15
+#define INVALIDREALNUMBER                   16
+#define INVALIDFRACTIONSPECIFICATION        17
+#define INVALIDINTEGERFORMAT                18
+#define INTEGERVALUEOVERFLOW                19
+#define INVALIDREALFORMAT                   20
+#define ENDOFFILE                           21
+#define INVALIDFILEPOSITION                 22
+#define FILENAMETOOLONG                     23
+#define FILEOPENFAIL                        24
+#define FILESIZEFAIL                        25
+#define FILECLOSEFAIL                       26
+#define FILEREADFAIL                        27
+#define FILEWRITEFAIL                       28
+#define FILEPOSITIONFAIL                    29
+#define FILEDELETEFAIL                      30
+#define FILENAMECHANGEFAIL                  31
+#define SPACEALLOCATEFAIL                   32
+#define SPACERELEASEFAIL                    33
+#define SPACEALLOCATENEGATIVE               34
+#define CANNOTPERFORMSPECIAL                35
+#define COMMANDLINETOOLONG                  36
+#define READPASTEOF                         37
+#define FILETRANSFERLENGTHZERO              38
+#define FILESIZETOOLARGE                    39
+#define FILENAMEEMPTY                       40
+#define CANNOTOPENSTANDARD                  41
+#define TOOMANYTEMPORARYFILES               42
+#define INPUTBUFFEROVERFLOW                 43
+#define TOOMANYTHREADS                      44
+#define CANNOTSTARTTHREAD                   45
+#define INVALIDTHREADHANDLE                 46
+#define CANNOTSTOPTHREAD                    47
+#define TOOMANYINTERTASKLOCKS               48
+#define INVALIDLOCKHANDLE                   49
+#define LOCKSEQUENCEFAIL                    50
+#define TOOMANYSIGNALS                      51
+#define CANNOTCREATESIGNAL                  52
+#define INVALIDSIGNALHANDLE                 53
+#define CANNOTDELETESIGNAL                  54
+#define CANNOTSENDSIGNAL                    55
+#define WAITFORSIGNALFAIL                   56
+#define FIELDNOTBLANK                       57
+#define READONWRITEONLYFILE                 58
+#define WRITEONREADONLYFILE                 59
+#define FILEBUFFERVARIABLEUNDEFINED         60
+#define NONDECIMALRADIXOFNEGATIVE           61
+#define INVALIDARGUMENTTOLN                 62
+#define INVALIDARGUMENTTOSQRT               63
+#define CANNOTRESETORREWRITESTANDARDFILE    64
+#define CANNOTRESETWRITEONLYFILE            65
+#define CANNOTREWRITEREADONLYFILE           66
+#define SETELEMENTOUTOFRANGE                67
+#define REALARGUMENTTOOLARGE                68
+#define BOOLEANOPERATOROFNEGATIVE           69
+#define INVALIDDIVISORTOMOD                 70
+#define PACKELEMENTSOUTOFBOUNDS             71
+#define UNPACKELEMENTSOUTOFBOUNDS           72
+#define CANNOTRESETCLOSEDTEMPFILE           73
+#define EXCEPTIONTOP                        73
 
 /* Exceptions that can't be caught.
   Note that these don't have associated exception variables. */
 
-#define UNDEFINEDLOCATIONACCESS             88
-#define FUNCTIONNOTIMPLEMENTED              89
-#define INVALIDINISO7185MODE                90
-#define HEAPFORMATINVALID                   91
-#define DISPOSEOFUNINITALIZEDPOINTER        92
-#define DISPOSEOFNILPOINTER                 93
-#define BADPOINTERVALUE                     94
-#define BLOCKALREADYFREED                   95
-#define INVALIDSTANDARDPROCEDUREORFUNCTION  96
-#define INVALIDINSTRUCTION                  97
-#define NEWDISPOSETAGSMISMATCH              98
-#define PCOUTOFRANGE                        99
-#define STOREOVERFLOW                       100
-#define STACKBALANCE                        101
-#define SETINCLUSION                        102
-#define UNINITIALIZEDPOINTER                103
-#define DEREFERENCEOFNILPOINTER             104
-#define POINTERUSEDAFTERDISPOSE             105
-#define VARIANTNOTACTIVE                    106
-#define INVALIDCASE                         107
-#define SYSTEMERROR                         108
-#define CHANGETOALLOCATEDTAGFIELD           109
-#define UNHANDLEDEXCEPTION                  110
-#define PROGRAMCODEASSERTION                111
-#define VARLISTEMPTY                        112
-#define CHANGETOVARREFERENCEDVARIANT        113
-#define DISPOSEOFVARREFERENCEDBLOCK         114
-#define VARREFERENCEDFILEBUFFERMODIFIED     115
-#define CONTAINERMISMATCH                   116
-#define INVALIDCONTAINERLEVEL               117
-#define DISPOSEOFWITHREFERENCEDBLOCK        118
-#define WITHBASELISTEMPTY                   119
-#define EXTERNALSNOTENABLED                 120
-#define MASTEREXCEPTION                     121
-#define PRIVEXCEPTIONTOP                    121
+#define UNDEFINEDLOCATIONACCESS             74
+#define FUNCTIONNOTIMPLEMENTED              75
+#define INVALIDINISO7185MODE                76
+#define HEAPFORMATINVALID                   77
+#define DISPOSEOFUNINITALIZEDPOINTER        78
+#define DISPOSEOFNILPOINTER                 79
+#define BADPOINTERVALUE                     80
+#define BLOCKALREADYFREED                   81
+#define INVALIDSTANDARDPROCEDUREORFUNCTION  82
+#define INVALIDINSTRUCTION                  83
+#define NEWDISPOSETAGSMISMATCH              84
+#define PCOUTOFRANGE                        85
+#define STOREOVERFLOW                       86
+#define STACKBALANCE                        87
+#define SETINCLUSION                        88
+#define UNINITIALIZEDPOINTER                89
+#define DEREFERENCEOFNILPOINTER             90
+#define POINTERUSEDAFTERDISPOSE             91
+#define VARIANTNOTACTIVE                    92
+#define INVALIDCASE                         93
+#define SYSTEMERROR                         94
+#define CHANGETOALLOCATEDTAGFIELD           95
+#define UNHANDLEDEXCEPTION                  96
+#define PROGRAMCODEASSERTION                97
+#define VARLISTEMPTY                        98
+#define CHANGETOVARREFERENCEDVARIANT        99
+#define DISPOSEOFVARREFERENCEDBLOCK         100
+#define VARREFERENCEDFILEBUFFERMODIFIED     101
+#define CONTAINERMISMATCH                   102
+#define INVALIDCONTAINERLEVEL               103
+#define DISPOSEOFWITHREFERENCEDBLOCK        104
+#define WITHBASELISTEMPTY                   105
+#define EXTERNALSNOTENABLED                 106
+#define MASTEREXCEPTION                     107
+#define PRIVEXCEPTIONTOP                    107
 
 typedef unsigned char byte;    /* 8-bit byte */
 typedef long boolean; /* true/false */
@@ -531,8 +533,7 @@ static void errors(
 Handle exception vector
 
 Accepts a module name, line number, and exception vector number. A message is
-printed for the exception and the program halted. This call is used to bypass
-the exception vector mechanisim and directly print and fail the program.
+printed for the exception and the program halted. 
 
 *******************************************************************************/
 
@@ -658,7 +659,8 @@ static void errorv(
     case DISPOSEOFWITHREFERENCEDBLOCK:       printf("Dispose of with referenced block\n"); break;
     case WITHBASELISTEMPTY:                  printf("With base list empty\n"); break;
     case EXTERNALSNOTENABLED:                printf("Externals not enabled\n"); break;
-    case MASTEREXCEPTION:                    printf("Master exception\n"); break;
+    case MASTEREXCEPTION:                    
+    default:                                 printf("Master exception\n"); break;
 
   }
   exit(1);
@@ -667,11 +669,11 @@ static void errorv(
 
 /** ****************************************************************************
 
-Handle exception vector
+Handle exception vectored
 
-Accepts a module name, line number, and exception vector number. A message is
-printed for the exception and the program halted. At the moment this is just
-passthrough to errorv(), but it will be used to process formal exceptions.
+Checks if the error number is in the user catchable exceptions. If so, it is
+send to the user vector handler. If it is a privelged error number, it is
+processed here and we halt.
 
 *******************************************************************************/
 
@@ -683,6 +685,10 @@ static void errore(
 
 {
 
+    /* if it is not a priveledged exception, throw to a possible user catch */
+    if (en >= EXCEPTIONBASE && en <= EXCEPTIONTOP) 
+        psystem_unwind(modnam, line, en-EXCEPTIONBASE);
+    /* for all priveleged exceptions, process the error here */
     errorv(modnam, line, en);
 
 }
@@ -793,14 +799,14 @@ static void assignexternal(filnum fn, char hfn[])
     while (!eolncommand() && !eofcommand() && bufcommand() == ' ') getcommand();
     i = 0;
     while (!eolncommand() && !eofcommand() && bufcommand() != ' ') {
-        if (i >= FILLEN) errorv(modnam, __LINE__, FILENAMETOOLONG);
+        if (i >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
         filnamtab[fn][i] = bufcommand();
         getcommand();
         i = i+1;
     }
-    if (i >= FILLEN) errorv(modnam, __LINE__, FILENAMETOOLONG);
+    if (i >= FILLEN) errore(modnam, __LINE__, FILENAMETOOLONG);
     filnamtab[fn][i] = 0; /* terminate */
-    if (i == 0) errorv(modnam, __LINE__, FILENAMEEMPTY);
+    if (i == 0) errore(modnam, __LINE__, FILENAMEEMPTY);
 }
 
 /* set operations */
@@ -1919,8 +1925,8 @@ void psystem_errorv(
 
 Handle exception vector
 
-Accepts a module name, line number, and exception vector number. A message is
-printed for the exception and the program halted. 
+Accepts a module name, line number, and exception vector number. The exception
+is either handled by unwinding it, or directly handling it here.
 
 *******************************************************************************/
 
@@ -1971,7 +1977,7 @@ void psystem_varexit(void)
 
     varptr vp;
 
-    if (!varlst) errorv(modnam, __LINE__, VARLISTEMPTY);
+    if (!varlst) errore(modnam, __LINE__, VARLISTEMPTY);
     vp = varlst; varlst = vp->next; vp->next = varfre; varfre = vp;
 
 }
@@ -2009,7 +2015,7 @@ void psystem_withexit(void)
 
     wthptr wp;
 
-    if (!wthlst) errorv(modnam, __LINE__, WITHBASELISTEMPTY);
+    if (!wthlst) errore(modnam, __LINE__, WITHBASELISTEMPTY);
     wp = wthlst; wthlst = wp->next; wp->next = wthfre; wthfre = wp;
 
 }
@@ -2033,7 +2039,7 @@ void psystem_get(
  
     valfilrm(f); /* validate file for reading */
     if (varlap(f+FILEIDSIZE, f+FILEIDSIZE))
-        errorv(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
+        errore(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
     fn = *f; /* get logical file no. */
 
     if (fn <= COMMANDFN) switch (fn) {
@@ -2771,7 +2777,7 @@ void psystem_rib(
 
     w = LONG_MAX; 
     readi(fn, i, &w, FALSE);
-    if (*i < mn || *i > mx) errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2803,7 +2809,7 @@ void psystem_ribf(
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
-    if (*i < mn || *i > mx) errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2934,7 +2940,7 @@ void psystem_rcb(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, LONG_MAX, FALSE);
-    if (*c < mn || *c > mx) errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+    if (*c < mn || *c > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -2965,7 +2971,7 @@ void psystem_rcbf(
     fn = *f; /* get logical file no. */
 
     readc(fn, c, w, TRUE);
-    if (*c < mn || *c > mx) errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+    if (*c < mn || *c > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -3305,7 +3311,7 @@ void psystem_dsp(
     if (!p) errore(modnam, __LINE__, DISPOSEOFNILPOINTER);
     if (varlap(p, p+s-1)) 
         errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
-    if (withsch(p)) errorv(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
+    if (withsch(p)) errore(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
     free(p);
 
 }
@@ -3374,8 +3380,8 @@ void psystem_dsl(
 
     }
     if (varlap(bp, bp+((tc+1)*sizeof(unsigned long))))
-                      errorv(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
-    if (withsch(p)) errorv(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
+                      errore(modnam, __LINE__, DISPOSEOFVARREFERENCEDBLOCK);
+    if (withsch(p)) errore(modnam, __LINE__, DISPOSEOFWITHREFERENCEDBLOCK);
     free(bp); /* free the net block */
 
 }
@@ -3683,7 +3689,7 @@ void psystem_gbf(
     bp = f+FILEIDSIZE; /* index the file variable */
     fp = filtable[fn]; /* get file pointer */
     if (varlap(bp, bp+l-1))
-        errorv(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
+        errore(modnam, __LINE__, VARREFERENCEDFILEBUFFERMODIFIED);
     if (filbuff[fn]) filbuff[fn] = FALSE; /* if buffer is full, just dump it */
     else /* fill buffer from file */
         for (i = 0; i < l; i++) *bp++ = fgetc(fp);
@@ -3874,7 +3880,7 @@ void psystem_clst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+    if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3901,7 +3907,7 @@ void psystem_clsb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
-    if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+    if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
     filanamtab[fn] = FALSE; /* break any name association */
@@ -3964,7 +3970,7 @@ void psystem_upd(
     } else {
 
         if (filstate[fn] == fsread)
-            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+            if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
         if (!fopen(filnamtab[fn], "rb+")) 
             errore(modnam, __LINE__, FILEOPENFAIL);
 
@@ -4001,7 +4007,7 @@ void psystem_appt(
     } else {
 
         if (filstate[fn] == fsread)
-            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+            if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
         if (!fopen(filnamtab[fn], "r+")) errore(modnam, __LINE__, FILEOPENFAIL);
         if (fseek(filtable[fn], 0, SEEK_END)) 
             errore(modnam, __LINE__, FILEPOSITIONFAIL);
@@ -4039,7 +4045,7 @@ void psystem_appb(
     } else {
 
         if (filstate[fn] == fsread)
-            if (fclose(filtable[fn])) errorv(modnam, __LINE__, FILECLOSEFAIL);
+            if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
         if (!fopen(filnamtab[fn], "rb+")) 
             errore(modnam, __LINE__, FILEOPENFAIL);
         if (fseek(filtable[fn], 0, SEEK_END)) 
@@ -4074,7 +4080,7 @@ void psystem_del(
     if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fn, n, l); /* copy string to buffer */
     r = remove(fn); /* remove file */
-    if (r) errorv(modnam, __LINE__, FILEDELETEFAIL);
+    if (r) errore(modnam, __LINE__, FILEDELETEFAIL);
 
 }
 
@@ -4109,7 +4115,7 @@ void psystem_chg(
     if (nl >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(nfn, nn, nl);
     r = rename(ofn, nfn); /* rename file */
-    if (r) errorv(modnam, __LINE__, FILENAMECHANGEFAIL);
+    if (r) errore(modnam, __LINE__, FILENAMECHANGEFAIL);
 
 }
 
@@ -4161,7 +4167,7 @@ long psystem_loc(
     fn = *f; /* get logical file no. */
 
     i = ftell(filtable[fn]);
-    if (i < 0) errorv(modnam, __LINE__, FILEPOSITIONFAIL);
+    if (i < 0) errore(modnam, __LINE__, FILEPOSITIONFAIL);
 
     return (i+1);
 
@@ -4228,7 +4234,7 @@ void psystem_ast(
 
 {
 
-    if (i == 0) errorv(modnam, __LINE__, PROGRAMCODEASSERTION);
+    if (i == 0) errore(modnam, __LINE__, PROGRAMCODEASSERTION);
 
 }
 
@@ -4539,13 +4545,13 @@ void psystem_tagchgvar(
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
     if (ntag < 0 || ntag >= lvt[0]) 
-        errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+        errore(modnam, __LINE__, VALUEOUTOFRANGE);
     taddr += size; /* offset to variant */
     /* translate both tags to a logical variant, then check has changed */
     if (lvt[ntag+1] != lvt[otag+1])
         /* if changed, see if the variant is in a VAR referenced region */
         if (varlap(taddr, taddr+size)) 
-            errorv(modnam, __LINE__, CHANGETOVARREFERENCEDVARIANT);
+            errore(modnam, __LINE__, CHANGETOVARREFERENCEDVARIANT);
 
 }
 
@@ -4575,7 +4581,7 @@ void psystem_tagchginv(
     /* check valid tag. We don't allow negative tags for the check, even
        though that is valid ISO 7185 */
     if (ntag < 0 || ntag >= lvt[0]) 
-        errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+        errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
 
@@ -4596,7 +4602,7 @@ void psystem_cmptmp(
 {
 
     while (lvl--) if (*tmp1++ != *tmp2++) 
-        errorv(modnam, __LINE__, CONTAINERMISMATCH);
+        errore(modnam, __LINE__, CONTAINERMISMATCH);
 
 }
 
@@ -4629,9 +4635,9 @@ void psystem_tagchkass(
         /* check valid tag. We don't allow negative tags for the check, even
            though that is valid ISO 7185 */
         if (ntag < 0 || ntag >= lvt[0]) 
-            errorv(modnam, __LINE__, VALUEOUTOFRANGE);
+            errore(modnam, __LINE__, VALUEOUTOFRANGE);
         if (tcp[lvl-1] != lvt[ntag+1]) 
-            errorv(modnam, __LINE__, CHANGETOALLOCATEDTAGFIELD);
+            errore(modnam, __LINE__, CHANGETOALLOCATEDTAGFIELD);
 
     }
 
@@ -4658,9 +4664,9 @@ void psystem_chksetbnd(
     long j;
 
     for (j = SETLOW; j < low; j++)
-        if (sisin(j, s)) errorv(modnam, __LINE__, SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) errore(modnam, __LINE__, SETELEMENTOUTOFRANGE);
     for (j = high+1; j <= SETHIGH; j++)
-        if (sisin(j, s)) errorv(modnam, __LINE__, SETELEMENTOUTOFRANGE);
+        if (sisin(j, s)) errore(modnam, __LINE__, SETELEMENTOUTOFRANGE);
 
 }
 

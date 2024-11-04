@@ -27,15 +27,26 @@ main:
         movq    %rax,psystem_expadr(%rip)
         movq    %rsp,psystem_expstk(%rip)   # set frame parameters                                      
         movq    %rbp,psystem_expmrk(%rip) 
-        jmp     1f                          # execute next module in sequence
+        jmp     3f                          # execute next module in sequence
 #
 # Exception handler
 #
 main_fault:
+        popq    %rdx                     # get vector
+        leaq    ExceptionTop(%rip),%rbx
+        cmpq    %rbx,%rdx
+        ja      1f                       # above
+        leaq    ExceptionBase(%rip),%rbx # check in range of our vectors
+        cmpq    %rbx,%rdx
+        jb      1f                       # below
+        subq    %rbx,%rdx
+        jmp     2f                       # and go
+1:
+        movq    $MasterException,%rdx    # load master fault error
+2:
         andq    $0xfffffffffffffff0,%rsp # align stack
         leaq    modnam(%rip),%rdi        # set no module name
         movq    $0,%rsi                  # set no line number
-        movq    $MasterException,%rdx    # load case fault error
         call    psystem_errorv           # go handler
         jmp     .                        # soft halt
 #
@@ -46,5 +57,5 @@ modnam:
 #
 # Execute next module in sequence
 #
-1:
+3:
         
