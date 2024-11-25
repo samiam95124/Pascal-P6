@@ -186,7 +186,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 128;  { maximum number of instructions }
+   maxins     = 130;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3326,6 +3326,8 @@ begin cmdpos := maxcmd end;
       126: write(prr, 'Load stack complex pointer');
       127: write(prr, 'Copy length from complex pointer');
       128: write(prr, 'Store structured value from stack');
+      129: write(prr, 'Store exception vector');
+      130: write(prr, 'Retore exception vector');
     end
   end;
 
@@ -3665,7 +3667,8 @@ begin cmdpos := maxcmd end;
             write(prr,chr(fp1),' ':4); par1(fp2);
             mes(0)
           end;
-          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117,124,128:
+          45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117,124,128,
+          129,130:
             begin
               write(prr,' ':5); par2(fp1, fp2);
               if fop = 116 then mesl(-fp2)
@@ -9040,7 +9043,9 @@ begin cmdpos := maxcmd end;
       procedure trystatement;
       var test: boolean; lcp: ctp; lattr: attr;
           endlbl, noexplbl, bgnexplbl, onendlbl,onstalbl: integer;
+          vecadr: stkoff;
       begin genlabel(endlbl); genlabel(noexplbl); genlabel(bgnexplbl);
+        gettmp(vecadr, intsize, false);
         genujpxjpcal(84(*bge*),bgnexplbl);
         addlvl;
         repeat
@@ -9057,6 +9062,7 @@ begin cmdpos := maxcmd end;
         sublvl;
         genujpxjpcal(57(*ujp*),noexplbl);
         prtlabel(bgnexplbl); writeln(prr); markline;
+        gen2(129(*sev*),level,vecadr);
         if (sy <> onsy) and (sy <> exceptsy) then error(24);
         while sy = onsy do begin insymbol; genlabel(onstalbl);
           genlabel(onendlbl);
@@ -9077,7 +9083,7 @@ begin cmdpos := maxcmd end;
               if lcp^.idtype <> nil then
                 if lcp^.idtype^.form <> exceptf then error(226);
               insymbol;
-              gen0t(76(*dup*),nilptr);{ make copy of original vector }
+              gen2t(54(*lod*),level,vecadr,intptr);
               gattr := lattr; loadaddress; { load compare vector }
               gen2(47(*equ*),ord('a'),0);
               genujpxjpcal(73(*tjp*),onstalbl);
@@ -9101,6 +9107,7 @@ begin cmdpos := maxcmd end;
           insymbol; statement(fsys+[elsesy]); sublvl;
           genujpxjpcal(57(*ujp*),endlbl)
         end;
+        gen2(130(*rev*),level,vecadr);
         gen0(86(*mse*));
         prtlabel(noexplbl); writeln(prr);
         markline;
@@ -9110,7 +9117,8 @@ begin cmdpos := maxcmd end;
         sublvl;
         prtlabel(endlbl); writeln(prr);
         markline;
-        gen0(85(*ede*))
+        gen0(85(*ede*));
+        puttmp(vecadr)
       end (*trystatement*) ;
 
     begin (*statement*)
@@ -10314,7 +10322,7 @@ begin cmdpos := maxcmd end;
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
       mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp'; mn[127] :='cpl';
-      mn[128] :='sfs';
+      mn[128] :='sfs'; mn[129] :='sev'; mn[130] :='rev';
 
     end (*instrmnemonics*) ;
 
@@ -10451,7 +10459,8 @@ begin cmdpos := maxcmd end;
       cdx[122] := 0;                    cdx[123] := +ptrsize;
       cdx[124] := 0;                    cdx[125] := 0;
       cdx[126] := -adrsize;             cdx[127] := -intsize;
-      cdx[128] := 0;
+      cdx[128] := 0;                    cdx[129] := 0;
+      cdx[130] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }

@@ -1,6 +1,4 @@
-#ifndef FPC_PASCAL
 (*$c+,t-,d-,l-*)
-#endif
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
@@ -2195,6 +2193,10 @@ procedure load;
          instr[250]:='lsp       '; insp[250] := false; insq[250] := 0;
          instr[251]:='cpl       '; insp[251] := false; insq[251] := 0;
          instr[252]:='sfs       '; insp[252] := false; insq[252] := intsize*2;
+         { sev is an alias for stra in pint. It has meaning to pgen. }
+         instr[253]:='sev       '; insp[253] := true; insq[253] := intsize;
+         { rev is an alias for loda in pint. It has meaning to pgen. }
+         instr[254]:='rev       '; insp[254] := true;  insq[254] := intsize;
 
          sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
          sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
@@ -2885,7 +2887,7 @@ procedure load;
 
           (*lod,str,lda,lip*)
           0, 193, 105, 106, 107, 108, 109, 195,
-          2, 70, 71, 72, 73, 74,4,120: begin read(prd,p,q); storeop; storep;
+          2, 70, 71, 72, 73, 74,4,120, 253, 254: begin read(prd,p,q); storeop; storep;
                                              storeq
                                        end;
 
@@ -4595,7 +4597,8 @@ begin
 
     0   (*lodi*): begin getp; getq; pshint(getint(getadr(mp-p*ptrsize)+q)) end;
     193 (*lodx*): begin getp; getq; pshint(getbyt(getadr(mp-p*ptrsize)+q)) end;
-    105 (*loda*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
+    105,
+    254 (*loda,rev*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
     106 (*lodr*): begin getp; getq; pshrel(getrel(getadr(mp-p*ptrsize)+ q)) end;
     107 (*lods*): begin getp; getq; getset(getadr(mp-p*ptrsize)+q, s1); pshset(s1) end;
     108 (*lodb*): begin getp; getq; pshint(ord(getbol(getadr(mp-p*ptrsize)+q))) end;
@@ -4619,7 +4622,8 @@ begin
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
-    70  (*stra*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
+    70,
+    253  (*stra,sev*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
@@ -5376,7 +5380,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 253, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 
     255: errorv(InvalidInstruction)
 
   end
