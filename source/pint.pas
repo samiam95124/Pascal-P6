@@ -423,17 +423,7 @@ const
 
 #include "version.inc"
 
-{ if FPC and 64 bit, override 32 bit integer }
-#if defined(BIT_64) && defined(FPC_PASCAL)
-   maxint = 9223372036854775807;
-#endif
-
 type
-
-{ if FPC and 64 bit, override 32 bit integer }
-#if defined(BIT_64) && defined(FPC_PASCAL)
-     integer = int64;
-#endif
 
 #if defined(WRDSIZ16) && defined(GNU_PASCAL)
       /* for GNU 16 bit mode, use both 16 bit defines and redefine integer and
@@ -2436,7 +2426,7 @@ procedure load;
 #ifdef EXTERNALS
      LookupExternal(mods, syms, rt);
 #endif
-     { supress fpc warnings }
+     { supress warnings }
      if mods[1] = ' ' then;
      if syms[1] = ' ' then;
      extref := rt

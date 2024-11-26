@@ -1,6 +1,4 @@
-#ifndef FPC_PASCAL
 (*$c+,t-,d-,l-*)
-#endif
 {*******************************************************************************
 *                                                                              *
 *                         PASCAL-P6 PORTABLE INTERPRETER                       *
