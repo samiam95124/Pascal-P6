@@ -3546,7 +3546,7 @@ procedure xlate;
 
             118{swp}: ; { done at top level }
 
-            {ldoi,loda,ltci}
+            {ldoi,ltci}
             1,65,228:
               if ep^.fl <> nil then
                 wrtins40(' movq @s(%rip),%1 # load global quad    ', 0, 0, ep^.r1, rgnull, ep^.fl)

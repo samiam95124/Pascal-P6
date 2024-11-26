@@ -2491,7 +2491,8 @@ void sinins()
 
     case 0   /*lodi*/: getp(); getq(); pshint(getint(getadr(mp-p*PTRSIZE) + q)); break;
     case 193 /*lodx*/: getp(); getq(); pshint(getbyt(getadr(mp-p*PTRSIZE) + q)); break;
-    case 105 /*loda*/: getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
+    case 105 /*loda*/: 
+    case 254 /*rev*/:   getp(); getq(); pshadr(getadr(getadr(mp-p*PTRSIZE) + q)); break;
     case 106 /*lodr*/: getp(); getq(); pshrel(getrel(getadr(mp-p*PTRSIZE) + q)); break;
     case 107 /*lods*/: getp(); getq(); getset(getadr(mp-p*PTRSIZE) + q, s1); pshset(s1); break;
     case 108 /*lodb*/: getp(); getq(); pshint(getbol(getadr(mp-p*PTRSIZE) + q)); break;
@@ -2507,7 +2508,8 @@ void sinins()
 
     case 2   /*stri*/: getp(); getq(); popint(i); putint(getadr(mp-p*PTRSIZE)+q, i); break;
     case 195 /*strx*/: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
-    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
+    case 70  /*stra*/: 
+    case 253 /*sev*/:  getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
     case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
     case 72  /*strs*/: getp(); getq(); popset(s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
     case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
@@ -3166,7 +3168,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 253, 254, 
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 
        255 */
     default: errorv(INVALIDINSTRUCTION); break;
 
