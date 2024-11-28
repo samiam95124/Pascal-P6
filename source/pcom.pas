@@ -119,11 +119,7 @@
 #define ISO7185_PASCAL
 #endif
 
-program pcom(output,prd,prr
-#ifdef PASCALINE
-              ,command
-#endif
-              );
+program pcom(output,prd,prr,command);
 
 label 99; { terminate immediately }
 
