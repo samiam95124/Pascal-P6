@@ -71,10 +71,10 @@ elif [ "$param1" = "--pgen" ]; then
 
 	echo Running with pgen
     #echo "Will execute: gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
-    #    -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+    #    -x assembler $PASCALP6/source/AMD64/gcc/psystem.asm \
     #    $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm"
     gcc -g3 -DWRDSIZ64 $iso7185option $PASCALP6/source/AMD64/gcc/psystem.c \
-        -x assembler $PASCALP6/source/AMD64/gcc/psystem_asm.asm \
+        -x assembler $PASCALP6/source/AMD64/gcc/psystem.asm \
         $PASCALP6/source/AMD64/gcc/main.asm pascaline2.s pascaline1.s pascaline.s -o pascaline -lm > pascaline.err 2>&1
     if [ "$?" == "0" ]; then
 
