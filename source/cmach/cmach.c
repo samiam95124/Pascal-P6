@@ -173,18 +173,6 @@
 #define WRDSIZ32 1
 #endif
 
-/*
- * Enable GPC compatability mode
- *
- * Invokes creation and use of the prd (input) and prr (output) files.
- * This is specific to GPC, which handles header files by taking the name of the
- * header file as the literal name of the file.
- *
- */
-#ifndef GPC
-#define GPC 0
-#endif
-
 /* Check flags: these turn on runtime checks
  *
  * These flags can be overridden by compiler define set
@@ -3228,32 +3216,6 @@ void main (int argc, char *argv[])
     for (sdi = 0; sdi <= MAXDEF; sdi++)
       storedef[sdi] = 0; /* clear storage defined flags */
 
-#if GPC == 1
-    /*
-     * For GPC, we open the PRD and PRR files in advance. In Pascaline mode, we
-     * treat all header files the same, which is to open as parameters from the
-     * command line.
-     */
-    filtable[PRDFN] = fopen("prd", "r");
-    if (!filtable[PRDFN]) {
-        printf("*** Cannot open file prd\n");
-        finish(1);
-    }
-    filstate[PRDFN] = fsread;
-    filbuff[PRDFN] = FALSE;
-    fileoln[PRDFN] = FALSE;
-    filbof[PRDFN] = FALSE;
-
-    filtable[PRRFN] = fopen("prr", "w");
-    if (!filtable[PRRFN]) {
-        printf("*** Cannot open file prr\n");
-        finish(1);
-    }
-    filstate[PRRFN] = fswrite;
-    filbuff[PRRFN] = FALSE;
-
-    fp = filtable[PRDFN]; /* set load file as prd */
-#else
 #ifndef PACKAGE
     if (argc < 1) {
         printf("*** Usage: cmach <codefile> [<params>]...\n");
@@ -3265,9 +3227,6 @@ void main (int argc, char *argv[])
         finish(1);
     }
     argv++; argc--; /* skip that parameter */
-#endif
-#endif
-#ifndef PACKAGE
     printf("loading program\n");
 #endif
 

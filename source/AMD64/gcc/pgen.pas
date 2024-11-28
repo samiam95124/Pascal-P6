@@ -73,18 +73,6 @@
 *                                                                              *
 *******************************************************************************}
 
-(*
- * Enable GPC compatability mode
- *
- * Invokes creation and use of the prd (input) and prr (output) files.
- * This is specific to GPC, which handles header files by taking the name of the
- * header file as the literal name of the file.
- *
- *)
-#ifndef GPC
-#define GPC 1
-#endif
-
 program pcode(input,output,prd,prr);
 
 label 1;
@@ -1463,23 +1451,6 @@ procedure xlate;
      writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
      writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
      writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
-#if GPC == 1
-     writeln(prr, '# GPC compatability, open the prd and prr files');
-     writeln(prr, '        leaq    globals_start+prdoff(%rip),%rdi');
-     writeln(prr, '        leaq    prdfilename(%rip),%rsi');
-     writeln(prr, '        movq    $3,%rdx');
-     writeln(prr, '        call    psystem_asst');
-     writeln(prr, '        leaq    globals_start+prdoff(%rip),%rdi');
-     writeln(prr, '        call    psystem_rsf');
-     writeln(prr);
-     writeln(prr, '        leaq    globals_start+prroff(%rip),%rdi');
-     writeln(prr, '        leaq    prrfilename(%rip),%rsi');
-     writeln(prr, '        movq    $3,%rdx');
-     writeln(prr, '        call    psystem_asst');
-     writeln(prr, '        leaq    globals_start+prroff(%rip),%rdi');
-     writeln(prr, '        call    psystem_rwf');
-     writeln(prr);
-#endif
      writeln(prr, '# Call startup code');
      writeln(prr, '        call    1f');
      writeln(prr, '        popq    %rax');
@@ -5870,12 +5841,6 @@ begin (*xlate*)
    writeln(prr, '        jmp     1f');
    writeln(prr, 'modnam:');
    write(prr, '        .string  "'); writevp(prr, modnam); writeln(prr, '"');
-#if GPC == 1
-   writeln(prr, 'prdfilename:');
-   writeln(prr, '        .string  "prd"');
-   writeln(prr, 'prrfilename:');
-   writeln(prr, '        .string  "prr"');
-#endif
    writeln(prr, 'real_zero:');
    writeln(prr, '        .double  0.0');
    writeln(prr, 'real_int_max:');
