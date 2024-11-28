@@ -45,10 +45,10 @@ CFLAGS=-g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 CPPFLAGS=-P -nostdinc -traditional-cpp
-CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
-CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
-CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
-CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR -DGPC=0
+CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR
+CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR
+CPPFLAGS64BE=-DWRDSIZ64 -DBENDIAN -DPASCALINE -DNOPRDPRR
+CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
@@ -74,14 +74,14 @@ $(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
 #
 # Build psystem_asm, the Pascaline support library in assembly.
 #
-psystem_asm: $(SOURCE)/AMD64/gcc/psystem_asm.asm
-$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem_asm.asm
+psystem_asm: $(SOURCE)/AMD64/gcc/psystem.asm
+$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.asm
 	@echo
 	@echo "Building psystem_asm..."
 	@echo
 	mkdir -p $(BUILD)/AMD64/gcc
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem_asm.o \
-		-c -x assembler $(SOURCE)/AMD64/gcc/psystem_asm.asm
+		-c -x assembler $(SOURCE)/AMD64/gcc/psystem.asm
 
 #
 # Build main, the program stack startup shim.
@@ -155,7 +155,7 @@ bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
 	gcc -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pint.pas $(BUILD)/pint.mpp.pas \
 		-DEXTERNALS
-	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --list- --reference-
+	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --chk- --list- --reference-
 	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
@@ -175,7 +175,7 @@ bin/pmach: $(SOURCE)/pmach.pas $(BUILD)/AMD64/gcc/psystem.o \
 	@echo
 	mkdir -p $(BUILD)
 	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pmach.pas $(BUILD)/pmach.mpp.pas
-	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --list- --reference-
+	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --chk- --list- --reference-
 	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
