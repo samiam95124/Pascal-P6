@@ -1087,8 +1087,6 @@ procedure xlate;
          instr[252]:='sfs       '; insr[252] := 0; insf[252] := false; inss[252] := false;
          { sev is an alias for stra in pint. It has meaning to pgen. }
          instr[253]:='sev       '; insr[253] := 0; insf[253] := false; inss[253] := false;
-         { rev is an alias for loda in pint. It has meaning to pgen. }
-         instr[254]:='rev       '; insr[254] := 1; insf[254] := false; inss[254] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -5080,18 +5078,9 @@ procedure xlate;
           getreg(r1, frereg); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' popq %rax # get exception vector       ', 0, 0, rgnull, rgnull, nil); 
+          wrtins40(' pushq %rax # replace                   ', 0, 0, rgnull, rgnull, nil); 
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
           wrtins40(' movq %rax,@l(%1) # store qword         ', q, p, r1, rgnull, nil);
-        end;
-
-        {rev}
-        254: begin parpq;
-          frereg := allreg-[rgrax];
-          getreg(r1, frereg); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins40(' movq @l(%1),%1 # fetch local qword     ', q, p, r1, rgnull, nil);
-          wrtins40(' pushq %1 # put exception vector        ', 0, 0, r1, rgnull, nil);
         end;
 
         {mst}

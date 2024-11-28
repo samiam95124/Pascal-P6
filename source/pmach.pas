@@ -2608,8 +2608,7 @@ begin
 
     0   (*lodi*): begin getp; getq; pshint(getint(getadr(mp-p*ptrsize)+q)) end;
     193 (*lodx*): begin getp; getq; pshint(getbyt(getadr(mp-p*ptrsize)+q)) end;
-    105,
-    254 (*loda,rev*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
+    105 (*loda*): begin getp; getq; pshadr(getadr(getadr(mp-p*ptrsize)+q)) end;
     106 (*lodr*): begin getp; getq; pshrel(getrel(getadr(mp-p*ptrsize)+ q)) end;
     107 (*lods*): begin getp; getq; getset(getadr(mp-p*ptrsize)+q, s1); pshset(s1) end;
     108 (*lodb*): begin getp; getq; pshint(ord(getbol(getadr(mp-p*ptrsize)+q))) end;
@@ -3290,7 +3289,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 254,
     255: errorv(InvalidInstruction)
 
   end

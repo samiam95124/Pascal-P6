@@ -186,7 +186,7 @@ const
    recal      = stackal;
    maxaddr    = pmmaxint;
    maxsp      = 85;   { number of standard procedures/functions }
-   maxins     = 130;  { maximum number of instructions }
+   maxins     = 129;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
@@ -3327,7 +3327,6 @@ begin cmdpos := maxcmd end;
       127: write(prr, 'Copy length from complex pointer');
       128: write(prr, 'Store structured value from stack');
       129: write(prr, 'Store exception vector');
-      130: write(prr, 'Retore exception vector');
     end
   end;
 
@@ -3668,7 +3667,7 @@ begin cmdpos := maxcmd end;
             mes(0)
           end;
           45,50,54,56,74,62,63,81,82,96,97,102,104,109,112,115,116,117,124,128,
-          129,130:
+          129:
             begin
               write(prr,' ':5); par2(fp1, fp2);
               if fop = 116 then mesl(-fp2)
@@ -9107,7 +9106,6 @@ begin cmdpos := maxcmd end;
           insymbol; statement(fsys+[elsesy]); sublvl;
           genujpxjpcal(57(*ujp*),endlbl)
         end;
-        gen2(130(*rev*),level,vecadr);
         gen0(86(*mse*));
         prtlabel(noexplbl); writeln(prr);
         markline;
@@ -10322,7 +10320,7 @@ begin cmdpos := maxcmd end;
       mn[116] :='cpp'; mn[117] :='cpr'; mn[118] :='lsa'; mn[119] :='wbs';
       mn[120] :='wbe'; mn[121] :='sfr'; mn[122] :='cuf'; mn[123] :='cif';
       mn[124] :='mpc'; mn[125] :='cvf'; mn[126] :='lsp'; mn[127] :='cpl';
-      mn[128] :='sfs'; mn[129] :='sev'; mn[130] :='rev';
+      mn[128] :='sfs'; mn[129] :='sev';
 
     end (*instrmnemonics*) ;
 
@@ -10460,7 +10458,6 @@ begin cmdpos := maxcmd end;
       cdx[124] := 0;                    cdx[125] := 0;
       cdx[126] := -adrsize;             cdx[127] := -intsize;
       cdx[128] := 0;                    cdx[129] := 0;
-      cdx[130] := 0;
 
       { secondary table order is i, r, b, c, a, s, m }
       cdxs[1][1] := +(adrsize+intsize);  { stoi }
