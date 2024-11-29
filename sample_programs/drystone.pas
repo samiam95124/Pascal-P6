@@ -1,4 +1,3 @@
-(*$l-*)
 { [saf] This program was obtained from
   http://www.netlib.org/benchmark/dhry-pascal. It only has the credits listed. }
 (*

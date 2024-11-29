@@ -1,4 +1,3 @@
-(*$l-*)
 { [saf] This program obtained from http://www.fourmilab.ch/fbench/. It is
   documented extensively in http://www.fourmilab.ch/fbench/fbench.html.
   It was coded by Mr. John Walker. }

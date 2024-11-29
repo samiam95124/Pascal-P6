@@ -1,4 +1,4 @@
-{$l-,s+}
+{$s+}
 PROGRAM startrek(input, output);
 
 label 99;
