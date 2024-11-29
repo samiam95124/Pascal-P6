@@ -27,7 +27,7 @@ function checkexists {
 #
 # Set default variables
 #
-compiler="iso7185"
+compiler="pascaline"
 bits="64"
 host="linux"
 
@@ -79,30 +79,12 @@ do
     if [ $var = "--help" ]
     then
 
-        echo "Configure program for Pascal-p6"
+        echo "Configure host for Pascal-p6"
         echo
-        echo "--gpc:       Select GPC as target compiler"
-        echo "--ip_pascal: Select IP Pascal as target compiler"
-        echo "--iso7185:   Select ISO7185 self compile as target compiler"
         echo "--32:        Select 32 bit target"
         echo "--64:        Select 64 bit target"
         echo
         exit 0
-
-    elif [ $var = "--gpc" ]
-    then
-
-        compiler="gpc"
-
-    elif [ $var = "--ip_pascal" ]
-    then
-
-        compiler="ip_pascal"
-
-    elif [ $var = "--iso7185" ]
-    then
-
-        compiler="iso7185"
 
     elif [ $var = "--32" ]
     then
@@ -119,114 +101,28 @@ do
 done
 
 #
-# Process fixups for individual compilers
+# Set up for chosen Pascal compiler combination
 #
-if [ $compiler != "iso7185" ]
-then
+echo "Set up for $compiler"
+cp hosts/$compiler/bit$bits/p6.bat bin/p6.bat
+cp hosts/$compiler/compile.bat     bin/compile.bat
+cp hosts/$compiler/run.bat         bin/run.bat
 
-    checkexists $compiler
-    if [[ $rc != 0 ]] ; then
-        compiler=""
-        # fatal this for now
-        exit 1
-    fi
+cp hosts/$compiler/bit$bits/p6     bin/p6
+cp hosts/$compiler/compile         bin/compile
+cp hosts/$compiler/run             bin/run
+cp hosts/$compiler/testp2          bin/testp2
 
-fi
+cp hosts/$compiler/bit$bits/Makefile    .
 
-if [ $compiler = "gpc" ]
-then    gpc -v 2> temp
-    grep "gpc version 20070904" temp > /dev/null
-    rc=$?
-    if [[ $rc != 0 ]] ; then
-
-        echo "*** Warning, Pascal-p6 is only validated to work with gpc version 20070904"
-
-    fi
-    grep "build=x86_64" temp > /dev/null
-    rc=$?
-    if [[ $rc == 0 ]] ; then
-
-        bits="64"
-
-    fi
-
-fi
-
-#
-# Configure for specific compiler
-#
-if [ $compiler = "ip_pascal" ] || [ $compiler = "IP_Pascal" ]
-then
-
-   #
-   # Set up for IP Pascal
-   #
-   echo "Set up for IP Pascal"
-   cp hosts/ip_pascal/p6.bat      bin/p6.bat
-   cp hosts/ip_pascal/compile.bat bin/compile.bat
-   cp hosts/ip_pascal/run.bat     bin/run.bat
-
-   cp hosts/ip_pascal/p6          bin/p6
-   cp hosts/ip_pascal/compile     bin/compile
-   cp hosts/ip_pascal/run         bin/run
-
-   cp hosts/ip_pascal/Makefile    .
-
-   cp hosts/ip_pascal/standard_tests/iso7185pat.cmp standard_tests
-   cp hosts/ip_pascal/standard_tests/iso7185pats.cmp standard_tests
-
-   #
-   # IP Pascal does not care about line endings, but returning to DOS mode
-   # line endings normalizes the files for SVN checkin.
-   #
-   #unixeol
-
-elif [ $compiler = "gpc" ] || [ $compiler = "iso7185" ]
-then
-
-   #
-   # Set up for chosen Pascal compiler
-   #
-   echo "Set up for $compiler"
-   cp hosts/$compiler/bit$bits/p6.bat bin/p6.bat
-   cp hosts/$compiler/compile.bat     bin/compile.bat
-   cp hosts/$compiler/run.bat         bin/run.bat
-
-   cp hosts/$compiler/bit$bits/p6     bin/p6
-   cp hosts/$compiler/compile         bin/compile
-   cp hosts/$compiler/run             bin/run
-   cp hosts/$compiler/testp2          bin/testp2
-
-   cp hosts/$compiler/bit$bits/Makefile    .
-
-   cp hosts/$compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
-   cp hosts/$compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
-   cp hosts/$compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
+cp hosts/$compiler/bit$bits/standard_tests/iso7185pat.cmp standard_tests
+cp hosts/$compiler/bit$bits/standard_tests/iso7185patc.cmp standard_tests
+cp hosts/$compiler/bit$bits/standard_tests/iso7185pats.cmp standard_tests
    
-   cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
-   cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
+cp hosts/$compiler/bit$bits/p4/standardp.cmp p4
+cp hosts/$compiler/bit$bits/p4/standardpc.cmp p4
 
-   cp hosts/$compiler/linux_X86/* bin
-
-   #
-   # GPC has been problematic for line endings. This changes them
-   # all to Unix mode for GPC compiles, which at this moment is
-   # all there is. GPC for Windows has serious problems.
-   #
-   #unixeol
-
-else
-
-   #
-   # No compiler name found!
-   #
-   echo "*** Compiler name does not match currently implemented"
-   echo "*** compilers"
-   echo
-   echo "IP Pascal  - use \"ip_pascal\""
-   echo "GPC Pascal - use \"GPC\""
-
-fi
+cp hosts/$compiler/linux_X86/* bin
 
 echo "Bit length $bits"
 
