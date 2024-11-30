@@ -1390,6 +1390,12 @@ begin cmdpos := maxcmd end;
       i: lininx;
   begin
     ovf := false;
+    if (errinx > 0) and not list then begin
+      { if error present, and no list, print line before getting the next one }
+      write(linecount:6,'  ':2);
+      if dp then write(lc:7) else write(ic:7);
+      writeln(' ', srclin:srclen)
+    end;
     srclen := 0; srcinx := 1; for i := 1 to maxlin do srclin[i] := ' ';
     if not fileeof then begin
       while not fileeoln do begin
