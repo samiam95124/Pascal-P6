@@ -461,6 +461,11 @@ type
        off: stkoff; { stack offset }
        len: addrrange { length }
      end;
+     errptr = ^errlin;
+     errlin = record { line error tracking }
+       next: errptr; { next entry }
+       errlin: integer; { line number }
+     end;
 
 (*-------------------------------------------------------------------------*)
 
@@ -620,6 +625,7 @@ var
     intlabel,mxint10,maxpow10: integer;
     entname,extname,nxtname: integer;
     errtbl: array [1..maxftl] of integer; { error occurence tracking }
+    errltb: array [1..maxftl] of errptr; { error line tracking }
     toterr: integer; { total errors in program }
     topnew, topmin: integer;
     cstptr: array [1..cstoccmax] of csp;
@@ -663,6 +669,7 @@ var
     f: boolean; { flag for if error number list entries were printed }
     i: 1..maxftl; { index for error number tracking array }
     oi: 1..maxopt; oni: optinx;
+    ep: errptr; { error line pointer }
 
 (*-------------------------------------------------------------------------*)
 
@@ -1776,6 +1783,7 @@ begin cmdpos := maxcmd end;
   end;
 
   procedure error(ferrnr: integer);
+  var ep: errptr;
   begin
     if not incact then begin { supress errors in includes }
 
@@ -1787,6 +1795,9 @@ begin cmdpos := maxcmd end;
 #endif
 
       errtbl[ferrnr] := errtbl[ferrnr]+1; { track this error }
+      { track error lines }
+      new(ep); ep^.errlin := linecount; ep^.next := errltb[ferrnr];
+      errltb[ferrnr] := ep;
       if errinx >= 9 then
         begin errlist[10].nmr := 255; errinx := 10 end
       else
@@ -10668,7 +10679,11 @@ begin
       writeln('-------------------------');
       f := false
     end;
-    write(i:3, ' ', errtbl[i]:3, ' '); errmsg(i); writeln
+    write(i:3, ' ', errtbl[i]:3, ' '); ep := errltb[i];
+    while ep <> nil do begin write(ep^.errlin:1); ep := ep^.next;
+      if ep <> nil then write(',');
+    end;
+    write(' '); errmsg(i); writeln
   end;
   if not f then writeln;
 
