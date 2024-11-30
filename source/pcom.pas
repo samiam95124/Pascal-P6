@@ -10149,6 +10149,7 @@ begin cmdpos := maxcmd end;
     tmpfre := nil; { clear temps free list }
 
     for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
+    for i := 1 to maxftl do errltb[i] := nil;
     toterr := 0; { clear error count }
     { clear the recycling tracking counters }
     strcnt := 0; { strings }
