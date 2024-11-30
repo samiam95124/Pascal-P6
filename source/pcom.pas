@@ -669,7 +669,7 @@ var
     f: boolean; { flag for if error number list entries were printed }
     i: 1..maxftl; { index for error number tracking array }
     oi: 1..maxopt; oni: optinx;
-    ep: errptr; { error line pointer }
+    ep, epl: errptr; { error line pointers }
 
 (*-------------------------------------------------------------------------*)
 
@@ -10680,7 +10680,12 @@ begin
       writeln('-------------------------');
       f := false
     end;
-    write(i:3, ' ', errtbl[i]:3, ' '); ep := errltb[i];
+    write(i:3, ' ', errtbl[i]:3, ' '); 
+    epl := nil; 
+    while errltb[i] <> nil do begin ep := errltb[i]; errltb[i] := ep^.next; 
+      ep^.next := epl; epl := ep 
+    end;
+    ep := epl;
     while ep <> nil do begin write(ep^.errlin:1); ep := ep^.next;
       if ep <> nil then write(',');
     end;
