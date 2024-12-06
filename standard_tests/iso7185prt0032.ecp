@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -25,8 +25,8 @@ Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  2   1 Identifier expected
-  5   1 ':' expected
-  6   1 Illegal symbol
- 10   1 Error in type
+  2   1 9 Identifier expected
+  5   1 9 ':' expected
+  6   1 9 Illegal symbol
+ 10   1 9 Error in type
 

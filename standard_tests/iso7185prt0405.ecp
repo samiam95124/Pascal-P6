@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -29,9 +29,9 @@ Errors in program: 5
 
 Error numbers in listing:
 -------------------------
- 10   1 Error in type
- 30   1 '..' expected
- 50   1 Error in constant
-102   1 Low bound exceeds highbound
-107   1 Incompatible subrange types
+ 10   1 9 Error in type
+ 30   1 9 '..' expected
+ 50   1 9 Error in constant
+102   1 9 Low bound exceeds highbound
+107   1 9 Incompatible subrange types
 

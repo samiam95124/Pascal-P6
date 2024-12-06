@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -40,12 +40,12 @@ Errors in program: 11
 
 Error numbers in listing:
 -------------------------
-  4   1 ')' expected
-  5   1 ':' expected
-  6   1 Illegal symbol
-  9   1 '(' expected
- 10   1 Error in type
-104   2 Identifier not declared
-178   3 Multidefined record variant
-200   1 Tagfield constants must cover entire tagfield type
+  4   1 16 ')' expected
+  5   1 16 ':' expected
+  6   1 16 Illegal symbol
+  9   1 15 '(' expected
+ 10   1 16 Error in type
+104   2 15,15 Identifier not declared
+178   3 15,15,15 Multidefined record variant
+200   1 16 Tagfield constants must cover entire tagfield type
 

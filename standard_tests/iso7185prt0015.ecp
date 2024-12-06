@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -26,6 +26,6 @@ Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-168   1 Undefined label
-397   1 Feature not valid in ISO 7185 Pascal
+168   1 12 Undefined label
+397   1 9 Feature not valid in ISO 7185 Pascal
 

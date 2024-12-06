@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -30,5 +30,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-129   1 Type conflict of operands
+129   1 20 Type conflict of operands
 

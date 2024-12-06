@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -29,8 +29,8 @@ Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  6   1 Illegal symbol
- 10   1 Error in type
-138   1 Type of variable is not array
-287   1 Variable reference is not addressable
+  6   1 9 Illegal symbol
+ 10   1 9 Error in type
+138   1 13 Type of variable is not array
+287   1 13 Variable reference is not addressable
 

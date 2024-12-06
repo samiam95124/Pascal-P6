@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -33,7 +33,7 @@ Errors in program: 4
 
 Error numbers in listing:
 -------------------------
-  5   1 ':' expected
-  7   2 Error in parameter list
-277   1 No overload found to match parameter
+  5   1 9 ':' expected
+  7   2 9,9 Error in parameter list
+277   1 16 No overload found to match parameter
 

@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -32,5 +32,5 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-143   1 Illegal type of loop control variable
+143   1 16 Illegal type of loop control variable
 

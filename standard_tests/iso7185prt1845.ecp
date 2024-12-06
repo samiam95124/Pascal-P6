@@ -1,4 +1,4 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
@@ -50,6 +50,6 @@ Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-167   1 Undeclared label
-168   2 Undefined label
+167   1 22 Undeclared label
+168   2 26,32 Undefined label
 
