@@ -3389,8 +3389,11 @@ procedure xlate;
                        '12345678901234567890123456789012345678901234567890123456789012345678901234567890' }
             {lodi,loda}
             0,105: begin
+              if ep^.p <> blkstk^.lvl then begin
               wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins40(' movq @l(%1),%1 # fetch local qword     ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
+                wrtins40(' movq @l(%1),%1 # fetch local qword     ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
+              end else
+                wrtins40(' movq @l(%rbp),%1 # fetch local qword   ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
             end;
 
             {lodx,lodb,lodc}
