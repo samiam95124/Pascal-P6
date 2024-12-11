@@ -2534,7 +2534,7 @@ procedure xlate;
           {lodr}
           106: begin ep^.r1 := r1;
             if ep^.r1 = rgnull then getfreg(ep^.r1, rf);
-            getreg(ep^.t1, rf)
+            if ep^.p <> blkstk^.lvl then getreg(ep^.t1, rf)
           end;
 
           {lods}
@@ -3390,7 +3390,7 @@ procedure xlate;
             {lodi,loda}
             0,105: begin
               if ep^.p <> blkstk^.lvl then begin
-              wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
+                wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
                 wrtins40(' movq @l(%1),%1 # fetch local qword     ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
               end else
                 wrtins40(' movq @l(%rbp),%1 # fetch local qword   ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
@@ -3398,14 +3398,20 @@ procedure xlate;
 
             {lodx,lodb,lodc}
             193,108,109: begin
-              wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins40(' movzx @l(%1),%1 # fetch local byte     ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
+              if ep^.p <> blkstk^.lvl then begin
+                wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
+                wrtins40(' movzx @l(%1),%1 # fetch local byte     ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
+              end else
+                wrtins40(' movzx @l(%rbp),%1 # fetch local byte   ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
             end;
 
             {lodr}
             106: begin
-              wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins40(' movsd @l(%1),%2 # fetch local real     ', ep^.q, ep^.p, ep^.t1, ep^.r1, nil)
+              if ep^.p <> blkstk^.lvl then begin
+                wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
+                wrtins40(' movsd @l(%1),%2 # fetch local real     ', ep^.q, ep^.p, ep^.t1, ep^.r1, nil)
+              end else
+                wrtins40(' movsd @l(%rbp),%1 # fetch local real   ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
             end;
 
             {lods}
@@ -3422,8 +3428,11 @@ procedure xlate;
 
             {lda}
             4: begin
-              wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
-              wrtins30(' lea @l(%1),%1 # index local  ', ep^.q, 0, ep^.r1, rgnull, nil);
+              if ep^.p <> blkstk^.lvl then begin
+                wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.r1, rgnull, nil);
+                wrtins30(' lea @l(%1),%1 # index local  ', ep^.q, 0, ep^.r1, rgnull, nil)
+              end else
+                wrtins30(' lea @l(%rbp),%1 # index local', ep^.q, 0, ep^.r1, rgnull, nil)
             end;
 
             {adi}
