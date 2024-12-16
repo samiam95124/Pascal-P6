@@ -3416,8 +3416,11 @@ procedure xlate;
 
             {lods}
             107: begin
-              wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
-              wrtins40(' lea @l(%rsi),%rsi # index local set    ', ep^.q, ep^.p, ep^.r1, rgnull, nil);
+              if ep^.p <> blkstk^.lvl then begin
+                wrtins50(' movq ^0(%rbp),%rsi # get display pointer         ', ep^.q1, 0, rgnull, rgnull, nil);
+                wrtins40(' lea @l(%rsi),%rsi # index local set    ', ep^.q, ep^.p, rgnull, rgnull, nil)
+              end else
+                wrtins40(' lea @l(%rbp),%rsi # index local set    ', ep^.q, ep^.p, rgnull, rgnull, nil);
               wrtins50(' leaq ^-@s^0(%rbp),%rdi # index destination temp  ', ep^.r1a, 0, rgnull, rgnull, lclspc);
               wrtins20(' movsq # move       ', 0, 0, rgnull, rgnull, nil);
               wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
