@@ -5011,33 +5011,43 @@ procedure xlate;
         {stri,stra}
         2,70: begin parpq;
           frereg := allreg;
-          popstk(ep); attach(ep); getreg(r1, frereg); assreg(ep, frereg, rgnull, rgnull); 
+          popstk(ep); attach(ep); if p <> blkstk^.lvl then getreg(r1, frereg); 
+          assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          if p <> blkstk^.lvl then begin
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movq %1,@l(%2) # store qword ', q, p, ep^.r1, r1, nil);
+            wrtins30(' movq %1,@l(%2) # store qword ', q, p, ep^.r1, r1, nil)
+          end else 
+            wrtins40(' movq %1,@l(%rbp) # store qword         ', q, p, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
         {strx,strb,strc} 
         195,73,74: begin parpq;
-          frereg := allreg; getreg(r1, frereg);
+          frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          if p <> blkstk^.lvl then begin
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movb %1l,@l(%2) # store byte ', q, p, ep^.r1, r1, nil);
+            wrtins30(' movb %1l,@l(%2) # store byte ', q, p, ep^.r1, r1, nil)
+          end else
+            wrtins40(' movb %1l,@l(%rbp) # store byte         ', q, p, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
         {strr}
         71: begin parpq;
-          frereg := allreg; getreg(r1, frereg);
+          frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          if p <> blkstk^.lvl then begin
           wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins30(' movsd %1,@l(%2) # store real ', q, p, ep^.r1, r1, nil);
+            wrtins30(' movsd %1,@l(%2) # store real ', q, p, ep^.r1, r1, nil)
+          end else
+            wrtins40(' movsd %1,@l(%rbp) # store real         ', q, p, ep^.r1, rgnull, nil);
           deltre(ep)
         end;
 
