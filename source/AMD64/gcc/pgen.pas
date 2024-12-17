@@ -5059,7 +5059,10 @@ procedure xlate;
           frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull); 
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins50(' movq ^0(%rbp),%rdi # get display pointer         ', -p*ptrsize, 0, ep^.t1, rgnull, nil);
+          if p <> blkstk^.lvl then
+            wrtins50(' movq ^0(%rbp),%rdi # get display pointer         ', -p*ptrsize, 0, rgnull, rgnull, nil)
+          else
+            wrtins40(' movq %rbp,%rdi # get display pointer   ', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins40(' leaq @l(%rdi),%rdi # index destination ', q, p, rgnull, rgnull, nil);
           wrtins20(' movsq # move set   ', 0, 0, rgnull, rgnull, nil);
           wrtins10(' movsq    ', 0, 0, rgnull, rgnull, nil);
