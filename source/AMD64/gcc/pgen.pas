@@ -5024,7 +5024,7 @@ procedure xlate;
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           if p <> blkstk^.lvl then begin
-          wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
+            wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
             wrtins30(' movq %1,@l(%2) # store qword ', q, p, ep^.r1, r1, nil)
           end else 
             wrtins40(' movq %1,@l(%rbp) # store qword         ', q, p, ep^.r1, rgnull, nil);
@@ -5083,8 +5083,11 @@ procedure xlate;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins40(' popq %rax # get exception vector       ', 0, 0, rgnull, rgnull, nil); 
           wrtins40(' pushq %rax # replace                   ', 0, 0, rgnull, rgnull, nil); 
-          wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
-          wrtins40(' movq %rax,@l(%1) # store qword         ', q, p, r1, rgnull, nil);
+          if p <> blkstk^.lvl then begin
+            wrtins40(' movq ^0(%rbp),%1 # get display pointer ', -p*ptrsize, 0, r1, rgnull, nil);
+            wrtins40(' movq %rax,@l(%1) # store qword         ', q, p, r1, rgnull, nil)
+          end else
+            wrtins40(' movq %rax,@l(%rbp) # store qword       ', q, p, rgnull, rgnull, nil)
         end;
 
         {mst}
