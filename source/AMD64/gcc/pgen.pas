@@ -3490,9 +3490,14 @@ procedure xlate;
             end;
 
             120{lip}: begin 
-              wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
-              wrtins50(' movq @l+ptrsize(%2),%1 # load frame pointer      ', ep^.q, ep^.p, ep^.r2, ep^.t1, nil);
-              wrtins40(' movq @l(%2),%1 # load procedure address', ep^.q, ep^.p, ep^.r1, ep^.t1, nil)
+              if ep^.p <> blkstk^.lvl then begin
+                wrtins40(' movq ^0(%rbp),%1 # get display pointer ', ep^.q1, 0, ep^.t1, rgnull, nil);
+                wrtins50(' movq @l+ptrsize(%2),%1 # load frame pointer      ', ep^.q, ep^.p, ep^.r2, ep^.t1, nil);
+                wrtins40(' movq @l(%2),%1 # load procedure address', ep^.q, ep^.p, ep^.r1, ep^.t1, nil)
+              end else begin
+                wrtins50(' movq @l+ptrsize(%rbp),%1 # load frame pointer    ', ep^.q, ep^.p, ep^.r2, rgnull, nil);
+                wrtins50(' movq @l(%rbp),%1 # load procedure address        ', ep^.q, ep^.p, ep^.r1, rgnull, nil)
+              end
             end;  
 
             {equm,neqm,geqm,gtrm,leqm,lesm}
