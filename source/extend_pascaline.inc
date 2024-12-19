@@ -146,6 +146,33 @@ begin
   until bufcommand <> '-'
 end;
 
+procedure parhdrfil(var f: text);
+const maxfil = 200;
+var name: packed array [1..maxfil] of char;
+procedure getname;
+var i: 1..maxfil;
+begin
+  for i := 1 to maxfil do name[i] := ' ';
+  i := 1;
+  while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
+  if (bufcommand <> '-') and not eolncommand and not eofcommand then
+    while not eolncommand and not eofcommand and (bufcommand <> ' ') do begin
+    if i = maxfil then begin
+      writeln('*** Filename too long');
+      halt
+    end;
+    name[i] := bufcommand; getcommand; i := i+1
+  end
+end;
+begin
+  getname; 
+  if name[1] <> ' ' then assign(f, name)
+  else begin
+    writeln('*** No name provided for file');
+    halt
+  end
+end;
+
 procedure capture;
 begin
 end;

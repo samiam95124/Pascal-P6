@@ -119,7 +119,11 @@
 #define ISO7185_PASCAL
 #endif
 
-program pcom(output,prd,prr,command);
+program pcom(output,
+#ifndef NOHEADER
+  prd,prr,
+#endif
+command);
 
 label 99; { terminate immediately }
 
@@ -10617,7 +10621,14 @@ begin
   { get command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
-  paroptions; { load command line options }
+#ifdef NOHEADER
+  paroptions; { parse command line options }
+  { parse header files }
+  parhdrfil(prd);
+  paroptions; { parse command line options }
+  parhdrfil(prr);
+#endif
+  paroptions; { parse command line options }
   plcopt; { place options in flags }
 
   (*compile:*)
