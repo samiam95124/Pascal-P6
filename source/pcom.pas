@@ -470,6 +470,7 @@ type
        next: errptr; { next entry }
        errlin: integer; { line number }
      end;
+     filext = packed array [1..4] of char; { filename extension }
 
 (*-------------------------------------------------------------------------*)
 
@@ -10627,13 +10628,13 @@ begin
 #ifdef NOHEADER
   paroptions; { parse command line options }
   { parse header files }
-  parhdrfil(prd, prdval);
+  parhdrfil(prd, prdval, '.pas');
   if not prdval then begin
     writeln('*** Error: input filename not found');
     goto 99
   end;
   paroptions; { parse command line options }
-  parhdrfil(prr, prrval);
+  parhdrfil(prr, prrval, '.p6 ');
   { if no output file exists, turn off output listing }
   if not prrval then prcode := false;
 #endif

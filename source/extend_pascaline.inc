@@ -146,9 +146,9 @@ begin
   until bufcommand <> '-'
 end;
 
-procedure parhdrfil(var f: text; var wasproc: boolean);
+procedure parhdrfil(var f: text; var wasproc: boolean; e: filext);
 const maxfil = 200;
-var name: packed array [1..maxfil] of char;
+var name: packed array [1..maxfil] of char; i: 1..maxfil; el: 0..maxfil;
 procedure getname;
 var i: 1..maxfil;
 begin
@@ -167,7 +167,21 @@ end;
 begin
   wasproc := false;
   getname; 
-  if name[1] <> ' ' then begin assign(f, name); wasproc := true end
+  if name[1] <> ' ' then begin 
+    el := 0;
+    for i := 1 to maxfil do if name[i] = '.' then el := i;
+    if el = 0 then begin
+      el := maxfil;
+      while (name[el] = ' ') and (el > 1) do el := el-1;
+      if (name[el] <> ' ') and (el < maxfil) then el := el+1;
+      if el+4 > maxfil then begin
+        writeln('*** Filename too long');
+        halt
+      end;
+      if el > 0 then for i := 1 to 4 do name[el+i-1] := e[i]
+    end;
+    assign(f, name); wasproc := true 
+  end
 end;
 
 procedure capture;

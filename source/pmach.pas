@@ -486,6 +486,7 @@ type
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
       optinx      = 1..optlen;
       optstr      = packed array [optinx] of char;
+      filext      = packed array [1..4] of char; { filename extension }
 
 var   pc          : address;   (*program address register*)
       pctop       : address;   { top of code store }

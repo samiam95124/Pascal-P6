@@ -544,6 +544,7 @@ type
                 dchs, dcti, dcnti, dctr, dcntr, dcts, dcnts, dcspf, dcnspf,dcic,
                 dcnic, dcan, dcnan, dcps, dcr, dcq, dcso, dcsso, dcsio, dcsiso,
                 dcret, dchelp, dch, dclistline, dcdumpsymbo);
+      filext = packed array [1..4] of char; { filename extension }
 
 var   pc, pcs     : address;   (*program address register*)
       pctop,lsttop: address;   { top of code store }
