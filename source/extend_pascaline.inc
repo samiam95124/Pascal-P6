@@ -146,7 +146,7 @@ begin
   until bufcommand <> '-'
 end;
 
-procedure parhdrfil(var f: text);
+procedure parhdrfil(var f: text; var wasproc: boolean);
 const maxfil = 200;
 var name: packed array [1..maxfil] of char;
 procedure getname;
@@ -165,12 +165,9 @@ begin
   end
 end;
 begin
+  wasproc := false;
   getname; 
-  if name[1] <> ' ' then assign(f, name)
-  else begin
-    writeln('*** No name provided for file');
-    halt
-  end
+  if name[1] <> ' ' then begin assign(f, name); wasproc := true end
 end;
 
 procedure capture;

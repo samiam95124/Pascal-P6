@@ -481,6 +481,9 @@ var
     prr: text;                      { output code file }
 #endif
 
+    prdval: boolean;                { input source file parsed }
+    prrval: boolean;                { output source file parsed }
+
                                     (*returned by source program scanner
                                      insymbol:
                                      **********)
@@ -1931,7 +1934,7 @@ begin cmdpos := maxcmd end;
         if (optst = opts[oi]) or (optst = optsl[oi]) then case oi of
           1:  switch(dummy);
           2:  switch(doprtlab);
-          3:  switch(prcode);
+          3:  if prrval then switch(prcode);
           4:  switch(debug);
           5:  switch(dummy);
           6:  switch(dummy);
@@ -10624,9 +10627,15 @@ begin
 #ifdef NOHEADER
   paroptions; { parse command line options }
   { parse header files }
-  parhdrfil(prd);
+  parhdrfil(prd, prdval);
+  if not prdval then begin
+    writeln('*** Error: input filename not found');
+    goto 99
+  end;
   paroptions; { parse command line options }
-  parhdrfil(prr);
+  parhdrfil(prr, prrval);
+  { if no output file exists, turn off output listing }
+  if not prrval then prcode := false;
 #endif
   paroptions; { parse command line options }
   plcopt; { place options in flags }
