@@ -153,11 +153,11 @@ if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
     echo "o e+" > temp
-    cat temp $progfile.p6 > temp2
-    pint temp2 $progfile.p6o > temp
+    cat temp $progfile.p6 > temp2.p6
+    pint temp2.p6 $progfile.p6o > temp
     cat $progfile.p6o $progfile.dat > temp
     pmach temp $progfile.out $options < $progfile.inp &> $progfile.lst
-    rm temp temp2
+    rm temp temp2.p6
     
 elif [ "$cmach" = "1" ]; then
 
@@ -179,10 +179,10 @@ elif [ "$pgen" = "1" ]; then
 else
 
 	echo Running with pint
-    cat $progfile.p6 $progfile.dat > temp
+    cat $progfile.p6 $progfile.dat > temp.p6
     #echo "Will execute: pint temp $progfile.out $options < $progfile.inp &> $progfile.lst"
-    pint temp $progfile.out $options < $progfile.inp &> $progfile.lst
-    rm temp
+    pint temp.p6 $progfile.out $options < $progfile.inp &> $progfile.lst
+    rm temp.p6
     
 fi
 
