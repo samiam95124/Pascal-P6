@@ -182,7 +182,10 @@
 #define ISO7185_PASCAL
 #endif
 
-program pmach(input,output,prd,prr
+program pmach(input,output
+#ifndef NOHEADER
+,prd,prr
+#endif
 #ifdef PASCALINE
               ,command
 #endif
@@ -576,6 +579,8 @@ var   pc          : address;   (*program address register*)
       extvecbase  : integer; { base of external vectors }
       exitcode    : integer; { exit code for program }
       breakflag   : boolean; { user break signaled }
+      prdval      : boolean; { input source file parsed }
+      prrval      : boolean; { output source file parsed }
       
       i           : integer;
       bai         : integer;
@@ -3394,6 +3399,21 @@ begin (* main *)
   { get the command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
+#ifdef NOHEADER
+  paroptions; { parse command line options }
+  { parse header files }
+  parhdrfil(prd, prdval, '.p6o');
+  if not prdval then begin
+    writeln('*** Error: input filename not found');
+    goto 99
+  end;
+  paroptions; { parse command line options }
+  parhdrfil(prr, prrval, '.out');
+  if not prdval then begin
+    writeln('*** Error: output filename not found');
+    goto 99
+  end;
+#endif
   { load command line options }
   paroptions;
   plcopt; { place options }
