@@ -1138,10 +1138,6 @@ begin cmdpos := maxcmd end;
 
 { Language extension routines }
 
-#ifdef GNU_PASCAL
-#include "extend_gnu_pascal.inc"
-#endif
-
 #ifdef ISO7185_PASCAL
 #include "extend_iso7185_pascal.inc"
 #endif

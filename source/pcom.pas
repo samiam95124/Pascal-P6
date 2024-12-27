@@ -1340,10 +1340,6 @@ begin eolncommand := cmdpos >= cmdlen+1 end;
 procedure readlncommand;
 begin cmdpos := maxcmd end;
 
-#ifdef GNU_PASCAL
-#include "extend_gnu_pascal.inc"
-#endif
-
 #ifdef ISO7185_PASCAL
 #include "extend_iso7185_pascal.inc"
 #endif
