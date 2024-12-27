@@ -277,11 +277,7 @@ const
       parspc      = 16;      { tab spacing to parameters }
       cmtspc      = 40;      { tab spacing to comments }
 
-      { version numbers }
-
-      majorver   = 0; { major version number }
-      minorver   = 4; { minor version number }
-      experiment = true; { is version experimental? }
+#include "version.inc"
 
 type
       { These equates define the instruction layout. I have choosen a 32 bit

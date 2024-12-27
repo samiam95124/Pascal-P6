@@ -212,24 +212,24 @@ fi
 if [ "$pmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > temp2
+	cat temp $progfile.p6 > temp2.p6
     rm temp
-	pint temp2 $progfile.p6o
-    rm temp2
+	pint temp2.p6 $progfile.p6o
+    rm temp2.p6
 	
 elif [ "$cmach" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > temp2
+	cat temp $progfile.p6 > temp2.p6
     rm temp
-	pint temp2 $progfile.p6o
+	pint temp2.p6 $progfile.p6o
 	
 elif [ "$package" = "1" ]; then
 
     echo "o e+" > temp
-	cat temp $progfile.p6 > temp2
+	cat temp $progfile.p6 > temp2.p6
     rm temp
-	pint temp2 $progfile.p6o
+	pint temp2.p6 $progfile.p6o
 	genobj $progfile.p6o program_code.c
 	gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -o $progfile $PASCALP6/source/cmach/cmach.c -lm
 
