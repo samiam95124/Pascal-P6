@@ -105,7 +105,17 @@ const
 
       }
 
-#include <mpb64.inc>
+#ifdef WRDSIZ16
+#include "mpb16.inc"
+#endif
+
+#ifdef WRDSIZ32
+#include "mpb32.inc"
+#endif
+
+#ifdef WRDSIZ64
+#include "mpb64.inc"
+#endif
 
       { internal constants }
 
