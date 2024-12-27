@@ -570,8 +570,6 @@ var   pc, pcs     : address;   (*program address register*)
         np  points to top of the dynamically allocated area*)
       bitmsk      : packed array [0..7] of ibyte; { bits in byte }
       maxdig      : integer; { number of decimal digits in integer }
-      opts: array [1..maxopt] of optstr;
-      optsl: array [1..maxopt] of optstr;
 
       { check flags: these turn on runtime checks }
       dochkovf: boolean; { check arithmetic overflow }
@@ -624,6 +622,8 @@ var   pc, pcs     : address;   (*program address register*)
       srclin      : integer; { current source line executing }
       option      : array [1..maxopt] of boolean; { option array }
       options     : array [1..maxopt] of boolean; { option was set array }
+      opts        : array [1..maxopt] of optstr;
+      optsl       : array [1..maxopt] of optstr;
       cmdlin      : cmdbuf; { command line }
       cmdlen      : cmdnum; { length of command line }
       cmdpos      : cmdinx; { current position in command line }
@@ -2563,7 +2563,7 @@ procedure load;
                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
                       24:; 25:; 26:; 11:; 10:; 18:;
                     end
-                  end;
+                  end else errorl('No valid option found    ');
                   while not eoln(prd) and (ch = ' ') do getnxt
                 until not (ch in ['a'..'z']);
                 getlin

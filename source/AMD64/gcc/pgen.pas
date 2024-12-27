@@ -405,7 +405,8 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       sppar       : array[sctyp] of integer; (*standard functions and procedures
                                                   number of parameters*)
       spkeep      : array[sctyp] of boolean; { keep the file parameter }
-      option      : array ['a'..'z'] of boolean; { option array }
+      option      : array [1..maxopt] of boolean; { option array }
+      options     : array [1..maxopt] of boolean; { option was set array }
       opts        : array [1..maxopt] of optstr;
       optsl       : array [1..maxopt] of optstr;
       csttbl      : cstptr; { constants table }
@@ -420,6 +421,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       (*locally used for interpreting one instruction*)
       ad          : address;
       c1          : char;
+      oi          : 1..maxopt;
 
 procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
 const digmax = 64; { maximum total digits }
@@ -1805,7 +1807,7 @@ procedure xlate;
                  getnxt;
                  while not eoln(prd) and (ch = ' ') do getnxt;
                  repeat
-                   if not (ch in ['a'..'z']) then
+                   if not (ch in ['a'..'z', 'A'..'Z', '_']) then
                      errorl('No valid option found    ');
                    getlab; if snl > optlen then errorl('Option is too long       ');
                    write(prr, sn:snl);
@@ -1815,27 +1817,26 @@ procedure xlate;
                      oi := oi+1;
                    if (os = opts[oi]) or (os = optsl[oi]) then begin
                      ch1 := chr(oi+ord('a')-1);
-                     option[ch1] := true; 
-                     if ch = '-' then option[ch1] := false;
+                     option[oi] := true; 
+                     if ch = '-' then option[oi] := false;
                      if (ch = '-') or (ch = '+') then begin write(prr, ch); getnxt end;
                      write(prr, ' ');
-                     case ch1 of
-                       'd': dodbgchk := option[ch1];
-                       'g': dodmplab := option[ch1];
-                       'h': dosrclin := option[ch1];
-                       'n': dorecycl := option[ch1];
-                       'o': dochkovf := option[ch1];
-                       'p': dochkrpt := option[ch1];
-                       'm': donorecpar := option[ch1];
-                       'q': dochkdef := option[ch1];
-                       's': iso7185  := option[ch1];
-                       'w': dodebug  := option[ch1];
-                       'a': dodbgflt := option[ch1];
-                       'f': dodbgsrc := option[ch1];
-                       'e': dodckout := option[ch1];
-                       'i': dochkvbk := option[ch1];
-                       'b':; 'c':; 'l':; 't':; 'u':; 'v':;
-                       'x':; 'y':; 'z':; 'k':; 'j':; 'r':;
+                     case oi of
+                       7:  dodmplab   := option[oi];
+                       8:  dosrclin   := option[oi];
+                       14: dorecycl   := option[oi];
+                       15: dochkovf   := option[oi];
+                       16: dochkrpt   := option[oi];
+                       13: donorecpar := option[oi];
+                       17: dochkdef   := option[oi];
+                       19: iso7185    := option[oi];
+                       23: dodebug    := option[oi];
+                       1:  dodbgflt   := option[oi];
+                       6:  dodbgsrc   := option[oi];
+                       5:  dodckout   := option[oi];
+                       9:  dochkvbk   := option[oi];
+                       2:; 3:; 4:; 12:; 20:; 21:; 22:;
+                       24:; 25:; 26:; 11:; 10:; 18:;
                      end
                    end else errorl('No valid option found    ');
                    while not eoln(prd) and (ch = ' ') do getnxt
@@ -5918,7 +5919,7 @@ begin (* main *)
 
   csttbl := nil; strnum := 0; realnum := 0; setnum := 0; gblsiz := 0; 
 
-  for c1 := 'a' to 'z' do option[c1] := false;
+  for oi := 1 to maxopt do begin option[oi] := false; options[oi] := false end;
 
   { preset options }
   dochkovf := true;  { check arithmetic overflow }
