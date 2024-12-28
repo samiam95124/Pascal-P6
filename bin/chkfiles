@@ -4,24 +4,24 @@
 #
 
 echo Source files
-cat source/*.pas | md5sum
+cat source/*.pas | sha256sum
 
 echo batch files
 cat bin/chkfiles bin/cmach bin/compile bin/cpcoms bin/cpints bin/diffnole \
 bin/doseol bin/fixeol bin/make_flip bin/p6 bin/regress bin/repo_ready bin/run \
-bin/testprt bin/testp2 bin/testp4 bin/testprog bin/unixeol bin/zipp5 | md5sum
+bin/testprt bin/testp2 bin/testp4 bin/testprog bin/unixeol bin/zipp5 | sha256sum
 
 echo P2 files
-cat p2/*.pas | md5sum
+cat p2/*.pas | sha256sum
 
 echo p4 files
-cat p4/*.pas | md5sum
+cat p4/*.pas | sha256sum
 
 echo Sample program test files
-cat sample_programs/*.pas | md5sum
+cat sample_programs/*.pas | sha256sum
 
 echo standard test files
-cat standard_tests/*.pas | md5sum
+cat standard_tests/*.pas | sha256sum
 
 echo other files
-cat setpath setpath Makefile configure configure | md5sum
+cat setpath setpath Makefile configure configure | sha256sum

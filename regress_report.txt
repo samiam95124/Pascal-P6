@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Fri 27 Dec 2024 11:42:09 PM PST
+Sat 28 Dec 2024 10:42:00 AM PST
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -113,19 +113,19 @@ PRT run
 0 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
-Fri 27 Dec 2024 11:47:55 PM PST
-Files md5sum ***************************************
+Sat 28 Dec 2024 10:47:46 AM PST
+Files sha256sum ***************************************
 Source files
-92659120427151b1178e8d980990dd80  -
+5cd98124ee48da09ccb6e6f5f205f84edcc4db97115620014e6d9d2b0af73f53  -
 batch files
-edc96b8e5dc0769dfb2f95ec7bf80423  -
+0f2b06a6cbd94a57fbbe3dbb04e5173cae40bc774386cc57f060e4f33f7a7e19  -
 P2 files
-d9ae9c9665a20cf4de7a07958b70dbc7  -
+1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
 p4 files
-7fde3a84df157d5f5ac639c9fb342b70  -
+c63ca632ff252538ab56aedcf0cce0493ae9b7932c7dcf18c8b3c4fe8d76f839  -
 Sample program test files
-3fae7c53d8453567b922afcb5a984832  -
+3cffca8b51a0fcbc553ec7fbf49b829073a4350d4acce401306e41b515e88563  -
 standard test files
-ea035337506e9f27c9402c86aaeaa612  -
+85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
 other files
-766f20963968550286f41b08015fdb5f  -
+33d7bfd558532f8cd3813c87f4c98cfb28a85db51ae4f23e2468907b4799c2eb  -

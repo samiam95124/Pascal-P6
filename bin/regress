@@ -328,7 +328,7 @@ fi
 #
 echo ""
 date >> regress_report.txt
-echo "Files md5sum ***************************************" >> regress_report.txt
+echo "Files sha256sum ***************************************" >> regress_report.txt
 chkfiles >> regress_report.txt
 cat regress_report.txt
 echo ""
