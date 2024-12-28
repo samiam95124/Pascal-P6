@@ -1,4 +1,3 @@
-{$s+}
 {*******************************************************************************
 *                                                                              *
 *                           Portable Pascal compiler                           *
@@ -73,9 +72,16 @@
 *                                                                              *
 *******************************************************************************}
 
-program pcode(input,output,prd,prr);
+program pgen(input,output
+#ifndef NOHEADER
+,prd,prr
+#endif
+#ifdef PASCALINE
+              ,command
+#endif
+              );
 
-label 1;
+label 99;
 
 const
 
@@ -112,6 +118,7 @@ const
       maxstr      = maxint;  { maximum size of addressing for program/var }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
+      maxcmd      = 250;     { size of command line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -253,6 +260,7 @@ const
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
+      fillen      = 20000;   { maximum length of filenames }
       lablen      = 20000;   { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
@@ -292,10 +300,15 @@ type
       byte        = 0..255; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
+      filnam      = packed array [1..fillen] of char; { filename strings }
+      cmdinx      = 1..maxcmd; { index for command line buffer }
+      cmdnum      = 0..maxcmd; { length of command line buffer }
+      cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       labbuf      = packed array [1..lablen] of char; { label buffer }
       strbuf      = packed array [1..strlen] of char;
       optinx      = 1..optlen;
       optstr      = packed array [optinx] of char;
+      filext      = packed array [1..4] of char; { filename extension }
       { Here is the variable length string containment to save on space. strings
         are only stored in their length rounded to the nearest 10th. }
       strvsp = ^strvs; { pointer to variable length id string }
@@ -386,6 +399,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       dodckout: boolean; { do output code deck }
       dochkvbk: boolean; { do check VAR blocks }
       dodbgchk: boolean; { do debug checks }
+      doechlin: boolean; { echo input command line }
 
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
@@ -409,6 +423,9 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       options     : array [1..maxopt] of boolean; { option was set array }
       opts        : array [1..maxopt] of optstr;
       optsl       : array [1..maxopt] of optstr;
+      cmdlin      : cmdbuf; { command line }
+      cmdlen      : cmdnum; { length of command line }
+      cmdpos      : cmdinx; { current position in command line }
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
@@ -417,6 +434,8 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       blklst      : pblock; { discard list of symbols blocks }
       level       : integer; { level count of active blocks }
       modnam      : strvsp; { block name }
+      prdval      : boolean; { input source file parsed }
+      prrval      : boolean; { output source file parsed }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -652,7 +671,7 @@ var i: integer; c: char;
 begin i := 1;
   while fl > 0 do begin
     c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
-    if (c = '"') or (c = '\') then write(f, '\'); write(f, c); fl := fl-1;
+    if (c = '"') or (c = '\\') then write(f, '\\'); write(f, c); fl := fl-1;
     if i > varsqt then begin s := s^.next; i := 1 end
   end
 end;
@@ -687,6 +706,65 @@ begin
   l := flc+1;
   flc := l - algn  +  (algn-l) mod algn
 end (*align*);
+
+(*--------------------------------------------------------------------*)
+
+{ Language extension routines }
+
+{ support I/O errors from extension library }
+
+procedure errore(e: integer);
+begin writeln; write('*** I/O error: ');
+  case e of
+    FileDeleteFail:                     writeln('File delete fail');
+    FileNameChangeFail:                 writeln('File name change fail');
+    CommandLineTooLong:                 writeln('Command line too long');
+    FunctionNotImplemented:             writeln('Function not implemented');
+  end;
+  goto 99
+end;
+
+{ "fileofy" routines for command line processing.
+
+  These routines implement the command header file by reading from a
+  buffer where the command line is stored. The assumption here is that
+  there is a fairly simple call to retrieve the command line.
+
+  If it is wanted, the command file primitives can be used to implement
+  another type of interface, say, reading from an actual file.
+
+  The command buffer is designed to never be completely full.
+  The last two locations indicate:
+
+  maxcmd: end of file
+  maxcmd-1: end of line
+
+  These locations are always left as space, thus eoln returns space as
+  the standard specifies.
+}
+
+function bufcommand: char;
+begin bufcommand := cmdlin[cmdpos] end;
+
+procedure getcommand;
+begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
+
+function eofcommand: boolean;
+begin eofcommand := cmdpos > cmdlen+1 end;
+
+function eolncommand: boolean;
+begin eolncommand := cmdpos >= cmdlen+1 end;
+
+procedure readlncommand;
+begin cmdpos := maxcmd end;
+
+#ifdef ISO7185_PASCAL
+#include "extend_iso7185_pascal.inc"
+#endif
+
+#ifdef PASCALINE
+#include "extend_pascaline.inc"
+#endif
 
 (*--------------------------------------------------------------------*)
 
@@ -1236,7 +1314,7 @@ procedure xlate;
    procedure errorl(string: beta); (*error in loading*)
    begin writeln;
       writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', string);
-      goto 1
+      goto 99
    end; (*errorl*)
 
    procedure dmplabs; { dump label table }
@@ -1824,6 +1902,7 @@ procedure xlate;
                      case oi of
                        7:  dodmplab   := option[oi];
                        8:  dosrclin   := option[oi];
+                       11: doechlin   := option[oi];
                        14: dorecycl   := option[oi];
                        15: dochkovf   := option[oi];
                        16: dochkrpt   := option[oi];
@@ -1836,7 +1915,7 @@ procedure xlate;
                        5:  dodckout   := option[oi];
                        9:  dochkvbk   := option[oi];
                        2:; 3:; 4:; 12:; 20:; 21:; 22:;
-                       24:; 25:; 26:; 11:; 10:; 18:;
+                       24:; 25:; 26:; 10:; 18:;
                      end
                    end else errorl('No valid option found    ');
                    while not eoln(prd) and (ch = ' ') do getnxt
@@ -2414,7 +2493,7 @@ procedure xlate;
           writeln;
           writeln('Contents of stack:');
           dmpstk(output);
-          goto 1
+          goto 99
         end
       end;
 
@@ -5902,6 +5981,31 @@ begin
   while m < maxint div p do begin m := m*p; d := d+1 end
 end;
 
+{ place options in flags }
+procedure plcopt;
+var oi: 1..maxopt;
+begin
+  for oi := 1 to 26 do if options[oi] then
+    case oi of
+      7:  dodmplab   := option[oi];
+      8:  dosrclin   := option[oi];
+      11: doechlin   := option[oi];
+      14: dorecycl   := option[oi];
+      15: dochkovf   := option[oi];
+      16: dochkrpt   := option[oi];
+      13: donorecpar := option[oi];
+      17: dochkdef   := option[oi];
+      19: iso7185    := option[oi];
+      23: dodebug    := option[oi];
+      1:  dodbgflt   := option[oi];
+      6:  dodbgsrc   := option[oi];
+      5:  dodckout   := option[oi];
+      9:  dochkvbk   := option[oi];
+      2:; 3:; 4:; 12:; 20:; 21:; 22:;
+      24:; 25:; 26:; 10:; 18:;
+    end
+end;
+
 begin (* main *)
 
   { Suppress unreferenced errors. }
@@ -5942,6 +6046,7 @@ begin (* main *)
   dodckout := false; { don't output code deck }
   dochkvbk := false; { don't check variable blocks }
   dodbgchk := true;  { do debug checks }
+  doechlin := false; { don't echo command lines }
 
   { supress warnings }
   if dochkovf then;
@@ -5964,6 +6069,8 @@ begin (* main *)
   if dodckout then;
   if dochkvbk then;
   if dodbgchk then;
+
+  extendinit; { initialize extentions package }
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
@@ -6037,6 +6144,28 @@ begin (* main *)
   writeln;
   writeln;
 
+  { get the command line }
+  getcommandline(cmdlin, cmdlen);
+  cmdpos := 1;
+#ifdef NOHEADER
+  paroptions; { parse command line options }
+  { parse header files }
+  parhdrfil(prd, prdval, '.p6 ');
+  if not prdval then begin
+    writeln('*** Error: input filename not found');
+    goto 99
+  end;
+  paroptions; { parse command line options }
+  parhdrfil(prr, prrval, '.s  ');
+  if not prdval then begin
+    writeln('*** Error: output filename not found');
+    goto 99
+  end;
+#endif
+  { load command line options }
+  paroptions;
+  plcopt; { place options }
+
 #ifndef SELF_COMPILE
   rewrite(prr);
 #endif
@@ -6052,7 +6181,7 @@ begin (* main *)
 
   xlate; (* assembles and stores code *)
 
-  1 : { abort run }
+  99 : { abort run }
 
   writeln;
   writeln('Program generation complete');
