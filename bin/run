@@ -164,7 +164,7 @@ elif [ "$cmach" = "1" ]; then
 	echo Running with cmach
     pint $progfile.p6 $progfile.p6o --machdeck > temp
     cmach $progfile.p6o $options $progfile.dat $progfile.out < $progfile.inp &> $progfile.lst
-    rm temp temp2
+    rm temp
 
 elif [ "$package" = "1" ]; then
 
