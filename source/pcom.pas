@@ -185,7 +185,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    = pmmaxint;
-   maxsp      = 85;   { number of standard procedures/functions }
+   maxsp      = 86;   { number of standard procedures/functions }
    maxins     = 129;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
@@ -1694,6 +1694,7 @@ begin cmdpos := maxcmd end;
     293: write('Procedure expected in this context');
     294: write('Cannot forward an external declaration');
     295: write('procedure or function previously declared external');
+    296: write('Cannot apply field to constant string on read');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -3426,6 +3427,7 @@ begin cmdpos := maxcmd end;
       83: writeln(prr, 'Read external integer');
       84: writeln(prr, 'Read external real');
       85: writeln(prr, 'Throw exception');
+      86: writeln(prr, 'Read and match constant string');
     end
   end;
 
@@ -5170,11 +5172,14 @@ begin cmdpos := maxcmd end;
           len:addrrange;
           fld, spad: boolean;
           cp: boolean;
+          cststr: boolean;
     begin
       txt := true; deffil := true; cp := false;
-      if sy = lparent then
-        begin insymbol; chkhdr;
-          variable(fsys + [comma,colon,rparent], true);
+      if sy  = lparent then
+        begin insymbol; chkhdr; cststr := false;
+          if sy = stringconst then begin chkstd; cststr := true; 
+            expression(fsys + [comma,colon,rparent], false)
+          end else variable(fsys + [comma,colon,rparent], true);
           if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc;
           lsp := gattr.typtr; test := false;
           if lsp <> nil then
@@ -5194,8 +5199,10 @@ begin cmdpos := maxcmd end;
                         skip(fsys + [comma,colon,rparent])
                       end;
                   if sy = comma then
-                    begin insymbol;
-                      variable(fsys + [comma,colon,rparent], true);
+                    begin insymbol; cststr := false;
+                      if sy = stringconst then begin chkstd; cststr := true;
+                        expression(fsys + [comma,colon,rparent], false)
+                      end else variable(fsys + [comma,colon,rparent], true);
                       if gattr.typtr <> nil then 
                         cp := gattr.typtr^.form = arrayc
                     end
@@ -5222,7 +5229,7 @@ begin cmdpos := maxcmd end;
             if txt then begin lsp := gattr.typtr;
               fld := false; spad := false;
               if sy = colon then begin { field }
-                chkstd; insymbol;
+                chkstd; if cststr then error(296); insymbol;
                 if (sy = mulop) and (op = mul) then begin
                   spad := true; insymbol;
                   if not stringt(lsp) then error(215);
@@ -5262,7 +5269,10 @@ begin cmdpos := maxcmd end;
                       end else if stringt(lsp) then begin
                         if fld then gen1(30(*csp*),79(*rdsf*))
                         else if spad then gen1(30(*csp*),80(*rdsp*))
-                        else gen1(30(*csp*),73(*rds*))
+                        else begin
+                          if cststr then gen1(30(*csp*),86(*rdsc*))
+                          else gen1(30(*csp*),73(*rds*))
+                        end
                       end else error(153)
                 else error(116);
             end else begin { binary file }
@@ -5272,7 +5282,10 @@ begin cmdpos := maxcmd end;
             end;
             test := sy <> comma;
             if not test then
-              begin insymbol; variable(fsys + [comma,colon,rparent], true);
+              begin insymbol; cststr := false; 
+                if sy = stringconst then begin chkstd; cststr := true;
+                  expression(fsys + [comma,colon,rparent], false)
+                end else variable(fsys + [comma,colon,rparent], true);
                 if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc
               end
           until test;
@@ -10290,7 +10303,7 @@ begin cmdpos := maxcmd end;
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
       sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
-      sna[84] :='rdre'; sna[85] :='thw ';
+      sna[84] :='rdre'; sna[85] :='thw '; sna[86] :='rdsc';
 
     end (*procmnemonics*) ;
 
@@ -10565,7 +10578,7 @@ begin cmdpos := maxcmd end;
       pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
       pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
       pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
-      pdx[85] := +adrsize;
+      pdx[85] := +adrsize;             pdx[86] := +adrsize+intsize;
 
     end;
 
