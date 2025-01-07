@@ -5252,13 +5252,20 @@ begin cmdpos := maxcmd end;
                       getbounds(lsp, lmin, lmax);
                       gen1t(51(*ldc*),lmin,basetype(lsp));
                       gen1t(51(*ldc*),lmax,basetype(lsp));
-                      if fld then gen1(30(*csp*),74(*ribf*))
-                      else begin
-                        if isbyte(lsp) then gen1(30(*csp*),89(*rib*))
+                      if fld then begin
+                        if isbyte(lsp) then gen1(30(*csp*),90(*rxbf*))
+                        else gen1(30(*csp*),74(*ribf*))
+                      end else begin
+                        if isbyte(lsp) then gen1(30(*csp*),89(*rxb*))
                         else gen1(30(*csp*),40(*rib*))
                       end
-                    end else if fld then gen1(30(*csp*),75(*rdif*))
-                             else gen1(30(*csp*),3(*rdi*))
+                    end else if fld then begin
+                               if isbyte(lsp) then gen1(30(*csp*),88(*rdxf*))
+                               else gen1(30(*csp*),75(*rdif*))
+                             end else begin
+                               if isbyte(lsp) then gen1(30(*csp*),87(*rdi*))
+                               else gen1(30(*csp*),3(*rdi*))
+                             end
                   end else
                     if comptypes(realptr,lsp) then
                       if fld then gen1(30(*csp*),76(*rdrf*))
