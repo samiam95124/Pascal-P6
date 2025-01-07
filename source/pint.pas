@@ -402,7 +402,7 @@ const
       privexceptiontop                   = 120;
 
       stringlgth  = 1000; { longest string length we can buffer }
-      maxsp       = 81;   { number of predefined procedures/functions }
+      maxsp       = 85;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
@@ -2228,6 +2228,8 @@ procedure load;
          sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
+         sptable[82]:='rdx       ';     sptable[83]:='rdxf      ';
+         sptable[84]:='rxb       ';     sptable[85]:='rxbf      ';
 
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
@@ -4011,19 +4013,30 @@ begin (*callsp*)
                             end
                       end;
            11(*rdi*),
-           72(*rdif*): begin w := pmmaxint; fld := q = 72; if fld then popint(w);
+           72(*rdif*),
+           82(*rdx*),
+           83(*rdxf*): begin w := pmmaxint; fld := (q = 72) or (q = 83); 
+                           if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad);
                            valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
-                           putint(ad1, i);
+                           if (q = 82) or (q = 83) then begin
+                             if (i < 0) or (i > 255) then errore(ValueOutOfRange);
+                             putbyt(ad1, i)
+                           end else putint(ad1, i)
                       end;
            37(*rib*),
-           71(*ribf*): begin w := pmmaxint; fld := q = 71; popint(mx); popint(mn);
+           71(*ribf*),
+           84(*rxb*),
+           85(*rxbf*): begin w := pmmaxint; fld := (q = 71) or (q = 85); 
+                           popint(mx); popint(mn);
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
                            readi(fn, i, w, fld);
                            if (i < mn) or (i > mx) then
                              errore(ValueOutOfRange);
-                           putint(ad1, i);
+                           { note: value should be in byte range }
+                           if (q = 82) or (q = 83) then putbyt(ad1, i)
+                           else putint(ad1, i)
                       end;
            12(*rdr*),
            73(*rdrf*): begin w := pmmaxint; fld := q = 73; if fld then popint(w);

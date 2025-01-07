@@ -430,7 +430,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define EXTERNALSNOTENABLED                 120
 #define PRIVEXCEPTIONTOP                    120
 
-#define MAXSP        81   /* number of predefined procedures/functions */
+#define MAXSP        85   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
@@ -2083,20 +2083,35 @@ void callsp(void)
                          fprintf(filtable[fn], "%*c", (int)w, c);
                      }
                      break;
+
+
     case 11/*rdi*/:
-    case 72/*rdif*/: w = LONG_MAX; fld = q == 72; if (fld) popint(w);
+    case 72/*rdif*/:
+    case 82/*rdx*/:
+    case 83/*rdxf*/: w = LONG_MAX; fld = q == 72||q == 83; if (fld) popint(w);
                      popadr(ad1); popadr(ad); pshadr(ad);
                      valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld);
-                     putint(ad1, i);
+                     if (q == 82||q == 83) {
+                       if (i < 0||i > 255) errore(VALUEOUTOFRANGE);
+                       putbyt(ad1, i);
+                     } else putint(ad1, i);
                      break;
     case 37/*rib*/:
-    case 71/*ribf*/: w = LONG_MAX; fld = q == 71; popint(mx); popint(mn);
+    case 71/*ribf*/:
+    case 84/*rxb*/:
+    case 85/*rxbf*/: w = LONG_MAX; fld = q == 71||q == 85; 
+                    popint(mx); popint(mn);
                     if (fld) popint(w); popadr(ad1); popadr(ad);
                     pshadr(ad); valfil(ad); fn = store[ad];
                     readi(fn, &i, &w, fld);
                     if (i < mn || i > mx) errore(VALUEOUTOFRANGE);
+                    /* note: value should be in byte range */
+                    if (q == 82||q == 83) putbyt(ad1, i);
                     putint(ad1, i);
                     break;
+
+
+
     case 12/*rdr*/:
     case 73/*rdrf*/: w = LONG_MAX; fld = q == 73; if (fld) popint(w);
                     popadr(ad1); popadr(ad); pshadr(ad);

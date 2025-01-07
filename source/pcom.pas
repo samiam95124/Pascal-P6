@@ -185,7 +185,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    = pmmaxint;
-   maxsp      = 86;   { number of standard procedures/functions }
+   maxsp      = 90;   { number of standard procedures/functions }
    maxins     = 129;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
@@ -3428,6 +3428,10 @@ begin cmdpos := maxcmd end;
       84: writeln(prr, 'Read external real');
       85: writeln(prr, 'Throw exception');
       86: writeln(prr, 'Read and match constant string');
+      87: writeln(prr, 'Read byte integer from text file');
+      88: writeln(prr, 'Read byte integer from text file with field');
+      89: writeln(prr, 'Read byte integer from text file with range check');
+      90: writeln(prr, 'Read byte integer from text file with range check and field');
     end
   end;
 
@@ -5249,7 +5253,10 @@ begin cmdpos := maxcmd end;
                       gen1t(51(*ldc*),lmin,basetype(lsp));
                       gen1t(51(*ldc*),lmax,basetype(lsp));
                       if fld then gen1(30(*csp*),74(*ribf*))
-                      else gen1(30(*csp*),40(*rib*))
+                      else begin
+                        if isbyte(lsp) then gen1(30(*csp*),89(*rib*))
+                        else gen1(30(*csp*),40(*rib*))
+                      end
                     end else if fld then gen1(30(*csp*),75(*rdif*))
                              else gen1(30(*csp*),3(*rdi*))
                   end else
@@ -10303,7 +10310,8 @@ begin cmdpos := maxcmd end;
       sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
       sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
       sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
-      sna[84] :='rdre'; sna[85] :='thw '; sna[86] :='rdsc';
+      sna[84] :='rdre'; sna[85] :='thw '; sna[86] :='rdsc'; sna[87] :='rdx '; 
+      sna[88] :='rdxf'; sna[89] :='rxb '; sna[90] :='rxbf';
 
     end (*procmnemonics*) ;
 
@@ -10579,7 +10587,8 @@ begin cmdpos := maxcmd end;
       pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
       pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
       pdx[85] := +adrsize;             pdx[86] := +adrsize+intsize;
-
+      pdx[87] := +adrsize;             pdx[88] := +adrsize+intsize;
+      pdx[89] := +(adrsize+intsize*2); pdx[90] := +(adrsize+intsize*3);
     end;
 
   begin (*inittables*)
