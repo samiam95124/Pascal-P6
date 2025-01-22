@@ -390,45 +390,46 @@ table is all you should need to adapt to any byte addressable machine.
 #define PACKELEMENTSOUTOFBOUNDS             85
 #define UNPACKELEMENTSOUTOFBOUNDS           86
 #define CANNOTRESETCLOSEDTEMPFILE           87
-#define EXCEPTIONTOP                        87
+#define READCHARACTERMISMATCH               88
+#define EXCEPTIONTOP                        88
 
 /* Exceptions that can't be caught.
   Note that these don't have associated exception variables. */
 
-#define UNDEFINEDLOCATIONACCESS             88
-#define FUNCTIONNOTIMPLEMENTED              89
-#define INVALIDINISO7185MODE                90
-#define HEAPFORMATINVALID                   91
-#define DISPOSEOFUNINITALIZEDPOINTER        92
-#define DISPOSEOFNILPOINTER                 93
-#define BADPOINTERVALUE                     94
-#define BLOCKALREADYFREED                   95
-#define INVALIDSTANDARDPROCEDUREORFUNCTION  96
-#define INVALIDINSTRUCTION                  97
-#define NEWDISPOSETAGSMISMATCH              98
-#define PCOUTOFRANGE                        99
-#define STOREOVERFLOW                       100
-#define STACKBALANCE                        101
-#define SETINCLUSION                        102
-#define UNINITIALIZEDPOINTER                103
-#define DEREFERENCEOFNILPOINTER             104
-#define POINTERUSEDAFTERDISPOSE             105
-#define VARIANTNOTACTIVE                    106
-#define INVALIDCASE                         107
-#define SYSTEMERROR                         108
-#define CHANGETOALLOCATEDTAGFIELD           109
-#define UNHANDLEDEXCEPTION                  110
-#define PROGRAMCODEASSERTION                111
-#define VARLISTEMPTY                        112
-#define CHANGETOVARREFERENCEDVARIANT        113
-#define DISPOSEOFVARREFERENCEDBLOCK         114
-#define VARREFERENCEDFILEBUFFERMODIFIED     115
-#define CONTAINERMISMATCH                   116
-#define INVALIDCONTAINERLEVEL               117
-#define DISPOSEOFWITHREFERENCEDBLOCK        118
-#define WITHBASELISTEMPTY                   119
-#define EXTERNALSNOTENABLED                 120
-#define PRIVEXCEPTIONTOP                    120
+#define UNDEFINEDLOCATIONACCESS             89
+#define FUNCTIONNOTIMPLEMENTED              90
+#define INVALIDINISO7185MODE                91
+#define HEAPFORMATINVALID                   92
+#define DISPOSEOFUNINITALIZEDPOINTER        93
+#define DISPOSEOFNILPOINTER                 94
+#define BADPOINTERVALUE                     95
+#define BLOCKALREADYFREED                   96
+#define INVALIDSTANDARDPROCEDUREORFUNCTION  97
+#define INVALIDINSTRUCTION                  98
+#define NEWDISPOSETAGSMISMATCH              99
+#define PCOUTOFRANGE                        100
+#define STOREOVERFLOW                       101
+#define STACKBALANCE                        102
+#define SETINCLUSION                        103
+#define UNINITIALIZEDPOINTER                104
+#define DEREFERENCEOFNILPOINTER             105
+#define POINTERUSEDAFTERDISPOSE             106
+#define VARIANTNOTACTIVE                    107
+#define INVALIDCASE                         108
+#define SYSTEMERROR                         109
+#define CHANGETOALLOCATEDTAGFIELD           110
+#define UNHANDLEDEXCEPTION                  111
+#define PROGRAMCODEASSERTION                112
+#define VARLISTEMPTY                        113
+#define CHANGETOVARREFERENCEDVARIANT        114
+#define DISPOSEOFVARREFERENCEDBLOCK         115
+#define VARREFERENCEDFILEBUFFERMODIFIED     116
+#define CONTAINERMISMATCH                   117
+#define INVALIDCONTAINERLEVEL               118
+#define DISPOSEOFWITHREFERENCEDBLOCK        119
+#define WITHBASELISTEMPTY                   120
+#define EXTERNALSNOTENABLED                 121
+#define PRIVEXCEPTIONTOP                    121
 
 #define MAXSP        85   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
@@ -763,6 +764,7 @@ void errorv(address ea)
     case PACKELEMENTSOUTOFBOUNDS:            printf("Pack elements out of bounds\n"); break;
     case UNPACKELEMENTSOUTOFBOUNDS:          printf("Unpack elements out of bounds\n"); break;
     case CANNOTRESETCLOSEDTEMPFILE:          printf("Cannot reset closed temp file\n"); break;
+    case READCHARACTERMISMATCH:              printf("Read character mismatch"); break;
 
     /* Exceptions that can't be intercepted */
     case UNDEFINEDLOCATIONACCESS:            printf("Undefined location access\n"); break;
