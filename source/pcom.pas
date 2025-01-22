@@ -10071,6 +10071,7 @@ begin cmdpos := maxcmd end;
     entstdexp('PackElementsOutOfBounds         ');
     entstdexp('UnpackElementsOutOfBounds       ');
     entstdexp('CannotResetClosedTempFile       ');
+    entstdexp('ReadCharacterMismatch           ');
   end (*entstdnames*) ;
 
   procedure enterundecl;
