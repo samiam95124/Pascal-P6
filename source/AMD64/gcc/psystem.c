@@ -2725,29 +2725,6 @@ void psystem_rdi(
 
 /** ****************************************************************************
 
-Read byte from text file
-
-Reads an integer from the given text file and returns it.
-
-*******************************************************************************/
-
-void psystem_rdx(
-    /* Pascal file to write to */ pasfil*        f,
-    /* byte to read */            unsigned char* b
-)
-
-{
-
-    long i;
-
-    psystem_rdi(f, &i);
-    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
-    *b = i;
-
-}
-
-/** ****************************************************************************
-
 Read integer from text file with field
 
 Reads an integer from the given text file with the given field and returns it.
@@ -2770,32 +2747,6 @@ void psystem_rdif(
     fn = *f; /* get logical file no. */
 
     readi(fn, i, &w, TRUE);
-
-}
-
-/** ****************************************************************************
-
-Read byte from text file with field
-
-Reads a byte from the given text file with the given field and returns it.
-See the Pascaline specification. Only the characters in the indicated field will
-be used, even if followed by other digits.
-
-*******************************************************************************/
-
-void psystem_rdxf(
-    /* Pascal file to write to */ pasfil*        f,
-    /* byte to read */            unsigned char* b,
-    /* Field */                   long           w
-)
-
-{
-
-    long i;
-
-    psystem_rdif(f, &i, w);
-    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
-    *b = i;
 
 }
 
@@ -2832,33 +2783,6 @@ void psystem_rib(
 
 /** ****************************************************************************
 
-Read byte bounded from text file
-
-Reads a byte with bounds from the given text file and returns it.
-
-The bounds give the acceptable limits of the integer value, from minimum to 
-maximum. Out of range integers will result in an error.
-
-*******************************************************************************/
-
-void psystem_rxb(
-    /* Pascal file to write to */ pasfil*        f,
-    /* byte to read */            unsigned char* b,
-    /* Bounds for integer */      long mn, long mx
-)
-
-{
-
-    long i;
-
-    psystem_rib(f, &i, mn, mx);
-    /* note: value should be in byte range */
-    *b = i;
-
-}
-
-/** ****************************************************************************
-
 Read integer bounded from text file with field
 
 Reads an integer with bounds from the given text file with the given field and
@@ -2886,36 +2810,6 @@ void psystem_ribf(
 
     readi(fn, i, &w, TRUE);
     if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
-
-}
-
-/** ****************************************************************************
-
-Read byte bounded from text file with field
-
-Reads a byte with bounds from the given text file with the given field and
-returns it. See the Pascaline specification. Only the characters in the 
-indicated field will be used, even if followed by other digits.
-
-The bounds give the acceptable limits of the integer value, from minimum to 
-maximum. Out of range integers will result in an error.
-
-*******************************************************************************/
-
-void psystem_rxbf(
-    /* Pascal file to write to */ pasfil*        f,
-    /* byte to read */            unsigned char* b,
-    /* Field to read */           long w,
-    /* Bounds for integer */      long mn, long mx
-)
-
-{
-
-    long i;
-
-    psystem_ribf(f, &i, w, mn, mx);
-    /* note: value should be in byte range */
-    *b = i;
 
 }
 

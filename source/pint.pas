@@ -361,49 +361,48 @@ const
       PackElementsOutOfBounds            = 85;
       UnpackElementsOutOfBounds          = 86;
       CannotResetClosedTempFile          = 87;
-      ReadCharacterMismatch              = 88;
-      exceptiontop                       = 88;
+      exceptiontop                       = 87;
 
       { Exceptions that can't be caught.
         Note that these don't have associated exception variables. }
 
-      UndefinedLocationAccess            = 89;
-      FunctionNotImplemented             = 90;
-      InvalidInISO7185Mode               = 91;
-      HeapFormatInvalid                  = 92;
-      DisposeOfUninitalizedPointer       = 93;
-      DisposeOfNilPointer                = 94;
-      BadPointerValue                    = 95;
-      BlockAlreadyFreed                  = 96;
-      InvalidStandardProcedureOrFunction = 97;
-      InvalidInstruction                 = 98;
-      NewDisposeTagsMismatch             = 99;
-      PCOutOfRange                       = 100;
-      StoreOverflow                      = 101;
-      StackBalance                       = 102;
-      SetInclusion                       = 103;
-      UninitializedPointer               = 104;
-      DereferenceOfNilPointer            = 105;
-      PointerUsedAfterDispose            = 106;
-      VariantNotActive                   = 107;
-      InvalidCase                        = 108;
-      SystemError                        = 109;
-      ChangeToAllocatedTagfield          = 110;
-      UnhandledException                 = 111;
-      ProgramCodeAssertion               = 112;
-      VarListEmpty                       = 113;
-      ChangeToVarReferencedVariant       = 114;
-      DisposeOfVarReferencedBlock        = 115;
-      VarReferencedFileBufferModified    = 116;
-      ContainerMismatch                  = 117;
-      InvalidContainerLevel              = 118;
-      DisposeOfWithReferencedBlock       = 119;
-      WithBaseListEmpty                  = 120;
-      ExternalsNotEnabled                = 121;
-      privexceptiontop                   = 121;
+      UndefinedLocationAccess            = 88;
+      FunctionNotImplemented             = 89;
+      InvalidInISO7185Mode               = 90;
+      HeapFormatInvalid                  = 91;
+      DisposeOfUninitalizedPointer       = 92;
+      DisposeOfNilPointer                = 93;
+      BadPointerValue                    = 94;
+      BlockAlreadyFreed                  = 95;
+      InvalidStandardProcedureOrFunction = 96;
+      InvalidInstruction                 = 97;
+      NewDisposeTagsMismatch             = 98;
+      PCOutOfRange                       = 99;
+      StoreOverflow                      = 100;
+      StackBalance                       = 101;
+      SetInclusion                       = 102;
+      UninitializedPointer               = 103;
+      DereferenceOfNilPointer            = 104;
+      PointerUsedAfterDispose            = 105;
+      VariantNotActive                   = 106;
+      InvalidCase                        = 107;
+      SystemError                        = 108;
+      ChangeToAllocatedTagfield          = 109;
+      UnhandledException                 = 110;
+      ProgramCodeAssertion               = 111;
+      VarListEmpty                       = 112;
+      ChangeToVarReferencedVariant       = 113;
+      DisposeOfVarReferencedBlock        = 114;
+      VarReferencedFileBufferModified    = 115;
+      ContainerMismatch                  = 116;
+      InvalidContainerLevel              = 117;
+      DisposeOfWithReferencedBlock       = 118;
+      WithBaseListEmpty                  = 119;
+      ExternalsNotEnabled                = 120;
+      privexceptiontop                   = 120;
 
       stringlgth  = 1000; { longest string length we can buffer }
-      maxsp       = 85;   { number of predefined procedures/functions }
+      maxsp       = 81;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
@@ -897,7 +896,6 @@ begin writeln; write('*** Runtime error');
     PackElementsOutOfBounds:            writeln('Pack elements out of bounds');
     UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');
     CannotResetClosedTempFile:          writeln('Cannot reset closed temp file');
-    ReadCharacterMismatch:              writeln('Read character mismatch');
 
     { Exceptions that can't be intercepted }
     UndefinedLocationAccess:            writeln('Undefined location access');
@@ -2230,8 +2228,6 @@ procedure load;
          sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
          sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
          sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
-         sptable[82]:='rdx       ';     sptable[83]:='rdxf      ';
-         sptable[84]:='rxb       ';     sptable[85]:='rxbf      ';
 
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
@@ -4015,30 +4011,19 @@ begin (*callsp*)
                             end
                       end;
            11(*rdi*),
-           72(*rdif*),
-           82(*rdx*),
-           83(*rdxf*): begin w := pmmaxint; fld := (q = 72) or (q = 83); 
-                           if fld then popint(w);
+           72(*rdif*): begin w := pmmaxint; fld := q = 72; if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad);
                            valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
-                           if (q = 82) or (q = 83) then begin
-                             if (i < 0) or (i > 255) then errore(ValueOutOfRange);
-                             putbyt(ad1, i)
-                           end else putint(ad1, i)
+                           putint(ad1, i);
                       end;
            37(*rib*),
-           71(*ribf*),
-           84(*rxb*),
-           85(*rxbf*): begin w := pmmaxint; fld := (q = 71) or (q = 85); 
-                           popint(mx); popint(mn);
+           71(*ribf*): begin w := pmmaxint; fld := q = 71; popint(mx); popint(mn);
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
                            readi(fn, i, w, fld);
                            if (i < mn) or (i > mx) then
                              errore(ValueOutOfRange);
-                           { note: value should be in byte range }
-                           if (q = 82) or (q = 83) then putbyt(ad1, i)
-                           else putint(ad1, i)
+                           putint(ad1, i);
                       end;
            12(*rdr*),
            73(*rdrf*): begin w := pmmaxint; fld := q = 73; if fld then popint(w);
