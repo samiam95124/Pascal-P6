@@ -361,45 +361,46 @@ const
       PackElementsOutOfBounds            = 85;
       UnpackElementsOutOfBounds          = 86;
       CannotResetClosedTempFile          = 87;
-      exceptiontop                       = 87;
+      ReadCharacterMismatch              = 88;
+      exceptiontop                       = 88;
 
       { Exceptions that can't be caught.
         Note that these don't have associated exception variables. }
 
-      UndefinedLocationAccess            = 88;
-      FunctionNotImplemented             = 89;
-      InvalidInISO7185Mode               = 90;
-      HeapFormatInvalid                  = 91;
-      DisposeOfUninitalizedPointer       = 92;
-      DisposeOfNilPointer                = 93;
-      BadPointerValue                    = 94;
-      BlockAlreadyFreed                  = 95;
-      InvalidStandardProcedureOrFunction = 96;
-      InvalidInstruction                 = 97;
-      NewDisposeTagsMismatch             = 98;
-      PCOutOfRange                       = 99;
-      StoreOverflow                      = 100;
-      StackBalance                       = 101;
-      SetInclusion                       = 102;
-      UninitializedPointer               = 103;
-      DereferenceOfNilPointer            = 104;
-      PointerUsedAfterDispose            = 105;
-      VariantNotActive                   = 106;
-      InvalidCase                        = 107;
-      SystemError                        = 108;
-      ChangeToAllocatedTagfield          = 109;
-      UnhandledException                 = 110;
-      ProgramCodeAssertion               = 111;
-      VarListEmpty                       = 112;
-      ChangeToVarReferencedVariant       = 113;
-      DisposeOfVarReferencedBlock        = 114;
-      VarReferencedFileBufferModified    = 115;
-      ContainerMismatch                  = 116;
-      InvalidContainerLevel              = 117;
-      DisposeOfWithReferencedBlock       = 118;
-      WithBaseListEmpty                  = 119;
-      ExternalsNotEnabled                = 120;
-      privexceptiontop                   = 120;
+      UndefinedLocationAccess            = 89;
+      FunctionNotImplemented             = 90;
+      InvalidInISO7185Mode               = 91;
+      HeapFormatInvalid                  = 92;
+      DisposeOfUninitalizedPointer       = 93;
+      DisposeOfNilPointer                = 94;
+      BadPointerValue                    = 95;
+      BlockAlreadyFreed                  = 96;
+      InvalidStandardProcedureOrFunction = 97;
+      InvalidInstruction                 = 98;
+      NewDisposeTagsMismatch             = 99;
+      PCOutOfRange                       = 100;
+      StoreOverflow                      = 101;
+      StackBalance                       = 102;
+      SetInclusion                       = 103;
+      UninitializedPointer               = 104;
+      DereferenceOfNilPointer            = 105;
+      PointerUsedAfterDispose            = 106;
+      VariantNotActive                   = 107;
+      InvalidCase                        = 108;
+      SystemError                        = 109;
+      ChangeToAllocatedTagfield          = 110;
+      UnhandledException                 = 111;
+      ProgramCodeAssertion               = 112;
+      VarListEmpty                       = 113;
+      ChangeToVarReferencedVariant       = 114;
+      DisposeOfVarReferencedBlock        = 115;
+      VarReferencedFileBufferModified    = 116;
+      ContainerMismatch                  = 117;
+      InvalidContainerLevel              = 118;
+      DisposeOfWithReferencedBlock       = 119;
+      WithBaseListEmpty                  = 120;
+      ExternalsNotEnabled                = 121;
+      privexceptiontop                   = 121;
 
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 85;   { number of predefined procedures/functions }
@@ -896,6 +897,7 @@ begin writeln; write('*** Runtime error');
     PackElementsOutOfBounds:            writeln('Pack elements out of bounds');
     UnpackElementsOutOfBounds:          writeln('Unpack elements out of bounds');
     CannotResetClosedTempFile:          writeln('Cannot reset closed temp file');
+    ReadCharacterMismatch:              writeln('Read character mismatch');
 
     { Exceptions that can't be intercepted }
     UndefinedLocationAccess:            writeln('Undefined location access');

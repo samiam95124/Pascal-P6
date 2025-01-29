@@ -186,6 +186,7 @@ InvalidDivisorToMod:                .byte 0
 PackElementsOutOfBounds:            .byte 0
 UnpackElementsOutOfBounds:          .byte 0
 CannotResetClosedTempFile:          .byte 0
+ReadCharacterMismatch:              .byte 0
 
     .global ExceptionTop
 ExceptionTop:
