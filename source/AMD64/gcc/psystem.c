@@ -1669,6 +1669,34 @@ static void readsp(filnum fn, char* s,  long l)
 
 /** ****************************************************************************
 
+Read string constant
+
+Reads from the input file and matches the characters to a given string with 
+lenth. The number of characters in the string are read until EOLN is 
+encountered or a mismatch occurs. If EOF or a mismatch is encountered, it is an
+error. 
+
+*******************************************************************************/
+
+static void readsc(filnum fn, char* s,  long l)
+{
+
+    char c;
+
+    while (l > 0 && !eolnfn(fn)) {
+
+        if (eoffn(fn)) errore(modnam, __LINE__, ENDOFFILE);
+        c = fgetc(filtable[fn]); 
+        if (c != *s) errore(modnam, __LINE__, READCHARACTERMISMATCH); 
+        s++; l--;
+
+    }
+    while (l > 0) { *s++ = ' '; l--; }
+
+}
+
+/** ****************************************************************************
+
 Write string padded
 
 Writes the given text file to the end of a padded string. The end of the padded
@@ -4446,8 +4474,7 @@ the rest of the string is filled with blanks.
 void psystem_rdsp(
     /* Pascal file */ pasfil* f,
     /* String */      char*   s,
-    /* Length */      long    l,
-    /* Field */       long    w
+    /* Length */      long    l
 )
 
 {
@@ -4459,6 +4486,35 @@ void psystem_rdsp(
     fn = *f; /* get logical file no. */
 
     readsp(fn, s, l);
+
+}
+
+/** ****************************************************************************
+
+Read constant string
+
+Reads the string from a Pascal text file. Expects the string address and length.
+The string is read until either the string is full, or eoln occurs. If there are
+more characters, and the string is full, an error results. If eoln occurs first,
+the rest of the string is filled with blanks.
+
+*******************************************************************************/
+
+void psystem_rdsc(
+    /* Pascal file */ pasfil* f,
+    /* String */      char*   s,
+    /* Length */      long    l
+)
+
+{
+
+    int fn;
+    long i;
+
+    valfil(f); /* validate file */
+    fn = *f; /* get logical file no. */
+
+    readsc(fn, s, l);
 
 }
 
