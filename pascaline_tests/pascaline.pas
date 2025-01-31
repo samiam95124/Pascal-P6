@@ -1622,12 +1622,8 @@ begin
    readln(fl1, f3:9, f4:9);
    writeln('er11: ', f3:9:4, ' ', f4:9:4, ' s/b 1234.5678 9876.5432');
 
-   {
-   string constants to match input
-   unimplemented
    read(fl1, 'The answer is: ', i);
    writeln('er12: ', i:1, ' s/b 42');
-   }
    readln(fl1);
 
    {
