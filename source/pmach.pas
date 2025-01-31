@@ -405,7 +405,7 @@ const
       ExternalsNotEnabled                = 121;
       privexceptiontop                   = 121;
 
-      maxsp       = 85;   { number of predefined procedures/functions }
+      maxsp       = 86;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
@@ -1952,6 +1952,17 @@ procedure callsp;
      while l > 0 do begin putchr(ad, ' '); ad := ad+1; l := l-1 end
    end;
 
+   procedure readsc(fn: fileno; ad: address; l: integer);
+   var c: char;
+   begin
+     while (l > 0) and not eolnfn(fn) do begin
+       if eoffn(fn) then errore(EndOfFile);
+       read(filtable[fn], c); 
+       if c <> getchr(ad) then errorv(ReadCharacterMismatch);
+       ad := ad+1; l := l-1
+     end
+   end;
+
    procedure writestr(var f: text; ad: address; w: integer; l: integer);
       var i: integer;
    begin (* l and w are numbers of characters *)
@@ -2569,6 +2580,10 @@ begin (*callsp*)
                          valfil(ad); fn := store[ad];
                          readsp(fn, ad1, i)
                        end;
+           86(*rdsc*): begin popadr(ad1); popint(i); 
+                         popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+                         readsc(fn, ad1, i)
+                      end;
            78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);

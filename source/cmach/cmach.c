@@ -431,7 +431,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define EXTERNALSNOTENABLED                 121
 #define PRIVEXCEPTIONTOP                    121
 
-#define MAXSP        85   /* number of predefined procedures/functions */
+#define MAXSP        86   /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
@@ -1802,6 +1802,18 @@ void readsp(filnum fn, address ad,  long l)
   while (l > 0) { putchr(ad, ' '); ad = ad+1; l = l-1; }
 }
 
+void readsc(filnum fn, address ad,  long l)
+{
+  char c;
+
+  while (l > 0 && !eolnfn(fn)) {
+    if (eoffn(fn)) errore(ENDOFFILE);
+    c = fgetc(filtable[fn]); 
+    if (c != getchr(ad)) errore(READCHARACTERMISMATCH);
+    ad = ad+1; l = l-1;
+  }
+}
+
 void writestrp(FILE* f, address ad, long l)
 {
     long i;
@@ -2441,6 +2453,10 @@ void callsp(void)
     case 77/*rdsp*/: popadr(ad1); popint(i); popadr(ad); pshadr(ad);
                   valfil(ad); fn = store[ad];
                   readsp(fn, ad1, i);
+                  break;
+    case 86/*rdsc*/: popadr(ad1); popint(i); 
+                  popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+                  readsc(fn, ad1, i);
                   break;
     case 78/*aeft*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);
                   fn = store[ad]; clrfn(fl1);
