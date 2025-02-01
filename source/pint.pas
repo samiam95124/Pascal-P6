@@ -3550,8 +3550,7 @@ procedure callsp;
    end;
 
    procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean);
-   var s: integer;
-       d: integer;
+   var s: integer; d: integer; r: integer;
    function chkbuf: char;
    begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf;
@@ -3565,22 +3564,36 @@ procedure callsp;
    begin
      chkend := (w = 0) or eoffn(fn)
    end;
+   function valchr: boolean;
+   begin
+     valchr := 
+       ((chkbuf in ['0'..'9','_']) and (r = 10)) or
+       ((lcase(chkbuf) in ['0'..'9','a'..'f','_']) and (r = 16)) or
+       ((chkbuf in ['0'..'1','_']) and (r = 2)) or
+       ((chkbuf in ['0'..'7','_']) and (r = 8))
+   end;
    begin
       s := +1; { set sign }
+      r := 10; { set radix }
       { skip leading spaces }
       while (chkbuf = ' ') and not chkend do getbuf;
-      if not (chkbuf in ['+', '-', '0'..'9']) then
+      if not (chkbuf in ['+', '-', '0'..'9','$','%','&']) then
         errore(InvalidIntegerFormat);
-      if chkbuf = '+' then getbuf
+      if chkbuf = '$' then begin getbuf; r := 16 end
+      else if chkbuf = '%' then begin getbuf; r := 2 end
+      else if chkbuf = '&' then begin getbuf; r := 8 end
+      else if chkbuf = '+' then getbuf
       else if chkbuf = '-' then begin getbuf; s := -1 end;
-      if not (chkbuf in ['0'..'9']) then errore(InvalidIntegerFormat);
+      if not valchr then errore(InvalidIntegerFormat);
       i := 0; { clear initial value }
-      while (chkbuf in ['0'..'9']) do begin { parse digit }
-        d := ord(chkbuf)-ord('0');
-        if (i > pmmaxint div 10) or
-           ((i = pmmaxint div 10) and (d > pmmaxint mod 10)) then
+      while valchr do begin { parse digit }
+        while (chkbuf = '_') and not chkend do getbuf;
+        if chkbuf in ['0'..'9'] then d := ord(chkbuf)-ord('0')
+        else d := ord(lcase(chkbuf))-ord('a')+10;
+        if (i > pmmaxint div r) or
+           ((i = pmmaxint div r) and (d > pmmaxint mod r)) then
           errore(IntegerValueOverFlow);
-        i := i*10+d; { add in new digit }
+        i := i*r+d; { add in new digit }
         getbuf
       end;
       i := i*s; { place sign }
