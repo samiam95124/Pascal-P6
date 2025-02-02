@@ -3588,13 +3588,15 @@ procedure callsp;
       i := 0; { clear initial value }
       while valchr do begin { parse digit }
         while (chkbuf = '_') and not chkend do getbuf;
-        if chkbuf in ['0'..'9'] then d := ord(chkbuf)-ord('0')
-        else d := ord(lcase(chkbuf))-ord('a')+10;
-        if (i > pmmaxint div r) or
-           ((i = pmmaxint div r) and (d > pmmaxint mod r)) then
-          errore(IntegerValueOverFlow);
-        i := i*r+d; { add in new digit }
-        getbuf
+        if valchr then begin
+          if chkbuf in ['0'..'9'] then d := ord(chkbuf)-ord('0')
+          else d := ord(lcase(chkbuf))-ord('a')+10;
+          if (i > pmmaxint div r) or
+             ((i = pmmaxint div r) and (d > pmmaxint mod r)) then
+            errore(IntegerValueOverFlow);
+          i := i*r+d; { add in new digit }
+          getbuf
+        end
       end;
       i := i*s; { place sign }
       { if fielded, validate the rest of the field is blank }

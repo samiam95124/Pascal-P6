@@ -1660,28 +1660,50 @@ void getbuf(filnum fn, long* w)
   }
 }
 
+int valchr(char c, long r)
+{
+  c = tolower(c);
+  return (
+    (((c >= '0' && c <= '9') || c == '_') && (r == 10)) ||
+    (((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || c == '_') && (r == 16)) ||
+    (((c >= '0' && c <= '1') || c == '_') && (r == 2)) ||
+    (((c >= '0' && c <= '7') || c == '_') && (r == 8))
+  );
+} 
+
 void readi(filnum fn, long *i, long* w, boolean fld)
 {
     long s;
     long d;
+    long r;
 
    s = +1; /* set sign */
+   r = 10; /* set radix */
    /* skip leading spaces */
    while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
    if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
-         isdigit(chkbuf(fn, *w)))) errore(INVALIDINTEGERFORMAT);
-   if (chkbuf(fn, *w) == '+') getbuf(fn, w);
+         chkbuf(fn, *w) == '$' || chkbuf(fn, *w) == '&' || 
+         chkbuf(fn, *w) == '%' ||
+         valchr(chkbuf(fn, *w),r))) errore(INVALIDINTEGERFORMAT);
+   if (chkbuf(fn, *w) == '$') { getbuf(fn, w); r = 16; }
+   else if (chkbuf(fn, *w) == '&') { getbuf(fn, w); r = 8; }
+   else if (chkbuf(fn, *w) == '%') { getbuf(fn, w); r = 2; }
+   else if (chkbuf(fn, *w) == '+') getbuf(fn, w);
    else if (chkbuf(fn, *w) == '-') { getbuf(fn, w); s = -1; }
-   if (!(isdigit(chkbuf(fn, *w))))
+   if (!(valchr(chkbuf(fn, *w),r)))
      errore(INVALIDINTEGERFORMAT);
    *i = 0; /* clear initial value */
-   while (isdigit(chkbuf(fn, *w))) { /* parse digit */
-     d = chkbuf(fn, *w)-'0';
-     if (*i > LONG_MAX/10 ||
-         *i == LONG_MAX/10 && d > LONG_MAX%10)
-       errore(INTEGERVALUEOVERFLOW);
-     *i = *i*10+d; /* add in new digit */
-     getbuf(fn, w);
+   while (valchr(chkbuf(fn, *w),r)) { /* parse digit */
+     while (chkbuf(fn, *w) == '_' && !chkend(fn, *w)) getbuf(fn, w);
+     if (valchr(chkbuf(fn, *w),r)) {
+       if (isdigit(chkbuf(fn, *w))) d = chkbuf(fn, *w)-'0';
+       else d = tolower(chkbuf(fn, *w))-'a'+10;
+       if (*i > LONG_MAX/r ||
+           *i == LONG_MAX/r && d > LONG_MAX%r)
+         errore(INTEGERVALUEOVERFLOW);
+       *i = *i*r+d; /* add in new digit */
+       getbuf(fn, w);
+     }
    }
    *i = *i*s; /* place sign */
    /* if fielded, validate the rest of the field is blank */
