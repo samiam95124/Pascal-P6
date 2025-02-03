@@ -185,7 +185,7 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    = pmmaxint;
-   maxsp      = 90;   { number of standard procedures/functions }
+   maxsp      = 114;  { number of standard procedures/functions }
    maxins     = 129;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
    maxstd     = 82;   { number of standard identifiers }
@@ -3432,6 +3432,33 @@ begin cmdpos := maxcmd end;
       88: writeln(prr, 'Read byte integer from text file with field');
       89: writeln(prr, 'Read byte integer from text file with range check');
       90: writeln(prr, 'Read byte integer from text file with range check and field');
+
+      91: writeln(prr, 'Read integer from text file in radix 16');
+      92: writeln(prr, 'Read integer from text file in radix 8');
+      93: writeln(prr, 'Read integer from text file in radix 2');
+      94: writeln(prr, 'Read integer from text file in radix 16 with field');
+      95: writeln(prr, 'Read integer from text file in radix 8 with field');
+      96: writeln(prr, 'Read integer from text file in radix 8 with field');
+      97: writeln(prr, 'Read integer from text file in radix 16 with range check');
+      98: writeln(prr, 'Read integer from text file in radix 8 with range check');
+      99: writeln(prr, 'Read integer from text file in radix 2 with range check');
+      100: writeln(prr, 'Read integer from text file in radix 16 with range check and field');
+      101: writeln(prr, 'Read integer from text file in radix 8 with range check and field');
+      102: writeln(prr, 'Read integer from text file in radix 2 with range check and field');
+
+      103: writeln(prr, 'Read byte integer from text file in radix 16');
+      104: writeln(prr, 'Read byte integer from text file in radix 8');
+      105: writeln(prr, 'Read byte integer from text file in radix 2');
+      106: writeln(prr, 'Read byte integer from text file in radix 16 with field');
+      107: writeln(prr, 'Read byte integer from text file in radix 8 with field');
+      108: writeln(prr, 'Read byte integer from text file in radix 8 with field');
+      109: writeln(prr, 'Read byte integer from text file in radix 16 with range check');
+      110: writeln(prr, 'Read byte integer from text file in radix 8 with range check');
+      111: writeln(prr, 'Read byte integer from text file in radix 2 with range check');
+      112: writeln(prr, 'Read byte integer from text file in radix 16 with range check and field');
+      113: writeln(prr, 'Read byte integer from text file in radix 8 with range check and field');
+      114: writeln(prr, 'Read byte integer from text file in radix 2 with range check and field');
+
     end
   end;
 
@@ -5177,6 +5204,7 @@ begin cmdpos := maxcmd end;
           fld, spad: boolean;
           cp: boolean;
           cststr: boolean;
+          r: integer; { radix of read }
     begin
       txt := true; deffil := true; cp := false;
       if sy  = lparent then
@@ -5230,8 +5258,13 @@ begin cmdpos := maxcmd end;
               else gen1(72(*swp*),ptrsize);
               deffil := false
             end;
-            if txt then begin lsp := gattr.typtr;
-              fld := false; spad := false;
+            if txt then begin 
+              { check radix markers }
+              r := 10;
+              if sy = hexsy then begin r := 16; insymbol end
+              else if sy = octsy then begin r := 8; insymbol end
+              else if sy = binsy then begin r := 2; insymbol end;
+              lsp := gattr.typtr; fld := false; spad := false;
               if sy = colon then begin { field }
                 chkstd; if cststr then error(296); insymbol;
                 if (sy = mulop) and (op = mul) then begin
@@ -5253,18 +5286,54 @@ begin cmdpos := maxcmd end;
                       gen1t(51(*ldc*),lmin,basetype(lsp));
                       gen1t(51(*ldc*),lmax,basetype(lsp));
                       if fld then begin
-                        if isbyte(lsp) then gen1(30(*csp*),90(*rxbf*))
-                        else gen1(30(*csp*),74(*ribf*))
+                        if isbyte(lsp) then begin
+                          if r = 10 then gen1(30(*csp*),90(*rxbf*))
+                          else if r = 16 then gen1(30(*csp*),112(*rbxh*))
+                          else if r = 8 then gen1(30(*csp*),113(*rbxo*))
+                          else if r = 2 then gen1(30(*csp*),114(*rbxb*))
+                        end else begin
+                          if r = 10 then gen1(30(*csp*),74(*ribf*))
+                          else if r = 16 then gen1(30(*csp*),100(*rdih*))
+                          else if r = 8 then gen1(30(*csp*),101(*rdio*))
+                          else if r = 2 then gen1(30(*csp*),102(*rdib*))
+                        end
                       end else begin
-                        if isbyte(lsp) then gen1(30(*csp*),89(*rxb*))
-                        else gen1(30(*csp*),40(*rib*))
+                        if isbyte(lsp) then begin
+                          if r = 10 then gen1(30(*csp*),89(*rxb*))
+                          else if r = 16 then gen1(30(*csp*),109(*rxbh*))
+                          else if r = 8 then gen1(30(*csp*),110(*rxbo*))
+                          else if r = 2 then gen1(30(*csp*),111(*rxbb*))
+                        end else begin 
+                          if r = 10 then gen1(30(*csp*),40(*rib*))
+                          else if r = 16 then gen1(30(*csp*),97(*ribh*))
+                          else if r = 8 then gen1(30(*csp*),98(*ribo*))
+                          else if r = 2 then gen1(30(*csp*),99(*ribb*))
+                        end
                       end
                     end else if fld then begin
-                               if isbyte(lsp) then gen1(30(*csp*),88(*rdxf*))
-                               else gen1(30(*csp*),75(*rdif*))
+                               if isbyte(lsp) then begin
+                                 if r = 10 then gen1(30(*csp*),88(*rdxf*))
+                                 else if r = 16 then gen1(30(*csp*),106(*rxfh*))
+                                 else if r = 8 then gen1(30(*csp*),107(*rxfo*))
+                                 else if r = 2 then gen1(30(*csp*),108(*rxfb*))
+                               end else begin
+                                 if r = 10 then gen1(30(*csp*),75(*rdif*))
+                                 else if r = 16 then gen1(30(*csp*),94(*rifh*))
+                                 else if r = 8 then gen1(30(*csp*),95(*rifo*))
+                                 else if r = 2 then gen1(30(*csp*),96(*rifb*))
+                               end
                              end else begin
-                               if isbyte(lsp) then gen1(30(*csp*),87(*rdi*))
-                               else gen1(30(*csp*),3(*rdi*))
+                               if isbyte(lsp) then begin
+                                 if r = 10 then gen1(30(*csp*),87(*rdx*))
+                                 else if r = 16 then gen1(30(*csp*),103(*rdxh*))
+                                 else if r = 8 then gen1(30(*csp*),104(*rdxo*))
+                                 else if r = 2 then gen1(30(*csp*),105(*rdxb*))
+                               end else begin
+                                 if r = 10 then gen1(30(*csp*),3(*rdi*))
+                                 else if r = 16 then gen1(30(*csp*),91(*rdih*))
+                                 else if r = 8 then gen1(30(*csp*),92(*rdio*))
+                                 else if r = 2 then gen1(30(*csp*),93(*rdib*))
+                               end
                              end
                   end else
                     if comptypes(realptr,lsp) then
@@ -10303,23 +10372,29 @@ begin cmdpos := maxcmd end;
       sna[17] :='exp '; sna[18] :='sqt '; sna[19] :='log '; sna[20] :='atn ';
       sna[21] :='rln '; sna[22] :='wln '; sna[23] :='sav ';
       { new procedure/function memonics for p5/p6 }
-      sna[24] :='pag '; sna[25] :='rsf '; sna[26] :='rwf '; sna[27] :='wrb ';
-      sna[28] :='wrf '; sna[29] :='dsp '; sna[30] :='wbf '; sna[31] :='wbi ';
-      sna[32] :='wbr '; sna[33] :='wbc '; sna[34] :='wbb '; sna[35] :='rbf ';
-      sna[36] :='rsb '; sna[37] :='rwb '; sna[38] :='gbf '; sna[39] :='pbf ';
-      sna[40] :='rib '; sna[41] :='rcb '; sna[42] :='nwl '; sna[43] :='dsl ';
-      sna[44] :='eof '; sna[45] :='efb '; sna[46] :='fbv '; sna[47] :='fvb ';
-      sna[48] :='wbx '; sna[49] :='asst'; sna[50] :='clst'; sna[51] :='pos ';
-      sna[52] :='upd '; sna[53] :='appt'; sna[54] :='del '; sna[55] :='chg ';
-      sna[56] :='len '; sna[57] :='loc '; sna[58] :='exs '; sna[59] :='assb';
-      sna[60] :='clsb'; sna[61] :='appb'; sna[62] :='hlt '; sna[63] :='ast ';
-      sna[64] :='asts'; sna[65] :='wrih'; sna[66] :='wrio'; sna[67] :='wrib';
-      sna[68] :='wrsp'; sna[69] :='wiz '; sna[70] :='wizh'; sna[71] :='wizo';
-      sna[72] :='wizb'; sna[73] :='rds '; sna[74] :='ribf'; sna[75] :='rdif';
-      sna[76] :='rdrf'; sna[77] :='rcbf'; sna[78] :='rdcf'; sna[79] :='rdsf';
-      sna[80] :='rdsp'; sna[81] :='aeft'; sna[82] :='aefb'; sna[83] :='rdie';
-      sna[84] :='rdre'; sna[85] :='thw '; sna[86] :='rdsc'; sna[87] :='rdx '; 
-      sna[88] :='rdxf'; sna[89] :='rxb '; sna[90] :='rxbf';
+      sna[24]  :='pag '; sna[25]  :='rsf '; sna[26]  :='rwf '; sna[27]  :='wrb ';
+      sna[28]  :='wrf '; sna[29]  :='dsp '; sna[30]  :='wbf '; sna[31]  :='wbi ';
+      sna[32]  :='wbr '; sna[33]  :='wbc '; sna[34]  :='wbb '; sna[35]  :='rbf ';
+      sna[36]  :='rsb '; sna[37]  :='rwb '; sna[38]  :='gbf '; sna[39]  :='pbf ';
+      sna[40]  :='rib '; sna[41]  :='rcb '; sna[42]  :='nwl '; sna[43]  :='dsl ';
+      sna[44]  :='eof '; sna[45]  :='efb '; sna[46]  :='fbv '; sna[47]  :='fvb ';
+      sna[48]  :='wbx '; sna[49]  :='asst'; sna[50]  :='clst'; sna[51]  :='pos ';
+      sna[52]  :='upd '; sna[53]  :='appt'; sna[54]  :='del '; sna[55]  :='chg ';
+      sna[56]  :='len '; sna[57]  :='loc '; sna[58]  :='exs '; sna[59]  :='assb';
+      sna[60]  :='clsb'; sna[61]  :='appb'; sna[62]  :='hlt '; sna[63]  :='ast ';
+      sna[64]  :='asts'; sna[65]  :='wrih'; sna[66]  :='wrio'; sna[67]  :='wrib';
+      sna[68]  :='wrsp'; sna[69]  :='wiz '; sna[70]  :='wizh'; sna[71]  :='wizo';
+      sna[72]  :='wizb'; sna[73]  :='rds '; sna[74]  :='ribf'; sna[75]  :='rdif';
+      sna[76]  :='rdrf'; sna[77]  :='rcbf'; sna[78]  :='rdcf'; sna[79]  :='rdsf';
+      sna[80]  :='rdsp'; sna[81]  :='aeft'; sna[82]  :='aefb'; sna[83]  :='rdie';
+      sna[84]  :='rdre'; sna[85]  :='thw '; sna[86]  :='rdsc'; sna[87]  :='rdx '; 
+      sna[88]  :='rdxf'; sna[89]  :='rxb '; sna[90]  :='rxbf'; sna[91]  :='rdih';
+      sna[92]  :='rdio'; sna[93]  :='rdib'; sna[94]  :='rifh'; sna[95]  :='rifo';
+      sna[96]  :='rifb'; sna[97]  :='ribh'; sna[98]  :='ribo'; sna[99]  :='ribb';
+      sna[100] :='rbfh'; sna[101] :='rbfo'; sna[102] :='rbfb'; sna[103] :='rdxh';
+      sna[104] :='rdxo'; sna[105] :='rdxb'; sna[106] :='rxfh'; sna[107] :='rxfo';
+      sna[108] :='rxfb'; sna[109] :='rxbh'; sna[110] :='rxbo'; sna[111] :='rxbb';
+      sna[112] :='rbxh'; sna[113] :='rbxo'; sna[114] :='rbxb';
 
     end (*procmnemonics*) ;
 
@@ -10552,51 +10627,63 @@ begin cmdpos := maxcmd end;
       cdxs[6][7] := +(adrsize+adrsize)-intsize; { equm/neqm/geqm/grtm/leqm/lesm }
       cdxs[6][8] := +(adrsize*2+adrsize*2)-intsize; { equv/neqv/geqv/grtv/leqv/lesv }
 
-      pdx[ 1] := +adrsize;             pdx[ 2] := +adrsize;
-      pdx[ 3] := +adrsize;             pdx[ 4] := +adrsize;
-      pdx[ 5] := +adrsize;             pdx[ 6] := +adrsize*2;
-      pdx[ 7] := 0;                    pdx[ 8] := +(realsize+intsize);
-      pdx[ 9] := +intsize*2;           pdx[10] := +(intsize+adrsize+intsize);
-      pdx[11] :=  0;                   pdx[12] := +ptrsize*2;
-      pdx[13] :=  0;                   pdx[14] := +adrsize-intsize;
-      pdx[15] :=  0;                   pdx[16] :=  0;
-      pdx[17] :=  0;                   pdx[18] :=  0;
-      pdx[19] :=  0;                   pdx[20] :=  0;
-      pdx[21] :=  0;                   pdx[22] :=  0;
-      pdx[23] :=  0;                   pdx[24] := +adrsize;
-      pdx[25] := +adrsize;             pdx[26] := +adrsize;
-      pdx[27] := +intsize*2;           pdx[28] := +(realsize+intsize*2);
-      pdx[29] := +adrsize*2;           pdx[30] := +(adrsize+intsize);
-      pdx[31] := +intsize;             pdx[32] := +realsize;
-      pdx[33] := +intsize;             pdx[34] := +intsize;
-      pdx[35] := +(intsize+adrsize);   pdx[36] := +adrsize;
-      pdx[37] := +adrsize;             pdx[38] := +(intsize+adrsize);
-      pdx[39] := +(intsize+adrsize);   pdx[40] := +(adrsize+intsize*2);
-      pdx[41] := +(adrsize+intsize*2); pdx[42] := +(adrsize+intsize*2);
-      pdx[43] := +(adrsize+intsize*2); pdx[44] := +adrsize-intsize;
-      pdx[45] := +adrsize-intsize;     pdx[46] :=  0;
-      pdx[47] := +intsize;             pdx[48] := +intsize;
-      pdx[49] := +adrsize*2+intsize;   pdx[50] := +adrsize;
-      pdx[51] := +adrsize+intsize;     pdx[52] := +adrsize;
-      pdx[53] := +adrsize;             pdx[54] := +adrsize+intsize;
-      pdx[55] := +adrsize*2+intsize*2; pdx[56] := +adrsize-intsize;
-      pdx[57] := +adrsize-intsize;     pdx[58] := +adrsize+intsize-intsize;
-      pdx[59] := +adrsize*2+intsize;   pdx[60] := +adrsize;
-      pdx[61] := +adrsize;             pdx[62] := 0;
-      pdx[63] := +intsize;             pdx[64] := +adrsize+intsize+intsize;
-      pdx[65] := +adrsize*2;           pdx[66] := +adrsize*2;
-      pdx[67] := +adrsize*2;           pdx[68] := +(adrsize+intsize);
-      pdx[69] := +adrsize*2;           pdx[70] := +adrsize*2;
-      pdx[71] := +adrsize*2;           pdx[72] := +adrsize*2;
-      pdx[73] := +adrsize+intsize;     pdx[74] := +(adrsize+intsize*3);
-      pdx[75] := +adrsize+intsize;     pdx[76] := +adrsize+intsize;
-      pdx[77] := +(adrsize+intsize*3); pdx[78] := +adrsize+intsize;
-      pdx[79] := +adrsize+intsize*2;   pdx[80] := +adrsize+intsize;
-      pdx[81] := +adrsize*2+intsize;   pdx[82] := +adrsize*2+intsize;
-      pdx[83] := +adrsize*2+intsize;   pdx[84] := +adrsize*2+intsize;
-      pdx[85] := +adrsize;             pdx[86] := +adrsize+intsize;
-      pdx[87] := +adrsize;             pdx[88] := +adrsize+intsize;
-      pdx[89] := +(adrsize+intsize*2); pdx[90] := +(adrsize+intsize*3);
+      pdx[ 1]  := +adrsize;             pdx[ 2]  := +adrsize;
+      pdx[ 3]  := +adrsize;             pdx[ 4]  := +adrsize;
+      pdx[ 5]  := +adrsize;             pdx[ 6]  := +adrsize*2;
+      pdx[ 7]  := 0;                    pdx[ 8]  := +(realsize+intsize);
+      pdx[ 9]  := +intsize*2;           pdx[10]  := +(intsize+adrsize+intsize);
+      pdx[11]  :=  0;                   pdx[12]  := +ptrsize*2;
+      pdx[13]  :=  0;                   pdx[14]  := +adrsize-intsize;
+      pdx[15]  :=  0;                   pdx[16]  :=  0;
+      pdx[17]  :=  0;                   pdx[18]  :=  0;
+      pdx[19]  :=  0;                   pdx[20]  :=  0;
+      pdx[21]  :=  0;                   pdx[22]  :=  0;
+      pdx[23]  :=  0;                   pdx[24]  := +adrsize;
+      pdx[25]  := +adrsize;             pdx[26]  := +adrsize;
+      pdx[27]  := +intsize*2;           pdx[28]  := +(realsize+intsize*2);
+      pdx[29]  := +adrsize*2;           pdx[30]  := +(adrsize+intsize);
+      pdx[31]  := +intsize;             pdx[32]  := +realsize;
+      pdx[33]  := +intsize;             pdx[34]  := +intsize;
+      pdx[35]  := +(intsize+adrsize);   pdx[36]  := +adrsize;
+      pdx[37]  := +adrsize;             pdx[38]  := +(intsize+adrsize);
+      pdx[39]  := +(intsize+adrsize);   pdx[40]  := +(adrsize+intsize*2);
+      pdx[41]  := +(adrsize+intsize*2); pdx[42]  := +(adrsize+intsize*2);
+      pdx[43]  := +(adrsize+intsize*2); pdx[44]  := +adrsize-intsize;
+      pdx[45]  := +adrsize-intsize;     pdx[46]  :=  0;
+      pdx[47]  := +intsize;             pdx[48]  := +intsize;
+      pdx[49]  := +adrsize*2+intsize;   pdx[50]  := +adrsize;
+      pdx[51]  := +adrsize+intsize;     pdx[52]  := +adrsize;
+      pdx[53]  := +adrsize;             pdx[54]  := +adrsize+intsize;
+      pdx[55]  := +adrsize*2+intsize*2; pdx[56]  := +adrsize-intsize;
+      pdx[57]  := +adrsize-intsize;     pdx[58]  := +adrsize+intsize-intsize;
+      pdx[59]  := +adrsize*2+intsize;   pdx[60]  := +adrsize;
+      pdx[61]  := +adrsize;             pdx[62]  := 0;
+      pdx[63]  := +intsize;             pdx[64]  := +adrsize+intsize+intsize;
+      pdx[65]  := +adrsize*2;           pdx[66]  := +adrsize*2;
+      pdx[67]  := +adrsize*2;           pdx[68]  := +(adrsize+intsize);
+      pdx[69]  := +adrsize*2;           pdx[70]  := +adrsize*2;
+      pdx[71]  := +adrsize*2;           pdx[72]  := +adrsize*2;
+      pdx[73]  := +adrsize+intsize;     pdx[74]  := +(adrsize+intsize*3);
+      pdx[75]  := +adrsize+intsize;     pdx[76]  := +adrsize+intsize;
+      pdx[77]  := +(adrsize+intsize*3); pdx[78]  := +adrsize+intsize;
+      pdx[79]  := +adrsize+intsize*2;   pdx[80]  := +adrsize+intsize;
+      pdx[81]  := +adrsize*2+intsize;   pdx[82]  := +adrsize*2+intsize;
+      pdx[83]  := +adrsize*2+intsize;   pdx[84]  := +adrsize*2+intsize;
+      pdx[85]  := +adrsize;             pdx[86]  := +adrsize+intsize;
+      pdx[87]  := +adrsize;             pdx[88]  := +adrsize+intsize;
+      pdx[89]  := +(adrsize+intsize*2); pdx[90]  := +(adrsize+intsize*3);
+      pdx[91]  := +adrsize;             pdx[92]  := +adrsize;
+      pdx[93]  := +adrsize;             pdx[94]  := +adrsize+intsize;
+      pdx[95]  := +adrsize+intsize;     pdx[96]  := +adrsize+intsize;
+      pdx[97]  := +(adrsize+intsize*2); pdx[98]  := +(adrsize+intsize*2);
+      pdx[99]  := +(adrsize+intsize*2); pdx[100] := +(adrsize+intsize*3);
+      pdx[101] := +(adrsize+intsize*3); pdx[102] := +(adrsize+intsize*3);
+      pdx[103] := +adrsize;             pdx[104] := +adrsize;
+      pdx[105] := +adrsize;             pdx[106] := +adrsize+intsize;
+      pdx[107] := +adrsize+intsize;     pdx[108] := +adrsize+intsize;
+      pdx[109] := +(adrsize+intsize*2); pdx[110] := +(adrsize+intsize*2);
+      pdx[111] := +(adrsize+intsize*2); pdx[112] := +(adrsize+intsize*3);
+      pdx[113] := +(adrsize+intsize*3); pdx[114] := +(adrsize+intsize*3);
     end;
 
   begin (*inittables*)
