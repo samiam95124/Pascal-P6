@@ -403,7 +403,7 @@ const
       privexceptiontop                   = 121;
 
       stringlgth  = 1000; { longest string length we can buffer }
-      maxsp       = 86;   { number of predefined procedures/functions }
+      maxsp       = 110;   { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
@@ -2189,50 +2189,62 @@ procedure load;
          { sev is an alias for stra in pint. It has meaning to pgen. }
          instr[253]:='sev       '; insp[253] := true; insq[253] := intsize;
 
-         sptable[ 0]:='get       ';     sptable[ 1]:='put       ';
-         sptable[ 2]:='thw       ';     sptable[ 3]:='rln       ';
-         sptable[ 4]:='new       ';     sptable[ 5]:='wln       ';
-         sptable[ 6]:='wrs       ';     sptable[ 7]:='eln       ';
-         sptable[ 8]:='wri       ';     sptable[ 9]:='wrr       ';
-         sptable[10]:='wrc       ';     sptable[11]:='rdi       ';
-         sptable[12]:='rdr       ';     sptable[13]:='rdc       ';
-         sptable[14]:='sin       ';     sptable[15]:='cos       ';
-         sptable[16]:='exp       ';     sptable[17]:='log       ';
-         sptable[18]:='sqt       ';     sptable[19]:='atn       ';
-         sptable[20]:='---       ';     sptable[21]:='pag       ';
-         sptable[22]:='rsf       ';     sptable[23]:='rwf       ';
-         sptable[24]:='wrb       ';     sptable[25]:='wrf       ';
-         sptable[26]:='dsp       ';     sptable[27]:='wbf       ';
-         sptable[28]:='wbi       ';     sptable[29]:='wbr       ';
-         sptable[30]:='wbc       ';     sptable[31]:='wbb       ';
-         sptable[32]:='rbf       ';     sptable[33]:='rsb       ';
-         sptable[34]:='rwb       ';     sptable[35]:='gbf       ';
-         sptable[36]:='pbf       ';     sptable[37]:='rib       ';
-         sptable[38]:='rcb       ';     sptable[39]:='nwl       ';
-         sptable[40]:='dsl       ';     sptable[41]:='eof       ';
-         sptable[42]:='efb       ';     sptable[43]:='fbv       ';
-         sptable[44]:='fvb       ';     sptable[45]:='wbx       ';
-         sptable[46]:='asst      ';     sptable[47]:='clst      ';
-         sptable[48]:='pos       ';     sptable[49]:='upd       ';
-         sptable[50]:='appt      ';     sptable[51]:='del       ';
-         sptable[52]:='chg       ';     sptable[53]:='len       ';
-         sptable[54]:='loc       ';     sptable[55]:='exs       ';
-         sptable[56]:='assb      ';     sptable[57]:='clsb      ';
-         sptable[58]:='appb      ';     sptable[59]:='hlt       ';
-         sptable[60]:='ast       ';     sptable[61]:='asts      ';
-         sptable[62]:='wrih      ';     sptable[63]:='wrio      ';
-         sptable[64]:='wrib      ';     sptable[65]:='wrsp      ';
-         sptable[66]:='wiz       ';     sptable[67]:='wizh      ';
-         sptable[68]:='wizo      ';     sptable[69]:='wizb      ';
-         sptable[70]:='rds       ';     sptable[71]:='ribf      ';
-         sptable[72]:='rdif      ';     sptable[73]:='rdrf      ';
-         sptable[74]:='rcbf      ';     sptable[75]:='rdcf      ';
-         sptable[76]:='rdsf      ';     sptable[77]:='rdsp      ';
-         sptable[78]:='aeft      ';     sptable[79]:='aefb      ';
-         sptable[80]:='rdie      ';     sptable[81]:='rdre      ';
-         sptable[82]:='rdx       ';     sptable[83]:='rdxf      ';
-         sptable[84]:='rxb       ';     sptable[85]:='rxbf      ';
-         sptable[86]:='rdsc      ';
+         sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
+         sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
+         sptable[ 4]  :='new       ';     sptable[ 5]  :='wln       ';
+         sptable[ 6]  :='wrs       ';     sptable[ 7]  :='eln       ';
+         sptable[ 8]  :='wri       ';     sptable[ 9]  :='wrr       ';
+         sptable[10]  :='wrc       ';     sptable[11]  :='rdi       ';
+         sptable[12]  :='rdr       ';     sptable[13]  :='rdc       ';
+         sptable[14]  :='sin       ';     sptable[15]  :='cos       ';
+         sptable[16]  :='exp       ';     sptable[17]  :='log       ';
+         sptable[18]  :='sqt       ';     sptable[19]  :='atn       ';
+         sptable[20]  :='---       ';     sptable[21]  :='pag       ';
+         sptable[22]  :='rsf       ';     sptable[23]  :='rwf       ';
+         sptable[24]  :='wrb       ';     sptable[25]  :='wrf       ';
+         sptable[26]  :='dsp       ';     sptable[27]  :='wbf       ';
+         sptable[28]  :='wbi       ';     sptable[29]  :='wbr       ';
+         sptable[30]  :='wbc       ';     sptable[31]  :='wbb       ';
+         sptable[32]  :='rbf       ';     sptable[33]  :='rsb       ';
+         sptable[34]  :='rwb       ';     sptable[35]  :='gbf       ';
+         sptable[36]  :='pbf       ';     sptable[37]  :='rib       ';
+         sptable[38]  :='rcb       ';     sptable[39]  :='nwl       ';
+         sptable[40]  :='dsl       ';     sptable[41]  :='eof       ';
+         sptable[42]  :='efb       ';     sptable[43]  :='fbv       ';
+         sptable[44]  :='fvb       ';     sptable[45]  :='wbx       ';
+         sptable[46]  :='asst      ';     sptable[47]  :='clst      ';
+         sptable[48]  :='pos       ';     sptable[49]  :='upd       ';
+         sptable[50]  :='appt      ';     sptable[51]  :='del       ';
+         sptable[52]  :='chg       ';     sptable[53]  :='len       ';
+         sptable[54]  :='loc       ';     sptable[55]  :='exs       ';
+         sptable[56]  :='assb      ';     sptable[57]  :='clsb      ';
+         sptable[58]  :='appb      ';     sptable[59]  :='hlt       ';
+         sptable[60]  :='ast       ';     sptable[61]  :='asts      ';
+         sptable[62]  :='wrih      ';     sptable[63]  :='wrio      ';
+         sptable[64]  :='wrib      ';     sptable[65]  :='wrsp      ';
+         sptable[66]  :='wiz       ';     sptable[67]  :='wizh      ';
+         sptable[68]  :='wizo      ';     sptable[69]  :='wizb      ';
+         sptable[70]  :='rds       ';     sptable[71]  :='ribf      ';
+         sptable[72]  :='rdif      ';     sptable[73]  :='rdrf      ';
+         sptable[74]  :='rcbf      ';     sptable[75]  :='rdcf      ';
+         sptable[76]  :='rdsf      ';     sptable[77]  :='rdsp      ';
+         sptable[78]  :='aeft      ';     sptable[79]  :='aefb      ';
+         sptable[80]  :='rdie      ';     sptable[81]  :='rdre      ';
+         sptable[82]  :='rdx       ';     sptable[83]  :='rdxf      ';
+         sptable[84]  :='rxb       ';     sptable[85]  :='rxbf      ';
+         sptable[86]  :='rdsc      ';     sptable[87]  :='rdih      ';
+         sptable[88]  :='rdio      ';     sptable[89]  :='rdib      '; 
+         sptable[90]  :='rifh      ';     sptable[91]  :='rifo      ';
+         sptable[92]  :='rifb      ';     sptable[93]  :='ribh      '; 
+         sptable[94]  :='ribo      ';     sptable[95]  :='ribb      ';
+         sptable[96]  :='rbfh      ';     sptable[97]  :='rbfo      '; 
+         sptable[98]  :='rbfb      ';     sptable[99]  :='rdxh      ';
+         sptable[100] :='rdxo      ';     sptable[101] :='rdxb      '; 
+         sptable[102] :='rxfh      ';     sptable[103] :='rxfo      ';
+         sptable[104] :='rxfb      ';     sptable[105] :='rxbh      '; 
+         sptable[106] :='rxbo      ';     sptable[107] :='rxbb      ';
+         sptable[108] :='rbxh      ';     sptable[109] :='rbxo      '; 
+         sptable[110] :='rbxb      ';
 
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
@@ -3488,6 +3500,7 @@ procedure callsp;
        rd: integer;
        lz: boolean;
        fld: boolean;
+       rx: integer;
 
    function buffn(fn: fileno): char;
    begin
@@ -3549,8 +3562,9 @@ procedure callsp;
      end
    end;
 
-   procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean);
-   var s: integer; d: integer; r: integer;
+   procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean; 
+                   r: integer);
+   var s: integer; d: integer;
    function chkbuf: char;
    begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf;
@@ -3574,7 +3588,6 @@ procedure callsp;
    end;
    begin
       s := +1; { set sign }
-      r := 10; { set radix }
       { skip leading spaces }
       while (chkbuf = ' ') and not chkend do getbuf;
       if not (chkbuf in ['+', '-', '0'..'9','$','%','&']) then
@@ -3668,7 +3681,7 @@ procedure callsp;
             getbuf; { skip 'e' }
             if not (chkbuf in ['0'..'9', '+', '-']) then
                errore(InvalidRealNumber);
-            readi(fn, i, w, fld); { get exponent }
+            readi(fn, i, w, fld, 10); { get exponent }
             { find with exponent }
             e := e+i
          end;
@@ -4044,11 +4057,28 @@ begin (*callsp*)
            11(*rdi*),
            72(*rdif*),
            82(*rdx*),
-           83(*rdxf*): begin w := pmmaxint; fld := (q = 72) or (q = 83); 
+           83(*rdxf*),
+           87(*rdih*),
+           88(*rdio*),
+           89(*rdib*),
+           90(*rifh*),
+           91(*rifo*),
+           92(*rifb*),
+           99(*rdxh*),
+           100(*rdxo*),
+           101(*rdxb*),
+           102(*rxfh*),
+           103(*rxfo*),
+           104(*rxfb*): begin w := pmmaxint; 
+                           fld := q in [72,83,90,91,92,102,103,104];
+                           rx := 10;
+                           if q in [87,90,99,102] then rx := 16
+                           else if q in [88,91,100,103] then rx := 8
+                           else if q in [89,92,101,104] then rx := 2;
                            if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad);
-                           valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
-                           if (q = 82) or (q = 83) then begin
+                           valfil(ad); fn := store[ad]; readi(fn, i, w, fld, rx);
+                           if q in [82,83,99,100,101,102,103,104] then begin
                              if (i < 0) or (i > 255) then errore(ValueOutOfRange);
                              putbyt(ad1, i)
                            end else putint(ad1, i)
@@ -4056,15 +4086,32 @@ begin (*callsp*)
            37(*rib*),
            71(*ribf*),
            84(*rxb*),
-           85(*rxbf*): begin w := pmmaxint; fld := (q = 71) or (q = 85); 
+           85(*rxbf*),
+           93(*ribh*),
+           94(*ribo*),
+           95(*ribb*),
+           96(*rbfh*),
+           97(*rbfo*),
+           98(*rbfb*),
+           105(*rxbh*),
+           106(*rxbo*),
+           107(*rxbb*),
+           108(*rbxh*),
+           109(*rbxo*),
+           110(*rbxb*): begin w := pmmaxint; 
+                           fld := q in [71,85,96,97,98,108,109,110];
+                           rx := 10;
+                           if q in [93,96,105,108] then rx := 16
+                           else if q in [94,97,106,109] then rx := 8
+                           else if q in [95,98,107,110] then rx := 2;
                            popint(mx); popint(mn);
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
-                           readi(fn, i, w, fld);
+                           readi(fn, i, w, fld, rx);
                            if (i < mn) or (i > mx) then
                              errore(ValueOutOfRange);
                            { note: value should be in byte range }
-                           if (q = 82) or (q = 83) then putbyt(ad1, i)
+                           if q in [82,83,105,106,107,108,109,110] then putbyt(ad1, i)
                            else putint(ad1, i)
                       end;
            12(*rdr*),
@@ -4423,7 +4470,7 @@ begin (*callsp*)
                          filanamtab[fn] := true
                        end;
            80(*rdie*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad);
-                         readi(commandfn, i, w, false); putint(ad, i);
+                         readi(commandfn, i, w, false, 10); putint(ad, i);
                        end;
            81(*rdre*): begin w := pmmaxint; popint(i); popadr(ad1); popadr(ad);
                          readr(commandfn, r, w, false); putrel(ad, r);

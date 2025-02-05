@@ -3432,7 +3432,6 @@ begin cmdpos := maxcmd end;
       88: writeln(prr, 'Read byte integer from text file with field');
       89: writeln(prr, 'Read byte integer from text file with range check');
       90: writeln(prr, 'Read byte integer from text file with range check and field');
-
       91: writeln(prr, 'Read integer from text file in radix 16');
       92: writeln(prr, 'Read integer from text file in radix 8');
       93: writeln(prr, 'Read integer from text file in radix 2');
@@ -3445,7 +3444,6 @@ begin cmdpos := maxcmd end;
       100: writeln(prr, 'Read integer from text file in radix 16 with range check and field');
       101: writeln(prr, 'Read integer from text file in radix 8 with range check and field');
       102: writeln(prr, 'Read integer from text file in radix 2 with range check and field');
-
       103: writeln(prr, 'Read byte integer from text file in radix 16');
       104: writeln(prr, 'Read byte integer from text file in radix 8');
       105: writeln(prr, 'Read byte integer from text file in radix 2');
