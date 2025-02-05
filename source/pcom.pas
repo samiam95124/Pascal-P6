@@ -5208,8 +5208,9 @@ begin cmdpos := maxcmd end;
       if sy  = lparent then
         begin insymbol; chkhdr; cststr := false;
           if sy = stringconst then begin chkstd; cststr := true; 
-            expression(fsys + [comma,colon,rparent], false)
-          end else variable(fsys + [comma,colon,rparent], true);
+            expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
+          end else 
+            variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
           if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc;
           lsp := gattr.typtr; test := false;
           if lsp <> nil then
@@ -5231,8 +5232,9 @@ begin cmdpos := maxcmd end;
                   if sy = comma then
                     begin insymbol; cststr := false;
                       if sy = stringconst then begin chkstd; cststr := true;
-                        expression(fsys + [comma,colon,rparent], false)
-                      end else variable(fsys + [comma,colon,rparent], true);
+                        expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
+                      end else 
+                        variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
                       if gattr.typtr <> nil then 
                         cp := gattr.typtr^.form = arrayc
                     end
@@ -5365,8 +5367,9 @@ begin cmdpos := maxcmd end;
             if not test then
               begin insymbol; cststr := false; 
                 if sy = stringconst then begin chkstd; cststr := true;
-                  expression(fsys + [comma,colon,rparent], false)
-                end else variable(fsys + [comma,colon,rparent], true);
+                  expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
+                end else 
+                  variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
                 if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc
               end
           until test;
