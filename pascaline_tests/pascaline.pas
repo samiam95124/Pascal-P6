@@ -1622,29 +1622,18 @@ begin
    readln(fl1, f3:9, f4:9);
    writeln('er11: ', f3:9:4, ' ', f4:9:4, ' s/b 1234.5678 9876.5432');
 
-   read(fl1, 'The answer is: ', i);
+   readln(fl1, 'The answer is: ', i);
    writeln('er12: ', i:1, ' s/b 42');
-   readln(fl1);
 
-   {
-   radix specifiers in the input file
-   unimplemented
-   read(fl1, i, x, y);
-   writeln('er13: ', i:1, x:1, y:1);
-   }
-   readln(fl1);
+   readln(fl1, i, x, y);
+   writeln('er13: ', i:1, ' ', x:1, ' ', y:1, ' s/b 66 34 66');
 
-   {
-   radix specifiers on variables
-   unimplemented
-   read(fl1, i$, x&, y%);
-   writeln('er13: ', i:1, x:1, y:1);
-   }
-   readln(fl1);
+   readln(fl1, i$, x&, y%);
+   writeln('er14: ', i:1, ' ', x:1, ' ', y:1, ' s/b 66 34 66');
 
    s10 := '1234567890';
    readln(fl1, s10:*);
-   writeln('er14: ', s10, '<', ' s/b hi!       <');
+   writeln('er15: ', s10, '<', ' s/b hi!       <');
 
 {*******************************************************************************
 

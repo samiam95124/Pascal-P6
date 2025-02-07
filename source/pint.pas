@@ -403,7 +403,7 @@ const
       privexceptiontop                   = 121;
 
       stringlgth  = 1000; { longest string length we can buffer }
-      maxsp       = 110;   { number of predefined procedures/functions }
+      maxsp       = 110;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }

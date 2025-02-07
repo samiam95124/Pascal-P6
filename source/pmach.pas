@@ -405,7 +405,7 @@ const
       ExternalsNotEnabled                = 121;
       privexceptiontop                   = 121;
 
-      maxsp       = 86;   { number of predefined procedures/functions }
+      maxsp       = 110;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
@@ -1702,6 +1702,7 @@ procedure callsp;
        rd: integer;
        lz: boolean;
        fld: boolean;
+       rx: integer;
 
    function buffn(fn: fileno): char;
    begin 
@@ -1764,8 +1765,9 @@ procedure callsp;
      end
    end;
 
-   procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean);
-   var s: integer; d: integer; r: integer;
+   procedure readi(fn: fileno; var i: integer; var w: integer; fld: boolean; 
+                   r: integer);
+   var s: integer; d: integer;
    function chkbuf: char;
    begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf;
@@ -1789,7 +1791,6 @@ procedure callsp;
    end;
    begin
       s := +1; { set sign }
-      r := 10; { set radix }
       { skip leading spaces }
       while (chkbuf = ' ') and not chkend do getbuf;
       if not (chkbuf in ['+', '-', '0'..'9','$','%','&']) then
@@ -1883,7 +1884,7 @@ procedure callsp;
             getbuf; { skip 'e' }
             if not (chkbuf in ['0'..'9', '+', '-']) then
                errore(InvalidRealNumber);
-            readi(fn, i, w, fld); { get exponent }
+            readi(fn, i, w, fld, 10); { get exponent }
             { find with exponent }
             e := e+i
          end;
@@ -2242,11 +2243,28 @@ begin (*callsp*)
            11(*rdi*),
            72(*rdif*),
            82(*rdx*),
-           83(*rdxf*): begin w := pmmaxint; fld := (q = 72) or (q = 83); 
+           83(*rdxf*),
+           87(*rdih*),
+           88(*rdio*),
+           89(*rdib*),
+           90(*rifh*),
+           91(*rifo*),
+           92(*rifb*),
+           99(*rdxh*),
+           100(*rdxo*),
+           101(*rdxb*),
+           102(*rxfh*),
+           103(*rxfo*),
+           104(*rxfb*): begin w := pmmaxint; 
+                           fld := q in [72,83,90,91,92,102,103,104];
+                           rx := 10;
+                           if q in [87,90,99,102] then rx := 16
+                           else if q in [88,91,100,103] then rx := 8
+                           else if q in [89,92,101,104] then rx := 2;
                            if fld then popint(w);
                            popadr(ad1); popadr(ad); pshadr(ad);
-                           valfil(ad); fn := store[ad]; readi(fn, i, w, fld);
-                           if (q = 82) or (q = 83) then begin
+                           valfil(ad); fn := store[ad]; readi(fn, i, w, fld, rx);
+                           if q in [82,83,99,100,101,102,103,104] then begin
                              if (i < 0) or (i > 255) then errore(ValueOutOfRange);
                              putbyt(ad1, i)
                            end else putint(ad1, i)
@@ -2254,15 +2272,32 @@ begin (*callsp*)
            37(*rib*),
            71(*ribf*),
            84(*rxb*),
-           85(*rxbf*): begin w := pmmaxint; fld := (q = 71) or (q = 85); 
+           85(*rxbf*),
+           93(*ribh*),
+           94(*ribo*),
+           95(*ribb*),
+           96(*rbfh*),
+           97(*rbfo*),
+           98(*rbfb*),
+           105(*rxbh*),
+           106(*rxbo*),
+           107(*rxbb*),
+           108(*rbxh*),
+           109(*rbxo*),
+           110(*rbxb*): begin w := pmmaxint; 
+                           fld := q in [71,85,96,97,98,108,109,110];
+                           rx := 10;
+                           if q in [93,96,105,108] then rx := 16
+                           else if q in [94,97,106,109] then rx := 8
+                           else if q in [95,98,107,110] then rx := 2;
                            popint(mx); popint(mn);
                            if fld then popint(w); popadr(ad1); popadr(ad);
                            pshadr(ad); valfil(ad); fn := store[ad];
-                           readi(fn, i, w, fld);
+                           readi(fn, i, w, fld, rx);
                            if (i < mn) or (i > mx) then
                              errore(ValueOutOfRange);
                            { note: value should be in byte range }
-                           if (q = 82) or (q = 83) then putbyt(ad1, i)
+                           if q in [82,83,105,106,107,108,109,110] then putbyt(ad1, i)
                            else putint(ad1, i)
                       end;
            12(*rdr*),
@@ -2612,7 +2647,7 @@ begin (*callsp*)
                          filanamtab[fn] := true
                        end;
            80(*rdie*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
-                         readi(commandfn, i, w, false); putint(ad, i);
+                         readi(commandfn, i, w, false, 10); putint(ad, i);
                        end;
            81(*rdre*): begin w := maxint; popint(i); popadr(ad1); popadr(ad); 
                          readr(commandfn, r, w, false); putrel(ad, r);

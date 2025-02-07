@@ -1,3 +1,8 @@
+P6 Pascal interpreter vs. 0.4.x
+
+Assembling/loading program
+Running program
+
 *******************************************************************************
 
                        TEST SUITE FOR PASCALINE
@@ -689,7 +694,9 @@ er9: bite me  ?42 s/b bite me  ?42
 er10: 1234567890 s/b 1234567890
 er11: 1234.5678 9876.5432 s/b 1234.5678 9876.5432
 er12: 42 s/b 42
-er14: hi!       < s/b hi!       <
+er13: 66 34 66 s/b 66 34 66
+er14: 66 34 66 s/b 66 34 66
+er15: hi!       < s/b hi!       <
 tcr1: one two three  s/b one two three
 tcr2: 53 s/b 53 
 f1: 1 5 3 10 92  s/b 1 5 3 10 92
@@ -1126,3 +1133,5 @@ ce8: \ s/b \
 ce9: a s/b a
 ht:
 The test should now halt
+
+program complete

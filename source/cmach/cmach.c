@@ -431,7 +431,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define EXTERNALSNOTENABLED                 121
 #define PRIVEXCEPTIONTOP                    121
 
-#define MAXSP        86   /* number of predefined procedures/functions */
+#define MAXSP        110  /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
@@ -1671,14 +1671,12 @@ int valchr(char c, long r)
   );
 } 
 
-void readi(filnum fn, long *i, long* w, boolean fld)
+void readi(filnum fn, long *i, long* w, boolean fld, int r)
 {
     long s;
     long d;
-    long r;
 
    s = +1; /* set sign */
-   r = 10; /* set radix */
    /* skip leading spaces */
    while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
    if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
@@ -1766,7 +1764,7 @@ void readr(filnum fn, double* r, long w, boolean fld)
          if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' ||
                chkbuf(fn, w) == '-'))
             errore(INVALIDREALNUMBER);
-         readi(fn, &i, &w, fld); /* get exponent */
+         readi(fn, &i, &w, fld, 10); /* get exponent */
          /* find with exponent */
          e = e+i;
       }
@@ -1939,6 +1937,7 @@ void callsp(void)
     boolean lz;
     boolean fld;
     FILE* fp;
+    int rx;
 
     /* system routine call trace diagnostic */
     /*
@@ -2122,10 +2121,30 @@ void callsp(void)
     case 11/*rdi*/:
     case 72/*rdif*/:
     case 82/*rdx*/:
-    case 83/*rdxf*/: w = LONG_MAX; fld = q == 72||q == 83; if (fld) popint(w);
+    case 83/*rdxf*/: 
+    case 87/*rdih*/:
+    case 88/*rdio*/:
+    case 89/*rdib*/:
+    case 90/*rifh*/:
+    case 91/*rifo*/:
+    case 92/*rifb*/:
+    case 99/*rdxh*/:
+    case 100/*rdxo*/:
+    case 101/*rdxb*/:
+    case 102/*rxfh*/:
+    case 103/*rxfo*/:
+    case 104/*rxfb*/: w = LONG_MAX; 
+                     fld = q == 72||q == 83||q == 90|| q == 91||q == 92||
+                           q == 102||q == 103||q == 104; 
+                     rx = 10;
+                     if (q == 87||q == 90||q == 99||q == 102) rx = 16;
+                     else if (q == 88||q == 91||q == 100||q == 103) rx = 8;
+                     else if (q == 89||q == 92||q == 101||q == 104) rx = 2;
+                     if (fld) popint(w);
                      popadr(ad1); popadr(ad); pshadr(ad);
-                     valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld);
-                     if (q == 82||q == 83) {
+                     valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld, rx);
+                     if (q == 82||q == 83||q == 99||q == 100||q == 101||
+                         q == 102||q == 103|| q == 104) {
                        if (i < 0||i > 255) errore(VALUEOUTOFRANGE);
                        putbyt(ad1, i);
                      } else putint(ad1, i);
@@ -2133,15 +2152,36 @@ void callsp(void)
     case 37/*rib*/:
     case 71/*ribf*/:
     case 84/*rxb*/:
-    case 85/*rxbf*/: w = LONG_MAX; fld = q == 71||q == 85; 
+    case 85/*rxbf*/: 
+    case 93/*ribh*/:
+    case 94/*ribo*/:
+    case 95/*ribb*/:
+    case 96/*rbfh*/:
+    case 97/*rbfo*/:
+    case 98/*rbfb*/:
+    case 105/*rxbh*/:
+    case 106/*rxbo*/:
+    case 107/*rxbb*/:
+    case 108/*rbxh*/:
+    case 109/*rbxo*/:
+    case 110/*rbxb*/: w = LONG_MAX; 
+                    fld = q == 71||q == 85||q == 96||q == 97||q == 98||
+                          q == 108||q == 109||q == 110; 
+                    rx = 10;
+                    if (q == 93||q == 96||q == 105||q == 108) rx = 16;
+                    else if (q == 94||q == 97||q == 106||q == 109) rx = 8;
+                    else if (q == 95||q == 98||q == 107||q == 110) rx = 2;
                     popint(mx); popint(mn);
                     if (fld) popint(w); popadr(ad1); popadr(ad);
                     pshadr(ad); valfil(ad); fn = store[ad];
-                    readi(fn, &i, &w, fld);
+                    readi(fn, &i, &w, fld, rx);
                     if (i < mn || i > mx) errore(VALUEOUTOFRANGE);
                     /* note: value should be in byte range */
-                    if (q == 82||q == 83) putbyt(ad1, i);
-                    putint(ad1, i);
+                    if (q == 82||q == 83||q == 105||q == 106||q == 107||
+                        q == 108||q == 109||q == 110) {
+                      if (i < 0||i > 255) errore(VALUEOUTOFRANGE);
+                      putbyt(ad1, i);
+                    } else putint(ad1, i);
                     break;
     case 12/*rdr*/:
     case 73/*rdrf*/: w = LONG_MAX; fld = q == 73; if (fld) popint(w);
@@ -2493,7 +2533,7 @@ void callsp(void)
                   filanamtab[fn] = TRUE;
                   break;
     case 80/*rdie*/: w = LONG_MAX; popint(i); popadr(ad1); popadr(ad);
-                  readi(COMMANDFN, &i, &w, FALSE); putint(ad, i);
+                  readi(COMMANDFN, &i, &w, FALSE, 10); putint(ad, i);
                   break;
     case 81/*rdre*/: w = LONG_MAX; popint(i); popadr(ad1); popadr(ad);
                   readr(COMMANDFN, &r, w, FALSE); putrel(ad, r);

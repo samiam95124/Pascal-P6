@@ -1437,14 +1437,12 @@ is blank.
 
 *******************************************************************************/
 
-void readi(filnum fn, long *i, long* w, boolean fld)
+void readi(filnum fn, long *i, long* w, boolean fld, long r)
 {
     long s;
     long d;
-    long r;
 
    s = +1; /* set sign */
-   r = 10; /* set radix */
    /* skip leading spaces */
    while (chkbuf(fn, *w) == ' ' && !chkend(fn, *w)) getbuf(fn, w);
    if (!(chkbuf(fn, *w) == '+' || chkbuf(fn, *w) == '-' ||
@@ -1478,6 +1476,33 @@ void readi(filnum fn, long *i, long* w, boolean fld)
      if (chkbuf(fn, *w) != ' ') errore(modnam, __LINE__, FIELDNOTBLANK);
      getbuf(fn, w);
    }
+}
+
+/** ****************************************************************************
+
+Read integer fielded from file pointer
+
+Reads an integer from the given file with field. An integer is read from the
+input file, but limited by the field width if provided. If the fielded flag is
+true, will also verify that the rest of the field after the number is parsed
+is blank.
+
+This is the same as readi(), but takes a file pointer and validates it for 
+reading.
+
+*******************************************************************************/
+
+void readifp(pasfil* f, long *i, long* w, boolean fld, long r)
+
+{
+
+    int fn;
+
+    valfilrm(f); /* validate file for reading */
+    fn = *f; /* get logical file no. */
+
+    readi(fn, i, w, fld, r);
+
 }
 
 /** ****************************************************************************
@@ -1567,7 +1592,7 @@ static void readr(filnum fn, double* r, long w, boolean fld)
             if (!(isdigit(chkbuf(fn, w)) || chkbuf(fn, w) == '+' || 
                 chkbuf(fn, w) == '-')) 
                 errore(modnam, __LINE__, INVALIDREALNUMBER);
-            readi(fn, &i, &w, fld); /* get exponent */
+            readi(fn, &i, &w, fld, 10); /* get exponent */
             /* find with exponent */
             e = e+i;
 
@@ -2767,14 +2792,76 @@ void psystem_rdi(
 
 {
 
-    int fn;
     long w;
 
-    valfilrm(f); /* validate file for reading */
-    fn = *f; /* get logical file no. */
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 10);
+
+}
+
+/** ****************************************************************************
+
+Read integer from text file with radix 16
+
+Reads an integer from the given text file with radix 16 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdih(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i
+)
+
+{
+
+    long w;
 
     w = LONG_MAX;
-    readi(fn, i, &w, FALSE);
+    readifp(f, i, &w, FALSE, 16);
+
+}
+
+/** ****************************************************************************
+
+Read integer from text file with radix 8
+
+Reads an integer from the given text file with radix 8 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdio(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i
+)
+
+{
+
+    long w;
+
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 8);
+
+}
+
+/** ****************************************************************************
+
+Read integer from text file with radix 2
+
+Reads an integer from the given text file with radix 2 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdib(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i
+)
+
+{
+
+    long w;
+
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 2);
 
 }
 
@@ -2803,6 +2890,75 @@ void psystem_rdx(
 
 /** ****************************************************************************
 
+Read byte from text file in radix 16
+
+Reads an integer from the given text file in radix 16 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdxh(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b
+)
+
+{
+
+    long i;
+
+    psystem_rdih(f, &i);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte from text file in radix 8
+
+Reads an integer from the given text file in radix 8 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdxo(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b
+)
+
+{
+
+    long i;
+
+    psystem_rdio(f, &i);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte from text file in radix 2
+
+Reads an integer from the given text file in radix 2 and returns it.
+
+*******************************************************************************/
+
+void psystem_rdxb(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b
+)
+
+{
+
+    long i;
+
+    psystem_rdib(f, &i);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
 Read integer from text file with field
 
 Reads an integer from the given text file with the given field and returns it.
@@ -2819,12 +2975,73 @@ void psystem_rdif(
 
 {
 
-    int fn;
+    readifp(f, i, &w, TRUE, 10);
 
-    valfilrm(f); /* validate file for reading */
-    fn = *f; /* get logical file no. */
+}
 
-    readi(fn, i, &w, TRUE);
+/** ****************************************************************************
+
+Read integer from text file with field and radix 16
+
+Reads an integer from the given text file with the given field and radix 16 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rifh(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Field */                   long    w
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 16);
+
+}
+
+/** ****************************************************************************
+
+Read integer from text file with field and radix 8
+
+Reads an integer from the given text file with the given field and radix 8 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rifo(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Field */                   long    w
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 8);
+
+}
+
+/** ****************************************************************************
+
+Read integer from text file with field and radix 2
+
+Reads an integer from the given text file with the given field and radix 2 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rifb(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Field */                   long    w
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 2);
 
 }
 
@@ -2856,6 +3073,84 @@ void psystem_rdxf(
 
 /** ****************************************************************************
 
+Read byte from text file with field and radix 16
+
+Reads a byte from the given text file with the given field and radix 16 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rxfh(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field */                   long           w
+)
+
+{
+
+    long i;
+
+    psystem_rifh(f, &i, w);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte from text file with field and radix 8
+
+Reads a byte from the given text file with the given field and radix 8 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rxfo(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field */                   long           w
+)
+
+{
+
+    long i;
+
+    psystem_rifo(f, &i, w);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte from text file with field and radix 2
+
+Reads a byte from the given text file with the given field and radix 2 and 
+returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+*******************************************************************************/
+
+void psystem_rxfb(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field */                   long           w
+)
+
+{
+
+    long i;
+
+    psystem_rifb(f, &i, w);
+    if (i < 0 || i > 255) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
 Read integer bounded from text file
 
 Reads an integer with bounds from the given text file and returns it.
@@ -2873,14 +3168,94 @@ void psystem_rib(
 
 {
 
-    int fn;
     long w;
 
-    valfilrm(f); /* validate file for reading */
-    fn = *f; /* get logical file no. */
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 10);
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
-    w = LONG_MAX; 
-    readi(fn, i, &w, FALSE);
+}
+
+/** ****************************************************************************
+
+Read integer bounded from text file with radix 16
+
+Reads an integer with bounds from the given text file with radix 16 and returns 
+it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_ribh(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long w;
+
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 16);
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Read integer bounded from text file with radix 8
+
+Reads an integer with bounds from the given text file with radix 8 and returns 
+it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_ribo(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long w;
+
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 8);
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Read integer bounded from text file with radix 2
+
+Reads an integer with bounds from the given text file with radix 2 and returns 
+it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_ribb(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long*    i,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long w;
+
+    w = LONG_MAX;
+    readifp(f, i, &w, FALSE, 2);
     if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
@@ -2914,6 +3289,87 @@ void psystem_rxb(
 
 /** ****************************************************************************
 
+Read byte bounded from text file with radix 16
+
+Reads a byte with bounds from the given text file with radix 16 and returns it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rxbh(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_ribh(f, &i, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte bounded from text file with radix 8
+
+Reads a byte with bounds from the given text file with radix 8 and returns it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rxbo(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_ribo(f, &i, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte bounded from text file with radix 2
+
+Reads a byte with bounds from the given text file with radix 2 and returns it.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rxbb(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_ribb(f, &i, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
 Read integer bounded from text file with field
 
 Reads an integer with bounds from the given text file with the given field and
@@ -2934,12 +3390,88 @@ void psystem_ribf(
 
 {
 
-    int fn;
+    readifp(f, i, &w, TRUE, 10); 
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
-    valfilrm(f); /* validate file for reading */
-    fn = *f; /* get logical file no. */
+}
 
-    readi(fn, i, &w, TRUE);
+/** ****************************************************************************
+
+Read integer bounded from text file with field and radix 16
+
+Reads an integer with bounds from the given text file with the given field and
+radix 16 and returns it. See the Pascaline specification. Only the characters in
+the indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbfh(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long* i,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 16); 
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Read integer bounded from text file with field and radix 8
+
+Reads an integer with bounds from the given text file with the given field and
+radix 8 and returns it. See the Pascaline specification. Only the characters in
+the indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbfo(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long* i,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 8); 
+    if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
+
+}
+
+/** ****************************************************************************
+
+Read integer bounded from text file with field and radix 2
+
+Reads an integer with bounds from the given text file with the given field and
+radix 2 and returns it. See the Pascaline specification. Only the characters in
+the indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbfb(
+    /* Pascal file to write to */ pasfil* f,
+    /* integer to read */         long* i,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    readifp(f, i, &w, TRUE, 2); 
     if (*i < mn || *i > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
@@ -2969,6 +3501,96 @@ void psystem_rxbf(
     long i;
 
     psystem_ribf(f, &i, w, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte bounded from text file with field and radix 16
+
+Reads a byte with bounds from the given text file with the given field and radix
+16 and returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbxh(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_rbfh(f, &i, w, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte bounded from text file with field and radix 8
+
+Reads a byte with bounds from the given text file with the given field and radix
+8 and returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbxo(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_rbfo(f, &i, w, mn, mx);
+    /* note: value should be in byte range */
+    *b = i;
+
+}
+
+/** ****************************************************************************
+
+Read byte bounded from text file with field and radix 2
+
+Reads a byte with bounds from the given text file with the given field and radix
+2 and returns it. See the Pascaline specification. Only the characters in the 
+indicated field will be used, even if followed by other digits.
+
+The bounds give the acceptable limits of the integer value, from minimum to 
+maximum. Out of range integers will result in an error.
+
+*******************************************************************************/
+
+void psystem_rbxb(
+    /* Pascal file to write to */ pasfil*        f,
+    /* byte to read */            unsigned char* b,
+    /* Field to read */           long w,
+    /* Bounds for integer */      long mn, long mx
+)
+
+{
+
+    long i;
+
+    psystem_rbfb(f, &i, w, mn, mx);
     /* note: value should be in byte range */
     *b = i;
 
@@ -4636,7 +5258,7 @@ void psystem_rdie(
     long w;
 
     w = LONG_MAX; 
-    readi(COMMANDFN, i, &w, FALSE);
+    readi(COMMANDFN, i, &w, FALSE, 10);
 
 }
 

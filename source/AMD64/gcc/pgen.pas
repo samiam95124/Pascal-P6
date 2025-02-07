@@ -256,7 +256,7 @@ const
       privexceptiontop                   = 121;
 
       strlen      = 1000;    { longest string length we can buffer }
-      maxsp       = 86;      { number of predefined procedures/functions }
+      maxsp       = 110;     { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1239,7 +1239,30 @@ procedure xlate;
          sptable[84]:='rxb       '; spfunc[84]:=false; sppar[84]:=4; spkeep[84]:=true;
          sptable[85]:='rxbf      '; spfunc[85]:=false; sppar[85]:=5; spkeep[85]:=true;
          sptable[86]:='rdsc      '; spfunc[86]:=false; sppar[86]:=3; spkeep[86]:=true;
-
+         sptable[87]:='rdih      '; spfunc[87]:=false; sppar[87]:=2; spkeep[87]:=true;
+         sptable[88]:='rdio      '; spfunc[88]:=false; sppar[88]:=2; spkeep[88]:=true;    
+         sptable[89]:='rdib      '; spfunc[89]:=false; sppar[89]:=2; spkeep[89]:=true;
+         sptable[90]:='rifh      '; spfunc[90]:=false; sppar[90]:=3; spkeep[90]:=true;    
+         sptable[91]:='rifo      '; spfunc[91]:=false; sppar[91]:=3; spkeep[91]:=true;
+         sptable[92]:='rifb      '; spfunc[92]:=false; sppar[92]:=3; spkeep[92]:=true;   
+         sptable[93]:='ribh      '; spfunc[93]:=false; sppar[93]:=4; spkeep[93]:=true;
+         sptable[94]:='ribo      '; spfunc[94]:=false; sppar[94]:=4; spkeep[94]:=true;    
+         sptable[95]:='ribb      '; spfunc[95]:=false; sppar[95]:=4; spkeep[95]:=true;
+         sptable[96]:='rbfh      '; spfunc[96]:=false; sppar[96]:=5; spkeep[96]:=true;
+         sptable[97]:='rbfo      '; spfunc[97]:=false; sppar[97]:=5; spkeep[97]:=true;
+         sptable[98]:='rbfb      '; spfunc[98]:=false; sppar[98]:=5; spkeep[98]:=true;
+         sptable[99]:='rdxh      '; spfunc[99]:=false; sppar[99]:=2; spkeep[99]:=true;
+         sptable[100]:='rdxo      '; spfunc[100]:=false; sppar[100]:=2; spkeep[100]:=true;
+         sptable[101]:='rdxb      '; spfunc[101]:=false; sppar[101]:=2; spkeep[101]:=true;
+         sptable[102]:='rxfh      '; spfunc[102]:=false; sppar[102]:=3; spkeep[102]:=true;    
+         sptable[103]:='rxfo      '; spfunc[103]:=false; sppar[103]:=3; spkeep[103]:=true;
+         sptable[104]:='rxfb      '; spfunc[104]:=false; sppar[104]:=3; spkeep[104]:=true;
+         sptable[105] :='rxbh      '; spfunc[105]:=false; sppar[105]:=4; spkeep[105]:=true;
+         sptable[106] :='rxbo      '; spfunc[106]:=false; sppar[106]:=4; spkeep[106]:=true;
+         sptable[107] :='rxbb      '; spfunc[107]:=false; sppar[107]:=4; spkeep[107]:=true;
+         sptable[108] :='rbxh      '; spfunc[108]:=false; sppar[108]:=5; spkeep[108]:=true;    
+         sptable[109] :='rbxo      '; spfunc[109]:=false; sppar[109]:=5; spkeep[109]:=true;
+         sptable[110] :='rbxb      '; spfunc[110]:=false; sppar[110]:=5; spkeep[110]:=true;
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;
