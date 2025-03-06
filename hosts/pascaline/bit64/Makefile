@@ -41,7 +41,7 @@
 ################################################################################
 
 CC=gcc
-CFLAGS=-g3 -DWRDSIZ64
+CFLAGS=-static -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 CPPFLAGS=-P -nostdinc -traditional-cpp

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#
+# Build all products and repeat 3 times.
+#
+# Used to verify the compiler can make itself.
+#
+make clean
+make
+make clean
+make
+make clean
+make
