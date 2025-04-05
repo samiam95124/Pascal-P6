@@ -7906,15 +7906,15 @@ begin cmdpos := maxcmd end;
           forw,extl,virt,ovrl: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
           ops: restr; opt: operatort;
+          oldlevf: 0..maxlevel; oldtopf: disprange;
 
-      procedure pushlvl(forw: boolean; lcp: ctp);
+      procedure pushlvl(lcp: ctp);
       begin
         if level < maxlevel then level := level + 1 else error(251);
         if top < displimit then
           begin top := top + 1;
             with display[top] do
               begin inidsp(display[top]);
-                if forw then fname := lcp^.pflist;
                 { use the defining point status of the parent block }
                 define := display[top-1].define;
                 occur := blck; bname := lcp
@@ -7928,7 +7928,6 @@ begin cmdpos := maxcmd end;
         var lcp,lcp1,lcp2,lcp3: ctp; lsp: stp; lkind: idkind;
           llc,lsize: addrrange; count: integer; pt: partyp;
           oldlev: 0..maxlevel; oldtop: disprange;
-          oldlevf: 0..maxlevel; oldtopf: disprange;
           lcs: addrrange; test: boolean; dummy: boolean; first: boolean;
       procedure joinlists;
       var lcp, lcp3: ctp;
@@ -7947,9 +7946,6 @@ begin cmdpos := maxcmd end;
       end;
       begin { parameterlist }
         plst := false; first := true;
-        if forw then begin { isolate duplicated list in level }
-          oldlevf := level; oldtopf := top; pushlvl(false, nil)
-        end;
         lcp1 := nil;
         if not (sy in fsy + [lparent]) then
           begin error(7); skip(fsys + fsy + [lparent]) end;
@@ -7981,7 +7977,7 @@ begin cmdpos := maxcmd end;
                         insymbol
                       end
                     else error(2);
-                    oldlev := level; oldtop := top; pushlvl(false, lcp);
+                    oldlev := level; oldtop := top; pushlvl(lcp);
                     lcs := lc; parameterlist([semicolon,rparent],lcp2,dummy, false, noop);
                     lc := lcs; 
                     if lcp <> nil then 
@@ -8013,7 +8009,7 @@ begin cmdpos := maxcmd end;
                             insymbol;
                           end
                         else error(2);
-                        oldlev := level; oldtop := top; pushlvl(false, lcp);
+                        oldlev := level; oldtop := top; pushlvl(lcp);
                         lcs := lc;
                         parameterlist([colon,semicolon,rparent],lcp2,dummy, false, noop);
                         lc := lcs; 
@@ -8162,10 +8158,7 @@ begin cmdpos := maxcmd end;
                   lcp3 := lcp1; lcp1 := lcp2
                 end;
             fpar := lcp3
-          end else begin fpar := nil; lc := -level*ptrsize end;
-        if forw then begin { isolate duplicated list in level }
-          level := oldlevf; putdsps(oldtopf); top := oldtopf
-        end
+          end else begin fpar := nil; lc := -level*ptrsize end
     end (*parameterlist*) ;
 
     { for overloading, same as strict cmpparlst(), but includes read = integer
@@ -8263,6 +8256,15 @@ begin cmdpos := maxcmd end;
           if not plst^.isloc then plst^.vaddr := plst^.vaddr+off
         end else if (plst^.klass = proc) or (plst^.klass = func) then 
           plst^.pfaddr := plst^.pfaddr+off;
+        plst := plst^.next
+      end
+    end;
+
+    { merge names in parameter list with current display }
+    procedure parmrg(plst: ctp);
+    begin
+      while plst <> nil do begin
+        enterid(plst);
         plst := plst^.next
       end
     end;
@@ -8408,25 +8410,28 @@ begin cmdpos := maxcmd end;
           if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
             lcp := uprcptr else lcp := ufctptr
         end;
-      oldlev := level; oldtop := top;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
-      pushlvl(forw, lcp); display[top].define := false;
+      oldlev := level; oldtop := top; pushlvl(lcp); 
+      display[top].define := false;
+      { push another level to isolate the parameter list for forward declarations }
+      pushlvl(nil); level := level-1;
       if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
-        parameterlist([semicolon],lcp1,plst, fsy = operatorsy, opt)
-      else parameterlist([semicolon,colon],lcp1,plst, fsy = operatorsy, opt);
+        parameterlist([semicolon],lcp2,plst, fsy = operatorsy, opt)
+      else parameterlist([semicolon,colon],lcp2,plst, fsy = operatorsy, opt);
+      putdsps(top-1); top := top-1; { dump display }
       if not forw then begin
-        lcp^.pflist := lcp1; lcp^.pfnum := parnum(lcp); 
+        parmrg(lcp2); { merge back the current parameter list }
+        lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
         lcp^.locpar := parmspc(lcp^.pflist);
         parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
-        if ovrl or (fsy = operatorsy) then begin { compare against overload group }
-          lcp2 := lcp^.grppar; { index top of overload group }
-          chkovlpar(lcp2, lcp)
-        end;
+        if ovrl or (fsy = operatorsy) then { compare against overload group }
+          chkovlpar(lcp^.grppar, lcp);
         lcp^.locstr := lc { save locals counter }
       end else begin
-        if plst then if not cmpparlst(lcp^.pflist, lcp1) then error(216);
-        putparlst(lcp1); { redeclare, dispose of copy }
+        parmrg(lcp^.pflist); { merge back the forwarded parameter list }
+        if plst then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
+        putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp^.locstr { reset locals counter }
       end;
       if (fsy = funcsy) or ((fsy = operatorsy) and not (opt = bcmop)) then
