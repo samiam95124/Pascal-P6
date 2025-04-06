@@ -7903,7 +7903,7 @@ begin cmdpos := maxcmd end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
-          forw,extl,virt,ovrl: boolean; oldtop: disprange;
+          forw,extl,virt,ovrl,forwn,extn: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
           ops: restr; opt: operatort;
           oldlevf: 0..maxlevel; oldtopf: disprange;
@@ -8447,6 +8447,22 @@ begin cmdpos := maxcmd end;
         else
           if not forw or plst then error(123);
       if sy = semicolon then insymbol else error(14);
+
+      forwn := false; { set this not forward }
+      extn := false; { set this not external }
+      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
+       (sy = externalsy) then begin
+        if forw then { previously forwarded }
+          if (sy = externalsy) then error(294) else error(161);
+        if extl and not ovrl then error(295);
+        if sy = externalsy then 
+          begin chkstd; lcp^.extern  := true; extn := true end
+        else begin lcp^.forwdecl := true; forwn := true end;
+        insymbol;
+        if sy = semicolon then insymbol else error(14);
+        if not (sy in fsys) then
+          begin error(6); skip(fsys) end
+      end;
       if not forw then begin
         parmrg(lcp2); { merge back the current parameter list }
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
@@ -8461,20 +8477,7 @@ begin cmdpos := maxcmd end;
         putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp^.locstr { reset locals counter }
       end;
-      if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
-         (sy = externalsy) then
-        begin
-          if forw then { previously forwarded }
-            if (sy = externalsy) then error(294) else error(161);
-          if extl and not ovrl then error(295);
-          if sy = externalsy then begin chkstd; lcp^.extern  := true end
-          else lcp^.forwdecl := true;
-          insymbol;
-          if sy = semicolon then insymbol else error(14);
-          if not (sy in fsys) then
-            begin error(6); skip(fsys) end
-        end
-      else
+      if not forwn and not extn then { process actual block}
         begin lcp^.forwdecl := false;
           { output block begin marker }
           if prcode then begin
