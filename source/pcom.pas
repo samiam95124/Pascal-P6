@@ -8420,20 +8420,6 @@ begin cmdpos := maxcmd end;
         parameterlist([semicolon],lcp2,plst, fsy = operatorsy, opt)
       else parameterlist([semicolon,colon],lcp2,plst, fsy = operatorsy, opt);
       putdsps(top-1); top := top-1; { dump display }
-      if not forw then begin
-        parmrg(lcp2); { merge back the current parameter list }
-        lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
-        lcp^.locpar := parmspc(lcp^.pflist);
-        parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
-        if ovrl or (fsy = operatorsy) then { compare against overload group }
-          chkovlpar(lcp^.grppar, lcp);
-        lcp^.locstr := lc { save locals counter }
-      end else begin
-        parmrg(lcp^.pflist); { merge back the forwarded parameter list }
-        if plst then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
-        putparlst(lcp2); { redeclare, dispose of copy }
-        lc := lcp^.locstr { reset locals counter }
-      end;
       if (fsy = funcsy) or ((fsy = operatorsy) and not (opt = bcmop)) then
         { function }
         if sy = colon then
@@ -8461,6 +8447,20 @@ begin cmdpos := maxcmd end;
         else
           if not forw or plst then error(123);
       if sy = semicolon then insymbol else error(14);
+      if not forw then begin
+        parmrg(lcp2); { merge back the current parameter list }
+        lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
+        lcp^.locpar := parmspc(lcp^.pflist);
+        parmoff(lcp^.pflist, marksize+ptrsize+adrsize+lcp^.locpar);
+        if ovrl or (fsy = operatorsy) then { compare against overload group }
+          chkovlpar(lcp^.grppar, lcp);
+        lcp^.locstr := lc { save locals counter }
+      end else begin
+        parmrg(lcp^.pflist); { merge back the forwarded parameter list }
+        if plst then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
+        putparlst(lcp2); { redeclare, dispose of copy }
+        lc := lcp^.locstr { reset locals counter }
+      end;
       if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
          (sy = externalsy) then
         begin
