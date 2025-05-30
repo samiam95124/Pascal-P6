@@ -7905,7 +7905,7 @@ begin cmdpos := maxcmd end;
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
           forw,extl,virt,ovrl,forwn,extn: boolean; oldtop: disprange;
           llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
-          ops: restr; opt: operatort;
+          ops: restr; opt: operatort; ids: idstr;
           oldlevf: 0..maxlevel; oldtopf: disprange;
 
       procedure pushlvl(lcp: ctp);
@@ -8287,7 +8287,7 @@ begin cmdpos := maxcmd end;
       end;
       { set parameter address start to zero, offset later }
       llc := lc; lc := 0; forw := false; extl := false; virt := false;
-      ovrl := false;
+      ovrl := false; ids := id;
       if (sy = ident) or (fsy = operatorsy) then
         begin
           if fsy = operatorsy then begin { process operator definition }
@@ -8329,7 +8329,7 @@ begin cmdpos := maxcmd end;
             end
           else if fpat = fpaoverride then error(231);
           lcp1 := lcp; { save original }
-          if not forw then { create a new proc/func entry }
+          if not forw or ovrl then { create a new proc/func entry }
             begin
               if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
                 new(lcp,proc,declared,actual)
@@ -8355,7 +8355,7 @@ begin cmdpos := maxcmd end;
                       notop: ops := 'not      '; bcmop: ops := ':=       ';
                     end;
                     strassvr(name, ops)
-                  end else strassvf(name, id);
+                  end else strassvf(name, ids);
                   idtype := nil; next := nil;
                   sysrot := false; extern := false; pflev := level; 
                   genlabel(lbname); pfdeckind := declared; pfkind := actual; 
@@ -8367,7 +8367,7 @@ begin cmdpos := maxcmd end;
                       { have to create a label for far references to virtual }
                       new(lcp2,vars); ininam(lcp2);
                       with lcp2^ do begin klass := vars;
-                        strassvf(name, id); strcatvr(name, '__virtvec');
+                        strassvf(name, ids); strcatvr(name, '__virtvec');
                         idtype := nilptr; vkind := actual; next := nil;
                         vlev := 0; vaddr := gc; isloc := false; threat := false;
                         forcnt := 0; part := ptval; hdr := false; 
@@ -8447,7 +8447,6 @@ begin cmdpos := maxcmd end;
         else
           if not forw or plst then error(123);
       if sy = semicolon then insymbol else error(14);
-
       forwn := false; { set this not forward }
       extn := false; { set this not external }
       if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
