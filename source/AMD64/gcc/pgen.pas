@@ -1325,9 +1325,9 @@ procedure xlate;
          fltassord[16] := rgxmm7;
    end;(*init*)
 
-   procedure errorl(string: beta); (*error in loading*)
+   procedure errorl(view es: string); (*error in loading*)
    begin writeln;
-      writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', string);
+      writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', es);
       goto 99
    end; (*errorl*)
 
