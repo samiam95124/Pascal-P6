@@ -9548,7 +9548,6 @@ begin cmdpos := maxcmd end;
   procedure err;
   begin
     incstk := incstk^.next;
-    dispose(fp);
     ff := false
   end;
   begin ff := true; es := extsrc;
@@ -9563,8 +9562,10 @@ begin cmdpos := maxcmd end;
         for x := 1 to 4 do begin i := i+1; fn[i] := es[x] end;
         if not existsfile(fn) then begin err; error(264) end
         else begin assigntext(f, fn); reset(f) end
-      end
-    end
+      end;
+      if not ff then putstrs(fp^.mn)
+    end;
+    if not ff then dispose(fp)
   end;
 
   procedure closeinput;
