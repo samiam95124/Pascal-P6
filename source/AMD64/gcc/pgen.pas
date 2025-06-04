@@ -72,14 +72,10 @@
 *                                                                              *
 *******************************************************************************}
 
-program pgen(input,output
-#ifndef NOHEADER
-,prd,prr
-#endif
-#ifdef PASCALINE
-              ,command
-#endif
-              );
+program pgen(input,output,command);
+
+uses mpb64le,
+     version;
 
 label 99;
 
@@ -110,8 +106,6 @@ const
       table is all you should need to adapt to any byte addressable machine.
 
       }
-
-#include "mpb64.inc"
 
       { internal constants }
 
@@ -274,8 +268,6 @@ const
       opcspc      = 8;       { tab spacing on assembly code }
       parspc      = 16;      { tab spacing to parameters }
       cmtspc      = 40;      { tab spacing to comments }
-
-#include "version.inc"
 
 type
       { These equates define the instruction layout. I have choosen a 32 bit
