@@ -27,6 +27,7 @@ procedure changefile(var fnd, fns: filnam); - Change filename.
 procedure getcommandline(var cb: cmdbuf; var l: cmdnum); - Get the shell command
                                                            line.
 procedure paroptions; - Parse command line options.
+procedure parhdrfil(var f: text; var wasproc: boolean; e: filext); - Parse header file.
 
 This set of extensions is for the Pascaline language.
 

@@ -321,10 +321,13 @@ type
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..32; { range of standard call keys }
+     lininx = 1..maxlin; { index for source line buffer }
+     linbuf = packed array [lininx] of char; { buffer for source lines }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
-                     priv: boolean; linecounts, lineouts: integer end;
+                     priv: boolean; linecounts, lineouts: integer;
+                     sb: linbuf; si: lininx; sl: 0..maxlin; fio: boolean end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
@@ -454,8 +457,6 @@ type
      cmdinx = 1..maxcmd; { index for command line buffer }
      cmdnum = 0..maxcmd; { length of command line buffer }
      cmdbuf = packed array [cmdinx] of char; { buffer for command line }
-     lininx = 1..maxlin; { index for source line buffer }
-     linbuf = packed array [lininx] of char; { buffer for source lines }
      { temp entries for sets }
      tmpptr = ^tmpety;
      tmpety = record
@@ -646,9 +647,6 @@ var
     nammod: strvsp; { name of current module }
     incstk: filptr; { stack of included files }
     inclst: filptr; { discard list for includes }
-    srclin: linbuf; { buffer for input source lines }
-    srcinx: lininx; { index for input buffer }
-    srclen: 0..maxlin; { size of input line }
     tmplst: tmpptr; { list of active temps }
     tmpfre: tmpptr; { free temp entries }
 
@@ -678,6 +676,8 @@ var
     i: 1..maxftl; { index for error number tracking array }
     oi: 1..maxopt; oni: optinx;
     ep, epl: errptr; { error line pointers }
+
+    fp: filptr;
 
 (*-------------------------------------------------------------------------*)
 
@@ -1382,7 +1382,7 @@ begin cmdpos := maxcmd end;
 
   function incact: boolean;
   begin
-    incact := incstk <> nil
+    incact := incstk^.fio
   end;
 
   function fileeof: boolean;
@@ -1405,49 +1405,49 @@ begin cmdpos := maxcmd end;
       { if error present, and no list, print line before getting the next one }
       write(linecount:6,'  ':2);
       if dp then write(lc:7) else write(ic:7);
-      writeln(' ', srclin:srclen)
+      writeln(' ', incstk^.sb:incstk^.sl)
     end;
-    srclen := 0; srcinx := 1; for i := 1 to maxlin do srclin[i] := ' ';
+    incstk^.sl := 0; incstk^.si := 1; for i := 1 to maxlin do incstk^.sb[i] := ' ';
     if not fileeof then begin
       while not fileeoln do begin
-        if incact then read(incstk^.f, srclin[srcinx])
-        else read(prd, srclin[srcinx]); 
-        if srclen = maxlin-1 then begin
+        if incact then read(incstk^.f, incstk^.sb[incstk^.si])
+        else read(prd, incstk^.sb[incstk^.si]); 
+        if incstk^.sl = maxlin-1 then begin
           if not ovf then 
             begin writeln; writeln('*** Input line too long, truncated') end;
           ovf := true
-        end else begin srclen := srclen+1; srcinx := srcinx+1 end
+        end else begin incstk^.sl := incstk^.sl+1; incstk^.si := incstk^.si+1 end
       end;
       if incact then readln(incstk^.f)
       else readln(prd);   
     end;
-    srcinx := 1;
+    incstk^.si := 1;
     if prcode then
-      if srclen = 0 then writeln(prr, '!') 
-      else writeln(prr, '! ', srclin:srclen)
+      if incstk^.sl = 0 then writeln(prr, '!') 
+      else writeln(prr, '! ', incstk^.sb:incstk^.sl)
   end;
 
   function eofinp: boolean;
   begin
-    if srclen <> 0 then eofinp := false else eofinp := fileeof
+    if incstk^.sl <> 0 then eofinp := false else eofinp := fileeof
   end;
 
   function eolninp: boolean;
   begin
     if eofinp then eolninp := true
-    else if srcinx > srclen then eolninp := true
+    else if incstk^.si > incstk^.sl then eolninp := true
     else eolninp := false
   end;
 
   function bufinp: char;
   begin
-    if not eolninp then bufinp := srclin[srcinx] else bufinp := ' '
+    if not eolninp then bufinp := incstk^.sb[incstk^.si] else bufinp := ' '
   end;
 
   procedure readinp(var c: char);
   begin
     c := bufinp;
-    if eolninp then readline else srcinx := srcinx+1
+    if eolninp then readline else incstk^.si := incstk^.si+1
   end;
 
   { ************************************************************************** }
@@ -1998,12 +1998,12 @@ begin cmdpos := maxcmd end;
     begin
       i := 1;
       { move to first mismatch or end }
-      while (es[i] = srclin[si+i-1]) and (es[i] <> ' ') and (i <= 4) do i := i+1;
+      while (es[i] = incstk^.sb[si+i-1]) and (es[i] <> ' ') and (i <= 4) do i := i+1;
       match := es[i] = ' '
     end;
 
     begin
-      si := srcinx-1; { move back to after '\' }
+      si := incstk^.si-1; { move back to after '\' }
       c := ' '; { set none found }
       if match('xoff ') then begin c := chr(19); l := 4 end
       else if match('dle  ') then begin c := chr(16); l := 3 end
@@ -9555,7 +9555,8 @@ begin cmdpos := maxcmd end;
     new(fp);
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
-      linecounts := linecount; lineouts := lineout;
+      linecounts := linecount; lineouts := lineout; si := 1; sl := 0; 
+      fio := true;
       fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
       if i > fillen-4-1 then begin err; error(265) end
       else begin
@@ -9572,12 +9573,14 @@ begin cmdpos := maxcmd end;
   var fp: filptr;
   begin
     if not incact then error(505);
-    closetext(incstk^.f);
-    linecount := incstk^.linecounts; lineout := incstk^.lineouts;
-    { remove top include entry }
-    fp := incstk; incstk := incstk^.next;
-    fp^.next := inclst; { put on discard list }
-    inclst := fp
+    if incstk^.fio then begin { not at level 0 }
+      closetext(incstk^.f);
+      linecount := incstk^.linecounts; lineout := incstk^.lineouts;
+      { remove top include entry }
+      fp := incstk; incstk := incstk^.next;
+      fp^.next := inclst; { put on discard list }
+      inclst := fp
+    end
   end;
 
   procedure putinp(var fl: filptr);
@@ -10795,12 +10798,18 @@ begin
   nvalid := false; { set no lookahead }
   { init for lookahead }
   sy := ident; op := mul; lgth := 0; kk := 1; ch := ' ';
+  { open input file }
+  new(fp); with fp^ do begin 
+      next := incstk; incstk := fp; priv := false; linecounts := linecount;
+      lineouts := lineout; si := 1; sl := 0; fio := false
+  end;
   readline;
   insymbol;
   modulep(blockbegsys+statbegsys-[casesy]);
+  { compile the program }
+  outline;
   { release file tracking entries }
   putinp(incstk); putinp(inclst);
-  outline;
 
   { dispose of levels 0 and 1 }
   putdsp(display[1]);
