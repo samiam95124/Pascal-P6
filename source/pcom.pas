@@ -9610,7 +9610,7 @@ begin cmdpos := maxcmd end;
     while fp <> nil do
       begin if fp^.fn = id then schnam := true; fp := fp^.next end
   end;
-  begin
+  begin chkstd;
     sym := sy; insymbol; { skip uses/joins }
     thismod := nil;
     repeat { modules }
