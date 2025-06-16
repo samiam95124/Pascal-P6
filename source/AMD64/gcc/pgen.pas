@@ -113,6 +113,7 @@ const
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxcmd      = 250;     { size of command line buffer }
+      maxlin      = 250;     { size of source line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -258,7 +259,7 @@ const
       lablen      = 20000;   { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
-      maxopt      = 26;      { number of options }
+      maxopt      = 27;      { number of options }
       optlen      = 10;      { maximum length of option words }
       maxtmp      = 20;      { maximum number of template dimensions }
 
@@ -293,6 +294,8 @@ type
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
+      lininx      = 1..maxlin; { index for source line buffer }
+      linbuf      = packed array [lininx] of char; { buffer for source lines }
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
@@ -428,6 +431,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       modnam      : strvsp; { block name }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
+      incbuf      : linbuf; { include file buffer }
 
       (*locally used for interpreting one instruction*)
       ad          : address;

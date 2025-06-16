@@ -191,7 +191,7 @@ const
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
-   maxopt     = 26;   { number of options }
+   maxopt     = 27;   { number of options }
    optlen     = 10;   { maximum length of option words }
    explen     = 32;   { length of exception names }
    maxrld     = 22;   { maximum length of real in digit form }
@@ -670,6 +670,8 @@ var
     cmdlen: cmdnum; { length of command line }
     cmdpos: cmdinx; { current position in command line }
 
+    incbuf: linbuf; { include file buffer }
+
     breakflag: boolean; { user break signaled }
 
     f: boolean; { flag for if error number list entries were printed }
@@ -678,6 +680,7 @@ var
     ep, epl: errptr; { error line pointers }
 
     fp: filptr;
+    ii: lininx;
 
 (*-------------------------------------------------------------------------*)
 
@@ -1958,6 +1961,7 @@ begin cmdpos := maxcmd end;
           24: switch(dodmplex);
           25: switch(dodmpdsp);
           26: switch(dummy);
+          27: switch(dummy);
         end else begin
           { skip all likely option chars }
           while ch in ['a'..'z','A'..'Z','+','-','0'..'9','_'] do
@@ -9543,27 +9547,53 @@ begin cmdpos := maxcmd end;
   end (*body*) ;
 
   procedure openinput(var ff: boolean);
-  var fp: filptr; i, x: integer; es: packed array [1..4] of char;
+  var fp: filptr; x: 1..4; es: packed array [1..4] of char; ii: lininx;
+      fi,fi2,fi3: 1..fillen; me: boolean;
   { for any error, back out the include level }
   procedure err;
   begin
     incstk := incstk^.next;
     ff := false
   end;
-  begin ff := true; es := extsrc;
+  procedure nxtinc;
+  var lchar: char;
+  begin
+    fi2 := 1;
+    if incbuf[ii] <> ' ' then with fp^ do begin
+      lchar := ' ';
+      while (incbuf[ii] <> ' ') and (incbuf[ii] <> ':') and 
+            (ii <= fillen) do begin
+        fn[fi2] := incbuf[ii]; lchar := fn[fi2]; ii := ii+1; fi2 := fi2+1
+      end;
+      if (incbuf[ii] = ':') and (ii < fillen) then ii := ii+1;
+      if (lchar <> '/') and (fi2 < fillen) and (ii > 1) then begin
+        fn[fi2] := '/'; fi2 := fi2+1
+      end
+    end
+  end;
+  begin ff := true; es := extsrc; ii := 1;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
       linecounts := linecount; lineouts := lineout; si := 1; sl := 0; 
       fio := true;
-      fn := id; i := fillen; while (i > 1) and (fn[i] = ' ') do i := i-1;
-      if i > fillen-4-1 then begin err; error(265) end
-      else begin
-        for x := 1 to 4 do begin i := i+1; fn[i] := es[x] end;
-        if not existsfile(fn) then begin err; error(264) end
-        else begin assigntext(f, fn); reset(f) end
-      end;
+      me := false;
+      repeat
+        me :=  incbuf[ii] = ' ';
+        for fi := 1 to fillen do fn[fi] := ' ';
+        nxtinc; fi3 := 1;
+        while (fi2 < fillen) and (id[fi3] <> ' ') do begin
+          fn[fi2] := id[fi3]; fi2 := fi2+1; fi3 := fi3+1
+        end;
+        if fi2 > fillen-4-1 then begin err; error(265) end
+        else begin
+          for x := 1 to 4 do begin fn[fi2] := es[x]; fi2 := fi2+1 end;
+          ff := existsfile(fn);
+        end
+      until ff or me;
+      if not ff then begin err; error(264) end
+      else begin assigntext(f, fn); reset(f) end;
       if not ff then putstrs(fp^.mn)
     end;
     if not ff then dispose(fp)
@@ -9610,7 +9640,7 @@ begin cmdpos := maxcmd end;
     while fp <> nil do
       begin if fp^.fn = id then schnam := true; fp := fp^.next end
   end;
-  begin chkstd;
+  begin
     sym := sy; insymbol; { skip uses/joins }
     thismod := nil;
     repeat { modules }
@@ -10747,6 +10777,8 @@ begin
   with display[1] do
     begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
 
+  for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
+
   { get command line }
   getcommandline(cmdlin, cmdlen);
   cmdpos := 1;
@@ -10785,7 +10817,7 @@ begin
     write(prr, 'o ');
     for oi := 1 to maxopt do
       { exclude pint options and unused }
-      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26]) then
+      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27]) then
         begin 
       for oni :=  1 to optlen do 
         if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);

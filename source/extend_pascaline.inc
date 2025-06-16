@@ -116,7 +116,7 @@ begin
 end;
 
 procedure paroptions;
-var optst: optstr; oni: optinx; oi: 1..maxopt; ch1: char;
+var optst: optstr; oni: optinx; oi: 1..maxopt; ch1: char; ii: lininx;
 begin
   repeat
     while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -141,6 +141,22 @@ begin
         option[oi] := true; if bufcommand = '-' then option[oi] := false;
         options[oi] := true;
         if (bufcommand = '+') or (bufcommand = '-') then getcommand
+        else if (bufcommand = '=') and (oi = 27) then begin
+          { include string }
+          getcommand;
+          ii := maxlin; while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1; 
+          if incbuf[ii] <> ' ' then begin
+            if ii < maxlin then ii := ii+1;
+            if (ii < maxlin-1) then begin incbuf[ii] := ':'; ii := ii+1 end
+          end;
+          while not (bufcommand in [' ',':',',']) do begin
+            if ii = maxlin then begin
+              writeln('*** Include path too long');
+              goto 99
+            end;
+            incbuf[ii] := bufcommand; getcommand; ii := ii+1
+          end
+        end
       end;
     end;
     while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand
@@ -229,6 +245,7 @@ begin
   opts[24] := 'x         ';
   opts[25] := 'y         ';
   opts[26] := 'z         ';
+  opts[27] := 'md        ';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -256,4 +273,5 @@ begin
   optsl[24] := 'prtlex    ';
   optsl[25] := 'prtdisplay';
   optsl[26] := 'lineinfo  ';
+  optsl[27] := 'modules   ';
 end;

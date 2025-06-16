@@ -256,6 +256,7 @@ const
       maxast      = 100;     { maximum size of assert message }
       maxdbf      = 30;      { size of numeric conversion buffer }
       maxcmd      = 250;     { size of command line buffer }
+      maxlin      = 250;     { size of source line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -421,7 +422,7 @@ const
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
       maxsym      = 20;   { maximum length of symbol/module name }
-      maxopt      = 26;   { number of options }
+      maxopt      = 27;   { number of options }
       optlen      = 10;   { maximum length of option words }
 
 #include "version.inc"
@@ -474,6 +475,8 @@ type
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fnone, fclosed, fread, fwrite);
+      lininx      = 1..maxlin; { index for source line buffer }
+      linbuf      = packed array [lininx] of char; { buffer for source lines }
       cmdinx      = 1..maxcmd; { index for command line buffer }
       cmdnum      = 0..maxcmd; { length of command line buffer }
       cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
@@ -688,6 +691,7 @@ var   pc, pcs     : address;   (*program address register*)
       dbgcmds     : array [dbgcmd] of alfa; { debug command strings }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
+      incbuf      : linbuf; { include file buffer }
 
       i           : integer;
       ad          : address;
