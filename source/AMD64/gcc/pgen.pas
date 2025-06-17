@@ -389,10 +389,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       { other flags }
       iso7185: boolean; { iso7185 standard flag }
 
-      { !!! remove this next statement for self compile }
-#ifndef SELF_COMPILE
       prd,prr     : text; (*prd for read only, prr for write only *)
-#endif
 
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       insr        : array[instyp] of integer; { number of stack words in result }
@@ -1190,9 +1187,7 @@ procedure xlate;
              with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;
 
          { !!! remove this next statement for self compile }
-#ifndef SELF_COMPILE
          reset(prd);
-#endif
 
          sline := 0; { set no line of source }
          iline := 1; { set 1st line of intermediate }
@@ -5990,7 +5985,6 @@ begin (* main *)
   { get the command line }
   getcommandline;
   cmdpos := 1;
-#ifdef NOHEADER
   paroptions; { parse command line options }
   { parse header files }
   parhdrfil(prd, prdval, '.p6 ');
@@ -6004,14 +5998,11 @@ begin (* main *)
     writeln('*** Error: output filename not found');
     goto 99
   end;
-#endif
   { load command line options }
   paroptions;
   plcopt; { place options }
 
-#ifndef SELF_COMPILE
   rewrite(prr);
-#endif
 
   writeln('Generating program');
 

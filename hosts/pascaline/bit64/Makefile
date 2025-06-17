@@ -210,9 +210,7 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
 	pcom $(SOURCE)/parcmd.pas $(BUILD)/parcmd.p6 --list- --reference-
 	pgen $(BUILD)/parcmd.p6 $(BUILD)/parcmd.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/parcmd.o -c $(BUILD)/parcmd.s
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/AMD64/gcc/pgen.pas \
-		-I$(PASCALP6)/source $(BUILD)/AMD64/gcc/pgen.mpp.pas
-	pcom $(BUILD)/AMD64/gcc/pgen.mpp.pas $(BUILD)/AMD64/gcc/pgen.p6 --modules=$(SOURCE) --list- --reference-
+	pcom $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/pgen.p6 --modules=$(SOURCE) --list- --reference-
 	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
