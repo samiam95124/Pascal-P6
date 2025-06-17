@@ -74,7 +74,8 @@
 
 program pgen(input,output,command);
 
-uses mpb64le, { machine parameter block }
+uses endian,  { endian mode }
+     mpb,     { machine parameter block }
      version, { current version number }
      parcmd;  { command line parsing }
 

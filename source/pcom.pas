@@ -203,7 +203,7 @@ const
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 516; { maximum fatal error }
-   maxcmd     = 250; { size of command line buffer }
+   maxcmd     = 2000; { size of command line buffer }
    maxlin     = 250; { size of source line buffer }
    parfld     = 24;  { field length for intermediate parameters }
 
