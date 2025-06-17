@@ -8533,8 +8533,8 @@ begin cmdpos := maxcmd end;
     repeat
       repeat
         if sy = privatesy then begin insymbol;
-          if level > 1 then error(266);
-          if incact and (level <= 1) then
+          if level > 2 then error(266);
+          if incact and (level <= 2) then
             incstk^.priv := true { flag private encountered }
         end;
         if not inpriv then begin { if private, get us out quickly }

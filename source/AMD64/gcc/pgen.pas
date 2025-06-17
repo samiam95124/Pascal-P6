@@ -74,8 +74,9 @@
 
 program pgen(input,output,command);
 
-uses mpb64le,
-     version;
+uses mpb64le, { machine parameter block }
+     version, { current version number }
+     parcmd;  { command line parsing }
 
 label 99;
 
@@ -112,8 +113,6 @@ const
       maxstr      = maxint;  { maximum size of addressing for program/var }
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
-      maxcmd      = 250;     { size of command line buffer }
-      maxlin      = 250;     { size of source line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -259,8 +258,6 @@ const
       lablen      = 20000;   { label maximum length }
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
-      maxopt      = 27;      { number of options }
-      optlen      = 10;      { maximum length of option words }
       maxtmp      = 20;      { maximum number of template dimensions }
 
       { coder parameters }
@@ -294,15 +291,8 @@ type
       bytfil      = packed file of byte; { untyped file of bytes }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
-      lininx      = 1..maxlin; { index for source line buffer }
-      linbuf      = packed array [lininx] of char; { buffer for source lines }
-      cmdinx      = 1..maxcmd; { index for command line buffer }
-      cmdnum      = 0..maxcmd; { length of command line buffer }
-      cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       labbuf      = packed array [1..lablen] of char; { label buffer }
       strbuf      = packed array [1..strlen] of char;
-      optinx      = 1..optlen;
-      optstr      = packed array [optinx] of char;
       filext      = packed array [1..4] of char; { filename extension }
       { Here is the variable length string containment to save on space. strings
         are only stored in their length rounded to the nearest 10th. }
@@ -414,13 +404,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       sppar       : array[sctyp] of integer; (*standard functions and procedures
                                                   number of parameters*)
       spkeep      : array[sctyp] of boolean; { keep the file parameter }
-      option      : array [1..maxopt] of boolean; { option array }
-      options     : array [1..maxopt] of boolean; { option was set array }
-      opts        : array [1..maxopt] of optstr;
-      optsl       : array [1..maxopt] of optstr;
-      cmdlin      : cmdbuf; { command line }
-      cmdlen      : cmdnum; { length of command line }
-      cmdpos      : cmdinx; { current position in command line }
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
@@ -431,7 +414,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       modnam      : strvsp; { block name }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
-      incbuf      : linbuf; { include file buffer }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -719,48 +701,6 @@ begin writeln; write('*** I/O error: ');
   end;
   goto 99
 end;
-
-{ "fileofy" routines for command line processing.
-
-  These routines implement the command header file by reading from a
-  buffer where the command line is stored. The assumption here is that
-  there is a fairly simple call to retrieve the command line.
-
-  If it is wanted, the command file primitives can be used to implement
-  another type of interface, say, reading from an actual file.
-
-  The command buffer is designed to never be completely full.
-  The last two locations indicate:
-
-  maxcmd: end of file
-  maxcmd-1: end of line
-
-  These locations are always left as space, thus eoln returns space as
-  the standard specifies.
-}
-
-function bufcommand: char;
-begin bufcommand := cmdlin[cmdpos] end;
-
-procedure getcommand;
-begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
-
-function eofcommand: boolean;
-begin eofcommand := cmdpos > cmdlen+1 end;
-
-function eolncommand: boolean;
-begin eolncommand := cmdpos >= cmdlen+1 end;
-
-procedure readlncommand;
-begin cmdpos := maxcmd end;
-
-#ifdef ISO7185_PASCAL
-#include "extend_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "extend_pascaline.inc"
-#endif
 
 (*--------------------------------------------------------------------*)
 
@@ -6030,8 +5970,6 @@ begin (* main *)
   if dochkvbk then;
   if dodbgchk then;
 
-  extendinit; { initialize extentions package }
-
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
   level := 0; { clear level count }
@@ -6050,7 +5988,7 @@ begin (* main *)
   writeln;
 
   { get the command line }
-  getcommandline(cmdlin, cmdlen);
+  getcommandline;
   cmdpos := 1;
 #ifdef NOHEADER
   paroptions; { parse command line options }
