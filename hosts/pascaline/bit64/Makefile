@@ -95,6 +95,30 @@ $(BUILD)/AMD64/gcc/main.o: $(SOURCE)/AMD64/gcc/main.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/main.o \
 		-c -x assembler $(SOURCE)/AMD64/gcc/main.asm
 
+#
+# Build command line parser
+#
+parcmd: $(SOURCE)/parcmd.pas
+$(BUILD)/parcmd.o: $(SOURCE)/parcmd.pas
+	@echo
+	@echo "Building parcmd..."
+	@echo
+	pcom $(SOURCE)/parcmd.pas $(BUILD)/parcmd.p6 --list- --reference-
+	pgen $(BUILD)/parcmd.p6 $(BUILD)/parcmd.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/parcmd.o -c $(BUILD)/parcmd.s
+
+#
+# Build simulator externals link module
+#
+extlink: $(SOURCE)/extlink.pas
+$(BUILD)/extlink.o: $(SOURCE)/extlink.pas
+	@echo
+	@echo "Building externals link..."
+	@echo
+	pcom $(SOURCE)/extlink.pas $(BUILD)/extlink.p6 --list- --reference-
+	pgen $(BUILD)/extlink.p6 $(BUILD)/extlink.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extlink.o -c $(BUILD)/extlink.s
+
 ################################################################################
 #
 # Build programs
@@ -169,17 +193,21 @@ bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
 #
 pmach: bin/pmach
 bin/pmach: $(SOURCE)/pmach.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o
 	@echo
 	@echo "Building pmach..."
 	@echo
 	mkdir -p $(BUILD)
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pmach.pas $(BUILD)/pmach.mpp.pas
-	pcom $(BUILD)/pmach.mpp.pas $(BUILD)/pmach.p6 --chk- --list- --reference-
+	pcom $(SOURCE)/pmach.pas $(BUILD)/pmach.p6 \
+		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
+		--chk- --list- --reference-
 	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(BUILD)/extlink.o \
 		$(BUILD)/pmach.s \
 		-o $(BUILD)/pmach -lm -lpthread
 	cp $(BUILD)/pmach $(PASCALP6)/bin
@@ -204,14 +232,12 @@ bin/cmach: $(SOURCE)/cmach/cmach.c
 #
 pgen: bin/pgen
 bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas
 	@echo
 	@echo "Building pgen..."
 	@echo
 	mkdir -p $(BUILD)/AMD64/gcc
-	pcom $(SOURCE)/parcmd.pas $(BUILD)/parcmd.p6 --list- --reference-
-	pgen $(BUILD)/parcmd.p6 $(BUILD)/parcmd.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/parcmd.o -c $(BUILD)/parcmd.s
 	pcom $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/pgen.p6 \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 --list- --reference-
 	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s

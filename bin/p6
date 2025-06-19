@@ -171,6 +171,7 @@ if [ "$pmach" = "1" ]; then
 
 	echo Running with pmach
 	pint $progfile.p6 $progfile.p6o --machdeck $options
+    # echo "Will execute: pmach $progfile.p6o $progfile.out $options"
 	pmach $progfile.p6o $progfile.out $options
 	
 elif [ "$cmach" = "1" ]; then
