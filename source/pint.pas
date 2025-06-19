@@ -159,33 +159,14 @@
 *                                                                              *
 *******************************************************************************}
 
-{ Set default configuration flags. This gives proper behavior even if no
-  preprocessor flags are passed in.
+program pint(input,output,command);
 
-  The defaults are:
-  WRDSIZ32       - 32 bit compiler.
-  ISO7185_PASCAL - uses ISO 7185 standard language only.
-}
-#if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
-#define WRDSIZ32 1
-#endif
-
-#if !defined(LENDIAN) && !defined(BENDIAN)
-#define LENDIAN
-#endif
-
-#if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
-#define ISO7185_PASCAL
-#endif
-
-program pint(input,output
-#ifndef NOHEADER
-,prd,prr
-#endif
-#ifdef PASCALINE
-              ,command
-#endif
-              );
+uses endian,  { endian mode }
+     mpb,     { machine parameter block }
+     version, { current version number }
+     parcmd,  { command line parsing }
+     extlink, { external routine linkages }
+     extend;  { extension routines }
 
 label 99;
 
@@ -217,46 +198,17 @@ const
 
       }
 
-#ifdef WRDSIZ16
-#include "mpb16.inc"
-#endif
-
-#ifdef WRDSIZ32
-#include "mpb32.inc"
-#endif
-
-#ifdef WRDSIZ64
-#include "mpb64.inc"
-#endif
-
       { ******************* end of pcom and pint common parameters *********** }
 
       { internal constants }
-
-      { !!! Need to use the small size memory to self compile, otherwise, by
-        definition, pint cannot fit into its own memory. }
-#if defined(SELF_COMPILE) || defined(SHORT_STORE)
-      maxstr     =  2000000;   { maximum size of addressing for program/var }
-      maxtop     =  2000001;   { maximum size of addressing for program/var+1 }
-      maxdef      = 250000;    { maxstr /8 for defined bits }
-#else
-#ifdef WRDSIZ16
-      maxstr      = 31999;  { maximum size of addressing for program/var }
-      maxtop      = 32000;  { maximum size of addressing for program/var+1 }
-      maxdef      = 4000;   { maxstr / 8 for defined bits }
-#else
       maxstr      = 16777215;  { maximum size of addressing for program/var }
       maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
       maxdef      = 2097152;   { maxstr / 8 for defined bits }
-#endif
-#endif
 
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
       maxast      = 100;     { maximum size of assert message }
       maxdbf      = 30;      { size of numeric conversion buffer }
-      maxcmd      = 250;     { size of command line buffer }
-      maxlin      = 250;     { size of source line buffer }
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
@@ -422,29 +374,13 @@ const
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
       maxsym      = 20;   { maximum length of symbol/module name }
-      maxopt      = 27;   { number of options }
-      optlen      = 10;   { maximum length of option words }
-
-#include "version.inc"
 
 type
 
-#if defined(WRDSIZ16) && defined(GNU_PASCAL)
-      /* for GNU 16 bit mode, use both 16 bit defines and redefine integer and
-         real size to match */
-      { Allow GNU Pascal extensions }
-      {$gnu-pascal}
-      pminteger = shortint;
-      pmreal = shortreal;
-      pmaddress = shortint;
-      { Restore to ISO 7185 Pascal language }
-      {$classic-pascal-level-0}
-#else
       { define the internally used types }
       pminteger = integer;
       pmreal = real;
       pmaddress = -maxstr..maxtop;
-#endif
 
       { These equates define the instruction layout. I have choosen a 32 bit
         layout for the instructions defined by (4 bit) digit:
@@ -463,23 +399,12 @@ type
       settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }
       alfa        = packed array[alfainx] of char;
-#ifdef GNU_PASCAL
-{$gnu-pascal}
-#endif
       ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
-#ifdef GNU_PASCAL
-{$classic-pascal-level-0}
-#endif
       charptr     = ^char; { pointer to character }
       fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
       filsts      = (fnone, fclosed, fread, fwrite);
-      lininx      = 1..maxlin; { index for source line buffer }
-      linbuf      = packed array [lininx] of char; { buffer for source lines }
-      cmdinx      = 1..maxcmd; { index for command line buffer }
-      cmdnum      = 0..maxcmd; { length of command line buffer }
-      cmdbuf      = packed array [cmdinx] of char; { buffer for command line }
       break       = record
                       ss: ibyte; { byte under breakpoint }
                       sa: address; { code address }
@@ -541,8 +466,6 @@ type
                        b: address    { address of block }
                      end;
       symnam      = packed array [1..maxsym] of char; { symbol/module name }
-      optinx = 1..optlen;
-      optstr = packed array [optinx] of char;
       { debug commands }
       dbgcmd = (dcnone, dcli, dcd, dcd8, dcd16, dcd32, dcd64, dcdb16, dcdb32,
                 dcdb64, dcdl16, dcdl32, dcdl64, dcds, dcdd, dcdf, dcdst, dcb, 
@@ -614,23 +537,13 @@ var   pc, pcs     : address;   (*program address register*)
 
       debugstart: boolean; { we have started debug mode }
 
-      { !!! remove this next statement for self compile }
-#ifndef SELF_COMPILE
       prd,prr     : text; (*prd for read only, prr for write only *)
-#endif
 
       instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
       sptable     : array[0..maxsp] of alfa; (*standard functions and procedures*)
       insp        : array[instyp] of boolean; { instruction includes a p parameter }
       insq        : array[instyp] of 0..32; { length of q parameter }
       srclin      : integer; { current source line executing }
-      option      : array [1..maxopt] of boolean; { option array }
-      options     : array [1..maxopt] of boolean; { option was set array }
-      opts        : array [1..maxopt] of optstr;
-      optsl       : array [1..maxopt] of optstr;
-      cmdlin      : cmdbuf; { command line }
-      cmdlen      : cmdnum; { length of command line }
-      cmdpos      : cmdinx; { current position in command line }
       brktbl      : array [brkinx] of break; { breakpoint table }
       bi          : brkinx; { index for same }
       anitbl      : array [1..maxana] of address; { instruction analyzer queue }
@@ -691,7 +604,6 @@ var   pc, pcs     : address;   (*program address register*)
       dbgcmds     : array [dbgcmd] of alfa; { debug command strings }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
-      incbuf      : linbuf; { include file buffer }
 
       i           : integer;
       ad          : address;
@@ -1106,54 +1018,6 @@ end { lcase };
 
 (*--------------------------------------------------------------------*)
 
-{ "fileofy" routines for command line processing.
-
-  These routines implement the command header file by reading from a
-  buffer where the command line is stored. The assumption here is that
-  there is a fairly simple call to retrieve the command line.
-
-  If it is wanted, the command file primitives can be used to implement
-  another type of interface, say, reading from an actual file.
-
-  The command buffer is designed to never be completely full.
-  The last two locations indicate:
-
-  maxcmd: end of file
-  maxcmd-1: end of line
-
-  These locations are always left as space, thus eoln returns space as
-  the standard specifies.
-}
-
-function bufcommand: char;
-begin bufcommand := cmdlin[cmdpos] end;
-
-procedure getcommand;
-begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
-
-function eofcommand: boolean;
-begin eofcommand := cmdpos > cmdlen+1 end;
-
-function eolncommand: boolean;
-begin eolncommand := cmdpos >= cmdlen+1 end;
-
-procedure readlncommand;
-begin cmdpos := maxcmd end;
-
-(*--------------------------------------------------------------------*)
-
-{ Language extension routines }
-
-#ifdef ISO7185_PASCAL
-#include "extend_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "extend_pascaline.inc"
-#endif
-
-(*--------------------------------------------------------------------*)
-
 { The external assigns read a filename off the command line. The original name
   of the header file is also passed in, and can be used to process. However,
   this implementation ignores them and just reads the names in order off the
@@ -1179,7 +1043,7 @@ begin
     i := i+1
   end;
   if fne[1] = ' ' then errorv(FileNameEmpty);
-  assigntext(f, fne) { assign to that }
+  assign(f, fne) { assign to that }
 end;
 
 procedure assignexternalbin(var f: bytfil; var fn: filnam);
@@ -1197,7 +1061,7 @@ begin
     i := i+1
   end;
   if fne[1] = ' ' then errorv(FileNameEmpty);
-  assignbin(f, fne) { assign to that }
+  assign(f, fne) { assign to that }
 end;
 
 (*-------------------------------------------------------------------------*)
@@ -1653,29 +1517,6 @@ begin
 end;
 
 { end of accessor functions }
-
-(*--------------------------------------------------------------------*)
-
-{ external routines }
-
-procedure newspc(len: address; var blk: address); forward;
-procedure valfil(fa: address); forward;
-
-#ifdef EXTERNALS
-
-#ifdef GNU_PASCAL
-#include "externals_gnu_pascal.inc"
-#endif
-
-#ifdef ISO7185_PASCAL
-#include "externals_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "externals_pascaline.inc"
-#endif
-
-#endif
 
 (*--------------------------------------------------------------------*)
 
@@ -2443,9 +2284,7 @@ procedure load;
      while (c <> ' ') and (c <> '@') do
        begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
      rt := 0;
-#ifdef EXTERNALS
      LookupExternal(mods, syms, rt);
-#endif
      { supress warnings }
      if mods[1] = ' ' then;
      if syms[1] = ' ' then;
@@ -3147,9 +2986,7 @@ procedure load;
 begin (*load*)
   init;
   extvecs := 0;
-#ifdef EXTERNALS
   extvecs := NumExternal;
-#endif
   pc := 0;
   { insert start sequence:
 
@@ -3272,7 +3109,7 @@ begin
   a1 := a1+i; a2 := a2+i
 end; (*compare*)
 
-procedure valfil{(fa: address)}; { attach file to file entry }
+procedure valfil(fa: address); { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }
@@ -3436,7 +3273,7 @@ end;
 
 { allocate space in heap }
 
-procedure newspc{(len: address; var blk: address)};
+procedure newspc(len: address; var blk: address);
 var ad,ad1: address;
 begin
   alignu(adrsize, len); { align to units of address }
@@ -4389,56 +4226,56 @@ begin (*callsp*)
            46 (*asst*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assigntext(filtable[fn], fl1);
+                         assign(filtable[fn], fl1);
                          filanamtab[fn] := true
                        end;
            56 (*assb*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad);
                          fn := store[ad]; clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         assignbin(bfiltable[fn], fl1);
+                         assign(bfiltable[fn], fl1);
                          filanamtab[fn] := true
                        end;
            47 (*clst*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         closetext(filtable[fn]); filstate[fn] := fclosed
+                         close(filtable[fn]); filstate[fn] := fclosed
                        end;
            57 (*clsb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         closebin(bfiltable[fn]); filstate[fn] := fclosed
+                         close(bfiltable[fn]); filstate[fn] := fclosed
                        end;
            48 (*pos*): begin popint(i); popadr(ad); valfil(ad); fn := store[ad];
                          if i < 1 then errore(InvalidFilePosition);
-                         positionbin(bfiltable[fn], i)
+                         position(bfiltable[fn], i)
                        end;
            49 (*upd*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         updatebin(bfiltable[fn]); filstate[fn] := fwrite;
+                         update(bfiltable[fn]); filstate[fn] := fwrite;
                          filbuff[fn] := false
                        end;
            50 (*appt*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendtext(filtable[fn]); filstate[fn] := fwrite;
+                         append(filtable[fn]); filstate[fn] := fwrite;
                          filbuff[fn] := false
                        end;
            58 (*appb*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         appendbin(bfiltable[fn]); filstate[fn] := fwrite;
+                         append(bfiltable[fn]); filstate[fn] := fwrite;
                          filbuff[fn] := false
                        end;
            51 (*del*): begin popint(i); popadr(ad1); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         deletefile(fl1)
+                         delete(fl1)
                        end;
            52 (*chg*): begin popint(i); popadr(ad1); popint(l); popadr(ad);
                          clrfn(fl1); clrfn(fl2);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
                          for j := 1 to l do fl2[j] := chr(store[ad+j-1]);
-                         changefile(fl2, fl1)
+                         change(fl2, fl1)
                        end;
            53 (*len*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         pshint(lengthbin(bfiltable[fn]))
+                         pshint(length(bfiltable[fn]))
                        end;
            54 (*loc*): begin popadr(ad); valfil(ad); fn := store[ad];
-                         pshint(locationbin(bfiltable[fn]))
+                         pshint(location(bfiltable[fn]))
                        end;
            55 (*exs*): begin popint(i); popadr(ad1); clrfn(fl1);
                          for j := 1 to i do fl1[j] := chr(store[ad1+j-1]);
-                         pshint(ord(existsfile(fl1)))
+                         pshint(ord(exists(fl1)))
                        end;
            59 (*hlt*): goto 99;
            60 (*ast*): begin popint(i);
@@ -4578,10 +4415,10 @@ begin
   end;
   if bp <> nil then begin
     strassfv(fn, bp^.fname);
-    if not existsfile(fn) then
+    if not exists(fn) then
       writeln('*** Source file ', fn:lenp(fn), ' not found')
     else begin
-      assigntext(f, fn); reset(f); i := 1;
+      assign(f, fn); reset(f); i := 1;
       nl := true;
       while (i < s) and not eof(f) do begin readln(f); i := i+1 end;
       while (i <= e) and not eof(f) and not chkbrk do begin
@@ -4607,7 +4444,7 @@ begin
           i := i+1; nl := true
         end
       end;
-      closetext(f)
+      close(f)
     end
   end
 end;
@@ -5455,14 +5292,11 @@ begin
                        pshadr(ad2) end;
 
     242 (*eext*): begin
-#ifdef EXTERNALS
                     ad := sp+adrsize; { index parameters }
-                    ExecuteExternal(pc-extvecbase, ad);
+                    { this needs evaluation }
+                    {ExecuteExternal(pc-extvecbase, ad);}
                     popadr(pc); { load return address }
                     sp := ad; { skip parameters }
-#else
-                    errorv(ExternalsNotEnabled)
-#endif
                   end;
 
     { illegal instructions }
@@ -7686,8 +7520,6 @@ begin (* main *)
   dochkvbk := false; { don't check variable blocks }
   doechlin := false; { don't echo command lines }
 
-  extendinit; { initialize extentions package }
-
   strcnt := 0; { clear string quanta allocation count }
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
@@ -7785,9 +7617,8 @@ begin (* main *)
   fndpow(maxpow2, 2, bindig); {bindig := bindig+1;} { add sign bit }
 
   { get the command line }
-  getcommandline(cmdlin, cmdlen);
+  getcommandline;
   cmdpos := 1;
-#ifdef NOHEADER
   paroptions; { parse command line options }
   { parse header files }
   parhdrfil(prd, prdval, '.p6 ');
@@ -7801,7 +7632,6 @@ begin (* main *)
     writeln('*** Error: output filename not found');
     goto 99
   end;
-#endif
   { load command line options }
   paroptions;
   plcopt; { place options }
@@ -7813,15 +7643,8 @@ begin (* main *)
   { clear source analyzer table }
   for ai := 1 to maxana do begin anstbl[ai] := 0; ansmtbl[ai] := nil end;
 
-  { !!! remove this next statement for self compile }
-#ifndef SELF_COMPILE
   reset(prd);
-#endif
-
-  { !!! remove this next statement for self compile }
-#ifndef SELF_COMPILE
   rewrite(prr);
-#endif
 
   { construct bit equivalence table }
   i := 1;

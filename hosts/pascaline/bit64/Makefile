@@ -119,6 +119,18 @@ $(BUILD)/extlink.o: $(SOURCE)/extlink.pas
 	pgen $(BUILD)/extlink.p6 $(BUILD)/extlink.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extlink.o -c $(BUILD)/extlink.s
 
+#
+# Build simulator extensions module
+#
+extend: $(SOURCE)/extend.pas
+$(BUILD)/extend.o: $(SOURCE)/extend.pas
+	@echo
+	@echo "Building extensions..."
+	@echo
+	pcom $(SOURCE)/extend.pas $(BUILD)/extend.p6 --list- --reference-
+	pgen $(BUILD)/extend.p6 $(BUILD)/extend.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extend.o -c $(BUILD)/extend.s
+
 ################################################################################
 #
 # Build programs
@@ -171,19 +183,24 @@ bin/pcom_immerr: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
 #
 pint: bin/pint
 bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
+    $(BUILD)/extend.o
 	@echo
 	@echo "Building pint..."
 	@echo
 	mkdir -p $(BUILD)
 	gcc -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pint.pas $(BUILD)/pint.mpp.pas \
-		-DEXTERNALS
-	pcom $(BUILD)/pint.mpp.pas $(BUILD)/pint.p6 --chk- --list- --reference-
+	pcom $(SOURCE)/pint.pas $(BUILD)/pint.p6 \
+		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
+		--chk- --list- --reference-
 	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(BUILD)/extlink.o \
+		$(BUILD)/extend.o \
 		$(BUILD)/pint.s \
 		-o $(BUILD)/pint -lm -lpthread
 	cp $(BUILD)/pint $(PASCALP6)/bin
