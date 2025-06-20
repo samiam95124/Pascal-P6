@@ -141,39 +141,23 @@ $(BUILD)/extend.o: $(SOURCE)/extend.pas
 #
 pcom: bin/pcom
 bin/pcom: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
+ 	$(BUILD)/extend.o
 	@echo
 	@echo "Building pcom..."
 	@echo
 	mkdir -p $(BUILD)
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) $(SOURCE)/pcom.pas $(BUILD)/pcom.mpp.pas
-	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --list- --reference-
+	pcom $(SOURCE)/pcom.pas $(BUILD)/pcom.p6 \
+		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
+		--list- --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/pcom.s \
-		-o $(BUILD)/pcom -lm -lpthread
-	cp $(BUILD)/pcom $(PASCALP6)/bin
-
-#
-# Build pcom, the source to intermediate compiler.
-#
-# Has immediate error reporting turned on.
-#
-bin/pcom_immerr: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
-	@echo
-	@echo "Building pcom with immediate error..."
-	@echo
-	mkdir -p $(BUILD)
-	cpp $(CPPFLAGS) $(CPPFLAGS64LE) -DIMM_ERR $(SOURCE)/pcom.pas \
-		$(BUILD)/pcom.mpp.pas
-	pcom $(BUILD)/pcom.mpp.pas $(BUILD)/pcom.p6 --list- --reference-
-	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
-		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(BUILD)/extlink.o \
+		$(BUILD)/extend.o \
 		$(BUILD)/pcom.s \
 		-o $(BUILD)/pcom -lm -lpthread
 	cp $(BUILD)/pcom $(PASCALP6)/bin

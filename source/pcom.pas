@@ -98,32 +98,14 @@
 *                                                                              *
 *******************************************************************************}
 
-{ Set default configuration flags. This gives proper behavior even if no
-  preprocessor flags are passed in.
+program pcom(output,command);
 
-  The defaults are:
-  WRDSIZ32       - 32 bit compiler.
-  ISO7185_PASCAL - uses ISO 7185 standard language only.
-  PASCALINE      - uses the Pascaline standard language.
-  SELF_COMPILE   - Set to off, selects predefined prd and prr files.
-}
-#if !defined(WRDSIZ16) && !defined(WRDSIZ32) && !defined(WRDSIZ64)
-#define WRDSIZ32 1
-#endif
-
-#if !defined(LENDIAN) && !defined(BENDIAN)
-#define LENDIAN
-#endif
-
-#if !defined(GNU_PASCAL) && !defined(ISO7185_PASCAL) && !defined(PASCALINE)
-#define ISO7185_PASCAL
-#endif
-
-program pcom(output,
-#ifndef NOHEADER
-  prd,prr,
-#endif
-command);
+uses endian,  { endian mode }
+     mpb,     { machine parameter block }
+     version, { current version number }
+     parcmd,  { command line parsing }
+     extlink, { external routine linkages }
+     extend;  { extension routines }
 
 label 99; { terminate immediately }
 
@@ -155,18 +137,6 @@ const
 
       }
 
-#ifdef WRDSIZ16
-#include "mpb16.inc"
-#endif
-
-#ifdef WRDSIZ32
-#include "mpb32.inc"
-#endif
-
-#ifdef WRDSIZ64
-#include "mpb64.inc"
-#endif
-
       { ******************* end of pcom and pint common parameters *********** }
 
    displimit   = 300;
@@ -191,8 +161,6 @@ const
    maxstd     = 82;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
-   maxopt     = 27;   { number of options }
-   optlen     = 10;   { maximum length of option words }
    explen     = 32;   { length of exception names }
    maxrld     = 22;   { maximum length of real in digit form }
    varsqt     = 10;   { variable string quanta }
@@ -203,8 +171,6 @@ const
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 516; { maximum fatal error }
-   maxcmd     = 2000; { size of command line buffer }
-   maxlin     = 250; { size of source line buffer }
    parfld     = 24;  { field length for intermediate parameters }
 
    { default field sizes for write }
@@ -212,8 +178,6 @@ const
    reldeff    = 22; { default field length for real }
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
-
-#include  "version.inc"
 
    { standard exceptions. Used for extension routines, this is a subset. }
    CommandLineTooLong      = 1;
@@ -315,14 +279,10 @@ type
      idkind = (actual,formal);
      idstr = packed array [1..maxids] of char;
      restr = packed array [1..reslen] of char;
-     optinx = 1..optlen;
-     optstr = packed array [optinx] of char;
      expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..32; { range of standard call keys }
-     lininx = 1..maxlin; { index for source line buffer }
-     linbuf = packed array [lininx] of char; { buffer for source lines }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
@@ -454,9 +414,6 @@ type
      modtyp = (mtprogram, mtmodule); { type of current module }
      byte = 0..255; { 8-bit byte }
      bytfil = packed file of byte; { untyped file of bytes }
-     cmdinx = 1..maxcmd; { index for command line buffer }
-     cmdnum = 0..maxcmd; { length of command line buffer }
-     cmdbuf = packed array [cmdinx] of char; { buffer for command line }
      { temp entries for sets }
      tmpptr = ^tmpety;
      tmpety = record
@@ -477,11 +434,8 @@ type
 
 var
 
-    { !!! remove this statement for self compile }
-#ifndef SELF_COMPILE
     prd: text;                      { input source file }
     prr: text;                      { output code file }
-#endif
 
     prdval: boolean;                { input source file parsed }
     prrval: boolean;                { output source file parsed }
@@ -556,11 +510,6 @@ var
     { -- k }
     { -- z }
 
-    option: array [1..maxopt] of    { option array }
-              boolean;
-    options: array [1..maxopt] of   { option set array }
-              boolean;
-
                                     (*pointers:*)
                                     (***********)
     parmptr,
@@ -624,8 +573,6 @@ var
     na:  array [stdrng] of restr;
     mn:  array [0..maxins] of packed array [1..3] of char;
     sna: array [1..maxsp] of packed array [1..4] of char;
-    opts: array [1..maxopt] of optstr;
-    optsl: array [1..maxopt] of optstr;
     cdx: array [0..maxins] of integer;
     cdxs: array [1..6, 1..8] of integer;
     pdx: array [1..maxsp] of integer;
@@ -664,13 +611,6 @@ var
     { serial numbers to label structure and identifier entries for dumps }
     ctpsnm: integer;
     stpsnm: integer;
-
-    { command line handling }
-    cmdlin: cmdbuf; { command line }
-    cmdlen: cmdnum; { length of command line }
-    cmdpos: cmdinx; { current position in command line }
-
-    incbuf: linbuf; { include file buffer }
 
     breakflag: boolean; { user break signaled }
 
@@ -1309,48 +1249,6 @@ begin
   errore(v)
 end;
 
-{ "fileofy" routines for command line processing.
-
-  These routines implement the command header file by reading from a
-  buffer where the command line is stored. The assumption here is that
-  there is a fairly simple call to retrieve the command line.
-
-  If it is wanted, the command file primitives can be used to implement
-  another type of interface, say, reading from an actual file.
-
-  The command buffer is designed to never be completely full.
-  The last two locations indicate:
-
-  maxcmd: end of file
-  maxcmd-1: end of line
-
-  These locations are always left as space, thus eoln returns space as
-  the standard specifies.
-}
-
-function bufcommand: char;
-begin bufcommand := cmdlin[cmdpos] end;
-
-procedure getcommand;
-begin if cmdpos <= cmdlen+1 then cmdpos := cmdpos+1 end;
-
-function eofcommand: boolean;
-begin eofcommand := cmdpos > cmdlen+1 end;
-
-function eolncommand: boolean;
-begin eolncommand := cmdpos >= cmdlen+1 end;
-
-procedure readlncommand;
-begin cmdpos := maxcmd end;
-
-#ifdef ISO7185_PASCAL
-#include "extend_iso7185_pascal.inc"
-#endif
-
-#ifdef PASCALINE
-#include "extend_pascaline.inc"
-#endif
-
 (*-------------------------------------------------------------------------*)
 
   { dump the display }
@@ -1797,10 +1695,9 @@ begin cmdpos := maxcmd end;
 
       { This diagnostic is here because error buffers error numbers til the end
         of line, and sometimes you need to know exactly where they occurred. }
-
-#ifdef IMM_ERR
+      {
       writeln; writeln('error: ', ferrnr:1);
-#endif
+      }
 
       errtbl[ferrnr] := errtbl[ferrnr]+1; { track this error }
       { track error lines }
@@ -9343,10 +9240,6 @@ begin cmdpos := maxcmd end;
             { check is a standard header file }
             if not (strequri('input    ', filename) or
                     strequri('output   ', filename) or
-#ifndef NOPRDPRR
-                    strequri('prd      ', filename) or
-                    strequri('prr      ', filename) or
-#endif
                     strequri('error    ', filename) or
                     strequri('list     ', filename) or
                     strequri('command  ', filename)) then begin
@@ -9589,11 +9482,11 @@ begin cmdpos := maxcmd end;
         if fi2 > fillen-4-1 then begin err; error(265) end
         else begin
           for x := 1 to 4 do begin fn[fi2] := es[x]; fi2 := fi2+1 end;
-          ff := existsfile(fn);
+          ff := exists(fn);
         end
       until ff or me;
       if not ff then begin err; error(264) end
-      else begin assigntext(f, fn); reset(f) end;
+      else begin assign(f, fn); reset(f) end;
       if not ff then putstrs(fp^.mn)
     end;
     if not ff then dispose(fp)
@@ -9604,7 +9497,7 @@ begin cmdpos := maxcmd end;
   begin
     if not incact then error(505);
     if incstk^.fio then begin { not at level 0 }
-      closetext(incstk^.f);
+      close(incstk^.f);
       linecount := incstk^.linecounts; lineout := incstk^.lineouts;
       { remove top include entry }
       fp := incstk; incstk := incstk^.next;
@@ -9746,10 +9639,6 @@ begin cmdpos := maxcmd end;
                   { check 'input' or 'output' appears in header for defaults }
                   if strequri('input    ', id) then inputptr^.hdr := true
                   else if strequri('output   ', id) then outputptr^.hdr := true
-#ifndef NOPRDPRR
-                  else if strequri('prd      ', id) then prdptr^.hdr := true
-                  else if strequri('prr      ', id) then prrptr^.hdr := true
-#endif
                   else if strequri('error    ', id) then errorptr^.hdr := true
                   else if strequri('list     ', id) then listptr^.hdr := true
                   else if strequri('command  ', id) then commandptr^.hdr := true;
@@ -10753,8 +10642,6 @@ begin
   (************)
   initscalars; initsets; inittables;
 
-  extendinit; { initialize extentions package };
-
   write('P6 Pascal compiler vs. ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
@@ -10780,9 +10667,8 @@ begin
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
 
   { get command line }
-  getcommandline(cmdlin, cmdlen);
+  getcommandline;
   cmdpos := 1;
-#ifdef NOHEADER
   paroptions; { parse command line options }
   { parse header files }
   parhdrfil(prd, prdval, '.pas');
@@ -10794,17 +10680,12 @@ begin
   parhdrfil(prr, prrval, '.p6 ');
   { if no output file exists, turn off output listing }
   if not prrval then prcode := false;
-#endif
   paroptions; { parse command line options }
   plcopt; { place options in flags }
 
   (*compile:*)
   (**********)
-
-  { !!! remove these statements for self compile }
-#ifndef SELF_COMPILE
   reset(prd); rewrite(prr); { open output file }
-#endif
 
   { write generator comment }
   if prcode then begin

@@ -45,8 +45,8 @@ procedure parhdrfil(var f: text; var wasproc: boolean; view e: string); forward;
 }
 
 const
-  maxlin = 250; { size of source line buffer }
-  maxcmd = 250; { size of command line buffer }
+  maxlin = 2000; { size of source line buffer }
+  maxcmd = 2000; { size of command line buffer }
   maxopt = 27;  { number of options }
   optlen = 10;  { maximum length of option words }
 
@@ -98,7 +98,7 @@ var i, j: cmdinx; c: char;
 procedure putcmd(c: char);
 begin
   if i >= maxcmd-1 then begin
-    writeln('Command line too long');
+    writeln('*** Command line too long');
     halt
   end;
   cmdlin[i] := c; i := i+1
