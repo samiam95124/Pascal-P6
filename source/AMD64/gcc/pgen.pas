@@ -295,19 +295,12 @@ type
       labbuf      = packed array [1..lablen] of char; { label buffer }
       strbuf      = packed array [1..strlen] of char;
       filext      = packed array [1..4] of char; { filename extension }
-      { Here is the variable length string containment to save on space. strings
-        are only stored in their length rounded to the nearest 10th. }
-      strvsp = ^strvs; { pointer to variable length id string }
-      strvs = record { id string variable length }
-                str:   packed array [1..varsqt] of char; { data contained }
-                next:  strvsp { next }
-              end;
       ctype = (cstr, creal, cset, ctmp, ctab, cint, cchr, cbol, cvalx);
       cstptr = ^cstrec; { pointer to string constant entry table }
       cstrec = record 
         next: cstptr; 
         case ct: ctype of
-            cstr:  (str: strvsp; strl: integer; strn: integer);
+            cstr:  (str: pstring; strl: integer; strn: integer);
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
             ctmp:  (ta:  array [1..maxtmp] of integer; tsize: integer; tn: integer);
@@ -320,19 +313,19 @@ type
       psymbol     = ^symbol;
       symbol      = record
                       next:   psymbol; { next list symbol }
-                      name:   strvsp; { name }
+                      name:   pstring; { name }
                       styp:   (stglobal, stlocal, stparam); { area type }
                       off:    address; { offset address }
-                      digest: strvsp; { type digest }
+                      digest: pstring; { type digest }
                     end;
       pblock       = ^block;
       block        = record
                        next:    pblock; { next list block }
                        incnxt:  pblock; { included blocks list }
                        parent:  pblock; { the parent of this block }
-                       name:    strvsp; { name of block, including type }
-                       bname:   strvsp; { name of block, not including type }
-                       tmpnam:  strvsp; { name of temp allocation space }
+                       name:    pstring; { name of block, including type }
+                       bname:   pstring; { name of block, not including type }
+                       tmpnam:  pstring; { name of temp allocation space }
                        short:   boolean; { there is a short name }
                        symbols: psymbol; { symbol list for block }
                        { block type }
@@ -409,7 +402,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       blkstk      : pblock; { stack of symbol blocks }
       blklst      : pblock; { discard list of symbols blocks }
       level       : integer; { level count of active blocks }
-      modnam      : strvsp; { block name }
+      modnam      : pstring; { block name }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
 
@@ -501,170 +494,70 @@ begin
   if fl > 0 then write(prr, ' ':fl)
 end;
 
-{ get string quanta }
-procedure getstr(var p: strvsp);
-begin
-  new(p); { get new entry }
-end;
+{*******************************************************************************
 
-{ find padded length of variable length id string }
-function lenpv(s: strvsp): integer;
-var l, tl: integer;
-begin tl := 0;
-  while s <> nil do begin
-    l := varsqt; 
-    if s^.next = nil then begin
-      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
-      if s^.str[l] = ' ' then l := 0;
-    end;
-    tl := tl+l;
-    s := s^.next
-  end;
-  lenpv := tl
-end;
+Pascaline string handling
 
-{ get character from variable length string }
-function strchr(a: strvsp; x: integer): char;
-var c: char; i: integer; q: integer;
-begin
-   c := ' '; i := 1; q := 1;
-   while i < x do begin
-      if q >= varsqt then begin q := 1; if a <> nil then a := a^.next end
-      else q := q+1;
-      i := i+1
-   end;
-   if a <> nil then c := a^.str[q];
-   strchr := c
- end;
+*******************************************************************************}
 
-{ put character to variable length string }
-procedure strchrass(var a: strvsp; x: integer; c: char);
-var i: integer; q: integer; p, l: strvsp;
-procedure getsqt;
-var y: integer;
-begin
-   if p = nil then begin getstr(p); for y := 1 to varsqt do p^.str[y] := ' ';
-      p^.next := nil; if a = nil then a := p else l^.next := p
-   end
-end;
-begin
-   i := 1; q := 1; p := a; l := nil;
-   getsqt;
-   while i < x do begin
-      if q >= varsqt then begin q := 1; l := p; p := p^.next; getsqt end
-      else q := q+1;
-      i := i+1
-   end;
-   p^.str[q] := c
-end;
-
-{ copy variable strings }
-procedure strassvv(var d: strvsp; s: strvsp);
+{ find length of right padded string }
+function lenp(view s: string): integer;
 var i: integer;
 begin
-  d := nil;
-  for i := 1 to lenpv(s) do strchrass(d, i, strchr(s, i))
-end;
-
-{ assign symbol identifier fixed to variable length string, including
-  allocation, with length specified }
-procedure strassvfl(var a: strvsp; var b: labbuf; l: integer);
-var i, j: integer; p, lp: strvsp;
-begin p := nil; a := nil; j := 1; lp := nil;
-  for i := 1 to l do begin
-    if j > varsqt then p := nil;
-    if p = nil then begin
-      getstr(p); p^.next := nil; j := 1;
-      if a = nil then a := p else lp^.next := p; lp := p
-    end;
-    p^.str[j] := b[i]; j := j+1
-  end;
-  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-end;
-
-{ assign symbol identifier fixed to variable length string, including
-  allocation }
-procedure strassvf(var a: strvsp; var b: labbuf);
-var i, j, l: integer; p, lp: strvsp;
-begin l := lablen; p := nil; a := nil; j := 1; lp := nil;
-  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-  if b[l] = ' ' then l := 0;
-  for i := 1 to l do begin
-    if j > varsqt then p := nil;
-    if p = nil then begin
-      getstr(p); p^.next := nil; j := 1;
-      if a = nil then a := p else lp^.next := p; lp := p
-    end;
-    p^.str[j] := b[i]; j := j+1
-  end;
-  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-end;
-
-{ assign fixed string to variable length string, including allocation }
-procedure strassvsb(var a: strvsp; var b: strbuf);
-var i, j, l: integer; p, lp: strvsp;
-begin l := strlen; p := nil; a := nil; j := 1; lp := nil;
-  while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-  if b[l] = ' ' then l := 0;
-  for i := 1 to l do begin
-    if j > varsqt then p := nil;
-    if p = nil then begin
-      getstr(p); p^.next := nil; j := 1;
-      if a = nil then a := p else lp^.next := p; lp := p
-    end;
-    p^.str[j] := b[i]; j := j+1
-  end;
-  if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-end;
-
-{ compare variable length id strings }
-function strequvv(a, b: strvsp): boolean;
-var m: boolean; i: integer;
-begin
-  m := true;
-  while (a <> nil) and (b <> nil) do begin
-    for i := 1 to varsqt do if lcase(a^.str[i]) <> lcase(b^.str[i]) then m := false;
-    a := a^.next; b := b^.next
-  end;
-  if a <> b then m := false;
-  strequvv := m
-end;
-
-{ write variable length string to file }
-procedure writev(var f: text; s: strvsp; fl: integer);
-var i: integer; c: char;
-begin i := 1;
-  while fl > 0 do begin
-    c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
-    write(f, c); fl := fl-1;
-    if i > varsqt then begin s := s^.next; i := 1 end
+  if max(s) = 0 then lenp := 0 else begin
+    i := max(s);
+    while (s[i] = ' ') and (i > 1) do i := i-1;
+    if s[i] <> ' ' then i := i+1;
+    lenp := i-1
   end
 end;
 
-{ write variable length string with escaped quotes to file }
-procedure writevq(var f: text; s: strvsp; fl: integer);
+{ make string from string substring }
+function strl(view s: string; l: integer): pstring;
+var p: pstring; i: integer;
+begin
+  new(p, l);
+  for i := 1 to l do p^[i] := s[i];
+  strl := p
+end;
+
+{ make string from string }
+function str(view s: string): pstring;
+var p: pstring;
+begin
+  str := strl(s, max(s))
+end;
+
+{ make string from padded string }
+function strp(view s: string): pstring;
+var p: pstring; l: integer;
+begin
+  strp := strl(s, lenp(s))
+end;
+
+{ write string with escaped quotes to file }
+procedure writeq(var f: text; view s: string; fl: integer);
 var i: integer; c: char;
 begin i := 1;
   while fl > 0 do begin
-    c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
-    if (c = '"') or (c = '\\') then write(f, '\\'); write(f, c); fl := fl-1;
-    if i > varsqt then begin s := s^.next; i := 1 end
+    c := ' '; if i <= max(s) then begin c := s^.str[i]; i := i+1 end;
+    if (c = '"') or (c = '\\') then write(f, '\\'); 
+    write(f, c); fl := fl-1
   end
 end;
 
-{ write padded string to file }
-procedure writevp(var f: text; s: strvsp);
-var l: integer;
+{ concatenate strings }
+procedure cat(var d: pstring; view s: string);
+var p: pstring; i,x: integer;
 begin
-  while s <> nil do begin
-    l := varsqt; 
-    if s^.next = nil then begin
-      while (s^.str[l] = ' ') and (l > 1) do l := l-1;
-      if s^.str[l] = ' ' then l := 0;
-    end;
-    if l > 0 then write(f, s^.str:l);
-    s := s^.next
-  end;
+  ld := max(d);
+  ls := max(s);
+  new(p, ld+ls);
+  for i := 1 to ld do p^[i] := d^[i];
+  x := ld+1;
+  for i := 1 to ls do begin p^[x] := s^[i]; x := x+1 end
+  dispose(d);
+  d := p
 end;
 
 { align address, upwards }
@@ -716,14 +609,14 @@ procedure xlate;
          labelrec = record
                           val: address;
                           st: labelst;
-                          ref: strvsp;
+                          ref: pstring;
                           blk: pblock;
                     end;
          flabelp = ^flabel;
          flabel = record
                        next: flabelp;
                        val: address;
-                       ref: strvsp
+                       ref: pstring
                      end;
          { registers in target }
          reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp, 
@@ -740,7 +633,7 @@ procedure xlate;
                     op:   instyp; { operator type }
                     p:   lvltyp; { p parameter } 
                     q, q1, q2, q3, q4: address; { q parameters values }
-                    qs, qs1, qs2: strvsp; { q parameters symbols }
+                    qs, qs1, qs2: pstring; { q parameters symbols }
                     r1, r2, r3: reg; { result registers }
                     t1, t2, t3: reg; { temporary registers }
                     r1a, r2a, r3a: address; { set temp tracking addresses }
@@ -756,10 +649,10 @@ procedure xlate;
                     setn: integer; { set number }
                     vi, vi2: integer; { integer value }
                     rs: regset; { push/pop mask }
-                    fn: strvsp; { function call name }
-                    lb: strvsp; { label for sfr }
-                    lt: strvsp; { label for table }
-                    fl: strvsp; { far label (where needed) }
+                    fn: pstring; { function call name }
+                    lb: pstring; { label for sfr }
+                    lt: pstring; { label for table }
+                    fl: pstring; { far label (where needed) }
                     pn: integer; { number of parameters for procedure/function }
                     rc: integer; { return type code 0=integer, 1=real, 2=set }
                     blk: pblock; { block called for cup }
@@ -796,7 +689,7 @@ procedure xlate;
         tmpspc: address; { size of temps area }
         tmplst: tmpptr; { list of active temps }
         tmpfre: tmpptr; { free temp entries }
-        lclspc: strvsp; { label for locals space }
+        lclspc: pstring; { label for locals space }
 
    procedure init;
       var i: integer;
@@ -1286,13 +1179,13 @@ procedure xlate;
    procedure putlabel(x: labelrg);
    var i, p: integer; digit: boolean;
    begin
-     strassvf(labeltab[x].ref, sn); strchrass(labeltab[x].ref, snl+1, '.'); i := snl+2;
+     labeltab[x].ref :=  strp(sn); cat(labeltab[x].ref, '.');
      p := maxpow10;
      digit := false;
      while p > 0 do begin
        if ((x div p) mod 10 <> 0) or (p = 1) or digit then begin
-         strchrass(labeltab[x].ref, i, chr((x div p) mod 10+ord('0'))); 
-         i := i+1; digit := true
+         cat(labeltab[x].ref, chr((x div p) mod 10+ord('0'))); 
+         digit := true
        end;
        p := p div 10
      end
@@ -1321,12 +1214,12 @@ procedure xlate;
    end;
 
    { search and attach expression stack to jump cache }
-   procedure schjmp(s: strvsp);
+   procedure schjmp(view s: string);
    var ep, lp, fp: expptr;
    begin
      ep := jmpstr; lp := nil; fp := nil;
      while ep <> nil do begin
-       if strequvv(ep^.qs, s) then begin fp := ep; ep := nil end
+       if ep^.qs^ = s then begin fp := ep; ep := nil end
        else begin lp := ep; ep := ep^.next end
      end;
      if fp <> nil then if fp^.l <> nil then begin
@@ -1344,7 +1237,7 @@ procedure xlate;
         labeltab[x].val:= labelvalue;
         putlabel(x);
         labeltab[x].blk := blkstk;
-        writevp(prr, labeltab[x].ref);
+        write(prr, labeltab[x].ref^);
         if pc then writeln(prr, ':') 
         else writeln(prr, ' = ', labeltab[x].val:1);
         schjmp(labeltab[x].ref);
@@ -1445,24 +1338,24 @@ procedure xlate;
      end;
    end;
 
-   procedure parlab(var x: integer; var fl: strvsp);
-   var i,j: integer;
+   procedure parlab(var x: integer; var fl: pstring);
+   var i,j: integer; ch: packed array [1..1] of char;
    begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error     ');
      if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
      else begin { far label }
-       getnxt; strassvf(fl, sn); strchrass(fl, snl+1, '.'); i := snl+2; 
+       getnxt; fl := strp(sn); cat(fl, '.');
        getsds; cvtsds;
-       for j := 1 to snl do begin strchrass(fl, i, sn[j]); i := i+1 end
+       for j := 1 to snl do begin ch[1] := sn[j]; cat(fl, ch) end
      end
    end;
 
    procedure preamble;
    begin
      { see how much of this is really required }
-     write(prr, '        .globl  '); writevp(prr, modnam); writeln(prr);
-     write(prr, '        .type   '); writevp(prr, modnam); writeln(prr, ', @function');
-     writevp(prr, modnam); writeln(prr, ':');
+     write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
+     write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
+     writeln(prr, modnam^, ':');
      writeln(prr, '# Align stack');
      writeln(prr, '        pushq   %rax');
      writeln(prr, '# Set up default files');
@@ -1655,7 +1548,7 @@ procedure xlate;
    { write short block name with field }
    procedure wrtblksht(bp: pblock; var fl: integer);
    begin
-     writevp(prr, bp^.bname); fl := fl+lenpv(bp^.bname);
+     write(prr, bp^.bname^); fl := fl+max(bp^.bname^);
      if bp^.en > 1 then begin write(prr, '$', bp^.en:1); fl := fl+1+digits(bp^.en) end
    end;
 
@@ -1665,7 +1558,7 @@ procedure xlate;
      if bp <> nil then begin
        wrtblks(bp^.parent, s, fl);
        if s then wrtblksht(bp, fl)
-       else begin writevp(prr, bp^.name); fl := fl+lenpv(bp^.name) end;
+       else begin write(prr, bp^.name^); fl := fl+lenp(bp^.name^) end;
        write(prr, '.'); fl := fl+1
      end
    end;
@@ -1682,12 +1575,12 @@ procedure xlate;
    end;
 
    { search overloads for max number }
-   function fndovrmax(bn: strvsp; bp: pblock): integer;
+   function fndovrmax(view bn: string; bp: pblock): integer;
    var ovrmax: integer;
    begin
      ovrmax := 0;
      while bp <> nil do begin
-       if strequvv(bn, bp^.bname) and (bp^.en > ovrmax) then ovrmax := bp^.en;
+       if (bn = bp^.bname) and (bp^.en > ovrmax) then ovrmax := bp^.en;
        bp := bp^.incnxt
      end;
      fndovrmax := ovrmax 
@@ -1698,7 +1591,7 @@ procedure xlate;
    begin
      if bp <> nil then begin
        wrtblks(bp^.next, false, fl);
-       writevp(prr, bp^.name)
+       write(prr, bp^.name^)
      end
    end;
 
@@ -1709,7 +1602,7 @@ procedure xlate;
      if bp <> nil then begin
        if anyshort(bp) then begin
          wrtblks(bp^.parent, true, fl);
-         writevp(prr, bp^.bname); 
+         write(prr, bp^.bname^); 
          if bp^.en > 1 then write(prr, '$', bp^.en:1);
          writeln(prr, ':')
        end;
@@ -1734,8 +1627,8 @@ procedure xlate;
        end
      end;
      if fsp <> nil then begin
-       writevp(f, fbp^.bname); write(f, '.'); writevp(f, fsp^.name); 
-       fl := fl+lenpv(fbp^.bname)+1+lenpv(fsp^.name)
+       write(f, fbp^.bname); write(f, '.'); write(f, fsp^.name^); 
+       fl := fl+lenp(fbp^.bname^)+1+lenp(fsp^.name^)
      end else begin 
        write(f, 'globals_start+', a:1); fl := fl+14+digits(a) 
      end
@@ -1757,8 +1650,8 @@ procedure xlate;
        end
      end;
      if fsp <> nil then begin
-       wrtblks(fbp, true, fl); writevp(f, fsp^.name); 
-       fl := fl+lenpv(fsp^.name)
+       wrtblks(fbp, true, fl); write(f, fsp^.name^); 
+       fl := fl+len(fsp^.name^)
      end else begin 
        write(f, a:1); fl := fl+digits(a) 
      end
@@ -1768,7 +1661,7 @@ procedure xlate;
       var x: integer; (* label number *)
           again: boolean;
           c,ch1: char;
-          ls: strvsp;    
+          ls: pstring;    
           ispc: boolean;  
           i, l: integer;   
           bp: pblock;
@@ -1789,6 +1682,7 @@ procedure xlate;
           v: integer;
           r: real;
           s: settype;
+          ch: packed array [1..1] of char;
    begin
       again := true; csttab := false;
       while again and not eof(prd) do begin
@@ -1876,18 +1770,18 @@ procedure xlate;
                    errorl('Block type is invalid    ');
                  ch1 := ch; { save block type }
                  getnxt; skpspc; getsds; sn2 := sn; snl2 := snl; cvtsds;
-                 new(bp); strassvf(bp^.name, sn);
+                 new(bp); bp^.name := strp(sn);
                  { get basename, without type }
                  l := 2; bp^.short := true;
                  while (l < lablen) and (sn[l] <> '$') do l := l+1;
-                 if sn[l] = '$' then strassvfl(bp^.bname, sn, l-1)
+                 if sn[l] = '$' then bp^.bname := strl(sn, l-1)
                  else begin
-                   strassvf(bp^.bname, sn); { just use whole name }
+                   bp^.bname := strp(sn); { just use whole name }
                    bp^.short := false
                  end;
-                 strassvv(bp^.tmpnam, bp^.bname); { copy to temp id }
-                 ts := '$_tmpspc  '; l := lenpv(bp^.tmpnam);
-                 for i := 1 to 8 do strchrass(bp^.tmpnam, l+i, ts[i]); 
+                 bp^.tmpnam := str(bp^.bname^); { copy to temp id }
+                 ts := '$_tmpspc  '; l := max(bp^.tmpnam^);
+                 for i := 1 to 8 do begin ch := ts[i]; cat(bp^.tmpnam, ch) end; 
                  bp^.symbols := nil;
                  bp^.incnxt := nil;
                  case ch1 of { block type }
@@ -1932,7 +1826,7 @@ procedure xlate;
          's': begin { symbol }
                 prtline; write(prr, ' s ');
                 getnxt; getlab;
-                new(sp); strassvf(sp^.name, sn);
+                new(sp); sp^.name := strp(sn);
                 write(prr, sn:snl); 
                 sn2 := sn; snl2 := snl;
                 skpspc;
@@ -1958,7 +1852,7 @@ procedure xlate;
                 if sgn then ad := -ad;
                 write(prr, ad:1, ' ');
                 sp^.off := ad; getsds; writeln(prr, sn:snl);
-                strassvf(sp^.digest, sn);
+                sp^.digest := strp(sn);
                 if anyshort(blkstk) then begin
                   wrtblks(blkstk, true, fl); 
                   if ch1 = 'g' then 
@@ -2077,7 +1971,7 @@ procedure xlate;
                            begin sn[i] := ch; i := i+1; getnxt end;
                          new(cstp2); cstp2^.ct := cstr;
                          cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                         strassvf(cstp2^.str,sn); cstp2^.strl := i; 
+                         cstp2^.str := strp(sn); cstp2^.strl := i; 
                          cstp2^.strn := 0
                        end;
                   'c': begin
@@ -2113,12 +2007,12 @@ procedure xlate;
           str: strbuf; { buffer for string constants }
           cstp: cstptr;
           ep, ep2, ep3, ep4, ep5, pp: expptr;
-          r1: reg; sp, sp2: strvsp; def, def2: boolean; val, val2: integer;
+          r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
           stkadr: integer; { stack address tracking }
           fl: integer; { field width }
           blk: pblock; { block reference }
 
-      procedure labelsearch(var def: boolean; var val: integer; var sp: strvsp; 
+      procedure labelsearch(var def: boolean; var val: integer; var sp: pstring; 
                             var blk: pblock);
       var x: integer; flp: flabelp;
       begin def := false; val := 0; flp := nil; blk := nil; skpspc; 
@@ -3163,7 +3057,7 @@ procedure xlate;
         @g - Global symbol from integer 1 (by offset)
         @l - Local symbol from integer 1 (by offset)
       }
-      procedure wrtins(view si: string; i1, i2: integer; r1, r2: reg; sn: strvsp);
+      procedure wrtins(view si: string; i1, i2: integer; r1, r2: reg; view sn: string);
       var i, j: integer;
 
       function cur: char;
@@ -3199,7 +3093,7 @@ procedure xlate;
             if cur = '$' then begin next; write(prr, '$'); j := j+1;
               if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
               else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
-              else if cur = 's' then begin writevp(prr, sn); j := j+lenpv(sn) end
+              else if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
               else begin write(prr, cur); j := j+1 end
             end else if cur = '%' then begin next; write(prr, '%'); j := j+1;
               if cur = '1' then begin
@@ -3222,7 +3116,7 @@ procedure xlate;
               else if cur = '1' then begin write(prr, i2:1); j := j+digits(i1) end
               else begin write(prr, cur);  j := j+1 end
             end else if cur = '@' then begin next;
-              if cur = 's' then begin writevp(prr, sn); j := j+lenpv(sn) end
+              if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
               else if cur = 'g' then wrtgbl(prr, i1, j)
               else if cur = 'l' then wrtlcl(prr, i2, i1, j)
               else begin write(prr, cur); j := j+1 end
@@ -4509,15 +4403,15 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
-            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+            write(prr, p:1, ' l '); write(prr, sp^); 
+            lftjst(parfld-(digits(p)+3+max(sp^))); pass
           end else parq;
           getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep)
         end;
 
         {lto} 
         234: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           getexp(ep); ep^.qs := sp; ep^.fl := sp; attach(ep); pshstk(ep)
         end;
 
@@ -4537,8 +4431,8 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
-            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+            write(prr, p:1, ' l '); write(prr, sp^); 
+            lftjst(parfld-(digits(p)+3+max(sp^))); pass
           end else parq;
           getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep) 
         end;
@@ -4568,8 +4462,8 @@ procedure xlate;
 
         {lpa}
         114: begin read(prd,p); labelsearch(def, val, sp, blk); 
-          write(prr, p:1, ' l '); writevp(prr, sp); 
-          lftjst(parfld-(digits(p)+3+lenpv(sp))); pass;
+          write(prr, p:1, ' l '); write(prr, sp^); 
+          lftjst(parfld-(digits(p)+3+max(sp^))); pass;
           q1 := -p*ptrsize; getexp(ep); ep^.fn := sp; pshstk(ep);
         end;
 
@@ -4665,7 +4559,7 @@ procedure xlate;
           until c = '''';
           getexp(ep); attach(ep); pshstk(ep);
           write(prr, '"', str:l,'"'); fl := fl+1+l+1; lftjst(parfld-fl); pass;
-          new(cstp); cstp^.ct := cstr; strassvsb(cstp^.str, str); 
+          new(cstp); cstp^.ct := cstr; cstp^.str := strp(str); 
           cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
           cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
         end;
@@ -4769,7 +4663,7 @@ procedure xlate;
 
         {sfr}
         245: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           getexp(ep); pshstk(ep);
           ep^.lb := nil;
           if (def and (val <> 0)) or not def then ep^.lb := sp
@@ -4777,8 +4671,8 @@ procedure xlate;
 
         {cuf}
         246: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1, ' ', q2:1, ' ', q3:1); 
-          lftjst(parfld-(2+lenpv(sp)+1+digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3))); pass;
+          write(prr, sp^); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1, ' ', q2:1, ' ', q3:1); 
+          lftjst(parfld-(2+max(sp^)+1+digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3))); pass;
           getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
           getpar(ep); pshstk(ep);
         end;
@@ -4797,9 +4691,9 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
+            write(prr, p:1, ' l '); write(prr, sp^); 
             read(prd,q1,q2,q3,q4); write(prr, q1:1, ' ', q2:1, ' ', q3:1, ' ', q4:1);
-            lftjst(parfld-(3+lenpv(sp)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
+            lftjst(parfld-(3+max(sp^)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
           end else begin 
             read(prd,q,q1,q2,q3,q4); write(prr,q,' ',q1, ' ', q2:1, ' ', q3:1, ' ', q4:1); 
             lftjst(parfld-(digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
@@ -4848,7 +4742,7 @@ procedure xlate;
 
         {lft} 
         213: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           getexp(ep);
           popstk(ep^.l); ep^.lt := sp;
           pshstk(ep)
@@ -4941,9 +4835,9 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
+            write(prr, p:1, ' l '); write(prr, sp^); 
             read(prd,q1); write(prr, q1:1);
-            lftjst(parfld-(3+lenpv(sp)+1+digits(q1)))
+            lftjst(parfld-(3+max(sp^)+1+digits(q1)))
           end else begin 
             read(prd,q,q1); write(prr,q,' ',q1); 
             lftjst(parfld-(digits(q)+1+digits(q1)))
@@ -4961,8 +4855,8 @@ procedure xlate;
         {ivti,ivtx,ivtb,ivtc,cta}
         192,101,102,111,191: begin read(prd,q, q1); 
           labelsearch(def, val, sp, blk); 
-          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); 
-          lftjst(parfld-(digits(q)+1+digits(q1)+3+lenpv(sp))); pass;
+          write(prr,q:1, ' ', q1:1, ' l '); write(prr, sp^); 
+          lftjst(parfld-(digits(q)+1+digits(q1)+3+max(sp^))); pass;
           getexp(ep); ep^.lt := sp; popstk(ep2); popstk(ep3); 
           duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -4971,8 +4865,8 @@ procedure xlate;
 
         {cup}
         12: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); read(prd, q1); write(prr, ' ', q1:1); 
-          lftjst(parfld-(2+lenpv(sp)+1+digits(q1))); pass;
+          write(prr, sp^); read(prd, q1); write(prr, ' ', q1:1); 
+          lftjst(parfld-(2+max(sp^)+1+digits(q1))); pass;
           getexp(ep); ep^.fn := sp; ep^.pn := q1; ep^.blk := blk; getpar(ep);
           frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
           genexp(ep); deltre(ep);
@@ -5065,8 +4959,8 @@ procedure xlate;
         {mst}
         11: begin read(prd,p); labelsearch(def, val, lclspc, blk); 
           labelsearch(def2, val2, sp2, blk);
-          write(prr,p:1, ' l '); writevp(prr, lclspc); write(prr, ' l '); 
-          writevp(prr, sp2); lftjst(parfld-(digits(p)+3+lenpv(lclspc)+3+lenpv(sp2))); pass;
+          write(prr,p:1, ' l '); write(prr, lclspc^); write(prr, ' l '); 
+          write(prr, sp2^); lftjst(parfld-(digits(p)+3+max(lclspc^)+3+max(sp2^))); pass;
           if blkstk <> nil then
             if blkstk^.btyp in [btproc, btfunc] then begin
               write(prr, '        .globl   '); wrtblklng(blkstk); writeln(prr);
@@ -5083,8 +4977,8 @@ procedure xlate;
           wrtins(' enterq $1,$0 # enter frame', p+1, 0, rgnull, rgnull, nil);
           wrtins(' movq %rsp,%rax # copy sp', 0, 0, rgnull, rgnull, nil);
           { find sp-locals }
-          write(prr, '        subq    $'); writevp(prr, lclspc); write(prr, '+'); 
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ',%rax # find sp-locals');
+          write(prr, '        subq    $'); write(prr, lclspc^); write(prr, '+'); 
+          write(prr, blkstk^.tmpnam^); writeln(prr, ',%rax # find sp-locals');
           wrtins('1:', 0, 0, rgnull, rgnull, lclspc);
           wrtins(' cmpq %rax,%rsp # check have reached stack', 0, 0, rgnull, rgnull, nil);
           wrtins(' je 2f # skip if so', 0, 0, rgnull, rgnull, nil);
@@ -5133,8 +5027,8 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
-            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+            write(prr, p:1, ' l '); write(prr, sp^); 
+            lftjst(parfld-(digits(p)+3+max(sp^))); pass
           end else parq;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
@@ -5165,8 +5059,8 @@ procedure xlate;
           sp := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp, blk);
-            write(prr, p:1, ' l '); writevp(prr, sp); 
-            lftjst(parfld-(digits(p)+3+lenpv(sp))); pass
+            write(prr, p:1, ' l '); write(prr, sp^); 
+            lftjst(parfld-(digits(p)+3+max(sp^))); pass
           end else parq;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
@@ -5235,7 +5129,7 @@ procedure xlate;
 
         {ujp}
         23: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           wrtins(' jmp @s', 0, 0, rgnull, rgnull, sp);
           if estack <> nil then begin { put in unresolved cache }
             getexp(ep); ep^.qs := sp;
@@ -5245,7 +5139,7 @@ procedure xlate;
 
         {fjp,tjp}
         24,119: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
@@ -5257,7 +5151,7 @@ procedure xlate;
 
         {xjp}
         25: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-          writevp(prr, sp); lftjst(parfld-(3+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(3+max(sp^))); pass;
           frereg := allreg; popstk(ep); getreg(r1, frereg);
           assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
@@ -5274,7 +5168,7 @@ procedure xlate;
 
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp, blk); write(prr, p:1, ' l ');
-          writevp(prr, sp); lftjst(parfld-(digits(p)+3+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(digits(p)+3+max(sp^))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize, 0, rgnull, rgnull, nil);
           wrtins(' movq ^0(%rbp),%rsp # get stack for target', marksb, 0, rgnull, rgnull, nil);
@@ -5327,7 +5221,7 @@ procedure xlate;
             wrtins(' movq %rsp,%rax # index result in rax', 0, 0, rgnull, rgnull, nil);
           wrtins(' pushq %rcx # replace return address', 0, 0, rgnull, rgnull, nil);
           wrtins(' ret # return to caller', 0, 0, rgnull, rgnull, nil);
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
+          write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -5350,7 +5244,7 @@ procedure xlate;
             wrtins(' andq $0,%rax # mask byte result', 255, 0, rgnull, rgnull, nil);
           wrtins(' pushq %rcx # replace return address', 0, 0, rgnull, rgnull, nil);
           wrtins(' ret # return to caller', 0, 0, rgnull, rgnull, nil);
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
+          write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -5373,7 +5267,7 @@ procedure xlate;
           wrtins(' addq $0,%rsp # remove real from stack', realsize, 0, rgnull, rgnull, nil);
           wrtins(' pushq %rcx # restore return address', 0, 0, rgnull, rgnull, nil);
           wrtins(' ret # return to caller', 0, 0, rgnull, rgnull, nil);
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
+          write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -5394,7 +5288,7 @@ procedure xlate;
           wrtins(' addq $0,%rsp # remove caller parameters', q, 0, rgnull, rgnull, nil);
           wrtins(' pushq %rcx # restore return address', 0, 0, rgnull, rgnull, nil);
           wrtins(' ret # return to caller', 0, 0, rgnull, rgnull, nil);
-          writevp(prr, blkstk^.tmpnam); writeln(prr, ' = ', tmpspc:1);
+          write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
           botstk; deltmp
         end;
 
@@ -5464,8 +5358,8 @@ procedure xlate;
      
         {cjp}
         8: begin read(prd,q,q1); labelsearch(def, val, sp, blk); 
-          write(prr,q:1, ' ', q1:1, ' l '); writevp(prr, sp); write(prr, ' '); 
-          lftjst(parfld-(digits(q)+1+digits(q1)+3+lenpv(sp))); pass;
+          write(prr,q:1, ' ', q1:1, ' l '); write(prr, sp^); write(prr, ' '); 
+          lftjst(parfld-(digits(q)+1+digits(q1)+3+max(sp^))); pass;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
@@ -5546,13 +5440,13 @@ procedure xlate;
           sp2 := nil;
           if prd^ = 'l' then begin 
             getnxt; labelsearch(def, val, sp2, blk);
-            write(prr,' l '); writevp(prr, sp);
-            write(prr,'l '); writevp(prr, sp2); 
-            lftjst(parfld-(3+lenpv(sp)+2+lenpv(sp2))); pass
+            write(prr,' l '); write(prr, sp^);
+            write(prr,'l '); write(prr, sp2^); 
+            lftjst(parfld-(3+max(sp^)+2+max(sp2^))); pass
           end else begin
-            read(prd,q1); write(prr,' l '); writevp(prr, sp);
+            read(prd,q1); write(prr,' l '); write(prr, sp^);
             write(' ',q1:1); 
-            lftjst(parfld-(3+lenpv(sp)+1+digits(q1))); pass
+            lftjst(parfld-(3+max(sp^)+1+digits(q1))); pass
           end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins(' leaq @s(%rip),%rax # get new vector address', 0, 0, rgnull, rgnull, sp);
@@ -5563,14 +5457,14 @@ procedure xlate;
 
         {cal}
         21: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins(' call @s # call routine/initializer', 0, 0, rgnull, rgnull, sp);
         end;
 
         {bge}
         207: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-          writevp(prr, sp); lftjst(parfld-(2+lenpv(sp))); pass;
+          write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins(' pushq psystem_expadr(%rip) # save current exception frame', 0, 0, rgnull, rgnull, nil);
           wrtins(' pushq psystem_expstk(%rip)', 0, 0, rgnull, rgnull, nil);
@@ -5739,7 +5633,7 @@ procedure xlate;
      case cp^.ct of
        cstr: begin
          write(prr, '        .string "');
-         writevq(prr, cp^.str, cp^.strl);
+         writeq(prr, cp^.str, cp^.strl);
          writeln(prr, '"') 
        end;
        creal: writeln(prr, '        .double ', cp^.r);
@@ -5797,11 +5691,11 @@ procedure xlate;
          cset: writeln(prr, 'set', csttbl^.setn:1, ':');
          ctmp: begin
            writeln(prr, 'template', csttbl^.tn:1, ':');
-           writevp(prr, modnam); writeln(prr, '.', csttbl^.tn:1, ':')
+           write(prr, modnam^); writeln(prr, '.', csttbl^.tn:1, ':')
          end;
          ctab: begin
            writeln(prr, 'constant_table', csttbl^.cn:1, ':');
-           writevp(prr, modnam); writeln(prr, '.', csttbl^.cn:1, ':')
+           write(prr, modnam^); writeln(prr, '.', csttbl^.cn:1, ':')
          end;
          cint: writeln(prr, 'value', csttbl^.intn:1, ':');
          cchr: writeln(prr, 'character', csttbl^.chrn:1, ':');
@@ -5848,7 +5742,7 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, '        jmp     1f');
    writeln(prr, 'modnam:');
-   write(prr, '        .string  "'); writevp(prr, modnam); writeln(prr, '"');
+   write(prr, '        .string  "'); write(prr, modnam^); writeln(prr, '"');
    writeln(prr, 'real_zero:');
    writeln(prr, '        .double  0.0');
    writeln(prr, 'real_int_max:');
