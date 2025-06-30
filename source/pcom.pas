@@ -286,9 +286,9 @@ type
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
-                     priv: boolean; linecounts, lineouts: integer;
+                     priv: boolean; linecount, lineout: integer;
                      sb: linbuf; si: lininx; sl: 0..maxlin; lo: boolean;
-                     lineno: integer; fio: boolean end;
+                     fio: boolean end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
@@ -451,8 +451,6 @@ var
     lgth: integer;                  (*length of last string constant*)
     id: idstr;                      (*last identifier (possibly truncated)*)
     kk: 1..maxids;                  (*nr of chars in last identifier*)
-    {ch: char;}                       (*last character*)
-    {eol: boolean;}                   (*end of line flag*)
 
     { pushback system, last and next variables }
     lsy: symbol; lop: operatort; lval: valu; llgth: integer;
@@ -466,8 +464,6 @@ var
     chcnt: integer;                 (*character counter*)
     ic,gc: addrrange;               (*data location and instruction counter*)
     lc,lcs: stkoff;
-    linecount: integer;
-    lineout: integer;
 
                                     (*switches:*)
                                     (***********)
@@ -1302,7 +1298,7 @@ end;
   begin
     if not incstk^.lo then begin
       if dolineinfo then begin
-        write(incstk^.lineno:6,'  ':2);
+        write(incstk^.linecount:6,'  ':2);
         if dp then write(lc:7) else write(ic:7);
         write(' ')
       end;
@@ -1329,8 +1325,7 @@ end;
       end;
       if incact then readln(incstk^.f)
       else readln(prd); 
-      linecount := linecount+1;
-      incstk^.lo := false; incstk^.lineno := linecount; 
+      incstk^.linecount := incstk^.linecount+1; incstk^.lo := false;
       if list then wrtsrclin
     end;
     incstk^.si := 1; incstk^.lo := false;
@@ -1344,21 +1339,21 @@ end;
     if incstk^.sl <> 0 then eofinp := false else eofinp := fileeof
   end;
 
-  function eolninp: boolean;
+  function eol: boolean;
   begin
-    if eofinp then eolninp := true
-    else if incstk^.si > incstk^.sl then eolninp := true
-    else eolninp := false
+    if eofinp then eol := true
+    else if incstk^.si > incstk^.sl then eol := true
+    else eol := false
   end;
 
-  function bufinp: char;
+  function ch: char;
   begin
-    if not eolninp then bufinp := incstk^.sb[incstk^.si] else bufinp := ' '
+    if not eol then ch := incstk^.sb[incstk^.si] else ch := ' '
   end;
 
   function bufnxt: char;
   begin
-    if not eolninp then bufnxt := incstk^.sb[incstk^.si+1] else bufnxt := ' '
+    if not eol then bufnxt := incstk^.sb[incstk^.si+1] else bufnxt := ' '
   end;
 
   procedure readinp;
@@ -1639,7 +1634,7 @@ end;
     if errinx > 0 then   (*output error messages*)
       begin 
         if not list then wrtsrclin;
-        write(incstk^.lineno:6,' ****  ':9);
+        write(incstk^.linecount:6,' ****  ':9);
         lastpos := -1; freepos := 1;
         for k := 1 to errinx do
           begin
@@ -1666,7 +1661,7 @@ end;
               for j := 1 to k-1 do 
                 if errlist[j].nmr = errlist[k].nmr then df := true;
               if not df then begin
-                write(incstk^.lineno:6,' ****  ':9); 
+                write(incstk^.linecount:6,' ****  ':9); 
                 write(errlist[k].nmr:3, ' ');
                 errmsg(errlist[k].nmr); writeln
               end
@@ -1680,11 +1675,11 @@ end;
   { output lines passed to intermediate }
   procedure outline;
   begin
-    while lineout < linecount do begin
-      lineout := lineout+1;
+    while incstk^.lineout < incstk^.linecount do begin
+      incstk^.lineout := incstk^.lineout+1;
       { output line marker in intermediate file }
       if not eofinp and prcode then begin
-        writeln(prr, ':', lineout:1);
+        writeln(prr, ':', incstk^.lineout:1);
       end
     end
   end;
@@ -1692,7 +1687,7 @@ end;
   procedure markline;
   begin
     outline;
-    if prcode then writeln(prr, ':', linecount:1)
+    if prcode then writeln(prr, ':', incstk^.linecount:1)
   end;
 
   { check in private section }
@@ -1714,7 +1709,7 @@ end;
 
       errtbl[ferrnr] := errtbl[ferrnr]+1; { track this error }
       { track error lines }
-      new(ep); ep^.errlin := linecount; ep^.next := errltb[ferrnr];
+      new(ep); ep^.errlin := incstk^.linecount; ep^.next := errltb[ferrnr];
       errltb[ferrnr] := ep;
       if errinx >= 9 then
         begin errlist[10].nmr := 255; errinx := 10 end
@@ -1786,10 +1781,6 @@ end;
         rv: real;
         sgn: integer;
         strend: boolean;
-
-    function ch: char; begin ch := bufinp end;
-
-    function eol: boolean; begin eol := eolninp end;
 
     procedure nextch;
     begin if eol then endofline;
@@ -2774,7 +2765,7 @@ end;
     for i := top downto lim do
       begin writeln('Level: ', i:1); followctp(display[i].fname) end;
     writeln(output);
-    if not eolninp then write(' ':chcnt+16)
+    if not eol then write(' ':chcnt+16)
   end (*printtables*);
 
   procedure chkrefs(p: ctp; var w: boolean);
@@ -9486,7 +9477,7 @@ end;
     new(fp);
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
-      linecounts := linecount; lineouts := lineout; si := 1; sl := 0; 
+      si := 1; sl := 0; 
       lo := false; fio := true;
       me := false;
       repeat
@@ -9515,7 +9506,6 @@ end;
     if not incact then error(505);
     if incstk^.fio then begin { not at level 0 }
       close(incstk^.f);
-      linecount := incstk^.linecounts; lineout := incstk^.lineouts;
       { remove top include entry }
       fp := incstk; incstk := incstk^.next;
       fp^.next := inclst; { put on discard list }
@@ -9556,7 +9546,7 @@ end;
     repeat { modules }
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin
-          eols := eolninp; prcodes := prcode; lists := list; gcs := gc;
+          eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
           openinput(ff);
           if ff then begin
@@ -10188,7 +10178,7 @@ end;
     { single display entry for top level }
     lc := -ptrsize; gc := 0;
     (* note in the above reservation of buffer store for 2 text files *)
-    ic := 3; linecount := 0; lineout := 0;
+    ic := 3;
     incstk := nil; inclst := nil; chcnt := 0;
     mxint10 := maxint div 10;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
@@ -10728,8 +10718,8 @@ begin
   sy := ident; op := mul; lgth := 0; kk := 1;
   { open input file }
   new(fp); with fp^ do begin 
-      next := incstk; incstk := fp; priv := false; lineno := linecount;
-      lineouts := lineout; si := 1; sl := 0; lo := false; fio := false
+      next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
+      si := 1; sl := 0; lo := false; fio := false
   end;
   readline;
   insymbol;

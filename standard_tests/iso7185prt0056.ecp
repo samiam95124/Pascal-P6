@@ -2,33 +2,32 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 56: missing begin word-symbol 
- 
-} 
- 
-program iso7185prt0056; 
- 
-end. 
+PRT test 56: missing begin word-symbol
+
+}
+
+program iso7185prt0056;
+
+end.
      9   ****     ^18
      9   ****   18 Error in declaration part
    *** eof encountered
+   *** eof encountered
 
-    10   ****  ^17,6,13,21
-    10   ****   17 'begin' expected
-    10   ****    6 Illegal symbol
-    10   ****   13 'end' expected
-    10   ****   21 '.' expected
-
+     9   ****  ^17,6,13,21
+     9   ****   17 'begin' expected
+     9   ****    6 Illegal symbol
+     9   ****   13 'end' expected
+     9   ****   21 '.' expected
 Errors in program: 5
 
 Error numbers in listing:
 -------------------------
-  6   1 10 Illegal symbol
- 13   1 10 'end' expected
- 17   1 10 'begin' expected
+  6   1 9 Illegal symbol
+ 13   1 9 'end' expected
+ 17   1 9 'begin' expected
  18   1 9 Error in declaration part
- 21   1 10 '.' expected
+ 21   1 9 '.' expected
 

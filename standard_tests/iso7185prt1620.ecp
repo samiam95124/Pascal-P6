@@ -2,36 +2,32 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 1620: Unterminated comment 
- 
-} 
- 
-program iso7185prt1620; 
- 
-begin 
- 
-   { 
- 
-end. 
+PRT test 1620: Unterminated comment
+
+}
+
+program iso7185prt1620;
+
+begin
+
+   {
+
+end.
+   *** eof encountered
+   *** eof encountered
    *** eof encountered
 
-   *** eof encountered
-
-   *** eof encountered
-
-    16   ****  ^6,13,21
-    16   ****    6 Illegal symbol
-    16   ****   13 'end' expected
-    16   ****   21 '.' expected
-
+    13   ****  ^6,13,21
+    13   ****    6 Illegal symbol
+    13   ****   13 'end' expected
+    13   ****   21 '.' expected
 Errors in program: 3
 
 Error numbers in listing:
 -------------------------
-  6   1 16 Illegal symbol
- 13   1 16 'end' expected
- 21   1 16 '.' expected
+  6   1 13 Illegal symbol
+ 13   1 13 'end' expected
+ 21   1 13 '.' expected
 
