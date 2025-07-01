@@ -3,20 +3,19 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
-
-     1       -8 module debug_test1(output); 
-     2       -8  
-     3       -8 procedure writehi; 
-     4      -16  
-     5      -16 begin 
-     6        7  
-     7        7     writeln('this is debug test1') 
-     8       15  
-     9       15 end; 
-    10       18  
-    11       18 begin 
-    12       18  
-    13       18 end. 
+     1       -8 module debug_test1(output);
+     2       -8 
+     3       -8 procedure writehi;
+     4      -16 
+     5      -16 begin
+     6        7 
+     7        7     writeln('this is debug test1')
+     8       15 
+     9       15 end;
+    10       18 
+    11       18 begin
+    12       18 
+    13       18 end.
 
 Errors in program: 0
 Compiling debug_test...
@@ -24,174 +23,174 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+     1       -8 program debug_test(output);
+     2       -8 
+     3       -8 joins debug_test1;
+     4        1 
+     5        1 type
+     6       -8     enum = (one, two, three);
+     7       -8     sub = 1..10;
+     8       -8     a10 = array 10 of integer;
+     9       -8     r = record i: integer; c: char; b: boolean; e: enum; sr: sub; r: real; 
+    10       -8                a: a10 end;
+    11       -8     r2 = record i: integer; c: char; b: boolean; e: enum; sr: sub; r: real; 
+    12       -8                 rec: r; a: a10 end;
+    13       -8     a2 = array 10 of r2;
+    14       -8 
+    15       -8 var i, x, i2: integer;
+    16       -8     c: char;
+    17       -8     b: boolean;
+    18       -8     e: enum;
+    19       -8     sr: sub;
+    20       -8     f: real;
+    21       -8     rv: r2;
+    22       -8     a: a10;
+    23       -8     ar: a2;
+    24       -8     pi: ^integer;
+    25       -8 
+    26       -8 procedure stop1; begin end;
+    27        2 
+    28        2 procedure stop2; begin end;
+    29        3 
+    30        3 procedure stop3; begin end;
+    31        4 
+    32        4 procedure traceme; begin end;
+    33        5 
+    34        5 procedure stop4; begin end;
+    35        6 
+    36        6 procedure stop5; begin end;
+    37        7 
+    38        7 procedure stop6; begin end;
+    39        8 
+    40        8 procedure stop7; begin end;
+    41        9 
+    42        9 procedure stop8; begin end;
+    43       10 
+    44       10 procedure stop9; begin end;
+    45       11 
+    46       11 procedure dostuff;
+    47       11 
+    48       11 var i: integer;
+    49      -24 
+    50      -24 begin
+    51       11 
+    52       11     for i := 1 to 4 do writeln('iteration: ', i);
+    53       44 
+    54       44 end;
+    55       45 
+    56       45 procedure proc2(i: integer; c: char);
+    57       45 
+    58       45 var a: integer;
+    59      -24     b: char;
+    60      -25     d: ^integer;
+    61      -36     e: ^integer;
+    62      -44 
+    63      -44 begin
+    64       45 
+    65       45     a := 75;
+    66       47     b := '6';
+    67       50 
+    68       50     stop3;
+    69       51 
+    70       51     writeln('Step past me!');
+    71       61     writeln('And me too!');
+    72       71     writeln('1');
+    73       78     writeln('2');
+    74       85     writeln('3');
+    75       92     traceme;
+    76       93     writeln('4');
+    77      100     stop4;
+    78      101     writeln('5');
+    79      108     a := 12;
+    80      110     writeln('6');
+    81      117     stop5;
+    82      118     writeln('7');
+    83      125     writeln('8');
+    84      132     dostuff;
+    85      133     writeln('9');
+    86      140     writeln('10');
+    87      150     stop6;
+    88      151     dostuff;
+    89      152     stop7;
+    90      153     new(d);
+    91      156     new(e);
+    92      159     dispose(d);
+    93      162     writeln('11');
+    94      172     stop8;
+    95      173 
+    96      173 end;
 
-     1       -8 program debug_test(output); 
-     2       -8  
-     3       -8 joins debug_test1; 
-     4        1  
-     5        1 type 
-     6       -8     enum = (one, two, three); 
-     7       -8     sub = 1..10; 
-     8       -8     a10 = array 10 of integer; 
-     9       -8     r = record i: integer; c: char; b: boolean; e: enum; sr: sub; r: real;  
-    10       -8                a: a10 end; 
-    11       -8     r2 = record i: integer; c: char; b: boolean; e: enum; sr: sub; r: real;  
-    12       -8                 rec: r; a: a10 end; 
-    13       -8     a2 = array 10 of r2; 
-    14       -8  
-    15       -8 var i, x, i2: integer; 
-    16       -8     c: char; 
-    17       -8     b: boolean; 
-    18       -8     e: enum; 
-    19       -8     sr: sub; 
-    20       -8     f: real; 
-    21       -8     rv: r2; 
-    22       -8     a: a10; 
-    23       -8     ar: a2; 
-    24       -8     pi: ^integer; 
-    25       -8  
-    26       -8 procedure stop1; begin end; 
-    27        2  
-    28        2 procedure stop2; begin end; 
-    29        3  
-    30        3 procedure stop3; begin end; 
-    31        4  
-    32        4 procedure traceme; begin end; 
-    33        5  
-    34        5 procedure stop4; begin end; 
-    35        6  
-    36        6 procedure stop5; begin end; 
-    37        7  
-    38        7 procedure stop6; begin end; 
-    39        8  
-    40        8 procedure stop7; begin end; 
-    41        9  
-    42        9 procedure stop8; begin end; 
-    43       10  
-    44       10 procedure stop9; begin end; 
-    45       11  
-    46       11 procedure dostuff; 
-    47       11  
-    48       11 var i: integer; 
-    49      -24  
-    50      -24 begin 
-    51       11  
-    52       11     for i := 1 to 4 do writeln('iteration: ', i); 
-    53       44  
-    54       44 end; 
-    55       45  
-    56       45 procedure proc2(i: integer; c: char); 
-    57       45  
-    58       45 var a: integer; 
-    59      -24     b: char; 
-    60      -25     d: ^integer; 
-    61      -36     e: ^integer; 
-    62      -44  
-    63      -44 begin 
-    64       45  
-    65       45     a := 75; 
-    66       47     b := '6'; 
-    67       50  
-    68       50     stop3; 
-    69       51  
-    70       51     writeln('Step past me!'); 
-    71       61     writeln('And me too!'); 
-    72       71     writeln('1'); 
-    73       78     writeln('2'); 
-    74       85     writeln('3'); 
-    75       92     traceme; 
-    76       93     writeln('4'); 
-    77      100     stop4; 
-    78      101     writeln('5'); 
-    79      108     a := 12; 
-    80      110     writeln('6'); 
-    81      117     stop5; 
-    82      118     writeln('7'); 
-    83      125     writeln('8'); 
-    84      132     dostuff; 
-    85      133     writeln('9'); 
-    86      140     writeln('10'); 
-    87      150     stop6; 
-    88      151     dostuff; 
-    89      152     stop7; 
-    90      153     new(d); 
-    91      156     new(e); 
-    92      159     dispose(d); 
-    93      162     writeln('11'); 
-    94      172     stop8; 
-    95      173  
-    96      173 end; 
 c          unreferenced
 i          unreferenced
+    97      174 
+    98      174 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
+    99      174 
+   100      174 var i, x, i2: integer;
+   101    -2464     c: char;
+   102    -2465     b: boolean;
+   103    -2466     e: enum;
+   104    -2468     sr: sub;
+   105    -2472     f: real;
+   106    -2480     rv: r2;
+   107    -2704     a: a10;
+   108    -2784     ar: a2;
+   109    -4984     ip: ^integer;
+   110    -4992 
+   111    -4992 begin
+   112      180 
+   113      180     x := 43;
+   114      182     c := 'b';
+   115      185     b := false;
+   116      188     e := three;
+   117      191     sr := 8;
+   118      194     f := 56.78e10;
+   119      196 
+   120      196     rv.i := 13;
+   121      198     rv.c := 'd';
+   122      201     rv.b := false;
+   123      204     rv.e := one;
+   124      207     rv.sr := 4;
+   125      210     rv.r := 87.65e20;
+   126      212     rv.rec.i := 85;
+   127      214     rv.rec.c := 'x';
+   128      217     rv.rec.b := true;
+   129      220     rv.rec.e := two;
+   130      223     rv.rec.sr := 4;
+   131      226     rv.rec.r := 36.32e8;
+   132      228     for i := 1 to 10 do rv.rec.a[i] := i+40;
+   133      257     for i := 1 to 10 do rv.a[i] := i+50;
+   134      286 
+   135      286     for i := 1 to 10 do a[i] := i+20;
+   136      315 
+   137      315     for i := 1 to 10 do begin
+   138      325 
+   139      325         ar[i].i := 16;
+   140      332         ar[i].c := 'z';
+   141      341         ar[i].b := false;
+   142      350         ar[i].e := three;
+   143      359         ar[i].sr := 2;
+   144      368         ar[i].r := 43.32e20;
+   145      376 
+   146      376         ar[i].rec.i := 85;
+   147      384         ar[i].rec.c := 'k';
+   148      393         ar[i].rec.b := true;
+   149      402         ar[i].rec.e := two;
+   150      411         ar[i].rec.sr := 7;
+   151      420         ar[i].rec.r := 23.65e8;
+   152      428         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+60;
+   153      462         for i2 := 1 to 10 do ar[i].a[i2] := i2+70;
+   154      496 
+   155      496     end;
+   156      506 
+   157      506     new(ip);
+   158      509     ip^ := 76;
+   159      513 
+   160      513     stop2;
+   161      514 
+   162      514     proc2(74, 'j');
+   163      518 
+   164      518 end;
 
-    97      174  
-    98      174 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2); 
-    99      174  
-   100      174 var i, x, i2: integer; 
-   101    -2464     c: char; 
-   102    -2465     b: boolean; 
-   103    -2466     e: enum; 
-   104    -2468     sr: sub; 
-   105    -2472     f: real; 
-   106    -2480     rv: r2; 
-   107    -2704     a: a10; 
-   108    -2784     ar: a2; 
-   109    -4984     ip: ^integer; 
-   110    -4992  
-   111    -4992 begin 
-   112      180  
-   113      180     x := 43; 
-   114      182     c := 'b'; 
-   115      185     b := false; 
-   116      188     e := three; 
-   117      191     sr := 8; 
-   118      194     f := 56.78e10; 
-   119      196  
-   120      196     rv.i := 13; 
-   121      198     rv.c := 'd'; 
-   122      201     rv.b := false; 
-   123      204     rv.e := one; 
-   124      207     rv.sr := 4; 
-   125      210     rv.r := 87.65e20; 
-   126      212     rv.rec.i := 85; 
-   127      214     rv.rec.c := 'x'; 
-   128      217     rv.rec.b := true; 
-   129      220     rv.rec.e := two; 
-   130      223     rv.rec.sr := 4; 
-   131      226     rv.rec.r := 36.32e8; 
-   132      228     for i := 1 to 10 do rv.rec.a[i] := i+40; 
-   133      257     for i := 1 to 10 do rv.a[i] := i+50; 
-   134      286  
-   135      286     for i := 1 to 10 do a[i] := i+20; 
-   136      315  
-   137      315     for i := 1 to 10 do begin 
-   138      325  
-   139      325         ar[i].i := 16; 
-   140      332         ar[i].c := 'z'; 
-   141      341         ar[i].b := false; 
-   142      350         ar[i].e := three; 
-   143      359         ar[i].sr := 2; 
-   144      368         ar[i].r := 43.32e20; 
-   145      376  
-   146      376         ar[i].rec.i := 85; 
-   147      384         ar[i].rec.c := 'k'; 
-   148      393         ar[i].rec.b := true; 
-   149      402         ar[i].rec.e := two; 
-   150      411         ar[i].rec.sr := 7; 
-   151      420         ar[i].rec.r := 23.65e8; 
-   152      428         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+60; 
-   153      462         for i2 := 1 to 10 do ar[i].a[i2] := i2+70; 
-   154      496  
-   155      496     end; 
-   156      506  
-   157      506     new(ip); 
-   158      509     ip^ := 76; 
-   159      513  
-   160      513     stop2; 
-   161      514  
-   162      514     proc2(74, 'j'); 
-   163      518  
-   164      518 end; 
 pa         unreferenced
 pb         unreferenced
 pe         unreferenced
@@ -200,93 +199,92 @@ prec       unreferenced
 pr         unreferenced
 psr        unreferenced
 pi         unreferenced
-
-   165      519  
-   166      519 procedure stepover1; 
-   167      519  
-   168      519 begin 
-   169      519  
-   170      519     writeln('I am stepover proc 1') 
-   171      527  
-   172      527 end; 
-   173      530  
-   174      530 procedure stepover2; 
-   175      530  
-   176      530 begin 
-   177      530  
-   178      530     writeln('I am stepover proc 2') 
-   179      538  
-   180      538 end; 
-   181      541  
-   182      541 begin 
-   183      541  
-   184      541     writeln('This is debug test'); 
-   185      551     debug_test1.writehi; 
-   186      552     x := 42; 
-   187      554     c := 'a'; 
-   188      557     b := true; 
-   189      560     e := two; 
-   190      563     sr := 5; 
-   191      566     f := 12.34e10; 
-   192      568  
-   193      568     rv.i := 12; 
-   194      570     rv.c := 'c'; 
-   195      573     rv.b := false; 
-   196      576     rv.e := three; 
-   197      579     rv.sr := 6; 
-   198      582     rv.r := 56.78e20; 
-   199      584     rv.rec.i := 84; 
-   200      586     rv.rec.c := 'u'; 
-   201      589     rv.rec.b := true; 
-   202      592     rv.rec.e := one; 
-   203      595     rv.rec.sr := 3; 
-   204      598     rv.rec.r := 54.32e8; 
-   205      600     for i := 1 to 10 do rv.rec.a[i] := i+20; 
-   206      629     for i := 1 to 10 do rv.a[i] := i+30; 
-   207      658  
-   208      658     for i := 1 to 10 do a[i] := i+10; 
-   209      687  
-   210      687     for i := 1 to 10 do begin 
-   211      697  
-   212      697         ar[i].i := 12; 
-   213      704         ar[i].c := 'c'; 
-   214      713         ar[i].b := false; 
-   215      722         ar[i].e := three; 
-   216      731         ar[i].sr := 1; 
-   217      740         ar[i].r := 56.78e20; 
-   218      748  
-   219      748         ar[i].rec.i := 84; 
-   220      756         ar[i].rec.c := 'u'; 
-   221      765         ar[i].rec.b := true; 
-   222      774         ar[i].rec.e := one; 
-   223      783         ar[i].rec.sr := 3; 
-   224      792         ar[i].rec.r := 54.32e8; 
-   225      800         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+20; 
-   226      834         for i2 := 1 to 10 do ar[i].a[i2] := i2+30; 
-   227      868  
-   228      868     end; 
-   229      878  
-   230      878     new(pi); 
-   231      881     pi^ := 42; 
-   232      885  
-   233      885     stop1; 
-   234      886  
-   235      886     proc1(83, 'g', true, two, 7, 98.76, rv, ar); 
-   236      899  
-   237      899     stepover1; 
-   238      900  
-   239      900     stepover2; 
-   240      901  
-   241      901     writeln('Step me!'); 
-   242      911  
-   243      911     x := 1; 
-   244      913     x := x+1; 
-   245      917  
-   246      917     for i := 1 to 3 do writeln('Hi there!');     
-   247      947  
-   248      947     stop9; 
-   249      948  
-   250      948 end. 
+   165      519 
+   166      519 procedure stepover1;
+   167      519 
+   168      519 begin
+   169      519 
+   170      519     writeln('I am stepover proc 1')
+   171      527 
+   172      527 end;
+   173      530 
+   174      530 procedure stepover2;
+   175      530 
+   176      530 begin
+   177      530 
+   178      530     writeln('I am stepover proc 2')
+   179      538 
+   180      538 end;
+   181      541 
+   182      541 begin
+   183      541 
+   184      541     writeln('This is debug test');
+   185      551     debug_test1.writehi;
+   186      552     x := 42;
+   187      554     c := 'a';
+   188      557     b := true;
+   189      560     e := two;
+   190      563     sr := 5;
+   191      566     f := 12.34e10;
+   192      568 
+   193      568     rv.i := 12;
+   194      570     rv.c := 'c';
+   195      573     rv.b := false;
+   196      576     rv.e := three;
+   197      579     rv.sr := 6;
+   198      582     rv.r := 56.78e20;
+   199      584     rv.rec.i := 84;
+   200      586     rv.rec.c := 'u';
+   201      589     rv.rec.b := true;
+   202      592     rv.rec.e := one;
+   203      595     rv.rec.sr := 3;
+   204      598     rv.rec.r := 54.32e8;
+   205      600     for i := 1 to 10 do rv.rec.a[i] := i+20;
+   206      629     for i := 1 to 10 do rv.a[i] := i+30;
+   207      658 
+   208      658     for i := 1 to 10 do a[i] := i+10;
+   209      687 
+   210      687     for i := 1 to 10 do begin
+   211      697 
+   212      697         ar[i].i := 12;
+   213      704         ar[i].c := 'c';
+   214      713         ar[i].b := false;
+   215      722         ar[i].e := three;
+   216      731         ar[i].sr := 1;
+   217      740         ar[i].r := 56.78e20;
+   218      748 
+   219      748         ar[i].rec.i := 84;
+   220      756         ar[i].rec.c := 'u';
+   221      765         ar[i].rec.b := true;
+   222      774         ar[i].rec.e := one;
+   223      783         ar[i].rec.sr := 3;
+   224      792         ar[i].rec.r := 54.32e8;
+   225      800         for i2 := 1 to 10 do ar[i].rec.a[i2] := i2+20;
+   226      834         for i2 := 1 to 10 do ar[i].a[i2] := i2+30;
+   227      868 
+   228      868     end;
+   229      878 
+   230      878     new(pi);
+   231      881     pi^ := 42;
+   232      885 
+   233      885     stop1;
+   234      886 
+   235      886     proc1(83, 'g', true, two, 7, 98.76, rv, ar);
+   236      899 
+   237      899     stepover1;
+   238      900 
+   239      900     stepover2;
+   240      901 
+   241      901     writeln('Step me!');
+   242      911 
+   243      911     x := 1;
+   244      913     x := x+1;
+   245      917 
+   246      917     for i := 1 to 3 do writeln('Hi there!');    
+   247      947 
+   248      947     stop9;
+   249      948 
+   250      948 end.
 
 Errors in program: 0
 P6 Pascal interpreter vs. 0.4.x
