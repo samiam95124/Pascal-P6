@@ -2,33 +2,37 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 124: Missing "end" on case statement 
- 
-} 
- 
-program iso7185prt0124; 
- 
-var x, a: integer; 
- 
-begin 
- 
-   case x of 
- 
-      1: a := 1; 
-      2: a := 2 
- 
-end. 
-    18   ****      ^6,13
+PRT test 124: Missing "end" on case statement
+
+}
+
+program iso7185prt0124;
+
+var x, a: integer;
+
+begin
+
+   case x of
+
+      1: a := 1;
+      2: a := 2
+
+end.
+    18   ****      ^6
     18   ****    6 Illegal symbol
-    18   ****   13 'end' expected
+   *** eof encountered
+   *** eof encountered
 
-Errors in program: 2
+    18   ****  ^13,21
+    18   ****   13 'end' expected
+    18   ****   21 '.' expected
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6   1 18 Illegal symbol
  13   1 18 'end' expected
+ 21   1 18 '.' expected
 

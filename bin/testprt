@@ -561,13 +561,13 @@ strip standard_tests/iso7185prt.lst tmp1
 if [ "$option" = "--pgen" ]; then
 
     strip standard_tests/iso7185prt_pgen.cmp tmp2
-    diff -B tmp1 tmp2 > standard_tests/iso7185prt_pgen.dif
-    wc -l standard_tests/iso7185prt_pgen.dif
+    diff -Bw tmp1 tmp2 > standard_tests/iso7185prt.dif
+    wc -l standard_tests/iso7185prt.dif
 
 else
 
     strip standard_tests/iso7185prt.cmp tmp2
-    diff -B tmp1 tmp2 > standard_tests/iso7185prt.dif
+    diff -Bw tmp1 tmp2 > standard_tests/iso7185prt.dif
     wc -l standard_tests/iso7185prt.dif
 
 fi
