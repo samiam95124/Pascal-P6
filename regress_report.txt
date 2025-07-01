@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Mon 30 Jun 2025 09:32:14 AM PDT
+Mon 30 Jun 2025 09:38:42 AM PDT
 Line counts should be 0 for pass
 pgen run ***************************************
 0 sample_programs/hello.dif
@@ -20,19 +20,19 @@ Pascal-P2 run
 Pascal-P4 run
 0 p4/standardp.dif
 PRT run
-18353 standard_tests/iso7185prt.dif
+18340 standard_tests/iso7185prt.dif
 Pascaline run
 0 pascaline_tests/pascaline.dif
 
-Total differences: 18353
+Total differences: 18340
 Fails: 0
 *** Regression fails
-Mon 30 Jun 2025 09:33:19 AM PDT
+Mon 30 Jun 2025 09:39:47 AM PDT
 Files sha256sum ***************************************
 Source files
 4aa0b19757c2ac8d14c98f0dccee4473a570a99dd0edcf3ed563bcbd744dd6e5  -
 batch files
-a14159550c98e6e7565c8896c66bc29321b32c6b612e51b1a8d8a5e8ac225304  -
+f4b1ae22f0426eaacacf6103c52beb9319c84ac16c2ef73b0c57ea565f6f299c  -
 P2 files
 1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
 p4 files
