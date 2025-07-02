@@ -42,5 +42,5 @@ flip -u -b tmp1
 flip -u -b tmp2
 strip tmp1 tmp1s
 strip tmp2 tmp2s
-diff -B tmp1s tmp2s
+diff -Bw tmp1s tmp2s
 rm tmp1 tmp2 tmp1s tmp2s

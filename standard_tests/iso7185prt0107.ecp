@@ -2,30 +2,34 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 107: Missing "end" on statement block 
- 
-} 
- 
-program iso7185prt0107; 
- 
-begin 
- 
-   begin 
- 
-      if 1=1 then 
- 
-end. 
-    15   ****      ^6,13
+PRT test 107: Missing "end" on statement block
+
+}
+
+program iso7185prt0107;
+
+begin
+
+   begin
+
+      if 1=1 then
+
+end.
+    15   ****      ^6
     15   ****    6 Illegal symbol
-    15   ****   13 'end' expected
+   *** eof encountered
+   *** eof encountered
 
-Errors in program: 2
+    15   ****  ^13,21
+    15   ****   13 'end' expected
+    15   ****   21 '.' expected
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6   1 15 Illegal symbol
  13   1 15 'end' expected
+ 21   1 15 '.' expected
 

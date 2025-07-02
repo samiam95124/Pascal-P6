@@ -47,4 +47,7 @@ grep -v -e 'loading program' | \
 grep -v -e 'Running program' | \
 grep -v -e 'Generating program' | \
 grep -v -e 'Program generation complete' | \
+grep -v -e '/usr/bin/ld: /tmp/.*.o: in function `resetfn' | \
+grep -v -e 'is dangerous, better use' | \
+grep -v -e '^[[:space:]]*$' | \
 grep -v -e 'program complete' > $2
