@@ -3319,7 +3319,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3336,7 +3336,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3473,7 +3473,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3490,7 +3490,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3533,7 +3533,7 @@ procedure xlate;
               wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $ContainerMismatch,%rdx # load error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
             end;
 
             {cpc}
@@ -3588,7 +3588,7 @@ procedure xlate;
               wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $ValueOutOfRange,%rdx # load error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:        ', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:        ', 0, 0, rgnull, rgnull);
               wrtins(' movq $0,%1 # load high bound', ep^.vi2, 0, ep^.t1, rgnull);
               wrtins(' cmpq %1,%2 # compare', 0, 0, ep^.t1, ep^.r1);
               wrtins(' jle 1f # skip if less or equal', 0, 0, rgnull, rgnull);
@@ -3596,7 +3596,7 @@ procedure xlate;
               wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $ValueOutOfRange,%rdx # load error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+              wrtins('1:', 0, 0, rgnull, rgnull)
             end;
 
             {chka}
@@ -3607,7 +3607,7 @@ procedure xlate;
               wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $DereferenceOfNilPointer,%rdx # load error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+              wrtins('1:', 0, 0, rgnull, rgnull)
             end;
 
             {chks}
@@ -3627,7 +3627,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $DereferenceOfNilPointer,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3707,12 +3707,12 @@ procedure xlate;
                 wrtins(' movq %1,%2 # move result to temp', 0, 0, ep^.t1, ep^.t2);
                 wrtins(' orq %1,%1 # check zero', 0, 0, ep^.t2, rgnull);
                 wrtins(' jnz 1f # skip not zero', 0, 0, rgnull, rgnull);
-                wrtins('2:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('2:', 0, 0, rgnull, rgnull);
                 wrtins(' leaq modnam(%rip),%rdi # load module name', 0, 0, rgnull, rgnull);
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end;                            
               wrtins(' cvttsd2si %1,%2 # trucate real to integer', 0, 0, ep^.l^.r1, ep^.r1);
             end;
@@ -3735,7 +3735,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -3749,7 +3749,7 @@ procedure xlate;
               wrtins(' orq %1,%1 # check positive', 0, 0, ep^.r1, rgnull);
               wrtins(' jns 1f # skip if so', 0, 0, ep^.r1, rgnull);
               wrtins(' negq %1 # negate integer', 0, 0, ep^.r1, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
 
             end;
 
@@ -3766,7 +3766,7 @@ procedure xlate;
               wrtins(' movq $1,%1 # set true', 0, 1, ep^.r1, rgnull);
               wrtins(' jz 1f # skip if so', 0, 0, ep^.r2, rgnull);
               wrtins(' movq $0,%1 # otherwise set false', 0, 0, ep^.r1, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+              wrtins('1:', 0, 0, rgnull, rgnull)
             end;
 
             {noti}
@@ -3778,7 +3778,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $BooleanOperatorOfNegative,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:', 0, 0, rgnull, rgnull);
               end;
               wrtins(' notq %1 # not integer', 0, 0, ep^.r1, rgnull);
               wrtins(' movq $0,%1 # clear sign bit', pmmaxint, 0, ep^.t1, rgnull);
@@ -3803,12 +3803,12 @@ procedure xlate;
                 wrtins(' movq %1,%2 # move result to temp', 0, 0, ep^.t1, ep^.t2);
                 wrtins(' orq %1,%1 # check zero', 0, 0, ep^.t2, rgnull);
                 wrtins(' jnz 1f # skip not zero', 0, 0, rgnull, rgnull);
-                wrtins('2:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('2:', 0, 0, rgnull, rgnull);
                 wrtins(' leaq modnam(%rip),%rdi # load module name', 0, 0, rgnull, rgnull);
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $RealArgumentTooLarge,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end;
               wrtins(' cvtsd2si %1,%2 # round to integer', 0, 0, ep^.l^.r1, ep^.r1)
             end;
@@ -3825,14 +3825,14 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # get line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $BooleanOperatorOfNegative,%rdx # get error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:', 0, 0, rgnull, rgnull);
                 wrtins(' orq %1,%1 # check signed', 0, 0, ep^.r^.r1, rgnull);
                 wrtins(' jns 1f # skip if not', 0, 0, rgnull, rgnull);
                 wrtins(' leaq modnam(%rip),%rdi # index module name', 0, 0, rgnull, rgnull);
                 wrtins(' movq $0,%rsi # get line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $BooleanOperatorOfNegative,%rdx # get error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:', 0, 0, rgnull, rgnull);
               end;
               case ep^.op of
                 43: wrtins(' andq %1,%2 # and integers', 0, 0, ep^.r^.r1, ep^.l^.r1);
@@ -3868,12 +3868,12 @@ procedure xlate;
               wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $InvalidDivisorToMod,%rdx # set error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
               wrtins(' xorq %rdx,%rdx # clear upper dividend', 0, 0, rgnull, rgnull);
               wrtins(' subq $0,%rax # find sign of dividend', 0, 0, ep^.r^.r1, rgnull);
               wrtins(' jns 1f # skip positive', 0, 0, ep^.r^.r1, rgnull);
-              wrtins(' decq %rdx # set sign of upper dividend', 0, 0, rgnull, rgnull, sp^);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins(' decq %rdx # set sign of upper dividend', 0, 0, rgnull, rgnull);
+              wrtins('1:', 0, 0, rgnull, rgnull);
               wrtins(' idivq %1 # divide integer', 0, 0, ep^.r^.r1, rgnull);
               if ep^.r1 <> rgrdx then
                 wrtins(' movq %rdx,%1 # place result', 0, 0, ep^.r1, rgnull)
@@ -3887,12 +3887,12 @@ procedure xlate;
               wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $ZeroDivide,%rdx # set error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
               wrtins(' xorq %rdx,%rdx # clear upper dividend', 0, 0, rgnull, rgnull);
               wrtins(' subq $0,%rax # find sign of dividend', 0, 0, ep^.r^.r1, rgnull);
               wrtins(' jns 1f # skip positive', 0, 0, ep^.r^.r1, rgnull);
-              wrtins(' decq %rdx # set sign of upper dividend ', 0, 0, rgnull, rgnull, sp^);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins(' decq %rdx # set sign of upper dividend ', 0, 0, rgnull, rgnull);
+              wrtins('1:', 0, 0, rgnull, rgnull);
               wrtins(' idivq %1 # divide integer', 0, 0, ep^.r^.r1, rgnull);
               if ep^.r1 <> rgrax then
                 wrtins(' movq %rax,%1 # move result into place', 0, 0, ep^.r1, rgnull)
@@ -3907,7 +3907,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $IntegerValueOverflow,%rdx # set error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end
             end;
 
@@ -4094,7 +4094,7 @@ procedure xlate;
               wrtins(' movq $0,%rsi # set line number', sline, 0, rgnull, rgnull);
               wrtins(' movq $VariantNotActive,%rdx # set error code', 0, 0, rgnull, rgnull);
               wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
             end;
 
             {wbs}
@@ -4112,7 +4112,7 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $ValueOutOfRange,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:', 0, 0, rgnull, rgnull);
               end;
               wrtins(' movq $0,%rax # get element size', ep^.q, 0, rgnull, rgnull);
               wrtins(' mulq %1 # find index*size', 0, 0, ep^.r^.r1, rgnull);
@@ -4132,12 +4132,12 @@ procedure xlate;
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $ValueOutOfRange,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:        ', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:        ', 0, 0, rgnull, rgnull);
               end;
               wrtins(' movq $0,%1 # get # levels-1', ep^.q-1, 0, ep^.t1, rgnull);
               wrtins(' movq $0,%rax # get base element size', ep^.q1, 0, rgnull, rgnull);
               wrtins(' movq %1,%rdx # copy template address', 0, 0, ep^.l^.r2, rgnull);
-              wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+              wrtins('1:', 0, 0, rgnull, rgnull);
               wrtins(' addq $0,%rdx # next template location', intsize, 0, rgnull, rgnull);
               wrtins(' mulq (%rdx) # add template to size', 0, 0, rgnull, rgnull);
               wrtins(' subq $0,%1 # count down levels', 1, 0, ep^.t1, rgnull);
@@ -4157,12 +4157,12 @@ procedure xlate;
                 wrtins(' jb 2f # skip if below', 0, 0, rgnull, rgnull);
                 wrtins(' cmpq $0,%1 # compare', ep^.q, 0, ep^.l^.r1, rgnull);
                 wrtins(' jbe 1f # skip if less or equal', 0, 0, rgnull, rgnull);
-                wrtins('2:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('2:', 0, 0, rgnull, rgnull);
                 wrtins(' leaq modnam(%rip),%rdi # load module name', 0, 0, rgnull, rgnull);
                 wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
                 wrtins(' movq $InvalidContainerLevel,%rdx # load error code', 0, 0, rgnull, rgnull);
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^)
+                wrtins('1:', 0, 0, rgnull, rgnull)
               end;
               if ep^.q = 1 then 
                 wrtins(' movq %1,%2 # set max = lvl 1 len', 1, 0, ep^.l^.r2, ep^.r1)
@@ -4205,7 +4205,7 @@ procedure xlate;
                 wrtins(' movq $0,%1 # get # levels', ep^.q, 0, ep^.t1, rgnull);
                 wrtins(' movq $0,%1 # get base element size', ep^.q1, 0, ep^.t2, rgnull);
                 wrtins(' movq %1,%2 # copy template address', 0, 0, ep^.l^.r2, ep^.t3);
-                wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+                wrtins('1:', 0, 0, rgnull, rgnull);
                 wrtins(' movq (%1),%rax # get size from template', 0, 0, ep^.t3, rgnull);
                 wrtins(' mulq %1 # multiply by size', 0, 0, ep^.t2, rgnull);
                 wrtins(' movq %rax,%1 # add template to size', 0, 0, ep^.t2, rgnull);
@@ -5162,12 +5162,12 @@ procedure xlate;
           assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
-          wrtins(' movq %1,%2 # make factoring copy of index', 0, 0, ep^.r1, r1, sp^);
-          wrtins(' salq $2,%1 # *4', 0, 0, ep^.r1, rgnull, sp^);
-          wrtins(' addq %2,%1 # *5', 0, 0, ep^.r1, r1, sp^);
+          wrtins(' movq %1,%2 # make factoring copy of index', 0, 0, ep^.r1, r1);
+          wrtins(' salq $2,%1 # *4', 0, 0, ep^.r1, rgnull);
+          wrtins(' addq %2,%1 # *5', 0, 0, ep^.r1, r1);
           wrtins(' leaq @s(%rip),%1 # index case jump table', 0, 0, r1, rgnull, sp^);
-          wrtins(' addq %2,%1 # add scaled index to base', 0, 0, ep^.r1, r1, sp^);
-          wrtins(' jmp *%1', 0, 0, ep^.r1, rgnull, sp^);
+          wrtins(' addq %2,%1 # add scaled index to base', 0, 0, ep^.r1, r1);
+          wrtins(' jmp *%1', 0, 0, ep^.r1, rgnull);
           deltre(ep); 
           botstk 
         end;
@@ -5371,10 +5371,10 @@ procedure xlate;
           dmptre(ep); genexp(ep);
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
           wrtins(' cmpq $0,%1 # check against low bound', q, 0, ep^.r1, rgnull);
-          wrtins(' jl 1f # skip if lower', 0, 0, rgnull, rgnull, sp^);
+          wrtins(' jl 1f # skip if lower', 0, 0, rgnull, rgnull);
           wrtins(' cmpq $0,%1 # check against high bound', q1, 0, ep^.r1, rgnull);
           wrtins(' jle @s # if less or equal, jump to target', 0, 0, rgnull, rgnull, sp^);
-          wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+          wrtins('1:', 0, 0, rgnull, rgnull);
           pshstk(ep)
         end;
 
@@ -5477,7 +5477,7 @@ procedure xlate;
           wrtins(' pushq psystem_expmrk(%rip)', 0, 0, rgnull, rgnull);          
           wrtins(' pushq $0 # place dummy vector', 0, 0, rgnull, rgnull);
           wrtins(' leaq @s(%rip),%rax # place new exception frame', 0, 0, rgnull, rgnull, sp^);
-          wrtins(' movq %rax,psystem_expadr(%rip)', 0, 0, rgnull, rgnull, sp^);
+          wrtins(' movq %rax,psystem_expadr(%rip)', 0, 0, rgnull, rgnull);
           wrtins(' movq %rsp,psystem_expstk(%rip)', 0, 0, rgnull, rgnull);
           wrtins(' movq %rbp,psystem_expmrk(%rip)', 0, 0, rgnull, rgnull);
           botstk
@@ -5504,7 +5504,7 @@ procedure xlate;
 
           wrtins(' orq %rax,%rax', 0, 0, rgnull, rgnull);
           wrtins(' jnz 1f # skip if less or equal', 0, 0, rgnull, rgnull);
-          wrtins('1:', 0, 0, rgnull, rgnull, sp^);
+          wrtins('1:', 0, 0, rgnull, rgnull);
           wrtins(' leaq modnam(%rip),%rdi # load module name', 0, 0, rgnull, rgnull);
           wrtins(' movq $0,%rsi # load line number', sline, 0, rgnull, rgnull);
 {??? Why didn't this stop unhandled exceptions ???}
@@ -5895,7 +5895,7 @@ begin (* main *)
   end;
   paroptions; { parse command line options }
   parhdrfil(prr, prrval, '.s  ');
-  if not prdval then begin
+  if not prrval then begin
     writeln('*** Error: output filename not found');
     goto 99
   end;
