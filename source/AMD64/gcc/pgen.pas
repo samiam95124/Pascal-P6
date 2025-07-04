@@ -4253,9 +4253,9 @@ procedure xlate;
             {max} 
             214: begin
               if dodbgchk then begin
-                wrtins(' cmpq $0,%1 # chk lvl < 1', 1, 0, ep^.l^.r2, rgnull, nil);
+                wrtins(' cmpq $0,%1 # chk lvl < 1', 1, 0, ep^.r^.r1, rgnull, nil);
                 wrtins(' jb 2f # skip if below', 0, 0, rgnull, rgnull, nil);
-                wrtins(' cmpq $0,%1 # compare', ep^.q, 0, ep^.l^.r1, rgnull, nil);
+                wrtins(' cmpq $0,%1 # compare', ep^.q, 0, ep^.r^.r1, rgnull, nil);
                 wrtins(' jbe 1f # skip if less or equal', 0, 0, rgnull, rgnull, nil);
                 wrtins('2:', 0, 0, rgnull, rgnull, sp);
                 wrtins(' leaq modnam(%rip),%rdi # load module name', 0, 0, rgnull, rgnull, nil);
@@ -4264,14 +4264,12 @@ procedure xlate;
                 wrtins(' call psystem_errore # process error', 0, 0, rgnull, rgnull, nil);
                 wrtins('1:', 0, 0, rgnull, rgnull, sp)
               end;
-              if ep^.q = 1 then 
-                wrtins(' movq %1,%2 # set max = lvl 1 len', 1, 0, ep^.l^.r2, ep^.r1, nil)
-              else begin
+              if ep^.q <> 1 then begin
                 wrtins(' movq $0,%1 # get total lvl', ep^.q, 0, ep^.t1, rgnull, nil);
                 wrtins(' subq %1,%2 # find tl-al', 0, 0, ep^.r^.r1, ep^.t1, nil);
                 wrtins(' salq $4,%1 # *16 (long)', 0, 0, ep^.t1, rgnull, nil);
                 wrtins(' addq %1,%2 # add to base template', 0, 0, ep^.l^.r2, ep^.t1, nil);
-                wrtins(' movq (%1),%2 # add to base template', 0, 0, ep^.t1, ep^.l^.r2, nil)
+                wrtins(' movq (%1),%2 # add to base template', 0, 0, ep^.t1, ep^.r1, nil)
               end
             end;
 
