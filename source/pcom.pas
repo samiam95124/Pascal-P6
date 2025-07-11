@@ -8185,15 +8185,6 @@ end;
       end
     end;
 
-    procedure prtpar(plst: ctp);
-    begin
-      while plst <> nil do begin
-        if plst^.idtype <> nil then prtform(plst^.idtype^.form) else write('<nil>');
-        write(',');
-        plst := plst^.next
-      end
-    end;
-
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
