@@ -2,32 +2,31 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 600: Missing parameter identifier 
- 
-} 
- 
-program iso7185prt0600; 
- 
-procedure a(: integer); 
+PRT test 600: Missing parameter identifier
+
+}
+
+program iso7185prt0600;
+
+procedure a(: integer);
      9   ****               ^7       ^7,5
      9   ****    7 Error in parameter list
      9   ****    5 ':' expected
- 
-begin 
-end; 
+
+begin
+end;
+
 integer    unreferenced
 
- 
-begin 
- 
-   a(1) 
-    16   ****         ^277
-    16   ****  277 No overload found to match parameter
- 
-end. 
+begin
+
+   a(1)
+    16   ****         ^189
+    16   ****  189 Parameter lists of formal and actual parameters not congruous
+
+end.
 
 Errors in program: 4
 
@@ -35,5 +34,5 @@ Error numbers in listing:
 -------------------------
   5   1 9 ':' expected
   7   2 9,9 Error in parameter list
-277   1 16 No overload found to match parameter
+189   1 16 Parameter lists of formal and actual parameters not congruous
 

@@ -5915,23 +5915,21 @@ end;
           frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
     { This overload does not match, sequence to the next, same parameter.
-      Set sets fcp -> new proc/func, nxt -> next parameter in new list. }
+      Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
+      fcp = nil, nxt = nil for no next found. }
     procedure nxtprc;
       var pc: integer; fcpn, fcpf: ctp;
       { compare parameter lists until current }
       function cmplst(pl1, pl2: ctp): boolean;
-        var pc: integer; pll1, pll2: ctp;
+        var pc: integer;
       begin cmplst := false; pc := 1;
-        pll1 := nil; pll2 := nil;
-        while (pc < prcnt) and cmppar(pl1, pl2) do begin
-          pll1 := pl1; pll2 := pl2;
-          if pl1 <> nil then pl1 := pl1^.next;
-          if pl2 <> nil then pl2 := pl2^.next;
+        while (pc < prcnt) and (pl1 <> nil) and (pl2 <> nil) and cmppar(pl1, pl2) do begin
+          pl1 := pl1^.next;
+          pl2 := pl2^.next;
           pc := pc+1
         end;
-        { compare last entry }
-        if (pll1 <> nil) and (pll2 <> nil) then cmplst := cmppar(pll1, pll2)
-        else cmplst := (pll1 = nil) and (pll2 = nil) { reached end of both lists }
+        { compared all list left }
+        cmplst := pc = prcnt
       end;
     begin pc := 1;
       fcpn := fcp^.grpnxt; { go next proc/func, which may not exist }
@@ -5943,10 +5941,10 @@ end;
           else fcpn := fcpn^.grpnxt { next group proc/func }
         else fcpn := fcpn^.grpnxt
       end;
-      fcp := fcpf; { set found/not found }
+      fcp := fcpf; nxt := nil; { set found/not found }
       if fcp <> nil then begin { recover parameter position in new list }
         nxt := fcp^.pflist;
-        while (pc < prcnt) do begin if nxt <> nil then nxt := nxt^.next; pc := pc+1 end
+        while pc < prcnt do begin if nxt <> nil then nxt := nxt^.next; pc := pc+1 end
       end
     end;
     begin { callnonstandard }
@@ -5971,7 +5969,7 @@ end;
             if nxt = nil then begin
               { out of parameters, try to find another overload }
               nxtprc;
-              if nxt = nil then begin
+              if fcp = nil then begin
                 { dispatch error according to overload status }
                 if ovrl then error(275) else error(126);
                 fcp := fcps
@@ -5995,7 +5993,8 @@ end;
                   end;
                   if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
-                if fcp = nil then begin error(277); e := true; fcp := fcps end
+                if fcp = nil then begin if ovrl then error(277) else error(189); 
+                                        e := true; fcp := fcps end
               end
             end;
             { match same thing for all procs/funcs }
@@ -6046,7 +6045,8 @@ end;
                     end;
                     if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
-                if fcp = nil then begin error(277); e := true; fcp := fcps end;
+                if fcp = nil then begin if ovrl then error(277) else error(189); 
+                                        e := true; fcp := fcps end;
                 { override variable status for view parameter }
                 if nxt <> nil then varp := (nxt^.vkind = formal) and not (nxt^.part = ptview);
                 if varp and (gattr.kind <> varbl) then error(278);
@@ -6112,7 +6112,8 @@ end;
                       end
                   end
               end;
-            if nxt <> nil then begin nxt := nxt^.next; prcnt := prcnt+1 end;
+            if nxt <> nil then nxt := nxt^.next; 
+            prcnt := prcnt+1;
             test := sy <> comma;
             if sy = comma then insymbol;
           until test;
@@ -6121,8 +6122,14 @@ end;
         end (*if lparent*);
       { not out of proto parameters, sequence until we are or there are no
         candidate overloads }
-      while (nxt <> nil) and (fcp <> nil) do nxtprc;
-      if fcp = nil then fcp := fcps;
+      if nxt <> nil then begin
+        while (fcp <> nil) and (nxt <> nil) do begin
+          nxtprc;
+          if fcp = nil then if ovrl then error(277) else error(189)
+        end
+      end;
+      if fcp = nil then begin if ovrl then error(277) else error(189); 
+                              fcp := fcps end;
       { find function result size }
       lsize := 0;
       if (fcp^.klass = func) and (fcp^.idtype <> nil) then begin
@@ -6131,7 +6138,7 @@ end;
       end;
       if prcode then begin prtlabel(frlab); writeln(prr,'=',lsize:1) end;
       if lkind = actual then
-        begin if nxt <> nil then if ovrl then error(275) else error(126);
+        begin if fcp = nil then if ovrl then error(275) else error(126);
           with fcp^ do
             begin
               if sysrot then gen1(30(*csp*),pfname)
@@ -8174,6 +8181,15 @@ end;
     begin
       while plst <> nil do begin
         enterid(plst);
+        plst := plst^.next
+      end
+    end;
+
+    procedure prtpar(plst: ctp);
+    begin
+      while plst <> nil do begin
+        if plst^.idtype <> nil then prtform(plst^.idtype^.form) else write('<nil>');
+        write(',');
         plst := plst^.next
       end
     end;

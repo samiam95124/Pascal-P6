@@ -2,37 +2,36 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 607: Misspelled 'var' 
- 
-} 
- 
-program iso7185prt0607; 
- 
-var b: integer; 
- 
-procedure a(vas b: integer); 
+PRT test 607: Misspelled 'var'
+
+}
+
+program iso7185prt0607;
+
+var b: integer;
+
+procedure a(vas b: integer);
     11   ****                   ^7        ^5
     11   ****    7 Error in parameter list
     11   ****    5 ':' expected
- 
-begin 
- 
-   b := 1 
- 
-end; 
+
+begin
+
+   b := 1
+
+end;
+
 vas        unreferenced
 
- 
-begin 
- 
-   a(b) 
-    21   ****         ^277
-    21   ****  277 No overload found to match parameter
- 
-end. 
+begin
+
+   a(b)
+    21   ****         ^189
+    21   ****  189 Parameter lists of formal and actual parameters not congruous
+
+end.
 
 Errors in program: 3
 
@@ -40,5 +39,5 @@ Error numbers in listing:
 -------------------------
   5   1 11 ':' expected
   7   1 11 Error in parameter list
-277   1 21 No overload found to match parameter
+189   1 21 Parameter lists of formal and actual parameters not congruous
 

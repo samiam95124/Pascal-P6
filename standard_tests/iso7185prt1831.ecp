@@ -2,38 +2,37 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 1831: Parameter type mismatch 
- 
-    Wrong type of a parameter. 
-    ISO 7185 6.8.2.3 
- 
-} 
- 
-program iso7185prt1831; 
- 
-procedure a(b: integer; c: char); 
- 
-begin 
- 
-   b := 1; 
-   c := 'a' 
- 
-end; 
- 
-begin 
- 
-   a(1, 2) 
-    23   ****            ^277
-    23   ****  277 No overload found to match parameter
- 
-end. 
+PRT test 1831: Parameter type mismatch
+
+    Wrong type of a parameter.
+    ISO 7185 6.8.2.3
+
+}
+
+program iso7185prt1831;
+
+procedure a(b: integer; c: char);
+
+begin
+
+   b := 1;
+   c := 'a'
+
+end;
+
+begin
+
+   a(1, 2)
+    23   ****            ^189
+    23   ****  189 Parameter lists of formal and actual parameters not congruous
+
+end.
 
 Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-277   1 23 No overload found to match parameter
+189   1 23 Parameter lists of formal and actual parameters not congruous
 

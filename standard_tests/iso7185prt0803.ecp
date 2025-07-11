@@ -2,37 +2,38 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 803: Missing first parameter in parameter list 
- 
-} 
- 
-program iso7185prt0803; 
- 
-procedure test(a, b: integer); 
- 
-begin 
- 
-   a := 1; 
-   b := 1 
- 
-end; 
- 
-begin 
- 
-   test(, 2) 
-    20   ****           ^58,277
+PRT test 803: Missing first parameter in parameter list
+
+}
+
+program iso7185prt0803;
+
+procedure test(a, b: integer);
+
+begin
+
+   a := 1;
+   b := 1
+
+end;
+
+begin
+
+   test(, 2)
+    20   ****           ^58,189^126^189
     20   ****   58 Error in factor
-    20   ****  277 No overload found to match parameter
- 
-end. 
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
+    20   ****  126 Number of parameters does not agree with declaration
 
-Errors in program: 2
+end.
+
+Errors in program: 4
 
 Error numbers in listing:
 -------------------------
  58   1 20 Error in factor
-277   1 20 No overload found to match parameter
+126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 

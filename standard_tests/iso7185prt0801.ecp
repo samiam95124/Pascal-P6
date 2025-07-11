@@ -2,37 +2,36 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 801: Missing leading '(' in list 
- 
-} 
- 
-program iso7185prt0801; 
- 
-procedure test(a, b: integer); 
- 
-begin 
- 
-   a := 1; 
-   b := 1 
- 
-end; 
- 
-begin 
- 
-   test 1, 2) 
-    20   ****           ^126,6
-    20   ****  126 Number of parameters does not agree with declaration
+PRT test 801: Missing leading '(' in list
+
+}
+
+program iso7185prt0801;
+
+procedure test(a, b: integer);
+
+begin
+
+   a := 1;
+   b := 1
+
+end;
+
+begin
+
+   test 1, 2)
+    20   ****           ^189,189,6
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
     20   ****    6 Illegal symbol
- 
-end. 
 
-Errors in program: 2
+end.
+
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6   1 20 Illegal symbol
-126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 

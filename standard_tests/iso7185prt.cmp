@@ -7131,8 +7131,8 @@ integer    unreferenced
 begin
 
    a(1)
-    16   ****         ^277
-    16   ****  277 No overload found to match parameter
+    16   ****         ^189
+    16   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7142,7 +7142,7 @@ Error numbers in listing:
 -------------------------
   5   1 9 ':' expected
   7   2 9,9 Error in parameter list
-277   1 16 No overload found to match parameter
+189   1 16 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7175,9 +7175,9 @@ end;
 begin
 
    a(1, 2)
-    19   ****           ^126^277
+    19   ****           ^126^189
     19   ****  126 Number of parameters does not agree with declaration
-    19   ****  277 No overload found to match parameter
+    19   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7187,7 +7187,7 @@ Error numbers in listing:
 -------------------------
   7   1 9 Error in parameter list
 126   1 19 Number of parameters does not agree with declaration
-277   1 19 No overload found to match parameter
+189   1 19 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7220,9 +7220,9 @@ end;
 begin
 
    a(1, 2)
-    19   ****           ^126^277
+    19   ****           ^126^189
     19   ****  126 Number of parameters does not agree with declaration
-    19   ****  277 No overload found to match parameter
+    19   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7232,7 +7232,7 @@ Error numbers in listing:
 -------------------------
   2   1 9 Identifier expected
 126   1 19 Number of parameters does not agree with declaration
-277   1 19 No overload found to match parameter
+189   1 19 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7269,8 +7269,8 @@ end;
 begin
 
    a(1, 2)
-    20   ****         ^277^126^277
-    20   ****  277 No overload found to match parameter
+    20   ****         ^189^126^189
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
     20   ****  126 Number of parameters does not agree with declaration
 
 end.
@@ -7283,7 +7283,7 @@ Error numbers in listing:
   7   1 9 Error in parameter list
 104   1 14 Identifier not declared
 126   1 20 Number of parameters does not agree with declaration
-277   2 20,20 No overload found to match parameter
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7318,18 +7318,20 @@ end;
 begin
 
    a(1, 2)
-    20   ****         ^277^277
-    20   ****  277 No overload found to match parameter
+    20   ****         ^189^126^189
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
+    20   ****  126 Number of parameters does not agree with declaration
 
 end.
 
-Errors in program: 4
+Errors in program: 5
 
 Error numbers in listing:
 -------------------------
   5   1 9 ':' expected
   7   1 9 Error in parameter list
-277   2 20,20 No overload found to match parameter
+126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7363,17 +7365,19 @@ end;
 begin
 
    a(1,2)
-    20   ****         ^277^277
-    20   ****  277 No overload found to match parameter
+    20   ****         ^189^126^189
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
+    20   ****  126 Number of parameters does not agree with declaration
 
 end.
 
-Errors in program: 3
+Errors in program: 4
 
 Error numbers in listing:
 -------------------------
   2   1 9 Identifier expected
-277   2 20,20 No overload found to match parameter
+126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7407,9 +7411,9 @@ end;
 begin
 
    a(b)
-    18   ****        ^126^277
+    18   ****        ^126^189
     18   ****  126 Number of parameters does not agree with declaration
-    18   ****  277 No overload found to match parameter
+    18   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7421,7 +7425,7 @@ Error numbers in listing:
   5   1 11 ':' expected
   7   1 11 Error in parameter list
 126   1 18 Number of parameters does not agree with declaration
-277   1 18 No overload found to match parameter
+189   1 18 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7459,8 +7463,8 @@ vas        unreferenced
 begin
 
    a(b)
-    21   ****         ^277
-    21   ****  277 No overload found to match parameter
+    21   ****         ^189
+    21   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7470,7 +7474,7 @@ Error numbers in listing:
 -------------------------
   5   1 11 ':' expected
   7   1 11 Error in parameter list
-277   1 21 No overload found to match parameter
+189   1 21 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -7507,9 +7511,9 @@ end;
 begin
 
    a(1, 2, 'a')
-    21   ****                ^126^277
+    21   ****                ^126^189
     21   ****  126 Number of parameters does not agree with declaration
-    21   ****  277 No overload found to match parameter
+    21   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -7520,7 +7524,7 @@ Error numbers in listing:
   7   1 9 Error in parameter list
 104   1 15 Identifier not declared
 126   1 21 Number of parameters does not agree with declaration
-277   1 21 No overload found to match parameter
+189   1 21 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -8188,21 +8192,18 @@ end;
 begin
 
    test()
-    20   ****           ^58,277
+    20   ****           ^58,189
     20   ****   58 Error in factor
-    20   ****  277 No overload found to match parameter
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
-    22   ****     ^126
-    22   ****  126 Number of parameters does not agree with declaration
-Errors in program: 3
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
  58   1 20 Error in factor
-126   1 22 Number of parameters does not agree with declaration
-277   1 20 No overload found to match parameter
+189   1 20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -8234,18 +8235,18 @@ end;
 begin
 
    test 1, 2)
-    20   ****           ^126,6
-    20   ****  126 Number of parameters does not agree with declaration
+    20   ****           ^189,189,6
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
     20   ****    6 Illegal symbol
 
 end.
 
-Errors in program: 2
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6   1 20 Illegal symbol
-126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -8282,14 +8283,14 @@ begin
 
 end.
 
-    22   ****     ^126
-    22   ****  126 Number of parameters does not agree with declaration
-Errors in program: 2
+    22   ****     ^189,189
+    22   ****  189 Parameter lists of formal and actual parameters not congruous
+Errors in program: 3
 
 Error numbers in listing:
 -------------------------
   6   1 20 Illegal symbol
-126   1 22 Number of parameters does not agree with declaration
+189   2 22,22 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -8321,18 +8322,20 @@ end;
 begin
 
    test(, 2)
-    20   ****           ^58,277
+    20   ****           ^58,189^126^189
     20   ****   58 Error in factor
-    20   ****  277 No overload found to match parameter
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
+    20   ****  126 Number of parameters does not agree with declaration
 
 end.
 
-Errors in program: 2
+Errors in program: 4
 
 Error numbers in listing:
 -------------------------
  58   1 20 Error in factor
-277   1 20 No overload found to match parameter
+126   1 20 Number of parameters does not agree with declaration
+189   2 20,20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -8364,9 +8367,9 @@ end;
 begin
 
    test(1, )
-    20   ****              ^58,277
+    20   ****              ^58,189
     20   ****   58 Error in factor
-    20   ****  277 No overload found to match parameter
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -8375,7 +8378,7 @@ Errors in program: 2
 Error numbers in listing:
 -------------------------
  58   1 20 Error in factor
-277   1 20 No overload found to match parameter
+189   1 20 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -10996,8 +10999,8 @@ end;
 begin
 
    b('c')
-    23   ****           ^277
-    23   ****  277 No overload found to match parameter
+    23   ****           ^189
+    23   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -11005,7 +11008,7 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-277   1 23 No overload found to match parameter
+189   1 23 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -14541,13 +14544,13 @@ begin
 
 end.
 
-    25   ****     ^126
-    25   ****  126 Number of parameters does not agree with declaration
-Errors in program: 1
+    25   ****     ^189,189
+    25   ****  189 Parameter lists of formal and actual parameters not congruous
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-126   1 25 Number of parameters does not agree with declaration
+189   2 25,25 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -14582,9 +14585,9 @@ end;
 begin
 
    a(1, 'a', 1.0)
-    23   ****                  ^126^277
+    23   ****                  ^126^189
     23   ****  126 Number of parameters does not agree with declaration
-    23   ****  277 No overload found to match parameter
+    23   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -14593,7 +14596,7 @@ Errors in program: 2
 Error numbers in listing:
 -------------------------
 126   1 23 Number of parameters does not agree with declaration
-277   1 23 No overload found to match parameter
+189   1 23 Parameter lists of formal and actual parameters not congruous
 
 
 
@@ -14628,8 +14631,8 @@ end;
 begin
 
    a(1, 2)
-    23   ****            ^277
-    23   ****  277 No overload found to match parameter
+    23   ****            ^189
+    23   ****  189 Parameter lists of formal and actual parameters not congruous
 
 end.
 
@@ -14637,7 +14640,7 @@ Errors in program: 1
 
 Error numbers in listing:
 -------------------------
-277   1 23 No overload found to match parameter
+189   1 23 Parameter lists of formal and actual parameters not congruous
 
 
 

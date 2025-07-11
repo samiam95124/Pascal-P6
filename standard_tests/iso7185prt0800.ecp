@@ -2,40 +2,36 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 800: Empty list (parens only) 
- 
-} 
- 
-program iso7185prt0800; 
- 
-procedure test(a, b: integer); 
- 
-begin 
- 
-   a := 1; 
-   b := 1 
- 
-end; 
- 
-begin 
- 
-   test() 
-    20   ****           ^58,277
+PRT test 800: Empty list (parens only)
+
+}
+
+program iso7185prt0800;
+
+procedure test(a, b: integer);
+
+begin
+
+   a := 1;
+   b := 1
+
+end;
+
+begin
+
+   test()
+    20   ****           ^58,189
     20   ****   58 Error in factor
-    20   ****  277 No overload found to match parameter
- 
-end. 
-    22   ****     ^126
-    22   ****  126 Number of parameters does not agree with declaration
+    20   ****  189 Parameter lists of formal and actual parameters not congruous
 
-Errors in program: 3
+end.
+
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
  58   1 20 Error in factor
-126   1 22 Number of parameters does not agree with declaration
-277   1 20 No overload found to match parameter
+189   1 20 Parameter lists of formal and actual parameters not congruous
 

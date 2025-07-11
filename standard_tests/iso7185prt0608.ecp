@@ -2,37 +2,36 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 608: Missing ';' between parameter specifications 
- 
-} 
- 
-program iso7185prt0608; 
- 
-procedure a(b, c: integer d: char); 
+PRT test 608: Missing ';' between parameter specifications
+
+}
+
+program iso7185prt0608;
+
+procedure a(b, c: integer d: char);
      9   ****                             ^7
      9   ****    7 Error in parameter list
- 
-begin 
- 
-   b := 1; 
-   c := 1; 
-   d := 'a' 
+
+begin
+
+   b := 1;
+   c := 1;
+   d := 'a'
     15   ****         ^104
     15   ****  104 Identifier not declared
- 
-end; 
- 
-begin 
- 
-   a(1, 2, 'a') 
-    21   ****                ^126^277
+
+end;
+
+begin
+
+   a(1, 2, 'a')
+    21   ****                ^126^189
     21   ****  126 Number of parameters does not agree with declaration
-    21   ****  277 No overload found to match parameter
- 
-end. 
+    21   ****  189 Parameter lists of formal and actual parameters not congruous
+
+end.
 
 Errors in program: 4
 
@@ -41,5 +40,5 @@ Error numbers in listing:
   7   1 9 Error in parameter list
 104   1 15 Identifier not declared
 126   1 21 Number of parameters does not agree with declaration
-277   1 21 No overload found to match parameter
+189   1 21 Parameter lists of formal and actual parameters not congruous
 

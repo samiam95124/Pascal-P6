@@ -2,38 +2,37 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 1829: Parameter number mismatch 
- 
-    Less parameters than specified. 
-    ISO 7185 6.8.2.3 
- 
-} 
- 
-program iso7185prt1829; 
- 
-procedure a(b: integer; c: char); 
- 
-begin 
- 
-   b := 1; 
-   c := 'a' 
- 
-end; 
- 
-begin 
- 
-   a(1) 
- 
-end. 
-    25   ****     ^126
-    25   ****  126 Number of parameters does not agree with declaration
+PRT test 1829: Parameter number mismatch
 
-Errors in program: 1
+    Less parameters than specified.
+    ISO 7185 6.8.2.3
+
+}
+
+program iso7185prt1829;
+
+procedure a(b: integer; c: char);
+
+begin
+
+   b := 1;
+   c := 'a'
+
+end;
+
+begin
+
+   a(1)
+
+end.
+
+    25   ****     ^189,189
+    25   ****  189 Parameter lists of formal and actual parameters not congruous
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
-126   1 25 Number of parameters does not agree with declaration
+189   2 25,25 Parameter lists of formal and actual parameters not congruous
 
