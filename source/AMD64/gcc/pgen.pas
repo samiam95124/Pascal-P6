@@ -2269,11 +2269,17 @@ procedure xlate;
         if ep^.t2a <> 0 then write(f, ' t2a: ', ep^.t2a:1);
         write(f, ' rs: '); wrtregs(f, ep^.rs, true) 
       end;
+
+      overload procedure dmpety(var f: text; ep: expptr);
+      begin dmpety(f, ep, rgnull, rgnull) end;
+
+      overload procedure dmpety(var f: text; ep: expptr; r1: reg);
+      begin dmpety(f, ep, r1, rgnull) end;
       
       procedure dmptrel(ep: expptr; lvl: integer);
       var l: expptr;
       begin
-        write(prr, '# ', ' '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
+        write(prr, '# ', ' '); dmpety(prr, ep); writeln(prr);
         if ep^.l <> nil then begin
           writeln(prr, '# ', ' ': lvl, 'Left:');
           dmptrel(ep^.l, lvl+3);
@@ -2331,7 +2337,7 @@ procedure xlate;
       begin
         ep := estack; sl := -1;
         while ep <> nil do begin
-          write(f, 'Stack ', sl:3); dmpety(f, ep, rgnull, rgnull); writeln(f);
+          write(f, 'Stack ', sl:3); dmpety(f, ep); writeln(f);
           ep := ep^.next; sl := sl-1
         end
       end;
@@ -2446,7 +2452,7 @@ procedure xlate;
         dstreg(rgxmm15)
       end;
 
-      begin
+      begin { assreg }
         write(prr, '# assigning:  '); dmpety(prr, ep, r1, r2); 
         write(prr, ' ~rf: '); wrtregs(prr, rf, false); writeln(prr);
         rfs := rf;
@@ -3046,7 +3052,7 @@ procedure xlate;
           end;
 
         end;
-        write(prr, '# assigning~: '); dmpety(prr, ep, rgnull, rgnull); write(prr, ' ~rf: ');
+        write(prr, '# assigning~: '); dmpety(prr, ep); write(prr, ' ~rf: ');
         wrtregs(prr, rf, false); writeln(prr)
       end;
 
@@ -3308,7 +3314,7 @@ procedure xlate;
           genexp(ep^.al);
           if (ep^.op <> 113{cip}) and (ep^.op <> 247{cif}) then genexp(ep^.l);
           genexp(ep^.r); genexp(ep^.x1);
-          write(prr, '# generating:  '); dmpety(prr, ep, rgnull, rgnull); writeln(prr);
+          write(prr, '# generating:  '); dmpety(prr, ep); writeln(prr);
           case ep^.op of
 
             {lodi,loda}
@@ -4297,7 +4303,7 @@ procedure xlate;
               stkadr := stkadr-intsize
             end
           end;
-          write(prr, '# generating~: '); dmpety(prr, ep, rgnull, rgnull); writeln(prr)
+          write(prr, '# generating~: '); dmpety(prr, ep); writeln(prr)
         end
       end;
 
