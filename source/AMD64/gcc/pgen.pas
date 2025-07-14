@@ -3821,7 +3821,7 @@ procedure xlate;
             {notb}
             42: begin
               wrtins(' orq %1,%1 # test boolean', ep^.r1);
-              wrtins(' movq $1,%1 # set true', 0, 1, ep^.r1);
+              wrtins(' movq $0,%1 # set true', 1, ep^.r1);
               wrtins(' jz 1f # skip if so', ep^.r2);
               wrtins(' movq $0,%1 # otherwise set false', ep^.r1);
               wrtins('1:')
