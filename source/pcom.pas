@@ -1607,6 +1607,7 @@ end;
     294: write('Cannot forward an external declaration');
     295: write('procedure or function previously declared external');
     296: write('Cannot apply field to constant string on read');
+    297: write('No procedure or function found to overload');
 
     300: write('Division by zero');
     301: write('No case provided for this value');
@@ -8243,7 +8244,10 @@ end;
               if virt and not chkext(lcp) then error (230);
               if ovrl and (lcp^.pfattr = fpavirtual) then error(232);
             end
-          else if fpat = fpaoverride then error(231);
+          else begin
+            if fpat = fpaoverride then error(231)
+            else if fpat = fpaoverload then error(297)
+          end;
           lcp1 := lcp; { save original }
           if not forw or ovrl then { create a new proc/func entry }
             begin
