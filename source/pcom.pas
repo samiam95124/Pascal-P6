@@ -4813,7 +4813,7 @@ end;
               begin
                 if pfkind = formal then error(151)
                 else
-                  if not schblk(fcp) then error(192);
+                  if not schblk(fcp^.grppar) then error(192);
                   begin access := drct; vlevel := pflev + 1;
                     { determine size of FR. This is a bit of a hack
                       against the fact that int/ptr results fit in
@@ -7819,10 +7819,10 @@ end;
     end (*fixeddeclaration*) ;
 
     procedure procdeclaration(fsy: symbol);
-      var oldlev: 0..maxlevel; lcp,lcp1,lcp2: ctp; lsp: stp;
-          forw,extl,virt,ovrl,forwn,extn: boolean; oldtop: disprange;
-          llc: stkoff; lbname: integer; plst: boolean; fpat: fpattr;
-          ops: restr; opt: operatort; ids: idstr;
+      var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
+          forw,extl,virt,ovrl,forwn,extn,opr,isvirt: boolean; 
+          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
+          fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
           oldlevf: 0..maxlevel; oldtopf: disprange;
 
       procedure pushlvl(lcp: ctp);
@@ -8204,135 +8204,115 @@ end;
       end;
       { set parameter address start to zero, offset later }
       llc := lc; lc := 0; forw := false; extl := false; virt := false;
-      ovrl := false; ids := id;
-      if (sy = ident) or (fsy = operatorsy) then
-        begin
-          if fsy = operatorsy then begin { process operator definition }
-            if not (sy in [mulop,addop,relop,notsy,becomes]) then
-              begin error(281); lcp := nil;
-                skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon])
-              end
-            else begin
-              if sy = notsy then op := notop
-              else if sy = becomes then op := bcmop;
-              lcp := display[top].oprprc[op] { pick up an operator leader }
-            end;
-            if fpat <> fpanone then error(280);
-            opt := op { save operator for later }
-          end else
-            searchsection(display[top].fname,lcp); { find previous definition }
-          if lcp <> nil then
-            begin
-              { set flags according to attribute }
-              if lcp^.klass = proc then begin
-                forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
-                extl := lcp^.extern and (fsy=procsy) and (lcp^.pfkind=actual);
-                virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
-                        (fsy=procsy)and(lcp^.pfkind=actual);
-                ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
-                        (fpat = fpaoverload)
-              end else if lcp^.klass = func then begin
-                  forw:=lcp^.forwdecl and (fsy=funcsy) and (lcp^.pfkind=actual);
-                  extl:=lcp^.extern and (fsy=funcsy) and (lcp^.pfkind=actual);
-                  virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
-                          (fsy=funcsy)and(lcp^.pfkind=actual);
-                  ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
-                          (fpat = fpaoverload)
-              end else forw := false;
-              if not forw and not virt and not ovrl and
-                 (fsy <> operatorsy) then error(160);
-              if virt and not chkext(lcp) then error (230);
-              if ovrl and (lcp^.pfattr = fpavirtual) then error(232);
+      ovrl := false; ids := id; opr := false; lcp1 := nil;
+      { lcp = current proc/func, lcp1 = previous proc/func, lcp2 = parm list }
+      if (sy = ident) or (fsy = operatorsy) then begin
+        if fsy = operatorsy then begin { process operator definition }
+          opr := true;
+          if not (sy in [mulop,addop,relop,notsy,becomes]) then
+            begin error(281); lcp := nil;
+              skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon])
             end
           else begin
-            if fpat = fpaoverride then error(231)
-            else if fpat = fpaoverload then error(297)
+            if sy = notsy then op := notop
+            else if sy = becomes then op := bcmop;
+            lcp1 := display[top].oprprc[op] { pick up an operator leader }
           end;
-          lcp1 := lcp; { save original }
-          if not forw or ovrl then { create a new proc/func entry }
-            begin
-              if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
-                new(lcp,proc,declared,actual)
-              else { func/opr } new(lcp,func,declared,actual);
-              ininam(lcp);
-              with lcp^ do
-                begin
-                  if (fsy = procsy) or
-                     ((fsy = operatorsy) and (opt = bcmop)) then
-                    klass := proc else klass := func;
-                  if fsy = operatorsy then begin
-                    { Synth a label based on the operator. This is done for
-                      downstream diagnostics. }
-                    case op of { operator }
-                      mul:   ops := '*        '; rdiv:  ops := '/        ';
-                      andop: ops := 'and      '; idiv:  ops := 'div      ';
-                      imod:  ops := 'mod      '; plus:  ops := '+        ';
-                      minus: ops := '-        '; orop:  ops := 'or       ';
-                      ltop:  ops := '<        '; leop:  ops := '<=       ';
-                      geop:  ops := '>        '; gtop:  ops := '>=       ';
-                      neop:  ops := '<>       '; eqop:  ops := '=        ';
-                      inop:  ops := 'in       '; xorop: ops := 'xor      ';
-                      notop: ops := 'not      '; bcmop: ops := ':=       ';
-                    end;
-                    strassvr(name, ops)
-                  end else strassvf(name, ids);
-                  idtype := nil; next := nil;
-                  sysrot := false; extern := false; pflev := level; 
-                  genlabel(lbname); pfdeckind := declared; pfkind := actual; 
-                  pfname := lbname; pflist := nil; asgn := false;
-                  pext := incact; pmod := incstk; refer := false;
-                  pfattr := fpat; grpnxt := nil; grppar := lcp;
-                  if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
-                    if pfattr = fpavirtual then begin
-                      { have to create a label for far references to virtual }
-                      new(lcp2,vars); ininam(lcp2);
-                      with lcp2^ do begin klass := vars;
-                        strassvf(name, ids); strcatvr(name, '__virtvec');
-                        idtype := nilptr; vkind := actual; next := nil;
-                        vlev := 0; vaddr := gc; isloc := false; threat := false;
-                        forcnt := 0; part := ptval; hdr := false; 
-                        vext := incact; vmod := incstk; inilab := -1; 
-                        ininxt := nil; dblptr := false;
-                      end;
-                      enterid(lcp2); lcp^.pfvid := lcp2;
-                      wrtsym(lcp2, 'g')
-                    end;
-                    pfvaddr := gc; gc := gc+adrsize
-                  end
-                end;
-              if virt or ovrl then
-                { just insert to group list for this proc/func }
-                begin lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
-                      lcp^.grppar := lcp1 end
-              else if fsy = operatorsy then begin
-                if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
-                else begin { already an operator this level, insert into group }
-                  lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
-                  lcp^.grppar := lcp1
-                end
-              end else enterid(lcp)
+          if fpat <> fpanone then error(280);
+          opt := op { save operator for later }
+        end else begin
+          searchsection(display[top].fname,lcp1); { find previous definition }
+          if lcp1 <> nil then begin { previous func/proc exists, reconcile }
+            { set flags according to attribute }
+            if lcp1^.klass = proc then begin
+              forw := lcp1^.forwdecl and (fsy=procsy) and (lcp1^.pfkind=actual);
+              extl := lcp1^.extern and (fsy=procsy) and (lcp1^.pfkind=actual);
+              virt := (lcp1^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                      (fsy=procsy)and(lcp1^.pfkind=actual);
+              ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp1^.pfkind=actual) and
+                      (fpat = fpaoverload)
+            end else if lcp1^.klass = func then begin
+              forw:=lcp1^.forwdecl and (fsy=funcsy) and (lcp1^.pfkind=actual);
+              extl:=lcp1^.extern and (fsy=funcsy) and (lcp1^.pfkind=actual);
+              virt := (lcp1^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                      (fsy=funcsy)and(lcp1^.pfkind=actual);
+              ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp1^.pfkind=actual) and
+                      (fpat = fpaoverload)
             end
-          else
-            begin lcp1 := lcp^.pflist;
-              while lcp1 <> nil do
-                begin
-                  with lcp1^ do
-                    if klass = vars then
-                      if idtype <> nil then
-                          if vaddr < lc then lc := vaddr;
-                  lcp1 := lcp1^.next
-                end
-            end;
-          insymbol
-        end
-      else
-        begin error(2);
-          if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
-            lcp := uprcptr else lcp := ufctptr
+          end
         end;
+        { create proc/func entry }
+        if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
+          new(lcp,proc,declared,actual)
+        else { func/opr } new(lcp,func,declared,actual);
+        ininam(lcp);
+        with lcp^ do begin
+          if (fsy = procsy) or
+             ((fsy = operatorsy) and (opt = bcmop)) then
+            klass := proc else klass := func;
+          if fsy = operatorsy then begin
+            { Synth a label based on the operator. This is done for
+              downstream diagnostics. }
+            case op of { operator }
+              mul:   ops := '*        '; rdiv:  ops := '/        ';
+              andop: ops := 'and      '; idiv:  ops := 'div      ';
+              imod:  ops := 'mod      '; plus:  ops := '+        ';
+              minus: ops := '-        '; orop:  ops := 'or       ';
+              ltop:  ops := '<        '; leop:  ops := '<=       ';
+              geop:  ops := '>        '; gtop:  ops := '>=       ';
+              neop:  ops := '<>       '; eqop:  ops := '=        ';
+              inop:  ops := 'in       '; xorop: ops := 'xor      ';
+              notop: ops := 'not      '; bcmop: ops := ':=       ';
+            end;
+            strassvr(name, ops)
+          end else strassvf(name, ids);
+          idtype := nil; next := nil;
+          sysrot := false; extern := false; pflev := level; 
+          genlabel(lbname); pfdeckind := declared; pfkind := actual; 
+          pfname := lbname; pflist := nil; asgn := false;
+          pext := incact; pmod := incstk; refer := false;
+          pfattr := fpat; grpnxt := nil; grppar := lcp;
+          if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
+            if pfattr = fpavirtual then begin
+              { have to create a label for far references to virtual }
+              new(lcp3,vars); ininam(lcp3);
+              with lcp3^ do begin klass := vars;
+                strassvf(name, ids); strcatvr(name, '__virtvec');
+                idtype := nilptr; vkind := actual; next := nil;
+                vlev := 0; vaddr := gc; isloc := false; threat := false;
+                forcnt := 0; part := ptval; hdr := false; 
+                vext := incact; vmod := incstk; inilab := -1; 
+                ininxt := nil; dblptr := false;
+              end;
+              { don't duplicate the vector }
+              isvirt := false;
+              if lcp1 <> nil then isvirt := lcp1^.pfattr = fpavirtual;
+              if not isvirt then begin
+                 enterid(lcp3); lcp^.pfvid := lcp3;
+                 wrtsym(lcp3, 'g')
+              end
+            end;
+            pfvaddr := gc; gc := gc+adrsize
+          end;
+          if opr then begin
+            if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
+            else begin { already an operator this level, insert into group }
+              lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
+              lcp^.grppar := lcp1
+            end
+          end else if (pfattr <> fpaoverride) and (pfattr <> fpaoverload) and 
+             not forw then enterid(lcp)
+        end;
+        insymbol
+      end else begin
+        error(2);
+        if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
+          lcp := uprcptr else lcp := ufctptr
+      end;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
-      oldlev := level; oldtop := top; pushlvl(lcp); 
+      lcp3 := lcp; if lcp1 <> nil then lcp3 := lcp1;
+      oldlev := level; oldtop := top; pushlvl(lcp3); 
       display[top].define := false;
       { push another level to isolate the parameter list for forward declarations }
       pushlvl(nil); level := level-1;
@@ -8346,8 +8326,8 @@ end;
           begin insymbol;
             if sy = ident then
               begin if forw and iso7185 then error(122);
-                searchid([types],lcp1);
-                lsp := lcp1^.idtype;
+                searchid([types],lcp3);
+                lsp := lcp3^.idtype;
                 if forw then begin
                   if not comptypes(lcp^.idtype, lsp) then error(216)
                 end else lcp^.idtype := lsp;
@@ -8371,9 +8351,6 @@ end;
       extn := false; { set this not external }
       if ((sy = ident) and strequri('forward  ', id)) or (sy = forwardsy) or 
        (sy = externalsy) then begin
-        if forw then { previously forwarded }
-          if (sy = externalsy) then error(294) else error(161);
-        if extl and not ovrl then error(295);
         if sy = externalsy then 
           begin chkstd; lcp^.extern  := true; extn := true end
         else begin lcp^.forwdecl := true; forwn := true end;
@@ -8381,6 +8358,37 @@ end;
         if sy = semicolon then insymbol else error(14);
         if not (sy in fsys) then
           begin error(6); skip(fsys) end
+      end;
+      { now the proc/func is completely defined }
+      if lcp1 <> nil then begin { previous func/proc exists, reconcile }
+        if forwn then begin { this entry forward }
+          if forw then { previously forwarded }
+            if extn then error(294) else error(161);
+          if extl and not ovrl then error(295)
+        end;
+        if not forw and not virt and not ovrl and
+           (fsy <> operatorsy) then error(160);
+        if virt and not chkext(lcp1) then error (230);
+        if ovrl and (lcp1^.pfattr = fpavirtual) then error(232);
+        if virt or ovrl then
+          { just insert to group list for this proc/func }
+          begin lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
+                lcp^.grppar := lcp1 end
+        else if not opr then
+          { not overload, override, or operator }
+          begin putnam(lcp); lcp := lcp1 end
+      end else begin { no previous func/proc }
+        if fpat = fpaoverload then error(297)
+        else if fpat = fpaoverride then error(231);
+      end;
+      { account for locals space in parameters }
+      lcp3 := lcp^.pflist;
+      while lcp3 <> nil do begin
+        with lcp3^ do
+          if klass = vars then
+            if idtype <> nil then
+                if vaddr < lc then lc := vaddr;
+        lcp3 := lcp3^.next
       end;
       if not forw then begin
         parmrg(lcp2); { merge back the current parameter list }
