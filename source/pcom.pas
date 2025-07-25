@@ -8140,6 +8140,20 @@ end;
       end
     end;
 
+    { find congruent overload group }
+    function fndovlgrp(lcp: ctp; lp: ctp): ctp;
+      var lcp1: ctp; f: boolean;
+    begin
+      lcp1 := nil;
+      lcp := lcp^.grppar; { index top of overload group }
+      while lcp <> nil do begin
+        if cmpparlst(lcp^.pflist, lp^.pflist) and (lcp <> lp) then begin
+          lcp1 := lcp; lcp := nil { found congruent group }
+        end else lcp := lcp^.grpnxt
+      end;
+      fndovlgrp := lcp1
+    end;
+
     { find space occupied by parameter list }
     function parmspc(plst: ctp): addrrange;
     var locpar: addrrange;
@@ -8186,6 +8200,27 @@ end;
       end
     end;
 
+    procedure prcsetflg(lcp: ctp);
+    begin
+      forw := false; extl := false; virt := false; ovrl := false;
+      { set flags according to attribute }
+      if lcp^.klass = proc then begin
+        forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
+        extl := lcp^.extern and (fsy=procsy) and (lcp^.pfkind=actual);
+        virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                (fsy=procsy)and(lcp^.pfkind=actual);
+        ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
+                (fpat = fpaoverload)
+      end else if lcp^.klass = func then begin
+        forw:=lcp^.forwdecl and (fsy=funcsy) and (lcp^.pfkind=actual);
+        extl:=lcp^.extern and (fsy=funcsy) and (lcp^.pfkind=actual);
+        virt := (lcp^.pfattr = fpavirtual) and (fpat = fpaoverride) and
+                (fsy=funcsy)and(lcp^.pfkind=actual);
+        ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp^.pfkind=actual) and
+                (fpat = fpaoverload)
+      end;
+    end;
+
     begin (*procdeclaration*)
       { parse and skip any attribute }
       fpat := fpanone;
@@ -8222,24 +8257,7 @@ end;
           opt := op { save operator for later }
         end else begin
           searchsection(display[top].fname,lcp1); { find previous definition }
-          if lcp1 <> nil then begin { previous func/proc exists, reconcile }
-            { set flags according to attribute }
-            if lcp1^.klass = proc then begin
-              forw := lcp1^.forwdecl and (fsy=procsy) and (lcp1^.pfkind=actual);
-              extl := lcp1^.extern and (fsy=procsy) and (lcp1^.pfkind=actual);
-              virt := (lcp1^.pfattr = fpavirtual) and (fpat = fpaoverride) and
-                      (fsy=procsy)and(lcp1^.pfkind=actual);
-              ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp1^.pfkind=actual) and
-                      (fpat = fpaoverload)
-            end else if lcp1^.klass = func then begin
-              forw:=lcp1^.forwdecl and (fsy=funcsy) and (lcp1^.pfkind=actual);
-              extl:=lcp1^.extern and (fsy=funcsy) and (lcp1^.pfkind=actual);
-              virt := (lcp1^.pfattr = fpavirtual) and (fpat = fpaoverride) and
-                      (fsy=funcsy)and(lcp1^.pfkind=actual);
-              ovrl := ((fsy=procsy)or(fsy=funcsy)) and (lcp1^.pfkind=actual) and
-                      (fpat = fpaoverload)
-            end
-          end
+          if lcp1 <> nil then prcsetflg(lcp1) { set flags }
         end;
         { create proc/func entry }
         if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
@@ -8271,7 +8289,8 @@ end;
           genlabel(lbname); pfdeckind := declared; pfkind := actual; 
           pfname := lbname; pflist := nil; asgn := false;
           pext := incact; pmod := incstk; refer := false;
-          pfattr := fpat; grpnxt := nil; grppar := lcp;
+          pfattr := fpat; grpnxt := nil; grppar := lcp; 
+          if lcp1 <> nil then grppar := lcp1^.grppar;
           if pfattr in [fpavirtual, fpaoverride] then begin { alloc vector }
             if pfattr = fpavirtual then begin
               { have to create a label for far references to virtual }
@@ -8361,8 +8380,12 @@ end;
       end;
       { now the proc/func is completely defined }
       if lcp1 <> nil then begin { previous func/proc exists, reconcile }
+        if ovrl then begin { check for existing overload }
+          lcp3 := fndovlgrp(lcp1, lcp); 
+          if lcp3 <> nil then begin lcp1 := lcp3; prcsetflg(lcp1) end
+        end;        
         if forwn then begin { this entry forward }
-          if forw then { previously forwarded }
+          if forw and not ovrl then { previously forwarded, not overload }
             if extn then error(294) else error(161);
           if extl and not ovrl then error(295)
         end;
@@ -8400,7 +8423,7 @@ end;
         lcp^.locstr := lc { save locals counter }
       end else begin
         parmrg(lcp^.pflist); { merge back the forwarded parameter list }
-        if plst then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
+        if plst and not ovrl then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
         putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp^.locstr { reset locals counter }
       end;
