@@ -5718,7 +5718,7 @@ procedure xlate;
        cvalx: writeln(prr, '        .byte   ', cp^.i:1);
      end
    end;
-   procedure gencstlst{(cp: cstptr)};
+   procedure gencstlst(cp: cstptr);
    var ad: address;
    procedure align(a: integer);
    begin
