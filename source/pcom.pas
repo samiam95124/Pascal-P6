@@ -8413,7 +8413,7 @@ end;
                 if vaddr < lc then lc := vaddr;
         lcp3 := lcp3^.next
       end;
-      if not forw then begin
+      if not forw or ovrl then begin
         parmrg(lcp2); { merge back the current parameter list }
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
         lcp^.locpar := parmspc(lcp^.pflist);
@@ -8422,7 +8422,7 @@ end;
           chkovlpar(lcp^.grppar, lcp);
         lcp^.locstr := lc { save locals counter }
       end else begin
-        parmrg(lcp^.pflist); { merge back the forwarded parameter list }
+        parmrg(lcp1^.pflist); { merge back the forwarded parameter list }
         if plst and not ovrl then if not cmpparlst(lcp^.pflist, lcp2) then error(216);
         putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp^.locstr { reset locals counter }
