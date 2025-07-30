@@ -400,12 +400,20 @@ make two assumptions here:
 
 ******************************************************************************}
 
-procedure error(view s: string);
+procedure perror(view s: string);
 
 begin
 
    { write error string to error output with preamble }
    writeln(error, 'Strlib: ', s);
+
+end;
+
+procedure throw(ev: exception);
+
+begin
+
+    writeln(error, 'Strlib: exception')
 
 end;
 
@@ -5046,33 +5054,35 @@ end;
 begin { deinit }
 
    { handle exceptions in modules }
-   on NoStringBlock except                error('No string block is active')          
-   on OuterBlockFull except               error('No room in outermost block')         
-   on CurrentBlockFull except             error('Current string block is full')         
-   on StringNil except                    error('String passed is nil')                 
+{
+   on NoStringBlock except                perror('No string block is active')          
+   on OuterBlockFull except               perror('No room in outermost block')         
+   on CurrentBlockFull except             perror('Current string block is full')         
+   on StringNil except                    perror('String passed is nil')                 
    on StringDestinationOverflow except    
-      error('String was too large for destination') 
-   on IndexOutOfRange except              error('String index out of range')             
-   on NegativeRepeatCount except          error('Repeat cont was negative')             
+      perror('String was too large for destination') 
+   on IndexOutOfRange except              perror('String index out of range')             
+   on NegativeRepeatCount except          perror('Repeat cont was negative')             
    on WordIndexOutOfRange except          
-      error('Word array index was out of range')    
+      perror('Word array index was out of range')    
    on StringReadOverflow except           
-      error('String was too large for destination') 
+      perror('String was too large for destination') 
    on FormatTooLarge except               
-      error('Format too large for destination')     
-   on InvalidFieldSpecification except    error('field specified is invalid')           
-   on NegativeValueNondecimal except      error('Radix was negative')                   
+      perror('Format too large for destination')     
+   on InvalidFieldSpecification except    perror('field specified is invalid')           
+   on NegativeValueNondecimal except      perror('Radix was negative')                   
    on NumberOverflowsFormat except        
-      error('Number overflows space provided in format string');                        
+      perror('Number overflows space provided in format string');                        
    on NegativeNotPlaced except            
-      error('Negative sign not placed in format')   
-   on InvalidRealNumber except            error('Invalid real number')                  
+      perror('Negative sign not placed in format')   
+   on InvalidRealNumber except            perror('Invalid real number')                  
    on InvalidFractionSpecification except 
-      error('Invalid fraction specification')       
-   on InvalidRadix except                 error('Invalid radix')                        
-   on InvalidIntegerFormat except         error('Invalid integer format')               
-   on NumberTooLarge except               error('Number too large')                     
-   on IntegerTooLarge except              error('Integer too large')                    
-   on InvalidRealFormat except            error('Invalid real format')                  
+      perror('Invalid fraction specification')       
+   on InvalidRadix except                 perror('Invalid radix')                        
+   on InvalidIntegerFormat except         perror('Invalid integer format')               
+   on NumberTooLarge except               perror('Number too large')                     
+   on IntegerTooLarge except              perror('Integer too large')                    
+   on InvalidRealFormat except            perror('Invalid real format')                  
+}
 
 end.

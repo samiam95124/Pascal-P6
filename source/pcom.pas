@@ -4813,7 +4813,7 @@ end;
               begin
                 if pfkind = formal then error(151)
                 else
-                  if not schblk(fcp^.grppar) then error(192);
+                  if not schblk(fcp) then error(192);
                   begin access := drct; vlevel := pflev + 1;
                     { determine size of FR. This is a bit of a hack
                       against the fact that int/ptr results fit in
@@ -8330,8 +8330,7 @@ end;
       end;
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
-      lcp3 := lcp; if lcp1 <> nil then lcp3 := lcp1;
-      oldlev := level; oldtop := top; pushlvl(lcp3); 
+      oldlev := level; oldtop := top; pushlvl(lcp); 
       display[top].define := false;
       { push another level to isolate the parameter list for forward declarations }
       pushlvl(nil); level := level-1;
@@ -8428,7 +8427,7 @@ end;
         lc := lcp^.locstr { reset locals counter }
       end;
       if not forwn and not extn then { process actual block}
-        begin lcp^.forwdecl := false;
+        begin lcp^.forwdecl := false; display[top].bname := lcp;
           { output block begin marker }
           if prcode then begin
             if lcp^.klass = proc then write(prr, 'b r ') else write(prr, 'b f ');
