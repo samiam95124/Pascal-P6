@@ -8246,7 +8246,7 @@ end;
         if fsy = operatorsy then begin { process operator definition }
           opr := true;
           if not (sy in [mulop,addop,relop,notsy,becomes]) then
-            begin error(281); lcp := nil;
+            begin error(281); lcp1 := nil;
               skip(fsys+[mulop,addop,relop,notsy,arrow,lparent,semicolon])
             end
           else begin
@@ -8316,7 +8316,8 @@ end;
           end;
           if opr then begin
             if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
-            else begin { already an operator this level, insert into group }
+            else if lcp1 <> nil then begin 
+              { already an operator this level, insert into group }
               lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
               lcp^.grppar := lcp1
             end
