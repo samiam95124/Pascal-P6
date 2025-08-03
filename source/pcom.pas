@@ -8203,7 +8203,6 @@ end;
 
     procedure prcsetflg(lcp: ctp);
     begin
-      forw := false; extl := false; virt := false; ovrl := false;
       { set flags according to attribute }
       if lcp^.klass = proc then begin
         forw := lcp^.forwdecl and (fsy=procsy) and (lcp^.pfkind=actual);
@@ -8239,8 +8238,7 @@ end;
         else fsy := sy; insymbol
       end;
       { set parameter address start to zero, offset later }
-      llc := lc; lc := 0; forw := false; extl := false; virt := false;
-      ovrl := false; ids := id; opr := false; lcp1 := nil;
+      llc := lc; lc := 0; ids := id; opr := false; lcp1 := nil;
       { lcp = current proc/func, lcp1 = previous proc/func, lcp2 = parm list }
       if (sy = ident) or (fsy = operatorsy) then begin
         if fsy = operatorsy then begin { process operator definition }
@@ -8256,10 +8254,8 @@ end;
           end;
           if fpat <> fpanone then error(280);
           opt := op { save operator for later }
-        end else begin
+        end else 
           searchsection(display[top].fname,lcp1); { find previous definition }
-          if lcp1 <> nil then prcsetflg(lcp1) { set flags }
-        end;
         { create proc/func entry }
         if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
           new(lcp,proc,declared,actual)
@@ -8321,8 +8317,7 @@ end;
               lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp;
               lcp^.grppar := lcp1
             end
-          end else if (pfattr <> fpaoverride) and (pfattr <> fpaoverload) and 
-             not forw then enterid(lcp)
+          end else if lcp1 = nil then enterid(lcp)
         end;
         insymbol
       end else begin
@@ -8330,6 +8325,8 @@ end;
         if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
           lcp := uprcptr else lcp := ufctptr
       end;
+      forw := false; extl := false; virt := false; ovrl := false; 
+      if lcp1 <> nil then prcsetflg(lcp1); { set flags on last entry, if exists }
       { procedure/functions have an odd defining status. The parameter list does
         not have defining points, but the rest of the routine definition does. }
       oldlev := level; oldtop := top; pushlvl(lcp); 
