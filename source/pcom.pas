@@ -4071,14 +4071,6 @@ end;
       end else cmppar := comptypes(pa^.idtype,pb^.idtype)
   end;
 
-  procedure prtpar(pl: ctp);
-  begin
-    while pl <> nil do begin
-      write('klass: ', ord(pl^.klass):1, ' ');
-      pl := pl^.next
-    end
-  end;
-
   { compare parameter lists }
   function cmpparlst{(pla, plb: ctp): boolean};
   begin cmpparlst := true;
@@ -8357,63 +8349,33 @@ end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }
       if lcp1 <> nil then begin { previous func/proc exists, reconcile }
-{ handle most errors here }
-
-{ this entry is override but last entry not virtual }
         if (lcp^.pfattr = fpaoverride) and not (lcp1^.pfattr = fpavirtual) then
           error(231);
-
-{ override of local routine }
         if (lcp^.pfattr = fpaoverride) and not chkext(lcp1) then error(230);
-
-{ this entry overload, search for previous routine that matches }
         if lcp^.pfattr = fpaoverload then begin { check for existing overload forward }
           lcp3 := fndovlgrp(lcp1, lcp2, lcp); 
           if lcp3 <> nil then begin 
             if not lcp3^.forwdecl then error(298);
-{ forwarded overload found, set that as last entry }
             lcp1 := lcp3
           end
         end; 
-
-{ this entry override, get any previous override }
         if lcp^.pfattr = fpaoverride then
           if lcp1^.grpnxt <> nil then lcp1 := lcp1^.grpnxt;
-
         forw := lcp1^.forwdecl; { set forwarded status }
-{ parameter list appears on forwarded entry in iso7185 mode }
         if forw and iso7185 and (lcp2 <> nil) then error(119);
-
-{ this entry not overload or override, and last entry not forward }
         if (lcp^.pfattr <> fpaoverload) and (lcp^.pfattr <> fpaoverride) and
            (fsy <> operatorsy) and not forw then error(101);
-
-{ this entry overload and last entry virtual}
         if (lcp^.pfattr = fpaoverload) and (lcp1^.pfattr = fpavirtual) then
           error(232);
-
-{ both this and last entry forwarded }
         if lcp^.forwdecl and (lcp^.pfattr <> fpaoverload) and forw then 
           error(161);
-
-{ cannot overload external }
         if (lcp^.pfattr = fpaoverload) and lcp1^.extern then error(294);
-        
-{ both external }
         if lcp^.extern and lcp1^.extern then error(295);
-
-{ this entry overload or operator, check ambigous with previous }
         if (lcp^.pfattr = fpaoverload) or (fsy = operatorsy) then { compare against overload group }
           chkovlpar(lcp^.grppar, lcp2, lcp);
-
-{ check forwarded, iso7185, and repeated function result }
         if lcp1^.forwdecl and iso7185 and (lcp^.idtype <> nil) then error(122);
-
-{ check forwarded, and result types do not match }
         if lcp1^.forwdecl then 
           if not comptypes(lcp^.idtype, lcp1^.idtype) then error(216);
-
-{ if overload or override or operator, insert to group list }
         if ((lcp^.pfattr = fpaoverload) or ((lcp^.pfattr = fpaoverride)) or 
             opr) and not lcp1^.forwdecl then begin
           { just insert to group list for this proc/func }
@@ -8433,8 +8395,6 @@ end;
                 if vaddr < lc then lc := vaddr;
         lcp3 := lcp3^.next
       end;
-
-{ decide which parameter list to keep }
       if not forw or (lcp^.pfattr = fpaoverload) then begin
         parmrg(lcp2); { merge back the current parameter list }
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
@@ -8448,13 +8408,10 @@ end;
         putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp1^.locstr { reset locals counter }
       end;
-
-{ this only unites conventional forwards with their blocks }
       if forw and (lcp^.pfattr <> fpaoverload) then begin
         { conventional forward, toss current entry and keep original }
         putnam(lcp); lcp := lcp1; lcp1 := nil; lcp^.forwdecl := false
       end;
-
       if not forwn and not extn then { process actual block}
         begin 
           display[top].bname := lcp;
