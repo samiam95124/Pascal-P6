@@ -2,25 +2,26 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 53: Missing type id on return type for function 
- 
-} 
- 
-program iso7185prt0053; 
- 
-function x: ; begin x := 1 end; 
-     9   ****               ^2
+PRT test 53: Missing type id on return type for function
+
+}
+
+program iso7185prt0053;
+
+function x: ; begin x := 1 end;
+     9   ****               ^2    ^123
      9   ****    2 Identifier expected
- 
-begin 
-end. 
+     9   ****  123 Missing result type in function declaration
 
-Errors in program: 1
+begin
+end.
+
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
   2   1 9 Identifier expected
+123   1 9 Missing result type in function declaration
 

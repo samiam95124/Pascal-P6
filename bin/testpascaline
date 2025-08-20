@@ -33,11 +33,11 @@ cd pascaline_tests
 if [ "$param1" = "--pgen" ]; then
 
     # compile each intermediate separately
-    pcom pascaline2.pas pascaline2.p6
+    pcom pascaline2.pas pascaline2.p6 -l-
     pgen pascaline2.p6 pascaline2.s
-    pcom pascaline1.pas pascaline1.p6
+    pcom pascaline1.pas pascaline1.p6 -l-
     pgen pascaline1.p6 pascaline1.s
-    pcom pascaline.pas pascaline.p6
+    pcom pascaline.pas pascaline.p6 -l-
     pgen pascaline.p6 pascaline.s
 
 else

@@ -2256,7 +2256,7 @@ PRT test 52: Missing ":"on return type for function
 program iso7185prt0052;
 
 function x integer; begin x := 1 end;
-     9   ****                    ^7^123
+     9   ****                    ^7     ^123
      9   ****    7 Error in parameter list
      9   ****  123 Missing result type in function declaration
 
@@ -2289,17 +2289,19 @@ PRT test 53: Missing type id on return type for function
 program iso7185prt0053;
 
 function x: ; begin x := 1 end;
-     9   ****               ^2
+     9   ****               ^2    ^123
      9   ****    2 Identifier expected
+     9   ****  123 Missing result type in function declaration
 
 begin
 end.
 
-Errors in program: 1
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
   2   1 9 Identifier expected
+123   1 9 Missing result type in function declaration
 
 
 
@@ -5910,6 +5912,8 @@ function x(one, two: integer):;
      9   ****    2 Identifier expected
 
 begin
+    11   ****       ^123
+    11   ****  123 Missing result type in function declaration
 
    one := 1;
    two := 2;
@@ -5921,11 +5925,12 @@ begin
 
 end.
 
-Errors in program: 1
+Errors in program: 2
 
 Error numbers in listing:
 -------------------------
   2   1 9 Identifier expected
+123   1 11 Missing result type in function declaration
 
 
 
