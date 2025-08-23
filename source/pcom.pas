@@ -170,7 +170,7 @@ const
    cstoccmax=4000; cixmax=10000;
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
-   maxftl     = 516; { maximum fatal error }
+   maxftl     = 519; { maximum fatal error }
    parfld     = 24;  { field length for intermediate parameters }
 
    { default field sizes for write }
@@ -1626,7 +1626,7 @@ end;
     { * marks spared compiler errors }
     400,401,402,403,404,406,407, 500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515,
-    516,517,518: write('Compiler internal error');
+    516,517,518,519: write('Compiler internal error');
     end
   end;
 
@@ -2801,44 +2801,29 @@ end;
   end;
 
   { id contains a procedure in overload list }
-  function hasovlproc(fcp: ctp): boolean;
-  begin hasovlproc := false;
+  function hasproc(fcp: ctp): boolean;
+  begin hasproc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
         fcp := fcp^.grppar;
         while fcp <> nil do begin
-          if fcp^.klass = proc then hasovlproc := true;
+          if fcp^.klass = proc then hasproc := true;
           fcp := fcp^.grpnxt
         end
       end
   end;
 
   { id contains a function in overload list }
-  function hasovlfunc(fcp: ctp): boolean;
-  begin hasovlfunc := false;
+  function hasfunc(fcp: ctp): boolean;
+  begin hasfunc := false;
     if fcp <> nil then
       if fcp^.klass in [proc, func] then begin
         fcp := fcp^.grppar;
         while fcp <> nil do begin
-          if fcp^.klass = func then hasovlfunc := true;
+          if fcp^.klass = func then hasfunc := true;
           fcp := fcp^.grpnxt
         end
       end
-  end;
-
-  { return overload function from list }
-  function ovlfunc(fcp: ctp): ctp;
-  var rcp: ctp;
-  begin rcp := nil;
-    if fcp <> nil then
-      if fcp^.klass in [proc, func] then begin
-        fcp := fcp^.grppar;
-        while fcp <> nil do begin
-          if fcp^.klass = func then rcp := fcp;
-          fcp := fcp^.grpnxt
-        end
-      end;
-    ovlfunc := rcp
   end;
 
   { return override procedure/function from list }
@@ -4689,7 +4674,8 @@ end;
   var i: disprange; f: boolean;
   begin
      f := false;
-     for i := level downto 2 do if display[i].bname = fcp then f := true;
+     for i := level downto 2 do if display[i].bname^.grppar = fcp^.grppar then
+       f := true;
      schblk := f
   end;
   procedure checkvrnt(lcp: ctp);
@@ -6377,7 +6363,7 @@ end;
         (*id*)    ident:
                   begin searchid([types,konst,vars,fixedt,field,func,proc],lcp);
                     insymbol;
-                    if hasovlfunc(lcp) or hasovlproc(lcp) then
+                    if hasfunc(lcp) then
                       begin call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
@@ -7822,7 +7808,7 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt: boolean; 
+          forw,forwn,extn,opr,isvirt, form: boolean; 
           oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
           oldlevf: 0..maxlevel; oldtopf: disprange;
@@ -8348,6 +8334,7 @@ end;
       end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }
+      form := false; { set no matching entry }
       if lcp1 <> nil then begin { previous func/proc exists, reconcile }
         if (lcp^.pfattr = fpaoverride) and not (lcp1^.pfattr = fpavirtual) then
           error(231);
@@ -8356,7 +8343,7 @@ end;
           lcp3 := fndovlgrp(lcp1, lcp2, lcp); 
           if lcp3 <> nil then begin 
             if not lcp3^.forwdecl then error(298);
-            lcp1 := lcp3
+            lcp1 := lcp3; form := true
           end
         end; 
         if lcp^.pfattr = fpaoverride then
@@ -8371,13 +8358,14 @@ end;
           error(161);
         if (lcp^.pfattr = fpaoverload) and lcp1^.extern then error(294);
         if lcp^.extern and lcp1^.extern then error(295);
-        if (lcp^.pfattr = fpaoverload) or (fsy = operatorsy) then { compare against overload group }
+        if ((lcp^.pfattr = fpaoverload) or (fsy = operatorsy)) and 
+           not lcp1^.forwdecl then { compare against overload group }
           chkovlpar(lcp^.grppar, lcp2, lcp);
         if lcp1^.forwdecl and iso7185 and (lcp^.idtype <> nil) then error(122);
-        if lcp1^.forwdecl then 
+        if lcp1^.forwdecl and not lcp^.forwdecl then 
           if not comptypes(lcp^.idtype, lcp1^.idtype) then error(216);
         if ((lcp^.pfattr = fpaoverload) or ((lcp^.pfattr = fpaoverride)) or 
-            opr) and not lcp1^.forwdecl then begin
+            opr) and not (lcp1^.forwdecl and form) then begin
           { just insert to group list for this proc/func }
           lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp; lcp^.grppar := lcp1
         end 
@@ -8408,8 +8396,8 @@ end;
         putparlst(lcp2); { redeclare, dispose of copy }
         lc := lcp1^.locstr { reset locals counter }
       end;
-      if forw and (lcp^.pfattr <> fpaoverload) then begin
-        { conventional forward, toss current entry and keep original }
+      if (forw and (lcp^.pfattr <> fpaoverload)) or form then begin
+        { forward, toss current entry and keep original }
         putnam(lcp); lcp := lcp1; lcp1 := nil; lcp^.forwdecl := false
       end;
       if not forwn and not extn then { process actual block}
@@ -8534,13 +8522,24 @@ end;
       ic := ic + 1; mes(33)
     end (*genfjp*) ;
 
+    { find active overlay for name entry }
+    function fndactovl(lcp: ctp): ctp;
+    var fcp: ctp; i: disprange;
+    begin fcp := nil;
+      for i := level downto 2 do if display[i].bname^.grppar = lcp then 
+        fcp := display[i].bname;
+      if fcp = nil then error(519);
+      fndactovl := fcp
+    end;
+
     procedure statement(fsys: setofsys);
       var lcp: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
         var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp; 
             len: addrrange;
-      begin tagasc := false; selector(fsys + [becomes],fcp,skp);
+      begin 
+        tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
             if gattr.kind = expr then error(287);
@@ -9206,17 +9205,16 @@ end;
                         if sy = inheritedsy then
                           begin insymbol; inherit := true end;
                         searchid([vars,field,func,proc],lcp); insymbol;
-                        if hasovlproc(lcp) then begin
-                          if hasovlfunc(lcp) then begin
+                        if hasproc(lcp) or hasfunc(lcp) then begin
+                          if hasfunc(lcp) then begin
                             { could be proc or func, need disambiguate }
                             if sy = becomes then begin
                               if inherit then error(233);
-                              assignment(ovlfunc(lcp), false)
+                              assignment(fndactovl(lcp), false)
                             end else call(fsys,lcp,inherit,false)
                           end else call(fsys,lcp,inherit,false)
                         end else begin if inherit then error(233);
-                          if hasovlfunc(lcp) then assignment(ovlfunc(lcp), false)
-                          else assignment(lcp, false)
+                          assignment(lcp, false)
                         end
                       end;
             beginsy:  begin insymbol; compoundstatement end;
