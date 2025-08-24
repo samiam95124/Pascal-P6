@@ -8383,7 +8383,7 @@ end;
                 if vaddr < lc then lc := vaddr;
         lcp3 := lcp3^.next
       end;
-      if not forw or (lcp^.pfattr = fpaoverload) then begin
+      if not forw or ((lcp^.pfattr = fpaoverload) and not form) then begin
         parmrg(lcp2); { merge back the current parameter list }
         lcp^.pflist := lcp2; lcp^.pfnum := parnum(lcp); 
         lcp^.locpar := parmspc(lcp^.pflist);
