@@ -735,7 +735,7 @@ var
   end;
 
   { recycle identifier entry }
-  procedure putnam{(p: ctp)};
+  procedure putnam(p: ctp);
   var p1: ctp;
   begin
      if (p^.klass = proc) or (p^.klass = func) then begin
@@ -2706,7 +2706,7 @@ end;
             end (*with*)
       end (*markstp*);
 
-      procedure markctp{(fp: ctp)};
+      procedure markctp(fp: ctp);
       begin
         if fp <> nil then
           with fp^ do
@@ -2744,7 +2744,7 @@ end;
             end (*if marked*)
     end (*followstp*);
 
-    procedure followctp{(fp: ctp)};
+    procedure followctp(fp: ctp);
     begin
       if fp <> nil then
         with fp^ do
@@ -3971,7 +3971,7 @@ end;
     filecomponent := f
   end;
 
-  function comptypes{(fsp1,fsp2: stp) : boolean};
+  function comptypes(fsp1,fsp2: stp) : boolean;
     (*decide whether structures pointed at by fsp1 and fsp2 are compatible*)
     var ty1, ty2: stp;
   begin
@@ -4057,7 +4057,7 @@ end;
   end;
 
   { compare parameter lists }
-  function cmpparlst{(pla, plb: ctp): boolean};
+  function cmpparlst(pla, plb: ctp): boolean;
   begin cmpparlst := true;
     while (pla <> nil) and (plb <> nil) do begin
       if not cmppar(pla,plb) then cmpparlst := false;
@@ -4237,7 +4237,7 @@ end;
     end
   end (*constterm*) ;
 
-  procedure constexpr{(fsys: setofsys; var fsp: stp; var fvalu: valu)};
+  procedure constexpr(fsys: setofsys; var fsp: stp; var fvalu: valu);
   var sign: (none,pos,neg); lvp,svp: csp; lv: valu; lop: operatort; lsp: stp;
   begin sign := none; svp := nil;
     if (sy = addop) and (op in [plus,minus]) then
@@ -6244,7 +6244,7 @@ end;
   end;
 
   { call operator type with 1 parameter }
-  procedure callop1{(fcp: ctp)};
+  procedure callop1(fcp: ctp);
     var frlab: integer; lsize: addrrange; locpar, locpars: addrrange;
         sp: stp;
   begin
@@ -6275,7 +6275,7 @@ end;
   end;
 
   { call operator type with 2 parameters }
-  procedure callop2{(fcp: ctp; var lattr: attr)};
+  procedure callop2(fcp: ctp; var lattr: attr);
     var frlab: integer; lsize: addrrange;
         locpar, locpars, lpl, lpr, lpls, lprs: addrrange;
         lsp, rsp: stp;
@@ -6332,7 +6332,7 @@ end;
     gattr.typtr := fcp^.idtype
   end;
 
-  procedure expression{(fsys: setofsys; threaten: boolean)};
+  procedure expression(fsys: setofsys; threaten: boolean);
     var lattr: attr; lop: operatort; typind: char; lsize, lsizspc: addrrange;
         fcp: ctp; lschrcst, rschrcst, revcmp: boolean;
         lc, rc: char;
@@ -8480,7 +8480,7 @@ end;
     dp := false
   end (*declare*) ;
 
-  procedure body{(fsys: setofsys)};
+  procedure body(fsys: setofsys; fprocp: ctp);
     var
         segsize, gblsize, stackbot: integer;
         llc1: stkoff; lcp: ctp;
@@ -8522,7 +8522,7 @@ end;
       ic := ic + 1; mes(33)
     end (*genfjp*) ;
 
-    { find active overlay for name entry }
+    { find active overload for name entry }
     function fndactovl(lcp: ctp): ctp;
     var fcp: ctp; i: disprange;
     begin fcp := nil;
@@ -9615,7 +9615,7 @@ end;
     searchext := f
   end;
 
-  procedure modulep{(fsys:setofsys)};
+  procedure modulep(fsys:setofsys);
     var extfp,newfl:extfilep; segsize, stackbot: integer;
         nulllab: integer;
   begin
