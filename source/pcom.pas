@@ -5899,9 +5899,9 @@ end;
     end;
 
     procedure callnonstandard(fcp: ctp; inherit: boolean);
-      var nxt,lcp: ctp; lsp: stp; lkind: idkind; lb: boolean;
+      var nxt,lcp,fcpe,fcps,nxts: ctp; lsp: stp; lkind: idkind; lb: boolean;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
-          frlab: integer; prcnt: integer; fcps: ctp; ovrl: boolean;
+          frlab: integer; prcnt: integer; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
@@ -5938,7 +5938,7 @@ end;
     end;
     begin { callnonstandard }
       soff := abs(topnew); { save stack net offset }
-      fcps := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
+      fcpe := fcp; fcp := fcp^.grppar; locpar := 0; genlabel(frlab);
       while ((isfunc and (fcp^.klass <> func)) or 
              (not isfunc and (fcp^.klass <> proc))) and (fcp^.grpnxt <> nil) do
         fcp := fcp^.grpnxt;
@@ -5961,7 +5961,7 @@ end;
               if fcp = nil then begin
                 { dispatch error according to overload status }
                 if ovrl then error(275) else error(126);
-                fcp := fcps
+                fcp := fcpe
               end
             end;
             e := false;
@@ -5969,6 +5969,7 @@ end;
               { next is id, and proc/func is overload, try proc/func parameter }
               match := false;
               searchidnenm([proc,func],lcp,mm);
+              fcps := fcp; nxts := nxt;
               if lcp <> nil then if lcp^.klass in [proc,func] then begin
                 { Search matching overload. For proc/func parameters, we allow
                   all features of the target to match, including function
@@ -5982,8 +5983,8 @@ end;
                   end;
                   if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
-                if fcp = nil then begin if ovrl then error(277) else error(189); 
-                                        e := true; fcp := fcps end
+                { proc/func param not found, reset to previous place }
+                if fcp = nil then begin fcp := fcps; nxt := nxts end
               end
             end;
             { match same thing for all procs/funcs }
@@ -6035,7 +6036,7 @@ end;
                     if not match then nxtprc { no match get next overload }
                 until match or (fcp = nil);
                 if fcp = nil then begin if ovrl then error(277) else error(189); 
-                                        e := true; fcp := fcps end;
+                                        e := true; fcp := fcpe end;
                 { override variable status for view parameter }
                 if nxt <> nil then varp := (nxt^.vkind = formal) and not (nxt^.part = ptview);
                 if varp and (gattr.kind <> varbl) then error(278);
@@ -6118,7 +6119,7 @@ end;
         end
       end;
       if fcp = nil then begin if ovrl then error(277) else error(189); 
-                              fcp := fcps end;
+                              fcp := fcpe end;
       { find function result size }
       lsize := 0;
       if (fcp^.klass = func) and (fcp^.idtype <> nil) then begin
