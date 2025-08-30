@@ -44,6 +44,7 @@ CC=gcc
 CFLAGS=-static -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
+LIBS=$(PASCALP6)/libs
 CPPFLAGS=-P -nostdinc -traditional-cpp
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
@@ -57,6 +58,11 @@ all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 ################################################################################
 #
 # Build components
+#
+
+################################################################################
+#
+# Components for compiler and support modules
 #
 
 #
@@ -130,6 +136,25 @@ $(BUILD)/extend.o: $(SOURCE)/extend.pas
 	pcom $(SOURCE)/extend.pas $(BUILD)/extend.p6 --list- --reference-
 	pgen $(BUILD)/extend.p6 $(BUILD)/extend.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extend.o -c $(BUILD)/extend.s
+
+################################################################################
+#
+# User accessable libraries
+#
+
+#
+# Build strings, the Pascaline string support library in Pascaline.
+#
+libs/strings.o: $(LIBS)/source/strings.pas $(BUILD)/libs/strings.s
+	@echo
+	@echo "Building strings..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom $(LIBS)/source/strings.pas $(BUILD)/libs/strings.p6 --list- --reference-
+	pgen $(BUILD)/libs/strings.p6 $(BUILD)/libs/strings.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/strings.o \
+		-c $(BUILD)/libs/strings.s
+	cp $(BUILD)/libs/strings.o $(LIBS)
 
 ################################################################################
 #
@@ -280,6 +305,32 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
+
+################################################################################
+#
+# Build library tests
+#
+
+#
+# Build strings test.
+#
+libs/strtst: $(LIBS)/source/strtst.pas
+	@echo
+	@echo "Building strtst..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom $(LIBS)/source/strtst.pas $(BUILD)/libs/strtst.p6 \
+		--modules=$(LIBS)/source --list- --reference-
+	pgen $(BUILD)/libs/strtst.p6 $(BUILD)/libs/strtst.s
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(BUILD)/extlink.o \
+		$(BUILD)/extend.o \
+		$(LIBS)/strings.o \
+		$(BUILD)/libs/strtst.s \
+		-o $(LIBS)/strtst -lm -lpthread
 	
 clean:
 	find . -name "*.pint" -type f -delete
