@@ -45,6 +45,8 @@ CFLAGS=-static -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
+AMI=$(PASCALP6)/petit_ami/linux
+AMIINC=$(PASCALP6)/petit_ami/include
 CPPFLAGS=-P -nostdinc -traditional-cpp
 CPPFLAGS64LE=-DWRDSIZ64 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 CPPFLAGS16LE=-DWRDSIZ16 -DLENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
@@ -155,6 +157,17 @@ libs/strings.o: $(LIBS)/source/strings.pas $(BUILD)/libs/strings.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/strings.o \
 		-c $(BUILD)/libs/strings.s
 	cp $(BUILD)/libs/strings.o $(LIBS)
+
+#
+# Services
+#
+libs/services.o: $(AMI)/services.c
+	@echo
+	@echo "Building services..."
+	@echo
+	mkdir -p $(BUILD)/petit_ami
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services.o \
+		-c $(AMI)/services.c
 
 ################################################################################
 #
@@ -326,8 +339,6 @@ libs/strtst: $(LIBS)/source/strtst.pas
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
-		$(BUILD)/extlink.o \
-		$(BUILD)/extend.o \
 		$(LIBS)/strings.o \
 		$(BUILD)/libs/strtst.s \
 		-o $(LIBS)/strtst -lm -lpthread

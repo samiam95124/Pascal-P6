@@ -1605,7 +1605,7 @@ end;
     292: write('Function expected in this context');
     293: write('Procedure expected in this context');
     294: write('Cannot overload an external declaration');
-    295: write('procedure or function previously declared external');
+    295: write('procedure or function external property does not match');
     296: write('Cannot apply field to constant string on read');
     297: write('No procedure or function found to overload');
     298: write('No matching forwarded overload');
@@ -8357,8 +8357,8 @@ end;
           error(232);
         if lcp^.forwdecl and (lcp^.pfattr <> fpaoverload) and forw then 
           error(161);
-        if (lcp^.pfattr = fpaoverload) and lcp1^.extern then error(294);
-        if lcp^.extern and lcp1^.extern then error(295);
+        if (lcp^.pfattr = fpaoverload) and lcp1^.pext then error(294);
+        if lcp^.extern <> lcp1^.extern then error(295);
         if ((lcp^.pfattr = fpaoverload) or (fsy = operatorsy)) and 
            not lcp1^.forwdecl then { compare against overload group }
           chkovlpar(lcp^.grppar, lcp2, lcp);
