@@ -148,6 +148,7 @@ $(BUILD)/extend.o: $(SOURCE)/extend.pas
 # Build strings, the Pascaline string support library in Pascaline.
 #
 libs/strings.o: $(LIBS)/source/strings.pas $(BUILD)/libs/strings.s
+$(BUILD)/libs/strings.s:
 	@echo
 	@echo "Building strings..."
 	@echo
@@ -161,11 +162,12 @@ libs/strings.o: $(LIBS)/source/strings.pas $(BUILD)/libs/strings.s
 #
 # Services
 #
-libs/services.o: $(AMI)/services.c
+libs/services.o: $(AMI)/services.c $(LIBS)/source/services_wrapper.asm
 	@echo
 	@echo "Building services..."
 	@echo
-	mkdir -p $(BUILD)/petit_ami
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(LIBS)/services_wrapper.o \
+		-c -x assembler $(LIBS)/source/services_wrapper.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services.o \
 		-c $(AMI)/services.c
 
@@ -342,6 +344,24 @@ libs/strtst: $(LIBS)/source/strtst.pas
 		$(LIBS)/strings.o \
 		$(BUILD)/libs/strtst.s \
 		-o $(LIBS)/strtst -lm -lpthread
+
+#
+# Build a test program (for whatever)
+#
+test: test.pas $(LIBS)/services.o
+	@echo
+	@echo "Building test..."
+	@echo
+	pcom --modules=libs/source test.pas test.p6
+	pgen test.p6 test.s
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(LIBS)/strings.o \
+		$(LIBS)/services_wrapper.o \
+		test.s -o test -lm -lpthread
 	
 clean:
 	find . -name "*.pint" -type f -delete

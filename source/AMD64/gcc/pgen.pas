@@ -2421,7 +2421,7 @@ procedure xlate;
             end;
             fpc := fpc+1
           end else if insr[pp^.op] = 2 then begin { double register }
-            if (pc <= mi) and (pc <= maxintparreg-1) then begin
+            if pc <= maxintparreg-1 then begin
               resreg(parreg[pc]); resreg(parreg[pc+1]); 
               assreg(pp, rf, parreg[pc], parreg[pc+1])
             end else begin
@@ -2429,7 +2429,7 @@ procedure xlate;
             end;
             pc := pc+2
           end else begin { single register }
-            if (pc <= mi) and (pc <= maxintparreg) then begin
+            if pc <= maxintparreg then begin
               resreg(parreg[pc]); assreg(pp, rf, parreg[pc], rgnull)
             end else begin 
               getreg(r1, rf); assreg(pp, rf, r1, rgnull) 
