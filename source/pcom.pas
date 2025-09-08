@@ -8840,11 +8840,11 @@ end;
                 gen2t(54(*lod*),level,csladr,intptr);
                 if occ >= minocc then begin { build straight vector table }
                   if lelse > 0 then begin
-                    gen0t(76(*dup*),intptr);
+                    gen2t(54(*lod*),level,csladr,intptr);
                     gen2(51(*ldc*),1,lmin);
                     gen2(53(*les*),ord('i'),0);
                     genujpxjpcal(73(*tjp*),lelse2);
-                    gen0t(76(*dup*),intptr);
+                    gen2t(54(*lod*),level,csladr,intptr);
                     gen2(51(*ldc*),1,lmax);
                     gen2(49(*grt*),ord('i'),0);
                     genujpxjpcal(73(*tjp*),lelse2);

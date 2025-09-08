@@ -166,6 +166,8 @@ libs/services.o: $(AMI)/services.c $(LIBS)/source/services_wrapper.asm
 	@echo
 	@echo "Building services..."
 	@echo
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services_support.o \
+		-c $(LIBS)/source/services_support.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(LIBS)/services_wrapper.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services.o \
@@ -348,7 +350,7 @@ libs/strtst: $(LIBS)/source/strtst.pas
 #
 # Build a test program (for whatever)
 #
-test: test.pas $(LIBS)/services.o
+test: test.pas libs/services.o libs/strings.o
 	@echo
 	@echo "Building test..."
 	@echo
@@ -357,6 +359,7 @@ test: test.pas $(LIBS)/services.o
 	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
