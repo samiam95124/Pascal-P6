@@ -3175,12 +3175,11 @@ begin
                          store[ad] := store[ad1]; putdef(ad, getdef(ad1)) 
                        end;
                        sp := sp+q1
-                 end;
-                 
+                 end; 
     241 (*lsa*): begin getq; pshadr(sp+q) end;
-
     251 (*cpl*): begin popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
                        pshadr(ad2) end;
+    254 (*mdc*): begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
 
     242 (*eext*): begin
                     {ExecuteExternal(pc-extvecbase); fixme}
@@ -3198,7 +3197,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250,
     255: errorv(InvalidInstruction)
 
   end

@@ -3218,11 +3218,11 @@ void sinins()
                       }
                       sp = sp+q1;
                       break;
-
     case 241 /*lsa*/: getq(); ad = sp+q; pshadr(ad); break;
-
     case 251 /*cpl*/: popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
                       pshadr(ad2);
+                      break;
+    case 254 /*mdc*/: getq(); popint(i1); pshint(i1); pshint(i1+q);
                       break;
 
     case 242 /*eext*/:
@@ -3245,7 +3245,7 @@ void sinins()
                     break;
 
     /* illegal instructions */
-    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 254,
+    /* 173, 228, 229, 230, 231, 232, 233, 234, 248, 250,
        255 */
     default: errorv(INVALIDINSTRUCTION); break;
 

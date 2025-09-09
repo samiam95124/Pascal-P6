@@ -973,6 +973,7 @@ procedure xlate;
          instr[252]:='sfs       '; insr[252] := 0; insf[252] := false; inss[252] := false;
          { sev is an alias for stra in pint. It has meaning to pgen. }
          instr[253]:='sev       '; insr[253] := 0; insf[253] := false; inss[253] := false;
+         instr[254]:='mdc       '; insr[254] := 1; insf[254] := false; inss[254] := false;
 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
@@ -2585,6 +2586,14 @@ procedure xlate;
             assreg(ep^.l, rf, ep^.r1, rgnull)
           end;
 
+          {mdc}
+          254: begin 
+            ep^.r1 := r1; ep^.r2 := r2;
+            if ep^.r1 = rgnull then getreg(ep^.r1, rf) else resreg(ep^.r1);
+            if ep^.r2 = rgnull then getreg(ep^.r2, rf) else resreg(ep^.r2);
+            assreg(ep^.l, rf, ep^.r1, rgnull)
+          end;
+
           {suv}
           91: ;
 
@@ -3552,6 +3561,12 @@ procedure xlate;
               end
             end;
 
+            {mdc}
+            254: begin
+              wrtins(' movq %1,%2 # copy template pointer to data', ep^.r1, ep^.r2);
+              wrtins(' addq $0,%1 # skip template to data', ep^.q, ep^.r1)
+            end;
+
             {ckvi,ckvb,ckvc,ckvx}
             175, 179, 180, 203: begin 
               wrtins(' cmpq $0,%1 # check this tag value', ep^.q, ep^.r1);
@@ -4506,6 +4521,11 @@ procedure xlate;
 
         {inci,inca,incb,incc,incx,deci,deca,decb,decc,decx}
         10, 90, 93, 94, 201, 57, 103, 104, 202: begin parq; 
+          getexp(ep); attach(ep); popstk(ep^.l); pshstk(ep) 
+        end;
+
+        {mdc}
+        254: begin parq; 
           getexp(ep); attach(ep); popstk(ep^.l); pshstk(ep) 
         end;
 

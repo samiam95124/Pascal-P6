@@ -2032,7 +2032,8 @@ procedure load;
          instr[251]:='cpl       '; insp[251] := false; insq[251] := 0;
          instr[252]:='sfs       '; insp[252] := false; insq[252] := intsize*2;
          { sev is an alias for stra in pint. It has meaning to pgen. }
-         instr[253]:='sev       '; insp[253] := true; insq[253] := intsize;
+         instr[253]:='sev       '; insp[253] := true;  insq[253] := intsize;
+         instr[254]:='mdc       '; insp[254] := false; insq[254] := intsize;
 
          sptable[ 0]  :='get       ';     sptable[ 1]  :='put       ';
          sptable[ 2]  :='thw       ';     sptable[ 3]  :='rln       ';
@@ -2761,10 +2762,10 @@ procedure load;
           (*ixa,mov,dmp,swp*)
           16,55,117,118,
 
-          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm,lsa*)
+          (*ind,inc,dec,ckv,vbs,cpc,aps,cxs,max,retm,lsa,mdc*)
           198, 9, 85, 86, 87, 88, 89,10, 90, 93, 94,57,103,104,175,177,178,
           179, 180, 201, 202,203,211,214,237,241,
-          92: begin read(prd,q); storeop; storeq end;
+          92,254: begin read(prd,q); storeop; storeq end;
 
           (*ldo,sro,lao*)
           1, 194, 65, 66, 67, 68, 69,
@@ -5285,11 +5286,10 @@ begin
                        end;
                        sp := sp+q1
                  end;
-
     241 (*lsa*): begin getq; pshadr(sp+q) end;
-
     251 (*cpl*): begin popadr(ad1); popadr(ad2); pshadr(ad2); pshadr(ad1);
                        pshadr(ad2) end;
+    254 (*mdc*): begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
 
     242 (*eext*): begin
                     ad := sp+adrsize; { index parameters }
@@ -5300,7 +5300,7 @@ begin
                   end;
 
     { illegal instructions }
-    173, 228, 229, 230, 231, 232, 233, 234, 248, 250, 254,
+    173, 228, 229, 230, 231, 232, 233, 234, 248, 250,
     255: errorv(InvalidInstruction)
 
   end
