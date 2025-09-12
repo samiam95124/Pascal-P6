@@ -346,6 +346,7 @@ libs/strtst: $(LIBS)/source/strtst.pas
 		$(LIBS)/strings.o \
 		$(BUILD)/libs/strtst.s \
 		-o $(LIBS)/strtst -lm -lpthread
+	cp $(LIBS)/strtst bin
 
 #
 # Build a test program (for whatever)

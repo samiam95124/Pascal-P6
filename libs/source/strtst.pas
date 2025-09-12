@@ -12,8 +12,7 @@
 
 program strtst(output);
 
-uses {stddef,}
-     strings;
+uses strings;
 
 var sa:  packed array [1..20] of char;
     sb:  packed array [1..40] of char;
@@ -25,7 +24,7 @@ var sa:  packed array [1..20] of char;
 
 begin
 
-   assign(fa, 'source/strtst.dat');
+   assign(fa, 'libs/source/strtst.dat');
    reset(fa);
    writeln('1:', lcase('H'), lcase('j'), lcase('8'), ' s/b hj8');
    sa := 'ThiS iS WeRId       ';

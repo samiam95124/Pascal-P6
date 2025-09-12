@@ -90,7 +90,6 @@ void cfilelist2pascaline(
     /* last entry */                   filptr lp;
     /* new list pointer */             filptr p;
 
-printf("cfilelist2pascaline: begin: next offset: %lu\n", offsetof(struct filrec, next));
     nl = NULL; /* create new list */
     lp = NULL; /* set no last */
     fl = *fla; /* get old list */
@@ -100,7 +99,6 @@ printf("cfilelist2pascaline: begin: next offset: %lu\n", offsetof(struct filrec,
         if (!nl) nl = p; /* start new list if empty */
         /* copy fields */
         l = strlen(fl->name); /* get length of string */
-printf("cfilelist2pascaline: length: %d allocation size: %ld\n", l, sizeof(pstring_header)+l);
         /* allocate header+data */
         ps = malloc(sizeof(pstring_header)+l);
         ps->len = l; /* set length */
@@ -109,7 +107,6 @@ printf("cfilelist2pascaline: length: %d allocation size: %ld\n", l, sizeof(pstri
         strncpy(s, fl->name, l); /* copy name string to new pstring */
         free(fl->name); /* free the old string */
         p->name = (char*)ps; /* place pstring pointer */
-printf("cfilelist2pascaline: fl: %p fl->name: %p\n", p, p->name);
         /* transfer other entries, converting sets */
         p->size = fl->size;
         p->alloc = fl->alloc;
