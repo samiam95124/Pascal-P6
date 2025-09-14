@@ -24,6 +24,43 @@
 # versions.
 #
 
+#
+# Macro to call a procedure.
+#
+# Takes the target function and the number of parameters. Note that the number
+# of parameters is in terms of registers occupied, and not source parameters.
+#
+    .macro  procedure func, numpar
+    popq    %r12                # get return address
+    .if     \numpar >= 1
+    popq    %r11                # dump parameters
+    .if     \numpar >= 2
+    popq    %r11
+    .if     \numpar >= 3
+    popq    %r11
+    .if     \numpar >= 4
+    popq    %r11
+    .if     \numpar >= 5
+    popq    %r11
+    .if     \numpar >= 6
+    popq    %r11
+    .endif
+    .endif
+    .endif
+    .endif
+    .endif
+    .endif
+    movq    %rsp,%r11           # save original stack
+    andq    $0xfffffffffffffff0,%rsp # align stack
+    pushq   %r11                # save original stack on stack
+    pushq   %r12                # save return address
+    call    \func               # call C function
+    popq     %r12               # get return address
+    popq    %r11                # get original stack
+    movq    %r11,%rsp           # restore original stack
+    jmp     *%r12               # return
+    .endm
+
     .text
 
     jmp     1f      # skip stack sequence
@@ -81,36 +118,12 @@ services.list$p_pvc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$at
 # procedure times(var s: string; t: integer); external;
 
 services.times$p_vc_i:
-    popq    %rax                # get return address
-    popq    %r11                # dump parameters
-    popq    %r11
-    popq    %r11
-    movq    %rsp,%r11           # save original stack
-    andq    $0xfffffffffffffff0,%rsp # align stack
-    pushq   %r11                # save original stack on stack
-    pushq   %rax                # save return address
-    call    pa_times            # call C function
-    popq     %r12               # get return address
-    popq    %r11                # get original stack
-    movq    %r11,%rsp           # restore original stack
-    jmp     *%r12               # return
+    procedure   pa_times, 3
 
 # procedure dates(var s: string; t: integer); external;
 
 services.dates$p_vc_i:
-    popq    %rax                # get return address
-    popq    %r11                # dump parameters
-    popq    %r11
-    popq    %r11
-    movq    %rsp,%r11           # save original stack
-    andq    $0xfffffffffffffff0,%rsp # align stack
-    pushq   %r11                # save original stack on stack
-    pushq   %rax                # save return address
-    call    pa_dates            # call C function
-    popq     %r12               # get return address
-    popq    %r11                # get original stack
-    movq    %r11,%rsp           # restore original stack
-    jmp     *%r12               # return
+    procedure   pa_dates, 3
 
 # function time: integer; external;
 
