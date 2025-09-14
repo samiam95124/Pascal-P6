@@ -38,15 +38,34 @@
 # procedure list(view f: string; var l: filptr); external;
 
 services.list$p_vc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$:
+    popq    %rax                # get return address
+    popq    %r11                # dump parameters
+    popq    %r11
+    popq    %r11
+    movq    %rsp,%r11           # save original stack
+    andq    $0xfffffffffffffff0,%rsp # align stack
+    pushq   %r11                # save original stack on stack
+    pushq   %rax                # save return address
     pushq   %rdx                # save **fl
     call    pa_listl            # call C routine
     popq    %rdi                # restore **fl to 1st
     call    cfilelist2pascaline # convert to Pascaline
-    ret
+    popq     %rax               # get return address
+    popq    %r11                # get original stack
+    movq    %r11,%rsp           # restore original stack
+    jmp     *%rax               # return
 
 # overload procedure list(view f: pstring; var  l: filptr); external;
 
 services.list$p_pvc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$:
+    popq    %rax                # get return address
+    popq    %r11                # dump parameters
+    popq    %r11
+    popq    %r11
+    movq    %rsp,%r11           # save original stack
+    andq    $0xfffffffffffffff0,%rsp # align stack
+    pushq   %r11                # save original stack on stack
+    pushq   %rax                # save return address
     movq    %rsi,%rdx           # move **fl to 3rd
     movq    (%rdi),%rsi         # move string len to 2nd
     addq    $8,%rdi             # index string data
@@ -54,7 +73,10 @@ services.list$p_pvc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$at
     call    pa_listl            # call C routine
     popq    %rdi                # restore **fl to 1st
     call    cfilelist2pascaline # convert to Pascaline
-    ret
+    popq     %r12               # get return address
+    popq    %r11                # get original stack
+    movq    %r11,%rsp           # restore original stack
+    jmp     *%r12               # return
 
 # procedure times(var s: string; t: integer); external;
 
@@ -68,10 +90,10 @@ services.times$p_vc_i:
     pushq   %r11                # save original stack on stack
     pushq   %rax                # save return address
     call    pa_times            # call C function
-    popq     %rax               # get return address
+    popq     %r12               # get return address
     popq    %r11                # get original stack
     movq    %r11,%rsp           # restore original stack
-    jmp     *%rax               # return
+    jmp     *%r12               # return
 
 # procedure dates(var s: string; t: integer); external;
 
@@ -85,10 +107,10 @@ services.dates$p_vc_i:
     pushq   %r11                # save original stack on stack
     pushq   %rax                # save return address
     call    pa_dates            # call C function
-    popq     %rax               # get return address
+    popq     %r12               # get return address
     popq    %r11                # get original stack
     movq    %r11,%rsp           # restore original stack
-    jmp     *%rax               # return
+    jmp     *%r12               # return
 
 # function time: integer; external;
 
