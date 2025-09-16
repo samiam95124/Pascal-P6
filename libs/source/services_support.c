@@ -143,3 +143,55 @@ void cfilelist2pascaline(
     *fla = (pa_filptr)nl;
 
 }
+
+/********************************************************************************
+
+Convert C zero terminated string to padded
+
+Accepts a C string in buffer with a buffer length. The buffer past the string is
+cleared to spaces, including the terminating zero.
+
+********************************************************************************/
+
+void cstr2pad(
+    /** C string buffer */ char* cs,
+    /** length of buffer */ int l
+)
+
+{
+
+    while (l && *cs) { l--; cs++; }
+    while (l) { l--; *cs = ' '; }
+
+}
+
+/********************************************************************************
+
+Convert C zero terminated string to pstring
+
+Accepts a C string in buffer with a buffer length. The string is allocated in
+heap, and returned in pstring format.
+
+********************************************************************************/
+
+pstring cstr2pstr(
+    /** C string buffer */ char* cs,
+    /** length of buffer */ int l
+)
+
+{
+
+    /* length */                       int l;
+    /* pointer for pascaline string */ pstring ps;
+    /* pointer to string */            char* s;
+
+    l = strnlen(cs, l); /* get length of string */
+    /* allocate header+data */
+    ps = malloc(sizeof(pstring_header)+l);
+    ps->len = l; /* set length */
+    /* point to string after the pstring header */
+    s = ((char*)ps)+sizeof(pstring_header);
+    strncpy(s, cs, l); /* copy name string to new pstring */
+
+}
+

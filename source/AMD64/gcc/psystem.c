@@ -5289,6 +5289,54 @@ void psystem_rdre(
 
 /** ****************************************************************************
 
+Find libc write file equivalent
+
+Given a Pascal file pointer, validates the write file and returns the libc file
+number equivalent.
+
+*******************************************************************************/
+
+FILE* psystem_libcwrfil(
+    /* Pascal file to write to */ pasfil* f
+)
+
+{
+
+    int fn;
+ 
+    valfilwm(f); /* validate file for writing */
+    fn = *f; /* get logical file no. */
+
+    return (filtable[fn]);
+
+}
+
+/** ****************************************************************************
+
+Find libc read file equivalent
+
+Given a Pascal file pointer, validates the read file and returns the libc file
+number equivalent.
+
+*******************************************************************************/
+
+FILE* psystem_libcrdfil(
+    /* Pascal file to write to */ pasfil* f
+)
+
+{
+
+    int fn;
+ 
+    valfilrm(f); /* validate file for writing */
+    fn = *f; /* get logical file no. */
+
+    return (filtable[fn]);
+
+}
+
+/** ****************************************************************************
+
 Compare strings
 
 Compares two strings, and returns:
