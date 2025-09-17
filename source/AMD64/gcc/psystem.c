@@ -5303,11 +5303,28 @@ FILE* psystem_libcwrfil(
 {
 
     int fn;
+    FILE* fp;
  
     valfilwm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
 
-    return (filtable[fn]);
+    if (fn <= COMMANDFN) switch (fn) {
+
+        case OUTPUTFN: fp = stdout; break;
+        case PRRFN: fp = filtable[PRRFN]; break;
+        case ERRORFN: fp = stdout; break;
+        case LISTFN: fp = stdout; break;
+        case INPUTFN: case PRDFN:
+        case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE); 
+            break;
+
+    } else {
+
+        fp = filtable[fn];
+
+    }
+
+    return (fp);
 
 }
 
@@ -5327,11 +5344,26 @@ FILE* psystem_libcrdfil(
 {
 
     int fn;
+    FILE* fp;
  
     valfilrm(f); /* validate file for writing */
     fn = *f; /* get logical file no. */
+    if (fn <= COMMANDFN) switch (fn) {
 
-    return (filtable[fn]);
+        case INPUTFN:   fp = stdin; break;
+        case PRDFN:     fp = filtable[PRDFN]; break;
+        case OUTPUTFN:  case ERRORFN:
+        case LISTFN:    errore(modnam, __LINE__, READONWRITEONLYFILE); 
+            break;
+        case COMMANDFN: errore(modnam, __LINE__, FILEREADFAIL); break;
+
+    } else {
+
+        fp = filtable[fn];
+
+    }
+
+    return (fp);
 
 }
 

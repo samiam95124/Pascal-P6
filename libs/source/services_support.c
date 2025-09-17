@@ -161,7 +161,7 @@ void cstr2pad(
 {
 
     while (l && *cs) { l--; cs++; }
-    while (l) { l--; *cs = ' '; }
+    while (l) { l--; *cs++ = ' '; }
 
 }
 
@@ -181,7 +181,6 @@ pstring cstr2pstr(
 
 {
 
-    /* length */                       int l;
     /* pointer for pascaline string */ pstring ps;
     /* pointer to string */            char* s;
 
@@ -192,6 +191,8 @@ pstring cstr2pstr(
     /* point to string after the pstring header */
     s = ((char*)ps)+sizeof(pstring_header);
     strncpy(s, cs, l); /* copy name string to new pstring */
+
+    return (ps);
 
 }
 

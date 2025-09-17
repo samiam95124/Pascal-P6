@@ -27,7 +27,9 @@
     .globl  services.list$p_vc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$
     .globl  services.list$p_pvc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$
     .globl  services.times$p_vc_i
+    .globl  services.times$f_i
     .globl  services.dates$p_vc_i
+    .globl  services.dates$f_i
     .globl  services.time$f
     .globl  services.local$f_i
     .globl  services.writetime$p_fc_i
@@ -35,6 +37,19 @@
     .global services.writedate$p_fc_i
     .global services.writedate$p_i
     .global services.clock$f
+    .global services.elapsed$f_i
+    .global services.validfile$f_vc_i
+    .global services.validfile$f_pvc
+    .global services.validpath$f_vc_i
+    .global services.validpath$f_pvc
+    .global services.wild$f_vc_i
+    .global services.wild$f_pvc
+    .global 
+    .global 
+    .global 
+    .global 
+    .global 
+    .global 
 
 #
 # Procedure/function preamble
@@ -150,16 +165,17 @@ services.times$p_vc_i:
 
 # overload function times(t: integer): pstring; external;
 
-services.times:
+services.times$f_i:
     preamble    1, 1
     movq    %rdi,%rdx           # place t
     subq    $1024,%rsp          # allocate stack buffer
-    movq    $1000,%rsi          # set maximum length
-    call    times$p_vc_i        # get time string in buffer
-    leaq    sbuffer(%rip),%rdi  # index buffer
-    movq    $1000,%rsi          # set maximum length
+    movq    %rsp,%rdi           # index that
+    movq    $1024,%rsi          # set maximum length
+    call    pa_times            # get time string in buffer
+    movq    %rsp,%rdi           # index buffer
+    movq    $1024,%rsi          # set maximum length
     call    cstr2pstr           # convert to pstring
-    addq    $1024,$rsp          # deallocate stack buffer
+    addq    $1024,%rsp          # deallocate stack buffer
     postamble
 
 # procedure dates(var s: string; t: integer); external;
@@ -176,16 +192,17 @@ services.dates$p_vc_i:
 
 # overload function dates(t: integer): pstring; external;
 
-services.dates:
+services.dates$f_i:
     preamble    1, 1
     movq    %rdi,%rdx           # place t
     subq    $1024,%rsp          # allocate stack buffer
-    movq    $1000,%rsi          # set maximum length
-    call    dates$p_vc_i        # get time string in buffer
-    leaq    sbuffer(%rip),%rdi  # index buffer
-    movq    $1000,%rsi          # set maximum length
+    movq    %rsp,%rdi           # index that
+    movq    $1024,%rsi          # set maximum length
+    call    pa_dates            # get time string in buffer
+    movq    %rsp,%rdi           # index buffer
+    movq    $1024,%rsi          # set maximum length
     call    cstr2pstr           # convert to pstring
-    addq    $1024,$rsp          # deallocate stack buffer
+    addq    $1024,%rsp          # deallocate stack buffer
     postamble
 
 # procedure writetime(var f: text; t: integer); external;
@@ -202,7 +219,14 @@ services.writetime$p_fc_i:
 # overload procedure writetime(t: integer); external;
 
 services.writetime$p_i:
-    procedure   pa_writetime, 1
+    preamble    0, 2
+    pushq   %rsi                # save t
+    leaq    output(%rip),%rdi   # index pseudo output file
+    call    psystem_libcwrfil   # convert Pascaline file to libc
+    movq    %rax,%rdi           # place FILE*
+    popq    %rsi                # restore t
+    call    pa_writetime        # call C function
+    postamble
 
 # procedure writedate(var f: text; t: integer); external;
 
@@ -218,7 +242,14 @@ services.writedate$p_fc_i:
 # overload procedure writedate(t: integer); external;
 
 services.writedate$p_i:
-    procedure   pa_writedate, 1
+    preamble    0, 2
+    pushq   %rsi                # save t
+    leaq    output(%rip),%rdi   # index pseudo output file
+    call    psystem_libcwrfil   # convert Pascaline file to libc
+    movq    %rax,%rdi           # place FILE*
+    popq    %rsi                # restore t
+    call    pa_writedate        # call C function
+    postamble
 
 # function time: integer; external;
 
@@ -236,18 +267,112 @@ services.clock$f:
    function pa_clock, 0
 
 # function elapsed(r: integer): integer; external;
+
+services.elapsed$f_i:
+    function pa_elapsed, 1
+
 # function validfile(view s: string): boolean; external;
+
+services.validfile$f_vc_i:
+    function pa_validfile, 2
+
 # overload function validfile(view s: pstring): boolean; external;
+
+services.validfile$f_pvc:
+    preamble    1, 3
+    movq    (%rdi),%rsi         # move string len to 2nd
+    addq    $8,%rdi             # index string data
+    call    pa_validfile        # call C routine
+    postamble
+
 # function validpath(view s: string): boolean; external;
+
+services.validpath$f_vc_i:
+    function pa_validpath, 2
+
 # overload function validpath(view s: pstring): boolean; external;
+
+services.validpath$f_pvc:
+    preamble    1, 3
+    movq    (%rdi),%rsi         # move string len to 2nd
+    addq    $8,%rdi             # index string data
+    call    pa_validpath        # call C routine
+    postamble
+
 # function wild(view s: string): boolean; external;
+
+services.wild$f_vc_i:
+    function pa_wild, 2
+
 # overload function wild(view s: pstring): boolean; external;
+
+services.wild$f_pvc:
+    preamble    1, 3
+    movq    (%rdi),%rsi         # move string len to 2nd
+    addq    $8,%rdi             # index string data
+    call    pa_wild             # call C routine
+    postamble
+
 # procedure getenv(view ls: string; var ds: string); external;
+
+services.getenv$p_vc_vc:
+    preamble    0, 4
+    pushq   %rdx                # save string
+    pushq   %rcx                # save length
+    call    pa_getenvl          # call C routine
+    pop     %rsi                # restore length
+    popq    %rdi                # restore string
+    call    csttr2pad           # convert result to padded
+    postamble
+
 # overload function getenv(view ls: string): pstring; external;
+
+services.getenv$f_vc:
+    preamble    1, 2
+    subq    $1024,%rsp          # allocate stack buffer
+    movq    %rsp,%rdx           # index that
+    movq    $1024,%rcx          # set maximum length
+    call    pa_getenvl          # get string in buffer
+    movq    %rsp,%rdi           # index buffer
+    movq    $1024,%rsi          # set maximum length
+    call    cstr2pstr           # convert to pstring
+    addq    $1024,%rsp          # deallocate stack buffer
+    postamble
+
 # procedure setenv(view sn, sd: string); external;
+
+services.setenv$p_vc_vc:
+    procedure pa_setenvl, 4
+
 # overload procedure setenv(sn: pstring; view sd: string); external;
+
+services.setenv$p_pvc_vc:
+    preamble    0, 3
+    movq    (%rdi),%rsi         # move string len to 2nd
+    addq    $8,%rdi             # index string data
+    call    setenvl             # call C routine
+    postamble
+
 # overload procedure setenv(view sn: string; sd: pstring); external;
+
+services.setenv$p_vc_pvc:
+    preamble    0, 3
+    movq    (%rdx),%rcx         # move string len to 2nd
+    addq    $8,%rdx             # index string data
+    call    setenvl             # call C routine
+    postamble
+
 # overload procedure setenv(sn, sd: pstring); external;
+
+services.setenv$p_pvc_pvc:
+    preamble    0, 3
+    movq    (%rdi),%rsi         # move string len to 2nd
+    addq    $8,%rdi             # index string data
+    movq    (%rdx),%rcx         # move string len to 2nd
+    addq    $8,%rdx             # index string data
+    call    setenvl             # call C routine
+    postamble
+
 # procedure allenv(var el: envptr); external;
 # procedure remenv(view sn: string); external;
 # overload procedure remenv(view sn: pstring); external;
@@ -323,6 +448,12 @@ services.clock$f:
 # function pa_datesep: char; external;
 # function pa_timesep: char; external;
 # function pa_currchr: char; external;
+
+#
+# Constants
+#
+output:
+    .byte   2
 
 #
 # Next module in series
