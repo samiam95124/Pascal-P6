@@ -11,6 +11,20 @@
 *                                                                              *
 *******************************************************************************/
 
+#ifndef __SERVICES_WRAPPER_H__
+#define __SERVICES_WRAPPER_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Pascaline string
+ *
+ * Passed as parameter is char* followed by length 
+ */
+typedef char* string;
+
 /*
 * Header structure for pstring.
 *
@@ -53,4 +67,28 @@ typedef struct filrec {
 typedef filrec* filptr; /* pointer to file records */
 
 /* pascaline file pointer */
-typedef pfile unsigned char*;
+typedef unsigned char* pfile;
+
+/*
+ * Length of string buffers
+ */
+#define BUFLEN 1024
+
+/*
+ * Services support routines
+ */
+
+pstring cstr2pstr(char* cs, int l); /* convert C string to pstring */
+char* pstr2cstr(pstring ps); /* convert pstring to C string in place */
+void pstr2cstrl(pstring ps, char** s, int* l); /* convert pstring to C string with length */
+void cpstrp2cstrl(pstring* ps, int* l); /* convert pstring to C string in place with length */
+void cstr2pad(char* cs, int l); /* convert C string to padded Pascaline */
+void cfilelist2pascaline(pa_filptr* fla); /* convert C files list to Pascaline files list */
+void cenvlist2pascaline(pa_envptr* eva); /* convert C environment string list to Pascaline */
+void cenvlist2c(pa_envptr* eva); /* convert Pascaline environment string list to C */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

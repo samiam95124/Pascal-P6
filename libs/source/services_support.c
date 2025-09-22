@@ -115,6 +115,27 @@ void cpstrp2cstrl(
 
 /********************************************************************************
 
+Convert C zero terminated string to padded
+
+Accepts a C string in buffer with a buffer length. The buffer past the string is
+cleared to spaces, including the terminating zero.
+
+********************************************************************************/
+
+void cstr2pad(
+    /** C string buffer */ char* cs,
+    /** length of buffer */ int l
+)
+
+{
+
+    while (l && *cs) { l--; cs++; }
+    while (l) { l--; *cs++ = ' '; }
+
+}
+
+/********************************************************************************
+
 Convert file list to Pascaline form
 
 Accepts a file list from the list()/listl() call in services.
@@ -201,29 +222,6 @@ void cfilelist2pascaline(
     *fla = (pa_filptr)nl;
 
 }
-
-/********************************************************************************
-
-Convert C zero terminated string to padded
-
-Accepts a C string in buffer with a buffer length. The buffer past the string is
-cleared to spaces, including the terminating zero.
-
-********************************************************************************/
-
-void cstr2pad(
-    /** C string buffer */ char* cs,
-    /** length of buffer */ int l
-)
-
-{
-
-    while (l && *cs) { l--; cs++; }
-    while (l) { l--; *cs++ = ' '; }
-
-}
-
-
 
 /********************************************************************************
 

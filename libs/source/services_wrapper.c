@@ -29,7 +29,31 @@
 
 /********************************************************************************
 
+procedure list(view f: string; var  l: filptr);
+->
+void pa_listl(char* f, int l, pa_filrec **lp);
+
+********************************************************************************/
+
+void wrapper_list(
+    /** filename */  string fn, int fnl,
+    /** file list */ filptr* fl
+)
+
+{
+
+    /* get files list in C form */
+    pa_listl(fn, fnl, fl); 
+    /* convert list to Pascaline form */
+    cfilelist2pascaline(fl);
+
+}
+
+/********************************************************************************
+
 procedure list(view f: pstring; var  l: filptr);
+->
+extern void pa_listl(char* f, int l, pa_filrec **lp);
 
 ********************************************************************************/
 
@@ -40,7 +64,7 @@ void wrapper_listp(
 
 {
 
-    /** string pointer */ char* s;
+    /** string pointer */ string s;
     /** string length */  int l;
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
@@ -53,28 +77,30 @@ void wrapper_listp(
 
 /********************************************************************************
 
-procedure times(var s: string; t: integer);
+procedure times(out s: string; t: integer);
+->
+void pa_times(char* s, int sl, int t);
 
 ********************************************************************************/
 
 void wrapper_times(
-    /** string pointer */ char* s,
+    /** string pointer */ string s,
     /** string length */  int l,
     /** time          */  long t
 )
 
 {
 
-    pa_times(s, l); /* find time string */
+    pa_times(s, l, t); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
-
-
 
 }
 
 /********************************************************************************
 
 function times(t: integer): pstring;
+->
+void pa_times(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -84,18 +110,20 @@ pstring wrapper_timesp(
 
 {
 
-    char buff[1024];
+    char buff[BUFLEN];
 
-    pa_times(buff, 1024); /* find time string */
+    pa_times(buff, BUFLEN, t); /* find time string */
 `    
-    return (cstr2pstr(buff, 1024); /* return pstring */
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
 }
 
 
 /********************************************************************************
 
-procedure times(var s: string; t: integer);
+procedure dates(var s: string; t: integer);
+->
+pa_dates(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -107,14 +135,16 @@ void wrapper_dates(
 
 {
 
-    pa_dates(s, l); /* find time string */
+    pa_dates(s, l, t); /* find time string */
     cstr2pad(s, l); /* convert output to padded */
 
 }
 
 /********************************************************************************
 
-function times(t: integer): pstring;
+function dates(t: integer): pstring;
+->
+pa_dates(char* s, int sl, int t);
 
 ********************************************************************************/
 
@@ -124,17 +154,19 @@ pstring wrapper_datesp(
 
 {
 
-    char buff[1024];
+    char buff[BUFLEN];
 
-    pa_dates(buff, 1024); /* find time string */
+    pa_dates(buff, BUFLEN, t); /* find time string */
 `    
-    return (cstr2pstr(buff, 1024); /* return pstring */
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
 }
 
 /********************************************************************************
 
 procedure writetime(var f: text; t: integer);
+->
+void pa_writetime(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -155,6 +187,8 @@ void wrapper_writetimef(
 /********************************************************************************
 
 procedure writetime(var f: text; t: integer);
+->
+void pa_writetime(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -170,7 +204,9 @@ void wrapper_writetime(
 
 /********************************************************************************
 
-procedure writetime(var f: text; t: integer);
+procedure writedatef(var f: text; t: integer);
+->
+void pa_writedate(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -190,7 +226,9 @@ void wrapper_writedatef(
 
 /********************************************************************************
 
-procedure writetime(var f: text; t: integer);
+procedure writedate(var f: text; t: integer);
+->
+void pa_writedate(FILE *f, int t);
 
 ********************************************************************************/
 
@@ -207,6 +245,8 @@ void wrapper_writedate(
 /********************************************************************************
 
 function time: integer;
+->
+long pa_time(void);
 
 ********************************************************************************/
 
@@ -221,6 +261,8 @@ long wrapper_time(void)
 /********************************************************************************
 
 function local(t: integer): integer;
+->
+long pa_local(long t);
 
 ********************************************************************************/
 
@@ -237,6 +279,8 @@ long wrapper_local(
 /********************************************************************************
 
 function clock: integer;
+->
+long pa_clock(void);
 
 ********************************************************************************/
 
@@ -251,6 +295,8 @@ long wrapper_clock(void)
 /********************************************************************************
 
 function elapsed(r: integer): integer;
+->
+long pa_elapsed(long r);
 
 ********************************************************************************/
 
@@ -267,6 +313,8 @@ long wrapper_elapsed(
 /********************************************************************************
 
 function validfile(view s: string): boolean;
+->
+int  pa_validfilel(char* s, int l);
 
 ********************************************************************************/
 
@@ -284,6 +332,8 @@ int wrapper_validfile(
 /********************************************************************************
 
 function validfile(view s: pstring): boolean;
+->
+int  pa_validfilel(char* s, int l);
 
 ********************************************************************************/
 
@@ -305,6 +355,8 @@ int wrapper_validfilep(
 /********************************************************************************
 
 function validpath(view s: string): boolean;
+->
+int  pa_validpathl(char* s, int l);
 
 ********************************************************************************/
 
@@ -322,6 +374,8 @@ int wrapper_validpath(
 /********************************************************************************
 
 function validpath(view s: pstring): boolean;
+->
+int  pa_validpathl(char* s, int l);
 
 ********************************************************************************/
 
@@ -343,62 +397,92 @@ int wrapper_validpathp(
 /********************************************************************************
 
 function wild(view s: string): boolean;
+->
+int  pa_wildl(char* s, int l);
 
 ********************************************************************************/
 
-services.wild$f_vc_i:
-    function pa_wild, 2
+int wrapper_wild(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+)
+
+{
+
+    return (pa_wildl(s, l));
+
+}
 
 /********************************************************************************
 
 function wild(view s: pstring): boolean;
+->
+int  pa_wildl(char* s, int l);
 
 ********************************************************************************/
 
-services.wild$f_pvc:
-    preamble    1, 3
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    pa_wild             # call C routine
-    postamble
+int wrapper_wildp(
+    /** filename */  pstring fn,
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    return(pa_wildl(s, l));
+
+}
 
 /********************************************************************************
 
-procedure getenv(view ls: string; var ds: string);
+procedure getenv(view ls: string; out ds: string);
+->
+void pa_getenvl(char* ls, int lsl, char* ds, int dsl);
 
 ********************************************************************************/
 
-services.getenv$p_vc_vc:
-    preamble    0, 4
-    pushq   %rdx                # save string
-    pushq   %rcx                # save length
-    call    pa_getenvl          # call C routine
-    pop     %rsi                # restore length
-    popq    %rdi                # restore string
-    call    cstr2pad            # convert result to padded
-    postamble
+void wrapper_getenv(
+    /** variable name */ string  s, int sl,
+    /** variable value */ string d, int dl
+)
+
+{
+
+    pa_getenvl(s, sl, d, dl); /* find environment string */
+    cstr2pad(d, dl); /* convert output to padded */
+
+}
 
 /********************************************************************************
 
 function getenv(view ls: string): pstring;
+->
+void pa_getenvl(char* ls, int lsl, char* ds, int dsl);
 
 ********************************************************************************/
 
-services.getenv$f_vc:
-    preamble    1, 2
-    subq    $1024,%rsp          # allocate stack buffer
-    movq    %rsp,%rdx           # index that
-    movq    $1024,%rcx          # set maximum length
-    call    pa_getenvl          # get string in buffer
-    movq    %rsp,%rdi           # index buffer
-    movq    $1024,%rsi          # set maximum length
-    call    cstr2pstr           # convert to pstring
-    addq    $1024,%rsp          # deallocate stack buffer
-    postamble
+pstring wrapper_getenvp(
+    /** variable name */ string  s, int sl
+)
+
+{
+
+    char buff[BUFLEN];
+
+    pa_getenvl(s, sl, buff, BUFLEN); /* find environment string */
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
 procedure setenv(view sn, sd: string);
+->
+void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
@@ -408,6 +492,8 @@ services.setenv$p_vc_vc:
 /********************************************************************************
 
 procedure setenv(sn: pstring; view sd: string);
+->
+void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
@@ -421,6 +507,8 @@ services.setenv$p_pvc_vc:
 /********************************************************************************
 
 procedure setenv(view sn: string; sd: pstring);
+->
+void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
@@ -435,6 +523,8 @@ services.setenv$p_vc_pvc:
 /********************************************************************************
 
 procedure setenv(sn, sd: pstring);
+->
+void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
@@ -450,6 +540,8 @@ services.setenv$p_pvc_pvc:
 /********************************************************************************
 
 procedure allenv(var el: envptr);
+->
+void pa_allenv(pa_envrec **el);
 
 ********************************************************************************/
 
@@ -463,6 +555,8 @@ services.allenv$p_:
 /********************************************************************************
 
 procedure remenv(view sn: string);
+->
+void pa_remenvl(char* sn, int snl);
 
 ********************************************************************************/
 
@@ -472,6 +566,8 @@ services.remenv$p_vc:
 /********************************************************************************
 
 procedure remenv(view sn: pstring);
+->
+extern void pa_remenvl(char* sn, int snl);
 
 ********************************************************************************/
 
@@ -485,6 +581,8 @@ services.remenv$p_pvc:
 /********************************************************************************
 
 procedure exec(view cmd: string);
+->
+void pa_execl(char* cmd, int cmdl);
 
 ********************************************************************************/
 
@@ -494,6 +592,8 @@ services.exec$p_vc:
 /********************************************************************************
 
 procedure exec(cmd: pstring);
+->
+void pa_execl(char* cmd, int cmdl);
 
 ********************************************************************************/
 
@@ -507,6 +607,8 @@ services.exec$p_pvc:
 /********************************************************************************
 
 procedure exece(view cmd: string; el: envptr);
+->
+void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 
 ********************************************************************************/
 
@@ -526,6 +628,8 @@ services.exece$p_vc:
 /********************************************************************************
 
 procedure exece(cmd: pstring; el: envptr);
+->
+void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 
 ********************************************************************************/
 
@@ -547,6 +651,8 @@ services.exece$p_pvc:
 /********************************************************************************
 
 procedure execw(view cmd: string; var e: integer);
+->
+void pa_execwl(char* cmd, int cmdl, int *e);
 
 ********************************************************************************/
 
@@ -556,6 +662,8 @@ services.execw$p_vc_i:
 /********************************************************************************
 
 procedure execw(cmd: pstring; var e: integer);
+->
+void pa_execwl(char* cmd, int cmdl, int *e);
 
 ********************************************************************************/
 
@@ -569,6 +677,8 @@ services.execw$p_pvc_i:
 /********************************************************************************
 
 procedure execew(view cmd: string; el: envptr; var e: integer);
+->
+void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 ********************************************************************************/
 
@@ -590,6 +700,8 @@ services.exece$p_vc_xx_i:
 /********************************************************************************
 
 procedure execew(cmd: pstring; el: envptr; var e: integer);
+->
+void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 ********************************************************************************/
 
@@ -612,7 +724,9 @@ services.exece$p_pvc_xx_i:
 
 /********************************************************************************
 
-procedure getcur(var fn: string);
+procedure getcur(out fn: string);
+->
+void pa_getcur(char* fn, int l);
 
 ********************************************************************************/
 
@@ -629,6 +743,8 @@ services.getcur$p_vc_i:
 /********************************************************************************
 
 function getcur: pstring;
+->
+void pa_getcur(char* fn, int l);
 
 ********************************************************************************/
 
@@ -648,6 +764,8 @@ services.getcur$f:
 /********************************************************************************
 
 procedure setcur(view fn: string);
+->
+void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -657,6 +775,8 @@ services.setcur$p_vc:
 /********************************************************************************
 
 procedure setcur(fn: pstring);
+->
+void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
@@ -669,7 +789,10 @@ services.setcur$f_pvc:
 
 /********************************************************************************
 
-brknam wrapper function with stringl
+procedure brknam(view fn: string; out p, n, e: string);
+->
+void pa_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
@@ -693,7 +816,10 @@ void wrapper_brknam(
 
 /********************************************************************************
 
-brknam wrapper function with pstring
+procedure brknam(view fn: string; out p, n, e: pstring);
+->
+void pa_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
@@ -721,7 +847,10 @@ void wrapper_brknamp(
 
 /********************************************************************************
 
-brknam wrapper function with pstring
+procedure brknam(fn: pstring; out p, n, e: pstring);
+->
+void pa_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
@@ -750,342 +879,465 @@ void wrapper_brknamp(
 
 /********************************************************************************
 
-procedure maknam(var fn: string; view p, n, e: string);
+procedure maknam(out fn: string; view p, n, e: string);
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(view p, n, e: string): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(view p: string; view n: string; e: pstring): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(view p: string; n: pstring; view e: string): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(view p: string; n: pstring; e: pstring): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(p: pstring; view n: string; view e: string): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(p: pstring; view n: string; e: pstring): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(p: pstring; n: pstring; view e: string): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function maknam(p: pstring; n: pstring; e: pstring): pstring;
+->
+void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e, 
+                int el);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure fulnam(var fn: string);
+->
+void pa_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function fulnam(view fn: string): pstring;
+->
+void pa_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
-procedure getpgm(var p: string);
+procedure getpgm(out p: string);
+->
+extern void pa_getpgm(char* p, int pl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function getpgm: pstring;
+->
+extern void pa_getpgm(char* p, int pl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
-procedure getusr(var fn: string);
+procedure getusr(out fn: string);
+->
+void pa_getusr(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function getusr: pstring;
+->
+void pa_getusr(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setatr(view fn: string; a: attrset);
+->
+pa_setatr(char* fn, pa_attrset a);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setatr(fn: pstring; a: attrset);
+->
+void pa_setatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resatr(view fn: string; a: attrset);
+->
+void pa_resatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resatr(fn: pstring; a: attrset);
+->
+void pa_resatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure bakupd(view fn: string);
+->
+void pa_bakupdl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure bakupd(fn: pstring);
+->
+void pa_bakupdl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setuper(view fn: string; p: permset);
+->
+void pa_setuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setuper(fn: pstring; p: permset);
+->
+void pa_setuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resuper(view fn: string; p: permset);
+->
+void pa_resuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resuper(fn: pstring; p: permset);
+->
+void pa_resuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setgper(view fn: string; p: permset);
+->
+void pa_setgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setgper(fn: pstring; p: permset);
+->
+void pa_setgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resgper(view fn: string; p: permset);
+->
+void pa_resgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resgper(fn: pstring; p: permset);
+->
+void pa_resgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setoper(view fn: string; p: permset);
+->
+void pa_setoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure setoper(fn: pstring; p: permset);
+->
+void pa_setoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resoper(view fn: string; p: permset);
+->
+void pa_resoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure resoper(fn: pstring; p: permset);
+->
+void pa_resoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure makpth(view fn: string);
+->
+void pa_makpthl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure makpth(fn: pstring);
+->
+void pa_makpthl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure rempth(view fn: string);
+->
+void pa_rempthl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure rempth(fn: pstring);
+->
+void pa_rempthl(char* fn, int fnl);
 
 ********************************************************************************/
 
 /********************************************************************************
 
-procedure filchr(var fc: schar);
+procedure filchr(out fc: schar);
+->
+void pa_filchr(pa_chrset fc);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function optchr: char;
+->
+char pa_optchr(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function pthchr: char;
+->
+char pa_pthchr(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function latitude: integer;
+->
+int  pa_latitude(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function longitude: integer;
+->
+int  pa_longitude(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function altitude: integer;
+->
+int  pa_altitude(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function country: integer;
+->
+int  pa_country(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure countrys(view s: string; len: integer; c: integer);
+->
+void pa_countrys(char* s, int sl, int c);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function timezone: integer;
+->
+int  pa_timezone(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function daysave: integer;
+->
+int  pa_daysave(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function time24hour: integer;
+->
+int pa_time24hour(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function language: integer;
+->
+int pa_language(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 procedure languages(view s: string; len: integer; l: integer);
+->
+void pa_languages(char* s, int sl, int l);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function decimal: char;
+->
+char pa_decimal(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function numbersep: char;
+->
+char pa_numbersep(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function timeorder: integer;
+->
+int  pa_timeorder(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function dateorder: integer;
+->
+int  pa_dateorder(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function datesep: char;
+->
+char pa_datesep(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function timesep: char;
+->
+char pa_timesep(void);
 
 ********************************************************************************/
 
 /********************************************************************************
 
 function currchr: char;
+->
+char pa_currchr(void);
 
 ********************************************************************************/
