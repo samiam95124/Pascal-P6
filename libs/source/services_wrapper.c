@@ -113,7 +113,7 @@ pstring wrapper_timesp(
     char buff[BUFLEN];
 
     pa_times(buff, BUFLEN, t); /* find time string */
-`    
+
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
 }
@@ -157,7 +157,7 @@ pstring wrapper_datesp(
     char buff[BUFLEN];
 
     pa_dates(buff, BUFLEN, t); /* find time string */
-`    
+
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
 }
@@ -486,8 +486,16 @@ void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
-services.setenv$p_vc_vc:
-    procedure pa_setenvl, 4
+void wrapper_setenv(
+    /** name */ string n, int nl,
+    /** variable */ string v, int vl
+)
+
+{
+
+    pa_setenvl(n, nl, v, vl)
+
+}
 
 /********************************************************************************
 
@@ -497,12 +505,21 @@ void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
-services.setenv$p_pvc_vc:
-    preamble    0, 3
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    setenvl             # call C routine
-    postamble
+void wrapper_setenvps(
+    /** name */ pstring n,
+    /** variable */ string v, int vl
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(n, &s, &l); /* get cstr/len from pstring */
+
+    pa_setenvl(s, l, v, vl);
+
+}
 
 /********************************************************************************
 
@@ -512,13 +529,21 @@ void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
-services.setenv$p_vc_pvc:
-    preamble    0, 3
-    movq    (%rdx),%rcx         # move string len to 2nd
-    addq    $8,%rdx             # index string data
-    call    setenvl             # call C routine
-    postamble
+void wrapper_setenvsp(
+    /** name */     string n, int nl,
+    /** variable */ pstring v
+)
 
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(v, &s, &l); /* get cstr/len from pstring */
+
+    pa_setenvl(n, nl, s, l);
+
+}
 
 /********************************************************************************
 
@@ -528,14 +553,24 @@ void pa_setenvl(char* sn, int snl, char* sd, int sdl);
 
 ********************************************************************************/
 
-services.setenv$p_pvc_pvc:
-    preamble    0, 3
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    movq    (%rdx),%rcx         # move string len to 2nd
-    addq    $8,%rdx             # index string data
-    call    setenvl             # call C routine
-    postamble
+void wrapper_setenvpp(
+    /** name */     pstring n,
+    /** variable */ pstring v
+)
+
+{
+
+    /** string pointer */ char* ns;
+    /** string length */  int nl;
+    /** string pointer */ char* vs;
+    /** string length */  int vl;
+
+    pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
+    pstr2cstrl(v, &vs, &vl); /* get cstr/len from pstring */
+
+    pa_setenvl(ns, nl, vs, vl);
+
+}
 
 /********************************************************************************
 
@@ -545,12 +580,14 @@ void pa_allenv(pa_envrec **el);
 
 ********************************************************************************/
 
-services.allenv$p_:
-    preamble    0, 1
-    push    %rdi                # save env*
-    call    pa_allenv           # call C function
-    call    cenvlist2pascaline  # convert env list
-    postamble
+void allenv(pa_envrec** el)
+
+{
+
+    pa_allenv(el);
+    cenvlist2pascaline(*el);
+
+}
 
 /********************************************************************************
 
@@ -560,8 +597,16 @@ void pa_remenvl(char* sn, int snl);
 
 ********************************************************************************/
 
-services.remenv$p_vc:
-    procedure   pa_remenvl, 0, 2
+void wrapper_remenv(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+)
+
+{
+
+    pa_remenvl(s, l);
+
+}
 
 /********************************************************************************
 
@@ -571,12 +616,20 @@ extern void pa_remenvl(char* sn, int snl);
 
 ********************************************************************************/
 
-services.remenv$p_pvc:
-    preamble    0, 2
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    pa_remenvl             # call C routine
-    postamble
+void wrapper_remenvp(
+    /** name */  pstring n,
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(n, &s, &l); /* get cstr/len from pstring */
+
+    pa_remenvl(s, l);
+
+}
 
 /********************************************************************************
 
@@ -586,8 +639,16 @@ void pa_execl(char* cmd, int cmdl);
 
 ********************************************************************************/
 
-services.exec$p_vc:
-    procedure   pa_execl, 0, 2
+void wrapper_exec(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+)
+
+{
+
+    pa_execl(s, l);
+
+}
 
 /********************************************************************************
 
@@ -597,12 +658,20 @@ void pa_execl(char* cmd, int cmdl);
 
 ********************************************************************************/
 
-services.exec$p_pvc:
-    preamble    0, 2
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    pa_execl             # call C routine
-    postamble
+void wrapper_execp(
+    /** filename */  pstring fn,
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    pa_execl(s, l);
+
+}
 
 /********************************************************************************
 
@@ -612,18 +681,18 @@ void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 
 ********************************************************************************/
 
-services.exece$p_vc:
-    preamble    0, 3
-    pushq       %rdi            # save cmd string
-    pushq       %rsi            # save cmd len
-    pushq       %rdx            # save el
-    mov         %rdx,%rdi       # set el as 1st par
-    call        cenvlist2pascaline # convert env list
-    popq        %rdx            # restore el
-    popq        %rsi            # restore cmd len
-    popq`       %rdi            # restore cmd string
-    call        pa_execel       # call C routine
-    postamble
+void wrapper_exece(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+    /** environment */    pa_envptr el
+)
+
+{
+
+    cenvlist2c(el); /* convert environment to C form */
+    pa_execel(s, l, el); /* execute */
+
+}
 
 /********************************************************************************
 
@@ -633,94 +702,115 @@ void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 
 ********************************************************************************/
 
-services.exece$p_pvc:
-    preamble    0, 3
-    movq    (%rdi),%rsi     # move string len to 2nd
-    addq    $8,%rdi         # index string data
-    pushq   %rdi            # save cmd string
-    pushq   %rsi            # save cmd len
-    pushq   %rdx            # save el
-    mov     %rdx,%rdi       # set el as 1st par
-    call    cenvlist2pascaline # convert env list
-    popq    %rdx            # restore el
-    popq    %rsi            # restore cmd len
-    popq`   %rdi            # restore cmd string
-    call    pa_execel       # call C routine
-    postamble
+void wrapper_execep(
+    /** filename */    pstring fn,
+    /** environment */ pa_envptr el
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    cenvlist2c(el); /* convert environment to C form */
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    pa_execel(s, l, el);
+
+}
 
 /********************************************************************************
 
-procedure execw(view cmd: string; var e: integer);
+procedure execw(view cmd: string; out e: integer);
 ->
 void pa_execwl(char* cmd, int cmdl, int *e);
 
 ********************************************************************************/
 
-services.execw$p_vc_i:
-    procedure   pa_execwl, 0, 3
+void wrapper_execw(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+    /** error */          int *e
+)
+
+{
+
+    pa_execwl(s, l, e);
+
+}
 
 /********************************************************************************
 
-procedure execw(cmd: pstring; var e: integer);
+procedure execw(cmd: pstring; out e: integer);
 ->
 void pa_execwl(char* cmd, int cmdl, int *e);
 
 ********************************************************************************/
 
-services.execw$p_pvc_i:
-    preamble    0, 3
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    pa_execwl            # call C routine
-    postamble
+void wrapper_execwp(
+    /** filename */    pstring fn,
+    /** environment */ pa_envptr el,
+    /** error */       int *e
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    pa_execwl(s, l, e);
+
+}
 
 /********************************************************************************
 
-procedure execew(view cmd: string; el: envptr; var e: integer);
+procedure execew(view cmd: string; el: envptr; out e: integer);
 ->
 void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 ********************************************************************************/
 
-services.exece$p_vc_xx_i:
-    preamble    0, 4
-    pushq       %rdi            # save cmd string
-    pushq       %rsi            # save cmd len
-    pushq       %rdx            # save el
-    pushq       %rcx            # save e
-    mov         %rdx,%rdi       # set el as 1st par
-    call        cenvlist2pascaline # convert env list
-    popq        %rcx            # restore e
-    popq        %rdx            # restore el
-    popq        %rsi            # restore cmd len
-    popq`       %rdi            # restore cmd string
-    call        pa_execewl      # call C routine
-    postamble
+void wrapper_execew(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+    /** environment */    pa_envptr el,
+    /** error */          int *e
+)
+
+{
+
+    cenvlist2c(el); /* convert environment to C form */
+    pa_execewl(s, l, el, e);
+
+}
 
 /********************************************************************************
 
-procedure execew(cmd: pstring; el: envptr; var e: integer);
+procedure execew(cmd: pstring; el: envptr; out e: integer);
 ->
 void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 ********************************************************************************/
 
-services.exece$p_pvc_xx_i:
-    preamble    0, 4
-    movq        (%rdi),%rsi     # move string len to 2nd
-    addq        $8,%rdi         # index string data
-    pushq       %rdi            # save cmd string
-    pushq       %rsi            # save cmd len
-    pushq       %rdx            # save el
-    pushq       %rcx            # save e
-    mov         %rdx,%rdi       # set el as 1st par
-    call        cenvlist2pascaline # convert env list
-    popq        %rcx            # restore e
-    popq        %rdx            # restore el
-    popq        %rsi            # restore cmd len
-    popq`       %rdi            # restore cmd string
-    call        pa_execewl      # call C routine
-    postamble
+void wrapper_execwp(
+    /** filename */    pstring fn,
+    /** environment */ pa_envptr el,
+    /** error */       int *e
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    cenvlist2c(el); /* convert environment to C form */
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    pa_execewl(s, l, el, e);
+
+}
 
 /********************************************************************************
 
@@ -730,15 +820,17 @@ void pa_getcur(char* fn, int l);
 
 ********************************************************************************/
 
-services.getcur$p_vc_i:
-    preamble    0, 2
-    pushq   %rdi                # save string
-    pushq   %rsi                # save length
-    call    pa_getcur           # call C function
-    popq    %rsi                # restore length
-    pop     %rdi                # restore string
-    call    cstr2pad            # convert to padded
-    postamble
+void wrapper_getcur(
+    /** string pointer */ string s,
+    /** string length */  int l,
+)
+
+{
+
+    pa_getcur(s, l); /* find time string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
 
 /********************************************************************************
 
@@ -748,18 +840,17 @@ void pa_getcur(char* fn, int l);
 
 ********************************************************************************/
 
-services.getcur$f:
-    preamble    1, 1
-    movq    %rdi,%rdx           # place t
-    subq    $1024,%rsp          # allocate stack buffer
-    movq    %rsp,%rdi           # index that
-    movq    $1024,%rsi          # set maximum length
-    call    pa_getcur           # get time string in buffer
-    movq    %rsp,%rdi           # index buffer
-    movq    $1024,%rsi          # set maximum length
-    call    cstr2pstr           # convert to pstring
-    addq    $1024,%rsp          # deallocate stack buffer
-    postamble
+pstring wrapper_getcurp(void)
+
+{
+
+    char buff[BUFLEN];
+
+    pa_getcur(buff, BUFLEN); /* find time string */
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -769,8 +860,16 @@ void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
-services.setcur$p_vc:
-    procedure pa_setcurl, 0, 2
+int wrapper_setcur(
+    /** string pointer */ char* s,
+    /** string length */  int l,
+)
+
+{
+
+    return (pa_setcurl(s, l));
+
+}
 
 /********************************************************************************
 
@@ -780,12 +879,20 @@ void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
-services.setcur$f_pvc:
-    preamble    0, 2
-    movq    (%rdi),%rsi         # move string len to 2nd
-    addq    $8,%rdi             # index string data
-    call    pa_setcurl          # call C routine
-    postamble
+int wrapper_setcurp(
+    /** filename */  pstring fn,
+)
+
+{
+
+    /** string pointer */ char* s;
+    /** string length */  int l;
+
+    pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
+
+    return(pa_setcurl(s, l));
+
+}
 
 /********************************************************************************
 
@@ -886,6 +993,24 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
+void wrapper_maknam(
+    /** string pointer */ string fn,
+    /** string length */  int fnl,
+    /** string pointer */ string p,
+    /** string length */  int pl,
+    /** string pointer */ string n,
+    /** string length */  int nl,
+    /** string pointer */ string e,
+    /** string length */  int el
+)
+
+{
+
+    pa_maknaml(fn, fnl, p, pl, n, nl, e, el);
+    cstr2pad(fn, fnl); /* convert output to padded */
+
+}
+
 /********************************************************************************
 
 function maknam(view p, n, e: string): pstring;
@@ -894,6 +1019,27 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
                 int el);
 
 ********************************************************************************/
+
+pstring wrapper_maknamp(
+    /** string pointer */ string fn,
+    /** string length */  int fnl,
+    /** string pointer */ string p,
+    /** string length */  int pl,
+    /** string pointer */ string n,
+    /** string length */  int nl,
+    /** string pointer */ string e,
+    /** string length */  int el
+)
+
+{
+
+    char buff[BUFLEN];
+
+    pa_maknaml(buff, BUFLEN, p, pl, n, nl, e, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -904,6 +1050,29 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
+pstring wrapper_maknampspp(
+    /** string pointer */ pstring p,
+    /** string pointer */ string n,
+    /** string length */  int nl,
+    /** string pointer */ pstring e
+)
+
+{
+
+    string ps;
+    int    pl;
+    string es;
+    int    el;
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
+    pa_maknaml(buff1, BUFLEN, p, pl, n, nl, es, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
+
 /********************************************************************************
 
 function maknam(view p: string; n: pstring; view e: string): pstring;
@@ -912,6 +1081,29 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
                 int el);
 
 ********************************************************************************/
+
+pstring wrapper_maknamppps(
+    /** string pointer */ pstring p,
+    /** string pointer */ pstring n,
+    /** string pointer */ string  e,
+    /** string length */  int     el
+)
+
+{
+
+    string ps;
+    int    pl;
+    string ns;
+    int    nl;
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
+    pa_maknaml(buff1, BUFLEN, ps, pl, ns, nl, e, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -922,6 +1114,29 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
+pstring wrapper_maknamppps(
+    /** string pointer */ string  p,
+    /** string length */  int     pl,
+    /** string pointer */ pstring n,
+    /** string pointer */ pstring e,
+)
+
+{
+
+    string ns;
+    int    nl;
+    string es;
+    int    el;
+    char buff[BUFLEN];
+
+    pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
+    pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
+    pa_maknaml(buff1, BUFLEN, p, pl, ns, nl, es, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
+
 /********************************************************************************
 
 function maknam(p: pstring; view n: string; view e: string): pstring;
@@ -930,6 +1145,27 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
                 int el);
 
 ********************************************************************************/
+
+pstring wrapper_maknamppss(
+    /** string pointer */ pstring  p,
+    /** string pointer */ pstring n,
+    /** string length */  int     nl,
+    /** string pointer */ pstring e,
+    /** string length */  int     el
+)
+
+{
+
+    string ps;
+    int    pl;
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pa_maknaml(buff1, BUFLEN, ps, pl, n, nl, e, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -940,6 +1176,29 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
+pstring wrapper_maknamppsp(
+    /** string pointer */ pstring p,
+    /** string pointer */ string  n,
+    /** string length */  int     nl,
+    /** string pointer */ pstring e
+)
+
+{
+
+    string ps;
+    int    ll;
+    string es;
+    int    el;
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
+    pa_maknaml(buff, BUFLEN, ps, pl, n, nl, es, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
+
 /********************************************************************************
 
 function maknam(p: pstring; n: pstring; view e: string): pstring;
@@ -949,6 +1208,29 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
+pstring wrapper_maknamppps(
+    /** string pointer */ pstring p,
+    /** string pointer */ pstring n,
+    /** string pointer */ pstring e,
+    /** string length */  int     el,
+)
+
+{
+
+    string ps;
+    int    pl;
+    string ns;
+    int    nl;
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
+    pa_maknaml(buff, BUFLEN, ps, pl, ns, nl, e, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
+
 /********************************************************************************
 
 function maknam(p: pstring; n: pstring; e: pstring): pstring;
@@ -957,6 +1239,32 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
                 int el);
 
 ********************************************************************************/
+
+pstring wrapper_maknamppps(
+    /** string pointer */ pstring p,
+    /** string pointer */ pstring n,
+    /** string pointer */ pstring e
+)
+
+{
+
+    string ps;
+    int    pl;
+    string ns;
+    int    nl;
+    string es;
+    int    el;
+
+    char buff[BUFLEN];
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
+    pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
+    pa_maknaml(buff, BUFLEN, ps, pl, ns, nl, es, el);
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
