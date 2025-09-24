@@ -1274,6 +1274,18 @@ void pa_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
 
+void wrapper_fulnam(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    pa_fulnam(s, l); /* find full name string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
+
 /********************************************************************************
 
 function fulnam(view fn: string): pstring;
@@ -1281,6 +1293,22 @@ function fulnam(view fn: string): pstring;
 void pa_fulnam(char* fn, int fnl);
 
 ********************************************************************************/
+
+pstring wrapper_fulnamp(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    char buff[BUFLEN];
+
+    strncpy(buff, s, l); /* copy filename to buffer */
+    pa_fulnam(buff, BUFLEN); /* find time string */
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -1290,6 +1318,18 @@ extern void pa_getpgm(char* p, int pl);
 
 ********************************************************************************/
 
+void wrapper_getpgm(
+    /** string pointer */ string s,
+    /** string length */  int l,
+)
+
+{
+
+    pa_getpgm(s, l); /* find program path string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
+
 /********************************************************************************
 
 function getpgm: pstring;
@@ -1297,6 +1337,18 @@ function getpgm: pstring;
 extern void pa_getpgm(char* p, int pl);
 
 ********************************************************************************/
+
+pstring wrapper_getpgmp(void)
+
+{
+
+    char buff[BUFLEN];
+
+    pa_getpgm(buff, BUFLEN); /* find program path string */
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -1306,6 +1358,18 @@ void pa_getusr(char* fn, int fnl);
 
 ********************************************************************************/
 
+void wrapper_getusr(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    pa_getusr(s, l); /* find time string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
+
 /********************************************************************************
 
 function getusr: pstring;
@@ -1313,6 +1377,18 @@ function getusr: pstring;
 void pa_getusr(char* fn, int fnl);
 
 ********************************************************************************/
+
+pstring wrapper_getusrp(void)
+
+{
+
+    char buff[BUFLEN];
+
+    pa_getusr(buff, BUFLEN); /* find program path string */
+
+    return (cstr2pstr(buff, BUFLEN)); /* return pstring */
+
+}
 
 /********************************************************************************
 
@@ -1322,6 +1398,18 @@ pa_setatr(char* fn, pa_attrset a);
 
 ********************************************************************************/
 
+void wrapper_setatr(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_setatrl(s, l, a[0]); /* set attributes */
+
+}
+
 /********************************************************************************
 
 procedure setatr(fn: pstring; a: attrset);
@@ -1329,6 +1417,21 @@ procedure setatr(fn: pstring; a: attrset);
 void pa_setatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
+
+void wrapper_setatrp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_setatrl(as, al, a[0]); /* set attributes */
+
+}
 
 /********************************************************************************
 
@@ -1338,6 +1441,18 @@ void pa_resatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
 
+void wrapper_setatr(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_resatrl(s, l, a[0]); /* reset attributes */
+
+}
+
 /********************************************************************************
 
 procedure resatr(fn: pstring; a: attrset);
@@ -1345,6 +1460,21 @@ procedure resatr(fn: pstring; a: attrset);
 void pa_resatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
+
+void wrapper_resatrp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_resatrl(as, al, a[0]); /* set attributes */
+
+}
 
 /********************************************************************************
 
@@ -1354,6 +1484,17 @@ void pa_bakupdl(char* fn, int fnl);
 
 ********************************************************************************/
 
+void wrapper_bakupd(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    pa_bakupdl(s, l); /* set backed up */
+
+}
+
 /********************************************************************************
 
 procedure bakupd(fn: pstring);
@@ -1361,6 +1502,21 @@ procedure bakupd(fn: pstring);
 void pa_bakupdl(char* fn, int fnl);
 
 ********************************************************************************/
+
+void wrapper_bakupdp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_bakupdl(as, al); /* set attributes */
+
+}
 
 /********************************************************************************
 
@@ -1370,6 +1526,18 @@ void pa_setuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_setuper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_setuperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure setuper(fn: pstring; p: permset);
@@ -1377,6 +1545,21 @@ procedure setuper(fn: pstring; p: permset);
 void pa_setuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_setuperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_setuperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1386,6 +1569,18 @@ void pa_resuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_resuper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_resuperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure resuper(fn: pstring; p: permset);
@@ -1393,6 +1588,21 @@ procedure resuper(fn: pstring; p: permset);
 void pa_resuperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_resuperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_resuperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1402,6 +1612,18 @@ void pa_setgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_setgper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_setgperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure setgper(fn: pstring; p: permset);
@@ -1409,6 +1631,21 @@ procedure setgper(fn: pstring; p: permset);
 void pa_setgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_setgperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_setgperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1418,6 +1655,18 @@ void pa_resgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_resgper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_resgperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure resgper(fn: pstring; p: permset);
@@ -1425,6 +1674,21 @@ procedure resgper(fn: pstring; p: permset);
 void pa_resgperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_resgperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_resgperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1434,6 +1698,18 @@ void pa_setoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_setoper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_setoperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure setoper(fn: pstring; p: permset);
@@ -1441,6 +1717,21 @@ procedure setoper(fn: pstring; p: permset);
 void pa_setoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_setoperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_setoperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1450,6 +1741,18 @@ void pa_resoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
 
+void wrapper_resoper(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** attribute set */  set a
+)
+
+{
+
+    pa_resoperl(s, l, a[0]); /* set permissions */
+
+}
+
 /********************************************************************************
 
 procedure resoper(fn: pstring; p: permset);
@@ -1457,6 +1760,21 @@ procedure resoper(fn: pstring; p: permset);
 void pa_resoperl(char* fn, int fnl, pa_permset p);
 
 ********************************************************************************/
+
+void wrapper_resoperp(
+    /** string pointer */ pstring s,
+    /** attribute set */  set a
+)
+
+{
+
+    string as;
+    int    al;
+
+    pstr2cstrl(s, &as, &al); /* get cstr/len from pstring */
+    pa_resoperl(as, al, a[0]); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1466,6 +1784,17 @@ void pa_makpthl(char* fn, int fnl);
 
 ********************************************************************************/
 
+void wrapper_makpth(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    pa_makpthl(s, l); /* make path */
+
+}
+
 /********************************************************************************
 
 procedure makpth(fn: pstring);
@@ -1473,6 +1802,20 @@ procedure makpth(fn: pstring);
 void pa_makpthl(char* fn, int fnl);
 
 ********************************************************************************/
+
+void wrapper_makpthp(
+    /** string pointer */ pstring p
+)
+
+{
+
+    string ps;
+    int    pl;
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pa_makpthl(ps, pl); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1482,6 +1825,17 @@ void pa_rempthl(char* fn, int fnl);
 
 ********************************************************************************/
 
+void wrapper_rempth(
+    /** string pointer */ string s,
+    /** string length */  int l
+)
+
+{
+
+    pa_rempthl(s, l); /* make path */
+
+}
+
 /********************************************************************************
 
 procedure rempth(fn: pstring);
@@ -1489,6 +1843,20 @@ procedure rempth(fn: pstring);
 void pa_rempthl(char* fn, int fnl);
 
 ********************************************************************************/
+
+void wrapper_makpthp(
+    /** string pointer */ pstring p
+)
+
+{
+
+    string ps;
+    int    pl;
+
+    pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
+    pa_rempthl(ps, pl); /* set permissions */
+
+}
 
 /********************************************************************************
 
@@ -1498,6 +1866,15 @@ void pa_filchr(pa_chrset fc);
 
 ********************************************************************************/
 
+void wrapper_filchr(
+    /** set of char */ set fc
+)
+
+{
+
+    pa_filchr(fc);
+
+}
 /********************************************************************************
 
 function optchr: char;
@@ -1505,6 +1882,14 @@ function optchr: char;
 char pa_optchr(void);
 
 ********************************************************************************/
+
+char wrapper_optchr(void)
+
+{
+
+    return (pa_optchr());
+
+}
 
 /********************************************************************************
 
@@ -1514,6 +1899,14 @@ char pa_pthchr(void);
 
 ********************************************************************************/
 
+char wrapper_pthchr(void)
+
+{
+
+    return (pa_pthchr());
+
+}
+
 /********************************************************************************
 
 function latitude: integer;
@@ -1521,6 +1914,14 @@ function latitude: integer;
 int  pa_latitude(void);
 
 ********************************************************************************/
+
+int wrapper_latitude(void)
+
+{
+
+    return (pa_latitude());
+
+}
 
 /********************************************************************************
 
@@ -1530,6 +1931,14 @@ int  pa_longitude(void);
 
 ********************************************************************************/
 
+int wrapper_longitude(void)
+
+{
+
+    return (pa_longitude());
+
+}
+
 /********************************************************************************
 
 function altitude: integer;
@@ -1537,6 +1946,14 @@ function altitude: integer;
 int  pa_altitude(void);
 
 ********************************************************************************/
+
+int wrapper_altitude(void)
+
+{
+
+    return (pa_altitude());
+
+}
 
 /********************************************************************************
 
@@ -1546,13 +1963,34 @@ int  pa_country(void);
 
 ********************************************************************************/
 
+int wrapper_country(void)
+
+{
+
+    return (pa_country());
+
+}
+
 /********************************************************************************
 
-procedure countrys(view s: string; len: integer; c: integer);
+procedure countrys(out s: string; c: integer);
 ->
 void pa_countrys(char* s, int sl, int c);
 
 ********************************************************************************/
+
+void wrapper_country(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** country code  */  int c
+)
+
+{
+
+    pa_countrys(s, l, c); /* find country string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
 
 /********************************************************************************
 
@@ -1562,21 +2000,45 @@ int  pa_timezone(void);
 
 ********************************************************************************/
 
+int wrapper_timezone(void)
+
+{
+
+    return (pa_timezone());
+
+}
+
 /********************************************************************************
 
-function daysave: integer;
+function daysave: boolean;
 ->
 int  pa_daysave(void);
 
 ********************************************************************************/
 
+int wrapper_daysave(void)
+
+{
+
+    return (pa_daysave());
+
+}
+
 /********************************************************************************
 
-function time24hour: integer;
+function time24hour: boolean;
 ->
 int pa_time24hour(void);
 
 ********************************************************************************/
+
+int wrapper_time24hour(void)
+
+{
+
+    return (pa_time24hour());
+
+}
 
 /********************************************************************************
 
@@ -1586,6 +2048,14 @@ int pa_language(void);
 
 ********************************************************************************/
 
+int wrapper_language(void)
+
+{
+
+    return (pa_language());
+
+}
+
 /********************************************************************************
 
 procedure languages(view s: string; len: integer; l: integer);
@@ -1593,6 +2063,19 @@ procedure languages(view s: string; len: integer; l: integer);
 void pa_languages(char* s, int sl, int l);
 
 ********************************************************************************/
+
+void wrapper_languages(
+    /** string pointer */ string s,
+    /** string length */  int l,
+    /** country code  */  int c
+)
+
+{
+
+    pa_languages(s, l, c); /* find country string */
+    cstr2pad(s, l); /* convert output to padded */
+
+}
 
 /********************************************************************************
 
@@ -1602,6 +2085,14 @@ char pa_decimal(void);
 
 ********************************************************************************/
 
+char wrapper_decimal(void)
+
+{
+
+    return (pa_decimal());
+
+}
+
 /********************************************************************************
 
 function numbersep: char;
@@ -1609,6 +2100,14 @@ function numbersep: char;
 char pa_numbersep(void);
 
 ********************************************************************************/
+
+char wrapper_numbersep(void)
+
+{
+
+    return (pa_decimal());
+
+}
 
 /********************************************************************************
 
@@ -1618,6 +2117,14 @@ int  pa_timeorder(void);
 
 ********************************************************************************/
 
+int wrapper_timeorder(void)
+
+{
+
+    return (pa_timeorder());
+
+}
+
 /********************************************************************************
 
 function dateorder: integer;
@@ -1625,6 +2132,14 @@ function dateorder: integer;
 int  pa_dateorder(void);
 
 ********************************************************************************/
+
+int wrapper_dateorder(void)
+
+{
+
+    return (pa_dateorder());
+
+}
 
 /********************************************************************************
 
@@ -1634,6 +2149,14 @@ char pa_datesep(void);
 
 ********************************************************************************/
 
+char wrapper_datesep(void)
+
+{
+
+    return (pa_datesep());
+
+}
+
 /********************************************************************************
 
 function timesep: char;
@@ -1642,6 +2165,14 @@ char pa_timesep(void);
 
 ********************************************************************************/
 
+char wrapper_timesep(void)
+
+{
+
+    return (pa_timesep());
+
+}
+
 /********************************************************************************
 
 function currchr: char;
@@ -1649,3 +2180,11 @@ function currchr: char;
 char pa_currchr(void);
 
 ********************************************************************************/
+
+char wrapper_currchr(void)
+
+{
+
+    return (pa_currchr());
+
+}
