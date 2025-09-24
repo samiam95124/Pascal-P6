@@ -88,8 +88,8 @@ void pstr2cstrl(
 
 {
 
-    *l = (*ps)->len; /* get length */
-    *s = (char*)&((*ps)->data); /* index data */
+    *l = ps->len; /* get length */
+    *s = (char*)&ps->data; /* index data */
 
 }
 
