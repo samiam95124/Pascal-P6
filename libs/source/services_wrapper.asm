@@ -78,7 +78,7 @@
     .global services.maknam$p_pvc_pvc_vc
     .global services.maknam$p_pvc_pvc_pvc
     .global services.fulnam$p_vc
-    .global services.fulnam$p_vc
+    .global services.fulnam$f_vc
     .global services.getpgm$p_vc
     .global services.getpgm$p_pvc
     .global services.getusr$p_vc
@@ -92,7 +92,7 @@
     .global services.setuper$p_vc_vi
     .global services.setuper$p_pvc_vi
     .global services.resuper$p_vc_vi
-    .global services.setuper$p_pvc_vi
+    .global services.resuper$p_pvc_vi
     .global services.setgper$p_vc_vi
     .global services.setgper$p_pvc_vi
     .global services.resgper$p_vc_vi
@@ -449,7 +449,7 @@ services.fulnam$p_vc: procedure wrapper_fulnam, 2
 
 # function fulnam(view fn: string): pstring; external;
 
-services.fulnam$p_vc: function wrapper_fulnam, 2
+services.fulnam$f_vc: function wrapper_fulnam, 2
 
 # procedure getpgm(out p: string); external;
 
@@ -505,7 +505,7 @@ services.resuper$p_vc_vi: procedure wrapper_resuper, 3
 
 # procedure resuper(fn: pstring; p: permset); external;
 
-services.setuper$p_pvc_vi: procedure wrapper_setuperp, 2
+services.resuper$p_pvc_vi: procedure wrapper_resuperp, 2
 
 # procedure setgper(view fn: string; p: permset); external;
 
