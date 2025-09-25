@@ -42,14 +42,89 @@
     .global services.validfile$f_pvc
     .global services.validpath$f_vc_i
     .global services.validpath$f_pvc
-    .global services.wild$f_vc_i
+    .global services.wild$f_vc
     .global services.wild$f_pvc
-    .global 
-    .global 
-    .global 
-    .global 
-    .global 
-    .global 
+    .global services.getenv$p_vc_vc
+    .global services.getenv$f_vc
+    .global services.setenv$p_vc_vc
+    .global services.setenv$p_pvc_vc
+    .global services.setenv$p_vc_pvc
+    .global services.setenv$p_pvc_pvc
+    .global services.allenv$p_
+    .global services.remenv$p_vc
+    .global services.remenv$p_pvc
+    .global services.exec$p_vc
+    .global services.exec$p_pvc
+    .global services.exece$p_vc
+    .global services.exece$p_pvc
+    .global services.execw$p_vc_i
+    .global services.execw$p_pvc_i
+    .global services.execew$p_vc_xx_i
+    .global services.execew$p_pvc_xx_i
+    .global services.getcur$p_vc_i
+    .global services.getcur$f
+    .global services.setcur$p_vc
+    .global services.setcur$f_pvc
+    .global services.brknam$p_vc_vc_vc_vc
+    .global services.brknam$p_vc_pvc_pvc_pvc
+    .global services.brknam$p_pvc_pvc_pvc_pvc
+    .global services.maknam$p_vc_vc_vc_vc
+    .global services.maknam$p_vc_vc_vc
+    .global services.maknam$p_vc_vc_pvc
+    .global services.maknam$p_vc_pvc_vc
+    .global services.maknam$p_vc_pvc_pvc
+    .global services.maknam$p_pvc_vc_vc
+    .global services.maknam$p_pvc_vc_pvc
+    .global services.maknam$p_pvc_pvc_vc
+    .global services.maknam$p_pvc_pvc_pvc
+    .global services.fulnam$p_vc
+    .global services.fulnam$p_vc
+    .global services.getpgm$p_vc
+    .global services.getpgm$p_pvc
+    .global services.getusr$p_vc
+    .global services.getusr$p_pvc
+    .global services.setatr$p_vc_vi
+    .global services.setatr$p_pvc_vi
+    .global services.resatr$p_vc_vi
+    .global services.resatr$p_pvc_vi
+    .global services.bakupd$p_vc
+    .global services.bakupd$p_pvc
+    .global services.setuper$p_vc_vi
+    .global services.setuper$p_pvc_vi
+    .global services.resuper$p_vc_vi
+    .global services.setuper$p_pvc_vi
+    .global services.setgper$p_vc_vi
+    .global services.setgper$p_pvc_vi
+    .global services.resgper$p_vc_vi
+    .global services.resgper$p_pvc_vi
+    .global services.setoper$p_vc_vi
+    .global services.setoper$p_pvc_vi
+    .global services.resoper$p_vc_vi
+    .global services.resoper$p_pvc_vi
+    .global services.makpth$p_vc
+    .global services.makpth$p_pvc
+    .global services.rempth$p_vc
+    .global services.rempth$p_pvc
+    .global services.filchr$p_vi
+    .global services.optchr$p_c
+    .global services.pthchr$p_c
+    .global services.latitude$p_i
+    .global services.longitude$p_i
+    .global services.altitude$p_i
+    .global services.country$p_i
+    .global services.countrys$p_i
+    .global services.timezone$p_i
+    .global services.daysave$p_i
+    .global services.time24hour$p_i
+    .global services.language$p_i
+    .global services.languages$p_i
+    .global services.decimal$p_i
+    .global services.numbersep$p_i
+    .global services.timeorder$p_i
+    .global services.dateorder$p_i
+    .global services.datesep$p_i
+    .global services.timesep$p_i
+    .global services.currchr$p_i
 
 #
 # Procedure/function preamble
@@ -496,22 +571,69 @@ services.pthchr$p_c: function wrapper_pthchr, 0
 
 services.latitude$p_i: function wrapper_latitude, 0
 
-# function pa_longitude: integer; external;
-# function pa_altitude: integer; external;
-# function pa_country: integer; external;
-# procedure pa_countrys(view s: string; len: integer; c: integer); external;
-# function pa_timezone: integer; external;
-# function pa_daysave: integer; external;
-# function pa_time24hour: integer; external;
-# function pa_language: integer; external;
-# procedure pa_languages(view s: string; len: integer; l: integer);  external;
-# function pa_decimal: char; external;
-# function pa_numbersep: char; external;
-# function pa_timeorder: integer; external;
-# function pa_dateorder: integer; external;
-# function pa_datesep: char; external;
-# function pa_timesep: char; external;
-# function pa_currchr: char; external;
+# function longitude: integer; external;
+
+services.longitude$p_i: function wrapper_longitude, 0
+
+# function altitude: integer; external;
+
+services.altitude$p_i: function wrapper_altitude, 0
+
+# function country: integer; external;
+
+services.country$p_i: function wrapper_country, 0
+
+# procedure countrys(view s: string; len: integer; c: integer); external;
+
+services.countrys$p_i: function wrapper_countrys, 4
+
+# function timezone: integer; external;
+
+services.timezone$p_i: function wrapper_timezone, 0
+
+# function daysave: boolean; external;
+
+services.daysave$p_i: function wrapper_daysave, 0
+
+# function time24hour: boolean; external;
+
+services.time24hour$p_i: function wrapper_time24hour, 0
+
+# function language: integer; external;
+
+services.language$p_i: function wrapper_language, 0
+
+# procedure languages(view s: string; len: integer; l: integer);  external;
+
+services.languages$p_i: function wrapper_languages, 4
+
+# function decimal: char; external;
+
+services.decimal$p_i: function wrapper_decimal, 0
+
+# function numbersep: char; external;
+
+services.numbersep$p_i: function wrapper_numbersep, 0
+
+# function timeorder: integer; external;
+
+services.timeorder$p_i: function wrapper_timeorder, 0
+
+# function dateorder: integer; external;
+
+services.dateorder$p_i: function wrapper_dateorder, 0
+
+# function datesep: char; external;
+
+services.datesep$p_i: function wrapper_datesep, 0
+
+# function timesep: char; external;
+
+services.timesep$p_i: function wrapper_timesep, 0
+
+# function currchr: char; external;
+
+services.currchr$p_i: function wrapper_currchr, 0
 
 #
 # Next module in series
