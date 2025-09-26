@@ -166,12 +166,14 @@ libs/services.o: $(AMI)/services.c $(LIBS)/source/services_wrapper.asm
 	@echo
 	@echo "Building services..."
 	@echo
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services_support.o \
-		-c $(LIBS)/source/services_support.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(LIBS)/services_wrapper.o \
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source\
+		-o $(LIBS)/services_support.o -c $(LIBS)/source/services_support.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(LIBS)/services_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -o $(LIBS)/services.o \
-		-c $(AMI)/services.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
+		-o $(LIBS)/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
+		-o $(LIBS)/services.o -c $(AMI)/services.c
 
 ################################################################################
 #
@@ -349,6 +351,44 @@ libs/strtst: $(LIBS)/source/strtst.pas
 	cp $(LIBS)/strtst bin
 
 #
+# Build services test.
+#
+libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_test1.pas \
+	libs/services.o libs/strings.o
+	@echo
+	@echo "Building services test..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom --modules=libs/source $(LIBS)/source/services_test.pas \
+		$(BUILD)/libs/services_test.p6 --list- --reference-
+	pcom --modules=libs/source $(LIBS)/source/services_test1.pas \
+		$(BUILD)/libs/services_test1.p6 --list- --reference-
+	pgen $(BUILD)/libs/services_test.p6 $(BUILD)/libs/services_test.s
+	pgen $(BUILD)/libs/services_test1.p6 $(BUILD)/libs/services_test1.s
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(LIBS)/strings.o \
+		$(LIBS)/services_wrapper_asm.o \
+		$(BUILD)/libs/services_test.s -o $(LIBS)/services_test -lm -lpthread
+	cp $(LIBS)/services_test bin
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/parcmd.o \
+		$(LIBS)/strings.o \
+		$(LIBS)/services_wrapper_asm.o \
+		$(BUILD)/libs/services_test1.s -o $(LIBS)/services_test1 -lm -lpthread
+	cp $(LIBS)/services_test1 bin
+
+#
 # Build a test program (for whatever)
 #
 test: test.pas libs/services.o libs/strings.o
@@ -361,10 +401,11 @@ test: test.pas libs/services.o libs/strings.o
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
-		$(LIBS)/services_wrapper.o \
+		$(LIBS)/services_wrapper_asm.o \
 		test.s -o test -lm -lpthread
 	
 clean:
