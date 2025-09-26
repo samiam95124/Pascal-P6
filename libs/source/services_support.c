@@ -250,7 +250,7 @@ void cenvlist2pascaline(
         free(cs); /* free old string */
         /* convert data */
         cs = el->data; /* save old string */
-        el->name = (char*)cstr2pstr(el->data, strlen(el->data));
+        el->data = (char*)cstr2pstr(el->data, strlen(el->data));
         free(cs); /* free old string */
         el = el->next; /* go next entry */
 
@@ -282,7 +282,7 @@ void cenvlist2c(
         free(ps); /* free old string */
         /* convert data */
         ps = (pstring)el->data; /* save old string */
-        el->name = pstr2cstr((pstring)el->data); /* convert */
+        el->data = pstr2cstr((pstring)el->data); /* convert */
         free(ps); /* free old string */
         el = el->next; /* go next entry */
 
