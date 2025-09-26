@@ -38,7 +38,7 @@
     .global services.writedate$p_i
     .global services.clock$f
     .global services.elapsed$f_i
-    .global services.validfile$f_vc_i
+    .global services.validfile$f_vc
     .global services.validfile$f_pvc
     .global services.validpath$f_vc_i
     .global services.validpath$f_pvc
@@ -50,18 +50,18 @@
     .global services.setenv$p_pvc_vc
     .global services.setenv$p_vc_pvc
     .global services.setenv$p_pvc_pvc
-    .global services.allenv$p_
+    .global services.allenv$p_pr$name$0$pvc$data$8$p12$next$16$p2$
     .global services.remenv$p_vc
     .global services.remenv$p_pvc
     .global services.exec$p_vc
     .global services.exec$p_pvc
-    .global services.exece$p_vc
-    .global services.exece$p_pvc
+    .global services.exece$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$
+    .global services.exece$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$
     .global services.execw$p_vc_i
     .global services.execw$p_pvc_i
-    .global services.execew$p_vc_xx_i
-    .global services.execew$p_pvc_xx_i
-    .global services.getcur$p_vc_i
+    .global services.execew$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$_i
+    .global services.execew$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$_i
+    .global services.getcur$p_vc
     .global services.getcur$f
     .global services.setcur$p_vc
     .global services.setcur$f_pvc
@@ -69,30 +69,30 @@
     .global services.brknam$p_vc_pvc_pvc_pvc
     .global services.brknam$p_pvc_pvc_pvc_pvc
     .global services.maknam$p_vc_vc_vc_vc
-    .global services.maknam$p_vc_vc_vc
-    .global services.maknam$p_vc_vc_pvc
-    .global services.maknam$p_vc_pvc_vc
-    .global services.maknam$p_vc_pvc_pvc
-    .global services.maknam$p_pvc_vc_vc
-    .global services.maknam$p_pvc_vc_pvc
-    .global services.maknam$p_pvc_pvc_vc
-    .global services.maknam$p_pvc_pvc_pvc
+    .global services.maknam$f_vc_vc_vc
+    .global services.maknam$f_vc_vc_pvc
+    .global services.maknam$f_vc_pvc_vc
+    .global services.maknam$f_vc_pvc_pvc
+    .global services.maknam$f_pvc_vc_vc
+    .global services.maknam$f_pvc_vc_pvc
+    .global services.maknam$f_pvc_pvc_vc
+    .global services.maknam$f_pvc_pvc_pvc
     .global services.fulnam$p_vc
     .global services.fulnam$f_vc
     .global services.getpgm$p_vc
-    .global services.getpgm$p_pvc
+    .global services.getpgm$f
     .global services.getusr$p_vc
-    .global services.getusr$p_pvc
-    .global services.setatr$p_vc_vi
-    .global services.setatr$p_pvc_vi
-    .global services.resatr$p_vc_vi
-    .global services.resatr$p_pvc_vi
+    .global services.getusr$f
+    .global services.setatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$
+    .global services.setatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$
+    .global services.resatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$
+    .global services.resatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$
     .global services.bakupd$p_vc
     .global services.bakupd$p_pvc
-    .global services.setuper$p_vc_vi
-    .global services.setuper$p_pvc_vi
-    .global services.resuper$p_vc_vi
-    .global services.resuper$p_pvc_vi
+    .global services.setuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.setuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
     .global services.setgper$p_vc_vi
     .global services.setgper$p_pvc_vi
     .global services.resgper$p_vc_vi
@@ -105,8 +105,8 @@
     .global services.makpth$p_pvc
     .global services.rempth$p_vc
     .global services.rempth$p_pvc
-    .global services.filchr$p_vi
-    .global services.optchr$p_c
+    .global services.filchr$p_sc
+    .global services.optchr$f
     .global services.pthchr$p_c
     .global services.latitude$p_i
     .global services.longitude$p_i
@@ -261,15 +261,15 @@ services.writetime$p_fc_i: procedure wrapper_writetimef, 2
 
 # procedure writetime(t: integer); external;
 
-services.writetime$p_i: procedure writetime, 2
+services.writetime$p_i: procedure wrapper_writetime, 2
 
 # procedure writedate(var f: text; t: integer); external;
 
-services.writedate$p_fc_i: procedure writedatef, 2
+services.writedate$p_fc_i: procedure wrapper_writedatef, 2
 
 # procedure writedate(t: integer); external;
 
-services.writedate$p_i: procedure writedate, 2
+services.writedate$p_i: procedure wrapper_writedate, 2
 
 # function time: integer; external;
 
@@ -289,7 +289,7 @@ services.elapsed$f_i: function pa_elapsed, 1
 
 # function validfile(view s: string): boolean; external;
 
-services.validfile$f_vc_i: function wrapper_validfile, 2
+services.validfile$f_vc: function wrapper_validfile, 2
 
 # function validfile(view s: pstring): boolean; external;
 
@@ -305,7 +305,7 @@ services.validpath$f_pvc: function wrapper_validpathp, 1
 
 # function wild(view s: string): boolean; external;
 
-services.wild$_vc: function wrapper_wild, 2
+services.wild$f_vc: function wrapper_wild, 2
 
 # function wild(view s: pstring): boolean; external;
 
@@ -337,7 +337,7 @@ services.setenv$p_pvc_pvc: procedure wrapper_setenvpp, 2
 
 # procedure allenv(var el: envptr); external;
 
-services.allenv$p_: procedure wrapper_allenv, 1
+services.allenv$p_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_allenv, 1
 
 # procedure remenv(view sn: string); external;
 
@@ -357,11 +357,11 @@ services.exec$p_pvc: procedure wrapper_execp, 1
 
 # procedure exece(view cmd: string; el: envptr); external;
 
-services.exece$p_vc: procedure wrapper_exece, 3
+services.exece$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_exece, 3
 
 # procedure exece(cmd: pstring; el: envptr); external;
 
-services.exece$p_pvc: procedure wrapper_execep, 2
+services.exece$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$: procedure wrapper_execep, 2
 
 # procedure execw(view cmd: string; var e: integer); external;
 
@@ -373,15 +373,15 @@ services.execw$p_pvc_i: procedure wrapper_execwp, 2
 
 # procedure execew(view cmd: string; el: envptr; var e: integer); external;
 
-services.execew$p_vc_xx_i: procedure wrapper_execew, 4
+services.execew$p_vc_pr$name$0$pvc$data$8$p12$next$16$p2$_i: procedure wrapper_execew, 4
 
 # procedure execew(cmd: pstring; el: envptr; var e: integer); external;
 
-services.execew$p_pvc_xx_i: procedure wrapper_execewp, 3
+services.execew$p_pvc_pr$name$0$pvc$data$8$p12$next$16$p2$_i: procedure wrapper_execewp, 3
 
 # procedure getcur(var fn: string); external;
 
-services.getcur$p_vc_i: procedure wrapper_getcur, 2
+services.getcur$p_vc: procedure wrapper_getcur, 2
 
 # function getcur: pstring; external;
 
@@ -413,35 +413,35 @@ services.maknam$p_vc_vc_vc_vc: procedure wrapper_maknam, 8
 
 # function maknam(view p, n, e: string): pstring; external;
 
-services.maknam$p_vc_vc_vc: function wrapper_maknamp, 6
+services.maknam$f_vc_vc_vc: function wrapper_maknamp, 6
 
 # function maknam(view p: string; view n: string; e: pstring): pstring; external;
 
-services.maknam$p_vc_vc_pvc: function wrapper_maknampsp, 5
+services.maknam$f_vc_vc_pvc: function wrapper_maknamppsp, 5
 
 # function maknam(view p: string; n: pstring; view e: string): pstring; external;
 
-services.maknam$p_vc_pvc_vc: function wrapper_maknampsp, 5
+services.maknam$f_vc_pvc_vc: function wrapper_maknamppsp, 5
 
 # function maknam(view p: string; n: pstring; e: pstring): pstring; external;
 
-services.maknam$p_vc_pvc_pvc: function wrapper_maknamspp, 4
+services.maknam$f_vc_pvc_pvc: function wrapper_maknampspp, 4
 
 # function maknam(p: pstring; view n: string; view e: string): pstring; external;
 
-services.maknam$p_pvc_vc_vc: function wrapper_maknampss, 5
+services.maknam$f_pvc_vc_vc: function wrapper_maknamppss, 5
 
 # function maknam(p: pstring; view n: string; e: pstring): pstring; external;
 
-services.maknam$p_pvc_vc_pvc: function wrapper_maknampsp, 4
+services.maknam$f_pvc_vc_pvc: function wrapper_maknamppsp, 4
 
 # function maknam(p: pstring; n: pstring; view e: string): pstring; external;
 
-services.maknam$p_pvc_pvc_vc: function wrapper_maknampps, 4
+services.maknam$f_pvc_pvc_vc: function wrapper_maknamppps, 4
 
 # function maknam(p: pstring; n: pstring; e: pstring): pstring; external;
 
-services.maknam$p_pvc_pvc_pvc: function wrapper_maknamppp, 3
+services.maknam$f_pvc_pvc_pvc: function wrapper_maknampppp, 3
 
 # procedure fulnam(var fn: string); external;
 
@@ -453,11 +453,11 @@ services.fulnam$f_vc: function wrapper_fulnam, 2
 
 # procedure getpgm(out p: string); external;
 
-services.getpgm$p_vc: function wrapper_getpgm, 2
+services.getpgm$p_vc: procedure wrapper_getpgm, 2
 
 # function getpgm: pstring; external;
 
-services.getpgm$p_pvc: function wrapper_getpgmp, 1
+services.getpgm$f: function wrapper_getpgmp, 1
 
 # procedure getusr(out fn: string); external;
 
@@ -465,23 +465,23 @@ services.getusr$p_vc: function wrapper_getusr, 2
 
 # function getusr: pstring; external;
 
-services.getusr$p_pvc: function wrapper_getusrp, 1
+services.getusr$f: function wrapper_getusrp, 1
 
 # procedure setatr(view fn: string; a: attrset); external;
 
-services.setatr$p_vc_vi: procedure wrapper_setatr, 3
+services.setatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_setatr, 3
 
 # procedure setatr(fn: pstring; a: attrset); external;
 
-services.setatr$p_pvc_vi: procedure wrapper_setatrp, 2
+services.setatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_setatrp, 2
 
 # procedure resatr(view fn: string; a: attrset); external;
 
-services.resatr$p_vc_vi: procedure wrapper_resatr, 3
+services.resatr$p_vc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_resatr, 3
 
 # procedure resatr(fn: pstring; a: attrset); external;
 
-services.resatr$p_pvc_vi: procedure wrapper_resatrp, 2
+services.resatr$p_pvc_sx$atexec$atarc$atsys$atdir$atloop$: procedure wrapper_resatrp, 2
 
 # procedure bakupd(view fn: string); external;
 
@@ -493,19 +493,19 @@ services.bakupd$p_pvc: procedure wrapper_bakupdp, 1
 
 # procedure setuper(view fn: string; p: permset); external;
 
-services.setuper$p_vc_vi: procedure wrapper_setuper, 3
+services.setuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setuper, 3
 
 # procedure setuper(fn: pstring; p: permset); external;
 
-services.setuper$p_pvc_vi: procedure wrapper_setuperp, 2
+services.setuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setuperp, 2
 
 # procedure resuper(view fn: string; p: permset); external;
 
-services.resuper$p_vc_vi: procedure wrapper_resuper, 3
+services.resuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resuper, 3
 
 # procedure resuper(fn: pstring; p: permset); external;
 
-services.resuper$p_pvc_vi: procedure wrapper_resuperp, 2
+services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resuperp, 2
 
 # procedure setgper(view fn: string; p: permset); external;
 
@@ -557,11 +557,11 @@ services.rempth$p_pvc: procedure wrapper_rempthp, 1
 
 # procedure filchr(out fc: schar); external;
 
-services.filchr$p_vi: procedure wrapper_filchrp, 1
+services.filchr$p_sc: procedure wrapper_filchr, 1
 
 # function optchr: char; external;
 
-services.optchr$p_c: function wrapper_optchr, 0
+services.optchr$f: function wrapper_optchr, 0
 
 # function pthchr: char; external;
 

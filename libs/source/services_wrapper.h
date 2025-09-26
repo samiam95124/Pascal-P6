@@ -86,6 +86,8 @@ void cstr2pad(char* cs, int l); /* convert C string to padded Pascaline */
 void cfilelist2pascaline(pa_filptr* fla); /* convert C files list to Pascaline files list */
 void cenvlist2pascaline(pa_envptr* eva); /* convert C environment string list to Pascaline */
 void cenvlist2c(pa_envptr* eva); /* convert Pascaline environment string list to C */
+FILE* psystem_libcwrfil(pfile f); /* Find libc write file equivalent */
+FILE* psystem_libcrdfil(pfile f); /* Find libc read file equivalent */
 
 #ifdef __cplusplus
 }

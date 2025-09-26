@@ -43,9 +43,9 @@ void wrapper_list(
 {
 
     /* get files list in C form */
-    pa_listl(fn, fnl, fl); 
+    pa_listl(fn, fnl, (pa_filptr*)fl); 
     /* convert list to Pascaline form */
-    cfilelist2pascaline(fl);
+    cfilelist2pascaline((pa_filptr*)fl);
 
 }
 
@@ -69,9 +69,9 @@ void wrapper_listp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
     /* get files list in C form */
-    pa_listl(s, l, fl); 
+    pa_listl(s, l, (pa_filptr*)fl); 
     /* convert list to Pascaline form */
-    cfilelist2pascaline(fl);
+    cfilelist2pascaline((pa_filptr*)fl);
 
 }
 
@@ -320,7 +320,7 @@ int  pa_validfilel(char* s, int l);
 
 int wrapper_validfile(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -338,7 +338,7 @@ int  pa_validfilel(char* s, int l);
 ********************************************************************************/
 
 int wrapper_validfilep(
-    /** filename */  pstring fn,
+    /** filename */  pstring fn
 )
 
 {
@@ -362,7 +362,7 @@ int  pa_validpathl(char* s, int l);
 
 int wrapper_validpath(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -380,7 +380,7 @@ int  pa_validpathl(char* s, int l);
 ********************************************************************************/
 
 int wrapper_validpathp(
-    /** filename */  pstring fn,
+    /** filename */  pstring fn
 )
 
 {
@@ -404,7 +404,7 @@ int  pa_wildl(char* s, int l);
 
 int wrapper_wild(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -422,7 +422,7 @@ int  pa_wildl(char* s, int l);
 ********************************************************************************/
 
 int wrapper_wildp(
-    /** filename */  pstring fn,
+    /** filename */  pstring fn
 )
 
 {
@@ -493,7 +493,7 @@ void wrapper_setenv(
 
 {
 
-    pa_setenvl(n, nl, v, vl)
+    pa_setenvl(n, nl, v, vl);
 
 }
 
@@ -580,12 +580,12 @@ void pa_allenv(pa_envrec **el);
 
 ********************************************************************************/
 
-void allenv(pa_envrec** el)
+void wrapper_allenv(pa_envrec** el)
 
 {
 
     pa_allenv(el);
-    cenvlist2pascaline(*el);
+    cenvlist2pascaline(el);
 
 }
 
@@ -599,7 +599,7 @@ void pa_remenvl(char* sn, int snl);
 
 void wrapper_remenv(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -617,7 +617,7 @@ extern void pa_remenvl(char* sn, int snl);
 ********************************************************************************/
 
 void wrapper_remenvp(
-    /** name */  pstring n,
+    /** name */  pstring n
 )
 
 {
@@ -641,7 +641,7 @@ void pa_execl(char* cmd, int cmdl);
 
 void wrapper_exec(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -659,7 +659,7 @@ void pa_execl(char* cmd, int cmdl);
 ********************************************************************************/
 
 void wrapper_execp(
-    /** filename */  pstring fn,
+    /** filename */  pstring fn
 )
 
 {
@@ -689,7 +689,7 @@ void wrapper_exece(
 
 {
 
-    cenvlist2c(el); /* convert environment to C form */
+    cenvlist2c(&el); /* convert environment to C form */
     pa_execel(s, l, el); /* execute */
 
 }
@@ -712,7 +712,7 @@ void wrapper_execep(
     /** string pointer */ char* s;
     /** string length */  int l;
 
-    cenvlist2c(el); /* convert environment to C form */
+    cenvlist2c(&el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
     pa_execel(s, l, el);
@@ -781,7 +781,7 @@ void wrapper_execew(
 
 {
 
-    cenvlist2c(el); /* convert environment to C form */
+    cenvlist2c(&el); /* convert environment to C form */
     pa_execewl(s, l, el, e);
 
 }
@@ -794,7 +794,7 @@ void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 ********************************************************************************/
 
-void wrapper_execwp(
+void wrapper_execewp(
     /** filename */    pstring fn,
     /** environment */ pa_envptr el,
     /** error */       int *e
@@ -805,7 +805,7 @@ void wrapper_execwp(
     /** string pointer */ char* s;
     /** string length */  int l;
 
-    cenvlist2c(el); /* convert environment to C form */
+    cenvlist2c(&el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
     pa_execewl(s, l, el, e);
@@ -822,7 +822,7 @@ void pa_getcur(char* fn, int l);
 
 void wrapper_getcur(
     /** string pointer */ string s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -860,14 +860,14 @@ void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
-int wrapper_setcur(
+void wrapper_setcur(
     /** string pointer */ char* s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
 
-    return (pa_setcurl(s, l));
+    pa_setcurl(s, l);
 
 }
 
@@ -879,8 +879,8 @@ void pa_setcurl(char* fn, int fnl);
 
 ********************************************************************************/
 
-int wrapper_setcurp(
-    /** filename */  pstring fn,
+void wrapper_setcurp(
+    /** filename */  pstring fn
 )
 
 {
@@ -890,7 +890,7 @@ int wrapper_setcurp(
 
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    return(pa_setcurl(s, l));
+    pa_setcurl(s, l);
 
 }
 
@@ -930,7 +930,7 @@ void pa_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-void wrapper_brknamp(
+void wrapper_brknamsp(
     /* filename */  char* fn, int fnl,
     /* path */      pstring p,
     /* name */      pstring n,
@@ -945,10 +945,10 @@ void wrapper_brknamp(
     cpstrp2cstrl(&n, &nl);
     cpstrp2cstrl(&e, &el);
     /* execute subfunction */
-    pa_brknaml(fn, fnl, p, pl, n, nl, e, el);
-    cstr2pad(p, pl);
-    cstr2pad(n, nl);
-    cstr2pad(e, el);
+    pa_brknaml(fn, fnl, (string)p, pl, (string)n, nl, (string)e, el);
+    cstr2pad((string)p, pl);
+    cstr2pad((string)n, nl);
+    cstr2pad((string)e, el);
 
 }
 
@@ -961,7 +961,7 @@ void pa_brknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-void wrapper_brknamp(
+void wrapper_brknampp(
     /* filename */  pstring fn,
     /* path */      pstring p,
     /* name */      pstring n,
@@ -977,10 +977,10 @@ void wrapper_brknamp(
     cpstrp2cstrl(&n, &nl);
     cpstrp2cstrl(&e, &el);
     /* execute subfunction */
-    pa_brknaml(fn, fnl, p, pl, n, nl, e, el);
-    cstr2pad(p, pl);
-    cstr2pad(n, nl);
-    cstr2pad(e, el);
+    pa_brknaml((string)fn, fnl, (string)p, pl, (string)n, nl, (string)e, el);
+    cstr2pad((string)p, pl);
+    cstr2pad((string)n, nl);
+    cstr2pad((string)e, el);
 
 }
 
@@ -1050,7 +1050,7 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-pstring wrapper_maknampspp(
+pstring wrapper_maknampssp(
     /** string pointer */ pstring p,
     /** string pointer */ string n,
     /** string length */  int nl,
@@ -1067,7 +1067,7 @@ pstring wrapper_maknampspp(
 
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    pa_maknaml(buff1, BUFLEN, p, pl, n, nl, es, el);
+    pa_maknaml(buff, BUFLEN, ps, pl, n, nl, es, el);
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1082,7 +1082,7 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-pstring wrapper_maknamppps(
+pstring wrapper_maknampsps(
     /** string pointer */ pstring p,
     /** string pointer */ pstring n,
     /** string pointer */ string  e,
@@ -1099,7 +1099,7 @@ pstring wrapper_maknamppps(
 
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
-    pa_maknaml(buff1, BUFLEN, ps, pl, ns, nl, e, el);
+    pa_maknaml(buff, BUFLEN, ps, pl, ns, nl, e, el);
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1114,11 +1114,11 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-pstring wrapper_maknamppps(
+pstring wrapper_maknampspp(
     /** string pointer */ string  p,
     /** string length */  int     pl,
     /** string pointer */ pstring n,
-    /** string pointer */ pstring e,
+    /** string pointer */ pstring e
 )
 
 {
@@ -1131,7 +1131,7 @@ pstring wrapper_maknamppps(
 
     pstr2cstrl(n, &ns, &nl); /* get cstr/len from pstring */
     pstr2cstrl(e, &es, &el); /* get cstr/len from pstring */
-    pa_maknaml(buff1, BUFLEN, p, pl, ns, nl, es, el);
+    pa_maknaml(buff, BUFLEN, p, pl, ns, nl, es, el);
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1147,10 +1147,10 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 ********************************************************************************/
 
 pstring wrapper_maknamppss(
-    /** string pointer */ pstring  p,
-    /** string pointer */ pstring n,
+    /** string pointer */ pstring p,
+    /** string pointer */ string  n,
     /** string length */  int     nl,
-    /** string pointer */ pstring e,
+    /** string pointer */ string  e,
     /** string length */  int     el
 )
 
@@ -1161,7 +1161,7 @@ pstring wrapper_maknamppss(
     char buff[BUFLEN];
 
     pstr2cstrl(p, &ps, &pl); /* get cstr/len from pstring */
-    pa_maknaml(buff1, BUFLEN, ps, pl, n, nl, e, el);
+    pa_maknaml(buff, BUFLEN, ps, pl, n, nl, e, el);
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
 
@@ -1186,7 +1186,7 @@ pstring wrapper_maknamppsp(
 {
 
     string ps;
-    int    ll;
+    int    pl;
     string es;
     int    el;
     char buff[BUFLEN];
@@ -1211,8 +1211,8 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 pstring wrapper_maknamppps(
     /** string pointer */ pstring p,
     /** string pointer */ pstring n,
-    /** string pointer */ pstring e,
-    /** string length */  int     el,
+    /** string pointer */ string  e,
+    /** string length */  int     el
 )
 
 {
@@ -1240,7 +1240,7 @@ void pa_maknaml(char* fn, int fnl, char* p, int pl, char* n, int nl, char* e,
 
 ********************************************************************************/
 
-pstring wrapper_maknamppps(
+pstring wrapper_maknampppp(
     /** string pointer */ pstring p,
     /** string pointer */ pstring n,
     /** string pointer */ pstring e
@@ -1320,7 +1320,7 @@ extern void pa_getpgm(char* p, int pl);
 
 void wrapper_getpgm(
     /** string pointer */ string s,
-    /** string length */  int l,
+    /** string length */  int l
 )
 
 {
@@ -1441,7 +1441,7 @@ void pa_resatrl(char* fn, int fnl, pa_attrset a);
 
 ********************************************************************************/
 
-void wrapper_setatr(
+void wrapper_resatr(
     /** string pointer */ string s,
     /** string length */  int l,
     /** attribute set */  set a
@@ -1844,7 +1844,7 @@ void pa_rempthl(char* fn, int fnl);
 
 ********************************************************************************/
 
-void wrapper_makpthp(
+void wrapper_rempthp(
     /** string pointer */ pstring p
 )
 
@@ -1867,7 +1867,7 @@ void pa_filchr(pa_chrset fc);
 ********************************************************************************/
 
 void wrapper_filchr(
-    /** set of char */ set fc
+    /** set of char */ pa_chrset fc
 )
 
 {
@@ -1979,7 +1979,7 @@ void pa_countrys(char* s, int sl, int c);
 
 ********************************************************************************/
 
-void wrapper_country(
+void wrapper_countrys(
     /** string pointer */ string s,
     /** string length */  int l,
     /** country code  */  int c
