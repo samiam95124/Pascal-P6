@@ -48,10 +48,9 @@
 
 program pc(output);
 
-uses stddef,  { standard defines }
-     strlib,  { string library }
-     extlib,  { os extentions }
-     parlib,  { parser library }
+uses strings,  { string library }
+     services, { os extentions }
+     parse,   { parser library }
      scanner; { pascal scanner }
 
 label 99; { abort program }

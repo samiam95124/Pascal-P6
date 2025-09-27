@@ -68,7 +68,7 @@ char* pstr2cstr(
     cs = malloc(ps->len+1);
     strncpy(cs, (char*)&ps->data, ps->len); /* copy string data */
 
-    return ((char*) ps);
+    return (cs);
 
 }
 
@@ -262,29 +262,60 @@ void cenvlist2pascaline(
 
 Convert environment list to C form
 
+Preserves the original list. Returns C copy list.
+
 ********************************************************************************/
 
-void cenvlist2c(
-    /** file record list head */ pa_envptr* eva
+pa_envptr cenvlist2c(
+    /** environment record list head */ envptr el
 )
 
 {
 
-    /* pointer to old list */ pa_envptr el;
-    /* pstring */             pstring ps;
+    /* pstring */ pstring ps;
+    /* new copy list in C */ pa_envptr cl;
+    /* new entry */ pa_envptr cp;
+    /* last entry */ pa_envptr lp;
 
-    el = *eva; /* index list */
+    lp = NULL; /* set no last entry */
     while (el) { /* traverse */
 
-        /* convert name */
-        ps = (pstring)el->name; /* save old string */
-        el->name = pstr2cstr((pstring)el->name); /* convert */
-        free(ps); /* free old string */
-        /* convert data */
-        ps = (pstring)el->data; /* save old string */
-        el->data = pstr2cstr((pstring)el->data); /* convert */
-        free(ps); /* free old string */
+        cp = malloc(sizeof(pa_envrec)); /* get new C entry */
+        cp->name = pstr2cstr((pstring)el->name); /* convert name */
+        cp->data = pstr2cstr((pstring)el->data); /* convert data */
+        cp->next = NULL;
+        if (lp) lp->next = cp; /* link last to this */
+        else cl = cp; /* set as root */
+        lp = cp; /* set new last */
         el = el->next; /* go next entry */
+
+    }
+
+}
+
+/********************************************************************************
+
+Free environment list in C form
+
+Frees both strins and the entry for the entire list.
+
+********************************************************************************/
+
+void freenvl(
+    /** environment record list head */ pa_envptr el
+)
+
+{
+
+    /* element pointer */ pa_envptr ep;
+
+    while (el) { /* drain */
+
+        ep = el; /* copy top pointer */
+        el = el->next; /* next entry */
+        free(ep->name); /* free strings */
+        free(ep->data);
+        free(ep); /* free the structure */
 
     }
 

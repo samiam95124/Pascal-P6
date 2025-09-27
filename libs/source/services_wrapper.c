@@ -684,13 +684,16 @@ void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 void wrapper_exece(
     /** string pointer */ char* s,
     /** string length */  int l,
-    /** environment */    pa_envptr el
+    /** environment */    envptr el
 )
 
 {
 
-    cenvlist2c(&el); /* convert environment to C form */
-    pa_execel(s, l, el); /* execute */
+    /* C copy list */ pa_envptr cel;
+
+    cel = cenvlist2c(el); /* convert environment to C form */
+    pa_execel(s, l, cel); /* execute */
+    freenvl(cel); /* free the list */
 
 }
 
@@ -704,18 +707,19 @@ void pa_execel(char* cmd, int cmdl, pa_envrec *el);
 
 void wrapper_execep(
     /** filename */    pstring fn,
-    /** environment */ pa_envptr el
+    /** environment */ envptr el
 )
 
 {
 
     /** string pointer */ char* s;
     /** string length */  int l;
+    /* C copy list */ pa_envptr cel;
 
-    cenvlist2c(&el); /* convert environment to C form */
+    cel = cenvlist2c(el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
-
-    pa_execel(s, l, el);
+    pa_execel(s, l, cel);
+    freenvl(cel); /* free the list */
 
 }
 
@@ -775,14 +779,17 @@ void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 void wrapper_execew(
     /** string pointer */ char* s,
     /** string length */  int l,
-    /** environment */    pa_envptr el,
+    /** environment */    envptr el,
     /** error */          int *e
 )
 
 {
 
-    cenvlist2c(&el); /* convert environment to C form */
-    pa_execewl(s, l, el, e);
+    /* C copy list */ pa_envptr cel;
+
+    cel = cenvlist2c(el); /* convert environment to C form */
+    pa_execewl(s, l, cel, e);
+    freenvl(cel); /* free the list */
 
 }
 
@@ -796,7 +803,7 @@ void pa_execewl(char* cmd, int cmdl, pa_envrec *el, int *e);
 
 void wrapper_execewp(
     /** filename */    pstring fn,
-    /** environment */ pa_envptr el,
+    /** environment */ envptr el,
     /** error */       int *e
 )
 
@@ -804,11 +811,12 @@ void wrapper_execewp(
 
     /** string pointer */ char* s;
     /** string length */  int l;
+    /* C copy list */     pa_envptr cel;
 
-    cenvlist2c(&el); /* convert environment to C form */
+    cel = cenvlist2c(el); /* convert environment to C form */
     pstr2cstrl(fn, &s, &l); /* get cstr/len from pstring */
 
-    pa_execewl(s, l, el, e);
+    pa_execewl(s, l, cel, e);
 
 }
 
