@@ -19,10 +19,10 @@
 *                                                                              *
 *******************************************************************************}
 
-module dirlib(output);
+module directory(output);
 
-uses strlib,
-     extlib;
+uses strings,
+     services;
 
 type  dirptr = ^dirent; { pointer to directory record }
       dirent = record { directory head chains }
@@ -693,6 +693,6 @@ end;
 
 begin
 
-   refer(output)
+   ! refer(output)
 
 end.

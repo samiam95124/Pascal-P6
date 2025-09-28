@@ -53,10 +53,7 @@
 
 module scanner(output);
 
-uses stddef,
-     xltlib,
-     xltmod,
-     strlib;
+uses strings;
 
 const
 
@@ -294,9 +291,7 @@ begin
    for i := 1 to max(s) do
       if s[i] <> ' ' then begin
 
-      { check encoded mode }
-      if xltmod then r := r + ord(nrmchr(lcase(s[i]))) + add
-      else r := r + ord(lcase(s[i])) + add;
+      r := r + ord(lcase(s[i])) + add;
 
    end;
    hash := r mod maxv + 1
@@ -897,9 +892,7 @@ begin
    for i := 1 to spcmax do
       if s[i] <> ' ' then begin
 
-      { check encoded mode }
-      if xltmod then r := r + ord(nrmchr(lcase(s[i]))) + add
-      else r := r + ord(lcase(s[i])) + add;
+      r := r + ord(lcase(s[i])) + add;
 
    end;
    hash := r mod max + 1

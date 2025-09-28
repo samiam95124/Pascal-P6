@@ -129,7 +129,7 @@
 *                                                                             *
 *      Parse space delimited word.                                            *
 *                                                                             *
-* procedure setfch(ph: parhan; view vc: chrset);                              *
+* procedure setfch(ph: parhan; view vc: schar);                              *
 *                                                                             *
 *      Set valid file characters.                                             *
 *                                                                             *
@@ -157,11 +157,10 @@
 *                                                                             *
 ******************************************************************************}
 
-module parlib(output);
+module parse(output);
 
-uses syslib,
-     strlib,
-     extlib;
+uses strings,
+     services;
 
 const maxpar = 8{100}; { number of logical parse handles }
 
@@ -196,7 +195,7 @@ function chkfil(ph: parhan): boolean; forward;
 procedure parfil(ph: parhan; var n: string; path: boolean; var err: boolean);
    forward;
 procedure parwrd(ph: parhan; var w: string; var err: boolean); forward;
-procedure setfch(ph: parhan; view vc: chrset); forward;
+procedure setfch(ph: parhan; view vc: schar); forward;
 function chkstr(ph: parhan): boolean; forward;
 procedure parstr(ph: parhan; var s: string; var err: boolean); forward;
 procedure prterr(ph: parhan; var ef: text; view es: string; pl: boolean);
@@ -234,14 +233,14 @@ type
 
       fil: iflptr;  { files stack }
       err: integer; { number of errors }
-      fch: chrset;  { set of valid file characters }
+      fch: schar;  { set of valid file characters }
       trc: boolean  { trace input lines }
 
    end;
 
 var partab: array [parhan] of parptr; { logical parse blocks }
     parinx: parhan; { index for table }
-    valfch: chrset; { valid file characters }
+    valfch: schar; { valid file characters }
 
 {*******************************************************************************
 
@@ -263,7 +262,8 @@ begin
    new(p, max(s)+8); { get string to hold }
    for i := 1 to 8 do p^[i] := pream[i]; { copy preamble }
    for i := 1 to max(s) do p^[i+8] := s[i]; { copy string }
-   ss_wrterr(p^); { output string }
+   !ss_wrterr(p^); { output string }
+   writeln(error, p^); { output string }
    dispose(p); { release storage }
    halt { end the run }
 
@@ -1050,7 +1050,7 @@ Sets the character set to parse files by.
 
 ******************************************************************************}
 
-procedure setfch(ph: parhan; view vc: chrset);
+procedure setfch(ph: parhan; view vc: schar);
 
 begin
 

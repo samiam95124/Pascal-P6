@@ -175,6 +175,33 @@ libs/services.o: $(AMI)/services.c $(LIBS)/source/services_wrapper.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
 		-o $(LIBS)/services.o -c $(AMI)/services.c
 
+libs/directory.o: $(LIBS)/source/directory.pas $(BUILD)/libs/directory.s
+$(BUILD)/libs/directory.s:
+	@echo
+	@echo "Building directory..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom $(LIBS)/source/directory.pas $(BUILD)/libs/directory.p6 \
+		--modules=$(LIBS)/source --list- --reference-
+	pgen $(BUILD)/libs/directory.p6 $(BUILD)/libs/directory.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/directory.o \
+		-c $(BUILD)/libs/directory.s
+	cp $(BUILD)/libs/directory.o $(LIBS)
+
+libs/parse.o: $(LIBS)/source/parse.pas $(BUILD)/libs/parse.s
+$(BUILD)/libs/parse.s:
+	@echo
+	@echo "Building parse..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom $(LIBS)/source/parse.pas $(BUILD)/libs/parse.p6 \
+		--modules=$(LIBS)/source --list- --reference-
+	pgen $(BUILD)/libs/parse.p6 $(BUILD)/libs/parse.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/parse.o \
+		-c $(BUILD)/libs/parse.s
+	cp $(BUILD)/libs/parse.o $(LIBS)
+
+
 ################################################################################
 #
 # Build programs
@@ -324,6 +351,29 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
+
+#
+# Build pc, the compiler integrator
+#
+pc: bin/pc
+bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	@echo
+	@echo "Building pc..."
+	@echo
+	mkdir -p $(BUILD)/pc
+	pcom pc/scanner.pas pc/scanner.p6 --modules=libs/source --modules=pc --list- \
+		--reference-
+	pgen pc/scanner.p6 pc/scanner.s
+	pcom pc/pc.pas pc/pc.p6 --modules=libs/source --modules=pc --list- \
+		--reference-
+	pgen pc/pc.p6 pc/pc.s
+	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pc/pc.s \
+		-o $(BUILD)/pc -lm -lpthread
+	cp $(BUILD)/pc $(PASCALP6)/bin
 
 ################################################################################
 #
