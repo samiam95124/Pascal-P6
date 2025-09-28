@@ -209,26 +209,6 @@
 
     jmp     1f      # skip stack sequence
 
-#
-# Swap 2 parameters on stack
-#
-# The System V AMD64 calling convention allows for up to 6 parameters to be in
-# registers.Past that, the parameters appear on stack. This wapper uses up to 8
-# parameters. For 7 parameters, there is no issue. For 8, the 2 parameters on
-# stack will be in the wrong order. This macro swaps those parameters into the
-# correct order for the calling convention.
-#
-    .macro  swaptop
-    movq    (%rsp),%r11         # swap the onstack parameters
-    movq    8(%rsp),%r12
-    movq    16(%rsp),%r13
-    movq    24(%rsp),%r14
-    movq    %r11,16(%rsp)
-    movq    %r12,24(%rsp)
-    movq    %r13,(%rsp)
-    movq    %r14,8(%rsp)
-    .endm
-
 # procedure list(view f: string; var l: filptr); external;
 
 services.list$p_vc_pr$name$0$pvc$size$8$i$alloc$16$i$attr$24$sx$atexec$atarc$atsys$atdir$atloop$$create$56$i$modify$64$i$access$72$i$backup$80$i$user$88$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$group$120$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$other$152$sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$$next$184$p2$:
@@ -397,7 +377,16 @@ services.setcur$f_pvc: procedure wrapper_setcur, 1
 
 # procedure brknam(view fn: string; var p, n, e: string); external;
 
-services.brknam$p_vc_vc_vc_vc: procedure wrapper_brknam, 8
+services.brknam$p_vc_vc_vc_vc:
+    movq    8(%rsp),%r13        # save onstack 7 and 8
+    movq    16(%rsp),%r14
+    preamble 0, 8
+    pushq   %r14                # replace parameters in reverse order
+    pushq   %r13
+    call    wrapper_brknam
+    popq    %r11                # dispose of 7 and 8
+    popq    %r11
+    postamble
 
 # procedure brknam(view fn: string; var p, n, e: pstring); external;
 
@@ -409,7 +398,16 @@ services.brknam$p_pvc_pvc_pvc_pvc: procedure wrapper_brknampp, 4
 
 # procedure maknam(var fn: string; view p, n, e: string); external;
 
-services.maknam$p_vc_vc_vc_vc: procedure wrapper_maknam, 8
+services.maknam$p_vc_vc_vc_vc:
+    movq    8(%rsp),%r13        # save onstack 7 and 8
+    movq    16(%rsp),%r14
+    preamble 0, 8
+    pushq   %r14                # replace parameters in reverse order
+    pushq   %r13
+    call    wrapper_maknam
+    popq    %r11                # dispose of 7 and 8
+    popq    %r11
+    postamble
 
 # function maknam(view p, n, e: string): pstring; external;
 
@@ -449,7 +447,7 @@ services.fulnam$p_vc: procedure wrapper_fulnam, 2
 
 # function fulnam(view fn: string): pstring; external;
 
-services.fulnam$f_vc: function wrapper_fulnam, 2
+services.fulnam$f_vc: function wrapper_fulnamp, 2
 
 # procedure getpgm(out p: string); external;
 

@@ -136,6 +136,28 @@ void cstr2pad(
 
 /********************************************************************************
 
+Remove right space padding from string with length
+
+Removes space padding from the right side of a string/length pair by readjusting
+the length.
+
+********************************************************************************/
+
+void rempad(
+    /** C string buffer */ char* cs,
+    /** length of buffer */ int* l
+)
+
+{
+
+    cs += *l-1;
+    while (l && *cs == ' ') { (*l)--; cs--; }
+
+}
+
+
+/********************************************************************************
+
 Convert file list to Pascaline form
 
 Accepts a file list from the list()/listl() call in services.

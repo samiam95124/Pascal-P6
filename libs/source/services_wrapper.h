@@ -93,6 +93,7 @@ char* pstr2cstr(pstring ps); /* convert pstring to C string in place */
 void pstr2cstrl(pstring ps, char** s, int* l); /* convert pstring to C string with length */
 void cpstrp2cstrl(pstring* ps, int* l); /* convert pstring to C string in place with length */
 void cstr2pad(char* cs, int l); /* convert C string to padded Pascaline */
+void rempad(char* cs, int* l); /* remove padding from string/length */
 void cfilelist2pascaline(pa_filptr* fla); /* convert C files list to Pascaline files list */
 void cenvlist2pascaline(pa_envptr* eva); /* convert C environment string list to Pascaline */
 pa_envptr cenvlist2c(envptr el); /* convert Pascaline environment string list to C */
