@@ -357,23 +357,32 @@ bin/spew: $(SOURCE)/spew.c
 #
 pc: bin/pc
 bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o \
+	libs/services.o libs/strings.o
 	@echo
 	@echo "Building pc..."
 	@echo
 	mkdir -p $(BUILD)/pc
-	pcom pc/scanner.pas pc/scanner.p6 --modules=libs/source --modules=pc --list- \
-		--reference-
-	pgen pc/scanner.p6 pc/scanner.s
-	pcom pc/pc.pas pc/pc.p6 --modules=libs/source --modules=pc --list- \
-		--reference-
-	pgen pc/pc.p6 pc/pc.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
+	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs/source \
+		--modules=pc --list- --reference-
+	pgen $(BUILD)/pc/scanner.p6 $(BUILD)/pc/scanner.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/scanner.o \
+		-c $(BUILD)/pc/scanner.s
+	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
+		--list- --reference-
+	pgen pc/pc.p6 $(BUILD)/pc/pc.s
+	$(CC) $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
 		$(BUILD)/AMD64/gcc/main.o \
+		$(LIBS)/strings.o \
+		$(LIBS)/services_wrapper_asm.o \
+        $(BUILD)/pc/scanner.o
 		$(BUILD)/pc/pc.s \
-		-o $(BUILD)/pc -lm -lpthread
-	cp $(BUILD)/pc $(PASCALP6)/bin
+		-o $(BUILD)/pc/pc -lm -lpthread
+	cp $(BUILD)/pc/pc $(PASCALP6)/bin
 
 ################################################################################
 #
