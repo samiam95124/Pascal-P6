@@ -541,8 +541,10 @@ var i: integer; c: char;
 begin i := 1;
   while fl > 0 do begin
     c := ' '; if i <= max(s) then begin c := s[i]; i := i+1 end;
-    if (c = '"') or (c = '\\') then write(f, '\\'); 
-    write(f, c); fl := fl-1
+    if (c = '"') or (c = '\\') then write(f, '\\', c)
+    else if c < ' ' then write(f, '\\x', ord(c)$:#2)
+    else write(f, c);
+    fl := fl-1
   end
 end;
 

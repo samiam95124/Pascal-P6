@@ -358,7 +358,7 @@ bin/spew: $(SOURCE)/spew.c
 pc: bin/pc
 bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
 	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o \
-	libs/services.o libs/strings.o
+	libs/services.o libs/strings.o libs/parse.o
 	@echo
 	@echo "Building pc..."
 	@echo
@@ -370,7 +370,7 @@ bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
 		-c $(BUILD)/pc/scanner.s
 	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
 		--list- --reference-
-	pgen pc/pc.p6 $(BUILD)/pc/pc.s
+	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
 	$(CC) $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/psystem_asm.o \
 		$(LIBS)/services.o \
@@ -379,7 +379,8 @@ bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(LIBS)/strings.o \
 		$(LIBS)/services_wrapper_asm.o \
-        $(BUILD)/pc/scanner.o
+		$(LIBS)/parse.o \
+        $(BUILD)/pc/scanner.o \
 		$(BUILD)/pc/pc.s \
 		-o $(BUILD)/pc/pc -lm -lpthread
 	cp $(BUILD)/pc/pc $(PASCALP6)/bin
