@@ -114,7 +114,7 @@ var
 
    cmdhan:  parhan;  { handle for command parsing }
    err:     boolean; { error holder }
-   valfch:  chrset;  { valid file characters }
+   valfch:  schar;  { valid file characters }
    filstk:  filept;  { file information stack }
    prgnam:  filnam;  { target program name }
    p, n, e: filnam;  { path components }

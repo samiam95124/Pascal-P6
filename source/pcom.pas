@@ -9561,14 +9561,27 @@ end;
       lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
       curmods: modtyp; entnames: integer; sym: symbol;
   function schnam(fp: filptr): boolean;
+  var fn: filnam; i, nc, ec: 1..fillen;
   begin schnam := false;
-    while fp <> nil do
-      begin if fp^.fn = id then schnam := true; fp := fp^.next end
+    while fp <> nil do begin
+      nc := 1; 
+      for i := 1 to fillen do 
+        if (fp^.fn[i] = '/') or (fp^.fn[i] = '\\') then nc := i+1;
+      ec := fillen;
+      for i := 1 to fillen do if fp^.fn[i] = '.' then ec := i;
+      for i := 1 to fillen do begin
+        fn[i] := ' ';
+        if (nc < fillen) and (nc < ec) then 
+          begin fn[i] := fp^.fn[nc]; nc := nc+1 end
+      end;
+      if fn = id then schnam := true; 
+      fp := fp^.next 
+    end
   end;
   begin
     sym := sy; insymbol; { skip uses/joins }
-    thismod := nil;
     repeat { modules }
+      thismod := nil;
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
