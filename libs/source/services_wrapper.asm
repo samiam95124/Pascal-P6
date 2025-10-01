@@ -40,7 +40,7 @@
     .global services.elapsed$f_i
     .global services.validfile$f_vc
     .global services.validfile$f_pvc
-    .global services.validpath$f_vc_i
+    .global services.validpath$f_vc
     .global services.validpath$f_pvc
     .global services.wild$f_vc
     .global services.wild$f_pvc
@@ -277,7 +277,7 @@ services.validfile$f_pvc: procedure wrapper_validfilep, 1
 
 # function validpath(view s: string): boolean; external;
 
-services.validpath$f_vc_i: function wrapper_validpath, 2
+services.validpath$f_vc: function wrapper_validpath, 2
 
 # function validpath(view s: pstring): boolean; external;
 
