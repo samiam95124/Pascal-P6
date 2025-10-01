@@ -576,7 +576,7 @@ var
     ordint: array [char] of integer;
 
     intlabel,mxint10,maxpow10: integer;
-    entname,extname,nxtname: integer;
+    entname: integer;
     errtbl: array [1..maxftl] of integer; { error occurence tracking }
     errltb: array [1..maxftl] of errptr; { error line tracking }
     toterr: integer; { total errors in program }
@@ -9629,7 +9629,7 @@ end;
 
   procedure modulep(fsys:setofsys);
     var extfp,newfl:extfilep; segsize, stackbot: integer;
-        nulllab: integer;
+        nulllab: integer; extname,nxtname: integer;
   begin
     cstptrix := 0; topnew := 0; topmin := 0; nammod := nil; genlabel(entname);
     genlabel(extname); genlabel(nxtname);

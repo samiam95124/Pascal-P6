@@ -368,7 +368,7 @@ bin/pc: pc/pc.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
 		--list- --reference-
 	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
 	$(CC) $(CFLAGS) \
-        $(LIBS)/psystem.a \
+        $(LIBS)/psystem.o \
 		$(LIBS)/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
