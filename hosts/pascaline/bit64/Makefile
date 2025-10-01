@@ -70,26 +70,17 @@ all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 #
 # Build psystem, the Pascaline support library in C.
 #
-psystem: $(SOURCE)/AMD64/gcc/psystem.c
-$(BUILD)/AMD64/gcc/psystem.o: $(SOURCE)/AMD64/gcc/psystem.c
+$(LIBS)/psystem.o $(LIBS)/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c \
+	$(SOURCE)/AMD64/gcc/psystem.asm
 	@echo
 	@echo "Building psystem..."
 	@echo
 	mkdir -p $(BUILD)/AMD64/gcc
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem.o \
 		-c $(SOURCE)/AMD64/gcc/psystem.c
-
-#
-# Build psystem_asm, the Pascaline support library in assembly.
-#
-psystem_asm: $(SOURCE)/AMD64/gcc/psystem.asm
-$(BUILD)/AMD64/gcc/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.asm
-	@echo
-	@echo "Building psystem_asm..."
-	@echo
-	mkdir -p $(BUILD)/AMD64/gcc
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem_asm.o \
 		-c -x assembler $(SOURCE)/AMD64/gcc/psystem.asm
+	cp $(BUILD)/AMD64/gcc/psystem.o $(BUILD)/AMD64/gcc/psystem_asm.o $(LIBS)
 
 #
 # Build main, the program stack startup shim.
@@ -211,8 +202,8 @@ $(BUILD)/libs/parse.s:
 # Build pcom, the source to intermediate compiler.
 #
 pcom: bin/pcom
-bin/pcom: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+bin/pcom: $(SOURCE)/pcom.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
 	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
  	$(BUILD)/extend.o
 	@echo
@@ -223,8 +214,9 @@ bin/pcom: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
 		--list- --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(BUILD)/extlink.o \
@@ -237,21 +229,22 @@ bin/pcom: $(SOURCE)/pcom.pas $(BUILD)/AMD64/gcc/psystem.o \
 # Build pint, the intermediate interpreter and debug facillity.
 #
 pint: bin/pint
-bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+bin/pint: $(SOURCE)/pint.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
 	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
     $(BUILD)/extend.o
 	@echo
 	@echo "Building pint..."
 	@echo
 	mkdir -p $(BUILD)
-	gcc -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
+	$(CC) -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
 	pcom $(SOURCE)/pint.pas $(BUILD)/pint.p6 \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
 		--chk- --list- --reference-
 	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(BUILD)/extlink.o \
@@ -264,8 +257,8 @@ bin/pint: $(SOURCE)/pint.pas $(BUILD)/AMD64/gcc/psystem.o \
 # Build pmach, an intermediate interpreter without assembler.
 #
 pmach: bin/pmach
-bin/pmach: $(SOURCE)/pmach.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+bin/pmach: $(SOURCE)/pmach.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
 	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o
 	@echo
 	@echo "Building pmach..."
@@ -275,8 +268,9 @@ bin/pmach: $(SOURCE)/pmach.pas $(BUILD)/AMD64/gcc/psystem.o \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
 		--chk- --list- --reference-
 	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(BUILD)/extlink.o \
@@ -303,8 +297,8 @@ bin/cmach: $(SOURCE)/cmach/cmach.c
 # This is always 64 bit little endian.
 #
 pgen: bin/pgen
-bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
+bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
 	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas
 	@echo
 	@echo "Building pgen..."
@@ -313,8 +307,9 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
 	pcom $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/pgen.p6 \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 --list- --reference-
 	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
         $(BUILD)/parcmd.o \
 		$(BUILD)/AMD64/gcc/pgen.s \
@@ -325,16 +320,17 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/psystem.o \
 # Build genobj, an object code to C array converter.
 #
 genobj: bin/genobj
-bin/genobj: $(SOURCE)/genobj.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o
+bin/genobj: $(SOURCE)/genobj.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o
 	@echo
 	@echo "Building genobj..."
 	@echo
 	mkdir -p $(BUILD)
 	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --list- --reference-
 	pgen $(BUILD)/genobj.p6 $(BUILD)/genobj.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/genobj.s \
 		-o $(BUILD)/genobj -lm -lpthread
@@ -356,8 +352,8 @@ bin/spew: $(SOURCE)/spew.c
 # Build pc, the compiler integrator
 #
 pc: bin/pc
-bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
-	$(BUILD)/AMD64/gcc/psystem_asm.o $(BUILD)/AMD64/gcc/main.o \
+bin/pc: pc/pc.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
+	$(BUILD)/AMD64/gcc/main.o \
 	libs/services.o libs/strings.o libs/parse.o
 	@echo
 	@echo "Building pc..."
@@ -371,8 +367,9 @@ bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
 	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
 		--list- --reference-
 	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
-	$(CC) $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+        $(LIBS)/psystem.a \
+		$(LIBS)/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
 		$(LIBS)/services_wrapper.o \
@@ -393,7 +390,7 @@ bin/pc: pc/pc.pas $(BUILD)/AMD64/gcc/psystem.o \
 #
 # Build strings test.
 #
-libs/strtst: $(LIBS)/source/strtst.pas
+libs/strtst: $(LIBS)/source/strtst.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o
 	@echo
 	@echo "Building strtst..."
 	@echo
@@ -401,8 +398,9 @@ libs/strtst: $(LIBS)/source/strtst.pas
 	pcom $(LIBS)/source/strtst.pas $(BUILD)/libs/strtst.p6 \
 		--modules=$(LIBS)/source --list- --reference-
 	pgen $(BUILD)/libs/strtst.p6 $(BUILD)/libs/strtst.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
@@ -414,7 +412,7 @@ libs/strtst: $(LIBS)/source/strtst.pas
 # Build services test.
 #
 libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_test1.pas \
-	libs/services.o libs/strings.o
+	libs/services.o libs/strings.o $(LIBS)/psystem.o $(LIBS)/psystem_asm.o
 	@echo
 	@echo "Building services test..."
 	@echo
@@ -425,8 +423,9 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		$(BUILD)/libs/services_test1.p6 --list- --reference-
 	pgen $(BUILD)/libs/services_test.p6 $(BUILD)/libs/services_test.s
 	pgen $(BUILD)/libs/services_test1.p6 $(BUILD)/libs/services_test1.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
 		$(LIBS)/services_wrapper.o \
@@ -436,8 +435,9 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		$(LIBS)/services_wrapper_asm.o \
 		$(BUILD)/libs/services_test.s -o $(LIBS)/services_test -lm -lpthread
 	cp $(LIBS)/services_test bin
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
 		$(LIBS)/services_wrapper.o \
@@ -451,14 +451,16 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 #
 # Build a test program (for whatever)
 #
-test: test.pas libs/services.o libs/strings.o
+test: test.pas libs/services.o libs/strings.o $(LIBS)/psystem.o \
+	$(LIBS)/psystem_asm.o
 	@echo
 	@echo "Building test..."
 	@echo
 	pcom --modules=libs/source test.pas test.p6
 	pgen test.p6 test.s
-	gcc $(CFLAGS) $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o \
+	$(CC) $(CFLAGS) \
+		$(LIBS)/psystem.o \
+		$(LIBS)/psystem_asm.o \
 		$(LIBS)/services.o \
 		$(LIBS)/services_support.o \
 		$(LIBS)/services_wrapper.o \
