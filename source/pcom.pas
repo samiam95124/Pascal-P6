@@ -8010,7 +8010,7 @@ end;
                                         { if the type is structured, and is
                                           a view parameter, promote to formal }
                                         if lsp <> nil then
-                                          if (lsp^.form >= power) and
+                                          if (lsp^.form > power) and
                                              (part = ptview) then
                                             vkind := formal
                                       end;

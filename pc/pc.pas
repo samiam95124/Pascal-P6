@@ -46,7 +46,7 @@
 *                                                                             *
 ******************************************************************************}
 
-program pc(output);
+program pc(output, command);
 
 uses strings,  { string library }
      services, { os extentions }
@@ -1907,7 +1907,7 @@ begin
 
    { process command line }
    openpar(cmdhan); { open parser }
-   openfil(cmdhan, '_command', cmdmax); { open command line level }
+   opencommand(cmdhan, cmdmax); { open command line level }
    filchr(valfch); { get the filename valid characters }
    valfch := valfch-['=']; { remove parsing characters }
    setfch(cmdhan, valfch); { set that for active parsing }

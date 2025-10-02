@@ -157,7 +157,7 @@
 *                                                                             *
 ******************************************************************************}
 
-module parse(output);
+module parse(output, command);
 
 uses strings,
      services;
@@ -174,6 +174,7 @@ procedure openpar(var ph: parhan); forward;
 procedure closepar(ph: parhan); forward;
 procedure openstr(ph: parhan; view s: string); forward;
 procedure openfil(ph: parhan; view fn: string; blen: integer); forward;
+procedure opencommand(ph: parhan; blen: integer); forward;
 procedure closefil(ph: parhan); forward;
 function endfil(ph: parhan): boolean; forward;
 function endlin(ph: parhan): boolean; forward;
@@ -224,6 +225,7 @@ type
       endf: boolean; { end of file encountered }
       flin: boolean; { file entry is for line buffer only }
       f:    text;    { file to read }
+      cmd:  boolean; { file is command file }
       sav:  posptr;  { position save stack }
       next: iflptr   { next entry in files stack }
 
@@ -233,7 +235,7 @@ type
 
       fil: iflptr;  { files stack }
       err: integer; { number of errors }
-      fch: schar;  { set of valid file characters }
+      fch: schar;   { set of valid file characters }
       trc: boolean  { trace input lines }
 
    end;
@@ -335,8 +337,17 @@ begin
             if eof(f) then endf := true { eof encountered }
             else begin { read the line }
 
-               reads(f, buf^, ovf); { read the first line in }
-               readln(f);
+               if cmd then begin { its the command file }
+
+                  reads(command, buf^, ovf); { read the first line in }
+                  readln(command)
+
+               end else begin { its a file }
+
+                  reads(f, buf^, ovf); { read the first line in }
+                  readln(f)
+
+               end;
                if ovf then error('Line too long for input buffer');
                llen := len(buf^); { set length }
                inx := 1; { set 1st character position }
@@ -454,7 +465,7 @@ end;
 
 {******************************************************************************
 
-Open file for parsing
+Open file by name for parsing
 
 Opens a new file level for processing. A new file entry is stacked and
 intialized.
@@ -479,11 +490,47 @@ begin
       endf := false; { set no eof }
       flin := false; { set not a buffer only entry }
       sav := nil; { clear position stack }
+      cmd := false; { set not command file }
 { problem: the _command file could be opened, it does not exist. fix is
   probally for paslib to recognize that }
 {      if not exists(fn) then error('File does not exist');}
       assign(f, fn); { activate file for reading }
       reset(f)
+
+   end;
+   fp^.next := partab[ph]^.fil; { push file entry onto stack }
+   partab[ph]^.fil := fp
+
+end;
+
+{******************************************************************************
+
+Open command file for parsing
+
+Opens a new file level for processing. A new file entry is stacked and
+intialized.
+
+******************************************************************************}
+
+procedure opencommand(ph: parhan; blen: integer);
+
+var fp: iflptr; { pointer to file entry }
+
+begin
+
+   if partab[ph] = nil then error('Invalid parse handle');
+   new(fp); { get new file entry }
+   with fp^ do begin { intalize entry }
+
+      new(buf, blen); { create the line buffer }
+      clears(buf^); { clear the buffer }
+      inx := 0; { flag no line read }
+      name := copy('<predefined>'); { create the filename }
+      line := 0; { set no line active }
+      endf := false; { set no eof }
+      flin := false; { set not a buffer only entry }
+      sav := nil; { clear position stack }
+      cmd := true { set command file }
 
    end;
    fp^.next := partab[ph]^.fil; { push file entry onto stack }
@@ -516,7 +563,8 @@ begin
       line := 0; { set no line active }
       endf := false; { set no eof }
       flin := true; { set not a buffer only entry }
-      sav := nil { clear position stack }
+      sav := nil; { clear position stack }
+      cmd := false { set not command file }
 
    end;
    fp^.next := partab[ph]^.fil; { push file entry onto stack }
