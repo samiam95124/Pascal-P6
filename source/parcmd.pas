@@ -24,6 +24,9 @@ procedure readlncommand; forward;
 procedure getcommandline; forward;
 procedure paroptions; forward;
 procedure parhdrfil(var f: text; var wasproc: boolean; view e: string); forward;
+procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string; 
+                       view e: string); forward;
+
 
 { "fileofy" routines for command line processing.
 
@@ -158,18 +161,17 @@ begin
   until bufcommand <> '-'
 end;
 
-procedure parhdrfil(var f: text; var wasproc: boolean; view e: string);
-const maxfil = 200;
-var name: packed array [1..maxfil] of char; i: 1..maxfil; el: 0..maxfil;
+procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string; view e: string);
+var i, el: integer;
 procedure getname;
-var i: 1..maxfil;
+var i: integer;
 begin
-  for i := 1 to maxfil do name[i] := ' ';
+  for i := 1 to max(name) do name[i] := ' ';
   i := 1;
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
   if (bufcommand <> ' ') and not eolncommand and not eofcommand then
     while not eolncommand and not eofcommand and (bufcommand <> ' ') do begin
-    if i = maxfil then begin
+    if i = max(name) then begin
       writeln('*** Filename too long');
       halt
     end;
@@ -181,19 +183,30 @@ begin
   getname; 
   if name[1] <> ' ' then begin 
     el := 0;
-    for i := 1 to maxfil do if name[i] = '.' then el := i;
+    for i := 1 to max(name) do if name[i] = '.' then el := i;
     if el = 0 then begin
-      el := maxfil;
+      el := max(name);
       while (name[el] = ' ') and (el > 1) do el := el-1;
-      if (name[el] <> ' ') and (el < maxfil) then el := el+1;
-      if el+4 > maxfil then begin
+      if (name[el] <> ' ') and (el < max(name)) then el := el+1;
+      if el+4 > max(name) then begin
         writeln('*** Filename too long');
         halt
       end;
       if el > 0 then for i := 1 to 4 do name[el+i-1] := e[i]
     end;
-    assign(f, name); wasproc := true 
+    assign(f, name); wasproc := true;
+    { remove extension }
+    el := 0;
+    for i := 1 to max(name) do if name[i] = '.' then el := i;
+    if el > 0 then for i := el to max(name) do name[i] := ' '
   end
+end;
+
+procedure parhdrfil(var f: text; var wasproc: boolean; view e: string);
+const maxfil = 200;
+var name: packed array [1..maxfil] of char;
+begin
+  parhdrfilnam(f, wasproc, name, e)
 end;
 
 begin

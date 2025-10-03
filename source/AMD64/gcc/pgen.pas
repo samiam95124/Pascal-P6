@@ -260,6 +260,7 @@ const
       varsqt      = 10;      { variable string quanta }
       parfld      = 24;      { field length for intermediate parameters }
       maxtmp      = 20;      { maximum number of template dimensions }
+      maxflen     = 200;     { maximum filename length }
 
       { coder parameters }
       maxreg      = 1000;    { maximum virtual registers to allocate }
@@ -405,6 +406,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       modnam      : pstring; { block name }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
+      srcfil(maxflen): string; { name of input source file }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -1728,6 +1730,7 @@ procedure xlate;
           ':': begin { source line }
                   read(prd,x); { get source line number }
                   sline := x; prtline; writeln(prr, ' ', ':', x:1);
+                  writeln(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
                   { skip the rest of the line, which would be the
                     contents of the source line if included }
                   while not eoln(prd) do
@@ -5966,7 +5969,7 @@ begin (* main *)
   cmdpos := 1;
   paroptions; { parse command line options }
   { parse header files }
-  parhdrfil(prd, prdval, '.p6 ');
+  parhdrfilnam(prd, prdval, srcfil, '.p6 ');
   if not prdval then begin
     writeln('*** Error: input filename not found');
     goto 99
@@ -5990,6 +5993,8 @@ begin (* main *)
   if experiment then write(prr, '.x');
   writeln(prr);
   writeln(prr, '#');
+  writeln(prr, '        .file "', srcfil:*, '.pas"');
+  writeln(prr, '        .file 1 "', srcfil:*, '.pas"');
   writeln(prr);
 
   xlate; (* assembles and stores code *)
