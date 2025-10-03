@@ -2351,7 +2351,7 @@ procedure load;
        if eof(prd) then errorl('unexpected eof on input  ');
        getnxt;(* first character of line*)
        if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                      'e', 's', 'f','v','t','n','c','x']) then
+                      'e', 's', 'f','v','t','n','c','x','p']) then
          errorl('unexpected line start    ');
        case ch of
          '!': getlin; { comment }
@@ -2648,7 +2648,8 @@ procedure load;
                        end;
                 end;
                 getlin
-              end
+              end;
+         'p': getlin; { ignore filename/path }
        end;
      end
    end; (*generate*)

@@ -205,18 +205,22 @@ pcom: bin/pcom
 bin/pcom: $(SOURCE)/pcom.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
 	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
 	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
- 	$(BUILD)/extend.o
+ 	$(BUILD)/extend.o libs/services.o
 	@echo
 	@echo "Building pcom..."
 	@echo
 	mkdir -p $(BUILD)
 	pcom $(SOURCE)/pcom.pas $(BUILD)/pcom.p6 \
 		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
-		--list- --reference-
+		--modules=$(LIBS)/source --list- --reference-
 	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
 	$(CC) $(CFLAGS) \
 		$(LIBS)/psystem.o \
 		$(LIBS)/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
+		$(LIBS)/services_wrapper_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(BUILD)/extlink.o \
@@ -299,17 +303,22 @@ bin/cmach: $(SOURCE)/cmach/cmach.c
 pgen: bin/pgen
 bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(LIBS)/psystem.o $(LIBS)/psystem_asm.o \
 	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
-	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas
+	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas libs/services.o
 	@echo
 	@echo "Building pgen..."
 	@echo
 	mkdir -p $(BUILD)/AMD64/gcc
 	pcom $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/pgen.p6 \
-		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 --list- --reference-
+		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
+        --modules=$(LIBS)/source --list- --reference-
 	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
 	$(CC) $(CFLAGS) \
 		$(LIBS)/psystem.o \
 		$(LIBS)/psystem_asm.o \
+		$(LIBS)/services.o \
+		$(LIBS)/services_support.o \
+		$(LIBS)/services_wrapper.o \
+		$(LIBS)/services_wrapper_asm.o \
 		$(BUILD)/AMD64/gcc/main.o \
         $(BUILD)/parcmd.o \
 		$(BUILD)/AMD64/gcc/pgen.s \

@@ -74,6 +74,8 @@
 
 program pgen(input,output,command);
 
+joins services;
+
 uses endian,  { endian mode }
      mpb,     { machine parameter block }
      version, { current version number }
@@ -406,7 +408,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       modnam      : pstring; { block name }
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
-      srcfil(maxflen): string; { name of input source file }
+      lindig      : boolean; { line diagnostic for gdb encountered }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -1698,12 +1700,14 @@ procedure xlate;
           r: real;
           s: settype;
           cs: packed array [1..1] of char;
+          srcfil(maxflen): string; { name of input source file }
+          p(fillen), n(fillen), e(fillen): string; { filename components }
    begin
       again := true; csttab := false;
       while again and not eof(prd) do begin
         getnxt;(* first character of line*)
         if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
-                       'v', 't', 'n', 'x', 'c']) then
+                       'v', 't', 'n', 'x', 'c', 'p']) then
           errorl('unexpected line start');
         case ch of
           '!': begin prtline; write(prr, ' ', '!'); while not eoln(prd) do
@@ -1730,7 +1734,8 @@ procedure xlate;
           ':': begin { source line }
                   read(prd,x); { get source line number }
                   sline := x; prtline; writeln(prr, ' ', ':', x:1);
-                  writeln(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
+                  if lindig then { gdb line diagnostic active }
+                    writeln(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
                   { skip the rest of the line, which would be the
                     contents of the source line if included }
                   while not eoln(prd) do
@@ -2010,6 +2015,20 @@ procedure xlate;
                          cstp2^.x := v; cstp2^.valxn := 0
                        end;
                 end;
+                getlin
+              end;
+         'p': begin { filename and path }
+                getnxt; skpspc;
+                for i := 1 to max(srcfil) do srcfil[i] := ' ';
+                skpspc; i := 1;
+                while ch <> ' ' do begin 
+                  srcfil[i] := ch; getnxt; i := i+1;
+                  if i = max(srcfil) then errorl('filename to long')
+                end;
+                services.brknam(srcfil, p, n, e);
+                writeln(prr, '        .file   "',n:*, '.', e:*, '"'); 
+                writeln(prr, '        .file   1 "',srcfil:*, '"'); 
+                lindig := true; { set line diagnostic active for gdb }
                 getlin
               end;
        end
@@ -5950,6 +5969,7 @@ begin (* main *)
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }
   level := 0; { clear level count }
+  lindig := false; { set no encounter line diagnostic }
 
   { supress warning }
   if blklst = nil then;
@@ -5969,7 +5989,7 @@ begin (* main *)
   cmdpos := 1;
   paroptions; { parse command line options }
   { parse header files }
-  parhdrfilnam(prd, prdval, srcfil, '.p6 ');
+  parhdrfil(prd, prdval, '.p6 ');
   if not prdval then begin
     writeln('*** Error: input filename not found');
     goto 99
@@ -5993,8 +6013,6 @@ begin (* main *)
   if experiment then write(prr, '.x');
   writeln(prr);
   writeln(prr, '#');
-  writeln(prr, '        .file "', srcfil:*, '.pas"');
-  writeln(prr, '        .file 1 "', srcfil:*, '.pas"');
   writeln(prr);
 
   xlate; (* assembles and stores code *)
