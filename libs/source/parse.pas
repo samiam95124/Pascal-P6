@@ -334,8 +334,9 @@ begin
          if flin then endf := true { set end of file on single buffer }
          else begin { is a file }
 
-            if eof(f) then endf := true { eof encountered }
-            else begin { read the line }
+            { find end of file }
+            if cmd then endf := eof(command) else endf := eof(f);
+            if not endf then begin { read the line }
 
                if cmd then begin { its the command file }
 
@@ -447,7 +448,7 @@ begin
       { free file entries }
       with fil^ do begin
 
-         if not flin then close(f); { close the file }
+         if not flin and not cmd then close(f); { close the file }
          if buf <> nil then dispose(buf); { release buffer }
          if name <> nil then dispose(name) { release name }
 

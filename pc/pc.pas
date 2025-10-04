@@ -215,7 +215,7 @@ begin
       parlab(cmdhan, w, err); { parse option label }
       if err then begin
 
-         writeln('*** pc: Invalid option');
+         writeln('*** pc: Invalid option "', w:*, '"');
          goto 99
 
       end;
@@ -247,7 +247,7 @@ begin
          parwrd(cmdhan, usepth, err); { get path }
          if err then begin
 
-            writeln('*** pc: Invalid uses path');
+            writeln('*** pc: Invalid uses path "', usepth:*, '"');
             goto 99
 
          end
@@ -1855,7 +1855,7 @@ end;
 begin
 
    writeln;
-   write('PC compiler shell vs. 1.13.01 Copyright (C) 2005 S. A. Moore');
+   writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
    writeln;
 
    filstk := nil; { clear the files stack }
@@ -1945,7 +1945,7 @@ begin
    { now check the file itself exists }
    if not exists(prgnam) then begin { file not found }
 
-      writeln('*** pc: Error: target file not found');
+      writeln('*** pc: Error: target file "', prgnam:*, '" not found');
       goto 99
 
    end;

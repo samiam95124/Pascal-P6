@@ -151,7 +151,7 @@ void rempad(
 {
 
     cs += *l-1;
-    while (l && *cs == ' ') { (*l)--; cs--; }
+    while (*l && *cs == ' ') { (*l)--; cs--; }
 
 }
 
