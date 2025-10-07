@@ -227,7 +227,7 @@ deftbl: array [tolken] of pstring; { tolken definition strings }
 ci:     chrinx;
 ri:     resinx;
 li:     labinx;
-
+
 {******************************************************************************
 
 Process scanner error
@@ -240,7 +240,7 @@ procedure error(f: fcbptr; e: errcod);
 
 begin
 
-   writeln(f^.lininp:0); { output source line }
+   writeln(f^.lininp:*); { output source line }
    writeln('^': f^.linptr); { output marker }
    write('*** ', f^.name^, ' [', f^.lincnt:1, ':', f^.linptr:1, '] ');
    case e of { error }
@@ -262,7 +262,7 @@ begin
    halt
 
 end;
-
+
 {******************************************************************************
 
 Find label hash function
@@ -297,7 +297,7 @@ begin
    hash := r mod maxv + 1
 
 end;
-
+
 {******************************************************************************
 
 Get next input line
@@ -323,12 +323,12 @@ begin
 
    end;
 {;if not eof(f^.inpfil) then begin
-;write(output, f^.linbuf:0);
+;write(output, f^.linbuf:*);
 ;writeln;
 ;end;}
 
 end;
-
+
 {******************************************************************************
 
 Check end of line
@@ -345,7 +345,7 @@ begin
    endlin := f^.linptr > f^.linend
 
 end;
-
+
 {******************************************************************************
 
 Check eof
@@ -363,7 +363,7 @@ begin
   seof := endlin(f) and eof(f^.inpfil)
 
 end;
-
+
 {******************************************************************************
 
 Check next input character
@@ -387,7 +387,7 @@ begin
    chkchr := c { return result }
 
 end;
-
+
 {******************************************************************************
 
 Skip input character
@@ -406,7 +406,7 @@ begin
       f^.linptr := f^.linptr+1 { advance one character }
 
 end;
-
+
 {******************************************************************************
 
 Skip input spaces or controls
@@ -431,7 +431,7 @@ begin
    until seof(f) or (chkchr(f) > ' ') { eof or non-space }
 
 end;                  
-
+
 {******************************************************************************
 
 Recognize control memnonic
@@ -533,7 +533,7 @@ begin
    if c = ' ' then f^.linptr := ips[1] { if not found, restore position }
 
 end;
-
+
 {******************************************************************************
 
 Parse and convert numeric
@@ -717,7 +717,7 @@ begin
    copy(f^.nxtlab, outb) { place number as parsed }
 
 end;
-
+
 {******************************************************************************
 
 Parse string
@@ -798,7 +798,7 @@ begin
    if (f^.nxtlen = 0) and fansi then error(f, enulstr) { null string }
 
 end;
-
+
 {******************************************************************************
 
 Parse label/reserved word
@@ -845,7 +845,8 @@ begin
 
    end;
    ri := hash(f^.nxtlab, hashoff, resmax); { find initial hash function }
-   if compp(f^.nxtlab, restbl[ri].lab^) then { found 1st try }
+   if restbl[ri].lab = nil then f^.nxttlk := cidentifier { not found}
+   else if compp(f^.nxtlab, restbl[ri].lab^) then { found 1st try }
       f^.nxttlk := restbl[ri].tolk
    else begin { search chained }
 
@@ -865,7 +866,7 @@ begin
       f^.nxttlk := cidentifier { not tolkens }
 
 end;
-
+
 {******************************************************************************
 
 Parse special character sequence
@@ -950,7 +951,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Parse tolken
@@ -986,7 +987,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Get next tolken
@@ -1048,7 +1049,7 @@ begin
          crct:        write('right comment');
          cinteger:    write('unsigned integer constant: ', f^.nxtint);
          cidentifier: begin write('identifier: '); 
-                            write(output, f^.nxtlab:0) end;
+                            write(output, f^.nxtlab:*) end;
          cstring:     begin write('string constant: '); 
                             for i := 1 to f^.nxtlen do write(f^.nxtlab[i]) end;
          creal:       write('real constant: ', f^.nxtflt);
@@ -1061,7 +1062,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Open scanner file
@@ -1083,7 +1084,7 @@ begin
    gettlk(f) { load 1st tolken in file }
 
 end;
-
+
 {******************************************************************************
 
 Close scanner file
@@ -1100,7 +1101,7 @@ begin
    dispose(f) { free its structure }
 
 end;
-
+
 {******************************************************************************
 
 Initalize scanner

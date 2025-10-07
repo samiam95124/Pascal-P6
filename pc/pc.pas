@@ -152,7 +152,7 @@ var
    siolib:  boolean; { an alternate standard I/O library exists }
 
 procedure logfil(view fn: string; var hp: filept); forward;
-
+
 {******************************************************************************
 
 Check options
@@ -252,7 +252,7 @@ begin
          parse.parwrd(cmdhan, usepth, err); { get path }
          if err then begin
 
-            writeln('*** pc: Invalid uses path "', usepth:*, '"');
+            writeln('*** pc: Error: Invalid uses path "', usepth:*, '"');
             goto 99
 
          end
@@ -269,7 +269,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Search file
@@ -311,7 +311,7 @@ begin
    schfil := hp { return result }
 
 end;
-
+
 {******************************************************************************
 
 Check file excluded
@@ -360,7 +360,7 @@ begin
    chkexcl := f { return result }
 
 end;
-
+
 {******************************************************************************
 
 Do list file
@@ -385,7 +385,7 @@ begin
       if l^.next <> nil then begin { should not be more than one entry }
 
          writeln('*** pc: Error: system fault: call S. A. Moore software');
-         halt
+         goto 99
 
       end;
       { translate entry }
@@ -406,7 +406,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Find file
@@ -461,7 +461,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Do uses file
@@ -555,9 +555,7 @@ begin
       until t <> scanner.ccma; { until no more }
       if f^.nxttlk <> scanner.cscn then begin { bad syntax }
 
-         write('*** pc: Error: Bad ''uses'' syntax in ');
-         write(output, fn:0);
-         writeln;
+         writeln('*** pc: Error: Bad ''uses'' syntax in ', fn:*);
          goto 99
 
       end
@@ -568,7 +566,7 @@ begin
    scanner.clsscn(f) { close scan instance }
 
 end;
-
+
 {******************************************************************************
 
 Log source file
@@ -610,9 +608,7 @@ begin
       dolist(fns, hp);
       if hp = nil then begin { missing source }
       
-         write('*** pc: Error: missing source file ''');
-         write(output, fns:0);
-         writeln('''');
+         writeln('*** pc: Error: missing source file ''', fns:*, '''');
          goto 99
 
       end;
@@ -640,7 +636,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Write file entry
@@ -667,7 +663,7 @@ begin
    writeln
 
 end;
-
+
 {******************************************************************************
 
 Print discovered file tree
@@ -756,7 +752,7 @@ begin
    writeln
 
 end;
-
+
 {******************************************************************************
 
 Dump package list
@@ -790,7 +786,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Find or insert standard library
@@ -864,7 +860,7 @@ begin
       fndfil(defnam);
       if not exists(defnam) then begin { not found }
 
-         write('*** pc: Error: support module "', defnam:*, '" not found');
+         writeln('*** pc: Error: support module "', defnam:*, '" not found');
          goto 99
 
       end;
@@ -873,7 +869,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Find package lists
@@ -1030,7 +1026,7 @@ begin { fndpkg }
    lnkpkg { link to used packages }
 
 end;
-
+
 {******************************************************************************
 
 Find link order
@@ -1279,7 +1275,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Execute build action
@@ -1315,7 +1311,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Perform file action
@@ -1345,7 +1341,7 @@ begin
 
    if i > scanner.maxlin then begin { overflow }
 
-      writeln('*** Error: action command too long');
+      writeln('*** pc: Error: action command too long');
       goto 99
 
    end;
@@ -1423,7 +1419,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Perform file actions on list
@@ -1444,7 +1440,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Perform linkage and generate pass
@@ -1503,9 +1499,7 @@ begin
    fndfil(cap);
    if not exists(cap) then begin { not found }
 
-      write('*** pc: Error: support module ''');
-      write(output, cap:0);
-      writeln(''' not found');
+      writeln('*** pc: Error: support module ''', cap:*, ''' not found');
       goto 99
 
    end;
@@ -1547,7 +1541,7 @@ begin
    delete('temp.sym')
 
 end;
-
+
 {******************************************************************************
 
 Register file
@@ -1590,7 +1584,7 @@ begin
    if not fp^.code and not compp(fp^.name, prgnam) then fp^.rebld := false
    
 end;
-
+
 {******************************************************************************
 
 Check executive rebuild
@@ -1623,7 +1617,7 @@ begin
    if (op = nil) or (sp = nil) then begin { should not be missing }
 
       writeln('*** pc: Error: Sequence error, missing file: check other tasks');
-      halt
+      goto 99
 
    end;
    if ep = nil then excrbl := true { does not exist }
@@ -1636,7 +1630,7 @@ begin
    dispose(sp)
 
 end;
-
+
 {******************************************************************************
 
 Register files
@@ -1660,7 +1654,7 @@ begin
    end
 
 end;
-
+
 {*******************************************************************************
 
 Parse and load instruction file
@@ -1855,7 +1849,7 @@ begin
    parse.closepar(inshan) { close the parser instance }
 
 end;
-
+
 begin
 
    writeln;
