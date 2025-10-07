@@ -48,10 +48,14 @@
 
 program pc(output, command);
 
-uses strings,  { string library }
-     services, { os extentions }
-     parse,   { parser library }
-     scanner; { pascal scanner }
+joins 
+    parse,    { parser library }
+    services, { os extentions }
+    scanner;  { pascal scanner }
+
+uses 
+     strings;  { string library }
+
 
 label 99; { abort program }
 
@@ -112,7 +116,7 @@ type
 
 var
 
-   cmdhan:  parhan;  { handle for command parsing }
+   cmdhan:  parse.parhan;  { handle for command parsing }
    err:     boolean; { error holder }
    valfch:  schar;  { valid file characters }
    filstk:  filept;  { file information stack }
@@ -124,6 +128,7 @@ var
    fact:    boolean; { list actions }
    fdry:    boolean; { do not perform actions }
    frebld:  boolean; { rebuild all }
+   fansi:   boolean; { ansi standard mode }
    fngwin:  boolean; { no graphical windows mode }
    fdeftrm: boolean; { default to terminal mode }
    fdefgra: boolean; { default to graphical mode }
@@ -207,12 +212,12 @@ end;
 
 begin
 
-   skpspc(cmdhan); { skip spaces }
-   while chkchr(cmdhan) = optchr do begin { parse option }
+   parse.skpspc(cmdhan); { skip spaces }
+   while parse.chkchr(cmdhan) = services.optchr do begin { parse option }
 
       optfnd := false; { set no option found }
-      getchr(cmdhan); { skip option marker }
-      parlab(cmdhan, w, err); { parse option label }
+      parse.getchr(cmdhan); { skip option marker }
+      parse.parlab(cmdhan, w, err); { parse option label }
       if err then begin
 
          writeln('*** pc: Invalid option "', w:*, '"');
@@ -236,15 +241,15 @@ begin
          compp(w, 'up') then begin
 
          optfnd := true;
-         skpspc(cmdhan); { skip spaces }
-         if chkchr(cmdhan) <> '=' then begin { should have '=' }
+         parse.skpspc(cmdhan); { skip spaces }
+         if parse.chkchr(cmdhan) <> '=' then begin { should have '=' }
 
             writeln('*** pc: Error: missing ''=''');
             goto 99
 
          end;
-         getchr(cmdhan); { skip '=' }
-         parwrd(cmdhan, usepth, err); { get path }
+         parse.getchr(cmdhan); { skip '=' }
+         parse.parwrd(cmdhan, usepth, err); { get path }
          if err then begin
 
             writeln('*** pc: Invalid uses path "', usepth:*, '"');
@@ -259,7 +264,7 @@ begin
          goto 99
 
       end;
-      skpspc(cmdhan) { skip spaces }
+      parse.skpspc(cmdhan) { skip spaces }
 
    end
 
@@ -291,13 +296,13 @@ var fnd:     boolean; { return status holder }
 begin
 
    fnd := false; { set not found }
-   brknam(fn, p, n, e); { break out name only }
+   services.brknam(fn, p, n, e); { break out name only }
    copy(ns, n); { save }
    fp := filstk; { index top of stack }
    hp := nil; { set head not found }
    while fp <> nil do begin { search stack }
 
-      brknam(fp^.name, p, n, e); { break name }
+      services.brknam(fp^.name, p, n, e); { break name }
       if compp(ns, n) then hp := fp; { set filename found }
       fp := fp^.stack { next stack entry }
 
@@ -347,8 +352,8 @@ end;
 
 begin
 
-   brknam(fn, p, n, e); { break down }
-   maknam(tn, p, n, ''); { remove extention }
+   services.brknam(fn, p, n, e); { break down }
+   services.maknam(tn, p, n, ''); { remove extention }
    f := schexc(tn); { search for the filename }
    if not f then f := schexc(p); { try search directory }
 
@@ -369,12 +374,12 @@ wildcards. If there is no such file, nil is returned.
 procedure dolist(view fn: string;  { filename to look up }
                  var  fp: filept); { entry to return }
 
-var l:       filptr; { file entry pointer }
+var l: services.filptr; { file entry pointer }
 
 begin
 
    fp := nil; { set no file }
-   list(fn, l); { get files list }
+   services.list(fn, l); { get files list }
    if l <> nil then begin { there is a file }
 
       if l^.next <> nil then begin { should not be more than one entry }
@@ -425,7 +430,7 @@ begin
 
    if usepth[1] <> ' ' then begin { uses path is not empty }
 
-      brknam(fn, p, n, e); { break down filespec }
+      services.brknam(fn, p, n, e); { break down filespec }
       copy(pt, usepth); { copy uses path }
       m := false; { set no match }
       repeat { try path components }
@@ -443,7 +448,7 @@ begin
             extract(pt, pt, i+1, len(pt)) { remove from uses path }
 
          end;
-         maknam(fns, w, n, 'pas'); { construct a name }
+         services.maknam(fns, w, n, 'pas'); { construct a name }
          if exists(fns) then begin
 
             copy(fn, fns); { copy winning spec }
@@ -478,15 +483,15 @@ be assumed to be a define only file, and can be skipped from the link order.
 procedure douses(view fn: string;  { filename to process }
                       fp: filept); { head entry }
 
-var f:  fcbptr; { file control block }
-    t:  tolken; { next tolken save }
+var f:  scanner.fcbptr; { file control block }
+    t:  scanner.tolken; { next tolken save }
     w:  filnam; { path holder }
     hp: filept; { head entry pointer }
     p:  fllptr; { file linkage pointer }
 
 { skip forward to interesting tolken, while tracking in-code status }
 
-procedure skpsrc(view s: tlkset);
+procedure skpsrc(view s: scanner.tlkset);
 
 var blkcnt: integer; { block nesting tracker }
 
@@ -497,11 +502,11 @@ begin
    while not (f^.nxttlk in s) do begin
 
       { perform block nest/unnest }
-      if f^.nxttlk = cbegin then blkcnt := blkcnt+1 { nest blocks }
+      if f^.nxttlk = scanner.cbegin then blkcnt := blkcnt+1 { nest blocks }
       { 'begin' is unambiguous, but 'end' has multiple uses, it can also appear
         in a record. However, these are never declared inside a block. So we
         just ignore attempts to go negative on block nesting. }
-      else if (f^.nxttlk = cend) and (blkcnt > 0) then 
+      else if (f^.nxttlk = scanner.cend) and (blkcnt > 0) then 
          blkcnt := blkcnt-1 { denest }
       { now, ANYTHING within an active begin..end block can be considered code.
         We only have to do this because an empty block is required on a 
@@ -509,9 +514,10 @@ begin
       else if blkcnt > 0 then fp^.code := true;
       { Note that "var" can appear in two places, but they both imply code is
         generated. }
-      if f^.nxttlk in [cvar, cfixed, cprocedure, cfunction] then 
+      if f^.nxttlk in [scanner.cvar, scanner.cfixed, scanner.cprocedure, 
+                       scanner.cfunction] then
          fp^.code := true; { coding structure found }
-      gettlk(f) { get next tolken }
+      scanner.gettlk(f) { get next tolken }
 
    end
 
@@ -519,14 +525,14 @@ end;
 
 begin
 
-   opnscn(f, fn); { open scan instance }
-   skpsrc([cuses, ceof]); { skip until file end or "uses" }
-   if f^.nxttlk = cuses then begin { we found it }
+   scanner.opnscn(f, fn); { open scan instance }
+   skpsrc([scanner.cuses, scanner.ceof]); { skip until file end or "uses" }
+   if f^.nxttlk = scanner.cuses then begin { we found it }
 
-      gettlk(f); { skip 'uses' }
+      scanner.gettlk(f); { skip 'uses' }
       repeat { process 'uses' files }
 
-         if f^.nxttlk <> cidentifier then begin { bad syntax }
+         if f^.nxttlk <> scanner.cidentifier then begin { bad syntax }
 
             write('Bad ''uses'' syntax in ');
             write(output, fn:0);
@@ -542,12 +548,12 @@ begin
          p^.ref := hp; { place link }
          p^.next := fp^.link; { insert to link list }
          fp^.link := p;
-         gettlk(f); { get next tolken }
+         scanner.gettlk(f); { get next tolken }
          t := f^.nxttlk; { save next tolken }
-         if f^.nxttlk = ccma then gettlk(f) { skip ',' }
+         if f^.nxttlk = scanner.ccma then scanner.gettlk(f) { skip ',' }
 
-      until t <> ccma; { until no more }
-      if f^.nxttlk <> cscn then begin { bad syntax }
+      until t <> scanner.ccma; { until no more }
+      if f^.nxttlk <> scanner.cscn then begin { bad syntax }
 
          write('*** pc: Error: Bad ''uses'' syntax in ');
          write(output, fn:0);
@@ -558,8 +564,8 @@ begin
       { thats all we verify, the start and the end }
      
    end;
-   skpsrc([ceof]); { skip until file end }
-   clsscn(f) { close scan instance }
+   skpsrc([scanner.ceof]); { skip until file end }
+   scanner.clsscn(f) { close scan instance }
 
 end;
 
@@ -599,8 +605,8 @@ begin
    if hp = nil then begin { nope, process }
 
       { do the four component files }
-      brknam(fns, p, n, e); { add Pascal extention }
-      maknam(fns, p, n, 'pas');
+      services.brknam(fns, p, n, e); { add Pascal extention }
+      services.maknam(fns, p, n, 'pas');
       dolist(fns, hp);
       if hp = nil then begin { missing source }
       
@@ -611,23 +617,23 @@ begin
 
       end;
       hp^.excl := chkexcl(fn); { check exists in exclude }
-      brknam(fns, p, n, e); { add symbols extention }
-      maknam(fns, p, n, 'sym');
+      services.brknam(fns, p, n, e); { add symbols extention }
+      services.maknam(fns, p, n, 'sym');
       dolist(fns, fp);
       hp^.syme := fp; { place link }
-      brknam(fns, p, n, e); { add object extention }
-      maknam(fns, p, n, 'obj');
+      services.brknam(fns, p, n, e); { add object extention }
+      services.maknam(fns, p, n, 'obj');
       dolist(fns, fp);
       hp^.obje := fp; { place link }
-      brknam(fns, p, n, e); { add assembly extention }
-      maknam(fns, p, n, 'asm');
+      services.brknam(fns, p, n, e); { add assembly extention }
+      services.maknam(fns, p, n, 'asm');
       dolist(fns, fp);
       hp^.asme := fp; { place link }
       { place head on stack }
       hp^.stack := filstk;
       filstk := hp;
-      brknam(fns, p, n, e); { add Pascal extention }
-      maknam(fns, p, n, 'pas');
+      services.brknam(fns, p, n, e); { add Pascal extention }
+      services.maknam(fns, p, n, 'pas');
       filcnt := filcnt+1; { count head files }
       douses(fns, hp) { process any uses files under }
 
@@ -651,9 +657,9 @@ begin
    { should find max length of filenames }
    write(fp^.name:0); { output filename }
    write(' '); { separate }
-   writedate(output, local(fp^.modify)); { output date/time of modification }
+   services.writedate(services.local(fp^.modify)); { output date/time of modification }
    write('  '); { separate }
-   writetime(output, local(fp^.modify));
+   services.writetime(services.local(fp^.modify));
    write('  '); { separate }
    if fp^.rebld then write('R');
    if fp^.excl then write('E');
@@ -725,8 +731,8 @@ begin
          while rp <> nil do begin { traverse references }
 
             copy(fn, rp^.ref^.name); { copy name }
-            brknam(fn, p, n, e); { remake without path or extention }
-            maknam(fn, '', n, '');
+            services.brknam(fn, p, n, e); { remake without path or extention }
+            services.maknam(fn, '', n, '');
             write(output, fn:0);
             if rp^.next <> nil then write(',');
             rp := rp^.next { next entry }
@@ -858,9 +864,7 @@ begin
       fndfil(defnam);
       if not exists(defnam) then begin { not found }
 
-         write('*** pc: Error: support module ''');
-         write(output, defnam:0);
-         writeln(''' not found');
+         write('*** pc: Error: support module "', defnam:*, '" not found');
          goto 99
 
       end;
@@ -957,8 +961,8 @@ begin
 
                   { We have extend this with .pas. I don't think that any other
                     extention would work downstream in any case. }
-                  brknam(pp^.name^, p, n, e); { break down filespec }
-                  maknam(fn, p, n, 'pas');
+                  services.brknam(pp^.name^, p, n, e); { break down filespec }
+                  services.maknam(fn, p, n, 'pas');
                   logfil(fn, pf); { log that }
                   logged := true { set new log }
 
@@ -992,7 +996,7 @@ begin
    fp := filstk; { index top of files list }
    while fp <> nil do begin { traverse }
 
-      brknam(fp^.name, fnp, fnn, fne); { break filename to components }
+      services.brknam(fp^.name, fnp, fnn, fne); { break filename to components }
       pp := package; { index top of package list }
       while pp <> nil do begin { traverse package list }
 
@@ -1003,7 +1007,7 @@ begin
             while lp <> nil do begin { traverse files list }
 
                { break filename to components }
-               brknam(lp^.name^, pnp, pnn, pne);
+               services.brknam(lp^.name^, pnp, pnn, pne);
                if compp(pnn, fnn) then { file contained in package }
                   fp^.pkg := cp; { link file to containing package file }
                lp := lp^.next { link next item in list }
@@ -1086,8 +1090,8 @@ var p, n, e: filnam;  { path components }
 begin
 
    { get rid of extention }
-   brknam(fn, p, n, e); { break down name }
-   maknam(fns, p, n, ''); { remake }
+   services.brknam(fn, p, n, e); { break down name }
+   services.maknam(fns, p, n, ''); { remake }
    putchr('"');
    { place name in link list }
    for i := 1 to len(fns) do putchr(fns[i]);
@@ -1132,7 +1136,7 @@ var i:       integer; { list index }
 
 begin
 
-   brknam(m, p, n, e); { strip name off }
+   services.brknam(m, p, n, e); { strip name off }
    f := false; { set no match }
    for i := 1 to words(l) do begin { for each list word }
 
@@ -1300,7 +1304,7 @@ begin
    end;
    if not fdry then begin { execute command }
 
-      execw(cs, r); { execute }
+      services.execw(cs, r); { execute }
       if r <> 0 then begin { error }
 
          writeln('Build has errors, terminating');
@@ -1330,8 +1334,8 @@ procedure doact(fp: filept);
 
 var p, n, e: filnam; { path components }
     fns:     filnam; { save for name }
-    cmdbuf:  linbuf; { command buffer }
-    i:       lininx; { index for that }
+    cmdbuf:  scanner.linbuf; { command buffer }
+    i:       scanner.lininx; { index for that }
 
 { place output character }
 
@@ -1339,7 +1343,7 @@ procedure putchr(c: char);
 
 begin
 
-   if i > maxlin then begin { overflow }
+   if i > scanner.maxlin then begin { overflow }
 
       writeln('*** Error: action command too long');
       goto 99
@@ -1370,9 +1374,9 @@ begin
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
       copy(fns, fp^.name); { make a copy of the name }
-      brknam(fns, p, n, e); { remove the extention }
-      maknam(fns, p, n, '');
-      fulnam(fns); { normalize it }
+      services.brknam(fns, p, n, e); { remove the extention }
+      services.maknam(fns, p, n, '');
+      services.fulnam(fns); { normalize it }
       { do information }
       if fverb then begin
 
@@ -1453,8 +1457,8 @@ procedure dolink;
 
 var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
-    cmdbuf:  linbuf;  { command buffer }
-    i:       lininx;  { index for that }
+    cmdbuf:  scanner.linbuf;  { command buffer }
+    i:       scanner.lininx;  { index for that }
     cap:     filnam;  { name for cap module }
 
 { place output character }
@@ -1463,7 +1467,7 @@ procedure putchr(c: char);
 
 begin
 
-   if i > maxlin then begin { overflow }
+   if i > scanner.maxlin then begin { overflow }
 
       writeln('*** pc: Error: action command too long');
       goto 99
@@ -1490,8 +1494,8 @@ end;
 begin
 
    { remove extention from target }
-   brknam(prgnam, p, n, e);
-   maknam(fns, p, n, '');
+   services.brknam(prgnam, p, n, e);
+   services.maknam(fns, p, n, '');
    i := 1; { set 1st command filename }
    clears(cmdbuf); { clear command buffer }
    { find cap }
@@ -1506,8 +1510,8 @@ begin
 
    end;
    { remove extention }
-   brknam(cap, p, n, e);
-   maknam(cap, p, n, '');
+   services.brknam(cap, p, n, e);
+   services.maknam(cap, p, n, '');
    if fverb then begin
 
       write('Building executable');
@@ -1608,13 +1612,13 @@ var op, sp, ep: filept; { file pointers }
 
 begin
 
-   brknam(prgnam, p, n, e); { break program name to components }
+   services.brknam(prgnam, p, n, e); { break program name to components }
    { find each of .obj, .sym and .exe files }
-   maknam(fn, p, n, 'obj');
+   services.maknam(fn, p, n, 'obj');
    dolist(fn, op);
-   maknam(fn, p, n, 'sym');
+   services.maknam(fn, p, n, 'sym');
    dolist(fn, sp);
-   maknam(fn, p, n, 'exe');
+   services.maknam(fn, p, n, 'exe');
    dolist(fn, ep);
    if (op = nil) or (sp = nil) then begin { should not be missing }
 
@@ -1695,7 +1699,7 @@ label nextline; { go to next line }
 
 const cmdmax = 250;
 
-var inshan:  parhan;  { handle for instruction parsing }
+var inshan:  parse.parhan;  { handle for instruction parsing }
     fn:      filnam;  { filename holder }
     cmd:     filnam;  { command verb }
     err:     boolean; { parsing error }
@@ -1706,23 +1710,23 @@ procedure inserr(view es: string);
 
 begin
 
-   prterr(inshan, output, es, true); { print error }
-   getlin(inshan); { skip to new line }
+   parse.prterr(inshan, output, es, true); { print error }
+   parse.getlin(inshan); { skip to new line }
    goto nextline
 
 end;
 
 { skip spaces allowing '\' to bridge lines }
 
-procedure lskpspc(inshan: parhan);
+procedure lskpspc(inshan: parse.parhan);
 
 begin
 
-   while not endfil(inshan) and not endlin(inshan) and 
-         ((chkchr(inshan) = ' ') or (chkchr(inshan) = '\\')) do begin
+   while not parse.endfil(inshan) and not parse.endlin(inshan) and 
+         ((parse.chkchr(inshan) = ' ') or (parse.chkchr(inshan) = '\\')) do begin
 
-      skpspc(inshan); { skip any spaces }
-      if chkchr(inshan) = '\\' then getlin(inshan) { get next line }
+      parse.skpspc(inshan); { skip any spaces }
+      if parse.chkchr(inshan) = '\\' then parse.getlin(inshan) { get next line }
 
    end
 
@@ -1734,10 +1738,10 @@ procedure parfilstr(var fn: string);
 
 begin
 
-   if chkchr(inshan) = '"' then { check quoted }
-      parstr(inshan, fn, err) { get string parameter }
+   if parse.chkchr(inshan) = '"' then { check quoted }
+      parse.parstr(inshan, fn, err) { get string parameter }
    else
-      parfil(inshan, fn, false, err); { get file parameter }
+      parse.parfil(inshan, fn, false, err); { get file parameter }
    if err then inserr('Invalid filename');
 
 end;
@@ -1745,27 +1749,27 @@ end;
 begin
 
    if fverb then writeln('Reading instruction file ', ifn:0);
-   openpar(inshan); { open parser }
-   openfil(inshan, ifn, cmdmax); { open file to parse }
+   parse.openpar(inshan); { open parser }
+   parse.openfil(inshan, ifn, cmdmax); { open file to parse }
 
    nextline: { start new line }
 
-   while not endfil(inshan) do begin { process instructions }
+   while not parse.endfil(inshan) do begin { process instructions }
    
-      skpspc(inshan); { skip leading spaces }
-      if chkchr(inshan) = '!' then { skip comment line }
-         while not endlin(inshan) do getchr(inshan)
-      else if not endlin(inshan) then begin { command line }
+      parse.skpspc(inshan); { skip leading spaces }
+      if parse.chkchr(inshan) = '!' then { skip comment line }
+         while not parse.endlin(inshan) do parse.getchr(inshan)
+      else if not parse.endlin(inshan) then begin { command line }
 
-         parlab(inshan, cmd, err); { get command word }
+         parse.parlab(inshan, cmd, err); { get command word }
          if err then inserr('Invalid command');
          { find command }
          if compp(cmd, 'exclude') then 
-            while not endlin(inshan) do begin
+            while not parse.endlin(inshan) do begin
 
             lskpspc(inshan); { skip trailing ing spaces }
             parfilstr(fn); { get filename }
-            fulnam(fn); { expand it }
+            services.fulnam(fn); { expand it }
             new(lp); { get new exclude list entry }
             copy(lp^.name, fn); { place name as filename }
             lp^.next := exclude; { push onto list }
@@ -1776,35 +1780,35 @@ begin
 
             lskpspc(inshan); { skip trailing spaces }
             parfilstr(fn); { get filename }
-            fulnam(fn); { expand it }
+            services.fulnam(fn); { expand it }
             new(pp); { get new packaging entry }
             copy(pp^.name, fn); { place package root name }
             pp^.next := package; { push onto package list }
             package := pp;
             pp^.lst := nil; { clear contents list }
-            skpspc(inshan); { skip spaces }
-            if chkchr(inshan) <> '=' then inserr('''='' expected');
-            getchr(inshan); { skip '=' }
+            parse.skpspc(inshan); { skip spaces }
+            if parse.chkchr(inshan) <> '=' then inserr('''='' expected');
+            parse.getchr(inshan); { skip '=' }
             repeat { parse components }
 
                lskpspc(inshan); { skip trailing spaces }
                parfilstr(fn); { get filename }
-               fulnam(fn); { expand it }
+               services.fulnam(fn); { expand it }
                new(lp); { get new list entry }
                copy(lp^.name, fn); { place package root name }
                lp^.next := pp^.lst; { push onto package list }
                pp^.lst := lp;
                lskpspc(inshan) { skip trailing spaces }
 
-            until endlin(inshan) { until line end }
+            until parse.endlin(inshan) { until line end }
 
          end else if compp(cmd, 'usespath') then begin
 
             lskpspc(inshan); { skip trailing spaces }
-            if chkchr(inshan) = '"' then { check quoted }
-               parstr(inshan, usepth, err) { get string parameter }
+            if parse.chkchr(inshan) = '"' then { check quoted }
+               parse.parstr(inshan, usepth, err) { get string parameter }
             else
-               parwrd(inshan, usepth, err); { get uses path }
+               parse.parwrd(inshan, usepth, err); { get uses path }
             if err then inserr('Uses path too long or invalid')
 
          end else 
@@ -1838,17 +1842,17 @@ begin
             { no generate coff symbols in binary }
             if compp(cmd, 'nosymcoff') then fsymcof := false
          else inserr('No such instruction');
-         skpspc(inshan); { skip trailing spaces }
-         if chkchr(inshan) = '!' then { skip comment line }
-            while not endlin(inshan) do getchr(inshan);
-         if not endlin(inshan) then inserr('Invalid command')
+         parse.skpspc(inshan); { skip trailing spaces }
+         if parse.chkchr(inshan) = '!' then { skip comment line }
+            while not parse.endlin(inshan) do parse.getchr(inshan);
+         if not parse.endlin(inshan) then inserr('Invalid command')
          
       end;
-      getlin(inshan) { skip to new line }
+      parse.getlin(inshan) { skip to new line }
 
    end;
-   closefil(inshan); { close the file }
-   closepar(inshan) { close the parser instance }
+   parse.closefil(inshan); { close the file }
+   parse.closepar(inshan) { close the parser instance }
 
 end;
 
@@ -1859,8 +1863,8 @@ begin
    writeln;
 
    filstk := nil; { clear the files stack }
-   filchr(valfch); { get the filename valid characters }
-   getenv('usespath', usepth); { get the uses path }
+   services.filchr(valfch); { get the filename valid characters }
+   services.getenv('usespath', usepth); { get the uses path }
    filcnt := 0; { clear files counter }
    filact := nil; { clear actions list }
    actcnt := 0; { set no actions performed }
@@ -1874,6 +1878,7 @@ begin
    fact := false; { list actions }
    fdry := false; { do not perform actions }
    frebld := false; { rebuild all }
+   fansi := false; { no standard mode }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    { passthrough }
@@ -1885,20 +1890,20 @@ begin
    grawin := false; { set no graphical windowing library found }
 
    { find any instruction files for us }
-   getpgm(pgmpath); { get the program path }
-   getusr(usrpath); { get the user path }
-   getcur(curpath); { get the current path }
-   maknam(tmpnam, pgmpath, 'pc', 'ins'); { create instruction file name }
+   services.getpgm(pgmpath); { get the program path }
+   services.getusr(usrpath); { get the user path }
+   services.getcur(curpath); { get the current path }
+   services.maknam(tmpnam, pgmpath, 'pc', 'ins'); { create instruction file name }
    if exists(tmpnam) then parinst(tmpnam);
    if not comp(usrpath, pgmpath) then begin
 
       { program and user paths are not identical }
-      maknam(tmpnam, usrpath, 'pc', 'ins'); { create instruction file name }
+      services.maknam(tmpnam, usrpath, 'pc', 'ins'); { create instruction file name }
       if exists(tmpnam) then parinst(tmpnam);
       if not comp(curpath, pgmpath) and not comp(curpath, usrpath) then begin
 
          { current path not equal to any of program or user paths }
-         maknam(tmpnam, curpath, 'pc', 'ins'); { create instruction file name }
+         services.maknam(tmpnam, curpath, 'pc', 'ins'); { create instruction file name }
          if exists(tmpnam) then parinst(tmpnam)
 
       end
@@ -1906,23 +1911,23 @@ begin
    end;
 
    { process command line }
-   openpar(cmdhan); { open parser }
-   opencommand(cmdhan, cmdmax); { open command line level }
-   filchr(valfch); { get the filename valid characters }
+   parse.openpar(cmdhan); { open parser }
+   parse.opencommand(cmdhan, cmdmax); { open command line level }
+   services.filchr(valfch); { get the filename valid characters }
    valfch := valfch-['=']; { remove parsing characters }
-   setfch(cmdhan, valfch); { set that for active parsing }
+   parse.setfch(cmdhan, valfch); { set that for active parsing }
    paropt; { parse command options }
-   if endlin(cmdhan) then begin
+   if parse.endlin(cmdhan) then begin
 
       writeln('*** pc: Filename expected');
       goto 99
 
    end;
-   skpspc(cmdhan); { skip spaces }
-   if chkchr(cmdhan) = '"' then { parse string }
-      parstr(cmdhan, prgnam, err) { get string parameter }
+   parse.skpspc(cmdhan); { skip spaces }
+   if parse.chkchr(cmdhan) = '"' then { parse string }
+      parse.parstr(cmdhan, prgnam, err) { get string parameter }
    else 
-      parfil(cmdhan, prgnam, false, err); { parse filename }
+      parse.parfil(cmdhan, prgnam, false, err); { parse filename }
    if err then begin
 
       writeln('*** pc: Invalid filename');
@@ -1930,17 +1935,17 @@ begin
 
    end;
    paropt; { parse command options }
-   skpspc(cmdhan); { skip to end }
-   if not endlin(cmdhan) then begin
+   parse.skpspc(cmdhan); { skip to end }
+   if not parse.endlin(cmdhan) then begin
 
       writeln('*** pc: Invalid command line');
       goto 99
 
    end;
-   brknam(prgnam, p, n, e); { add Pascal extention }
-   maknam(prgnam, p, n, 'pas');
+   services.brknam(prgnam, p, n, e); { add Pascal extention }
+   services.maknam(prgnam, p, n, 'pas');
    { see if there is an instruction file to go with it }
-   maknam(tmpnam, p, n, 'ins');
+   services.maknam(tmpnam, p, n, 'ins');
    if exists(tmpnam) then parinst(tmpnam);
    { now check the file itself exists }
    if not exists(prgnam) then begin { file not found }

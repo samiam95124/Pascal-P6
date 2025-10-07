@@ -290,7 +290,7 @@ type
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
                      priv: boolean; linecount, lineout: integer;
                      sb: linbuf; si: lininx; sl: 0..maxlin; lo: boolean;
-                     fio: boolean end;
+                     fio: boolean; join: integer end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
@@ -619,6 +619,7 @@ var
     ep, epl: errptr; { error line pointers }
     srcfil(fillen): string; { name of input source file } 
     p(fillen), n(fillen), e(fillen): string; { filename components }
+    joinsnest: integer; { nesting level of joins }
 
     fp: filptr;
     ii: lininx;
@@ -9476,7 +9477,7 @@ end;
       end;
   end (*body*) ;
 
-  procedure openinput(var ff: boolean);
+  procedure openinput(var ff: boolean; joinlvl: integer);
   var fp: filptr; x: 1..4; es: packed array [1..4] of char; ii: lininx;
       fi,fi2,fi3: 1..fillen; me: boolean;
   { for any error, back out the include level }
@@ -9507,7 +9508,7 @@ end;
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
       si := 1; sl := 0; 
-      lo := false; fio := true;
+      lo := false; fio := true; join := joinlvl;
       me := false;
       repeat
         me :=  incbuf[ii] = ' ';
@@ -9578,19 +9579,21 @@ end;
         if (nc < fillen) and (nc < ec) then 
           begin fn[i] := fp^.fn[nc]; nc := nc+1 end
       end;
-      if fn = id then schnam := true; 
+      if (fn = id) and (fp^.join = 0) then schnam := true; 
       fp := fp^.next 
     end
   end;
   begin
     sym := sy; insymbol; { skip uses/joins }
     repeat { modules }
+      { count joins levels }
+      if sym = joinssy then joinsnest := joinsnest+1;
       thismod := nil;
       if sy <> ident then error(2) else begin
         if not schnam(incstk) and not schnam(inclst) then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
-          openinput(ff);
+          openinput(ff, joinsnest);
           if ff then begin
             prcode := false; list := false;
             readline; insymbol; modnams := display[top].modnam;
@@ -9615,8 +9618,9 @@ end;
                     packing := false; packcom := false; ptrref := false;
                     define := true; occur := blck; bname := nil end
           end
-        end else putstrs(thismod)
+        end else putstrs(thismod);
       end;
+      if sym = joinssy then joinsnest := joinsnest-1;
       sys := sy;
       if sy = comma then insymbol
     until sys <> comma;
@@ -10226,6 +10230,7 @@ end;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
     tmplst := nil; { clear temps list }
     tmpfre := nil; { clear temps free list }
+    joinsnest := 0; { clear joins nesting }
 
     for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
     for i := 1 to maxftl do errltb[i] := nil;

@@ -52,6 +52,10 @@
 *                                                                             *
 *      Opens a file for parsing.                                              *
 *                                                                             *
+* procedure opencommand(ph: parhan; view fn: string; blen: integer);          *
+*                                                                             *
+*      Opens a file for parsing.                                              *
+*                                                                             *
 * procedure closefil(ph: parhan);                                             *
 *                                                                             *
 *      Close a file or string level for parsing.                              *
