@@ -7,29 +7,29 @@
 *                              Written 4/01                                   *
 *                                                                             *
 * PC is a Pascal compilation shell. It examines the file given it, and forms  *
-* a dependency tree by looking at all the files that appear in "uses"         *
-* statements. Then, the dates and times are checked against the object files, *
-* and components rebuilt as required.                                         *
+* a dependency tree by looking at all the files that appear in "uses" or      *
+* "joins" statements. Then, the dates and times are checked against the       *
+* object files, and components rebuilt as required.                           *
 * The command line is:                                                        *
 *                                                                             *
-* pc program [#option]...                                                     *
+* pc program [-option]...                                                     *
 *                                                                             *
 * Options:                                                                    *
 *                                                                             *
-* #t or #tree - List the dependency tree.                                     *
+* -t or -tree - List the dependency tree.                                     *
 *                                                                             *
-* #a or #action - List the actions taken (commands performed)                 *
+* -a or -action - List the actions taken (commands performed)                 *
 *                                                                             *
-* #d or #dry - Do not actually perform anything. Used with #action to get a   *
+* -d or -dry - Do not actually perform anything. Used with -action to get a   *
 * list of what is going to happen before actually running the operation.      *
 *                                                                             *
-* #r or #rebuild - Treat all files as needing to be rebuilt.                  *
+* -r or -rebuild - Treat all files as needing to be rebuilt.                  *
 *                                                                             *
-* #el or #errorlimit=n - Passthrough option to limit errors.                  *
+* -el or -errorlimit=n - Passthrough option to limit errors.                  *
 *                                                                             *
-* #nrf or #noreference - Passthrough option to remove reference checking.     *
+* -nrf or -noreference - Passthrough option to remove reference checking.     *
 *                                                                             *
-* #u or #uses=path - Direct specification of uses path.                       *
+* -u or -uses=path - Direct specification of uses path.                       *
 *                                                                             *
 * Currently contains some Windows dependencies, which need to be removed:     *
 *                                                                             *
@@ -59,11 +59,11 @@ uses
 
 label 99; { abort program }
 
-const serlib = 'serlib'; { name of serial libary }
-      trmlib = 'trmlib'; { name of terminal library }
-      gralib = 'gralib'; { name of graphical library }
+const serlib = 'psystem'; { name of base libary }
+      trmlib = 'terminal'; { name of terminal library }
+      gralib = 'graphical'; { name of graphical library }
       { libs that can be substituted for standard serial library }
-      iolibs = 'serlib trmlib gralib tmmlib gmnlib';
+      iolibs = 'psystem terminal graphical';
       { libs that run in a separate window }
       gwlibs  = 'gralib gmnlib';
       cmdmax = 250;      { maximum length of command line }
@@ -122,7 +122,7 @@ var
    filstk:  filept;  { file information stack }
    prgnam:  filnam;  { target program name }
    p, n, e: filnam;  { path components }
-   usepth:  filnam;  { path of uses files }
+   modpth:  filnam;  { path of module files }
    fverb:   boolean; { verbose flag (also gets passed through) }
    ftree:   boolean; { list dependency tree }
    fact:    boolean; { list actions }
@@ -158,7 +158,7 @@ procedure logfil(view fn: string; var hp: filept); forward;
 Check options
 
 Checks if a sequence of options is present in the input, and if so, parses and
-processes them. An option is a '#' (or '/'), followed by the option identifier.
+processes them. An option is a '-' followed by the option identifier.
 The identifier must be one of the valid options. Further processing may occur,
 on input after the option, depending on the option specified (see the
 handlers). Consult the operator's manual for full option details.
@@ -249,10 +249,10 @@ begin
 
          end;
          parse.getchr(cmdhan); { skip '=' }
-         parse.parwrd(cmdhan, usepth, err); { get path }
+         parse.parwrd(cmdhan, modpth, err); { get path }
          if err then begin
 
-            writeln('*** pc: Error: Invalid uses path "', usepth:*, '"');
+            writeln('*** pc: Error: Invalid module path "', modpth:*, '"');
             goto 99
 
          end
@@ -411,7 +411,7 @@ end;
 
 Find file
 
-Finds the given file by the uses path. If a uses path name is found, that name
+Finds the given file by the mod path. If a uses path name is found, that name
 is returned with full path. If it is not found, or there is no uses path,
 the original name is returned.
 
@@ -428,15 +428,15 @@ var p, n, e: filnam; { path components }
 
 begin
 
-   if usepth[1] <> ' ' then begin { uses path is not empty }
+   if modpth[1] <> ' ' then begin { uses path is not empty }
 
       services.brknam(fn, p, n, e); { break down filespec }
-      copy(pt, usepth); { copy uses path }
+      copy(pt, modpth); { copy module path }
       m := false; { set no match }
       repeat { try path components }
 
          { extract a single path from the uses path }
-         i := indexp(pt, ','); { find location of ',' }
+         i := indexp(pt, ':'); { find location of path divider }
          if i = 0 then begin { only one path left, use the whole thing }
 
             copy(w, pt); { place }
@@ -445,7 +445,7 @@ begin
          end else begin { extract single path }
 
             extract(w, pt, 1, i-1); { get the path }
-            extract(pt, pt, i+1, len(pt)) { remove from uses path }
+            extract(pt, pt, i+1, len(pt)) { remove from module path }
 
          end;
          services.maknam(fns, w, n, 'pas'); { construct a name }
@@ -453,6 +453,26 @@ begin
 
             copy(fn, fns); { copy winning spec }
             m := true { set found }
+
+         end else begin
+
+            services.maknam(fns, w, n, 'a'); { construct a name }
+            if exists(fns) then begin
+
+               copy(fn, fns); { copy winning spec }
+               m := true { set found }
+
+            end else begin
+
+               services.maknam(fns, w, n, 'o'); { construct a name }
+               if exists(fns) then begin
+
+                  copy(fn, fns); { copy winning spec }
+                  m := true { set found }
+
+               end
+
+            end
 
          end
 
@@ -534,9 +554,7 @@ begin
 
          if f^.nxttlk <> scanner.cidentifier then begin { bad syntax }
 
-            write('Bad ''uses'' syntax in ');
-            write(output, fn:0);
-            writeln;
+            writeln('Bad ''uses'' syntax in ', fn:*);
             goto 99
 
          end;
@@ -651,7 +669,7 @@ procedure wrtfil(fp: filept); { entry to write }
 begin
 
    { should find max length of filenames }
-   write(fp^.name:0); { output filename }
+   write(fp^.name:*); { output filename }
    write(' '); { separate }
    services.writedate(services.local(fp^.modify)); { output date/time of modification }
    write('  '); { separate }
@@ -683,7 +701,7 @@ begin
 
    writeln;
    write('Dependency tree for ');
-   write(output, prgnam:0);
+   write(prgnam:*);
    writeln;
    fp := filstk; { index top of stack }
    while fp <> nil do begin { print entries }
@@ -729,7 +747,7 @@ begin
             copy(fn, rp^.ref^.name); { copy name }
             services.brknam(fn, p, n, e); { remake without path or extention }
             services.maknam(fn, '', n, '');
-            write(output, fn:0);
+            write(output, fn:*);
             if rp^.next <> nil then write(',');
             rp := rp^.next { next entry }
          
@@ -1292,12 +1310,7 @@ var r: integer; { command result code }
 begin
 
    { print command if requested }
-   if fact then begin
-
-      write(output, cs:0);
-      writeln
-
-   end;
+   if fact then writeln(output, cs:*);
    if not fdry then begin { execute command }
 
       services.execw(cs, r); { execute }
@@ -1376,9 +1389,7 @@ begin
       { do information }
       if fverb then begin
 
-         write('Building ');
-         write(output, fns:0);
-         writeln;
+         writeln('Building ', fns:*);
          if not fact then writeln
 
       end;
@@ -1388,21 +1399,21 @@ begin
       putstr('"="');
       putstr(fns);
       putstr('"');
-      { place uses path, if defined here }
-      if len(usepth) > 0 then begin
+      { place module path, if defined here }
+      if len(modpth) > 0 then begin
 
-         putstr('/uses="');
-         putstr(usepth);
+         putstr('--module="');
+         putstr(modpth);
          putchr('"')
        
       end;
       { place pass through options }
-      if fverb then putstr('/v'); { verbose }
-      if fansi then putstr('/s') { standard }
-               else putstr('/ns'); { not standard }
-      if not fovf then putstr('/nooverflow'); { no overflow checks }
-      if fref then putstr('/rf') { reference checks }
-              else putstr('/nrf'); { no references checks }
+      if fverb then putstr('-v'); { verbose }
+      if fansi then putstr('-s') { standard }
+               else putstr('-ns'); { not standard }
+      if not fovf then putstr('-nooverflow'); { no overflow checks }
+      if fref then putstr('-rf') { reference checks }
+              else putstr('-nrf'); { no references checks }
       excact(cmdbuf); { execute command buffer action }
       { build ce x=x command }
       i := 1; { set 1st command filename }
@@ -1742,7 +1753,7 @@ end;
 
 begin
 
-   if fverb then writeln('Reading instruction file ', ifn:0);
+   if fverb then writeln('Reading instruction file ', ifn:*);
    parse.openpar(inshan); { open parser }
    parse.openfil(inshan, ifn, cmdmax); { open file to parse }
 
@@ -1758,6 +1769,7 @@ begin
          parse.parlab(inshan, cmd, err); { get command word }
          if err then inserr('Invalid command');
          { find command }
+;writeln('parinst: command: ', cmd:*);
          if compp(cmd, 'exclude') then 
             while not parse.endlin(inshan) do begin
 
@@ -1796,13 +1808,13 @@ begin
 
             until parse.endlin(inshan) { until line end }
 
-         end else if compp(cmd, 'usespath') then begin
+         end else if compp(cmd, 'modulepath') then begin
 
             lskpspc(inshan); { skip trailing spaces }
             if parse.chkchr(inshan) = '"' then { check quoted }
-               parse.parstr(inshan, usepth, err) { get string parameter }
+               parse.parstr(inshan, modpth, err) { get string parameter }
             else
-               parse.parwrd(inshan, usepth, err); { get uses path }
+               parse.parwrd(inshan, modpth, err); { get module path }
             if err then inserr('Uses path too long or invalid')
 
          end else 
@@ -1858,7 +1870,7 @@ begin
 
    filstk := nil; { clear the files stack }
    services.filchr(valfch); { get the filename valid characters }
-   services.getenv('usespath', usepth); { get the uses path }
+   clears(modpth); { clear module path }
    filcnt := 0; { clear files counter }
    filact := nil; { clear actions list }
    actcnt := 0; { set no actions performed }
@@ -1882,11 +1894,17 @@ begin
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
    grawin := false; { set no graphical windowing library found }
+   services.getenv('MODULEPATH', modpth); { get any module path }
+;writeln('Module path: ', modpth:*);
 
    { find any instruction files for us }
+;writeln('pc: before program path');
    services.getpgm(pgmpath); { get the program path }
+;writeln('Program path: ', pgmpath:*);
    services.getusr(usrpath); { get the user path }
+;writeln('User path: ', usrpath:*);
    services.getcur(curpath); { get the current path }
+;writeln('Current path: ', curpath:*);
    services.maknam(tmpnam, pgmpath, 'pc', 'ins'); { create instruction file name }
    if exists(tmpnam) then parinst(tmpnam);
    if not comp(usrpath, pgmpath) then begin
@@ -1928,6 +1946,7 @@ begin
       goto 99
 
    end;
+;writeln('program name: ', prgnam:*);
    paropt; { parse command options }
    parse.skpspc(cmdhan); { skip to end }
    if not parse.endlin(cmdhan) then begin

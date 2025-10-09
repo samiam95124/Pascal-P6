@@ -323,7 +323,7 @@ begin
 
    end;
 {;if not eof(f^.inpfil) then begin
-;write(output, f^.linbuf:*);
+;write(output, f^.linbuf:* );
 ;writeln;
 ;end;}
 
