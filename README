@@ -1,4 +1,4 @@
-                         THE P6 COMPILER/INTERPRETER
+                         THE PASCAL-P6 COMPILER/INTERPRETER
 
 ============================== Description =====================================
 
@@ -12,30 +12,34 @@ and modified quite a bit, but Niklaus Wirth noted that it was very popular, and
 represented a good method to popularize the language. He gathered the source
 into a clean version called Pascal-P2, which was the basis of UCSD Pascal, which
 in turn was the base language for Borland Pascal. The Zurich group then created
-an improved version called Pascal-P4.
+an improved version called Pascal-P4. From there a fully ISO 7185 standard
+version was created as Pascal-P5. Pascal-P6 is Pascal-P5 extended to accept the
+Pascaline language, a highly extended version of ISO 7185 Pascal. It also 
+can generate AMD64 binaries in addition to being an interpreter.
 
-Pascal-P5 is Pascal-P4 modified to accept all of the ISO 7185 language.
-
-Pascal-P5 is Pascal-P5 extended to accept the Pascaline language.
-
-The full instructions for running and setting up the P6 compiler/interpreter
+The full instructions for running and setting up the Pascal-P6 compiler/interpreter
 have all been incorporated into the document:
 
 doc/the_p6_compiler.docx
 
 Which is a Microsoft Word document, 2007 or later.
 
-Please consult this documents for full instructions on how to use P6.
+Please consult this documents for full instructions on how to use Pascal-P6.
 
 ============================== Quick start =====================================
 
+Please note that to set up all features of the system, you need to clone
+submodules as well:
+
+git clone --recurse-submodules https://github.com/samiam95124/Pascal-P6.git
+
+If you already cloned the repo without submodules, don't worry. Just execute:
+
+git submodule update --init --recursive
+
+And you will get the submodules.
+
 Pascal-p6 uses the standard GNU release layout. You execute:
-
-[Windows]
-
-> setpath
-> configure
-> make
 
 [linux]
 
@@ -52,16 +56,15 @@ program as:
 
 ================================== Problems ====================================
 
-You need a working gpc implementation. It is strongly suggested you use the
-gpc version 20070904. gpc has/had various compliance issues with ISO 7185, and
-the compiler has ceased to be supported. This version is found to be solid.
-
-You will need a working set of linux tooling (grep, ls, rm, etc). Mingw has
-an excellent set of tools for Windows users.
+The present  version of Pascal-P6 is limited to Linux, and has been run
+extensively on Ubuntu. The Windows and Mac OS/X versions are not runnable at
+this time.
 
 You need the "flip" line ending adapation program. If you don't have it, we
 include a copy you can compile, or you can simply go find it. It is a widely
-available program.
+available program. You can install it on your Linux via:
+
+sudo apt install flip
 
 ================================== Feedback ====================================
 
