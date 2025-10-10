@@ -85,9 +85,10 @@ type
       stack:  filept;  { next stack entry }
       link:   fllptr;  { linkage list }
       list:   boolean; { placed in link list }
+      inte:   filept;  { intermediate file entry }
       asme:   filept;  { assembly file entry }
       obje:   filept;  { object file entry }
-      syme:   filept;  { symbol file entry }
+      arce:   filept;  { archive file entry }
       pkg:    filept   { packaged within this module }
 
    end;
@@ -398,9 +399,10 @@ begin
       fp^.stack := nil; { clear stack link }
       fp^.link := nil; { clear link list }
       fp^.list := false; { set not in link list }
+      fp^.inte := nil; { set no intermediate file }
       fp^.asme := nil; { set no assembly file }
       fp^.obje := nil; { set no object file }
-      fp^.syme := nil; { set no symbol file }
+      fp^.arce := nil; { set no archive file }
       fp^.pkg := nil { set no package file }
 
    end
@@ -423,11 +425,13 @@ var p, n, e: filnam; { path components }
     pt:      filnam; { uses path holder }
     w:       filnam; { single path holder }
     fns:     filnam; { trial filespec }
+    ps:      filnam; { current path save }
     m:       boolean; { match flag }
     i:       integer;
 
 begin
 
+   services.setcur(pgmpath); { seach relative to program path }
    if modpth[1] <> ' ' then begin { uses path is not empty }
 
       services.brknam(fn, p, n, e); { break down filespec }
@@ -449,6 +453,7 @@ begin
 
          end;
          services.maknam(fns, w, n, 'pas'); { construct a name }
+         services.fulnam(fns); { rationalize }
          if exists(fns) then begin
 
             copy(fn, fns); { copy winning spec }
@@ -457,6 +462,7 @@ begin
          end else begin
 
             services.maknam(fns, w, n, 'a'); { construct a name }
+            services.fulnam(fns); { rationalize }
             if exists(fns) then begin
 
                copy(fn, fns); { copy winning spec }
@@ -465,6 +471,7 @@ begin
             end else begin
 
                services.maknam(fns, w, n, 'o'); { construct a name }
+               services.fulnam(fns); { rationalize }
                if exists(fns) then begin
 
                   copy(fn, fns); { copy winning spec }
@@ -478,7 +485,8 @@ begin
 
       until (pt[1] = ' ') or m { until path is empty or matched }
 
-   end
+   end;
+   services.setcur(curpath) { restore current path }
 
 end;
 
@@ -631,18 +639,22 @@ begin
 
       end;
       hp^.excl := chkexcl(fn); { check exists in exclude }
-      services.brknam(fns, p, n, e); { add symbols extention }
-      services.maknam(fns, p, n, 'sym');
+      services.brknam(fns, p, n, e); { add intermediate extention }
+      services.maknam(fns, p, n, 'p6');
       dolist(fns, fp);
-      hp^.syme := fp; { place link }
-      services.brknam(fns, p, n, e); { add object extention }
-      services.maknam(fns, p, n, 'obj');
-      dolist(fns, fp);
-      hp^.obje := fp; { place link }
+      hp^.inte := fp; { place link }
       services.brknam(fns, p, n, e); { add assembly extention }
       services.maknam(fns, p, n, 'asm');
       dolist(fns, fp);
       hp^.asme := fp; { place link }
+      services.brknam(fns, p, n, e); { add object extention }
+      services.maknam(fns, p, n, 'o');
+      dolist(fns, fp);
+      hp^.obje := fp; { place link }
+      services.brknam(fns, p, n, e); { add archive extention }
+      services.maknam(fns, p, n, 'a');
+      dolist(fns, fp);
+      hp^.arce := fp; { place link }
       { place head on stack }
       hp^.stack := filstk;
       filstk := hp;
@@ -710,11 +722,18 @@ begin
       writeln('Pascal module:');
       writeln;
       wrtfil(fp); { output head entry }
-      if (fp^.asme <> nil) or (fp^.obje <> nil) or (fp^.syme <> nil) then begin
+      if (fp^.inte <> nil) or (fp^.asme <> nil) or (fp^.obje <> nil) or 
+         (fp^.arce <> nil) then begin
 
          writeln;
          writeln('   Components:');
          writeln;
+         if fp^.inte <> nil then begin
+
+            write('   '); { tab out }
+            wrtfil(fp^.inte) { print entry }
+
+         end;
          if fp^.asme <> nil then begin
 
             write('   '); { tab out }
@@ -727,10 +746,10 @@ begin
             wrtfil(fp^.obje) { print entry }
 
          end;
-         if fp^.syme <> nil then begin
+         if fp^.arce <> nil then begin
 
             write('   '); { tab out }
-            wrtfil(fp^.syme) { print entry }
+            wrtfil(fp^.arce) { print entry }
 
          end
 
@@ -1383,8 +1402,8 @@ begin
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
       copy(fns, fp^.name); { make a copy of the name }
-      services.brknam(fns, p, n, e); { remove the extention }
-      services.maknam(fns, p, n, '');
+      services.brknam(fns, p, n, e); { remove the extention and place .pas }
+      services.maknam(fns, p, n, 'pas');
       services.fulnam(fns); { normalize it }
       { do information }
       if fverb then begin
@@ -1393,27 +1412,30 @@ begin
          if not fact then writeln
 
       end;
-      { build parse x=x command }
-      putstr('parse "');
+      { build pcom x=x command }
+      putstr('pcom "');
       putstr(fns);
-      putstr('"="');
+      putstr('" "');
+      services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+      services.maknam(fns, p, n, 'p6');
+      services.fulnam(fns); { normalize it }
       putstr(fns);
       putstr('"');
       { place module path, if defined here }
       if len(modpth) > 0 then begin
 
-         putstr('--module="');
+         putstr(' --modules="');
          putstr(modpth);
-         putchr('"')
+         putstr('" ')
        
       end;
       { place pass through options }
-      if fverb then putstr('-v'); { verbose }
-      if fansi then putstr('-s') { standard }
-               else putstr('-ns'); { not standard }
-      if not fovf then putstr('-nooverflow'); { no overflow checks }
-      if fref then putstr('-rf') { reference checks }
-              else putstr('-nrf'); { no references checks }
+      if fansi then putstr(' -s+ ') { standard }
+               else putstr(' -s- '); { not standard }
+      if fovf then putstr(' -o+ '); { overflow checks }
+      if not fovf then putstr(' -o- '); { no overflow checks }
+      if fref then putstr(' -r+ ') { reference checks }
+              else putstr(' -r- '); { no references checks }
       excact(cmdbuf); { execute command buffer action }
       { build ce x=x command }
       i := 1; { set 1st command filename }
@@ -1573,16 +1595,14 @@ procedure regfil(fp: filept); { file head }
 begin
 
    { check both .obj and .sym files exist }
-   if (fp^.obje = nil) or (fp^.syme = nil) then fp^.rebld := true { set rebuild }
+   if fp^.obje = nil then fp^.rebld := true { set rebuild }
    else begin { both outputs exist }
   
       { check times on source }
-      if (fp^.modify > fp^.obje^.modify) or
-         (fp^.modify > fp^.syme^.modify) then
+      if fp^.modify > fp^.obje^.modify then
             fp^.rebld := true; { old, set rebuild }
       if fp^.asme <> nil then { assembly exists }
-         if (fp^.asme^.modify > fp^.obje^.modify) or
-            (fp^.asme^.modify > fp^.syme^.modify) then
+         if fp^.asme^.modify > fp^.obje^.modify then
                fp^.rebld := true { old, set rebuild }
 
    end;
@@ -1769,7 +1789,6 @@ begin
          parse.parlab(inshan, cmd, err); { get command word }
          if err then inserr('Invalid command');
          { find command }
-;writeln('parinst: command: ', cmd:*);
          if compp(cmd, 'exclude') then 
             while not parse.endlin(inshan) do begin
 
@@ -1895,16 +1914,11 @@ begin
    siolib := false; { set no serial library found }
    grawin := false; { set no graphical windowing library found }
    services.getenv('MODULEPATH', modpth); { get any module path }
-;writeln('Module path: ', modpth:*);
 
    { find any instruction files for us }
-;writeln('pc: before program path');
    services.getpgm(pgmpath); { get the program path }
-;writeln('Program path: ', pgmpath:*);
    services.getusr(usrpath); { get the user path }
-;writeln('User path: ', usrpath:*);
    services.getcur(curpath); { get the current path }
-;writeln('Current path: ', curpath:*);
    services.maknam(tmpnam, pgmpath, 'pc', 'ins'); { create instruction file name }
    if exists(tmpnam) then parinst(tmpnam);
    if not comp(usrpath, pgmpath) then begin
@@ -1946,7 +1960,6 @@ begin
       goto 99
 
    end;
-;writeln('program name: ', prgnam:*);
    paropt; { parse command options }
    parse.skpspc(cmdhan); { skip to end }
    if not parse.endlin(cmdhan) then begin
