@@ -1399,8 +1399,6 @@ begin
 
    if fp^.rebld then begin { this section is to be rebuilt }
 
-      i := 1; { set 1st command filename }
-      clears(cmdbuf); { clear command buffer }
       copy(fns, fp^.name); { make a copy of the name }
       services.brknam(fns, p, n, e); { remove the extention and place .pas }
       services.maknam(fns, p, n, 'pas');
@@ -1412,21 +1410,25 @@ begin
          if not fact then writeln
 
       end;
-      { build pcom x=x command }
-      putstr('pcom "');
+
+      { build pcom x x command }
+      i := 1; { set 1st command filename }
+      clears(cmdbuf); { clear command buffer }
+      putstr('pcom');
+      putchr(' ');
       putstr(fns);
-      putstr('" "');
+      putchr(' ');
       services.brknam(fns, p, n, e); { remove the extention and place .p6 }
       services.maknam(fns, p, n, 'p6');
       services.fulnam(fns); { normalize it }
       putstr(fns);
-      putstr('"');
+      putchr(' ');
       { place module path, if defined here }
       if len(modpth) > 0 then begin
 
-         putstr(' --modules="');
+         putstr(' --modules=');
          putstr(modpth);
-         putstr('" ')
+         putchr(' ')
        
       end;
       { place pass through options }
@@ -1437,15 +1439,43 @@ begin
       if fref then putstr(' -r+ ') { reference checks }
               else putstr(' -r- '); { no references checks }
       excact(cmdbuf); { execute command buffer action }
-      { build ce x=x command }
+      { build pgen x x command }
+      i := 1; { set 1st command filename }
+
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
-      putstr('ec "');
+      putstr('pgen');
+      putchr(' ');
+      services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+      services.maknam(fns, p, n, 'p6');
+      services.fulnam(fns); { normalize it }
       putstr(fns);
-      putstr('"="');
+      putchr(' ');
+      services.brknam(fns, p, n, e); { remove the extention and place .s }
+      services.maknam(fns, p, n, 's');
+      services.fulnam(fns); { normalize it }
       putstr(fns);
-      putchr('"');
       excact(cmdbuf); { execute command buffer action }
+
+      i := 1; { set 1st command filename }
+      clears(cmdbuf); { clear command buffer }
+      putstr('gcc -static -g3');
+      putchr(' ');
+      putstr('-c');
+      putchr(' ');
+      services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+      services.maknam(fns, p, n, 's');
+      services.fulnam(fns); { normalize it }
+      putstr(fns);
+      putchr(' ');
+      putstr('-o');
+      putchr(' ');
+      services.brknam(fns, p, n, e); { remove the extention and place .s }
+      services.maknam(fns, p, n, 'o');
+      services.fulnam(fns); { normalize it }
+      putstr(fns);
+      excact(cmdbuf); { execute command buffer action }
+
       if not fact then writeln;
       actcnt := actcnt+1 { count actions }
 
@@ -1638,23 +1668,31 @@ var op, sp, ep: filept; { file pointers }
 begin
 
    services.brknam(prgnam, p, n, e); { break program name to components }
-   { find each of .obj, .sym and .exe files }
-   services.maknam(fn, p, n, 'obj');
+   { find each of .o, .s and executive files }
+   services.maknam(fn, p, n, 'o');
    dolist(fn, op);
-   services.maknam(fn, p, n, 'sym');
-   dolist(fn, sp);
-   services.maknam(fn, p, n, 'exe');
-   dolist(fn, ep);
-   if (op = nil) or (sp = nil) then begin { should not be missing }
+   if op = nil then begin { should not be missing }
 
-      writeln('*** pc: Error: Sequence error, missing file: check other tasks');
+      writeln('*** pc: Error: Sequence error, missing file ', fn:*, 
+              ': check other tasks');
       goto 99
 
    end;
+   services.maknam(fn, p, n, 's');
+   dolist(fn, sp);
+   if sp = nil then begin { should not be missing }
+
+      writeln('*** pc: Error: Sequence error, missing file ', fn:*, 
+              ': check other tasks');
+      goto 99
+
+   end;
+   services.maknam(fn, p, n, '');
+   dolist(fn, ep);
    if ep = nil then excrbl := true { does not exist }
    else if (ep^.modify < op^.modify) or 
            (ep^.modify < sp^.modify) then
-      { .exe date/time is older than .obj or .sym, execute rebuild }
+      { .exe date/time is older than .o or .s, execute rebuild }
       excrbl := true;
    dispose(ep); { release objects }
    dispose(op);
