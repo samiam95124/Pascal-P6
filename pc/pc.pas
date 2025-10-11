@@ -68,11 +68,14 @@ const serlib = 'psystem'; { name of base libary }
       gwlibs  = 'gralib gmnlib';
       cmdmax = 250;      { maximum length of command line }
       filmax = 1000;     { maximum length of filename }
+      maxlin = 1000; { maximum size of input line }
 
 type
 
    filinx = 1..filmax; { index for filename }
    filnam = packed array [filinx] of char; { filename }
+   lininx = 1..maxlin;  { index for text line }
+   linbuf = packed array [lininx] of char; { a text line }
    filept = ^filety; { pointer to file entry }
    fllptr = ^fillet; { pointer to file linkage entry }
    filety = record { file information entry }
@@ -1360,8 +1363,8 @@ procedure doact(fp: filept);
 
 var p, n, e: filnam; { path components }
     fns:     filnam; { save for name }
-    cmdbuf:  scanner.linbuf; { command buffer }
-    i:       scanner.lininx; { index for that }
+    cmdbuf:  linbuf; { command buffer }
+    i:       lininx; { index for that }
 
 { place output character }
 
@@ -1369,7 +1372,7 @@ procedure putchr(c: char);
 
 begin
 
-   if i > scanner.maxlin then begin { overflow }
+   if i > maxlin then begin { overflow }
 
       writeln('*** pc: Error: action command too long');
       goto 99
@@ -1514,8 +1517,8 @@ procedure dolink;
 
 var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
-    cmdbuf:  scanner.linbuf;  { command buffer }
-    i:       scanner.lininx;  { index for that }
+    cmdbuf:  linbuf;  { command buffer }
+    i:       lininx;  { index for that }
     main:    filnam;  { name for main module }
     psystem: filnam;  { name for psystem module }
 
@@ -1525,7 +1528,7 @@ procedure putchr(c: char);
 
 begin
 
-   if i > scanner.maxlin then begin { overflow }
+   if i > maxlin then begin { overflow }
 
       writeln('*** pc: Error: action command too long');
       goto 99
