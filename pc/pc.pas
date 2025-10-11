@@ -414,12 +414,12 @@ end;
 Find file
 
 Finds the given file by the mod path. If a uses path name is found, that name
-is returned with full path. If it is not found, or there is no uses path,
+is returned with full path. If it is not found, or there is no module path,
 the original name is returned.
 
 ******************************************************************************}
 
-procedure fndfil(var fn: string);
+procedure fndfil(var fn: string; obj: boolean);
 
 var p, n, e: filnam; { path components }
     pt:      filnam; { uses path holder }
@@ -454,7 +454,7 @@ begin
          end;
          services.maknam(fns, w, n, 'pas'); { construct a name }
          services.fulnam(fns); { rationalize }
-         if exists(fns) then begin
+         if exists(fns) and not obj then begin
 
             copy(fn, fns); { copy winning spec }
             m := true { set found }
@@ -567,7 +567,7 @@ begin
 
          end;
          copy(w, f^.nxtlab); { copy name }
-         fndfil(w); { find it }
+         fndfil(w, false); { find it }
          logfil(w, hp); { log that }
          { chain it to caller head entry }
          new(p); { get a new link entry  }
@@ -894,7 +894,7 @@ begin
       if fdefgra then copy(defnam, gralib)
       else if fdeftrm then copy(defnam, trmlib)
       else copy(defnam, serlib);
-      fndfil(defnam);
+      fndfil(defnam, false);
       if not exists(defnam) then begin { not found }
 
          writeln('*** pc: Error: support module "', defnam:*, '" not found');
@@ -1122,13 +1122,11 @@ var p, n, e: filnam;  { path components }
 
 begin
 
-   { get rid of extention }
+   { place .o extension }
    services.brknam(fn, p, n, e); { break down name }
-   services.maknam(fns, p, n, ''); { remake }
-   putchr('"');
+   services.maknam(fns, p, n, 'o'); { remake }
    { place name in link list }
    for i := 1 to len(fns) do putchr(fns[i]);
-   putchr('"');
    putchr(' ') { place separator }
 
 end;
@@ -1518,7 +1516,8 @@ var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
     cmdbuf:  scanner.linbuf;  { command buffer }
     i:       scanner.lininx;  { index for that }
-    cap:     filnam;  { name for cap module }
+    main:    filnam;  { name for main module }
+    psystem: filnam;  { name for psystem module }
 
 { place output character }
 
@@ -1557,51 +1556,43 @@ begin
    services.maknam(fns, p, n, '');
    i := 1; { set 1st command filename }
    clears(cmdbuf); { clear command buffer }
-   { find cap }
-   copy(cap, 'cap');
-   fndfil(cap);
-   if not exists(cap) then begin { not found }
+   { find main }
+   copy(main, 'main');
+   fndfil(main, true);
+   if not exists(main) then begin { not found }
 
-      writeln('*** pc: Error: support module ''', cap:*, ''' not found');
+      writeln('*** pc: Error: support module ''', main:*, ''' not found');
       goto 99
 
    end;
-   { remove extention }
-   services.brknam(cap, p, n, e);
-   services.maknam(cap, p, n, '');
+   { find psystem }
+   copy(psystem, 'psystem');
+   fndfil(psystem, true);
+   if not exists(psystem) then begin { not found }
+
+      writeln('*** pc: Error: support module ''', psystem:*, ''' not found');
+      goto 99
+
+   end;
    if fverb then begin
 
       write('Building executable');
       writeln
 
    end;
-   { build ln command }
-   putstr('ln temp=');
-   putstr(lnklst);
-   putstr(' "');
-   putstr(cap);
-   putstr('"');
-   if fverb then putstr('/v'); { verbose }
-   putstr('/nu');
-   excact(cmdbuf); { execute command buffer action }
-   i := 1; { set 1st command filename }
-   clears(cmdbuf); { clear command buffer }
-   putstr('genpe');
+   { build gcc command }
+   putstr('gcc -static -g3 -o');
    putchr(' ');
    putstr(fns);
-   putstr('=temp');
-   if fverb then putstr('/v'); { add verbose if set }
-   { check graphical window specificially selected, or default graphical
-     selected and not another type of standard I/O library, and not the
-     "no graphical" (autodetach) flag }
-   if (grawin or (fdefgra and not siolib)) and not fngwin then 
-      putstr('/wg'); { add windows graphical }
-   if fsymcof then putstr('/sc'); { add symbols generation }
-   excact(cmdbuf);
-   if fact then writeln('del temp.obj');
-   delete('temp.obj');
-   if fact then writeln('del temp.sym');
-   delete('temp.sym')
+   putchr(' ');
+   putstr(main);
+   putchr(' ');
+   putstr(lnklst);
+   putchr(' ');
+   putstr(psystem);
+   putchr(' ');
+   putstr('-lm -lpthread');
+   excact(cmdbuf) { execute command buffer action }
 
 end;
 
@@ -1694,7 +1685,7 @@ begin
            (ep^.modify < sp^.modify) then
       { .exe date/time is older than .o or .s, execute rebuild }
       excrbl := true;
-   dispose(ep); { release objects }
+   if ep <> nil then dispose(ep); { release objects }
    dispose(op);
    dispose(sp)
 
