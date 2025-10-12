@@ -137,10 +137,28 @@ tolken = (cundefined,  { undefined (must be first tolken) }
           cmonitor,    { monitor }
           cshare,      { share }
           cclass,      { class }
-          cconstruct,  { construct }
-          cdestruct,   { destruct }
           cis,         { is }
           catom,       { atom }
+          coverload,   { overload }
+          coverride,   { override }
+          creference,  { reference }
+          cthread,     { thread }
+          cjoins,      { joins }
+          cstatic,     { static }
+          cinherited,  { inherited }
+          cself,       { self }
+          cvirtual,    { virtual }
+          ctry,        { try}
+          cexcept,     { except }
+          cextends,    { extends }
+          con,         { on }
+          cresult,     { result }
+          coperator,   { operator }
+          ctask,       { task}
+          cproperty,   { property }
+          cchannel,    { channel }
+          cstream,     { stream }
+          cout,        { out }
           cinteger,    { unsigned integer constant }
           cidentifier, { identifier }
           cstring,     { string constant }
@@ -180,10 +198,10 @@ const
 
 chrmax  = 37;  { number of special character sequences
                  (plus padding) }
-resmax  = 61;  { number of reserved words (plus padding) }
+resmax  = 77;  { number of reserved words (plus padding) }
 spcmax  = 2;   { special character string length }
 maxexp  = 308; { maximum exponent of real }
-hashoff = 3;   { hash function offset }
+hashoff = 0;   { hash function offset }
 chroff  = 20;  { special character hash offset }
 
 type
@@ -859,10 +877,13 @@ begin
 
    end;
    { if ansi mode, serveral tolkens are invalid }
-   if fansi and (f^.nxttlk in [cxor, cforward, cmodule, cuses, cprivate, 
+   if fansi and (f^.nxttlk in [cxor, cforward, cmodule, cuses, cjoins, cprivate,
                             cexternal, cview, cfixed, cprocess, cmonitor,
-                            cshare, cclass, cconstruct, cdestruct, cis,
-                            catom]) then
+                            cshare, cclass, cis, catom, coverload, coverride,
+                            creference, cthread, cjoins, cstatic, cinherited,
+                            cself, cvirtual, ctry, cexcept, cextends, con,
+                            cresult, coperator, ctask, cproperty, cchannel,
+                            cstream, cout]) then
       f^.nxttlk := cidentifier { not tolkens }
 
 end;
@@ -1198,108 +1219,144 @@ begin
       chn := 0
 
    end;
-   restbl[  1].lab := copy('class');
-   restbl[  1].tolk := cclass;
-   restbl[  2].lab := copy('file');
-   restbl[  2].tolk := cfile;
-   restbl[  3].lab := copy('nil');
-   restbl[  3].tolk := cnil;
-   restbl[  4].lab := copy('while');
-   restbl[  4].tolk := cwhile;
-   restbl[  5].lab := copy('monitor');
-   restbl[  5].tolk := cmonitor;
-   restbl[  6].lab := copy('repeat');    restbl[  6].chn :=   9;
-   restbl[  6].tolk := crepeat;
-   restbl[  7].lab := copy('set');
-   restbl[  7].tolk := cset;
-   restbl[  8].lab := copy('packed');
-   restbl[  8].tolk := cpacked;
-   restbl[  9].lab := copy('program');
-   restbl[  9].tolk := cprogram;
-   restbl[ 10].lab := copy('array');
-   restbl[ 10].tolk := carray;
-   restbl[ 11].lab := copy('else');
-   restbl[ 11].tolk := celse;
-   restbl[ 12].lab := copy('and');
-   restbl[ 12].tolk := cand;
-   restbl[ 13].lab := copy('uses');
-   restbl[ 13].tolk := cuses;
-   restbl[ 14].lab := copy('share');
-   restbl[ 14].tolk := cshare;
-   restbl[ 15].lab := copy('downto');
-   restbl[ 15].tolk := cdownto;
-   restbl[ 16].lab := copy('end');
-   restbl[ 16].tolk := cend;
-   restbl[ 17].lab := copy('then');
-   restbl[ 17].tolk := cthen;
-   restbl[ 18].lab := copy('const');
-   restbl[ 18].tolk := cconst;
-   restbl[ 19].lab := copy('atom');
-   restbl[ 19].tolk := catom;
-   restbl[ 20].lab := copy('construct'); restbl[ 20].chn :=  22;
-   restbl[ 20].tolk := cconstruct;
-   restbl[ 21].lab := copy('procedure');
-   restbl[ 21].tolk := cprocedure;
-   restbl[ 22].lab := copy('destruct');
-   restbl[ 22].tolk := cdestruct;
-   restbl[ 23].lab := copy('until');
-   restbl[ 23].tolk := cuntil;
-   restbl[ 25].lab := copy('mod');       restbl[ 25].chn :=   8;
-   restbl[ 25].tolk := cmod;
-   restbl[ 27].lab := copy('goto');
-   restbl[ 27].tolk := cgoto;
-   restbl[ 28].lab := copy('div');       restbl[ 28].chn :=   3;
-   restbl[ 28].tolk := cdiv;
-   restbl[ 29].lab := copy('view');
-   restbl[ 29].tolk := cview;
-   restbl[ 30].lab := copy('with');
-   restbl[ 30].tolk := cwith;
-   restbl[ 31].lab := copy('if');
-   restbl[ 31].tolk := cif;
-   restbl[ 32].lab := copy('for');
-   restbl[ 32].tolk := cfor;
-   restbl[ 34].lab := copy('var');       restbl[ 34].chn :=  13;
-   restbl[ 34].tolk := cvar;
-   restbl[ 35].lab := copy('do');
-   restbl[ 35].tolk := cdo;
-   restbl[ 36].lab := copy('type');
-   restbl[ 36].tolk := ctype;
-   restbl[ 37].lab := copy('of');        restbl[ 37].chn :=   7;
-   restbl[ 37].tolk := cof;
-   restbl[ 38].lab := copy('external');
-   restbl[ 38].tolk := cexternal;
-   restbl[ 39].lab := copy('in');
-   restbl[ 39].tolk := cin;
-   restbl[ 40].lab := copy('label');
-   restbl[ 40].tolk := clabel;
-   restbl[ 41].lab := copy('function');
-   restbl[ 41].tolk := cfunction;
-   restbl[ 42].lab := copy('not');
-   restbl[ 42].tolk := cnot;
-   restbl[ 44].lab := copy('is');
-   restbl[ 44].tolk := cis;
-   restbl[ 45].lab := copy('begin');
-   restbl[ 45].tolk := cbegin;
-   restbl[ 47].lab := copy('forward');
-   restbl[ 47].tolk := cforward;
-   restbl[ 48].lab := copy('record');
-   restbl[ 48].tolk := crecord;
-   restbl[ 49].lab := copy('or');        restbl[ 49].chn :=  20;
-   restbl[ 49].tolk := cor;
-   restbl[ 50].lab := copy('xor');       restbl[ 50].chn :=   6;
-   restbl[ 50].tolk := cxor;
-   restbl[ 51].lab := copy('to');
-   restbl[ 51].tolk := cto;
-   restbl[ 53].lab := copy('private');
-   restbl[ 53].tolk := cprivate;
-   restbl[ 55].lab := copy('module');
-   restbl[ 55].tolk := cmodule;
-   restbl[ 56].lab := copy('fixed');
-   restbl[ 56].tolk := cfixed;
-   restbl[ 57].lab := copy('process');
-   restbl[ 57].tolk := cprocess;
-   restbl[ 59].lab := copy('case');      restbl[ 59].chn :=  14;
-   restbl[ 59].tolk := ccase;
+   restbl[  1].lab := copy('packed');
+   restbl[  1].tolk := cpacked;
+   restbl[  2].lab := copy('nil');
+   restbl[  2].tolk := cnil;
+   restbl[  3].lab := copy('with');
+   restbl[  3].tolk := cwith;
+   restbl[  4].lab := copy('end');
+   restbl[  4].tolk := cend;
+   restbl[  5].lab := copy('array');
+   restbl[  5].tolk := carray;
+   restbl[  6].lab := copy('virtual');
+   restbl[  6].tolk := cvirtual;
+   restbl[  7].lab := copy('monitor');
+   restbl[  7].tolk := cmonitor;
+   restbl[  8].lab := copy('const');
+   restbl[  8].tolk := cconst;
+   restbl[  9].lab := copy('joins');
+   restbl[  9].tolk := cjoins;
+   restbl[ 10].lab := copy('function');
+   restbl[ 10].tolk := cfunction;
+   restbl[ 11].lab := copy('is');
+   restbl[ 11].tolk := cis;
+   restbl[ 12].lab := copy('override');
+   restbl[ 12].tolk := coverride;
+   restbl[ 13].lab := copy('mod'); restbl[ 13].chn :=   8;
+   restbl[ 13].tolk := cmod;
+   restbl[ 14].lab := copy('overload');
+   restbl[ 14].tolk := coverload;
+   restbl[ 15].lab := copy('reference');
+   restbl[ 15].tolk := creference;
+   restbl[ 16].lab := copy('div'); restbl[ 16].chn :=   2;
+   restbl[ 16].tolk := cdiv;
+   restbl[ 17].lab := copy('thread');
+   restbl[ 17].tolk := cthread;
+   restbl[ 18].lab := copy('until'); restbl[ 18].chn :=  12;
+   restbl[ 18].tolk := cuntil;
+   restbl[ 19].lab := copy('inherited');
+   restbl[ 19].tolk := cinherited;
+   restbl[ 20].lab := copy('for'); restbl[ 20].chn :=  15;
+   restbl[ 20].tolk := cfor;
+   restbl[ 21].lab := copy('external');
+   restbl[ 21].tolk := cexternal;
+   restbl[ 22].lab := copy('var');
+   restbl[ 22].tolk := cvar;
+   restbl[ 23].lab := copy('extends');
+   restbl[ 23].tolk := cextends;
+   restbl[ 24].lab := copy('record'); restbl[ 24].chn :=  10;
+   restbl[ 24].tolk := crecord;
+   restbl[ 25].lab := copy('set');
+   restbl[ 25].tolk := cset;
+   restbl[ 26].lab := copy('repeat');
+   restbl[ 26].tolk := crepeat;
+   restbl[ 27].lab := copy('on');
+   restbl[ 27].tolk := con;
+   restbl[ 28].lab := copy('case');
+   restbl[ 28].tolk := ccase;
+   restbl[ 29].lab := copy('result');
+   restbl[ 29].tolk := cresult;
+   restbl[ 30].lab := copy('not'); restbl[ 30].chn :=  35;
+   restbl[ 30].tolk := cnot;
+   restbl[ 31].lab := copy('module');
+   restbl[ 31].tolk := cmodule;
+   restbl[ 32].lab := copy('file');
+   restbl[ 32].tolk := cfile;
+   restbl[ 33].lab := copy('static'); restbl[ 33].chn :=  19;
+   restbl[ 33].tolk := cstatic;
+   restbl[ 34].lab := copy('except');
+   restbl[ 34].tolk := cexcept;
+   restbl[ 35].lab := copy('operator');
+   restbl[ 35].tolk := coperator;
+   restbl[ 36].lab := copy('task');
+   restbl[ 36].tolk := ctask;
+   restbl[ 37].lab := copy('channel'); restbl[ 37].chn :=  39;
+   restbl[ 37].tolk := cchannel;
+   restbl[ 38].lab := copy('xor');
+   restbl[ 38].tolk := cxor;
+   restbl[ 39].lab := copy('stream'); restbl[ 39].chn :=  40;
+   restbl[ 39].tolk := cstream;
+   restbl[ 40].lab := copy('out');
+   restbl[ 40].tolk := cout;
+   restbl[ 41].lab := copy('else');
+   restbl[ 41].tolk := celse;
+   restbl[ 42].lab := copy('self');
+   restbl[ 42].tolk := cself;
+   restbl[ 44].lab := copy('try');
+   restbl[ 44].tolk := ctry;
+   restbl[ 46].lab := copy('procedure');
+   restbl[ 46].tolk := cprocedure;
+   restbl[ 47].lab := copy('then');
+   restbl[ 47].tolk := cthen;
+   restbl[ 49].lab := copy('atom');
+   restbl[ 49].tolk := catom;
+   restbl[ 51].lab := copy('label'); restbl[ 51].chn :=  36;
+   restbl[ 51].tolk := clabel;
+   restbl[ 52].lab := copy('downto');
+   restbl[ 52].tolk := cdownto;
+   restbl[ 54].lab := copy('if');
+   restbl[ 54].tolk := cif;
+   restbl[ 55].lab := copy('property');
+   restbl[ 55].tolk := cproperty;
+   restbl[ 56].lab := copy('begin'); restbl[ 56].chn :=  29;
+   restbl[ 56].tolk := cbegin;
+   restbl[ 57].lab := copy('goto');
+   restbl[ 57].tolk := cgoto;
+   restbl[ 58].lab := copy('do');
+   restbl[ 58].tolk := cdo;
+   restbl[ 59].lab := copy('view');
+   restbl[ 59].tolk := cview;
+   restbl[ 60].lab := copy('of'); restbl[ 60].chn :=   3;
+   restbl[ 60].tolk := cof;
+   restbl[ 62].lab := copy('in');
+   restbl[ 62].tolk := cin;
+   restbl[ 64].lab := copy('uses');
+   restbl[ 64].tolk := cuses;
+   restbl[ 65].lab := copy('forward');
+   restbl[ 65].tolk := cforward;
+   restbl[ 66].lab := copy('type');
+   restbl[ 66].tolk := ctype;
+   restbl[ 67].lab := copy('fixed'); restbl[ 67].chn :=  11;
+   restbl[ 67].tolk := cfixed;
+   restbl[ 68].lab := copy('program'); restbl[ 68].chn :=  27;
+   restbl[ 68].tolk := cprogram;
+   restbl[ 70].lab := copy('share');
+   restbl[ 70].tolk := cshare;
+   restbl[ 71].lab := copy('private'); restbl[ 71].chn :=  23;
+   restbl[ 71].tolk := cprivate;
+   restbl[ 72].lab := copy('or');
+   restbl[ 72].tolk := cor;
+   restbl[ 73].lab := copy('class');
+   restbl[ 73].tolk := cclass;
+   restbl[ 74].lab := copy('to');
+   restbl[ 74].tolk := cto;
+   restbl[ 75].lab := copy('process');
+   restbl[ 75].tolk := cprocess;
+   restbl[ 76].lab := copy('while');
+   restbl[ 76].tolk := cwhile;
+   restbl[ 77].lab := copy('and');
+   restbl[ 77].tolk := cand;
 
    { definitions table.
      This table is used to translate tolkens back to 
@@ -1378,10 +1435,28 @@ begin
    deftbl[cmonitor]    := copy('monitor');
    deftbl[cshare]      := copy('share');
    deftbl[cclass]      := copy('class');
-   deftbl[cconstruct]  := copy('construct');
-   deftbl[cdestruct]   := copy('destruct');
    deftbl[cis]         := copy('is');
    deftbl[catom]       := copy('atom');
+   deftbl[catom]       := copy('overload');
+   deftbl[catom]       := copy('override');
+   deftbl[catom]       := copy('reference');
+   deftbl[catom]       := copy('thread');
+   deftbl[catom]       := copy('joins');
+   deftbl[catom]       := copy('static');
+   deftbl[catom]       := copy('inherited');
+   deftbl[catom]       := copy('self');
+   deftbl[catom]       := copy('virtual');
+   deftbl[catom]       := copy('try');
+   deftbl[catom]       := copy('except');
+   deftbl[catom]       := copy('extends');
+   deftbl[catom]       := copy('on');
+   deftbl[catom]       := copy('result');
+   deftbl[catom]       := copy('operator');
+   deftbl[catom]       := copy('task');
+   deftbl[catom]       := copy('property');
+   deftbl[catom]       := copy('channel');
+   deftbl[catom]       := copy('stream');
+   deftbl[catom]       := copy('out');
    deftbl[cinteger]    := copy('');
    deftbl[cidentifier] := copy('');
    deftbl[cstring]     := copy('');
