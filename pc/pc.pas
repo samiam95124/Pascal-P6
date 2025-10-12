@@ -495,12 +495,12 @@ end;
 
 {******************************************************************************
 
-Do uses file
+Do uses/joins file
 
 Accepts the name of a Pascal file, complete with extention. searches for a
-uses statement in the source, then processes a log operation on each file.
-Since this is a recursive call, all of the uses files downwards from the file
-will be registered. We perform a search for each file being already in the
+uses or joins statement in the source, then processes a log operation on each 
+file. Since this is a recursive call, all of the uses files downwards from the
+file will be registered. We perform a search for each file being already in the
 tree in order to prevent loops.
 
 The entries are chained to the current head entry.
@@ -557,15 +557,17 @@ end;
 begin
 
    scanner.opnscn(f, fn); { open scan instance }
-   skpsrc([scanner.cuses, scanner.ceof]); { skip until file end or "uses" }
-   if f^.nxttlk = scanner.cuses then begin { we found it }
+   { skip until file end or "uses" or "joins" }
+   skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof]); 
+   while (f^.nxttlk = scanner.cuses) or (f^.nxttlk = scanner.cjoins) do begin
 
-      scanner.gettlk(f); { skip 'uses' }
+      { we found it }
+      scanner.gettlk(f); { skip 'uses'/'joins' }
       repeat { process 'uses' files }
 
          if f^.nxttlk <> scanner.cidentifier then begin { bad syntax }
 
-            writeln('Bad ''uses'' syntax in ', fn:*);
+            writeln('Bad ''uses''/''joins'' syntax in ', fn:*);
             goto 99
 
          end;
@@ -587,8 +589,9 @@ begin
          writeln('*** pc: Error: Bad ''uses'' syntax in ', fn:*);
          goto 99
 
-      end
-      { thats all we verify, the start and the end }
+      end;
+      { find next file end or "uses" or "joins" }
+      skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof])
      
    end;
    skpsrc([scanner.ceof]); { skip until file end }
