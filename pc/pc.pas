@@ -63,7 +63,7 @@ const serlib = 'psystem'; { name of base libary }
       trmlib = 'terminal'; { name of terminal library }
       gralib = 'graphical'; { name of graphical library }
       { libs that can be substituted for standard serial library }
-      iolibs = 'psystem terminal graphical';
+      iolibs = 'terminal graphical';
       { libs that run in a separate window }
       gwlibs  = 'gralib gmnlib';
       cmdmax = 250;      { maximum length of command line }
@@ -419,9 +419,9 @@ end;
 
 Find file
 
-Finds the given file by the mod path. If a uses path name is found, that name
-is returned with full path. If it is not found, or there is no module path,
-the original name is returned.
+Finds the given file by the module path. If a uses path name is found, that 
+name is returned with full path. If it is not found, or there is no module 
+path, the original name is returned.
 
 ******************************************************************************}
 
@@ -437,8 +437,7 @@ var p, n, e: filnam; { path components }
 
 begin
 
-   services.setcur(pgmpath); { seach relative to program path }
-   if modpth[1] <> ' ' then begin { uses path is not empty }
+   if modpth[1] <> ' ' then begin { module path is not empty }
 
       services.brknam(fn, p, n, e); { break down filespec }
       copy(pt, modpth); { copy module path }
@@ -491,8 +490,7 @@ begin
 
       until (pt[1] = ' ') or m { until path is empty or matched }
 
-   end;
-   services.setcur(curpath) { restore current path }
+   end
 
 end;
 
@@ -1093,6 +1091,12 @@ loop of mutual references. Since this is not at the present an error, we output
 an information message, then we output the top of the list and continue the
 entire algorithim until the stack is empty.
 
+We treat .o and .a files differently. .o files are assumed to be Pascaline
+startup compliant. .a files are assumed to be C/assembly compliant. The .a
+files appear after the .o files for that reason. If .a files containing
+Pascaline code appear, we must establish a method to indicate that they are
+also Pascaline compliant.
+
 ******************************************************************************}
 
 procedure fndlnk;
@@ -1101,23 +1105,27 @@ var li:      integer; { output index }
     rescnt:  integer; { resolved file count }
     ressav:  integer; { resolved count save }
     cycwrn:  boolean; { cyclic warning output }
-    filacts: fllptr; { file action list save }
-    p:       fllptr; { file action pointer }
+    filacts: fllptr;  { file action list save }
+    p:       fllptr;  { file action pointer }
+    lnklsto: filnam;  { .o objects list }
+    loi:     integer; { .o output index }
+    lnklsta: filnam;  { .a objects list }
+    lai:     integer; { .a output index }
 
 { place output character }
 
-procedure putchr(c: char);
+procedure putchr(var l: string; var i: integer; c: char);
 
 begin
 
-   if li > filmax then begin { overflow }
+   if i > filmax then begin { overflow }
 
       writeln('*** pc: Error: link list too long');
       goto 99
 
    end;
-   lnklst[li] := c; { place character }
-   li := li+1
+   l[i] := c; { place character }
+   i := i+1
 
 end;
 
@@ -1131,12 +1139,25 @@ var p, n, e: filnam;  { path components }
 
 begin
 
-   { place .o extension }
+   { try .a extension }
    services.brknam(fn, p, n, e); { break down name }
-   services.maknam(fns, p, n, 'o'); { remake }
-   { place name in link list }
-   for i := 1 to len(fns) do putchr(fns[i]);
-   putchr(' ') { place separator }
+   services.maknam(fns, p, n, 'a'); { remake }
+   if exists(fns) then begin
+
+      { place name in link list }
+      for i := 1 to len(fns) do putchr(lnklsta, lai, fns[i]);
+      putchr(lnklsta, lai, ' ') { place separator }
+      
+   end else begin
+
+      { place .o extension }
+      services.brknam(fn, p, n, e); { break down name }
+      services.maknam(fns, p, n, 'o'); { remake }
+      { place name in link list }
+      for i := 1 to len(fns) do putchr(lnklsto, loi, fns[i]);
+      putchr(lnklsto, loi, ' ') { place separator }
+
+   end
 
 end;
 
@@ -1281,8 +1302,10 @@ end;
 
 begin
 
-   clears(lnklst); { clear the output list }
-   li := 1; { index 1st character }
+   clears(lnklsto); { clear the output lists }
+   clears(lnklsta);
+   loi := 1; { index 1st character }
+   lai := 1;
    rescnt := 0; { set no files resolved }
    cycwrn := false; { set no cyclic warning output }
    schstdio; { put standard I/O at the head of the list }
@@ -1306,6 +1329,14 @@ begin
       end
 
    end;
+   if len(lnklsto)+len(lnklsta)+1 > filmax then begin { overflow }
+
+      writeln('*** pc: Error: link list too long');
+      goto 99
+
+   end;
+   copy(lnklst, lnklsto); { place .o files }
+   insert(lnklst, lnklsta, len(lnklsto)+2); { place .a files at end }
    { now we need to reverse the order of the action list }
    filacts := filact; { get the list }
    filact := nil; { clear }
@@ -1515,7 +1546,10 @@ end;
 
 Perform linkage and generate pass
 
-Links and generates the final executable.
+Links and generates the final executable. In gcc, both the compile phase and
+the link phase is done via gcc, but not really. It actually passes it on to
+ld. The difference is the compile phase converts .c or .s files into .o files,
+whereas ld links .o files
 
 ******************************************************************************}
 
@@ -1917,7 +1951,6 @@ begin
                parse.parwrd(inshan, modpth, err); { get module path }
             if err then inserr('Uses path too long or invalid');
             cleanpath(modpth); { clean the path up }
-;writeln('parinst: modpth: ', modpth:*);
 
          end else 
             { standard mode }
