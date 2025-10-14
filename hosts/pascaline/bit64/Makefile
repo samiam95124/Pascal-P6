@@ -473,7 +473,7 @@ test: test.pas $(LIBS)/services.a $(LIBS)/strings.o $(LIBS)/psystem.a \
 	pcom --modules=libs/source test.pas test.p6
 	pgen test.p6 test.s
 	$(CC) $(CFLAGS) \
-		$(LIBS)/AMD64/gcc/main.o \
+		$(LIBS)/main.o \
 		$(LIBS)/strings.o \
 		test.s \
         $(LIBS)/services.a \

@@ -327,8 +327,9 @@ directory.
 
 function chkexcl(view fn: string): boolean;
 
-var f: boolean; { match flag }
-    tn: filnam; { filename holder }
+var f:  boolean; { match flag }
+    tn: filnam;  { filename holder }
+    l:  integer;
 
 function schexc(view fn: string): boolean;
 
@@ -359,6 +360,8 @@ begin
    services.brknam(fn, p, n, e); { break down }
    services.maknam(tn, p, n, ''); { remove extention }
    f := schexc(tn); { search for the filename }
+   l := len(p); { check path ends in '/' }
+   if l > 0 then if p[l] = services.pthchr then p[l] := ' ';
    if not f then f := schexc(p); { try search directory }
 
    chkexcl := f { return result }
@@ -442,7 +445,7 @@ begin
       m := false; { set no match }
       repeat { try path components }
 
-         { extract a single path from the uses path }
+         { extract a single path from the module path }
          i := indexp(pt, ':'); { find location of path divider }
          if i = 0 then begin { only one path left, use the whole thing }
 
@@ -1759,12 +1762,15 @@ label nextline; { go to next line }
 
 const cmdmax = 250;
 
-var inshan:  parse.parhan;  { handle for instruction parsing }
-    fn:      filnam;  { filename holder }
-    cmd:     filnam;  { command verb }
-    err:     boolean; { parsing error }
-    lp:      lstptr;  { pointer to file list entry }
-    pp:      pkgptr;  { pointer to package list entry }
+var inshan:  parse.parhan; { handle for instruction parsing }
+    pn:      filnam;       { path of instruction file }
+    fn:      filnam;       { filename holder }
+    en:      filnam;       { extension holder }
+    cp:      filnam;       { current path holder }
+    cmd:     filnam;       { command verb }
+    err:     boolean;      { parsing error }
+    lp:      lstptr;       { pointer to file list entry }
+    pp:      pkgptr;       { pointer to package list entry }
 
 procedure inserr(view es: string);
 
@@ -1806,9 +1812,49 @@ begin
 
 end;
 
+{ clean ':' separated path for relative directories }
+
+procedure cleanpath(var pt: string);
+
+var w:  filnam;
+    ts: filnam;
+    i:  integer;
+
+begin
+
+   clears(ts); { clear result }
+   repeat
+
+      { extract a single path from the module path }
+      i := indexp(pt, ':'); { find location of path divider }
+      if i = 0 then begin { only one path left, use the whole thing }
+
+         copy(w, pt); { place }
+         clears(pt) { clear out the rest }
+
+      end else begin { extract single path }
+
+         extract(w, pt, 1, i-1); { get the path }
+         extract(pt, pt, i+1, len(pt)) { remove from module path }
+
+      end;
+      services.fulnam(w);
+      { add new path }
+      if ts[1] <> ' ' then cat(ts, ':');
+      cat(ts, w)
+
+   until i = 0; { no more paths to extract }
+   copy(pt, ts) { copy back result }
+
+end;
+
 begin
 
    if fverb then writeln('Reading instruction file ', ifn:*);
+   services.brknam(ifn, pn, fn, en); { extract path of instruction file }
+   services.getcur(cp); { save current path }
+   { this makes relative paths work }
+   services.setcur(pn); { set path to instruction file path }
    parse.openpar(inshan); { open parser }
    parse.openfil(inshan, ifn, cmdmax); { open file to parse }
 
@@ -1827,7 +1873,7 @@ begin
          if compp(cmd, 'exclude') then 
             while not parse.endlin(inshan) do begin
 
-            lskpspc(inshan); { skip trailing ing spaces }
+            lskpspc(inshan); { skip trailinging spaces }
             parfilstr(fn); { get filename }
             services.fulnam(fn); { expand it }
             new(lp); { get new exclude list entry }
@@ -1869,7 +1915,9 @@ begin
                parse.parstr(inshan, modpth, err) { get string parameter }
             else
                parse.parwrd(inshan, modpth, err); { get module path }
-            if err then inserr('Uses path too long or invalid')
+            if err then inserr('Uses path too long or invalid');
+            cleanpath(modpth); { clean the path up }
+;writeln('parinst: modpth: ', modpth:*);
 
          end else 
             { standard mode }
@@ -1912,7 +1960,8 @@ begin
 
    end;
    parse.closefil(inshan); { close the file }
-   parse.closepar(inshan) { close the parser instance }
+   parse.closepar(inshan); { close the parser instance }
+   services.setcur(cp) { reset to current path }
 
 end;
 

@@ -107,7 +107,7 @@
     .global services.rempth$p_pvc
     .global services.filchr$p_sc
     .global services.optchr$f
-    .global services.pthchr$p_c
+    .global services.pthchr$f
     .global services.latitude$p_i
     .global services.longitude$p_i
     .global services.altitude$p_i
@@ -563,7 +563,7 @@ services.optchr$f: function wrapper_optchr, 0
 
 # function pthchr: char; external;
 
-services.pthchr$p_c: function wrapper_pthchr, 0
+services.pthchr$f: function wrapper_pthchr, 0
 
 # function latitude: integer; external;
 
