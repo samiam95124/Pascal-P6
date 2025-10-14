@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build My Project",
+            "type": "shell",
+            "command": "pc ${fileBasenameNoExtension}", // Or your build command like 'npm run build', 'msbuild', etc.
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true // Set as default build task
+            },
+            "problemMatcher": [
+                "$gcc" // Example problem matcher for GCC
+            ]
+        }
+    ]
+}
