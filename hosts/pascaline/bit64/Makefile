@@ -154,22 +154,23 @@ libs/strings.o $(LIBS)/strings.o: $(LIBS)/source/strings.pas
 #
 # Services
 #
-libs/services.o $(LIBS)/services.a: $(AMI)/services.c \
+libs/services.a $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm
 	@echo
 	@echo "Building services..."
 	@echo
+	mkdir -p $(BUILD)/libs
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source\
-		-o $(LIBS)/services_support.o -c $(LIBS)/source/services_support.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(LIBS)/services_wrapper_asm.o \
+		-o $(BUILD)/libs/services_support.o -c $(LIBS)/source/services_support.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/services_wrapper_asm.o \
 		-c -x assembler $(LIBS)/source/services_wrapper.asm
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
-		-o $(LIBS)/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
+		-o $(BUILD)/libs/services_wrapper.o -c $(LIBS)/source/services_wrapper.c
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -I$(AMIINC) -I$(LIBS)/source \
-		-o $(LIBS)/services.o -c $(AMI)/services.c
-	ar r $(LIBS)/services.a $(LIBS)/services_wrapper_asm.o \
-		$(LIBS)/services_wrapper.o $(LIBS)/services.o \
-		$(LIBS)/services_support.o
+		-o $(BUILD)/libs/services.o -c $(AMI)/services.c
+	ar r $(LIBS)/services.a $(BUILD)/libs/services_wrapper_asm.o \
+		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
+		$(BUILD)/libs/services_support.o
 
 libs/directory.o: $(LIBS)/source/directory.pas $(BUILD)/libs/directory.s
 $(BUILD)/libs/directory.s:
@@ -392,7 +393,6 @@ bin/pc: pc/pc.pas $(LIBS)/psystem.a \
 	$(CC) $(CFLAGS) \
 		$(BUILD)/AMD64/gcc/main.o \
 		$(LIBS)/strings.o \
-		$(LIBS)/services_wrapper_asm.o \
 		$(LIBS)/parse.o \
         $(BUILD)/pc/scanner.o \
 		$(BUILD)/pc/pc.s \
@@ -445,7 +445,6 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
-		$(LIBS)/services_wrapper_asm.o \
 		$(BUILD)/libs/services_test.s \
         $(LIBS)/services.a \
 		$(LIBS)/psystem.a \
@@ -455,7 +454,6 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
-		$(LIBS)/services_wrapper_asm.o \
 		$(BUILD)/libs/services_test1.s 
 		$(LIBS)/services.a \
 		$(LIBS)/psystem.a \
