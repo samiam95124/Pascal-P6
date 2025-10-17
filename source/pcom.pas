@@ -618,6 +618,7 @@ var
     oi: 1..maxopt; oni: optinx;
     ep, epl: errptr; { error line pointers }
     srcfil(fillen): string; { name of input source file } 
+    desfil(fillen): string; { name of output destination file }
     p(fillen), n(fillen), e(fillen): string; { filename components }
     joinsnest: integer; { nesting level of joins }
 
@@ -5798,8 +5799,10 @@ end;
       expression(fsys + [rparent], false); loadaddress;
       if not stringt(gattr.typtr) then error(208);
       if gattr.typtr <> nil then begin
-        len := gattr.typtr^.size div charmax;
-        gen2(51(*ldc*),1,len);
+        if not complext(gattr.typtr) then begin
+          len := gattr.typtr^.size div charmax;
+          gen2(51(*ldc*),1,len)
+        end;
         gen1(30(*csp*),54(*del*));
       end
     end;
@@ -5809,17 +5812,19 @@ end;
     begin chkstd;
       expression(fsys + [comma,rparent], false); loadaddress;
       if not stringt(gattr.typtr) then error(208);
-      if gattr.typtr <> nil then begin
-        len := gattr.typtr^.size div charmax;
-        gen2(51(*ldc*),1,len)
-      end;
+      if gattr.typtr <> nil then
+        if not complext(gattr.typtr) then begin
+          len := gattr.typtr^.size div charmax;
+          gen2(51(*ldc*),1,len)
+        end;
       if sy = comma then insymbol else error(20);
       expression(fsys + [rparent], false); loadaddress;
       if not stringt(gattr.typtr) then error(208);
-      if gattr.typtr <> nil then begin
-        len := gattr.typtr^.size div charmax;
-        gen2(51(*ldc*),1,len)
-      end;
+      if gattr.typtr <> nil then
+        if not complext(gattr.typtr) then begin
+          len := gattr.typtr^.size div charmax;
+          gen2(51(*ldc*),1,len)
+        end;
       gen1(30(*csp*),55(*del*));
     end;
 
@@ -5844,10 +5849,12 @@ end;
       expression(fsys + [rparent], false); loadaddress;
       if not stringt(gattr.typtr) then error(208);
       if gattr.typtr <> nil then begin
-        len := gattr.typtr^.size div charmax;
-        gen2(51(*ldc*),1,len)
+        if not complext(gattr.typtr) then begin
+          len := gattr.typtr^.size div charmax;
+          gen2(51(*ldc*),1,len)
+        end;
+        gen1(30(*csp*),58(*exs*))
       end;
-      gen1(30(*csp*),58(*exs*));
       if sy = rparent then insymbol else error(4);
       gattr.typtr := boolptr
     end;
@@ -5867,8 +5874,10 @@ end;
         expression(fsys + [rparent], false); loadaddress;
         if not stringt(gattr.typtr) then error(208);
         if gattr.typtr <> nil then begin
-          len := gattr.typtr^.size div charmax;
-          gen2(51(*ldc*),1,len);
+          if not complext(gattr.typtr) then begin
+            len := gattr.typtr^.size div charmax;
+            gen2(51(*ldc*),1,len)
+          end;
           gen1(30(*csp*),64(*asts*))
         end
       end else
@@ -10747,7 +10756,7 @@ begin
   services.maknam(srcfil, p, n, 'pas');
   services.fulnam(srcfil);
   paroptions; { parse command line options }
-  parhdrfil(prr, prrval, '.p6 ');
+  parhdrfilnam(prr, prrval, desfil, '.p6 ');
   { if no output file exists, turn off output listing }
   if not prrval then prcode := false;
   paroptions; { parse command line options }
@@ -10755,7 +10764,8 @@ begin
 
   (*compile:*)
   (**********)
-  reset(prd); rewrite(prr); { open output file }
+  reset(prd); 
+  if prrval then rewrite(prr); { open output file }
 
   { write generator comment }
   if prcode then begin
@@ -10880,5 +10890,9 @@ begin
              wtpcnt:1);
 
   99:
+   if prrval then begin
+      close(prr);
+      {if toterr > 0 then delete(desfil)}
+   end
 
 end.
