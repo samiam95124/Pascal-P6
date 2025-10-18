@@ -253,7 +253,7 @@ const
       privexceptiontop                   = 121;
 
       strlen      = 1000;    { longest string length we can buffer }
-      maxsp       = 110;     { number of predefined procedures/functions }
+      maxsp       = 111;     { number of predefined procedures/functions }
       maxins      = 255;     { maximum instruction code, 0-255 or byte }
       maxfil      = 100;     { maximum number of general (temp) files }
       maxalfa     = 10;      { maximum number of characters in alfa type }
@@ -1092,6 +1092,7 @@ procedure xlate;
          sptable[108] :='rbxh      '; spfunc[108]:=false; sppar[108]:=5; spkeep[108]:=true;    
          sptable[109] :='rbxo      '; spfunc[109]:=false; sppar[109]:=5; spkeep[109]:=true;
          sptable[110] :='rbxb      '; spfunc[110]:=false; sppar[110]:=5; spkeep[110]:=true;
+         sptable[111] :='sete      '; spfunc[111]:=false; sppar[111]:=1; spkeep[111]:=false;
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;

@@ -485,6 +485,7 @@ typedef struct _wthblk {
 address psystem_expadr; /* exception address of exception handler starts */
 address psystem_expstk; /* exception address of sp at handlers */
 address psystem_expmrk; /* exception address of mp at handlers */
+long psystem_errret; /* return error for program */
 
 /* internal variables */
 static const char*modnam = "psystem"; /* name of this module */
@@ -5941,6 +5942,23 @@ void psystem_apc(
 
 /** ****************************************************************************
 
+Set return error code
+
+Sets the error return code for the operating system. The original Unix 
+convention of returning an error code is widespread. The meaning of the return
+code is not, but it is safe to assume that zero is no error, with non-zero
+meaning error.
+
+*******************************************************************************/
+
+void psystem_sete(int err)
+
+{
+
+}
+
+/** ****************************************************************************
+
 Initialize psystem support module
 
 *******************************************************************************/
@@ -5964,6 +5982,9 @@ static void init(int argc, char* argv[])
     psystem_expadr = 0; 
     psystem_expstk = 0; 
     psystem_expmrk = 0;
+
+    /* set program error return */
+    psystem_errret = 0;
 
     /* initialize file state */
     for (i = 1; i <= MAXFIL; i++) {

@@ -431,7 +431,7 @@ table is all you should need to adapt to any byte addressable machine.
 #define EXTERNALSNOTENABLED                 121
 #define PRIVEXCEPTIONTOP                    121
 
-#define MAXSP        110  /* number of predefined procedures/functions */
+#define MAXSP        111  /* number of predefined procedures/functions */
 #define MAXINS       255  /* maximum instruction code, 0-255 or byte */
 #define MAXFIL       100  /* maximum number of general (temp) files */
 #define FILLEN       2000 /* maximum length of filenames */
@@ -2542,6 +2542,8 @@ void callsp(void)
                   pc = expadr; popadr(ad2); pshadr(ad1);
                   ep = getadr(mp+MARKET); /* get the mark ep */
                   /* release to search vectors */
+                  break;
+    case 111/*sete*/: popint(exitcode); /* set exit code */
                   break;
 
     } /*case q*/

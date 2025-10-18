@@ -356,7 +356,7 @@ const
       privexceptiontop                   = 121;
 
       stringlgth  = 1000; { longest string length we can buffer }
-      maxsp       = 110;  { number of predefined procedures/functions }
+      maxsp       = 111;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
@@ -2090,7 +2090,7 @@ procedure load;
          sptable[104] :='rxfb      ';     sptable[105] :='rxbh      '; 
          sptable[106] :='rxbo      ';     sptable[107] :='rxbb      ';
          sptable[108] :='rbxh      ';     sptable[109] :='rbxo      '; 
-         sptable[110] :='rbxb      ';
+         sptable[110] :='rbxb      ';     sptable[111] :='sete      '; 
 
          { constants are stored at top of memory, but relocated to the top of
            the code deck }
@@ -4323,6 +4323,7 @@ begin (*callsp*)
                          ep := getadr(mp+market) { get the mark ep }
                          { release to search vectors }
                        end;
+           111(*sete*): begin popint(i) end; { noop for now }
 
       end;(*case q*)
 end;(*callsp*)

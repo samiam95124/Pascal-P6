@@ -157,10 +157,10 @@ const
    parmsize   = stackelsize;
    recal      = stackal;
    maxaddr    = pmmaxint;
-   maxsp      = 114;  { number of standard procedures/functions }
+   maxsp      = 115;  { number of standard procedures/functions }
    maxins     = 130;  { maximum number of instructions }
    maxids     = 250;  { maximum characters in id string (basically, a full line) }
-   maxstd     = 83;   { number of standard identifiers }
+   maxstd     = 84;   { number of standard identifiers }
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
@@ -284,7 +284,7 @@ type
      expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      rlstr = packed array [1..maxrld] of char;
-     keyrng = 1..32; { range of standard call keys }
+     keyrng = 1..33; { range of standard call keys }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
@@ -3360,6 +3360,7 @@ end;
       112: writeln(prr, 'Read byte integer from text file in radix 16 with range check and field');
       113: writeln(prr, 'Read byte integer from text file in radix 8 with range check and field');
       114: writeln(prr, 'Read byte integer from text file in radix 2 with range check and field');
+      115: writeln(prr, 'Set program error return');
 
     end
   end;
@@ -5905,6 +5906,15 @@ end;
        end
     end;
 
+    procedure seterrprocedure;
+    var lcp: ctp;
+    begin chkstd;
+      expression(fsys + [rparent], false); load;
+      if gattr.typtr <> nil then
+        if gattr.typtr <> intptr then error(125);
+      gen1(30(*csp*),115(*sete*));
+    end;
+
     procedure maxfunction;
       var lattr: attr;
     begin chkstd;
@@ -6223,6 +6233,7 @@ end;
               30:     assertprocedure;
               31:     throwprocedure;
               32:     referprocedure;
+              33:     seterrprocedure;
 
               10,13:  error(508)
             end;
@@ -9812,7 +9823,7 @@ end;
     na[73] := 'exception'; na[74] := 'throw    '; na[75] := 'max      ';
     na[76] := 'string   '; na[77] := 'pstring  '; na[78] := 'byte     ';
     na[79] := 'vector   '; na[80] := 'matrix   '; na[81] := 'abyte    ';
-    na[82] := 'schar    '; na[83] := 'refer    ';
+    na[82] := 'schar    '; na[83] := 'refer    '; na[84] := 'seterr   ';
 
   end (*stdnames*) ;
 
@@ -10069,7 +10080,8 @@ end;
     entstdprocfunc(proc, 69, 30, nil);     { assert }
     entstdprocfunc(proc, 74, 31, nil);     { throw }
     entstdprocfunc(func, 75, 32, intptr);  { max }
-    entstdprocfunc(proc, 83, 32, nil);     { close }
+    entstdprocfunc(proc, 83, 32, nil);     { refer }
+    entstdprocfunc(proc, 84, 33, nil);     { seterr }
 
     { standard exceptions }
     entstdexp('ValueOutOfRange                 ');
@@ -10400,7 +10412,7 @@ end;
       sna[100] :='rbfh'; sna[101] :='rbfo'; sna[102] :='rbfb'; sna[103] :='rdxh';
       sna[104] :='rdxo'; sna[105] :='rdxb'; sna[106] :='rxfh'; sna[107] :='rxfo';
       sna[108] :='rxfb'; sna[109] :='rxbh'; sna[110] :='rxbo'; sna[111] :='rxbb';
-      sna[112] :='rbxh'; sna[113] :='rbxo'; sna[114] :='rbxb';
+      sna[112] :='rbxh'; sna[113] :='rbxo'; sna[114] :='rbxb'; sna[115] :='sete';
 
     end (*procmnemonics*) ;
 
@@ -10691,6 +10703,7 @@ end;
       pdx[109] := +(adrsize+intsize*2); pdx[110] := +(adrsize+intsize*2);
       pdx[111] := +(adrsize+intsize*2); pdx[112] := +(adrsize+intsize*3);
       pdx[113] := +(adrsize+intsize*3); pdx[114] := +(adrsize+intsize*3);
+      pdx[115] := +intsize;
     end;
 
   begin (*inittables*)

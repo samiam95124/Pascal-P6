@@ -27,7 +27,9 @@ main:
         movq    %rax,psystem_expadr(%rip)
         movq    %rsp,psystem_expstk(%rip)   # set frame parameters                                      
         movq    %rbp,psystem_expmrk(%rip) 
-        jmp     3f                          # execute next module in sequence
+        call     3f                          # execute next module in sequence
+        movq    psystem_errret(%rip),%rax    # get program error return code
+        ret                                  # exit to operating system
 #
 # Exception handler
 #

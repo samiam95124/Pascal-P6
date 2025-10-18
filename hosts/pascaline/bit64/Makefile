@@ -70,7 +70,7 @@ all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
 #
 # Build psystem, the Pascaline support library in C.
 #
-$(LIBS)/psystem.o $(LIBS)/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c \
+$(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c \
 	$(SOURCE)/AMD64/gcc/psystem.asm
 	@echo
 	@echo "Building psystem..."

@@ -357,7 +357,7 @@ const
       ExternalsNotEnabled                = 121;
       privexceptiontop                   = 121;
 
-      maxsp       = 110;  { number of predefined procedures/functions }
+      maxsp       = 111;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
       maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
@@ -2491,6 +2491,7 @@ begin (*callsp*)
                          ep := getadr(mp+market) { get the mark ep }
                          { release to search vectors }
                        end;
+           111(*sete*): begin popint(i) end; { noop for now }
                        
       end;(*case q*)
 end;(*callsp*)
