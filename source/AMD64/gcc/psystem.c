@@ -5951,9 +5951,11 @@ meaning error.
 
 *******************************************************************************/
 
-void psystem_sete(int err)
+void psystem_sete(long err)
 
 {
+
+    psystem_errret = err; /* set system error code */
 
 }
 
