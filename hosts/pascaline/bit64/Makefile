@@ -41,7 +41,7 @@
 ################################################################################
 
 CC=gcc
-CFLAGS=-static -g3 -DWRDSIZ64
+CFLAGS=-static -std=c89 -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
