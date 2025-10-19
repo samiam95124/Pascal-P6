@@ -25,6 +25,8 @@ if [ -z "$param1" ]; then
 
 fi
 
+echo "testpascaline begin"
+
 cd pascaline_tests
 
 #
@@ -42,6 +44,7 @@ if [ "$param1" = "--pgen" ]; then
 
 else
 
+echo "testpascaline: form combined intermediate"
     # form combined intermediate
     #echo "Will execute: compile $param1 pascaline2 pascaline1 pascaline"
     compile $param1 pascaline2 pascaline1 pascaline
