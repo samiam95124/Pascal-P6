@@ -41,7 +41,7 @@
 ################################################################################
 
 CC=gcc
-CFLAGS=-static -std=c89 -g3 -DWRDSIZ64
+CFLAGS=-static -g3 -DWRDSIZ64
 SOURCE=$(PASCALP6)/source
 BUILD=$(PASCALP6)/build
 LIBS=$(PASCALP6)/libs
@@ -377,7 +377,7 @@ bin/spew: $(SOURCE)/spew.c
 pc: bin/pc
 bin/pc: pc/pc.pas $(LIBS)/psystem.a \
 	$(BUILD)/AMD64/gcc/main.o \
-	$(LIBS)/services.a libs/strings.o libs/parse.o
+	$(LIBS)/services.a libs/strings.o libs/parse.o pc/scanner.pas
 	@echo
 	@echo "Building pc..."
 	@echo

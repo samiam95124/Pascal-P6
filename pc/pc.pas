@@ -1501,7 +1501,7 @@ begin
 
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
-      putstr('gcc -static -std=c89 -g3');
+      putstr('gcc -static -g3');
       putchr(' ');
       putstr('-c');
       putchr(' ');

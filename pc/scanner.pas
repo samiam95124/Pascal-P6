@@ -465,7 +465,7 @@ procedure conchr(    f: fcbptr; { file control block }
 
 var s:   packed array [1..4] of char;  { holding cell }
     r:   0..1020;                      { hash calculator holding (4*c) }
-    chn: 0..34;                        { index of control characters }
+    chn: 0..35;                        { index of control characters }
     i:   1..4;                         { index for cell }
     ips: array [1..4] of integer;   { line pointer saves }
 
