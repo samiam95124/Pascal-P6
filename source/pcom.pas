@@ -10908,6 +10908,10 @@ begin
       services.brknam(desfil, p, n, e); { place extension }
       services.maknam(desfil, p, n, 'p6');
       {if toterr > 0 then delete(desfil)}
-   end
+   end;
+
+   { Return number of errors as return code. This does not match any standard,
+     because there is no standard, so it might as well be useful. }
+   seterr(toterr);
 
 end.

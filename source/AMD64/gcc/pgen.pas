@@ -409,6 +409,7 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       prdval      : boolean; { input source file parsed }
       prrval      : boolean; { output source file parsed }
       lindig      : boolean; { line diagnostic for gdb encountered }
+      errret      : boolean; { error flagged }
 
       (*locally used for interpreting one instruction*)
       ad          : address;
@@ -605,6 +606,7 @@ begin writeln; write('*** I/O error: ');
     CommandLineTooLong:                 writeln('Command line too long');
     FunctionNotImplemented:             writeln('Function not implemented');
   end;
+  errret := true; { set there was an error }
   goto 99
 end;
 
@@ -1170,6 +1172,7 @@ procedure xlate;
    procedure errorl(view es: string); (*error in loading*)
    begin writeln;
       writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', es);
+      errret := true; { set there was an error }
       goto 99
    end; (*errorl*)
 
@@ -2376,6 +2379,7 @@ procedure xlate;
           writeln;
           writeln('Contents of stack:');
           dmpstk(output);
+          errret := true; { set there was an error }
           goto 99
         end
       end;
@@ -5971,9 +5975,10 @@ begin (* main *)
   blklst := nil; { clear symbols block discard list }
   level := 0; { clear level count }
   lindig := false; { set no encounter line diagnostic }
+  errret := false; { set no error on return }
 
   { supress warning }
-  if blklst = nil then;
+  refer(blklst);
 
   fndpow(maxpow10, 10, decdig);
   fndpow(maxpow16, 16, hexdig);
@@ -5993,12 +5998,14 @@ begin (* main *)
   parhdrfil(prd, prdval, '.p6 ');
   if not prdval then begin
     writeln('*** Error: input filename not found');
+    errret := true; { set there was an error }
     goto 99
   end;
   paroptions; { parse command line options }
   parhdrfil(prr, prrval, '.s  ');
   if not prrval then begin
     writeln('*** Error: output filename not found');
+    errret := true; { set there was an error }
     goto 99
   end;
   { load command line options }
@@ -6022,5 +6029,8 @@ begin (* main *)
 
   writeln;
   writeln('Program generation complete');
+
+  { return 0 on no error, 1 on error }
+  seterr(ord(errret));
 
 end.
