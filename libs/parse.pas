@@ -163,6 +163,12 @@
 
 module parse;
 
+const maxpar = 100; { number of logical parse handles }
+
+type 
+
+   parhan = 1..maxpar; { logical parse handle }
+
 { functions }
 
 procedure openpar(var ph: parhan); external;

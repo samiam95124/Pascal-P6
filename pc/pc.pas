@@ -136,6 +136,7 @@ var
    fngwin:  boolean; { no graphical windows mode }
    fdeftrm: boolean; { default to terminal mode }
    fdefgra: boolean; { default to graphical mode }
+   flist:   boolean; { list program (passthough) }
    { these are "pass through" options, options meant for programs we execute }
    fovf:    boolean; { overflow checks in parser, used for unsigned numbers }
    fref:    boolean; { check for non-references in parser }
@@ -235,6 +236,7 @@ begin
       setflg('r',  'rebuild',  frebld); { rebuild everything }
       setflg('s',  'standard', fansi); { ansi standard mode }
       setflg('o',  'overflow', fovf); { check input numeric overflows }
+      setflg('l',  'list',     flist); { list program }
       setflg('rf', 'refer',    fref); { check references }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
@@ -1474,6 +1476,8 @@ begin
                else putstr(' -s- '); { not standard }
       if fovf then putstr(' -o+ '); { overflow checks }
       if not fovf then putstr(' -o- '); { no overflow checks }
+      if flist then putstr(' -l+ '); { list program }
+      if not flist then putstr(' -l- '); { list program }
       if fref then putstr(' -r+ ') { reference checks }
               else putstr(' -r- '); { no references checks }
       excact(cmdbuf); { execute command buffer action }
@@ -1497,7 +1501,7 @@ begin
 
       i := 1; { set 1st command filename }
       clears(cmdbuf); { clear command buffer }
-      putstr('gcc -static -g3');
+      putstr('gcc -static -std=c89 -g3');
       putchr(' ');
       putstr('-c');
       putchr(' ');
@@ -2026,6 +2030,7 @@ begin
    { passthrough }
    fovf := true; { overflow checking on }
    fref := true; { reference checking on }
+   flist := false; { list program }
    fngwin := false; { do not override graphical windows switch }
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
