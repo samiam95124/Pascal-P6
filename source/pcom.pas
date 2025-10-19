@@ -10907,7 +10907,7 @@ begin
       close(prr);
       services.brknam(desfil, p, n, e); { place extension }
       services.maknam(desfil, p, n, 'p6');
-      {if toterr > 0 then delete(desfil)}
+      if toterr > 0 then delete(desfil)
    end;
 
    { Return number of errors as return code. This does not match any standard,

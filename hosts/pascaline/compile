@@ -137,7 +137,6 @@ do
 
 	elif [ ! -z "$param.pas" ]; then
 
-	
 		if [ ! -f "$param.pas" ]; then
 		
 			echo "$param.pas does not exist"
@@ -148,7 +147,6 @@ do
         thisfail=0
         #echo "Will execute: pcom $param.pas $param.p6 $options"
         pcom $param.pas $param.p6 $options > temp
-        grep 'Errors in program: 0' temp > temp2
         if [ "$?" != "0" ]; then
 
             fails=1
@@ -156,7 +154,7 @@ do
 
         fi
         cat temp >> caterrs.err
-        rm temp temp2
+        rm temp
         if [ "$pgen" = "1" ] && [ "$thisfail" = "0" ]; then
 
             # generate .s assembly files
@@ -168,7 +166,11 @@ do
 
         fi
         # generate concatenated intermediates
-	    cat $param.p6 >> catints.p6
+        if [ "$thisfail" = "0" ]; then
+
+	        cat $param.p6 >> catints.p6
+
+        fi
 		progfile="$param"
 		
     fi
@@ -185,7 +187,11 @@ fi
 #
 # Put intermediate and error under the program filename
 #
-mv catints.p6 $progfile.p6
+if [ -f "catints.p6" ]; then
+
+    mv catints.p6 $progfile.p6
+
+fi
 mv caterrs.err $progfile.err
 
 #
