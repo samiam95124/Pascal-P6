@@ -382,12 +382,12 @@ bin/pc: pc/pc.pas $(LIBS)/psystem.a \
 	@echo "Building pc..."
 	@echo
 	mkdir -p $(BUILD)/pc
-	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs/source \
+	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs \
 		--modules=pc --list- --reference-
 	pgen $(BUILD)/pc/scanner.p6 $(BUILD)/pc/scanner.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/scanner.o \
 		-c $(BUILD)/pc/scanner.s
-	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
+	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs --modules=pc \
 		--list- --reference-
 	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
 	$(CC) $(CFLAGS) \
