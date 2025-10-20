@@ -150,6 +150,7 @@ var
    pgmpath: filnam;  { program path }
    usrpath: filnam;  { user path }
    curpath: filnam;  { current path }
+   tarpath: filnam;  { target path }
    tmpnam:  filnam;  { temp filename holding }
    exclude: lstptr;  { exclude list }
    package: pkgptr;  { packaging list }
@@ -421,7 +422,7 @@ end;
 
 Find file
 
-Finds the given file by the module path. If a uses path name is found, that 
+Finds the given file by the module path. If a module path name is found, that 
 name is returned with full path. If it is not found, or there is no module 
 path, the original name is returned.
 
@@ -433,15 +434,52 @@ var p, n, e: filnam; { path components }
     pt:      filnam; { uses path holder }
     w:       filnam; { single path holder }
     fns:     filnam; { trial filespec }
-    ps:      filnam; { current path save }
     m:       boolean; { match flag }
     i:       integer;
 
+procedure makpth(view pn: string);
+
 begin
 
-   if modpth[1] <> ' ' then begin { module path is not empty }
+   services.maknam(fns, pn, n, 'pas'); { construct a name }
+   services.fulnam(fns); { rationalize }
+   if exists(fns) and not obj then begin
 
-      services.brknam(fn, p, n, e); { break down filespec }
+      copy(fn, fns); { copy winning spec }
+      m := true { set found }
+
+   end else begin
+
+      services.maknam(fns, pn, n, 'a'); { construct a name }
+      services.fulnam(fns); { rationalize }
+      if exists(fns) then begin
+
+         copy(fn, fns); { copy winning spec }
+         m := true { set found }
+
+      end else begin
+
+         services.maknam(fns, pn, n, 'o'); { construct a name }
+         services.fulnam(fns); { rationalize }
+         if exists(fns) then begin
+
+            copy(fn, fns); { copy winning spec }
+            m := true { set found }
+
+         end
+
+      end
+
+   end
+
+end;
+
+begin
+
+   services.brknam(fn, p, n, e); { break down filespec }
+   makpth(tarpath); { try target path }
+   if not m and (modpth[1] <> ' ') then begin { module path is not empty }
+
       copy(pt, modpth); { copy module path }
       m := false; { set no match }
       repeat { try path components }
@@ -459,36 +497,7 @@ begin
             extract(pt, pt, i+1, len(pt)) { remove from module path }
 
          end;
-         services.maknam(fns, w, n, 'pas'); { construct a name }
-         services.fulnam(fns); { rationalize }
-         if exists(fns) and not obj then begin
-
-            copy(fn, fns); { copy winning spec }
-            m := true { set found }
-
-         end else begin
-
-            services.maknam(fns, w, n, 'a'); { construct a name }
-            services.fulnam(fns); { rationalize }
-            if exists(fns) then begin
-
-               copy(fn, fns); { copy winning spec }
-               m := true { set found }
-
-            end else begin
-
-               services.maknam(fns, w, n, 'o'); { construct a name }
-               services.fulnam(fns); { rationalize }
-               if exists(fns) then begin
-
-                  copy(fn, fns); { copy winning spec }
-                  m := true { set found }
-
-               end
-
-            end
-
-         end
+         makpth(w) { try that path }
 
       until (pt[1] = ' ') or m { until path is empty or matched }
 
@@ -1103,8 +1112,7 @@ also Pascaline compliant.
 
 procedure fndlnk;
 
-var li:      integer; { output index }
-    rescnt:  integer; { resolved file count }
+var rescnt:  integer; { resolved file count }
     ressav:  integer; { resolved count save }
     cycwrn:  boolean; { cyclic warning output }
     filacts: fllptr;  { file action list save }
@@ -1462,6 +1470,10 @@ begin
       services.maknam(fns, p, n, 'p6');
       services.fulnam(fns); { normalize it }
       putstr(fns);
+      putchr(' ');
+      { place target path }
+      putstr(' --modules=');
+      putstr(tarpath);
       putchr(' ');
       { place module path, if defined here }
       if len(modpth) > 0 then begin
@@ -2062,7 +2074,7 @@ begin
    parse.openpar(cmdhan); { open parser }
    parse.opencommand(cmdhan, cmdmax); { open command line level }
    services.filchr(valfch); { get the filename valid characters }
-   valfch := valfch-['=']; { remove parsing characters }
+   valfch := valfch-['=','-']; { remove parsing characters }
    parse.setfch(cmdhan, valfch); { set that for active parsing }
    paropt; { parse command options }
    if parse.endlin(cmdhan) then begin
@@ -2090,10 +2102,11 @@ begin
       goto 99
 
    end;
-   services.brknam(prgnam, p, n, e); { add Pascal extention }
-   services.maknam(prgnam, p, n, 'pas');
+   services.brknam(prgnam, tarpath, n, e); { add Pascal extention }
+   services.maknam(prgnam, tarpath, n, 'pas');
+   services.fulnam(prgnam); { expand relative }
    { see if there is an instruction file to go with it }
-   services.maknam(tmpnam, p, n, 'ins');
+   services.maknam(tmpnam, tarpath, n, 'ins');
    if exists(tmpnam) then parinst(tmpnam);
    { now check the file itself exists }
    if not exists(prgnam) then begin { file not found }

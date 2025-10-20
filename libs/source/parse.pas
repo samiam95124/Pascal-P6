@@ -166,7 +166,7 @@ module parse(output, command);
 uses strings,
      services;
 
-const maxpar = 8{100}; { number of logical parse handles }
+const maxpar = 100; { number of logical parse handles }
 
 type 
 
@@ -247,7 +247,7 @@ type
 var partab: array [parhan] of parptr; { logical parse blocks }
     parinx: parhan; { index for table }
     valfch: schar; { valid file characters }
-
+
 {*******************************************************************************
 
 Process string library error
@@ -274,7 +274,7 @@ begin
    halt { end the run }
 
 end;
-
+
 {*******************************************************************************
 
 Flush position save stack
@@ -304,7 +304,7 @@ begin
    end
 
 end;
-
+
 {*******************************************************************************
 
 Get next line line handle
@@ -377,7 +377,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Set up handle
@@ -401,7 +401,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Open parser
@@ -430,7 +430,7 @@ begin
    partab[ph]^.trc := false { set no trace }
 
 end;
-
+
 {******************************************************************************
 
 Close parser
@@ -467,7 +467,7 @@ begin
    partab[ph] := nil { and flag free }
 
 end;
-
+
 {******************************************************************************
 
 Open file by name for parsing
@@ -507,7 +507,7 @@ begin
    partab[ph]^.fil := fp
 
 end;
-
+
 {******************************************************************************
 
 Open command file for parsing
@@ -542,7 +542,7 @@ begin
    partab[ph]^.fil := fp
 
 end;
-
+
 {******************************************************************************
 
 Set line for parsing
@@ -576,7 +576,7 @@ begin
    partab[ph]^.fil := fp
 
 end;
-
+
 {******************************************************************************
 
 Close file level for parsing
@@ -603,7 +603,7 @@ begin
    partab[ph]^.fil := nil { clear entry } 
 
 end;
-
+
 {******************************************************************************
 
 Push present line position
@@ -629,7 +629,7 @@ begin
    end
 
 end;      
-
+
 {******************************************************************************
 
 Pop old line position
@@ -656,7 +656,7 @@ begin
    end
 
 end;      
-
+
 {******************************************************************************
 
 Dump old line position
@@ -682,7 +682,7 @@ begin
    end
 
 end;      
-
+
 {******************************************************************************
 
 Check end of file
@@ -699,7 +699,7 @@ begin
    with partab[ph]^.fil^ do endfil := endf { return eof status }
 
 end;
-
+
 {******************************************************************************
 
 Check end of line
@@ -717,7 +717,7 @@ begin
       endlin := inx > llen { input pointer past end of line }
 
 end;
-
+
 {******************************************************************************
 
 Check next buffer line character
@@ -736,7 +736,7 @@ begin
       else chkchr := ' ' { else return space }
 
 end;
-
+
 {******************************************************************************
 
 Get next character
@@ -755,7 +755,7 @@ begin
       if not endlin(ph) then inx := inx+1 { advance position if not end }
 
 end;
-
+
 {******************************************************************************
 
 Get next character multiline
@@ -796,7 +796,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Skip spaces
@@ -814,7 +814,7 @@ begin
    while (chkchr(ph) = ' ') and not endlin(ph) do getchr(ph)
 
 end;
-
+
 {******************************************************************************
 
 Skip spaces multiline
@@ -832,7 +832,7 @@ begin
    while (chkchr(ph) = ' ') and not endfil(ph) do getchrl(ph)
 
 end;
-
+
 {******************************************************************************
 
 Check label
@@ -851,7 +851,7 @@ begin
    chklab := chkchr(ph) in ['_', 'a'..'z', 'A'..'Z']
 
 end;
-
+
 {******************************************************************************
 
 Parse label
@@ -891,7 +891,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Check number
@@ -927,7 +927,7 @@ begin
    chknum := f
 
 end;
-
+
 {******************************************************************************
 
 Parse and convert numeric
@@ -995,7 +995,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Check filename
@@ -1014,7 +1014,7 @@ begin
    chkfil := chkchr(ph) in partab[ph]^.fch
 
 end;
-
+
 {******************************************************************************
 
 Parse filename
@@ -1060,7 +1060,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Parse word from parser instance
@@ -1094,7 +1094,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Set filename parsing characters
@@ -1111,7 +1111,7 @@ begin
    partab[ph]^.fch := vc { place parsing character set }
 
 end;
-
+
 {******************************************************************************
 
 Check string
@@ -1130,7 +1130,7 @@ begin
    chkstr := chkchr(ph) = '"'
 
 end;
-
+
 {******************************************************************************
 
 Parse string
@@ -1184,7 +1184,7 @@ begin
    end
 
 end;
-
+
 {******************************************************************************
 
 Set input line tracing mode
@@ -1202,7 +1202,7 @@ begin
    partab[ph]^.trc := trc { set tracing status }
 
 end;
-
+
 {******************************************************************************
 
 Print error
