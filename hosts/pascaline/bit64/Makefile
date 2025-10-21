@@ -322,44 +322,6 @@ bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(LIBS)/psystem.a \
 	cp $(BUILD)/AMD64/gcc/pgen $(PASCALP6)/bin/pgen
 
 #
-# Build genobj, an object code to C array converter.
-#
-genobj: bin/genobj
-bin/genobj: $(SOURCE)/genobj.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o
-	@echo
-	@echo "Building genobj..."
-	@echo
-	mkdir -p $(BUILD)
-	pcom $(SOURCE)/genobj.pas $(BUILD)/genobj.p6 --list- --reference-
-	pgen $(BUILD)/genobj.p6 $(BUILD)/genobj.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/genobj.s \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/genobj -lm -lpthread
-	cp $(BUILD)/genobj $(PASCALP6)/bin/genobj
-
-#
-# Build hashtab, a reserved word hash table builder
-#
-hashtab: bin/hashtab
-bin/hashtab: pc/hashtab.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o
-	@echo
-	@echo "Building hashtab..."
-	@echo
-	mkdir -p $(BUILD)/pc
-	pcom pc/hashtab.pas $(BUILD)/pc/hashtab.p6 --list- --reference-
-	pgen $(BUILD)/pc/hashtab.p6 $(BUILD)/pc/hashtab.s
-	$(CC) $(CFLAGS) \
-		$(LIBS)/main.o \
-		$(BUILD)/pc/hashtab.s \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/hashtab -lm -lpthread
-	cp $(BUILD)/hashtab $(PASCALP6)/bin
-
-#
 # Build spew, an automated test facillity.
 #
 spew: bin/spew
@@ -371,60 +333,10 @@ bin/spew: $(SOURCE)/spew.c
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
 
-#
-# Build pc, the compiler integrator
-#
-pc: bin/pc
-bin/pc: pc/pc.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o \
-	$(LIBS)/services.a libs/strings.o libs/parse.o pc/scanner.pas
-	@echo
-	@echo "Building pc..."
-	@echo
-	mkdir -p $(BUILD)/pc
-	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs \
-		--modules=pc --list- --reference-
-	pgen $(BUILD)/pc/scanner.p6 $(BUILD)/pc/scanner.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/scanner.o \
-		-c $(BUILD)/pc/scanner.s
-	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs --modules=pc \
-		--list- --reference-
-	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(LIBS)/strings.o \
-		$(LIBS)/parse.o \
-        $(BUILD)/pc/scanner.o \
-		$(BUILD)/pc/pc.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/pc/pc -lm -lpthread
-	cp $(BUILD)/pc/pc $(PASCALP6)/bin
-
 ################################################################################
 #
 # Build library tests
 #
-
-#
-# Build strings test.
-#
-libs/strtst: $(LIBS)/source/strtst.pas $(LIBS)/psystem.a
-	@echo
-	@echo "Building strtst..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom $(LIBS)/source/strtst.pas $(BUILD)/libs/strtst.p6 \
-		--modules=$(LIBS)/source --list- --reference-
-	pgen $(BUILD)/libs/strtst.p6 $(BUILD)/libs/strtst.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/parcmd.o \
-		$(LIBS)/strings.o \
-		$(BUILD)/libs/strtst.s \
-		$(LIBS)/psystem.a \
-		-o $(LIBS)/strtst -lm -lpthread
-	cp $(LIBS)/strtst bin
 
 #
 # Build services test.
@@ -460,24 +372,6 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		-o $(LIBS)/services_test1 -lm -lpthread
 	cp $(LIBS)/services_test1 bin
 
-#
-# Build a test program (for whatever)
-#
-test: test.pas $(LIBS)/services.a $(LIBS)/strings.o $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o
-	@echo
-	@echo "Building test..."
-	@echo
-	pcom --modules=libs/source test.pas test.p6
-	pgen test.p6 test.s
-	$(CC) $(CFLAGS) \
-		$(LIBS)/main.o \
-		$(LIBS)/strings.o \
-		test.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o test -lm -lpthread
-	
 clean:
 	find . -name "*.pint" -type f -delete
 	find . -name "*.out" -type f -delete

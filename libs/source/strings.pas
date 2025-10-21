@@ -413,6 +413,7 @@ procedure throw(ev: exception);
 
 begin
 
+    refer(ev); { unused }
     writeln(error, 'Strlib: exception')
 
 end;

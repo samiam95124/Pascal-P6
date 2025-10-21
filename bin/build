@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# General build script for Pascal-P6
+#
+# Form:
+# 
+# build [<options>]
+#
+# The options are pc options only.
+#
+function compprog {
+
+    pc $1 $OPTIONS
+    cp $1 bin
+
+}
+
+OPTIONS=$@
+
+make
+compprog pc/pc
+compprog pc/hashtab
+compprog source/genobj
+compprog libs/source/strtst

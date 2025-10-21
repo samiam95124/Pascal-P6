@@ -45,14 +45,27 @@ Pascal-p6 uses the standard GNU release layout. You execute:
 
 > . ./setpath
 > ./configure
-> make
+
+And optionally:
+
+> build
 
 (You can avoid "setpath" by placing the ./bin directory on your path)
 
-This will make the compiler and interpreter set. You can then try a sample
-program as:
+> ./configure
 
-> p6 sample_programs/hello
+Will set up your system for the existing host, and place the binaries and other
+files you need in the ./bin directory.
+
+> build
+
+This will make the compiler and interpreter set. You don't need to do this step
+if you are not changing the compiler. It will be prebuilt for you.
+
+ You can then try a sample program as:
+
+> pc sample_programs/hello
+> sample_programs/hello
 
 ================================== Problems ====================================
 
