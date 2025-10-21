@@ -37,6 +37,8 @@ procedure LookupExternal(
 
 begin
 
+   refer(modulen); { unused }
+   refer(symbol); { unused }
    routine := 0; { set no routine found }
 
 end;
@@ -63,6 +65,8 @@ procedure ExecuteExternal(
 
 begin
 
+    refer(routine); { unused }
+    refer(params); { unused }
     { place external routine executions here }
 
 end;

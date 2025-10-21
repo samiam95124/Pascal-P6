@@ -5,9 +5,6 @@
 #
 # Used to verify the compiler can make itself.
 #
-make clean
-make
-make clean
-make
-make clean
-make
+build "-B" "-r"
+build "-B" "-r"
+build "-B" "-r"

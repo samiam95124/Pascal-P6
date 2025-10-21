@@ -205,33 +205,6 @@ $(BUILD)/libs/parse.s:
 #
 
 #
-# Build pcom, the source to intermediate compiler.
-#
-pcom: bin/pcom
-bin/pcom: $(SOURCE)/pcom.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
-	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
- 	$(BUILD)/extend.o libs/services.a
-	@echo
-	@echo "Building pcom..."
-	@echo
-	mkdir -p $(BUILD)
-	pcom $(SOURCE)/pcom.pas $(BUILD)/pcom.p6 \
-		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
-		--modules=$(LIBS)/source --list- --reference-
-	pgen $(BUILD)/pcom.p6 $(BUILD)/pcom.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/parcmd.o \
-		$(BUILD)/extlink.o \
-		$(BUILD)/extend.o \
-		$(BUILD)/pcom.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/pcom -lm -lpthread
-	cp $(BUILD)/pcom $(PASCALP6)/bin
-	
-#
 # Build pint, the intermediate interpreter and debug facillity.
 #
 pint: bin/pint

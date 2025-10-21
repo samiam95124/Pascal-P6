@@ -1922,7 +1922,7 @@ end;
 
 begin
 
-   if fverb then writeln('Reading instruction file bark bark', ifn:*);
+   if fverb then writeln('Reading instruction file', ifn:*);
    services.brknam(ifn, pn, fn, en); { extract path of instruction file }
    services.getcur(cp); { save current path }
    { this makes relative paths work }

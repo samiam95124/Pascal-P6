@@ -5290,7 +5290,7 @@ end;
 
     procedure writeprocedure;
       var lsp,lsp1: stp; default, default1: boolean; llkey: 1..15;
-          len:addrrange; strspc: addrrange;
+          len:addrrange;
           txt: boolean; { is a text file }
           byt: boolean; { is a byte file }
           deffil: boolean; { default file was loaded }
@@ -5907,7 +5907,6 @@ end;
     end;
 
     procedure seterrprocedure;
-    var lcp: ctp;
     begin chkstd;
       expression(fsys + [rparent], false); load;
       if gattr.typtr <> nil then
@@ -7848,7 +7847,6 @@ end;
           forw,forwn,extn,opr,isvirt, form: boolean; 
           oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
-          oldlevf: 0..maxlevel; oldtopf: disprange;
 
       procedure pushlvl(lcp: ctp);
       begin
@@ -8167,7 +8165,7 @@ end;
 
     { find congruent overload group }
     function fndovlgrp(lcp, lp, hp: ctp): ctp;
-      var lcp1: ctp; f: boolean;
+      var lcp1: ctp;
     begin
       lcp1 := nil;
       lcp := lcp^.grppar; { index top of overload group }
@@ -8773,7 +8771,7 @@ end;
         label 1;
         var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
             laddr, lcix, lcix1, lelse, lelse2, lmin, lmax: integer;
-            test: boolean; i,occ: integer; llc: addrrange;
+            test: boolean; i,occ: integer;
             csladr: stkoff; { case selector temp }
       function casecount(cp: cip): integer;
       var c: integer;

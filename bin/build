@@ -18,8 +18,11 @@ function compprog {
 
 }
 
-make
+OPTIONS=$2
+
+make $1
 compprog pc/pc
 compprog pc/hashtab
 compprog source/genobj
 compprog libs/source/strtst
+compprog source/pcom
