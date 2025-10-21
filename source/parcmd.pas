@@ -139,7 +139,7 @@ begin
         option[oi] := true; if bufcommand = '-' then option[oi] := false;
         options[oi] := true;
         if (bufcommand = '+') or (bufcommand = '-') then getcommand
-        else if (bufcommand = '=') and (oi = 27) then begin
+        else if (bufcommand = '=') and (oi = 27{modules}) then begin
           { include string }
           getcommand;
           ii := maxlin; while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1; 

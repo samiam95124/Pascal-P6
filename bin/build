@@ -4,9 +4,12 @@
 #
 # Form:
 # 
-# build [<options>]
+# build [<options for make>] [<options for pc>]
 #
-# The options are pc options only.
+# Note: if you want to give multiple options for make or pc, surround in quotes
+# like:
+#
+# build "-Bi" "-r -d"
 #
 function compprog {
 
@@ -14,8 +17,6 @@ function compprog {
     cp $1 bin
 
 }
-
-OPTIONS=$@
 
 make
 compprog pc/pc

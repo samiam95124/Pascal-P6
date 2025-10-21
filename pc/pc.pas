@@ -1408,10 +1408,13 @@ of the Pascal compile.
 
 procedure doact(fp: filept);
 
-var p, n, e: filnam; { path components }
-    fns:     filnam; { save for name }
-    cmdbuf:  linbuf; { command buffer }
-    i:       lininx; { index for that }
+var p, n, e: filnam;    { path components }
+    fns:     filnam;    { save for name }
+    cmdbuf:  linbuf;    { command buffer }
+    w:       filnam;    { single path holder }
+    pt:      filnam;    { uses path holder }
+    i:       lininx;    { index for that }
+    x:       0..maxlin; { index for path }
 
 { place output character }
 
@@ -1478,9 +1481,28 @@ begin
       { place module path, if defined here }
       if len(modpth) > 0 then begin
 
-         putstr(' --modules=');
-         putstr(modpth);
-         putchr(' ')
+         copy(pt, modpth); { copy module path }
+         repeat { try path components }
+
+            { extract a single path from the module path }
+            x := indexp(pt, ':'); { find location of path divider }
+            if x = 0 then begin { only one path left, use the whole thing }
+
+               copy(w, pt); { place }
+               clears(pt) { clear out the rest }
+
+            end else begin { extract single path }
+
+               extract(w, pt, 1, x-1); { get the path }
+               extract(pt, pt, x+1, len(pt)) { remove from module path }
+
+            end;
+            { output this path }
+            putstr(' --modules=');
+            putstr(w);
+            putchr(' ')
+
+         until pt[1] = ' ' { until path is empty }         
        
       end;
       { place pass through options }
@@ -1900,7 +1922,7 @@ end;
 
 begin
 
-   if fverb then writeln('Reading instruction file ', ifn:*);
+   if fverb then writeln('Reading instruction file bark bark', ifn:*);
    services.brknam(ifn, pn, fn, en); { extract path of instruction file }
    services.getcur(cp); { save current path }
    { this makes relative paths work }
@@ -1962,11 +1984,18 @@ begin
 
             lskpspc(inshan); { skip trailing spaces }
             if parse.chkchr(inshan) = '"' then { check quoted }
-               parse.parstr(inshan, modpth, err) { get string parameter }
+               parse.parstr(inshan, fn, err) { get string parameter }
             else
-               parse.parwrd(inshan, modpth, err); { get module path }
+               parse.parwrd(inshan, fn, err); { get module path }
             if err then inserr('Uses path too long or invalid');
-            cleanpath(modpth); { clean the path up }
+            cleanpath(fn); { clean the path up }
+            if modpth[1] = ' ' then copy(modpth, fn) { just copy }
+            else begin
+
+              cat(modpth, ':'); { separate paths }
+              cat(modpth, fn) { add new paths }
+
+            end
 
          end else 
             { standard mode }
@@ -2059,11 +2088,13 @@ begin
 
       { program and user paths are not identical }
       services.maknam(tmpnam, usrpath, 'pc', 'ins'); { create instruction file name }
+      services.fulnam(tmpnam); { normalize }
       if exists(tmpnam) then parinst(tmpnam);
       if not comp(curpath, pgmpath) and not comp(curpath, usrpath) then begin
 
          { current path not equal to any of program or user paths }
          services.maknam(tmpnam, curpath, 'pc', 'ins'); { create instruction file name }
+         services.fulnam(tmpnam); { normalize }
          if exists(tmpnam) then parinst(tmpnam)
 
       end
@@ -2107,6 +2138,7 @@ begin
    services.fulnam(prgnam); { expand relative }
    { see if there is an instruction file to go with it }
    services.maknam(tmpnam, tarpath, n, 'ins');
+   services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
    { now check the file itself exists }
    if not exists(prgnam) then begin { file not found }
