@@ -1,0 +1,19 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Instruction file for pgen
+!
+! pgen uses this file to accomplish two configuration changes:
+!
+! 1. endian status big/little.
+! 2. mpb (machine parameter block).
+!
+! These are done by setting different module paths for this file. Thus each
+! configuration is stored in a different directory, but with the same filename.
+! Thus the path selects the correct file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!
+! Declare the main library and protect it from recompiles
+!
+modulepath "../../lendian:../../mpb64:../.."
