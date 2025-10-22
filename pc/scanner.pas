@@ -90,6 +90,9 @@ tolken = (cundefined,  { undefined (must be first tolken) }
           ccln,        { : }
           ccmf,        { ^ }
           crange,      { .. }
+          chex,        { $ }
+          coct,        { & }
+          cbin,        { % }
           cdiv,        { div }
           cmod,        { mod }
           cnil,        { nil }
@@ -990,6 +993,9 @@ Parses the following tolken types:
 
 procedure partlk(var f: fcbptr); { file to read from }
 
+var ls: integer; { line position save }
+    c:  char;    { char save }
+
 begin
 
    skpspc(f); { skip spaces }
@@ -1000,9 +1006,29 @@ begin
          parstr(f) { string }
       else if chkchr(f) in ['_', 'A'..'Z', 'a'..'z'] then
          parlabr(f) { label }
-      else if chkchr(f) in ['0'..'9', '&', '%', '$'] then
+      else if chkchr(f) in ['0'..'9'] then
          parnum(f, true) { numeric }
-      else
+      else if chkchr(f) in ['&', '%', '$'] then begin
+
+         { either number or plain radix }
+         c := chkchr(f); { save leader }
+         ls := f^.linptr; { save line position }
+         getchr(f); { go next }
+         { if regular digit follows, is a number otherwise radix symbol }
+         if chkchr(f) in ['0'..'9'] then begin
+
+            f^.linptr := ls; { back up }
+            parnum(f, false) { parse number without real }
+
+         end else case c of
+
+           '$': f^.nxttlk := chex;
+           '&': f^.nxttlk := coct;
+           '%': f^.nxttlk := cbin
+
+         end
+
+      end else
          parchr(f) { special character sequence }
 
    end
