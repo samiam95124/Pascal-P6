@@ -858,6 +858,7 @@ end { lcase };
 procedure assignexternaltext(var f: text; var fn: filnam);
 var fne: filnam; i: integer;
 begin
+  refer(fn); { unused }
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -875,6 +876,7 @@ end;
 procedure assignexternalbin(var f: bytfil; var fn: filnam);
 var fne: filnam; i: integer;
 begin
+  refer(fn); { unused }
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -1893,6 +1895,7 @@ procedure callsp;
    end;
 
 begin (*callsp*)
+      refer(getfile); { unused }
       if q > maxsp then errorv(InvalidStandardProcedureOrFunction);
 
       case q of

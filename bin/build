@@ -26,3 +26,5 @@ compprog pc/hashtab
 compprog source/genobj
 compprog libs/source/strtst
 compprog source/pcom
+compprog source/pint
+compprog source/pmach
