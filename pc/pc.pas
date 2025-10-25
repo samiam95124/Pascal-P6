@@ -88,10 +88,12 @@ type
       stack:  filept;  { next stack entry }
       link:   fllptr;  { linkage list }
       list:   boolean; { placed in link list }
+      pgm:    boolean; { is program/module }
       inte:   filept;  { intermediate file entry }
       asme:   filept;  { assembly file entry }
       obje:   filept;  { object file entry }
       arce:   filept;  { archive file entry }
+      exec:   filept;  { executable file entry }
       pkg:    filept   { packaged within this module }
 
    end;
@@ -431,19 +433,25 @@ begin
         error('System fault'); { should not be more than one entry }
       { translate entry }
       new(fp); { get a new entry }
-      copy(fp^.name, fn); { place name }
-      fp^.modify := l^.modify; { place date }
-      fp^.rebld := false; { set no rebuild }
-      fp^.excl := false; { clear exclude }
-      fp^.code := false; { set no code }
-      fp^.stack := nil; { clear stack link }
-      fp^.link := nil; { clear link list }
-      fp^.list := false; { set not in link list }
-      fp^.inte := nil; { set no intermediate file }
-      fp^.asme := nil; { set no assembly file }
-      fp^.obje := nil; { set no object file }
-      fp^.arce := nil; { set no archive file }
-      fp^.pkg := nil { set no package file }
+      with fp^ do begin
+
+         copy(fp^.name, fn); { place name }
+         modify := l^.modify; { place date }
+         rebld := false; { set no rebuild }
+         excl := false; { clear exclude }
+         code := false; { set no code }
+         stack := nil; { clear stack link }
+         link := nil; { clear link list }
+         list := false; { set not in link list }  
+         pgm := false; { set not program file }
+         inte := nil; { set no intermediate file }
+         asme := nil; { set no assembly file }
+         obje := nil; { set no object file }
+         arce := nil; { set no archive file }
+         exec := nil; { set no exective }  
+         pkg := nil { set no package file }
+
+      end
 
    end
 
@@ -600,6 +608,8 @@ end;
 begin
 
    scanner.opnscn(f, fn); { open scan instance }
+   { if it is a program, indicate }
+   if f^.nxttlk = scanner.cprogram then fp^.pgm := true;
    { skip until file end or "uses" or "joins" }
    skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof]); 
    while (f^.nxttlk = scanner.cuses) or (f^.nxttlk = scanner.cjoins) do begin
@@ -692,6 +702,10 @@ begin
       services.maknam(fns, p, n, 'a');
       dolist(fns, fp);
       hp^.arce := fp; { place link }
+      services.brknam(fns, p, n, e); { add exec extention (none) }
+      services.maknam(fns, p, n, '');
+      dolist(fns, fp);
+      hp^.arce := fp; { place link }
       { place head on stack }
       hp^.stack := filstk;
       filstk := hp;
@@ -724,9 +738,14 @@ begin
    write('  '); { separate }
    services.writetime(services.local(fp^.modify));
    write('  '); { separate }
-   if fp^.rebld then write('R');
-   if fp^.excl then write('E');
-   if fp^.code then write('C');
+   if fp^.rebld then write(' Rebuild')
+   else write(' No rebuild');
+   if fp^.excl then write(' Exclude')
+   else write(' No exclude');
+   if fp^.pgm then write(' Is a program')
+   else write(' Is a module');
+   if fp^.code then write(' Contains code')
+   else write(' Contains no code');
    writeln
 
 end;
@@ -767,26 +786,32 @@ begin
          writeln;
          if fp^.inte <> nil then begin
 
-            write('   '); { tab out }
+            write('   (intermediate) '); { tab out }
             wrtfil(fp^.inte) { print entry }
 
          end;
          if fp^.asme <> nil then begin
 
-            write('   '); { tab out }
+            write('   (assembly)     '); { tab out }
             wrtfil(fp^.asme) { print entry }
 
          end;
          if fp^.obje <> nil then begin
 
-            write('   '); { tab out }
+            write('   (object)       '); { tab out }
             wrtfil(fp^.obje) { print entry }
 
          end;
          if fp^.arce <> nil then begin
 
-            write('   '); { tab out }
+            write('   (archive)      '); { tab out }
             wrtfil(fp^.arce) { print entry }
+
+         end;
+         if fp^.exec <> nil then begin
+
+            write('   (executive)    '); { tab out }
+            wrtfil(fp^.exec) { print entry }
 
          end
 
