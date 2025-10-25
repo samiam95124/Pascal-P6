@@ -156,8 +156,61 @@ var
    package: pkgptr;  { packaging list }
    grawin:  boolean; { a graphical window library exists }
    siolib:  boolean; { an alternate standard I/O library exists }
+   errexit: boolean; { exit has error }
 
 procedure logfil(view fn: string; var hp: filept); forward;
+
+{******************************************************************************
+
+Flag program error
+
+Outputs an error message, flags an error on exit, and exits the program.
+Takes from one to 5 parameters, which are embedded with '%' markers. Each
+parameters corresponds to the position of the mark in the first string.
+
+******************************************************************************}
+
+procedure error(view es, s1, s2, s3, s4, s5: string);
+
+var i: integer;
+
+begin
+
+    write('*** pc: Error: '); { output preamble }
+    i := 1; { set 1st string position }
+    while i < max(es) do begin
+
+        if es[i] = '%' then begin
+
+            case i of { parameter }
+
+                1: write(s1:*);
+                2: write(s2:*);
+                3: write(s3:*);
+                4: write(s4:*);
+                5: write(s5:*)
+
+            end
+
+        end else write(es[i]);
+        i := i+1
+
+    end;
+    errexit := true; { flag exit error }
+    goto 99
+
+end;
+ 
+overload procedure error(view es: string); 
+begin error(es, '', '', '', '', '') end;
+overload procedure error(view es, s1: string); 
+begin error(es, s1, '', '', '', '') end;
+overload procedure error(view es, s1, s2: string); 
+begin error(es, s1, s2, '', '', '') end;
+overload procedure error(view es, s1, s2, s3: string); 
+begin error(es, s1, s2, s3, '', '') end;
+overload procedure error(view es, s1, s2, s3, s4: string); 
+begin error(es, s1, s2, s3, s4, '') end;
 
 {******************************************************************************
 
@@ -224,12 +277,7 @@ begin
       optfnd := false; { set no option found }
       parse.getchr(cmdhan); { skip option marker }
       parse.parlab(cmdhan, w, err); { parse option label }
-      if err then begin
-
-         writeln('*** pc: Invalid option "', w:*, '"');
-         goto 99
-
-      end;
+      if err then error('Invalid option "%"', w);
       setflg('v',  'verbose',  fverb); { verbose mode }
       setflg('t',  'tree',     ftree); { list dependency tree }
       setflg('a',  'action',   fact); { list actions }
@@ -249,28 +297,14 @@ begin
 
          optfnd := true;
          parse.skpspc(cmdhan); { skip spaces }
-         if parse.chkchr(cmdhan) <> '=' then begin { should have '=' }
-
-            writeln('*** pc: Error: missing ''=''');
-            goto 99
-
-         end;
+         if parse.chkchr(cmdhan) <> '=' then { should have '=' }
+            error('missing "="');
          parse.getchr(cmdhan); { skip '=' }
          parse.parwrd(cmdhan, modpth, err); { get path }
-         if err then begin
-
-            writeln('*** pc: Error: Invalid module path "', modpth:*, '"');
-            goto 99
-
-         end
+         if err then error('Invalid module path "%"', modpth)
          
       end;
-      if not optfnd then begin { no option found }
-
-         writeln('*** pc: Error: no option found');
-         goto 99
-
-      end;
+      if not optfnd then error('No option found'); { no option found }
       parse.skpspc(cmdhan) { skip spaces }
 
    end
@@ -392,12 +426,8 @@ begin
    services.list(fn, l); { get files list }
    if l <> nil then begin { there is a file }
 
-      if l^.next <> nil then begin { should not be more than one entry }
-
-         writeln('*** pc: Error: system fault: call S. A. Moore software');
-         goto 99
-
-      end;
+      if l^.next <> nil then 
+        error('System fault'); { should not be more than one entry }
       { translate entry }
       new(fp); { get a new entry }
       copy(fp^.name, fn); { place name }
@@ -577,12 +607,8 @@ begin
       scanner.gettlk(f); { skip 'uses'/'joins' }
       repeat { process 'uses' files }
 
-         if f^.nxttlk <> scanner.cidentifier then begin { bad syntax }
-
-            writeln('Bad ''uses''/''joins'' syntax in ', fn:*);
-            goto 99
-
-         end;
+         if f^.nxttlk <> scanner.cidentifier then { bad syntax }
+            error('Bad ''uses''/''joins'' syntax in %', fn);
          copy(w, f^.nxtlab); { copy name }
          fndfil(w, false); { find it }
          logfil(w, hp); { log that }
@@ -596,12 +622,8 @@ begin
          if f^.nxttlk = scanner.ccma then scanner.gettlk(f) { skip ',' }
 
       until t <> scanner.ccma; { until no more }
-      if f^.nxttlk <> scanner.cscn then begin { bad syntax }
-
-         writeln('*** pc: Error: Bad ''uses'' syntax in ', fn:*);
-         goto 99
-
-      end;
+      if f^.nxttlk <> scanner.cscn then { bad syntax }
+         error('Bad ''uses'' syntax in %', fn);
       { find next file end or "uses" or "joins" }
       skpsrc([scanner.cuses, scanner.cjoins, scanner.ceof])
      
@@ -650,12 +672,8 @@ begin
       services.brknam(fns, p, n, e); { add Pascal extention }
       services.maknam(fns, p, n, 'pas');
       dolist(fns, hp);
-      if hp = nil then begin { missing source }
-      
-         writeln('*** pc: Error: missing source file ''', fns:*, '''');
-         goto 99
-
-      end;
+      if hp = nil then{ missing source }
+         error('missing source file %', fns);
       hp^.excl := chkexcl(fn); { check exists in exclude }
       services.brknam(fns, p, n, e); { add intermediate extention }
       services.maknam(fns, p, n, 'p6');
@@ -913,12 +931,8 @@ begin
       else if fdeftrm then copy(defnam, trmlib)
       else copy(defnam, serlib);
       fndfil(defnam, false);
-      if not exists(defnam) then begin { not found }
-
-         writeln('*** pc: Error: support module "', defnam:*, '" not found');
-         goto 99
-
-      end;
+      if not exists(defnam) then { not found }
+         error('Support module not found %', defnam);
       logfil(defnam, fp) { log the library }
 
    end
@@ -1128,12 +1142,8 @@ procedure putchr(var l: string; var i: integer; c: char);
 
 begin
 
-   if i > filmax then begin { overflow }
-
-      writeln('*** pc: Error: link list too long');
-      goto 99
-
-   end;
+   if i > filmax then { overflow }
+      error('link list too long');
    l[i] := c; { place character }
    i := i+1
 
@@ -1339,12 +1349,8 @@ begin
       end
 
    end;
-   if len(lnklsto)+len(lnklsta)+1 > filmax then begin { overflow }
-
-      writeln('*** pc: Error: link list too long');
-      goto 99
-
-   end;
+   if len(lnklsto)+len(lnklsta)+1 > filmax then { overflow }
+      error('link list too long');
    copy(lnklst, lnklsto); { place .o files }
    insert(lnklst, lnklsta, len(lnklsto)+2); { place .a files at end }
    { now we need to reverse the order of the action list }
@@ -1381,12 +1387,8 @@ begin
    if not fdry then begin { execute command }
 
       services.execw(cs, r); { execute }
-      if r <> 0 then begin { error }
-
-         writeln('Build has errors, terminating');
-         goto 99
-
-      end
+      if r <> 0 then { error }
+         error('Build has errors, terminating')
       
    end
 
@@ -1422,12 +1424,8 @@ procedure putchr(c: char);
 
 begin
 
-   if i > maxlin then begin { overflow }
-
-      writeln('*** pc: Error: action command too long');
-      goto 99
-
-   end;
+   if i > maxlin then { overflow }
+      error('Action command too long');
    cmdbuf[i] := c; { place character }
    i := i+1
 
@@ -1606,12 +1604,8 @@ procedure putchr(c: char);
 
 begin
 
-   if i > maxlin then begin { overflow }
-
-      writeln('*** pc: Error: action command too long');
-      goto 99
-
-   end;
+   if i > maxlin then { overflow }
+      error('Action command too long');
    cmdbuf[i] := c; { place character }
    i := i+1
 
@@ -1640,21 +1634,13 @@ begin
    { find main }
    copy(main, 'main');
    fndfil(main, true);
-   if not exists(main) then begin { not found }
-
-      writeln('*** pc: Error: support module ''', main:*, ''' not found');
-      goto 99
-
-   end;
+   if not exists(main) then { not found }
+      error('Support module "%" not found', main);
    { find psystem }
    copy(psystem, 'psystem');
    fndfil(psystem, true);
-   if not exists(psystem) then begin { not found }
-
-      writeln('*** pc: Error: support module ''', psystem:*, ''' not found');
-      goto 99
-
-   end;
+   if not exists(psystem) then { not found }
+      writeln('*** pc: Error: support module "%"', psystem);
    if fverb then begin
 
       write('Building executable');
@@ -1743,22 +1729,12 @@ begin
    { find each of .o, .s and executive files }
    services.maknam(fn, p, n, 'o');
    dolist(fn, op);
-   if op = nil then begin { should not be missing }
-
-      writeln('*** pc: Error: Sequence error, missing file ', fn:*, 
-              ': check other tasks');
-      goto 99
-
-   end;
+   if op = nil then { should not be missing }
+      error('Sequence error, missing file % check other tasks', fn); 
    services.maknam(fn, p, n, 's');
    dolist(fn, sp);
-   if sp = nil then begin { should not be missing }
-
-      writeln('*** pc: Error: Sequence error, missing file ', fn:*, 
-              ': check other tasks');
-      goto 99
-
-   end;
+   if sp = nil then { should not be missing }
+      error('Sequence error, missing file % check other tasks', fn); 
    services.maknam(fn, p, n, '');
    dolist(fn, ep);
    if ep = nil then excrbl := true { does not exist }
@@ -2076,6 +2052,7 @@ begin
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
    grawin := false; { set no graphical windowing library found }
+   errexit := false; { set no error exit }
    services.getenv('MODULEPATH', modpth); { get any module path }
 
    { find any instruction files for us }
@@ -2108,31 +2085,16 @@ begin
    valfch := valfch-['=','-']; { remove parsing characters }
    parse.setfch(cmdhan, valfch); { set that for active parsing }
    paropt; { parse command options }
-   if parse.endlin(cmdhan) then begin
-
-      writeln('*** pc: Filename expected');
-      goto 99
-
-   end;
+   if parse.endlin(cmdhan) then error('Filename expected');
    parse.skpspc(cmdhan); { skip spaces }
    if parse.chkchr(cmdhan) = '"' then { parse string }
       parse.parstr(cmdhan, prgnam, err) { get string parameter }
    else 
       parse.parfil(cmdhan, prgnam, false, err); { parse filename }
-   if err then begin
-
-      writeln('*** pc: Invalid filename');
-      goto 99
-
-   end;
+   if err then error('Invalid filename');
    paropt; { parse command options }
    parse.skpspc(cmdhan); { skip to end }
-   if not parse.endlin(cmdhan) then begin
-
-      writeln('*** pc: Invalid command line');
-      goto 99
-
-   end;
+   if not parse.endlin(cmdhan) then error('Invalid command line');
    services.brknam(prgnam, tarpath, n, e); { add Pascal extention }
    services.maknam(prgnam, tarpath, n, 'pas');
    services.fulnam(prgnam); { expand relative }
@@ -2141,12 +2103,8 @@ begin
    services.fulnam(tmpnam); { normalize }
    if exists(tmpnam) then parinst(tmpnam);
    { now check the file itself exists }
-   if not exists(prgnam) then begin { file not found }
-
-      writeln('*** pc: Error: target file "', prgnam:*, '" not found');
-      goto 99
-
-   end;
+   if not exists(prgnam) then { file not found }
+      error('Target file "%" not found', prgnam);
    logfil(prgnam, hp); { form tree from file }
    stdlib; { place standard libary }
    fndpkg; { find any included packages }
@@ -2167,5 +2125,7 @@ begin
    end;
 
    99: { terminate program }
+
+   seterr(ord(errexit))
 
 end.

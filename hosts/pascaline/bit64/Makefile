@@ -55,7 +55,11 @@ CPPFLAGS16BE=-DWRDSIZ16 -DBENDIAN -DPASCALINE -DNOPRDPRR -DNOHEADER
 EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
-all: bin/pcom bin/pint bin/pmach bin/cmach bin/pgen bin/genobj bin/spew
+all: bin/cmach bin/pgen bin/spew \
+	$(LIBS)/psystem.a $(LIBS)/psystem_asm.o main $(BUILD)/AMD64/gcc/main.o \
+	parcmd $(BUILD)/parcmd.o libs/strings.o $(LIBS)/strings.o \
+	libs/services.a $(LIBS)/services.a libs/services_test \
+	libs/parse.o $(LIBS)/parse.o
 
 ################################################################################
 #
@@ -126,6 +130,21 @@ libs/strings.o $(LIBS)/strings.o: $(LIBS)/source/strings.pas
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/strings.o \
 		-c $(BUILD)/libs/strings.s
 	cp $(BUILD)/libs/strings.o $(LIBS)
+
+#
+# Build parse, the Pascaline parsre library in Pascaline.
+#
+libs/parse.o $(LIBS)/parse.o: $(LIBS)/source/parse.pas
+	@echo
+	@echo "Building parse..."
+	@echo
+	mkdir -p $(BUILD)/libs
+	pcom $(LIBS)/source/parse.pas $(BUILD)/libs/parse.p6 --modules=$(LIBS) \
+		--list- --reference-
+	pgen $(BUILD)/libs/parse.p6 $(BUILD)/libs/parse.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/parse.o \
+		-c $(BUILD)/libs/parse.s
+	cp $(BUILD)/libs/parse.o $(LIBS)
 
 #
 # Services
@@ -237,7 +256,7 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		$(BUILD)/AMD64/gcc/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
-		$(BUILD)/libs/services_test1.s 
+		$(BUILD)/libs/services_test1.s \
 		$(LIBS)/services.a \
 		$(LIBS)/psystem.a \
 		-o $(LIBS)/services_test1 -lm -lpthread

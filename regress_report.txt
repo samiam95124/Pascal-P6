@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Sat 25 Oct 2025 10:23:24 AM PDT
+Sat 25 Oct 2025 03:22:39 PM PDT
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -116,7 +116,7 @@ Pascaline run
 
 Total differences: 0
 Fails: 0
-Sat 25 Oct 2025 10:30:12 AM PDT
+Sat 25 Oct 2025 03:29:26 PM PDT
 Files sha256sum ***************************************
 Source files
 fed63dbb6d62ab48c024e4b6e2a65a99da4b3fbd469ce353c48e13973b7f4f9f  -
@@ -131,4 +131,4 @@ e8b232656d543ef16dfcd1bb0c26195ed3423ce9ed1f5fcf32a5592b654e702a  -
 standard test files
 85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
 other files
-09a0cd4a4ef9b94eaa18ad64a81ffbd3ce269bb1485765d04d5852eea2abbd94  -
+72f2c994b08d93047398e5161821a8e639a74e1a30c6a87b8ab71f963d6cf168  -
