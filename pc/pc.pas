@@ -178,7 +178,7 @@ begin
 
     write('*** pc: Error: '); { output preamble }
     i := 1; { set 1st string position }
-    while i < max(es) do begin
+    while i <= max(es) do begin
 
         if es[i] = '%' then begin
 
@@ -196,6 +196,7 @@ begin
         i := i+1
 
     end;
+    writeln;
     errexit := true; { flag exit error }
     goto 99
 
