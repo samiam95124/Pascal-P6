@@ -4763,6 +4763,7 @@ procedure xlate;
         181, 182, 183, 184, 185, 186: begin par; 
           ep2 := nil;
           if estack <> nil then if estack^.op = 188{cke} then popstk(ep2);
+          if estack = nil then errorl('Expression underflow');
           duptre(estack, ep); pshstk(ep);
           if ep2 <> nil then pshstk(ep2)
         end;

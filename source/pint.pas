@@ -4487,6 +4487,15 @@ begin
   if ansptr = maxana then ansptr := 1 else ansptr := ansptr+1
 end;
 
+procedure lstexp(a: address);
+begin
+   writeln('exception frame:');
+   writeln('exception vector: @', a$:#16, ':', getint(a)$:#16);
+   writeln('exception address: @', a+8$:#16, ':', getint(a+8)$:#16);
+   writeln('exception address of sp: @', a+16$:#16, ':', getint(a+16)$:#16);
+   writeln('exception address of mp: @', a+24$:#16, ':', getint(a+24)$:#16)
+end;
+
 procedure sinins;
 var ad,ad1,ad2,ad3,ad4: address; b: boolean; i,j,i1,i2 : integer; c1: char;
     i3,i4: integer; r1,r2: real; b1: boolean; s1,s2: settype;
@@ -4548,8 +4557,7 @@ begin
                           begin watchmatch := true; pc := pcs end
                         else begin popint(i); putbyt(stoad, i) end
                   end;
-    70,
-    253  (*stra,sev*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
+    70  (*stra*): begin getp; getq; stoad := getadr(mp-p*ptrsize)+q;
                         if iswatch(stoad) and stopwatch then
                           begin watchmatch := true; pc := pcs end
                         else begin popadr(ad); putadr(stoad, ad) end
@@ -5177,6 +5185,9 @@ begin
                      { release to search vectors }
                    end
                  end;
+    253  (*sev*): begin getp; getq; a1 := getadr(mp-p*ptrsize)+q;
+                        popadr(ad); pshadr(ad); putadr(a1, ad)
+                  end;
     8 (*cjp*): begin getq; getq1; popint(i1); pshint(i1);
                   if (i1 >= getint(q)) and (i1 <= getint(q+intsize)) then
                     begin pc := q1; popint(i1) end

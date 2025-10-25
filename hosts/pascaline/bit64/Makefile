@@ -108,30 +108,6 @@ $(BUILD)/parcmd.o: $(SOURCE)/parcmd.pas
 	pgen $(BUILD)/parcmd.p6 $(BUILD)/parcmd.s
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/parcmd.o -c $(BUILD)/parcmd.s
 
-#
-# Build simulator externals link module
-#
-extlink: $(SOURCE)/extlink.pas
-$(BUILD)/extlink.o: $(SOURCE)/extlink.pas
-	@echo
-	@echo "Building externals link..."
-	@echo
-	pcom $(SOURCE)/extlink.pas $(BUILD)/extlink.p6 --list- --reference-
-	pgen $(BUILD)/extlink.p6 $(BUILD)/extlink.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extlink.o -c $(BUILD)/extlink.s
-
-#
-# Build simulator extensions module
-#
-extend: $(SOURCE)/extend.pas
-$(BUILD)/extend.o: $(SOURCE)/extend.pas
-	@echo
-	@echo "Building extensions..."
-	@echo
-	pcom $(SOURCE)/extend.pas $(BUILD)/extend.p6 --list- --reference-
-	pgen $(BUILD)/extend.p6 $(BUILD)/extend.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/extend.o -c $(BUILD)/extend.s
-
 ################################################################################
 #
 # User accessable libraries
@@ -172,88 +148,10 @@ libs/services.a $(LIBS)/services.a: $(AMI)/services.c \
 		$(BUILD)/libs/services_wrapper.o $(BUILD)/libs/services.o \
 		$(BUILD)/libs/services_support.o
 
-libs/directory.o: $(LIBS)/source/directory.pas $(BUILD)/libs/directory.s
-$(BUILD)/libs/directory.s:
-	@echo
-	@echo "Building directory..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom $(LIBS)/source/directory.pas $(BUILD)/libs/directory.p6 \
-		--modules=$(LIBS)/source --list- --reference-
-	pgen $(BUILD)/libs/directory.p6 $(BUILD)/libs/directory.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/directory.o \
-		-c $(BUILD)/libs/directory.s
-	cp $(BUILD)/libs/directory.o $(LIBS)
-
-libs/parse.o: $(LIBS)/source/parse.pas $(BUILD)/libs/parse.s
-$(BUILD)/libs/parse.s:
-	@echo
-	@echo "Building parse..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom $(LIBS)/source/parse.pas $(BUILD)/libs/parse.p6 \
-		--modules=$(LIBS)/source --list- --reference-
-	pgen $(BUILD)/libs/parse.p6 $(BUILD)/libs/parse.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/parse.o \
-		-c $(BUILD)/libs/parse.s
-	cp $(BUILD)/libs/parse.o $(LIBS)
-
-
 ################################################################################
 #
 # Build programs
 #
-
-#
-# Build pint, the intermediate interpreter and debug facillity.
-#
-pint: bin/pint
-bin/pint: $(SOURCE)/pint.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
-	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o \
-    $(BUILD)/extend.o
-	@echo
-	@echo "Building pint..."
-	@echo
-	mkdir -p $(BUILD)
-	$(CC) -g -o $(BUILD)/externals.o -c $(SOURCE)/externals.c
-	pcom $(SOURCE)/pint.pas $(BUILD)/pint.p6 \
-		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
-		--chk- --list- --reference-
-	pgen $(BUILD)/pint.p6 $(BUILD)/pint.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/parcmd.o \
-		$(BUILD)/extlink.o \
-		$(BUILD)/extend.o \
-		$(BUILD)/pint.s \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/pint -lm -lpthread
-	cp $(BUILD)/pint $(PASCALP6)/bin
-
-#
-# Build pmach, an intermediate interpreter without assembler.
-#
-pmach: bin/pmach
-bin/pmach: $(SOURCE)/pmach.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
-	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(BUILD)/extlink.o
-	@echo
-	@echo "Building pmach..."
-	@echo
-	mkdir -p $(BUILD)
-	pcom $(SOURCE)/pmach.pas $(BUILD)/pmach.p6 \
-		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
-		--chk- --list- --reference-
-	pgen $(BUILD)/pmach.p6 $(BUILD)/pmach.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(BUILD)/parcmd.o \
-		$(BUILD)/extlink.o \
-		$(BUILD)/pmach.s \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/pmach -lm -lpthread
-	cp $(BUILD)/pmach $(PASCALP6)/bin
 
 #
 # Build cmach, an intermediate interpreter written in C.

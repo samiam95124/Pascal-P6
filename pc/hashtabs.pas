@@ -23,7 +23,7 @@ var loadarr, loadarrs: array [1..tabmax] of name; { holding table }
     ressym: array [1..tabmax] of { label table }
                record
                   reslab: name;
-                  reschn: 1..tabmax { chain }
+                  reschn: 0..tabmax { chain }
                end;
     max, maxt, mmax: 0..65535; { maximum number of entries }
     s : name;
@@ -262,7 +262,8 @@ begin { hash }
          else if ressym[i].reslab = ': ' then write(outfile, 'ccln')
          else if ressym[i].reslab = '^ ' then write(outfile, 'ccmf')
          else if ressym[i].reslab = '@ ' then write(outfile, 'ccmf')
-         else if ressym[i].reslab = '..' then write(outfile, 'crange');
+         else if ressym[i].reslab = '..' then write(outfile, 'crange')
+         else if ressym[i].reslab = '# ' then write(outfile, 'cnum');
          write(outfile, ';');
          writeln(outfile) { terminate line }
 

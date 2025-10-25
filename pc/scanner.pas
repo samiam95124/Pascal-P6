@@ -93,6 +93,7 @@ tolken = (cundefined,  { undefined (must be first tolken) }
           chex,        { $ }
           coct,        { & }
           cbin,        { % }
+          cnum,        { # }
           cdiv,        { div }
           cmod,        { mod }
           cnil,        { nil }
@@ -199,13 +200,13 @@ private
 
 const
 
-chrmax  = 37;  { number of special character sequences
+chrmax  = 42;  { number of special character sequences
                  (plus padding) }
 resmax  = 77;  { number of reserved words (plus padding) }
 spcmax  = 2;   { special character string length }
 maxexp  = 308; { maximum exponent of real }
 hashoff = 0;   { hash function offset }
-chroff  = 20;  { special character hash offset }
+chroff  = 28;  { special character hash offset }
 
 type
 
@@ -1171,68 +1172,70 @@ begin
 
    end;
 
-   spctbl[  1].lab  := '[ ';
-   spctbl[  1].tolk := clbrkt;
-   spctbl[  2].lab  := '><';
-   spctbl[  2].tolk := cnequa;
-   spctbl[  3].lab  := '] ';
-   spctbl[  3].tolk := crbrkt;
-   spctbl[  4].lab  := '^ ';
-   spctbl[  4].tolk := ccmf;
-   spctbl[  5].lab  := ': ';
-   spctbl[  5].tolk := ccln;
-   spctbl[  6].lab  := '; ';
-   spctbl[  6].tolk := cscn;
-   spctbl[  7].lab  := '< ';
-   spctbl[  7].tolk := cltn;
-   spctbl[  8].lab  := '= ';
-   spctbl[  8].tolk := cequ;
-   spctbl[  9].lab  := '> ';
-   spctbl[  9].tolk := cgtn;
-   spctbl[ 10].lab  := '=<';
-   spctbl[ 10].tolk := clequa;
-   spctbl[ 11].lab  := '@ ';
-   spctbl[ 11].tolk := ccmf;
-   spctbl[ 12].lab  := '(*'; spctbl[ 12].chn :=  20;
-   spctbl[ 12].tolk := clct;
-   spctbl[ 13].lab  := '*)';
-   spctbl[ 13].tolk := crct;
-   spctbl[ 14].lab  := '<='; spctbl[ 14].chn :=  10;
-   spctbl[ 14].tolk := clequ;
-   spctbl[ 15].lab  := '<>'; spctbl[ 15].chn :=   2;
-   spctbl[ 15].tolk := cnequ;
-   spctbl[ 16].lab  := '>='; spctbl[ 16].chn :=  18;
-   spctbl[ 16].tolk := cgequ;
-   spctbl[ 17].lab  := '.)';
-   spctbl[ 17].tolk := crbrkt;
-   spctbl[ 18].lab  := '=>'; spctbl[ 18].chn :=  19;
-   spctbl[ 18].tolk := cgequa;
-   spctbl[ 19].lab  := '(.';
-   spctbl[ 19].tolk := clbrkt;
-   spctbl[ 20].lab  := ':=';
-   spctbl[ 20].tolk := cbcms;
-   spctbl[ 22].lab  := '..';
-   spctbl[ 22].tolk := crange;
-   spctbl[ 24].lab  := '( ';
-   spctbl[ 24].tolk := clparen;
-   spctbl[ 25].lab  := ') ';
-   spctbl[ 25].tolk := crparen;
-   spctbl[ 26].lab  := '* ';
-   spctbl[ 26].tolk := ctimes;
-   spctbl[ 27].lab  := '+ ';
-   spctbl[ 27].tolk := cplus;
-   spctbl[ 28].lab  := ', ';
-   spctbl[ 28].tolk := ccma;
-   spctbl[ 29].lab  := '- ';
-   spctbl[ 29].tolk := cminus;
-   spctbl[ 30].lab  := '. ';
-   spctbl[ 30].tolk := cperiod;
-   spctbl[ 31].lab  := '/ ';
-   spctbl[ 31].tolk := crdiv;
-   spctbl[ 33].lab  := '{ ';
-   spctbl[ 33].tolk := clct;
-   spctbl[ 35].lab  := '} ';
-   spctbl[ 35].tolk := crct;
+   spctbl[  1].lab  := '><';
+   spctbl[  1].tolk := cnequa;
+   spctbl[  2].lab  := '=<';
+   spctbl[  2].tolk := clequa;
+   spctbl[  3].lab  := ': ';
+   spctbl[  3].tolk := ccln;
+   spctbl[  4].lab  := '; ';
+   spctbl[  4].tolk := cscn;
+   spctbl[  5].lab  := '< ';
+   spctbl[  5].tolk := cltn;
+   spctbl[  6].lab  := '= ';
+   spctbl[  6].tolk := cequ;
+   spctbl[  7].lab  := '> ';
+   spctbl[  7].tolk := cgtn;
+   spctbl[  8].lab  := ':=';
+   spctbl[  8].tolk := cbcms;
+   spctbl[  9].lab  := '@ ';
+   spctbl[  9].tolk := ccmf;
+   spctbl[ 10].lab  := '<='; spctbl[ 10].chn :=   2;
+   spctbl[ 10].tolk := clequ;
+   spctbl[ 11].lab  := '<>'; spctbl[ 11].chn :=   1;
+   spctbl[ 11].tolk := cnequ;
+   spctbl[ 12].lab  := '>='; spctbl[ 12].chn :=  15;
+   spctbl[ 12].tolk := cgequ;
+   spctbl[ 13].lab  := '(*';
+   spctbl[ 13].tolk := clct;
+   spctbl[ 14].lab  := '*)';
+   spctbl[ 14].tolk := crct;
+   spctbl[ 15].lab  := '=>';
+   spctbl[ 15].tolk := cgequa;
+   spctbl[ 16].lab  := '} ';
+   spctbl[ 16].tolk := crct;
+   spctbl[ 17].lab  := '(.';
+   spctbl[ 17].tolk := clbrkt;
+   spctbl[ 18].lab  := '.)';
+   spctbl[ 18].tolk := crbrkt;
+   spctbl[ 22].lab  := '# ';
+   spctbl[ 22].tolk := cnum;
+   spctbl[ 23].lab  := '..';
+   spctbl[ 23].tolk := crange;
+   spctbl[ 26].lab  := '{ ';
+   spctbl[ 26].tolk := clct;
+   spctbl[ 27].lab  := '( ';
+   spctbl[ 27].tolk := clparen;
+   spctbl[ 28].lab  := ') '; spctbl[ 28].chn :=  16;
+   spctbl[ 28].tolk := crparen;
+   spctbl[ 29].lab  := '* ';
+   spctbl[ 29].tolk := ctimes;
+   spctbl[ 30].lab  := '+ ';
+   spctbl[ 30].tolk := cplus;
+   spctbl[ 31].lab  := ', ';
+   spctbl[ 31].tolk := ccma;
+   spctbl[ 32].lab  := '- ';
+   spctbl[ 32].tolk := cminus;
+   spctbl[ 33].lab  := '. ';
+   spctbl[ 33].tolk := cperiod;
+   spctbl[ 34].lab  := '/ ';
+   spctbl[ 34].tolk := crdiv;
+   spctbl[ 36].lab  := '[ ';
+   spctbl[ 36].tolk := clbrkt;
+   spctbl[ 38].lab  := '] ';
+   spctbl[ 38].tolk := crbrkt;
+   spctbl[ 39].lab  := '^ ';
+   spctbl[ 39].tolk := ccmf;
 
    { initalize reserved word table. This table is automatically
      generated, see the "hashtab" program. }
