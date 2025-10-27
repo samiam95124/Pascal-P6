@@ -55,6 +55,7 @@ module scanner(output);
 
 uses strings, { string functions }
      restbl,  { reserved word hash table }
+     spctbl,  { symbols hash table }
      tolkens; { scanner tolkens }
 
 const
@@ -95,23 +96,10 @@ private
 
 const
 
-chrmax  = 42;  { number of special character sequences
-                 (plus padding) }
-spcmax  = 2;   { special character string length }
 maxexp  = 308; { maximum exponent of real }
-chroff  = 28;  { special character hash offset }
 
 type
 
-chrinx = 1..chrmax; { special character index }
-chrstr = packed array [1..spcmax] of char; { special character string }
-chrequ = record { special character table entry }
-
-            lab:  chrstr;   { characters }
-            tolk: tolken;   { equivalent tolken }
-            chn:  0..chrmax { next entry chain }
-
-         end;
 labinx = 1..maxstr; { index for label }
 errcod = (einpltl,  { Input line too large }
           einvdig,  { Invalid digit }
@@ -128,7 +116,6 @@ errcod = (einpltl,  { Input line too large }
 
 var
 
-spctbl: array [chrinx] of chrequ; { special character table }
 deftbl: array [tolken] of pstring; { tolken definition strings }
 ci:     chrinx;
 ri:     resinx;

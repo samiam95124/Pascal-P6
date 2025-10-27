@@ -223,6 +223,48 @@ bin/spew: $(SOURCE)/spew.c
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
 
+#
+# Build pc, the compiler integrator
+#
+pc: bin/pc
+bin/pc: pc/pc.pas $(LIBS)/psystem.a \
+	$(BUILD)/AMD64/gcc/main.o \
+	$(LIBS)/services.a libs/strings.o libs/parse.o pc/scanner.pas
+	@echo
+	@echo "Building pc..."
+	@echo
+	mkdir -p $(BUILD)/pc
+	pcom pc/restbl.pas $(BUILD)/pc/restbl.p6 --modules=libs/source \
+		--modules=pc --list- --reference-
+	pgen $(BUILD)/pc/restbl.p6 $(BUILD)/pc/restbl.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/restbl.o \
+		-c $(BUILD)/pc/restbl.s
+	pcom pc/spctbl.pas $(BUILD)/pc/spctbl.p6 --modules=libs/source \
+		--modules=pc --list- --reference-
+	pgen $(BUILD)/pc/spctbl.p6 $(BUILD)/pc/spctbl.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/spctbl.o \
+		-c $(BUILD)/pc/spctbl.s
+	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs/source \
+		--modules=pc --list- --reference-
+	pgen $(BUILD)/pc/scanner.p6 $(BUILD)/pc/scanner.s
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/scanner.o \
+		-c $(BUILD)/pc/scanner.s
+	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
+		--list- --reference-
+	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
+	$(CC) $(CFLAGS) \
+		$(BUILD)/AMD64/gcc/main.o \
+		$(LIBS)/strings.o \
+		$(LIBS)/parse.o \
+        $(BUILD)/pc/restbl.o \
+        $(BUILD)/pc/spctbl.o \
+        $(BUILD)/pc/scanner.o \
+		$(BUILD)/pc/pc.s \
+        $(LIBS)/services.a \
+		$(LIBS)/psystem.a \
+		-o $(BUILD)/pc/pc -lm -lpthread
+	cp $(BUILD)/pc/pc $(PASCALP6)/bin
+
 ################################################################################
 #
 # Build library tests
