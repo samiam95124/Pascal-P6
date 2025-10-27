@@ -174,17 +174,19 @@ parameters corresponds to the position of the mark in the first string.
 
 procedure error(view es, s1, s2, s3, s4, s5: string);
 
-var i: integer;
+var i: integer; { string index }
+    c: integer; { parameter count }
 
 begin
 
     write('*** pc: Error: '); { output preamble }
     i := 1; { set 1st string position }
+    c := 1; { set 1st parameter }
     while i <= max(es) do begin
 
         if es[i] = '%' then begin
 
-            case i of { parameter }
+            case c of { parameter }
 
                 1: write(s1:*);
                 2: write(s2:*);
@@ -192,10 +194,11 @@ begin
                 4: write(s4:*);
                 5: write(s5:*)
 
-            end
+            end;
+            c := c+1 { next parameter }
 
         end else write(es[i]);
-        i := i+1
+        i := i+1 { next string character }
 
     end;
     writeln;
