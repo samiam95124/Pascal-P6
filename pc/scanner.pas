@@ -53,7 +53,9 @@
 
 module scanner(output);
 
-uses strings;
+uses strings, { string functions }
+     restbl,  { reserved word hash table }
+     tolkens; { scanner tolkens }
 
 const
 
@@ -62,113 +64,6 @@ maxlin = 1000; { maximum size of input line }
 
 type
 
-{ scanner input tolkens }
-tolken = (cundefined,  { undefined (must be first tolken) }
-          cplus,       { + }
-          cminus,      { - }
-          ctimes,      { * }
-          crdiv,       { / }
-          cequ,        { = }
-          cnequ,       { <> }
-          cnequa,      { >< }
-          cltn,        { < }
-          cgtn,        { > }
-          clequ,       { <= }
-          clequa,      { =< }
-          cgequ,       { >= }
-          cgequa,      { => }
-          clparen,     { ( }
-          crparen,     { ) }
-          clbrkt,      { [ }
-          crbrkt,      { ] }
-          clct,        { left comment }
-          crct,        { right comment }
-          cbcms,       { := }
-          cperiod,     { . }
-          ccma,        { , }
-          cscn,        { ; }
-          ccln,        { : }
-          ccmf,        { ^ }
-          crange,      { .. }
-          chex,        { $ }
-          coct,        { & }
-          cbin,        { % }
-          cnum,        { # }
-          cdiv,        { div }
-          cmod,        { mod }
-          cnil,        { nil }
-          cin,         { in }
-          cor,         { or }
-          cand,        { and }
-          cxor,        { xor }
-          cnot,        { not }
-          cif,         { if }
-          cthen,       { then }
-          celse,       { else }
-          ccase,       { case }
-          cof,         { of }
-          crepeat,     { repeat }
-          cuntil,      { until }
-          cwhile,      { while }
-          cdo,         { do }
-          cfor,        { for }
-          cto,         { to }
-          cdownto,     { downto }
-          cbegin,      { begin }
-          cend,        { end }
-          cwith,       { with }
-          cgoto,       { goto }
-          cconst,      { const }
-          cvar,        { var }
-          ctype,       { type }
-          carray,      { array }
-          crecord,     { record }
-          cset,        { set }
-          cfile,       { file }
-          cfunction,   { function }
-          cprocedure,  { procedure }
-          clabel,      { label }
-          cpacked,     { packed }
-          cprogram,    { program }
-          cforward,    { forward }
-          cmodule,     { module }
-          cuses,       { uses }
-          cprivate,    { private }
-          cexternal,   { external }
-          cview,       { view }
-          cfixed,      { fixed }
-          cprocess,    { process }
-          cmonitor,    { monitor }
-          cshare,      { share }
-          cclass,      { class }
-          cis,         { is }
-          catom,       { atom }
-          coverload,   { overload }
-          coverride,   { override }
-          creference,  { reference }
-          cthread,     { thread }
-          cjoins,      { joins }
-          cstatic,     { static }
-          cinherited,  { inherited }
-          cself,       { self }
-          cvirtual,    { virtual }
-          ctry,        { try}
-          cexcept,     { except }
-          cextends,    { extends }
-          con,         { on }
-          cresult,     { result }
-          coperator,   { operator }
-          ctask,       { task}
-          cproperty,   { property }
-          cchannel,    { channel }
-          cstream,     { stream }
-          cout,        { out }
-          cinteger,    { unsigned integer constant }
-          cidentifier, { identifier }
-          cstring,     { string constant }
-          creal,       { real constant }
-          ceof);       { end of file (must be last tolken) }
-tlkset = set of tolken; { tolken set }
 lininx = 1..maxlin;  { index for text line }
 linbuf = packed array [lininx] of char; { a text line }
 fcbptr = ^fcbrec; { file control block pointer }
@@ -202,10 +97,8 @@ const
 
 chrmax  = 42;  { number of special character sequences
                  (plus padding) }
-resmax  = 77;  { number of reserved words (plus padding) }
 spcmax  = 2;   { special character string length }
 maxexp  = 308; { maximum exponent of real }
-hashoff = 0;   { hash function offset }
 chroff  = 28;  { special character hash offset }
 
 type
@@ -217,14 +110,6 @@ chrequ = record { special character table entry }
             lab:  chrstr;   { characters }
             tolk: tolken;   { equivalent tolken }
             chn:  0..chrmax { next entry chain }
-
-         end;
-resinx = 1..resmax; { index for reserved table }
-resequ = record { reserved word table entry }
-
-            lab:  pstring;     { reserved word }
-            tolk: tolken;   { equivalent tolken }
-            chn:  0..resmax { chain to next entry }
 
          end;
 labinx = 1..maxstr; { index for label }
@@ -244,7 +129,6 @@ errcod = (einpltl,  { Input line too large }
 var
 
 spctbl: array [chrinx] of chrequ; { special character table }
-restbl: array [resinx] of resequ; { reserved words table }
 deftbl: array [tolken] of pstring; { tolken definition strings }
 ci:     chrinx;
 ri:     resinx;
@@ -1236,156 +1120,6 @@ begin
    spctbl[ 38].tolk := crbrkt;
    spctbl[ 39].lab  := '^ ';
    spctbl[ 39].tolk := ccmf;
-
-   { initalize reserved word table. This table is automatically
-     generated, see the "hashtab" program. }
-
-   for ri := 1 to resmax do
-     with restbl[ri] do begin { initalize all table }
-  
-      for li := 1 to maxstr do lab := nil;
-      tolk := cundefined;
-      chn := 0
-
-   end;
-   restbl[  1].lab := copy('packed');
-   restbl[  1].tolk := cpacked;
-   restbl[  2].lab := copy('nil');
-   restbl[  2].tolk := cnil;
-   restbl[  3].lab := copy('with');
-   restbl[  3].tolk := cwith;
-   restbl[  4].lab := copy('end');
-   restbl[  4].tolk := cend;
-   restbl[  5].lab := copy('array');
-   restbl[  5].tolk := carray;
-   restbl[  6].lab := copy('virtual');
-   restbl[  6].tolk := cvirtual;
-   restbl[  7].lab := copy('monitor');
-   restbl[  7].tolk := cmonitor;
-   restbl[  8].lab := copy('const');
-   restbl[  8].tolk := cconst;
-   restbl[  9].lab := copy('joins');
-   restbl[  9].tolk := cjoins;
-   restbl[ 10].lab := copy('function');
-   restbl[ 10].tolk := cfunction;
-   restbl[ 11].lab := copy('is');
-   restbl[ 11].tolk := cis;
-   restbl[ 12].lab := copy('override');
-   restbl[ 12].tolk := coverride;
-   restbl[ 13].lab := copy('mod'); restbl[ 13].chn :=   8;
-   restbl[ 13].tolk := cmod;
-   restbl[ 14].lab := copy('overload');
-   restbl[ 14].tolk := coverload;
-   restbl[ 15].lab := copy('reference');
-   restbl[ 15].tolk := creference;
-   restbl[ 16].lab := copy('div'); restbl[ 16].chn :=   2;
-   restbl[ 16].tolk := cdiv;
-   restbl[ 17].lab := copy('thread');
-   restbl[ 17].tolk := cthread;
-   restbl[ 18].lab := copy('until'); restbl[ 18].chn :=  12;
-   restbl[ 18].tolk := cuntil;
-   restbl[ 19].lab := copy('inherited');
-   restbl[ 19].tolk := cinherited;
-   restbl[ 20].lab := copy('for'); restbl[ 20].chn :=  15;
-   restbl[ 20].tolk := cfor;
-   restbl[ 21].lab := copy('external');
-   restbl[ 21].tolk := cexternal;
-   restbl[ 22].lab := copy('var');
-   restbl[ 22].tolk := cvar;
-   restbl[ 23].lab := copy('extends');
-   restbl[ 23].tolk := cextends;
-   restbl[ 24].lab := copy('record'); restbl[ 24].chn :=  10;
-   restbl[ 24].tolk := crecord;
-   restbl[ 25].lab := copy('set');
-   restbl[ 25].tolk := cset;
-   restbl[ 26].lab := copy('repeat');
-   restbl[ 26].tolk := crepeat;
-   restbl[ 27].lab := copy('on');
-   restbl[ 27].tolk := con;
-   restbl[ 28].lab := copy('case');
-   restbl[ 28].tolk := ccase;
-   restbl[ 29].lab := copy('result');
-   restbl[ 29].tolk := cresult;
-   restbl[ 30].lab := copy('not'); restbl[ 30].chn :=  35;
-   restbl[ 30].tolk := cnot;
-   restbl[ 31].lab := copy('module');
-   restbl[ 31].tolk := cmodule;
-   restbl[ 32].lab := copy('file');
-   restbl[ 32].tolk := cfile;
-   restbl[ 33].lab := copy('static'); restbl[ 33].chn :=  19;
-   restbl[ 33].tolk := cstatic;
-   restbl[ 34].lab := copy('except');
-   restbl[ 34].tolk := cexcept;
-   restbl[ 35].lab := copy('operator');
-   restbl[ 35].tolk := coperator;
-   restbl[ 36].lab := copy('task');
-   restbl[ 36].tolk := ctask;
-   restbl[ 37].lab := copy('channel'); restbl[ 37].chn :=  39;
-   restbl[ 37].tolk := cchannel;
-   restbl[ 38].lab := copy('xor');
-   restbl[ 38].tolk := cxor;
-   restbl[ 39].lab := copy('stream'); restbl[ 39].chn :=  40;
-   restbl[ 39].tolk := cstream;
-   restbl[ 40].lab := copy('out');
-   restbl[ 40].tolk := cout;
-   restbl[ 41].lab := copy('else');
-   restbl[ 41].tolk := celse;
-   restbl[ 42].lab := copy('self');
-   restbl[ 42].tolk := cself;
-   restbl[ 44].lab := copy('try');
-   restbl[ 44].tolk := ctry;
-   restbl[ 46].lab := copy('procedure');
-   restbl[ 46].tolk := cprocedure;
-   restbl[ 47].lab := copy('then');
-   restbl[ 47].tolk := cthen;
-   restbl[ 49].lab := copy('atom');
-   restbl[ 49].tolk := catom;
-   restbl[ 51].lab := copy('label'); restbl[ 51].chn :=  36;
-   restbl[ 51].tolk := clabel;
-   restbl[ 52].lab := copy('downto');
-   restbl[ 52].tolk := cdownto;
-   restbl[ 54].lab := copy('if');
-   restbl[ 54].tolk := cif;
-   restbl[ 55].lab := copy('property');
-   restbl[ 55].tolk := cproperty;
-   restbl[ 56].lab := copy('begin'); restbl[ 56].chn :=  29;
-   restbl[ 56].tolk := cbegin;
-   restbl[ 57].lab := copy('goto');
-   restbl[ 57].tolk := cgoto;
-   restbl[ 58].lab := copy('do');
-   restbl[ 58].tolk := cdo;
-   restbl[ 59].lab := copy('view');
-   restbl[ 59].tolk := cview;
-   restbl[ 60].lab := copy('of'); restbl[ 60].chn :=   3;
-   restbl[ 60].tolk := cof;
-   restbl[ 62].lab := copy('in');
-   restbl[ 62].tolk := cin;
-   restbl[ 64].lab := copy('uses');
-   restbl[ 64].tolk := cuses;
-   restbl[ 65].lab := copy('forward');
-   restbl[ 65].tolk := cforward;
-   restbl[ 66].lab := copy('type');
-   restbl[ 66].tolk := ctype;
-   restbl[ 67].lab := copy('fixed'); restbl[ 67].chn :=  11;
-   restbl[ 67].tolk := cfixed;
-   restbl[ 68].lab := copy('program'); restbl[ 68].chn :=  27;
-   restbl[ 68].tolk := cprogram;
-   restbl[ 70].lab := copy('share');
-   restbl[ 70].tolk := cshare;
-   restbl[ 71].lab := copy('private'); restbl[ 71].chn :=  23;
-   restbl[ 71].tolk := cprivate;
-   restbl[ 72].lab := copy('or');
-   restbl[ 72].tolk := cor;
-   restbl[ 73].lab := copy('class');
-   restbl[ 73].tolk := cclass;
-   restbl[ 74].lab := copy('to');
-   restbl[ 74].tolk := cto;
-   restbl[ 75].lab := copy('process');
-   restbl[ 75].tolk := cprocess;
-   restbl[ 76].lab := copy('while');
-   restbl[ 76].tolk := cwhile;
-   restbl[ 77].lab := copy('and');
-   restbl[ 77].tolk := cand;
 
    { definitions table.
      This table is used to translate tolkens back to 
