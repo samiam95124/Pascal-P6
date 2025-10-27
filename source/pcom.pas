@@ -290,7 +290,7 @@ type
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
                      priv: boolean; linecount, lineout: integer;
                      sb: linbuf; si: lininx; sl: 0..maxlin; lo: boolean;
-                     fio: boolean; join: integer end;
+                     fio: boolean; use: boolean; uselist: filptr end;
      partyp = (ptval, ptvar, ptview, ptout);
      { procedure function attribute }
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
@@ -620,7 +620,6 @@ var
     srcfil(fillen): string; { name of input source file } 
     desfil(fillen): string; { name of output destination file }
     p(fillen), n(fillen), e(fillen): string; { filename components }
-    joinsnest: integer; { nesting level of joins }
 
     fp: filptr;
     ii: lininx;
@@ -9508,7 +9507,7 @@ end;
       end;
   end (*body*) ;
 
-  procedure openinput(var ff: boolean; joinlvl: integer);
+  procedure openinput(isuse: boolean; var ff: boolean);
   var fp: filptr; x: 1..4; es: packed array [1..4] of char; ii: lininx;
       fi,fi2,fi3: 1..fillen; me: boolean;
   { for any error, back out the include level }
@@ -9533,13 +9532,23 @@ end;
       end
     end
   end;
-  begin ff := true; es := extsrc; ii := 1;
+  { insert uses to joins/main level }
+  procedure insertuse(fp: filptr);
+  var lp: filptr;
+  begin
+    lp := incstk;
+    while lp^.use do lp := lp^.next;
+    fp^.uselist := lp^.uselist; lp^.uselist := fp
+  end;
+  begin 
+ff := true; es := extsrc; ii := 1;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
       next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
       si := 1; sl := 0; 
-      lo := false; fio := true; join := joinlvl;
+      lo := false; fio := true; use := isuse; uselist := nil;
+      if isuse then insertuse(fp);
       me := false;
       repeat
         me :=  incbuf[ii] = ' ';
@@ -9596,9 +9605,11 @@ end;
   var sys: symbol; prcodes: boolean; ff: boolean; eols: boolean;
       lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
       curmods: modtyp; entnames: integer; sym: symbol;
-  function schnam(fp: filptr): boolean;
-  var fn: filnam; i, nc, ec: 1..fillen;
-  begin schnam := false;
+  function schnam: boolean;
+  var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
+  begin schnam := false; fp := incstk;
+    while fp^.use do fp := fp^.next;
+    fp := fp^.uselist;
     while fp <> nil do begin
       nc := 1; 
       for i := 1 to fillen do 
@@ -9610,21 +9621,19 @@ end;
         if (nc < fillen) and (nc < ec) then 
           begin fn[i] := fp^.fn[nc]; nc := nc+1 end
       end;
-      if (fn = id) and (fp^.join = 0) then schnam := true; 
-      fp := fp^.next 
+      if fn = id then schnam := true; 
+      fp := fp^.uselist 
     end
   end;
   begin
     sym := sy; insymbol; { skip uses/joins }
     repeat { modules }
-      { count joins levels }
-      if sym = joinssy then joinsnest := joinsnest+1;
       thismod := nil;
       if sy <> ident then error(2) else begin
-        if not schnam(incstk) and not schnam(inclst) then begin
+        if not schnam then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
-          openinput(ff, joinsnest);
+          openinput(sym = usessy, ff);
           if ff then begin
             prcode := false; list := false;
             readline; insymbol; modnams := display[top].modnam;
@@ -9651,7 +9660,6 @@ end;
           end
         end else putstrs(thismod);
       end;
-      if sym = joinssy then joinsnest := joinsnest-1;
       sys := sy;
       if sy = comma then insymbol
     until sys <> comma;
@@ -10263,7 +10271,6 @@ end;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
     tmplst := nil; { clear temps list }
     tmpfre := nil; { clear temps free list }
-    joinsnest := 0; { clear joins nesting }
 
     for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
     for i := 1 to maxftl do errltb[i] := nil;
