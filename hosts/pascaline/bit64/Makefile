@@ -185,33 +185,6 @@ bin/cmach: $(SOURCE)/cmach/cmach.c
 	cp $(BUILD)/cmach64le $(PASCALP6)/bin/cmach
 
 #
-# Build pgen, the intermediate to assembly code generator for AMD64 mode 
-# processors.
-#
-# This is always 64 bit little endian.
-#
-pgen: bin/pgen
-bin/pgen: $(SOURCE)/AMD64/gcc/pgen.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o $(BUILD)/parcmd.o \
-	$(SOURCE)/lendian/endian.pas $(SOURCE)/mpb64/mpb.pas $(LIBS)/services.a
-	@echo
-	@echo "Building pgen..."
-	@echo
-	mkdir -p $(BUILD)/AMD64/gcc
-	pcom $(SOURCE)/AMD64/gcc/pgen.pas $(BUILD)/AMD64/gcc/pgen.p6 \
-		--modules=$(SOURCE) --modules=$(SOURCE)/lendian --modules=$(SOURCE)/mpb64 \
-        --modules=$(LIBS)/source --list- --reference-
-	pgen $(BUILD)/AMD64/gcc/pgen.p6 $(BUILD)/AMD64/gcc/pgen.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-        $(BUILD)/parcmd.o \
-		$(BUILD)/AMD64/gcc/pgen.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/AMD64/gcc/pgen -lm -lpthread
-	cp $(BUILD)/AMD64/gcc/pgen $(PASCALP6)/bin/pgen
-
-#
 # Build spew, an automated test facillity.
 #
 spew: bin/spew
@@ -222,48 +195,6 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
-
-#
-# Build pc, the compiler integrator
-#
-pc: bin/pc
-bin/pc: pc/pc.pas $(LIBS)/psystem.a \
-	$(BUILD)/AMD64/gcc/main.o \
-	$(LIBS)/services.a libs/strings.o libs/parse.o pc/scanner.pas
-	@echo
-	@echo "Building pc..."
-	@echo
-	mkdir -p $(BUILD)/pc
-	pcom pc/restbl.pas $(BUILD)/pc/restbl.p6 --modules=libs/source \
-		--modules=pc --list- --reference-
-	pgen $(BUILD)/pc/restbl.p6 $(BUILD)/pc/restbl.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/restbl.o \
-		-c $(BUILD)/pc/restbl.s
-	pcom pc/spctbl.pas $(BUILD)/pc/spctbl.p6 --modules=libs/source \
-		--modules=pc --list- --reference-
-	pgen $(BUILD)/pc/spctbl.p6 $(BUILD)/pc/spctbl.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/spctbl.o \
-		-c $(BUILD)/pc/spctbl.s
-	pcom pc/scanner.pas $(BUILD)/pc/scanner.p6 --modules=libs/source \
-		--modules=pc --list- --reference-
-	pgen $(BUILD)/pc/scanner.p6 $(BUILD)/pc/scanner.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pc/scanner.o \
-		-c $(BUILD)/pc/scanner.s
-	pcom pc/pc.pas $(BUILD)/pc/pc.p6 --modules=libs/source --modules=pc \
-		--list- --reference-
-	pgen $(BUILD)/pc/pc.p6 $(BUILD)/pc/pc.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
-		$(LIBS)/strings.o \
-		$(LIBS)/parse.o \
-        $(BUILD)/pc/restbl.o \
-        $(BUILD)/pc/spctbl.o \
-        $(BUILD)/pc/scanner.o \
-		$(BUILD)/pc/pc.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(BUILD)/pc/pc -lm -lpthread
-	cp $(BUILD)/pc/pc $(PASCALP6)/bin
 
 ################################################################################
 #

@@ -528,14 +528,12 @@ end;
 
 { make string from string }
 function str(view s: string): pstring;
-var p: pstring;
 begin
   str := strl(s, max(s))
 end;
 
 { make string from padded string }
 function strp(view s: string): pstring;
-var p: pstring; l: integer;
 begin
   strp := strl(s, lenp(s))
 end;
@@ -1197,7 +1195,7 @@ procedure xlate;
    end;
 
    procedure putlabel(x: labelrg);
-   var i, p: integer; digit: boolean; sc: packed array [1..1] of char;
+   var p: integer; digit: boolean; sc: packed array [1..1] of char;
    begin
      labeltab[x].ref :=  strp(sn); cat(labeltab[x].ref, '.');
      p := maxpow10;
@@ -1360,7 +1358,7 @@ procedure xlate;
    end;
 
    procedure parlab(var x: integer; var fl: pstring);
-   var i,j: integer; cs: packed array [1..1] of char;
+   var j: integer; cs: packed array [1..1] of char;
    begin fl := nil;
      getlab; if ch <> '.' then errorl('Symbols format error');
      if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
@@ -2045,7 +2043,7 @@ procedure xlate;
           i,s1,lb,ub,l:integer; c: char;
           str: strbuf; { buffer for string constants }
           cstp: cstptr;
-          ep, ep2, ep3, ep4, ep5, pp: expptr;
+          ep, ep2, ep3, ep4, ep5: expptr;
           r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
           stkadr: integer; { stack address tracking }
           fl: integer; { field width }
@@ -2441,6 +2439,7 @@ procedure xlate;
       procedure asspar(ep: expptr; mi: integer);
       var pp: expptr; pc: integer; fpc: integer; r1, r2: reg; fr: reg;
       begin
+        refer(mi);
         pp := ep^.pl; pc := 1; fpc := 1;
         while pp <> nil do begin
           if isfltres(pp) then begin { floating result }
@@ -3230,7 +3229,7 @@ procedure xlate;
       begin wrtins(si, i1, 0, rgnull, rgnull, sn) end;
 
       procedure genexp(ep: expptr);
-      var r: reg; ep2: expptr; i: integer; stkadrs: integer; fl: integer;
+      var r: reg; ep2: expptr; stkadrs: integer; fl: integer;
 
       { push parameters in order }
       procedure pshpar(pp: expptr);
@@ -4425,7 +4424,7 @@ procedure xlate;
       end;
 
       function alflen(var s: alfa): integer;
-      var i: alfainx; len: integer;
+      var i: alfainx;
       begin
         i := 1; while (i < maxalfa) and (s[i] <> ' ') do i := i+1;
         if s[i] = ' ' then alflen := i-1 else alflen := i
@@ -4473,6 +4472,9 @@ procedure xlate;
       end;
 
     begin { assemble } 
+      refer(dmplst); { diagnostics }
+      refer(dmptmp);
+      refer(parp); { variation not used at present }
       p := 0;  q := 0;  q1 := 0; q2 := 0; q3 := 0; q4 := 0; op := 0; stkadr := 0;
       getname;
       { note this search removes the top instruction from use }
@@ -5735,8 +5737,6 @@ procedure xlate;
           false: (b: packed array [1..setsize] of byte);
 
        end;
-       i: 1..setsize;
-       ti: 1..maxtmp;
    procedure gencstlst(cp: cstptr); forward;
    procedure gencstety(cp: cstptr);
    var i: integer;
