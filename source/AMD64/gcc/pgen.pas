@@ -5559,7 +5559,7 @@ procedure xlate;
             lftjst(parfld-(3+max(sp^)+2+max(sp2^))); pass
           end else begin
             read(prd,q1); write(prr,' l '); write(prr, sp^);
-            write(' ',q1:1); 
+            write(prr, ' ',q1:1); 
             lftjst(parfld-(3+max(sp^)+1+digits(q1))); pass
           end;
           writeln(prr, '# generating: ', op:3, ': ', instr[op]);
