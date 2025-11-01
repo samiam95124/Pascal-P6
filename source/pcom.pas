@@ -105,9 +105,7 @@ joins services; { services }
 uses endian,   { endian mode }
      mpb,      { machine parameter block }
      version,  { current version number }
-     parcmd,   { command line parsing }
-     extlink,  { external routine linkages }
-     extend;   { extension routines }
+     parcmd;   { command line parsing }
 
 label 99; { terminate immediately }
 

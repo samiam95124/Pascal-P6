@@ -2083,6 +2083,8 @@ begin
    grawin := false; { set no graphical windowing library found }
    errexit := false; { set no error exit }
    services.getenv('MODULEPATH', modpth); { get any module path }
+   if fverb and (modpth[1] <> ' ') then 
+      writeln('Environment module path: ', modpth:*);
 
    { find any instruction files for us }
    services.getpgm(pgmpath); { get the program path }
@@ -2106,6 +2108,8 @@ begin
       end
 
    end;
+   if fverb and (modpth[1] <> ' ') then 
+      writeln('Final module path: ', modpth:*);
 
    { process command line }
    parse.openpar(cmdhan); { open parser }
