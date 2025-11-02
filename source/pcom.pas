@@ -6000,7 +6000,8 @@ end;
               match := false;
               searchidnenm([proc,func],lcp,mm);
               fcps := fcp; nxts := nxt;
-              if lcp <> nil then if lcp^.klass in [proc,func] then begin
+              if (lcp <> nil) and (nxt <> nil) then 
+                if lcp^.klass in [proc,func] then begin
                 { Search matching overload. For proc/func parameters, we allow
                   all features of the target to match, including function
                   result. }
