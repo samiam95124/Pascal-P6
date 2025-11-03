@@ -4788,7 +4788,7 @@ procedure xlate;
           write(prr, sp^); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1, ' ', q2:1, ' ', q3:1); 
           lftjst(parfld-(2+max(sp^)+1+digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3))); pass;
           getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
-          getpar(ep); pshstk(ep);
+          getpar(ep); pshstk(ep)
         end;
 
         {cif}
@@ -4796,7 +4796,7 @@ procedure xlate;
           read(prd,q,q1,q2, q3); write(prr,q:1,' ',q1:1, ' ', q2:1, ' ', q3:1); 
           lftjst(parfld-digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)); pass;
           getexp(ep); ep^.pn := q; ep^.rc := q1; popstk(ep^.l); getpar(ep);
-          pshstk(ep);
+          pshstk(ep)
         end;
 
         {cvf}
@@ -4814,8 +4814,7 @@ procedure xlate;
           end;
           pass;
           getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
-          frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
-          genexp(ep); deltre(ep)
+          pshstk(ep)
         end;
 
         {cke}
