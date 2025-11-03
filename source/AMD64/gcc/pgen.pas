@@ -2961,7 +2961,7 @@ procedure xlate;
 
           {cuv}
           27: begin
-            asscall
+            asscall; asspar(ep, ep^.pn)
           end;
 
           {cvf}
