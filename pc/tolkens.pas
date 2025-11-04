@@ -40,6 +40,7 @@ tolken = (cundefined,  { undefined (must be first tolken) }
           coct,        { & }
           cbin,        { % }
           cnum,        { # }
+          clinc,       { ! }
           cdiv,        { div }
           cmod,        { mod }
           cnil,        { nil }

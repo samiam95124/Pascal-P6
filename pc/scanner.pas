@@ -54,9 +54,9 @@
 module scanner(output);
 
 uses strings, { string functions }
+     tolkens, { scanner tolkens }
      restbl,  { reserved word hash table }
-     spctbl,  { symbols hash table }
-     tolkens; { scanner tolkens }
+     spctbl;  { symbols hash table }
 
 const
 
@@ -951,7 +951,9 @@ begin
          if (c <> '}') and (c <> '*') and seof(f) then 
             error(f, euntcmt) { unterminated comment }
 
-      end
+      end else if f^.nxttlk = clinc then { line comment }
+         { skip to line end }
+         while not endlin(f) do getchr(f)
 
    until ts <> clct; { not comment }
 

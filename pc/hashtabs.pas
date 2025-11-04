@@ -303,7 +303,8 @@ begin { hash }
          else if ressym[i].reslab = '^ ' then write(outfile, 'ccmf')
          else if ressym[i].reslab = '@ ' then write(outfile, 'ccmf')
          else if ressym[i].reslab = '..' then write(outfile, 'crange')
-         else if ressym[i].reslab = '# ' then write(outfile, 'cnum');
+         else if ressym[i].reslab = '# ' then write(outfile, 'cnum')
+         else if ressym[i].reslab = '! ' then write(outfile, 'clinc');
          write(outfile, ';');
          writeln(outfile) { terminate line }
 
