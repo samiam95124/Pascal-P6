@@ -918,16 +918,14 @@ next buffers. Removes the error suppression on the parser.
 
 procedure gettlk(f: fcbptr); { file to read from }
 
-var ts: tolken; { tolken save }
-    c:  char;   { holding }
-    i:  labinx; { index for string }
+var c: char;    { holding }
+    i: integer; { index }
 
 begin
 
-   repeat
+   partlk(f); { parse tolken }
+   while (f^.nxttlk = clct) or (f^.nxttlk = clinc) do begin
 
-      partlk(f); { parse tolken }
-      ts := f^.nxttlk; { save tolken }
       if f^.nxttlk = clct then begin { comment }
 
          repeat
@@ -953,9 +951,10 @@ begin
 
       end else if f^.nxttlk = clinc then { line comment }
          { skip to line end }
-         while not endlin(f) do getchr(f)
+         while not endlin(f) do getchr(f);
+      partlk(f) { parse next tolken }
 
-   until ts <> clct; { not comment }
+   end;
 
    { the following is a diagnostic to print the next tolken }
 
@@ -968,6 +967,7 @@ begin
    
          clct:        write('left comment');
          crct:        write('right comment');
+         clinc:       write('line comment');
          cinteger:    write('unsigned integer constant: ', f^.nxtint);
          cidentifier: begin write('identifier: '); 
                             write(output, f^.nxtlab:*) end;
