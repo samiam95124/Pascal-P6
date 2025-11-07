@@ -2261,6 +2261,27 @@ end;
     end
   end;
 
+  procedure prtlvlsym;
+  var di: disprange; lc: integer;
+  procedure prtsyms(fcp: ctp);
+  begin
+    if fcp <> nil then begin
+      writevp(output, fcp^.name);
+      write(' ');
+      lc := lc+lenpv(fcp^.name);
+      if lc >= 80 then begin writeln; lc := 1 end;
+      prtsyms(fcp^.llink);
+      prtsyms(fcp^.rlink)
+    end
+  end;
+  begin lc := 1;
+    for di := top downto 0 do begin
+      write('level: ', di:1, ' ');
+      prtsyms(display[di].fname);
+      writeln
+    end
+  end;
+
   procedure enterid(fcp: ctp);
     (*enter id pointed at by fcp into the name-table,
      which on each declaration level is organised as
@@ -4236,7 +4257,8 @@ end;
                        else fvalu.ival := band(lv.ival, fvalu.ival)
                      else error(134);
       end;
-      if lvp <> nil then fvalu.valp := lvp; { place result }
+      if lvp <> nil then 
+         begin fvalu.intval := false; fvalu.valp := lvp end; { place result }
       { mixed types or / = real }
       if (lsp = realptr) or (lop = rdiv) then fsp := realptr
     end
@@ -4679,8 +4701,11 @@ end;
   var i: disprange; f: boolean;
   begin
      f := false;
-     for i := level downto 2 do if display[i].bname^.grppar = fcp^.grppar then
-       f := true;
+     for i := top downto 2 do 
+       if display[i].occur = blck then
+         if display[i].bname <> nil then 
+           if display[i].bname^.grppar = fcp^.grppar then
+             f := true;
      schblk := f
   end;
   procedure checkvrnt(lcp: ctp);
@@ -8559,8 +8584,10 @@ end;
     function fndactovl(lcp: ctp): ctp;
     var fcp: ctp; i: disprange;
     begin fcp := nil;
-      for i := level downto 2 do if display[i].bname^.grppar = lcp then 
-        fcp := display[i].bname;
+      for i := top downto 2 do
+        if display[i].occur = blck then
+          if display[i].bname <> nil then 
+            if display[i].bname^.grppar = lcp then fcp := display[i].bname;
       if fcp = nil then error(519);
       fndactovl := fcp
     end;
@@ -9602,7 +9629,7 @@ end;
   procedure usesjoins;
   var sys: symbol; prcodes: boolean; ff: boolean; eols: boolean;
       lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
-      curmods: modtyp; entnames: integer; sym: symbol;
+      curmods: modtyp; entnames: integer; sym: symbol; dup: boolean;
   function schnam: boolean;
   var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
   begin schnam := false; fp := incstk;
@@ -9628,13 +9655,19 @@ end;
     repeat { modules }
       thismod := nil;
       if sy <> ident then error(2) else begin
-        if not schnam then begin
+        dup := schnam;
+        if not dup then begin
           eols := eol; prcodes := prcode; lists := list; gcs := gc;
           nammods := nammod; curmods := curmod; entnames := entname;
           openinput(sym = usessy, ff);
           if ff then begin
             prcode := false; list := false;
-            readline; insymbol; modnams := display[top].modnam;
+            readline; insymbol; 
+            if sym = joinssy then 
+              { throw display for joined module }
+              begin top := top+1; inidsp(display[top]); 
+                    display[top].occur := blck; display[top].bname := nil end;
+            modnams := display[top].modnam;
             display[top].modnam := nil;
             modulep(blockbegsys+statbegsys-[casesy]);
             thismod := display[top].modnam; display[top].modnam := modnams;
@@ -9644,17 +9677,12 @@ end;
           nammod := nammods; curmod := curmods; entname := entnames
         end;
         insymbol; { skip id }
-        if sym = joinssy then begin { post process joins level }
+        if (sym = joinssy) and not dup then begin { post process joins level }
           if ptop >= displimit then error(267)
           else begin
             pile[ptop] := display[top]; { copy out definitions from display }
             pile[ptop].modnam := thismod; { put back module name }
-            ptop := ptop+1;
-            { clear display for next }
-            with display[top] do
-              begin fname := nil; flabel := nil; fconst := nil; fstruct := nil;
-                    packing := false; packcom := false; ptrref := false;
-                    define := true; occur := blck; bname := nil end
+            ptop := ptop+1; top := top-1
           end
         end else putstrs(thismod);
       end;
