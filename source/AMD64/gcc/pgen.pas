@@ -5763,8 +5763,8 @@ procedure xlate;
        ctab: gencstlst(cp^.tb);
        cint: writeln(prr, '        .quad   ', cp^.i:1);
        cchr: writeln(prr, '        .byte   ', cp^.c:1);
-       cbol: writeln(prr, '        .byte   ', cp^.i:1);
-       cvalx: writeln(prr, '        .byte   ', cp^.i:1);
+       cbol: writeln(prr, '        .byte   ', cp^.b:1);
+       cvalx: writeln(prr, '        .byte   ', cp^.x:1);
      end
    end;
    procedure gencstlst(cp: cstptr);
