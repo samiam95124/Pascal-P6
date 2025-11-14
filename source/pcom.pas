@@ -4778,7 +4778,8 @@ end;
                 begin packing := typtr^.packing; dblptr := fcp^.dblptr end;
               if vkind = actual then
                 begin access := drct; vlevel := vlev;
-                  dplmt := vaddr
+                  { don't offset far }
+                  if chkext(fcp) then dplmt := 0 else dplmt := vaddr
                 end
               else
                 begin
