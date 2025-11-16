@@ -1951,8 +1951,7 @@ procedure xlate;
                   neither encouraged nor forbidden }
               end;
          'x': begin
-                if not csttab then
-                  errorl('No constant table active');
+                if not csttab then errorl('No constant table active');
                 cstp2 := cstp^.tb; cstp^.tb := nil;
                 while cstp2 <> nil do begin
                   cstp3 := cstp2; cstp2 := cstp2^.next;
@@ -1962,6 +1961,7 @@ procedure xlate;
                 getlin
               end;
          'c': begin
+                if not csttab then errorl('No constant table active');
                 getnxt; skpspc;
                 if not (ch in ['i','r','p','s','c','b','x'])
                   then errorl('Invalid const table type');
