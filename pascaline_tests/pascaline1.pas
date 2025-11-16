@@ -65,4 +65,6 @@ end;
 
 begin
 
+    mod1_i := 42
+
 end.

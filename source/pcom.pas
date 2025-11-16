@@ -9499,6 +9499,8 @@ end;
     if toterr = 0 then
       if (topnew <> 0) and prcode then
         error(504); { stack should have wound to zero }
+    { in an external module, we could have unbalanced, so zero it. }
+    topnew := 0;
     if fprocp <> nil then
       begin
         { output var block ends for each var parameter }

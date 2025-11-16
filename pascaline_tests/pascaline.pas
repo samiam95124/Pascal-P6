@@ -2432,6 +2432,11 @@ begin
 *******************************************************************************}
 
    writeln('um1:');
+   writeln(mod1_i:1, ' s/b 42');
+   writeln('um2:');
+   mod1_i := 93;
+   writeln(mod1_i:1, ' s/b 42');
+   writeln('um3:');
    mod1_i := 87;
    mod1_p;
    writeln('s/b');
