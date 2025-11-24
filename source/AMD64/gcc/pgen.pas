@@ -1890,7 +1890,7 @@ procedure xlate;
                   writeln(prr, sn2:snl2);
                   wrtblks(blkstk, false, fl); 
                   writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
-                end else if ch1 = 'l' then begin
+                end else if ch1 in ['l','p'] then begin
                   wrtblks(blkstk, false, fl); 
                   writeln(prr, sn2:snl2, ' = ', ad:1)
                 end;
