@@ -2646,7 +2646,9 @@ end;
                  write(inilab:intdig, ' '); wrtctp(ininxt);
                  write(' ', dblptr:intdig);
                end;
-        fixedt: begin write('fixed':intdig, ' ', floc:intdig, ' ');
+        fixedt: begin write('fixed':intdig, ' '); 
+                 if floc >= 0 then write(floc:intdig) else writev(output, name, intdig);
+                 write(' ');
                  if fext then write('external':intdig) else write(' ':intdig);
                  if fext then write(fmod^.fn:intdig) else write(' ':intdig)
                end;
@@ -3030,6 +3032,24 @@ end;
       write(prr, '.');
       writevp(prr, fcp^.name)
     end
+  end;
+
+  procedure prtfxlabel(fcp: ctp);
+  begin
+    if prcode then begin
+      write(prr, 'l ');
+      writevp(prr, nammod); 
+      write(prr, '.');
+      if fcp^.floc >= 1 then write(prr, fcp^.floc:1)
+      else writevp(prr, fcp^.name)
+    end
+  end;
+
+  procedure prtfxlabelc(fcp: ctp; var fl: integer);
+  begin
+    prtfxlabel(fcp); 
+    if fcp^.floc >= 0 then fl := fl+2+lenpv(nammod)+1+digits(fcp^.floc)
+    else fl := fl+2+lenpv(nammod)+1+lenpv(fcp^.name)
   end;
 
   function lenflabel(fcp: ctp): integer;
@@ -3598,7 +3618,7 @@ end;
             end else if chkext(symptr) then begin
               write(prr,' ':5); fl := 0; prtflabelc(symptr, fl)
             end else if chkfix(symptr) then begin
-              write(prr,' ':5); fl := 0; prtlabelc(symptr^.floc, fl)
+              write(prr,' ':5); fl := 0; prtfxlabelc(symptr, fl)
             end else begin write(prr,' ':5, fp2:1); fl := digits(fp2) end;
             if fop = 42 then mes(0)
             else if fop = 71 then mesl(fp2)
@@ -3737,7 +3757,7 @@ end;
     if prcode then begin
       write(prr,mn[fop]:11); gentypindicator(fsp); write(prr, ' ':4); fl := 0;
       if chkext(symptr) then prtflabelc(symptr, fl)
-      else if chkfix(symptr) then prtlabelc(symptr^.floc, fl)
+      else if chkfix(symptr) then prtfxlabelc(symptr, fl)
       else begin write(prr,fp2:1); fl := digits(fp2) end;
       lftjst(parfld-1-fl);
       intmsg(fop)
@@ -7600,6 +7620,10 @@ end;
           end else if klass = vars then begin
             write(prr, ' ', vaddr:1, ' ');
             wrttyp(prr, idtype)
+          end else if klass = fixedt then begin
+            { fixed address is determined at gentime }
+            write(prr, ' 0 ');
+            wrttyp(prr, idtype)
           end else error(517);
           writeln(prr)
         end
@@ -7753,9 +7777,11 @@ end;
                             v := fvalu.ival; d := true
                           end
                         end else if fvalu.intval then begin
-                          if (size = 1) and prcode then
-                            write(prr, 'c x ', fvalu.ival:1)
-                          else write(prr, 'c i ', fvalu.ival:1);
+                          if prcode then begin
+                            if size = 1 then
+                              write(prr, 'c x ', fvalu.ival:1)
+                            else write(prr, 'c i ', fvalu.ival:1)
+                          end;
                           v := fvalu.ival; d := true
                         end else if (fvalu.valp^.cclass = reel) and prcode then
                           write(prr, 'c r ', fvalu.valp^.rval:23); 
@@ -7848,11 +7874,15 @@ end;
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon,relop] + typedels,lsp,lsize);
         if lcp <> nil then lcp^.idtype := lsp;
+        { mark symbol }
+        if prcode then 
+          if level <= 1 then wrtsym(lcp, 'f') else wrtsym(lcp, 'c');
         if (sy = relop) and (op = eqop) then begin
           insymbol;
           { start fixed constants }
           if prcode then write(prr, 'n ');
-          genlabel(lcp^.floc); prtlabel(lcp^.floc);
+          if level > 1 then genlabel(lcp^.floc);
+          prtfxlabel(lcp);
           if prcode then writeln(prr, ' ', lsize:1);
           fixeditem(fsys+[semicolon], lsp, lsp^.size, v, d);
           if prcode then writeln(prr, 'x')
@@ -8532,7 +8562,8 @@ end;
             begin lsy := sy; insymbol; procdeclaration(lsy) end
         end
       until inpriv or iso7185 or (sy = beginsy) or eofinp or
-            not (sy in [privatesy,labelsy,constsy,typesy,varsy]+pfbegsys);
+            not (sy in [privatesy,labelsy,constsy,typesy,fixedsy,varsy]+
+                       pfbegsys);
       if (sy <> beginsy) and not inpriv then
         begin error(18); skip(fsys) end
     until (sy in statbegsys) or eofinp or inpriv;

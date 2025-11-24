@@ -427,7 +427,8 @@ type
       symbol      = record
                       next:   psymbol; { next list symbol }
                       name:   strvsp; { name }
-                      styp:   (stglobal, stlocal, stparam); { area type }
+                      { area type }
+                      styp:   (stglobal, stlocal, stparam, stfixg, stfixl);
                       off:    address; { offset address }
                       digest: strvsp; { type digest }
                     end;
@@ -2209,7 +2210,7 @@ procedure load;
      end
    end;
 
-   procedure gblrlc(off: address);
+   procedure gblrlc(off: address; crf: address);
    var sp: psymbol; bp: pblock;
    begin
      if blklst <> nil then begin { there is a top block }
@@ -2218,7 +2219,8 @@ procedure load;
          if bp^.btyp in [btprog, btmod] then begin { it is a module }
            sp := bp^.symbols;
            while sp <> nil do begin
-             if sp^.styp = stglobal then sp^.off := sp^.off+off;
+             if sp^.styp = stglobal then sp^.off := sp^.off+off
+             else if sp^.styp = stfixg then sp^.off := sp^.off+crf;
              sp := sp^.next
            end
          end;
@@ -2255,7 +2257,8 @@ procedure load;
        else sp := sp^.next
      end;
      if fsp <> nil then begin
-       if fsp^.styp <> stglobal then errorl('Symbol not global        ');
+       if not (fsp^.styp in [stglobal, stfixg]) then 
+         errorl('Symbol not global        ');
        symref := fsp^.off { return address of symbol }
      end else begin { search for routine }
        bp := fbp^.incnxt; fbp := nil;
@@ -2324,7 +2327,7 @@ procedure load;
           sp: psymbol;
           ad: address;
           sgn: boolean;
-          ls: strvsp;
+          ls, ds: strvsp;
           csttab: boolean;
           cstadr: address;
           r: real;
@@ -2341,6 +2344,31 @@ procedure load;
            if sp^.styp = stglobal then sp^.off := sp^.off+gbloff;
            sp := sp^.next
          end
+       end
+     end
+   end;
+   
+   procedure stripext(var ds: strvsp; ss: strvsp);
+   var i, x: integer;
+   begin
+     i := 1; ds := nil;
+     while not (strchr(ss, i) in [' ', '.']) do i := i+1;
+     if strchr(ss, i) = '.' then begin
+       x := 1; i := i+1;
+       while strchr(ss, i) <> ' ' do 
+         begin strchrass(ds, x, strchr(ss, i)); i := i+1; x := x+1 end
+     end
+   end;
+
+   procedure fndsym(sn: strvsp; var sp: psymbol);
+   var lp: psymbol;
+   begin
+     sp := nil;
+     if blkstk <> nil then begin { there is a top block }
+       lp := blkstk^.symbols;
+       while lp <> nil do begin
+         if strequvv(lp^.name, sn) then begin sp := lp; lp := nil end
+         else lp := lp^.next
        end
      end
    end;
@@ -2512,11 +2540,15 @@ procedure load;
                 getnxt; getlab;
                 new(sp); strassvf(sp^.name, sn);
                 skpspc;
-                if not (ch in ['g', 'l','p']) then
+                if not (ch in ['g', 'l','p','f','c']) then
                   errorl('Symbol type is invalid   ');
-                if ch = 'g' then sp^.styp := stglobal
-                else if ch = 'p' then sp^.styp := stparam
-                else sp^.styp := stlocal;
+                case ch of
+                  'g': sp^.styp := stglobal;
+                  'p': sp^.styp := stparam;
+                  'l': sp^.styp := stlocal;
+                  'f': sp^.styp := stfixg;
+                  'c': sp^.styp := stfixl
+                end;
                 getnxt;
                 skpspc;
                 if not (ch in ['0'..'9','-']) then
@@ -2583,24 +2615,27 @@ procedure load;
                 if ch <> 'l' then
                   errorl('Label format error       ');
                 getnxt; parlab(x,ls);
-                if ls <> nil then
-                  errorl('Invalid intermediate     ');
                 { Note the constant table must start on maximium
                   natural alignment to match it's structure type.
                   We use stackal for that. }
                 read(prd,l); cp := cp-l; alignd(stackal, cp);
-                cstadr := cp; labelvalue:=cstadr; update(x);
+                cstadr := cp; labelvalue:=cstadr;
+                if ls <> nil then begin
+                  stripext(ds, ls); fndsym(ds, sp); 
+                  if sp = nil then errorl('Symbol not found         ');
+                  sp^.off := cstadr
+                end else update(x);
                 getlin
                 { note mixed constants with other operands is
                   neither encouraged nor forbidden }
               end;
          'x': begin
-                if not csttab then
-                  errorl('No constant table active ');
+                if not csttab then errorl('No constant table active ');
                 csttab := false;
                 getlin
               end;
          'c': begin
+                if not csttab then errorl('No constant table active ');
                 getnxt; skpspc;
                 if not (ch in ['i','r','p','s','c','b','x'])
                   then errorl('Invalid const table type ');
@@ -3025,7 +3060,7 @@ begin (*load*)
   if gblfixi >= 1 then for gi := 1 to gblfixi do
     begin
     ad := gblfixtab[gi]; putadr(ad, getadr(ad)+pctop) end;
-  gblrlc(pctop); { relocate symbols as well }
+  gblrlc(pctop, crf); { relocate symbols as well }
   { set heap bottom pointer }
   if npadr < 0 then errorl('Heap bottom not set      ');
   putadr(npadr, gbtop);

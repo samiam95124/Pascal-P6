@@ -307,7 +307,7 @@ type
             creal: (r:   real; realn: integer);
             cset:  (s:   settype; setn: integer);
             ctmp:  (ta:  array [1..maxtmp] of integer; tsize: integer; tn: integer);
-            ctab:  (tb:  cstptr; csize: integer; cn: integer);
+            ctab:  (tb:  cstptr; csize: integer; cs: pstring; cn: integer);
             cint:  (i:   integer; intn: integer);
             cchr:  (c:   integer; chrn: integer);
             cbol:  (b:   integer; boln: integer);
@@ -317,7 +317,8 @@ type
       symbol      = record
                       next:   psymbol; { next list symbol }
                       name:   pstring; { name }
-                      styp:   (stglobal, stlocal, stparam); { area type }
+                      { area type }
+                      styp:   (stglobal, stlocal, stparam, stfixg, stfixl);
                       off:    address; { offset address }
                       digest: pstring; { type digest }
                     end;
@@ -1853,7 +1854,7 @@ procedure xlate;
                 write(prr, sn:snl); 
                 sn2 := sn; snl2 := snl;
                 skpspc;
-                if not (ch in ['g', 'l','p']) then
+                if not (ch in ['g', 'l','p','f','c']) then
                   errorl('Symbol type is invalid');
                 if ch = 'g' then sp^.styp := stglobal
                 else if ch = 'p' then sp^.styp := stparam
@@ -1876,7 +1877,7 @@ procedure xlate;
                 write(prr, ad:1, ' ');
                 sp^.off := ad; getsds; writeln(prr, sn:snl);
                 sp^.digest := strp(sn);
-                if anyshort(blkstk) then begin
+                if anyshort(blkstk) and (ch1 in ['g','l','p']) then begin
                   wrtblks(blkstk, true, fl); 
                   if ch1 = 'g' then 
                     writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
@@ -1889,7 +1890,7 @@ procedure xlate;
                   writeln(prr, sn2:snl2);
                   wrtblks(blkstk, false, fl); 
                   writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
-                end else begin
+                end else if ch1 = 'l' then begin
                   wrtblks(blkstk, false, fl); 
                   writeln(prr, sn2:snl2, ' = ', ad:1)
                 end;
@@ -1940,18 +1941,17 @@ procedure xlate;
                 if ch <> 'l' then
                   errorl('Label format error');
                 getnxt; parlab(x,ls);
-                if ls <> nil then
-                  errorl('Invalid intermediate');
                 read(prd,l); { note the size is unused }
                 new(cstp); cstp^.ct := ctab; cstp^.tb := nil; 
                 cstp^.next := csttbl; csttbl := cstp;
-                cstp^.csize := l; cstp^.cn := x;
+                cstp^.csize := l; cstp^.cn := x; cstp^.cs := ls;
                 getlin
                 { note mixed constants with other operands is
                   neither encouraged nor forbidden }
               end;
          'x': begin
-                if not csttab then errorl('No constant table active');
+                if not csttab then
+                  errorl('No constant table active');
                 cstp2 := cstp^.tb; cstp^.tb := nil;
                 while cstp2 <> nil do begin
                   cstp3 := cstp2; cstp2 := cstp2^.next;
@@ -5792,7 +5792,7 @@ procedure xlate;
        end;
        gencstety(cp);
        cp := cp^.next
-   end;
+     end
    end;
    begin
      while csttbl <> nil do begin
@@ -5806,7 +5806,12 @@ procedure xlate;
          end;
          ctab: begin
            writeln(prr, 'constant_table', csttbl^.cn:1, ':');
-           write(prr, modnam^); writeln(prr, '.', csttbl^.cn:1, ':')
+           if csttbl^.cs <> nil then begin
+             writeln(prr, '        .globl  ', csttbl^.cs^);
+             write(prr, csttbl^.cs^, ':')
+           end else begin 
+             write(prr, modnam^); write(prr, '.'); write(prr, csttbl^.cn:1, ':')
+           end
          end;
          cint: writeln(prr, 'value', csttbl^.intn:1, ':');
          cchr: writeln(prr, 'character', csttbl^.chrn:1, ':');
