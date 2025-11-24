@@ -13,6 +13,8 @@ module pascaline1(output);
 
 var mod1_i: integer;
 
+fixed mod1_f_i: integer = 754;
+
 procedure mod1_p;
 
 begin

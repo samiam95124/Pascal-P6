@@ -1102,6 +1102,8 @@ um3:
 This is the used module: 87
 s/b
 this is the used module: 87
+um4:
+754 s/b 754
 ov1:
 This is the overriding procedure
 This is the abstract procedure
@@ -1122,6 +1124,8 @@ This is zork
 zork: the integer is: 52
 zork: the string is: hi there
 42
+lm3:
+729 s/b 729
 ce1: my'self s/b my'self
 ce2: this\one s/b this<slash>one
 ce3: e s/b e

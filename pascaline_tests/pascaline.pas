@@ -2441,6 +2441,8 @@ begin
    mod1_p;
    writeln('s/b');
    writeln('this is the used module: 87');
+   writeln('um4:');
+   writeln(mod1_f_i:1, ' s/b 754');
 
 {*******************************************************************************
 
@@ -2475,6 +2477,8 @@ begin
    writeln('zork: the integer is: 52');
    writeln('zork: the string is: hi there');
    writeln('42');
+   writeln('lm3:');
+   writeln(pascaline2.mod1_f_i:1, ' s/b 729'); 
 
 {*******************************************************************************
 
