@@ -298,7 +298,7 @@ type
       labbuf      = packed array [1..lablen] of char; { label buffer }
       strbuf      = packed array [1..strlen] of char;
       filext      = packed array [1..4] of char; { filename extension }
-      ctype = (cstr, creal, cset, ctmp, ctab, cint, cchr, cbol, cvalx);
+      ctype = (cstr, creal, cset, ctmp, ctab, cint, cchr, cbol, cvalx, crst);
       cstptr = ^cstrec; { pointer to string constant entry table }
       cstrec = record 
         next: cstptr; 
@@ -312,6 +312,7 @@ type
             cchr:  (c:   integer; chrn: integer);
             cbol:  (b:   integer; boln: integer);
             cvalx: (x:   integer; valxn: integer);
+            crst:  ();
       end;
       psymbol     = ^symbol;
       symbol      = record
@@ -1710,7 +1711,7 @@ procedure xlate;
       while again and not eof(prd) do begin
         getnxt;(* first character of line*)
         if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
-                       'v', 't', 'n', 'x', 'c', 'p']) then
+                       'v', 't', 'n', 'x', 'c', 'p', 'r']) then
           errorl('unexpected line start');
         case ch of
           '!': begin prtline; write(prr, ' ', '!'); while not eoln(prd) do
@@ -2017,6 +2018,13 @@ procedure xlate;
                          cstp2^.x := v; cstp2^.valxn := 0
                        end;
                 end;
+                getlin
+              end;
+         'r': begin
+                if not csttab then
+                  errorl('No constant table active');
+                new(cstp2); cstp2^.ct := crst; 
+                cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                 getlin
               end;
          'p': begin { filename and path }
@@ -5765,6 +5773,7 @@ procedure xlate;
        cchr: writeln(prr, '        .byte   ', cp^.c:1);
        cbol: writeln(prr, '        .byte   ', cp^.b:1);
        cvalx: writeln(prr, '        .byte   ', cp^.x:1);
+       crst: ;
      end
    end;
    procedure gencstlst(cp: cstptr);
@@ -5776,7 +5785,7 @@ procedure xlate;
        ad := ad+1
      end
    end;
-   begin { gencst }
+   begin { gencstlst }
      ad := 0;
      while cp <> nil do begin
        case cp^.ct of
@@ -5789,6 +5798,7 @@ procedure xlate;
          cchr: begin align(charal); ad := ad+charsize end;
          cbol: begin align(boolal); ad := ad+boolsize end;
          cvalx: ad := ad+1;
+         crst: ad := 0;
        end;
        gencstety(cp);
        cp := cp^.next
@@ -5817,6 +5827,7 @@ procedure xlate;
          cchr: writeln(prr, 'character', csttbl^.chrn:1, ':');
          cbol: writeln(prr, 'boolean', csttbl^.boln:1, ':');
          cvalx: writeln(prr, 'byte_value', csttbl^.valxn:1, ':');
+         crst: ;
        end;
        gencstety(csttbl);
        csttbl := csttbl^.next

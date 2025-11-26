@@ -2379,7 +2379,7 @@ procedure load;
        if eof(prd) then errorl('unexpected eof on input  ');
        getnxt;(* first character of line*)
        if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b',
-                      'e', 's', 'f','v','t','n','c','x','p']) then
+                      'e', 's', 'f','v','t','n','c','x','p','r']) then
          errorl('unexpected line start    ');
        case ch of
          '!': getlin; { comment }
@@ -2682,6 +2682,10 @@ procedure load;
                          putbyt(cstadr,i); cstadr := cstadr+1
                        end;
                 end;
+                getlin
+              end;
+         'r': begin
+                if not csttab then errorl('No constant table active ');
                 getlin
               end;
          'p': getlin; { ignore filename/path }

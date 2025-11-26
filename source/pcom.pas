@@ -7821,6 +7821,7 @@ end;
                       { iterate array elements }
                       i := min; if sy = arraysy then insymbol else error(28);
                       repeat
+                        writeln(prr, 'r'); {reset alignment }
                         fixeditem(fsys+[comma,endsy],lsp^.aeltype, lsp^.aeltype^.size, v, d);
                         i := i+1;
                         if not (sy in [comma,endsy]) then
