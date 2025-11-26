@@ -1994,7 +1994,7 @@ procedure xlate;
                            begin sn[i] := ch; i := i+1; getnxt end;
                          new(cstp2); cstp2^.ct := cstr;
                          cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                         cstp2^.str := strp(sn); cstp2^.strl := i; 
+                         cstp2^.str := strp(sn); cstp2^.strl := i-1; 
                          cstp2^.strn := 0
                        end;
                   'c': begin
@@ -5743,7 +5743,7 @@ procedure xlate;
    begin
      case cp^.ct of
        cstr: begin
-         write(prr, '        .string "');
+         write(prr, '        .ascii  "');
          writeq(prr, cp^.str^, cp^.strl);
          writeln(prr, '"') 
        end;
@@ -5772,11 +5772,11 @@ procedure xlate;
    procedure align(a: integer);
    begin
      while (ad mod a) <> 0 do begin
-       writeln(prr, '        .byte   1');
+       writeln(prr, '        .byte   0');
        ad := ad+1
      end
    end;
-   begin
+   begin { gencst }
      ad := 0;
      while cp <> nil do begin
        case cp^.ct of
@@ -5808,7 +5808,7 @@ procedure xlate;
            writeln(prr, 'constant_table', csttbl^.cn:1, ':');
            if csttbl^.cs <> nil then begin
              writeln(prr, '        .globl  ', csttbl^.cs^);
-             write(prr, csttbl^.cs^, ':')
+             writeln(prr, csttbl^.cs^, ':')
            end else begin 
              write(prr, modnam^); write(prr, '.'); write(prr, csttbl^.cn:1, ':')
            end
