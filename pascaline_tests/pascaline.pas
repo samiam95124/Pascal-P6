@@ -118,6 +118,15 @@ fixed f_i: integer = 432;
       end;
       f_rc: record i: integer; c: char; r: real end = record 42, 'a', 1.234 end;
       f_sr: frange = -42;
+      f_arc: array [1..5] of 
+         record s: packed array [1..4] of char; i: integer; c: char end = array
+         record 'hi  ', 42,   'a' end,
+         record 'way ', 12,   'q' end,
+         record 'fork', 4567, 'z' end,
+         record 'zip ', 8731, 'n' end,
+         record 'lame', 82,   'i' end
+      end;
+         
 
 type enum_a   = (one, two, three);
      enum_b   = (red, green, blue, cyan, purple, black, white);
@@ -1678,6 +1687,14 @@ begin
    writeln(' s/b 1 3 64 2 12 31 647 21 190 32 641 243');
    writeln('f5: ', f_rc.i:1, f_rc.c, f_rc.r:1:4, ' s/b 42a1.2340');
    writeln('f6: ', f_sr:1, ' s/b -42');
+   writeln('f7: ');
+   for i := 1 to 5 do writeln(f_arc[i].s, ' ', f_arc[i].i:4, ' ', f_arc[i].c);
+   writeln('s/b');
+   writeln('hi   42,  a');
+   writeln('way  12,  q');
+   writeln('fork 4567 z');
+   writeln('zip  8731 n');
+   writeln('lame 82   i');
 
 {*******************************************************************************
 
