@@ -2330,6 +2330,7 @@ procedure load;
           ls, ds: strvsp;
           csttab: boolean;
           cstadr: address;
+          cstoff: address;
           r: real;
           s: settype;
           optst: optstr; oni: optinx; oi: 1..maxopt;
@@ -2619,7 +2620,7 @@ procedure load;
                   natural alignment to match it's structure type.
                   We use stackal for that. }
                 read(prd,l); cp := cp-l; alignd(stackal, cp);
-                cstadr := cp; labelvalue:=cstadr;
+                cstadr := cp; labelvalue:=cstadr; cstoff := 0;
                 if ls <> nil then begin
                   stripext(ds, ls); fndsym(ds, sp); 
                   if sp = nil then errorl('Symbol not found         ');
@@ -2641,12 +2642,12 @@ procedure load;
                   then errorl('Invalid const table type ');
                 case ch of { constant type }
                   'i': begin
-                         getnxt; read(prd,i); alignu(intal, cstadr);
-                         putint(cstadr,i); cstadr := cstadr+intsize
+                         getnxt; read(prd,i); alignu(intal, cstoff);
+                         putint(cstadr+cstoff,i); cstoff := cstoff+intsize
                        end;
                   'r': begin
-                         getnxt; read(prd,r); alignu(realal, cstadr);
-                         putrel(cstadr,r); cstadr := cstadr+realsize
+                         getnxt; read(prd,r); alignu(realal, cstoff);
+                         putrel(cstadr+cstoff,r); cstoff := cstoff+realsize
                        end;
                   'p': begin
                          getnxt; skpspc;
@@ -2654,38 +2655,39 @@ procedure load;
                          s := [ ]; getnxt;
                          while ch<>')' do
                            begin read(prd,i); getnxt; s := s + [i] end;
-                         alignu(setal, cstadr);
-                         putset(cstadr,s); cstadr := cstadr+setsize
+                         alignu(setal, cstoff);
+                         putset(cstadr+cstoff,s); cstoff := cstoff+setsize
                        end;
                   's': begin
                          getnxt; skpspc;
                          if ch <> '''' then errorl('quote expected for string');
-                         getnxt; alignu(charal, cstadr);
+                         getnxt; alignu(charal, cstoff);
                          while ch<>'''' do
-                           begin putchr(cstadr, ch); getnxt;
-                                 cstadr := cstadr+charsize end
+                           begin putchr(cstadr+cstoff, ch); getnxt; 
+                                 cstoff := cstoff+charsize end
                        end;
                   'c': begin
                          getnxt;
                          { chars are output as values }
-                         read(prd,i); alignu(charal, cstadr);
-                         putchr(cstadr,chr(i)); cstadr := cstadr+charsize
+                         read(prd,i); alignu(charal, cstoff);
+                         putchr(cstadr+cstoff,chr(i)); cstoff := cstoff+charsize
                        end;
                   'b': begin
                          getnxt;
                          { booleans are output as values }
-                         read(prd,i); alignu(boolal, cstadr);
-                         putbyt(cstadr,i); cstadr := cstadr+boolsize
+                         read(prd,i); alignu(boolal, cstoff);
+                         putbyt(cstadr+cstoff,i); cstoff := cstoff+boolsize
                        end;
                   'x': begin
                          getnxt; read(prd,i);
-                         putbyt(cstadr,i); cstadr := cstadr+1
+                         putbyt(cstadr+cstoff,i); cstoff := cstoff+1
                        end;
                 end;
                 getlin
               end;
          'r': begin
                 if not csttab then errorl('No constant table active ');
+                cstadr := cstadr+cstoff; cstoff := 0;
                 getlin
               end;
          'p': getlin; { ignore filename/path }
