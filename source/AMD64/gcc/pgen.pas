@@ -338,6 +338,287 @@ type
                        en:      integer; { encounter number }
                        lvl:     integer; { level of block }
                      end;
+      inspar = array [instyp] of record
+        instr: alfa;    { mnemonic instruction codes }
+        insr:  integer; { number of stack words in result }
+        insf:  boolean; { result is real }
+        inss:  boolean  { result is set }
+      end;
+
+{
+
+  Instruction parameters table
+
+  Notes:
+  1. Instructions marked with "*" are for internal use only.
+     The "*" mark both shows in the listing, and also prevents
+     their use in the intermediate file, since only alpha
+     characters are allowed as opcode labels.
+  2. "---" entries are no longer used, but left here to keep the
+     original instruction numbers from P4. They could be safely
+     assigned to other instructions if the space is needed.
+}
+fixed instab: inspar = array
+       { memonic       SW RReal  RSet }
+  record 'lodi      ', 1, false, false end,
+  record 'ldoi      ', 1, false, false end,
+  record 'stri      ', 0, false, false end,
+  record 'sroi      ', 0, false, false end,
+  record 'lda       ', 1, false, false end,
+  record 'lao       ', 1, false, false end,
+  record 'stoi      ', 0, false, false end,
+  record 'ldcs      ', 1, false, true  end,
+  record 'cjp       ', 0, false, false end,
+  record 'indi      ', 1, false, false end,
+  record 'inci      ', 1, false, false end,
+  record 'mst       ', 0, false, false end,
+  record 'cup       ', 0, false, false end,
+  record 'rip       ', 0, false, false end,
+  record 'retp      ', 0, false, false end,
+  record 'csp       ', 0, false, false end,
+  record 'ixa       ', 1, false, false end,
+  record 'equa      ', 1, false, false end,
+  record 'neqa      ', 1, false, false end,
+  record 'brk*      ', 0, false, false end,
+  record 'lnp*      ', 0, false, false end,
+  record 'cal       ', 1, false, false end,
+  record 'ret       ', 0, false, false end,
+  record 'ujp       ', 0, false, false end,
+  record 'fjp       ', 0, false, false end,
+  record 'xjp       ', 0, false, false end,
+  record 'chki      ', 1, false, false end,
+  record 'cuv       ', 0, false, false end,
+  record 'adi       ', 1, false, false end,
+  record 'adr       ', 1, true,  false end, 
+  record 'sbi       ', 1, false, false end,
+  record 'sbr       ', 1, true,  false end, 
+  record 'sgs       ', 1, false, true  end,
+  record 'flt       ', 1, true,  false end,
+  record 'flo       ', 2, true,  false end,
+  record 'trc       ', 1, false, false end,
+  record 'ngi       ', 1, false, false end,
+  record 'ngr       ', 1, true,  false end, 
+  record 'sqi       ', 1, false, false end,
+  record 'sqr       ', 1, true,  false end, 
+  record 'abi       ', 1, false, false end,
+  record 'abr       ', 1, true,  false end, 
+  record 'notb      ', 1, false, false end,
+  record 'and       ', 1, false, false end,
+  record 'ior       ', 1, false, false end,
+  record 'dif       ', 1, false, true  end,
+  record 'int       ', 1, false, true  end,
+  record 'uni       ', 1, false, true  end,
+  record 'inn       ', 1, false, false end,
+  record 'mod       ', 1, false, false end,
+  record 'odd       ', 1, false, false end,
+  record 'mpi       ', 1, false, false end,
+  record 'mpr       ', 1, true,  false end, 
+  record 'dvi       ', 1, false, false end,
+  record 'dvr       ', 1, true,  false end, 
+  record 'mov       ', 0, false, false end,
+  record 'lca       ', 1, false, false end,
+  record 'deci      ', 1, false, false end,
+  record 'stp*      ', 0, false, false end,
+  record 'ordi      ', 1, false, false end,
+  record 'chr       ', 1, false, false end,
+  record 'ujc       ', 0, false, false end,
+  record 'rnd       ', 1, false, false end,
+  record 'pck       ', 0, false, false end,
+  record 'upk       ', 0, false, false end,
+  record 'ldoa      ', 1, false, false end,
+  record 'ldor      ', 1, true,  false end, 
+  record 'ldos      ', 1, false, true  end,
+  record 'ldob      ', 1, false, false end,
+  record 'ldoc      ', 1, false, false end,
+  record 'stra      ', 0, false, false end,
+  record 'strr      ', 0, false, false end,
+  record 'strs      ', 0, false, false end,
+  record 'strb      ', 0, false, false end,
+  record 'strc      ', 0, false, false end,
+  record 'sroa      ', 0, false, false end,
+  record 'sror      ', 0, true,  false end, 
+  record 'sros      ', 0, false, false end,
+  record 'srob      ', 0, false, false end,
+  record 'sroc      ', 0, false, false end,
+  record 'stoa      ', 0, false, false end,
+  record 'stor      ', 0, false, false end,
+  record 'stos      ', 0, false, false end,
+  record 'stob      ', 0, false, false end,
+  record 'stoc      ', 0, false, false end,
+  record 'inda      ', 1, false, false end,
+  record 'indr      ', 1, true,  false end, 
+  record 'inds      ', 1, false, true  end,
+  record 'indb      ', 1, false, false end,
+  record 'indc      ', 1, false, false end,
+  record 'inca      ', 1, false, false end,
+  record 'suv       ', 0, false, false end,
+  record 'vbs       ', 0, false, false end,
+  record 'incb      ', 1, false, false end,
+  record 'incc      ', 1, false, false end,
+  record 'chka      ', 1, false, false end,
+  record 'vbe       ', 0, false, false end,
+  record 'chks      ', 0, false, true  end,
+  record 'chkb      ', 1, false, false end,
+  record 'chkc      ', 1, false, false end,
+  record 'cvbi      ', 2, false, false end,
+  record 'ivtx      ', 2, false, false end,
+  record 'ivtb      ', 2, false, false end,
+  record 'decb      ', 1, false, false end,
+  record 'decc      ', 1, false, false end,
+  record 'loda      ', 1, false, false end,
+  record 'lodr      ', 1, true,  false end, 
+  record 'lods      ', 1, false, true  end,
+  record 'lodb      ', 1, false, false end,
+  record 'lodc      ', 1, false, false end,
+  record 'rgs       ', 1, false, true  end,
+  record 'ivtc      ', 2, false, false end,
+  record 'ipj       ', 0, false, false end,
+  record 'cip       ', 0, false, false end,
+  record 'lpa       ', 2, false, false end,
+  record 'cvbx      ', 2, false, false end,
+  record 'cvbb      ', 2, false, false end,
+  record 'dmp       ', 0, false, false end,
+  record 'swp       ', 2, false, false end,
+  record 'tjp       ', 0, false, false end,
+  record 'lip       ', 2, false, false end,
+  record 'cvbc      ', 2, false, false end,
+  record 'vis       ', 1, false, false end,
+  record 'ldci      ', 1, false, false end,
+  record 'ldcr      ', 1, true,  false end, 
+  record 'ldcn      ', 1, false, false end,
+  record 'ldcb      ', 1, false, false end,
+  record 'ldcc      ', 1, false, false end,
+  record 'reti      ', 1, false, false end,
+  record 'retr      ', 1, false, false end,
+  record 'retc      ', 1, false, false end,
+  record 'retb      ', 1, false, false end,
+  record 'reta      ', 1, false, false end,
+  record 'vip       ', 0, false, false end,
+  record 'ordb      ', 1, false, false end,
+  record 'lcp       ', 2, false, false end,
+  record 'ordc      ', 1, false, false end,
+  record 'equi      ', 1, false, false end,
+  record 'equr      ', 1, false, false end,
+  record 'equb      ', 1, false, false end,
+  record 'equs      ', 1, false, false end,
+  record 'equc      ', 1, false, false end,
+  record 'equm      ', 1, false, false end,
+  record 'neqi      ', 1, false, false end,
+  record 'neqr      ', 1, false, false end,
+  record 'neqb      ', 1, false, false end,
+  record 'neqs      ', 1, false, false end,
+  record 'neqc      ', 1, false, false end,
+  record 'neqm      ', 1, false, false end,
+  record 'geqi      ', 1, false, false end,
+  record 'geqr      ', 1, false, false end,
+  record 'geqb      ', 1, false, false end,
+  record 'geqs      ', 1, false, false end,
+  record 'geqc      ', 1, false, false end,
+  record 'geqm      ', 1, false, false end,
+  record 'grti      ', 1, false, false end,
+  record 'grtr      ', 1, false, false end,
+  record 'grtb      ', 1, false, false end,
+  record 'grts      ', 1, false, false end,
+  record 'grtc      ', 1, false, false end,
+  record 'grtm      ', 1, false, false end,
+  record 'leqi      ', 1, false, false end,
+  record 'leqr      ', 1, false, false end,
+  record 'leqb      ', 1, false, false end,
+  record 'leqs      ', 1, false, false end,
+  record 'leqc      ', 1, false, false end,
+  record 'leqm      ', 1, false, false end,
+  record 'lesi      ', 1, false, false end,
+  record 'lesr      ', 1, false, false end,
+  record 'lesb      ', 1, false, false end,
+  record 'less      ', 1, false, false end,
+  record 'lesc      ', 1, false, false end,
+  record 'lesm      ', 1, false, false end,
+  record '---       ', 0, false, false end,
+  record 'mrkl*     ', 0, false, false end,
+  record 'ckvi      ', 2, false, false end,
+  record 'cps       ', 3, false, false end,
+  record 'cpc       ', 3, false, false end,
+  record 'aps       ', 0, false, false end,
+  record 'ckvb      ', 2, false, false end,
+  record 'ckvc      ', 2, false, false end,
+  record 'dupi      ', 1, false, false end,
+  record 'dupa      ', 2, false, false end,
+  record 'dupr      ', 1, true,  false end, 
+  record 'dups      ', 1, false, true  end,
+  record 'dupb      ', 1, false, false end,
+  record 'dupc      ', 1, false, false end,
+  record 'cks       ', 2, false, false end,
+  record 'cke       ', 0, false, false end,
+  record 'inv       ', 0, false, false end,
+  record 'ckla      ', 1, false, false end,
+  record 'cta       ', 2, false, false end,
+  record 'ivti      ', 2, false, false end,
+  record 'lodx      ', 1, false, false end,
+  record 'ldox      ', 1, false, false end,
+  record 'strx      ', 0, false, false end,
+  record 'srox      ', 1, false, false end,
+  record 'stox      ', 0, false, false end,
+  record 'indx      ', 1, false, false end,
+  record 'chkx      ', 1, false, false end,
+  record 'ordx      ', 1, false, false end,
+  record 'incx      ', 1, false, false end,
+  record 'decx      ', 1, false, false end,
+  record 'ckvx      ', 2, false, false end,
+  record 'retx      ', 1, false, false end,
+  record 'noti      ', 1, false, false end,
+  record 'xor       ', 1, false, false end,
+  record 'bge       ', 4, false, false end,
+  record 'ede       ', 0, false, false end,
+  record 'mse       ', 0, false, false end,
+  record 'apc       ', 0, false, false end,
+  record 'cxs       ', 1, false, false end,
+  record 'cxc       ', 2, false, false end,
+  record 'lft       ', 2, false, false end,
+  record 'max       ', 1, false, false end,
+  record 'equv      ', 1, false, false end,
+  record 'neqv      ', 1, false, false end,
+  record 'lesv      ', 1, false, false end,
+  record 'grtv      ', 1, false, false end,
+  record 'leqv      ', 1, false, false end,
+  record 'geqv      ', 1, false, false end,
+  record 'vdp       ', 0, false, false end,
+  record 'spc       ', 2, false, false end,
+  record 'ccs       ', 2, false, false end,
+  record 'scp       ', 0, false, false end,
+  record 'ldp       ', 2, false, false end,
+  record 'vin       ', 0, false, false end,
+  record 'vdd       ', 0, false, false end,
+  { ltc and lto are aliases to ldo and lao instructions }
+  record 'ltci      ', 1, false, false end,
+  record 'ltcr      ', 1, true,  false end, 
+  record 'ltcs      ', 1, false, false end,
+  record 'ltcb      ', 1, false, false end,
+  record 'ltcc      ', 1, false, false end,
+  record 'ltcx      ', 1, false, false end,
+  record 'lto       ', 1, false, false end,
+  record 'stom      ', 0, false, false end,
+  record 'rets      ', 1, false, true  end,
+  record 'retm      ', 1, false, false end,
+  record 'ctb       ', 0, false, false end,
+  record 'cpp       ', 1, false, false end,
+  record 'cpr       ', 1, false, false end,
+  record 'lsa       ', 1, false, false end,
+  record 'eext*     ', 0, false, false end,
+  record 'wbs       ', 1, false, false end,
+  record 'wbe       ', 0, false, false end,
+  record 'sfr       ', 0, false, false end,
+  record 'cuf       ', 0, false, false end,
+  record 'cif       ', 0, false, false end,
+  record 'mpc       ', 2, false, false end,
+  record 'cvf       ', 0, false, false end,
+  record 'lsp       ', 2, false, false end,
+  record 'cpl       ', 1, false, false end,
+  record 'sfs       ', 0, false, false end,
+  { sev is an alias for stra in pint. It has meaning to pgen. }
+  record 'sev       ', 0, false, false end,
+  record 'mdc       ', 1, false, false end,
+  record '---       ', 0, false, false end
+end;
 
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1, q2, q3, q4 : address; { extra parameters }
@@ -389,11 +670,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       iso7185: boolean; { iso7185 standard flag }
 
       prd,prr     : text; (*prd for read only, prr for write only *)
-
-      instr       : array[instyp] of alfa; (* mnemonic instruction codes *)
-      insr        : array[instyp] of integer; { number of stack words in result }
-      insf        : array[instyp] of boolean; { result is real }
-      inss        : array[instyp] of boolean; { result is set }
       sptable     : array[sctyp] of alfa; (*standard functions and procedures*)
       spfunc      : array[sctyp] of boolean; (*standard function or procedure
                                                   is function*)
@@ -710,279 +986,7 @@ procedure xlate;
 
    procedure init;
       var i: integer;
-   begin for i := 0 to maxins do instr[i] := '          ';
-         {
-
-           Notes:
-
-           1. Instructions marked with "*" are for internal use only.
-              The "*" mark both shows in the listing, and also prevents
-              their use in the intermediate file, since only alpha
-              characters are allowed as opcode labels.
-
-           2. "---" entries are no longer used, but left here to keep the
-              original instruction numbers from P4. They could be safely
-              assigned to other instructions if the space is needed.
-
-         }
-         instr[  0]:='lodi      '; insr[  0] := 1; insf[  0] := false; inss[  0] := false;
-         instr[  1]:='ldoi      '; insr[  1] := 1; insf[  1] := false; inss[  1] := false;
-         instr[  2]:='stri      '; insr[  2] := 0; insf[  2] := false; inss[  2] := false;
-         instr[  3]:='sroi      '; insr[  3] := 0; insf[  3] := false; inss[  3] := false;
-         instr[  4]:='lda       '; insr[  4] := 1; insf[  4] := false; inss[  4] := false;
-         instr[  5]:='lao       '; insr[  5] := 1; insf[  5] := false; inss[  5] := false;
-         instr[  6]:='stoi      '; insr[  6] := 0; insf[  6] := false; inss[  6] := false;
-         instr[  7]:='ldcs      '; insr[  7] := 1; insf[  7] := false; inss[  7] := true;
-         instr[  8]:='cjp       '; insr[  8] := 0; insf[  8] := false; inss[  8] := false;
-         instr[  9]:='indi      '; insr[  9] := 1; insf[  9] := false; inss[  9] := false;
-         instr[ 10]:='inci      '; insr[ 10] := 1; insf[ 10] := false; inss[ 10] := false;
-         instr[ 11]:='mst       '; insr[ 11] := 0; insf[ 11] := false; inss[ 11] := false;
-         instr[ 12]:='cup       '; insr[ 12] := 0; insf[ 12] := false; inss[ 12] := false;
-         instr[ 13]:='rip       '; insr[ 13] := 0; insf[ 13] := false; inss[ 13] := false;
-         instr[ 14]:='retp      '; insr[ 14] := 0; insf[ 14] := false; inss[ 14] := false;
-         instr[ 15]:='csp       '; insr[ 15] := 0; insf[ 15] := false; inss[ 15] := false;
-         instr[ 16]:='ixa       '; insr[ 16] := 1; insf[ 16] := false; inss[ 16] := false;
-         instr[ 17]:='equa      '; insr[ 17] := 1; insf[ 17] := false; inss[ 17] := false;
-         instr[ 18]:='neqa      '; insr[ 18] := 1; insf[ 18] := false; inss[ 18] := false;
-         instr[ 19]:='brk*      '; insr[ 19] := 0; insf[ 19] := false; inss[ 19] := false;
-         instr[ 20]:='lnp*      '; insr[ 20] := 0; insf[ 20] := false; inss[ 20] := false;
-         instr[ 21]:='cal       '; insr[ 21] := 1; insf[ 21] := false; inss[ 21] := false;
-         instr[ 22]:='ret       '; insr[ 22] := 0; insf[ 22] := false; inss[ 22] := false;
-         instr[ 23]:='ujp       '; insr[ 23] := 0; insf[ 23] := false; inss[ 23] := false;
-         instr[ 24]:='fjp       '; insr[ 24] := 0; insf[ 24] := false; inss[ 24] := false;
-         instr[ 25]:='xjp       '; insr[ 25] := 0; insf[ 25] := false; inss[ 25] := false;
-         instr[ 26]:='chki      '; insr[ 26] := 1; insf[ 26] := false; inss[ 26] := false;
-         instr[ 27]:='cuv       '; insr[ 27] := 0; insf[ 27] := false; inss[ 27] := false;
-         instr[ 28]:='adi       '; insr[ 28] := 1; insf[ 28] := false; inss[ 28] := false;
-         instr[ 29]:='adr       '; insr[ 29] := 1; insf[ 29] := true;  inss[ 29] := false; 
-         instr[ 30]:='sbi       '; insr[ 30] := 1; insf[ 30] := false; inss[ 30] := false;
-         instr[ 31]:='sbr       '; insr[ 31] := 1; insf[ 31] := true;  inss[ 31] := false; 
-         instr[ 32]:='sgs       '; insr[ 32] := 1; insf[ 32] := false; inss[ 32] := true;
-         instr[ 33]:='flt       '; insr[ 33] := 1; insf[ 33] := true; inss[ 33] := false;
-         instr[ 34]:='flo       '; insr[ 34] := 2; insf[ 34] := true; inss[ 34] := false;
-         instr[ 35]:='trc       '; insr[ 35] := 1; insf[ 35] := false; inss[ 35] := false;
-         instr[ 36]:='ngi       '; insr[ 36] := 1; insf[ 36] := false; inss[ 36] := false;
-         instr[ 37]:='ngr       '; insr[ 37] := 1; insf[ 37] := true;  inss[ 37] := false; 
-         instr[ 38]:='sqi       '; insr[ 38] := 1; insf[ 38] := false; inss[ 38] := false;
-         instr[ 39]:='sqr       '; insr[ 39] := 1; insf[ 39] := true;  inss[ 39] := false; 
-         instr[ 40]:='abi       '; insr[ 40] := 1; insf[ 40] := false; inss[ 40] := false;
-         instr[ 41]:='abr       '; insr[ 41] := 1; insf[ 41] := true;  inss[ 41] := false; 
-         instr[ 42]:='notb      '; insr[ 42] := 1; insf[ 42] := false; inss[ 42] := false;
-         instr[ 43]:='and       '; insr[ 43] := 1; insf[ 43] := false; inss[ 43] := false;
-         instr[ 44]:='ior       '; insr[ 44] := 1; insf[ 44] := false; inss[ 44] := false;
-         instr[ 45]:='dif       '; insr[ 45] := 1; insf[ 45] := false; inss[ 45] := true;
-         instr[ 46]:='int       '; insr[ 46] := 1; insf[ 46] := false; inss[ 46] := true;
-         instr[ 47]:='uni       '; insr[ 47] := 1; insf[ 47] := false; inss[ 47] := true;
-         instr[ 48]:='inn       '; insr[ 48] := 1; insf[ 48] := false; inss[ 48] := false;
-         instr[ 49]:='mod       '; insr[ 49] := 1; insf[ 49] := false; inss[ 49] := false;
-         instr[ 50]:='odd       '; insr[ 50] := 1; insf[ 50] := false; inss[ 50] := false;
-         instr[ 51]:='mpi       '; insr[ 51] := 1; insf[ 51] := false; inss[ 51] := false;
-         instr[ 52]:='mpr       '; insr[ 52] := 1; insf[ 52] := true;  inss[ 52] := false; 
-         instr[ 53]:='dvi       '; insr[ 53] := 1; insf[ 53] := false; inss[ 53] := false;
-         instr[ 54]:='dvr       '; insr[ 54] := 1; insf[ 54] := true;  inss[ 54] := false; 
-         instr[ 55]:='mov       '; insr[ 55] := 0; insf[ 55] := false; inss[ 55] := false;
-         instr[ 56]:='lca       '; insr[ 56] := 1; insf[ 56] := false; inss[ 56] := false;
-         instr[ 57]:='deci      '; insr[ 57] := 1; insf[ 57] := false; inss[ 57] := false;
-         instr[ 58]:='stp*      '; insr[ 58] := 0; insf[ 58] := false; inss[ 58] := false;
-         instr[ 59]:='ordi      '; insr[ 59] := 1; insf[ 59] := false; inss[ 59] := false;
-         instr[ 60]:='chr       '; insr[ 60] := 1; insf[ 60] := false; inss[ 60] := false;
-         instr[ 61]:='ujc       '; insr[ 61] := 0; insf[ 61] := false; inss[ 61] := false;
-         instr[ 62]:='rnd       '; insr[ 62] := 1; insf[ 62] := false; inss[ 62] := false;
-         instr[ 63]:='pck       '; insr[ 63] := 0; insf[ 63] := false; inss[ 63] := false;
-         instr[ 64]:='upk       '; insr[ 64] := 0; insf[ 64] := false; inss[ 64] := false;
-         instr[ 65]:='ldoa      '; insr[ 65] := 1; insf[ 65] := false; inss[ 65] := false;
-         instr[ 66]:='ldor      '; insr[ 66] := 1; insf[ 66] := true;  inss[ 66] := false; 
-         instr[ 67]:='ldos      '; insr[ 67] := 1; insf[ 67] := false; inss[ 67] := true;
-         instr[ 68]:='ldob      '; insr[ 68] := 1; insf[ 68] := false; inss[ 68] := false;
-         instr[ 69]:='ldoc      '; insr[ 69] := 1; insf[ 69] := false; inss[ 69] := false;
-         instr[ 70]:='stra      '; insr[ 70] := 0; insf[ 70] := false; inss[ 70] := false;
-         instr[ 71]:='strr      '; insr[ 71] := 0; insf[ 71] := false; inss[ 71] := false;
-         instr[ 72]:='strs      '; insr[ 72] := 0; insf[ 72] := false; inss[ 72] := false;
-         instr[ 73]:='strb      '; insr[ 73] := 0; insf[ 73] := false; inss[ 73] := false;
-         instr[ 74]:='strc      '; insr[ 74] := 0; insf[ 74] := false; inss[ 74] := false;
-         instr[ 75]:='sroa      '; insr[ 75] := 0; insf[ 75] := false; inss[ 75] := false;
-         instr[ 76]:='sror      '; insr[ 76] := 0; insf[ 76] := true;  inss[ 76] := false; 
-         instr[ 77]:='sros      '; insr[ 77] := 0; insf[ 77] := false; inss[ 77] := false;
-         instr[ 78]:='srob      '; insr[ 78] := 0; insf[ 78] := false; inss[ 78] := false;
-         instr[ 79]:='sroc      '; insr[ 79] := 0; insf[ 79] := false; inss[ 79] := false;
-         instr[ 80]:='stoa      '; insr[ 80] := 0; insf[ 80] := false; inss[ 80] := false;
-         instr[ 81]:='stor      '; insr[ 81] := 0; insf[ 81] := false; inss[ 81] := false;
-         instr[ 82]:='stos      '; insr[ 82] := 0; insf[ 82] := false; inss[ 82] := false;
-         instr[ 83]:='stob      '; insr[ 83] := 0; insf[ 83] := false; inss[ 83] := false;
-         instr[ 84]:='stoc      '; insr[ 84] := 0; insf[ 84] := false; inss[ 84] := false;
-         instr[ 85]:='inda      '; insr[ 85] := 1; insf[ 85] := false; inss[ 85] := false;
-         instr[ 86]:='indr      '; insr[ 86] := 1; insf[ 86] := true;  inss[ 86] := false; 
-         instr[ 87]:='inds      '; insr[ 87] := 1; insf[ 87] := false; inss[ 87] := true;
-         instr[ 88]:='indb      '; insr[ 88] := 1; insf[ 88] := false; inss[ 88] := false;
-         instr[ 89]:='indc      '; insr[ 89] := 1; insf[ 89] := false; inss[ 89] := false;
-         instr[ 90]:='inca      '; insr[ 90] := 1; insf[ 90] := false; inss[ 90] := false;
-         instr[ 91]:='suv       '; insr[ 91] := 0; insf[ 91] := false; inss[ 91] := false;
-         instr[ 92]:='vbs       '; insr[ 92] := 0; insf[ 92] := false; inss[ 92] := false;
-         instr[ 93]:='incb      '; insr[ 93] := 1; insf[ 93] := false; inss[ 93] := false;
-         instr[ 94]:='incc      '; insr[ 94] := 1; insf[ 94] := false; inss[ 94] := false;
-         instr[ 95]:='chka      '; insr[ 95] := 1; insf[ 95] := false; inss[ 95] := false;
-         instr[ 96]:='vbe       '; insr[ 96] := 0; insf[ 96] := false; inss[ 96] := false;
-         instr[ 97]:='chks      '; insr[ 97] := 0; insf[ 97] := false; inss[ 97] := true;
-         instr[ 98]:='chkb      '; insr[ 98] := 1; insf[ 98] := false; inss[ 98] := false;
-         instr[ 99]:='chkc      '; insr[ 99] := 1; insf[ 99] := false; inss[ 99] := false;
-         instr[100]:='cvbi      '; insr[100] := 2; insf[100] := false; inss[100] := false;
-         instr[101]:='ivtx      '; insr[101] := 2; insf[101] := false; inss[101] := false;
-         instr[102]:='ivtb      '; insr[102] := 2; insf[102] := false; inss[102] := false;
-         instr[103]:='decb      '; insr[103] := 1; insf[103] := false; inss[103] := false;
-         instr[104]:='decc      '; insr[104] := 1; insf[104] := false; inss[104] := false;
-         instr[105]:='loda      '; insr[105] := 1; insf[105] := false; inss[105] := false;
-         instr[106]:='lodr      '; insr[106] := 1; insf[106] := true;  inss[106] := false; 
-         instr[107]:='lods      '; insr[107] := 1; insf[107] := false; inss[107] := true;
-         instr[108]:='lodb      '; insr[108] := 1; insf[108] := false; inss[108] := false;
-         instr[109]:='lodc      '; insr[109] := 1; insf[109] := false; inss[109] := false;
-         instr[110]:='rgs       '; insr[110] := 1; insf[110] := false; inss[110] := true;
-         instr[111]:='ivtc      '; insr[111] := 2; insf[111] := false; inss[111] := false;
-         instr[112]:='ipj       '; insr[112] := 0; insf[112] := false; inss[112] := false;
-         instr[113]:='cip       '; insr[113] := 0; insf[113] := false; inss[113] := false;
-         instr[114]:='lpa       '; insr[114] := 2; insf[114] := false; inss[114] := false;
-         instr[115]:='cvbx      '; insr[115] := 2; insf[115] := false; inss[115] := false;
-         instr[116]:='cvbb      '; insr[116] := 2; insf[116] := false; inss[116] := false;
-         instr[117]:='dmp       '; insr[117] := 0; insf[117] := false; inss[117] := false;
-         instr[118]:='swp       '; insr[118] := 2; insf[118] := false; inss[118] := false;
-         instr[119]:='tjp       '; insr[119] := 0; insf[119] := false; inss[119] := false;
-         instr[120]:='lip       '; insr[120] := 2; insf[120] := false; inss[120] := false;
-         instr[121]:='cvbc      '; insr[121] := 2; insf[121] := false; inss[121] := false;
-         instr[122]:='vis       '; insr[122] := 1; insf[122] := false; inss[122] := false;
-         instr[123]:='ldci      '; insr[123] := 1; insf[123] := false; inss[123] := false;
-         instr[124]:='ldcr      '; insr[124] := 1; insf[124] := true;  inss[124] := false; 
-         instr[125]:='ldcn      '; insr[125] := 1; insf[125] := false; inss[125] := false;
-         instr[126]:='ldcb      '; insr[126] := 1; insf[126] := false; inss[126] := false;
-         instr[127]:='ldcc      '; insr[127] := 1; insf[127] := false; inss[127] := false;
-         instr[128]:='reti      '; insr[128] := 1; insf[128] := false; inss[128] := false;
-         instr[129]:='retr      '; insr[129] := 1; insf[129] := false; inss[129] := false;
-         instr[130]:='retc      '; insr[130] := 1; insf[130] := false; inss[130] := false;
-         instr[131]:='retb      '; insr[131] := 1; insf[131] := false; inss[131] := false;
-         instr[132]:='reta      '; insr[132] := 1; insf[132] := false; inss[132] := false;
-         instr[133]:='vip       '; insr[133] := 0; insf[133] := false; inss[133] := false;
-         instr[134]:='ordb      '; insr[134] := 1; insf[134] := false; inss[134] := false;
-         instr[135]:='lcp       '; insr[135] := 2; insf[135] := false; inss[135] := false;
-         instr[136]:='ordc      '; insr[136] := 1; insf[136] := false; inss[136] := false;
-         instr[137]:='equi      '; insr[137] := 1; insf[137] := false; inss[137] := false;
-         instr[138]:='equr      '; insr[138] := 1; insf[138] := false; inss[138] := false;
-         instr[139]:='equb      '; insr[139] := 1; insf[139] := false; inss[139] := false;
-         instr[140]:='equs      '; insr[140] := 1; insf[140] := false; inss[140] := false;
-         instr[141]:='equc      '; insr[141] := 1; insf[141] := false; inss[141] := false;
-         instr[142]:='equm      '; insr[142] := 1; insf[142] := false; inss[142] := false;
-         instr[143]:='neqi      '; insr[143] := 1; insf[143] := false; inss[143] := false;
-         instr[144]:='neqr      '; insr[144] := 1; insf[144] := false; inss[144] := false;
-         instr[145]:='neqb      '; insr[145] := 1; insf[145] := false; inss[145] := false;
-         instr[146]:='neqs      '; insr[146] := 1; insf[146] := false; inss[146] := false;
-         instr[147]:='neqc      '; insr[147] := 1; insf[147] := false; inss[147] := false;
-         instr[148]:='neqm      '; insr[148] := 1; insf[148] := false; inss[148] := false;
-         instr[149]:='geqi      '; insr[149] := 1; insf[149] := false; inss[149] := false;
-         instr[150]:='geqr      '; insr[150] := 1; insf[150] := false; inss[150] := false;
-         instr[151]:='geqb      '; insr[151] := 1; insf[151] := false; inss[151] := false;
-         instr[152]:='geqs      '; insr[152] := 1; insf[152] := false; inss[152] := false;
-         instr[153]:='geqc      '; insr[153] := 1; insf[153] := false; inss[153] := false;
-         instr[154]:='geqm      '; insr[154] := 1; insf[154] := false; inss[154] := false;
-         instr[155]:='grti      '; insr[155] := 1; insf[155] := false; inss[155] := false;
-         instr[156]:='grtr      '; insr[156] := 1; insf[156] := false; inss[156] := false;
-         instr[157]:='grtb      '; insr[157] := 1; insf[157] := false; inss[157] := false;
-         instr[158]:='grts      '; insr[158] := 1; insf[158] := false; inss[158] := false;
-         instr[159]:='grtc      '; insr[159] := 1; insf[159] := false; inss[159] := false;
-         instr[160]:='grtm      '; insr[160] := 1; insf[160] := false; inss[160] := false;
-         instr[161]:='leqi      '; insr[161] := 1; insf[161] := false; inss[161] := false;
-         instr[162]:='leqr      '; insr[162] := 1; insf[162] := false; inss[162] := false;
-         instr[163]:='leqb      '; insr[163] := 1; insf[163] := false; inss[163] := false;
-         instr[164]:='leqs      '; insr[164] := 1; insf[164] := false; inss[164] := false;
-         instr[165]:='leqc      '; insr[165] := 1; insf[165] := false; inss[165] := false;
-         instr[166]:='leqm      '; insr[166] := 1; insf[166] := false; inss[166] := false;
-         instr[167]:='lesi      '; insr[167] := 1; insf[167] := false; inss[167] := false;
-         instr[168]:='lesr      '; insr[168] := 1; insf[168] := false; inss[168] := false;
-         instr[169]:='lesb      '; insr[169] := 1; insf[169] := false; inss[169] := false;
-         instr[170]:='less      '; insr[170] := 1; insf[170] := false; inss[170] := false;
-         instr[171]:='lesc      '; insr[171] := 1; insf[171] := false; inss[171] := false;
-         instr[172]:='lesm      '; insr[172] := 1; insf[172] := false; inss[172] := false;
-         instr[173]:='---       '; insr[173] := 0; insf[173] := false; inss[173] := false;
-         instr[174]:='mrkl*     '; insr[174] := 0; insf[174] := false; inss[174] := false;
-         instr[175]:='ckvi      '; insr[175] := 2; insf[175] := false; inss[175] := false;
-         instr[176]:='cps       '; insr[176] := 3; insf[176] := false; inss[176] := false;
-         instr[177]:='cpc       '; insr[177] := 3; insf[177] := false; inss[177] := false;
-         instr[178]:='aps       '; insr[178] := 0; insf[178] := false; inss[178] := false;
-         instr[179]:='ckvb      '; insr[179] := 2; insf[179] := false; inss[179] := false;
-         instr[180]:='ckvc      '; insr[180] := 2; insf[180] := false; inss[180] := false;
-         instr[181]:='dupi      '; insr[181] := 1; insf[181] := false; inss[181] := false;
-         instr[182]:='dupa      '; insr[182] := 2; insf[182] := false; inss[182] := false;
-         instr[183]:='dupr      '; insr[183] := 1; insf[183] := true;  inss[183] := false; 
-         instr[184]:='dups      '; insr[184] := 1; insf[184] := false; inss[184] := true;
-         instr[185]:='dupb      '; insr[185] := 1; insf[185] := false; inss[185] := false;
-         instr[186]:='dupc      '; insr[186] := 1; insf[186] := false; inss[186] := false;
-         instr[187]:='cks       '; insr[187] := 2; insf[187] := false; inss[187] := false;
-         instr[188]:='cke       '; insr[188] := 0; insf[188] := false; inss[188] := false;
-         instr[189]:='inv       '; insr[189] := 0; insf[189] := false; inss[189] := false;
-         instr[190]:='ckla      '; insr[190] := 1; insf[190] := false; inss[190] := false;
-         instr[191]:='cta       '; insr[191] := 2; insf[191] := false; inss[191] := false;
-         instr[192]:='ivti      '; insr[192] := 2; insf[192] := false; inss[192] := false;
-         instr[193]:='lodx      '; insr[193] := 1; insf[193] := false; inss[193] := false;
-         instr[194]:='ldox      '; insr[194] := 1; insf[194] := false; inss[194] := false;
-         instr[195]:='strx      '; insr[195] := 0; insf[195] := false; inss[195] := false;
-         instr[196]:='srox      '; insr[196] := 1; insf[196] := false; inss[196] := false;
-         instr[197]:='stox      '; insr[197] := 0; insf[197] := false; inss[197] := false;
-         instr[198]:='indx      '; insr[198] := 1; insf[198] := false; inss[198] := false;
-         instr[199]:='chkx      '; insr[199] := 1; insf[199] := false; inss[199] := false;
-         instr[200]:='ordx      '; insr[200] := 1; insf[200] := false; inss[200] := false;
-         instr[201]:='incx      '; insr[201] := 1; insf[201] := false; inss[201] := false;
-         instr[202]:='decx      '; insr[202] := 1; insf[202] := false; inss[202] := false;
-         instr[203]:='ckvx      '; insr[203] := 2; insf[203] := false; inss[203] := false;
-         instr[204]:='retx      '; insr[204] := 1; insf[204] := false; inss[204] := false;
-         instr[205]:='noti      '; insr[205] := 1; insf[205] := false; inss[205] := false;
-         instr[206]:='xor       '; insr[206] := 1; insf[206] := false; inss[206] := false;
-         instr[207]:='bge       '; insr[207] := 4; insf[207] := false; inss[207] := false;
-         instr[208]:='ede       '; insr[208] := 0; insf[208] := false; inss[208] := false;
-         instr[209]:='mse       '; insr[209] := 0; insf[209] := false; inss[209] := false;
-         instr[210]:='apc       '; insr[210] := 0; insf[210] := false; inss[210] := false;
-         instr[211]:='cxs       '; insr[211] := 1; insf[211] := false; inss[211] := false;
-         instr[212]:='cxc       '; insr[212] := 2; insf[212] := false; inss[212] := false;
-         instr[213]:='lft       '; insr[213] := 2; insf[213] := false; inss[213] := false;
-         instr[214]:='max       '; insr[214] := 1; insf[214] := false; inss[214] := false;
-         instr[215]:='equv      '; insr[215] := 1; insf[215] := false; inss[215] := false;
-         instr[216]:='neqv      '; insr[216] := 1; insf[216] := false; inss[216] := false;
-         instr[217]:='lesv      '; insr[217] := 1; insf[217] := false; inss[217] := false;
-         instr[218]:='grtv      '; insr[218] := 1; insf[218] := false; inss[218] := false;
-         instr[219]:='leqv      '; insr[219] := 1; insf[219] := false; inss[219] := false;
-         instr[220]:='geqv      '; insr[220] := 1; insf[220] := false; inss[220] := false;
-         instr[221]:='vdp       '; insr[221] := 0; insf[221] := false; inss[221] := false;
-         instr[222]:='spc       '; insr[222] := 2; insf[222] := false; inss[222] := false;
-         instr[223]:='ccs       '; insr[223] := 2; insf[223] := false; inss[223] := false;
-         instr[224]:='scp       '; insr[224] := 0; insf[224] := false; inss[224] := false;
-         instr[225]:='ldp       '; insr[225] := 2; insf[225] := false; inss[225] := false;
-         instr[226]:='vin       '; insr[226] := 0; insf[226] := false; inss[226] := false;
-         instr[227]:='vdd       '; insr[227] := 0; insf[227] := false; inss[227] := false;
-         { ltc and lto are aliases to ldo and lao instructions }
-         instr[228]:='ltci      '; insr[228] := 1; insf[228] := false; inss[228] := false;
-         instr[229]:='ltcr      '; insr[229] := 1; insf[229] := true;  inss[229] := false; 
-         instr[230]:='ltcs      '; insr[230] := 1; insf[230] := false; inss[230] := false;
-         instr[231]:='ltcb      '; insr[231] := 1; insf[231] := false; inss[231] := false;
-         instr[232]:='ltcc      '; insr[232] := 1; insf[232] := false; inss[232] := false;
-         instr[233]:='ltcx      '; insr[233] := 1; insf[233] := false; inss[233] := false;
-         instr[234]:='lto       '; insr[234] := 1; insf[234] := false; inss[234] := false;
-         instr[235]:='stom      '; insr[235] := 0; insf[235] := false; inss[235] := false;
-         instr[236]:='rets      '; insr[236] := 1; insf[236] := false; inss[236] := true;
-         instr[237]:='retm      '; insr[237] := 1; insf[237] := false; inss[237] := false;
-         instr[238]:='ctb       '; insr[238] := 0; insf[238] := false; inss[238] := false;
-         instr[239]:='cpp       '; insr[239] := 1; insf[239] := false; inss[239] := false;
-         instr[240]:='cpr       '; insr[240] := 1; insf[240] := false; inss[240] := false;
-         instr[241]:='lsa       '; insr[241] := 1; insf[241] := false; inss[241] := false;
-         instr[242]:='eext*     '; insr[242] := 0; insf[242] := false; inss[242] := false;
-         instr[243]:='wbs       '; insr[243] := 1; insf[243] := false; inss[243] := false;
-         instr[244]:='wbe       '; insr[244] := 0; insf[244] := false; inss[244] := false;
-         instr[245]:='sfr       '; insr[245] := 0; insf[245] := false; inss[245] := false;
-         instr[246]:='cuf       '; insr[246] := 0; insf[246] := false; inss[246] := false;
-         instr[247]:='cif       '; insr[247] := 0; insf[247] := false; inss[247] := false;
-         instr[248]:='mpc       '; insr[248] := 2; insf[248] := false; inss[248] := false;
-         instr[249]:='cvf       '; insr[249] := 0; insf[249] := false; inss[249] := false;
-         instr[250]:='lsp       '; insr[250] := 2; insf[250] := false; inss[250] := false;
-         instr[251]:='cpl       '; insr[251] := 1; insf[251] := false; inss[251] := false;
-         instr[252]:='sfs       '; insr[252] := 0; insf[252] := false; inss[252] := false;
-         { sev is an alias for stra in pint. It has meaning to pgen. }
-         instr[253]:='sev       '; insr[253] := 0; insf[253] := false; inss[253] := false;
-         instr[254]:='mdc       '; insr[254] := 1; insf[254] := false; inss[254] := false;
-
+   begin 
          sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
          sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
          sptable[ 2]:='thw       '; spfunc[ 2]:=false; sppar[ 2]:=1; spkeep[ 2]:=false;   
@@ -2286,7 +2290,7 @@ procedure xlate;
       procedure dmpety(var f: text; ep: expptr; r1, r2: reg);
       begin
         write(prr, ep^.sline:6, ': ', ep^.iline:6, ': ');
-        write(f, ep^.op:3, ': ', instr[ep^.op]:4, ' ');
+        write(f, ep^.op:3, ': ', instab[ep^.op].instr:4, ' ');
         if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
         else if ep^.op in [123{ldci},126{ldcb},127{lccc}] then write(f, ep^.vi:1)
         else write(f, ep^.q:1);
@@ -2416,7 +2420,7 @@ procedure xlate;
       var isf: boolean;
       begin
         isf := false; 
-        if insf[ep^.op] then isf := true
+        if instab[ep^.op].insf then isf := true
         else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.rc = 1) then isf := true
         else if ep^.op = 15{csp} then
           if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
@@ -2457,7 +2461,7 @@ procedure xlate;
               getfreg(fr, rf); assreg(pp, rf, rgnull, rgnull)
             end;
             fpc := fpc+1
-          end else if insr[pp^.op] = 2 then begin { double register }
+          end else if instab[pp^.op].insr = 2 then begin { double register }
             if pc <= maxintparreg-1 then begin
               resreg(parreg[pc]); resreg(parreg[pc+1]); 
               assreg(pp, rf, parreg[pc], parreg[pc+1])
@@ -3248,7 +3252,7 @@ procedure xlate;
             wrtins(' pushq %1 # place 2nd register on stack', pp^.r2); 
             stkadr := stkadr-intsize
           end;
-          if inss[pp^.op] then begin
+          if instab[pp^.op].inss then begin
             wrtins(' subq $0,%rsp # allocate set', setsize);
             wrtins(' pushq %rsi # save source');
             wrtins(' pushq %rdi # save destination');
@@ -4486,7 +4490,7 @@ procedure xlate;
       p := 0;  q := 0;  q1 := 0; q2 := 0; q3 := 0; q4 := 0; op := 0; stkadr := 0;
       getname;
       { note this search removes the top instruction from use }
-      while (instr[op]<>name) and (op < maxins) do op := op+1;
+      while (instab[op].instr<>name) and (op < maxins) do op := op+1;
       if op = maxins then errorl('illegal instruction');
       prtline; write(prr, op:3, ': ', name:alflen(name)); lftjst(8-alflen(name));
       case op of
@@ -5009,7 +5013,7 @@ procedure xlate;
           popstk(ep); attach(ep); if p <> blkstk^.lvl then getreg(r1, frereg); 
           assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           if p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
             wrtins(' movq %1,@l(%2) # store qword', q, p, ep^.r1, r1)
@@ -5023,7 +5027,7 @@ procedure xlate;
           frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           if p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
             wrtins(' movb %1l,@l(%2) # store byte', q, p, ep^.r1, r1)
@@ -5037,7 +5041,7 @@ procedure xlate;
           frereg := allreg; if p <> blkstk^.lvl then getreg(r1, frereg);
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           if p <> blkstk^.lvl then begin
             wrtins(' movq ^0(%rbp),%1 # get display pointer', -p*ptrsize, r1);
             wrtins(' movsd %1,@l(%2) # store real', q, p, ep^.r1, r1)
@@ -5050,7 +5054,7 @@ procedure xlate;
         72:begin parpq;
           frereg := allreg; popstk(ep); attach(ep); assreg(ep, frereg, rgrsi, rgnull); 
           dmptre(ep); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           if p <> blkstk^.lvl then
             wrtins(' movq ^0(%rbp),%rdi # get display pointer', -p*ptrsize)
           else
@@ -5067,7 +5071,7 @@ procedure xlate;
         253: begin parpq;
           frereg := allreg-[rgrax];
           getreg(r1, frereg); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' popq %rax # get exception vector'); 
           wrtins(' pushq %rax # replace'); 
           if p <> blkstk^.lvl then begin
@@ -5091,7 +5095,7 @@ procedure xlate;
           frereg := allreg;
           { We limit to the enter instruction }
           if p >= 32 then errorl('Too many nested levels');
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' pushq $0 # place current ep');
           wrtins(' pushq $0 # place bottom of stack');
           wrtins(' pushq $0 # place previous ep');
@@ -5154,7 +5158,7 @@ procedure xlate;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           if (op = 78{srob}) or (op = 79){sroc} or (op = 196){srox} then begin
             if sp <> nil then
               wrtins(' movb %1l,@s(%rip) # store byte to global', ep^.r1, sp^)
@@ -5186,7 +5190,7 @@ procedure xlate;
           frereg := allreg;
           popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
           genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' leaq ^-@s^0(%rbp),%rsi # index temp set', ep^.r1a, lclspc^);
           if sp <> nil then
             wrtins(' leaq @g(%rip),%rdi # index global destination', ep^.r1, sp^)
@@ -5206,7 +5210,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrsi, rgnull);
           dmptre(ep); genexp(ep);
           dmptre(ep2); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq $0,%rax # get size', q);
           wrtins(' mulq %rcx # find len*size');
           wrtins(' movq %rax,%rcx # place size');
@@ -5224,7 +5228,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq $0,%rdi # get size of packed array', q);
           wrtins(' movq $0,%rsi # get size of unpacked array', q1);
           wrtins(' call psystem_pack # pack the array');
@@ -5240,7 +5244,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrcx, rgnull); frereg := frereg-[rgrcx];
           assreg(ep3, frereg, rgr8, rgnull);
           genexp(ep); genexp(ep2); genexp(ep3);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq $0,%rdi # load size of packed array', q);
           wrtins(' movq $0,%rsi # load size of unpacked array', q1);
           wrtins(' call psystem_unpack # unpack the array');
@@ -5263,7 +5267,7 @@ procedure xlate;
           write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' orb %1l,%1l # move boolean to flags', ep^.r1);
           if op = 24{fjp} then wrtins(' jz @s # go if false', sp^)
           else {tjp} wrtins(' jnz @s # go if true', sp^);
@@ -5276,7 +5280,7 @@ procedure xlate;
           frereg := allreg; popstk(ep); getreg(r1, frereg);
           assreg(ep, frereg, rgnull, rgnull); 
           dmptre(ep); genexp(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq %1,%2 # make factoring copy of index', ep^.r1, r1);
           wrtins(' salq $2,%1 # *4', ep^.r1);
           wrtins(' addq %2,%1 # *5', ep^.r1, r1);
@@ -5290,7 +5294,7 @@ procedure xlate;
         {ipj}
         112: begin read(prd,p); labelsearch(def, val, sp, blk); write(prr, p:1, ' l ');
           write(prr, sp^); lftjst(parfld-(digits(p)+3+max(sp^))); pass;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize);
           wrtins(' movq ^0(%rbp),%rsp # get stack for target', marksb);
           wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
@@ -5302,7 +5306,7 @@ procedure xlate;
         92: begin parq;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgrdi, rgnull); dmptrel(ep, 19); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq %rdi,%rsi # set start of variable block');
           wrtins(' addq $0,%rsi # set end of variable block', ep^.q-1);
           wrtins(' call psystem_varenter # establish variable reference block');
@@ -5312,7 +5316,7 @@ procedure xlate;
 
         {vbe}
         96: begin par;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' call psystem_varexit # remove variable reference block');
           botstk
         end;
@@ -5327,7 +5331,7 @@ procedure xlate;
         {retp,retm}
         14,237: begin parq;
           frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' popq %r15 # undo alignment push');
           wrtins(' popq %r15 # restore protected registers');
           wrtins(' popq %r14');
@@ -5349,7 +5353,7 @@ procedure xlate;
         {reti,reta,retx,retc,retb}
         128,132,204,130,131: begin parq;
           frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' popq %r15 # undo alignment push');
           wrtins(' popq %r15 # restore protected registers');
           wrtins(' popq %r14');
@@ -5372,7 +5376,7 @@ procedure xlate;
         {retr}
         129: begin parq;
           frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           { restore protected registers }
           wrtins(' popq %r15 # undo alignment push');
           wrtins(' popq %r15 # restore protected registers');
@@ -5395,7 +5399,7 @@ procedure xlate;
         {rets}
         236: begin parq;
           frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           { restore protected registers }
           wrtins(' popq %r15 # undo alignment push');
           wrtins(' popq %r15 # restore protected registers');
@@ -5421,7 +5425,7 @@ procedure xlate;
           assreg(ep2, frereg, rgnull,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           case op of
             6{stoi},80{stoa}: wrtins(' movq %1,(%2) # store quad to address', q, ep2^.r1, ep^.r1);
             81{stor}: wrtins(' movsd %1,(%2) # store real to address', q, ep2^.r1, ep^.r1);
@@ -5438,7 +5442,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrsi,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movsq # store set to address');
           wrtins(' movsq');
           wrtins(' movsq');
@@ -5454,7 +5458,7 @@ procedure xlate;
           assreg(ep2, frereg, rgrsi,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq $0,%rcx # set length', q);
           wrtins(' repnz # move structure to address');
           wrtins(' movsb');
@@ -5472,7 +5476,7 @@ procedure xlate;
         end;
 
         61 {ujc}: begin par;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' call psystem_caseerror');
           botstk
         end;
@@ -5484,7 +5488,7 @@ procedure xlate;
           frereg := allreg; popstk(ep); 
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' cmpq $0,%1 # check against low bound', q, ep^.r1);
           wrtins(' jl 1f # skip if lower');
           wrtins(' cmpq $0,%1 # check against high bound', q1, ep^.r1);
@@ -5496,7 +5500,7 @@ procedure xlate;
         {wbe}
         244: begin par;
           frereg := allreg;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' call psystem_withexit # remove last with');
           botstk
         end;
@@ -5505,7 +5509,7 @@ procedure xlate;
         133: begin parqq;
           frereg := allreg;
           popstk(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
           wrtins(' movq $0,%rdi # load # levels', q);
@@ -5521,7 +5525,7 @@ procedure xlate;
         122: begin parqq;
           frereg := allreg;
           popstk(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
           wrtins(' movq $0,%rdi # index level', q, r1);
@@ -5543,7 +5547,7 @@ procedure xlate;
         226: begin parqq;
           frereg := allreg;
           popstk(ep); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           pshexps(q); 
           assreg(ep, frereg, rgrdx, rgnull); dmptre(ep); genexp(ep);
           wrtins(' movq $0,%rdi # load # levels', q, r1);
@@ -5569,7 +5573,7 @@ procedure xlate;
             write(prr, ' ',q1:1); 
             lftjst(parfld-(3+max(sp^)+1+digits(q1))); pass
           end;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' leaq @s(%rip),%rax # get new vector address', sp^);
 
           if sp2 <> nil then wrtins(' movq %rax,@s(%rip) #  place new vector', sp2^)
@@ -5579,14 +5583,14 @@ procedure xlate;
         {cal}
         21: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' call @s # call routine/initializer', sp^);
         end;
 
         {bge}
         207: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
           write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' pushq psystem_expadr(%rip) # save current exception frame');
           wrtins(' pushq psystem_expstk(%rip)');
           wrtins(' pushq psystem_expmrk(%rip)');          
@@ -5600,7 +5604,7 @@ procedure xlate;
 
         {ede}
         208: begin par;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' popq %rax # Dispose vector');
           wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
           wrtins(' popq psystem_expstk(%rip)');
@@ -5610,7 +5614,7 @@ procedure xlate;
 
         {mse}
         209: begin par;
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' popq %rdx # get error vector');
           wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
           wrtins(' popq psystem_expstk(%rip)');
@@ -5639,7 +5643,7 @@ procedure xlate;
           popstk(ep); popstk(ep2);
           assreg(ep, frereg, rgrdx, rgnull); frereg := frereg-[rgrdx];
           assreg(ep2, frereg, rgrcx, rgr8); 
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           dmptre(ep2); genexp(ep2);
           dmptre(ep); genexp(ep);
           wrtins(' movq $0,%rdi # load # levels ', q, r1);
@@ -5654,7 +5658,7 @@ procedure xlate;
           frereg := allreg;
           popstk(ep);
           assreg(ep, frereg, rgrdi, rgnull);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           dmptre(ep); genexp(ep);
           wrtins(' movq $0,%rsi # load size', 1);
           wrtins(' call psystem_dsp # dispose of vector');
@@ -5672,7 +5676,7 @@ procedure xlate;
           assreg(ep2, frereg, rgnull, rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq %1,(%2) # store array address', ep2^.r1, ep^.r1);
           wrtins(' addq $0,%1 # skip to template', intsize, ep^.r1);
           wrtins(' movq %1,(%2) # store template', ep2^.r2, ep^.r1)
@@ -5685,7 +5689,7 @@ procedure xlate;
           frereg := frereg-[rgrdi,rgrsi,rgrcx];
           assreg(ep, frereg, rgnull, rgnull);
           dmptre(ep); genexp(ep);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq %1,%rdi # index destination', q, ep^.r1);
           wrtins(' movq %rsp,%rsi # index stack data', q);
           wrtins(' movq $0,%rcx # set length', q);
@@ -5715,7 +5719,7 @@ procedure xlate;
           assreg(ep, frereg, rgrsi,  rgnull);
           dmptre(ep); dmptre(ep2);
           genexp(ep); genexp(ep2);
-          writeln(prr, '# generating: ', op:3, ': ', instr[op]);
+          writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
           wrtins(' movq $0,%rcx # set length', q);
           wrtins(' repnz # move structure to address');
           wrtins(' movsb');
