@@ -1988,7 +1988,7 @@ procedure xlate;
                          cstp2^.b := i; cstp2^.boln := 0
                        end;
                   'x': begin
-                         getnxt; read(prd,i); new(cstp2); cstp2^.ct := cvalx;
+                         getnxt; read(prd,v); new(cstp2); cstp2^.ct := cvalx;
                          cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                          cstp2^.x := v; cstp2^.valxn := 0
                        end;
