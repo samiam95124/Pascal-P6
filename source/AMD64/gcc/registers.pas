@@ -24,6 +24,31 @@ reg = (rgnull, rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp,
        rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14, rgxmm15);
 regset = set of reg;
 
+{ set assignment preference registers }
+fixed
+
+{ integer register assignment order }
+intassord: array [1..maxintreg] of reg = array
+    rgrbx, rgr12, rgr13, rgr14, rgr15, rgrcx, rgr8, rgr9, rgr10, rgr11, rgrsi, 
+    rgrdi, rgrdx, rgrax
+end;
+
+{ floating point register assignment order }
+fltassord: array [1..maxfltreg] of reg = array
+    rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13, rgxmm14, rgxmm15, 
+    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, rgxmm7
+end;
+
+{ parameter registers }
+parreg: array [1..7] of reg = array
+    rgrdi, rgrsi, rgrdx, rgrcx, rgr8, rgr9, rgnull
+end;
+
+{ floating point parameter registers }
+parregf: array [1..8] of reg = array
+    rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, rgxmm7
+end;
+
 procedure wrtreg(var f: text; r: reg);
 begin
   case r of

@@ -943,11 +943,7 @@ procedure xlate;
         estack, efree: expptr; { expression stack }
         jmpstr: expptr; { unresolved jump cache }
         frereg, allreg: regset;
-        intassord: array [1..maxintreg] of reg; { integer register assignment order }
-        fltassord: array [1..maxfltreg] of reg; { floating point register assignment order }
         stacklvl: integer;
-        parreg: array [1..7] of reg; { parameter registers }
-        parregf: array [1..8] of reg; { floating point parameter registers }
         expsn: integer; { expression entries sn }
         tmpoff: address; { starting address of set temps offset in stack }
         tmpspc: address; { size of temps area }
@@ -1093,55 +1089,6 @@ procedure xlate;
                     rgxmm14,
                     rgxmm15];
          frereg := allreg;
-         { set parameter registers }
-         parreg[1] :=rgrdi;
-         parreg[2] :=rgrsi;
-         parreg[3] :=rgrdx;
-         parreg[4] :=rgrcx;
-         parreg[5] :=rgr8;
-         parreg[6] :=rgr9;
-         parreg[7] :=rgnull;
-
-         parregf[1] :=rgxmm0;
-         parregf[2] :=rgxmm1;
-         parregf[3] :=rgxmm2;
-         parregf[4] :=rgxmm3;
-         parregf[5] :=rgxmm4;
-         parregf[6] :=rgxmm5;
-         parregf[7] :=rgxmm6;
-         parregf[8] :=rgxmm7;
-         { set assignment preference registers }
-         intassord[1] := rgrbx;
-         intassord[2] := rgr12; 
-         intassord[3] := rgr13; 
-         intassord[4] := rgr14; 
-         intassord[5] := rgr15;
-         intassord[6] := rgrcx; 
-         intassord[7] := rgr8;
-         intassord[8] := rgr9; 
-         intassord[9] := rgr10; 
-         intassord[10] := rgr11;
-         intassord[11] := rgrsi; 
-         intassord[12] := rgrdi; 
-         intassord[13] := rgrdx;
-         intassord[14] := rgrax;
-
-         fltassord[1] := rgxmm8;
-         fltassord[2] := rgxmm9; 
-         fltassord[3] := rgxmm10; 
-         fltassord[4] := rgxmm11; 
-         fltassord[5] := rgxmm12;
-         fltassord[6] := rgxmm13; 
-         fltassord[7] := rgxmm14; 
-         fltassord[8] := rgxmm15; 
-         fltassord[9] := rgxmm0; 
-         fltassord[10] := rgxmm1; 
-         fltassord[11] := rgxmm2; 
-         fltassord[12] := rgxmm3;
-         fltassord[13] := rgxmm4;
-         fltassord[14] := rgxmm5;
-         fltassord[15] := rgxmm6;
-         fltassord[16] := rgxmm7;
    end;(*init*)
 
    procedure errorl(view es: string); (*error in loading*)
