@@ -3072,13 +3072,15 @@ end;
   begin
     plst := fcp^.pflist;
     while plst <> nil do begin
-      if plst^.klass in [proc, func] then begin
-        write(prr, 'q('); prtpartypc(plst, fl); write(prr, ')'); fl := fl+3;
-        if plst^.klass = func then begin
-          write(prr, ':'); fl := fl+1; wrttypc(prr, plst^.idtype, fl)
-        end
-      end else wrttypc(prr, plst^.idtype, fl);
-      if plst^.next <> nil then begin write(prr, '_'); fl := fl+1 end;
+      if prcode then begin
+        if plst^.klass in [proc, func] then begin
+          write(prr, 'q('); prtpartypc(plst, fl); write(prr, ')'); fl := fl+3;
+          if plst^.klass = func then begin
+            write(prr, ':'); fl := fl+1; wrttypc(prr, plst^.idtype, fl)
+          end
+        end else wrttypc(prr, plst^.idtype, fl);
+        if plst^.next <> nil then begin write(prr, '_'); fl := fl+1 end
+      end;
       plst := plst^.next
     end
   end;
@@ -3148,146 +3150,149 @@ end;
 
   procedure intmsgneol(intcod: integer);
   begin
-    write(prr, ' ! ');
-    case intcod of
-      0: write(prr, 'Absolute value integer');
-      1: write(prr, 'Absolute value real');
-      2: write(prr, 'Add integers');
-      3: write(prr, 'Add reals');
-      4: write(prr, 'And booleans');
-      5: write(prr, 'Set difference');
-      6: write(prr, 'Divide integers');
-      7: write(prr, 'Divide reals');
-      8: write(prr, 'Load constant(t)');
-      9: write(prr, 'Convert sos stack to float');
-      10: write(prr, 'Convert tos to float');
-      11: write(prr, 'Set inclusion');
-      12: write(prr, 'Set intersection');
-      13: write(prr, 'Inclusive or booleans');
-      14: write(prr, 'Modulo integers');
-      15: write(prr, 'Multiply integers');
-      16: write(prr, 'Multiply reals');
-      17: write(prr, 'Negate integer');
-      18: write(prr, 'Negate real');
-      19: write(prr, 'Not(t)');
-      20: write(prr, 'Odd');
-      21: write(prr, 'Subtract integer');
-      22: write(prr, 'Subtract real');
-      23: write(prr, 'Singleton set');
-      24: write(prr, 'Square of integer');
-      25: write(prr, 'Square of real');
-      26: write(prr, 'Store to address(t)');
-      27: write(prr, 'Truncate real to integer');
-      28: write(prr, 'Set union');
-      29: write(prr, 'Stop execution');
-      30: write(prr, 'Call system procedure/function');
-      31: write(prr, 'Decrement(t)');
-      32: write(prr, 'Return indirect procedure/function');
-      33: write(prr, 'False jump');
-      34: write(prr, 'Increment(t)');
-      35: write(prr, 'Load indirect(t)');
-      36: write(prr, 'Scale array access');
-      37: write(prr, 'Load global address');
-      38: write(prr, 'Load constant string address');
-      39: write(prr, 'Load global value(t)');
-      40: write(prr, 'Move(copy)');
-      41: write(prr, 'Mark(frame) stack');
-      42: write(prr, 'Return from procedure/function(t)');
-      43: write(prr, 'Store global value(t)');
-      44: write(prr, 'Table(case) jump');
-      45: write(prr, 'Bounds check(t)');
-      46: write(prr, 'Call user procedure');
-      47: write(prr, 'Equal(t)');
-      48: write(prr, 'Greater than or equal(t)');
-      49: write(prr, 'Greater than(t)');
-      50: write(prr, 'Load local address');
-      51: write(prr, 'Load constant(t)');
-      52: write(prr, 'Less than or equal(t)');
-      53: write(prr, 'Less than(t)');
-      54: write(prr, 'Load local value(t)');
-      55: write(prr, 'Not equal(t)');
-      56: write(prr, 'Store local(t)');
-      57: write(prr, 'Unconditional jump');
-      58: write(prr, 'Ordinal(t)');
-      59: write(prr, 'Character from integer');
-      60: write(prr, 'Throw case error');
-      61: write(prr, 'Round float to integer');
-      62: write(prr, 'Pack array from unpacked');
-      63: write(prr, 'Unpack array from packed');
-      64: write(prr, 'Range set');
-      66: write(prr, 'Interprocedure jump');
-      67: write(prr, 'Call indirect procedure');
-      68: write(prr, 'Load procedure address');
-      71: write(prr, 'Dump tos');
-      72: write(prr, 'Swap tos with sos');
-      73: write(prr, 'True jump');
-      74: write(prr, 'Load procedure/function address');
-      75: write(prr, 'Check tagfield for active variants');
-      76: write(prr, 'Duplicate tos(t)');
-      77: write(prr, 'Terminate active variant check');
-      78: write(prr, 'Start active variant check');
-      79: write(prr, 'Invalidate address');
-      80: write(prr, 'Bounds check for record pointer(t)');
-      81: write(prr, 'Check tagfield assignment');
-      82: write(prr, 'Invalidate tagged variant(t)');
-      83: write(prr, 'Exclusive or');
-      84: write(prr, 'Begin exception frame');
-      85: write(prr, 'End exception frame');
-      86: write(prr, 'Handle next exception frame');
-      87: write(prr, 'Compare and jump');
-      89: write(prr, 'Call initializer code strip');
-      90: write(prr, 'Return code strip');
-      91: write(prr, 'Call virtual procedure');
-      92: write(prr, 'Set virtual procedure/function vector');
-      93: write(prr, 'Variable reference block start');
-      94: write(prr, 'Variable reference block end');
-      95: write(prr, 'Check change to tagfield(t)');
-      96: write(prr, 'Vector initialize stack');
-      97: write(prr, 'Vector initialize pointer global');
-      98: write(prr, 'Load complex pointer');
-      99: write(prr, 'Compare simple templates');
-      100: write(prr, 'Compare complex templates');
-      101: write(prr, 'Assign simple pointer data');
-      102: write(prr, 'Assign pointer complex');
-      103: write(prr, 'Simple container index');
-      104: write(prr, 'Complex container index');
-      105: write(prr, 'Load complex fixed container');
-      106: write(prr, 'Maximum dimension of array');
-      107: write(prr, 'Vector dispose array');
-      108: write(prr, 'Simplify complex pointer');
-      109: write(prr, 'Copy complex container to stack');
-      110: write(prr, 'Store complex pointer');
-      111: write(prr, 'Load complex pointer');
-      112: write(prr, 'Vector initialize dynamic');
-      113: write(prr, 'Vector dispose array');
-      114: write(prr, 'Load constant address');
-      115: write(prr, 'Copy to buffer');
-      116: write(prr, 'Copy procedure parameter');
-      117: write(prr, 'Copy result');
-      118: write(prr, 'Load stack address');
-      119: write(prr, 'With block start');
-      120: write(prr, 'With block end');
-      121: write(prr, 'Set function result');
-      122: write(prr, 'Call user function');
-      123: write(prr, 'Call indirect function');
-      124: write(prr, 'Make fat pointer from components');
-      125: write(prr, 'Call virtual function');
-      126: write(prr, 'Load stack complex pointer');
-      127: write(prr, 'Copy length from complex pointer');
-      128: write(prr, 'Store structured value from stack');
-      129: write(prr, 'Store exception vector');
-      130: write(prr, 'Make dynamic complex pointer');
+    if prcode then begin
+      write(prr, ' ! ');
+      case intcod of
+        0: write(prr, 'Absolute value integer');
+        1: write(prr, 'Absolute value real');
+        2: write(prr, 'Add integers');
+        3: write(prr, 'Add reals');
+        4: write(prr, 'And booleans');
+        5: write(prr, 'Set difference');
+        6: write(prr, 'Divide integers');
+        7: write(prr, 'Divide reals');
+        8: write(prr, 'Load constant(t)');
+        9: write(prr, 'Convert sos stack to float');
+        10: write(prr, 'Convert tos to float');
+        11: write(prr, 'Set inclusion');
+        12: write(prr, 'Set intersection');
+        13: write(prr, 'Inclusive or booleans');
+        14: write(prr, 'Modulo integers');
+        15: write(prr, 'Multiply integers');
+        16: write(prr, 'Multiply reals');
+        17: write(prr, 'Negate integer');
+        18: write(prr, 'Negate real');
+        19: write(prr, 'Not(t)');
+        20: write(prr, 'Odd');
+        21: write(prr, 'Subtract integer');
+        22: write(prr, 'Subtract real');
+        23: write(prr, 'Singleton set');
+        24: write(prr, 'Square of integer');
+        25: write(prr, 'Square of real');
+        26: write(prr, 'Store to address(t)');
+        27: write(prr, 'Truncate real to integer');
+        28: write(prr, 'Set union');
+        29: write(prr, 'Stop execution');
+        30: write(prr, 'Call system procedure/function');
+        31: write(prr, 'Decrement(t)');
+        32: write(prr, 'Return indirect procedure/function');
+        33: write(prr, 'False jump');
+        34: write(prr, 'Increment(t)');
+        35: write(prr, 'Load indirect(t)');
+        36: write(prr, 'Scale array access');
+        37: write(prr, 'Load global address');
+        38: write(prr, 'Load constant string address');
+        39: write(prr, 'Load global value(t)');
+        40: write(prr, 'Move(copy)');
+        41: write(prr, 'Mark(frame) stack');
+        42: write(prr, 'Return from procedure/function(t)');
+        43: write(prr, 'Store global value(t)');
+        44: write(prr, 'Table(case) jump');
+        45: write(prr, 'Bounds check(t)');
+        46: write(prr, 'Call user procedure');
+        47: write(prr, 'Equal(t)');
+        48: write(prr, 'Greater than or equal(t)');
+        49: write(prr, 'Greater than(t)');
+        50: write(prr, 'Load local address');
+        51: write(prr, 'Load constant(t)');
+        52: write(prr, 'Less than or equal(t)');
+        53: write(prr, 'Less than(t)');
+        54: write(prr, 'Load local value(t)');
+        55: write(prr, 'Not equal(t)');
+        56: write(prr, 'Store local(t)');
+        57: write(prr, 'Unconditional jump');
+        58: write(prr, 'Ordinal(t)');
+        59: write(prr, 'Character from integer');
+        60: write(prr, 'Throw case error');
+        61: write(prr, 'Round float to integer');
+        62: write(prr, 'Pack array from unpacked');
+        63: write(prr, 'Unpack array from packed');
+        64: write(prr, 'Range set');
+        66: write(prr, 'Interprocedure jump');
+        67: write(prr, 'Call indirect procedure');
+        68: write(prr, 'Load procedure address');
+        71: write(prr, 'Dump tos');
+        72: write(prr, 'Swap tos with sos');
+        73: write(prr, 'True jump');
+        74: write(prr, 'Load procedure/function address');
+        75: write(prr, 'Check tagfield for active variants');
+        76: write(prr, 'Duplicate tos(t)');
+        77: write(prr, 'Terminate active variant check');
+        78: write(prr, 'Start active variant check');
+        79: write(prr, 'Invalidate address');
+        80: write(prr, 'Bounds check for record pointer(t)');
+        81: write(prr, 'Check tagfield assignment');
+        82: write(prr, 'Invalidate tagged variant(t)');
+        83: write(prr, 'Exclusive or');
+        84: write(prr, 'Begin exception frame');
+        85: write(prr, 'End exception frame');
+        86: write(prr, 'Handle next exception frame');
+        87: write(prr, 'Compare and jump');
+        89: write(prr, 'Call initializer code strip');
+        90: write(prr, 'Return code strip');
+        91: write(prr, 'Call virtual procedure');
+        92: write(prr, 'Set virtual procedure/function vector');
+        93: write(prr, 'Variable reference block start');
+        94: write(prr, 'Variable reference block end');
+        95: write(prr, 'Check change to tagfield(t)');
+        96: write(prr, 'Vector initialize stack');
+        97: write(prr, 'Vector initialize pointer global');
+        98: write(prr, 'Load complex pointer');
+        99: write(prr, 'Compare simple templates');
+        100: write(prr, 'Compare complex templates');
+        101: write(prr, 'Assign simple pointer data');
+        102: write(prr, 'Assign pointer complex');
+        103: write(prr, 'Simple container index');
+        104: write(prr, 'Complex container index');
+        105: write(prr, 'Load complex fixed container');
+        106: write(prr, 'Maximum dimension of array');
+        107: write(prr, 'Vector dispose array');
+        108: write(prr, 'Simplify complex pointer');
+        109: write(prr, 'Copy complex container to stack');
+        110: write(prr, 'Store complex pointer');
+        111: write(prr, 'Load complex pointer');
+        112: write(prr, 'Vector initialize dynamic');
+        113: write(prr, 'Vector dispose array');
+        114: write(prr, 'Load constant address');
+        115: write(prr, 'Copy to buffer');
+        116: write(prr, 'Copy procedure parameter');
+        117: write(prr, 'Copy result');
+        118: write(prr, 'Load stack address');
+        119: write(prr, 'With block start');
+        120: write(prr, 'With block end');
+        121: write(prr, 'Set function result');
+        122: write(prr, 'Call user function');
+        123: write(prr, 'Call indirect function');
+        124: write(prr, 'Make fat pointer from components');
+        125: write(prr, 'Call virtual function');
+        126: write(prr, 'Load stack complex pointer');
+        127: write(prr, 'Copy length from complex pointer');
+        128: write(prr, 'Store structured value from stack');
+        129: write(prr, 'Store exception vector');
+        130: write(prr, 'Make dynamic complex pointer');
+      end
     end
   end;
 
   procedure intmsg(intcod: integer);
   begin
-    intmsgneol(intcod); writeln(prr)
+    intmsgneol(intcod); 
+    if prcode then writeln(prr)
   end;
 
   procedure spfmsg(sypcod: integer);
   begin
-    case sypcod of
+    if prcode then case sypcod of
       1: writeln(prr, 'Get file buffer text');
       2: writeln(prr, 'Put file buffer text');
       3: writeln(prr, 'Read integer from text file');
@@ -3399,7 +3404,6 @@ end;
       113: writeln(prr, 'Read byte integer from text file in radix 8 with range check and field');
       114: writeln(prr, 'Read byte integer from text file in radix 2 with range check and field');
       115: writeln(prr, 'Set program error return');
-
     end
   end;
 
@@ -3521,12 +3525,13 @@ end;
 
   procedure lftjst(fl: integer);
   begin
-    if fl > 0 then write(prr, ' ':fl)
+    if (fl > 0) and prcode then write(prr, ' ':fl)
   end;
 
   procedure par1(a: integer);
   begin
-    write(prr,a:1); lftjst(parfld-1-digits(a))
+    if prcode then write(prr,a:1); 
+    lftjst(parfld-1-digits(a))
   end;
 
   procedure par2(a, b: integer);
@@ -7656,7 +7661,8 @@ end;
             { parameterized type specification }
             if (nxt <> nil) and (lcp <>nil) then begin { gen code strip label }
               lcp^.ininxt := display[top].inilst; display[top].inilst := lcp;
-              genlabel(lcp^.inilab); prtlabel(lcp^.inilab); writeln(prr); 
+              genlabel(lcp^.inilab); prtlabel(lcp^.inilab); 
+              if prcode then writeln(prr);
               genlabel(lcp^.skplab)
             end;
             insymbol;
@@ -7707,7 +7713,7 @@ end;
               if prcode then
                 if level <= 1 then wrtsym(nxt, 'g') else wrtsym(nxt, 'l');
               if maxpar > 0 then begin
-                prtlabel(nxt^.skplab); writeln(prr);
+                prtlabel(nxt^.skplab); if prcode then writeln(prr);
                 { load variable address }
                 if level <= 1 then gen1(37(*lao*),vaddr)
                 else gen2(50(*lda*),level-(level-vlev),vaddr);
@@ -7821,7 +7827,7 @@ end;
                       { iterate array elements }
                       i := min; if sy = arraysy then insymbol else error(28);
                       repeat
-                        writeln(prr, 'r'); {reset alignment }
+                        if prcode then writeln(prr, 'r'); {reset alignment }
                         fixeditem(fsys+[comma,endsy],lsp^.aeltype, lsp^.aeltype^.size, v, d);
                         i := i+1;
                         if not (sy in [comma,endsy]) then
@@ -8813,16 +8819,20 @@ end;
         sublvl;
         if sy = elsesy then
           begin genlabel(lcix2); genujpxjpcal(57(*ujp*),lcix2);
-            prtlabel(lcix1); writeln(prr);
+            prtlabel(lcix1); if prcode then writeln(prr);
             markline;
             insymbol;
             addlvl;
             statement(fsys);
             sublvl;
-            prtlabel(lcix2); writeln(prr);
+            prtlabel(lcix2); if prcode then writeln(prr);
             markline
           end
-        else begin prtlabel(lcix1); writeln(prr); markline end
+        else begin 
+          prtlabel(lcix1); 
+          if prcode then writeln(prr); 
+          markline 
+        end
       end (*ifstatement*) ;
 
       procedure casestatement;
@@ -8903,10 +8913,10 @@ end;
           if not test then insymbol
         until test;
         if sy = elsesy then begin chkstd; insymbol; genlabel(lelse);
-          genlabel(lelse2); prtlabel(lelse2); writeln(prr);
+          genlabel(lelse2); prtlabel(lelse2); if prcode then writeln(prr);
           mesl(-intsize); { put selector on stack }
           gen1(71(*dmp*),intsize);
-          prtlabel(lelse); writeln(prr);
+          prtlabel(lelse); if prcode then writeln(prr);
           markline;
           addlvl;
           statement(fsys + [semicolon]);
@@ -8914,7 +8924,7 @@ end;
           genujpxjpcal(57(*ujp*),laddr);
           if sy = semicolon then insymbol
         end;
-        prtlabel(lcix); writeln(prr);
+        prtlabel(lcix); if prcode then writeln(prr);
         markline;
         if fstptr <> nil then
           begin lmax := fstptr^.cslabe;
@@ -8942,7 +8952,8 @@ end;
                     genujpxjpcal(73(*tjp*),lelse2);
                   end else gen2t(45(*chk*),lmin,lmax,intptr);
                   gen2(51(*ldc*),1,lmin); gen0(21(*sbi*)); genlabel(lcix);
-                  genujpxjpcal(44(*xjp*),lcix); prtlabel(lcix); writeln(prr);
+                  genujpxjpcal(44(*xjp*),lcix); prtlabel(lcix); 
+                  if prcode then writeln(prr);
                   repeat
                     with fstptr^ do
                       begin
@@ -8970,7 +8981,7 @@ end;
                   gen1(71(*dmp*),intsize);
                   gen0(60(*ujc error*))
                 end;
-                prtlabel(laddr); writeln(prr);
+                prtlabel(laddr); if prcode then writeln(prr);
                 markline
               end
             else begin
@@ -8988,7 +8999,9 @@ end;
 
       procedure repeatstatement;
         var laddr: integer;
-      begin genlabel(laddr); prtlabel(laddr); writeln(prr); markline;
+      begin genlabel(laddr); prtlabel(laddr); 
+        if prcode then writeln(prr); 
+        markline;
         addlvl;
         repeat
           statement(fsys + [semicolon,untilsy]);
@@ -9010,13 +9023,17 @@ end;
 
       procedure whilestatement;
         var laddr, lcix: integer;
-      begin genlabel(laddr); prtlabel(laddr); writeln(prr); markline;
+      begin genlabel(laddr); prtlabel(laddr); 
+        if prcode then writeln(prr); 
+        markline;
         expression(fsys + [dosy], false); genlabel(lcix); genfjp(lcix);
         if sy = dosy then insymbol else error(54);
         addlvl;
         statement(fsys);
         sublvl;
-        genujpxjpcal(57(*ujp*),laddr); prtlabel(lcix); writeln(prr); markline
+        genujpxjpcal(57(*ujp*),laddr); prtlabel(lcix); 
+        if prcode then writeln(prr); 
+        markline
       end (*whilestatement*) ;
 
       procedure forstatement;
@@ -9088,7 +9105,9 @@ end;
                     if debug and (lattr.typtr <> nil) then
                       checkbnds(lattr.typtr);
                     store(lattr);
-                    genlabel(laddr); prtlabel(laddr); writeln(prr); markline;
+                    genlabel(laddr); prtlabel(laddr); 
+                    if prcode then writeln(prr); 
+                    markline;
                     gattr := lattr; load;
                     if not comptypes(gattr.typtr,intptr) then
                       gen0t(58(*ord*),gattr.typtr);
@@ -9116,7 +9135,9 @@ end;
         if debug and (lattr.typtr <> nil) then
           checkbnds(lattr.typtr);
         store(lattr);
-        genujpxjpcal(57(*ujp*),laddr); prtlabel(lcix); writeln(prr); markline;
+        genujpxjpcal(57(*ujp*),laddr); prtlabel(lcix); 
+        if prcode then writeln(prr); 
+        markline;
         gattr := lattr; loadaddress; gen0(79(*inv*));
         if lcp <> nil then lcp^.forcnt := lcp^.forcnt-1;
         puttmp(stradr); puttmp(endadr)
@@ -9200,7 +9221,9 @@ end;
           end;
         sublvl;
         genujpxjpcal(57(*ujp*),noexplbl);
-        prtlabel(bgnexplbl); writeln(prr); markline;
+        prtlabel(bgnexplbl); 
+        if prcode then writeln(prr); 
+        markline;
         gen2(129(*sev*),level,vecadr);
         if (sy <> onsy) and (sy <> exceptsy) then error(24);
         while sy = onsy do begin insymbol; genlabel(onstalbl);
@@ -9233,13 +9256,15 @@ end;
           genujpxjpcal(57(*ujp*),onendlbl);
           if sy = exceptsy then insymbol else
             begin error(23); skip(fsys+[onsy,exceptsy,elsesy]) end;
-          prtlabel(onstalbl); writeln(prr);
+          prtlabel(onstalbl); 
+          if prcode then writeln(prr);
           markline;
           addlvl;
           statement(fsys+[exceptsy]);
           sublvl;
           genujpxjpcal(57(*ujp*),endlbl);
-          prtlabel(onendlbl); writeln(prr);
+          prtlabel(onendlbl); 
+          if prcode then writeln(prr);
           markline
         end;
         if sy = exceptsy then begin addlvl;
@@ -9247,13 +9272,15 @@ end;
           genujpxjpcal(57(*ujp*),endlbl)
         end;
         gen0(86(*mse*));
-        prtlabel(noexplbl); writeln(prr);
+        prtlabel(noexplbl); 
+        if prcode then writeln(prr);
         markline;
         if sy = elsesy then begin addlvl;
           insymbol; statement(fsys); sublvl
         end;
         sublvl;
-        prtlabel(endlbl); writeln(prr);
+        prtlabel(endlbl); 
+        if prcode then writeln(prr);
         markline;
         gen0(85(*ede*));
         puttmp(vecadr)
@@ -9279,7 +9306,9 @@ end;
                { Label referenced by goto at lesser statement level or
                  differently nested statement }
                error(186);
-             prtlabel(labname); writeln(prr); { output label to intermediate }
+             { output label to intermediate }
+             prtlabel(labname); 
+             if prcode then writeln(prr);
              markline
            end else begin { not found }
              error(167); { undeclared label }
@@ -9437,7 +9466,8 @@ end;
     cstptrix := 0; topnew := 0; topmin := 0;
     { if processing procedure/function, use that entry label, otherwise set
       at program }
-    if fprocp <> nil then prtlabel(fprocp^.pfname) else prtlabel(entname); writeln(prr);
+    if fprocp <> nil then prtlabel(fprocp^.pfname) else prtlabel(entname); 
+    if prcode then writeln(prr);
     markline;
     genlabel(segsize); genlabel(stackbot);
     genlabel(gblsize);
@@ -9753,9 +9783,11 @@ end;
           if prcode then begin
             writeln(prr, '!');
             if curmod = mtprogram then
-              begin write(prr, '! Program '); writevp(prr, nammod); writeln(prr) end
+              begin write(prr, '! Program '); writevp(prr, nammod); 
+                    if prcode then writeln(prr) end
             else
-              begin write(prr, '! Module '); writevp(prr, nammod); writeln(prr) end;
+              begin write(prr, '! Module '); writevp(prr, nammod); 
+                    if prcode then writeln(prr) end;
             writeln(prr, '!');
             if curmod = mtmodule then
               writeln(prr, 'b', ' ':7, 'm', ' ':7, id:kk) { mark module block start }
@@ -9830,7 +9862,8 @@ end;
         { gen exit block }
         entname := extname; body(fsys, nil);
       end else begin { generate dummy terminator block }
-        genlabel(segsize); genlabel(stackbot); prtlabel(extname); writeln(prr);
+        genlabel(segsize); genlabel(stackbot); prtlabel(extname); 
+        if prcode then writeln(prr);
         genmst(level-1,segsize,stackbot);
         gen2(42(*ret*),ord('p'),0);
         if prcode then begin
@@ -9839,7 +9872,9 @@ end;
         end
       end;
       if prcode then begin
-        prtlabel(nxtname); writeln(prr); { set skip module stack }
+        { set skip module stack }
+        prtlabel(nxtname); 
+        if prcode then writeln(prr);
         writeln(prr,'g ',gc:1);
         writeln(prr, 'e m') { mark module block end }
       end
@@ -10865,7 +10900,7 @@ begin
       if option[oi] then write(prr, '+') else write(prr, '-');
       write(prr, ' ')
     end;
-    writeln(prr)
+    if prcode then writeln(prr)
   end;
 
   nvalid := false; { set no lookahead }
