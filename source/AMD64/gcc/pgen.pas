@@ -339,13 +339,23 @@ type
                        en:      integer; { encounter number }
                        lvl:     integer; { level of block }
                      end;
+      { intermediate instruction table }
       inspar = array [instyp] of record
         instr: alfa;    { mnemonic instruction codes }
         insr:  integer; { number of stack words in result }
         insf:  boolean; { result is real }
         inss:  boolean  { result is set }
       end;
+      { standard functions and procedures table }
+      spfpar = array [sctyp] of record
+        sptable : alfa; (*standard functions and procedures*)
+        spfunc  : boolean; (*standard function or procedure is function*)
+        sppar   : integer; (*standard functions and procedures number of 
+                             parameters*)
+        spkeep  : boolean; { keep the file parameter }
+      end;
 
+fixed
 {
 
   Instruction parameters table
@@ -359,7 +369,7 @@ type
      original instruction numbers from P4. They could be safely
      assigned to other instructions if the space is needed.
 }
-fixed instab: inspar = array
+instab: inspar = array
        { memonic       SW RReal  RSet }
   record 'lodi      ', 1, false, false end,
   record 'ldoi      ', 1, false, false end,
@@ -621,6 +631,126 @@ fixed instab: inspar = array
   record '---       ', 0, false, false end
 end;
 
+{ 
+
+Standard functions and procedures table 
+
+}
+sfptab: spfpar = array
+   record 'get       ', false, 1, false end,
+   record 'put       ', false, 1, false end,
+   record 'thw       ', false, 1, false end,   
+   record 'rln       ', false, 1, true end,
+   record 'new       ', false, 2, false end,   
+   record 'wln       ', false, 1, true end,
+   record 'wrs       ', false, 4, true end,   
+   record 'eln       ', true,  1, false end,
+   record 'wri       ', false, 3, true end,   
+   record 'wrr       ', false, 3, true end,
+   record 'wrc       ', false, 3, true end,   
+   record 'rdi       ', false, 2, true end,
+   record 'rdr       ', false, 2, true end,   
+   record 'rdc       ', false, 2, true end,
+   record 'sin       ', true,  1, false end,   
+   record 'cos       ', true,  1, false end,
+   record 'exp       ', true,  1, false end,
+   record 'log       ', true,  1, false end,
+   record 'sqt       ', true,  1, false end,   
+   record 'atn       ', true,  1, false end,
+   record '---       ', false, 1, false end,   
+   record 'pag       ', false, 1, false end,
+   record 'rsf       ', false, 1, false end,   
+   record 'rwf       ', false, 1, false end,
+   record 'wrb       ', false, 3, true end,   
+   record 'wrf       ', false, 4, true end,
+   record 'dsp       ', false, 2, false end,   
+   record 'wbf       ', false, 3, true end,
+   record 'wbi       ', false, 2, true end,   
+   record 'wbr       ', false, 2, true end,
+   record 'wbc       ', false, 2, true end,   
+   record 'wbb       ', false, 2, true end,
+   record 'rbf       ', false, 3, true end,   
+   record 'rsb       ', false, 1, false end,
+   record 'rwb       ', false, 1, false end,   
+   record 'gbf       ', false, 2, false end,
+   record 'pbf       ', false, 2, false end,   
+   record 'rib       ', false, 4, true end,
+   record 'rcb       ', false, 4, true end,   
+   record 'nwl       ', false, 3, false end, { special }
+   record 'dsl       ', false, 3, false end, { special }
+   record 'eof       ', true,  1, false end,
+   record 'efb       ', true,  1, false end,   
+   record 'fbv       ', false, 1, true end,
+   record 'fvb       ', false, 2, true end,
+   record 'wbx       ', false, 2, true end,
+   record 'asst      ', false, 3, false end,
+   record 'clst      ', false, 1, false end,
+   record 'pos       ', false, 2, false end,
+   record 'upd       ', false, 1, false end,
+   record 'appt      ', false, 1, false end,
+   record 'del       ', false, 2, false end,
+   record 'chg       ', false, 4, false end,
+   record 'len       ', true,  1, false end,
+   record 'loc       ', true,  1, false end,
+   record 'exs       ', true,  2, false end,
+   record 'assb      ', false, 3, false end,
+   record 'clsb      ', false, 1, false end,
+   record 'appb      ', false, 1, false end,
+   record 'hlt       ', false, 0, false end,
+   record 'ast       ', false, 1, false end,
+   record 'asts      ', false, 3, false end,
+   record 'wrih      ', false, 3, true end,
+   record 'wrio      ', false, 3, true end,
+   record 'wrib      ', false, 3, true end,
+   record 'wrsp      ', false, 3, true end,
+   record 'wiz       ', false, 3, true end,
+   record 'wizh      ', false, 3, true end,
+   record 'wizo      ', false, 3, true end,
+   record 'wizb      ', false, 3, true end,
+   record 'rds       ', false, 3, true end,
+   record 'ribf      ', false, 5, true end,
+   record 'rdif      ', false, 3, true end,
+   record 'rdrf      ', false, 3, true end,
+   record 'rcbf      ', false, 5, true end,
+   record 'rdcf      ', false, 3, true end,
+   record 'rdsf      ', false, 4, true end,
+   record 'rdsp      ', false, 3, true end,
+   record 'aeft      ', false, 3, false end,
+   record 'aefb      ', false, 3, false end,
+   record 'rdie      ', false, 3, false end,
+   record 'rdre      ', false, 3, false end,
+   record 'rdx       ', false, 2, true end,
+   record 'rdxf      ', false, 3, true end,
+   record 'rxb       ', false, 4, true end,
+   record 'rxbf      ', false, 5, true end,
+   record 'rdsc      ', false, 3, true end,
+   record 'rdih      ', false, 2, true end,
+   record 'rdio      ', false, 2, true end,    
+   record 'rdib      ', false, 2, true end,
+   record 'rifh      ', false, 3, true end,    
+   record 'rifo      ', false, 3, true end,
+   record 'rifb      ', false, 3, true end,   
+   record 'ribh      ', false, 4, true end,
+   record 'ribo      ', false, 4, true end,    
+   record 'ribb      ', false, 4, true end,
+   record 'rbfh      ', false, 5, true end,
+   record 'rbfo      ', false, 5, true end,
+   record 'rbfb      ', false, 5, true end,
+   record 'rdxh      ', false, 2, true end,
+   record 'rdxo      ', false, 2, true end,
+   record 'rdxb      ', false, 2, true end,
+   record 'rxfh      ', false, 3, true end,    
+   record 'rxfo      ', false, 3, true end,
+   record 'rxfb      ', false, 3, true end,
+   record 'rxbh      ', false, 4, true end,
+   record 'rxbo      ', false, 4, true end,
+   record 'rxbb      ', false, 4, true end,
+   record 'rbxh      ', false, 5, true end,    
+   record 'rbxo      ', false, 5, true end,
+   record 'rbxb      ', false, 5, true end,
+   record 'sete      ', false, 1, false end
+end;
+
 var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       q1, q2, q3, q4 : address; { extra parameters }
       gblsiz: address; { size of globals }
@@ -671,12 +801,6 @@ var   op : instyp; p : lvltyp; q : address;  (*instruction register*)
       iso7185: boolean; { iso7185 standard flag }
 
       prd,prr     : text; (*prd for read only, prr for write only *)
-      sptable     : array[sctyp] of alfa; (*standard functions and procedures*)
-      spfunc      : array[sctyp] of boolean; (*standard function or procedure
-                                                  is function*)
-      sppar       : array[sctyp] of integer; (*standard functions and procedures
-                                                  number of parameters*)
-      spkeep      : array[sctyp] of boolean; { keep the file parameter }
       csttbl      : cstptr; { constants table }
       strnum      : integer; { string constant label count }
       realnum     : integer; { real constants label count }
@@ -954,118 +1078,6 @@ procedure xlate;
    procedure init;
       var i: integer;
    begin 
-         sptable[ 0]:='get       '; spfunc[ 0]:=false; sppar[ 0]:=1; spkeep[ 0]:=false;
-         sptable[ 1]:='put       '; spfunc[ 1]:=false; sppar[ 1]:=1; spkeep[ 1]:=false;
-         sptable[ 2]:='thw       '; spfunc[ 2]:=false; sppar[ 2]:=1; spkeep[ 2]:=false;   
-         sptable[ 3]:='rln       '; spfunc[ 3]:=false; sppar[ 3]:=1; spkeep[ 3]:=true;
-         sptable[ 4]:='new       '; spfunc[ 4]:=false; sppar[ 4]:=2; spkeep[ 4]:=false;   
-         sptable[ 5]:='wln       '; spfunc[ 5]:=false; sppar[ 5]:=1; spkeep[ 5]:=true;
-         sptable[ 6]:='wrs       '; spfunc[ 6]:=false; sppar[ 6]:=4; spkeep[ 6]:=true;   
-         sptable[ 7]:='eln       '; spfunc[ 7]:=true;  sppar[ 7]:=1; spkeep[ 7]:=false;
-         sptable[ 8]:='wri       '; spfunc[ 8]:=false; sppar[ 8]:=3; spkeep[ 8]:=true;   
-         sptable[ 9]:='wrr       '; spfunc[ 9]:=false; sppar[ 9]:=3; spkeep[ 9]:=true;
-         sptable[10]:='wrc       '; spfunc[10]:=false; sppar[10]:=3; spkeep[10]:=true;   
-         sptable[11]:='rdi       '; spfunc[11]:=false; sppar[11]:=2; spkeep[11]:=true;
-         sptable[12]:='rdr       '; spfunc[12]:=false; sppar[12]:=2; spkeep[12]:=true;   
-         sptable[13]:='rdc       '; spfunc[13]:=false; sppar[13]:=2; spkeep[13]:=true;
-         sptable[14]:='sin       '; spfunc[14]:=true;  sppar[14]:=1; spkeep[14]:=false;   
-         sptable[15]:='cos       '; spfunc[15]:=true;  sppar[15]:=1; spkeep[15]:=false;
-         sptable[16]:='exp       '; spfunc[16]:=true;  sppar[16]:=1; spkeep[16]:=false;
-         sptable[17]:='log       '; spfunc[17]:=true;  sppar[17]:=1; spkeep[17]:=false;
-         sptable[18]:='sqt       '; spfunc[18]:=true;  sppar[18]:=1; spkeep[18]:=false;   
-         sptable[19]:='atn       '; spfunc[19]:=true;  sppar[19]:=1; spkeep[19]:=false;
-         sptable[20]:='---       '; spfunc[20]:=false; sppar[20]:=1; spkeep[20]:=false;   
-         sptable[21]:='pag       '; spfunc[21]:=false; sppar[21]:=1; spkeep[21]:=false;
-         sptable[22]:='rsf       '; spfunc[22]:=false; sppar[22]:=1; spkeep[22]:=false;   
-         sptable[23]:='rwf       '; spfunc[23]:=false; sppar[23]:=1; spkeep[23]:=false;
-         sptable[24]:='wrb       '; spfunc[24]:=false; sppar[24]:=3; spkeep[24]:=true;   
-         sptable[25]:='wrf       '; spfunc[25]:=false; sppar[25]:=4; spkeep[25]:=true;
-         sptable[26]:='dsp       '; spfunc[26]:=false; sppar[26]:=2; spkeep[26]:=false;   
-         sptable[27]:='wbf       '; spfunc[27]:=false; sppar[27]:=3; spkeep[27]:=true;
-         sptable[28]:='wbi       '; spfunc[28]:=false; sppar[28]:=2; spkeep[28]:=true;   
-         sptable[29]:='wbr       '; spfunc[29]:=false; sppar[29]:=2; spkeep[29]:=true;
-         sptable[30]:='wbc       '; spfunc[30]:=false; sppar[30]:=2; spkeep[30]:=true;   
-         sptable[31]:='wbb       '; spfunc[31]:=false; sppar[31]:=2; spkeep[31]:=true;
-         sptable[32]:='rbf       '; spfunc[32]:=false; sppar[32]:=3; spkeep[32]:=true;   
-         sptable[33]:='rsb       '; spfunc[33]:=false; sppar[33]:=1; spkeep[33]:=false;
-         sptable[34]:='rwb       '; spfunc[34]:=false; sppar[34]:=1; spkeep[34]:=false;   
-         sptable[35]:='gbf       '; spfunc[35]:=false; sppar[35]:=2; spkeep[35]:=false;
-         sptable[36]:='pbf       '; spfunc[36]:=false; sppar[36]:=2; spkeep[36]:=false;   
-         sptable[37]:='rib       '; spfunc[37]:=false; sppar[37]:=4; spkeep[37]:=true;
-         sptable[38]:='rcb       '; spfunc[38]:=false; sppar[38]:=4; spkeep[38]:=true;   
-         sptable[39]:='nwl       '; spfunc[39]:=false; sppar[39]:=3; spkeep[39]:=false; { special }
-         sptable[40]:='dsl       '; spfunc[40]:=false; sppar[40]:=3; spkeep[40]:=false; { special }
-         sptable[41]:='eof       '; spfunc[41]:=true;  sppar[41]:=1; spkeep[41]:=false;
-         sptable[42]:='efb       '; spfunc[42]:=true;  sppar[42]:=1; spkeep[42]:=false;   
-         sptable[43]:='fbv       '; spfunc[43]:=false;  sppar[43]:=1; spkeep[43]:=true;
-         sptable[44]:='fvb       '; spfunc[44]:=false;  sppar[44]:=2; spkeep[44]:=true;
-         sptable[45]:='wbx       '; spfunc[45]:=false; sppar[45]:=2; spkeep[45]:=true;
-         sptable[46]:='asst      '; spfunc[46]:=false; sppar[46]:=3; spkeep[46]:=false;
-         sptable[47]:='clst      '; spfunc[47]:=false; sppar[47]:=1; spkeep[47]:=false;
-         sptable[48]:='pos       '; spfunc[48]:=false; sppar[48]:=2; spkeep[48]:=false;
-         sptable[49]:='upd       '; spfunc[49]:=false; sppar[49]:=1; spkeep[49]:=false;
-         sptable[50]:='appt      '; spfunc[50]:=false; sppar[50]:=1; spkeep[50]:=false;
-         sptable[51]:='del       '; spfunc[51]:=false; sppar[51]:=2; spkeep[51]:=false;
-         sptable[52]:='chg       '; spfunc[52]:=false; sppar[52]:=4; spkeep[52]:=false;
-         sptable[53]:='len       '; spfunc[53]:=true;  sppar[53]:=1; spkeep[53]:=false;
-         sptable[54]:='loc       '; spfunc[54]:=true;  sppar[54]:=1; spkeep[54]:=false;
-         sptable[55]:='exs       '; spfunc[55]:=true;  sppar[55]:=2; spkeep[55]:=false;
-         sptable[56]:='assb      '; spfunc[56]:=false; sppar[56]:=3; spkeep[56]:=false;
-         sptable[57]:='clsb      '; spfunc[57]:=false; sppar[57]:=1; spkeep[57]:=false;
-         sptable[58]:='appb      '; spfunc[58]:=false; sppar[58]:=1; spkeep[58]:=false;
-         sptable[59]:='hlt       '; spfunc[59]:=false; sppar[59]:=0; spkeep[59]:=false;
-         sptable[60]:='ast       '; spfunc[60]:=false; sppar[60]:=1; spkeep[60]:=false;
-         sptable[61]:='asts      '; spfunc[61]:=false; sppar[61]:=3; spkeep[61]:=false;
-         sptable[62]:='wrih      '; spfunc[62]:=false; sppar[62]:=3; spkeep[62]:=true;
-         sptable[63]:='wrio      '; spfunc[63]:=false; sppar[63]:=3; spkeep[63]:=true;
-         sptable[64]:='wrib      '; spfunc[64]:=false; sppar[64]:=3; spkeep[64]:=true;
-         sptable[65]:='wrsp      '; spfunc[65]:=false; sppar[65]:=3; spkeep[65]:=true;
-         sptable[66]:='wiz       '; spfunc[66]:=false; sppar[66]:=3; spkeep[66]:=true;
-         sptable[67]:='wizh      '; spfunc[67]:=false; sppar[67]:=3; spkeep[67]:=true;
-         sptable[68]:='wizo      '; spfunc[68]:=false; sppar[68]:=3; spkeep[68]:=true;
-         sptable[69]:='wizb      '; spfunc[69]:=false; sppar[69]:=3; spkeep[69]:=true;
-         sptable[70]:='rds       '; spfunc[70]:=false; sppar[70]:=3; spkeep[70]:=true;
-         sptable[71]:='ribf      '; spfunc[71]:=false; sppar[71]:=5; spkeep[71]:=true;
-         sptable[72]:='rdif      '; spfunc[72]:=false; sppar[72]:=3; spkeep[72]:=true;
-         sptable[73]:='rdrf      '; spfunc[73]:=false; sppar[73]:=3; spkeep[73]:=true;
-         sptable[74]:='rcbf      '; spfunc[74]:=false; sppar[74]:=5; spkeep[74]:=true;
-         sptable[75]:='rdcf      '; spfunc[75]:=false; sppar[75]:=3; spkeep[75]:=true;
-         sptable[76]:='rdsf      '; spfunc[76]:=false; sppar[76]:=4; spkeep[76]:=true;
-         sptable[77]:='rdsp      '; spfunc[77]:=false; sppar[77]:=3; spkeep[77]:=true;
-         sptable[78]:='aeft      '; spfunc[78]:=false; sppar[78]:=3; spkeep[78]:=false;
-         sptable[79]:='aefb      '; spfunc[79]:=false; sppar[79]:=3; spkeep[79]:=false;
-         sptable[80]:='rdie      '; spfunc[80]:=false; sppar[80]:=3; spkeep[80]:=false;
-         sptable[81]:='rdre      '; spfunc[81]:=false; sppar[81]:=3; spkeep[81]:=false;
-         sptable[82]:='rdx       '; spfunc[82]:=false; sppar[82]:=2; spkeep[82]:=true;
-         sptable[83]:='rdxf      '; spfunc[83]:=false; sppar[83]:=3; spkeep[83]:=true;
-         sptable[84]:='rxb       '; spfunc[84]:=false; sppar[84]:=4; spkeep[84]:=true;
-         sptable[85]:='rxbf      '; spfunc[85]:=false; sppar[85]:=5; spkeep[85]:=true;
-         sptable[86]:='rdsc      '; spfunc[86]:=false; sppar[86]:=3; spkeep[86]:=true;
-         sptable[87]:='rdih      '; spfunc[87]:=false; sppar[87]:=2; spkeep[87]:=true;
-         sptable[88]:='rdio      '; spfunc[88]:=false; sppar[88]:=2; spkeep[88]:=true;    
-         sptable[89]:='rdib      '; spfunc[89]:=false; sppar[89]:=2; spkeep[89]:=true;
-         sptable[90]:='rifh      '; spfunc[90]:=false; sppar[90]:=3; spkeep[90]:=true;    
-         sptable[91]:='rifo      '; spfunc[91]:=false; sppar[91]:=3; spkeep[91]:=true;
-         sptable[92]:='rifb      '; spfunc[92]:=false; sppar[92]:=3; spkeep[92]:=true;   
-         sptable[93]:='ribh      '; spfunc[93]:=false; sppar[93]:=4; spkeep[93]:=true;
-         sptable[94]:='ribo      '; spfunc[94]:=false; sppar[94]:=4; spkeep[94]:=true;    
-         sptable[95]:='ribb      '; spfunc[95]:=false; sppar[95]:=4; spkeep[95]:=true;
-         sptable[96]:='rbfh      '; spfunc[96]:=false; sppar[96]:=5; spkeep[96]:=true;
-         sptable[97]:='rbfo      '; spfunc[97]:=false; sppar[97]:=5; spkeep[97]:=true;
-         sptable[98]:='rbfb      '; spfunc[98]:=false; sppar[98]:=5; spkeep[98]:=true;
-         sptable[99]:='rdxh      '; spfunc[99]:=false; sppar[99]:=2; spkeep[99]:=true;
-         sptable[100]:='rdxo      '; spfunc[100]:=false; sppar[100]:=2; spkeep[100]:=true;
-         sptable[101]:='rdxb      '; spfunc[101]:=false; sppar[101]:=2; spkeep[101]:=true;
-         sptable[102]:='rxfh      '; spfunc[102]:=false; sppar[102]:=3; spkeep[102]:=true;    
-         sptable[103]:='rxfo      '; spfunc[103]:=false; sppar[103]:=3; spkeep[103]:=true;
-         sptable[104]:='rxfb      '; spfunc[104]:=false; sppar[104]:=3; spkeep[104]:=true;
-         sptable[105] :='rxbh      '; spfunc[105]:=false; sppar[105]:=4; spkeep[105]:=true;
-         sptable[106] :='rxbo      '; spfunc[106]:=false; sppar[106]:=4; spkeep[106]:=true;
-         sptable[107] :='rxbb      '; spfunc[107]:=false; sppar[107]:=4; spkeep[107]:=true;
-         sptable[108] :='rbxh      '; spfunc[108]:=false; sppar[108]:=5; spkeep[108]:=true;    
-         sptable[109] :='rbxo      '; spfunc[109]:=false; sppar[109]:=5; spkeep[109]:=true;
-         sptable[110] :='rbxb      '; spfunc[110]:=false; sppar[110]:=5; spkeep[110]:=true;
-         sptable[111] :='sete      '; spfunc[111]:=false; sppar[111]:=1; spkeep[111]:=false;
          for i:= 1 to 10 do word[i]:= ' ';
          for i:= 0 to maxlabel do
              with labeltab[i] do begin val:=-1; st:= entered; ref := nil; blk := nil end;
@@ -2131,7 +2143,7 @@ procedure xlate;
       begin
         write(prr, ep^.sline:6, ': ', ep^.iline:6, ': ');
         write(f, ep^.op:3, ': ', instab[ep^.op].instr:4, ' ');
-        if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sptable[ep^.q]:4) 
+        if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sfptab[ep^.q].sptable:4) 
         else if ep^.op in [123{ldci},126{ldcb},127{lccc}] then write(f, ep^.vi:1)
         else write(f, ep^.q:1);
         if r1 <> rgnull then begin write(prr, ' dr1: '); wrtreg(prr, r1) end;
@@ -2748,9 +2760,9 @@ procedure xlate;
 
           {csp}
           15: begin
-            asscall; asspar(ep, sppar[ep^.q]);
+            asscall; asspar(ep, sfptab[ep^.q].sppar);
             if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then resreg(rgrcx);
-            if spfunc[ep^.q] then begin { function }
+            if sfptab[ep^.q].spfunc then begin { function }
               if isfltres(ep) then begin
                 if (r1 = rgnull) and (rgxmm0 in rf) then ep^.r1 := rgxmm0
                 else ep^.r1 := r1;
@@ -3901,7 +3913,7 @@ procedure xlate;
             15: begin
               { need irregular handling for nwl and dsl }
               if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then callnwldsl(ep)
-              else callsp(ep, sptable[ep^.q], spfunc[ep^.q])
+              else callsp(ep, sfptab[ep^.q].sptable, sfptab[ep^.q].spfunc)
             end;
 
             {sfr}
@@ -4773,18 +4785,18 @@ procedure xlate;
 
         {csp} 
         15: begin skpspc; getname;
-          while name<>sptable[q] do begin 
+          while name<>sfptab[q].sptable do begin 
             q := q+1; if q > maxsp then errorl('std proc/func not found')
           end; 
-          write(prr, sptable[q]:alflen(sptable[q])); 
-          lftjst(parfld-alflen(sptable[q])); pass;
+          write(prr, sfptab[q].sptable:alflen(sfptab[q].sptable)); 
+          lftjst(parfld-alflen(sfptab[q].sptable)); pass;
           getexp(ep); 
           if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
             begin getparn(ep, maxint); revpar(ep); ordpar(ep) end
-          else getparn(ep, sppar[q]);
-          if spfunc[q] then pshstk(ep) { non-terminal, stack it }
+          else getparn(ep, sfptab[q].sppar);
+          if sfptab[q].spfunc then pshstk(ep) { non-terminal, stack it }
           else begin { terminal, execute here }
-            if spkeep[ep^.q] then begin
+            if sfptab[ep^.q].spkeep then begin
               if ep^.pl = nil then errorl('System error');
               duptre(ep^.pl, ep2); pshstk(ep2)
             end;
