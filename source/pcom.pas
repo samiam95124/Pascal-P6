@@ -3005,11 +3005,14 @@ end;
     digits := dc
   end;
 
+  procedure prtlabelu(labname: integer);
+  begin 
+    write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
+  end;
+
   procedure prtlabel(labname: integer);
   begin 
-    if prcode then begin
-      write(prr, 'l '); writevp(prr, nammod); write(prr, '.', labname:1)
-    end
+    if prcode then prtlabelu(labname)
   end;
 
   function lenlabel(labnam: integer): integer;
@@ -4130,7 +4133,7 @@ end;
   procedure arrtmp(sp: stp);
   var tp: stp; lc: integer; l, h: integer;
   begin
-    if prcode and (sp <> nil) then begin
+    if sp <> nil then begin
       { check fixed array type }
       if sp^.form = arrays then begin
         { count levels }
@@ -4139,7 +4142,7 @@ end;
           if tp^.form = arrays then begin lc := lc+1; tp := tp^.aeltype end
           else tp := nil;
         write(prr, 't',' ':7);
-        genlabel(sp^.tmpl); prtlabel(sp^.tmpl);
+        genlabel(sp^.tmpl); prtlabelu(sp^.tmpl);
         write(prr, ' ', lc:1);
         while sp <> nil do
           if sp^.form = arrays then begin getbounds(sp^.inxtype, l, h);
@@ -7321,15 +7324,14 @@ end;
             lsp^.varts := 0;
             if lcp <> nil then begin
               if varcmx >= 0 then lsp^.varts := varcmx+1;
-              { output LVN table }
-              if prcode then begin
-                write(prr, 'v',' ':7);
-                genlabel(lcp^.vartl); prtlabel(lcp^.vartl);
-                write(prr, ' ', lsp^.varts:1);
-                for varcn := 0 to lsp^.varts-1 do
-                  write(prr, ' ', lsp^.vart^[varcn]:1);
-                writeln(prr)
-              end
+              { output LVN table. note each file gets a copy of this, near or 
+                far. }
+              write(prr, 'v',' ':7);
+              genlabel(lcp^.vartl); prtlabelu(lcp^.vartl);
+              write(prr, ' ', lsp^.varts:1);
+              for varcn := 0 to lsp^.varts-1 do
+                write(prr, ' ', lsp^.vart^[varcn]:1);
+              writeln(prr)
             end;
             if lsp^.tagfieldp <> nil then begin
               ordertag(tagl);
