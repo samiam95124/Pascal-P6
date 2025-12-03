@@ -134,15 +134,37 @@ var
    fact:    boolean; { list actions }
    fdry:    boolean; { do not perform actions }
    frebld:  boolean; { rebuild all }
-   fansi:   boolean; { ansi standard mode }
    fngwin:  boolean; { no graphical windows mode }
    fdeftrm: boolean; { default to terminal mode }
    fdefgra: boolean; { default to graphical mode }
-   flist:   boolean; { list program (passthough) }
    { these are "pass through" options, options meant for programs we execute }
-   fovf:    boolean; { overflow checks in parser, used for unsigned numbers }
-   fref:    boolean; { check for non-references in parser }
    fsymcof: boolean; { generate coff symbols }
+   { passthrough options: these have "set/not set indicators }
+   fprtlab,     sprtlab:     boolean;
+   flstcod,     slstcod:     boolean;
+   fchk,        schk:        boolean;
+   fprtlabdef,  sprtlabdef:  boolean;
+   fsourceset,  ssourceset:  boolean;
+   fvarblk,     svarblk:     boolean;
+   fexperror,   sexperror:   boolean;
+   fecholine,   secholine:   boolean;
+   flist,       slist:       boolean;
+   fbreakheap,  sbreakheap:  boolean;
+   frecycle,    srecycle:    boolean;
+   fchkoverflo, schkoverflo: boolean;
+   fchkreuse,   schkreuse:   boolean;
+   fchkundef,   schkundef:   boolean;
+   freference,  sreference:  boolean;
+   fiso7185,    siso7185:    boolean;
+   fprttables,  sprttables:  boolean;
+   fundestag,   sundestag:   boolean;
+   fchkvar,     schkvar:     boolean;
+   fdebug,      sdebug:      boolean;
+   fprtlex,     sprtlex:     boolean;
+   fprtdisplay, sprtdisplay: boolean;
+   flineinfo,   slineinfo:   boolean;
+   fmrklin,     smrklin:     boolean;
+
    hp:      filept;  { head entry pointer }
    lnklst:  filnam;  { link order list }
    filcnt:  integer; { files to process count }
@@ -238,7 +260,7 @@ var w:      filnam; { word holder }
 
 { set true/false flag }
 
-procedure setflg(view a, n: string; var f: boolean);
+procedure setflg(view a, n: string; var f, s: boolean);
 
 var ts: packed array [1..40] of char; { string holder }
 
@@ -247,6 +269,7 @@ begin
    if compp(w, n) or compp(w, a) then begin
 
       f := true; { perform true }
+      s := true; { set this option found }
       optfnd := true { set option found }
 
    end else begin { try false cases }
@@ -256,6 +279,7 @@ begin
       if compp(w, ts) then begin
 
          f := false; { perform false }
+         s := true; { set this option found }
          optfnd := true { set option found }
 
       end else begin
@@ -265,6 +289,7 @@ begin
          if compp(w, ts) then begin
 
             f := false; { perform false }
+            s := true; { set this option found }
             optfnd := true { set option found }
 
          end
@@ -272,6 +297,24 @@ begin
       end
 
    end
+
+end;
+
+overload procedure setflg(view n: string; var f, s: boolean);
+
+begin
+
+   setflg('', n, f, s)
+
+end;
+
+overload procedure setflg(view a, n: string; var f: boolean);
+
+var s: boolean;
+
+begin
+
+   setflg(a, n, f, s)
 
 end;
 
@@ -289,17 +332,40 @@ begin
       setflg('a',  'action',   fact); { list actions }
       setflg('d',  'dry',      fdry); { don't perform actions }
       setflg('r',  'rebuild',  frebld); { rebuild everything }
-      setflg('s',  'standard', fansi); { ansi standard mode }
-      setflg('o',  'overflow', fovf); { check input numeric overflows }
-      setflg('l',  'list',     flist); { list program }
-      setflg('rf', 'refer',    fref); { check references }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
       setflg('dt', 'defaultterminal', fdeftrm); { default to terminal mode }
       setflg('dg', 'defaultgraphical', fdefgra); { default to graphical mode }
-      if compp(w, 'usespath') or
-         compp(w, 'up') then begin
+      { passthrough options for the compiler. Note most of these are the long
+        options so they don't conflict with pc short options. }
+      setflg('prtlab',          fprtlab,     sprtlab);
+      setflg('lstcod',          flstcod,     slstcod);
+      setflg('chk',             fchk,        schk);
+      setflg('prtlabdef',       fprtlabdef,  sprtlabdef);
+      setflg('sourceset',       fsourceset,  ssourceset);
+      setflg('varblk',          fvarblk,     svarblk);
+      setflg('experror',        fexperror,   sexperror);
+      setflg('echoline',        fecholine,   secholine);
+      setflg('l', 'list',       flist,       slist);
+      setflg('breakheap',       fbreakheap,  sbreakheap);
+      setflg('recycle',         frecycle,    srecycle);
+      setflg('o', 'chkoverflo', fchkoverflo, schkoverflo);
+      setflg('chkreuse',        fchkreuse,   schkreuse);
+      setflg('chkundef',        fchkundef,   schkundef);
+      setflg('reference',       freference,  sreference);
+      setflg('s', 'iso7185',    fiso7185,    siso7185);
+      setflg('prttables',       fprttables,  sprttables);
+      setflg('undestag',        fundestag,   sundestag);
+      setflg('chkvar',          fchkvar,     schkvar);
+      setflg('debug',           fdebug,      sdebug);
+      setflg('prtlex',          fprtlex,     sprtlex);
+      setflg('prtdisplay',      fprtdisplay, sprtdisplay);
+      setflg('lineinfo',        flineinfo,   slineinfo);
+      setflg('mrkasslin',       fmrklin,     smrklin);
+      { non-flag options }
+      if compp(w, 'modulepath') or
+         compp(w, 'mp') then begin
 
          optfnd := true;
          parse.skpspc(cmdhan); { skip spaces }
@@ -1473,6 +1539,21 @@ begin
 
 end;
 
+procedure putflg(view s: string; e, f: boolean);
+
+begin
+
+   if e then begin
+  
+      putstr(' -');
+      putstr(s);
+      if f then putchr('+') else putchr('-');
+      putchr(' ')
+
+   end
+
+end;
+
 begin
 
    if fp^.rebld then begin { this section is to be rebuilt }
@@ -1533,14 +1614,29 @@ begin
        
       end;
       { place pass through options }
-      if fansi then putstr(' -s+ ') { standard }
-               else putstr(' -s- '); { not standard }
-      if fovf then putstr(' -o+ '); { overflow checks }
-      if not fovf then putstr(' -o- '); { no overflow checks }
-      if flist then putstr(' -l+ '); { list program }
-      if not flist then putstr(' -l- '); { list program }
-      if fref then putstr(' -r+ ') { reference checks }
-              else putstr(' -r- '); { no references checks }
+      putflg('prtlabdef', sprtlabdef, fprtlabdef);
+      putflg('lstcod', slstcod, flstcod);
+      putflg('chk', schk, fchk);
+      putflg('sourceset', ssourceset, fsourceset);
+      putflg('varblk', svarblk, svarblk);
+      putflg('experror', sexperror, fexperror);
+      putflg('list', slist, flist);
+      putflg('breakheap', sbreakheap, fbreakheap);
+      putflg('recycle', srecycle, frecycle);
+      putflg('chkoverflo', schkoverflo, fchkoverflo);
+      putflg('chkreuse', schkreuse, fchkreuse);
+      putflg('chkundef', schkundef, fchkundef);
+      putflg('reference', sreference, freference);
+      putflg('iso7185', siso7185, fiso7185);
+      putflg('prttables', sprttables, fprttables);
+      putflg('undestag', sundestag, fundestag);
+      putflg('chkvar', schkvar, fchkvar);
+      putflg('debug', sdebug, fdebug);
+      putflg('prtlex', sprtlex, fprtlex);
+      putflg('prtdisplay', sprtdisplay, fprtdisplay);
+      putflg('lineinfo', slineinfo, flineinfo);
+      putflg('mrkasslin', smrklin, fmrklin);
+      
       excact(cmdbuf); { execute command buffer action }
       { build pgen x x command }
       i := 1; { set 1st command filename }
@@ -2004,22 +2100,28 @@ begin
 
          end else 
             { standard mode }
-            if compp(cmd, 'standard') then fansi := true
+            if compp(cmd, 'standard') then 
+               begin siso7185 := true; fiso7185 := true end
          else
             { no standard mode }
-            if compp(cmd, 'nstandard') then fansi := false
+            if compp(cmd, 'nstandard') then 
+               begin siso7185 := true; fiso7185 := false end
          else
             { check input overflow }
-            if compp(cmd, 'overflow') then fovf := true
+            if compp(cmd, 'overflow') then 
+              begin schkoverflo := true; fchkoverflo := true end
          else
             { no check input overflow }
-            if compp(cmd, 'noverflow') then fovf := false
+            if compp(cmd, 'noverflow') then
+               begin schkoverflo := true; fchkoverflo := false end
          else
             { check references }
-            if compp(cmd, 'refer') then fref := true
+            if compp(cmd, 'refer') then
+               begin sreference := true; freference := true end
          else
             { no check references }
-            if compp(cmd, 'nrefer') then fref := false
+            if compp(cmd, 'nrefer') then
+               begin sreference := true; freference := false end
          else
             { keep terminal window }
             if compp(cmd, 'keepterminalwindow') then fngwin := true
@@ -2070,13 +2172,56 @@ begin
    fact := false; { list actions }
    fdry := false; { do not perform actions }
    frebld := false; { rebuild all }
-   fansi := false; { no standard mode }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    { passthrough }
-   fovf := true; { overflow checking on }
-   fref := true; { reference checking on }
-   flist := false; { list program }
+   fprtlabdef := false;  
+   sprtlabdef := false;  
+   flstcod := false;
+   slstcod := false;
+   fchk := false;
+   schk := false;
+   fsourceset := false;  
+   ssourceset := false;  
+   fvarblk := false;     
+   svarblk := false;     
+   fexperror := false;   
+   sexperror := false;   
+   fecholine := false;   
+   secholine := false;   
+   flist := false;      
+   slist := true{false};      
+   fbreakheap := false;  
+   sbreakheap := false;  
+   frecycle := false;    
+   srecycle := false;    
+   fchkoverflo := false; 
+   schkoverflo := false; 
+   fchkreuse := false;   
+   schkreuse := false;   
+   fchkundef := false;   
+   schkundef := false;   
+   freference := false;  
+   sreference := false;  
+   fiso7185 := false;    
+   siso7185 := false;    
+   fprttables := false;  
+   sprttables := false;  
+   fundestag := false;   
+   sundestag := false;   
+   fchkvar := false;     
+   schkvar := false;     
+   fdebug := false;      
+   sdebug := false;      
+   fprtlex := false;     
+   sprtlex := false;     
+   fprtdisplay := false; 
+   sprtdisplay := false; 
+   flineinfo := false;   
+   slineinfo := false;   
+   fmrklin := false;     
+   smrklin := false;     
+
    fngwin := false; { do not override graphical windows switch }
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
