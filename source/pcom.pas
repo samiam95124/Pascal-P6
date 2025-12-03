@@ -10351,7 +10351,7 @@ end;
   begin fwptr := nil; 
     for oi := 1 to maxopt do 
       begin option[oi] := false; options[oi] := false end;
-    prtables := false; option[20] := false; list := true; option[12] := true;
+    prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
     chkudtc := true; option[21] := true; option[19] := false; iso7185 := false;

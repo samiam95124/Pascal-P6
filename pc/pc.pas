@@ -2190,7 +2190,7 @@ begin
    fecholine := false;   
    secholine := false;   
    flist := false;      
-   slist := true{false};      
+   slist := false;      
    fbreakheap := false;  
    sbreakheap := false;  
    frecycle := false;    
