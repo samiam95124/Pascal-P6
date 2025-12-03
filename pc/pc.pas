@@ -2294,7 +2294,7 @@ begin
    if (actcnt = 0) and not excrbl then
       writeln('No action required, files up to date')
    else
-      dolink; { perform link }
+      if hp^.pgm then dolink; { perform link }
    if fverb and (actcnt > 0) then begin
 
       writeln;
