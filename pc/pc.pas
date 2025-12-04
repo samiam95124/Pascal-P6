@@ -129,6 +129,7 @@ var
    prgnam:  filnam;  { target program name }
    p, n, e: filnam;  { path components }
    modpth:  filnam;  { path of module files }
+   { these are pc internal flags }
    fverb:   boolean; { verbose flag (also gets passed through) }
    ftree:   boolean; { list dependency tree }
    fact:    boolean; { list actions }
@@ -137,6 +138,7 @@ var
    fngwin:  boolean; { no graphical windows mode }
    fdeftrm: boolean; { default to terminal mode }
    fdefgra: boolean; { default to graphical mode }
+   fpint:   boolean; { compile for pint (interpreter) }
    { these are "pass through" options, options meant for programs we execute }
    fsymcof: boolean; { generate coff symbols }
    { passthrough options: these have "set/not set indicators }
@@ -318,6 +320,14 @@ begin
 
 end;
 
+overload procedure setflg(view n: string; var f: boolean);
+
+begin
+
+   setflg('', n, f)
+
+end;
+
 begin
 
    parse.skpspc(cmdhan); { skip spaces }
@@ -332,6 +342,7 @@ begin
       setflg('a',  'action',   fact); { list actions }
       setflg('d',  'dry',      fdry); { don't perform actions }
       setflg('r',  'rebuild',  frebld); { rebuild everything }
+      setflg('pint', fpint); { compile for pint (interpreter) }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -1254,23 +1265,36 @@ var p, n, e: filnam;  { path components }
 
 begin
 
-   { try .a extension }
-   services.brknam(fn, p, n, e); { break down name }
-   services.maknam(fns, p, n, 'a'); { remake }
-   if exists(fns) then begin
+   { if interpreting, insert .intermediate extension}
+   if fpint then begin
 
-      { place name in link list }
-      for i := 1 to len(fns) do putchr(lnklsta, lai, fns[i]);
-      putchr(lnklsta, lai, ' ') { place separator }
-      
-   end else begin
-
-      { place .o extension }
       services.brknam(fn, p, n, e); { break down name }
-      services.maknam(fns, p, n, 'o'); { remake }
+      services.maknam(fns, p, n, 'p6'); { remake }
       { place name in link list }
       for i := 1 to len(fns) do putchr(lnklsto, loi, fns[i]);
       putchr(lnklsto, loi, ' ') { place separator }
+
+   end else begin
+
+      { try .a extension }
+      services.brknam(fn, p, n, e); { break down name }
+      services.maknam(fns, p, n, 'a'); { remake }
+      if exists(fns) then begin
+
+         { place name in link list }
+         for i := 1 to len(fns) do putchr(lnklsta, lai, fns[i]);
+         putchr(lnklsta, lai, ' ') { place separator }
+         
+      end else begin
+
+         { place .o extension }
+         services.brknam(fn, p, n, e); { break down name }
+         services.maknam(fns, p, n, 'o'); { remake }
+         { place name in link list }
+         for i := 1 to len(fns) do putchr(lnklsto, loi, fns[i]);
+         putchr(lnklsto, loi, ' ') { place separator }
+
+      end
 
    end
 
@@ -1584,7 +1608,7 @@ begin
       putchr(' ');
       { place target path }
       putstr(' --modules=');
-      putstr(tarpath);
+      if len(tarpath) = 0 then putstr('.') else putstr(tarpath);
       putchr(' ');
       { place module path, if defined here }
       if len(modpth) > 0 then begin
@@ -1638,42 +1662,46 @@ begin
       putflg('mrkasslin', smrklin, fmrklin);
       
       excact(cmdbuf); { execute command buffer action }
-      { build pgen x x command }
-      i := 1; { set 1st command filename }
 
-      i := 1; { set 1st command filename }
-      clears(cmdbuf); { clear command buffer }
-      putstr('pgen');
-      putchr(' ');
-      services.brknam(fns, p, n, e); { remove the extention and place .p6 }
-      services.maknam(fns, p, n, 'p6');
-      services.fulnam(fns); { normalize it }
-      putstr(fns);
-      putchr(' ');
-      services.brknam(fns, p, n, e); { remove the extention and place .s }
-      services.maknam(fns, p, n, 's');
-      services.fulnam(fns); { normalize it }
-      putstr(fns);
-      excact(cmdbuf); { execute command buffer action }
+      { build to assembly and generate object only if not interpreting }
+      if not fpint then begin
 
-      i := 1; { set 1st command filename }
-      clears(cmdbuf); { clear command buffer }
-      putstr('gcc -static -g3');
-      putchr(' ');
-      putstr('-c');
-      putchr(' ');
-      services.brknam(fns, p, n, e); { remove the extention and place .p6 }
-      services.maknam(fns, p, n, 's');
-      services.fulnam(fns); { normalize it }
-      putstr(fns);
-      putchr(' ');
-      putstr('-o');
-      putchr(' ');
-      services.brknam(fns, p, n, e); { remove the extention and place .s }
-      services.maknam(fns, p, n, 'o');
-      services.fulnam(fns); { normalize it }
-      putstr(fns);
-      excact(cmdbuf); { execute command buffer action }
+         { build pgen x x command }
+         i := 1; { set 1st command filename }
+         clears(cmdbuf); { clear command buffer }
+         putstr('pgen');
+         putchr(' ');
+         services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+         services.maknam(fns, p, n, 'p6');
+         services.fulnam(fns); { normalize it }
+         putstr(fns);
+         putchr(' ');
+         services.brknam(fns, p, n, e); { remove the extention and place .s }
+         services.maknam(fns, p, n, 's');
+         services.fulnam(fns); { normalize it }
+         putstr(fns);
+         excact(cmdbuf); { execute command buffer action }
+
+         i := 1; { set 1st command filename }
+         clears(cmdbuf); { clear command buffer }
+         putstr('gcc -static -g3');
+         putchr(' ');
+         putstr('-c');
+         putchr(' ');
+         services.brknam(fns, p, n, e); { remove the extention and place .p6 }
+         services.maknam(fns, p, n, 's');
+         services.fulnam(fns); { normalize it }
+         putstr(fns);
+         putchr(' ');
+         putstr('-o');
+         putchr(' ');
+         services.brknam(fns, p, n, e); { remove the extention and place .s }
+         services.maknam(fns, p, n, 'o');
+         services.fulnam(fns); { normalize it }
+         putstr(fns);
+         excact(cmdbuf); { execute command buffer action }
+
+      end;
 
       if not fact then writeln;
       actcnt := actcnt+1 { count actions }
@@ -1712,6 +1740,10 @@ the link phase is done via gcc, but not really. It actually passes it on to
 ld. The difference is the compile phase converts .c or .s files into .o files,
 whereas ld links .o files
 
+For pint interpretation, linkage consists of concatenating all of the
+intermediate files into a combined file under the name of the target (which
+will overwrite the target intermediate).
+
 ******************************************************************************}
 
 procedure dolink;
@@ -1749,42 +1781,58 @@ begin
 
 end;
 
-begin
+begin { dolink }
 
-   { remove extention from target }
-   services.brknam(prgnam, p, n, e);
-   services.maknam(fns, p, n, '');
-   i := 1; { set 1st command filename }
-   clears(cmdbuf); { clear command buffer }
-   { find main }
-   copy(main, 'main');
-   fndfil(main, true);
-   if not exists(main) then { not found }
-      error('Support module "%" not found', main);
-   { find psystem }
-   copy(psystem, 'psystem');
-   fndfil(psystem, true);
-   if not exists(psystem) then { not found }
-      writeln('*** pc: Error: support module "%"', psystem);
-   if fverb then begin
+   if fpint then begin { interpret }
 
-      write('Building executable');
-      writeln
+      putstr('cat');
+      putchr(' ');
+      putstr(lnklst);
+      putchr(' ');
+      putstr('>');
+      putchr(' ');
+      putstr(prgnam);
+      putstr('.p6');
+      excact(cmdbuf) { execute command buffer action }
 
-   end;
-   { build gcc command }
-   putstr('gcc -static -g3 -o');
-   putchr(' ');
-   putstr(fns);
-   putchr(' ');
-   putstr(main);
-   putchr(' ');
-   putstr(lnklst);
-   putchr(' ');
-   putstr(psystem);
-   putchr(' ');
-   putstr('-lm -lpthread');
-   excact(cmdbuf) { execute command buffer action }
+   end else begin { build }
+
+      { remove extention from target }
+      services.brknam(prgnam, p, n, e);
+      services.maknam(fns, p, n, '');
+      i := 1; { set 1st command filename }
+      clears(cmdbuf); { clear command buffer }
+      { find main }
+      copy(main, 'main');
+      fndfil(main, true);
+      if not exists(main) then { not found }
+         error('Support module "%" not found', main);
+      { find psystem }
+      copy(psystem, 'psystem');
+      fndfil(psystem, true);
+      if not exists(psystem) then { not found }
+         writeln('*** pc: Error: support module "%"', psystem);
+      if fverb then begin
+
+         write('Building executable');
+         writeln
+
+      end;
+      { build gcc command }
+      putstr('gcc -static -g3 -o');
+      putchr(' ');
+      putstr(fns);
+      putchr(' ');
+      putstr(main);
+      putchr(' ');
+      putstr(lnklst);
+      putchr(' ');
+      putstr(psystem);
+      putchr(' ');
+      putstr('-lm -lpthread');
+      excact(cmdbuf) { execute command buffer action }
+
+   end
 
 end;
 
@@ -2174,6 +2222,7 @@ begin
    frebld := false; { rebuild all }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
+   fpint := false; { set no pint (interpreter) }
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
