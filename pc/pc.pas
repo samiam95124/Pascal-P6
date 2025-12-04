@@ -1556,7 +1556,7 @@ end;
 
 begin
 
-   if fp^.rebld then begin { this section is to be rebuilt }
+   if fp^.rebld and fp^.code then begin { this section is to be rebuilt }
 
       copy(fns, fp^.name); { make a copy of the name }
       services.brknam(fns, p, n, e); { remove the extention and place .pas }
