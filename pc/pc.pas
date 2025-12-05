@@ -1578,6 +1578,35 @@ begin
 
 end;
 
+procedure plcpass;
+
+begin
+
+      putflg('prtlabdef', sprtlabdef, fprtlabdef);
+      putflg('lstcod', slstcod, flstcod);
+      putflg('chk', schk, fchk);
+      putflg('sourceset', ssourceset, fsourceset);
+      putflg('varblk', svarblk, svarblk);
+      putflg('experror', sexperror, fexperror);
+      putflg('list', slist, flist);
+      putflg('breakheap', sbreakheap, fbreakheap);
+      putflg('recycle', srecycle, frecycle);
+      putflg('chkoverflo', schkoverflo, fchkoverflo);
+      putflg('chkreuse', schkreuse, fchkreuse);
+      putflg('chkundef', schkundef, fchkundef);
+      putflg('reference', sreference, freference);
+      putflg('iso7185', siso7185, fiso7185);
+      putflg('prttables', sprttables, fprttables);
+      putflg('undestag', sundestag, fundestag);
+      putflg('chkvar', schkvar, fchkvar);
+      putflg('debug', sdebug, fdebug);
+      putflg('prtlex', sprtlex, fprtlex);
+      putflg('prtdisplay', sprtdisplay, fprtdisplay);
+      putflg('lineinfo', slineinfo, flineinfo);
+      putflg('mrkasslin', smrklin, fmrklin);
+
+end;
+
 begin
 
    if fp^.rebld and fp^.code then begin { this section is to be rebuilt }
@@ -1637,30 +1666,7 @@ begin
          until pt[1] = ' ' { until path is empty }         
        
       end;
-      { place pass through options }
-      putflg('prtlabdef', sprtlabdef, fprtlabdef);
-      putflg('lstcod', slstcod, flstcod);
-      putflg('chk', schk, fchk);
-      putflg('sourceset', ssourceset, fsourceset);
-      putflg('varblk', svarblk, svarblk);
-      putflg('experror', sexperror, fexperror);
-      putflg('list', slist, flist);
-      putflg('breakheap', sbreakheap, fbreakheap);
-      putflg('recycle', srecycle, frecycle);
-      putflg('chkoverflo', schkoverflo, fchkoverflo);
-      putflg('chkreuse', schkreuse, fchkreuse);
-      putflg('chkundef', schkundef, fchkundef);
-      putflg('reference', sreference, freference);
-      putflg('iso7185', siso7185, fiso7185);
-      putflg('prttables', sprttables, fprttables);
-      putflg('undestag', sundestag, fundestag);
-      putflg('chkvar', schkvar, fchkvar);
-      putflg('debug', sdebug, fdebug);
-      putflg('prtlex', sprtlex, fprtlex);
-      putflg('prtdisplay', sprtdisplay, fprtdisplay);
-      putflg('lineinfo', slineinfo, flineinfo);
-      putflg('mrkasslin', smrklin, fmrklin);
-      
+      plcpass; { place pass through options }
       excact(cmdbuf); { execute command buffer action }
 
       { build to assembly and generate object only if not interpreting }
@@ -1680,6 +1686,7 @@ begin
          services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
+         plcpass; { place pass through options }
          excact(cmdbuf); { execute command buffer action }
 
          i := 1; { set 1st command filename }
