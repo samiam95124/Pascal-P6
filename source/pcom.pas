@@ -10323,7 +10323,7 @@ end;
   procedure plcopt;
   var oi: 1..maxopt;
   begin
-    for oi := 1 to 26 do if options[oi] then
+    for oi := 1 to maxopt do if options[oi] then
       case oi of
         2: doprtlab := option[oi];
         3: prcode := option[oi];
@@ -10342,7 +10342,7 @@ end;
         26: dolineinfo := option[oi];
         { these are backend options }
         1:; 5:; 6:; 7:; 8:; 11:; 13:; 14:; 15:; 16:; 
-        17:; 23:;
+        17:; 23:; 27:; 28:;
       end
   end;
 
@@ -10895,8 +10895,8 @@ begin
     write(prr, 'o ');
     for oi := 1 to maxopt do
       { exclude pint options and unused }
-      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27,28]) then
-        begin 
+      if not (oi in [7,8,14,15,16,13,17,19,23,1,6,5,18,11,26,27,28]) or 
+         options[oi] then begin 
       for oni :=  1 to optlen do 
         if optsl[oi, oni] <> ' ' then write(prr, optsl[oi, oni]);
       if option[oi] then write(prr, '+') else write(prr, '-');

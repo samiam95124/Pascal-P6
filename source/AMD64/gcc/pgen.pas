@@ -5764,7 +5764,7 @@ end;
 procedure plcopt;
 var oi: 1..maxopt;
 begin
-  for oi := 1 to 26 do if options[oi] then
+  for oi := 1 to maxopt do if options[oi] then
     case oi of
       7:  dodmplab   := option[oi];
       8:  dosrclin   := option[oi];
@@ -5780,6 +5780,7 @@ begin
       6:  dodbgsrc   := option[oi];
       5:  dodckout   := option[oi];
       9:  dochkvbk   := option[oi];
+      28: domrklin   := option[oi];
       2:; 3:; 4:; 12:; 20:; 21:; 22:;
       24:; 25:; 26:; 10:; 18:;
     end

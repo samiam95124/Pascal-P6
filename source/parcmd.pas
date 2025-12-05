@@ -141,6 +141,7 @@ begin
         if (bufcommand = '+') or (bufcommand = '-') then getcommand
         else if (bufcommand = '=') and (oi = 27{modules}) then begin
           { include string }
+          options[oi] := false;
           getcommand;
           ii := maxlin; while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1; 
           if incbuf[ii] <> ' ' then begin

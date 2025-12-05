@@ -13,8 +13,14 @@
 #
 function compprog {
 
-    pc $1 $OPTIONS
-    cp $1 bin
+   pc $1 $OPTIONS
+   if [ $? -ne 0 ]; then
+
+      echo "*** Error: compile failed"
+      exit 1
+
+   fi
+   cp $1 bin
 
 }
 
@@ -22,6 +28,12 @@ OPTIONS=$2
 
 make clean
 make $1
+if [ $? -ne 0 ]; then
+
+   echo "*** Error: make failed"
+   exit 1
+
+fi
 compprog pc/pc
 compprog pc/hashtabr
 compprog pc/hashtabs
