@@ -856,6 +856,7 @@ dodckout: boolean; { do output code deck }
 dochkvbk: boolean; { do check VAR blocks }
 dodbgchk: boolean; { do debug checks }
 doechlin: boolean; { echo input command line }
+domrklin: boolean; { mark source line translations in assembly }
 
 { other flags }
 iso7185: boolean; { iso7185 standard flag }
@@ -1713,6 +1714,7 @@ begin
                     6:  dodbgsrc   := option[oi];
                     5:  dodckout   := option[oi];
                     9:  dochkvbk   := option[oi];
+                    28: domrklin   := option[oi];
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
                     24:; 25:; 26:; 10:; 18:;
                   end
@@ -1969,9 +1971,11 @@ begin
                if i = max(srcfil) then errorl('filename to long')
              end;
              services.brknam(srcfil, p, n, e);
+             if domrklin then begin
              writeln(prr, '        .file   "',n:*, '.', e:*, '"'); 
              writeln(prr, '        .file   1 "',srcfil:*, '"'); 
              lindig := true; { set line diagnostic active for gdb }
+             end;
              getlin
            end;
     end
@@ -5784,17 +5788,17 @@ end;
 begin (* main *)
 
   { Suppress unreferenced errors. }
-  if adral = 0 then;
-  if adral = 0 then;     
-  if boolal = 0 then;    
-  if charmax = 0 then;   
-  if charal = 0 then;     
-  if codemax = 0 then;    
-  if filesize = 0 then;   
-  if intdig = 0 then;     
-  if ordminchar = 0 then; 
-  if ordmaxchar = 0 then; 
-  if stackelsize = 0 then; 
+  refer(adral);
+  refer(adral);     
+  refer(boolal);    
+  refer(charmax);   
+  refer(charal);     
+  refer(codemax);    
+  refer(filesize);   
+  refer(intdig);     
+  refer(ordminchar); 
+  refer(ordmaxchar); 
+  refer(stackelsize); 
 
   csttbl := nil; strnum := 0; realnum := 0; setnum := 0; gblsiz := 0; 
 
@@ -5822,28 +5826,29 @@ begin (* main *)
   dochkvbk := false; { don't check variable blocks }
   dodbgchk := true;  { do debug checks }
   doechlin := false; { don't echo command lines }
+  domrklin := true;  { mark assembly lines }
 
   { supress warnings }
-  if dochkovf then;
-  if dodmplab then;
-  if dotrcrot then;
-  if dotrcins then;
-  if dosrclin then;
-  if dotrcsrc then;
-  if dorecycl then;
-  if dochkrpt then;
-  if donorecpar then;
-  if dochkdef then;
-  if iso7185 then;
-  if dodebug then;
-  if dodbgflt then;
-  if dodbgsrc then;
-  if dosrcprf then;
-  if dochkcov then;
-  if doanalys then;
-  if dodckout then;
-  if dochkvbk then;
-  if dodbgchk then;
+  refer(dochkovf);
+  refer(dodmplab);
+  refer(dotrcrot);
+  refer(dotrcins);
+  refer(dosrclin);
+  refer(dotrcsrc);
+  refer(dorecycl);
+  refer(dochkrpt);
+  refer(donorecpar);
+  refer(dochkdef);
+  refer(iso7185);
+  refer(dodebug);
+  refer(dodbgflt);
+  refer(dodbgsrc);
+  refer(dosrcprf);
+  refer(dochkcov);
+  refer(doanalys);
+  refer(dodckout);
+  refer(dochkvbk);
+  refer(dodbgchk);
 
   blkstk := nil; { clear symbols block stack }
   blklst := nil; { clear symbols block discard list }

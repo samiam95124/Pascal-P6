@@ -50,7 +50,7 @@ procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string;
 const
   maxlin = 2000; { size of source line buffer }
   maxcmd = 2000; { size of command line buffer }
-  maxopt = 27;  { number of options }
+  maxopt = 28;  { number of options }
   optlen = 10;  { maximum length of option words }
 
 type
@@ -241,6 +241,7 @@ begin
   opts[25] := 'y         ';
   opts[26] := 'z         ';
   opts[27] := 'md        ';
+  opts[28] := 'mal       ';
 
   optsl[1]  := 'debugflt  ';
   optsl[2]  := 'prtlab    ';
@@ -269,5 +270,6 @@ begin
   optsl[25] := 'prtdisplay';
   optsl[26] := 'lineinfo  ';
   optsl[27] := 'modules   ';
+  optsl[28] := 'mrkasslin ';
 end.
 
