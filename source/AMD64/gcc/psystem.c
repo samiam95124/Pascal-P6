@@ -1991,14 +1991,14 @@ the exception vector mechanisim and directly print and fail the program.
 
 void psystem_errorv(
     /* module name */         const char* modnam, 
-    /* line number */         int         line, 
-    /* error/vector number */ int         en
+    /* line number */         long        line, 
+    /* error/vector number */ long        en
 )
 
 { 
 
     /* call internal version of this */
-    errorv(modnam, line, en);
+    errorv(modnam, (int)line, (int)en);
 
 }
 
@@ -2013,14 +2013,14 @@ is either handled by unwinding it, or directly handling it here.
 
 void psystem_errore(
     /* module name */         const char* modnam,
-    /* line number */         int         line,
-    /* error/vector number */ int         en
+    /* line number */         long        line,
+    /* error/vector number */ long        en
 )
 
 {
 
     /* call internal version of this */
-    errore(modnam, line, en);
+    errore(modnam, (int)line, (int)en);
 
 }
 
@@ -2345,8 +2345,8 @@ the field specification.
 void psystem_wrs(
     /* Pascal file to write to */ pasfil* f,
     /* String to write */         char    s[],
-    /* Length of string */        int     l,
-    /* Width of field */          int     w
+    /* Length of string */        long    l,
+    /* Width of field */          long    w
 )
 
 {
@@ -2361,10 +2361,10 @@ void psystem_wrs(
     if (l > labs(w)) l = labs(w); /* limit string to field */
     if (fn <= COMMANDFN) switch (fn) {
 
-        case OUTPUTFN: fprintf(stdout, "%*.*s", w, l, s); break;
-        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", w, l, s); break;
-        case ERRORFN: fprintf(stdout, "%*.*s", w, l, s); break;
-        case LISTFN: fprintf(stdout, "%*.*s", w, l, s); break;
+        case OUTPUTFN: fprintf(stdout, "%*.*s", (int)w, (int)l, s); break;
+        case PRRFN: fprintf(filtable[PRRFN], "%*.*s", (int)w, (int)l, s); break;
+        case ERRORFN: fprintf(stdout, "%*.*s", (int)w, (int)l, s); break;
+        case LISTFN: fprintf(stdout, "%*.*s", (int)w, (int)l, s); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: 
             errore(modnam, __LINE__, WRITEONREADONLYFILE); break;
@@ -2373,7 +2373,7 @@ void psystem_wrs(
 
         if (filstate[fn] != fswrite) 
             errore(modnam, __LINE__, FILEMODEINCORRECT);
-        fprintf(filtable[fn], "%*.*s", w, l, s);
+        fprintf(filtable[fn], "%*.*s", (int)w, (int)l, s);
 
     }
 
@@ -2393,7 +2393,7 @@ the string, that are non-space.
 void psystem_wrsp(
     /* Pascal file to write to */ pasfil* f,
     /* String to write */         char*   s,
-    /* Length of string */        int     l
+    /* Length of string */        long    l
 )
 
 {
@@ -2405,10 +2405,10 @@ void psystem_wrsp(
 
     if (fn <= COMMANDFN) switch (fn) {
 
-        case OUTPUTFN: writestrp(stdout, s, l); break;
-        case PRRFN: writestrp(filtable[PRRFN], s, l); break;
-        case ERRORFN: writestrp(stdout, s, l); break;
-        case LISTFN: writestrp(stdout, s, l); break;
+        case OUTPUTFN: writestrp(stdout, s, (int)l); break;
+        case PRRFN: writestrp(filtable[PRRFN], s, (int)l); break;
+        case ERRORFN: writestrp(stdout, s, (int)l); break;
+        case LISTFN: writestrp(stdout, s, (int)l); break;
         case PRDFN: case INPUTFN:
         case COMMANDFN: errore(modnam, __LINE__, WRITEONREADONLYFILE);
             break;
@@ -2417,7 +2417,7 @@ void psystem_wrsp(
 
         if (filstate[fn] != fswrite) 
             errore(modnam, __LINE__, FILEMODEINCORRECT);
-        writestrp(filtable[fn], s, l);
+        writestrp(filtable[fn], s, (int)l);
 
     }
 
@@ -4246,7 +4246,7 @@ as bytes.
 *******************************************************************************/
 
 void psystem_wbx(
-    /* Pascal file to rewrite */ pasfil*        f,
+    /* Pascal file to rewrite */ pasfil* f,
     /* Variable to write */      long    v
 )
 
@@ -4258,7 +4258,7 @@ void psystem_wbx(
     valfilwm(f); /* validate file for writing */
     fn = *f;     /* get logical file no. */
 
-    fputc(v & 0xff, filtable[fn]);
+    fputc((int)(v & 0xff), filtable[fn]);
 
 }
 
@@ -4523,7 +4523,7 @@ not, it is loaded from the input file. This satisfies the Lazy I/O concept.
 *******************************************************************************/
 
 void psystem_fbv(
-    /* Pascal binary file */     pasfil*       f
+    /* Pascal binary file */ pasfil* f
 )
 
 {
@@ -5386,7 +5386,7 @@ specified, and both strings must be of the same length.
 long psystem_strcmp(
     /** First string */  char* s1,
     /** Second string */ char* s2, 
-    /** Length */        int l
+    /** Length */        long  l
 )
 
 {
