@@ -1835,7 +1835,10 @@ begin
              blkstk^.symbols := sp;
              getlin
            end;
-       'f': getlin; { source error count }
+       'f': begin; { source error count }
+              prtline; read(prd, x); writeln(prr, ' f ', x:1);
+              getlin
+            end;
        'v': begin { variant logical table }
              getnxt; skpspc;
              if ch <> 'l' then errorl('Label format error');
@@ -1855,15 +1858,17 @@ begin
              if ch <> 'l' then
                errorl('Label format error');
              getnxt; parlab(x,ls);
+             prtline; write(prr, ' ', 'v l ', sn:snl, '.', x:1, ' ');
              if ls <> nil then
                errorl('Invalid intermediate');
-             read(prd,l); 
+             read(prd,l); write(prr, l:1, ' ');
              new(cstp2); cstp2^.ct := ctmp; cstp2^.next := csttbl; 
              csttbl := cstp2;
              cstp2^.tsize := l; cstp2^.tn := x; ti := 1;
              while not eoln(prd) do begin
                if ti = maxtmp then errorl('Too many template indexes');
-               read(prd,tv); cstp2^.ta[ti] := tv; ti := ti+1;
+               read(prd,tv); write(prr, tv:1, ' '); cstp2^.ta[ti] := tv; 
+               ti := ti+1;
                { this is a gpc compiler bug, \cr is passing the eoln filter }
                while not eoln(prd) and (prd^ <= ' ') do get(prd)
              end;
@@ -1877,6 +1882,8 @@ begin
              if ch <> 'l' then
                errorl('Label format error');
              getnxt; parlab(x,ls);
+             prtline; write(prr, ' ', 'v l ', sn:snl, '.');
+             if ls = nil then write(prr, x:1, ' ') else write(prr, ls^);
              read(prd,l); { note the size is unused }
              new(cstp); cstp^.ct := ctab; cstp^.tb := nil; 
              cstp^.next := csttbl; csttbl := cstp;
@@ -1886,6 +1893,7 @@ begin
                neither encouraged nor forbidden }
            end;
       'x': begin
+             prtline; writeln(prr, ' x');
              if not csttab then
                errorl('No constant table active');
              cstp2 := cstp^.tb; cstp^.tb := nil;
@@ -1897,65 +1905,79 @@ begin
              getlin
            end;
       'c': begin
+             prtline; write(prr, ' c ');
              if not csttab then errorl('No constant table active');
              getnxt; skpspc;
              if not (ch in ['i','r','p','s','c','b','x'])
                then errorl('Invalid const table type');
+             write(prr, ch, ' ');
              case ch of { constant type }
                'i': begin
-                      getnxt; read(prd,v); new(cstp2); cstp2^.ct := cint; 
-                      cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.i := v; cstp2^.intn := 0
+                      write(prr, 'i ');
+                      getnxt; read(prd,v); write(prr, v:1); new(cstp2); 
+                      cstp2^.ct := cint; cstp2^.next := cstp^.tb; 
+                      cstp^.tb := cstp2; cstp2^.i := v; cstp2^.intn := 0
                     end;
                'r': begin
-                      getnxt; read(prd,r); new(cstp2); cstp2^.ct := creal;
-                      cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.r := r; cstp2^.realn := 0
+                      write(prr, 'r ');
+                      getnxt; read(prd,r); write(prr, r:1); new(cstp2); 
+                      cstp2^.ct := creal; cstp2^.next := cstp^.tb; 
+                      cstp^.tb := cstp2; cstp2^.r := r; cstp2^.realn := 0
                     end;
                'p': begin
+                      write(prr, 'p ');
                       getnxt; skpspc;
                       if ch <> '(' then errorl('''('' expected for set');
                       s := [ ]; getnxt;
                       while ch<>')' do
-                        begin read(prd,i); getnxt; s := s + [i] end;
+                        begin read(prd,i); write(prr, i, ' '); 
+                          getnxt; s := s + [i] end;
                       new(cstp2); cstp2^.ct := cset;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                       cstp2^.s := s; cstp2^.setn := 0
                     end;
                's': begin
+                      write(prr, 's ');
                       getnxt; skpspc;
                       if ch <> '''' then errorl('quote expected for string');
+                      write(prr, '''');
                       getnxt; i := 1;
                       while ch<>'''' do
-                        begin sn[i] := ch; i := i+1; getnxt end;
+                        begin sn[i] := ch; write(prr, ch); i := i+1; getnxt end;
+                      write(prr, '''');
                       new(cstp2); cstp2^.ct := cstr;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                       cstp2^.str := strp(sn); cstp2^.strl := i-1; 
                       cstp2^.strn := 0
                     end;
                'c': begin
+                      write(prr, 'c ');
                       getnxt;
                       { chars are output as values }
-                      read(prd,i); new(cstp2); cstp2^.ct := cchr;
-                      cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.c := i; cstp2^.chrn := 0
+                      read(prd,i); write(prr, i:1); new(cstp2); 
+                      cstp2^.ct := cchr; cstp2^.next := cstp^.tb; 
+                      cstp^.tb := cstp2; cstp2^.c := i; cstp2^.chrn := 0
                     end;
                'b': begin
+                      write(prr, 'b ');
                       getnxt;
                       { booleans are output as values }
-                      read(prd,i); new(cstp2); cstp2^.ct := cbol;
-                      cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.b := i; cstp2^.boln := 0
+                      read(prd,i); write(prr, i:1); new(cstp2); 
+                      cstp2^.ct := cbol; cstp2^.next := cstp^.tb; 
+                      cstp^.tb := cstp2; cstp2^.b := i; cstp2^.boln := 0
                     end;
                'x': begin
-                      getnxt; read(prd,v); new(cstp2); cstp2^.ct := cvalx;
-                      cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.x := v; cstp2^.valxn := 0
+                      write(prr, 'x ');
+                      getnxt; read(prd,v); write(prr, v:1); new(cstp2); 
+                      cstp2^.ct := cvalx; cstp2^.next := cstp^.tb; 
+                      cstp^.tb := cstp2; cstp2^.x := v; cstp2^.valxn := 0
                     end;
              end;
+             writeln(prr);
              getlin
            end;
       'r': begin
+             prtline; writeln(prr, ' r');
              if not csttab then
                errorl('No constant table active');
              new(cstp2); cstp2^.ct := crst; 
@@ -1963,13 +1985,15 @@ begin
              getlin
            end;
       'p': begin { filename and path }
+            prtline; write(prr, ' p ');
              getnxt; skpspc;
              for i := 1 to max(srcfil) do srcfil[i] := ' ';
              skpspc; i := 1;
              while ch <> ' ' do begin 
-               srcfil[i] := ch; getnxt; i := i+1;
+               srcfil[i] := ch; write(prr, ch); getnxt; i := i+1;
                if i = max(srcfil) then errorl('filename to long')
              end;
+             writeln(prr);
              services.brknam(srcfil, p, n, e);
              if domrklin then begin
              writeln(prr, '        .file   "',n:*, '.', e:*, '"'); 
