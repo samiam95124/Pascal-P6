@@ -5393,6 +5393,7 @@ begin { assemble }
       wrtins(' popq %rbx # get return address');
       wrtins(' subq %rax,%rsp # allocate vector on stack', q*intsize);
       wrtins(' movq %rsp,(%rdx) # set variable address');
+      wrtins(' andq $0xfffffffffffffff0,%rsp # align stack');
       wrtins(' pushq %rbx # replace return address');
       deltre(ep);
       botstk
