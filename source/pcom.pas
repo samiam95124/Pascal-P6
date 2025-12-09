@@ -9055,13 +9055,15 @@ end;
         if sy = ident then
           begin searchid([vars],lcp);
             with lcp^, lattr do
-              begin typtr := idtype; kind := varbl; packing := false;
+              begin symptr := lcp; typtr := idtype; kind := varbl; 
+                packing := false;
                 if threat or (forcnt > 0) then error(195); forcnt := forcnt+1;
                 if part = ptview then error(290);
                 if vkind = actual then
                   begin access := drct; vlevel := vlev;
                     if vlev <> level then error(183);
-                    dplmt := vaddr
+                    { don't offset far }
+                    if chkext(lcp) then dplmt := 0 else dplmt := vaddr
                   end
                 else begin error(155); typtr := nil end
               end;
