@@ -127,6 +127,36 @@ begin
   end
 end;
 
+function regl(r: reg): integer;
 begin
+ if r = rgnull then regl := 6
+ else if r in [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, rgrbp, rgrsp,
+               rgr10, rgr11, rgr12, rgr13, rgr14, rgr15] then regl := 3
+ else if r in [rgr8, rgr9] then regl := 2
+ else if r in [rgxmm0..rgxmm9] then regl := 4
+ else regl := 5
+end;
 
+function bregl(r: reg): integer;
+begin
+ if r = rgnull then bregl := 6
+ else if r in [rgrax, rgrbx, rgrcx, rgrdx] then bregl := 2
+ else if r in [rgrsi, rgrdi, rgrbp, rgrsp, rgr8, rgr9] then bregl := 3
+ else if r in [rgr10..rgr15, rgxmm0..rgxmm9] then bregl := 4
+ else bregl := 5
+end;
+
+procedure wrtregs(var f: text; rs: regset; n: boolean);
+var first: boolean; r: reg;
+begin
+ first := true; write(f, '['); 
+ for r := rgrax to rgxmm15 do 
+   if ((r in rs) = n) and not (r in [rgrbp, rgrsp]) then begin 
+   if not first then write(f, ', ');
+   wrtreg(f, r); first := false
+ end;
+ write(f, ']')
+end;
+
+begin
 end.

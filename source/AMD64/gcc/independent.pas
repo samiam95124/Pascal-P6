@@ -892,11 +892,6 @@ tmplst:         tmpptr; { list of active temps }
 tmpfre:         tmpptr; { free temp entries }
 lclspc:         pstring; { label for locals space }
 
-(*locally used for interpreting one instruction*)
-ad          : address;
-c1          : char;
-oi          : 1..maxopt;
-
 procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
 const digmax = 64; { maximum total digits }
 var p,i,x,d,t,n: integer; sgn: boolean;
@@ -1654,6 +1649,7 @@ procedure generate; (*generate segment of code*)
        cs: packed array [1..1] of char;
        srcfil(maxflen): string; { name of input source file }
        p(fillen), n(fillen), e(fillen): string; { filename components }
+       ad: address;
 begin
    again := true; csttab := false;
    while again and not eof(prd) do begin
@@ -2091,6 +2087,593 @@ begin
   c := 0; ep := estack;
   while ep <> nil do begin c := c+1; ep := ep^.next end;
   depth := c
+end;
+
+procedure labelsearch(var def: boolean; var val: integer; var sp: pstring; 
+                     var blk: pblock);
+var x: integer; flp: flabelp;
+begin def := false; val := 0; flp := nil; blk := nil; skpspc; 
+ if ch <> 'l' then errorl('Label format error');
+ getnxt; parlab(x,sp);
+ if sp <> nil then begin { far label }
+   new(flp); flp^.next := flablst; flablst := flp; flp^.ref := sp
+ end else begin { near label }
+   if labeltab[x].ref = nil then putlabel(x);
+   sp := labeltab[x].ref; def := labeltab[x].st = defined; 
+   val := labeltab[x].val; blk := labeltab[x].blk
+ end
+end;(*labelsearch*)
+
+procedure getname(var name: alfa);
+var i: alfainx;
+begin
+ if eof(prd) then errorl('Unexpected eof on input');
+ for i := 1 to maxalfa do word[i] := ' ';
+ i := 1; { set 1st character of word }
+ if not (ch in ['a'..'z']) then errorl('No operation label');
+ while ch in ['a'..'z'] do begin
+   if i = maxalfa then errorl('Opcode label is too long');
+   word[i] := ch;
+   i := i+1; ch := ' ';
+   if not eoln(prd) then read(prd,ch); { next character }
+ end;
+ pack(word,1,name)
+end; (*getname*)
+
+procedure deltre(ep: expptr);
+begin
+ if ep^.l <> nil then deltre(ep^.l); 
+ if ep^.r <> nil then deltre(ep^.r);
+ if ep^.x1 <> nil then deltre(ep^.x1);
+ if ep^.sl <> nil then deltre(ep^.sl);
+ if ep^.cl <> nil then deltre(ep^.cl);
+ if ep^.al <> nil then deltre(ep^.al);
+ if ep^.pl <> nil then deltre(ep^.pl);
+ if ep^.next <> nil then deltre(ep^.next);
+ putexp(ep)
+end;
+
+procedure dmpety(var f: text; ep: expptr; r1, r2: reg);
+begin
+ write(prr, ep^.sline:6, ': ', ep^.iline:6, ': ');
+ write(f, ep^.op:3, ': ', instab[ep^.op].instr:4, ' ');
+ if ep^.op = 15{csp} then write(f, ep^.q:1, ': ', sfptab[ep^.q].sptable:4) 
+ else if ep^.op in [123{ldci},126{ldcb},127{lccc}] then write(f, ep^.vi:1)
+ else write(f, ep^.q:1);
+ if r1 <> rgnull then begin write(prr, ' dr1: '); wrtreg(prr, r1) end;
+ if r2 <> rgnull then begin write(prr, ' dr2: '); wrtreg(prr, r2) end;
+ if ep^.r1 <> rgnull then begin write(f, ' r1: '); wrtreg(f, ep^.r1) end;
+ if ep^.r1a <> 0 then write(f, ' r1a: ', ep^.r1a:1); 
+ if ep^.r2 <> rgnull then begin write(f, ' r2: '); wrtreg(f, ep^.r2) end;
+ if ep^.r2a <> 0 then write(f, ' r2a: ', ep^.r2a:1);
+ if ep^.r3 <> rgnull then begin write(f, ' r3: '); wrtreg(f, ep^.r3) end;
+ if ep^.r3a <> 0 then write(f, ' r3a: ', ep^.r3a:1);
+ if ep^.t1 <> rgnull then begin write(f, ' t1: '); wrtreg(f, ep^.t1) end;
+ if ep^.t1a <> 0 then write(f, ' t1a: ', ep^.t1a:1);
+ if ep^.t2 <> rgnull then begin write(f, ' t2: '); wrtreg(f, ep^.t2) end;
+ if ep^.t2a <> 0 then write(f, ' t2a: ', ep^.t2a:1);
+ write(f, ' rs: '); wrtregs(f, ep^.rs, true) 
+end;
+
+overload procedure dmpety(var f: text; ep: expptr);
+begin dmpety(f, ep, rgnull, rgnull) end;
+
+overload procedure dmpety(var f: text; ep: expptr; r1: reg);
+begin dmpety(f, ep, r1, rgnull) end;
+
+procedure dmptrel(ep: expptr; lvl: integer);
+var l: expptr;
+begin
+ write(prr, '# ', ' '); dmpety(prr, ep); writeln(prr);
+ if ep^.l <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'Left:');
+   dmptrel(ep^.l, lvl+3);
+ end;
+ if ep^.r <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'right:');
+   dmptrel(ep^.r, lvl+3);
+ end;
+ if ep^.x1 <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'xtra1:');
+   dmptrel(ep^.x1, lvl+3);
+ end;
+ if ep^.sl <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'call start:');
+   dmptrel(ep^.sl, lvl+3);
+ end;
+ if ep^.cl <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'tag checks:');
+    l := ep^.cl;
+    while l <> nil do begin
+      dmptrel(l, lvl+3);
+      l := l^.next
+    end
+ end;
+ if ep^.al <> nil then begin
+   writeln(prr, '# ', ' ': lvl, 'attached:');
+   dmptrel(ep^.al, lvl+3);
+ end;
+ if ep^.pl <> nil then begin
+   l := ep^.pl;
+   while l <> nil do begin
+     writeln(prr, '# ', ' ': lvl, 'Parameter:');
+     dmptrel(l, lvl+3);
+     l := l^.next
+   end
+ end
+end;
+
+procedure dmptre(ep: expptr);
+begin
+ writeln(prr, '#    expr:');
+ dmptrel(ep, 1)
+end;
+
+procedure dmplst(ep: expptr);
+begin
+ while ep <> nil do begin
+   dmptre(ep);
+   ep := ep^.next
+ end
+end;
+
+procedure dmpstk(var f: text);
+var ep: expptr; sl: integer;
+begin
+ ep := estack; sl := -1;
+ while ep <> nil do begin
+   write(f, 'Stack ', sl:3); dmpety(f, ep); writeln(f);
+   ep := ep^.next; sl := sl-1
+ end
+end;
+
+procedure botstk;
+begin
+ if estack <> nil then begin
+   writeln;
+   writeln('*** Program translation error: [', sline:1, ',', iline:1, '] Stack balance');
+   writeln;
+   writeln('Contents of stack:');
+   dmpstk(output);
+   errret := true; { set there was an error }
+   abort
+ end
+end;
+
+{ Interpret instruction macro string and write to output.
+ The macros are:
+ $0 - Immediate integer 1
+ $1 - Immediate integer 2
+ $s - Immediate symbol
+ %1 - Register 1, l postfix means lower
+ %2 - register 2, l postfix means lower
+ +0 - Immediate integer 1
+ +1 - Immediate integer 2
+ -0 - Immediate integer 1
+ -1 - Immediate integer 2
+ ^0 - Immediate integer 1 without leader
+ ^1 - Immediate integer 2 without leader
+ @s - Symbol
+ @g - Global symbol from integer 1 (by offset)
+ @l - Local symbol from integer 1 (by offset)
+}
+procedure wrtins(view si: string; i1, i2: integer; r1, r2: reg; view sn: string);
+var i, j: integer;
+
+function cur: char;
+begin if i > max(si) then cur := ' ' else cur := si[i] end;
+
+function looka: char;
+begin if i+1 > max(si) then looka := ' ' else looka := si[i+1] end;
+
+procedure next;
+begin if i > max(si) then errorl('Error in instruction     '); i := i+1 end;
+ 
+begin
+ i := 1; j := 1;
+ { write any label }
+ while cur <> ' ' do begin write(prr, cur); next; j := j+1 end;
+ write(prr, ' '); j := j+1;
+ while j <= opcspc do begin write(prr, ' '); j := j+1 end;
+ while (cur = ' ') and (i < max(si)) do next; { skip spaces }
+ { write opcode }
+ while cur <> ' ' do begin write(prr, cur); next; j := j+1 end;
+ write(prr, ' '); j := j+1;
+ while j <= parspc do begin write(prr, ' '); j := j+1 end;
+ while (cur = ' ') and (i < max(si)) do next; { skip spaces }
+ { parse parameters and macros }
+ while i <= max(si) do begin
+   if cur = '#' then begin
+     while j <= cmtspc do begin write(prr, ' '); j := j+1 end;
+     j := max(si);
+     while (si[j] = ' ') and (j > 1) do j := j-1;
+     while i <= j do begin write(prr, cur); next end;
+     i := max(si)+1;
+   end else begin
+     if cur = '$' then begin next; write(prr, '$'); j := j+1;
+       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+       else if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
+       else begin write(prr, cur); j := j+1 end
+     end else if cur = '%' then begin next; write(prr, '%'); j := j+1;
+       if cur = '1' then begin
+         if looka = 'l' then begin wrtbreg(prr, r1); next; j := j+bregl(r1) end
+         else begin wrtreg(prr, r1); j := j+regl(r1) end
+       end else if cur = '2' then begin
+         if looka = 'l' then begin wrtbreg(prr, r2); next; j := j+bregl(r2) end
+         else begin wrtreg(prr, r2); j := j+regl(r2) end
+       end else begin write(prr, cur); j := j+1 end
+     end else if cur = '+' then begin next; write(prr, '+'); j := j+1;
+       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+       else begin write(prr, cur); j := j+1 end
+     end else if cur = '-' then begin next; write(prr, '-');j := j+1;
+       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end 
+       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
+       else begin write(prr, cur); j := j+1 end
+     end else if cur = '^' then begin next;
+       if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
+       else if cur = '1' then begin write(prr, i2:1); j := j+digits(i1) end
+       else begin write(prr, cur);  j := j+1 end
+     end else if cur = '@' then begin next;
+       if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
+       else if cur = 'g' then wrtgbl(prr, i1, j)
+       else if cur = 'l' then wrtlcl(prr, i2, i1, j)
+       else begin write(prr, cur); j := j+1 end
+     end else begin write(prr, cur);  j := j+1 end;
+     next
+   end
+ end;
+ writeln(prr)
+end;
+
+overload procedure wrtins(view si: string);
+begin wrtins(si, 0, 0, rgnull, rgnull, '') end;
+
+overload procedure wrtins(view si: string; i1, i2: integer);
+begin wrtins(si, i1, i2, rgnull, rgnull, '') end;
+
+overload procedure wrtins(view si: string; i1, i2: integer; r1, r2: reg);
+begin wrtins(si, i1, i2, r1, r2, '') end;
+
+overload procedure wrtins(view si: string; r1, r2: reg; view sn: string);
+begin wrtins(si, 0, 0, r1, r2, sn) end;
+
+overload procedure wrtins(view si: string; r1, r2: reg);
+begin wrtins(si, 0, 0, r1, r2, '') end;
+
+overload procedure wrtins(view si: string; r1: reg);
+begin wrtins(si, 0, 0, r1, rgnull, '') end;
+
+overload procedure wrtins(view si: string; i1, i2: integer; r1: reg);
+begin wrtins(si, i1, i2, r1, rgnull, '') end;
+
+overload procedure wrtins(view si: string; r1: reg; view sn: string);
+begin wrtins(si, 0, 0, r1, rgnull, sn) end;
+
+overload procedure wrtins(view si: string; i1: integer);
+begin wrtins(si, i1, 0, rgnull, rgnull, '') end;
+
+overload procedure wrtins(view si: string; i1: integer; r1, r2: reg);
+begin wrtins(si, i1, 0, r1, r2, '') end;
+
+overload procedure wrtins(view si: string; i1: integer; r1: reg);
+begin wrtins(si, i1, 0, r1, rgnull, '') end;
+
+overload procedure wrtins(view si: string; i1: integer; r1, r2: reg; view sn: string);
+begin wrtins(si, i1, 0, r1, r2, sn) end;
+
+overload procedure wrtins(view si: string; i1: integer; r1: reg; view sn: string);
+begin wrtins(si, i1, 0, r1, rgnull, sn) end;
+
+overload procedure wrtins(view si: string; view sn: string);
+begin wrtins(si, 0, 0, rgnull, rgnull, sn) end;
+
+overload procedure wrtins(view si: string; i1, i2: integer; view sn: string);
+begin wrtins(si, i1, i2, rgnull, rgnull, sn) end;
+
+overload procedure wrtins(view si: string; i1: integer; view sn: string);
+begin wrtins(si, i1, 0, rgnull, rgnull, sn) end;
+
+procedure gencst;
+var r: record case boolean of
+
+       true:  (s: settype);
+       false: (b: packed array [1..setsize] of byte);
+
+    end;
+procedure gencstlst(cp: cstptr); forward;
+procedure gencstety(cp: cstptr);
+var i: integer;
+    ti: 1..maxtmp;
+begin
+  case cp^.ct of
+    cstr: begin
+      write(prr, '        .ascii  "');
+      writeq(prr, cp^.str^, cp^.strl);
+      writeln(prr, '"') 
+    end;
+    creal: writeln(prr, '        .double ', cp^.r);
+    cset: begin
+      write(prr, '        .byte   ');
+      r.s := cp^.s;
+      for i := 1 to setsize do begin
+        write(prr, r.b[i]:1); if i < setsize then write(prr, ',') 
+      end;
+      writeln(prr)
+    end;
+    ctmp: begin
+      for ti := 1 to cp^.tsize do
+        writeln(prr, '        .quad    ', cp^.ta[ti])
+    end;
+    ctab: gencstlst(cp^.tb);
+    cint: writeln(prr, '        .quad   ', cp^.i:1);
+    cchr: writeln(prr, '        .byte   ', cp^.c:1);
+    cbol: writeln(prr, '        .byte   ', cp^.b:1);
+    cvalx: writeln(prr, '        .byte   ', cp^.x:1);
+    crst: ;
+  end
+end;
+procedure gencstlst(cp: cstptr);
+var ad: address;
+procedure align(a: integer);
+begin
+  while (ad mod a) <> 0 do begin
+    writeln(prr, '        .byte   0');
+    ad := ad+1
+  end
+end;
+begin { gencstlst }
+  ad := 0;
+  while cp <> nil do begin
+    case cp^.ct of
+      cstr: ad := ad+cp^.strl;
+      creal: begin align(realal); ad := ad+realsize end;
+      cset: begin align(setal); ad := ad+setsize end;
+      ctmp: ad := ad+(cp^.tsize+1)*intsize;
+      ctab: ad := ad+cp^.csize;
+      cint: begin align(intal); ad := ad+intsize end;
+      cchr: begin align(charal); ad := ad+charsize end;
+      cbol: begin align(boolal); ad := ad+boolsize end;
+      cvalx: ad := ad+1;
+      crst: ad := 0;
+    end;
+    gencstety(cp);
+    cp := cp^.next
+  end
+end;
+begin
+  while csttbl <> nil do begin
+    case csttbl^.ct of
+      cstr: writeln(prr, 'string', csttbl^.strn:1, ':');
+      creal: writeln(prr, 'real', csttbl^.realn:1, ':');
+      cset: writeln(prr, 'set', csttbl^.setn:1, ':');
+      ctmp: begin
+        writeln(prr, 'template', csttbl^.tn:1, ':');
+        write(prr, modnam^); writeln(prr, '.', csttbl^.tn:1, ':')
+      end;
+      ctab: begin
+        writeln(prr, 'constant_table', csttbl^.cn:1, ':');
+        if csttbl^.cs <> nil then begin
+          writeln(prr, '        .globl  ', csttbl^.cs^);
+          writeln(prr, csttbl^.cs^, ':')
+        end else begin 
+          write(prr, modnam^); write(prr, '.'); write(prr, csttbl^.cn:1, ':')
+        end
+      end;
+      cint: writeln(prr, 'value', csttbl^.intn:1, ':');
+      cchr: writeln(prr, 'character', csttbl^.chrn:1, ':');
+      cbol: writeln(prr, 'boolean', csttbl^.boln:1, ':');
+      cvalx: writeln(prr, 'byte_value', csttbl^.valxn:1, ':');
+      crst: ;
+    end;
+    gencstety(csttbl);
+    csttbl := csttbl^.next
+  end
+end;
+
+{ translate intermediate file }
+procedure xlate;
+
+begin (*xlate*)
+
+   init;
+   writeln(prr, '# Header file locations');
+   writeln(prr, 'inputoff = 0');
+   writeln(prr, 'outputoff = 2');
+   writeln(prr, 'prdoff = 4');
+   writeln(prr, 'prroff = 6');
+   writeln(prr, 'erroroff = 8');
+   writeln(prr, 'listoff = 10');
+   writeln(prr, 'commandoff = 12');
+   writeln(prr);
+   writeln(prr, '# Logical file numbers for header files');
+   writeln(prr, 'inputfn = 1');
+   writeln(prr, 'outputfn = 2');
+   writeln(prr, 'prdfn = 3');
+   writeln(prr, 'prrfn = 4');
+   writeln(prr, 'errorfn = 5');
+   writeln(prr, 'listfn = 6');
+   writeln(prr, 'commandfn = 7');
+   writeln(prr);
+   errorcode;
+   writeln(prr);
+   mpb;
+   writeln(prr);
+   writeln(prr, '        .text');
+   writeln(prr, '#');
+   writeln(prr, '# Code section');
+   writeln(prr, '#');
+   generate;
+   writeln(prr, '#');
+   writeln(prr, '# Constants section');
+   writeln(prr, '#');
+   writeln(prr, '        jmp     1f');
+   writeln(prr, 'modnam:');
+   write(prr, '        .string  "'); write(prr, modnam^); writeln(prr, '"');
+   writeln(prr, 'real_zero:');
+   writeln(prr, '        .double  0.0');
+   writeln(prr, 'real_int_max:');
+   writeln(prr, '        .double  9223372036854775807');
+   writeln(prr, 'real_int_min:');
+   writeln(prr, '        .double  -9223372036854775807');
+
+   gencst;
+
+   writeln(prr, '1:');
+
+   writeln(prr, '        .bss');
+   writeln(prr, '#');
+   writeln(prr, '# Globals section');
+   writeln(prr, '#');
+   writeln(prr, 'globals_start:');
+   writeln(prr, '        .zero ', gblsiz:1);
+
+   if dodmplab then dmplabs { Debug: dump label definitions }
+
+end; (*load*)
+
+procedure fndpow(var m: integer; p: integer; var d: integer);
+begin
+  m := 1; d := 1;
+  while m < maxint div p do begin m := m*p; d := d+1 end
+end;
+
+{ place options in flags }
+procedure plcopt;
+var oi: 1..maxopt;
+begin
+  for oi := 1 to maxopt do if options[oi] then
+    case oi of
+      7:  dodmplab   := option[oi];
+      8:  dosrclin   := option[oi];
+      11: doechlin   := option[oi];
+      14: dorecycl   := option[oi];
+      15: dochkovf   := option[oi];
+      16: dochkrpt   := option[oi];
+      13: donorecpar := option[oi];
+      17: dochkdef   := option[oi];
+      19: iso7185    := option[oi];
+      23: dodebug    := option[oi];
+      1:  dodbgflt   := option[oi];
+      6:  dodbgsrc   := option[oi];
+      5:  dodckout   := option[oi];
+      9:  dochkvbk   := option[oi];
+      28: domrklin   := option[oi];
+      2:; 3:; 4:; 12:; 20:; 21:; 22:;
+      24:; 25:; 26:; 10:; 18:;
+    end
+end;
+
+procedure proginit;
+var oi: 1..maxopt;
+begin
+
+  { Suppress unreferenced errors. }
+  refer(adral);
+  refer(adral);     
+  refer(boolal);    
+  refer(charmax);   
+  refer(charal);     
+  refer(codemax);    
+  refer(filesize);   
+  refer(intdig);     
+  refer(ordminchar); 
+  refer(ordmaxchar); 
+  refer(stackelsize); 
+
+  csttbl := nil; strnum := 0; realnum := 0; setnum := 0; gblsiz := 0; 
+
+  for oi := 1 to maxopt do begin option[oi] := false; options[oi] := false end;
+
+  { preset options }
+  dochkovf := true;  { check arithmetic overflow }
+  dodmplab := false; { dump label definitions }
+  dotrcrot := false; { trace routine executions }
+  dotrcins := false; { trace instruction executions }
+  dosrclin := true;  { add source line sets to code }
+  dotrcsrc := false; { trace source line executions (requires dosrclin) }
+  dorecycl := true;  { obey heap space recycle requests }
+  dochkrpt := false;  { check reuse of freed entry (automatically) }
+  donorecpar := false; { check reuse, but leave whole block unused }
+  dochkdef := true;  { check undefined accesses }
+  iso7185 := false;  { iso7185 standard mode }
+  dodebug := false;  { no debug }
+  dodbgflt := false; { no debug on fault }
+  dodbgsrc := false; { no source level debug }
+  dosrcprf := true;  { do source level profiling }
+  dochkcov := false; { don't do code coverage }
+  doanalys := false; { don't do analyze mode }
+  dodckout := false; { don't output code deck }
+  dochkvbk := false; { don't check variable blocks }
+  dodbgchk := true;  { do debug checks }
+  doechlin := false; { don't echo command lines }
+  domrklin := true;  { mark assembly lines }
+
+  { supress warnings }
+  refer(dochkovf);
+  refer(dodmplab);
+  refer(dotrcrot);
+  refer(dotrcins);
+  refer(dosrclin);
+  refer(dotrcsrc);
+  refer(dorecycl);
+  refer(dochkrpt);
+  refer(donorecpar);
+  refer(dochkdef);
+  refer(iso7185);
+  refer(dodebug);
+  refer(dodbgflt);
+  refer(dodbgsrc);
+  refer(dosrcprf);
+  refer(dochkcov);
+  refer(doanalys);
+  refer(dodckout);
+  refer(dochkvbk);
+  refer(dodbgchk);
+
+  blkstk := nil; { clear symbols block stack }
+  blklst := nil; { clear symbols block discard list }
+  level := 0; { clear level count }
+  lindig := false; { set no encounter line diagnostic }
+  errret := false; { set no error on return }
+
+  { supress warning }
+  refer(blklst);
+
+  fndpow(maxpow10, 10, decdig);
+  fndpow(maxpow16, 16, hexdig);
+  fndpow(maxpow8, 8, octdig);
+  fndpow(maxpow2, 2, bindig); bindig := bindig+1; { add sign bit }
+
+end;
+
+procedure parcmdlin;
+
+begin
+
+  { get the command line }
+  getcommandline;
+  cmdpos := 1;
+  paroptions; { parse command line options }
+  { parse header files }
+  parhdrfil(prd, prdval, '.p6 ');
+  if not prdval then begin
+    writeln('*** Error: input filename not found');
+    errret := true; { set there was an error }
+    abort
+  end;
+  paroptions; { parse command line options }
+  parhdrfil(prr, prrval, '.s  ');
+  if not prrval then begin
+    writeln('*** Error: output filename not found');
+    errret := true; { set there was an error }
+    abort
+  end;
+  { load command line options }
+  paroptions;
+  plcopt; { place options }
+
 end;
 
 begin
