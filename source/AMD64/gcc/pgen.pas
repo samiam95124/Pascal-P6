@@ -5072,7 +5072,7 @@ begin { assemble }
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' leaq ^-@s^0(%rbp),%rsi # index temp set', ep^.r1a, lclspc^);
       if sp <> nil then
-        wrtins(' leaq @g(%rip),%rdi # index global destination', ep^.r1, sp^)
+        wrtins(' leaq @s(%rip),%rdi # index global destination', ep^.r1, sp^)
       else
         wrtins(' leaq @g(%rip),%rdi # index global destination', q, ep^.r1);
       wrtins(' movsq # move');
