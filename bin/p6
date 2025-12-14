@@ -191,10 +191,10 @@ elif [ "$package" = "1" ]; then
 elif [ "$pgen" = "1" ]; then
 
 	echo Running with pgen
-    #echo "Will execute: gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c -x assembler $PASCALP6/source/AMD64/gcc/psystem.asm $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm"
-    gcc -g3 -DWRDSIZ64 $PASCALP6/source/AMD64/gcc/psystem.c \
-        -x assembler $PASCALP6/source/AMD64/gcc/psystem.asm \
-        $PASCALP6/source/AMD64/gcc/main.asm $objects -o $progfile -lm
+    #echo "Will execute: gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c -x assembler $PASCALP6/source/pgen/psystem.asm $PASCALP6/source/pgen/main.asm $objects -o $progfile -lm"
+    gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
+        -x assembler $PASCALP6/source/pgen/psystem.asm \
+        $PASCALP6/source/pgen/main.asm $objects -o $progfile -lm
     ./$progfile
 
 else

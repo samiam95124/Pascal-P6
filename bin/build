@@ -42,4 +42,4 @@ compprog libs/source/strtst
 compprog source/pcom
 compprog source/pint
 compprog source/pmach
-compprog source/AMD64/gcc/pgen
+compprog source/pgen/pgen
