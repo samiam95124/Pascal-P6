@@ -448,11 +448,11 @@ table is all you should need to adapt to any byte addressable machine.
 #define MASTEREXCEPTION                     108
 #define PRIVEXCEPTIONTOP                    108
 
-typedef unsigned char byte;    /* 8-bit byte */
-typedef long boolean; /* true/false */
-typedef char pasfil;  /* Pascal file */
-typedef long filnum;  /* logical file number */
-typedef char filnam[FILLEN]; /* filename strings */
+typedef unsigned char byte;   /* 8-bit byte */
+typedef long boolean;         /* true/false */
+typedef unsigned char pasfil; /* Pascal file */
+typedef long filnum;          /* logical file number */
+typedef char filnam[FILLEN];  /* filename strings */
 typedef enum {
   fsnone,
   fsclosed,
@@ -1244,7 +1244,7 @@ static boolean chkeoffn(FILE* fp, filnum fn)
                 return (TRUE);
             else return (FALSE);
 
-        } else errore(modnam, __LINE__, FILENOTOPEN);
+        } else { errore(modnam, __LINE__, FILENOTOPEN); return (FALSE); }
 
     }
 
@@ -1821,9 +1821,9 @@ static void writei(FILE* f, long w, long fl, long r, long lz)
 
     } while (w != 0);
     if (sgn) ds = d+1; else ds = d; /* add sign */
-    if (ds > labs(fl)) if (fl < 0) fl = -ds; else fl = ds;
+    if (ds > labs(fl)) { if (fl < 0) fl = -ds; else fl = ds; }
     if (fl > 0 && fl > ds)
-      if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' ');
+      { if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' '); }
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
     if (fl < 1 && labs(fl) > ds) fprintf(f, "%*c", (int)(labs(fl)-ds), ' ');
@@ -2466,8 +2466,10 @@ boolean psystem_efb(
 
     valfilrm(f); /* validate file for reading */
     if (filstate[fn] == fswrite) return(TRUE);
-    else if (filstate[fn] == fsread) 
-        return (eoffile(filtable[fn]) && !filbuff[fn]);
+    else 
+      if (filstate[fn] == fsread) 
+         return (eoffile(filtable[fn]) && !filbuff[fn]);
+      else return(FALSE);
 
 }
 
@@ -3723,7 +3725,7 @@ void psystem_rcb(
     valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
-    readc(fn, c, LONG_MAX, FALSE);
+    readc(fn, (char*)c, LONG_MAX, FALSE);
     if (*c < mn || *c > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
@@ -3754,7 +3756,7 @@ void psystem_rcbf(
     valfilrm(f); /* validate file for reading */
     fn = *f; /* get logical file no. */
 
-    readc(fn, c, w, TRUE);
+    readc(fn, (char*)c, w, TRUE);
     if (*c < mn || *c > mx) errore(modnam, __LINE__, VALUEOUTOFRANGE);
 
 }
@@ -4151,7 +4153,7 @@ void psystem_dsl(
     ulp--;
     if (*ulp-ADRSIZE-1 != tc) 
         errore(modnam, __LINE__, NEWDISPOSETAGSMISMATCH);
-    lp = (unsigned long*)ulp; /* point to bottom */
+    lp = (long*)ulp; /* point to bottom */
     lp -= tc; /* start of tag list */
     bp = (unsigned char*) lp; /* save that */
     while (tc) { /* compare tags list */
@@ -4981,7 +4983,7 @@ boolean psystem_exs(
     while (i > 0 && n[i] == ' ') i--,l--;
     if (l >= FILLEN-1) errore(modnam, __LINE__, FILENAMETOOLONG);
     strcpyl(fn, n, l); /* make a copy of the string */
-    if (fp = fopen(fn, "r")) fclose(fp); /* test file exists */
+    if ((fp = fopen(fn, "r"))) fclose(fp); /* test file exists */
 
     return (!!fp); /* exit with status */
 
