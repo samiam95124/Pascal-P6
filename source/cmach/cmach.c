@@ -1591,7 +1591,7 @@ boolean chkeoffn(FILE* fp, filnum fn)
             if ((eoffile(filtable[fn]) && fileoln[fn]) || filbof[fn])
                 return (TRUE);
             else return (FALSE);
-        } else errore(FILENOTOPEN);
+        } else { errore(FILENOTOPEN); return (FALSE); }
     }
 }
 
@@ -1867,9 +1867,9 @@ void writei(FILE* f, long w, long fl, long r, long lz)
         w = w / r; i = i-1; d = d+1;
     } while (w != 0);
     if (sgn) ds = d+1; else ds = d; /* add sign */
-    if (ds > labs(fl)) if (fl < 0) fl = -ds; else fl = ds;
+    if (ds > labs(fl)) { if (fl < 0) fl = -ds; else fl = ds; }
     if (fl > 0 && fl > ds)
-      if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' ');
+      { if (lz) filllz(f, fl-ds); else fprintf(f, "%*c", (int)(fl-ds), ' '); }
     if (sgn) fputc('-', f);
     for (i = MAXDBF-d; i < MAXDBF; i++) fputc(digit[i], f);
     if (fl < 1 && labs(fl) > ds) fprintf(f, "%*c", (int)(labs(fl)-ds), ' ');
@@ -2193,14 +2193,14 @@ void callsp(void)
     case 75/*rdcf*/: w = LONG_MAX; fld = q == 75; if (fld) popint(w);
                     popadr(ad1); popadr(ad); pshadr(ad);
                     valfil(ad); fn = store[ad];
-                    readc(fn, &c, w, fld); putchr(ad1, c);
+                    readc(fn, (char*)&c, w, fld); putchr(ad1, c);
                     break;
     case 38/*rcb*/:
     case 74/*rcbf*/: w = LONG_MAX; fld = q == 74; popint(mx); popint(mn);
                      if (fld) popint(w); popadr(ad1); popadr(ad);
                      pshadr(ad); valfil(ad);
                      fn = store[ad];
-                     readc(fn, &c, w, fld);
+                     readc(fn, (char*)&c, w, fld);
                      if (c < mn || c > mx) errore(VALUEOUTOFRANGE);
                      putchr(ad1, c);
                      break;
@@ -2496,7 +2496,7 @@ void callsp(void)
                   break;
     case 55 /*exs*/: popint(i); popadr(ad1);
                   for (j = 0; j < i; j++) fl1[j] = store[ad1+j]; fl1[j] = 0;
-                  if (fp = fopen(fl1, "r")) fclose(fp);
+                  if ((fp = fopen(fl1, "r"))) fclose(fp);
                   pshint(!!fp);
                   break;
     case 59 /*hlt*/: finish(1); break;
@@ -2900,8 +2900,9 @@ void sinins()
     case 34 /*flo*/: poprel(r1); popint(i1); pshrel(i1); pshrel(r1); break;
 
     case 35 /*trc*/: poprel(r1);
-                  if (dochkovf) if (r1 < -LONG_MAX || r1 > LONG_MAX)
-                    errore(REALARGUMENTTOOLARGE);
+                  if (dochkovf) 
+                    if (r1 < (double)-LONG_MAX || r1 > (double)LONG_MAX)
+                      errore(REALARGUMENTTOOLARGE);
                   pshint(trunc(r1)); break;
     case 36 /*ngi*/: popint(i1); pshint(-i1); break;
     case 37 /*ngr*/: poprel(r1); pshrel(-r1); break;
@@ -2982,8 +2983,9 @@ void sinins()
 
     case 61 /*ujc*/: errorv(INVALIDCASE); break;
     case 62 /*rnd*/: poprel(r1);
-                  if (dochkovf) if (r1 < -(LONG_MAX+0.5) || r1 > LONG_MAX+0.5)
-                    errore(REALARGUMENTTOOLARGE);
+                  if (dochkovf) 
+                    if (r1 < -((double)LONG_MAX+0.5) || r1 > (double)LONG_MAX+0.5)
+                      errore(REALARGUMENTTOOLARGE);
                   pshint(round(r1)); break;
     case 63 /*pck*/: getq(); getq1(); popadr(a3); popadr(a2); popadr(a1);
                  if (a2+q > q1) errore(PACKELEMENTSOUTOFBOUNDS);
@@ -3254,7 +3256,7 @@ void sinins()
   }
 }
 
-void main (int argc, char *argv[])
+int main (int argc, char *argv[])
 
 {
     FILE* fp;
@@ -3357,4 +3359,5 @@ void main (int argc, char *argv[])
 
     finish(exitcode); /* exit program with good status */
 
+    return 0;
 }
