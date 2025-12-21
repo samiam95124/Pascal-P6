@@ -23,7 +23,7 @@ begin
 
 end;
 
-vas        unreferenced
+vas unreferenced at block ending on line: 17 in function/procedure: a
 
 begin
 

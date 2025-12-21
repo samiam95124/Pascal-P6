@@ -2,29 +2,28 @@ P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 40: Reverse order between type and var 
- 
-} 
- 
-program iso7185prt0040(output); 
- 
-var   one: boolean; 
- 
-type  integer = char; 
+PRT test 40: Reverse order between type and var
+
+}
+
+program iso7185prt0040(output);
+
+var   one: boolean;
+
+type  integer = char;
     11   ****      ^18
     11   ****   18 Error in declaration part
- 
-begin 
- 
-   one := true; 
-   writeln(one) 
- 
-end. 
-integer    unreferenced
 
+begin
+
+   one := true;
+   writeln(one)
+
+end.
+
+integer unreferenced at block ending on line: 18
 
 Errors in program: 1
 

@@ -48,7 +48,7 @@ procedure parhdrfilnam(var f: text; var wasproc: boolean; out name: string;
 }
 
 const
-  maxlin = 2000; { size of source line buffer }
+  maxlin = 20000; { size of source line buffer }
   maxcmd = 2000; { size of command line buffer }
   maxopt = 28;  { number of options }
   optlen = 10;  { maximum length of option words }

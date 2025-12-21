@@ -66,7 +66,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       ep, ep2, ep3, ep4, ep5: expptr;
       r1: reg; sp, sp2: pstring; def, def2: boolean; val, val2: integer;
       stkadr: integer; { stack address tracking }
-      fl: integer; { field width }
       blk: pblock; { block reference }
 
   procedure getreg(var r: reg; var rf: regset);
@@ -76,7 +75,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     r := intassord[i];
     while not (r in rf) and (i < maxintreg) do 
       begin i := i+1; r := intassord[i] end;
-    if not (r in rf) then errorl('Out of registers');
+    if not (r in rf) then error('Out of registers');
     rf := rf-[r];
   end;
 
@@ -87,7 +86,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     r := fltassord[i];
     while not (r in rf) and (i < maxfltreg) do 
       begin i := i+1; r := fltassord[i] end;
-    if not (r in rf) then errorl('Out of registers');
+    if not (r in rf) then error('Out of registers');
     rf := rf-[r];
   end;
 
@@ -856,7 +855,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     stkadrs := stkadr; { save because we don't know tag count }
     ep2 := ep^.pl;
     for i := 1 to 3 do begin
-      if ep2 = nil then errorl('system error');
+      if ep2 = nil then error('system error');
       ep2 := ep2^.next
     end;
     pshpar(ep2);
@@ -1920,7 +1919,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
       if estack^.op = 245{sfr} then popstk(ep^.sl); { get sfr start }
       getparn(ep, ep^.pn); { get those parameters into list }
       if ep^.sl = nil then popstk(ep^.sl); { get sfr start }
-      if ep^.sl^.op <> 245{sfr} then errorl('system error');
+      if ep^.sl^.op <> 245{sfr} then error('system error');
   end;
 
   { reverse parameters list }
@@ -1943,7 +1942,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     lp := nil;
     if pp <> nil then 
       while pp^.next <> nil do begin lp := pp; pp := pp^.next end;
-    if (pp = nil) or (lp = nil) then errorl('system error');
+    if (pp = nil) or (lp = nil) then error('system error');
     lp^.next := nil;
     pp^.next := ep^.pl;
     ep^.pl := pp
@@ -1967,14 +1966,6 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     end
   end;
 
-  { pass though the rest of the line }
-  procedure pass;
-  begin
-    while (ch <> '!') and not eoln(prd) do getnxt;
-    while not eoln(prd) do begin write(prr, ch); getnxt end;
-    writeln(prr, ch)
-  end;
-
   function alflen(var s: alfa): integer;
   var i: alfainx;
   begin
@@ -1982,33 +1973,36 @@ override procedure assemble; (*translate symbolic code into machine code and sto
     if s[i] = ' ' then alflen := i-1 else alflen := i
   end;
  
-  procedure par;
+  procedure getlvl(var p: lvltyp);
+  var i: integer;
   begin
-    lftjst(parfld); pass
+    getint(i); p := i
+  end;
+
+  procedure getadr(var a: address);
+  var i: integer;
+  begin
+    getint(i); a := i
   end;
 
   procedure parp;
   begin
-    read(prd,p); write(prr,p:1); 
-    lftjst(parfld-digits(p)); pass
+    getlvl(p)
   end;
 
   procedure parq;
   begin
-    read(prd,q); write(prr,q:1); 
-    lftjst(parfld-digits(q)); pass
+    getadr(q)
   end;
 
   procedure parpq;
   begin
-    read(prd,p,q); write(prr,p:1,' ',q:1); 
-    lftjst(parfld-(digits(p)+1+digits(q))); pass
+    getlvl(p); getadr(q)
   end;
 
   procedure parqq;
   begin
-    read(prd,q,q1); write(prr,q:1,' ',q1:1); 
-    lftjst(parfld-digits(q)+1+digits(q1)); pass
+    getadr(q); getadr(q1)
   end;
 
   { evaluate and push n arguments depth first }
@@ -2031,8 +2025,7 @@ begin { assemble }
   getname(name);
   { note this search removes the top instruction from use }
   while (instab[op].instr<>name) and (op < maxins) do op := op+1;
-  if op = maxins then errorl('illegal instruction');
-  prtline; write(prr, op:3, ': ', name:alflen(name)); lftjst(8-alflen(name));
+  if op = maxins then error('illegal instruction');
   case op of
 
     { *** non-terminals *** }
@@ -2043,7 +2036,7 @@ begin { assemble }
     end;
 
     {adi,adr,sbi,sbr}
-    28, 29, 30, 31: begin par;
+    28, 29, 30, 31: begin
       getexp(ep); popstk(ep^.r);
       popstk(ep^.l); pshstk(ep)
     end;
@@ -2059,19 +2052,14 @@ begin { assemble }
     end;
 
     {lao} 
-    5: begin while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+    5: begin skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        lftjst(parfld-(digits(p)+3+max(sp^))); pass
-      end else parq;
+      if ch = 'l' then labelsearch(def, val, sp, blk) else parq;
       getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep)
     end;
 
     {lto} 
-    234: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    234: begin labelsearch(def, val, sp, blk);
       getexp(ep); ep^.qs := sp; ep^.fl := sp; attach(ep); pshstk(ep)
     end;
 
@@ -2087,13 +2075,9 @@ begin { assemble }
 
     {ldoi,ldoa,ldor,ldos,ldob,ldoc,ldox,ltci,ltcr,ltcs,ltcb,ltcc,ltcx}
     1, 65, 66, 67, 68, 69, 194,228,229,230,231,232,233: begin
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        lftjst(parfld-(digits(p)+3+max(sp^))); pass
-      end else parq;
+      if ch = 'l' then labelsearch(def, val, sp, blk) else parq;
       getexp(ep); ep^.fl := sp; attach(ep); pshstk(ep) 
     end;
 
@@ -2118,7 +2102,7 @@ begin { assemble }
     end;
 
     {cpc}
-    177: begin par;
+    177: begin
       getexp(ep); popstk(ep2); popstk(ep3);
       duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
       frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -2126,21 +2110,18 @@ begin { assemble }
     end;
 
     {lpa}
-    114: begin read(prd,p); labelsearch(def, val, sp, blk); 
-      write(prr, p:1, ' l '); write(prr, sp^); 
-      lftjst(parfld-(digits(p)+3+max(sp^))); pass;
+    114: begin getlvl(p); labelsearch(def, val, sp, blk); 
       q1 := -p*ptrsize; getexp(ep); ep^.fn := sp; pshstk(ep);
     end;
 
     {ldcs,ldci,ldcr,ldcn,ldcb,ldcc}
     7, 123, 124, 125, 126, 127: begin case op of
 
-      123: begin read(prd,i); write(prr, i:1); lftjst(parfld-digits(i)); 
-        pass;
+      123: begin getint(i); 
         getexp(ep); attach(ep); ep^.vi := i; pshstk(ep) 
       end;
 
-      124: begin read(prd,r); write(prr, r); lftjst(parfld-23); pass;
+      124: begin getreal(r); 
         getexp(ep); attach(ep);
         pshstk(ep); new(cstp); cstp^.ct := creal; 
         cstp^.r := r; realnum := realnum+1; 
@@ -2148,12 +2129,11 @@ begin { assemble }
         csttbl := cstp; ep^.realn := realnum 
       end;
 
-      125: begin par;
+      125: begin
         getexp(ep); pshstk(ep) 
       end;
 
-      126: begin read(prd,i); write(prr, i:1); lftjst(parfld-digits(i)); 
-        pass;
+      126: begin getint(i); 
         getexp(ep); attach(ep); ep^.vi := i; pshstk(ep) 
       end;
 
@@ -2162,27 +2142,22 @@ begin { assemble }
         if ch in ['0'..'9'] then begin i := 0;
           while ch in ['0'..'9'] do
             begin i := i*10+ord(ch)-ord('0'); getnxt end;
-          c := chr(i);
-          write(prr, i:1); lftjst(parfld-digits(i)); pass
+          c := chr(i)
         end else begin
-          if ch <> '''' then errorl('illegal character');
+          if ch <> '''' then error('illegal character');
           getnxt;  c := ch;
           getnxt;
-          if ch <> '''' then errorl('illegal character');
-          write(prr, '''', c, ''''); lftjst(parfld-3); pass
+          if ch <> '''' then error('illegal character')
         end;
         getexp(ep); attach(ep); ep^.vi := ord(c); pshstk(ep)
       end;
 
       7: begin skpspc;
-        if ch <> '(' then errorl('ldcs() expected');
-        s := [ ];  getnxt; write(prr, '('); fl := 1;
+        if ch <> '(' then error('ldcs() expected');
+        s := [ ];  getnxt; 
         while ch<>')' do
-          begin read(prd,s1); write(prr, s1, ' '); fl := fl+digits(s1)+1; 
-                getnxt; s := s + [s1] end;
-        write(prr, ')'); fl := fl+1;
+          begin getint(s1); skpspc; s := s + [s1] end;
         getexp(ep); attach(ep); pshstk(ep);
-        lftjst(parfld-fl); pass;
         new(cstp); cstp^.ct := cset; cstp^.s := s;
         setnum := setnum+1; cstp^.setn := setnum;
         cstp^.next := csttbl; csttbl := cstp; ep^.setn := setnum
@@ -2192,45 +2167,40 @@ begin { assemble }
     end;
 
     {chki,chks,chkb,chkc,ckla,chkx}
-    26, 97, 98, 99, 190, 199: begin read(prd,lb,ub); 
-      write(prr, lb:1, ' ', ub:1); lftjst(parfld-(digits(lb)+1+digits(ub)));
-      pass;
+    26, 97, 98, 99, 190, 199: begin getint(lb); getint(ub);
       getexp(ep); popstk(ep^.l); 
       pshstk(ep); ep^.vi := lb; ep^.vi2 := ub
     end;
 
     {chka}
-    95: begin read(prd,lb,ub); 
-      write(prr, lb:1, ' ', ub:1); lftjst(parfld-(digits(lb)+1+digits(ub)));
-      pass;
+    95: begin getint(lb); getint(ub);
       if lb <> 0 then begin getexp(ep); popstk(ep^.l); pshstk(ep) end
     end;
 
     {lca}
-    56: begin read(prd,l); write(prr, l:1, ' '); fl := digits(l)+1; skpspc;
+    56: begin getint(l); skpspc;
       for i := 1 to strlen do str[i] := ' ';
-      if ch <> '''' then errorl('bad string format');
+      if ch <> '''' then error('bad string format');
       i := 0;
       repeat
-        if eoln(prd) then errorl('unterminated string');
+        if eolinp then error('unterminated string');
         getnxt;
-        c := ch; if (ch = '''') and (prd^ = '''') then 
+        c := ch; if (ch = '''') and (chla = '''') then 
           begin getnxt; c := ' ' end;
         if c <> '''' then begin
-          if i >= strlen then errorl('string overflow');
+          if i >= strlen then error('string overflow');
           str[i+1] := ch; { accumulate string }
           i := i+1
         end
       until c = '''';
       getexp(ep); attach(ep); pshstk(ep);
-      write(prr, '"', str:l,'"'); fl := fl+1+l+1; lftjst(parfld-fl); pass;
       new(cstp); cstp^.ct := cstr; cstp^.str := strp(str); 
       cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
       cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
     end;
 
     {grts,less}
-    158,170: errorl('Invalid operand');
+    158,170: error('Invalid operand');
 
     {equa,equi,equr,equb,equs,equc}
     17, 137, 138, 139, 140, 141,
@@ -2243,7 +2213,7 @@ begin { assemble }
     {leqi,leqr,leqb,leqs,leqc}
     161, 162, 163, 164, 165,
     {lesi,lesr,lesb,lesc}
-    167, 168, 169, 171: begin par;
+    167, 168, 169, 171: begin
       getexp(ep); 
       { reverse order for leqs }
       if op = 164 then begin popstk(ep^.l); popstk(ep^.r) end
@@ -2255,58 +2225,58 @@ begin { assemble }
     19: ; { unused }
 
     {ord}
-    59, 134, 136, 200: begin par; 
+    59, 134, 136, 200: begin
       getexp(ep); popstk(ep^.l); pshstk(ep);
     end;
 
     {lcp}
-    135: begin par; 
+    135: begin
       getexp(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
     {sgs}
-    32: begin par; 
+    32: begin
       getexp(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
     {flt}
-    33: begin par; 
+    33: begin
       getexp(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
     {flo}
-    34: begin par; 
+    34: begin
       getexp(ep); popstk(ep2); popstk(ep^.l);
       pshstk(ep); pshstk(ep2)
     end;
 
     {trc}
-    35: begin par; 
+    35: begin
       getexp(ep); popstk(ep^.l); pshstk(ep); 
     end;
 
     {ngi,ngr}
-    36,37: begin par; 
+    36,37: begin
       getexp(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
     {sqi,sqr}
-    38,39: begin par; 
+    38,39: begin
       getexp(ep); popstk(ep^.l); pshstk(ep)
     end;
 
     {abi,abr}
-    40,41: begin par; 
+    40,41: begin
       getexp(ep); popstk(ep^.l); pshstk(ep) 
     end;
 
     {notb,odd,chr,rnd,noti}
-    42,50,60,62,205: begin par; 
+    42,50,60,62,205: begin
       getexp(ep); popstk(ep^.l); pshstk(ep)
     end;
 
     {and,ior,xor,dif,int,uni,inn,mod,mpi,mpr,dvi,dvr,rgs}
-    43,44,45,46,47,48,49,51,52,53,54,110,206: begin par;
+    43,44,45,46,47,48,49,51,52,53,54,110,206: begin
       getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep) 
     end;
 
@@ -2314,63 +2284,55 @@ begin { assemble }
       optimize this. }
 
     { dupi, dupa, dupr, dups, dupb, dupc }
-    181, 182, 183, 184, 185, 186: begin par; 
+    181, 182, 183, 184, 185, 186: begin
       ep2 := nil;
       if estack <> nil then if estack^.op = 188{cke} then popstk(ep2);
-      if estack = nil then errorl('Expression underflow');
+      if estack = nil then error('Expression underflow');
       duptre(estack, ep); pshstk(ep);
       if ep2 <> nil then pshstk(ep2)
     end;
 
     {cks}
-    187: begin par; 
+    187: begin
       getexp(ep); pshstk(ep)
     end;
 
     {sfr}
-    245: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    245: begin labelsearch(def, val, sp, blk);
       getexp(ep); pshstk(ep);
       ep^.lb := nil;
       if (def and (val <> 0)) or not def then ep^.lb := sp
     end;
 
+
     {cuf}
-    246: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); read(prd,q,q1,q2,q3); write(prr, ' ', q:1, ' ', q1:1, ' ', q2:1, ' ', q3:1); 
-      lftjst(parfld-(2+max(sp^)+1+digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3))); pass;
+    246: begin labelsearch(def, val, sp, blk);
+      getadr(q); getadr(q1); getadr(q2); getadr(q3);
       getexp(ep); ep^.fn := sp; ep^.pn := q; ep^.rc := q1; ep^.blk := blk;
       getpar(ep); pshstk(ep)
     end;
 
     {cif}
     247: begin 
-      read(prd,q,q1,q2, q3); write(prr,q:1,' ',q1:1, ' ', q2:1, ' ', q3:1); 
-      lftjst(parfld-digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)); pass;
+      getadr(q); getadr(q1); getadr(q2); getadr(q3);
       getexp(ep); ep^.pn := q; ep^.rc := q1; popstk(ep^.l); getpar(ep);
       pshstk(ep)
     end;
 
     {cvf}
     249: begin 
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        read(prd,q1,q2,q3,q4); write(prr, q1:1, ' ', q2:1, ' ', q3:1, ' ', q4:1);
-        lftjst(parfld-(3+max(sp^)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
-      end else begin 
-        read(prd,q,q1,q2,q3,q4); write(prr,q,' ',q1, ' ', q2:1, ' ', q3:1, ' ', q4:1); 
-        lftjst(parfld-(digits(q)+1+digits(q1)+1+digits(q2)+1+digits(q3)+1+digits(q4)))
-      end;
-      pass;
+      if ch = 'l' then begin 
+        labelsearch(def, val, sp, blk);
+        getadr(q1); getadr(q2); getadr(q3); getadr(q4)
+      end else getadr(q1); getadr(q2); getadr(q3); getadr(q4);
       getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
       pshstk(ep)
     end;
 
     {cke}
-    188: begin par; 
+    188: begin
       getexp(ep);
       ep4 := estack;
       while ep4 <> nil do begin
@@ -2385,7 +2347,7 @@ begin { assemble }
     end;
 
     {wbs}
-    243: begin par;
+    243: begin
       getexp(ep);
       popstk(ep^.l);
       pshstk(ep)
@@ -2406,8 +2368,7 @@ begin { assemble }
     end;
 
     {lft} 
-    213: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    213: begin labelsearch(def, val, sp, blk);
       getexp(ep);
       popstk(ep^.l); ep^.lt := sp;
       pshstk(ep)
@@ -2421,12 +2382,12 @@ begin { assemble }
     end;
 
     {equv,neqv,lesv,grtv,leqv,geqv} 
-    215,216,217,218,219,220: begin par;
+    215,216,217,218,219,220: begin
       getexp(ep); popstk(ep^.r); popstk(ep^.l); pshstk(ep)
     end;
 
     {spc} 
-    222: begin par;
+    222: begin
       getexp(ep);
       popstk(ep^.l);
       pshstk(ep)
@@ -2440,7 +2401,7 @@ begin { assemble }
     end;
 
     {ldp} 
-    225: begin par;
+    225: begin
       getexp(ep);
       popstk(ep^.l);
       pshstk(ep)
@@ -2463,7 +2424,7 @@ begin { assemble }
     end;
 
     { cpl }
-    251: begin par;
+    251: begin
       getexp(ep);
       popstk(ep2); duptre(ep2, ep3); pshstk(ep2);
       ep^.l := ep3; pshstk(ep)
@@ -2474,10 +2435,8 @@ begin { assemble }
     {csp} 
     15: begin skpspc; getname(name);
       while name<>sfptab[q].sptable do begin 
-        q := q+1; if q > maxsp then errorl('std proc/func not found')
+        q := q+1; if q > maxsp then error('std proc/func not found')
       end; 
-      write(prr, sfptab[q].sptable:alflen(sfptab[q].sptable)); 
-      lftjst(parfld-alflen(sfptab[q].sptable)); pass;
       getexp(ep); 
       if (ep^.q = 39{nwl}) or (ep^.q = 40{dsl}) then 
         begin getparn(ep, maxint); revpar(ep); ordpar(ep) end
@@ -2485,7 +2444,7 @@ begin { assemble }
       if sfptab[q].spfunc then pshstk(ep) { non-terminal, stack it }
       else begin { terminal, execute here }
         if sfptab[ep^.q].spkeep then begin
-          if ep^.pl = nil then errorl('System error');
+          if ep^.pl = nil then error('System error');
           duptre(ep^.pl, ep2); pshstk(ep2)
         end;
         frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -2496,18 +2455,12 @@ begin { assemble }
 
     {cuv}
     27: begin 
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        read(prd,q1); write(prr, q1:1);
-        lftjst(parfld-(3+max(sp^)+1+digits(q1)))
-      end else begin 
-        read(prd,q,q1); write(prr,q,' ',q1); 
-        lftjst(parfld-(digits(q)+1+digits(q1)))
-      end;
-      pass;
+      if ch = 'l' then begin 
+        labelsearch(def, val, sp, blk);
+        getadr(q1)
+      end else begin getadr(q); getadr(q1) end;
       getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
       frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
       genexp(ep); deltre(ep)
@@ -2518,10 +2471,8 @@ begin { assemble }
     {cvbi,cvbx,cvbb,cvbc}
     100, 115, 116, 121,
     {ivti,ivtx,ivtb,ivtc,cta}
-    192,101,102,111,191: begin read(prd,q, q1); 
+    192,101,102,111,191: begin getadr(q); getadr(q1);
       labelsearch(def, val, sp, blk); 
-      write(prr,q:1, ' ', q1:1, ' l '); write(prr, sp^); 
-      lftjst(parfld-(digits(q)+1+digits(q1)+3+max(sp^))); pass;
       getexp(ep); ep^.lt := sp; popstk(ep2); popstk(ep3); 
       duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
       frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -2529,9 +2480,7 @@ begin { assemble }
     end;
 
     {cup}
-    12: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); read(prd, q1); write(prr, ' ', q1:1); 
-      lftjst(parfld-(2+max(sp^)+1+digits(q1))); pass;
+    12: begin labelsearch(def, val, sp, blk); getadr(q1);
       getexp(ep); ep^.fn := sp; ep^.pn := q1; ep^.blk := blk; getpar(ep);
       frereg := allreg; assreg(ep, frereg, rgnull, rgnull); dmptre(ep);
       genexp(ep); deltre(ep);
@@ -2622,10 +2571,8 @@ begin { assemble }
     end;
 
     {mst}
-    11: begin read(prd,p); labelsearch(def, val, lclspc, blk); 
+    11: begin getlvl(p); labelsearch(def, val, lclspc, blk); 
       labelsearch(def2, val2, sp2, blk);
-      write(prr,p:1, ' l '); write(prr, lclspc^); write(prr, ' l '); 
-      write(prr, sp2^); lftjst(parfld-(digits(p)+3+max(lclspc^)+3+max(sp2^))); pass;
       if blkstk <> nil then
         if blkstk^.btyp in [btproc, btfunc] then begin
           write(prr, '        .globl   '); wrtblklng(blkstk); writeln(prr);
@@ -2634,7 +2581,7 @@ begin { assemble }
         end;
       frereg := allreg;
       { We limit to the enter instruction }
-      if p >= 32 then errorl('Too many nested levels');
+      if p >= 32 then error('Too many nested levels');
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' pushq $0 # place current ep');
       wrtins(' pushq $0 # place bottom of stack');
@@ -2688,13 +2635,9 @@ begin { assemble }
 
     {sroi,sroa,sror,srob,sroc,srox}
     3, 75, 76, 78, 79, 196: begin
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        lftjst(parfld-(digits(p)+3+max(sp^))); pass
-      end else parq;
+      if ch = 'l' then labelsearch(def, val, sp, blk) else parq;
       frereg := allreg;
       popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
       genexp(ep);
@@ -2720,13 +2663,9 @@ begin { assemble }
 
     {sros}
     77: begin
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp, blk);
-        write(prr, p:1, ' l '); write(prr, sp^); 
-        lftjst(parfld-(digits(p)+3+max(sp^))); pass
-      end else parq;
+      if ch = 'l' then labelsearch(def, val, sp, blk) else parq;
       frereg := allreg;
       popstk(ep); attach(ep); assreg(ep, frereg, rgnull, rgnull); dmptre(ep); 
       genexp(ep);
@@ -2793,8 +2732,7 @@ begin { assemble }
     end;
 
     {ujp}
-    23: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    23: begin labelsearch(def, val, sp, blk);
       wrtins(' jmp @s', sp^);
       if estack <> nil then begin { put in unresolved cache }
         getexp(ep); ep^.qs := sp;
@@ -2803,8 +2741,7 @@ begin { assemble }
     end;
 
     {fjp,tjp}
-    24,119: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    24,119: begin labelsearch(def, val, sp, blk);
       frereg := allreg; popstk(ep); 
       assreg(ep, frereg, rgnull, rgnull); dmptre(ep); genexp(ep); 
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
@@ -2815,8 +2752,7 @@ begin { assemble }
     end;
 
     {xjp}
-    25: begin labelsearch(def, val, sp, blk); write(prr, 'l '); 
-      write(prr, sp^); lftjst(parfld-(3+max(sp^))); pass;
+    25: begin labelsearch(def, val, sp, blk);
       frereg := allreg; popstk(ep); getreg(r1, frereg);
       assreg(ep, frereg, rgnull, rgnull); 
       dmptre(ep); genexp(ep); 
@@ -2832,8 +2768,7 @@ begin { assemble }
     end;
 
     {ipj}
-    112: begin read(prd,p); labelsearch(def, val, sp, blk); write(prr, p:1, ' l ');
-      write(prr, sp^); lftjst(parfld-(digits(p)+3+max(sp^))); pass;
+    112: begin getlvl(p); labelsearch(def, val, sp, blk);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' movq ^0(%rbp),%rbp # get frame pointer for target', -p*ptrsize);
       wrtins(' movq ^0(%rbp),%rsp # get stack for target', marksb);
@@ -2855,14 +2790,14 @@ begin { assemble }
     end;
 
     {vbe}
-    96: begin par;
+    96: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' call psystem_varexit # remove variable reference block');
       botstk
     end;
 
     {ret}
-    22: begin par;
+    22: begin
       frereg := allreg;
       wrtins(' ret      ');
       botstk
@@ -2958,7 +2893,7 @@ begin { assemble }
     end;
 
     {stoi,stoa,stor,stob,stoc,stox}
-    6, 80, 81, 83, 84, 197: begin par;
+    6, 80, 81, 83, 84, 197: begin
       frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
       getreg(ep^.r1, frereg);
       assreg(ep, frereg, ep^.r1, rgnull);
@@ -2976,7 +2911,7 @@ begin { assemble }
     end;
 
     {stos}
-    82: begin par; 
+    82: begin
       frereg := allreg; popstk(ep2); popstk(ep); attach(ep);
       assreg(ep, frereg, rgrdi, rgnull); frereg := frereg-[rgrdi];
       assreg(ep2, frereg, rgrsi,  rgnull);
@@ -3007,24 +2942,22 @@ begin { assemble }
     end;
 
     {stp}
-    58: par; { unused }
+    58: ; { unused }
 
     {inv} { a no-op in pgen }
-    189: begin par; 
+    189: begin 
       frereg := allreg; popstk(ep); dmptre(ep); deltre(ep); 
       botstk
     end;
 
-    61 {ujc}: begin par;
+    61 {ujc}: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' call psystem_caseerror');
       botstk
     end;
- 
+
     {cjp}
-    8: begin read(prd,q,q1); labelsearch(def, val, sp, blk); 
-      write(prr,q:1, ' ', q1:1, ' l '); write(prr, sp^); write(prr, ' '); 
-      lftjst(parfld-(digits(q)+1+digits(q1)+3+max(sp^))); pass;
+    8: begin getadr(q); getadr(q1); labelsearch(def, val, sp, blk); 
       frereg := allreg; popstk(ep); 
       assreg(ep, frereg, rgnull, rgnull);
       dmptre(ep); genexp(ep);
@@ -3038,7 +2971,7 @@ begin { assemble }
     end;
 
     {wbe}
-    244: begin par;
+    244: begin
       frereg := allreg;
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' call psystem_withexit # remove last with');
@@ -3102,18 +3035,9 @@ begin { assemble }
 
     {suv}
     91: begin labelsearch(def, val, sp, blk); 
-      while not eoln(prd) and (prd^ = ' ') do read(prd,ch);
+      skpspc;
       sp2 := nil;
-      if prd^ = 'l' then begin 
-        getnxt; labelsearch(def, val, sp2, blk);
-        write(prr,' l '); write(prr, sp^);
-        write(prr,'l '); write(prr, sp2^); 
-        lftjst(parfld-(3+max(sp^)+2+max(sp2^))); pass
-      end else begin
-        read(prd,q1); write(prr,' l '); write(prr, sp^);
-        write(prr, ' ',q1:1); 
-        lftjst(parfld-(3+max(sp^)+1+digits(q1))); pass
-      end;
+      if ch = 'l' then labelsearch(def, val, sp2, blk) else getadr(q1); 
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' leaq @s(%rip),%rax # get new vector address', sp^);
 
@@ -3122,15 +3046,13 @@ begin { assemble }
     end;
 
     {cal}
-    21: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    21: begin labelsearch(def, val, sp, blk);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' call @s # call routine/initializer', sp^);
     end;
 
     {bge}
-    207: begin labelsearch(def, val, sp, blk); write(prr, 'l ');
-      write(prr, sp^); lftjst(parfld-(2+max(sp^))); pass;
+    207: begin labelsearch(def, val, sp, blk);
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' pushq psystem_expadr(%rip) # save current exception frame');
       wrtins(' pushq psystem_expstk(%rip)');
@@ -3144,7 +3066,7 @@ begin { assemble }
     end;        
 
     {ede}
-    208: begin par;
+    208: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' popq %rax # Dispose vector');
       wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
@@ -3154,7 +3076,7 @@ begin { assemble }
     end;
 
     {mse}
-    209: begin par;
+    209: begin
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' popq %rdx # get error vector');
       wrtins(' popq psystem_expmrk(%rip) # restore previous exception frame');
@@ -3195,7 +3117,7 @@ begin { assemble }
     end;
 
     {vdp,vdd} 
-    221,227: begin par;
+    221,227: begin
       frereg := allreg;
       popstk(ep);
       assreg(ep, frereg, rgrdi, rgnull);
@@ -3208,7 +3130,7 @@ begin { assemble }
     end;
 
     {scp} 
-    224: begin par;
+    224: begin
       frereg := allreg;
       { complex pointer, store address }
       popstk(ep2); popstk(ep);
@@ -3240,7 +3162,7 @@ begin { assemble }
     end;
 
     {cps}
-    176: begin par; 
+    176: begin
       getexp(ep); popstk(ep2); popstk(ep3);
       duptre(ep2, ep^.r); duptre(ep3, ep^.l); pshstk(ep3); pshstk(ep2);
       frereg := allreg; assreg(ep, frereg, rgnull, rgnull); 
@@ -3274,11 +3196,9 @@ begin { assemble }
     241: parq;
 
     {lsp}
-    250: par;
+    250: ;
 
-  end; (*case*)
-
-  getlin; { next intermediate line }
+  end (*case*)
 
 end; (*assemble*)
 

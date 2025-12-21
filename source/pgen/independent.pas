@@ -873,7 +873,7 @@ prrval      : boolean; { output source file parsed }
 lindig      : boolean; { line diagnostic for gdb encountered }
 errret      : boolean; { error flagged }
 
-word:           array[alfainx] of char; ch  : char;
+word:           array[alfainx] of char;
 labeltab:       array[labelrg] of labelrec;
 labelvalue:     address;
 sline:          integer; { line number of Pascal source file }
@@ -891,6 +891,9 @@ tmpspc:         address; { size of temps area }
 tmplst:         tmpptr; { list of active temps }
 tmpfre:         tmpptr; { free temp entries }
 lclspc:         pstring; { label for locals space }
+inplin:         linbuf; { buffer for input line }
+inpinx:         lininx; { current input line position }
+inplen:         0..maxlin; { length of input line }
 
 procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
 const digmax = 64; { maximum total digits }
@@ -1079,7 +1082,7 @@ begin
       reset(prd);
 
       sline := 0; { set no line of source }
-      iline := 1; { set 1st line of intermediate }
+      iline := 0; { set no line of intermediate }
       flablst := nil; { clear far label list }
       expsn := 0; { expression entries serial number start }
       tmpoff := 0; { set temps stack offset }
@@ -1105,9 +1108,15 @@ begin
 
 end;
 
-procedure errorl(view es: string); (*error in loading*)
-begin writeln;
-   writeln('*** Program translation error: [', sline:1, ',', iline:1, '] ', es);
+procedure wrtlin;
+begin
+  writeln(sline:6, ': ', iline:6, ': ', inplin:inplen);
+  writeln(' ':6+2+6+2, '^': inpinx)
+end;
+
+procedure error(view es: string); (*error in loading*)
+begin writeln; wrtlin;
+   writeln('*** pgen: Program translation error: ', es);
    errret := true; { set there was an error }
    abort
 end; (*errorl*)
@@ -1166,7 +1175,7 @@ end;
    
 procedure putexp(ep: expptr);
 begin
-  if ep^.free then errorl('System fault: dbl free');
+  if ep^.free then error('System fault: dbl free');
   ep^.next := efree; efree := ep; ep^.free := true
 end;
 
@@ -1188,7 +1197,7 @@ end;
 
 procedure update(x: labelrg; pc: boolean); (*when a label definition lx is found*)
 begin
-   if labeltab[x].st=defined then errorl('duplicated label')
+   if labeltab[x].st=defined then error('Duplicated label')
    else begin
      labeltab[x].st := defined;
      labeltab[x].val:= labelvalue;
@@ -1201,30 +1210,142 @@ begin
    end
 end;(*update*)
 
+procedure getlin;
+var i: lininx;
+begin
+ for i := 1 to maxlin do inplin[i] := ' ';
+ inpinx := 1;
+ inplen := 0;
+ if not eof(prd) then begin
+   while not eoln(prd) do begin
+     read(prd, inplin[inpinx]); 
+     if inpinx = maxlin-1 then begin
+       writeln; 
+       writeln('*** ', sline:6, ': ', iline:6, 
+               ': Input line too long, truncated');
+       abort
+     end else begin inplen := inplen+1; inpinx := inpinx+1 end
+   end;
+   readln(prd); 
+   inpinx := 1;
+   iline := iline+1; { next intermediate line }
+!;writeln(sline:6, ': ', iline:6, ': ', inplin:inplen);
+   writeln(prr, '# ', sline:6, ': ', iline:6, ': ', inplin:inplen)
+ end
+end;
+
+function eofinp: boolean;
+begin
+  eofinp := (inplen = 0) and eof(prd)
+end;
+
+function eolinp: boolean;
+begin
+  if eofinp then eolinp := true
+  else if inpinx > inplen then eolinp := true
+  else eolinp := false
+end;
+
+function ch: char;
+begin
+  if not eolinp then ch := inplin[inpinx] else ch := ' '
+end;
+
 procedure getnxt; { get next character }
 begin
-   ch := ' ';
-   if not eoln(prd) then read(prd,ch)
+  if not eolinp then inpinx := inpinx+1
+end;
+
+function chla: char;
+var l: lininx;
+begin
+  l := inpinx; getnxt; chla := ch; inpinx := l
 end;
 
 procedure skpspc; { skip spaces }
 begin
-  while (ch = ' ') and not eoln(prd) do getnxt
+  while (ch = ' ') and not eolinp do getnxt
 end;
 
-procedure getlin; { get next line }
+procedure getint(var i: integer); { get integer }
+var s: integer;
 begin
-  readln(prd);
-  iline := iline+1 { next intermediate line }
+  skpspc; i := 0; s := +1;
+  if ch = '-' then s := -1;
+  if ch in ['-', '+'] then getnxt;
+  if not (ch in ['0'..'9']) then error('Number expected');
+  while ch in ['0'..'9'] do begin
+    i := i*10+(ord(ch)-ord('0'));
+    getnxt
+  end;
+  i := i*s
+end;
+
+procedure getreal(var r: real); { get real }
+var i: integer; { integer holding }
+    e: integer; { exponent }
+    d: integer; { digit }
+    s: boolean; { sign }
+   { find power of ten }
+function pwrten(e: integer): real;
+var t: real; { accumulator }
+    p: real; { current power }
+begin
+   p := 1.0e+1; { set 1st power }
+   t := 1.0; { initalize result }
+   repeat
+      if odd(e) then t := t*p; { if bit set, add this power }
+      e := e div 2; { index next bit }
+      p := sqr(p) { find next power }
+   until e = 0;
+   pwrten := t
+end;
+begin
+  e := 0; { clear exponent }
+  s := false; { set sign }
+  r := 0.0; { clear result }
+  { skip leading spaces }
+  while (ch = ' ') and not eolinp do getnxt;
+  { get any sign from number }
+  if ch = '-' then begin getnxt; s := true end
+  else if ch = '+' then getnxt;
+  if not (ch in ['0'..'9']) then error('Invalid real number');
+  while (ch in ['0'..'9']) do begin { parse digit }
+     d := ord(ch)-ord('0');
+     r := r*10+d; { add in new digit }
+     getnxt
+  end;
+  if ch in ['.', 'e', 'E'] then begin { it's a real }
+     if ch = '.' then begin { decimal point }
+        getnxt; { skip '.' }
+        if not (ch in ['0'..'9']) then error('Invalid real number');
+        while (ch in ['0'..'9']) do begin { parse digit }
+           d := ord(ch)-ord('0');
+           r := r*10+d; { add in new digit }
+           getnxt;
+           e := e-1 { count off right of decimal }
+        end;
+     end;
+     if ch in ['e', 'E'] then begin { exponent }
+        getnxt; { skip 'e' }
+        if not (ch in ['0'..'9', '+', '-']) then
+           error('Invalid real number');
+        getint(i); { get exponent }
+        { find with exponent }
+        e := e+i
+     end;
+     if e < 0 then r := r/pwrten(e) else r := r*pwrten(e)
+  end;
+  if s then r := -r
 end;
 
 procedure getlab;
 var i: 1..lablen;
 begin skpspc; for i := 1 to lablen do sn[i] := ' '; snl := 1;
   if not (ch in ['a'..'z','A'..'Z','_']) then
-    errorl('Symbols format error');
+    error('Symbols format error');
   while ch in ['a'..'z','A'..'Z','0'..'9','_'] do begin
-    if snl >= lablen then errorl('Symbols format error');
+    if snl >= lablen then error('Symbols format error');
     sn[snl] := ch; getnxt; snl := snl+1
   end;
   snl := snl-1
@@ -1233,9 +1354,9 @@ end;
 procedure getsds;
 var i: 1..lablen;
 begin skpspc; for i := 1 to lablen do sn[i] := ' '; snl := 1;
-  if ch = ' ' then errorl('Symbols format error');
+  if ch = ' ' then error('Symbols format error');
   while ch <> ' ' do begin
-    if snl >= lablen then errorl('Symbols format error');
+    if snl >= lablen then error('Symbols format error');
     sn[snl] := ch; getnxt; snl := snl+1
   end;
   snl := snl-1
@@ -1298,10 +1419,11 @@ end;
 procedure parlab(var x: integer; var fl: pstring);
 var j: integer; cs: packed array [1..1] of char;
 begin fl := nil;
-  getlab; if ch <> '.' then errorl('Symbols format error');
-  if prd^ in ['0'..'9'] then begin read(prd, x); getnxt end { near label }
+  getlab; if ch <> '.' then error('Symbols format error');
+  getnxt; 
+  if ch in ['0'..'9'] then getint(x) { near label }
   else begin { far label }
-    getnxt; fl := strp(sn); cat(fl, '.');
+    fl := strp(sn); cat(fl, '.');
     getsds; cvtsds;
     for j := 1 to snl do begin cs[1] := sn[j]; cat(fl, cs) end
   end
@@ -1495,11 +1617,6 @@ begin
   writeln(prr, 'market      = ', market:10,      ' # current ep');
 end;
 
-procedure prtline;
-begin
-  write(prr, '# ', sline:6, ': ', iline:6, ': ')
-end;
-
 { write short block name with field }
 procedure wrtblksht(bp: pblock; var fl: integer);
 begin
@@ -1624,7 +1741,7 @@ end;
 procedure generate; (*generate segment of code*)
    var x: integer; (* label number *)
        again: boolean;
-       c,ch1: char;
+       ch1: char;
        ls: pstring;    
        ispc: boolean;  
        i, l: integer;   
@@ -1652,53 +1769,38 @@ procedure generate; (*generate segment of code*)
        ad: address;
 begin
    again := true; csttab := false;
-   while again and not eof(prd) do begin
-     getnxt;(* first character of line*)
+   while again and not eofinp do begin
+     getlin; { load next intermediate line }
      if not (ch in ['!', 'l', 'q', ' ', ':', 'o', 'g', 'b', 'e', 's', 'f',
                     'v', 't', 'n', 'x', 'c', 'p', 'r']) then
-       errorl('unexpected line start');
-     case ch of
-       '!': begin prtline; write(prr, ' ', '!'); while not eoln(prd) do
-              begin read(prd, ch); write(prr, ch) end;
-              writeln(prr); getlin
-            end;
-       'l': begin getnxt; parlab(x,ls); 
-                  prtline; write(prr, ' ', 'l ', sn:snl, '.', x:1);
+       error('unexpected line start');
+     ch1 := ch; getnxt;
+     case ch1 of
+       '!': ;
+       'l': begin parlab(x,ls); 
                   if ls <> nil then
-                    errorl('Invalid intermediate');
+                    error('Invalid intermediate');
                   if ch='=' then 
-                    begin read(prd,labelvalue); 
-                      write(prr, '=', labelvalue:1);
-                      ispc := false
-                    end else ispc := true;
-                  getlin; writeln(prr); update(x, ispc)
+                    begin getnxt; getint(i); labelvalue := i; ispc := false end
+                  else ispc := true;
+                  update(x, ispc);
             end;
-       'q': begin again := false; getlin end;
-       ' ': begin getnxt; 
-                  while not eoln(prd) and (ch = ' ') do getnxt;
-                  if not eoln(prd) and (ch <> ' ') then assemble
-                  else getlin 
+       'q': again := false;
+       ' ': begin skpspc;
+                  if not eolinp and (ch <> ' ') then assemble
             end;
        ':': begin { source line }
-               read(prd,x); { get source line number }
-               sline := x; prtline; writeln(prr, ' ', ':', x:1);
+               getint(x); { get source line number }
+               sline := x;
                if lindig then { gdb line diagnostic active }
-                 writeln(prr, '        .loc 1 ', x:1, ' 1'); { write debug line }
-               { skip the rest of the line, which would be the
-                 contents of the source line if included }
-               while not eoln(prd) do
-                  read(prd, c); { get next character }
-               getlin { source line }
+                 writeln(prr, '        .loc 1 ', x:1, ' 1') { write debug line }
             end;
        'o': begin { option }
-              prtline; write(prr, ' ', 'o ');
-              getnxt;
-              while not eoln(prd) and (ch = ' ') do getnxt;
+              skpspc;
               repeat
                 if not (ch in ['a'..'z', 'A'..'Z', '_']) then
-                  errorl('No valid option found');
-                getlab; if snl > optlen then errorl('Option is too long');
-                write(prr, sn:snl);
+                  error('No valid option found');
+                getlab; if snl > optlen then error('Option is too long');
                 for i := 1 to optlen do os[i] := sn[i];
                 oi := 1;
                 while (oi < maxopt) and (os <> opts[oi]) and (os <> optsl[oi]) do
@@ -1707,8 +1809,7 @@ begin
                   ch1 := chr(oi+ord('a')-1);
                   option[oi] := true; 
                   if ch = '-' then option[oi] := false;
-                  if (ch = '-') or (ch = '+') then begin write(prr, ch); getnxt end;
-                  write(prr, ' ');
+                  if (ch = '-') or (ch = '+') then getnxt;
                   case oi of
                     7:  dodmplab   := option[oi];
                     8:  dosrclin   := option[oi];
@@ -1728,16 +1829,15 @@ begin
                     2:; 3:; 4:; 12:; 20:; 21:; 22:;
                     24:; 25:; 26:; 10:; 18:;
                   end
-                end else errorl('No valid option found');
-                while not eoln(prd) and (ch = ' ') do getnxt
-              until not (ch in ['a'..'z']);
-              getlin; writeln(prr);
+                end else error('No valid option found');
+                skpspc
+              until not (ch in ['a'..'z'])
             end;
-       'g': begin read(prd, gblsiz); getlin end; { set globals space }
+       'g': begin getint(i); gblsiz := i end; { set globals space }
        'b': begin { block start }
-              getnxt; skpspc;
+              skpspc;
               if not (ch in ['p', 'm', 'r', 'f']) then
-                errorl('Block type is invalid');
+                error('Block type is invalid');
               ch1 := ch; { save block type }
               getnxt; skpspc; getsds; sn2 := sn; snl2 := snl; cvtsds;
               new(bp); bp^.name := strp(sn);
@@ -1770,65 +1870,57 @@ begin
               bp^.parent := blkstk; { set parent entry }
               { put onto block stack }
               bp^.next := blkstk; blkstk := bp;
-              prtline; writeln(prr, ' b ', ch1, ' ', sn2:snl2);
               if ch1 in ['p', 'm'] then begin
                 modnam := bp^.bname;
                 preamble
               end;
               level := level+1; { count block levels }
-              bp^.lvl := level; { set }
-              getlin
+              bp^.lvl := level { set }
             end;
        'e': begin 
-              getnxt; skpspc;
+              skpspc;
               if not (ch in ['p', 'm', 'r', 'f']) then
-                errorl('Block type is invalid');
-              prtline; writeln(prr, ' e ', ch);
+                error('Block type is invalid');
               if ch = 'p' then postamble;
-              if blkstk = nil then errorl('System error');
+              if blkstk = nil then error('System error');
               bp := blkstk;
               blkstk := blkstk^.next;
               bp^.next := blklst;
               blklst := bp;
-              level := level-1; { count block levels }
-              getlin
+              level := level-1 { count block levels }
             end;
       's': begin { symbol }
-             prtline; write(prr, ' s ');
-             getnxt; getlab;
+             getlab;
              new(sp); sp^.name := strp(sn);
-             write(prr, sn:snl); 
              sn2 := sn; snl2 := snl;
              skpspc;
              if not (ch in ['g', 'l','p','f','c']) then
-               errorl('Symbol type is invalid');
+               error('Symbol type is invalid');
              if ch = 'g' then sp^.styp := stglobal
              else if ch = 'p' then sp^.styp := stparam
              else sp^.styp := stlocal;
              ch1 := ch;
-             write(prr, ' ', ch, ' ');
              getnxt;
              skpspc;
              if not (ch in ['0'..'9','-']) then
-               errorl('No offset found');
+               error('No offset found');
              sgn := ch = '-'; if ch = '-' then getnxt;
              ad := 0; while ch in ['0'..'9'] do
                begin
                  if ad <= maxstr div 10 then
                    ad := ad*10+ord(ch)-ord('0')
-                 else errorl('Symbol offset > max');
+                 else error('Symbol offset > max');
                  getnxt
                end;
              if sgn then ad := -ad;
-             write(prr, ad:1, ' ');
-             sp^.off := ad; getsds; writeln(prr, sn:snl);
+             sp^.off := ad; getsds;
              sp^.digest := strp(sn);
              if anyshort(blkstk) and (ch1 in ['g','l','p']) then begin
                wrtblks(blkstk, true, fl); 
                if ch1 = 'g' then 
                  writeln(prr, sn2:snl2, ' = globals_start+', ad:1)
                else
-                 writeln(prr, sn2:snl2, ' = ', ad:1);
+                 writeln(prr, sn2:snl2, ' = ', ad:1)
              end;
              if ch1 = 'g' then begin
                write(prr, '        .globl   ');
@@ -1842,175 +1934,141 @@ begin
              end;
              { place in block symbol list }
              sp^.next := blkstk^.symbols;
-             blkstk^.symbols := sp;
-             getlin
+             blkstk^.symbols := sp
            end;
-       'f': begin; { source error count }
-              prtline; read(prd, x); writeln(prr, ' f ', x:1);
-              getlin
-            end;
+       'f': ; { source error count (unused) }
        'v': begin { variant logical table }
-             getnxt; skpspc;
-             if ch <> 'l' then errorl('Label format error');
+             skpspc;
+             if ch <> 'l' then error('Label format error');
              getnxt; parlab(x,ls); 
-             prtline; write(prr, ' ', 'v l ', sn:snl, '.', x:1, ' ');
-             read(prd, vl); write(prr, vl:1, ' '); vi := 1; 
-             for vi := 1 to vl do 
-               begin read(prd, vt[vi]); write(prr, vt[vi]:1, ' ') end;
-             writeln(prr); update(x, true); getlin;
+             getint(vl);
+             for vi := 1 to vl do getint(vt[vi]);
+             update(x, true);
              write(prr, '        .quad   ', vl:1);
              for vi := 1 to vl do
                write(prr, ',', vt[vi]:1);
              writeln(prr)
             end;
        't': begin { template }
-             getnxt; skpspc;
+             skpspc;
              if ch <> 'l' then
-               errorl('Label format error');
+               error('Label format error');
              getnxt; parlab(x,ls);
-             prtline; write(prr, ' ', 'v l ', sn:snl, '.', x:1, ' ');
              if ls <> nil then
-               errorl('Invalid intermediate');
-             read(prd,l); write(prr, l:1, ' ');
+               error('Invalid intermediate');
+             getint(l);
              new(cstp2); cstp2^.ct := ctmp; cstp2^.next := csttbl; 
              csttbl := cstp2;
              cstp2^.tsize := l; cstp2^.tn := x; ti := 1;
-             while not eoln(prd) do begin
-               if ti = maxtmp then errorl('Too many template indexes');
-               read(prd,tv); write(prr, tv:1, ' '); cstp2^.ta[ti] := tv; 
+             while not eolinp do begin
+               if ti = maxtmp then error('Too many template indexes');
+               getint(tv); cstp2^.ta[ti] := tv; 
                ti := ti+1;
-               { this is a gpc compiler bug, \cr is passing the eoln filter }
-               while not eoln(prd) and (prd^ <= ' ') do get(prd)
-             end;
-             getlin
+               { dump remainer }
+               while not eolinp and (ch <= ' ') do getnxt
+             end
            end;
       'n': begin { start constant table }
              if csttab then
-               errorl('Already in constant table');
+               error('Already in constant table');
              csttab := true; { flag in table }
-             getnxt; skpspc;
-             if ch <> 'l' then
-               errorl('Label format error');
+             skpspc;
+             if ch <> 'l' then error('Label format error');
              getnxt; parlab(x,ls);
-             prtline; write(prr, ' ', 'v l ', sn:snl, '.');
-             if ls = nil then write(prr, x:1, ' ') else write(prr, ls^);
-             read(prd,l); { note the size is unused }
+             getint(l); { note the size is unused }
              new(cstp); cstp^.ct := ctab; cstp^.tb := nil; 
              cstp^.next := csttbl; csttbl := cstp;
-             cstp^.csize := l; cstp^.cn := x; cstp^.cs := ls;
-             getlin
+             cstp^.csize := l; cstp^.cn := x; cstp^.cs := ls
              { note mixed constants with other operands is
                neither encouraged nor forbidden }
            end;
       'x': begin
-             prtline; writeln(prr, ' x');
              if not csttab then
-               errorl('No constant table active');
+               error('No constant table active');
              cstp2 := cstp^.tb; cstp^.tb := nil;
              while cstp2 <> nil do begin
                cstp3 := cstp2; cstp2 := cstp2^.next;
                cstp3^.next := cstp^.tb; cstp^.tb := cstp3
              end;
-             csttab := false;
-             getlin
+             csttab := false
            end;
       'c': begin
-             prtline; write(prr, ' c ');
-             if not csttab then errorl('No constant table active');
-             getnxt; skpspc;
+             if not csttab then error('No constant table active');
+             skpspc;
              if not (ch in ['i','r','p','s','c','b','x'])
-               then errorl('Invalid const table type');
-             write(prr, ch, ' ');
-             case ch of { constant type }
+               then error('Invalid const table type');
+             ch1 := ch; getnxt;
+             case ch1 of { constant type }
                'i': begin
-                      write(prr, 'i ');
-                      getnxt; read(prd,v); write(prr, v:1); new(cstp2); 
+                      getint(v); new(cstp2); 
                       cstp2^.ct := cint; cstp2^.next := cstp^.tb; 
                       cstp^.tb := cstp2; cstp2^.i := v; cstp2^.intn := 0
                     end;
                'r': begin
-                      write(prr, 'r ');
-                      getnxt; read(prd,r); write(prr, r:1); new(cstp2); 
+                      getreal(r); new(cstp2); 
                       cstp2^.ct := creal; cstp2^.next := cstp^.tb; 
                       cstp^.tb := cstp2; cstp2^.r := r; cstp2^.realn := 0
                     end;
                'p': begin
-                      write(prr, 'p ');
-                      getnxt; skpspc;
-                      if ch <> '(' then errorl('''('' expected for set');
+                      skpspc;
+                      if ch <> '(' then error('''('' expected for set');
                       s := [ ]; getnxt;
                       while ch<>')' do
-                        begin read(prd,i); write(prr, i, ' '); 
+                        begin getint(i);
                           getnxt; s := s + [i] end;
                       new(cstp2); cstp2^.ct := cset;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                       cstp2^.s := s; cstp2^.setn := 0
                     end;
                's': begin
-                      write(prr, 's ');
-                      getnxt; skpspc;
-                      if ch <> '''' then errorl('quote expected for string');
-                      write(prr, '''');
+                      skpspc;
+                      if ch <> '''' then error('quote expected for string');
                       getnxt; i := 1;
                       while ch<>'''' do
-                        begin sn[i] := ch; write(prr, ch); i := i+1; getnxt end;
-                      write(prr, '''');
+                        begin sn[i] := ch; i := i+1; getnxt end;
                       new(cstp2); cstp2^.ct := cstr;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                       cstp2^.str := strp(sn); cstp2^.strl := i-1; 
                       cstp2^.strn := 0
                     end;
                'c': begin
-                      write(prr, 'c ');
-                      getnxt;
                       { chars are output as values }
-                      read(prd,i); write(prr, i:1); new(cstp2); 
+                      getint(i); new(cstp2); 
                       cstp2^.ct := cchr; cstp2^.next := cstp^.tb; 
                       cstp^.tb := cstp2; cstp2^.c := i; cstp2^.chrn := 0
                     end;
                'b': begin
-                      write(prr, 'b ');
-                      getnxt;
                       { booleans are output as values }
-                      read(prd,i); write(prr, i:1); new(cstp2); 
+                      getint(i); new(cstp2); 
                       cstp2^.ct := cbol; cstp2^.next := cstp^.tb; 
                       cstp^.tb := cstp2; cstp2^.b := i; cstp2^.boln := 0
                     end;
                'x': begin
-                      write(prr, 'x ');
-                      getnxt; read(prd,v); write(prr, v:1); new(cstp2); 
+                      getint(v); new(cstp2); 
                       cstp2^.ct := cvalx; cstp2^.next := cstp^.tb; 
                       cstp^.tb := cstp2; cstp2^.x := v; cstp2^.valxn := 0
                     end;
-             end;
-             writeln(prr);
-             getlin
+             end
            end;
       'r': begin
-             prtline; writeln(prr, ' r');
-             if not csttab then
-               errorl('No constant table active');
+             if not csttab then error('No constant table active');
              new(cstp2); cstp2^.ct := crst; 
-             cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-             getlin
+             cstp2^.next := cstp^.tb; cstp^.tb := cstp2
            end;
       'p': begin { filename and path }
-            prtline; write(prr, ' p ');
-             getnxt; skpspc;
+             skpspc;
              for i := 1 to max(srcfil) do srcfil[i] := ' ';
              skpspc; i := 1;
              while ch <> ' ' do begin 
-               srcfil[i] := ch; write(prr, ch); getnxt; i := i+1;
-               if i = max(srcfil) then errorl('filename to long')
+               srcfil[i] := ch; getnxt; i := i+1;
+               if i = max(srcfil) then error('filename to long')
              end;
-             writeln(prr);
              services.brknam(srcfil, p, n, e);
              if domrklin then begin
              writeln(prr, '        .file   "',n:*, '.', e:*, '"'); 
              writeln(prr, '        .file   1 "',srcfil:*, '"'); 
              lindig := true; { set line diagnostic active for gdb }
-             end;
-             getlin
+             end
            end;
     end
   end
@@ -2054,7 +2112,7 @@ begin
   }
   fp := nil; p := tmplst;
   while p <> nil do begin if p^.off = a then fp := p; p := p^.next end;
-  if fp = nil then errorl('System error: tmp addr');
+  if fp = nil then error('System error: tmp addr');
   fp^.occu := false
 end;
 
@@ -2076,7 +2134,7 @@ end;
 
 procedure popstk(var ep: expptr);
 begin
-  if estack = nil then errorl('Expression underflow');
+  if estack = nil then error('Expression underflow');
   ep := estack; estack := estack^.next; ep^.next := nil; 
   stacklvl := stacklvl-1
 end;
@@ -2093,7 +2151,7 @@ procedure labelsearch(var def: boolean; var val: integer; var sp: pstring;
                      var blk: pblock);
 var x: integer; flp: flabelp;
 begin def := false; val := 0; flp := nil; blk := nil; skpspc; 
- if ch <> 'l' then errorl('Label format error');
+ if ch <> 'l' then error('Label format error');
  getnxt; parlab(x,sp);
  if sp <> nil then begin { far label }
    new(flp); flp^.next := flablst; flablst := flp; flp^.ref := sp
@@ -2107,15 +2165,15 @@ end;(*labelsearch*)
 procedure getname(var name: alfa);
 var i: alfainx;
 begin
- if eof(prd) then errorl('Unexpected eof on input');
+ if eofinp then error('Unexpected eof on input');
  for i := 1 to maxalfa do word[i] := ' ';
  i := 1; { set 1st character of word }
- if not (ch in ['a'..'z']) then errorl('No operation label');
+ if not (ch in ['a'..'z']) then error('No operation label');
  while ch in ['a'..'z'] do begin
-   if i = maxalfa then errorl('Opcode label is too long');
+   if i = maxalfa then error('Opcode label is too long');
    word[i] := ch;
-   i := i+1; ch := ' ';
-   if not eoln(prd) then read(prd,ch); { next character }
+   i := i+1;
+   getnxt { next character }
  end;
  pack(word,1,name)
 end; (*getname*)
@@ -2267,7 +2325,7 @@ function looka: char;
 begin if i+1 > max(si) then looka := ' ' else looka := si[i+1] end;
 
 procedure next;
-begin if i > max(si) then errorl('Error in instruction     '); i := i+1 end;
+begin if i > max(si) then error('Error in instruction     '); i := i+1 end;
  
 begin
  i := 1; j := 1;

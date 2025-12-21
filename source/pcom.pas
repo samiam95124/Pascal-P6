@@ -1629,7 +1629,7 @@ end;
     { * marks spared compiler errors }
     400,401,402,403,404,406,407, 500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515,
-    516,517,518,519: write('Compiler internal error');
+    516,517,518,{*}519: write('Compiler internal error');
     end
   end;
 
@@ -2797,15 +2797,21 @@ end;
     if not eol then write(' ':chcnt+16)
   end (*printtables*);
 
-  procedure chkrefs(p: ctp; var w: boolean);
+  procedure chkrefs(h, p: ctp; var w: boolean);
   begin
     if chkref then begin
       if p <> nil then begin
-        chkrefs(p^.llink, w); { check left }
-        chkrefs(p^.rlink, w); { check right }
+        chkrefs(h, p^.llink, w); { check left }
+        chkrefs(h, p^.rlink, w); { check right }
         if not p^.refer and (p^.klass <> alias) and not incact then begin
-          if not w then writeln; writev(output, p^.name, 10);
-          writeln(' unreferenced'); w := true
+          if not w then writeln; writev(output, p^.name, lenpv(p^.name));
+          write(' unreferenced at block ending on line: ', 
+                  incstk^.linecount:1);
+          if h <> nil then 
+            begin write(' in function/procedure: '); 
+                  writev(output, h^.name, lenpv(h^.name)) end;
+          writeln;
+          w := true
         end
       end
     end
@@ -8320,8 +8326,13 @@ end;
           end;
           if fpat <> fpanone then error(280);
           opt := op { save operator for later }
-        end else 
+        end else begin
           searchsection(display[top].fname,lcp1); { find previous definition }
+          if lcp1 <> nil then 
+            if not (lcp1^.klass in [proc, func]) then begin
+            error(101); lcp1 := nil
+          end
+        end;
         { create proc/func entry }
         if (fsy = procsy) or ((fsy = operatorsy) and (opt = bcmop)) then
           new(lcp,proc,declared,actual)
@@ -8629,12 +8640,11 @@ end;
         if display[i].occur = blck then
           if display[i].bname <> nil then 
             if display[i].bname^.grppar = lcp then fcp := display[i].bname;
-      if fcp = nil then error(519);
       fndactovl := fcp
     end;
 
     procedure statement(fsys: setofsys);
-      var lcp: ctp; llp: lbp; inherit: boolean;
+      var lcp, lcp2: ctp; llp: lbp; inherit: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
         var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp; 
@@ -9336,7 +9346,11 @@ end;
                             { could be proc or func, need disambiguate }
                             if sy = becomes then begin
                               if inherit then error(233);
-                              assignment(fndactovl(lcp), false)
+                              lcp2 := fndactovl(lcp); { see if overload }
+                              { if not, error and back to original }
+                              if lcp2 = nil then 
+                                begin error(192); lcp2 := lcp end;
+                              assignment(lcp2, false)
                             end else call(fsys,lcp,inherit,false)
                           end else call(fsys,lcp,inherit,false)
                         end else begin if inherit then error(233);
@@ -9561,7 +9575,8 @@ end;
           llp := nextlab
         end;
     printed := false;
-    if (fprocp <> nil) or iso7185 then chkrefs(display[top].fname, printed);
+    if (fprocp <> nil) or iso7185 then 
+      chkrefs(fprocp, display[top].fname, printed);
     if toterr = 0 then
       if (topnew <> 0) and prcode then
         error(504); { stack should have wound to zero }

@@ -1796,7 +1796,7 @@ begin
 
 end.
 
-integer    unreferenced
+integer unreferenced at block ending on line: 18
 
 Errors in program: 1
 
@@ -7131,7 +7131,7 @@ procedure a(: integer);
 begin
 end;
 
-integer    unreferenced
+integer unreferenced at block ending on line: 12 in function/procedure: a
 
 begin
 
@@ -7463,7 +7463,7 @@ begin
 
 end;
 
-vas        unreferenced
+vas unreferenced at block ending on line: 17 in function/procedure: a
 
 begin
 
@@ -10892,7 +10892,7 @@ begin
 
 end;
 
-c          unreferenced
+c unreferenced at block ending on line: 20 in function/procedure: b
 
 begin
 
@@ -10947,7 +10947,7 @@ begin
 
 end;
 
-c          unreferenced
+c unreferenced at block ending on line: 20 in function/procedure: b
 
 begin
 
@@ -15482,7 +15482,7 @@ begin
 
 end.
 
-i          unreferenced
+i unreferenced at block ending on line: 16
 
 Errors in program: 0
 
@@ -16239,7 +16239,7 @@ begin
   
 end;
 
-one        unreferenced
+one unreferenced at block ending on line: 22 in function/procedure: x
 
 begin
 
@@ -16325,7 +16325,7 @@ begin
    
 end;
 
-one        unreferenced
+one unreferenced at block ending on line: 22 in function/procedure: x
 
 begin
 

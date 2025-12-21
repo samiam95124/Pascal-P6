@@ -18,7 +18,7 @@ procedure a(: integer);
 begin
 end;
 
-integer    unreferenced
+integer unreferenced at block ending on line: 12 in function/procedure: a
 
 begin
 

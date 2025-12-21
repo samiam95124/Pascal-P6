@@ -1,39 +1,38 @@
-P6 Pascal compiler vs. 0.2.x
+P6 Pascal compiler vs. 0.4.x
 Pascal-P6 complies with the requirements of Pascaline version 0.4
 and the following annexes: A,B,C,E.
 
+{
 
-{ 
- 
-PRT test 1706: It is an error to alter the value of a file-variable f when a 
-               reference to the buffer-variable f^ exists. 
- 
-               ISO 7185 reference: 6.5.5 
- 
-} 
- 
-program iso7185prt1706(output); 
- 
-var a: text; 
- 
-procedure b(var c: char); 
- 
-begin 
- 
-   get(a); 
- 
-end; 
-c          unreferenced
+PRT test 1706: It is an error to alter the value of a file-variable f when a
+               reference to the buffer-variable f^ exists.
 
- 
-begin 
- 
-   rewrite(a); 
-   a^ := 'x'; 
-   put(a); 
-   reset(a); 
-   b(a^) 
- 
-end. 
+               ISO 7185 reference: 6.5.5
+
+}
+
+program iso7185prt1706(output);
+
+var a: text;
+
+procedure b(var c: char);
+
+begin
+
+   get(a);
+
+end;
+
+c unreferenced at block ending on line: 20 in function/procedure: b
+
+begin
+
+   rewrite(a);
+   a^ := 'x';
+   put(a);
+   reset(a);
+   b(a^)
+
+end.
 
 Errors in program: 0

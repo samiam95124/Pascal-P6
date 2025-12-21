@@ -56,7 +56,7 @@ EXTERNAL=libs
 EXTERNALLIBS=$(EXTERNAL)/services.o
 
 all: bin/cmach bin/pgen bin/spew \
-	$(LIBS)/psystem.a $(LIBS)/psystem_asm.o main $(BUILD)/AMD64/gcc/main.o \
+	$(LIBS)/psystem.a $(LIBS)/psystem_asm.o main $(BUILD)/pgen/main.o \
 	parcmd $(BUILD)/parcmd.o libs/strings.o $(LIBS)/strings.o \
 	libs/services.a $(LIBS)/services.a libs/services_test \
 	libs/parse.o $(LIBS)/parse.o
@@ -74,31 +74,31 @@ all: bin/cmach bin/pgen bin/spew \
 #
 # Build psystem, the Pascaline support library in C.
 #
-$(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/AMD64/gcc/psystem.c \
-	$(SOURCE)/AMD64/gcc/psystem.asm
+$(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/pgen/psystem.c \
+	$(SOURCE)/pgen/psystem.asm
 	@echo
 	@echo "Building psystem..."
 	@echo
-	mkdir -p $(BUILD)/AMD64/gcc
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem.o \
-		-c $(SOURCE)/AMD64/gcc/psystem.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/psystem_asm.o \
-		-c -x assembler $(SOURCE)/AMD64/gcc/psystem.asm
-	ar r $(LIBS)/psystem.a $(BUILD)/AMD64/gcc/psystem.o \
-		$(BUILD)/AMD64/gcc/psystem_asm.o
+	mkdir -p $(BUILD)/pgen
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem.o \
+		-c $(SOURCE)/pgen/psystem.c
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_asm.o \
+		-c -x assembler $(SOURCE)/pgen/psystem.asm
+	ar r $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
+		$(BUILD)/pgen/psystem_asm.o
 
 #
 # Build main, the program stack startup shim.
 #
-main: $(SOURCE)/AMD64/gcc/main.asm
-$(BUILD)/AMD64/gcc/main.o: $(SOURCE)/AMD64/gcc/main.asm
+main: $(SOURCE)/pgen/main.asm
+$(BUILD)/pgen/main.o: $(SOURCE)/pgen/main.asm
 	@echo
 	@echo "Building main..."
 	@echo
-	mkdir -p $(BUILD)/AMD64/gcc
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/AMD64/gcc/main.o \
-		-c -x assembler $(SOURCE)/AMD64/gcc/main.asm
-	cp $(BUILD)/AMD64/gcc/main.o $(LIBS)
+	mkdir -p $(BUILD)/pgen
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/main.o \
+		-c -x assembler $(SOURCE)/pgen/main.asm
+	cp $(BUILD)/pgen/main.o $(LIBS)
 
 #
 # Build command line parser
@@ -217,7 +217,7 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 	pgen $(BUILD)/libs/services_test.p6 $(BUILD)/libs/services_test.s
 	pgen $(BUILD)/libs/services_test1.p6 $(BUILD)/libs/services_test1.s
 	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pgen/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
 		$(BUILD)/libs/services_test.s \
@@ -226,7 +226,7 @@ libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_tes
 		-o $(LIBS)/services_test -lm -lpthread
 	cp $(LIBS)/services_test bin
 	$(CC) $(CFLAGS) \
-		$(BUILD)/AMD64/gcc/main.o \
+		$(BUILD)/pgen/main.o \
 		$(BUILD)/parcmd.o \
 		$(LIBS)/strings.o \
 		$(BUILD)/libs/services_test1.s \

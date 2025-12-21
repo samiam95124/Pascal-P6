@@ -84,7 +84,7 @@ elif [ "$param1" = "--pgen" ]; then
 
     else
 
-        echo "** Compile failed"
+        echo "*** testpascaline: Compile failed"
         exit 1
 
     fi
@@ -110,7 +110,7 @@ elif [ "$param1" = "--package" ]; then
 
     else
 
-        echo "** Compile failed"
+        echo "*** testpascaline: Compile failed"
         exit 1
 
     fi

@@ -120,8 +120,8 @@ and the following annexes: A,B,C,E.
     95      173 
     96      173 end;
 
-c          unreferenced
-i          unreferenced
+c unreferenced at block ending on line: 96 in function/procedure: proc2
+i unreferenced at block ending on line: 96 in function/procedure: proc2
     97      174 
     98      174 procedure proc1(pi: integer; pc: char; pb: boolean; pe: enum; psr: sub; pr: real; prec: r2; pa: a2);
     99      174 
@@ -191,14 +191,14 @@ i          unreferenced
    163      518 
    164      518 end;
 
-pa         unreferenced
-pb         unreferenced
-pe         unreferenced
-pc         unreferenced
-prec       unreferenced
-pr         unreferenced
-psr        unreferenced
-pi         unreferenced
+pa unreferenced at block ending on line: 164 in function/procedure: proc1
+pb unreferenced at block ending on line: 164 in function/procedure: proc1
+pe unreferenced at block ending on line: 164 in function/procedure: proc1
+pc unreferenced at block ending on line: 164 in function/procedure: proc1
+prec unreferenced at block ending on line: 164 in function/procedure: proc1
+pr unreferenced at block ending on line: 164 in function/procedure: proc1
+psr unreferenced at block ending on line: 164 in function/procedure: proc1
+pi unreferenced at block ending on line: 164 in function/procedure: proc1
    165      519 
    166      519 procedure stepover1;
    167      519 
