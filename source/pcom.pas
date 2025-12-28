@@ -2261,14 +2261,27 @@ end;
     end
   end;
 
+  procedure prtfpat(fpat: fpattr);
+  begin
+    case fpat of
+      fpanone: write('none');
+      fpaoverload: write('overload');
+      fpastatic: write('static');
+      fpavirtual: write('virtual');
+      fpaoverride: write('override');
+    end
+  end;
+
+ function digits(i: integer): integer; forward;
+
   procedure prtlvlsym;
   var di: disprange; lc: integer;
   procedure prtsyms(fcp: ctp);
   begin
     if fcp <> nil then begin
       writevp(output, fcp^.name);
-      write(' ');
-      lc := lc+lenpv(fcp^.name);
+      write(': ', fcp^.snm:1, ' ');
+      lc := lc+lenpv(fcp^.name)+2+digits(fcp^.snm)+1;
       if lc >= 80 then begin writeln; lc := 1 end;
       prtsyms(fcp^.llink);
       prtsyms(fcp^.rlink)
@@ -8473,8 +8486,12 @@ end;
         if lcp1^.forwdecl and iso7185 and (lcp^.idtype <> nil) then error(122);
         if lcp1^.forwdecl and not lcp^.forwdecl then 
           if not comptypes(lcp^.idtype, lcp1^.idtype) then error(216);
-        if ((lcp^.pfattr = fpaoverload) or ((lcp^.pfattr = fpaoverride)) or 
-            opr) and not (lcp1^.forwdecl and form) then begin
+        if ((lcp^.pfattr = fpaoverload) or opr) and not 
+           (lcp1^.forwdecl and form) then begin
+          { just insert to group list for this proc/func }
+          lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp; lcp^.grppar := lcp1
+        end;
+        if (lcp^.pfattr = fpaoverride) and not lcp1^.forwdecl then begin
           { just insert to group list for this proc/func }
           lcp^.grpnxt := lcp1^.grpnxt; lcp1^.grpnxt := lcp; lcp^.grppar := lcp1
         end 

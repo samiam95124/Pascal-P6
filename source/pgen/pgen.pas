@@ -2326,7 +2326,7 @@ begin { assemble }
       if ch = 'l' then begin 
         labelsearch(def, val, sp, blk);
         getadr(q1); getadr(q2); getadr(q3); getadr(q4)
-      end else getadr(q1); getadr(q2); getadr(q3); getadr(q4);
+      end else begin getadr(q1); getadr(q2); getadr(q3); getadr(q4) end;
       getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
       pshstk(ep)
     end;
