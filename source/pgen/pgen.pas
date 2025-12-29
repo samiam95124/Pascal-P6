@@ -95,7 +95,8 @@ override procedure assemble; (*translate symbolic code into machine code and sto
   begin
     isf := false; 
     if instab[ep^.op].insf then isf := true
-    else if (ep^.op in [247{cif}, 246{cuf}]) and (ep^.rc = 1) then isf := true
+    else if (ep^.op in [247{cif}, 246{cuf}, 249{cvf}]) and 
+            (ep^.rc = 1) then isf := true
     else if ep^.op = 15{csp} then
       if ep^.q in [19{atn},15{cos},16{exp},17{log},14{sin},18{sqt}] then 
         isf := true;
@@ -2304,7 +2305,6 @@ begin { assemble }
       if (def and (val <> 0)) or not def then ep^.lb := sp
     end;
 
-
     {cuf}
     246: begin labelsearch(def, val, sp, blk);
       getadr(q); getadr(q1); getadr(q2); getadr(q3);
@@ -2327,8 +2327,8 @@ begin { assemble }
         labelsearch(def, val, sp, blk);
         getadr(q1); getadr(q2); getadr(q3); getadr(q4)
       end else begin getadr(q1); getadr(q2); getadr(q3); getadr(q4) end;
-      getexp(ep); ep^.qs := sp; ep^.pn := q1; getpar(ep);
-      pshstk(ep)
+      getexp(ep); ep^.qs := sp; ep^.pn := q1; ep^.rc := q2;
+      getpar(ep); pshstk(ep)
     end;
 
     {cke}

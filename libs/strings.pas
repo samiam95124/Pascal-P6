@@ -114,18 +114,13 @@ var
 { Word array index was out of range }    WordIndexOutOfRange,
 { String was too large for destination } StringReadOverflow,
 { Format too large for destination }     FormatTooLarge,
-{ field specified is invalid }           InvalidFieldSpecification,
 { Radix was negative }                   NegativeValueNondecimal,
 { Number overflows space provided in 
   format string }                        NumberOverflowsFormat,
 { Negative sign not placed in format }   NegativeNotPlaced,
-{ Invalid real number }                  InvalidRealNumber,
-{ Invalid fraction specification }       InvalidFractionSpecification,
 { Invalid radix }                        InvalidRadix,
-{ Invalid integer format }               InvalidIntegerFormat,
 { Number too large }                     NumberTooLarge,
-{ Integer too large }                    IntegerTooLarge,
-{ Invalid real format }                  InvalidRealFormat: exception;
+{ Integer too large }                    IntegerTooLarge: exception;
 
 function lcase(c: char): char; external;
 overload function lcase(view s: pstring): pstring; external;
