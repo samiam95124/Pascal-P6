@@ -7755,7 +7755,7 @@ begin (* main *)
   writeln;
   writeln('program complete');
   
-  { give external package a chance to exit }
-  exitprogram(exitcode)  
+  { return error code }
+  seterr(exitcode)  
 
 end.

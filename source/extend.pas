@@ -16,10 +16,5 @@ begin
   chkbrk := false
 end;
 
-procedure exitprogram(ec: integer);
-begin
-  ec := ec
-end;
-
 begin
 end.

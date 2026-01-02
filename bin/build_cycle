@@ -6,5 +6,20 @@
 # Used to verify the compiler can make itself.
 #
 build "-B" "-r"
+if [ $? -ne 0 ]; then
+
+   exit 1
+
+fi
 build "-B" "-r"
+if [ $? -ne 0 ]; then
+
+   exit 1
+
+fi
 build "-B" "-r"
+if [ $? -ne 0 ]; then
+
+   exit 1
+
+fi
