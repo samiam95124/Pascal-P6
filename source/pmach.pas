@@ -165,11 +165,13 @@
 
 program pmach(input,output,command);
 
-uses endian,  { endian mode }
-     mpb,     { machine parameter block }
-     version, { current version number }
-     parcmd,  { command line parsing }
-     extlink; { external routine linkages }
+uses services, { system services }
+     endian,   { endian mode }
+     mpb,      { machine parameter block }
+     version,  { current version number }
+     parcmd,   { command line parsing }
+     pint_mem, { low level vm access for pint }
+     extlink;  { external routine linkages }
 
 label 99;
 
@@ -204,9 +206,7 @@ const
       { ******************* end of pcom and pint common parameters *********** }
 
       { internal constants }
-      maxstr      = 16777215;  { maximum size of addressing for program/var }
-      maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
-      maxdef      = 2097152;   { maxstr / 8 for defined bits }
+      maxdef      = maxstr div 8; { number of definition bits }
       
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
@@ -215,7 +215,6 @@ const
 
       codemax     = maxstr;  { set size of code store to maximum possible }
 
-      maxlabel = 5000;       { total possible labels in intermediate }
       maxcstfx = 10000;      { maximum constant fixup in intermediate }
       maxgblfx = 10000;      { maximum global access fixup in intermediate }
       resspc   = 0;          { reserve space in heap (if you want) }
@@ -231,15 +230,6 @@ const
       listoff    = 10;       { 'list' file address }
       commandoff = 12;       { 'command' file address }
 
-      { assigned logical channels for header files }
-      inputfn    = 1;        { 'input' file no. }
-      outputfn   = 2;        { 'output' file no. }
-      prdfn      = 3;        { 'prd' file no. }
-      prrfn      = 4;        { 'prr' file no. }
-      errorfn    = 5;        { 'error' file no. }
-      listfn     = 6;        { 'list' file no. }
-      commandfn  = 7;        { 'command' file no. }
-      
       { locations of standard exceptions }
       exceptionbase                      = 14;
       ValueOutOfRange                    = 14;
@@ -359,7 +349,6 @@ const
 
       maxsp       = 111;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
-      maxfil      = 100;  { maximum number of general (temp) files }
       fillen      = 2000; { maximum length of filenames }
       maxsym      = 20;   { maximum length of symbol/module name }
 
@@ -368,7 +357,6 @@ type
       { define the internally used types }
       pminteger = integer;
       pmreal = real;
-      pmaddress = -maxstr..maxtop;
 
       { These equates define the instruction layout. I have choosen a 32 bit
         layout for the instructions defined by (4 bit) digit:
@@ -382,16 +370,12 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-      address     = integer; { address }
 
       beta        = packed array[1..25] of char; (*error message*)
-      settype     = set of setlow..sethigh;
       ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
       charptr     = ^char; { pointer to character }
-      fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
-      filsts      = (fnone, fclosed, fread, fwrite);
       { VAR reference block }
       varptr       = ^varblk;
       varblk       = record 
@@ -460,11 +444,8 @@ var   pc          : address;   (*program address register*)
       srclin      : integer; { current source line executing }
       stopins     : boolean; { stop instruction executed }
 
-      filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
       bfiltable   : array [1..maxfil] of bytfil;
-      { file state holding }
-      filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
       { file name has been assigned }
@@ -536,7 +517,7 @@ begin sgn := false;
    for i := 1 to n do begin
       d := v div p mod r; { extract digit }
       digits[i] := digit(d); { place }
-      p := p*r
+      if i < n then p := p*r
    end;
    i := digmax; 
    while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
@@ -594,7 +575,7 @@ end;(*errori*)
 }
 
 { throw an exception by vector }
-procedure errore(ei: integer); forward;
+override procedure errore(ei: integer); forward;
 
 { handle exception vector }
 procedure errorv(ea: address);
@@ -836,13 +817,6 @@ end;
 
 { End of language extension routines }
 
-{ find lower case of character }
-function lcase(c: char): char;
-begin
-  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-  lcase := c
-end { lcase };
-
 (*--------------------------------------------------------------------*)
 
 { The external assigns read a filename off the command line. The original name
@@ -924,7 +898,7 @@ begin
 
 end;
 
-function getint(a: address): integer;
+override function getint(a: address): integer;
 
 var r: record case boolean of
 
@@ -942,7 +916,7 @@ begin
    getint := r.i
 end;
 
-procedure putint(a: address; x: integer);
+override procedure putint(a: address; x: integer);
 
 var r: record case boolean of
 
@@ -962,7 +936,7 @@ begin
 
 end;
 
-function getrel(a: address): real;
+override function getrel(a: address): real;
 
 var r: record case boolean of
 
@@ -981,7 +955,7 @@ begin
 
 end;
 
-procedure putrel(a: address; f: real);
+override procedure putrel(a: address; f: real);
 
 var r: record case boolean of
 
@@ -1001,7 +975,7 @@ begin
 
 end;
 
-function getbol(a: address): boolean;
+override function getbol(a: address): boolean;
 
 var b: boolean;
 
@@ -1013,7 +987,7 @@ begin
 
 end;
 
-procedure putbol(a: address; b: boolean);
+override procedure putbol(a: address; b: boolean);
 
 begin
 
@@ -1021,7 +995,7 @@ begin
 
 end;
 
-procedure getset(a: address; var s: settype);
+override procedure getset(a: address; var s: settype);
 
 var r: record case boolean of
 
@@ -1039,7 +1013,7 @@ begin
 
 end;
 
-procedure putset(a: address; s: settype);
+override procedure putset(a: address; s: settype);
 
 var r: record case boolean of
 
@@ -1057,7 +1031,7 @@ begin
 
 end;
 
-function getchr(a: address): char;
+override function getchr(a: address): char;
 
 begin
 
@@ -1066,7 +1040,7 @@ begin
 
 end;
 
-procedure putchr(a: address; c: char);
+override procedure putchr(a: address; c: char);
 
 begin
 
@@ -1074,7 +1048,7 @@ begin
 
 end;
 
-function getbyt(a: address): ibyte;
+override function getbyt(a: address): ibyte;
 
 begin
 
@@ -1083,7 +1057,7 @@ begin
 
 end;
 
-procedure putbyt(a: address; b: ibyte);
+override procedure putbyt(a: address; b: ibyte);
 
 begin
 
@@ -1091,7 +1065,7 @@ begin
 
 end;
 
-function getadr(a: address): address;
+override function getadr(a: address): address;
 
 var r: record case boolean of
 
@@ -1111,7 +1085,7 @@ begin
 
 end;
 
-procedure putadr(a: address; ad: address);
+override procedure putadr(a: address; ad: address);
 
 var r: record case boolean of
 
@@ -1153,7 +1127,7 @@ begin
 
 end;
 
-{ end of accessor functions
+{ end of accessor functions }
 
 (*--------------------------------------------------------------------*)
 
@@ -1173,7 +1147,7 @@ procedure popadr(var a: address); begin a := getadr(sp); sp := sp+adrsize end;
 procedure pshadr(a: address); begin sp := sp-adrsize; putadr(sp, a) end;
 
 { throw an exception by vector }
-procedure errore {(ei: integer)} ;
+override procedure errore(ei: integer);
 var ad: address;
 begin
   if expadr = 0 then errorm(pctop+ei); { no surrounding frame, throw system }
@@ -1324,7 +1298,7 @@ begin
   a1 := a1+i; a2 := a2+i
 end; (*compare*)
 
-procedure valfil(fa: address); { attach file to file entry }
+override procedure valfil(fa: address); { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }
@@ -1470,7 +1444,7 @@ end;
 
 { allocate space in heap }
 
-procedure newspc(len: address; var blk: address);
+override procedure newspc(len: address; var blk: address);
 var ad,ad1: address;
 begin
   alignu(adrsize, len); { align to units of address }
@@ -1497,7 +1471,7 @@ begin
    len := len; { shut up compiler check }
    if blk = 0 then errorv(DisposeOfUninitalizedPointer)
    else if blk = nilval then errorv(DisposeOfNilPointer)
-   else if (blk < gbtop) or (blk >= np) then errorv(BadPointerValue);
+   else if (blk < gbtop) or (blk > np) then errorv(BadPointerValue);
    ad := blk-adrsize; { index header }
    if getadr(ad) >= 0 then errorv(BlockAlreadyFreed);
    if dorecycl and not dochkrpt and not donorecpar then begin 
@@ -1557,8 +1531,7 @@ procedure callsp;
    procedure getfn(fn: fileno);
    begin 
      if fn <= commandfn then case fn of
-       inputfn:   get(input);
-       
+       inputfn:   get(input);       
        prdfn:     get(prd);
        outputfn,prrfn,errorfn,
        listfn:    errore(ReadOnWriteOnlyFile);
@@ -1828,8 +1801,9 @@ procedure callsp;
       var i: integer;
    begin
          ad1 := ad+l-1; { find end }
-         while (l > 0) and (getchr(ad1) = ' ') do 
+         while (l > 1) and (getchr(ad1) = ' ') do
            begin ad1 := ad1-1; l := l-1 end;
+         if getchr(ad1) <> ' ' then
          for i := 0 to l-1 do write(f, getchr(ad+i));
    end;
    
@@ -1841,11 +1815,6 @@ procedure callsp;
        for i := 1 to abs(w)-1 do write(f,' ') 
      end else write(f, c:w)
    end;
-
-   procedure getfile(var f: text);
-   begin if eof(f) then errore(EndOfFile);
-         get(f);
-   end;(*getfile*)
 
    procedure putfile(var f: text; var ad: address; fn: fileno);
    begin if not filbuff[fn] then errore(FileBufferVariableUndefined);
@@ -1895,7 +1864,6 @@ procedure callsp;
    end;
 
 begin (*callsp*)
-      refer(getfile); { unused }
       if q > maxsp then errorv(InvalidStandardProcedureOrFunction);
 
       case q of
@@ -2380,7 +2348,7 @@ begin (*callsp*)
                             if filstate[fn] = fread then
                             putchr(ad+fileidsize, filtable[fn]^)
                           end;
-                          filbuff[fn] := true
+                          filbuff[fn] := true { validate buffer }
                         end;
            44 (*fvb*): begin popint(i); popadr(ad); pshadr(ad); valfil(ad);
                           fn := store[ad];
@@ -2541,8 +2509,7 @@ begin
 
     2   (*stri*): begin getp; getq; popint(i); putint(getadr(mp-p*ptrsize)+q, i) end;
     195 (*strx*): begin getp; getq; popint(i); putbyt(getadr(mp-p*ptrsize)+q, i) end;
-    70,
-    253 (*stra,sev*): begin getp; getq; popadr(ad); putadr(getadr(mp-p*ptrsize)+q, ad) end;
+    70  (*stra*): begin getp; getq; popadr(ad); putadr(getadr(mp-p*ptrsize)+q, ad) end;
     71  (*strr*): begin getp; getq; poprel(r1); putrel(getadr(mp-p*ptrsize)+q, r1) end;
     72  (*strs*): begin getp; getq; popset(s1); putset(getadr(mp-p*ptrsize)+q, s1) end;
     73  (*strb*): begin getp; getq; popint(i1); b1 := i1 <> 0; 
@@ -2645,7 +2612,7 @@ begin
                 end;
 
     12 (*cup*),
-    246 (*cup*): begin (*q=entry point*)
+    246 (*cuf*): begin (*q=entry point*)
                  getq; pshadr(pc); pc := q
                 end;
 
@@ -2670,7 +2637,7 @@ begin
                  end;
     131 (*retb*): begin getq;
                    ep := getadr(mp+markep);
-                   sp := mp; { index old mark }
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
                    sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
@@ -2685,16 +2652,16 @@ begin
     129 (*retr*),
     132 (*reta*): begin getq;
                    ep := getadr(mp+markep);
-                   sp := mp; { index old mark }
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
                    sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
-                   sp := sp+q { remove parameters }
+                   sp := sp+q { remove parameters and mark }
                  end;
 
     237 (*retm*): begin getq;
                    ep := getadr(mp+markep);
-                   sp := mp; { index old mark }
+                   sp := mp; { index old mp }
                    popadr(mp); { restore old mp }
                    sp := sp+marksize; { skip mark }
                    popadr(pc); { load return address }
@@ -3070,6 +3037,9 @@ begin
                      { release to search vectors }
                    end
                  end;
+    253  (*sev*): begin getp; getq; a1 := getadr(mp-p*ptrsize)+q;
+                        popadr(ad); pshadr(ad); putadr(a1, ad)
+                  end;
     8 (*cjp*): begin getq; getq1; popint(i1); pshint(i1);
                   if (i1 >= getint(q)) and (i1 <= getint(q+intsize)) then
                     begin pc := q1; popint(i1) end
@@ -3100,8 +3070,9 @@ begin
                    for i := 1 to q do 
                      begin q1 := q1*getint(ad2); ad2 := ad2+intsize end;
                    newspc(q1+q*intsize, ad2); putadr(ad, ad2);
+                   ad2 := ad2+q*intsize;
                    for i := 1 to q do 
-                     begin popint(i1); putint(ad2, i1); ad2 := ad2+intsize;end
+                     begin popint(i1); ad2 := ad2-intsize; putint(ad2, i1) end
                  end;
     135 (*lcp*): begin popadr(ad); pshadr(ad+ptrsize); pshadr(getadr(ad)) end; 
     176 (*cps*): begin popadr(ad1); popint(i1); popadr(ad2); popint(i2);
@@ -3117,7 +3088,7 @@ begin
                        end
                  end;
 
-    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popadr(i1); 
+    178 (*aps*): begin getq; popadr(ad1); popadr(ad); popadr(ad); popint(i1);
                        for i := 0 to i1*q-1 do begin
                          store[ad+i] := store[ad1+i]; putdef(ad+i, getdef(ad1+i)) 
                        end

@@ -53,8 +53,9 @@ fi
 #
 if [ "$param1" = "--pmach" ]; then
 
-	echo Running with pmach
+    echo Running with pmach
     pint pascaline.p6 pascaline.p6o --machdeck
+    # echo "will execute: pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst"
     pmach pascaline.p6o temp headertest1 headertest2 42 123.456 hi there < pascaline.inp > pascaline.lst
     diffnolestrip pascaline.lst pascaline.cmp > pascaline.dif
     wc -l pascaline.dif

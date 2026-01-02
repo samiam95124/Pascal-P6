@@ -165,6 +165,7 @@ uses endian,  { endian mode }
      mpb,     { machine parameter block }
      version, { current version number }
      parcmd,  { command line parsing }
+     pint_mem, { low level vm access for pint }
      extlink, { external routine linkages }
      extend;  { extension routines }
 
@@ -201,9 +202,7 @@ const
       { ******************* end of pcom and pint common parameters *********** }
 
       { internal constants }
-      maxstr      = 16777215;  { maximum size of addressing for program/var }
-      maxtop      = 16777216;  { maximum size of addressing for program/var+1 }
-      maxdef      = 2097152;   { maxstr / 8 for defined bits }
+      maxdef      = maxstr div 8; { number of definition bits }
 
       maxdigh     = 6;       { number of digits in hex representation of maxstr }
       maxdigd     = 8;       { number of digits in decimal representation of maxstr }
@@ -228,15 +227,6 @@ const
       listoff    = 10;       { 'list' file address }
       commandoff = 12;       { 'command' file address }
       filmax     = 13;       { maximum reserved file region }
-
-      { assigned logical channels for header files }
-      inputfn    = 1;        { 'input' file no. }
-      outputfn   = 2;        { 'output' file no. }
-      prdfn      = 3;        { 'prd' file no. }
-      prrfn      = 4;        { 'prr' file no. }
-      errorfn    = 5;        { 'error' file no. }
-      listfn     = 6;        { 'list' file no. }
-      commandfn  = 7;        { 'command' file no. }
 
       { locations of standard exceptions }
       exceptionbase                      = 14;
@@ -358,7 +348,6 @@ const
       stringlgth  = 1000; { longest string length we can buffer }
       maxsp       = 111;  { number of predefined procedures/functions }
       maxins      = 255;  { maximum instruction code, 0-255 or byte }
-      maxfil      = 100;  { maximum number of general (temp) files }
       maxalfa     = 10;   { maximum number of characters in alfa type }
       fillen      = 20000; { maximum length of filenames }
       maxbrk      = 10;   { maximum number of breakpoints }
@@ -394,17 +383,13 @@ type
         need for negatives. }
       lvltyp      = 0..255;     { procedure/function level }
       instyp      = 0..maxins;  { instruction }
-      address     = -maxstr..maxtop; { address }
       beta        = packed array[1..25] of char; (*error message*)
-      settype     = set of setlow..sethigh;
       alfainx     = 1..maxalfa; { index for alfa type }
       alfa        = packed array[alfainx] of char;
       ibyte       = byte; { 8-bit byte }
       bytfil      = packed file of byte; { untyped file of bytes }
       charptr     = ^char; { pointer to character }
-      fileno      = 0..maxfil; { logical file number }
       filnam      = packed array [1..fillen] of char; { filename strings }
-      filsts      = (fnone, fclosed, fread, fwrite);
       break       = record
                       ss: ibyte; { byte under breakpoint }
                       sa: address; { code address }
@@ -558,11 +543,8 @@ var   pc, pcs     : address;   (*program address register*)
       stopwatch   : boolean; { stop on watch address matched }
       watchmatch  : boolean; { watch address was matched on instruction }
 
-      filtable    : array [1..maxfil] of text; { general (temp) text file holders }
       { general (temp) binary file holders }
       bfiltable   : array [1..maxfil] of bytfil;
-      { file state holding }
-      filstate    : array [1..maxfil] of filsts;
       { file buffer full status }
       filbuff     : array [1..maxfil] of boolean;
       { file name has been assigned }
@@ -578,7 +560,6 @@ var   pc, pcs     : address;   (*program address register*)
       { address of watchpoint instruction store in progress }
       stoad       : address;
       errsinprg   : integer; { errors in source program }
-      newline     : boolean; { output is on new line }
       boolsym     : psymbol; { symbol for boolean result }
       realsym     : psymbol; { symbol for real result }
       intsym      : psymbol; { symbol for integer result }
@@ -730,7 +711,7 @@ end;(*errori*)
 }
 
 { throw an exception by vector }
-procedure errore(ei: integer); forward;
+override procedure errore(ei: integer); forward;
 
 { handle exception vector }
 procedure errorv(ea: address);
@@ -1010,13 +991,6 @@ end;
 
 { End of language extension routines }
 
-{ find lower case of character }
-function lcase(c: char): char;
-begin
-  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-  lcase := c
-end { lcase };
-
 (*--------------------------------------------------------------------*)
 
 { The external assigns read a filename off the command line. The original name
@@ -1032,7 +1006,7 @@ end { lcase };
 procedure assignexternaltext(var f: text; var fn: filnam);
 var fne: filnam; i: integer;
 begin
-  fn := fn;
+  refer(fn); { unused }
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -1050,7 +1024,7 @@ end;
 procedure assignexternalbin(var f: bytfil; var fn: filnam);
 var fne: filnam; i: integer;
 begin
-  fn := fn;
+  refer(fn); { unused }
   for i := 1 to fillen do fne[i] := ' ';
   { skip leading spaces }
   while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
@@ -1287,7 +1261,7 @@ begin
 
 end;
 
-function getint(a: address): integer;
+override function getint(a: address): integer;
 
 var r: record case boolean of
 
@@ -1297,7 +1271,6 @@ var r: record case boolean of
        end;
     i: 1..intsize;
 
-
 begin
    if dochkdef then chkdef(a);
    if flipend then for i := intsize downto 1 do r.b[i] := store[a+(intsize-i)]
@@ -1306,7 +1279,7 @@ begin
    getint := r.i
 end;
 
-procedure putint(a: address; x: integer);
+override procedure putint(a: address; x: integer);
 
 var r: record case boolean of
 
@@ -1326,7 +1299,7 @@ begin
 
 end;
 
-function getrel(a: address): real;
+override function getrel(a: address): real;
 
 var r: record case boolean of
 
@@ -1345,7 +1318,7 @@ begin
 
 end;
 
-procedure putrel(a: address; f: real);
+override procedure putrel(a: address; f: real);
 
 var r: record case boolean of
 
@@ -1365,7 +1338,7 @@ begin
 
 end;
 
-function getbol(a: address): boolean;
+override function getbol(a: address): boolean;
 
 var b: boolean;
 
@@ -1377,7 +1350,7 @@ begin
 
 end;
 
-procedure putbol(a: address; b: boolean);
+override procedure putbol(a: address; b: boolean);
 
 begin
 
@@ -1385,7 +1358,7 @@ begin
 
 end;
 
-procedure getset(a: address; var s: settype);
+override procedure getset(a: address; var s: settype);
 
 var r: record case boolean of
 
@@ -1403,7 +1376,7 @@ begin
 
 end;
 
-procedure putset(a: address; s: settype);
+override procedure putset(a: address; s: settype);
 
 var r: record case boolean of
 
@@ -1421,7 +1394,7 @@ begin
 
 end;
 
-function getchr(a: address): char;
+override function getchr(a: address): char;
 
 begin
 
@@ -1430,7 +1403,7 @@ begin
 
 end;
 
-procedure putchr(a: address; c: char);
+override procedure putchr(a: address; c: char);
 
 begin
 
@@ -1438,7 +1411,7 @@ begin
 
 end;
 
-function getbyt(a: address): ibyte;
+override function getbyt(a: address): ibyte;
 
 begin
 
@@ -1447,7 +1420,7 @@ begin
 
 end;
 
-procedure putbyt(a: address; b: ibyte);
+override procedure putbyt(a: address; b: ibyte);
 
 begin
 
@@ -1455,7 +1428,7 @@ begin
 
 end;
 
-function getadr(a: address): address;
+override function getadr(a: address): address;
 
 var r: record case boolean of
 
@@ -1475,7 +1448,7 @@ begin
 
 end;
 
-procedure putadr(a: address; ad: address);
+override procedure putadr(a: address; ad: address);
 
 var r: record case boolean of
 
@@ -1537,7 +1510,7 @@ procedure popadr(var a: address); begin a := getadr(sp); sp := sp+adrsize end;
 procedure pshadr(a: address); begin sp := sp-adrsize; putadr(sp, a) end;
 
 { throw an exception by vector }
-procedure errore {(ei: integer)} ;
+override procedure errore(ei: integer);
 var ad: address;
 begin
   if expadr = 0 then errorm(pctop+ei); { no surrounding frame, throw system }
@@ -3152,7 +3125,7 @@ begin
   a1 := a1+i; a2 := a2+i
 end; (*compare*)
 
-procedure valfil(fa: address); { attach file to file entry }
+override procedure valfil(fa: address); { attach file to file entry }
 var i,ff: integer;
 begin
    if store[fa] = 0 then begin { no file }
@@ -3316,7 +3289,7 @@ end;
 
 { allocate space in heap }
 
-procedure newspc(len: address; var blk: address);
+override procedure newspc(len: address; var blk: address);
 var ad,ad1: address;
 begin
   alignu(adrsize, len); { align to units of address }
@@ -3604,6 +3577,7 @@ procedure callsp;
 
    procedure reads(fn: fileno; ad: address; l: integer; w: integer;
                    fld: boolean);
+   var c: char;
    function chkbuf: char;
    begin if w > 0 then chkbuf := buffn(fn) else chkbuf := ' ' end;
    procedure getbuf;
@@ -3639,6 +3613,7 @@ procedure callsp;
    end;(*reads*)
 
    procedure readsp(fn: fileno; ad: address; l: integer);
+   var c: char;
    begin
      while (l > 0) and not eolnfn(fn) do begin
        if eoffn(fn) then errore(EndOfFile);

@@ -93,14 +93,14 @@
     .global services.setuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
     .global services.resuper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
     .global services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
-    .global services.setgper$p_vc_vi
-    .global services.setgper$p_pvc_vi
-    .global services.resgper$p_vc_vi
-    .global services.resgper$p_pvc_vi
-    .global services.setoper$p_vc_vi
-    .global services.setoper$p_pvc_vi
-    .global services.resoper$p_vc_vi
-    .global services.resoper$p_pvc_vi
+    .global services.setgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.setgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.setoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.setoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
+    .global services.resoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$
     .global services.makpth$p_vc
     .global services.makpth$p_pvc
     .global services.rempth$p_vc
@@ -108,23 +108,23 @@
     .global services.filchr$p_sc
     .global services.optchr$f
     .global services.pthchr$f
-    .global services.latitude$p_i
-    .global services.longitude$p_i
-    .global services.altitude$p_i
-    .global services.country$p_i
-    .global services.countrys$p_i
-    .global services.timezone$p_i
-    .global services.daysave$p_i
-    .global services.time24hour$p_i
-    .global services.language$p_i
-    .global services.languages$p_i
-    .global services.decimal$p_i
-    .global services.numbersep$p_i
-    .global services.timeorder$p_i
-    .global services.dateorder$p_i
-    .global services.datesep$p_i
-    .global services.timesep$p_i
-    .global services.currchr$p_i
+    .global services.latitude$f
+    .global services.longitude$f
+    .global services.altitude$f
+    .global services.country$f
+    .global services.countrys$p_vc_i
+    .global services.timezone$f
+    .global services.daysave$f
+    .global services.time24hour$f
+    .global services.language$f
+    .global services.languages$p_vc_i
+    .global services.decimal$f
+    .global services.numbersep$f
+    .global services.timeorder$f
+    .global services.dateorder$f
+    .global services.datesep$f
+    .global services.timesep$f
+    .global services.currchr$f
 
 #
 # Procedure/function preamble
@@ -507,35 +507,35 @@ services.resuper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: proce
 
 # procedure setgper(view fn: string; p: permset); external;
 
-services.setgper$p_vc_vi: procedure wrapper_setgper, 3
+services.setgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setgper, 3
 
 # procedure setgper(fn: pstring; p: permset); external;
 
-services.setgper$p_pvc_vi: procedure wrapper_setgperp, 2
+services.setgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setgperp, 2
 
 # procedure resgper(view fn: string; p: permset); external;
 
-services.resgper$p_vc_vi: procedure wrapper_resgper, 3
+services.resgper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resgper, 3
 
 # procedure resgper(fn: pstring; p: permset); external;
 
-services.resgper$p_pvc_vi: procedure wrapper_resgperp, 2
+services.resgper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resgperp, 2
 
 # procedure setoper(view fn: string; p: permset); external;
 
-services.setoper$p_vc_vi: procedure wrapper_setoper, 3
+services.setoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setoper, 3
 
 # procedure setoper(fn: pstring; p: permset); external;
 
-services.setoper$p_pvc_vi: procedure wrapper_setoperp, 2
+services.setoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_setoperp, 2
 
 # procedure resoper(view fn: string; p: permset); external;
 
-services.resoper$p_vc_vi: procedure wrapper_resoper, 3
+services.resoper$p_vc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resoper, 3
 
 # procedure resoper(fn: pstring; p: permset); external;
 
-services.resoper$p_pvc_vi: procedure wrapper_resoperp, 3
+services.resoper$p_pvc_sx$pmread$pmwrite$pmexec$pmdel$pmvis$pmcopy$pmren$: procedure wrapper_resoperp, 2
 
 # procedure makpth(view fn: string); external;
 
@@ -567,71 +567,71 @@ services.pthchr$f: function wrapper_pthchr, 0
 
 # function latitude: integer; external;
 
-services.latitude$p_i: function wrapper_latitude, 0
+services.latitude$f: function wrapper_latitude, 0
 
 # function longitude: integer; external;
 
-services.longitude$p_i: function wrapper_longitude, 0
+services.longitude$f: function wrapper_longitude, 0
 
 # function altitude: integer; external;
 
-services.altitude$p_i: function wrapper_altitude, 0
+services.altitude$f: function wrapper_altitude, 0
 
 # function country: integer; external;
 
-services.country$p_i: function wrapper_country, 0
+services.country$f: function wrapper_country, 0
 
 # procedure countrys(view s: string; len: integer; c: integer); external;
 
-services.countrys$p_i: function wrapper_countrys, 4
+services.countrys$p_vc_i: function wrapper_countrys, 4
 
 # function timezone: integer; external;
 
-services.timezone$p_i: function wrapper_timezone, 0
+services.timezone$f: function wrapper_timezone, 0
 
 # function daysave: boolean; external;
 
-services.daysave$p_i: function wrapper_daysave, 0
+services.daysave$f: function wrapper_daysave, 0
 
 # function time24hour: boolean; external;
 
-services.time24hour$p_i: function wrapper_time24hour, 0
+services.time24hour$f: function wrapper_time24hour, 0
 
 # function language: integer; external;
 
-services.language$p_i: function wrapper_language, 0
+services.language$f: function wrapper_language, 0
 
 # procedure languages(view s: string; len: integer; l: integer);  external;
 
-services.languages$p_i: function wrapper_languages, 4
+services.languages$p_vc_i: function wrapper_languages, 4
 
 # function decimal: char; external;
 
-services.decimal$p_i: function wrapper_decimal, 0
+services.decimal$f: function wrapper_decimal, 0
 
 # function numbersep: char; external;
 
-services.numbersep$p_i: function wrapper_numbersep, 0
+services.numbersep$f: function wrapper_numbersep, 0
 
 # function timeorder: integer; external;
 
-services.timeorder$p_i: function wrapper_timeorder, 0
+services.timeorder$f: function wrapper_timeorder, 0
 
 # function dateorder: integer; external;
 
-services.dateorder$p_i: function wrapper_dateorder, 0
+services.dateorder$f: function wrapper_dateorder, 0
 
 # function datesep: char; external;
 
-services.datesep$p_i: function wrapper_datesep, 0
+services.datesep$f: function wrapper_datesep, 0
 
 # function timesep: char; external;
 
-services.timesep$p_i: function wrapper_timesep, 0
+services.timesep$f: function wrapper_timesep, 0
 
 # function currchr: char; external;
 
-services.currchr$p_i: function wrapper_currchr, 0
+services.currchr$f: function wrapper_currchr, 0
 
 #
 # Next module in series
