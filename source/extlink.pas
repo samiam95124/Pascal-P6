@@ -104,7 +104,6 @@ begin
        else if compp(symbol, 'datesep') then routine := 56
        else if compp(symbol, 'timesep') then routine := 57
        else if compp(symbol, 'currchr') then routine := 58
-       else if compp(symbol, 'seterr') then routine := 59
 
    { placeholders }
 

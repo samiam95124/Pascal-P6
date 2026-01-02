@@ -2587,8 +2587,7 @@ void sinins()
 
     case 2   /*stri*/: getp(); getq(); popint(i); putint(getadr(mp-p*PTRSIZE)+q, i); break;
     case 195 /*strx*/: getp(); getq(); popint(i); putbyt(getadr(mp-p*PTRSIZE)+q, i); break;
-    case 70  /*stra*/: 
-    case 253 /*sev*/:  getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
+    case 70  /*stra*/: getp(); getq(); popadr(ad); putadr(getadr(mp-p*PTRSIZE)+q, ad); break;
     case 71  /*strr*/: getp(); getq(); poprel(r1); putrel(getadr(mp-p*PTRSIZE)+q, r1); break;
     case 72  /*strs*/: getp(); getq(); popset(s1); putset(getadr(mp-p*PTRSIZE)+q, s1); break;
     case 73  /*strb*/: getp(); getq(); popint(i1); b1 = i1 != 0;
@@ -3111,6 +3110,9 @@ void sinins()
                      ep = getadr(mp+MARKET); /* get the mark ep */
                      /* release to search vectors */
                    }
+                   break;
+    case 253 /*sev*/: getp(); getq(); a1 = getadr(mp-p*PTRSIZE)+q;
+                   popadr(ad); pshadr(ad); putadr(a1, ad);
                    break;
     case 8 /*cjp*/: getq(); getq1(); popint(i1); pshint(i1);
                   if (i1 >= getint(q) && i1 <= getint(q+INTSIZE))

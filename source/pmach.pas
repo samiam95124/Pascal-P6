@@ -3037,7 +3037,7 @@ begin
                      { release to search vectors }
                    end
                  end;
-    253  (*sev*): begin getp; getq; a1 := getadr(mp-p*ptrsize)+q;
+    253 (*sev*): begin getp; getq; a1 := getadr(mp-p*ptrsize)+q;
                         popadr(ad); pshadr(ad); putadr(a1, ad)
                   end;
     8 (*cjp*): begin getq; getq1; popint(i1); pshint(i1);
