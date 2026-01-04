@@ -1709,8 +1709,6 @@ begin
          excact(cmdbuf); { execute command buffer action }
 
       end;
-
-      if not fact then writeln;
       actcnt := actcnt+1 { count actions }
 
    end
@@ -1788,19 +1786,69 @@ begin
 
 end;
 
+{ concatenate list of files to output file }
+procedure catfils(view sfl, dfn: string);
+
+var df, sf: text;
+    sn: filnam;
+    i:  integer;
+    c:  char;
+
+begin
+
+   assign(df, dfn);
+   rewrite(df);
+   for i := 1 to words(sfl) do begin { for each file }
+
+      extwords(sn, sfl, i, i); { get the current word }
+      assign(sf, sn); { open input file }
+      reset(sf);
+      { copy input to output file }
+      while not eof(sf) do begin
+
+         while not eoln(sf) do begin
+
+            read(sf, c);
+            write(df, c);
+
+         end;
+         readln(sf);
+         writeln(df)
+
+      end;
+      close(sf);
+
+   end;
+   close(df)
+
+end;
+
 begin { dolink }
 
    if fpint then begin { interpret }
 
-      putstr('cat');
-      putchr(' ');
-      putstr(lnklst);
-      putchr(' ');
-      putstr('>');
-      putchr(' ');
-      putstr(prgnam);
-      putstr('.p6');
-      excact(cmdbuf) { execute command buffer action }
+      { remove extention from target }
+      services.brknam(prgnam, p, n, e);
+      services.maknam(fns, p, n, '');
+      if fact then begin
+
+         { the shell can do a cat, but we can't. Print the command if asked, but
+           we don't do it. }
+         clears(cmdbuf); { clear command buffer }
+         i := 1; { set 1st char }
+         putstr('cat');
+         putchr(' ');
+         putstr(lnklst);
+         putchr(' ');
+         putstr('>');
+         putchr(' ');
+         putstr(fns);
+         putstr('.p6');
+         writeln(cmdbuf:*)
+
+      end;
+      { concatenate file }
+      catfils(lnklst, fns)
 
    end else begin { build }
 
@@ -1826,6 +1874,8 @@ begin { dolink }
 
       end;
       { build gcc command }
+      clears(cmdbuf); { clear command buffer }
+      i := 1; { set 1st char }
       putstr('gcc -static -g3 -o');
       putchr(' ');
       putstr(fns);
