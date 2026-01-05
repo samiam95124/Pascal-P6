@@ -139,6 +139,8 @@ var
    fdeftrm: boolean; { default to terminal mode }
    fdefgra: boolean; { default to graphical mode }
    fpint:   boolean; { compile for pint (interpreter) }
+   fpmach:  boolean; { compile for pmach (interpreter) }
+   fcmach:  boolean; { compile for cmach (compiler) }
    { these are "pass through" options, options meant for programs we execute }
    fsymcof: boolean; { generate coff symbols }
    { passthrough options: these have "set/not set indicators }
@@ -343,6 +345,8 @@ begin
       setflg('d',  'dry',      fdry); { don't perform actions }
       setflg('r',  'rebuild',  frebld); { rebuild everything }
       setflg('pint', fpint); { compile for pint (interpreter) }
+      setflg('pmach', fpmach); { compile for pmach (interpreter) }
+      setflg('cmach', fcmach); { compile for cmach (interpreter) }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -1266,7 +1270,7 @@ var p, n, e: filnam;  { path components }
 begin
 
    { if interpreting, insert .intermediate extension}
-   if fpint then begin
+   if fpint or fpmach or fcmach then begin
 
       services.brknam(fn, p, n, e); { break down name }
       services.maknam(fns, p, n, 'p6'); { remake }
@@ -1670,7 +1674,7 @@ begin
       excact(cmdbuf); { execute command buffer action }
 
       { build to assembly and generate object only if not interpreting }
-      if not fpint then begin
+      if not (fpint or fpmach or fcmach) then begin
 
          { build pgen x x command }
          i := 1; { set 1st command filename }
@@ -1825,11 +1829,17 @@ end;
 
 begin { dolink }
 
-   if fpint then begin { interpret }
+   if fpint or fpmach or fcmach then begin { interpret }
 
       { remove extention from target }
       services.brknam(prgnam, p, n, e);
       services.maknam(fns, p, n, '');
+      if fverb then begin
+
+         write('Building collected intermediate');
+         writeln
+
+      end;
       if fact then begin
 
          { the shell can do a cat, but we can't. Print the command if asked, but
@@ -1847,8 +1857,24 @@ begin { dolink }
          writeln(cmdbuf:*)
 
       end;
-      { concatenate file }
-      catfils(lnklst, fns)
+      if fpmach or fcmach then begin
+
+         { concatenate file }
+         catfils(lnklst, fns);
+         { prepare machine binary }
+         clears(cmdbuf); { clear command buffer }
+         i := 1; { set 1st char }
+         putstr('pint --machdeck');
+         putchr(' ');
+         putstr(fns);
+         putstr('.p6');
+         putchr(' ');
+         putstr(fns);
+         putstr('.p6o');
+         putchr(' ');
+         excact(cmdbuf) { execute command buffer action }
+
+      end
 
    end else begin { build }
 
@@ -1942,6 +1968,7 @@ Checks if the executive needs to be rebuilt. This would occur if the .obj or
 .sym files for the target are newer than the .exe file, or the .exe file does
 not exist. Both of these files must have been rebuilt by this point in the
 code.
+
 Its possible that the .obj or .sym files could get deleted by another task, so
 we output a special error message for that.
 
@@ -1955,26 +1982,48 @@ var op, sp, ep: filept; { file pointers }
 
 begin
 
-   services.brknam(prgnam, p, n, e); { break program name to components }
-   { find each of .o, .s and executive files }
-   services.maknam(fn, p, n, 'o');
-   dolist(fn, op);
-   if op = nil then { should not be missing }
-      error('Sequence error, missing file % check other tasks', fn); 
-   services.maknam(fn, p, n, 's');
-   dolist(fn, sp);
-   if sp = nil then { should not be missing }
-      error('Sequence error, missing file % check other tasks', fn); 
-   services.maknam(fn, p, n, '');
-   dolist(fn, ep);
-   if ep = nil then excrbl := true { does not exist }
-   else if (ep^.modify < op^.modify) or 
-           (ep^.modify < sp^.modify) then
-      { .exe date/time is older than .o or .s, execute rebuild }
-      excrbl := true;
-   if ep <> nil then dispose(ep); { release objects }
-   dispose(op);
-   dispose(sp)
+   if fpint then begin { executive is an intermediate }
+
+      services.brknam(prgnam, p, n, e); { break program name to components }
+      { find the intermediate file }
+      services.maknam(fn, p, n, 'p6');
+      dolist(fn, op);
+      if ep = nil then excrbl := true; { does not exist }
+      if ep <> nil then dispose(ep) { release objects }
+
+   end else if fpmach or fcmach then begin { executive is a p-machine binary }
+
+      services.brknam(prgnam, p, n, e); { break program name to components }
+      { find the pmachine binary file }
+      services.maknam(fn, p, n, 'p6o');
+      dolist(fn, op);
+      if ep = nil then excrbl := true; { does not exist }
+      if ep <> nil then dispose(ep) { release objects }
+
+   end else begin { executive is a binary executable }
+
+      services.brknam(prgnam, p, n, e); { break program name to components }
+      { find each of .o, .s and executive files }
+      services.maknam(fn, p, n, 'o');
+      dolist(fn, op);
+      if op = nil then { should not be missing }
+         error('Sequence error, missing file % check other tasks', fn); 
+      services.maknam(fn, p, n, 's');
+      dolist(fn, sp);
+      if sp = nil then { should not be missing }
+         error('Sequence error, missing file % check other tasks', fn); 
+      services.maknam(fn, p, n, '');
+      dolist(fn, ep);
+      if ep = nil then excrbl := true { does not exist }
+      else if (ep^.modify < op^.modify) or 
+              (ep^.modify < sp^.modify) then
+         { exec date/time is older than .o or .s, execute rebuild }
+         excrbl := true;
+      if ep <> nil then dispose(ep); { release objects }
+      dispose(op);
+      dispose(sp)
+
+   end
 
 end;
 
@@ -2280,6 +2329,8 @@ begin
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    fpint := false; { set no pint (interpreter) }
+   fpmach := false; { set no pmach (interpreter) }
+   fcmach := false; { set no cmach (interpreter) }
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
