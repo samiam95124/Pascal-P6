@@ -141,6 +141,7 @@ var
    fpint:   boolean; { compile for pint (interpreter) }
    fpmach:  boolean; { compile for pmach (interpreter) }
    fcmach:  boolean; { compile for cmach (compiler) }
+   fpack:   boolean; { compile for package mode }
    { these are "pass through" options, options meant for programs we execute }
    fsymcof: boolean; { generate coff symbols }
    { passthrough options: these have "set/not set indicators }
@@ -347,6 +348,7 @@ begin
       setflg('pint', fpint); { compile for pint (interpreter) }
       setflg('pmach', fpmach); { compile for pmach (interpreter) }
       setflg('cmach', fcmach); { compile for cmach (interpreter) }
+      setflg('package', fpack); { compile for package mode }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -540,6 +542,62 @@ begin
    end
 
 end;
+
+{******************************************************************************
+
+Find file in module path
+
+Finds the given file by the module path. If a module path name is found, that 
+name is returned with full path. If it is not found, or there is no module 
+path, the original name is returned.
+
+******************************************************************************}
+
+procedure fndfilmod(var fn: string);
+
+var p, n, e: filnam; { path components }
+    pt:      filnam; { uses path holder }
+    w:       filnam; { single path holder }
+    fns:     filnam; { trial filespec }
+    m:       boolean; { match flag }
+    i:       integer;
+
+begin
+
+   services.brknam(fn, p, n, e); { break down filespec }
+   if modpth[1] <> ' ' then begin { module path is not empty }
+
+      copy(pt, modpth); { copy module path }
+      m := false; { set no match }
+      repeat { try path components }
+
+         { extract a single path from the module path }
+         i := indexp(pt, ':'); { find location of path divider }
+         if i = 0 then begin { only one path left, use the whole thing }
+
+            copy(w, pt); { place }
+            clears(pt) { clear out the rest }
+
+         end else begin { extract single path }
+
+            extract(w, pt, 1, i-1); { get the path }
+            extract(pt, pt, i+1, len(pt)) { remove from module path }
+
+         end;
+         services.maknam(fns, w, n, e); { try that path }
+         if exists(fns) then begin
+
+            copy(fn, fns); { copy winning spec }
+            m := true { set match }
+
+         end
+
+      until (pt[1] = ' ') or m { until path is empty or matched }
+
+   end
+
+end;
+
 
 {******************************************************************************
 
@@ -1270,7 +1328,7 @@ var p, n, e: filnam;  { path components }
 begin
 
    { if interpreting, insert .intermediate extension}
-   if fpint or fpmach or fcmach then begin
+   if fpint or fpmach or fcmach or fpack then begin
 
       services.brknam(fn, p, n, e); { break down name }
       services.maknam(fns, p, n, 'p6'); { remake }
@@ -1674,7 +1732,7 @@ begin
       excact(cmdbuf); { execute command buffer action }
 
       { build to assembly and generate object only if not interpreting }
-      if not (fpint or fpmach or fcmach) then begin
+      if not (fpint or fpmach or fcmach or fpack) then begin
 
          { build pgen x x command }
          i := 1; { set 1st command filename }
@@ -1759,6 +1817,8 @@ procedure dolink;
 
 var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
+    fnc:     filnam;  { name of cmach.c }
+    fpc:     filnam;  { path of cmach.c }
     cmdbuf:  linbuf;  { command buffer }
     i:       lininx;  { index for that }
     main:    filnam;  { name for main module }
@@ -1829,7 +1889,7 @@ end;
 
 begin { dolink }
 
-   if fpint or fpmach or fcmach then begin { interpret }
+   if fpint or fpmach or fcmach or fpack then begin { interpret }
 
       { remove extention from target }
       services.brknam(prgnam, p, n, e);
@@ -1857,7 +1917,7 @@ begin { dolink }
          writeln(cmdbuf:*)
 
       end;
-      if fpmach or fcmach then begin
+      if fpmach or fcmach or fpack then begin
 
          { concatenate file }
          catfils(lnklst, fns);
@@ -1872,6 +1932,34 @@ begin { dolink }
          putstr(fns);
          putstr('.p6o');
          putchr(' ');
+         excact(cmdbuf) { execute command buffer action }
+
+      end;
+      if fpack then begin
+
+         copy(fnc, 'cmach.c'); { set name of cmach }
+         fndfilmod(fnc); { find on path }
+         if not exists(fnc) then error('cmach.c not found');
+         services.brknam(fnc, fpc, n, e); { extract path of cmach }
+         clears(cmdbuf); { clear command buffer }
+         i := 1; { set 1st char }
+         putstr('genobj');
+         putchr(' ');
+         putstr(fns);
+         putstr('.p6o program_code.c');
+         excact(cmdbuf); { execute command buffer action }
+         clears(cmdbuf); { clear command buffer }
+         i := 1; { set 1st char }
+         putstr('gcc -DPACKAGE -DWRDSIZ64 -DGPC=0 -I. -I');
+         putstr(fpc);
+         putchr(' ');
+         putstr('-o');
+         putchr(' ');
+         putstr(fns);
+         putchr(' ');
+         putstr(fnc);
+         putchr(' ');
+         putstr('-lm');
          excact(cmdbuf) { execute command buffer action }
 
       end
@@ -1976,9 +2064,9 @@ we output a special error message for that.
 
 procedure chkexc;
 
-var op, sp, ep: filept; { file pointers }
-    p, n, e:    filnam; { path components }
-    fn:         filnam; { file name save }
+var op, sp, ip, ep: filept; { file pointers }
+    p, n, e:        filnam; { path components }
+    fn:             filnam; { file name save }
 
 begin
 
@@ -1987,18 +2075,31 @@ begin
       services.brknam(prgnam, p, n, e); { break program name to components }
       { find the intermediate file }
       services.maknam(fn, p, n, 'p6');
-      dolist(fn, op);
-      if ep = nil then excrbl := true; { does not exist }
-      if ep <> nil then dispose(ep) { release objects }
+      dolist(fn, ip);
+      if ip = nil then excrbl := true; { does not exist }
+      if ip <> nil then dispose(ip) { release objects }
 
-   end else if fpmach or fcmach then begin { executive is a p-machine binary }
+   end else if fpmach or fcmach or fpack then begin { executive is a p-machine binary }
 
       services.brknam(prgnam, p, n, e); { break program name to components }
       { find the pmachine binary file }
       services.maknam(fn, p, n, 'p6o');
-      dolist(fn, op);
-      if ep = nil then excrbl := true; { does not exist }
-      if ep <> nil then dispose(ep) { release objects }
+      dolist(fn, ip);
+      if ip = nil then excrbl := true; { does not exist }
+      if fpack then begin
+
+         services.brknam(prgnam, p, n, e); { break program name to components }
+         { find the executive file }
+         services.maknam(fn, p, n, '');
+         dolist(fn, ep);
+         if ep = nil then excrbl := true { does not exist }
+         else if ip <> nil then if ep^.modify < ip^.modify then
+            { exec date/time is older than .p6 execute rebuild }
+            excrbl := true;
+         if ep <> nil then dispose(ep); { release objects }
+
+      end;
+      if ip <> nil then dispose(ip); { release objects }
 
    end else begin { executive is a binary executable }
 
@@ -2331,6 +2432,7 @@ begin
    fpint := false; { set no pint (interpreter) }
    fpmach := false; { set no pmach (interpreter) }
    fcmach := false; { set no cmach (interpreter) }
+   fpack := false; { set no package (interpreter) }
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
