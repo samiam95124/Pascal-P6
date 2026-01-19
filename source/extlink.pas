@@ -93,61 +93,62 @@ begin
        else if compp(symbol, 'brknam@p_vc_pvc_pvc_pvc') then routine := 43
        else if compp(symbol, 'brknam@p_pvc_pvc_pvc_pvc') then routine := 44
        else if compp(symbol, 'maknam@p_vc_vc_vc_vc') then routine := 45
-       else if compp(symbol, 'maknam@f_vc_vc_pvc') then routine := 46
-       else if compp(symbol, 'maknam@f_vc_pvc_vc') then routine := 47
-       else if compp(symbol, 'maknam@f_vc_pvc_pvc') then routine := 48
-       else if compp(symbol, 'maknam@f_pvc_vc_vc') then routine := 49
-       else if compp(symbol, 'maknam@f_pvc_vc_pvc') then routine := 50
-       else if compp(symbol, 'maknam@f_pvc_pvc_vc') then routine := 51
-       else if compp(symbol, 'maknam@f_pvc_pvc_pvc') then routine := 52
-       else if compp(symbol, 'fulnam@p_vc') then routine := 53
-       else if compp(symbol, 'fulnam@f_vc') then routine := 54
-       else if compp(symbol, 'getpgm@p_vc') then routine := 55
-       else if compp(symbol, 'getpgm@f') then routine := 56
-       else if compp(symbol, 'getusr@p_vc') then routine := 57
-       else if compp(symbol, 'getusr@f') then routine := 58
-       else if compp(symbol, 'setatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 59
-       else if compp(symbol, 'setatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 60
-       else if compp(symbol, 'resatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 61
-       else if compp(symbol, 'resatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 62
-       else if compp(symbol, 'bakupd@p_vc') then routine := 63
-       else if compp(symbol, 'bakupd@p_pvc') then routine := 64
-       else if compp(symbol, 'setuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 65
-       else if compp(symbol, 'setuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 66
-       else if compp(symbol, 'resuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 67
-       else if compp(symbol, 'resuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 68
-       else if compp(symbol, 'setgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 69
-       else if compp(symbol, 'setgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 70
-       else if compp(symbol, 'resgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 71
-       else if compp(symbol, 'resgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 72
-       else if compp(symbol, 'setoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 73
-       else if compp(symbol, 'setoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 74
-       else if compp(symbol, 'resoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 75
-       else if compp(symbol, 'resoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 76
-       else if compp(symbol, 'makpth@p_vc') then routine := 77
-       else if compp(symbol, 'makpth@p_pvc') then routine := 78
-       else if compp(symbol, 'rempth@p_vc') then routine := 79
-       else if compp(symbol, 'rempth@p_pvc') then routine := 80
-       else if compp(symbol, 'filchr@p_sc') then routine := 81
-       else if compp(symbol, 'optchr@f') then routine := 82
-       else if compp(symbol, 'pthchr@f') then routine := 83
-       else if compp(symbol, 'latitude@f') then routine := 84
-       else if compp(symbol, 'longitude@f') then routine := 85
-       else if compp(symbol, 'altitude@f') then routine := 86
-       else if compp(symbol, 'country@f') then routine := 87
-       else if compp(symbol, 'countrys@p_vc_i') then routine := 88
-       else if compp(symbol, 'timezone@f') then routine := 89
-       else if compp(symbol, 'daysave@f') then routine := 90
-       else if compp(symbol, 'time24hour@f') then routine := 91
-       else if compp(symbol, 'language@f') then routine := 92
-       else if compp(symbol, 'languages@p_vc_i') then routine := 93
-       else if compp(symbol, 'decimal@f') then routine := 94
-       else if compp(symbol, 'numbersep@f') then routine := 95
-       else if compp(symbol, 'timeorder@f') then routine := 96
-       else if compp(symbol, 'dateorder@f') then routine := 97
-       else if compp(symbol, 'datesep@f') then routine := 98
-       else if compp(symbol, 'timesep@f') then routine := 99
-       else if compp(symbol, 'currchr@f') then routine := 100
+       else if compp(symbol, 'maknam@f_vc_vc_vc') then routine := 46
+       else if compp(symbol, 'maknam@f_vc_vc_pvc') then routine := 47
+       else if compp(symbol, 'maknam@f_vc_pvc_vc') then routine := 48
+       else if compp(symbol, 'maknam@f_vc_pvc_pvc') then routine := 49
+       else if compp(symbol, 'maknam@f_pvc_vc_vc') then routine := 50
+       else if compp(symbol, 'maknam@f_pvc_vc_pvc') then routine := 51
+       else if compp(symbol, 'maknam@f_pvc_pvc_vc') then routine := 52
+       else if compp(symbol, 'maknam@f_pvc_pvc_pvc') then routine := 53
+       else if compp(symbol, 'fulnam@p_vc') then routine := 54
+       else if compp(symbol, 'fulnam@f_vc') then routine := 55
+       else if compp(symbol, 'getpgm@p_vc') then routine := 56
+       else if compp(symbol, 'getpgm@f') then routine := 57
+       else if compp(symbol, 'getusr@p_vc') then routine := 58
+       else if compp(symbol, 'getusr@f') then routine := 59
+       else if compp(symbol, 'setatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 60
+       else if compp(symbol, 'setatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 61
+       else if compp(symbol, 'resatr@p_vc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 62
+       else if compp(symbol, 'resatr@p_pvc_sx(atexec,atarc,atsys,atdir,atloop)') then routine := 63
+       else if compp(symbol, 'bakupd@p_vc') then routine := 64
+       else if compp(symbol, 'bakupd@p_pvc') then routine := 65
+       else if compp(symbol, 'setuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 66
+       else if compp(symbol, 'setuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 67
+       else if compp(symbol, 'resuper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 68
+       else if compp(symbol, 'resuper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 69
+       else if compp(symbol, 'setgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 70
+       else if compp(symbol, 'setgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 71
+       else if compp(symbol, 'resgper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 72
+       else if compp(symbol, 'resgper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 73
+       else if compp(symbol, 'setoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 74
+       else if compp(symbol, 'setoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 75
+       else if compp(symbol, 'resoper@p_vc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 76
+       else if compp(symbol, 'resoper@p_pvc_sx(pmread,pmwrite,pmexec,pmdel,pmvis,pmcopy,pmren)') then routine := 77
+       else if compp(symbol, 'makpth@p_vc') then routine := 78
+       else if compp(symbol, 'makpth@p_pvc') then routine := 79
+       else if compp(symbol, 'rempth@p_vc') then routine := 80
+       else if compp(symbol, 'rempth@p_pvc') then routine := 81
+       else if compp(symbol, 'filchr@p_sc') then routine := 82
+       else if compp(symbol, 'optchr@f') then routine := 83
+       else if compp(symbol, 'pthchr@f') then routine := 84
+       else if compp(symbol, 'latitude@f') then routine := 85
+       else if compp(symbol, 'longitude@f') then routine := 86
+       else if compp(symbol, 'altitude@f') then routine := 87
+       else if compp(symbol, 'country@f') then routine := 88
+       else if compp(symbol, 'countrys@p_vc_i') then routine := 89
+       else if compp(symbol, 'timezone@f') then routine := 90
+       else if compp(symbol, 'daysave@f') then routine := 91
+       else if compp(symbol, 'time24hour@f') then routine := 92
+       else if compp(symbol, 'language@f') then routine := 93
+       else if compp(symbol, 'languages@p_vc_i') then routine := 94
+       else if compp(symbol, 'decimal@f') then routine := 95
+       else if compp(symbol, 'numbersep@f') then routine := 96
+       else if compp(symbol, 'timeorder@f') then routine := 97
+       else if compp(symbol, 'dateorder@f') then routine := 98
+       else if compp(symbol, 'datesep@f') then routine := 99
+       else if compp(symbol, 'timesep@f') then routine := 100
+       else if compp(symbol, 'currchr@f') then routine := 101
 
    { placeholders }
 
@@ -606,7 +607,6 @@ begin
 
        end;
 
-
        7:  begin { procedure writetime(var f: text; t: integer) }
 
            a := getint(params);
@@ -962,8 +962,6 @@ begin
 
        end;
 
-
-
        44: begin { procedure brknam(view fn: pstring; out p, n, e: pstring) }
 
           getpstr(params+ptrsize*3, s);
@@ -974,7 +972,6 @@ begin
           params := params+ptrsize*3+strparsiz
 
        end;
-
 
        45: begin { procedure maknam(out fn: string; view p, n, e: string) }
 
@@ -1218,7 +1215,15 @@ begin
 
        end;
 
-       65: begin { procedure setuper(view fn: string; p: permset) }
+       65: begin { procedure bakupd(view fn: pstring) }
+
+          getpstr(params, s);
+          services.bakupd(s);
+          params := params+ptrsize
+
+       end;
+
+       66: begin { procedure setuper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1228,7 +1233,7 @@ begin
 
        end;
 
-       66: begin { procedure setuper(view fn: pstring; p: permset) }
+       67: begin { procedure setuper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
            getset(params, st);
@@ -1238,7 +1243,7 @@ begin
 
        end;
 
-       67: begin { procedure resuper(view fn: string; p: permset) }
+       68: begin { procedure resuper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1248,7 +1253,7 @@ begin
 
        end;
 
-       68: begin { procedure resuper(view fn: pstring; p: permset) }
+       69: begin { procedure resuper(view fn: pstring; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1258,7 +1263,7 @@ begin
 
        end;
 
-       69: begin { procedure setgper(view fn: string; p: permset) }
+       70: begin { procedure setgper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1268,7 +1273,7 @@ begin
 
        end;
 
-       70: begin { procedure setgper(view fn: pstring; p: permset) }
+       71: begin { procedure setgper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
            getset(params, st);
@@ -1278,7 +1283,7 @@ begin
 
        end;
 
-       71: begin { procedure resgper(view fn: string; p: permset) }
+       72: begin { procedure resgper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1288,7 +1293,7 @@ begin
 
        end;
 
-       72: begin { procedure resgper(view fn: pstring; p: permset) }
+       73: begin { procedure resgper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
            getset(params, st);
@@ -1298,7 +1303,7 @@ begin
 
        end;
 
-       73: begin { procedure setoper(view fn: string; p: permset) }
+       74: begin { procedure setoper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1308,7 +1313,7 @@ begin
 
        end;
 
-       74: begin { procedure setoper(view fn: pstring; p: permset) }
+       75: begin { procedure setoper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
            getset(params, st);
@@ -1318,7 +1323,7 @@ begin
 
        end;
 
-       75: begin { procedure resoper(view fn: string; p: permset) }
+       76: begin { procedure resoper(view fn: string; p: permset) }
 
            getstr(params+setsize, s);
            getset(params, st);
@@ -1328,7 +1333,7 @@ begin
 
        end;
 
-       76: begin { procedure resoper(view fn: pstring; p: permset) }
+       77: begin { procedure resoper(view fn: pstring; p: permset) }
 
            getpstr(params+setsize, s);
            getset(params, st);
@@ -1338,7 +1343,7 @@ begin
 
        end;
 
-       77: begin { procedure makpth(view fn: string) }
+       78: begin { procedure makpth(view fn: string) }
 
           getstr(params, s);
           services.makpth(s);
@@ -1346,7 +1351,7 @@ begin
 
        end;
 
-       78: begin { procedure makpth(view fn: pstring) }
+       79: begin { procedure makpth(view fn: pstring) }
 
           getpstr(params, s);
           services.makpth(s);
@@ -1354,7 +1359,7 @@ begin
 
        end;
 
-       79: begin { procedure rempth(view fn: string) }
+       80: begin { procedure rempth(view fn: string) }
 
           getstr(params, s);
           services.rempth(s);
@@ -1362,7 +1367,7 @@ begin
 
        end;
 
-       80: begin { procedure rempth(view fn: pstring) }
+       81: begin { procedure rempth(view fn: pstring) }
 
           getpstr(params, s);
           services.rempth(s);
@@ -1370,7 +1375,7 @@ begin
 
        end;
 
-       81: begin { procedure filchr(out fc: schar) }
+       82: begin { procedure filchr(out fc: schar) }
 
            services.filchr(cs);
            cst2set(cs, st);
@@ -1379,49 +1384,49 @@ begin
 
        end;
 
-       82: begin { function optchr: char }
+       83: begin { function optchr: char }
 
            ch := services.optchr;
            putint(params, ord(ch))
 
        end;
 
-       83: begin { function pthchr: char }
+       84: begin { function pthchr: char }
 
            ch := services.pthchr;
            putint(params, ord(ch))
 
        end;
 
-       84: begin { function latitude: integer }
+       85: begin { function latitude: integer }
 
            a := services.latitude;
            putint(params, a)
 
        end;
 
-       85: begin { function longitude: integer }
+       86: begin { function longitude: integer }
 
            a := services.longitude;
            putint(params, a)
 
        end;
 
-       86: begin { function altitude: integer }
+       87: begin { function altitude: integer }
 
            a := services.altitude;
            putint(params, a)
 
        end;
 
-       87: begin { function country: integer }
+       88: begin { function country: integer }
 
            a := services.country;
            putint(params, a)
 
        end;
 
-       88: begin { procedure countrys(out s: string; c: integer) }
+       89: begin { procedure countrys(out s: string; c: integer) }
 
            services.countrys(s, getint(params));
            putstr(s, params+intsize);
@@ -1429,28 +1434,28 @@ begin
 
        end;
 
-       89: begin { function timezone: integer }
+       90: begin { function timezone: integer }
 
            a := services.timezone;
            putint(params, a)
 
        end;
 
-       90: begin { function daysave: boolean }
+       91: begin { function daysave: boolean }
 
            bl := services.daysave;
            putint(params, ord(bl))
 
        end;
 
-       91: begin { function time24hour: boolean }
+       92: begin { function time24hour: boolean }
 
            bl := services.time24hour;
            putint(params, ord(bl))
 
        end;
 
-       92: begin { function language: integer}
+       93: begin { function language: integer}
 
            a := services.language;
            params := params+intsize;
@@ -1458,7 +1463,7 @@ begin
 
        end;
 
-       93: begin { procedure languages(out s: string; l: integer) }
+       94: begin { procedure languages(out s: string; l: integer) }
 
            services.languages(s, getint(params));
            putstr(s, params+intsize);
@@ -1466,49 +1471,49 @@ begin
 
        end;
 
-       94: begin { function decimal: char; external }
+       95: begin { function decimal: char; external }
 
            ch := services.decimal;
            putint(params, ord(ch))
 
        end;
 
-       95: begin { function numbersep: char }
+       96: begin { function numbersep: char }
 
            ch := services.numbersep;
            putint(params, ord(ch))
 
        end;
 
-       96: begin { function timeorder: integer }
+       97: begin { function timeorder: integer }
 
            a := services.timeorder;
            putint(params, a)
 
        end;
 
-       97: begin { function dateorder: integer }
+       98: begin { function dateorder: integer }
 
            a := services.dateorder;
            putint(params, a)
 
        end;
 
-       98: begin { function datesep: char }
+       99: begin { function datesep: char }
 
            ch := services.datesep;
            putint(params, ord(ch))
 
        end;
 
-       99: begin { function timesep: char }
+       100: begin { function timesep: char }
 
            ch := services.timesep;
            putint(params, ord(ch))
 
        end;
 
-       100: begin { function currchr: char }
+       101: begin { function currchr: char }
 
            ch := services.currchr;
            putint(params, ord(ch))

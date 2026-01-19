@@ -362,7 +362,7 @@ const
       extsrc      = '.pas'; { extention for source file }
       maxwth      = 10;   { maximum number of watched addresses }
       maxana      = 10;   { maximum depth of analyzer traces }
-      maxsym      = 20;   { maximum length of symbol/module name }
+      maxsym      = 4000; { maximum length of symbol/module name }
 
 type
 
