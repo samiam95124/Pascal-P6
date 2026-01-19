@@ -34,6 +34,7 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
+# Programs
 compprog pc/pc
 compprog pc/hashtabr
 compprog pc/hashtabs
@@ -43,3 +44,8 @@ compprog source/pcom
 compprog source/pint
 compprog source/pmach
 compprog source/pgen/pgen
+# Modules
+pc libs/source/services -pint
+cp libs/source/services.p6 libs
+pc libs/source/strings -pint
+cp libs/source/strings.p6 libs

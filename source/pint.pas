@@ -2258,13 +2258,10 @@ procedure load;
      while c <> '.' do
        begin mods[i] := c; i := i+1; c := strchr(lsp, i) end;
      i := i+1; c := strchr(lsp, i); x := 1;
-     while (c <> ' ') and (c <> '@') do
+     while c <> ' ' do
        begin syms[x] := c; i := i+1; x := x+1; c := strchr(lsp, i) end;
      rt := 0;
      LookupExternal(mods, syms, rt);
-     { supress warnings }
-     if mods[1] = ' ' then;
-     if syms[1] = ' ' then;
      extref := rt
    end;
 
@@ -5321,11 +5318,10 @@ begin
     254 (*mdc*): begin getq; popint(i1); pshint(i1); pshint(i1+q) end;
 
     242 (*eext*): begin
-                    ad := sp+adrsize; { index parameters }
-                    { this needs evaluation }
-                    {ExecuteExternal(pc-extvecbase, ad);}
+                    i1 := sp+adrsize; { index parameters }
+                    ExecuteExternal(pc-extvecbase, i1);
                     popadr(pc); { load return address }
-                    sp := ad; { skip parameters }
+                    sp := i1; { skip parameters }
                   end;
 
     { illegal instructions }

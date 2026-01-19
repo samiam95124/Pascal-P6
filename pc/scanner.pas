@@ -60,8 +60,8 @@ uses strings, { string functions }
 
 const
 
-maxstr = 200; { maximum length of string/symbol }
-maxlin = 1000; { maximum size of input line }
+maxstr = 2000; { maximum length of string/symbol }
+maxlin = 20000; { maximum size of input line }
 
 type
 
@@ -216,7 +216,7 @@ begin
 
    end;
 {;if not eof(f^.inpfil) then begin
-;write(output, f^.linbuf:* );
+;write(output, f^.lininp:* );
 ;writeln;
 ;end;}
 
@@ -1064,6 +1064,11 @@ begin
    deftbl[ccln]        := copy(':');
    deftbl[ccmf]        := copy('^');
    deftbl[crange]      := copy('..');
+   deftbl[chex]        := copy('$');
+   deftbl[coct]        := copy('&');
+   deftbl[cbin]        := copy('%');
+   deftbl[cnum]        := copy('#');
+   deftbl[clinc]       := copy('!');
    deftbl[cdiv]        := copy('div');
    deftbl[cmod]        := copy('mod');
    deftbl[cnil]        := copy('nil');
@@ -1113,32 +1118,32 @@ begin
    deftbl[cclass]      := copy('class');
    deftbl[cis]         := copy('is');
    deftbl[catom]       := copy('atom');
-   deftbl[catom]       := copy('overload');
-   deftbl[catom]       := copy('override');
-   deftbl[catom]       := copy('reference');
-   deftbl[catom]       := copy('thread');
-   deftbl[catom]       := copy('joins');
-   deftbl[catom]       := copy('static');
-   deftbl[catom]       := copy('inherited');
-   deftbl[catom]       := copy('self');
-   deftbl[catom]       := copy('virtual');
-   deftbl[catom]       := copy('try');
-   deftbl[catom]       := copy('except');
-   deftbl[catom]       := copy('extends');
-   deftbl[catom]       := copy('on');
-   deftbl[catom]       := copy('result');
-   deftbl[catom]       := copy('operator');
-   deftbl[catom]       := copy('task');
-   deftbl[catom]       := copy('property');
-   deftbl[catom]       := copy('channel');
-   deftbl[catom]       := copy('stream');
-   deftbl[catom]       := copy('out');
-   deftbl[cinteger]    := copy('');
-   deftbl[cidentifier] := copy('');
-   deftbl[cstring]     := copy('');
-   deftbl[creal]       := copy('');
-   deftbl[cundefined]  := copy('');
-   deftbl[ceof]        := copy('');
+   deftbl[coverload]   := copy('overload');
+   deftbl[coverride]   := copy('override');
+   deftbl[creference]  := copy('reference');
+   deftbl[cthread]     := copy('thread');
+   deftbl[cjoins]      := copy('joins');
+   deftbl[cstatic]     := copy('static');
+   deftbl[cinherited]  := copy('inherited');
+   deftbl[cself]       := copy('self');
+   deftbl[cvirtual]    := copy('virtual');
+   deftbl[ctry]        := copy('try');
+   deftbl[cexcept]     := copy('except');
+   deftbl[cextends]    := copy('extends');
+   deftbl[con]         := copy('on');
+   deftbl[cresult]     := copy('result');
+   deftbl[coperator]   := copy('operator');
+   deftbl[ctask]       := copy('task');
+   deftbl[cproperty]   := copy('property');
+   deftbl[cchannel]    := copy('channel');
+   deftbl[cstream]     := copy('stream');
+   deftbl[cout]        := copy('out');
+   deftbl[cinteger]    := copy('<integer>');
+   deftbl[cidentifier] := copy('<identifier>');
+   deftbl[cstring]     := copy('<string>');
+   deftbl[creal]       := copy('<real>');
+   deftbl[cundefined]  := copy('<undefined>');
+   deftbl[ceof]        := copy('<eof>');
 
    { flags }
   

@@ -138,7 +138,6 @@ procedure setoper(view fn: string; p: permset); external;
 overload procedure setoper(fn: pstring; p: permset); external;
 procedure resoper(view fn: string; p: permset); external;
 overload procedure resoper(fn: pstring; p: permset); external;
-procedure seterr(e: integer); external;
 procedure makpth(view fn: string); external;
 overload procedure makpth(fn: pstring); external;
 procedure rempth(view fn: string); external;

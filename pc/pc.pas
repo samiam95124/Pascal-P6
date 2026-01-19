@@ -1819,6 +1819,7 @@ var p, n, e: filnam;  { path components }
     fns:     filnam;  { save for name }
     fnc:     filnam;  { name of cmach.c }
     fpc:     filnam;  { path of cmach.c }
+    fni:     filnam;  { name of intermediate }
     cmdbuf:  linbuf;  { command buffer }
     i:       lininx;  { index for that }
     main:    filnam;  { name for main module }
@@ -1857,14 +1858,19 @@ var df, sf: text;
     sn: filnam;
     i:  integer;
     c:  char;
+    p, n, e: filnam;  { path components }
+    tn: filnam;
 
 begin
 
-   assign(df, dfn);
+   services.brknam(dfn, p, n, e);
+   services.maknam(tn, p, n, 'tmp');
+   assign(df, tn);
    rewrite(df);
    for i := 1 to words(sfl) do begin { for each file }
 
       extwords(sn, sfl, i, i); { get the current word }
+      if not exists(sn) then error('File not found %', sn);
       assign(sf, sn); { open input file }
       reset(sf);
       { copy input to output file }
@@ -1883,7 +1889,8 @@ begin
       close(sf);
 
    end;
-   close(df)
+   close(df);
+   change(dfn, tn)
 
 end;
 
@@ -1915,6 +1922,14 @@ begin { dolink }
          putstr(fns);
          putstr('.p6');
          writeln(cmdbuf:*)
+
+      end;
+      { for pint, just cat the files }
+      if fpint then begin
+
+         services.brknam(prgnam, p, n, e);
+         services.maknam(fni, p, n, 'p6');
+         catfils(lnklst, fni)
 
       end;
       if fpmach or fcmach or fpack then begin

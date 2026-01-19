@@ -144,7 +144,7 @@ const
    { strglgth used to define the size of all strings in pcom and pint. With the
      string quanta system, string lengths are effectively unlimited, but there
      it still sets the size of some buffers in pcom. }
-   strglgth    = 250;
+   strglgth    = 2000;
    fileal      = charal;
    (* stackelsize = minimum size for 1 stackelement
                   = k*stackal
