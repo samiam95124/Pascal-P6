@@ -57,9 +57,7 @@ EXTERNALLIBS=$(EXTERNAL)/services.o
 
 all: bin/cmach bin/pgen bin/spew \
 	$(LIBS)/psystem.a $(LIBS)/psystem_asm.o main $(BUILD)/pgen/main.o \
-	parcmd $(BUILD)/parcmd.o libs/strings.o $(LIBS)/strings.o \
-	libs/services.a $(LIBS)/services.a libs/services_test \
-	libs/parse.o $(LIBS)/parse.o
+	libs/services.a $(LIBS)/services.a
 
 ################################################################################
 #
@@ -68,7 +66,7 @@ all: bin/cmach bin/pgen bin/spew \
 
 ################################################################################
 #
-# Components for compiler and support modules
+# Components for compiler and support modules in C
 #
 
 #
@@ -100,54 +98,16 @@ $(BUILD)/pgen/main.o: $(SOURCE)/pgen/main.asm
 		-c -x assembler $(SOURCE)/pgen/main.asm
 	cp $(BUILD)/pgen/main.o $(LIBS)
 
-#
-# Build command line parser
-#
-parcmd: $(SOURCE)/parcmd.pas
-$(BUILD)/parcmd.o: $(SOURCE)/parcmd.pas
-	@echo
-	@echo "Building parcmd..."
-	@echo
-	pcom $(SOURCE)/parcmd.pas $(BUILD)/parcmd.p6 --list- --reference-
-	pgen $(BUILD)/parcmd.p6 $(BUILD)/parcmd.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/parcmd.o -c $(BUILD)/parcmd.s
-
 ################################################################################
 #
-# User accessable libraries
+# User accessable libraries in C
 #
-
-#
-# Build strings, the Pascaline string support library in Pascaline.
-#
-libs/strings.o $(LIBS)/strings.o: $(LIBS)/source/strings.pas
-	@echo
-	@echo "Building strings..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom $(LIBS)/source/strings.pas $(BUILD)/libs/strings.p6 --list- --reference-
-	pgen $(BUILD)/libs/strings.p6 $(BUILD)/libs/strings.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/strings.o \
-		-c $(BUILD)/libs/strings.s
-	cp $(BUILD)/libs/strings.o $(LIBS)
-
-#
-# Build parse, the Pascaline parsre library in Pascaline.
-#
-libs/parse.o $(LIBS)/parse.o: $(LIBS)/source/parse.pas
-	@echo
-	@echo "Building parse..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom $(LIBS)/source/parse.pas $(BUILD)/libs/parse.p6 --modules=$(LIBS) \
-		--list- --reference-
-	pgen $(BUILD)/libs/parse.p6 $(BUILD)/libs/parse.s
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/libs/parse.o \
-		-c $(BUILD)/libs/parse.s
-	cp $(BUILD)/libs/parse.o $(LIBS)
 
 #
 # Services
+#
+# Services is built from components since it is an external C library in
+# Petit-Ami. The result is an archive services.a.
 #
 libs/services.a $(LIBS)/services.a: $(AMI)/services.c \
 	$(LIBS)/source/services_wrapper.asm
@@ -169,7 +129,7 @@ libs/services.a $(LIBS)/services.a: $(AMI)/services.c \
 
 ################################################################################
 #
-# Build programs
+# Build programs in C
 #
 
 #
@@ -195,45 +155,6 @@ bin/spew: $(SOURCE)/spew.c
 	mkdir -p $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/spew $(SOURCE)/spew.c
 	cp $(BUILD)/spew $(PASCALP6)/bin/spew
-
-################################################################################
-#
-# Build library tests
-#
-
-#
-# Build services test.
-#
-libs/services_test: $(LIBS)/source/services_test.pas $(LIBS)/source/services_test1.pas \
-	$(LIBS)/services.a libs/strings.o $(LIBS)/psystem.a
-	@echo
-	@echo "Building services test..."
-	@echo
-	mkdir -p $(BUILD)/libs
-	pcom --modules=libs/source $(LIBS)/source/services_test.pas \
-		$(BUILD)/libs/services_test.p6 --list- --reference-
-	pcom --modules=libs/source $(LIBS)/source/services_test1.pas \
-		$(BUILD)/libs/services_test1.p6 --list- --reference-
-	pgen $(BUILD)/libs/services_test.p6 $(BUILD)/libs/services_test.s
-	pgen $(BUILD)/libs/services_test1.p6 $(BUILD)/libs/services_test1.s
-	$(CC) $(CFLAGS) \
-		$(BUILD)/pgen/main.o \
-		$(BUILD)/parcmd.o \
-		$(LIBS)/strings.o \
-		$(BUILD)/libs/services_test.s \
-        $(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(LIBS)/services_test -lm -lpthread
-	cp $(LIBS)/services_test bin
-	$(CC) $(CFLAGS) \
-		$(BUILD)/pgen/main.o \
-		$(BUILD)/parcmd.o \
-		$(LIBS)/strings.o \
-		$(BUILD)/libs/services_test1.s \
-		$(LIBS)/services.a \
-		$(LIBS)/psystem.a \
-		-o $(LIBS)/services_test1 -lm -lpthread
-	cp $(LIBS)/services_test1 bin
 
 clean:
 	find . -name "*.pint" -type f -delete

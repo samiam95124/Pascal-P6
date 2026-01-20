@@ -34,18 +34,41 @@ if [ $? -ne 0 ]; then
    exit 1
 
 fi
-# Programs
+
+#
+# Services is build from C level components.
+# We build an interpretive deck here only as a dummy to satisfy
+# pc builds.
+#
+pc libs/source/services -pint
+cp libs/source/services.p6 libs
+
+#
+# General library modules in Pascaline.
+# These are compiled to objects and intermediates both because they can be used
+# in executables and interpretation.
+#
+pc libs/source/strings
+cp libs/source/strings.o libs
+pc libs/source/strings -pint
+cp libs/source/strings.p6 libs
+
+pc libs/source/parse
+cp libs/source/parse.o libs
+pc libs/source/parse -pint
+cp libs/source/parse.p6 libs
+
+#
+# Programs in Pascaline.
+#
 compprog pc/pc
 compprog pc/hashtabr
 compprog pc/hashtabs
 compprog source/genobj
-compprog libs/source/strtst
+compprog libs/tests/strtst
+compprog libs/tests/services_test
+compprog libs/tests/services_test1
 compprog source/pcom
 compprog source/pint
 compprog source/pmach
 compprog source/pgen/pgen
-# Modules
-pc libs/source/services -pint
-cp libs/source/services.p6 libs
-pc libs/source/strings -pint
-cp libs/source/strings.p6 libs
