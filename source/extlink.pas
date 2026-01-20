@@ -610,7 +610,7 @@ begin
        7:  begin { procedure writetime(var f: text; t: integer) }
 
            a := getint(params);
-           ad := getadr(params+intsize); valfil(ad);
+           ad := getadr(params+intsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then case fn of
               outputfn,
               errorfn,
@@ -638,7 +638,7 @@ begin
        9:  begin { procedure writedate(var f: text; t: integer) }
 
            a := getint(params);
-           ad := getadr(params+intsize); valfil(ad);
+           ad := getadr(params+intsize); valfil(ad); fn := getbyt(ad);
            if fn <= commandfn then case fn of
               outputfn,
               errorfn,
