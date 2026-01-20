@@ -738,8 +738,7 @@ begin
       else if blkcnt > 0 then fp^.code := true;
       { Note that "var" can appear in two places, but they both imply code is
         generated. }
-      if f^.nxttlk in [scanner.cvar, scanner.cfixed, scanner.cprocedure, 
-                       scanner.cfunction] then
+      if f^.nxttlk in [scanner.cvar, scanner.cfixed] then
          fp^.code := true; { coding structure found }
       scanner.gettlk(f) { get next tolken }
 
