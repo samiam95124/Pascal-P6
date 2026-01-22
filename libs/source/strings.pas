@@ -5041,7 +5041,8 @@ begin
 
    if s = nil then throw(StringNil);
 
-   realv := realv(s^) { return result }
+   realv := realv(s^); { return result }
+   dispose(s) { release input pstring }
 
 end;
 

@@ -100,18 +100,18 @@ begin
    writeln('test11: waiting 1 second');
    waittime(SECOND);
    writeln('test 11: ', elapsed(ta), ' s/b ', second, ' (approximate)');
-   writeln('test 12: ', validfile('c:\\just\\fargle.com'), ' s/b true');
-   writeln('test 13: ', validfile('c:\\fargle.com'), ' s/b false');
-   writeln('test 14: ', wild('c:\\fargle.c?m'), ' s/b true');
+   writeln('test 12: ', validfile('/just/fargle.com'), ' s/b true');
+   writeln('test 13: ', validfile('    '), ' s/b false');
+   writeln('test 14: ', wild('fargle.c?m'), ' s/b true');
    writeln('test 15: ', validfile('c:\\far*gle.com'), ' s/b true');
-   writeln('test 16: ', validfile('c:\\fargle.com'), ' s/b false');
-   writeln('test 17: ', wild('c:\\for?.txt'), ' s/b true');
-   writeln('test 18: ', wild('c:\\for*.txt'), ' s/b true');
-   writeln('test 19: ', wild('c:\\fork.txt'), ' s/b false');
+   writeln('test 16: ', validfile(''), ' s/b false');
+   writeln('test 17: ', wild('for?.txt'), ' s/b true');
+   writeln('test 18: ', wild('/for*.txt'), ' s/b true');
+   writeln('test 19: ', wild('fork.txt'), ' s/b false');
    setenv('barkbark', 'what is this');
    getenv('barkbark   ', sa);
    writeln('test20: ', sa:*, ' s/b what is this');
-   sp := getenv('barkbark   ');
+   sp := getenv('barkbark');
    writeln('test21: ', sp^, ' s/b what is this');
    remenv('barkbark');
    getenv('barkbark', sa);
@@ -191,6 +191,9 @@ begin
    assign(ft, 'junk');
    rewrite(ft);
    close(ft);
+
+   { Linux cannot set or reset attributes }
+   {
    write('test 42: ');
    setatr('junk', [atarc]);
    list('junk', fla);
@@ -211,6 +214,8 @@ begin
    list('junk', fla);
    if fla <> nil then write(fla^.name^, ' ', atsys in fla^.attr);
    writeln(' s/b junk false');
+   }
+
    write('test 46: ');
    setuper('junk', [pmwrite]);
    list('junk', fla);
