@@ -21,7 +21,7 @@ ARM64 Register Conventions (AAPCS64):
 
 *******************************************************************************}
 
-module registers_arm64;
+module registers;
 
 const
 

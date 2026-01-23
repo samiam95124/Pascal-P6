@@ -36,16 +36,16 @@
 *                                                                              *
 *******************************************************************************}
 
-program pgen_arm64(output);
+program pgen(output);
 
 joins services;
 
-uses endian,           { endian mode }
-     mpb,              { machine parameter block }
-     version,          { current version number }
-     parcmd,           { command line parsing }
-     registers_arm64,  { ARM64 cpu specific registers }
-     independent;      { cpu independent module }
+uses endian,      { endian mode }
+     mpb,         { machine parameter block }
+     version,     { current version number }
+     parcmd,      { command line parsing }
+     registers,   { ARM64 cpu specific registers }
+     independent; { cpu independent module }
 
 label 99;
 
