@@ -88,6 +88,18 @@ typedef int boolean;
 #define SETLOW       0     /* lowest set element */
 #define SETHIGH      255   /* highest set element */
 #define PTRSIZE      8     /* pointer size in bytes */
+#define ADRSIZE      8     /* address size in bytes */
+#define MARKSIZE     24    /* mark stack frame size (3*ptrsize) */
+#define STACKELSIZE  8     /* stack element size */
+#define APTS         ADRSIZE  /* address size (alias) */
+#define INTSIZE      8     /* size of integer */
+#define REALSIZE     8     /* size of real */
+#define CHARSIZE     1     /* size of char */
+#define BOOLSIZE     1     /* size of boolean */
+#define SETSIZE      32    /* size of set */
+#define FILEIDSIZE   1     /* size of file logical file number */
+#define FILESIZE     1     /* size of file (lfn only for now) */
+#define EXCEPTSIZE   1     /* size of exception variable */
 #define EXPLEN       32    /* length of exception names */
 #define MAXRLD       22    /* maximum length of real in digit form */
 #define VARSQT       10    /* variable string quanta */
@@ -780,6 +792,7 @@ filptr fp;
  *****************************************************************************/
 
 /* Forward declarations of all functions follow the same order as Pascal */
+boolean eofinp(void);
 void genlabel(integer* nxtlab);
 void alignau(integer alvl, addrrange* flc);
 void intmsg(integer intcod);
@@ -1790,14 +1803,18 @@ void endofline(void) {
 
 /* Output lines to intermediate file */
 void outline(void) {
-    /* NOTE: Requires completion of file I/O system */
-    /* Placeholder implementation */
+    while (incstk->lineout < incstk->linecount) {
+        incstk->lineout = incstk->lineout + 1;
+        if (!eofinp() && prcode) {
+            fprintf(prr, ":%d\n", incstk->lineout);
+        }
+    }
 }
 
 /* Mark line in output */
 void markline(void) {
     outline();
-    /* NOTE: Full implementation pending */
+    if (prcode) fprintf(prr, ":%d\n", incstk->linecount);
 }
 
 /* Main error reporting function */
@@ -1823,6 +1840,7 @@ void chkstd(void) {
 
 /* Check if an include file is currently active */
 boolean incact(void) {
+    if (incstk == NULL) return false;
     return incstk->fio;
 }
 
@@ -2307,7 +2325,7 @@ static void prtsym(symbol sy) {
  */
 void insymbol(void) {
     integer i, k, v, r;
-    csstr stringbuf;  /* String accumulator */
+    /* Note: stringbuf is a global static - shared with plcchr */
     csp lvp;
     boolean ferr;
     boolean iscmte;
@@ -3585,6 +3603,177 @@ static void chartypes(void) {
 }
 
 /* Main initialization routine for tables */
+/* Initialize stack effect tables */
+void initdx(void) {
+    /* cdx table - stack effects for each instruction */
+    cdx[  0] =  0;                    cdx[  1] =  0;
+    cdx[  2] = +INTSIZE;              cdx[  3] = +REALSIZE;
+    cdx[  4] = +INTSIZE;              cdx[  5] = +SETSIZE;
+    cdx[  6] = +INTSIZE;              cdx[  7] = +REALSIZE;
+    cdx[  8] =  4;                    cdx[  9] = +INTSIZE-REALSIZE;
+    cdx[ 10] = -REALSIZE+INTSIZE;     cdx[ 11] = +SETSIZE;
+    cdx[ 12] = +SETSIZE;              cdx[ 13] = +INTSIZE;
+    cdx[ 14] = +INTSIZE;              cdx[ 15] = +INTSIZE;
+    cdx[ 16] = +REALSIZE;             cdx[ 17] =  0;
+    cdx[ 18] =  0;                    cdx[ 19] =  2;
+    cdx[ 20] =  0;                    cdx[ 21] = +INTSIZE;
+    cdx[ 22] = +REALSIZE;             cdx[ 23] = +INTSIZE-SETSIZE;
+    cdx[ 24] =  0;                    cdx[ 25] =  0;
+    cdx[ 26] = 1;                     cdx[ 27] = +REALSIZE-INTSIZE;
+    cdx[ 28] = +SETSIZE;              cdx[ 29] =  0;
+    cdx[ 30] =  0;                    cdx[ 31] =  2;
+    cdx[ 32] =  0;                    cdx[ 33] = +INTSIZE;
+    cdx[ 34] =  2;                    cdx[ 35] =  3;
+    cdx[ 36] = +INTSIZE;              cdx[ 37] = -ADRSIZE;
+    cdx[ 38] = -ADRSIZE;              cdx[ 39] =  4;
+    cdx[ 40] = +ADRSIZE*2;            cdx[ 41] =  0;
+    cdx[ 42] =  2;                    cdx[ 43] =  5;
+    cdx[ 44] = +INTSIZE;              cdx[ 45] =  2;
+    cdx[ 46] =  0;                    cdx[ 47] =  6;
+    cdx[ 48] =  6;                    cdx[ 49] =  6;
+    cdx[ 50] = -ADRSIZE;              cdx[ 51] =  4;
+    cdx[ 52] =  6;                    cdx[ 53] =  6;
+    cdx[ 54] =  4;                    cdx[ 55] =  6;
+    cdx[ 56] =  5;                    cdx[ 57] =  0;
+    cdx[ 58] =  2;                    cdx[ 59] =  0;
+    cdx[ 60] =  0;                    cdx[ 61] =  +REALSIZE-INTSIZE;
+    cdx[ 62] = +ADRSIZE*3;            cdx[ 63] = +ADRSIZE*3;
+    cdx[ 64] = +INTSIZE*2-SETSIZE;    cdx[ 65] =  0;
+    cdx[ 66] =  0;                    cdx[ 67] = +PTRSIZE;
+    cdx[ 68] = -ADRSIZE*2;            cdx[ 69] =  0;
+    cdx[ 70] =  0;                    cdx[ 71] = +PTRSIZE;
+    cdx[ 72] =  0;                    cdx[ 73] = +INTSIZE;
+    cdx[ 74] = -ADRSIZE*2;            cdx[ 75] =  2;
+    cdx[ 76] =  4;                    cdx[ 77] =  +INTSIZE*2;
+    cdx[ 78] = -INTSIZE;              cdx[ 79] =  +ADRSIZE;
+    cdx[ 80] =  2;                    cdx[ 81] =  0;
+    cdx[ 82] =  0;                    cdx[ 83] = +INTSIZE;
+    cdx[ 84] =  -(ADRSIZE*3+INTSIZE); cdx[ 85] = ADRSIZE*3+INTSIZE;
+    cdx[ 86] = 0;                     cdx[ 87] = 0;
+    cdx[ 88] = 0;                     cdx[ 89] = 0;
+    cdx[ 90] = 0;                     cdx[ 91] = 0;
+    cdx[ 92] = 0;                     cdx[ 93] = +INTSIZE;
+    cdx[ 94] = 0;                     cdx[ 95] = 0;
+    cdx[ 96] = 0;                     cdx[ 97] = 0;
+    cdx[ 98] = -ADRSIZE;              cdx[ 99] = 0;
+    cdx[100] = 0;                     cdx[101] = +PTRSIZE*4;
+    cdx[102] = +PTRSIZE*4;            cdx[103] = +INTSIZE+PTRSIZE;
+    cdx[104] = +INTSIZE;              cdx[105] = -ADRSIZE;
+    cdx[106] = +PTRSIZE*2;            cdx[107] = +PTRSIZE;
+    cdx[108] = 0;                     cdx[109] = 0;
+    cdx[110] = +PTRSIZE*3;            cdx[111] = -ADRSIZE;
+    cdx[112] = 0;                     cdx[113] = +PTRSIZE;
+    cdx[114] = -ADRSIZE;              cdx[115] = 0;
+    cdx[116] = 0;                     cdx[117] = 0;
+    cdx[118] = -ADRSIZE;              cdx[119] = 0;
+    cdx[120] = 0;                     cdx[121] = 0;
+    cdx[122] = 0;                     cdx[123] = +PTRSIZE;
+    cdx[124] = 0;                     cdx[125] = 0;
+    cdx[126] = -ADRSIZE;              cdx[127] = -INTSIZE;
+    cdx[128] = 0;                     cdx[129] = 0;
+    cdx[130] = -ADRSIZE;
+
+    /* Secondary table: cdxs[row][col]
+       Order is i, r, b, c, a, s, m, v (1-8) */
+    cdxs[1][1] = +(ADRSIZE+INTSIZE);  /* stoi */
+    cdxs[1][2] = +(ADRSIZE+REALSIZE); /* stor */
+    cdxs[1][3] = +(ADRSIZE+INTSIZE);  /* stob */
+    cdxs[1][4] = +(ADRSIZE+INTSIZE);  /* stoc */
+    cdxs[1][5] = +(ADRSIZE+ADRSIZE);  /* stoa */
+    cdxs[1][6] = +(ADRSIZE+SETSIZE);  /* stos */
+    cdxs[1][7] = 0;
+    cdxs[1][8] = 0;
+
+    cdxs[2][1] = 0; /* deci/inci/ordi/chki/reti/noti */
+    cdxs[2][2] = 0; /* chkr/retr */
+    cdxs[2][3] = 0; /* decb/incb/ordb/chkb/retb/notb */
+    cdxs[2][4] = 0; /* decc/incc/ordc/chkc/retc */
+    cdxs[2][5] = 0; /* reva/reta */
+    cdxs[2][6] = 0;
+    cdxs[2][7] = 0;
+    cdxs[2][8] = 0;
+
+    cdxs[3][1] = -INTSIZE;   /* dupi */
+    cdxs[3][2] = -REALSIZE;  /* dupr */
+    cdxs[3][3] = -INTSIZE;   /* dupb */
+    cdxs[3][4] = -INTSIZE;   /* dupc */
+    cdxs[3][5] = -ADRSIZE;   /* dupa */
+    cdxs[3][6] = -SETSIZE;   /* dups */
+    cdxs[3][7] = 0;
+    cdxs[3][8] = 0;
+
+    cdxs[4][1] = -INTSIZE;   /* lodi/ldoi/indi */
+    cdxs[4][2] = -REALSIZE;  /* lodr/ldor/indr */
+    cdxs[4][3] = -INTSIZE;   /* lodb/ldob/indb */
+    cdxs[4][4] = -INTSIZE;   /* lodc/ldoc/indc */
+    cdxs[4][5] = -ADRSIZE;   /* loda/ldoa/inda */
+    cdxs[4][6] = -SETSIZE;   /* lods/ldos/inds */
+    cdxs[4][7] = 0;
+    cdxs[4][8] = 0;
+
+    cdxs[5][1] = +(ADRSIZE+INTSIZE);   /* sti */
+    cdxs[5][2] = +(ADRSIZE+REALSIZE);  /* str */
+    cdxs[5][3] = +(ADRSIZE+INTSIZE);   /* stb */
+    cdxs[5][4] = +(ADRSIZE+INTSIZE);   /* stc */
+    cdxs[5][5] = +(ADRSIZE+ADRSIZE);   /* sta */
+    cdxs[5][6] = +(ADRSIZE+SETSIZE);   /* sts */
+    cdxs[5][7] = 0;
+    cdxs[5][8] = 0;
+
+    cdxs[6][1] = +INTSIZE;   /* equi/neqi/lesi/grti/leqi/geqi */
+    cdxs[6][2] = +REALSIZE;  /* equr/neqr/lesr/grtr/leqr/geqr */
+    cdxs[6][3] = +INTSIZE;   /* equb/neqb/lesb/grtb/leqb/geqb */
+    cdxs[6][4] = +INTSIZE;   /* equc/neqc/lesc/grtc/leqc/geqc */
+    cdxs[6][5] = +ADRSIZE;   /* equa/neqa */
+    cdxs[6][6] = +SETSIZE+SETSIZE-INTSIZE; /* equs/neqs/less/grts/leqs/geqs */
+    cdxs[6][7] = 0;
+    cdxs[6][8] = +(ADRSIZE+INTSIZE)*2;  /* equv/neqv/lesv/grtv/leqv/geqv */
+
+    /* pdx - procedure stack effects for CSP (call system procedure) */
+    pdx[ 1]  = +ADRSIZE;             pdx[ 2]  = +ADRSIZE;
+    pdx[ 3]  = +ADRSIZE;             pdx[ 4]  = +ADRSIZE;
+    pdx[ 5]  = +ADRSIZE;             pdx[ 6]  = +ADRSIZE*2;
+    pdx[ 7]  = 0;                    pdx[ 8]  = +(REALSIZE+INTSIZE);
+    pdx[ 9]  = +INTSIZE*2;           pdx[10]  = +(INTSIZE+ADRSIZE+INTSIZE);
+    pdx[11]  =  0;                   pdx[12]  = +PTRSIZE*2;
+    pdx[13]  =  0;                   pdx[14]  = +ADRSIZE-INTSIZE;
+    pdx[15]  =  0;                   pdx[16]  =  0;
+    pdx[17]  =  0;                   pdx[18]  =  0;
+    pdx[19]  =  0;                   pdx[20]  =  0;
+    pdx[21]  =  0;                   pdx[22]  =  0;
+    pdx[23]  =  0;                   pdx[24]  = +ADRSIZE;
+    pdx[25]  = +ADRSIZE;             pdx[26]  = +ADRSIZE;
+    pdx[27]  = +INTSIZE*2;           pdx[28]  = +(REALSIZE+INTSIZE*2);
+    pdx[29]  = +ADRSIZE*2;           pdx[30]  = +(ADRSIZE+INTSIZE);
+    pdx[31]  = +INTSIZE;             pdx[32]  = +REALSIZE;
+    pdx[33]  = +INTSIZE;             pdx[34]  = +INTSIZE;
+    pdx[35]  = +(INTSIZE+ADRSIZE);   pdx[36]  = +ADRSIZE;
+    pdx[37]  = +ADRSIZE;             pdx[38]  = +(INTSIZE+ADRSIZE);
+    pdx[39]  = +(INTSIZE+ADRSIZE);   pdx[40]  = +(ADRSIZE+INTSIZE*2);
+    pdx[41]  = +(ADRSIZE+INTSIZE*2); pdx[42]  = +(ADRSIZE+INTSIZE*2);
+    pdx[43]  = +(ADRSIZE+INTSIZE*2); pdx[44]  = +ADRSIZE-INTSIZE;
+    pdx[45]  = +ADRSIZE-INTSIZE;     pdx[46]  =  0;
+    pdx[47]  = +INTSIZE;             pdx[48]  = +INTSIZE;
+    pdx[49]  = +ADRSIZE*2+INTSIZE;   pdx[50]  = +ADRSIZE;
+    pdx[51]  = +ADRSIZE+INTSIZE;     pdx[52]  = +ADRSIZE;
+    pdx[53]  = +ADRSIZE;             pdx[54]  = +ADRSIZE+INTSIZE;
+    pdx[55]  = +ADRSIZE*2+INTSIZE*2; pdx[56]  = +ADRSIZE-INTSIZE;
+    pdx[57]  = +ADRSIZE-INTSIZE;     pdx[58]  = +ADRSIZE+INTSIZE-INTSIZE;
+    pdx[59]  = +ADRSIZE*2+INTSIZE;   pdx[60]  = +ADRSIZE;
+    pdx[61]  = +ADRSIZE;             pdx[62]  = 0;
+    pdx[63]  = +INTSIZE;             pdx[64]  = +ADRSIZE+INTSIZE+INTSIZE;
+    pdx[65]  = +ADRSIZE*2;           pdx[66]  = +ADRSIZE*2;
+    pdx[67]  = +ADRSIZE*2;           pdx[68]  = +(ADRSIZE+INTSIZE);
+    pdx[69]  = +ADRSIZE*2;           pdx[70]  = +ADRSIZE*2;
+    pdx[71]  = +ADRSIZE*2;           pdx[72]  = +ADRSIZE*2;
+    pdx[73]  = +ADRSIZE+INTSIZE;     pdx[74]  = +(ADRSIZE+INTSIZE*3);
+    pdx[75]  = +ADRSIZE+INTSIZE;     pdx[76]  = +ADRSIZE+INTSIZE;
+    pdx[77]  = +(ADRSIZE+INTSIZE*3); pdx[78]  = +ADRSIZE+INTSIZE;
+    pdx[79]  = +ADRSIZE+INTSIZE;     pdx[80]  = +ADRSIZE+INTSIZE;
+    pdx[81]  = +ADRSIZE+INTSIZE*2;   pdx[82]  = +(ADRSIZE+INTSIZE*2);
+    pdx[83]  = +(ADRSIZE+INTSIZE*2); pdx[84]  = +ADRSIZE+INTSIZE;
+}
+
 void inittables(void) {
     reswords();
     symbols();
@@ -3592,7 +3781,7 @@ void inittables(void) {
     procmnemonics();
     instrmnemonics();
     chartypes();
-    /* initdx() would go here - stack effect table (omitted for brevity) */
+    initdx();
 }
 
 /***************************************************************************
@@ -3819,6 +4008,148 @@ void mest(integer i, stp fsp) {
     mesl(cdxs[cdx[i]][mestn(fsp)]);
 }
 
+/* Print instruction message (no newline) */
+void intmsgneol(integer intcod) {
+    if (prcode) {
+        fprintf(prr, " ! ");
+        switch (intcod) {
+            case 0: fprintf(prr, "Absolute value integer"); break;
+            case 1: fprintf(prr, "Absolute value real"); break;
+            case 2: fprintf(prr, "Add integers"); break;
+            case 3: fprintf(prr, "Add reals"); break;
+            case 4: fprintf(prr, "And booleans"); break;
+            case 5: fprintf(prr, "Set difference"); break;
+            case 6: fprintf(prr, "Divide integers"); break;
+            case 7: fprintf(prr, "Divide reals"); break;
+            case 8: fprintf(prr, "Load constant(t)"); break;
+            case 9: fprintf(prr, "Convert sos stack to float"); break;
+            case 10: fprintf(prr, "Convert tos to float"); break;
+            case 11: fprintf(prr, "Set inclusion"); break;
+            case 12: fprintf(prr, "Set intersection"); break;
+            case 13: fprintf(prr, "Inclusive or booleans"); break;
+            case 14: fprintf(prr, "Modulo integers"); break;
+            case 15: fprintf(prr, "Multiply integers"); break;
+            case 16: fprintf(prr, "Multiply reals"); break;
+            case 17: fprintf(prr, "Negate integer"); break;
+            case 18: fprintf(prr, "Negate real"); break;
+            case 19: fprintf(prr, "Not(t)"); break;
+            case 20: fprintf(prr, "Odd"); break;
+            case 21: fprintf(prr, "Subtract integer"); break;
+            case 22: fprintf(prr, "Subtract real"); break;
+            case 23: fprintf(prr, "Singleton set"); break;
+            case 24: fprintf(prr, "Square of integer"); break;
+            case 25: fprintf(prr, "Square of real"); break;
+            case 26: fprintf(prr, "Store to address(t)"); break;
+            case 27: fprintf(prr, "Truncate real to integer"); break;
+            case 28: fprintf(prr, "Set union"); break;
+            case 29: fprintf(prr, "Stop execution"); break;
+            case 30: fprintf(prr, "Call system procedure/function"); break;
+            case 31: fprintf(prr, "Decrement(t)"); break;
+            case 32: fprintf(prr, "Return indirect procedure/function"); break;
+            case 33: fprintf(prr, "False jump"); break;
+            case 34: fprintf(prr, "Increment(t)"); break;
+            case 35: fprintf(prr, "Load indirect(t)"); break;
+            case 36: fprintf(prr, "Scale array access"); break;
+            case 37: fprintf(prr, "Load global address"); break;
+            case 38: fprintf(prr, "Load constant string address"); break;
+            case 39: fprintf(prr, "Load global value(t)"); break;
+            case 40: fprintf(prr, "Move(copy)"); break;
+            case 41: fprintf(prr, "Mark(frame) stack"); break;
+            case 42: fprintf(prr, "Return from procedure/function(t)"); break;
+            case 43: fprintf(prr, "Store global value(t)"); break;
+            case 44: fprintf(prr, "Table(case) jump"); break;
+            case 45: fprintf(prr, "Bounds check(t)"); break;
+            case 46: fprintf(prr, "Call user procedure"); break;
+            case 47: fprintf(prr, "Equal(t)"); break;
+            case 48: fprintf(prr, "Greater than or equal(t)"); break;
+            case 49: fprintf(prr, "Greater than(t)"); break;
+            case 50: fprintf(prr, "Load local address"); break;
+            case 51: fprintf(prr, "Load constant(t)"); break;
+            case 52: fprintf(prr, "Less than or equal(t)"); break;
+            case 53: fprintf(prr, "Less than(t)"); break;
+            case 54: fprintf(prr, "Load local value(t)"); break;
+            case 55: fprintf(prr, "Not equal(t)"); break;
+            case 56: fprintf(prr, "Store local(t)"); break;
+            case 57: fprintf(prr, "Unconditional jump"); break;
+            case 58: fprintf(prr, "Ordinal(t)"); break;
+            case 59: fprintf(prr, "Character from integer"); break;
+            case 60: fprintf(prr, "Throw case error"); break;
+            case 61: fprintf(prr, "Round float to integer"); break;
+            case 62: fprintf(prr, "Pack array from unpacked"); break;
+            case 63: fprintf(prr, "Unpack array from packed"); break;
+            case 64: fprintf(prr, "Range set"); break;
+            case 66: fprintf(prr, "Interprocedure jump"); break;
+            case 67: fprintf(prr, "Call indirect procedure"); break;
+            case 68: fprintf(prr, "Load procedure address"); break;
+            case 71: fprintf(prr, "Dump tos"); break;
+            case 72: fprintf(prr, "Swap tos with sos"); break;
+            case 73: fprintf(prr, "True jump"); break;
+            case 74: fprintf(prr, "Load procedure/function address"); break;
+            case 75: fprintf(prr, "Check tagfield for active variants"); break;
+            case 76: fprintf(prr, "Duplicate tos(t)"); break;
+            case 77: fprintf(prr, "Terminate active variant check"); break;
+            case 78: fprintf(prr, "Start active variant check"); break;
+            case 79: fprintf(prr, "Invalidate address"); break;
+            case 80: fprintf(prr, "Bounds check for record pointer(t)"); break;
+            case 81: fprintf(prr, "Check tagfield assignment"); break;
+            case 82: fprintf(prr, "Invalidate tagged variant(t)"); break;
+            case 83: fprintf(prr, "Exclusive or"); break;
+            case 84: fprintf(prr, "Begin exception frame"); break;
+            case 85: fprintf(prr, "End exception frame"); break;
+            case 86: fprintf(prr, "Handle next exception frame"); break;
+            case 87: fprintf(prr, "Compare and jump"); break;
+            case 89: fprintf(prr, "Call initializer code strip"); break;
+            case 90: fprintf(prr, "Return code strip"); break;
+            case 91: fprintf(prr, "Call virtual procedure"); break;
+            case 92: fprintf(prr, "Set virtual procedure/function vector"); break;
+            case 93: fprintf(prr, "Variable reference block start"); break;
+            case 94: fprintf(prr, "Variable reference block end"); break;
+            case 95: fprintf(prr, "Check change to tagfield(t)"); break;
+            case 96: fprintf(prr, "Vector initialize stack"); break;
+            case 97: fprintf(prr, "Vector initialize pointer global"); break;
+            case 98: fprintf(prr, "Load complex pointer"); break;
+            case 99: fprintf(prr, "Compare simple templates"); break;
+            case 100: fprintf(prr, "Compare complex templates"); break;
+            case 101: fprintf(prr, "Assign simple pointer data"); break;
+            case 102: fprintf(prr, "Assign pointer complex"); break;
+            case 103: fprintf(prr, "Simple container index"); break;
+            case 104: fprintf(prr, "Complex container index"); break;
+            case 105: fprintf(prr, "Load complex fixed container"); break;
+            case 106: fprintf(prr, "Maximum dimension of array"); break;
+            case 107: fprintf(prr, "Vector dispose array"); break;
+            case 108: fprintf(prr, "Simplify complex pointer"); break;
+            case 109: fprintf(prr, "Copy complex container to stack"); break;
+            case 110: fprintf(prr, "Store complex pointer"); break;
+            case 111: fprintf(prr, "Load complex pointer"); break;
+            case 112: fprintf(prr, "Vector initialize dynamic"); break;
+            case 113: fprintf(prr, "Vector dispose array"); break;
+            case 114: fprintf(prr, "Load constant address"); break;
+            case 115: fprintf(prr, "Copy to buffer"); break;
+            case 116: fprintf(prr, "Copy procedure parameter"); break;
+            case 117: fprintf(prr, "Copy result"); break;
+            case 118: fprintf(prr, "Load stack address"); break;
+            case 119: fprintf(prr, "With block start"); break;
+            case 120: fprintf(prr, "With block end"); break;
+            case 121: fprintf(prr, "Set function result"); break;
+            case 122: fprintf(prr, "Call user function"); break;
+            case 123: fprintf(prr, "Call indirect function"); break;
+            case 124: fprintf(prr, "Make fat pointer from components"); break;
+            case 125: fprintf(prr, "Call virtual function"); break;
+            case 126: fprintf(prr, "Load stack complex pointer"); break;
+            case 127: fprintf(prr, "Copy length from complex pointer"); break;
+            case 128: fprintf(prr, "Store structured value from stack"); break;
+            case 129: fprintf(prr, "Store exception vector"); break;
+            case 130: fprintf(prr, "Make dynamic complex pointer"); break;
+        }
+    }
+}
+
+/* Print instruction message (with newline) */
+void intmsg(integer intcod) {
+    intmsgneol(intcod);
+    if (prcode) fprintf(prr, "\n");
+}
+
 /* Generate type indicator character */
 void gentypindicator(stp fsp) {
     if ((fsp != NULL) && prcode) {
@@ -4036,9 +4367,10 @@ void gen1s(oprange fop, integer fp2, ctp symptr) {
             if (fop == 38) {  /* LCA - load constant string address */
                 p = cstptr[fp2]->val.str_val.sval;
                 j = 1;
+                integer len = lenpv(p);
                 fprintf(prr, "     %d '", cstptr[fp2]->val.str_val.slgth);
                 fl = digits(cstptr[fp2]->val.str_val.slgth) + 2;
-                for (k = 1; k <= lenpv(p); k++) {
+                for (k = 1; k <= len; k++) {
                     char c = strchrvs(p, j);
                     if (c == '\'') {
                         fprintf(prr, "''");
@@ -9957,10 +10289,17 @@ static void vardeclaration(setofsys fsys) {
         typ(tempset, &lsp, &lsize);
 
         while (nxt != NULL) {
-            alignu(lsp, &lc);
             nxt->idtype = lsp;
-            nxt->u.vars_data.vaddr = lc;
-            lc = lc + lsize;
+            /* globals are alloc/increment, locals are decrement/alloc */
+            if (level <= 1) {
+                alignu(lsp, &gc);
+                nxt->u.vars_data.vaddr = gc;
+                gc = gc + lsize;
+            } else {
+                lc = lc - lsize;
+                alignd(lsp, &lc);
+                nxt->u.vars_data.vaddr = lc;
+            }
             nxt = nxt->next;
         }
 
@@ -10650,23 +10989,155 @@ void declare(setofsys fsys) {
  ***************************************************************************/
 
 void body(setofsys fsys, ctp fprocp) {
-    /* Body procedure handles the executable part of a block */
-    /* Full implementation would include all the with-statement tracking, */
-    /* label checking, and entry/exit code generation */
+    integer segsize, stackbot, gblsize;
+    stkoff llc1;
+    ctp lcp;
+    lbp llp;
+    boolean test;
+    setofsys tempset;
 
     stalvl = 0;  /* clear statement nesting level */
+    cstptrix = 0;
+    topnew = 0;
+    topmin = 0;
 
-    /* Process compound statement */
+    /* Print entry label */
+    if (fprocp != NULL) {
+        prtlabel(fprocp->u.procfunc_data.pf_u.decl.pfname);
+    } else {
+        prtlabel(entname);
+    }
+    if (prcode) fprintf(prr, "\n");
+    markline();
+
+    /* Generate segment size and stack bottom labels */
+    genlabel(&segsize);
+    genlabel(&stackbot);
+    genlabel(&gblsize);
+
+    /* Generate mark stack instruction */
+    genmst(level - 1, segsize, stackbot);
+
+    /* Copy parameters for procedure/function */
+    if (fprocp != NULL) {
+        llc1 = MARKSIZE + PTRSIZE + APTS + fprocp->u.procfunc_data.locpar;
+        lcp = fprocp->u.procfunc_data.pflist;
+        while (lcp != NULL) {
+            if (lcp->klass == vars) {
+                if (lcp->idtype != NULL) {
+                    if (lcp->idtype->form > power) {
+                        if (lcp->idtype->form == arrayc) {
+                            llc1 = llc1 - PTRSIZE * 2;
+                        } else {
+                            llc1 = llc1 - PTRSIZE;
+                        }
+                        alignd(parmptr, &llc1);
+                        if (lcp->u.vars_data.vkind == actual) {
+                            if (lcp->idtype->form == arrayc) {
+                                /* Container array copy */
+                                gen2(50/*lda*/, level, llc1);
+                                gen0(111/*ldp*/);
+                                gen2(109/*ccs*/, containers(lcp->idtype), containerbase(lcp->idtype));
+                                gen2(50/*lda*/, level, lcp->u.vars_data.vaddr);
+                                gen1(72/*swp*/, STACKELSIZE * 2);
+                                gen0(110/*scp*/);
+                            } else {
+                                gen2(50/*lda*/, level, lcp->u.vars_data.vaddr);
+                                gen2t(54/*lod*/, level, llc1, nilptr);
+                                gen1(40/*mov*/, lcp->idtype->size);
+                            }
+                        }
+                    } else {
+                        if (lcp->u.vars_data.vkind == formal) {
+                            llc1 = llc1 - PTRSIZE;
+                        } else {
+                            llc1 = llc1 - lcp->idtype->size;
+                        }
+                        alignd(parmptr, &llc1);
+                    }
+                    if (chkvbk && (lcp->u.vars_data.vkind == formal)) {
+                        gen2t(54/*lod*/, level, llc1, nilptr);
+                        gen1(93/*vbs*/, lcp->idtype->size);
+                    }
+                }
+            }
+            lcp = lcp->next;
+        }
+    }
+
+    addlvl();
+
+    /* Process begin...end block */
     if (sy == beginsy) {
         insymbol();
-        statement(fsys, fprocp);
-        while (inset(sy, statbegsys) || (sy == semicolon)) {
-            if (sy == semicolon) insymbol();
-            else error(14);
-            statement(fsys, fprocp);
+    } else {
+        error(17);
+    }
+
+    do {
+        do {
+            setcopy(tempset, fsys);
+            setadd(tempset, semicolon);
+            setadd(tempset, endsy);
+            statement(tempset, fprocp);
+        } while (inset(sy, statbegsys));
+        test = (sy != semicolon);
+        if (!test) insymbol();
+    } while (!test);
+
+    sublvl();
+
+    if (sy == endsy) {
+        insymbol();
+    } else {
+        error(13);
+    }
+
+    /* Check for undefined/unreferenced labels */
+    llp = display[top].flabel;
+    while (llp != NULL) {
+        if (!llp->defined || !llp->refer) {
+            if (!llp->defined) error(168);
         }
-        if (sy == endsy) insymbol();
-        else error(13);
+        llp = llp->nextlab;
+    }
+
+    /* Stack check */
+    if (toterr == 0) {
+        if ((topnew != 0) && prcode) {
+            error(504);
+        }
+    }
+    topnew = 0;
+
+    /* Generate return instruction and label values */
+    if (fprocp != NULL) {
+        /* Procedure/function return */
+        if (fprocp->idtype == NULL) {
+            gen2(42/*ret*/, (int)'p', fprocp->u.procfunc_data.locpar);
+        } else if ((fprocp->idtype->form == records) || (fprocp->idtype->form == arrays)) {
+            gen2t(42/*ret*/, fprocp->u.procfunc_data.locpar, fprocp->idtype->size, basetype(fprocp->idtype));
+        } else {
+            gen1t(42/*ret*/, fprocp->u.procfunc_data.locpar, fprocp->idtype);
+        }
+        alignd(parmptr, &lc);
+        if (prcode) {
+            prtlabel(segsize);
+            fprintf(prr, "=%ld\n", -(integer)level * PTRSIZE - lc);
+            prtlabel(stackbot);
+            fprintf(prr, "=%ld\n", -topmin);
+        }
+    } else {
+        /* Program/module return */
+        gen2(42/*ret*/, (int)'p', 0);
+        alignd(parmptr, &lc);
+        if (prcode) {
+            prtlabel(segsize);
+            fprintf(prr, "=%ld\n", -(integer)level * PTRSIZE - lc);
+            prtlabel(stackbot);
+            fprintf(prr, "=%ld\n", -topmin);
+        }
+        ic = 0;
     }
 }
 
@@ -10874,6 +11345,7 @@ void stdnames(void) {
     strcpy(na[49], "list     "); strcpy(na[50], "command  "); strcpy(na[51], "halt     ");
     strcpy(na[63], "integer  "); strcpy(na[64], "real     "); strcpy(na[65], "char     ");
     strcpy(na[66], "boolean  "); strcpy(na[67], "text     ");
+    strcpy(na[70], "error    "); strcpy(na[71], "list     "); strcpy(na[72], "command  ");
 }
 
 /* Enter standard types into symbol table */
@@ -10946,8 +11418,8 @@ void entstdtyp(int sn, stp idt) {
     enterid(cp);
 }
 
-/* Enter standard header file */
-void entstdhdr(int sn) {
+/* Enter standard header file - returns the created entry */
+ctp entstdhdr(int sn) {
     ctp cp;
     cp = (ctp)malloc(sizeof(identifier));
     ininam(cp);
@@ -10959,6 +11431,37 @@ void entstdhdr(int sn) {
     cp->u.vars_data.vlev = 1;
     cp->u.vars_data.vaddr = gc;
     gc = gc + FILEIDSIZE + CHARSIZE;
+    cp->u.vars_data.isloc = false;
+    cp->u.vars_data.threat = false;
+    cp->u.vars_data.forcnt = 0;
+    cp->u.vars_data.part = ptval;
+    cp->u.vars_data.hdr = false;
+    cp->u.vars_data.vext = false;
+    cp->u.vars_data.vmod = NULL;
+    cp->u.vars_data.inilab = -1;
+    cp->u.vars_data.ininxt = NULL;
+    enterid(cp);
+    return cp;
+}
+
+/* Enter standard exception */
+void entstdexp(const char* en) {
+    ctp cp;
+    idstr temp;
+    int i;
+    cp = (ctp)malloc(sizeof(identifier));
+    ininam(cp);
+    cp->klass = vars;
+    /* Copy exception name to fixed buffer */
+    for (i = 0; i < MAXIDS && en[i] != '\0'; i++) temp[i] = en[i];
+    for (; i < MAXIDS; i++) temp[i] = ' ';
+    strassvf(&cp->name, temp);
+    cp->idtype = exceptptr;
+    cp->u.vars_data.vkind = actual;
+    cp->next = NULL;
+    cp->u.vars_data.vlev = 1;
+    cp->u.vars_data.vaddr = gc;
+    gc = gc + EXCEPTSIZE;
     cp->u.vars_data.isloc = false;
     cp->u.vars_data.threat = false;
     cp->u.vars_data.forcnt = 0;
@@ -11021,8 +11524,90 @@ void entstdnames(void) {
     boolptr->u.scalar_data.fconst = cp;
 
     /* Standard header files */
-    entstdhdr(3);  inputptr = display[top].fname;   /* input */
-    entstdhdr(4);  outputptr = display[top].fname;  /* output */
+    inputptr = entstdhdr(3);    /* input */
+    outputptr = entstdhdr(4);   /* output */
+    prdptr = entstdhdr(33);     /* prd */
+    prrptr = entstdhdr(34);     /* prr */
+    errorptr = entstdhdr(70);   /* error */
+    listptr = entstdhdr(71);    /* list */
+    commandptr = entstdhdr(72); /* command */
+
+    /* Standard exception variables */
+    entstdexp("ValueOutOfRange");
+    entstdexp("ArrayLengthMatch");
+    entstdexp("CaseValueNotFound");
+    entstdexp("ZeroDivide");
+    entstdexp("InvalidOperand");
+    entstdexp("NilPointerDereference");
+    entstdexp("RealOverflow");
+    entstdexp("RealUnderflow");
+    entstdexp("RealProcessingFault");
+    entstdexp("TagValueNotActive");
+    entstdexp("TooManyFiles");
+    entstdexp("FileIsOpen");
+    entstdexp("FileAlreadyNamed");
+    entstdexp("FileNotOpen");
+    entstdexp("FileModeIncorrect");
+    entstdexp("InvalidFieldSpecification");
+    entstdexp("InvalidRealNumber");
+    entstdexp("InvalidFractionSpecification");
+    entstdexp("InvalidIntegerFormat");
+    entstdexp("IntegerValueOverflow");
+    entstdexp("InvalidRealFormat");
+    entstdexp("EndOfFile");
+    entstdexp("InvalidFilePosition");
+    entstdexp("FilenameTooLong");
+    entstdexp("FileOpenFail");
+    entstdexp("FileSIzeFail");
+    entstdexp("FileCloseFail");
+    entstdexp("FileReadFail");
+    entstdexp("FileWriteFail");
+    entstdexp("FilePositionFail");
+    entstdexp("FileDeleteFail");
+    entstdexp("FileNameChangeFail");
+    entstdexp("SpaceAllocateFail");
+    entstdexp("SpaceReleaseFail");
+    entstdexp("SpaceAllocateNegative");
+    entstdexp("CannotPerformSpecial");
+    entstdexp("CommandLineTooLong");
+    entstdexp("ReadPastEOF");
+    entstdexp("FileTransferLengthZero");
+    entstdexp("FileSizeTooLarge");
+    entstdexp("FilenameEmpty");
+    entstdexp("CannotOpenStandard");
+    entstdexp("TooManyTemporaryFiles");
+    entstdexp("InputBufferOverflow");
+    entstdexp("TooManyThreads");
+    entstdexp("CannotStartThread");
+    entstdexp("InvalidThreadHandle");
+    entstdexp("CannotStopThread");
+    entstdexp("TooManyIntertaskLocks");
+    entstdexp("InvalidLockHandle");
+    entstdexp("LockSequenceFail");
+    entstdexp("TooManySignals");
+    entstdexp("CannotCreateSignal");
+    entstdexp("InvalidSignalHandle");
+    entstdexp("CannotDeleteSignal");
+    entstdexp("CannotSendSignal");
+    entstdexp("WaitForSignalFail");
+    entstdexp("FieldNotBlank");
+    entstdexp("ReadOnWriteOnlyFile");
+    entstdexp("WriteOnReadOnlyFile");
+    entstdexp("FileBufferVariableUndefined");
+    entstdexp("NondecimalRadixOfNegative");
+    entstdexp("InvalidArgumentToLn");
+    entstdexp("InvalidArgumentToSqrt");
+    entstdexp("CannotResetOrRewriteStandardFile");
+    entstdexp("CannotResetWriteOnlyFile");
+    entstdexp("CannotRewriteReadOnlyFile");
+    entstdexp("SetElementOutOfRange");
+    entstdexp("RealArgumentTooLarge");
+    entstdexp("BooleanOperatorOfNegative");
+    entstdexp("InvalidDivisorToMod");
+    entstdexp("PackElementsOutOfBounds");
+    entstdexp("UnpackElementsOutOfBounds");
+    entstdexp("CannotResetClosedTempFile");
+    entstdexp("ReadCharacterMismatch");
 
     /* maxint */
     cp = (ctp)malloc(sizeof(identifier));
