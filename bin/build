@@ -71,4 +71,5 @@ compprog libs/tests/services_test1
 compprog source/pcom
 compprog source/pint
 compprog source/pmach
-compprog source/pgen/pgen
+compprog source/pgen/amd64/pgen
+cp source/pgen/amd64/pgen bin/pgen_amd64

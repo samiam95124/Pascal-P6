@@ -29,6 +29,7 @@ maxintreg = 25; { maximum number of assignable integer reg (X0-X15, X19-X28) }
 maxfltreg = 32; { maximum number of assignable float reg (V0-V31) }
 maxintparreg = 8; { maximum number of integer/pointer parameter regs (X0-X7) }
 maxfltparreg = 8; { maximum number of floating parameter regs (V0-V7) }
+regprefix = false; { NO % register prefix required }
 
 type
 
@@ -83,6 +84,16 @@ end;
 parregf: array [1..8] of reg = array
     rgv0, rgv1, rgv2, rgv3, rgv4, rgv5, rgv6, rgv7
 end;
+
+{ all possible registers }
+allreg: regset = [rgx0, rgx1, rgx2, rgx3, rgx4, rgx5, rgx6, rgx7,
+                  rgx8, rgx9, rgx10, rgx11, rgx12, rgx13, rgx14, rgx15,
+                  rgx16, rgx17, rgx18, rgx19, rgx20, rgx21, rgx22, rgx23,
+                  rgx24, rgx25, rgx26, rgx27, rgx28,
+                  rgv0, rgv1, rgv2, rgv3, rgv4, rgv5, rgv6, rgv7,
+                  rgv8, rgv9, rgv10, rgv11, rgv12, rgv13, rgv14, rgv15,
+                  rgv16, rgv17, rgv18, rgv19, rgv20, rgv21, rgv22, rgv23,
+                  rgv24, rgv25, rgv26, rgv27, rgv28, rgv29, rgv30, rgv31];
 
 { Write full 64-bit register name (X registers) }
 procedure wrtreg(var f: text; r: reg);

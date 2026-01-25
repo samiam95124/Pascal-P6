@@ -477,6 +477,7 @@ pstring wrapper_getenvp(
 
     char buff[BUFLEN];
 
+    rempad(s, &sl);
     pa_getenvl(s, sl, buff, BUFLEN); /* find environment string */
 
     return (cstr2pstr(buff, BUFLEN)); /* return pstring */
@@ -1341,6 +1342,7 @@ pstring wrapper_fulnamp(
 
     char buff[BUFLEN];
 
+    rempad(s, &l);
     strncpy(buff, s, l); /* copy filename to buffer */
     if (l < BUFLEN) buff[l] = 0; /* ensure terminated */
     pa_fulnam(buff, BUFLEN); /* find time string */

@@ -14,6 +14,7 @@ maxintreg = 14; { maximum number of assignable integer reg }
 maxfltreg = 16; { maximum number of assignable float reg }
 maxintparreg = 6; { maximum number of integer/pointer parameter regs }
 maxfltparreg = 8; { maximum number of floating parameter regs }
+regprefix = true; { % register prefix required }
 
 type 
 
@@ -48,6 +49,17 @@ end;
 parregf: array [1..8] of reg = array
     rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, rgxmm7
 end;
+
+{ all possible registers }
+{
+allreg: regset = [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi,
+                  rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
+                  rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
+                  rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
+                  rgxmm14, rgxmm15];
+}
+
+var allreg: regset;
 
 procedure wrtreg(var f: text; r: reg);
 begin
@@ -159,4 +171,11 @@ begin
 end;
 
 begin
+
+allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi,
+                  rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
+                  rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6,
+                  rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
+                  rgxmm14, rgxmm15];
+
 end.

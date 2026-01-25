@@ -883,7 +883,7 @@ snl:            1..lablen;
 flablst:        flabelp; { list of far labels }
 estack, efree:  expptr; { expression stack }
 jmpstr:         expptr; { unresolved jump cache }
-frereg, allreg: regset;
+frereg: regset;
 stacklvl:       integer;
 expsn:          integer; { expression entries sn }
 tmpoff:         address; { starting address of set temps offset in stack }
@@ -1090,12 +1090,6 @@ begin
       tmplst := nil; { clear temps list }
       tmpfre := nil; { clear temps free list }
       estack := nil; stacklvl := 0; efree := nil; jmpstr := nil;
-      allreg := [rgrax, rgrbx, rgrcx, rgrdx, rgrsi, rgrdi, 
-                 rgr8, rgr9, rgr10, rgr11, rgr12, rgr13, rgr14, rgr15,
-                 rgxmm0, rgxmm1, rgxmm2, rgxmm3, rgxmm4, rgxmm5, rgxmm6, 
-                 rgxmm7, rgxmm8, rgxmm9, rgxmm10, rgxmm11, rgxmm12, rgxmm13,
-                 rgxmm14,
-                 rgxmm15];
       frereg := allreg;
 end;(*init*)
 
@@ -1429,33 +1423,16 @@ begin fl := nil;
   end
 end;
 
-procedure preamble;
+virtual procedure preamble;
 begin
-  { see how much of this is really required }
-  write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
-  write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
-  writeln(prr, modnam^, ':');
-  writeln(prr, '# Align stack');
-  writeln(prr, '        pushq   %rax');
-  writeln(prr, '# Set up default files');
-  writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
-  writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
-  writeln(prr, '        movb    $prdfn,globals_start+prdoff(%rip)');
-  writeln(prr, '        movb    $prrfn,globals_start+prroff(%rip)');
-  writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
-  writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
-  writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
-  writeln(prr, '# Call startup code');
-  writeln(prr, '        call    1f');
-  writeln(prr, '        popq    %rax');
-  writeln(prr, '        sub     %rax,%rax');
-  writeln(prr, '        ret');
-  writeln(prr, '1:');
+   writeln('*** Preamble procedure not defined');
+   halt
 end;
 
-procedure postamble;
+virtual procedure postamble;
 begin
-
+   writeln('*** Postamble procedure not defined');
+   halt
 end;
 
 procedure errorcode;
@@ -2015,7 +1992,7 @@ begin
                       s := [ ]; getnxt;
                       while ch<>')' do
                         begin getint(i);
-                          getnxt; s := s + [i] end;
+                          s := s + [i]; skpspc end;
                       new(cstp2); cstp2^.ct := cset;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
                       cstp2^.s := s; cstp2^.setn := 0
@@ -2353,7 +2330,8 @@ begin
        else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
        else if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
        else begin write(prr, cur); j := j+1 end
-     end else if cur = '%' then begin next; write(prr, '%'); j := j+1;
+     end else if cur = '%' then begin next; 
+       if regprefix then begin write(prr, '%'); j := j+1 end;
        if cur = '1' then begin
          if looka = 'l' then begin wrtbreg(prr, r1); next; j := j+bregl(r1) end
          else begin wrtreg(prr, r1); j := j+regl(r1) end

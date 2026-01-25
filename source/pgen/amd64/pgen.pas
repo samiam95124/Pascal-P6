@@ -57,6 +57,34 @@ begin
 
 end;
 
+override procedure preamble;
+begin
+  { see how much of this is really required }
+  write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
+  write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
+  writeln(prr, modnam^, ':');
+  writeln(prr, '# Align stack');
+  writeln(prr, '        pushq   %rax');
+  writeln(prr, '# Set up default files');
+  writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
+  writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
+  writeln(prr, '        movb    $prdfn,globals_start+prdoff(%rip)');
+  writeln(prr, '        movb    $prrfn,globals_start+prroff(%rip)');
+  writeln(prr, '        movb    $errorfn,globals_start+erroroff(%rip)');
+  writeln(prr, '        movb    $listfn,globals_start+listoff(%rip)');
+  writeln(prr, '        movb    $commandfn,globals_start+commandoff(%rip)');
+  writeln(prr, '# Call startup code');
+  writeln(prr, '        call    1f');
+  writeln(prr, '        popq    %rax');
+  writeln(prr, '        sub     %rax,%rax');
+  writeln(prr, '        ret');
+  writeln(prr, '1:');
+end;
+
+override procedure postamble;
+begin
+end;
+
 override procedure assemble; (*translate symbolic code into machine code and store*)
 
   var name :alfa; r :real; s :settype;
