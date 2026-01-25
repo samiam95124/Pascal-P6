@@ -14,6 +14,11 @@ Options:
 -w   Ignore whitespace (default)
 -nw  Exact comparison
 
+Returns:
+
+0    Files are the same
+1    Files are different
+
 ******************************************************************************}
 
 program dif(command, output);
@@ -730,6 +735,37 @@ begin
 
 end;
 
+{******************************************************************************
+
+Has differences
+
+Returns true if there are any differences between the files.
+
+******************************************************************************}
+
+function hasdiff:
+    { true if files differ } boolean;
+
+var { edit list pointer } ep: editptr;
+    { result flag } diff: boolean;
+
+begin
+
+    diff := false;
+    ep := editlist;
+    while (ep <> nil) and not diff do begin
+
+        if ep^.op <> opkeep then
+            diff := true
+        else
+            ep := ep^.next
+
+    end;
+
+    hasdiff := diff
+
+end;
+
 var
 
     { first filename } file1: pstring;
@@ -760,6 +796,8 @@ begin
     readfile2(f2, nlines2);
     close(f2);
     computediff;
-    showdiff
+    showdiff;
+    if hasdiff then seterr(1)
+    else seterr(0)
 
 end.
