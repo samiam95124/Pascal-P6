@@ -58,8 +58,8 @@ elif [ "$1" = "--pgen" ]; then
     echo "Executing with pgen..."
     pgen p4/pint.p6 p4/pint.s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/psystem.asm \
-        $PASCALP6/source/pgen/main.asm p4/pint.s -o p4/pint -lm
+        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
+        $PASCALP6/source/pgen/amd64/main.asm p4/pint.s -o p4/pint -lm
 	p4/pint p4/standardp.p4 temp $options < p4/pint.inp > p4/standardp.lst
 
 else

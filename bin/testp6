@@ -56,8 +56,8 @@ elif [ "$1" = "--pgen" ]; then
     echo "Running pgen test..."
     pgen source/pint.mpp.p6 source/pint.s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/psystem.asm \
-        $PASCALP6/source/pgen/main.asm source/pint.s -o source/pint -lm
+        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
+        $PASCALP6/source/pgen/amd64/main.asm source/pint.s -o source/pint -lm
 	pint source/iso7185pat.p6 temp $options < source/pint.inp > source/iso7185pat.lst
 
 else

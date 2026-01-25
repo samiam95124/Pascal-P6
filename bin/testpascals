@@ -38,8 +38,8 @@ elif [ "$1" = "--pgen" ]; then
 
     pgen sample_programs/pascals.p6 sample_programs/pascals.s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/psystem.asm \
-        $PASCALP6/source/pgen/main.asm sample_programs/pascals.s -o sample_programs/pascals -lm
+        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
+        $PASCALP6/source/pgen/amd64/main.asm sample_programs/pascals.s -o sample_programs/pascals -lm
     #echo "Will execute: sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst"
 	sample_programs/pascals sample_programs/roman.pas temp $options < sample_programs/pascals.inp > sample_programs/pascals.lst
 

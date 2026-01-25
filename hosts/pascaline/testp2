@@ -51,8 +51,8 @@ elif [ "$1" = "--pgen" ]; then
 
     pgen p2/pasint.p6 p2/pasint.s
     gcc -g3 -DWRDSIZ64 $PASCALP6/source/pgen/psystem.c \
-        -x assembler $PASCALP6/source/pgen/psystem.asm \
-        $PASCALP6/source/pgen/main.asm p2/pasint.s -o p2/pasint -lm
+        -x assembler $PASCALP6/source/pgen/amd64/psystem.asm \
+        $PASCALP6/source/pgen/amd64/main.asm p2/pasint.s -o p2/pasint -lm
 	p2/pasint p2/roman.p2 temp $options < p2/pasint.inp > p2/roman.lst
 
 else

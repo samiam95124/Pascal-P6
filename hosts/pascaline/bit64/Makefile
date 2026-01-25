@@ -70,33 +70,35 @@ all: bin/cmach bin/pgen bin/spew \
 #
 
 #
-# Build psystem, the Pascaline support library in C.
+# Build psystem for AMD64, the Pascaline support library in C.
 #
 $(LIBS)/psystem.a $(LIBS)/psystem_asm.o: $(SOURCE)/pgen/psystem.c \
-	$(SOURCE)/pgen/psystem.asm
+	$(SOURCE)/pgen/amd64/psystem.asm
 	@echo
 	@echo "Building psystem..."
 	@echo
 	mkdir -p $(BUILD)/pgen
+	mkdir -p $(BUILD)/pgen/amd64
 	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem.o \
 		-c $(SOURCE)/pgen/psystem.c
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/psystem_asm.o \
-		-c -x assembler $(SOURCE)/pgen/psystem.asm
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/psystem_asm.o \
+		-c -x assembler $(SOURCE)/pgen/amd64/psystem.asm
 	ar r $(LIBS)/psystem.a $(BUILD)/pgen/psystem.o \
-		$(BUILD)/pgen/psystem_asm.o
+		$(BUILD)/pgen/amd64/psystem_asm.o
 
 #
-# Build main, the program stack startup shim.
+# Build main for AMD64, the program stack startup shim.
 #
-main: $(SOURCE)/pgen/main.asm
-$(BUILD)/pgen/main.o: $(SOURCE)/pgen/main.asm
+main: $(SOURCE)/pgen/amd64/main.asm
+$(BUILD)/pgen/main.o: $(SOURCE)/pgen/amd64/main.asm
 	@echo
 	@echo "Building main..."
 	@echo
 	mkdir -p $(BUILD)/pgen
-	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/main.o \
-		-c -x assembler $(SOURCE)/pgen/main.asm
-	cp $(BUILD)/pgen/main.o $(LIBS)
+	mkdir -p $(BUILD)/pgen/amd64
+	$(CC) $(CFLAGS) $(CPPFLAGS64LE) -o $(BUILD)/pgen/amd64/main.o \
+		-c -x assembler $(SOURCE)/pgen/amd64/main.asm
+	cp $(BUILD)/pgen/amd64/main.o $(LIBS)
 
 ################################################################################
 #
