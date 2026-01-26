@@ -28,12 +28,12 @@ Returns true if the given name is the special "." or ".." directory entry.
 ******************************************************************************}
 
 function isdots(
-    { name to check } n: pstring):
+    { name to check }  n: pstring):
     { true if . or .. } boolean;
 
 begin
 
-    isdots := compc(n, '.') or compc(n, '..')
+    isdots := comp(n, '.') or comp(n, '..')
 
 end;
 
@@ -46,63 +46,12 @@ Returns true if the entry is a directory (excluding . and ..).
 ******************************************************************************}
 
 function isdir(
-    { file entry } p: filptr):
+    { file entry }        p: filptr):
     { true if directory } boolean;
 
 begin
 
     isdir := (atdir in p^.attr) and not isdots(p^.name)
-
-end;
-
-{******************************************************************************
-
-Compare strings
-
-Compares two pstrings lexicographically. Returns true if a < b.
-
-******************************************************************************}
-
-function strless(
-    { first string } a: pstring;
-    { second string } b: pstring):
-    { true if a < b } boolean;
-
-var { index } i: integer;
-    { length of a } lena: integer;
-    { length of b } lenb: integer;
-    { minimum length } minlen: integer;
-    { result } r: boolean;
-    { done flag } done: boolean;
-
-begin
-
-    lena := len(a);
-    lenb := len(b);
-    if lena < lenb then minlen := lena
-    else minlen := lenb;
-    i := 1;
-    done := false;
-    r := false;
-    while (i <= minlen) and not done do begin
-
-        if a^[i] < b^[i] then begin
-
-            r := true;
-            done := true
-
-        end else if a^[i] > b^[i] then begin
-
-            r := false;
-            done := true
-
-        end else
-            i := i + 1
-
-    end;
-    if not done then r := lena < lenb;
-
-    strless := r
 
 end;
 
@@ -117,13 +66,15 @@ Sorts a file list alphabetically using insertion sort.
 procedure sortlist(
     { file list to sort } var fp: filptr);
 
-var { current pointer } p: filptr;
-    { sorted list head } sorted: filptr;
-    { sorted list tail } stail: filptr;
-    { insertion point } ins: filptr;
-    { previous for insertion } prev: filptr;
-    { next to process } next: filptr;
-    { found flag } found: boolean;
+var
+
+{ current pointer }        p:      filptr;
+{ sorted list head }       sorted: filptr;
+{ sorted list tail }       stail:  filptr;
+{ insertion point }        ins:    filptr;
+{ previous for insertion } prev:   filptr;
+{ next to process }        next:   filptr;
+{ found flag }             found:  boolean;
 
 begin
 
@@ -139,7 +90,7 @@ begin
             sorted := p;
             stail := p
 
-        end else if strless(p^.name, sorted^.name) then begin
+        end else if gtr(sorted^.name, p^.name) then begin
 
             { insert at head }
             p^.next := sorted;
@@ -153,7 +104,7 @@ begin
             found := false;
             while (ins <> nil) and not found do begin
 
-                if strless(p^.name, ins^.name) then
+                if gtr(ins^.name, p^.name) then
                     found := true
                 else begin
 
@@ -184,11 +135,13 @@ Counts the number of non-dot entries in a file list.
 ******************************************************************************}
 
 function countentries(
-    { file list } fp: filptr):
+    { file list }         fp: filptr):
     { number of entries } integer;
 
-var { list pointer } p: filptr;
-    { count } n: integer;
+var
+
+{ list pointer } p: filptr;
+{ count }        n: integer;
 
 begin
 
@@ -214,7 +167,7 @@ Prints a single entry with proper tree characters and recurses for directories.
 ******************************************************************************}
 
 procedure printentry(
-    { file entry } p: filptr;
+    { file entry }    p: filptr;
     { path to entry } path: pstring;
     { prefix string } prefix: pstring;
     { is last entry } islast: boolean);
@@ -232,15 +185,17 @@ then files, both sorted alphabetically.
 ******************************************************************************}
 
 procedure listdir(
-    { path to list } path: pstring;
+    { path to list }                  path: pstring;
     { prefix string for indentation } prefix: pstring);
 
-var { file list head } fp: filptr;
-    { file list pointer } p: filptr;
-    { wildcard path } wildpath: pstring;
-    { entry count } total: integer;
-    { current entry } current: integer;
-    { is last entry } islast: boolean;
+var
+
+{ file list head }    fp:       filptr;
+{ file list pointer } p:        filptr;
+{ wildcard path }     wildpath: pstring;
+{ entry count }       total:    integer;
+{ current entry }     current:  integer;
+{ is last entry }     islast:   boolean;
 
 begin
 
@@ -292,13 +247,15 @@ Prints a single entry with proper tree characters and recurses for directories.
 ******************************************************************************}
 
 procedure printentry(
-    { file entry } p: filptr;
+    { file entry }    p: filptr;
     { path to entry } path: pstring;
     { prefix string } prefix: pstring;
     { is last entry } islast: boolean);
 
-var { subdirectory path } subpath: pstring;
-    { new prefix for children } newprefix: pstring;
+var
+
+{ subdirectory path }        subpath:   pstring;
+{ new prefix for children } newprefix: pstring;
 
 begin
 
@@ -322,9 +279,11 @@ begin
 
 end;
 
-var { starting path } start: pstring;
-    { empty prefix } prefix: pstring;
-    { command line argument } arg: pstring;
+var
+
+{ starting path }         start:  pstring;
+{ empty prefix }          prefix: pstring;
+{ command line argument } arg:    pstring;
 
 begin
 

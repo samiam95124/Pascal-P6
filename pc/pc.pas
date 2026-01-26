@@ -142,6 +142,7 @@ var
    fpmach:  boolean; { compile for pmach (interpreter) }
    fcmach:  boolean; { compile for cmach (compiler) }
    fpack:   boolean; { compile for package mode }
+   fpgen:   boolean; { compile for pgen mode (executable) }
    { these are "pass through" options, options meant for programs we execute }
    fsymcof: boolean; { generate coff symbols }
    { passthrough options: these have "set/not set indicators }
@@ -349,6 +350,8 @@ begin
       setflg('pmach', fpmach); { compile for pmach (interpreter) }
       setflg('cmach', fcmach); { compile for cmach (interpreter) }
       setflg('package', fpack); { compile for package mode }
+      { note: pgen is the default, and so is a no-op }
+      setflg('pgen', fpgen); { compile for package mode }
       { keep terminal window for graphical window application }
       setflg('ktw', 'keepterminalwindow', fngwin);
       setflg('sc', 'symcoff', fsymcof); { generate coff symbols }
@@ -2447,6 +2450,7 @@ begin
    fpmach := false; { set no pmach (interpreter) }
    fcmach := false; { set no cmach (interpreter) }
    fpack := false; { set no package (interpreter) }
+   fpgen := true; { set executable mode by default }
    { passthrough }
    fprtlabdef := false;  
    sprtlabdef := false;  
