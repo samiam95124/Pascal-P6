@@ -339,6 +339,8 @@ begin
 
       optfnd := false; { set no option found }
       parse.getchr(cmdhan); { skip option marker }
+      { allow double option character }
+      if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
       parse.parlab(cmdhan, w, err); { parse option label }
       if err then error('Invalid option "%"', w);
       setflg('v',  'verbose',  fverb); { verbose mode }
