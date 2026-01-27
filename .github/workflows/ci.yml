@@ -1,0 +1,49 @@
+name: Pascal-P6 CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - build
+          - regress
+
+jobs:
+  build:
+    if: ${{ github.event.inputs.action == 'build' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make binaries executable
+        run: chmod +x bin/*
+
+      - name: Build
+        run: bin/build
+
+  regress:
+    if: ${{ github.event.inputs.action == 'regress' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make binaries executable
+        run: chmod +x bin/*
+
+      - name: Build
+        run: bin/build
+
+      - name: Regression test
+        run: bin/regress
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regress_report
+          path: regress_report.txt
