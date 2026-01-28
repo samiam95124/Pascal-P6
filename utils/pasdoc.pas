@@ -100,12 +100,12 @@
 
 program pasdoc(output,command);
 
-joins services; { services }
+joins services, { services }
+      parse;   { command line parsing }
 
-uses endian,   { endian mode }
-     mpb,      { machine parameter block }
+uses mpb,      { machine parameter block }
      version,  { current version number }
-     parcmd;   { command line parsing }
+     strings;  { string handling }
 
 label 99; { terminate immediately }
 
@@ -171,6 +171,12 @@ const
    maxcmtlin  = 100;    { maximum lines in comment buffer }
    maxcmtchr  = 250;    { maximum characters per comment line }
 
+   { command line parsing }
+   cmdmax     = 2000;   { maximum command line length }
+   maxlin     = 20000;  { maximum include buffer length }
+   maxopt     = 28;     { number of options }
+   optlen     = 10;     { maximum length of option words }
+
    { standard exceptions. Used for extension routines, this is a subset. }
    CommandLineTooLong      = 1;
    FunctionNotImplemented  = 2;
@@ -178,6 +184,12 @@ const
    FileNameChangeFail      = 4;
 
 type
+
+     { command line types }
+     lininx = 1..maxlin;
+     linbuf = packed array [lininx] of char;
+     optinx = 1..optlen;
+     optstr = packed array [optinx] of char;
 
                                                             (*describing:*)
                                                             (*************)
@@ -250,6 +262,7 @@ type
      docrec = record
                 next:    docp;
                 dname:   strvsp;
+                dmod:    strvsp;
                 dklass:  dockind;
                 dline:   integer;
                 dcmt:    cmtlinep;
@@ -258,16 +271,19 @@ type
               end;
      modentryp = ^modentry;
      modentry = record
-                  next:  modentryp;
-                  mname: strvsp;
-                  mkind: symbol
+                  next:    modentryp;
+                  mname:   strvsp;
+                  mkind:   symbol;
+                  mhdrcmt: cmtlinep;
+                  mhdrcnt: integer
                 end;
      xrefp = ^xrefrec;
      xrefrec = record
                  next:    xrefp;
                  idname:  strvsp;
                  refline: integer;
-                 refproc: strvsp
+                 refproc: strvsp;
+                 extinc:  boolean { reference from external module }
                end;
 
      structure = record
@@ -445,6 +461,18 @@ var
     prd: text;                      { input source file }
 
     prdval: boolean;                { input source file parsed }
+
+    { command line parsing }
+    cmdhan:  parse.parhan;          { command line parse handle }
+    incbuf:  linbuf;                { include/module path buffer }
+    valfch:  schar;                  { valid filename characters }
+    ftext:   boolean;               { text output mode }
+    fhtml:   boolean;               { html output mode }
+
+    option:  array [1..maxopt] of boolean; { option values }
+    options: array [1..maxopt] of boolean; { option was set }
+    opts:    array [1..maxopt] of optstr;  { short option names }
+    optsl:   array [1..maxopt] of optstr;  { long option names }
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -943,18 +971,18 @@ var
 (*-------------------------------------------------------------------------*)
 
   { find lower case of character }
-  function lcase(c: char): char;
+  function lcasec(c: char): char;
   begin
     if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-    lcase := c
-  end { lcase };
+    lcasec := c
+  end;
 
   { find reserved word string equal to id string }
   function strequri(a: restr; var b: idstr): boolean;
   var m: boolean; i: integer;
   begin
     m := true;
-    for i := 1 to reslen do if lcase(a[i]) <> lcase(b[i]) then m := false;
+    for i := 1 to reslen do if lcasec(a[i]) <> lcasec(b[i]) then m := false;
     for i := reslen+1 to maxids do if b[i] <> ' ' then m := false;
     strequri := m
   end { equstr };
@@ -1089,7 +1117,7 @@ var
   begin
     m := true;
     while (a <> nil) and (b <> nil) do begin
-      for i := 1 to varsqt do if lcase(a^.str[i]) <> lcase(b^.str[i]) then m := false;
+      for i := 1 to varsqt do if lcasec(a^.str[i]) <> lcasec(b^.str[i]) then m := false;
       a := a^.next; b := b^.next
     end;
     if a <> b then m := false;
@@ -1103,8 +1131,8 @@ var
     while (a <> nil) or (b <> nil) do begin
       i := 1;
       while (i <= varsqt) and ((a <> nil) or (b <> nil)) do begin
-        if a <> nil then ca := lcase(a^.str[i]) else ca := ' ';
-        if b <> nil then cb := lcase(b^.str[i]) else cb := ' ';
+        if a <> nil then ca := lcasec(a^.str[i]) else ca := ' ';
+        if b <> nil then cb := lcasec(b^.str[i]) else cb := ' ';
         if ca <> cb then begin a := nil; b := nil end;
         i := i+1
       end;
@@ -1120,7 +1148,7 @@ var
     m := true; j := 1;
     for i := 1 to maxids do begin
       c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
-      if lcase(c) <> lcase(b[i]) then m := false;
+      if lcasec(c) <> lcasec(b[i]) then m := false;
       if j > varsqt then begin a := a^.next; j := 1 end
     end;
     strequvf := m
@@ -1133,10 +1161,10 @@ var
     i := 1; j := 1;
     while i < maxids do begin
       c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
-      if lcase(c) <> lcase(b[i]) then begin f := i; i := maxids end else i := i+1;
+      if lcasec(c) <> lcasec(b[i]) then begin f := i; i := maxids end else i := i+1;
       if j > varsqt then begin a := a^.next; j := 1 end
     end;
-    strltnvf := lcase(c) < lcase(b[f])
+    strltnvf := lcasec(c) < lcasec(b[f])
   end;
 
   { put character to variable length string }
@@ -1786,6 +1814,8 @@ end;
     new(dp);
     dp^.next := nil;
     strcpyvv(dp^.dname, lcp^.name);
+    if incact then strcpyvv(dp^.dmod, nammod)
+    else dp^.dmod := nil;
     dp^.dklass := dk;
     dp^.dline := incstk^.linecount;
     dp^.dcmtcnt := cmtcnt;
@@ -1829,19 +1859,33 @@ end;
     strcpyvv(xp^.idname, lcp^.name);
     xp^.refline := incstk^.linecount;
     strcpyvv(xp^.refproc, curproc);
+    xp^.extinc := incact;
     xp^.next := xreflist;
     xreflist := xp
   end;
 
-  procedure newmod(var id: idstr; mknd: symbol);
+  function newmod(var id: idstr; mknd: symbol): boolean;
   var mp: modentryp;
+      fnd: boolean;
   begin
-    new(mp);
-    mp^.mkind := mknd;
-    mp^.mname := nil;
-    strassvf(mp^.mname, id);
-    mp^.next := modlist;
-    modlist := mp
+    { check if module already in list }
+    mp := modlist;
+    fnd := false;
+    while mp <> nil do begin
+      if strequvf(mp^.mname, id) then fnd := true;
+      mp := mp^.next
+    end;
+    if not fnd then begin
+      new(mp);
+      mp^.mkind := mknd;
+      mp^.mname := nil;
+      mp^.mhdrcmt := nil;
+      mp^.mhdrcnt := 0;
+      strassvf(mp^.mname, id);
+      mp^.next := modlist;
+      modlist := mp
+    end;
+    newmod := not fnd
   end;
 
   procedure insymbol;
@@ -1889,7 +1933,7 @@ end;
       repeat
         oni := 1; optst := '          ';
         while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-          ch1 := lcase(ch); 
+          ch1 := lcasec(ch); 
           if optst[oni] = ' ' then optst[oni] := ch1; 
           if oni < optlen then oni := oni+1;
           nextch
@@ -2079,13 +2123,13 @@ end;
             until (chartp[ch] <> number) and ((ch <> '_') or iso7185) and
                   ((chartp[ch] <> letter) or (r < 16) or iso7185);
             { separator must be non-alpha numeric or 'e' with decimal radix }
-            if ((chartp[ch] = letter) and not ((lcase(ch) = 'e') and (r = 10))) or
+            if ((chartp[ch] = letter) and not ((lcasec(ch) = 'e') and (r = 10))) or
                (chartp[ch] = number) then error(241);
             val.intval := true;
             val.ival := v;
             sy := intconst;
             if ((ch = '.') and (bufnxt <> '.') and (bufnxt <> ')')) or
-               (lcase(ch) = 'e') then
+               (lcasec(ch) = 'e') then
               begin
                 { its a real, reject non-decimal radixes }
                 if r <> 10 then error(305);
@@ -2097,7 +2141,7 @@ end;
                     rv := rv*10+ordint[ch]; nextch; ev := ev-1
                   until chartp[ch] <> number;
                 end;
-                if lcase(ch) = 'e' then
+                if lcasec(ch) = 'e' then
                   begin nextch; sgn := +1;
                     if (ch = '+') or (ch ='-') then begin
                       if ch = '-' then sgn := -1;
@@ -7597,7 +7641,8 @@ end;
   procedure usesjoins;
   var sys: symbol; ff: boolean; eols: boolean;
       lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
-      curmods: modtyp; sym: symbol; dup: boolean;
+      curmods: modtyp; sym: symbol; dup: boolean; newm: boolean;
+      clp, clt: cmtlinep; ci, cj: integer;
   function schnam: boolean;
   var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
   begin schnam := false; fp := incstk;
@@ -7623,7 +7668,7 @@ end;
     repeat { modules }
       thismod := nil;
       if sy <> ident then error(2) else begin
-        newmod(id, sym);
+        newm := newmod(id, sym);
         dup := schnam;
         if not dup then begin
           eols := eol; lists := list; gcs := gc;
@@ -7632,6 +7677,20 @@ end;
           if ff then begin
             list := false;
             readline; insymbol;
+            { capture external module header comment }
+            if newm then begin
+              modlist^.mhdrcnt := cmtcnt;
+              clt := nil;
+              for ci := 1 to cmtcnt do begin
+                new(clp);
+                clp^.next := nil;
+                for cj := 1 to maxcmtchr do clp^.text[cj] := cmtbuf[ci][cj];
+                if modlist^.mhdrcmt = nil then modlist^.mhdrcmt := clp
+                else clt^.next := clp;
+                clt := clp
+              end
+            end;
+            cmtcnt := 0;
             if sym = joinssy then
               { throw display for joined module }
               begin top := top+1; inidsp(display[top]);
@@ -8406,12 +8465,113 @@ end;
       xp: xrefp;
       mp: modentryp;
       i: integer;
+      col, indent, ew, ln: integer;
+
+    { HTML output helper procedures }
+    procedure htmlhdr;
+    begin
+      writeln(docfil, '<!DOCTYPE html>');
+      writeln(docfil, '<html lang="en">');
+      writeln(docfil, '<head>');
+      writeln(docfil, '<meta charset="UTF-8">');
+      writeln(docfil, '<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+      writeln(docfil, '<meta name="generator" content="pasdoc">');
+      write(docfil, '<title>');
+      if nammod <> nil then writevp(docfil, nammod)
+      else write(docfil, 'Documentation');
+      writeln(docfil, '</title>');
+      writeln(docfil, '<style>');
+      { Base styles - Doxygen-inspired colors }
+      writeln(docfil, 'body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; }');
+      writeln(docfil, '.container { max-width: 1000px; margin: 0 auto; padding: 20px; }');
+      writeln(docfil, 'h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }');
+      writeln(docfil, 'h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }');
+      writeln(docfil, 'h3 { color: #333; font-size: 100%; margin-top: 20px; }');
+      writeln(docfil, 'a { color: #3D578C; text-decoration: none; }');
+      writeln(docfil, 'a:hover { text-decoration: underline; }');
+      { Header comment }
+      writeln(docfil, '.header-comment { background: #FBFCFD; padding: 10px; border: 1px solid #C4CFE5; margin: 15px 0; }');
+      { Section styles }
+      writeln(docfil, '.section { margin: 15px 0; }');
+      writeln(docfil, '.item { padding: 4px 0; }');
+      writeln(docfil, '.item-name { font-weight: bold; color: #3D578C; }');
+      writeln(docfil, '.item-type { color: #4665A2; }');
+      writeln(docfil, '.keyword { color: #008000; font-weight: normal; }');
+      writeln(docfil, '.none { color: #666; font-style: italic; }');
+      { Function/procedure member item - Doxygen memitem style }
+      writeln(docfil, '.memitem { background: #F9FAFC; border: 1px solid #C4CFE5; margin: 20px 0; border-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }');
+      writeln(docfil, '.memproto { background: linear-gradient(to bottom, #E2E8F2 0%, #D8DFEE 100%); padding: 6px; border-bottom: 1px solid #A8B8D9; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }');
+      writeln(docfil, '.memname { color: #253555; font-weight: bold; }');
+      writeln(docfil, '.paramtype { color: #4665A2; }');
+      writeln(docfil, '.paramname { color: #803010; }');
+      writeln(docfil, '.memdoc { padding: 10px 15px; }');
+      { Documentation sections within memdoc }
+      writeln(docfil, '.memsection { margin: 12px 0; }');
+      writeln(docfil, '.memsection-title { font-weight: bold; color: #4665A2; margin-bottom: 4px; }');
+      writeln(docfil, '.brief { margin-bottom: 10px; }');
+      writeln(docfil, '.detail { margin: 10px 0; color: #333; }');
+      { Parameter table }
+      writeln(docfil, '.paramtable { border-collapse: collapse; margin: 8px 0; }');
+      writeln(docfil, '.paramtable td { padding: 4px 12px 4px 0; vertical-align: top; }');
+      writeln(docfil, '.paramtable .paramdir { color: #008000; font-style: italic; width: 40px; }');
+      writeln(docfil, '.paramtable .paramname { color: #803010; font-weight: bold; }');
+      writeln(docfil, '.paramtable .paramtype { color: #4665A2; }');
+      { Return type }
+      writeln(docfil, '.returntype { color: #4665A2; }');
+      { Definition location }
+      writeln(docfil, '.definition { color: #666; font-size: 11px; margin-top: 10px; }');
+      writeln(docfil, '.definition .filename { color: #3D578C; }');
+      { Call graph sections }
+      writeln(docfil, '.callgraph { margin: 8px 0; }');
+      writeln(docfil, '.callgraph-item { display: inline-block; background: #F0F0F0; padding: 2px 8px; margin: 2px; border-radius: 3px; font-family: monospace; font-size: 12px; }');
+      writeln(docfil, '.callgraph-item a { color: #3D578C; }');
+      { Cross-reference }
+      writeln(docfil, '.xref { font-family: monospace; font-size: 12px; }');
+      writeln(docfil, '.xref-line { color: #3D578C; }');
+      writeln(docfil, '.xref-proc { color: #666; }');
+      { Module sections }
+      writeln(docfil, '.module-section { background: #F9FAFC; padding: 15px; margin: 15px 0; border: 1px solid #C4CFE5; border-radius: 4px; }');
+      writeln(docfil, '.module-section h3 { color: #253555; margin-top: 0; }');
+      { Code formatting }
+      writeln(docfil, 'code { background: #F7F8FB; padding: 1px 4px; border-radius: 2px; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }');
+      writeln(docfil, '</style>');
+      writeln(docfil, '</head>');
+      writeln(docfil, '<body>');
+      writeln(docfil, '<div class="container">')
+    end;
+
+    procedure htmlftr;
+    begin
+      writeln(docfil, '</div>');
+      writeln(docfil, '</body>');
+      writeln(docfil, '</html>')
+    end;
+
+    procedure htmlesc(c: char);
+    begin
+      if c = '<' then write(docfil, '&lt;')
+      else if c = '>' then write(docfil, '&gt;')
+      else if c = '&' then write(docfil, '&amp;')
+      else if c = '"' then write(docfil, '&quot;')
+      else write(docfil, c)
+    end;
 
     procedure writename(s: strvsp);
+    begin
+      if fhtml then begin
+        write(docfil, '<span class="item-name">');
+        writevp(docfil, s);
+        write(docfil, '</span>')
+      end else
+        writevp(docfil, s)
+    end;
+
+    procedure writenameplain(s: strvsp);
     begin writevp(docfil, s) end;
 
     procedure writetypname(lsp: stp);
     begin
+      if fhtml then write(docfil, '<span class="item-type">');
       if lsp = nil then write(docfil, '(unknown)')
       else if lsp = intptr then write(docfil, 'integer')
       else if lsp = realptr then write(docfil, 'real')
@@ -8430,7 +8590,8 @@ end;
         tagfld:   write(docfil, 'tagfield');
         variant:  write(docfil, 'variant');
         exceptf:  write(docfil, 'exception')
-      end
+      end;
+      if fhtml then write(docfil, '</span>')
     end;
 
     procedure writeparams(plst: ctp);
@@ -8445,22 +8606,27 @@ end;
           case plst^.klass of
             vars: begin
               case plst^.part of
-                ptvar:  write(docfil, 'var ');
-                ptview: write(docfil, 'view ');
-                ptout:  write(docfil, 'out ');
+                ptvar:  if fhtml then write(docfil, '<span class="keyword">var</span> ')
+                        else write(docfil, 'var ');
+                ptview: if fhtml then write(docfil, '<span class="keyword">view</span> ')
+                        else write(docfil, 'view ');
+                ptout:  if fhtml then write(docfil, '<span class="keyword">out</span> ')
+                        else write(docfil, 'out ');
                 ptval:
               end;
-              writename(plst^.name);
+              writenameplain(plst^.name);
               write(docfil, ': ');
               writetypname(plst^.idtype)
             end;
             proc: begin
-              write(docfil, 'procedure ');
-              writename(plst^.name)
+              if fhtml then write(docfil, '<span class="keyword">procedure</span> ')
+              else write(docfil, 'procedure ');
+              writenameplain(plst^.name)
             end;
             func: begin
-              write(docfil, 'function ');
-              writename(plst^.name);
+              if fhtml then write(docfil, '<span class="keyword">function</span> ')
+              else write(docfil, 'function ');
+              writenameplain(plst^.name);
               write(docfil, ': ');
               writetypname(plst^.idtype)
             end
@@ -8475,8 +8641,11 @@ end;
     var l, ll: integer;
         fnd: boolean;
         clp: cmtlinep;
+        first: boolean;
     begin
+      if fhtml then write(docfil, '<div class="comment">');
       clp := clst;
+      first := true;
       while clp <> nil do begin
         ll := maxcmtchr;
         fnd := false;
@@ -8484,215 +8653,991 @@ end;
           if clp^.text[ll] <> ' ' then fnd := true
           else ll := ll - 1;
         if ll > 0 then begin
-          write(docfil, '    ');
-          for l := 1 to ll do write(docfil, clp^.text[l]);
-          writeln(docfil)
+          if fhtml then begin
+            if not first then writeln(docfil);
+            for l := 1 to ll do htmlesc(clp^.text[l])
+          end else begin
+            write(docfil, '    ');
+            for l := 1 to ll do write(docfil, clp^.text[l]);
+            writeln(docfil)
+          end;
+          first := false
         end;
         clp := clp^.next
+      end;
+      if fhtml then writeln(docfil, '</div>')
+    end;
+
+    { write first line with alphabetic content from comment list }
+    procedure writecmt1(clst: cmtlinep);
+    var l, ll, fl: integer;
+        fnd, hasalpha: boolean;
+        clp: cmtlinep;
+    begin
+      clp := clst;
+      hasalpha := false;
+      while clp <> nil do begin
+        { check if line contains a letter }
+        hasalpha := false;
+        for l := 1 to maxcmtchr do
+          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+            hasalpha := true;
+        if hasalpha then begin
+          { find first non-space, non-star character }
+          fl := 1;
+          fnd := false;
+          while (fl <= maxcmtchr) and not fnd do
+            if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then
+              fnd := true
+            else fl := fl + 1;
+          { find last non-space, non-star character }
+          ll := maxcmtchr;
+          fnd := false;
+          while (ll > 0) and not fnd do
+            if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then
+              fnd := true
+            else ll := ll - 1;
+          if ll >= fl then begin
+            if fhtml then begin
+              write(docfil, '<p>');
+              for l := fl to ll do htmlesc(clp^.text[l]);
+              writeln(docfil, '</p>')
+            end else begin
+              write(docfil, '    ');
+              for l := fl to ll do write(docfil, clp^.text[l]);
+              writeln(docfil)
+            end
+          end;
+          clp := nil { exit loop }
+        end else
+          clp := clp^.next
       end
     end;
 
     procedure wrtsep;
     var i: integer;
     begin
-      for i := 1 to 70 do write(docfil, '-');
-      writeln(docfil)
+      if not fhtml then begin
+        for i := 1 to 70 do write(docfil, '-');
+        writeln(docfil)
+      end
+    end;
+
+    { write brief description - first line with alphabetic content }
+    procedure writebrief(clst: cmtlinep);
+    var l, ll, fl: integer;
+        fnd, hasalpha: boolean;
+        clp: cmtlinep;
+    begin
+      clp := clst;
+      while clp <> nil do begin
+        hasalpha := false;
+        for l := 1 to maxcmtchr do
+          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+            hasalpha := true;
+        if hasalpha then begin
+          fl := 1; fnd := false;
+          while (fl <= maxcmtchr) and not fnd do
+            if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then fnd := true
+            else fl := fl + 1;
+          ll := maxcmtchr; fnd := false;
+          while (ll > 0) and not fnd do
+            if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then fnd := true
+            else ll := ll - 1;
+          if ll >= fl then begin
+            write(docfil, '<div class="brief">');
+            for l := fl to ll do htmlesc(clp^.text[l]);
+            writeln(docfil, '</div>')
+          end;
+          clp := nil
+        end else clp := clp^.next
+      end
+    end;
+
+    { write detailed description - all lines after first }
+    procedure writedetail(clst: cmtlinep);
+    var l, ll, fl: integer;
+        fnd, hasalpha, skipped: boolean;
+        clp: cmtlinep;
+    begin
+      clp := clst;
+      skipped := false;
+      write(docfil, '<div class="detail">');
+      while clp <> nil do begin
+        hasalpha := false;
+        for l := 1 to maxcmtchr do
+          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+            hasalpha := true;
+        if hasalpha then begin
+          if not skipped then begin skipped := true; clp := clp^.next end
+          else begin
+            fl := 1; fnd := false;
+            while (fl <= maxcmtchr) and not fnd do
+              if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then fnd := true
+              else fl := fl + 1;
+            ll := maxcmtchr; fnd := false;
+            while (ll > 0) and not fnd do
+              if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then fnd := true
+              else ll := ll - 1;
+            if ll >= fl then begin
+              for l := fl to ll do htmlesc(clp^.text[l]);
+              writeln(docfil, '<br>')
+            end;
+            clp := clp^.next
+          end
+        end else clp := clp^.next
+      end;
+      writeln(docfil, '</div>')
+    end;
+
+    { check if comment has more than one line of content }
+    function hasmultiline(clst: cmtlinep): boolean;
+    var l, cnt: integer;
+        hasalpha: boolean;
+        clp: cmtlinep;
+    begin
+      clp := clst; cnt := 0;
+      while clp <> nil do begin
+        hasalpha := false;
+        for l := 1 to maxcmtchr do
+          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+            hasalpha := true;
+        if hasalpha then cnt := cnt + 1;
+        clp := clp^.next
+      end;
+      hasmultiline := cnt > 1
+    end;
+
+    { write parameters table }
+    procedure writeparamtable(plst: ctp);
+    begin
+      if plst <> nil then begin
+        writeln(docfil, '<div class="memsection">');
+        writeln(docfil, '<div class="memsection-title">Parameters</div>');
+        writeln(docfil, '<table class="paramtable">');
+        while plst <> nil do begin
+          if plst^.klass = vars then begin
+            write(docfil, '<tr><td class="paramdir">');
+            case plst^.part of
+              ptval:  write(docfil, '');
+              ptvar:  write(docfil, 'var');
+              ptview: write(docfil, 'view');
+              ptout:  write(docfil, 'out')
+            end;
+            write(docfil, '</td><td class="paramname">');
+            writenameplain(plst^.name);
+            write(docfil, '</td><td class="paramtype">');
+            writetypname(plst^.idtype);
+            writeln(docfil, '</td></tr>')
+          end;
+          plst := plst^.next
+        end;
+        writeln(docfil, '</table>');
+        writeln(docfil, '</div>')
+      end
+    end;
+
+    { write what this procedure calls }
+    procedure writecalls(pname: strvsp);
+    var xp, xp2: xrefp;
+        first, dup, isproc: boolean;
+        dp: docp;
+    begin
+      first := true;
+      xp := xreflist;
+      while xp <> nil do begin
+        if xp^.refproc <> nil then
+          if strequvv(xp^.refproc, pname) then begin
+            { check for duplicate - only output first occurrence }
+            dup := false;
+            xp2 := xreflist;
+            while (xp2 <> xp) and not dup do begin
+              if xp2^.refproc <> nil then
+                if strequvv(xp2^.refproc, pname) then
+                  if strequvv(xp2^.idname, xp^.idname) then dup := true;
+              xp2 := xp2^.next
+            end;
+            if not dup then begin
+              { check if the called symbol is a proc/func (check only once) }
+              isproc := false;
+              dp := doclist;
+              while dp <> nil do begin
+                if strequvv(dp^.dname, xp^.idname) then
+                  if dp^.dklass in [dkproc, dkfunc] then isproc := true;
+                dp := dp^.next
+              end;
+              if isproc then begin
+                if first then begin
+                  writeln(docfil, '<div class="memsection">');
+                  writeln(docfil, '<div class="memsection-title">Calls</div>');
+                  write(docfil, '<div class="callgraph">');
+                  first := false
+                end;
+                write(docfil, '<span class="callgraph-item">');
+                writenameplain(xp^.idname);
+                write(docfil, '</span>')
+              end
+            end
+          end;
+        xp := xp^.next
+      end;
+      if not first then writeln(docfil, '</div></div>')
+    end;
+
+    { write who calls this procedure }
+    procedure writecalledby(pname: strvsp);
+    var xp: xrefp;
+        first: boolean;
+        lastproc: strvsp;
+    begin
+      first := true;
+      lastproc := nil;
+      xp := xreflist;
+      while xp <> nil do begin
+        if strequvv(xp^.idname, pname) then
+          if xp^.refproc <> nil then
+            if not strequvv(xp^.refproc, pname) then begin
+              { avoid duplicates }
+              if (lastproc = nil) or not strequvv(lastproc, xp^.refproc) then begin
+                if first then begin
+                  writeln(docfil, '<div class="memsection">');
+                  writeln(docfil, '<div class="memsection-title">Called By</div>');
+                  write(docfil, '<div class="callgraph">');
+                  first := false
+                end;
+                write(docfil, '<span class="callgraph-item">');
+                writenameplain(xp^.refproc);
+                write(docfil, '</span>');
+                lastproc := xp^.refproc
+              end
+            end;
+        xp := xp^.next
+      end;
+      if not first then writeln(docfil, '</div></div>')
+    end;
+
+    { check if symbol is referenced from the main file }
+    function usedmain(nm: strvsp): boolean;
+    var xp: xrefp; f: boolean;
+    begin f := false; xp := xreflist;
+      while xp <> nil do begin
+        if not xp^.extinc then
+          if strequvv(xp^.idname, nm) then f := true;
+        xp := xp^.next
+      end;
+      usedmain := f
+    end;
+
+    { check if module has any used entries }
+    function hasanyused(mod1: strvsp): boolean;
+    var dp: docp; f: boolean;
+    begin f := false; dp := doclist;
+      while dp <> nil do begin
+        if dp^.dmod <> nil then
+          if strequvv(dp^.dmod, mod1) then
+            if usedmain(dp^.dname) then f := true;
+        dp := dp^.next
+      end;
+      hasanyused := f
+    end;
+
+    { check if module has entries of given kind }
+    function hasmod(dk: dockind; mod1: strvsp): boolean;
+    var dp: docp; f: boolean;
+    begin f := false; dp := doclist;
+      while dp <> nil do begin
+        if dp^.dklass = dk then begin
+          if mod1 = nil then begin
+            if dp^.dmod = nil then f := true
+          end else if dp^.dmod <> nil then
+            if strequvv(dp^.dmod, mod1) then
+              if usedmain(dp^.dname) then f := true
+        end;
+        dp := dp^.next
+      end;
+      hasmod := f
+    end;
+
+    { check if module has proc/func entries }
+    function hasmodpf(mod1: strvsp): boolean;
+    var dp: docp; f: boolean;
+    begin f := false; dp := doclist;
+      while dp <> nil do begin
+        if dp^.dklass in [dkproc, dkfunc] then begin
+          if mod1 = nil then begin
+            if dp^.dmod = nil then f := true
+          end else if dp^.dmod <> nil then
+            if strequvv(dp^.dmod, mod1) then
+              if usedmain(dp^.dname) then f := true
+        end;
+        dp := dp^.next
+      end;
+      hasmodpf := f
+    end;
+
+    { match doc entry module }
+    function modmatch(dp: docp; mod1: strvsp): boolean;
+    begin
+      if mod1 = nil then modmatch := dp^.dmod = nil
+      else if dp^.dmod = nil then modmatch := false
+      else modmatch := strequvv(dp^.dmod, mod1)
     end;
 
   begin { writedoc }
+    { HTML header }
+    if fhtml then htmlhdr;
+
     { Section 1: Summary }
-    writeln(docfil);
-    write(docfil, 'DOCUMENTATION FOR: ');
-    if nammod <> nil then writename(nammod)
-    else write(docfil, '(unnamed)');
-    writeln(docfil);
-    for i := 1 to 70 do write(docfil, '=');
-    writeln(docfil);
+    if fhtml then begin
+      write(docfil, '<h1>');
+      if nammod <> nil then writenameplain(nammod)
+      else write(docfil, 'Documentation');
+      writeln(docfil, '</h1>')
+    end else begin
+      writeln(docfil);
+      write(docfil, 'DOCUMENTATION FOR: ');
+      if nammod <> nil then writename(nammod)
+      else write(docfil, '(unnamed)');
+      writeln(docfil);
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil)
+    end;
 
     { header comment }
     if hdrcmtcnt > 0 then begin
-      writeln(docfil);
-      writecmt(hdrcmt)
+      if fhtml then writeln(docfil, '<div class="header-comment">')
+      else writeln(docfil);
+      writecmt(hdrcmt);
+      if fhtml then writeln(docfil, '</div>')
     end;
-    writeln(docfil);
+    if not fhtml then writeln(docfil);
 
     { Modules }
-    writeln(docfil, 'MODULES');
+    if fhtml then writeln(docfil, '<h2>Modules</h2>')
+    else writeln(docfil, 'MODULES');
     wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
     mp := modlist;
-    if mp = nil then writeln(docfil, '    (none)')
-    else while mp <> nil do begin
-      write(docfil, '    ');
-      if mp^.mkind = usessy then write(docfil, 'uses ')
-      else write(docfil, 'joins ');
-      writename(mp^.mname);
-      writeln(docfil);
+    if mp = nil then begin
+      if fhtml then writeln(docfil, '<p class="none">(none)</p>')
+      else writeln(docfil, '    (none)')
+    end else while mp <> nil do begin
+      if fhtml then begin
+        write(docfil, '<div class="item">');
+        if mp^.mkind = usessy then write(docfil, '<span class="keyword">uses</span> ')
+        else write(docfil, '<span class="keyword">joins</span> ');
+        writenameplain(mp^.mname);
+        writeln(docfil, '</div>')
+      end else begin
+        write(docfil, '    ');
+        if mp^.mkind = usessy then write(docfil, 'uses ')
+        else write(docfil, 'joins ');
+        writename(mp^.mname);
+        writeln(docfil)
+      end;
       mp := mp^.next
     end;
-    writeln(docfil);
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
 
     { Constants }
-    writeln(docfil, 'CONSTANTS');
+    if fhtml then writeln(docfil, '<h2>Constants</h2>')
+    else writeln(docfil, 'CONSTANTS');
     wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
     dp := doclist;
     while dp <> nil do begin
-      if dp^.dklass = dkconst then begin
-        write(docfil, '    ');
-        writename(dp^.dname);
-        writeln(docfil)
+      if (dp^.dklass = dkconst) and (dp^.dmod = nil) then begin
+        if fhtml then begin
+          write(docfil, '<div class="item">');
+          writenameplain(dp^.dname);
+          writeln(docfil, '</div>')
+        end else begin
+          write(docfil, '    ');
+          writename(dp^.dname);
+          writeln(docfil)
+        end
       end;
       dp := dp^.next
     end;
-    writeln(docfil);
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
 
     { Types }
-    writeln(docfil, 'TYPES');
+    if fhtml then writeln(docfil, '<h2>Types</h2>')
+    else writeln(docfil, 'TYPES');
     wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
     dp := doclist;
     while dp <> nil do begin
-      if dp^.dklass = dktype then begin
-        write(docfil, '    ');
-        writename(dp^.dname);
-        writeln(docfil)
+      if (dp^.dklass = dktype) and (dp^.dmod = nil) then begin
+        if fhtml then begin
+          write(docfil, '<div class="item">');
+          writenameplain(dp^.dname);
+          writeln(docfil, '</div>')
+        end else begin
+          write(docfil, '    ');
+          writename(dp^.dname);
+          writeln(docfil)
+        end
       end;
       dp := dp^.next
     end;
-    writeln(docfil);
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
 
     { Fixed }
-    writeln(docfil, 'FIXED');
+    if fhtml then writeln(docfil, '<h2>Fixed</h2>')
+    else writeln(docfil, 'FIXED');
     wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
     dp := doclist;
     while dp <> nil do begin
-      if dp^.dklass = dkfixed then begin
-        write(docfil, '    ');
-        writename(dp^.dname);
-        write(docfil, ': ');
-        if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
-        else write(docfil, '(unknown)');
-        writeln(docfil)
-      end;
-      dp := dp^.next
-    end;
-    writeln(docfil);
-
-    { Variables }
-    writeln(docfil, 'VARIABLES');
-    wrtsep;
-    dp := doclist;
-    while dp <> nil do begin
-      if dp^.dklass = dkvar then begin
-        write(docfil, '    ');
-        writename(dp^.dname);
-        write(docfil, ': ');
-        if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
-        else write(docfil, '(unknown)');
-        writeln(docfil)
-      end;
-      dp := dp^.next
-    end;
-    writeln(docfil);
-
-    { Procedures and Functions }
-    writeln(docfil, 'PROCEDURES AND FUNCTIONS');
-    wrtsep;
-    dp := doclist;
-    while dp <> nil do begin
-      if dp^.dklass in [dkproc, dkfunc] then begin
-        write(docfil, '    ');
-        if dp^.dklass = dkproc then write(docfil, 'procedure ')
-        else write(docfil, 'function ');
-        writename(dp^.dname);
-        if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-          writeparams(dp^.idp^.pflist);
-        if dp^.dklass = dkfunc then begin
+      if (dp^.dklass = dkfixed) and (dp^.dmod = nil) then begin
+        if fhtml then begin
+          write(docfil, '<div class="item">');
+          writenameplain(dp^.dname);
+          write(docfil, ': ');
+          writetypname(dp^.idp^.idtype);
+          writeln(docfil, '</div>')
+        end else begin
+          write(docfil, '    ');
+          writename(dp^.dname);
           write(docfil, ': ');
           if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
-          else write(docfil, '(unknown)')
-        end;
-        writeln(docfil)
+          else write(docfil, '(unknown)');
+          writeln(docfil)
+        end
       end;
       dp := dp^.next
     end;
-    writeln(docfil);
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
 
-    { Section 2: Detail }
-    for i := 1 to 70 do write(docfil, '=');
-    writeln(docfil);
-    writeln(docfil, 'DETAIL');
-    for i := 1 to 70 do write(docfil, '=');
-    writeln(docfil);
-    writeln(docfil);
-
+    { Variables }
+    if fhtml then writeln(docfil, '<h2>Variables</h2>')
+    else writeln(docfil, 'VARIABLES');
+    wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
     dp := doclist;
     while dp <> nil do begin
-      writename(dp^.dname);
-      case dp^.dklass of
-        dkconst: write(docfil, ' (constant)');
-        dktype:  write(docfil, ' (type)');
-        dkfixed: write(docfil, ' (fixed)');
-        dkvar:   write(docfil, ' (variable)');
-        dkproc:  write(docfil, ' (procedure)');
-        dkfunc:  write(docfil, ' (function)')
+      if (dp^.dklass = dkvar) and (dp^.dmod = nil) then begin
+        if fhtml then begin
+          write(docfil, '<div class="item">');
+          writenameplain(dp^.dname);
+          write(docfil, ': ');
+          if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+          else write(docfil, '(unknown)');
+          writeln(docfil, '</div>')
+        end else begin
+          write(docfil, '    ');
+          writename(dp^.dname);
+          write(docfil, ': ');
+          if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+          else write(docfil, '(unknown)');
+          writeln(docfil)
+        end
       end;
-      writeln(docfil);
-      if dp^.dklass in [dkproc, dkfunc] then begin
-        if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then begin
+      dp := dp^.next
+    end;
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
+
+    { Procedures and Functions }
+    if fhtml then writeln(docfil, '<h2>Procedures and Functions</h2>')
+    else writeln(docfil, 'PROCEDURES AND FUNCTIONS');
+    wrtsep;
+    if fhtml then writeln(docfil, '<div class="section">');
+    dp := doclist;
+    while dp <> nil do begin
+      if (dp^.dklass in [dkproc, dkfunc]) and (dp^.dmod = nil) then begin
+        if fhtml then begin
+          write(docfil, '<div class="item"><code>');
+          if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
+          else write(docfil, '<span class="keyword">function</span> ');
+          writenameplain(dp^.dname);
+          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+            writeparams(dp^.idp^.pflist);
+          if dp^.dklass = dkfunc then begin
+            write(docfil, ': ');
+            if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+            else write(docfil, '(unknown)')
+          end;
+          writeln(docfil, '</code></div>')
+        end else begin
           write(docfil, '    ');
           if dp^.dklass = dkproc then write(docfil, 'procedure ')
           else write(docfil, 'function ');
           writename(dp^.dname);
-          writeparams(dp^.idp^.pflist);
+          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+            writeparams(dp^.idp^.pflist);
           if dp^.dklass = dkfunc then begin
             write(docfil, ': ');
-            writetypname(dp^.idp^.idtype)
+            if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+            else write(docfil, '(unknown)')
           end;
           writeln(docfil)
         end
-      end else begin
-        write(docfil, '    Type: ');
-        if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
-        else write(docfil, '(unknown)');
-        writeln(docfil)
       end;
+      dp := dp^.next
+    end;
+    if fhtml then writeln(docfil, '</div>')
+    else writeln(docfil);
 
-      if dp^.dcmtcnt > 0 then begin
-        writeln(docfil);
-        writecmt(dp^.dcmt)
-      end;
-
+    { Section 2: Detail }
+    if fhtml then writeln(docfil, '<h2>Detail</h2>')
+    else begin
+      for i := 1 to 70 do write(docfil, '=');
       writeln(docfil);
+      writeln(docfil, 'DETAIL');
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil);
+      writeln(docfil)
+    end;
+
+    dp := doclist;
+    while dp <> nil do begin
+      if dp^.dmod = nil then begin
+        if fhtml and (dp^.dklass in [dkproc, dkfunc]) then begin
+          { Doxygen-style memitem for procedures/functions }
+          writeln(docfil, '<div class="memitem">');
+          { memproto - signature header }
+          write(docfil, '<div class="memproto">');
+          if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
+          else write(docfil, '<span class="keyword">function</span> ');
+          write(docfil, '<span class="memname">');
+          writenameplain(dp^.dname);
+          write(docfil, '</span>');
+          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+            writeparams(dp^.idp^.pflist);
+          if dp^.dklass = dkfunc then begin
+            write(docfil, ': ');
+            if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+            else write(docfil, '(unknown)')
+          end;
+          writeln(docfil, '</div>');
+          { memdoc - documentation content }
+          writeln(docfil, '<div class="memdoc">');
+          { 1. Brief description }
+          if dp^.dcmtcnt > 0 then writebrief(dp^.dcmt);
+          { 2. Detailed description }
+          if dp^.dcmtcnt > 0 then
+            if hasmultiline(dp^.dcmt) then writedetail(dp^.dcmt);
+          { 3. Return type for functions }
+          if dp^.dklass = dkfunc then begin
+            writeln(docfil, '<div class="memsection">');
+            writeln(docfil, '<div class="memsection-title">Returns</div>');
+            write(docfil, '<span class="returntype">');
+            if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+            else write(docfil, '(unknown)');
+            writeln(docfil, '</span>');
+            writeln(docfil, '</div>')
+          end;
+          { 4. Parameters }
+          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+            writeparamtable(dp^.idp^.pflist);
+          { 5. Definition location }
+          writeln(docfil, '<div class="definition">');
+          write(docfil, 'Definition at line <span class="filename">', dp^.dline:1, '</span>');
+          write(docfil, ' of file <span class="filename">');
+          writevp(docfil, nammod);
+          writeln(docfil, '.pas</span></div>');
+          { 6. What it calls }
+          writecalls(dp^.dname);
+          { 7. Who calls it }
+          writecalledby(dp^.dname);
+          writeln(docfil, '</div>'); { close memdoc }
+          writeln(docfil, '</div>') { close memitem }
+        end else if fhtml then begin
+          { Non-procedure/function items }
+          writeln(docfil, '<div class="memitem">');
+          write(docfil, '<div class="memproto"><span class="memname">');
+          writenameplain(dp^.dname);
+          write(docfil, '</span>');
+          case dp^.dklass of
+            dkconst: write(docfil, ' <span class="kind">(constant)</span>');
+            dktype:  write(docfil, ' <span class="kind">(type)</span>');
+            dkfixed: write(docfil, ' <span class="kind">(fixed)</span>');
+            dkvar:   write(docfil, ' <span class="kind">(variable)</span>')
+          end;
+          writeln(docfil, '</div>');
+          writeln(docfil, '<div class="memdoc">');
+          write(docfil, '<p>Type: ');
+          if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+          else write(docfil, '(unknown)');
+          writeln(docfil, '</p>');
+          if dp^.dcmtcnt > 0 then writecmt(dp^.dcmt);
+          writeln(docfil, '</div>');
+          writeln(docfil, '</div>')
+        end else begin
+          { Text mode output }
+          writename(dp^.dname);
+          case dp^.dklass of
+            dkconst: write(docfil, ' (constant)');
+            dktype:  write(docfil, ' (type)');
+            dkfixed: write(docfil, ' (fixed)');
+            dkvar:   write(docfil, ' (variable)');
+            dkproc:  write(docfil, ' (procedure)');
+            dkfunc:  write(docfil, ' (function)')
+          end;
+          writeln(docfil);
+          if dp^.dklass in [dkproc, dkfunc] then begin
+            if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then begin
+              write(docfil, '    ');
+              if dp^.dklass = dkproc then write(docfil, 'procedure ')
+              else write(docfil, 'function ');
+              writename(dp^.dname);
+              writeparams(dp^.idp^.pflist);
+              if dp^.dklass = dkfunc then begin
+                write(docfil, ': ');
+                writetypname(dp^.idp^.idtype)
+              end;
+              writeln(docfil)
+            end
+          end else begin
+            write(docfil, '    Type: ');
+            if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+            else write(docfil, '(unknown)');
+            writeln(docfil)
+          end;
+          if dp^.dcmtcnt > 0 then begin
+            writeln(docfil);
+            writecmt(dp^.dcmt)
+          end;
+          writeln(docfil)
+        end
+      end;
       dp := dp^.next
     end;
 
     { Section 3: Cross-reference }
-    for i := 1 to 70 do write(docfil, '=');
-    writeln(docfil);
-    writeln(docfil, 'CROSS-REFERENCE');
-    for i := 1 to 70 do write(docfil, '=');
-    writeln(docfil);
-    writeln(docfil);
+    if fhtml then writeln(docfil, '<h2>Cross-Reference</h2>')
+    else begin
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil);
+      writeln(docfil, 'CROSS-REFERENCE');
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil);
+      writeln(docfil)
+    end;
 
+    if fhtml then writeln(docfil, '<div class="section xref">');
     dp := doclist;
     while dp <> nil do begin
-      writename(dp^.dname);
-      write(docfil, ':');
-      xp := xreflist;
-      while xp <> nil do begin
-        if strequvv(xp^.idname, dp^.dname) then begin
-          write(docfil, ' ', xp^.refline:1);
-          if xp^.refproc <> nil then begin
-            write(docfil, '(');
-            writename(xp^.refproc);
-            write(docfil, ')')
-          end
+      if dp^.dmod = nil then begin
+        if fhtml then begin
+          write(docfil, '<div class="item"><strong>');
+          writenameplain(dp^.dname);
+          write(docfil, '</strong>:')
+        end else begin
+          writename(dp^.dname);
+          write(docfil, ':')
         end;
-        xp := xp^.next
+        col := lenpv(dp^.dname) + 1; { name + colon }
+        indent := col;
+        xp := xreflist;
+        while xp <> nil do begin
+          if strequvv(xp^.idname, dp^.dname) then begin
+            if fhtml then begin
+              write(docfil, ' <span class="xref-line">', xp^.refline:1, '</span>');
+              if xp^.refproc <> nil then begin
+                write(docfil, '<span class="xref-proc">(');
+                writenameplain(xp^.refproc);
+                write(docfil, ')</span>')
+              end
+            end else begin
+              { estimate width of this entry }
+              ew := 1; { leading space }
+              ln := xp^.refline; if ln = 0 then ew := ew + 1
+              else begin
+                while ln > 0 do begin ew := ew + 1; ln := ln div 10 end
+              end;
+              if xp^.refproc <> nil then
+                ew := ew + 1 + lenpv(xp^.refproc) + 1; { ( name ) }
+              if col + ew > 80 then begin
+                writeln(docfil);
+                for ln := 1 to indent do write(docfil, ' ');
+                col := indent
+              end;
+              write(docfil, ' ', xp^.refline:1);
+              col := col + ew;
+              if xp^.refproc <> nil then begin
+                write(docfil, '(');
+                writename(xp^.refproc);
+                write(docfil, ')')
+              end
+            end
+          end;
+          xp := xp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
       end;
-      writeln(docfil);
       dp := dp^.next
-    end
+    end;
+    if fhtml then writeln(docfil, '</div>');
+
+    { Section 4: External module sections }
+    if fhtml then writeln(docfil, '<h2>External Modules</h2>')
+    else begin
+      writeln(docfil);
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil);
+      writeln(docfil, 'EXTERNAL MODULES');
+      for i := 1 to 70 do write(docfil, '=');
+      writeln(docfil)
+    end;
+    mp := modlist;
+    while mp <> nil do begin
+      if hasanyused(mp^.mname) then begin
+      if fhtml then begin
+        writeln(docfil, '<div class="module-section">');
+        write(docfil, '<h3>');
+        writenameplain(mp^.mname);
+        writeln(docfil, '</h3>')
+      end else begin
+        writeln(docfil);
+        writename(mp^.mname);
+        writeln(docfil);
+        for i := 1 to 70 do write(docfil, '=');
+        writeln(docfil)
+      end;
+      { module header comment (first line only) }
+      if mp^.mhdrcnt > 0 then begin
+        writecmt1(mp^.mhdrcmt);
+        if not fhtml then writeln(docfil)
+      end;
+
+      { module constants }
+      if hasmod(dkconst, mp^.mname) then begin
+        if fhtml then writeln(docfil, '<h4>Constants</h4><div class="section">')
+        else writeln(docfil, 'CONSTANTS');
+        wrtsep;
+        dp := doclist;
+        while dp <> nil do begin
+          if (dp^.dklass = dkconst) and modmatch(dp, mp^.mname) then
+            if usedmain(dp^.dname) then begin
+              if fhtml then begin
+                write(docfil, '<div class="item">');
+                writenameplain(dp^.dname);
+                writeln(docfil, '</div>')
+              end else begin
+                write(docfil, '    ');
+                writename(dp^.dname);
+                writeln(docfil)
+              end
+            end;
+          dp := dp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
+      end;
+
+      { module types }
+      if hasmod(dktype, mp^.mname) then begin
+        if fhtml then writeln(docfil, '<h4>Types</h4><div class="section">')
+        else writeln(docfil, 'TYPES');
+        wrtsep;
+        dp := doclist;
+        while dp <> nil do begin
+          if (dp^.dklass = dktype) and modmatch(dp, mp^.mname) then
+            if usedmain(dp^.dname) then begin
+              if fhtml then begin
+                write(docfil, '<div class="item">');
+                writenameplain(dp^.dname);
+                writeln(docfil, '</div>')
+              end else begin
+                write(docfil, '    ');
+                writename(dp^.dname);
+                writeln(docfil)
+              end
+            end;
+          dp := dp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
+      end;
+
+      { module fixed }
+      if hasmod(dkfixed, mp^.mname) then begin
+        if fhtml then writeln(docfil, '<h4>Fixed</h4><div class="section">')
+        else writeln(docfil, 'FIXED');
+        wrtsep;
+        dp := doclist;
+        while dp <> nil do begin
+          if (dp^.dklass = dkfixed) and modmatch(dp, mp^.mname) then
+            if usedmain(dp^.dname) then begin
+              if fhtml then begin
+                write(docfil, '<div class="item">');
+                writenameplain(dp^.dname);
+                write(docfil, ': ');
+                if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                else write(docfil, '(unknown)');
+                writeln(docfil, '</div>')
+              end else begin
+                write(docfil, '    ');
+                writename(dp^.dname);
+                write(docfil, ': ');
+                if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                else write(docfil, '(unknown)');
+                writeln(docfil)
+              end
+            end;
+          dp := dp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
+      end;
+
+      { module variables }
+      if hasmod(dkvar, mp^.mname) then begin
+        if fhtml then writeln(docfil, '<h4>Variables</h4><div class="section">')
+        else writeln(docfil, 'VARIABLES');
+        wrtsep;
+        dp := doclist;
+        while dp <> nil do begin
+          if (dp^.dklass = dkvar) and modmatch(dp, mp^.mname) then
+            if usedmain(dp^.dname) then begin
+              if fhtml then begin
+                write(docfil, '<div class="item">');
+                writenameplain(dp^.dname);
+                write(docfil, ': ');
+                if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                else write(docfil, '(unknown)');
+                writeln(docfil, '</div>')
+              end else begin
+                write(docfil, '    ');
+                writename(dp^.dname);
+                write(docfil, ': ');
+                if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                else write(docfil, '(unknown)');
+                writeln(docfil)
+              end
+            end;
+          dp := dp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
+      end;
+
+      { module procedures and functions }
+      if hasmodpf(mp^.mname) then begin
+        if fhtml then writeln(docfil, '<h4>Procedures and Functions</h4><div class="section">')
+        else writeln(docfil, 'PROCEDURES AND FUNCTIONS');
+        wrtsep;
+        dp := doclist;
+        while dp <> nil do begin
+          if (dp^.dklass in [dkproc, dkfunc]) and
+             modmatch(dp, mp^.mname) then
+            if usedmain(dp^.dname) then begin
+              if fhtml then begin
+                write(docfil, '<div class="item"><code>');
+                if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
+                else write(docfil, '<span class="keyword">function</span> ');
+                writenameplain(dp^.dname);
+                if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+                  writeparams(dp^.idp^.pflist);
+                if dp^.dklass = dkfunc then begin
+                  write(docfil, ': ');
+                  if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                  else write(docfil, '(unknown)')
+                end;
+                writeln(docfil, '</code></div>')
+              end else begin
+                write(docfil, '    ');
+                if dp^.dklass = dkproc then write(docfil, 'procedure ')
+                else write(docfil, 'function ');
+                writename(dp^.dname);
+                if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
+                  writeparams(dp^.idp^.pflist);
+                if dp^.dklass = dkfunc then begin
+                  write(docfil, ': ');
+                  if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
+                  else write(docfil, '(unknown)')
+                end;
+                writeln(docfil)
+              end
+            end;
+          dp := dp^.next
+        end;
+        if fhtml then writeln(docfil, '</div>')
+        else writeln(docfil)
+      end;
+
+      if fhtml then writeln(docfil, '</div>'); { close module-section }
+      end; { hasanyused }
+      mp := mp^.next
+    end;
+
+    { HTML footer }
+    if fhtml then htmlftr
   end; { writedoc }
+
+  { parse command line options }
+  procedure paropt;
+  var w: filnam;
+      err: boolean;
+      optfnd: boolean;
+      modpth: filnam;
+      i, j: integer;
+
+  begin
+    parse.skpspc(cmdhan);
+    while parse.chkchr(cmdhan) = services.optchr do begin
+      optfnd := false;
+      parse.getchr(cmdhan); { skip option marker }
+      { allow double option character }
+      if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
+      parse.parlab(cmdhan, w, err);
+      if err then begin
+        writeln('*** Error: Invalid option');
+        goto 99
+      end;
+      { check for -text option }
+      if compp(w, 'text') then begin
+        ftext := true;
+        fhtml := false;
+        optfnd := true
+      end;
+      { check for -html option }
+      if compp(w, 'html') then begin
+        fhtml := true;
+        ftext := false;
+        optfnd := true
+      end;
+      { check for --modules= option }
+      if compp(w, 'modules') then begin
+        optfnd := true;
+        parse.skpspc(cmdhan);
+        if parse.chkchr(cmdhan) <> '=' then begin
+          writeln('*** Error: missing "=" after modules');
+          goto 99
+        end;
+        parse.getchr(cmdhan); { skip '=' }
+        parse.parwrd(cmdhan, modpth, err);
+        if err then begin
+          writeln('*** Error: Invalid module path');
+          goto 99
+        end;
+        { append to incbuf with colon separator }
+        i := 1;
+        while (i < maxlin) and (incbuf[i] <> ' ') do i := i + 1;
+        if i < maxlin then begin
+          if i > 1 then begin incbuf[i] := ':'; i := i + 1 end;
+          j := 1;
+          while (j <= fillen) and (modpth[j] <> ' ') and (i < maxlin) do begin
+            incbuf[i] := modpth[j];
+            i := i + 1; j := j + 1
+          end
+        end
+      end;
+      if not optfnd then begin
+        writeln('*** Error: Unknown option: ', w:*);
+        goto 99
+      end;
+      parse.skpspc(cmdhan)
+    end
+  end; { paropt }
 
 begin
 
@@ -8735,26 +9680,46 @@ begin
     begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
 
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
+  ftext := true; fhtml := false; { default to text output }
 
-  { get command line }
-  getcommandline;
-  cmdpos := 1;
-  paroptions; { parse command line options }
-  { parse header files }
-  parhdrfilnam(prd, prdval, srcfil, '.pas');
-  if not prdval then begin
-    writeln('*** Error: input filename not found');
+  { process command line }
+  parse.openpar(cmdhan);
+  parse.opencommand(cmdhan, cmdmax);
+  services.filchr(valfch); { get valid filename characters }
+  valfch := valfch - ['=', '-']; { remove parsing characters }
+  parse.setfch(cmdhan, valfch);
+  paropt; { parse command line options }
+  if parse.endlin(cmdhan) then begin
+    writeln('*** Error: Filename expected');
+    goto 99
+  end;
+  parse.skpspc(cmdhan);
+  { parse input filename }
+  prdval := false;
+  if parse.chkchr(cmdhan) = '"' then
+    parse.parstr(cmdhan, srcfil, prdval)
+  else
+    parse.parfil(cmdhan, srcfil, false, prdval);
+  if prdval then begin
+    writeln('*** Error: Invalid filename');
     goto 99
   end;
   services.brknam(srcfil, p, n, e); { form full filename }
   services.maknam(srcfil, p, n, 'pas');
   services.fulnam(srcfil);
-  services.maknam(docfilnam, p, n, 'doc');
-  paroptions; { parse command line options }
-  plcopt; { place options in flags }
+  paropt; { parse trailing command line options }
+  parse.skpspc(cmdhan);
+  if not parse.endlin(cmdhan) then begin
+    writeln('*** Error: Extra text on command line');
+    goto 99
+  end;
+  { set output filename based on mode - must be after all paropt calls }
+  if fhtml then services.maknam(docfilnam, p, n, 'html')
+  else services.maknam(docfilnam, p, n, 'doc');
 
   (*parse:*)
   (********)
+  assign(prd, srcfil);
   reset(prd);
 
   nvalid := false; { set no lookahead }
