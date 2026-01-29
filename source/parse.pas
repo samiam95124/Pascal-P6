@@ -100,7 +100,8 @@
 
 program parse(output,command);
 
-joins services, strings; { services and string handling }
+joins services, { system services }
+      strings;  { string handling }
 
 uses endian,   { endian mode }
      mpb,      { machine parameter block }
@@ -571,87 +572,43 @@ var
 
 (*-------------------------------------------------------------------------*)
 
-                        { utility functions }
-
-(*-------------------------------------------------------------------------*)
-
-  { find lower case of character }
-  function lcase(c: char): char;
-  begin
-    if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-    lcase := c
-  end { lcase };
-
-(*-------------------------------------------------------------------------*)
-
                         { pstring helper functions }
 
 (*-------------------------------------------------------------------------*)
 
-  { write pstring to file with field width }
-  procedure writep(var f: text; s: pstring; fl: integer);
-  var i, l: integer;
-  begin
-    if s = nil then l := 0 else l := max(s^);
-    for i := 1 to l do if i <= fl then write(f, s^[i]);
-    for i := l+1 to fl do write(f, ' ')
-  end;
-
-  { compare pstrings case-insensitively with nil handling }
-  function compp(a, b: pstring): boolean;
-  begin
-    if (a = nil) and (b = nil) then compp := true
-    else if (a = nil) or (b = nil) then compp := false
-    else compp := strings.comp(a, b)
-  end;
-
-  { compare pstrings case-insensitively, a < b, with nil handling }
-  function gtrp(a, b: pstring): boolean;
-  begin
-    if a = nil then gtrp := b <> nil
-    else if b = nil then gtrp := false
-    else gtrp := strings.gtr(a, b)
-  end;
-
-  { compare pstring to fixed string with nil handling (padded) }
+  { compare pstring to fixed string (padded comparison) }
   function comppf(a: pstring; var b: idstr): boolean;
   var ld, ls, i: integer; r: boolean;
   begin
-    if a = nil then comppf := strings.len(b) = 0
+    ld := max(a^);  { length of pstring }
+    ls := strings.len(b);  { padded length of fixed string }
+    if ld <> ls then comppf := false
     else begin
-      ld := max(a^);  { length of pstring }
-      ls := strings.len(b);  { padded length of fixed string }
-      if ld <> ls then comppf := false
-      else begin
-        r := true;
-        for i := 1 to ld do
-          if lcase(a^[i]) <> lcase(b[i]) then r := false;
-        comppf := r
-      end
+      r := true;
+      for i := 1 to ld do
+        if strings.lcase(a^[i]) <> strings.lcase(b[i]) then r := false;
+      comppf := r
     end
   end;
 
-  { compare pstring to fixed string, a < b, with nil handling (padded) }
+  { compare pstring to fixed string, a < b (padded comparison) }
   function gtrpf(a: pstring; var b: idstr): boolean;
   label 1;
   var ld, ls, i: integer; ca, cb: char;
   begin
-    if a = nil then gtrpf := strings.len(b) > 0
-    else begin
-      ld := max(a^);  { length of pstring }
-      ls := strings.len(b);  { padded length of fixed string }
-      i := 1;
-      while (i <= ld) or (i <= ls) do begin
-        if i <= ld then ca := lcase(a^[i]) else ca := ' ';
-        if i <= ls then cb := lcase(b[i]) else cb := ' ';
-        if ca <> cb then begin
-          gtrpf := ca < cb;
-          goto 1
-        end;
-        i := i + 1
+    ld := max(a^);  { length of pstring }
+    ls := strings.len(b);  { padded length of fixed string }
+    i := 1;
+    while (i <= ld) or (i <= ls) do begin
+      if i <= ld then ca := strings.lcase(a^[i]) else ca := ' ';
+      if i <= ls then cb := strings.lcase(b[i]) else cb := ' ';
+      if ca <> cb then begin
+        gtrpf := ca < cb;
+        goto 1
       end;
-      gtrpf := false { strings are equal }
+      i := i + 1
     end;
+    gtrpf := false; { strings are equal }
     1:
   end;
 
@@ -675,12 +632,6 @@ var
     new(p, l);
     for i := 1 to l do p^[i] := s[i];
     strl := p
-  end;
-
-  { get length of pstring, nil-safe }
-  function lenpp(s: pstring): integer;
-  begin
-    if s = nil then lenpp := 0 else lenpp := max(s^)
   end;
 
   { concatenate string to pstring in place }
@@ -1007,7 +958,8 @@ var
   var m: boolean; i: integer;
   begin
     m := true;
-    for i := 1 to reslen do if lcase(a[i]) <> lcase(b[i]) then m := false;
+    for i := 1 to reslen do
+      if strings.lcase(a[i]) <> strings.lcase(b[i]) then m := false;
     for i := reslen+1 to maxids do if b[i] <> ' ' then m := false;
     strequri := m
   end { equstr };
@@ -1099,7 +1051,7 @@ end;
   begin
     if p <> nil then begin
       for i := 1 to f do write(' ');
-      writep(output, p^.name, 10); writeln;
+      if p^.name <> nil then write(p^.name^:10) else write(' ':10); writeln;
       if p^.llink <> nil then prtlnk(p^.llink, f+3);
       if p^.rlink <> nil then prtlnk(p^.rlink, f+3)
     end
@@ -1637,7 +1589,7 @@ end;
       repeat
         oni := 1; optst := '          ';
         while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-          ch1 := lcase(ch); 
+          ch1 := strings.lcase(ch); 
           if optst[oni] = ' ' then optst[oni] := ch1; 
           if oni < optlen then oni := oni+1;
           nextch
@@ -1827,13 +1779,13 @@ end;
             until (chartp[ch] <> number) and ((ch <> '_') or iso7185) and
                   ((chartp[ch] <> letter) or (r < 16) or iso7185);
             { separator must be non-alpha numeric or 'e' with decimal radix }
-            if ((chartp[ch] = letter) and not ((lcase(ch) = 'e') and (r = 10))) or
+            if ((chartp[ch] = letter) and not ((strings.lcase(ch) = 'e') and (r = 10))) or
                (chartp[ch] = number) then error(241);
             val.intval := true;
             val.ival := v;
             sy := intconst;
             if ((ch = '.') and (bufnxt <> '.') and (bufnxt <> ')')) or
-               (lcase(ch) = 'e') then
+               (strings.lcase(ch) = 'e') then
               begin
                 { its a real, reject non-decimal radixes }
                 if r <> 10 then error(305);
@@ -1845,7 +1797,7 @@ end;
                     rv := rv*10+ordint[ch]; nextch; ev := ev-1
                   until chartp[ch] <> number;
                 end;
-                if lcase(ch) = 'e' then
+                if strings.lcase(ch) = 'e' then
                   begin nextch; sgn := +1;
                     if (ch = '+') or (ch ='-') then begin
                       if ch = '-' then sgn := -1;
@@ -2014,7 +1966,7 @@ end;
           realconst:   write(': ', val.valp^.rval: 9);
           stringconst: begin write(': ''');
             if val.intval then write(chr(val.ival))
-            else writep(output, val.valp^.sval, val.valp^.slgth);
+            else if val.valp^.sval <> nil then write(val.valp^.sval^);
             write('''') 
           end;
         end;
@@ -2046,7 +1998,7 @@ end;
     else
       begin
         repeat lcp1 := lcp;
-          if compp(lcp^.name, fcp^.name) then begin
+          if strings.comp(lcp^.name, fcp^.name) then begin
             (*name conflict, follow right link*)
             if incact then begin
               writeln; write('*** Duplicate in uses/joins: ');
@@ -2057,7 +2009,7 @@ end;
             if lcp^.klass = alias then error(242) else error(101);
             lcp := lcp^.rlink; lleft := false
           end else
-            if gtrp(lcp^.name, fcp^.name) then
+            if strings.gtr(lcp^.name, fcp^.name) then
               begin lcp := lcp^.rlink; lleft := false end
             else begin lcp := lcp^.llink; lleft := true end
         until lcp = nil;
@@ -2338,7 +2290,8 @@ end;
   begin
     if cp = nil then write('<nil>':intdig)
     else with cp^ do begin
-      write(cp^.snm:intdig); write(' '); writep(output, name, intdig);
+      write(cp^.snm:intdig); write(' ');
+      if name <> nil then write(name^:intdig) else write(' ':intdig);
       write(' '); wrtctp(llink); write(' '); wrtctp(rlink); write(' ');
       wrtstp(idtype); write(' ');
       case klass of
@@ -2354,7 +2307,8 @@ end;
                        begin
                          if values.valp <> nil then
                            begin
-                             with values.valp^ do writep(output, sval, slgth)
+                             with values.valp^ do
+                              if sval <> nil then write(sval^:slgth)
                            end
                        end
                      else write(values.ival:intdig)
@@ -2379,7 +2333,8 @@ end;
                  write(' ', dblptr:intdig);
                end;
         fixedt: begin write('fixed':intdig, ' '); 
-                 if floc >= 0 then write(floc:intdig) else writep(output, name, intdig);
+                 if floc >= 0 then write(floc:intdig)
+                 else if name <> nil then write(name^:intdig) else write(' ':intdig);
                  write(' ');
                  if fext then write('external':intdig) else write(' ':intdig);
                  if fext then write(fmod^.fn:intdig) else write(' ':intdig)
@@ -2536,12 +2491,13 @@ end;
         chkrefs(h, p^.llink, w); { check left }
         chkrefs(h, p^.rlink, w); { check right }
         if not p^.refer and (p^.klass <> alias) and not incact then begin
-          if not w then writeln; writep(output, p^.name, lenpp(p^.name));
+          if not w then writeln;
+          if p^.name <> nil then write(p^.name^);
           write(' unreferenced at block ending on line: ', 
                   incstk^.linecount:1);
           if h <> nil then 
-            begin write(' in function/procedure: '); 
-                  writep(output, h^.name, lenpp(h^.name)) end;
+            begin write(' in function/procedure: ');
+                  if h^.name <> nil then write(h^.name^) end;
           writeln;
           w := true
         end
@@ -4990,7 +4946,8 @@ end;
         end else begin
           if fe then begin error(117); writeln(output) end;
           write('*** undefined type-id forward reference: ');
-          writep(output, lcp1^.name, prtlln); writeln;
+          if lcp1^.name <> nil then write(lcp1^.name^:prtlln) else write(' ':prtlln);
+          writeln;
           fe := false
         end;
         putnam(lcp1)
