@@ -100,10 +100,10 @@
 
 program parse(output,command);
 
-joins services, { system services }
-      strings;  { string handling }
+joins services; { system services }
 
 uses endian,   { endian mode }
+     strings,  { string handling }
      mpb,      { machine parameter block }
      version,  { current version number }
      parcmd;   { command line parsing }
@@ -581,12 +581,12 @@ var
   var ld, ls, i: integer; r: boolean;
   begin
     ld := max(a^);  { length of pstring }
-    ls := strings.len(b);  { padded length of fixed string }
+    ls := len(b);  { padded length of fixed string }
     if ld <> ls then comppf := false
     else begin
       r := true;
       for i := 1 to ld do
-        if strings.lcase(a^[i]) <> strings.lcase(b[i]) then r := false;
+        if lcase(a^[i]) <> lcase(b[i]) then r := false;
       comppf := r
     end
   end;
@@ -597,11 +597,11 @@ var
   var ld, ls, i: integer; ca, cb: char;
   begin
     ld := max(a^);  { length of pstring }
-    ls := strings.len(b);  { padded length of fixed string }
+    ls := len(b);  { padded length of fixed string }
     i := 1;
     while (i <= ld) or (i <= ls) do begin
-      if i <= ld then ca := strings.lcase(a^[i]) else ca := ' ';
-      if i <= ls then cb := strings.lcase(b[i]) else cb := ' ';
+      if i <= ld then ca := lcase(a^[i]) else ca := ' ';
+      if i <= ls then cb := lcase(b[i]) else cb := ' ';
       if ca <> cb then begin
         gtrpf := ca < cb;
         goto 1
@@ -622,7 +622,7 @@ var
   procedure strcopy(var a: pstring; view b: string);
   begin
     disposestr(a);
-    strings.copy(a, b)
+    copy(a, b)
   end;
 
   { create pstring from string with explicit length }
@@ -638,7 +638,7 @@ var
   procedure strcat(var a: pstring; view b: string);
   var t: pstring;
   begin
-    t := strings.cat(a, b);
+    t := cat(a, b);
     disposestr(a);
     a := t
   end;
@@ -646,8 +646,8 @@ var
   { copy pstring to fixed string }
   procedure strcopyf(var a: idstr; b: pstring);
   begin
-    strings.clears(a);
-    if b <> nil then strings.copy(a, b)
+    clears(a);
+    if b <> nil then copy(a, b)
   end;
 
 (*-------------------------------------------------------------------------*)
@@ -959,7 +959,7 @@ var
   begin
     m := true;
     for i := 1 to reslen do
-      if strings.lcase(a[i]) <> strings.lcase(b[i]) then m := false;
+      if lcase(a[i]) <> lcase(b[i]) then m := false;
     for i := reslen+1 to maxids do if b[i] <> ' ' then m := false;
     strequri := m
   end { equstr };
@@ -1589,7 +1589,7 @@ end;
       repeat
         oni := 1; optst := '          ';
         while ch in ['a'..'z', 'A'..'Z', '0'..'9'] do begin
-          ch1 := strings.lcase(ch); 
+          ch1 := lcase(ch); 
           if optst[oni] = ' ' then optst[oni] := ch1; 
           if oni < optlen then oni := oni+1;
           nextch
@@ -1779,13 +1779,13 @@ end;
             until (chartp[ch] <> number) and ((ch <> '_') or iso7185) and
                   ((chartp[ch] <> letter) or (r < 16) or iso7185);
             { separator must be non-alpha numeric or 'e' with decimal radix }
-            if ((chartp[ch] = letter) and not ((strings.lcase(ch) = 'e') and (r = 10))) or
+            if ((chartp[ch] = letter) and not ((lcase(ch) = 'e') and (r = 10))) or
                (chartp[ch] = number) then error(241);
             val.intval := true;
             val.ival := v;
             sy := intconst;
             if ((ch = '.') and (bufnxt <> '.') and (bufnxt <> ')')) or
-               (strings.lcase(ch) = 'e') then
+               (lcase(ch) = 'e') then
               begin
                 { its a real, reject non-decimal radixes }
                 if r <> 10 then error(305);
@@ -1797,7 +1797,7 @@ end;
                     rv := rv*10+ordint[ch]; nextch; ev := ev-1
                   until chartp[ch] <> number;
                 end;
-                if strings.lcase(ch) = 'e' then
+                if lcase(ch) = 'e' then
                   begin nextch; sgn := +1;
                     if (ch = '+') or (ch ='-') then begin
                       if ch = '-' then sgn := -1;
@@ -1998,7 +1998,7 @@ end;
     else
       begin
         repeat lcp1 := lcp;
-          if strings.comp(lcp^.name, fcp^.name) then begin
+          if comp(lcp^.name, fcp^.name) then begin
             (*name conflict, follow right link*)
             if incact then begin
               writeln; write('*** Duplicate in uses/joins: ');
@@ -2009,7 +2009,7 @@ end;
             if lcp^.klass = alias then error(242) else error(101);
             lcp := lcp^.rlink; lleft := false
           end else
-            if strings.gtr(lcp^.name, fcp^.name) then
+            if gtr(lcp^.name, fcp^.name) then
               begin lcp := lcp^.rlink; lleft := false end
             else begin lcp := lcp^.llink; lleft := true end
         until lcp = nil;
