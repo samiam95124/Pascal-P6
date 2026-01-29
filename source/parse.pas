@@ -102,8 +102,7 @@ program parse(output,command);
 
 joins services; { system services }
 
-uses endian,   { endian mode }
-     strings,  { string handling }
+uses strings,  { string handling }
      mpb,      { machine parameter block }
      version,  { current version number }
      parcmd;   { command line parsing }
