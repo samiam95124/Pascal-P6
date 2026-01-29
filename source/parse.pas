@@ -100,9 +100,9 @@
 
 program parse(output,command);
 
-joins services; { services }
+joins services; { system services }
 
-uses endian,   { endian mode }
+uses strings,  { string handling }
      mpb,      { machine parameter block }
      version,  { current version number }
      parcmd;   { command line parsing }
@@ -160,7 +160,6 @@ const
    maxres     = 66;   { number of reserved words }
    reslen     = 9;    { maximum length of reserved words }
    explen     = 32;   { length of exception names }
-   varsqt     = 10;   { variable string quanta }
    prtlln     = 10;   { number of label characters to print in dumps }
    minocc     = 50;   { minimum occupancy for case tables }
    varmax     = 1000; { maximum number of logical variants to track }
@@ -200,13 +199,6 @@ type
      chtp = (letter,number,special,illegal,
              chstrquo,chcolon,chperiod,chlt,chgt,chlparen,chspace,chlcmt,chrem,
              chhex,choct,chbin);
-     { Here is the variable length string containment to save on space. strings
-       strings are only stored in their length rounded to the nearest 10th. }
-     strvsp = ^strvs; { pointer to variable length id string }
-     strvs = record { id string variable length }
-                 str:   packed array [1..varsqt] of char; { data contained }
-                 next:  strvsp { next }
-               end;
 
                                                             (*constants*)
                                                             (***********)
@@ -218,7 +210,7 @@ type
                        case cclass: cstclass of
                          reel: (rval: real);
                          pset: (pval: setty);
-                         strg: (slgth: 0..strglgth; sval: strvsp)
+                         strg: (slgth: 0..strglgth; sval: pstring)
                        end;
 
      valu = record case intval: boolean of
@@ -274,7 +266,7 @@ type
      keyrng = 1..33; { range of standard call keys }
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
-     filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
+     filrec = record next: filptr; fn: filnam; mn: pstring; f: text;
                      priv: boolean; linecount, lineout: integer;
                      sb: linbuf; si: lininx; sl: 0..maxlin; lo: boolean;
                      fio: boolean; use: boolean; uselist: filptr end;
@@ -283,7 +275,7 @@ type
      fpattr = (fpanone,fpaoverload,fpastatic,fpavirtual,fpaoverride);
      identifier = record
                    snm: integer; { serial number }
-                   name: strvsp; llink, rlink: ctp;
+                   name: pstring; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean;
                    refer: boolean;
                    case klass: idclass of
@@ -347,7 +339,7 @@ type
                    defined: boolean; { label defining point was seen }
                    labval,           { numeric value of label }
                    labname: integer; { internal sequental name of label }
-                   labid:   strvsp;  { id in case of identifier label }
+                   labid:   pstring;  { id in case of identifier label }
                    vlevel: levrange; { procedure level of definition }
                    slevel:  integer; { statement level of definition }
                    ipcref:  boolean; { was referenced by another proc/func }
@@ -364,7 +356,7 @@ type
                  packcom: boolean;         { used for with derived from packed }
                  ptrref: boolean;          { used for with derived from pointer }
                  define: boolean;          { is this a defining block? }
-                 modnam: strvsp;           { module name for block (if exists) }
+                 modnam: pstring;           { module name for block (if exists) }
                  inilst: ctp;              { initializer list }
                  oprprc: array [operatort] of ctp; { operator functions }
                  case occur: where of      (*   constant address*)
@@ -547,12 +539,11 @@ var
     errltb: array [1..maxftl] of errptr; { error line tracking }
     toterr: integer; { total errors in program }
     curmod: modtyp; { type of current module }
-    nammod: strvsp; { name of current module }
+    nammod: pstring; { name of current module }
     incstk: filptr; { stack of included files }
     inclst: filptr; { discard list for includes }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
-    strcnt: integer; { strings }
     cspcnt: integer; { constants }
     stpcnt: integer; { structures }
     ctpcnt: integer; { identifiers }
@@ -580,37 +571,102 @@ var
 
 (*-------------------------------------------------------------------------*)
 
-                           { recycling controls }
+                        { pstring helper functions }
 
 (*-------------------------------------------------------------------------*)
 
-  { get string quanta }
-  procedure getstr(var p: strvsp);
+  { compare pstring to fixed string (padded comparison) }
+  function comppf(a: pstring; var b: idstr): boolean;
+  var ld, ls, i: integer; r: boolean;
   begin
-     new(p); { get new entry }
-     strcnt := strcnt+1 { count }
-  end;
-
-  { recycle string quanta list }
-  procedure putstrs(p: strvsp);
-  var p1: strvsp;
-  begin
-    while p <> nil do begin
-      p1 := p; p := p^.next; dispose(p1); strcnt := strcnt-1
+    ld := max(a^);  { length of pstring }
+    ls := len(b);  { padded length of fixed string }
+    if ld <> ls then comppf := false
+    else begin
+      r := true;
+      for i := 1 to ld do
+        if lcase(a^[i]) <> lcase(b[i]) then r := false;
+      comppf := r
     end
   end;
+
+  { compare pstring to fixed string, a < b (padded comparison) }
+  function gtrpf(a: pstring; var b: idstr): boolean;
+  label 1;
+  var ld, ls, i: integer; ca, cb: char;
+  begin
+    ld := max(a^);  { length of pstring }
+    ls := len(b);  { padded length of fixed string }
+    i := 1;
+    while (i <= ld) or (i <= ls) do begin
+      if i <= ld then ca := lcase(a^[i]) else ca := ' ';
+      if i <= ls then cb := lcase(b[i]) else cb := ' ';
+      if ca <> cb then begin
+        gtrpf := ca < cb;
+        goto 1
+      end;
+      i := i + 1
+    end;
+    gtrpf := false; { strings are equal }
+    1:
+  end;
+
+  { safe dispose for pstring }
+  procedure disposestr(p: pstring);
+  begin
+    if p <> nil then dispose(p)
+  end;
+
+  { assign pstring from fixed string (dispose old, create new trimmed) }
+  procedure strcopy(var a: pstring; view b: string);
+  begin
+    disposestr(a);
+    copy(a, b)
+  end;
+
+  { create pstring from string with explicit length }
+  function strl(view s: string; l: integer): pstring;
+  var p: pstring; i: integer;
+  begin
+    new(p, l);
+    for i := 1 to l do p^[i] := s[i];
+    strl := p
+  end;
+
+  { concatenate string to pstring in place }
+  procedure strcat(var a: pstring; view b: string);
+  var t: pstring;
+  begin
+    t := cat(a, b);
+    disposestr(a);
+    a := t
+  end;
+
+  { copy pstring to fixed string }
+  procedure strcopyf(var a: idstr; b: pstring);
+  begin
+    clears(a);
+    if b <> nil then copy(a, b)
+  end;
+
+(*-------------------------------------------------------------------------*)
+
+                           { recycling controls }
+
+(*-------------------------------------------------------------------------*)
 
   { get label entry }
   procedure getlab(var p: lbp);
   begin
      new(p); { get new entry }
+     p^.labid := nil; { init pstring field }
      lbpcnt := lbpcnt+1 { add to count }
   end;
 
   { recycle label entry }
   procedure putlab(p: lbp);
   begin
-     putstrs(p^.labid); { release any id label }
+     disposestr(p^.labid); { release any id label }
      dispose(p); { release entry }
      lbpcnt := lbpcnt-1 { remove from count }
   end;
@@ -628,7 +684,7 @@ var
   procedure putcst(p: csp);
   begin
      { recycle string if present }
-     if p^.cclass = strg then putstrs(p^.sval);
+     if p^.cclass = strg then disposestr(p^.sval);
      { release entry }
      case p^.cclass of
        reel: dispose(p, reel);
@@ -705,7 +761,7 @@ var
           putnam(p1) { release }
         end
      end;
-     if p^.klass <> alias then putstrs(p^.name); { release name string }
+     if p^.klass <> alias then disposestr(p^.name); { release name string }
      { release entry according to class }
      case p^.klass of
        types: dispose(p, types);
@@ -796,7 +852,7 @@ var
       lsp := dr.fstruct; dr.fstruct := lsp^.next; putsub(lsp)
     end;
     { dispose of module name }
-    putstrs(dr.modnam);
+    disposestr(dr.modnam);
     for oi := mul to bcmop do
       if dr.oprprc[oi] <> nil then putnam(dr.oprprc[oi]);
   end; { putdsp }
@@ -896,223 +952,16 @@ var
 
 (*-------------------------------------------------------------------------*)
 
-  { find lower case of character }
-  function lcase(c: char): char;
-  begin
-    if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-    lcase := c
-  end { lcase };
-
   { find reserved word string equal to id string }
   function strequri(a: restr; var b: idstr): boolean;
   var m: boolean; i: integer;
   begin
     m := true;
-    for i := 1 to reslen do if lcase(a[i]) <> lcase(b[i]) then m := false;
+    for i := 1 to reslen do
+      if lcase(a[i]) <> lcase(b[i]) then m := false;
     for i := reslen+1 to maxids do if b[i] <> ' ' then m := false;
     strequri := m
   end { equstr };
-
-  { write variable length id string to file }
-  procedure writev(var f: text; s: strvsp; fl: integer);
-  var i: integer; c: char;
-  begin i := 1;
-    while fl > 0 do begin
-      c := ' '; if s <> nil then begin c := s^.str[i]; i := i+1 end;
-      write(f, c); fl := fl-1;
-      if i > varsqt then begin s := s^.next; i := 1 end
-    end
-  end;
-
-  { find padded length of variable length id string }
-  function lenpv(s: strvsp): integer;
-  var lc, cc, i: integer;
-  begin lc := 0; cc := 0;
-    while s <> nil do begin
-      for i := 1 to varsqt do begin
-        cc := cc+1; if s^.str[i] <> ' ' then lc := cc
-      end;
-      s := s^.next
-    end;
-    lenpv := lc
-  end;
-
-  { write padded string to file }
-  procedure writevp(var f: text; s: strvsp);
-  var l, cc, i: integer;
-  begin l := lenpv(s); cc := 0;
-    while s <> nil do begin
-      for i := 1 to varsqt do begin
-        cc := cc+1; if cc <= l then write(f, s^.str[i])
-      end;
-      s := s^.next
-    end
-  end;
-
-  { assign identifier fixed to variable length string, including allocation }
-  procedure strassvf(var a: strvsp; var b: idstr);
-  var i, j, l: integer; p, lp: strvsp;
-  begin l := maxids; p := nil; a := nil; j := 1; lp := nil;
-    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-    if b[l] = ' ' then l := 0;
-    for i := 1 to l do begin
-      if j > varsqt then p := nil;
-      if p = nil then begin
-        getstr(p); p^.next := nil; j := 1;
-        if a = nil then a := p else lp^.next := p; lp := p
-      end;
-      p^.str[j] := b[i]; j := j+1
-    end;
-    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-  end;
-
-  { assign reserved word fixed to variable length string, including allocation }
-  procedure strassvr(var a: strvsp; b: restr);
-  var i, j, l: integer; p, lp: strvsp;
-  begin l := reslen; p := nil; a := nil; lp := nil; j := 1;
-    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-    if b[l] = ' ' then l := 0;
-    for i := 1 to l do begin
-      if j > varsqt then p := nil;
-      if p = nil then begin
-        getstr(p); p^.next := nil; j := 1;
-        if a = nil then a := p else lp^.next := p; lp := p
-      end;
-      p^.str[j] := b[i]; j := j+1
-    end;
-    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-  end;
-
-  { assign exception word fixed to variable length string, including allocation }
-  procedure strassve(var a: strvsp; b: expstr);
-  var i, j, l: integer; p, lp: strvsp;
-  begin l := explen; p := nil; a := nil; lp := nil; j := 1;
-    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-    if b[l] = ' ' then l := 0;
-    for i := 1 to l do begin
-      if j > varsqt then p := nil;
-      if p = nil then begin
-        getstr(p); p^.next := nil; j := 1;
-        if a = nil then a := p else lp^.next := p; lp := p
-      end;
-      p^.str[j] := b[i]; j := j+1
-    end;
-    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-  end;
-
-  { assign constant string fixed to variable length string, including allocation }
-  procedure strassvc(var a: strvsp; b: csstr; l: integer);
-  var i, j: integer; p, lp: strvsp;
-  begin p := nil; a := nil; lp := nil; j := 1;
-    for i := 1 to l do begin
-      if j > varsqt then p := nil;
-      if p = nil then begin
-        getstr(p); p^.next := nil; j := 1;
-        if a = nil then a := p else lp^.next := p; lp := p
-      end;
-      p^.str[j] := b[i]; j := j+1
-    end;
-    if p <> nil then for j := j to varsqt do p^.str[j] := ' '
-  end;
-
-  { assign variable length string to fixed identifier }
-  procedure strassfv(var a: idstr; b: strvsp);
-  var i, j: integer;
-  begin for i := 1 to maxids do a[i] := ' '; i := 1;
-     while b <> nil do begin
-        for j := 1 to varsqt do begin a[i] := b^.str[j]; i := i+1 end;
-        b := b^.next
-     end
-  end;
-
-  { compare variable length id strings }
-  function strequvv(a, b: strvsp): boolean;
-  var m: boolean; i: integer;
-  begin
-    m := true;
-    while (a <> nil) and (b <> nil) do begin
-      for i := 1 to varsqt do if lcase(a^.str[i]) <> lcase(b^.str[i]) then m := false;
-      a := a^.next; b := b^.next
-    end;
-    if a <> b then m := false;
-    strequvv := m
-  end;
-
-  { compare variable length id strings, a < b }
-  function strltnvv(a, b: strvsp): boolean;
-  var i: integer; ca, cb: char;
-  begin ca := ' '; cb := ' ';
-    while (a <> nil) or (b <> nil) do begin
-      i := 1;
-      while (i <= varsqt) and ((a <> nil) or (b <> nil)) do begin
-        if a <> nil then ca := lcase(a^.str[i]) else ca := ' ';
-        if b <> nil then cb := lcase(b^.str[i]) else cb := ' ';
-        if ca <> cb then begin a := nil; b := nil end;
-        i := i+1
-      end;
-      if a <> nil then a := a^.next; if b <> nil then b := b^.next
-    end;
-    strltnvv := ca < cb
-  end;
-
-  { compare variable length id string to fixed }
-  function strequvf(a: strvsp; var b: idstr): boolean;
-  var m: boolean; i, j: integer; c: char;
-  begin
-    m := true; j := 1;
-    for i := 1 to maxids do begin
-      c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
-      if lcase(c) <> lcase(b[i]) then m := false;
-      if j > varsqt then begin a := a^.next; j := 1 end
-    end;
-    strequvf := m
-  end;
-
-  { compare variable length id string to fixed, a < b }
-  function strltnvf(a: strvsp; var b: idstr): boolean;
-  var i, j, f: integer; c: char;
-  begin
-    i := 1; j := 1;
-    while i < maxids do begin
-      c := ' '; if a <> nil then begin c := a^.str[j]; j := j+1 end;
-      if lcase(c) <> lcase(b[i]) then begin f := i; i := maxids end else i := i+1;
-      if j > varsqt then begin a := a^.next; j := 1 end
-    end;
-    strltnvf := lcase(c) < lcase(b[f])
-  end;
-
-  { put character to variable length string }
-
-  procedure strchrass(var a: strvsp; x: integer; c: char);
-  var i: integer; q: integer; p, l: strvsp;
-  procedure getsqt;
-  var y: integer;
-  begin
-     if p = nil then begin getstr(p); for y := 1 to varsqt do p^.str[y] := ' ';
-        p^.next := nil; if a = nil then a := p else l^.next := p
-     end
-  end;
-  begin
-     i := 1; q := 1; p := a; l := nil;
-     getsqt;
-     while i < x do begin
-        if q >= varsqt then begin q := 1; l := p; p := p^.next; getsqt end
-        else q := q+1;
-        i := i+1
-     end;
-     p^.str[q] := c
-  end;
-
-  { concatenate reserved word fixed to variable length string, including
-    allocation }
-  procedure strcatvr(var a: strvsp; b: restr);
-  var i, j, l: integer;
-  begin l := reslen;
-    while (l > 1) and (b[l] = ' ') do l := l-1; { find length of fixed string }
-    if b[l] = ' ' then l := 0;
-    j := lenpv(a); j := j+1;
-    for i := 1 to l do begin strchrass(a, j, b[i]); j := j+1 end
-  end;
 
 (*-------------------------------------------------------------------------*)
 
@@ -1201,7 +1050,7 @@ end;
   begin
     if p <> nil then begin
       for i := 1 to f do write(' ');
-      writev(output, p^.name, 10); writeln;
+      if p^.name <> nil then write(p^.name^:10) else write(' ':10); writeln;
       if p^.llink <> nil then prtlnk(p^.llink, f+3);
       if p^.rlink <> nil then prtlnk(p^.rlink, f+3)
     end
@@ -2037,7 +1886,7 @@ end;
             if lgth > strglgth then
               begin error(26); lgth := strglgth end;
             with lvp^ do
-              begin slgth := lgth; strassvc(sval, string, strglgth) end;
+              begin slgth := lgth; sval := strl(string, lgth) end;
             val.intval := false;
             val.valp := lvp
           end
@@ -2116,7 +1965,7 @@ end;
           realconst:   write(': ', val.valp^.rval: 9);
           stringconst: begin write(': ''');
             if val.intval then write(chr(val.ival))
-            else writev(output, val.valp^.sval, val.valp^.slgth);
+            else if val.valp^.sval <> nil then write(val.valp^.sval^);
             write('''') 
           end;
         end;
@@ -2148,18 +1997,18 @@ end;
     else
       begin
         repeat lcp1 := lcp;
-          if strequvv(lcp^.name, fcp^.name) then begin
+          if comp(lcp^.name, fcp^.name) then begin
             (*name conflict, follow right link*)
             if incact then begin
               writeln; write('*** Duplicate in uses/joins: ');
-              writevp(output, fcp^.name);
+              if fcp^.name <> nil then write(output, fcp^.name^);
               writeln
             end;
             { give appropriate error }
             if lcp^.klass = alias then error(242) else error(101);
             lcp := lcp^.rlink; lleft := false
           end else
-            if strltnvv(lcp^.name, fcp^.name) then
+            if gtr(lcp^.name, fcp^.name) then
               begin lcp := lcp^.rlink; lleft := false end
             else begin lcp := lcp^.llink; lleft := true end
         until lcp = nil;
@@ -2175,8 +2024,8 @@ end;
      label 1;
   begin
     while fcp <> nil do
-      if strequvf(fcp^.name, id) then goto 1
-      else if strltnvf(fcp^.name, id) then fcp := fcp^.rlink
+      if comppf(fcp^.name, id) then goto 1
+      else if gtrpf(fcp^.name, id) then fcp := fcp^.rlink
         else fcp := fcp^.llink;
 1:  if fcp <> nil then
       if fcp^.klass = alias then fcp := fcp^.actid;
@@ -2204,13 +2053,13 @@ end;
   begin
     mm := false; fcp := nil;
     while lcp <> nil do begin
-      if strequvf(lcp^.name, id) then begin
+      if comppf(lcp^.name, id) then begin
         lcp1 := lcp; if lcp1^.klass = alias then lcp1 := lcp1^.actid;
         lcp1 := inclass(lcp1);
         if lcp1 <> nil then begin fcp := lcp1; lcp := nil end
         else begin mm := true; lcp := lcp^.rlink end
       end else
-        if strltnvf(lcp^.name, id) then lcp := lcp^.rlink
+        if gtrpf(lcp^.name, id) then lcp := lcp^.rlink
         else lcp := lcp^.llink
     end
   end (*searchidnenm*) ;
@@ -2250,7 +2099,7 @@ end;
     if lcp = nil then begin
       { search module leader in the pile }
       if ptop > 0 then for pn := ptop-1 downto 0 do
-        if strequvf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
+        if comppf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
       if pdf then begin { module name was found }
         insymbol; if sy <> period then error(21) else insymbol;
         if sy <> ident then error(2)
@@ -2440,7 +2289,8 @@ end;
   begin
     if cp = nil then write('<nil>':intdig)
     else with cp^ do begin
-      write(cp^.snm:intdig); write(' '); writev(output, name, intdig);
+      write(cp^.snm:intdig); write(' ');
+      if name <> nil then write(name^:intdig) else write(' ':intdig);
       write(' '); wrtctp(llink); write(' '); wrtctp(rlink); write(' ');
       wrtstp(idtype); write(' ');
       case klass of
@@ -2456,7 +2306,8 @@ end;
                        begin
                          if values.valp <> nil then
                            begin
-                             with values.valp^ do writev(output, sval, slgth)
+                             with values.valp^ do
+                              if sval <> nil then write(sval^:slgth)
                            end
                        end
                      else write(values.ival:intdig)
@@ -2481,7 +2332,8 @@ end;
                  write(' ', dblptr:intdig);
                end;
         fixedt: begin write('fixed':intdig, ' '); 
-                 if floc >= 0 then write(floc:intdig) else writev(output, name, intdig);
+                 if floc >= 0 then write(floc:intdig)
+                 else if name <> nil then write(name^:intdig) else write(' ':intdig);
                  write(' ');
                  if fext then write('external':intdig) else write(' ':intdig);
                  if fext then write(fmod^.fn:intdig) else write(' ':intdig)
@@ -2638,12 +2490,13 @@ end;
         chkrefs(h, p^.llink, w); { check left }
         chkrefs(h, p^.rlink, w); { check right }
         if not p^.refer and (p^.klass <> alias) and not incact then begin
-          if not w then writeln; writev(output, p^.name, lenpv(p^.name));
+          if not w then writeln;
+          if p^.name <> nil then write(p^.name^);
           write(' unreferenced at block ending on line: ', 
                   incstk^.linecount:1);
           if h <> nil then 
-            begin write(' in function/procedure: '); 
-                  writev(output, h^.name, lenpv(h^.name)) end;
+            begin write(' in function/procedure: ');
+                  if h^.name <> nil then write(h^.name^) end;
           writeln;
           w := true
         end
@@ -2716,7 +2569,7 @@ end;
     llp := display[level].flabel; { index top of label list }
     while llp <> nil do begin { traverse }
       if isid and (llp^.labid <> nil) then begin { id type label }
-        if strequvf(llp^.labid, id) then begin
+        if comppf(llp^.labid, id) then begin
           fllp := llp; { set entry found }
           llp := nil { stop }
         end else llp := llp^.nextlab { next in list }
@@ -2735,7 +2588,7 @@ end;
       begin getlab(llp);
         with llp^ do
           begin labid := nil; labval := 0;
-            if isid then strassvf(labid, id) { id type label }
+            if isid then strcopy(labid, id) { id type label }
             else labval := val.ival; { numeric type label }
             if labval > 9999 then error(261);
             genlabel(lbname); defined := false; nextlab := flabel;
@@ -5084,7 +4937,7 @@ end;
       while fwptr <> nil do begin
         lcp1 := fwptr;
         fwptr := lcp1^.next;
-        strassfv(id, lcp1^.name);
+        strcopyf(id, lcp1^.name);
         searchidnenm([types], lcp2, mm);
         if lcp2 <> nil then begin
           lcp1^.idtype^.eltype := lcp2^.idtype;
@@ -5092,7 +4945,8 @@ end;
         end else begin
           if fe then begin error(117); writeln(output) end;
           write('*** undefined type-id forward reference: ');
-          writev(output, lcp1^.name, prtlln); writeln;
+          if lcp1^.name <> nil then write(lcp1^.name^:prtlln) else write(' ':prtlln);
+          writeln;
           fe := false
         end;
         putnam(lcp1)
@@ -5126,7 +4980,7 @@ end;
                   if sy = ident then
                     begin new(lcp,konst); ininam(lcp);
                       with lcp^ do
-                        begin klass := konst; strassvf(name, id); idtype := lsp;
+                        begin klass := konst; strcopy(name, id); idtype := lsp;
                           next := lcp1; values.intval := true;
                           values.ival := lcnt;
                         end;
@@ -5248,7 +5102,7 @@ end;
                 begin new(lcp,field); ininam(lcp);
                   if fstlab = nil then fstlab := lcp;
                   with lcp^ do
-                    begin klass := field; strassvf(name, id); idtype := nil;
+                    begin klass := field; strcopy(name, id); idtype := nil;
                       next := nxt; fldaddr := 0; varnt := vartyp;
                       varlb := varlab; tagfield := false; taglvl := lvl;
                       varsaddr := 0; varssize := 0; vartl := -1
@@ -5302,7 +5156,7 @@ end;
                 { now set up as field id }
                 new(lcp,field); ininam(lcp);
                 with lcp^ do
-                  begin klass:=field; strassvf(name, id); idtype := nil;
+                  begin klass:=field; strcopy(name, id); idtype := nil;
                     next := nil; fldaddr := displ; varnt := vartyp;
                     varlb := varlab; tagfield := true; taglvl := lvl;
                     varsaddr := 0; varssize := 0; vartl := -1
@@ -5317,7 +5171,7 @@ end;
                    if lcp1 = nil then begin error(104); lcp1 := usclrptr end;
                    { If type only (undiscriminated variant), kill the id. }
                    if mm then error(103);
-                   putstrs(lcp^.name); { release name string }
+                   disposestr(lcp^.name); { release name string }
                    lcp^.name := nil { set no tagfield }
                 end;
                 if lcp1 <> nil then begin
@@ -5463,7 +5317,7 @@ end;
                   begin { forward reference everything }
                     new(lcp,types); ininam(lcp);
                     with lcp^ do
-                      begin klass := types; strassvf(name,id); idtype := lsp;
+                      begin klass := types; strcopy(name,id); idtype := lsp;
                         next := fwptr;
                       end;
                     fwptr := lcp;
@@ -5665,7 +5519,7 @@ end;
       while sy = ident do
         begin new(lcp,konst); ininam(lcp);
           with lcp^ do
-            begin klass:=konst; strassvf(name, id); idtype := nil; next := nil;
+            begin klass:=konst; strcopy(name, id); idtype := nil; next := nil;
               refer := false
             end;
           insymbol;
@@ -5690,7 +5544,7 @@ end;
       while sy = ident do
         begin new(lcp,types); ininam(lcp);
           with lcp^ do
-            begin klass := types; strassvf(name, id); idtype := nil;
+            begin klass := types; strcopy(name, id); idtype := nil;
               refer := false
             end;
           insymbol;
@@ -5719,7 +5573,7 @@ end;
           if sy = ident then
             begin new(lcp,vars); ininam(lcp); curpar := 0;
               with lcp^ do
-               begin klass := vars; strassvf(name, id); next := nxt;
+               begin klass := vars; strcopy(name, id); next := nxt;
                   idtype := nil; vkind := actual; vlev := level;
                   refer := false; isloc := false; threat := false; forcnt := 0;
                   part := ptval; hdr := false; vext := incact; 
@@ -5893,7 +5747,7 @@ end;
         if sy = ident then
           begin new(lcp,fixedt); ininam(lcp);
             with lcp^ do
-             begin klass := fixedt; strassvf(name, id);
+             begin klass := fixedt; strcopy(name, id);
                idtype := nil; floc := -1; fext := incact; fmod := incstk
              end;
             enterid(lcp);
@@ -5982,7 +5836,7 @@ end;
                         lc := lc-ptrsize*2; { mp and addr }
                         alignd(parmptr,lc);
                         with lcp^ do
-                          begin klass:=proc; strassvf(name, id); idtype := nil;
+                          begin klass:=proc; strcopy(name, id); idtype := nil;
                             next := lcp1;
                             pflev := level (*beware of parameter procedures*);
                             pfdeckind:=declared; pflist := nil;
@@ -6014,7 +5868,7 @@ end;
                             lc := lc-ptrsize*2; { mp and addr }
                             alignd(parmptr,lc);
                             with lcp^ do
-                              begin klass:=func; strassvf(name, id);
+                              begin klass:=func; strcopy(name, id);
                                 idtype := nil; next := lcp1;
                                 pflev := level (*beware param funcs*);
                                 pfdeckind:=declared; pflist := nil;
@@ -6076,7 +5930,7 @@ end;
                           if sy = ident then
                             begin new(lcp,vars); ininam(lcp);
                               with lcp^ do
-                                begin klass:=vars; strassvf(name,id);
+                                begin klass:=vars; strcopy(name,id);
                                   idtype:=nil; vkind := lkind; next := lcp2;
                                   vlev := level; keep := true; refer := false;
                                   isloc := false; threat := false; forcnt := 0; 
@@ -6365,8 +6219,8 @@ end;
               inop:  ops := 'in       '; xorop: ops := 'xor      ';
               notop: ops := 'not      '; bcmop: ops := ':=       ';
             end;
-            strassvr(name, ops)
-          end else strassvf(name, ids);
+            strcopy(name, ops)
+          end else strcopy(name, ids);
           idtype := nil; next := nil;
           sysrot := false; extern := false; pflev := level; 
           genlabel(lbname); pfdeckind := declared; pfkind := actual; 
@@ -6383,7 +6237,7 @@ end;
                 { have to create a label for far references to virtual }
                 new(lcp3,vars); ininam(lcp3);
                 with lcp3^ do begin klass := vars;
-                  strassvf(name, ids); strcatvr(name, '__virtvec');
+                  strcopy(name, ids); strcat(name, '__virtvec');
                   idtype := nilptr; vkind := actual; next := nil;
                   vlev := 0; vaddr := gc; isloc := false; threat := false;
                   forcnt := 0; part := ptval; hdr := false; 
@@ -7366,7 +7220,8 @@ end;
     { have not previously parsed this module }
     new(fp);
     with fp^ do begin
-      next := incstk; incstk := fp; strassvf(mn, id); priv := false; 
+      mn := nil; { init before strcopy }
+      next := incstk; incstk := fp; strcopy(mn, id); priv := false; 
       si := 1; sl := 0; 
       lo := false; fio := true; use := isuse; uselist := nil;
       if isuse then insertuse(fp);
@@ -7386,7 +7241,7 @@ end;
       until ff or me;
       if not ff then begin err; error(264) end
       else begin assign(f, fn); reset(f) end;
-      if not ff then putstrs(fp^.mn)
+      if not ff then disposestr(fp^.mn)
     end;
     if not ff then dispose(fp)
   end;
@@ -7408,7 +7263,7 @@ end;
   var fp: filptr;
   begin
     while fl <> nil do begin
-      fp := fl; fl := fl^.next; putstrs(fp^.mn); dispose(fp)
+      fp := fl; fl := fl^.next; disposestr(fp^.mn); dispose(fp)
     end
   end;
 
@@ -7424,7 +7279,7 @@ end;
 
   procedure usesjoins;
   var sys: symbol; ff: boolean; eols: boolean;
-      lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
+      lists: boolean; nammods, modnams, thismod: pstring; gcs: addrrange;
       curmods: modtyp; sym: symbol; dup: boolean;
   function schnam: boolean;
   var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
@@ -7480,7 +7335,7 @@ end;
             pile[ptop].modnam := thismod; { put back module name }
             ptop := ptop+1; top := top-1
           end
-        end else putstrs(thismod);
+        end else disposestr(thismod);
       end;
       sys := sy;
       if sy = comma then insymbol
@@ -7508,8 +7363,8 @@ end;
     if (sy = progsy) or (sy = modulesy) then
       begin insymbol;
         if sy <> ident then error(2) else begin
-          strassvf(nammod, id); { place module name }
-          strassvf(display[top].modnam, id);
+          strcopy(nammod, id); { place module name }
+          strcopy(display[top].modnam, id);
           insymbol
         end;
         if not (sy in [lparent,semicolon]) then error(14);
@@ -7570,7 +7425,7 @@ end;
     if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
     if list then writeln;
     if errinx <> 0 then endofline;
-    putstrs(nammod) { release module name }
+    disposestr(nammod) { release module name }
   end (*modulep*) ;
 
   procedure stdnames;
@@ -7687,7 +7542,7 @@ end;
     else new(cp,func,standard);
     ininam(cp);
     with cp^ do
-      begin klass := idc; strassvr(name, na[sn]); idtype := idt;
+      begin klass := idc; strcopy(name, na[sn]); idtype := idt;
         pflist := nil; next := nil; key := kn;
         pfdeckind := standard; pfaddr := 0; pext := false;
         pmod := nil; pfattr := fpanone; grpnxt := nil; grppar := cp;
@@ -7699,7 +7554,7 @@ end;
   begin
     new(cp,types); ininam(cp);
     with cp^ do
-      begin klass := types; strassvr(name, na[sn]); idtype := idt end;
+      begin klass := types; strcopy(name, na[sn]); idtype := idt end;
     enterid(cp)
   end;
 
@@ -7707,7 +7562,7 @@ end;
   begin
     new(cp,konst); ininam(cp);
     with cp^ do
-      begin klass := konst; strassvr(name, na[sn]); idtype := idt; next := nil;
+      begin klass := konst; strcopy(name, na[sn]); idtype := idt; next := nil;
         values.intval := true; values.ival := i end;
     enterid(cp)
   end;
@@ -7718,7 +7573,7 @@ end;
     new(cp,konst); ininam(cp); new(lvp,reel); pshcst(lvp); lvp^.cclass := reel;
     lvp^.rval := r;
     with cp^ do
-      begin klass := konst; strassvr(name, na[sn]); idtype := idt; next := nil;
+      begin klass := konst; strcopy(name, na[sn]); idtype := idt; next := nil;
         values.intval := false; values.valp := lvp end;
     enterid(cp)
   end;
@@ -7727,7 +7582,7 @@ end;
   begin
     new(cp,vars); ininam(cp);
     with cp^ do
-    begin klass := vars; strassvr(name, na[sn]); idtype := textptr;
+    begin klass := vars; strcopy(name, na[sn]); idtype := textptr;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+filesize+charsize; { files are global now }
       isloc := false; threat := false; forcnt := 0; part := ptval; hdr := false;
@@ -7740,7 +7595,7 @@ end;
   begin
     new(cp,vars); ininam(cp);
     with cp^ do
-    begin klass := vars; strassve(name, en); idtype := exceptptr;
+    begin klass := vars; strcopy(name, en); idtype := exceptptr;
       vkind := actual; next := nil; vlev := 1;
       vaddr := gc; gc := gc+exceptsize;
       isloc := false; threat := false; forcnt := 0; part := ptval; hdr := false;
@@ -7776,7 +7631,7 @@ end;
     for i := 1 to 2 do
       begin new(cp,konst); ininam(cp);                        (*false,true*)
         with cp^ do
-          begin klass := konst; strassvr(name, na[i]); idtype := boolptr;
+          begin klass := konst; strcopy(name, na[i]); idtype := boolptr;
             next := cp1; values.intval := true; values.ival := i - 1;
           end;
         enterid(cp); cp1 := cp
@@ -7795,7 +7650,7 @@ end;
       begin
         new(cp,vars); ininam(cp);                                (*parameter of predeclared functions*)
         with cp^ do
-          begin klass := vars; strassvr(name, '         '); idtype := realptr;
+          begin klass := vars; strcopy(name, '         '); idtype := realptr;
             vkind := actual; next := nil; vlev := 1; vaddr := 0;
             isloc := false; threat := false; forcnt := 0; part := ptval; 
             hdr := false; vext := false; vmod := nil; inilab := -1; 
@@ -7803,7 +7658,7 @@ end;
           end;
         new(cp1,func,declared,actual); ininam(cp1);            (*sin,cos,exp*)
         with cp1^ do                                           (*sqrt,ln,arctan*)
-          begin klass := func; strassvr(name, na[i]); idtype := realptr;
+          begin klass := func; strcopy(name, na[i]); idtype := realptr;
             pflist := cp; forwdecl := false; sysrot := true; extern := false; 
             pflev := 0; pfname := i - 12; pfdeckind := declared; 
             pfkind := actual; pfaddr := 0; pext := false; pmod := nil; 
@@ -7945,15 +7800,15 @@ end;
   begin
     new(utypptr,types); ininam(utypptr);
     with utypptr^ do
-      begin klass := types; strassvr(name, '         '); idtype := nil end;
+      begin klass := types; strcopy(name, '         '); idtype := nil end;
     new(ucstptr,konst); ininam(ucstptr);
     with ucstptr^ do
-      begin klass := konst; strassvr(name, '         '); idtype := nil;
+      begin klass := konst; strcopy(name, '         '); idtype := nil;
         next := nil; values.intval := true; values.ival := 0
       end;
     new(uvarptr,vars); ininam(uvarptr);
     with uvarptr^ do
-      begin klass := vars; strassvr(name, '         '); idtype := nil;
+      begin klass := vars; strcopy(name, '         '); idtype := nil;
         vkind := actual; next := nil; vlev := 0; vaddr := 0;
         isloc := false; threat := false; forcnt := 0; part := ptval; 
         hdr := false; vext := false; vmod := nil; inilab := -1; ininxt := nil;
@@ -7961,14 +7816,14 @@ end;
       end;
     new(ufldptr,field); ininam(ufldptr);
     with ufldptr^ do
-      begin klass := field; strassvr(name, '         '); idtype := nil;
+      begin klass := field; strcopy(name, '         '); idtype := nil;
         next := nil; fldaddr := 0; varnt := nil; varlb := nil;
         tagfield := false; taglvl := 0; varsaddr := 0;
         varssize := 0; vartl := -1
       end;
     new(uprcptr,proc,declared,actual); ininam(uprcptr);
     with uprcptr^ do
-      begin klass := proc; strassvr(name, '         '); idtype := nil;
+      begin klass := proc; strcopy(name, '         '); idtype := nil;
         forwdecl := false; next := nil; sysrot := false; extern := false; 
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := uprcptr;
@@ -7976,7 +7831,7 @@ end;
       end;
     new(ufctptr,func,declared,actual); ininam(ufctptr);
     with ufctptr^ do
-      begin klass := func; strassvr(name, '         '); idtype := nil;
+      begin klass := func; strcopy(name, '         '); idtype := nil;
         next := nil; forwdecl := false; sysrot := false; extern := false; 
         pflev := 0; genlabel(pfname); pflist := nil; pfdeckind := declared;
         pfkind := actual; pmod := nil; grpnxt := nil; grppar := ufctptr;
@@ -8046,7 +7901,6 @@ end;
     for i := 1 to maxftl do errltb[i] := nil;
     toterr := 0; { clear error count }
     { clear the recycling tracking counters }
-    strcnt := 0; { strings }
     cspcnt := 0; { constants }
     stpcnt := 0; { structures }
     ctpcnt := 0; { identifiers }
@@ -8287,7 +8141,8 @@ begin
   { init for lookahead }
   sy := ident; op := mul; lgth := 0; kk := 1;
   { open input file }
-  new(fp); with fp^ do begin 
+  new(fp); with fp^ do begin
+      mn := nil; { init pstring field }
       next := incstk; incstk := fp; priv := false; linecount := 0; lineout := 0;
       si := 1; sl := 0; lo := false; fio := false
   end;
@@ -8335,7 +8190,6 @@ begin
     writeln;
     writeln('Recycling tracking counts:');
     writeln;
-    writeln('string quants:              ', strcnt:1);
     writeln('constants:                  ', cspcnt:1);
     writeln('structures:                 ', stpcnt:1);
     writeln('identifiers:                ', ctpcnt:1);
@@ -8353,9 +8207,6 @@ begin
 
   { perform errors for recycling balance }
 
-  if strcnt <> 0 then
-     writeln('*** Error: Compiler internal error: string recycle balance: ',
-             strcnt:1);
   if cspcnt <> 0 then
      writeln('*** Error: Compiler internal error: constant recycle balance: ',
              cspcnt:1);
