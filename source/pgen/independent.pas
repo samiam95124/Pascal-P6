@@ -996,6 +996,19 @@ begin
   end
 end;
 
+{ compare strings using padded length (ignores container size differences) }
+function streqp(view a, b: string): boolean;
+var i, la, lb: integer; r: boolean;
+begin
+  la := lenp(a); lb := lenp(b);
+  if la <> lb then r := false
+  else begin
+    r := true;
+    for i := 1 to la do if a[i] <> b[i] then r := false
+  end;
+  streqp := r
+end;
+
 { make string from string substring }
 function strl(view s: string; l: integer): pstring;
 var p: pstring; i: integer;
@@ -1179,7 +1192,7 @@ var ep, lp, fp: expptr;
 begin
   ep := jmpstr; lp := nil; fp := nil;
   while ep <> nil do begin
-    if ep^.qs^ = s then begin fp := ep; ep := nil end
+    if streqp(ep^.qs^, s) then begin fp := ep; ep := nil end
     else begin lp := ep; ep := ep^.next end
   end;
   if fp <> nil then if fp^.l <> nil then begin
