@@ -80,7 +80,8 @@ uses endian,    { endian mode }
      mpb,       { machine parameter block }
      version,   { current version number }
      parcmd,    { command line parsing }
-     registers; { cpu specific registers }
+     registers, { cpu specific registers }
+     strings;   { string handling }
 
 const
 
@@ -895,75 +896,6 @@ inplin:         linbuf; { buffer for input line }
 inpinx:         lininx; { current input line position }
 inplen:         0..maxlin; { length of input line }
 
-procedure wrtnum(var tf: text; v: integer; r: integer; f: integer; lz: boolean);
-const digmax = 64; { maximum total digits }
-var p,i,x,d,t,n: integer; sgn: boolean;
-    digits: packed array [1..digmax] of char;
-function digit(d: integer): char;
-var c: char;
-begin
-  if d < 10 then c := chr(d+ord('0'))
-  else c := chr(d-10+ord('A'));
-  digit := c
-end;
-begin sgn := false;
-   if (r = 10) and (v < 0) then begin sgn := true; v := -v; lz := false end;
-   if r = 16 then n := hexdig
-   else if r = 10 then n := decdig
-   else if r = 8 then n := octdig
-   else n := bindig;
-   for i := 1 to digmax do digits[i] := '0';
-   { adjust signed radix }
-   if (r = 16) and (v < 0) then begin
-     v := v+1+maxint; { convert number to 31 bit unsigned }
-     t := v div maxpow16+8; { extract high digit w/sign }
-     digits[hexdig] := digit(t); { place high digit }
-     v := v mod maxpow16; { remove digit }
-     n := hexdig-1 { set number of digits-1 }
-   end else if (r = 8) and (v < 0) then begin
-     v := v+1+maxint; { convert number to 31 bit unsigned }
-     if (bindig mod 3) = 2 then { top is either 2 bits or 1 }
-       t := v div maxpow8+4 { extract high digit w/sign }
-     else t := 1; { it is sign }
-     digits[octdig] := digit(t); { place high digit }
-     v := v mod maxpow8; { remove digit }
-     n := octdig-1 { set number of digits-1 }
-   end else if (r = 2) and (v < 0) then begin
-     v := v+1+maxint; { convert number to 31 bit unsigned }
-     digits[bindig] := '1'; { place high digit (sign) }
-     n := bindig-1 { set number of digits-1 }
-   end;
-   p := 1;
-   for i := 1 to n do begin
-      d := v div p mod r; { extract digit }
-      digits[i] := digit(d); { place }
-      if i < n then p := p*r
-   end;
-   i := digmax;
-   while (digits[i] = '0') and (i > 1) do i := i-1; { find sig digits }
-   if sgn then begin digits[i+1] := '-'; i := i+1 end;
-   if not lz then for x := digmax downto i+1 do digits[x] := ' ';
-   if i > f then f := i;
-   if f > digmax then begin
-     for i := 1 to f-8 do if lz then write(tf, '0') else write(tf, ' ');
-     f := digmax
-   end;
-   { print result }
-   for i := f downto 1 do write(tf, digits[i])
-end;
-
-procedure wrthex(var tf: text; v: integer; f: integer; lz: boolean);
-begin
-  wrtnum(tf, v, 16, f, lz)
-end;
-
-{ find lower case of character }
-function lcase(c: char): char;
-begin
-  if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-  lcase := c
-end { lcase };
-
 function digits(i: integer): integer;
 var dc: integer;
 begin
@@ -978,58 +910,6 @@ begin
   if fl > 0 then write(prr, ' ':fl)
 end;
 
-{*******************************************************************************
-
-Pascaline string handling
-
-*******************************************************************************}
-
-{ find length of right padded string }
-function lenp(view s: string): integer;
-var i: integer;
-begin
-  if max(s) = 0 then lenp := 0 else begin
-    i := max(s);
-    while (s[i] = ' ') and (i > 1) do i := i-1;
-    if s[i] <> ' ' then i := i+1;
-    lenp := i-1
-  end
-end;
-
-{ compare strings using padded length (ignores container size differences) }
-function streqp(view a, b: string): boolean;
-var i, la, lb: integer; r: boolean;
-begin
-  la := lenp(a); lb := lenp(b);
-  if la <> lb then r := false
-  else begin
-    r := true;
-    for i := 1 to la do if a[i] <> b[i] then r := false
-  end;
-  streqp := r
-end;
-
-{ make string from string substring }
-function strl(view s: string; l: integer): pstring;
-var p: pstring; i: integer;
-begin
-  new(p, l);
-  for i := 1 to l do p^[i] := s[i];
-  strl := p
-end;
-
-{ make string from string }
-function str(view s: string): pstring;
-begin
-  str := strl(s, max(s))
-end;
-
-{ make string from padded string }
-function strp(view s: string): pstring;
-begin
-  strp := strl(s, lenp(s))
-end;
-
 { write string with escaped quotes to file }
 procedure writeq(var f: text; view s: string; fl: integer);
 var i: integer; c: char;
@@ -1041,29 +921,6 @@ begin i := 1;
     else write(f, c);
     fl := fl-1
   end
-end;
-
-{ concatenate strings }
-procedure cat(var d: pstring; view s: string);
-var p: pstring; i,x: integer; ld, ls: integer;
-begin
-  ld := max(d^);
-  ls := max(s);
-  new(p, ld+ls);
-  for i := 1 to ld do p^[i] := d^[i];
-  x := ld+1;
-  for i := 1 to ls do begin p^[x] := s[i]; x := x+1 end;
-  dispose(d);
-  d := p
-end;
-
-{ match padded strings }
-function matchp(view a, b: string): boolean;
-var la, lb, i: integer;
-begin
-  la := lenp(a); lb := lenp(b); matchp := true;
-  if la <> lb then matchp := false
-  else for i := 1 to la do if a[i] <> b[i] then matchp := false
 end;
 
 { align address, upwards }
@@ -1151,13 +1008,13 @@ end;
 procedure putlabel(x: labelrg);
 var p: integer; digit: boolean; sc: packed array [1..1] of char;
 begin
-  labeltab[x].ref :=  strp(sn); cat(labeltab[x].ref, '.');
+  labeltab[x].ref := cat(extract(sn, 1, len(sn)), '.');
   p := maxpow10;
   digit := false;
   while p > 0 do begin
     if ((x div p) mod 10 <> 0) or (p = 1) or digit then begin
       sc[1] := chr((x div p) mod 10+ord('0'));
-      cat(labeltab[x].ref, sc); 
+      labeltab[x].ref := cat(labeltab[x].ref, sc); 
       digit := true
     end;
     p := p div 10
@@ -1192,7 +1049,7 @@ var ep, lp, fp: expptr;
 begin
   ep := jmpstr; lp := nil; fp := nil;
   while ep <> nil do begin
-    if streqp(ep^.qs^, s) then begin fp := ep; ep := nil end
+    if compcp(ep^.qs^, s) then begin fp := ep; ep := nil end
     else begin lp := ep; ep := ep^.next end
   end;
   if fp <> nil then if fp^.l <> nil then begin
@@ -1430,9 +1287,9 @@ begin fl := nil;
   getnxt; 
   if ch in ['0'..'9'] then getint(x) { near label }
   else begin { far label }
-    fl := strp(sn); cat(fl, '.');
+    fl := cat(extract(sn, 1, len(sn)), '.');
     getsds; cvtsds;
-    for j := 1 to snl do begin cs[1] := sn[j]; cat(fl, cs) end
+    for j := 1 to snl do begin cs[1] := sn[j]; fl := cat(fl, cs) end
   end
 end;
 
@@ -1620,7 +1477,7 @@ begin
   if bp <> nil then begin
     wrtblks(bp^.parent, s, fl);
     if s then wrtblksht(bp, fl)
-    else begin write(prr, bp^.name^); fl := fl+lenp(bp^.name^) end;
+    else begin write(prr, bp^.name^); fl := fl+len(bp^.name^) end;
     write(prr, '.'); fl := fl+1
   end
 end;
@@ -1642,7 +1499,7 @@ var ovrmax: integer;
 begin
   ovrmax := 0;
   while bp <> nil do begin
-    if matchp(bn, bp^.bname^) and (bp^.en > ovrmax) then ovrmax := bp^.en;
+    if compcp(bn, bp^.bname^) and (bp^.en > ovrmax) then ovrmax := bp^.en;
     bp := bp^.incnxt
   end;
   fndovrmax := ovrmax 
@@ -1690,7 +1547,7 @@ begin
   end;
   if fsp <> nil then begin
     write(f, fbp^.bname^); write(f, '.'); write(f, fsp^.name^); 
-    fl := fl+lenp(fbp^.bname^)+1+lenp(fsp^.name^)
+    fl := fl+len(fbp^.bname^)+1+len(fsp^.name^)
   end else begin 
     write(f, 'globals_start+', a:1); fl := fl+14+digits(a) 
   end
@@ -1830,18 +1687,18 @@ begin
                 error('Block type is invalid');
               ch1 := ch; { save block type }
               getnxt; skpspc; getsds; sn2 := sn; snl2 := snl; cvtsds;
-              new(bp); bp^.name := strp(sn);
+              new(bp); bp^.name := extract(sn, 1, len(sn));
               { get basename, without type }
               l := 2; bp^.short := true;
               while (l < lablen) and (sn[l] <> '$') do l := l+1;
-              if sn[l] = '$' then bp^.bname := strl(sn, l-1)
+              if sn[l] = '$' then bp^.bname := extract(sn, 1, l-1)
               else begin
-                bp^.bname := strp(sn); { just use whole name }
+                bp^.bname := extract(sn, 1, len(sn)); { just use whole name }
                 bp^.short := false
               end;
-              bp^.tmpnam := str(bp^.bname^); { copy to temp id }
+              bp^.tmpnam := copy(bp^.bname^); { copy to temp id }
               ts := '$_tmpspc  '; l := max(bp^.tmpnam^);
-              for i := 1 to 8 do begin cs[1] := ts[i]; cat(bp^.tmpnam, cs) end; 
+              for i := 1 to 8 do begin cs[1] := ts[i]; bp^.tmpnam := cat(bp^.tmpnam, cs) end; 
               bp^.symbols := nil;
               bp^.incnxt := nil;
               case ch1 of { block type }
@@ -1881,7 +1738,7 @@ begin
             end;
       's': begin { symbol }
              getlab;
-             new(sp); sp^.name := strp(sn);
+             new(sp); sp^.name := extract(sn, 1, len(sn));
              sn2 := sn; snl2 := snl;
              skpspc;
              if not (ch in ['g', 'l','p','f','c']) then
@@ -1904,7 +1761,7 @@ begin
                end;
              if sgn then ad := -ad;
              sp^.off := ad; getsds;
-             sp^.digest := strp(sn);
+             sp^.digest := extract(sn, 1, len(sn));
              if anyshort(blkstk) and (ch1 in ['g','l','p']) then begin
                wrtblks(blkstk, true, fl); 
                if ch1 = 'g' then 
@@ -2018,7 +1875,7 @@ begin
                         begin sn[i] := ch; i := i+1; getnxt end;
                       new(cstp2); cstp2^.ct := cstr;
                       cstp2^.next := cstp^.tb; cstp^.tb := cstp2;
-                      cstp2^.str := strp(sn); cstp2^.strl := i-1; 
+                      cstp2^.str := extract(sn, 1, len(sn)); cstp2^.strl := i-1; 
                       cstp2^.strn := 0
                     end;
                'c': begin
@@ -2341,7 +2198,7 @@ begin
      if cur = '$' then begin next; write(prr, '$'); j := j+1;
        if cur = '0' then begin write(prr, i1:1); j := j+digits(i1) end
        else if cur = '1' then begin write(prr, i2:1); j := j+digits(i2) end
-       else if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
+       else if cur = 's' then begin write(prr, sn); j := j+len(sn) end
        else begin write(prr, cur); j := j+1 end
      end else if cur = '%' then begin next; 
        if regprefix then begin write(prr, '%'); j := j+1 end;
@@ -2365,7 +2222,7 @@ begin
        else if cur = '1' then begin write(prr, i2:1); j := j+digits(i1) end
        else begin write(prr, cur);  j := j+1 end
      end else if cur = '@' then begin next;
-       if cur = 's' then begin write(prr, sn); j := j+lenp(sn) end
+       if cur = 's' then begin write(prr, sn); j := j+len(sn) end
        else if cur = 'g' then wrtgbl(prr, i1, j)
        else if cur = 'l' then wrtlcl(prr, i2, i1, j)
        else begin write(prr, cur); j := j+1 end
