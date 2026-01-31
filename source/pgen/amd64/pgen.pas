@@ -2223,7 +2223,7 @@ begin { assemble }
         end
       until c = '''';
       getexp(ep); attach(ep); pshstk(ep);
-      new(cstp); cstp^.ct := cstr; cstp^.str := strp(str); 
+      new(cstp); cstp^.ct := cstr; cstp^.str := extract(str, 1, len(str)); 
       cstp^.strl := l; strnum := strnum+1; cstp^.strn := strnum;
       cstp^.next := csttbl; csttbl := cstp; ep^.strn := strnum
     end;
