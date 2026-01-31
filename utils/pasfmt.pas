@@ -43,7 +43,9 @@
 
 program pasfmt(output, command);
 
-uses parcmd;
+joins parse, services;
+
+uses strings;
 
 label 99; { terminate immediately }
 
@@ -51,6 +53,7 @@ const
     { maximum lengths }
     maxids   = 250;   { maximum characters in id string }
     maxlinp  = 2000;  { maximum line length }
+    cmdmax   = 250;   { maximum command line length }
     maxres   = 66;    { number of reserved words }
     reslen   = 9;     { maximum length of reserved words }
     fillen   = maxids;
@@ -145,8 +148,11 @@ var
     errtbl:   array [1..maxftl] of integer; { error occurrence tracking }
     errltb:   array [1..maxftl] of errptr;  { error line tracking }
     experr:   boolean;           { expanded error descriptions }
-    list:     boolean;           { source listing enabled }
+    listmode: boolean;           { source listing enabled }
     iso7185:  boolean;           { restrict to ISO 7185 language }
+
+    { command line parsing }
+    cmdhan:   parse.parhan;      { command line parser handle }
 
     { reserved words }
     rw:       array [1..maxres] of restr;   { reserved words }
@@ -174,13 +180,6 @@ var
                               Utility Routines
 
 ******************************************************************************}
-
-{ find lower case of character }
-function lcase(c: char): char;
-begin
-    if c in ['A'..'Z'] then c := chr(ord(c) - ord('A') + ord('a'));
-    lcase := c
-end;
 
 { compare reserved word to identifier }
 function strequri(a: restr; var b: idstr): boolean;
@@ -223,7 +222,7 @@ begin
     end else
         eofinp := true;
     eol := false;
-    if list then wrtsrclin
+    if listmode then wrtsrclin
 end;
 
 procedure nextch;
@@ -786,7 +785,7 @@ var lastpos, freepos, currpos, currnmr, f, j, k: integer; df: boolean;
 begin
     if errinx > 0 then begin
         { output source line if not already listed }
-        if not list then wrtsrclin;
+        if not listmode then wrtsrclin;
         write(lineno:6, ' ****  ':9);
         lastpos := -1; freepos := 1;
         for k := 1 to errinx do begin
@@ -1694,10 +1693,77 @@ begin
     typedels := [arraysy, recordsy, setsy, filesy]
 end;
 
+{******************************************************************************
+
+Parse command line options
+
+Parses options from the command line. Options are:
+  -l, --list     List source lines while processing
+  -s, --iso7185  Format as ISO 7185 Pascal (not Pascaline)
+  -e, --experr   Show expanded error descriptions (default on)
+
+******************************************************************************}
+
+procedure paropt;
+var w:      filnam;   { word holder }
+    err:    boolean;  { error flag }
+    optfnd: boolean;  { option found }
+
+{ set true/false flag from option }
+procedure setflg(view a, n: string; var f: boolean);
+var ts: packed array [1..40] of char;
+    i: integer;
+begin
+    if compp(w, n) or compp(w, a) then begin
+        f := true;
+        optfnd := true
+    end else begin
+        { try negative form: n + name }
+        for i := 1 to 40 do ts[i] := ' ';
+        ts[1] := 'n';
+        for i := 1 to max(n) do if i < 40 then ts[i+1] := n[i];
+        if compp(w, ts) then begin
+            f := false;
+            optfnd := true
+        end else begin
+            { try negative short form }
+            for i := 1 to 40 do ts[i] := ' ';
+            ts[1] := 'n';
+            for i := 1 to max(a) do if i < 40 then ts[i+1] := a[i];
+            if compp(w, ts) then begin
+                f := false;
+                optfnd := true
+            end
+        end
+    end
+end;
+
+begin
+    parse.skpspc(cmdhan); { skip spaces }
+    while parse.chkchr(cmdhan) = services.optchr do begin { parse option }
+        optfnd := false;
+        parse.getchr(cmdhan); { skip option marker }
+        { allow double option character (--option) }
+        if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
+        parse.parlab(cmdhan, w, err); { parse option label }
+        if err then begin
+            writeln('*** Error: Invalid option');
+            goto 99
+        end;
+        setflg('l', 'list', listmode);
+        setflg('s', 'iso7185', iso7185);
+        setflg('e', 'experr', experr);
+        if not optfnd then begin
+            writeln('*** Error: Unknown option: ', w:*);
+            goto 99
+        end;
+        parse.skpspc(cmdhan)
+    end
+end;
+
 procedure initialize;
 var i: integer;
-    wasproc: boolean;
-    fn: filnam;
+    err: boolean;
 begin
     initreserved;
     initchartables;
@@ -1724,7 +1790,7 @@ begin
     toterr := 0;
     errinx := 0;
     experr := true; { show expanded error messages }
-    list := false;  { don't list source by default }
+    listmode := false;  { don't list source by default }
     for i := 1 to maxftl do begin errtbl[i] := 0; errltb[i] := nil end;
     hascmt := false;
     cmtlen := 0;
@@ -1737,31 +1803,62 @@ begin
     end;
     for i := 1 to strglgth do sval[i] := ' ';
 
-    { get input filename from command line }
-    getcommandline;
-    paroptions; { parse command line options }
-    iso7185 := option[19]; { get ISO 7185 flag }
-    list := option[12];    { get list flag }
-    parhdrfilnam(prd, wasproc, srcfil, '.pas');
-    if not wasproc then begin
+    { parse command line }
+    iso7185 := false; { default to Pascaline mode }
+    parse.openpar(cmdhan); { open parser }
+    parse.opencommand(cmdhan, cmdmax); { open command line }
+    paropt; { parse command options }
+    if parse.endlin(cmdhan) then begin
         writeln('*** Error: No input file specified');
-        writeln('Usage: pasfmt [-l|--list] [-s|--iso7185] <inputfile>');
+        writeln('Usage: pasfmt [-l|--list] [-s|--iso7185] [-e|--experr] <inputfile>');
         writeln('  -l, --list     List source lines while processing');
         writeln('  -s, --iso7185  Format as ISO 7185 Pascal (not Pascaline)');
+        writeln('  -e, --experr   Show expanded error messages (default on)');
         goto 99
     end;
+    parse.skpspc(cmdhan); { skip spaces }
+    parse.parfil(cmdhan, srcfil, false, err); { parse filename }
+    if err then begin
+        writeln('*** Error: Invalid filename');
+        goto 99
+    end;
+    paropt; { parse any trailing options }
+    { strip extension if present, keep base name in srcfil }
+    i := 1;
+    while (i < fillen) and (srcfil[i] <> ' ') and (srcfil[i] <> '.') do i := i + 1;
+    if srcfil[i] = '.' then begin
+        { has extension, remove it from srcfil (keep base name only) }
+        while (i <= fillen) and (srcfil[i] <> ' ') do begin
+            srcfil[i] := ' ';
+            i := i + 1
+        end
+    end;
+    { create input filename: srcfil + .pas }
+    for i := 1 to fillen do dstfil[i] := srcfil[i]; { use dstfil temporarily }
+    i := 1;
+    while (i < fillen) and (dstfil[i] <> ' ') do i := i + 1;
+    if i + 4 <= fillen then begin
+        dstfil[i] := '.';
+        dstfil[i+1] := 'p';
+        dstfil[i+2] := 'a';
+        dstfil[i+3] := 's'
+    end;
+    assign(prd, dstfil);
     reset(prd);
 
-    { create output filename by replacing extension }
+    { create output filename: srcfil + .pas.fmt }
     for i := 1 to fillen do dstfil[i] := srcfil[i];
     i := 1;
     while (i < fillen) and (dstfil[i] <> ' ') do i := i + 1;
-    { add .fmt extension }
-    if i + 4 <= fillen then begin
+    if i + 8 <= fillen then begin
         dstfil[i] := '.';
-        dstfil[i+1] := 'f';
-        dstfil[i+2] := 'm';
-        dstfil[i+3] := 't'
+        dstfil[i+1] := 'p';
+        dstfil[i+2] := 'a';
+        dstfil[i+3] := 's';
+        dstfil[i+4] := '.';
+        dstfil[i+5] := 'f';
+        dstfil[i+6] := 'm';
+        dstfil[i+7] := 't'
     end;
     assign(prr, dstfil);
     rewrite(prr)
