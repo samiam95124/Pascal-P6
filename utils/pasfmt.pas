@@ -170,6 +170,7 @@ var
     { file names }
     srcfil:   filnam;            { source filename }
     dstfil:   filnam;            { destination filename }
+    p, n, e:  filnam;            { path, name, extension components }
 
     { symbol sets for error recovery }
     constbegsys, simptypebegsys, typebegsys, blockbegsys,
@@ -1823,43 +1824,15 @@ begin
         goto 99
     end;
     paropt; { parse any trailing options }
-    { strip extension if present, keep base name in srcfil }
-    i := 1;
-    while (i < fillen) and (srcfil[i] <> ' ') and (srcfil[i] <> '.') do i := i + 1;
-    if srcfil[i] = '.' then begin
-        { has extension, remove it from srcfil (keep base name only) }
-        while (i <= fillen) and (srcfil[i] <> ' ') do begin
-            srcfil[i] := ' ';
-            i := i + 1
-        end
-    end;
-    { create input filename: srcfil + .pas }
-    for i := 1 to fillen do dstfil[i] := srcfil[i]; { use dstfil temporarily }
-    i := 1;
-    while (i < fillen) and (dstfil[i] <> ' ') do i := i + 1;
-    if i + 4 <= fillen then begin
-        dstfil[i] := '.';
-        dstfil[i+1] := 'p';
-        dstfil[i+2] := 'a';
-        dstfil[i+3] := 's'
-    end;
-    assign(prd, dstfil);
+    { break filename into path, name, extension }
+    services.brknam(srcfil, p, n, e);
+    { create input filename: path + name + .pas }
+    services.maknam(srcfil, p, n, 'pas');
+    assign(prd, srcfil);
     reset(prd);
-
-    { create output filename: srcfil + .pas.fmt }
-    for i := 1 to fillen do dstfil[i] := srcfil[i];
-    i := 1;
-    while (i < fillen) and (dstfil[i] <> ' ') do i := i + 1;
-    if i + 8 <= fillen then begin
-        dstfil[i] := '.';
-        dstfil[i+1] := 'p';
-        dstfil[i+2] := 'a';
-        dstfil[i+3] := 's';
-        dstfil[i+4] := '.';
-        dstfil[i+5] := 'f';
-        dstfil[i+6] := 'm';
-        dstfil[i+7] := 't'
-    end;
+    { create output filename: path + name + .pas.fmt }
+    services.maknam(dstfil, p, n, 'pas');
+    cat(dstfil, '.fmt');
     assign(prr, dstfil);
     rewrite(prr)
 end;
