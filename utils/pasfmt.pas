@@ -2,6 +2,50 @@
 *                                                                              *
 *                         PASCALINE SOURCE FORMATTER                           *
 *                                                                              *
+*                     Pascaline Source Code Formatter                          *
+*                     *******************************                          *
+*                                                                              *
+* Formats Pascaline source code according to the coding standard.              *
+* Derived from parse.pas with error recovery intact for robust handling        *
+* of incorrect input.                                                          *
+*                                                                              *
+* Usage: pasfmt [options] <inputfile>                                          *
+*                                                                              *
+* Converts inputfile.pas to inputfile.pas.fmt                                  *
+*                                                                              *
+* Options:                                                                     *
+*   -h, --help           Display help message                                  *
+*   -l, --list           List source lines while processing                    *
+*   -s, --iso7185        Format as ISO 7185 Pascal (not Pascaline)             *
+*   -e, --experr         Show expanded error messages (default on)             *
+*   -c, --columns <n>    Set wrap column (default 80)                          *
+*   -b, --bracketbreak   Add blank lines around begin/end, const, etc.         *
+*   -f, --flushleft      Flush left for multi-line definitions                 *
+*   -z, --columnize      Align = signs in const/type/var blocks                *
+*   -n, --sourceline     Add original source line numbers as comments          *
+*   -r, --noerror        Suppress error output (keep error count)             *
+*                                                                              *
+* Instruction File:                                                            *
+*                                                                              *
+* If inputfile.fmt exists, it is read as an instruction file. The format is:  *
+*                                                                              *
+*   command [param]                                                            *
+*   ! comment                                                                  *
+*                                                                              *
+* Commands (same as command line options):                                     *
+*   list or l           - List source lines while processing                   *
+*   iso7185 or s        - Format as ISO 7185 Pascal (not Pascaline)            *
+*   experr or e         - Show expanded error descriptions                     *
+*   columns or c <n>    - Set wrap column (default 80)                         *
+*   bracketbreak or b   - Add blank lines around begin/end, const, etc.        *
+*   flushleft or f      - Flush left for multi-line definitions                *
+*   columnize or z      - Align = signs in const/type/var blocks               *
+*   sourceline or n     - Add original source line numbers as comments         *
+*   noerror or r        - Suppress error output (keep error count)            *
+*                                                                              *
+* Comments start with '!' and continue to end of line. They can appear at the  *
+* start of a line or after commands.                                           *
+*                                                                              *
 * LICENSING:                                                                   *
 *                                                                              *
 * Copyright (c) 2024, Scott A. Franco                                          *
@@ -27,17 +71,6 @@
 * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)      *
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE   *
 * POSSIBILITY OF SUCH DAMAGE.                                                  *
-*                                                                              *
-*                     Pascaline Source Code Formatter                          *
-*                     *******************************                          *
-*                                                                              *
-* Formats Pascaline source code according to the coding standard.              *
-* Derived from parse.pas with error recovery intact for robust handling        *
-* of incorrect input.                                                          *
-*                                                                              *
-* Usage: pasfmt <inputfile>                                                    *
-*                                                                              *
-* Converts inputfile.pas to inputfile.fmt                                      *
 *                                                                              *
 *******************************************************************************}
 
@@ -128,6 +161,7 @@ var
     { output state }
     outlin:   linbufp;           { output line buffer }
     outpos:   integer;           { position in output line }
+    outlineno: integer;          { source line that started current output line }
     indent:   integer;           { current indent level }
     atbol:    boolean;           { at beginning of line }
     lastsy:   symbol;            { last symbol output }
@@ -151,8 +185,17 @@ var
     listmode: boolean;           { source listing enabled }
     iso7185:  boolean;           { restrict to ISO 7185 language }
 
+    { formatting options }
+    wrapcolumn:   integer;       { wrap column for output lines }
+    bracketbreak: boolean;       { add blank lines around structural keywords }
+    flushleft:    boolean;       { flush left for multi-line definitions }
+    columnize:    boolean;       { align = signs in const/type/var blocks }
+    sourceline:   boolean;       { add original source line numbers as comments }
+    noerror:      boolean;       { suppress error output (keep error count) }
+
     { command line parsing }
     cmdhan:   parse.parhan;      { command line parser handle }
+    inshan:   parse.parhan;      { instruction file parser handle }
 
     { reserved words }
     rw:       array [1..maxres] of restr;   { reserved words }
@@ -170,6 +213,7 @@ var
     { file names }
     srcfil:   filnam;            { source filename }
     dstfil:   filnam;            { destination filename }
+    insfil:   filnam;            { instruction filename }
     p, n, e:  filnam;            { path, name, extension components }
 
     { symbol sets for error recovery }
@@ -256,6 +300,8 @@ var i: integer;
 begin
     { clamp outpos to valid range }
     if outpos > maxlinp then outpos := maxlinp;
+    { emit source line number as comment if sourceline option enabled }
+    if sourceline then write(prr, '{', outlineno:6, '} ');
     if outpos > 0 then begin
         { trim trailing spaces }
         while (outpos > 0) and (outlin[outpos] = ' ') do
@@ -271,11 +317,18 @@ end;
 
 procedure emit_char(c: char);
 begin
-    if atbol and (indent > 0) then begin
-        { emit indent - check maxlinp to prevent buffer overflow }
-        while (outpos < indent * lindent) and (outpos < maxlinp) do begin
-            outpos := outpos + 1;
-            outlin[outpos] := ' '
+    { check for column wrap before adding character }
+    if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
+        flush_line;
+    if atbol then begin
+        { record source line that starts this output line }
+        outlineno := lineno;
+        if indent > 0 then begin
+            { emit indent - check maxlinp to prevent buffer overflow }
+            while (outpos < indent * lindent) and (outpos < maxlinp) do begin
+                outpos := outpos + 1;
+                outlin[outpos] := ' '
+            end
         end
     end;
     atbol := false;
@@ -285,6 +338,9 @@ end;
 
 procedure emit_space;
 begin
+    { check for column wrap - break line at space boundaries }
+    if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
+        flush_line;
     { note: must check outpos > 0 before accessing outlin[outpos]
       because Pascaline doesn't short-circuit and evaluations }
     if not atbol and (outpos > 0) then
@@ -302,7 +358,8 @@ end;
 
 procedure emit_blank_line;
 begin
-    flush_line;
+    if not atbol then flush_line;
+    if sourceline then write(prr, '{', lineno:6, '} ');
     writeln(prr)
 end;
 
@@ -310,6 +367,9 @@ procedure emit_kw(s: restr; len: integer);
 var i: integer;
 begin
     emit_space;
+    { check if keyword would exceed wrap column, wrap first if so }
+    if (wrapcolumn > 0) and (outpos + len > wrapcolumn) then
+        flush_line;
     for i := 1 to len do emit_char(s[i])
 end;
 
@@ -344,15 +404,35 @@ begin
     case sy of
         ident: begin
             emit_space;
+            { check if identifier would exceed wrap column, wrap first if so }
+            if (wrapcolumn > 0) and (outpos + kk > wrapcolumn) then
+                flush_line;
             for i := 1 to kk do emit_char(id[i])
         end;
         intconst: emit_int(ival);
         realconst: begin
-            emit_space;
-            write(prr, rval:1) { use built-in real output }
+            { real output - must be careful about buffer interleaving }
+            { flush current buffer, write real directly, continue on same line }
+            if atbol then outlineno := lineno;
+            if sourceline and atbol then write(prr, '{', outlineno:6, '} ');
+            if outpos > 0 then begin
+                { trim trailing spaces }
+                while (outpos > 0) and (outlin[outpos] = ' ') do
+                    outpos := outpos - 1;
+                for i := 1 to outpos do write(prr, outlin[i]);
+                write(prr, ' ')
+            end;
+            write(prr, rval:1);
+            { reset buffer state for continuation }
+            outpos := 0;
+            for i := 1 to maxlinp do outlin[i] := ' ';
+            atbol := false
         end;
         stringconst: begin
             emit_space;
+            { check if string would exceed wrap column, wrap first if so }
+            if (wrapcolumn > 0) and (outpos + lgth + 2 > wrapcolumn) then
+                flush_line;
             emit_char('''');
             for i := 1 to lgth do begin
                 emit_char(sval[i]);
@@ -495,7 +575,7 @@ end;
 procedure insymbol;
 label 1;
 var i, k, v, r: integer;
-    test, ferr: boolean;
+    ferr: boolean;
     strend: boolean;
     string_buf: csstr;
     ev: integer;
@@ -507,8 +587,7 @@ begin
     while (ch <= ' ') and not eofinp do begin
         if eol then begin
             endofline; { output any errors from previous line }
-            if hascmt then emit_comment;
-            emit_newline
+            if hascmt then emit_comment
         end;
         nextch
     end;
@@ -785,37 +864,39 @@ procedure endofline;
 var lastpos, freepos, currpos, currnmr, f, j, k: integer; df: boolean;
 begin
     if errinx > 0 then begin
-        { output source line if not already listed }
-        if not listmode then wrtsrclin;
-        write(lineno:6, ' ****  ':9);
-        lastpos := -1; freepos := 1;
-        for k := 1 to errinx do begin
-            currpos := errlist[k].pos;
-            currnmr := errlist[k].nmr;
-            if currpos = lastpos then write(',')
-            else begin
-                while freepos < currpos do begin
-                    write(' '); freepos := freepos + 1
-                end;
-                write('^');
-                lastpos := currpos
-            end;
-            if currnmr < 10 then f := 1
-            else if currnmr < 100 then f := 2
-            else f := 3;
-            write(currnmr:f);
-            freepos := freepos + f + 1
-        end;
-        writeln;
-        if experr then begin
+        if not noerror then begin
+            { output source line if not already listed }
+            if not listmode then wrtsrclin;
+            write(lineno:6, ' ****  ':9);
+            lastpos := -1; freepos := 1;
             for k := 1 to errinx do begin
-                df := false;
-                for j := 1 to k - 1 do
-                    if errlist[j].nmr = errlist[k].nmr then df := true;
-                if not df then begin
-                    write(lineno:6, ' ****  ':9);
-                    write(errlist[k].nmr:3, ' ');
-                    errmsg(errlist[k].nmr); writeln
+                currpos := errlist[k].pos;
+                currnmr := errlist[k].nmr;
+                if currpos = lastpos then write(',')
+                else begin
+                    while freepos < currpos do begin
+                        write(' '); freepos := freepos + 1
+                    end;
+                    write('^');
+                    lastpos := currpos
+                end;
+                if currnmr < 10 then f := 1
+                else if currnmr < 100 then f := 2
+                else f := 3;
+                write(currnmr:f);
+                freepos := freepos + f + 1
+            end;
+            writeln;
+            if experr then begin
+                for k := 1 to errinx do begin
+                    df := false;
+                    for j := 1 to k - 1 do
+                        if errlist[j].nmr = errlist[k].nmr then df := true;
+                    if not df then begin
+                        write(lineno:6, ' ****  ':9);
+                        write(errlist[k].nmr:3, ' ');
+                        errmsg(errlist[k].nmr); writeln
+                    end
                 end
             end
         end;
@@ -1098,12 +1179,15 @@ begin
             typ(fsys)
         end;
         recordsy: begin
+            if bracketbreak then emit_blank_line;
             emit_symbol; emit_newline; insymbol;
             indent := indent + 1;
             fieldlist(fsys + [endsy]);
             indent := indent - 1;
+            if bracketbreak then emit_newline;
             if sy = endsy then begin emit_symbol; insymbol end
-            else error(13)
+            else error(13);
+            if bracketbreak then emit_blank_line
         end;
         setsy: begin
             emit_symbol; insymbol;
@@ -1189,6 +1273,7 @@ procedure compoundstatement(fsys: setofsys);
 var done: boolean;
 begin
     emit_symbol; emit_newline; insymbol; { beginsy }
+    if bracketbreak then emit_blank_line; { blank line after begin }
     indent := indent + 1;
     done := false;
     while not done do begin
@@ -1197,6 +1282,7 @@ begin
         else done := true
     end;
     indent := indent - 1;
+    if bracketbreak then emit_blank_line; { blank line before end }
     if sy = endsy then begin emit_symbol; insymbol end
     else error(13)
 end;
@@ -1221,7 +1307,6 @@ begin
 end;
 
 procedure casestatement(fsys: setofsys);
-var done: boolean;
 begin
     emit_symbol; insymbol; { casesy }
     expression(fsys + [ofsy, comma, colon]);
@@ -1449,7 +1534,8 @@ begin
     if sy = constsy then begin
         emit_blank_line;
         emit_symbol; emit_newline; insymbol;
-        indent := indent + 1;
+        if bracketbreak then emit_blank_line; { blank line after const }
+        if not flushleft then indent := indent + 1; { skip indent if flushleft }
         while sy = ident do begin
             emit_symbol; insymbol;
             if sy = relop then begin emit_symbol; insymbol end
@@ -1457,13 +1543,14 @@ begin
             constexpression(fsys + [semicolon]);
             if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
         end;
-        indent := indent - 1
+        if not flushleft then indent := indent - 1
     end;
     { type declarations }
     if sy = typesy then begin
         emit_blank_line;
         emit_symbol; emit_newline; insymbol;
-        indent := indent + 1;
+        if bracketbreak then emit_blank_line; { blank line after type }
+        if not flushleft then indent := indent + 1; { skip indent if flushleft }
         while sy = ident do begin
             emit_symbol; insymbol;
             if sy = relop then begin emit_symbol; insymbol end
@@ -1471,13 +1558,14 @@ begin
             typ(fsys + [semicolon]);
             if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
         end;
-        indent := indent - 1
+        if not flushleft then indent := indent - 1
     end;
     { variable declarations }
     if sy = varsy then begin
         emit_blank_line;
         emit_symbol; emit_newline; insymbol;
-        indent := indent + 1;
+        if bracketbreak then emit_blank_line; { blank line after var }
+        if not flushleft then indent := indent + 1; { skip indent if flushleft }
         while sy = ident do begin
             emit_symbol; insymbol;
             while sy = comma do begin
@@ -1489,7 +1577,7 @@ begin
             typ(fsys + [semicolon]);
             if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
         end;
-        indent := indent - 1
+        if not flushleft then indent := indent - 1
     end;
     { procedure and function declarations }
     while sy in [procsy, funcsy, operatorsy] do begin
@@ -1705,10 +1793,36 @@ Parses options from the command line. Options are:
 
 ******************************************************************************}
 
+{ print help message }
+procedure prthelp;
+begin
+    writeln('pasfmt - Pascaline Source Code Formatter');
+    writeln;
+    writeln('Usage: pasfmt [options] <inputfile>');
+    writeln;
+    writeln('Options:');
+    writeln('  -h, --help           Display this help message');
+    writeln('  -l, --list           List source lines (default: off)');
+    writeln('  -s, --iso7185        Format as ISO 7185 Pascal (default: off/Pascaline)');
+    writeln('  -e, --experr         Show expanded error messages (default: on)');
+    writeln('  -c, --columns <n>    Set wrap column (default: 80)');
+    writeln('  -b, --bracketbreak   Add blank lines around begin/end, etc. (default: on)');
+    writeln('  -f, --flushleft      Flush left for const/type/var blocks (default: off)');
+    writeln('  -z, --columnize      Align = signs in const/type/var blocks (default: off)');
+    writeln('  -n, --sourceline     Add source line numbers as comments (default: off)');
+    writeln('  -r, --noerror        Suppress error output (keep error count) (default: off)');
+    writeln;
+    writeln('Instruction file:');
+    writeln('  If <inputfile>.fmt exists, it is read for additional options.');
+    writeln('  Format: one command per line, ! for comments');
+    goto 99
+end;
+
 procedure paropt;
 var w:      filnam;   { word holder }
     err:    boolean;  { error flag }
     optfnd: boolean;  { option found }
+    tv:     integer;  { temp value for integer options }
 
 { set true/false flag from option }
 procedure setflg(view a, n: string; var f: boolean);
@@ -1739,6 +1853,21 @@ begin
     end
 end;
 
+{ set integer value from option }
+procedure setint(view a, n: string; var v: integer);
+begin
+    if compp(w, n) or compp(w, a) then begin
+        parse.skpspc(cmdhan);
+        parse.parnum(cmdhan, tv, 10, err);
+        if err then begin
+            writeln('*** Error: Invalid number for option: ', w:*);
+            goto 99
+        end;
+        v := tv;
+        optfnd := true
+    end
+end;
+
 begin
     parse.skpspc(cmdhan); { skip spaces }
     while parse.chkchr(cmdhan) = services.optchr do begin { parse option }
@@ -1751,15 +1880,113 @@ begin
             writeln('*** Error: Invalid option');
             goto 99
         end;
+        { check for help first }
+        if compp(w, 'help') or compp(w, 'h') or compp(w, '?') then prthelp;
+        { boolean options }
         setflg('l', 'list', listmode);
         setflg('s', 'iso7185', iso7185);
         setflg('e', 'experr', experr);
+        setflg('b', 'bracketbreak', bracketbreak);
+        setflg('f', 'flushleft', flushleft);
+        setflg('z', 'columnize', columnize);
+        setflg('n', 'sourceline', sourceline);
+        setflg('r', 'noerror', noerror);
+        { integer options }
+        setint('c', 'columns', wrapcolumn);
         if not optfnd then begin
             writeln('*** Error: Unknown option: ', w:*);
             goto 99
         end;
         parse.skpspc(cmdhan)
     end
+end;
+
+{******************************************************************************
+
+Parse and load instruction file
+
+Parses and loads a list of instructions from the instruction file. The format
+of the instruction file is:
+
+! comment
+
+command [parameter]
+
+Where command is one of:
+
+list or l           - List source lines while processing
+iso7185 or s        - Format as ISO 7185 Pascal (not Pascaline)
+experr or e         - Show expanded error descriptions
+columns or c <n>    - Set wrap column (default 80)
+bracketbreak or b   - Add blank lines around begin/end, const, etc.
+flushleft or f      - Flush left for multi-line definitions
+columnize or z      - Align = signs in const/type/var blocks
+sourceline or n     - Add original source line numbers as comments
+
+Comments start with '!' and continue to end of line. They can appear at the
+start of a line or after commands.
+
+******************************************************************************}
+
+procedure parinst(view ifn: string);
+var cmd: filnam;  { command word }
+    err: boolean; { parsing error }
+    tv:  integer; { temp value for integer parameters }
+begin
+    parse.openpar(inshan); { open parser }
+    parse.openfil(inshan, ifn, cmdmax); { open file to parse }
+    while not parse.endfil(inshan) do begin { process instructions }
+        parse.skpspc(inshan); { skip leading spaces }
+        if parse.chkchr(inshan) = '!' then { skip comment line }
+            parse.getlin(inshan)
+        else if not parse.endlin(inshan) then begin { command line }
+            parse.parlab(inshan, cmd, err); { get command word }
+            if err then begin
+                writeln('*** Error: Invalid command in instruction file');
+                parse.prterr(inshan, output, 'Invalid command', true);
+                parse.getlin(inshan)
+            end else begin
+                { match commands }
+                if compp(cmd, 'list') or compp(cmd, 'l') then
+                    listmode := true
+                else if compp(cmd, 'iso7185') or compp(cmd, 's') then
+                    iso7185 := true
+                else if compp(cmd, 'experr') or compp(cmd, 'e') then
+                    experr := true
+                else if compp(cmd, 'columns') or compp(cmd, 'c') then begin
+                    parse.skpspc(inshan);
+                    parse.parnum(inshan, tv, 10, err);
+                    if err then begin
+                        writeln('*** Warning: Invalid columns value in instruction file');
+                        parse.prterr(inshan, output, 'Invalid number', true)
+                    end else
+                        wrapcolumn := tv
+                end
+                else if compp(cmd, 'bracketbreak') or compp(cmd, 'b') then
+                    bracketbreak := true
+                else if compp(cmd, 'flushleft') or compp(cmd, 'f') then
+                    flushleft := true
+                else if compp(cmd, 'columnize') or compp(cmd, 'z') then
+                    columnize := true
+                else if compp(cmd, 'sourceline') or compp(cmd, 'n') then
+                    sourceline := true
+                else if compp(cmd, 'noerror') or compp(cmd, 'r') then
+                    noerror := true
+                else begin
+                    writeln('*** Warning: Unknown command in instruction file: ', cmd:*);
+                    parse.prterr(inshan, output, 'Unknown command', true)
+                end;
+                { skip to comment or end of line }
+                parse.skpspc(inshan);
+                while not parse.endlin(inshan) and (parse.chkchr(inshan) <> '!') do
+                    parse.getchr(inshan);
+                parse.getlin(inshan)
+            end
+        end else
+            parse.getlin(inshan) { skip empty line }
+    end;
+    parse.closefil(inshan); { close instruction file }
+    parse.closepar(inshan) { close parser }
 end;
 
 procedure initialize;
@@ -1779,6 +2006,7 @@ begin
     inppos := 1;
     inplen := 0;
     outpos := 0;
+    outlineno := 0;
     lineno := 0;
     chcnt := 0;
     indent := 0;
@@ -1792,6 +2020,12 @@ begin
     errinx := 0;
     experr := true; { show expanded error messages }
     listmode := false;  { don't list source by default }
+    wrapcolumn := 80;   { default wrap column }
+    bracketbreak := true;
+    flushleft := false;
+    columnize := false;
+    sourceline := false;
+    noerror := false;
     for i := 1 to maxftl do begin errtbl[i] := 0; errltb[i] := nil end;
     hascmt := false;
     cmtlen := 0;
@@ -1800,7 +2034,8 @@ begin
     for i := 1 to maxids do begin
         id[i] := ' ';
         srcfil[i] := ' ';
-        dstfil[i] := ' '
+        dstfil[i] := ' ';
+        insfil[i] := ' '
     end;
     for i := 1 to strglgth do sval[i] := ' ';
 
@@ -1811,11 +2046,7 @@ begin
     paropt; { parse command options }
     if parse.endlin(cmdhan) then begin
         writeln('*** Error: No input file specified');
-        writeln('Usage: pasfmt [-l|--list] [-s|--iso7185] [-e|--experr] <inputfile>');
-        writeln('  -l, --list     List source lines while processing');
-        writeln('  -s, --iso7185  Format as ISO 7185 Pascal (not Pascaline)');
-        writeln('  -e, --experr   Show expanded error messages (default on)');
-        goto 99
+        prthelp
     end;
     parse.skpspc(cmdhan); { skip spaces }
     parse.parfil(cmdhan, srcfil, false, err); { parse filename }
@@ -1826,6 +2057,9 @@ begin
     paropt; { parse any trailing options }
     { break filename into path, name, extension }
     services.brknam(srcfil, p, n, e);
+    { check for instruction file: path + name + .fmt }
+    services.maknam(insfil, p, n, 'fmt');
+    if exists(insfil) then parinst(insfil);
     { create input filename: path + name + .pas }
     services.maknam(srcfil, p, n, 'pas');
     assign(prd, srcfil);
@@ -1847,6 +2081,7 @@ var
     f: boolean;
     i: 1..maxftl;
     ep, epl: errptr;
+    col, tv, nw: integer; { for error listing wrapping }
 begin
     initialize;
     readline;
@@ -1860,28 +2095,47 @@ begin
 
     { output error summary }
     writeln('Errors in program: ', toterr:1);
-    f := true;
-    for i := 1 to maxftl do if errtbl[i] > 0 then begin
-        if f then begin
+    if not noerror then begin
+        f := true;
+        for i := 1 to maxftl do if errtbl[i] > 0 then begin
+            if f then begin
+                writeln;
+                writeln('Error numbers in listing:');
+                writeln('-------------------------');
+                f := false
+            end;
+            write(i:3, ' ', errtbl[i]:3, ' ');
+            { calculate starting column based on actual output width }
+            tv := errtbl[i]; nw := 0;
+            repeat nw := nw + 1; tv := tv div 10 until tv = 0;
+            if nw < 3 then nw := 3; { :3 means minimum 3 chars }
+            col := 3 + 1 + nw + 1; { i:3 + space + count + space }
+            { reverse the line list for chronological order }
+            epl := nil;
+            while errltb[i] <> nil do begin
+                ep := errltb[i]; errltb[i] := ep^.next;
+                ep^.next := epl; epl := ep
+            end;
+            ep := epl;
+            while ep <> nil do begin
+                { calculate width of next number }
+                tv := ep^.errlinno; nw := 0;
+                repeat nw := nw + 1; tv := tv div 10 until tv = 0;
+                if ep^.next <> nil then nw := nw + 1; { comma }
+                if col + nw > 80 then begin { wrap at 80 columns }
+                    writeln;
+                    write('        ':8); { indent continuation }
+                    col := 8
+                end;
+                write(ep^.errlinno:1);
+                col := col + nw;
+                ep := ep^.next;
+                if ep <> nil then write(',')
+            end;
             writeln;
-            writeln('Error numbers in listing:');
-            writeln('-------------------------');
-            f := false
+            write('        ':8); errmsg(i); writeln
         end;
-        write(i:3, ' ', errtbl[i]:3, ' ');
-        { reverse the line list for chronological order }
-        epl := nil;
-        while errltb[i] <> nil do begin
-            ep := errltb[i]; errltb[i] := ep^.next;
-            ep^.next := epl; epl := ep
-        end;
-        ep := epl;
-        while ep <> nil do begin
-            write(ep^.errlinno:1); ep := ep^.next;
-            if ep <> nil then write(',')
-        end;
-        write(' '); errmsg(i); writeln
+        if not f then writeln
     end;
-    if not f then writeln;
 99:
 end.
