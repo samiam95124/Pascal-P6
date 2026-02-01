@@ -21,7 +21,7 @@
 *   -c, --columns <n>    Set wrap column (default 80)                          *
 *   -b, --bracketbreak   Add blank lines around begin/end, const, etc.         *
 *   -f, --flushleft      Flush left for multi-line definitions                 *
-*   -z, --columnize      Align = signs in const/type/var blocks                *
+*   -z, --columnize      Align columns in const/type/fixed/var definitions     *
 *   -n, --sourceline     Add original source line numbers as comments          *
 *   -r, --noerror        Suppress error output (keep error count)             *
 *                                                                              *
@@ -39,7 +39,7 @@
 *   columns or c <n>    - Set wrap column (default 80)                         *
 *   bracketbreak or b   - Add blank lines around begin/end, const, etc.        *
 *   flushleft or f      - Flush left for multi-line definitions                *
-*   columnize or z      - Align = signs in const/type/var blocks               *
+*   columnize or z      - Align columns in const/type/fixed/var definitions    *
 *   sourceline or n     - Add original source line numbers as comments         *
 *   noerror or r        - Suppress error output (keep error count)            *
 *                                                                              *
@@ -133,6 +133,17 @@ type
         errlinno: integer; { line number }
     end;
 
+    { definition list for columnize feature }
+    defptr = ^deflin;
+    deflin = record
+        next: defptr;         { next entry }
+        nampart: linbufp;     { name part before = or : }
+        namlen: integer;      { length of name part }
+        defpart: linbufp;     { definition part after = or : }
+        deflen: integer;      { length of definition part }
+        srclin: integer;      { source line number }
+    end;
+
 var
     { files }
     prd:      text;   { input source file }
@@ -192,6 +203,18 @@ var
     columnize:    boolean;       { align = signs in const/type/var blocks }
     sourceline:   boolean;       { add original source line numbers as comments }
     noerror:      boolean;       { suppress error output (keep error count) }
+
+    { definition list for columnize }
+    defhead:  defptr;            { head of definition list }
+    deftail:  defptr;            { tail of definition list }
+    defmax:   integer;           { maximum name length in list }
+    defnamebuf: linbufp;         { buffer for name part }
+    defnamelen: integer;         { length of name part }
+    defdefbuf:  linbufp;         { buffer for definition part }
+    defdeflen:  integer;         { length of definition part }
+    defbufmode: integer;         { 0=off, 1=name, 2=def }
+    defsrclin:  integer;         { source line for current definition }
+    defsep:     char;            { separator character (= or :) }
 
     { command line parsing }
     cmdhan:   parse.parhan;      { command line parser handle }
@@ -295,60 +318,120 @@ end;
 
 ******************************************************************************}
 
+procedure def_output(sep: char); forward;
+
 procedure flush_line;
 var i: integer;
 begin
-    { clamp outpos to valid range }
-    if outpos > maxlinp then outpos := maxlinp;
-    { emit source line number as comment if sourceline option enabled }
-    if sourceline then write(prr, '{', outlineno:6, '} ');
-    if outpos > 0 then begin
-        { trim trailing spaces }
-        while (outpos > 0) and (outlin[outpos] = ' ') do
-            outpos := outpos - 1;
-        for i := 1 to outpos do write(prr, outlin[i]);
-        writeln(prr)
-    end else
+    { if buffering and we hit a newline, output buffered content directly }
+    if defbufmode = 2 then begin
+        { first output any buffered single-line definitions to maintain order }
+        if defhead <> nil then begin
+            def_output(defsep);
+            atbol := true
+        end;
+        { this is a multi-line definition, output directly without alignment }
+        outlineno := defsrclin;
+        if sourceline then write(prr, '{', outlineno:6, '} ');
+        { emit indent if needed }
+        if not flushleft and (indent > 0) then
+            for i := 1 to indent * lindent do write(prr, ' ');
+        { emit name part }
+        for i := 1 to defnamelen do write(prr, defnamebuf[i]);
+        { emit separator - space before = but not before : }
+        if defsep = '=' then write(prr, ' ');
+        write(prr, defsep);
+        write(prr, ' ');
+        { emit definition part so far }
+        for i := 1 to defdeflen do write(prr, defdefbuf[i]);
         writeln(prr);
-    outpos := 0;
-    for i := 1 to maxlinp do outlin[i] := ' ';
-    atbol := true
+        { reset buffer for continuation }
+        defdeflen := 0;
+        for i := 1 to maxlinp do defdefbuf[i] := ' ';
+        { switch to passthrough mode for rest of multi-line definition }
+        defbufmode := 0
+    end else begin
+        { normal flush }
+        { clamp outpos to valid range }
+        if outpos > maxlinp then outpos := maxlinp;
+        { emit source line number as comment if sourceline option enabled }
+        if sourceline then write(prr, '{', outlineno:6, '} ');
+        if outpos > 0 then begin
+            { trim trailing spaces }
+            while (outpos > 0) and (outlin[outpos] = ' ') do
+                outpos := outpos - 1;
+            for i := 1 to outpos do write(prr, outlin[i]);
+            writeln(prr)
+        end else
+            writeln(prr);
+        outpos := 0;
+        for i := 1 to maxlinp do outlin[i] := ' ';
+        atbol := true
+    end
 end;
 
 procedure emit_char(c: char);
 begin
-    { check for column wrap before adding character }
-    if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
-        flush_line;
-    if atbol then begin
-        { record source line that starts this output line }
-        outlineno := lineno;
-        if indent > 0 then begin
-            { emit indent - check maxlinp to prevent buffer overflow }
-            while (outpos < indent * lindent) and (outpos < maxlinp) do begin
-                outpos := outpos + 1;
-                outlin[outpos] := ' '
+    { if buffering for columnize, write to appropriate buffer }
+    if defbufmode = 1 then begin
+        defnamelen := defnamelen + 1;
+        if defnamelen <= maxlinp then defnamebuf[defnamelen] := c
+    end else if defbufmode = 2 then begin
+        defdeflen := defdeflen + 1;
+        if defdeflen <= maxlinp then defdefbuf[defdeflen] := c
+    end else begin
+        { normal output }
+        { check for column wrap before adding character }
+        if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
+            flush_line;
+        if atbol then begin
+            { record source line that starts this output line }
+            outlineno := lineno;
+            if indent > 0 then begin
+                { emit indent - check maxlinp to prevent buffer overflow }
+                while (outpos < indent * lindent) and (outpos < maxlinp) do begin
+                    outpos := outpos + 1;
+                    outlin[outpos] := ' '
+                end
             end
-        end
-    end;
-    atbol := false;
-    outpos := outpos + 1;
-    if outpos <= maxlinp then outlin[outpos] := c
+        end;
+        atbol := false;
+        outpos := outpos + 1;
+        if outpos <= maxlinp then outlin[outpos] := c
+    end
 end;
 
 procedure emit_space;
 begin
-    { check for column wrap - break line at space boundaries }
-    if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
-        flush_line;
-    { note: must check outpos > 0 before accessing outlin[outpos]
-      because Pascaline doesn't short-circuit and evaluations }
-    if not atbol and (outpos > 0) then
-        if (outlin[outpos] <> ' ') and
-           (outlin[outpos] <> '(') and (outlin[outpos] <> '[') then begin
-            outpos := outpos + 1;
-            if outpos <= maxlinp then outlin[outpos] := ' '
-        end
+    { if buffering for columnize, add space to buffer }
+    if defbufmode = 1 then begin
+        if defnamelen > 0 then
+            { don't add space after comment closing brace }
+            if (defnamebuf[defnamelen] <> ' ') and
+               (defnamebuf[defnamelen] <> '}') then begin
+                defnamelen := defnamelen + 1;
+                if defnamelen <= maxlinp then defnamebuf[defnamelen] := ' '
+            end
+    end else if defbufmode = 2 then begin
+        if defdeflen > 0 then
+            if defdefbuf[defdeflen] <> ' ' then begin
+                defdeflen := defdeflen + 1;
+                if defdeflen <= maxlinp then defdefbuf[defdeflen] := ' '
+            end
+    end else begin
+        { normal output }
+        { check for column wrap - break line at space boundaries }
+        if (wrapcolumn > 0) and (outpos >= wrapcolumn) then
+            flush_line;
+        { note: must check outpos > 0 before accessing outlin[outpos]
+          because Pascaline doesn't short-circuit and evaluations }
+        if not atbol and (outpos > 0) then
+            if (outlin[outpos] <> ' ') and
+               (outlin[outpos] <> '(') and (outlin[outpos] <> '[') then begin
+                outpos := outpos + 1;
+                if outpos <= maxlinp then outlin[outpos] := ' '
+            end
+    end
 end;
 
 procedure emit_newline;
@@ -564,6 +647,131 @@ begin
         hascmt := false;
         cmtlen := 0
     end
+end;
+
+{******************************************************************************
+
+                         Definition List for Columnize
+
+******************************************************************************}
+
+{ clear the definition list }
+procedure def_clear;
+var p, q: defptr;
+begin
+    p := defhead;
+    while p <> nil do begin
+        q := p^.next;
+        dispose(p);
+        p := q
+    end;
+    defhead := nil;
+    deftail := nil;
+    defmax := 0
+end;
+
+{ add entry to definition list }
+procedure def_add(var nam: linbufp; nlen: integer;
+                  var def: linbufp; dlen: integer;
+                  slin: integer);
+var p: defptr;
+    i: integer;
+begin
+    new(p);
+    for i := 1 to maxlinp do begin
+        p^.nampart[i] := nam[i];
+        p^.defpart[i] := def[i]
+    end;
+    p^.namlen := nlen;
+    p^.deflen := dlen;
+    p^.srclin := slin;
+    p^.next := nil;
+    if deftail = nil then defhead := p
+    else deftail^.next := p;
+    deftail := p;
+    if nlen > defmax then defmax := nlen
+end;
+
+{ output definition list with alignment }
+procedure def_output(sep: char);
+var p: defptr;
+    i, pad: integer;
+    savemode: integer;
+begin
+    { save and reset buffer mode so emit_* functions output directly }
+    savemode := defbufmode;
+    defbufmode := 0;
+    p := defhead;
+    while p <> nil do begin
+        { record source line for output }
+        outlineno := p^.srclin;
+        { emit indent if needed }
+        if not flushleft and (indent > 0) then begin
+            while (outpos < indent * lindent) and (outpos < maxlinp) do begin
+                outpos := outpos + 1;
+                outlin[outpos] := ' '
+            end
+        end;
+        atbol := false;
+        { emit name part }
+        for i := 1 to p^.namlen do emit_char(p^.nampart[i]);
+        { emit separator with padding if columnize }
+        if columnize then begin
+            { for = separator, add space before; for : no space }
+            if sep = '=' then emit_space;
+            emit_char(sep);
+            { pad to align definitions }
+            pad := defmax - p^.namlen + 1;
+            if sep = ':' then pad := pad + 1; { extra pad since no leading space }
+            while pad > 0 do begin
+                outpos := outpos + 1;
+                if outpos <= maxlinp then outlin[outpos] := ' ';
+                pad := pad - 1
+            end
+        end else begin
+            if sep = '=' then emit_space;
+            emit_char(sep);
+            emit_space
+        end;
+        { emit definition part }
+        for i := 1 to p^.deflen do emit_char(p^.defpart[i]);
+        emit_char(';');
+        emit_newline;
+        p := p^.next
+    end;
+    def_clear
+end;
+
+{ start buffering name part }
+procedure def_startname;
+var i: integer;
+begin
+    defbufmode := 1;
+    defnamelen := 0;
+    defdeflen := 0;
+    defsrclin := lineno;
+    for i := 1 to maxlinp do begin
+        defnamebuf[i] := ' ';
+        defdefbuf[i] := ' '
+    end
+end;
+
+{ switch to buffering definition part }
+procedure def_startdef(sep: char);
+begin
+    defbufmode := 2;
+    defsep := sep
+end;
+
+{ finish buffering and add to list }
+procedure def_finish;
+begin
+    { only add to list if still buffering (single-line definition) }
+    if defbufmode > 0 then begin
+        defbufmode := 0;
+        def_add(defnamebuf, defnamelen, defdefbuf, defdeflen, defsrclin)
+    end
+    { if defbufmode is already 0, definition was already output as multi-line }
 end;
 
 {******************************************************************************
@@ -1179,15 +1387,14 @@ begin
             typ(fsys)
         end;
         recordsy: begin
-            if bracketbreak then emit_blank_line;
             emit_symbol; emit_newline; insymbol;
+            if bracketbreak then emit_blank_line;
             indent := indent + 1;
             fieldlist(fsys + [endsy]);
             indent := indent - 1;
-            if bracketbreak then emit_newline;
+            if bracketbreak then emit_blank_line;
             if sy = endsy then begin emit_symbol; insymbol end
-            else error(13);
-            if bracketbreak then emit_blank_line
+            else error(13)
         end;
         setsy: begin
             emit_symbol; insymbol;
@@ -1520,7 +1727,6 @@ end;
 procedure block(fsys: setofsys);
 { declaration part and compound statement }
 begin
-    emit_blank_line;
     { label declarations }
     if sy = labelsy then begin
         emit_symbol; insymbol;
@@ -1536,13 +1742,18 @@ begin
         emit_symbol; emit_newline; insymbol;
         if bracketbreak then emit_blank_line; { blank line after const }
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
+        def_clear;
         while sy = ident do begin
+            def_startname;
+            emit_comment; { include any preceding comment in name for columnize }
             emit_symbol; insymbol;
-            if sy = relop then begin emit_symbol; insymbol end
+            if sy = relop then begin insymbol; def_startdef('=') end
             else error(16);
             constexpression(fsys + [semicolon]);
-            if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+            def_finish;
+            if sy = semicolon then insymbol
         end;
+        def_output('=');
         if not flushleft then indent := indent - 1
     end;
     { type declarations }
@@ -1551,13 +1762,25 @@ begin
         emit_symbol; emit_newline; insymbol;
         if bracketbreak then emit_blank_line; { blank line after type }
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
+        def_clear;
         while sy = ident do begin
+            def_startname;
+            emit_comment; { include any preceding comment in name for columnize }
             emit_symbol; insymbol;
-            if sy = relop then begin emit_symbol; insymbol end
+            if sy = relop then begin insymbol; def_startdef('=') end
             else error(16);
             typ(fsys + [semicolon]);
-            if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+            { check if still buffering (single-line) or already output (multi-line) }
+            if defbufmode > 0 then begin
+                { single-line definition - add to list }
+                def_finish;
+                if sy = semicolon then insymbol
+            end else begin
+                { multi-line definition was already output, just handle semicolon }
+                if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+            end
         end;
+        def_output('=');
         if not flushleft then indent := indent - 1
     end;
     { variable declarations }
@@ -1566,17 +1789,29 @@ begin
         emit_symbol; emit_newline; insymbol;
         if bracketbreak then emit_blank_line; { blank line after var }
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
+        def_clear;
         while sy = ident do begin
+            def_startname;
+            emit_comment; { include any preceding comment in name for columnize }
             emit_symbol; insymbol;
             while sy = comma do begin
                 emit_symbol; insymbol;
                 if sy = ident then begin emit_symbol; insymbol end
             end;
-            if sy = colon then begin emit_symbol; insymbol end
+            if sy = colon then begin insymbol; def_startdef(':') end
             else error(5);
             typ(fsys + [semicolon]);
-            if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+            { check if still buffering (single-line) or already output (multi-line) }
+            if defbufmode > 0 then begin
+                { single-line definition - add to list }
+                def_finish;
+                if sy = semicolon then insymbol
+            end else begin
+                { multi-line definition was already output, just handle semicolon }
+                if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+            end
         end;
+        def_output(':');
         if not flushleft then indent := indent - 1
     end;
     { procedure and function declarations }
@@ -1807,10 +2042,10 @@ begin
     writeln('  -e, --experr         Show expanded error messages (default: on)');
     writeln('  -c, --columns <n>    Set wrap column (default: 80)');
     writeln('  -b, --bracketbreak   Add blank lines around begin/end, etc. (default: on)');
-    writeln('  -f, --flushleft      Flush left for const/type/var blocks (default: off)');
-    writeln('  -z, --columnize      Align = signs in const/type/var blocks (default: off)');
+    writeln('  -f, --flushleft      Flush left for const/type/var blocks (default: on)');
+    writeln('  -z, --columnize      Align columns in const/type/fixed/var (default: on)');
     writeln('  -n, --sourceline     Add source line numbers as comments (default: off)');
-    writeln('  -r, --noerror        Suppress error output (keep error count) (default: off)');
+    writeln('  -r, --noerror        Suppress error output (keep error count) (default: on)');
     writeln;
     writeln('Instruction file:');
     writeln('  If <inputfile>.fmt exists, it is read for additional options.');
@@ -1920,7 +2155,7 @@ experr or e         - Show expanded error descriptions
 columns or c <n>    - Set wrap column (default 80)
 bracketbreak or b   - Add blank lines around begin/end, const, etc.
 flushleft or f      - Flush left for multi-line definitions
-columnize or z      - Align = signs in const/type/var blocks
+columnize or z      - Align columns in const/type/fixed/var definitions
 sourceline or n     - Add original source line numbers as comments
 
 Comments start with '!' and continue to end of line. They can appear at the
@@ -2022,11 +2257,18 @@ begin
     listmode := false;  { don't list source by default }
     wrapcolumn := 80;   { default wrap column }
     bracketbreak := true;
-    flushleft := false;
-    columnize := false;
+    flushleft := true;
+    columnize := true;
     sourceline := false;
-    noerror := false;
+    noerror := true;
     for i := 1 to maxftl do begin errtbl[i] := 0; errltb[i] := nil end;
+    defhead := nil;
+    deftail := nil;
+    defmax := 0;
+    defbufmode := 0;
+    defnamelen := 0;
+    defdeflen := 0;
+    for i := 1 to maxlinp do begin defnamebuf[i] := ' '; defdefbuf[i] := ' ' end;
     hascmt := false;
     cmtlen := 0;
     cmtlncmt := false;
