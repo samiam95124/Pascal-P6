@@ -23,11 +23,11 @@
 *   -f, --flushleft      Flush left for multi-line definitions                 *
 *   -z, --columnize      Align columns in const/type/fixed/var definitions     *
 *   -n, --sourceline     Add original source line numbers as comments          *
-*   -r, --noerror        Suppress error output (keep error count)             *
+*   -r, --noerror        Suppress error output (keep error count)              *
 *                                                                              *
 * Instruction File:                                                            *
 *                                                                              *
-* If inputfile.fmt exists, it is read as an instruction file. The format is:  *
+* If inputfile.fmt exists, it is read as an instruction file. The format is:   *
 *                                                                              *
 *   command [param]                                                            *
 *   ! comment                                                                  *
@@ -41,7 +41,7 @@
 *   flushleft or f      - Flush left for multi-line definitions                *
 *   columnize or z      - Align columns in const/type/fixed/var definitions    *
 *   sourceline or n     - Add original source line numbers as comments         *
-*   noerror or r        - Suppress error output (keep error count)            *
+*   noerror or r        - Suppress error output (keep error count)             *
 *                                                                              *
 * Comments start with '!' and continue to end of line. They can appear at the  *
 * start of a line or after commands.                                           *

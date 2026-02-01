@@ -48,12 +48,12 @@ cp libs/source/services.p6 libs
 # These are compiled to objects and intermediates both because they can be used
 # in executables and interpretation.
 #
-pc libs/source/strings
+pc libs/source/strings -r
 cp libs/source/strings.o libs
 pc libs/source/strings -pint
 cp libs/source/strings.p6 libs
 
-pc libs/source/parse
+pc libs/source/parse -r
 cp libs/source/parse.o libs
 pc libs/source/parse -pint
 cp libs/source/parse.p6 libs

@@ -48,145 +48,157 @@
 
 program pc(output, command);
 
-joins 
-    parse,    { parser library }
-    services, { os extentions }
-    scanner;  { pascal scanner }
+joins
 
-uses 
-     strings;  { string library }
+{ parser library }  parse,
+{ os extentions }   services,
+{ pascal scanner }  scanner;
+
+uses
+
+{ string library }  strings;
 
 
-label 99; { abort program }
+{ abort program }
+label 99;
 
-const serlib = 'psystem'; { name of base libary }
-      trmlib = 'terminal'; { name of terminal library }
-      gralib = 'graphical'; { name of graphical library }
-      { libs that can be substituted for standard serial library }
-      iolibs = 'terminal graphical';
-      { libs that run in a separate window }
-      gwlibs  = 'gralib gmnlib';
-      cmdmax = 250;      { maximum length of command line }
-      filmax = 1000;     { maximum length of filename }
-      maxlin = 1000; { maximum size of input line }
+const
+
+{ name of base libary }            serlib = 'psystem';
+{ name of terminal library }       trmlib = 'terminal';
+{ name of graphical library }      gralib = 'graphical';
+{ libs that can be substituted for standard serial library }
+                                   iolibs = 'terminal graphical';
+{ libs that run in a separate window }
+                                   gwlibs  = 'gralib gmnlib';
+{ maximum length of command line } cmdmax = 250;
+{ maximum length of filename }     filmax = 1000;
+{ maximum size of input line }     maxlin = 1000;
 
 type
 
-   filinx = 1..filmax; { index for filename }
-   filnam = packed array [filinx] of char; { filename }
-   lininx = 1..maxlin;  { index for text line }
-   linbuf = packed array [lininx] of char; { a text line }
-   filept = ^filety; { pointer to file entry }
-   fllptr = ^fillet; { pointer to file linkage entry }
-   filety = record { file information entry }
+{ index for filename }             filinx = 1..filmax;
+{ filename }                       filnam = packed array [filinx] of char;
+{ index for text line }            lininx = 1..maxlin;
+{ a text line }                    linbuf = packed array [lininx] of char;
+{ pointer to file entry }          filept = ^filety;
+{ pointer to file linkage entry }  fllptr = ^fillet;
+{ file information entry }
+filety = record
 
-      name:   filnam;  { filename }
-      modify: integer; { time of last modification }
-      rebld:  boolean; { requires rebuilding }
-      excl:   boolean; { file is excluded or exists in an excluded directory }
-      code:   boolean; { file contains code }
-      stack:  filept;  { next stack entry }
-      link:   fllptr;  { linkage list }
-      list:   boolean; { placed in link list }
-      pgm:    boolean; { is program/module }
-      inte:   filept;  { intermediate file entry }
-      asme:   filept;  { assembly file entry }
-      obje:   filept;  { object file entry }
-      arce:   filept;  { archive file entry }
-      exec:   filept;  { executable file entry }
-      pkg:    filept   { packaged within this module }
+   { filename }                    name:   filnam;
+   { time of last modification }   modify: integer;
+   { requires rebuilding }         rebld:  boolean;
+   { file is excluded or exists in an excluded directory }
+                                   excl:   boolean;
+   { file contains code }          code:   boolean;
+   { next stack entry }            stack:  filept;
+   { linkage list }                link:   fllptr;
+   { placed in link list }         list:   boolean;
+   { is program/module }           pgm:    boolean;
+   { intermediate file entry }     inte:   filept;
+   { assembly file entry }         asme:   filept;
+   { object file entry }           obje:   filept;
+   { archive file entry }          arce:   filept;
+   { executable file entry }       exec:   filept;
+   { packaged within this module } pkg:    filept
 
-   end;
-   fillet = record { file linkage entry }
+end;
+{ file linkage entry }
+fillet = record
 
-      ref:  filept; { link to used entry }
-      next: fllptr  { next entry link }
+   { link to used entry }          ref:  filept;
+   { next entry link }             next: fllptr
 
-   end;
-   lstptr = ^lstety; { pointer to file list entry }
-   lstety = record { file list entry }
+end;
+{ pointer to file list entry }     lstptr = ^lstety;
+{ file list entry }
+lstety = record
 
-      name: pstring; { filename }
-      next: lstptr  { next link }
+   { filename }                    name: pstring;
+   { next link }                   next: lstptr
 
-   end;
-   pkgptr = ^pkgety; { packaging entry }
-   pkgety = record { library packing spec }
+end;
+{ packaging entry }                pkgptr = ^pkgety;
+{ library packing spec }
+pkgety = record
 
-      name: pstring; { name of root package }
-      lst:  lstptr; { list of contained packages }
-      next: pkgptr { next entry in list }
+   { name of root package }        name: pstring;
+   { list of contained packages }  lst:  lstptr;
+   { next entry in list }          next: pkgptr
 
-   end;
-   ext    = packed array [1..3] of char; { filename extention }
+end;
+{ filename extention }             ext = packed array [1..3] of char;
 
 var
 
-   cmdhan:  parse.parhan;  { handle for command parsing }
-   err:     boolean; { error holder }
-   valfch:  schar;  { valid file characters }
-   filstk:  filept;  { file information stack }
-   prgnam:  filnam;  { target program name }
-   p, n, e: filnam;  { path components }
-   modpth:  filnam;  { path of module files }
-   { these are pc internal flags }
-   fverb:   boolean; { verbose flag (also gets passed through) }
-   ftree:   boolean; { list dependency tree }
-   fact:    boolean; { list actions }
-   fdry:    boolean; { do not perform actions }
-   frebld:  boolean; { rebuild all }
-   fngwin:  boolean; { no graphical windows mode }
-   fdeftrm: boolean; { default to terminal mode }
-   fdefgra: boolean; { default to graphical mode }
-   fpint:   boolean; { compile for pint (interpreter) }
-   fpmach:  boolean; { compile for pmach (interpreter) }
-   fcmach:  boolean; { compile for cmach (compiler) }
-   fpack:   boolean; { compile for package mode }
-   fpgen:   boolean; { compile for pgen mode (executable) }
-   { these are "pass through" options, options meant for programs we execute }
-   fsymcof: boolean; { generate coff symbols }
-   { passthrough options: these have "set/not set indicators }
-   fprtlab,     sprtlab:     boolean;
-   flstcod,     slstcod:     boolean;
-   fchk,        schk:        boolean;
-   fprtlabdef,  sprtlabdef:  boolean;
-   fsourceset,  ssourceset:  boolean;
-   fvarblk,     svarblk:     boolean;
-   fexperror,   sexperror:   boolean;
-   fecholine,   secholine:   boolean;
-   flist,       slist:       boolean;
-   fbreakheap,  sbreakheap:  boolean;
-   frecycle,    srecycle:    boolean;
-   fchkoverflo, schkoverflo: boolean;
-   fchkreuse,   schkreuse:   boolean;
-   fchkundef,   schkundef:   boolean;
-   freference,  sreference:  boolean;
-   fiso7185,    siso7185:    boolean;
-   fprttables,  sprttables:  boolean;
-   fundestag,   sundestag:   boolean;
-   fchkvar,     schkvar:     boolean;
-   fdebug,      sdebug:      boolean;
-   fprtlex,     sprtlex:     boolean;
-   fprtdisplay, sprtdisplay: boolean;
-   flineinfo,   slineinfo:   boolean;
-   fmrklin,     smrklin:     boolean;
+{ handle for command parsing }              cmdhan:  parse.parhan;
+{ error holder }                           err:     boolean;
+{ valid file characters }                  valfch:  schar;
+{ file information stack }                 filstk:  filept;
+{ target program name }                    prgnam:  filnam;
+{ path components }                        p, n, e: filnam;
+{ path of module files }                   modpth:  filnam;
+{ these are pc internal flags }
+{ verbose flag (also gets passed through) }
+                                           fverb:   boolean;
+{ list dependency tree }                   ftree:   boolean;
+{ list actions }                           fact:    boolean;
+{ do not perform actions }                 fdry:    boolean;
+{ rebuild all }                            frebld:  boolean;
+{ no graphical windows mode }              fngwin:  boolean;
+{ default to terminal mode }               fdeftrm: boolean;
+{ default to graphical mode }              fdefgra: boolean;
+{ compile for pint (interpreter) }         fpint:   boolean;
+{ compile for pmach (interpreter) }        fpmach:  boolean;
+{ compile for cmach (compiler) }           fcmach:  boolean;
+{ compile for package mode }               fpack:   boolean;
+{ compile for pgen mode (executable) }     fpgen:   boolean;
+{ these are "pass through" options, options meant for programs we execute }
+{ generate coff symbols }                  fsymcof: boolean;
+{ passthrough options: these have "set/not set indicators }
+fprtlab,     sprtlab:     boolean;
+flstcod,     slstcod:     boolean;
+fchk,        schk:        boolean;
+fprtlabdef,  sprtlabdef:  boolean;
+fsourceset,  ssourceset:  boolean;
+fvarblk,     svarblk:     boolean;
+fexperror,   sexperror:   boolean;
+fecholine,   secholine:   boolean;
+flist,       slist:       boolean;
+fbreakheap,  sbreakheap:  boolean;
+frecycle,    srecycle:    boolean;
+fchkoverflo, schkoverflo: boolean;
+fchkreuse,   schkreuse:   boolean;
+fchkundef,   schkundef:   boolean;
+freference,  sreference:  boolean;
+fiso7185,    siso7185:    boolean;
+fprttables,  sprttables:  boolean;
+fundestag,   sundestag:   boolean;
+fchkvar,     schkvar:     boolean;
+fdebug,      sdebug:      boolean;
+fprtlex,     sprtlex:     boolean;
+fprtdisplay, sprtdisplay: boolean;
+flineinfo,   slineinfo:   boolean;
+fmrklin,     smrklin:     boolean;
 
-   hp:      filept;  { head entry pointer }
-   lnklst:  filnam;  { link order list }
-   filcnt:  integer; { files to process count }
-   filact:  fllptr;  { file actions list }
-   actcnt:  integer; { actions count }
-   excrbl:  boolean; { executive needs rebuilding }
-   pgmpath: filnam;  { program path }
-   usrpath: filnam;  { user path }
-   curpath: filnam;  { current path }
-   tarpath: filnam;  { target path }
-   tmpnam:  filnam;  { temp filename holding }
-   exclude: lstptr;  { exclude list }
-   package: pkgptr;  { packaging list }
-   grawin:  boolean; { a graphical window library exists }
-   siolib:  boolean; { an alternate standard I/O library exists }
-   errexit: boolean; { exit has error }
+{ head entry pointer }                     hp:      filept;
+{ link order list }                        lnklst:  filnam;
+{ files to process count }                 filcnt:  integer;
+{ file actions list }                      filact:  fllptr;
+{ actions count }                          actcnt:  integer;
+{ executive needs rebuilding }             excrbl:  boolean;
+{ program path }                           pgmpath: filnam;
+{ user path }                              usrpath: filnam;
+{ current path }                           curpath: filnam;
+{ target path }                            tarpath: filnam;
+{ temp filename holding }                  tmpnam:  filnam;
+{ exclude list }                           exclude: lstptr;
+{ packaging list }                         package: pkgptr;
+{ a graphical window library exists }      grawin:  boolean;
+{ an alternate standard I/O library exists }
+                                           siolib:  boolean;
+{ exit has error }                         errexit: boolean;
 
 procedure logfil(view fn: string; var hp: filept); forward;
 
