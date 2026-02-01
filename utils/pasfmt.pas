@@ -21,7 +21,7 @@
 *   -c, --columns <n>    Set wrap column (default 80)                          *
 *   -b, --bracketbreak   Add blank lines around begin/end, const, etc.         *
 *   -f, --flushleft      Flush left for multi-line definitions                 *
-*   -z, --columnize      Align =/: in const/type/var blocks                    *
+*   -z, --columnize      Align columns in const/type/fixed/var definitions     *
 *   -n, --sourceline     Add original source line numbers as comments          *
 *   -r, --noerror        Suppress error output (keep error count)             *
 *                                                                              *
@@ -39,7 +39,7 @@
 *   columns or c <n>    - Set wrap column (default 80)                         *
 *   bracketbreak or b   - Add blank lines around begin/end, const, etc.        *
 *   flushleft or f      - Flush left for multi-line definitions                *
-*   columnize or z      - Align =/: in const/type/var blocks                   *
+*   columnize or z      - Align columns in const/type/fixed/var definitions    *
 *   sourceline or n     - Add original source line numbers as comments         *
 *   noerror or r        - Suppress error output (keep error count)            *
 *                                                                              *
@@ -2043,7 +2043,7 @@ begin
     writeln('  -c, --columns <n>    Set wrap column (default: 80)');
     writeln('  -b, --bracketbreak   Add blank lines around begin/end, etc. (default: on)');
     writeln('  -f, --flushleft      Flush left for const/type/var blocks (default: on)');
-    writeln('  -z, --columnize      Align =/: in const/type/var blocks (default: on)');
+    writeln('  -z, --columnize      Align columns in const/type/fixed/var (default: on)');
     writeln('  -n, --sourceline     Add source line numbers as comments (default: off)');
     writeln('  -r, --noerror        Suppress error output (keep error count) (default: on)');
     writeln;
@@ -2155,7 +2155,7 @@ experr or e         - Show expanded error descriptions
 columns or c <n>    - Set wrap column (default 80)
 bracketbreak or b   - Add blank lines around begin/end, const, etc.
 flushleft or f      - Flush left for multi-line definitions
-columnize or z      - Align =/: in const/type/var blocks
+columnize or z      - Align columns in const/type/fixed/var definitions
 sourceline or n     - Add original source line numbers as comments
 
 Comments start with '!' and continue to end of line. They can appear at the
