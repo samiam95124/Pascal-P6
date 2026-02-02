@@ -22,6 +22,9 @@ jobs:
       - name: Make binaries executable
         run: chmod +x bin/*
 
+      - name: Configure
+        run: ./configure
+
       - name: Build
         run: bin/build
 
@@ -34,6 +37,9 @@ jobs:
 
       - name: Make binaries executable
         run: chmod +x bin/*
+
+      - name: Configure
+        run: ./configure
 
       - name: Build
         run: bin/build
