@@ -1170,6 +1170,38 @@ begin
   c_str(s); c_newline
 end;
 
+function is_c_reserved(p: pstring): boolean;
+{ check if identifier is a C reserved word }
+var l: integer;
+    res: boolean;
+    { check if pstring p matches a given string (ignoring case) }
+    function nameis(view s: string): boolean;
+    var m: boolean; i: integer;
+    begin
+      m := true;
+      if l <> max(s) then m := false
+      else for i := 1 to l do
+        if lcase(p^[i]) <> lcase(s[i]) then m := false;
+      nameis := m
+    end;
+begin
+  res := false;
+  if p <> nil then begin
+    l := max(p^);
+    { check against C reserved words }
+    if nameis('auto') or nameis('break') or nameis('case') or nameis('char') or
+       nameis('const') or nameis('continue') or nameis('default') or nameis('do') or
+       nameis('double') or nameis('else') or nameis('enum') or nameis('extern') or
+       nameis('float') or nameis('for') or nameis('goto') or nameis('if') or
+       nameis('int') or nameis('long') or nameis('register') or nameis('return') or
+       nameis('short') or nameis('signed') or nameis('sizeof') or nameis('static') or
+       nameis('struct') or nameis('switch') or nameis('typedef') or nameis('union') or
+       nameis('unsigned') or nameis('void') or nameis('volatile') or nameis('while')
+    then res := true
+  end;
+  is_c_reserved := res
+end;
+
 procedure c_pstr(p: pstring);
 { output pstring identifier to C file (lowercase) }
 var i, l: integer; c: char;
@@ -1181,7 +1213,9 @@ begin
       if (c >= 'A') and (c <= 'Z') then
         c := chr(ord(c) - ord('A') + ord('a'));
       write(prc, c)
-    end
+    end;
+    { add underscore suffix if C reserved word }
+    if is_c_reserved(p) then write(prc, '_')
   end
 end;
 
@@ -1380,7 +1414,9 @@ begin
       if (c >= 'A') and (c <= 'Z') then
         c := chr(ord(c) - ord('A') + ord('a'));
       expr_chr(c)
-    end
+    end;
+    { add underscore suffix if C reserved word }
+    if is_c_reserved(p) then expr_chr('_')
   end
 end;
 
@@ -1599,7 +1635,7 @@ begin
       if tname <> nil then begin
         if intypedef then c_str('struct ');
         c_pstr(tname);
-        c_chr('*')
+        c_str('_t*')  { add _t suffix to type name }
       end else begin
         c_basetype(fsp^.eltype);
         c_chr('*')
@@ -1611,9 +1647,10 @@ begin
     arrayc:  c_basetype(fsp^.abstype);
     records: begin
       tname := lookup_typename(fsp);
-      if tname <> nil then
-        c_pstr(tname)  { use typedef name directly }
-      else
+      if tname <> nil then begin
+        c_pstr(tname);
+        c_str('_t')  { add _t suffix to type name }
+      end else
         c_str('struct')  { anonymous - will cause C error }
     end;
     files:   c_str('FILE*')
@@ -1638,7 +1675,9 @@ begin
           lmin := fsp^.inxtype^.min.ival;
           lmax := fsp^.inxtype^.max.ival;
           c_chr('[');
-          c_int(lmax - lmin + 1);
+          { expand array by 1 for 1-based Pascal indexing }
+          if lmin >= 1 then c_int(lmax + 1)
+          else c_int(lmax - lmin + 1);
           c_chr(']')
         end
       end;
@@ -1673,6 +1712,7 @@ begin
   for i := 1 to typemapcount do begin
     c_str('typedef struct ');
     c_pstr(typemapname[i]);
+    c_str('_t');  { add _t suffix to struct tag }
     c_ln(' {');
     cindent := cindent + 1;
     { output fields }
@@ -1694,6 +1734,7 @@ begin
     cindent := cindent - 1;
     c_str('} ');
     c_pstr(typemapname[i]);
+    c_str('_t');  { add _t suffix to typedef name }
     c_ln(';');
     c_newline
   end
@@ -1702,6 +1743,7 @@ end;
 { output variable declarations from identifier BST }
 { pfl is the parameter list to exclude from output }
 procedure c_vars(p: ctp; pfl: ctp);
+var lmin: integer;
 begin
   if p <> nil then begin
     c_vars(p^.llink, pfl);
@@ -1712,7 +1754,26 @@ begin
       c_chr(' ');
       if p^.name <> nil then c_pstr(p^.name);
       c_arraydims(p^.idtype);
-      c_ln(';')
+      c_ln(';');
+      { for 1-based packed array of char, add _c pointer for C library calls }
+      if p^.idtype <> nil then
+        if p^.idtype^.form = arrays then
+          if p^.idtype^.packing then
+            if p^.idtype^.aeltype = charptr then
+              if p^.idtype^.inxtype <> nil then
+                if p^.idtype^.inxtype^.form = subrange then begin
+                  lmin := p^.idtype^.inxtype^.min.ival;
+                  if lmin >= 1 then begin
+                    c_indent;
+                    c_str('/* C zero based view */ char *');
+                    if p^.name <> nil then c_pstr(p^.name);
+                    c_str('_c = &');
+                    if p^.name <> nil then c_pstr(p^.name);
+                    c_chr('[');
+                    c_int(lmin);
+                    c_ln('];')
+                  end
+                end
     end;
     c_vars(p^.rlink, pfl)
   end
@@ -4371,6 +4432,37 @@ end;
       { add current expression to printf args based on type }
       { uses wascst, savedcval, fldwidth }
       var ltp: stp; i, l, w: integer; c: char;
+          fmin, fmax: integer;
+
+      procedure fmt_strspec;
+      { output %s or %Ns format for packed array of char }
+      begin
+        fmt_chr('%');
+        if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
+          getbounds(ltp^.inxtype, fmin, fmax);
+          fmt_width(fmax - fmin + 1)
+        end;
+        fmt_chr('s')
+      end;
+
+      procedure arg_stradd;
+      { add string argument with &[lmin] for 1-based arrays }
+      var j: integer;
+      begin
+        if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
+          getbounds(ltp^.inxtype, fmin, fmax);
+          if fmin >= 1 then begin
+            { always use &expr[lmin] - works for params, locals, subscripted }
+            if stmttop^.arglen > 0 then arg_str(', ');
+            arg_chr('&');
+            for j := 1 to stmttop^.exprlen do
+              arg_chr(stmttop^.exprbuf[j]);
+            arg_str('[1]')
+          end else
+            arg_add
+        end else
+          arg_add
+      end;
       begin
         ltp := basetype(gattr.typtr);
         if ltp = intptr then begin
@@ -4403,7 +4495,8 @@ end;
             { char constants are stored as integer ord value in ival }
             c := chr(savedcval.ival);
             if c = '%' then fmt_str('%%')
-            else if c = chr(92) then fmt_str('\\')
+            else if c = chr(92) then begin fmt_chr(chr(92)); fmt_chr(chr(92)) end
+            else if c = chr(34) then begin fmt_chr(chr(92)); fmt_chr(chr(34)) end
             else fmt_chr(c)
           end else begin
             fmt_str('%c');
@@ -4427,20 +4520,25 @@ end;
                 for i := 1 to l do begin
                   c := savedcval.valp^.sval^[i];
                   if c = '%' then fmt_str('%%')
-                  else if c = chr(92) then fmt_str('\\')
+                  else if c = chr(92) then begin
+                    fmt_chr(chr(92)); fmt_chr(chr(92))
+                  end else if c = chr(34) then begin
+                    fmt_chr(chr(92)); { backslash }
+                    fmt_chr(chr(34))  { quote }
+                  end
                   else fmt_chr(c)
                 end
               end else begin
-                fmt_str('%s');
-                arg_add
+                fmt_strspec;
+                arg_stradd
               end
             else begin
-              fmt_str('%s');
-              arg_add
+              fmt_strspec;
+              arg_stradd
             end
           else begin
-            fmt_str('%s');
-            arg_add
+            fmt_strspec;
+            arg_stradd
           end
         end else begin
           fmt_str('/* unsupported type */');
@@ -5307,7 +5405,7 @@ end;
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
-              lii: integer;
+              lii: integer; k: integer; lc: char;
         begin
           if not (sy in facbegsys) then
             begin error(58); skip(fsys + facbegsys);
@@ -5457,9 +5555,17 @@ end;
                           expr_chr(chr(val.ival));
                         expr_chr('''')
                       end else begin
-                        { string constant - output pstring contents }
+                        { string constant - output with escaping }
                         expr_chr('"');
-                        expr_pstr(val.valp^.sval);
+                        for k := 1 to val.valp^.slgth do begin
+                          lc := val.valp^.sval^[k];
+                          if lc = chr(34) then begin
+                            expr_chr(chr(92)); expr_chr('"')
+                          end else if lc = chr(92) then begin
+                            expr_chr(chr(92)); expr_chr(chr(92))
+                          end else
+                            expr_chr(lc)
+                        end;
                         expr_chr('"')
                       end
                     end;
@@ -7493,7 +7599,8 @@ end;
       procedure assignment(fcp: ctp; skp: boolean);
         var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp;
             len: addrrange;
-            i: integer;
+            i, j: integer;
+            lmin, lmax: integer;
       begin
         { push assignment context for C output }
         pushstmt(stk_assign);
@@ -7559,9 +7666,9 @@ end;
                       containerop(lattr); { rationalize binary container op }
                       { check for string to string assignment - need strcpy }
                       if stringt(lattr.typtr) and stringt(gattr.typtr) then begin
-                        { need strcpy - transform expression buffer }
+                        { need strncpy - transform expression buffer }
                         { expression buffer has: varname = "string" or varname = other }
-                        { transform: "varname = value" to "strcpy(varname, value)" }
+                        { for 1-based arrays: "strncpy(&varname[1], value, len)" }
                         usestring := true;
                         if stmttop <> nil then begin
                           { find = position in buffer }
@@ -7569,12 +7676,28 @@ end;
                           while (i <= stmttop^.exprlen) and
                                 (stmttop^.exprbuf[i] <> '=') do i := i + 1;
                           if i <= stmttop^.exprlen then begin
-                            { insert strcpy( at beginning }
-                            expr_insert('strcpy(', 1);
-                            i := i + 7; { adjust for shifted position }
+                            { get array bounds for offset and length }
+                            lmin := 0; lmax := 0;
+                            if lattr.typtr^.form = arrays then
+                              if lattr.typtr^.inxtype <> nil then
+                                getbounds(lattr.typtr^.inxtype, lmin, lmax);
+                            { insert strncpy( with & prefix for 1-based arrays }
+                            if lmin >= 1 then begin
+                              expr_insert('strncpy(&', 1);
+                              i := i + 9; { adjust for strncpy(& }
+                              { insert [1] suffix before space }
+                              expr_insert('[1]', i - 1);
+                              i := i + 3
+                            end else begin
+                              expr_insert('strncpy(', 1);
+                              i := i + 8
+                            end;
                             { replace " = " with ", " }
                             stmttop^.exprbuf[i - 1] := ',';
                             expr_del(i, 2); { remove "= " }
+                            { add length parameter }
+                            expr_str(', ');
+                            expr_int(lmax - lmin + 1);
                             expr_chr(')') { add closing paren }
                           end
                         end
