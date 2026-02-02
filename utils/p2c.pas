@@ -1377,6 +1377,41 @@ begin
   end
 end;
 
+procedure expr_insert(view s: string; p: integer);
+{ insert string at position p in expression buffer }
+{ similar to strings library insert() }
+var i, l, slen: integer;
+begin
+  if stmttop <> nil then begin
+    slen := max(s);
+    l := stmttop^.exprlen;
+    if l + slen <= 2000 then begin
+      { shift existing content right }
+      for i := l downto p do
+        stmttop^.exprbuf[i + slen] := stmttop^.exprbuf[i];
+      { copy string into gap }
+      for i := 1 to slen do
+        stmttop^.exprbuf[p + i - 1] := s[i];
+      stmttop^.exprlen := l + slen
+    end
+  end
+end;
+
+procedure expr_del(p, n: integer);
+{ delete n chars at position p in expression buffer }
+var i, l: integer;
+begin
+  if stmttop <> nil then begin
+    l := stmttop^.exprlen;
+    if (p >= 1) and (p <= l) and (n > 0) then begin
+      { shift content left }
+      for i := p to l - n do
+        stmttop^.exprbuf[i] := stmttop^.exprbuf[i + n];
+      stmttop^.exprlen := l - n
+    end
+  end
+end;
+
 { Format string operations for write/writeln }
 
 procedure fmt_reset;
@@ -7420,6 +7455,7 @@ end;
                       if stringt(lattr.typtr) and stringt(gattr.typtr) then begin
                         { need strcpy - transform expression buffer }
                         { expression buffer has: varname = "string" or varname = other }
+                        { transform: "varname = value" to "strcpy(varname, value)" }
                         usestring := true;
                         if stmttop <> nil then begin
                           { find = position in buffer }
@@ -7427,36 +7463,13 @@ end;
                           while (i <= stmttop^.exprlen) and
                                 (stmttop^.exprbuf[i] <> '=') do i := i + 1;
                           if i <= stmttop^.exprlen then begin
-                            { save old buffer info }
-                            len := stmttop^.exprlen;
-                            { move content to make room for strcpy prefix }
-                            { transform: "varname = value" to "strcpy(varname, value)" }
-                            { insert strcpy( at beginning, change = to ,, add ) at end }
-                            { shift buffer right by 7 chars for "strcpy(" }
-                            if len + 8 <= 2000 then begin
-                              { shift everything right }
-                              for len := stmttop^.exprlen downto 1 do
-                                stmttop^.exprbuf[len + 7] := stmttop^.exprbuf[len];
-                              { insert strcpy( at start }
-                              stmttop^.exprbuf[1] := 's';
-                              stmttop^.exprbuf[2] := 't';
-                              stmttop^.exprbuf[3] := 'r';
-                              stmttop^.exprbuf[4] := 'c';
-                              stmttop^.exprbuf[5] := 'p';
-                              stmttop^.exprbuf[6] := 'y';
-                              stmttop^.exprbuf[7] := '(';
-                              { find and replace " = " with ", " (at position i+7 now) }
-                              i := i + 7; { adjust for shifted position }
-                              { replace " = " with ", " }
-                              stmttop^.exprbuf[i - 1] := ',';
-                              { shift rest left by 1 to remove extra space }
-                              for len := i + 1 to stmttop^.exprlen + 7 do
-                                stmttop^.exprbuf[len - 1] := stmttop^.exprbuf[len];
-                              stmttop^.exprlen := stmttop^.exprlen + 7 - 1;
-                              { add closing paren }
-                              stmttop^.exprlen := stmttop^.exprlen + 1;
-                              stmttop^.exprbuf[stmttop^.exprlen] := ')'
-                            end
+                            { insert strcpy( at beginning }
+                            expr_insert('strcpy(', 1);
+                            i := i + 7; { adjust for shifted position }
+                            { replace " = " with ", " }
+                            stmttop^.exprbuf[i - 1] := ',';
+                            expr_del(i, 2); { remove "= " }
+                            expr_chr(')') { add closing paren }
                           end
                         end
                       end else if (lattr.typtr^.form = arrayc) or
