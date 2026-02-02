@@ -1533,31 +1533,32 @@ begin
   else if fsp = charptr then c_str('char')
   else if fsp = boolptr then c_str('int')
   else if fsp = byteptr then c_str('unsigned char')
-  else if fsp^.form = subrange then begin
-    { use appropriate integer type based on range }
-    if fsp^.rangetype = charptr then c_str('char')
-    else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 255) then
-      c_str('unsigned char')
-    else if (fsp^.min.ival >= -128) and (fsp^.max.ival <= 127) then
-      c_str('signed char')
-    else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 65535) then
-      c_str('unsigned short')
-    else if (fsp^.min.ival >= -32768) and (fsp^.max.ival <= 32767) then
-      c_str('short')
-    else
-      c_str('long')
+  else case fsp^.form of
+    subrange: begin
+      { use appropriate integer type based on range }
+      if fsp^.rangetype = charptr then c_str('char')
+      else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 255) then
+        c_str('unsigned char')
+      else if (fsp^.min.ival >= -128) and (fsp^.max.ival <= 127) then
+        c_str('signed char')
+      else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 65535) then
+        c_str('unsigned short')
+      else if (fsp^.min.ival >= -32768) and (fsp^.max.ival <= 32767) then
+        c_str('short')
+      else
+        c_str('long')
+    end;
+    pointer: begin
+      c_basetype(fsp^.eltype);
+      c_chr('*')
+    end;
+    scalar:  c_str('int');  { enumerated types map to int }
+    power:   c_str('unsigned char');  { sets are byte arrays }
+    arrays:  c_basetype(fsp^.aeltype);
+    arrayc:  c_basetype(fsp^.abstype);
+    records: c_str('struct');  { need name }
+    files:   c_str('FILE*')
   end
-  else if fsp^.form = pointer then begin
-    c_basetype(fsp^.eltype);
-    c_chr('*')
-  end
-  else if fsp^.form = scalar then c_str('int')  { enumerated types map to int }
-  else if fsp^.form = power then c_str('unsigned char')  { sets are byte arrays }
-  else if fsp^.form = arrays then c_basetype(fsp^.aeltype)
-  else if fsp^.form = arrayc then c_basetype(fsp^.abstype)
-  else if fsp^.form = records then c_str('struct')  { need name }
-  else if fsp^.form = files then c_str('FILE*')
-  else c_str('/* unknown type */')
 end;
 
 procedure c_type(fsp: stp);
