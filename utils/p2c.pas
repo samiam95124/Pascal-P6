@@ -181,6 +181,7 @@ const
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 519; { maximum fatal error }
+   maxtypemap = 500; { maximum record type name mappings }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -467,6 +468,12 @@ var
     usestdio: boolean;              { uses stdio.h (printf, etc.) }
     usestdlib: boolean;             { uses stdlib.h (malloc, etc.) }
     usestring: boolean;             { uses string.h (strcpy, etc.) }
+
+    { Record type name mapping for C output }
+    typemapcount: integer;          { number of type mappings }
+    typemapstp: array [1..maxtypemap] of stp;    { type pointers }
+    typemapname: array [1..maxtypemap] of pstring; { type names }
+    intypedef: boolean;             { inside typedef - use struct prefix }
 
     { Statement context stack }
     stmttop: stmtctxptr;            { top of statement context stack }
@@ -1520,12 +1527,51 @@ end;
 
 { C type mapping procedures }
 
+procedure register_typename(fsp: stp; name: pstring);
+{ register a type name for a record type }
+begin
+  if (fsp <> nil) and (fsp^.form = records) then begin
+    if typemapcount < maxtypemap then begin
+      typemapcount := typemapcount + 1;
+      typemapstp[typemapcount] := fsp;
+      typemapname[typemapcount] := name
+    end
+  end
+end;
+
+function lookup_typename(fsp: stp): pstring;
+{ lookup the name for a record type, returns nil if not found }
+var i: integer;
+    found: pstring;
+begin
+  found := nil;
+  for i := 1 to typemapcount do
+    if typemapstp[i] = fsp then found := typemapname[i];
+  lookup_typename := found
+end;
+
+procedure find_record_type(fsp: stp; var recsp: stp);
+{ find the innermost record type in a type structure }
+begin
+  recsp := nil;
+  if fsp <> nil then begin
+    case fsp^.form of
+      records: recsp := fsp;
+      arrays: find_record_type(fsp^.aeltype, recsp);
+      arrayc: find_record_type(fsp^.abstype, recsp);
+      pointer: find_record_type(fsp^.eltype, recsp);
+      scalar, subrange, power, files, tagfld, variant, exceptf: { no records }
+    end
+  end
+end;
+
 procedure c_type(fsp: stp);
 { output C type for given Pascal type }
 forward;
 
 procedure c_basetype(fsp: stp);
 { output base C type without array dimensions }
+var tname: pstring;
 begin
   if fsp = nil then c_str('void')
   else if fsp = intptr then c_str('long')
@@ -1549,14 +1595,27 @@ begin
         c_str('long')
     end;
     pointer: begin
-      c_basetype(fsp^.eltype);
-      c_chr('*')
+      tname := lookup_typename(fsp^.eltype);
+      if tname <> nil then begin
+        if intypedef then c_str('struct ');
+        c_pstr(tname);
+        c_chr('*')
+      end else begin
+        c_basetype(fsp^.eltype);
+        c_chr('*')
+      end
     end;
     scalar:  c_str('int');  { enumerated types map to int }
     power:   c_str('unsigned char');  { sets are byte arrays }
     arrays:  c_basetype(fsp^.aeltype);
     arrayc:  c_basetype(fsp^.abstype);
-    records: c_str('struct');  { need name }
+    records: begin
+      tname := lookup_typename(fsp);
+      if tname <> nil then
+        c_pstr(tname)  { use typedef name directly }
+      else
+        c_str('struct')  { anonymous - will cause C error }
+    end;
     files:   c_str('FILE*')
   end
 end;
@@ -1603,6 +1662,41 @@ begin
     pfl := pfl^.next
   end;
   inpflist := found
+end;
+
+{ output typedef declarations for all registered record types }
+procedure c_typedefs;
+var i: integer;
+    fld: ctp;
+    fsp: stp;
+begin
+  for i := 1 to typemapcount do begin
+    c_str('typedef struct ');
+    c_pstr(typemapname[i]);
+    c_ln(' {');
+    cindent := cindent + 1;
+    { output fields }
+    fsp := typemapstp[i];
+    if fsp <> nil then begin
+      intypedef := true;
+      fld := fsp^.fstfld;
+      while fld <> nil do begin
+        c_indent;
+        c_type(fld^.idtype);
+        c_chr(' ');
+        if fld^.name <> nil then c_pstr(fld^.name);
+        c_arraydims(fld^.idtype);
+        c_ln(';');
+        fld := fld^.next
+      end;
+      intypedef := false
+    end;
+    cindent := cindent - 1;
+    c_str('} ');
+    c_pstr(typemapname[i]);
+    c_ln(';');
+    c_newline
+  end
 end;
 
 { output variable declarations from identifier BST }
@@ -6448,6 +6542,9 @@ end;
           typ(fsys + [semicolon],lsp,lsize);
           enterid(lcp);
           lcp^.idtype := lsp;
+          { register record type name for C typedef output }
+          if lsp <> nil then
+            if lsp^.form = records then register_typename(lsp, lcp^.name);
           if sy = semicolon then
             begin insymbol;
               if not (sy in fsys + [ident]) then
@@ -6459,7 +6556,7 @@ end;
     end (*typedeclaration*) ;
 
     procedure vardeclaration;
-      var lcp,nxt: ctp; lsp: stp; lsize: addrrange;
+      var lcp,nxt: ctp; lsp, lsp1: stp; lsize: addrrange;
           test: boolean; maxpar, curpar: integer; cc: integer;
     begin nxt := nil;
       repeat { id:type group }
@@ -6513,6 +6610,14 @@ end;
           assocated variable yet. }
         if sy = colon then insymbol else error(5);
         typ(fsys + [semicolon] + typedels,lsp,lsize);
+        { register anonymous record types for C typedef output }
+        if (lsp <> nil) and (nxt <> nil) then begin
+          find_record_type(lsp, lsp1);
+          if lsp1 <> nil then
+            if lookup_typename(lsp1) = nil then
+              { generate name based on first variable name }
+              register_typename(lsp1, nxt^.name)
+        end;
         cc := containers(lsp); { find # containers }
         if cc > 0 then
           { change variable from size of base to pointer+template for containers }
@@ -8255,21 +8360,23 @@ end;
     { emit C function opening }
     if (level = 1) and (fprocp = nil) then begin
       { main program body }
+      { output typedefs and global variables before main if not done }
+      if not gblvarsdone then begin
+        c_typedefs;
+        lcp := display[top].fname;
+        c_vars(lcp, nil);
+        c_newline;
+        gblvarsdone := true
+      end;
       c_ln('int main(void)');
       c_ln('{');
       c_newline;
-      cindent := cindent + 1;
-      { program-level variables are output at C global scope before procedures }
-      { if no procedures, output them here; otherwise they're already global }
-      if not gblvarsdone then begin
-        lcp := display[top].fname;
-        c_vars(lcp, nil);
-        c_newline  { blank line after declarations before code }
-      end
+      cindent := cindent + 1
     end else if fprocp <> nil then begin
       { procedure or function body }
-      { before first procedure, output global (program-level) variables }
+      { before first procedure, output typedefs and global variables }
       if not gblvarsdone then begin
+        c_typedefs;
         c_vars(display[1].fname, nil);
         c_newline;
         gblvarsdone := true
@@ -9382,6 +9489,8 @@ begin
   usestdio := false;
   usestdlib := false;
   usestring := false;
+  typemapcount := 0;
+  intypedef := false;
   stmttop := nil;
   stmtfree := nil;
   inopexpr := false;
