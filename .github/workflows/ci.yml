@@ -22,11 +22,11 @@ jobs:
       - name: Make binaries executable
         run: chmod +x bin/*
 
-      - name: Configure
-        run: ./configure
-
       - name: Build
-        run: bin/build
+        run: |
+          . ./setpath
+          ./configure
+          bin/build
 
   regress:
     if: ${{ github.event.inputs.action == 'regress' }}
@@ -38,14 +38,12 @@ jobs:
       - name: Make binaries executable
         run: chmod +x bin/*
 
-      - name: Configure
-        run: ./configure
-
-      - name: Build
-        run: bin/build
-
-      - name: Regression test
-        run: bin/regress
+      - name: Build and test
+        run: |
+          . ./setpath
+          ./configure
+          bin/build
+          bin/regress
 
       - name: Upload regression report
         if: always()
