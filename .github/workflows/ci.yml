@@ -18,15 +18,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Make binaries executable
         run: chmod +x bin/*
 
       - name: Build
         run: |
-          . ./setpath
+          . setpath
           ./configure
-          bin/build
+          build
 
   regress:
     if: ${{ github.event.inputs.action == 'regress' }}
@@ -34,16 +36,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Make binaries executable
         run: chmod +x bin/*
 
       - name: Build and test
         run: |
-          . ./setpath
+          . setpath
           ./configure
-          bin/build
-          bin/regress
+          build
+          regress
 
       - name: Upload regression report
         if: always()
