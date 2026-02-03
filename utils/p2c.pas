@@ -1502,7 +1502,7 @@ end;
 procedure expr_int(i: integer);
 { append integer to expression in current context }
 var s: packed array [1..24] of char;
-    j, k, l: integer;
+    k, l: integer;
     neg: boolean;
 begin
   if stmttop <> nil then begin
@@ -4613,28 +4613,31 @@ end;
         if part = ptview then error(290)
       end;
       { track uplevel variable references for C output }
-      if (lcp^.klass = vars) and (lcp^.vlev < level) and
-         (lcp^.vlev >= uplevellev) then
-        add_uplevelref(lcp);
+      if lcp^.klass = vars then
+        if (lcp^.vlev < level) and (lcp^.vlev >= uplevellev) then
+          add_uplevelref(lcp);
       { output variable name for C before selector handles subscripts }
       if wantexpr then
         if lcp <> nil then
           if lcp^.name <> nil then begin
-            { check if uplevel variable reference in nested procedure }
-            if (lcp^.klass = vars) and (lcp^.vlev < level) and
-               (lcp^.vlev >= uplevellev) and nestbuffering then begin
-              { use __up parameter pointer }
-              expr_str('(*');
-              expr_pstr(lcp^.name);
-              expr_str('__up)')
-            end
-            { check if var param of simple type needs dereference }
-            else if (lcp^.klass = vars) and (lcp^.vkind = formal) and
-               (lcp^.idtype <> nil) and
-               (lcp^.idtype^.form in [scalar, subrange]) then begin
-              expr_str('(*');
-              expr_pstr(lcp^.name);
-              expr_chr(')')
+            if lcp^.klass = vars then begin
+              { check if uplevel variable reference in nested procedure }
+              if (lcp^.vlev < level) and
+                 (lcp^.vlev >= uplevellev) and nestbuffering then begin
+                { use __up parameter pointer }
+                expr_str('(*');
+                expr_pstr(lcp^.name);
+                expr_str('__up)')
+              end
+              { check if var param of simple type needs dereference }
+              else if (lcp^.vkind = formal) and
+                 (lcp^.idtype <> nil) and
+                 (lcp^.idtype^.form in [scalar, subrange]) then begin
+                expr_str('(*');
+                expr_pstr(lcp^.name);
+                expr_chr(')')
+              end else
+                expr_pstr(lcp^.name)
             end else
               expr_pstr(lcp^.name)
           end;
@@ -5857,7 +5860,7 @@ end;
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
-              lii: integer; k: integer; lc: char;
+              k: integer; lc: char;
         begin
           if not (sy in facbegsys) then
             begin error(58); skip(fsys + facbegsys);
@@ -5953,25 +5956,29 @@ end;
                         end else
                           begin
                             { track uplevel variable references for C output }
-                            if (lcp^.klass = vars) and (lcp^.vlev < level) and
-                               (lcp^.vlev >= uplevellev) then
-                              add_uplevelref(lcp);
+                            if lcp^.klass = vars then
+                              if (lcp^.vlev < level) and
+                                 (lcp^.vlev >= uplevellev) then
+                                add_uplevelref(lcp);
                             { output variable identifier BEFORE selector }
                             if wantexpr then begin
-                              { check if uplevel variable reference in nested procedure }
-                              if (lcp^.klass = vars) and (lcp^.vlev < level) and
-                                 (lcp^.vlev >= uplevellev) and nestbuffering then begin
-                                expr_str('(*');
-                                expr_pstr(lcp^.name);
-                                expr_str('__up)')
-                              end
-                              { check if var param of simple type needs dereference }
-                              else if (lcp^.klass = vars) and (lcp^.vkind = formal) and
-                                 (lcp^.idtype <> nil) and
-                                 (lcp^.idtype^.form in [scalar, subrange]) then begin
-                                expr_str('(*');
-                                expr_pstr(lcp^.name);
-                                expr_chr(')')
+                              if lcp^.klass = vars then begin
+                                { check if uplevel variable reference in nested procedure }
+                                if (lcp^.vlev < level) and
+                                   (lcp^.vlev >= uplevellev) and nestbuffering then begin
+                                  expr_str('(*');
+                                  expr_pstr(lcp^.name);
+                                  expr_str('__up)')
+                                end
+                                { check if var param of simple type needs dereference }
+                                else if (lcp^.vkind = formal) and
+                                   (lcp^.idtype <> nil) and
+                                   (lcp^.idtype^.form in [scalar, subrange]) then begin
+                                  expr_str('(*');
+                                  expr_pstr(lcp^.name);
+                                  expr_chr(')')
+                                end else
+                                  expr_pstr(lcp^.name)
                               end else
                                 expr_pstr(lcp^.name)
                             end;
@@ -8143,7 +8150,7 @@ end;
       procedure assignment(fcp: ctp; skp: boolean);
         var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp;
             len: addrrange;
-            i, j: integer;
+            i: integer;
             lmin, lmax: integer;
       begin
         { push assignment context for C output }
@@ -8156,20 +8163,23 @@ end;
         { output variable name to expression buffer BEFORE selector }
         if fcp <> nil then
           if fcp^.name <> nil then begin
-            { check if uplevel variable reference in nested procedure }
-            if (fcp^.klass = vars) and (fcp^.vlev < level) and
-               (fcp^.vlev >= uplevellev) and nestbuffering then begin
-              expr_str('(*');
-              expr_pstr(fcp^.name);
-              expr_str('__up)')
-            end
-            { check if var param of simple type needs dereference }
-            else if (fcp^.klass = vars) and (fcp^.vkind = formal) and
-               (fcp^.idtype <> nil) and
-               (fcp^.idtype^.form in [scalar, subrange]) then begin
-              expr_str('(*');
-              expr_pstr(fcp^.name);
-              expr_chr(')')
+            if fcp^.klass = vars then begin
+              { check if uplevel variable reference in nested procedure }
+              if (fcp^.vlev < level) and
+                 (fcp^.vlev >= uplevellev) and nestbuffering then begin
+                expr_str('(*');
+                expr_pstr(fcp^.name);
+                expr_str('__up)')
+              end
+              { check if var param of simple type needs dereference }
+              else if (fcp^.vkind = formal) and
+                 (fcp^.idtype <> nil) and
+                 (fcp^.idtype^.form in [scalar, subrange]) then begin
+                expr_str('(*');
+                expr_pstr(fcp^.name);
+                expr_chr(')')
+              end else
+                expr_pstr(fcp^.name)
             end else begin
               expr_pstr(fcp^.name);
               { if function result assignment, add __result suffix }
