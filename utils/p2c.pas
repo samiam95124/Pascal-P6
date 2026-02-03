@@ -182,6 +182,7 @@ const
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 519; { maximum fatal error }
    maxtypemap = 500; { maximum record type name mappings }
+   maxenummap = 100; { maximum enum type name mappings }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -468,12 +469,18 @@ var
     usestdio: boolean;              { uses stdio.h (printf, etc.) }
     usestdlib: boolean;             { uses stdlib.h (malloc, etc.) }
     usestring: boolean;             { uses string.h (strcpy, etc.) }
+    usemath: boolean;               { uses math.h (sin, cos, sqrt, etc.) }
 
     { Record type name mapping for C output }
     typemapcount: integer;          { number of type mappings }
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
     intypedef: boolean;             { inside typedef - use struct prefix }
+
+    { Enum type name mapping for C output }
+    enummapcount: integer;          { number of enum type mappings }
+    enummapstp: array [1..maxenummap] of stp;    { enum type pointers }
+    enummapname: array [1..maxenummap] of pstring; { enum type names }
 
     { Statement context stack }
     stmttop: stmtctxptr;            { top of statement context stack }
@@ -1156,6 +1163,13 @@ begin
   write(prc, i:1)
 end;
 
+procedure c_real(r: real);
+{ output real to C file }
+begin
+  if catbol then begin c_indent; catbol := false end;
+  write(prc, r)
+end;
+
 procedure c_id(var s: idstr; l: integer);
 { output identifier to C file }
 var i: integer;
@@ -1420,6 +1434,28 @@ begin
   end
 end;
 
+procedure expr_mathfn(p: pstring);
+{ output math function name translated to C equivalent }
+var l: integer;
+    function nameis(view s: string): boolean;
+    var m: boolean; i: integer;
+    begin
+      m := true;
+      if l <> max(s) then m := false
+      else for i := 1 to l do
+        if lcase(p^[i]) <> lcase(s[i]) then m := false;
+      nameis := m
+    end;
+begin
+  if p <> nil then begin
+    l := max(p^);
+    { translate Pascal math functions to C equivalents }
+    if nameis('arctan') then expr_str('atan')
+    else if nameis('ln') then expr_str('log')
+    else expr_pstr(p)  { use lowercase name as-is }
+  end
+end;
+
 procedure expr_insert(view s: string; p: integer);
 { insert string at position p in expression buffer }
 { similar to strings library insert() }
@@ -1575,6 +1611,19 @@ begin
   end
 end;
 
+procedure register_enumtype(fsp: stp; name: pstring);
+{ register a type name for an enumerated type }
+begin
+  if (fsp <> nil) and (fsp^.form = scalar) then
+    if fsp^.scalkind = declared then begin
+      if enummapcount < maxenummap then begin
+        enummapcount := enummapcount + 1;
+        enummapstp[enummapcount] := fsp;
+        enummapname[enummapcount] := name
+      end
+    end
+end;
+
 function lookup_typename(fsp: stp): pstring;
 { lookup the name for a record type, returns nil if not found }
 var i: integer;
@@ -1666,7 +1715,8 @@ end;
 
 procedure c_arraydims(fsp: stp);
 { output array dimensions for C declaration }
-var lmin, lmax: integer;
+var lmin, lmax, enumcnt: integer;
+    lcp: ctp;
 begin
   if fsp <> nil then begin
     if fsp^.form = arrays then begin
@@ -1679,6 +1729,19 @@ begin
           if lmin >= 1 then c_int(lmax + 1)
           else c_int(lmax - lmin + 1);
           c_chr(']')
+        end else if fsp^.inxtype^.form = scalar then begin
+          { enum index type - count the enum constants }
+          if fsp^.inxtype^.scalkind = declared then begin
+            enumcnt := 0;
+            lcp := fsp^.inxtype^.fconst;
+            while lcp <> nil do begin
+              enumcnt := enumcnt + 1;
+              lcp := lcp^.next
+            end;
+            c_chr('[');
+            c_int(enumcnt);
+            c_chr(']')
+          end
         end
       end;
       c_arraydims(fsp^.aeltype)
@@ -1701,6 +1764,41 @@ begin
     pfl := pfl^.next
   end;
   inpflist := found
+end;
+
+{ output enum declarations for all registered enum types }
+procedure c_enums;
+var i: integer;
+    lcp: ctp;
+    fsp: stp;
+    first: boolean;
+begin
+  for i := 1 to enummapcount do begin
+    c_str('enum ');
+    c_pstr(enummapname[i]);
+    c_ln('_e {');
+    cindent := cindent + 1;
+    { output enum constants with explicit ordinal values }
+    { they are linked in reverse order but explicit values make order irrelevant }
+    fsp := enummapstp[i];
+    if fsp <> nil then begin
+      first := true;
+      lcp := fsp^.fconst;
+      while lcp <> nil do begin
+        if not first then c_ln(',');
+        first := false;
+        c_indent;
+        if lcp^.name <> nil then c_pstr(lcp^.name);
+        c_str(' = ');
+        c_int(lcp^.values.ival);
+        lcp := lcp^.next
+      end;
+      c_newline
+    end;
+    cindent := cindent - 1;
+    c_ln('};');
+    c_newline
+  end
 end;
 
 { output typedef declarations for all registered record types }
@@ -1740,10 +1838,48 @@ begin
   end
 end;
 
+{ output constant declarations from identifier BST }
+procedure c_consts(p: ctp);
+var isenumconst: boolean;
+begin
+  if p <> nil then begin
+    c_consts(p^.llink);
+    { output constants, but not enum constants (those are in c_enums) }
+    if p^.klass = konst then begin
+      isenumconst := false;
+      if p^.idtype <> nil then
+        if p^.idtype^.form = scalar then
+          if p^.idtype^.scalkind = declared then
+            isenumconst := true;
+      if not isenumconst then begin
+        c_str('#define ');
+        if p^.name <> nil then c_pstr(p^.name);
+        c_chr(' ');
+        if p^.idtype = intptr then
+          c_int(p^.values.ival)
+        else if p^.idtype = realptr then
+          c_real(p^.values.valp^.rval)
+        else if p^.idtype = charptr then begin
+          c_chr('''');
+          c_chr(chr(p^.values.ival));
+          c_chr('''')
+        end else if p^.idtype = boolptr then begin
+          if p^.values.ival = 0 then c_chr('0')
+          else c_chr('1')
+        end else if p^.values.intval then
+          c_int(p^.values.ival)
+        else if p^.values.valp <> nil then
+          c_real(p^.values.valp^.rval);
+        c_newline
+      end
+    end;
+    c_consts(p^.rlink)
+  end
+end;
+
 { output variable declarations from identifier BST }
 { pfl is the parameter list to exclude from output }
 procedure c_vars(p: ctp; pfl: ctp);
-var lmin: integer;
 begin
   if p <> nil then begin
     c_vars(p^.llink, pfl);
@@ -1754,26 +1890,7 @@ begin
       c_chr(' ');
       if p^.name <> nil then c_pstr(p^.name);
       c_arraydims(p^.idtype);
-      c_ln(';');
-      { for 1-based packed array of char, add _c pointer for C library calls }
-      if p^.idtype <> nil then
-        if p^.idtype^.form = arrays then
-          if p^.idtype^.packing then
-            if p^.idtype^.aeltype = charptr then
-              if p^.idtype^.inxtype <> nil then
-                if p^.idtype^.inxtype^.form = subrange then begin
-                  lmin := p^.idtype^.inxtype^.min.ival;
-                  if lmin >= 1 then begin
-                    c_indent;
-                    c_str('/* C zero based view */ char *');
-                    if p^.name <> nil then c_pstr(p^.name);
-                    c_str('_c = &');
-                    if p^.name <> nil then c_pstr(p^.name);
-                    c_chr('[');
-                    c_int(lmin);
-                    c_ln('];')
-                  end
-                end
+      c_ln(';')
     end;
     c_vars(p^.rlink, pfl)
   end
@@ -4227,6 +4344,7 @@ end;
 
   procedure call(fsys: setofsys; fcp: ctp; inherit: boolean; isfunc: boolean);
     var lkey: keyrng;
+        prearglen: integer; { buffer length before parsing argument }
 
     procedure variable(fsys: setofsys; threaten: boolean);
       var lcp: ctp;
@@ -4464,7 +4582,8 @@ end;
           arg_add
       end;
       begin
-        ltp := basetype(gattr.typtr);
+        { use lsp (saved type) not gattr.typtr (may be modified by :width:prec) }
+        ltp := lsp;
         if ltp = intptr then begin
           fmt_chr('%');
           if fldwidth < 0 then begin
@@ -4473,7 +4592,10 @@ end;
           end else
             w := fldwidth;
           if w <> 1 then fmt_width(w);  { width 1 = C default, no specifier }
-          fmt_str('ld');
+          if wascst then
+            fmt_chr('d')  { constants are int in C }
+          else
+            fmt_str('ld');  { variables are long }
           arg_add
         end else if ltp = realptr then begin
           fmt_chr('%');
@@ -4828,14 +4950,39 @@ end;
     begin
       if gattr.typtr <> nil then
         if (gattr.typtr <> intptr) and (gattr.typtr <> realptr) then
-          begin error(125); gattr.typtr := intptr end
+          begin error(125); gattr.typtr := intptr end;
+      { wrap expression with appropriate abs function for C }
+      if wantexpr then begin
+        if gattr.typtr = realptr then
+          expr_insert('fabs(', 1)
+        else
+          expr_insert('labs(', 1);
+        expr_chr(')')
+      end
     end (*abs*) ;
 
     procedure sqrfunction;
+    var i, argstart, arglen: integer;
+        saved: packed array [1..2000] of char;
     begin
       if gattr.typtr <> nil then
         if (gattr.typtr <> intptr) and (gattr.typtr <> realptr) then
-          begin error(125); gattr.typtr := intptr end
+          begin error(125); gattr.typtr := intptr end;
+      { C doesn't have sqr - generate ((x)*(x)) by duplicating argument }
+      if wantexpr and (stmttop <> nil) then begin
+        { extract just the argument (from prearglen+1 to current length) }
+        argstart := prearglen + 1;
+        arglen := stmttop^.exprlen - prearglen;
+        for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
+        { truncate buffer back to before argument }
+        stmttop^.exprlen := prearglen;
+        { output ((arg)*(arg)) }
+        expr_str('((');
+        for i := 1 to arglen do expr_chr(saved[i]);
+        expr_str(')*(');
+        for i := 1 to arglen do expr_chr(saved[i]);
+        expr_str('))')
+      end
     end (*sqr*) ;
 
     procedure truncfunction;
@@ -4880,15 +5027,25 @@ end;
     end (*predsucc*) ;
 
     procedure eofeolnfunction;
+    var hasarg: boolean;
     begin
+      hasarg := false;
       if sy = lparent then
-        begin insymbol; variable(fsys + [rparent], false);
+        begin insymbol; hasarg := true;
+          { output function name before parsing arg }
+          if lkey = 9 then expr_str('feof(')
+          else expr_str('p2c_eoln(');
+          variable(fsys + [rparent], false);
           if sy = rparent then insymbol else error(4);
+          expr_chr(')');
           loadaddress
         end
       else begin
         if not inputptr^.hdr then error(175);
-        gattr.typtr := textptr
+        gattr.typtr := textptr;
+        { no arg - use stdin }
+        if lkey = 9 then expr_str('feof(stdin)')
+        else expr_str('p2c_eoln(stdin)')
       end;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> files then error(125)
@@ -5328,6 +5485,9 @@ end;
             if (lkey <= 8) or (lkey = 16) then
               begin
                 if sy = lparent then insymbol else error(9);
+                { save buffer position before parsing argument }
+                if (stmttop <> nil) then prearglen := stmttop^.exprlen
+                else prearglen := 0;
                 expression(fsys+[rparent], false); load
               end;
             case lkey of
@@ -5426,9 +5586,19 @@ end;
                     if hasfunc(lcp) then
                       begin
                         { output function name for C call }
-                        if lcp^.name <> nil then
-                          for lii := 1 to max(lcp^.name^) do
-                            expr_chr(lcp^.name^[lii]);
+                        { skip name output for standard functions - handled in call() }
+                        if lcp^.pfdeckind <> standard then begin
+                          { translate math function names for C (check sysrot flag) }
+                          varpart := false; { reuse as "is math function" flag }
+                          if lcp^.klass = func then
+                            if lcp^.pfdeckind = declared then
+                              if lcp^.pfkind = actual then
+                                if lcp^.sysrot then varpart := true;
+                          if varpart then
+                            expr_mathfn(lcp^.name)
+                          else
+                            expr_pstr(lcp^.name)
+                        end;
                         call(fsys,lcp, inherit, true);
                         with gattr do
                           begin kind := expr;
@@ -5879,22 +6049,65 @@ end;
       lattr := gattr; lop := op;
       { output C relational operator }
       if wantexpr then begin
-        case lop of
-          ltop: expr_str(' < ');
-          leop: expr_str(' <= ');
-          geop: expr_str(' >= ');
-          gtop: expr_str(' > ');
-          neop: expr_str(' != ');
-          eqop: expr_str(' == ');
-          inop: begin
-            { save left expression and clear buffer for 'in' handling }
-            if stmttop <> nil then begin
-              in_left_len := stmttop^.exprlen;
-              for lsize := 1 to in_left_len do
-                in_left_buf[lsize] := stmttop^.exprbuf[lsize];
-              stmttop^.exprlen := 0 { clear for regeneration }
-            end else
-              in_left_len := 0
+        { check for string comparison - need strncmp }
+        if stringt(gattr.typtr) and (lop in [eqop, neop, ltop, leop, gtop, geop]) then begin
+          { string comparison - save left expr and wrap with strncmp }
+          if stmttop <> nil then begin
+            { find start of current comparison - scan backwards for && or || }
+            lsizspc := stmttop^.exprlen;
+            rschrcst := false; { reuse as "found" flag }
+            while (lsizspc > 1) and not rschrcst do begin
+              if (stmttop^.exprbuf[lsizspc] = '&') and
+                 (stmttop^.exprbuf[lsizspc-1] = '&') then begin
+                lsizspc := lsizspc + 2; { start after && and space }
+                rschrcst := true
+              end
+              else if (stmttop^.exprbuf[lsizspc] = '|') and
+                 (stmttop^.exprbuf[lsizspc-1] = '|') then begin
+                lsizspc := lsizspc + 2;
+                rschrcst := true
+              end
+              else lsizspc := lsizspc - 1
+            end;
+            if not rschrcst then lsizspc := 1; { use entire buffer }
+            { copy from lsizspc to end into in_left_buf }
+            in_left_len := stmttop^.exprlen - lsizspc + 1;
+            for lsize := 1 to in_left_len do
+              in_left_buf[lsize] := stmttop^.exprbuf[lsizspc + lsize - 1];
+            { truncate expression buffer to before the left expression }
+            stmttop^.exprlen := lsizspc - 1;
+            { output any leading parens before strncmp }
+            lsizspc := 1;
+            while (lsizspc <= in_left_len) and (in_left_buf[lsizspc] = '(') do begin
+              expr_chr('(');
+              lsizspc := lsizspc + 1
+            end;
+            expr_str('strncmp(');
+            { output rest of expression (after leading parens) }
+            for lsize := lsizspc to in_left_len do
+              expr_chr(in_left_buf[lsize]);
+            expr_str(', ')
+          end else
+            in_left_len := 0
+        end else begin
+          in_left_len := 0;
+          case lop of
+            ltop: expr_str(' < ');
+            leop: expr_str(' <= ');
+            geop: expr_str(' >= ');
+            gtop: expr_str(' > ');
+            neop: expr_str(' != ');
+            eqop: expr_str(' == ');
+            inop: begin
+              { save left expression and clear buffer for 'in' handling }
+              if stmttop <> nil then begin
+                in_left_len := stmttop^.exprlen;
+                for lsize := 1 to in_left_len do
+                  in_left_buf[lsize] := stmttop^.exprbuf[lsize];
+                stmttop^.exprlen := 0 { clear for regeneration }
+              end else
+                in_left_len := 0
+            end
           end
         end
       end else
@@ -6000,6 +6213,21 @@ end;
                              (gattr.typtr^.form = arrayc) then typind := 'v'
                           else typind := 'm';
                           containerop(lattr); { rationalize binary container }
+                        end;
+                        { close strncmp call for string comparison }
+                        if wantexpr and (in_left_len > 0) then begin
+                          expr_str(', ');
+                          expr_int(lsize);
+                          expr_chr(')');
+                          case lop of
+                            eqop: expr_str(' == 0');
+                            neop: expr_str(' != 0');
+                            ltop: expr_str(' < 0');
+                            leop: expr_str(' <= 0');
+                            gtop: expr_str(' > 0');
+                            geop: expr_str(' >= 0')
+                          end;
+                          in_left_len := 0 { reset for next comparison }
                         end
                       end;
                     records:
@@ -6648,9 +6876,12 @@ end;
           typ(fsys + [semicolon],lsp,lsize);
           enterid(lcp);
           lcp^.idtype := lsp;
-          { register record type name for C typedef output }
-          if lsp <> nil then
+          { register type names for C output }
+          if lsp <> nil then begin
             if lsp^.form = records then register_typename(lsp, lcp^.name);
+            if lsp^.form = scalar then
+              if lsp^.scalkind = declared then register_enumtype(lsp, lcp^.name)
+          end;
           if sy = semicolon then
             begin insymbol;
               if not (sy in fsys + [ident]) then
@@ -7607,8 +7838,12 @@ end;
         expr_reset;
         { output variable name to expression buffer BEFORE selector }
         if fcp <> nil then
-          if fcp^.name <> nil then
+          if fcp^.name <> nil then begin
             expr_pstr(fcp^.name);
+            { if function result assignment, add __result suffix }
+            if fcp^.klass = func then
+              expr_str('__result')
+          end;
         tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
           begin
@@ -7664,11 +7899,11 @@ end;
                              end;
                     arrays, arrayc: begin
                       containerop(lattr); { rationalize binary container op }
-                      { check for string to string assignment - need strcpy }
+                      { check for string to string assignment - need memmove }
                       if stringt(lattr.typtr) and stringt(gattr.typtr) then begin
-                        { need strncpy - transform expression buffer }
+                        { need memmove - transform expression buffer }
                         { expression buffer has: varname = "string" or varname = other }
-                        { for 1-based arrays: "strncpy(&varname[1], value, len)" }
+                        { for 1-based arrays: "memmove(&varname[1], value, len)" }
                         usestring := true;
                         if stmttop <> nil then begin
                           { find = position in buffer }
@@ -7681,15 +7916,15 @@ end;
                             if lattr.typtr^.form = arrays then
                               if lattr.typtr^.inxtype <> nil then
                                 getbounds(lattr.typtr^.inxtype, lmin, lmax);
-                            { insert strncpy( with & prefix for 1-based arrays }
+                            { insert memmove( with & prefix for 1-based arrays }
                             if lmin >= 1 then begin
-                              expr_insert('strncpy(&', 1);
-                              i := i + 9; { adjust for strncpy(& }
+                              expr_insert('memmove(&', 1);
+                              i := i + 9; { adjust for memmove(& }
                               { insert [1] suffix before space }
                               expr_insert('[1]', i - 1);
                               i := i + 3
                             end else begin
-                              expr_insert('strncpy(', 1);
+                              expr_insert('memmove(', 1);
                               i := i + 8
                             end;
                             { replace " = " with ", " }
@@ -8338,11 +8573,9 @@ end;
                               { procedure call as statement - output C call }
                               pushstmt(stk_call);
                               expr_reset;
-                              { output function name for non-standard procs }
+                              { output function name for non-standard procs (lowercase) }
                               if lcp^.pfdeckind <> standard then
-                                if lcp^.name <> nil then
-                                  for lii := 1 to max(lcp^.name^) do
-                                    expr_chr(lcp^.name^[lii]);
+                                expr_pstr(lcp^.name);
                               call(fsys,lcp,inherit,false);
                               { output the call - but not for standard procs (handled internally) }
                               if lcp^.pfdeckind <> standard then begin
@@ -8357,11 +8590,9 @@ end;
                             { procedure call as statement - output C call }
                             pushstmt(stk_call);
                             expr_reset;
-                            { output function name for non-standard procs }
+                            { output function name for non-standard procs (lowercase) }
                             if lcp^.pfdeckind <> standard then
-                              if lcp^.name <> nil then
-                                for lii := 1 to max(lcp^.name^) do
-                                  expr_chr(lcp^.name^[lii]);
+                              expr_pstr(lcp^.name);
                             call(fsys,lcp,inherit,false);
                             { output the call - but not for standard procs (handled internally) }
                             if lcp^.pfdeckind <> standard then begin
@@ -8485,6 +8716,8 @@ end;
       { main program body }
       { output typedefs and global variables before main if not done }
       if not gblvarsdone then begin
+        c_consts(display[top].fname);
+        c_enums;
         c_typedefs;
         lcp := display[top].fname;
         c_vars(lcp, nil);
@@ -8499,6 +8732,8 @@ end;
       { procedure or function body }
       { before first procedure, output typedefs and global variables }
       if not gblvarsdone then begin
+        c_consts(display[1].fname);
+        c_enums;
         c_typedefs;
         c_vars(display[1].fname, nil);
         c_newline;
@@ -8522,9 +8757,14 @@ end;
           if lcp^.klass = vars then begin
             { output parameter type }
             if lcp^.vkind = formal then begin
-              { var parameter - use pointer }
+              { var parameter - use pointer, but not for arrays }
+              { arrays decay to pointers naturally in C function params }
               c_type(lcp^.idtype);
-              c_str('* ')
+              if (lcp^.idtype <> nil) and
+                 (lcp^.idtype^.form <> arrays) then
+                c_str('* ')
+              else
+                c_chr(' ')
             end else begin
               { value parameter }
               c_type(lcp^.idtype);
@@ -8856,6 +9096,11 @@ end;
     c_newline;
     c_ln('#include <stdio.h>');
     c_ln('#include <string.h>');
+    c_ln('#include <math.h>');
+    c_newline;
+    { Pascal runtime helper macros }
+    c_ln('/* Pascal runtime helpers */');
+    c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
@@ -9612,7 +9857,9 @@ begin
   usestdio := false;
   usestdlib := false;
   usestring := false;
+  usemath := false;
   typemapcount := 0;
+  enummapcount := 0;
   intypedef := false;
   stmttop := nil;
   stmtfree := nil;
