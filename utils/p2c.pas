@@ -4068,6 +4068,7 @@ end;
   procedure selector(fsys: setofsys; fcp: ctp; skp: boolean);
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
+      needarrow: boolean; { for C output: use -> instead of . for var param records }
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
   begin
@@ -4125,6 +4126,7 @@ end;
   end;
   begin { selector }
     lastptr := false; { set last index op not ptr }
+    needarrow := false; { init for C output }
     with fcp^, gattr do
       begin symptr := nil; typtr := idtype; spv := false; kind := varbl;
         packing := false; packcom := false; tagfield := false; ptrref := false;
@@ -4143,7 +4145,10 @@ end;
                   { if container, just load the address of it, the complex
                     pointer is loaded when the address is loaded }
                   ct := false; if typtr <> nil then ct := typtr^.form = arrayc;
-                  access := indrct; idplmt := 0
+                  access := indrct; idplmt := 0;
+                  { for C output: var param of record type needs -> for field access }
+                  if (typtr <> nil) and (typtr^.form = records) then
+                    needarrow := true
                 end;
             end;
           fixedt: begin symptr := fcp;
@@ -4272,6 +4277,15 @@ end;
                           else
                             with lcp^ do
                               begin checkvrnt(lcp);
+                                { output field access for C }
+                                if wantexpr then begin
+                                  if needarrow then begin
+                                    expr_str('->');
+                                    needarrow := false { after first ->, use . for nested }
+                                  end else
+                                    expr_chr('.');
+                                  if lcp^.name <> nil then expr_pstr(lcp^.name)
+                                end;
                                 typtr := idtype;
                                 gattr.packcom := gattr.packing;
                                 if typtr <> nil then
@@ -4360,8 +4374,17 @@ end;
       { output variable name for C before selector handles subscripts }
       if wantexpr then
         if lcp <> nil then
-          if lcp^.name <> nil then
-            expr_pstr(lcp^.name);
+          if lcp^.name <> nil then begin
+            { check if var param of simple type needs dereference }
+            if (lcp^.klass = vars) and (lcp^.vkind = formal) and
+               (lcp^.idtype <> nil) and
+               (lcp^.idtype^.form in [scalar, subrange]) then begin
+              expr_str('(*');
+              expr_pstr(lcp^.name);
+              expr_chr(')')
+            end else
+              expr_pstr(lcp^.name)
+          end;
       selector(fsys,lcp, false);
       if gattr.kind = expr then error(287)
     end (*variable*) ;
@@ -5320,6 +5343,12 @@ end;
             else
               begin varp := false;
                 if nxt <> nil then varp := (nxt^.vkind = formal) and (nxt^.part <> ptview);
+                { output & for var params in C (but not for arrays which decay to pointers) }
+                if wantexpr and varp then
+                  if nxt <> nil then
+                    if nxt^.idtype <> nil then
+                      if nxt^.idtype^.form <> arrays then
+                        expr_chr('&');
                 expression(fsys + [comma,rparent], varp);
                 { find the appropriate overload }
                 match := false;
@@ -5661,7 +5690,17 @@ end;
                         end else
                           begin
                             { output variable identifier BEFORE selector }
-                            if wantexpr then expr_pstr(lcp^.name);
+                            if wantexpr then begin
+                              { check if var param of simple type needs dereference }
+                              if (lcp^.klass = vars) and (lcp^.vkind = formal) and
+                                 (lcp^.idtype <> nil) and
+                                 (lcp^.idtype^.form in [scalar, subrange]) then begin
+                                expr_str('(*');
+                                expr_pstr(lcp^.name);
+                                expr_chr(')')
+                              end else
+                                expr_pstr(lcp^.name)
+                            end;
                             selector(fsys,lcp,false);
                             if threaten and (lcp^.klass = vars) then with lcp^ do begin
                               if vlev < level then threat := true;
@@ -7839,10 +7878,19 @@ end;
         { output variable name to expression buffer BEFORE selector }
         if fcp <> nil then
           if fcp^.name <> nil then begin
-            expr_pstr(fcp^.name);
-            { if function result assignment, add __result suffix }
-            if fcp^.klass = func then
-              expr_str('__result')
+            { check if var param of simple type needs dereference }
+            if (fcp^.klass = vars) and (fcp^.vkind = formal) and
+               (fcp^.idtype <> nil) and
+               (fcp^.idtype^.form in [scalar, subrange]) then begin
+              expr_str('(*');
+              expr_pstr(fcp^.name);
+              expr_chr(')')
+            end else begin
+              expr_pstr(fcp^.name);
+              { if function result assignment, add __result suffix }
+              if fcp^.klass = func then
+                expr_str('__result')
+            end
           end;
         tagasc := false; selector(fsys + [becomes],fcp,skp);
         if (sy = becomes) or skp then
