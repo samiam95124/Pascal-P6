@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     if: ${{ github.event.inputs.action == 'build' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
 
   regress:
     if: ${{ github.event.inputs.action == 'regress' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
