@@ -1,0 +1,470 @@
+================================================================================
+                    PASCAL-P6 COMPILER (PCOM) THEORY OF OPERATIONS
+================================================================================
+
+                                  Overview
+                                  --------
+
+The Pascal-P6 compiler (pcom.pas) is a single-pass, recursive descent compiler
+that translates Pascal source code into P-code (pseudo-code), an intermediate
+stack-based instruction set. The compiler is itself written in Pascal, making
+it a self-compiling (bootstrappable) system.
+
+The compiler descends from the original Pascal-P compilers developed at ETH
+Zurich in the 1970s by Wirth, Ammann, Nori, and Jacobi. P6 extends the original
+ISO 7185 Pascal with the Pascaline extensions including modules, exception
+handling, dynamic arrays, operator overloading, and object-oriented features.
+
+================================================================================
+                              COMPILER PHASES
+================================================================================
+
+The compiler operates in a single pass through the source code, performing:
+
+  1. Lexical Analysis (Scanner)
+  2. Syntax Analysis (Parser)
+  3. Semantic Analysis (Type Checking)
+  4. Code Generation (P-code Output)
+
+All phases are interleaved - as the parser recognizes constructs, it
+simultaneously performs type checking and emits P-code.
+
+================================================================================
+                           1. LEXICAL ANALYSIS
+================================================================================
+
+The lexical analyzer is implemented in the `insymbol` procedure (line ~1777).
+
+Key Components:
+---------------
+- Input buffering via `incstk` (include file stack) with pushback support
+- Character classification via `chartp` array mapping chars to token classes
+- Reserved word recognition using the `rw` array and binary search
+- Support for multiple number bases (decimal, hex with $, octal with &, binary)
+- String literal handling with escape sequences (\n, \t, etc.)
+- Comment handling (both { } and (* *) styles)
+- Compiler directive processing ($option)
+
+Scanner Output:
+---------------
+The scanner sets global variables for each token:
+  - `sy`: Symbol type (symbol enumeration)
+  - `op`: Operator type (for operator symbols)
+  - `id`: Identifier string (for identifiers)
+  - `val`: Value (for numeric/string constants)
+  - `lgth`: String length (for string constants)
+
+Lookahead:
+----------
+The scanner maintains one-token lookahead via:
+  - `lsy`, `lop`, `lval`, etc. - previous token
+  - `nsy`, `nop`, `nval`, etc. - next token (when prefetched)
+  - `nvalid` - flag indicating valid lookahead exists
+
+================================================================================
+                           2. SYNTAX ANALYSIS
+================================================================================
+
+The parser uses recursive descent with the following major procedures:
+
+Program Structure:
+------------------
+  modulep()      - Top-level: parses program/module header and structure
+  declare()      - Declaration section (labels, consts, types, vars, procs)
+  body()         - Statement part (begin..end block)
+
+Declaration Parsing:
+--------------------
+  labeldeclaration()   - Label declarations
+  constdeclaration()   - Constant definitions
+  typedeclaration()    - Type definitions
+  vardeclaration()     - Variable declarations
+  procdeclaration()    - Procedure/function declarations
+
+Type Parsing:
+-------------
+  typ()          - General type parsing
+  simpletype()   - Scalar, subrange, pointer types
+  fieldlist()    - Record field lists including variants
+
+Statement Parsing:
+------------------
+  statement()           - Main statement dispatcher
+  assignment()          - Assignment statements
+  compoundstatement()   - begin..end blocks
+  ifstatement()         - if..then..else
+  casestatement()       - case..of
+  whilestatement()      - while..do
+  repeatstatement()     - repeat..until
+  forstatement()        - for loops
+  withstatement()       - with statements
+  gotostatement()       - goto statements
+  trystatement()        - try..except (Pascaline extension)
+
+Expression Parsing:
+-------------------
+  expression()          - Comparison operators (=, <>, <, >, <=, >=, in)
+  simpleexpression()    - Additive operators (+, -, or, xor)
+  term()                - Multiplicative operators (*, /, div, mod, and)
+  factor()              - Primaries (literals, identifiers, function calls)
+  selector()            - Array indexing, field access, pointer dereference
+
+Error Recovery:
+---------------
+Uses the "follow set" technique - each parsing procedure receives `fsys`,
+a set of symbols that can legally follow the construct. On error, the parser
+skips input until a symbol in fsys is found.
+
+================================================================================
+                         3. SEMANTIC ANALYSIS
+================================================================================
+
+Symbol Table:
+-------------
+The symbol table uses a display-based scope mechanism:
+
+  - `display` array: Stack of scope levels (0..displimit)
+  - Each display entry contains:
+    - `fname`: Root of binary search tree of identifiers
+    - `flabel`: List of labels in this scope
+    - `occur`: Type of scope (blck, crec, vrec, rec)
+    - `inilst`: Initializer list for the block
+    - `oprprc`: Operator function table for overloading
+
+Key symbol table procedures:
+  - `enterid(fcp)`: Insert identifier into current scope's BST
+  - `searchid(fidcls, fcp)`: Search all scopes for identifier
+  - `searchsection(fcp, fcp1)`: Search single scope (for record fields)
+
+Identifier Records (ctp):
+-------------------------
+Each identifier is represented by a variant record with fields:
+  - `name`: Identifier string (variable length via strvsp)
+  - `idtype`: Pointer to type structure
+  - `klass`: Identifier class (types, konst, vars, field, proc, func, alias)
+  - Class-specific fields for addresses, parameters, etc.
+
+Type Structures (stp):
+----------------------
+Types are represented by variant records:
+  - `form`: Type form (scalar, subrange, pointer, power, arrays, records, etc.)
+  - `size`: Size in addressable units
+  - `packing`: Whether type is packed
+  - Form-specific fields for element types, bounds, fields, etc.
+
+Type Checking:
+--------------
+  - `comptypes(fsp1, fsp2)`: Check type compatibility
+  - `assigncompat(fsp1, fsp2)`: Check assignment compatibility
+  - Type coercion for integer-to-real conversion
+  - Bounds checking via `checkbnds()`
+
+Expression Attributes:
+----------------------
+The `gattr` global (type `attr`) tracks the current expression:
+  - `typtr`: Type of expression
+  - `kind`: Category (cst=constant, varbl=variable, expr=computed)
+  - For variables: access mode (drct=direct, indrct=indirect, inxd=indexed)
+  - For constants: the constant value
+
+================================================================================
+                          4. CODE GENERATION
+================================================================================
+
+P-Code Output:
+--------------
+The compiler generates P-code, a stack-based intermediate language.
+Code is written to the `prr` (program result) file as text.
+
+Code Generation Procedures:
+---------------------------
+  gen0(fop)              - Zero-operand instruction
+  gen1(fop, fp2)         - One-operand instruction
+  gen2(fop, fp1, fp2)    - Two-operand instruction
+  gen0t(fop, fsp)        - Typed zero-operand (adds type indicator)
+  gen1t(fop, fp2, fsp)   - Typed one-operand
+  gen2t(fop, fp1, fp2, fsp) - Typed two-operand
+  genujpxjpcal()         - Jump instructions
+  gencupcuf()            - Procedure/function calls
+  genlabel()             - Generate unique label number
+
+Major P-Code Instructions:
+--------------------------
+Stack Operations:
+  ldc - Load constant
+  ldo - Load global variable (level 0)
+  lod - Load local/intermediate variable
+  lda - Load address
+  lao - Load address of global
+  sto - Store to address on stack
+  str - Store to local/intermediate variable
+  sro - Store to global variable
+  ind - Indirect load through pointer
+  mov - Block move
+
+Arithmetic/Logic:
+  adi, adr - Add integer/real
+  sbi, sbr - Subtract
+  mpi, mpr - Multiply
+  dvi, dvr - Divide
+  ngi, ngr - Negate
+  abi, abr - Absolute value
+  sqi, sqr - Square
+  and, ior, xor, not - Boolean/bitwise operations
+  odd - Test odd
+
+Comparison:
+  equ, neq - Equal, not equal
+  les, leq - Less than, less or equal
+  grt, geq - Greater than, greater or equal
+
+Control Flow:
+  ujp - Unconditional jump
+  fjp - False jump (conditional)
+  tjp - True jump
+  xjp - Indexed jump (case statement)
+  cup - Call user procedure
+  cuf - Call user function
+  ret - Return from procedure/function
+  mst - Mark stack (prepare for call)
+  csp - Call standard procedure
+
+Set Operations:
+  uni - Set union
+  int - Set intersection
+  dif - Set difference
+  inn - Set membership test
+  sgs - Singleton set
+
+Type Conversion:
+  flt - Integer to real
+  trc - Truncate real to integer
+  rnd - Round real to integer
+  ord - Ordinal value
+  chr - Integer to character
+
+Address Calculation:
+  ixa - Index array (compute element address)
+  inc, dec - Increment/decrement
+
+Runtime Checks:
+  chk - Range check
+  ckv - Variant check
+  cta - Check tag assignment
+
+Label Generation:
+-----------------
+Labels are generated as integers and printed in the output.
+The `genlabel` procedure maintains a counter for unique labels.
+
+================================================================================
+                           DATA STRUCTURES
+================================================================================
+
+Constant Table:
+---------------
+Constants are stored in a linked list of `constant` records:
+  - `cclass`: Constant class (reel, pset, strg)
+  - Type-specific value storage
+
+Case Table:
+-----------
+Case statement labels stored in `caseinfo` records:
+  - Linked list sorted by case value
+  - Used to generate jump table or comparison chain
+
+Label Table:
+------------
+Labels stored in `labl` records per scope:
+  - `defined`: Whether label definition seen
+  - `labval`: Numeric label value
+  - `vlevel`: Procedure nesting level
+  - `slevel`: Statement nesting level (for goto checking)
+
+With Statement Stack:
+--------------------
+`wthstk` tracks active with statements for:
+  - Scope management
+  - Proper cleanup on goto
+
+================================================================================
+                          MEMORY MODEL
+================================================================================
+
+Stack Frame Layout:
+------------------
+Each procedure activation has:
+  - Mark area (return address, static/dynamic links, etc.)
+  - Parameters (formal parameter space)
+  - Local variables
+  - Temporaries (for expression evaluation)
+
+Address Calculation:
+--------------------
+  - Global variables: Absolute addresses from level 0
+  - Local variables: Offsets from frame pointer
+  - Intermediate variables: Display-based access using static link chain
+
+Variable Addressing:
+--------------------
+  - `vlev`: Variable's lexical level
+  - `vaddr`: Offset within that level's frame
+  - Access mode determined by `vlev` vs. current `level`
+
+================================================================================
+                         PASCALINE EXTENSIONS
+================================================================================
+
+The P6 compiler extends ISO 7185 Pascal with:
+
+Modules:
+--------
+  - `module` keyword for separate compilation units
+  - `uses` and `joins` for module dependencies
+  - Qualified name access (module.identifier)
+
+Dynamic Arrays:
+---------------
+  - Container arrays with runtime bounds
+  - Complex pointer management (mpc, aps, apc instructions)
+
+Exception Handling:
+-------------------
+  - `try`..`except`..`on` statements
+  - `throw` for raising exceptions
+  - Exception type hierarchy
+
+Operator Overloading:
+---------------------
+  - `operator` keyword for defining operators on types
+  - Operator lookup table in display records
+  - `fndopr1`, `fndopr2` for operator resolution
+
+Object-Oriented Features:
+-------------------------
+  - `virtual` and `override` procedure attributes
+  - `inherited` for calling parent methods
+  - Virtual method tables (VMT)
+
+Extended Parameter Modes:
+-------------------------
+  - `view`: Read-only reference parameters
+  - `out`: Write-only parameters (uninitialized on entry)
+
+================================================================================
+                            COMPILATION FLOW
+================================================================================
+
+1. Initialization (initscalars, initsets, inittables)
+   - Set up reserved word tables
+   - Initialize standard type pointers
+   - Enter standard identifiers (entstdnames)
+
+2. Open source file and begin scanning
+
+3. Parse program/module header (modulep)
+   - Process program/module name
+   - Handle file list in header
+   - Process uses/joins clauses
+
+4. Parse declarations (declare)
+   - Labels, constants, types, variables
+   - Nested procedures/functions (recursive)
+
+5. Parse body (body)
+   - Compound statement (begin..end)
+   - Generate procedure entry/exit code
+
+6. Finalize
+   - Check for undefined labels/forward declarations
+   - Output global size information
+   - Close output file
+
+================================================================================
+                              ERROR HANDLING
+================================================================================
+
+Error Reporting:
+----------------
+  - `error(n)`: Report error number n at current position
+  - `errmsg(n)`: Print error message text
+  - Errors accumulated in `errinx` array for line-end display
+
+Error Classes:
+--------------
+  1-99: Syntax errors
+  100-199: Semantic errors (type mismatches, undeclared identifiers)
+  200-299: Extended feature errors
+  300-399: Pascaline-specific errors
+  500+: Fatal/internal errors
+
+Error Recovery:
+---------------
+  - Skip to synchronization point (symbol in fsys)
+  - Substitute dummy entries for missing declarations
+  - Continue parsing to find additional errors
+
+================================================================================
+                         FILE ORGANIZATION
+================================================================================
+
+The source file is organized as:
+
+  Lines 1-100: Header comments, licensing
+  Lines 101-111: Program header, label
+  Lines 112-187: Constants
+  Lines 188-433: Type definitions
+  Lines 434-630: Variable declarations
+  Lines 631-1180: Utility procedures (string handling, memory management)
+  Lines 1181-1234: Bitwise operations (bnot, bor, band, bxor)
+  Lines 1235-1776: Error handling, input processing, scanner support
+  Lines 1777-2297: Scanner (insymbol)
+  Lines 2298-2888: Symbol table management
+  Lines 2889-3606: Label and constant pool management
+  Lines 3607-4010: Code generation primitives
+  Lines 4011-4743: Type utilities, compatibility checking
+  Lines 4744-5097: Selector (array indexing, field access)
+  Lines 5098-6440: Call processing (procedure/function calls)
+  Lines 6442-6989: Expression parsing
+  Lines 6990-8608: Declaration parsing
+  Lines 8610-9403: Body and statement parsing
+  Lines 9404-9636: External headers, virtual method initialization
+  Lines 9637-9803: Include file and module handling
+  Lines 9804-9932: Main program/module parsing (modulep)
+  Lines 9933-10356: Standard identifier initialization
+  Lines 10357-10700: Main program initialization and entry point
+
+================================================================================
+                              DEBUGGING AIDS
+================================================================================
+
+Compiler Options:
+-----------------
+  - debug: Enable runtime checks
+  - list: Generate source listing
+  - prcode: Generate P-code output
+  - chkvbk: Check variant block consistency
+  - chkref: Check for unreferenced identifiers
+  - prtables: Print symbol tables
+
+Diagnostic Output:
+------------------
+  - Symbol table dumps (via prtables option)
+  - Display stack dumps (dodmpdsp option)
+  - Lexer token dumps (dodmplex option)
+
+================================================================================
+                               REFERENCES
+================================================================================
+
+1. "Pascal Implementation" by Steven Pemberton and Martin Daniels
+   (Ellis Horwood, ISBN 0-13-653-0311) - The definitive guide to Pascal-P
+
+2. "Algorithms + Data Structures = Programs" by Niklaus Wirth
+   - Original recursive descent technique
+
+3. ISO 7185:1990 - Pascal standard
+
+4. Pascaline Language Reference - P6 extensions documentation
+
+================================================================================
