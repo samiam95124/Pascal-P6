@@ -28,7 +28,7 @@ jobs:
         run: |
           . setpath
           ./configure
-          build
+          build_cycle
 
   regress:
     if: ${{ github.event.inputs.action == 'regress' }}
@@ -46,7 +46,7 @@ jobs:
         run: |
           . setpath
           ./configure
-          build
+          build_cycle
           regress
 
       - name: Upload regression report
