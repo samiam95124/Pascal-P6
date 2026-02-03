@@ -183,6 +183,9 @@ const
    maxftl     = 519; { maximum fatal error }
    maxtypemap = 500; { maximum record type name mappings }
    maxenummap = 100; { maximum enum type name mappings }
+   maxuplevel = 100; { maximum uplevel variable references per procedure }
+   maxprocuplevel = 100; { max nested procs with uplevel refs }
+   nestbufmax = 100000; { max size of nested procedure buffer }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -486,6 +489,23 @@ var
     stmttop: stmtctxptr;            { top of statement context stack }
     stmtfree: stmtctxptr;           { free list for recycling }
     inopexpr: boolean;              { suppress expr output during in operator }
+
+    { Uplevel variable tracking for nested procedures }
+    uplevelcnt: integer;            { count of uplevel variable refs }
+    uplevelrefs: array [1..maxuplevel] of ctp; { uplevel variable pointers }
+    uplevelproc: ctp;               { current procedure being parsed }
+    uplevellev: integer;            { level of current proc for uplevel detection }
+
+    { Stored uplevel info per nested procedure for call site generation }
+    procuplevelcnt: integer;        { count of stored proc uplevel entries }
+    procuplevelproc: array [1..maxprocuplevel] of ctp; { procedure pointers }
+    procuplevelnum:  array [1..maxprocuplevel] of integer; { count of uplevel refs }
+    procuplevelrefs: array [1..maxprocuplevel, 1..maxuplevel] of ctp; { refs per proc }
+
+    { Nested procedure C output buffering }
+    nestbuf: packed array [1..nestbufmax] of char; { buffer for nested proc C output }
+    nestbuflen: integer;            { current length of buffer }
+    nestbuffering: boolean;         { true when buffering nested proc output }
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -1128,54 +1148,122 @@ end;
 { C output routines }
 
 procedure c_indent;
-{ output current indentation to C file }
+{ output current indentation to C file or buffer }
 var i: integer;
 begin
-  for i := 1 to cindent * 4 do write(prc, ' ');
+  if nestbuffering then begin
+    for i := 1 to cindent * 4 do
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := ' '
+      end
+  end else
+    for i := 1 to cindent * 4 do write(prc, ' ');
   catbol := false
 end;
 
 procedure c_newline;
-{ output newline to C file }
+{ output newline to C file or buffer }
 begin
-  writeln(prc);
+  if nestbuffering then begin
+    if nestbuflen < nestbufmax then begin
+      nestbuflen := nestbuflen + 1;
+      nestbuf[nestbuflen] := chr(10) { newline }
+    end
+  end else
+    writeln(prc);
   catbol := true
 end;
 
 procedure c_str(view s: string);
-{ output string to C file }
+{ output string to C file or buffer }
+var i: integer;
 begin
   if catbol then begin c_indent; catbol := false end;
-  write(prc, s)
+  if nestbuffering then begin
+    for i := 1 to max(s) do
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := s[i]
+      end
+  end else
+    write(prc, s)
 end;
 
 procedure c_chr(c: char);
-{ output character to C file }
+{ output character to C file or buffer }
 begin
   if catbol then begin c_indent; catbol := false end;
-  write(prc, c)
+  if nestbuffering then begin
+    if nestbuflen < nestbufmax then begin
+      nestbuflen := nestbuflen + 1;
+      nestbuf[nestbuflen] := c
+    end
+  end else
+    write(prc, c)
 end;
 
 procedure c_int(i: integer);
-{ output integer to C file }
+{ output integer to C file or buffer }
+var s: packed array [1..20] of char;
+    n, j: integer;
 begin
   if catbol then begin c_indent; catbol := false end;
-  write(prc, i:1)
+  if nestbuffering then begin
+    { convert integer to string and buffer it }
+    if i = 0 then begin
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := '0'
+      end
+    end else begin
+      { handle negative }
+      if i < 0 then begin
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := '-'
+        end;
+        i := -i
+      end;
+      { extract digits }
+      n := 0;
+      while i > 0 do begin
+        n := n + 1;
+        s[n] := chr(ord('0') + i mod 10);
+        i := i div 10
+      end;
+      { output in reverse }
+      for j := n downto 1 do
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := s[j]
+        end
+    end
+  end else
+    write(prc, i:1)
 end;
 
 procedure c_real(r: real);
 { output real to C file }
 begin
   if catbol then begin c_indent; catbol := false end;
+  { real output not buffered - should not occur in nested proc headers }
   write(prc, r)
 end;
 
 procedure c_id(var s: idstr; l: integer);
-{ output identifier to C file }
+{ output identifier to C file or buffer }
 var i: integer;
 begin
   if catbol then begin c_indent; catbol := false end;
-  for i := 1 to l do write(prc, s[i])
+  if nestbuffering then begin
+    for i := 1 to l do
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := s[i]
+      end
+  end else
+    for i := 1 to l do write(prc, s[i])
 end;
 
 procedure c_ln(view s: string);
@@ -1217,7 +1305,7 @@ begin
 end;
 
 procedure c_pstr(p: pstring);
-{ output pstring identifier to C file (lowercase) }
+{ output pstring identifier to C file or buffer (lowercase) }
 var i, l: integer; c: char;
 begin
   if (p <> nil) then begin
@@ -1226,10 +1314,24 @@ begin
       c := p^[i];
       if (c >= 'A') and (c <= 'Z') then
         c := chr(ord(c) - ord('A') + ord('a'));
-      write(prc, c)
+      if nestbuffering then begin
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := c
+        end
+      end else
+        write(prc, c)
     end;
     { add underscore suffix if C reserved word }
-    if is_c_reserved(p) then write(prc, '_')
+    if is_c_reserved(p) then begin
+      if nestbuffering then begin
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := '_'
+        end
+      end else
+        write(prc, '_')
+    end
   end
 end;
 
@@ -1584,12 +1686,12 @@ begin
     end;
     c_str('printf("');
     for i := 1 to stmttop^.fmtlen do
-      write(prc, stmttop^.fmtbuf[i]);
+      c_chr(stmttop^.fmtbuf[i]);
     c_str('"');
     if stmttop^.arglen > 0 then begin
       c_str(', ');
       for i := 1 to stmttop^.arglen do
-        write(prc, stmttop^.argbuf[i])
+        c_chr(stmttop^.argbuf[i])
     end;
     c_ln(');')
   end
@@ -1620,6 +1722,126 @@ begin
         enummapcount := enummapcount + 1;
         enummapstp[enummapcount] := fsp;
         enummapname[enummapcount] := name
+      end
+    end
+end;
+
+procedure clear_uplevelrefs;
+{ clear uplevel reference tracking for new procedure }
+begin
+  uplevelcnt := 0
+end;
+
+procedure add_uplevelref(vcp: ctp);
+{ add a variable to the uplevel reference list if not already present }
+var i: integer;
+    found: boolean;
+begin
+  if (vcp <> nil) and (vcp^.klass = vars) then begin
+    { check if already in list }
+    found := false;
+    for i := 1 to uplevelcnt do
+      if uplevelrefs[i] = vcp then found := true;
+    { add if not found and space available }
+    if not found and (uplevelcnt < maxuplevel) then begin
+      uplevelcnt := uplevelcnt + 1;
+      uplevelrefs[uplevelcnt] := vcp
+    end
+  end
+end;
+
+procedure flush_nestbuf;
+{ flush buffered nested procedure output to C file }
+var i: integer;
+begin
+  for i := 1 to nestbuflen do
+    write(prc, nestbuf[i]);
+  nestbuflen := 0;
+  nestbuffering := false
+end;
+
+procedure c_uplevel_args(needcomma: boolean);
+{ output arguments for uplevel variable references at call site }
+var i: integer;
+    vcp: ctp;
+begin
+  for i := 1 to uplevelcnt do begin
+    vcp := uplevelrefs[i];
+    if vcp <> nil then begin
+      if needcomma then c_str(', ');
+      needcomma := true;
+      { pass address of uplevel variable }
+      c_chr('&');
+      if vcp^.name <> nil then c_pstr(vcp^.name)
+    end
+  end
+end;
+
+procedure save_proc_uplevelrefs(pcp: ctp);
+{ save the current uplevel refs for a procedure }
+var i: integer;
+begin
+  if (uplevelcnt > 0) and (procuplevelcnt < maxprocuplevel) then begin
+    procuplevelcnt := procuplevelcnt + 1;
+    procuplevelproc[procuplevelcnt] := pcp;
+    procuplevelnum[procuplevelcnt] := uplevelcnt;
+    for i := 1 to uplevelcnt do
+      procuplevelrefs[procuplevelcnt, i] := uplevelrefs[i]
+  end
+end;
+
+procedure c_proc_uplevel_args(pcp: ctp; needcomma: boolean);
+{ output arguments for a specific procedure's uplevel refs at call site }
+var i, j, n: integer;
+    vcp: ctp;
+begin
+  { find the stored uplevel refs for this procedure }
+  for i := 1 to procuplevelcnt do
+    if procuplevelproc[i] = pcp then begin
+      n := procuplevelnum[i];
+      for j := 1 to n do begin
+        vcp := procuplevelrefs[i, j];
+        if vcp <> nil then begin
+          if needcomma then c_str(', ');
+          needcomma := true;
+          { pass address of uplevel variable }
+          c_chr('&');
+          if vcp^.name <> nil then c_pstr(vcp^.name)
+        end
+      end
+    end
+end;
+
+function has_proc_uplevelrefs(pcp: ctp): boolean;
+{ check if a procedure has stored uplevel refs }
+var i: integer;
+    found: boolean;
+begin
+  found := false;
+  for i := 1 to procuplevelcnt do
+    if procuplevelproc[i] = pcp then
+      if procuplevelnum[i] > 0 then found := true;
+  has_proc_uplevelrefs := found
+end;
+
+procedure expr_proc_uplevel_args(pcp: ctp; needcomma: boolean);
+{ output arguments for a procedure's uplevel refs to expression buffer }
+var i, j, n: integer;
+    vcp: ctp;
+begin
+  { find the stored uplevel refs for this procedure }
+  for i := 1 to procuplevelcnt do
+    if procuplevelproc[i] = pcp then begin
+      n := procuplevelnum[i];
+      for j := 1 to n do begin
+        vcp := procuplevelrefs[i, j];
+        if vcp <> nil then begin
+          if needcomma then expr_str(', ');
+          needcomma := true;
+          { pass address of uplevel variable }
+          expr_chr('&');
+          if vcp^.name <> nil then expr_pstr(vcp^.name)
+        end
       end
     end
 end;
@@ -1798,6 +2020,25 @@ begin
     cindent := cindent - 1;
     c_ln('};');
     c_newline
+  end
+end;
+
+procedure c_uplevel_params(needcomma: boolean);
+{ output extra parameters for uplevel variable references }
+var i: integer;
+    vcp: ctp;
+begin
+  for i := 1 to uplevelcnt do begin
+    vcp := uplevelrefs[i];
+    if vcp <> nil then begin
+      if needcomma then c_str(', ');
+      needcomma := true;
+      { all uplevel vars are passed as pointers }
+      c_type(vcp^.idtype);
+      c_str('* ');
+      if vcp^.name <> nil then c_pstr(vcp^.name);
+      c_str('__up')
+    end
   end
 end;
 
@@ -4371,12 +4612,24 @@ end;
         if forcnt > 0 then error(195);
         if part = ptview then error(290)
       end;
+      { track uplevel variable references for C output }
+      if (lcp^.klass = vars) and (lcp^.vlev < level) and
+         (lcp^.vlev >= uplevellev) then
+        add_uplevelref(lcp);
       { output variable name for C before selector handles subscripts }
       if wantexpr then
         if lcp <> nil then
           if lcp^.name <> nil then begin
+            { check if uplevel variable reference in nested procedure }
+            if (lcp^.klass = vars) and (lcp^.vlev < level) and
+               (lcp^.vlev >= uplevellev) and nestbuffering then begin
+              { use __up parameter pointer }
+              expr_str('(*');
+              expr_pstr(lcp^.name);
+              expr_str('__up)')
+            end
             { check if var param of simple type needs dereference }
-            if (lcp^.klass = vars) and (lcp^.vkind = formal) and
+            else if (lcp^.klass = vars) and (lcp^.vkind = formal) and
                (lcp^.idtype <> nil) and
                (lcp^.idtype^.form in [scalar, subrange]) then begin
               expr_str('(*');
@@ -5436,11 +5689,21 @@ end;
             end;
           until test;
           lc := llc;
+          { add uplevel args for nested proc calls }
+          if has_proc_uplevelrefs(fcp) then
+            expr_proc_uplevel_args(fcp, true); { comma before args }
           expr_chr(')');  { output closing paren for C call }
           if sy = rparent then insymbol else error(4)
         end (*if lparent*)
-      else
-        expr_str('()');  { no parameters - output empty parens }
+      else begin
+        { no parameters - output parens with any uplevel args }
+        if has_proc_uplevelrefs(fcp) then begin
+          expr_chr('(');
+          expr_proc_uplevel_args(fcp, false); { no comma before first arg }
+          expr_chr(')')
+        end else
+          expr_str('()')
+      end;
       { not out of proto parameters, sequence until we are or there are no
         candidate overloads }
       if nxt <> nil then begin
@@ -5689,10 +5952,21 @@ end;
                           end
                         end else
                           begin
+                            { track uplevel variable references for C output }
+                            if (lcp^.klass = vars) and (lcp^.vlev < level) and
+                               (lcp^.vlev >= uplevellev) then
+                              add_uplevelref(lcp);
                             { output variable identifier BEFORE selector }
                             if wantexpr then begin
+                              { check if uplevel variable reference in nested procedure }
+                              if (lcp^.klass = vars) and (lcp^.vlev < level) and
+                                 (lcp^.vlev >= uplevellev) and nestbuffering then begin
+                                expr_str('(*');
+                                expr_pstr(lcp^.name);
+                                expr_str('__up)')
+                              end
                               { check if var param of simple type needs dereference }
-                              if (lcp^.klass = vars) and (lcp^.vkind = formal) and
+                              else if (lcp^.klass = vars) and (lcp^.vkind = formal) and
                                  (lcp^.idtype <> nil) and
                                  (lcp^.idtype^.form in [scalar, subrange]) then begin
                                 expr_str('(*');
@@ -7875,11 +8149,22 @@ end;
         { push assignment context for C output }
         pushstmt(stk_assign);
         expr_reset;
+        { track uplevel for assignment }
+        if (fcp <> nil) and (fcp^.klass = vars) then
+          if (fcp^.vlev < level) and (fcp^.vlev >= uplevellev) then
+            add_uplevelref(fcp);
         { output variable name to expression buffer BEFORE selector }
         if fcp <> nil then
           if fcp^.name <> nil then begin
+            { check if uplevel variable reference in nested procedure }
+            if (fcp^.klass = vars) and (fcp^.vlev < level) and
+               (fcp^.vlev >= uplevellev) and nestbuffering then begin
+              expr_str('(*');
+              expr_pstr(fcp^.name);
+              expr_str('__up)')
+            end
             { check if var param of simple type needs dereference }
-            if (fcp^.klass = vars) and (fcp^.vkind = formal) and
+            else if (fcp^.klass = vars) and (fcp^.vkind = formal) and
                (fcp^.idtype <> nil) and
                (fcp^.idtype^.form in [scalar, subrange]) then begin
               expr_str('(*');
@@ -7901,7 +8186,10 @@ end;
             else if fcp^.klass = vars then with fcp^ do begin
                if vlev < level then threat := true;
                if forcnt > 0 then error(195);
-               if part = ptview then error(290)
+               if part = ptview then error(290);
+               { track uplevel variable references for C output }
+               if (vlev < level) and (vlev >= uplevellev) then
+                 add_uplevelref(fcp)
             end;
             tagasc := false;
             if gattr.kind = varbl then 
@@ -8126,6 +8414,9 @@ end;
         var lsp,lsp1,lsp2: stp; fstptr,lpt1,lpt2,lpt3: cip; lvals,lvale: valu;
             lmin, lmax: integer;
             test: boolean; occ: integer;
+            i: integer;
+            cval: integer;
+            firstcase: boolean;
       function casecount(cp: cip): integer;
       var c: integer;
       begin c := 0;
@@ -8134,13 +8425,26 @@ end;
         casecount := c
       end;
       begin
+        { output switch header and capture selector expression }
+        pushstmt(stk_case);
+        expr_reset;
         expression(fsys + [ofsy,comma,colon], false); load;
         lsp := gattr.typtr;
         if lsp <> nil then
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end;
+        { output C switch statement }
+        c_indent;
+        c_str('switch (');
+        if stmttop <> nil then
+          for i := 1 to stmttop^.exprlen do
+            c_chr(stmttop^.exprbuf[i]);
+        c_ln(') {');
+        c_newline;
+        popstmt;
         if sy = ofsy then insymbol else error(8);
         fstptr := nil;
+        firstcase := true;
         repeat
           lpt3 := nil;
           if not(sy in [semicolon,endsy,elsesy]) then
@@ -8155,6 +8459,36 @@ end;
                   if not lvale.intval then
                     begin lvale.intval := true; lvale.ival := 1 end;
                   if lvale.ival < lvals.ival then error(225)
+                end;
+                { output C case label(s) }
+                if lsp1 = charptr then begin
+                  { character case labels }
+                  for cval := lvals.ival to lvale.ival do begin
+                    c_indent;
+                    c_str('case ');
+                    c_chr(chr(39)); { single quote }
+                    if cval = 39 then begin { single quote }
+                      c_chr(chr(92)); c_chr(chr(39)) { \' }
+                    end else if cval = 92 then begin { backslash }
+                      c_chr(chr(92)); c_chr(chr(92)) { \\ }
+                    end else if cval < 32 then begin
+                      c_chr(chr(92)); { backslash }
+                      c_int(cval div 64);
+                      c_int((cval div 8) mod 8);
+                      c_int(cval mod 8)
+                    end else
+                      c_chr(chr(cval));
+                    c_chr(chr(39)); { single quote }
+                    c_ln(':')
+                  end
+                end else begin
+                  { integer/enum case labels }
+                  for cval := lvals.ival to lvale.ival do begin
+                    c_indent;
+                    c_str('case ');
+                    c_int(cval);
+                    c_ln(':')
+                  end
                 end;
                 if lsp <> nil then
                   if comptypes(lsp,lsp1) then
@@ -8180,19 +8514,34 @@ end;
                 if not test then insymbol
               until test;
               if sy = colon then insymbol else error(5);
+              { output case body }
+              cindent := cindent + 1;
               repeat
                 addlvl;
                 statement(fsys + [semicolon]);
                 sublvl
               until not (sy in statbegsys);
+              { output break }
+              c_indent;
+              c_ln('break;');
+              cindent := cindent - 1;
+              c_newline
             end;
           test := sy <> semicolon;
           if not test then insymbol
         until test;
         if sy = elsesy then begin chkstd; insymbol;
+          { output default case }
+          c_indent;
+          c_ln('default:');
+          cindent := cindent + 1;
           addlvl;
           statement(fsys + [semicolon]);
           sublvl;
+          c_indent;
+          c_ln('break;');
+          cindent := cindent - 1;
+          c_newline;
           if sy = semicolon then insymbol
         end;
         if fstptr <> nil then
@@ -8237,6 +8586,9 @@ end;
               until fstptr = nil
             end
           end;
+        { output closing brace }
+        c_indent;
+        c_ln('}');
         if sy = endsy then insymbol else error(13)
       end (*casestatement*) ;
 
@@ -8787,62 +9139,88 @@ end;
         c_newline;
         gblvarsdone := true
       end;
-      { output return type }
-      if fprocp^.klass = func then begin
-        c_type(fprocp^.idtype);
-        c_chr(' ')
-      end else
-        c_str('void ');
-      { output function name }
-      if fprocp^.name <> nil then c_pstr(fprocp^.name);
-      { output parameter list }
-      c_chr('(');
-      lcp := fprocp^.pflist;
-      if lcp = nil then
-        c_str('void')
-      else begin
-        while lcp <> nil do begin
-          if lcp^.klass = vars then begin
-            { output parameter type }
-            if lcp^.vkind = formal then begin
-              { var parameter - use pointer, but not for arrays }
-              { arrays decay to pointers naturally in C function params }
-              c_type(lcp^.idtype);
-              if (lcp^.idtype <> nil) and
-                 (lcp^.idtype^.form <> arrays) then
-                c_str('* ')
-              else
-                c_chr(' ')
-            end else begin
-              { value parameter }
-              c_type(lcp^.idtype);
-              c_chr(' ')
-            end;
-            { output parameter name }
-            if lcp^.name <> nil then c_pstr(lcp^.name);
-            c_arraydims(lcp^.idtype)
-          end;
-          lcp := lcp^.next;
-          if lcp <> nil then c_str(', ')
-        end
-      end;
-      c_ln(')');
-      c_ln('{');
-      c_newline;
-      cindent := cindent + 1;
-      { output local variable declarations }
-      lcp := display[top].fname;
-      c_vars(lcp, fprocp^.pflist);
-      { for functions, output return variable }
-      if fprocp^.klass = func then begin
-        c_indent;
-        c_type(fprocp^.idtype);
-        c_str(' ');
+      { set up for uplevel variable detection }
+      uplevelproc := fprocp;
+      uplevellev := level - 1; { detect vars from enclosing scope }
+      clear_uplevelrefs;
+      if level > 2 then begin
+        { nested procedure - buffer body, delay header until uplevel refs known }
+        nestbuflen := 0;
+        nestbuffering := true;
+        { buffer opening brace and local vars }
+        c_ln('{');
+        c_newline;
+        cindent := cindent + 1;
+        lcp := display[top].fname;
+        c_vars(lcp, fprocp^.pflist);
+        if fprocp^.klass = func then begin
+          c_indent;
+          c_type(fprocp^.idtype);
+          c_str(' ');
+          if fprocp^.name <> nil then c_pstr(fprocp^.name);
+          c_str('__result');
+          c_ln(';')
+        end;
+        c_newline
+      end else begin
+        { top-level procedure - output header directly }
+        { output return type }
+        if fprocp^.klass = func then begin
+          c_type(fprocp^.idtype);
+          c_chr(' ')
+        end else
+          c_str('void ');
+        { output function name }
         if fprocp^.name <> nil then c_pstr(fprocp^.name);
-        c_str('__result');
-        c_ln(';')
-      end;
-      c_newline
+        { output parameter list }
+        c_chr('(');
+        lcp := fprocp^.pflist;
+        if lcp = nil then
+          c_str('void')
+        else begin
+          while lcp <> nil do begin
+            if lcp^.klass = vars then begin
+              { output parameter type }
+              if lcp^.vkind = formal then begin
+                { var parameter - use pointer, but not for arrays }
+                { arrays decay to pointers naturally in C function params }
+                c_type(lcp^.idtype);
+                if (lcp^.idtype <> nil) and
+                   (lcp^.idtype^.form <> arrays) then
+                  c_str('* ')
+                else
+                  c_chr(' ')
+              end else begin
+                { value parameter }
+                c_type(lcp^.idtype);
+                c_chr(' ')
+              end;
+              { output parameter name }
+              if lcp^.name <> nil then c_pstr(lcp^.name);
+              c_arraydims(lcp^.idtype)
+            end;
+            lcp := lcp^.next;
+            if lcp <> nil then c_str(', ')
+          end
+        end;
+        c_ln(')');
+        c_ln('{');
+        c_newline;
+        cindent := cindent + 1;
+        { output local variable declarations }
+        lcp := display[top].fname;
+        c_vars(lcp, fprocp^.pflist);
+        { for functions, output return variable }
+        if fprocp^.klass = func then begin
+          c_indent;
+          c_type(fprocp^.idtype);
+          c_str(' ');
+          if fprocp^.name <> nil then c_pstr(fprocp^.name);
+          c_str('__result');
+          c_ln(';')
+        end;
+        c_newline
+      end
     end;
     repeat
       repeat statement(fsys + [semicolon,endsy])
@@ -8874,7 +9252,52 @@ end;
         c_ln('__result;')
       end;
       cindent := cindent - 1;
-      c_ln('}')
+      c_ln('}');
+      { for nested procedures, now output header with uplevel params and flush body }
+      if nestbuffering then begin
+        nestbuffering := false; { stop buffering to output header }
+        { output return type }
+        if fprocp^.klass = func then begin
+          c_type(fprocp^.idtype);
+          c_chr(' ')
+        end else
+          c_str('void ');
+        { output function name }
+        if fprocp^.name <> nil then c_pstr(fprocp^.name);
+        { output parameter list with uplevel params }
+        c_chr('(');
+        lcp := fprocp^.pflist;
+        if (lcp = nil) and (uplevelcnt = 0) then
+          c_str('void')
+        else begin
+          while lcp <> nil do begin
+            if lcp^.klass = vars then begin
+              if lcp^.vkind = formal then begin
+                c_type(lcp^.idtype);
+                if (lcp^.idtype <> nil) and
+                   (lcp^.idtype^.form <> arrays) then
+                  c_str('* ')
+                else
+                  c_chr(' ')
+              end else begin
+                c_type(lcp^.idtype);
+                c_chr(' ')
+              end;
+              if lcp^.name <> nil then c_pstr(lcp^.name);
+              c_arraydims(lcp^.idtype)
+            end;
+            lcp := lcp^.next;
+            if lcp <> nil then c_str(', ')
+          end;
+          { add extra params for uplevel variables }
+          c_uplevel_params(fprocp^.pflist <> nil)
+        end;
+        c_ln(')');
+        { now flush the buffered body }
+        flush_nestbuf;
+        { save uplevel refs for this procedure so call sites can use them }
+        save_proc_uplevelrefs(fprocp)
+      end
     end;
     llp := display[top].flabel; (*test for undefined and unreferenced labels*)
     while llp <> nil do
@@ -9911,6 +10334,12 @@ begin
   intypedef := false;
   stmttop := nil;
   stmtfree := nil;
+  uplevelcnt := 0;
+  uplevelproc := nil;
+  uplevellev := 0;
+  procuplevelcnt := 0;
+  nestbuflen := 0;
+  nestbuffering := false;
   inopexpr := false;
 
   nvalid := false; { set no lookahead }
