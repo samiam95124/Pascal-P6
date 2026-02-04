@@ -3211,7 +3211,9 @@ end;
       if (disx <> top) and (display[top].define) and not pdf then begin
         { downlevel, create an alias and link to bottom }
         new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
-        lcp1^.name := lcp^.name; lcp1^.actid := lcp;
+        strcopy(lcp1^.name, lcp^.name^); { copy name string }
+        lcp1^.actid := lcp;
+        lcp^.keep := true; { prevent disposal while alias references it }
         enterid(lcp1)
       end
     end else begin (*search not successful
