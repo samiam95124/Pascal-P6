@@ -5766,7 +5766,7 @@ end;
     procedure ordfunction;
     begin
       if gattr.typtr <> nil then
-        if gattr.typtr^.form >= power then error(125);
+        if gattr.typtr^.form >= pointer then error(125);
       gen0t(58(*ord*),gattr.typtr);
       gattr.typtr := intptr
     end (*ord*) ;
