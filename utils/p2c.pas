@@ -479,6 +479,7 @@ var
     cindent: integer;               { current C indentation level }
     catbol: boolean;                { at beginning of line in C output }
     gblvarsdone: boolean;           { global C vars have been output }
+    curstmtline: integer;           { current statement's source line }
 
     { Track C features used - for minimal includes }
     usestdio: boolean;              { uses stdio.h (printf, etc.) }
@@ -8771,6 +8772,7 @@ end;
         { output C assignment statement }
         if stmttop <> nil then
           if stmttop^.exprlen > 0 then begin
+            flushcmts_before(curstmtline);
             c_indent;
             for i := 1 to stmttop^.exprlen do
               c_chr(stmttop^.exprbuf[i]);
@@ -8849,6 +8851,7 @@ end;
         expression(fsys + [thensy], false);
         chkbool;
         { output C if header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('if (');
         if stmttop <> nil then
@@ -8910,6 +8913,7 @@ end;
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end;
         { output C switch statement }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('switch (');
         if stmttop <> nil then
@@ -9072,6 +9076,7 @@ end;
         var i: integer;
       begin
         { output C do-while header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_ln('do {');
         c_newline;
@@ -9119,6 +9124,7 @@ end;
         expr_reset;
         expression(fsys + [dosy], false); chkbool;
         { output C while header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('while (');
         if stmttop <> nil then
@@ -9243,6 +9249,7 @@ end;
         else begin error(55); skip(fsys + [dosy]) end;
         if sy = dosy then insymbol else error(54);
         { output C for loop header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('for (');
         { output variable name in lowercase }
@@ -9399,6 +9406,7 @@ end;
       end (*trystatement*) ;
 
     begin (*statement*)
+      curstmtline := incstk^.linecount; { capture statement start line }
       if (sy = intconst) or (sy = ident) then begin (*label*)
           { and here is why Wirth didn't include symbolic labels in Pascal.
             We are ambiguous with assigns and calls, so must look ahead for
@@ -9455,6 +9463,7 @@ end;
                               call(fsys,lcp,inherit,false);
                               { output the call - but not for standard procs (handled internally) }
                               if lcp^.pfdeckind <> standard then begin
+                                flushcmts_before(curstmtline);
                                 c_indent;
                                 for lii := 1 to stmttop^.exprlen do
                                   c_chr(stmttop^.exprbuf[lii]);
@@ -9474,6 +9483,7 @@ end;
                             call(fsys,lcp,inherit,false);
                             { output the call - but not for standard procs (handled internally) }
                             if lcp^.pfdeckind <> standard then begin
+                              flushcmts_before(curstmtline);
                               c_indent;
                               for lii := 1 to stmttop^.exprlen do
                                 c_chr(stmttop^.exprbuf[lii]);
@@ -9683,7 +9693,9 @@ end;
               end;
               { output parameter name }
               if lcp^.name <> nil then c_pstr(lcp^.name);
-              c_arraydims(lcp^.idtype)
+              c_arraydims(lcp^.idtype);
+              { output inline comment for parameter }
+              c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
             if lcp <> nil then c_str(', ')
@@ -9770,7 +9782,9 @@ end;
                 c_chr(' ')
               end;
               if lcp^.name <> nil then c_pstr(lcp^.name);
-              c_arraydims(lcp^.idtype)
+              c_arraydims(lcp^.idtype);
+              { output inline comment for parameter }
+              c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
             if lcp <> nil then c_str(', ')
@@ -10818,6 +10832,7 @@ begin
   cindent := 0;
   catbol := true;
   gblvarsdone := false;
+  curstmtline := 0;
   usestdio := false;
   usestdlib := false;
   usestring := false;
