@@ -183,6 +183,8 @@ const
    maxftl     = 519; { maximum fatal error }
    maxtypemap = 500; { maximum record type name mappings }
    maxenummap = 100; { maximum enum type name mappings }
+   maxptrmap  = 500; { maximum pointer type name mappings }
+   maxarrmap  = 500; { maximum array type name mappings }
    maxuplevel = 100; { maximum uplevel variable references per procedure }
    maxprocuplevel = 100; { max nested procs with uplevel refs }
    nestbufmax = 100000; { max size of nested procedure buffer }
@@ -303,6 +305,7 @@ type
                    name: pstring; llink, rlink: ctp;
                    idtype: stp; next: ctp; keep: boolean;
                    refer: boolean;
+                   srcline: integer; { source line where declared }
                    case klass: idclass of
                      types: ();
                      konst: (values: valu);
@@ -487,12 +490,26 @@ var
     typemapcount: integer;          { number of type mappings }
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
+    typemapsrcline: array [1..maxtypemap] of integer; { source lines }
     intypedef: boolean;             { inside typedef - use struct prefix }
 
     { Enum type name mapping for C output }
     enummapcount: integer;          { number of enum type mappings }
     enummapstp: array [1..maxenummap] of stp;    { enum type pointers }
     enummapname: array [1..maxenummap] of pstring; { enum type names }
+    enummapsrcline: array [1..maxenummap] of integer; { source lines }
+
+    { Pointer type name mapping for C output }
+    ptrmapcount: integer;           { number of pointer type mappings }
+    ptrmapstp: array [1..maxptrmap] of stp;     { pointer type pointers }
+    ptrmapname: array [1..maxptrmap] of pstring; { pointer type names }
+    ptrmapsrcline: array [1..maxptrmap] of integer; { source lines }
+
+    { Array type name mapping for C output }
+    arrmapcount: integer;           { number of array type mappings }
+    arrmapstp: array [1..maxarrmap] of stp;     { array type pointers }
+    arrmapname: array [1..maxarrmap] of pstring; { array type names }
+    arrmapsrcline: array [1..maxarrmap] of integer; { source lines }
 
     { Statement context stack }
     stmttop: stmtctxptr;            { top of statement context stack }
@@ -520,6 +537,7 @@ var
     cmtqueue: cmtptr;               { queue of captured comments }
     cmtqtail: cmtptr;               { tail pointer for efficient append }
     headercmt: cmtptr;              { file header comment (first comment before program) }
+    pastprogram: boolean;           { true after program keyword seen }
     incmt: boolean;                 { currently inside a comment }
     cmttyp: char;                   { comment type: '{' or '(' }
 
@@ -852,6 +870,8 @@ var
      { clear fixed entries }
      p^.idtype := nil; p^.keep := false; p^.refer := false;
      p^.name := nil; p^.llink := nil; p^.rlink := nil; p^.next := nil;
+     if incstk <> nil then p^.srcline := incstk^.linecount { capture source line }
+     else p^.srcline := 0;
      ctpsnm := ctpsnm+1; { identify entry in dumps }
      p^.snm := ctpsnm
   end;
@@ -1450,6 +1470,46 @@ begin
   cmtqtail := nil
 end;
 
+function getlinecmt(line: integer): cmtptr;
+{ find and remove a comment with matching line number from queue }
+var p, prev: cmtptr;
+    found: boolean;
+begin
+  getlinecmt := nil;
+  prev := nil;
+  p := cmtqueue;
+  found := false;
+  while (p <> nil) and not found do begin
+    if p^.linenum = line then begin
+      { found matching comment - remove from queue }
+      if prev = nil then
+        cmtqueue := p^.next
+      else
+        prev^.next := p^.next;
+      if cmtqtail = p then
+        cmtqtail := prev;
+      p^.next := nil;
+      getlinecmt := p;
+      found := true
+    end else begin
+      prev := p;
+      p := p^.next
+    end
+  end
+end;
+
+procedure c_inlinecmt(line: integer);
+{ output inline comment for given source line if one exists }
+var p: cmtptr;
+begin
+  p := getlinecmt(line);
+  if p <> nil then begin
+    c_str(' ');
+    c_comment(p);
+    putcmt(p)
+  end
+end;
+
 { Statement context stack management }
 
 procedure getstmt(var p: stmtctxptr);
@@ -1791,19 +1851,20 @@ end;
 
 { C type mapping procedures }
 
-procedure register_typename(fsp: stp; name: pstring);
+procedure register_typename(fsp: stp; name: pstring; srcline: integer);
 { register a type name for a record type }
 begin
   if (fsp <> nil) and (fsp^.form = records) then begin
     if typemapcount < maxtypemap then begin
       typemapcount := typemapcount + 1;
       typemapstp[typemapcount] := fsp;
-      typemapname[typemapcount] := name
+      typemapname[typemapcount] := name;
+      typemapsrcline[typemapcount] := srcline
     end
   end
 end;
 
-procedure register_enumtype(fsp: stp; name: pstring);
+procedure register_enumtype(fsp: stp; name: pstring; srcline: integer);
 { register a type name for an enumerated type }
 begin
   if (fsp <> nil) and (fsp^.form = scalar) then
@@ -1811,9 +1872,58 @@ begin
       if enummapcount < maxenummap then begin
         enummapcount := enummapcount + 1;
         enummapstp[enummapcount] := fsp;
-        enummapname[enummapcount] := name
+        enummapname[enummapcount] := name;
+        enummapsrcline[enummapcount] := srcline
       end
     end
+end;
+
+procedure register_ptrtype(fsp: stp; name: pstring; srcline: integer);
+{ register a type name for a pointer type }
+begin
+  if (fsp <> nil) and (fsp^.form = pointer) then begin
+    if ptrmapcount < maxptrmap then begin
+      ptrmapcount := ptrmapcount + 1;
+      ptrmapstp[ptrmapcount] := fsp;
+      ptrmapname[ptrmapcount] := name;
+      ptrmapsrcline[ptrmapcount] := srcline
+    end
+  end
+end;
+
+function lookup_ptrname(fsp: stp): pstring;
+{ lookup a pointer type to find its registered name }
+var i: integer;
+    found: pstring;
+begin
+  found := nil;
+  for i := 1 to ptrmapcount do
+    if ptrmapstp[i] = fsp then found := ptrmapname[i];
+  lookup_ptrname := found
+end;
+
+procedure register_arrtype(fsp: stp; name: pstring; srcline: integer);
+{ register a type name for an array type }
+begin
+  if (fsp <> nil) and (fsp^.form = arrays) then begin
+    if arrmapcount < maxarrmap then begin
+      arrmapcount := arrmapcount + 1;
+      arrmapstp[arrmapcount] := fsp;
+      arrmapname[arrmapcount] := name;
+      arrmapsrcline[arrmapcount] := srcline
+    end
+  end
+end;
+
+function lookup_arrname(fsp: stp): pstring;
+{ lookup an array type to find its registered name }
+var i: integer;
+    found: pstring;
+begin
+  found := nil;
+  for i := 1 to arrmapcount do
+    if arrmapstp[i] = fsp then found := arrmapname[i];
+  lookup_arrname := found
 end;
 
 procedure clear_uplevelrefs;
@@ -1992,25 +2102,37 @@ begin
         c_str('long')
     end;
     pointer: begin
-      tname := lookup_typename(fsp^.eltype);
+      { first check if the pointer type itself has a registered name }
+      tname := lookup_ptrname(fsp);
       if tname <> nil then begin
-        if intypedef then c_str('struct ');
-        c_pstr(tname);
-        c_str('_t*')  { add _t suffix to type name }
+        c_pstr(tname)  { use registered pointer type name }
       end else begin
-        c_basetype(fsp^.eltype);
-        c_chr('*')
+        { no registered pointer name, output target type with * }
+        tname := lookup_typename(fsp^.eltype);
+        if tname <> nil then begin
+          if intypedef then c_str('struct ');
+          c_pstr(tname);
+          c_chr('*')
+        end else begin
+          c_basetype(fsp^.eltype);
+          c_chr('*')
+        end
       end
     end;
     scalar:  c_str('int');  { enumerated types map to int }
     power:   c_str('unsigned char');  { sets are byte arrays }
-    arrays:  c_basetype(fsp^.aeltype);
+    arrays: begin
+      tname := lookup_arrname(fsp);
+      if tname <> nil then
+        c_pstr(tname)
+      else
+        c_basetype(fsp^.aeltype)
+    end;
     arrayc:  c_basetype(fsp^.abstype);
     records: begin
       tname := lookup_typename(fsp);
       if tname <> nil then begin
-        c_pstr(tname);
-        c_str('_t')  { add _t suffix to type name }
+        c_pstr(tname)
       end else
         c_str('struct')  { anonymous - will cause C error }
     end;
@@ -2032,31 +2154,34 @@ var lmin, lmax, enumcnt: integer;
 begin
   if fsp <> nil then begin
     if fsp^.form = arrays then begin
-      if fsp^.inxtype <> nil then begin
-        if fsp^.inxtype^.form = subrange then begin
-          lmin := fsp^.inxtype^.min.ival;
-          lmax := fsp^.inxtype^.max.ival;
-          c_chr('[');
-          { expand array by 1 for 1-based Pascal indexing }
-          if lmin >= 1 then c_int(lmax + 1)
-          else c_int(lmax - lmin + 1);
-          c_chr(']')
-        end else if fsp^.inxtype^.form = scalar then begin
-          { enum index type - count the enum constants }
-          if fsp^.inxtype^.scalkind = declared then begin
-            enumcnt := 0;
-            lcp := fsp^.inxtype^.fconst;
-            while lcp <> nil do begin
-              enumcnt := enumcnt + 1;
-              lcp := lcp^.next
-            end;
+      { skip dimensions if this array type has a typedef }
+      if lookup_arrname(fsp) = nil then begin
+        if fsp^.inxtype <> nil then begin
+          if fsp^.inxtype^.form = subrange then begin
+            lmin := fsp^.inxtype^.min.ival;
+            lmax := fsp^.inxtype^.max.ival;
             c_chr('[');
-            c_int(enumcnt);
+            { expand array by 1 for 1-based Pascal indexing }
+            if lmin >= 1 then c_int(lmax + 1)
+            else c_int(lmax - lmin + 1);
             c_chr(']')
+          end else if fsp^.inxtype^.form = scalar then begin
+            { enum index type - count the enum constants }
+            if fsp^.inxtype^.scalkind = declared then begin
+              enumcnt := 0;
+              lcp := fsp^.inxtype^.fconst;
+              while lcp <> nil do begin
+                enumcnt := enumcnt + 1;
+                lcp := lcp^.next
+              end;
+              c_chr('[');
+              c_int(enumcnt);
+              c_chr(']')
+            end
           end
-        end
-      end;
-      c_arraydims(fsp^.aeltype)
+        end;
+        c_arraydims(fsp^.aeltype)
+      end
     end
     else if fsp^.form = power then begin
       c_chr('[');
@@ -2103,6 +2228,7 @@ begin
         if lcp^.name <> nil then c_pstr(lcp^.name);
         c_str(' = ');
         c_int(lcp^.values.ival);
+        c_inlinecmt(lcp^.srcline); { output inline comment if exists }
         lcp := lcp^.next
       end;
       c_newline
@@ -2141,8 +2267,9 @@ begin
   for i := 1 to typemapcount do begin
     c_str('typedef struct ');
     c_pstr(typemapname[i]);
-    c_str('_t');  { add _t suffix to struct tag }
-    c_ln(' {');
+    c_str(' {');
+    c_inlinecmt(typemapsrcline[i]); { output inline comment for type name }
+    c_newline;
     cindent := cindent + 1;
     { output fields }
     fsp := typemapstp[i];
@@ -2155,7 +2282,9 @@ begin
         c_chr(' ');
         if fld^.name <> nil then c_pstr(fld^.name);
         c_arraydims(fld^.idtype);
-        c_ln(';');
+        c_chr(';');
+        c_inlinecmt(fld^.srcline); { output inline comment for field }
+        c_newline;
         fld := fld^.next
       end;
       intypedef := false
@@ -2163,10 +2292,94 @@ begin
     cindent := cindent - 1;
     c_str('} ');
     c_pstr(typemapname[i]);
-    c_str('_t');  { add _t suffix to typedef name }
     c_ln(';');
     c_newline
   end
+end;
+
+{ output typedef declarations for all registered pointer types }
+procedure c_ptrtypedefs;
+var i: integer;
+    fsp: stp;
+    tname: pstring;
+begin
+  for i := 1 to ptrmapcount do begin
+    c_str('typedef ');
+    { output the target type }
+    fsp := ptrmapstp[i];
+    if fsp <> nil then
+      if fsp^.eltype <> nil then begin
+        c_type(fsp^.eltype);
+        c_str('* ')
+      end else
+        c_str('void* ');
+    c_pstr(ptrmapname[i]);
+    c_chr(';');
+    c_inlinecmt(ptrmapsrcline[i]); { output inline comment for pointer type }
+    c_newline
+  end;
+  if ptrmapcount > 0 then c_newline
+end;
+
+{ output typedef declarations for all registered array types }
+procedure c_arraytypedefs;
+{ output array dimensions for typedef - bypasses the typedef name check }
+  procedure arrdimsdef(fsp: stp);
+  var lmin, lmax, enumcnt: integer;
+      lcp: ctp;
+  begin
+    if fsp <> nil then begin
+      if fsp^.form = arrays then begin
+        if fsp^.inxtype <> nil then begin
+          if fsp^.inxtype^.form = subrange then begin
+            lmin := fsp^.inxtype^.min.ival;
+            lmax := fsp^.inxtype^.max.ival;
+            c_chr('[');
+            if lmin >= 1 then c_int(lmax + 1)
+            else c_int(lmax - lmin + 1);
+            c_chr(']')
+          end else if fsp^.inxtype^.form = scalar then begin
+            if fsp^.inxtype^.scalkind = declared then begin
+              enumcnt := 0;
+              lcp := fsp^.inxtype^.fconst;
+              while lcp <> nil do begin
+                enumcnt := enumcnt + 1;
+                lcp := lcp^.next
+              end;
+              c_chr('[');
+              c_int(enumcnt);
+              c_chr(']')
+            end
+          end
+        end;
+        arrdimsdef(fsp^.aeltype)
+      end
+    end
+  end;
+{ get the ultimate element type of an array (for nested arrays) }
+  function geteltype(fsp: stp): stp;
+  begin
+    if fsp = nil then geteltype := nil
+    else if fsp^.form = arrays then geteltype := geteltype(fsp^.aeltype)
+    else geteltype := fsp
+  end;
+var i: integer;
+    fsp: stp;
+begin
+  for i := 1 to arrmapcount do begin
+    c_str('typedef ');
+    fsp := arrmapstp[i];
+    if fsp <> nil then begin
+      c_basetype(geteltype(fsp)); { get base element type }
+      c_chr(' ');
+      c_pstr(arrmapname[i]);
+      arrdimsdef(fsp) { output all dimensions }
+    end;
+    c_chr(';');
+    c_inlinecmt(arrmapsrcline[i]);
+    c_newline
+  end;
+  if arrmapcount > 0 then c_newline
 end;
 
 { output constant declarations from identifier BST }
@@ -2201,6 +2414,7 @@ begin
           c_int(p^.values.ival)
         else if p^.values.valp <> nil then
           c_real(p^.values.valp^.rval);
+        c_inlinecmt(p^.srcline); { output inline comment if exists }
         c_newline
       end
     end;
@@ -2221,7 +2435,9 @@ begin
       c_chr(' ');
       if p^.name <> nil then c_pstr(p^.name);
       c_arraydims(p^.idtype);
-      c_ln(';')
+      c_chr(';');
+      c_inlinecmt(p^.srcline); { output inline comment if exists }
+      c_newline
     end;
     c_vars(p^.rlink, pfl)
   end
@@ -2881,8 +3097,8 @@ end;
         while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
                or (p^.text[p^.len] = chr(10))) do
           p^.len := p^.len - 1;
-        (* store as header comment if first comment, else enqueue *)
-        if headercmt = nil then
+        (* store as header comment only if before program keyword, else enqueue *)
+        if (headercmt = nil) and not pastprogram then
           headercmt := p
         else
           enqueuecmt(p)
@@ -7347,9 +7563,11 @@ end;
           lcp^.idtype := lsp;
           { register type names for C output }
           if lsp <> nil then begin
-            if lsp^.form = records then register_typename(lsp, lcp^.name);
+            if lsp^.form = records then register_typename(lsp, lcp^.name, lcp^.srcline);
             if lsp^.form = scalar then
-              if lsp^.scalkind = declared then register_enumtype(lsp, lcp^.name)
+              if lsp^.scalkind = declared then register_enumtype(lsp, lcp^.name, lcp^.srcline);
+            if lsp^.form = pointer then register_ptrtype(lsp, lcp^.name, lcp^.srcline);
+            if lsp^.form = arrays then register_arrtype(lsp, lcp^.name, lcp^.srcline)
           end;
           if sy = semicolon then
             begin insymbol;
@@ -7422,7 +7640,7 @@ end;
           if lsp1 <> nil then
             if lookup_typename(lsp1) = nil then
               { generate name based on first variable name }
-              register_typename(lsp1, nxt^.name)
+              register_typename(lsp1, nxt^.name, nxt^.srcline)
         end;
         cc := containers(lsp); { find # containers }
         if cc > 0 then
@@ -9277,7 +9495,9 @@ end;
       if not gblvarsdone then begin
         c_consts(display[top].fname);
         c_enums;
+        c_arraytypedefs;
         c_typedefs;
+        c_ptrtypedefs;
         lcp := display[top].fname;
         c_vars(lcp, nil);
         c_newline;
@@ -9294,7 +9514,9 @@ end;
       if not gblvarsdone then begin
         c_consts(display[1].fname);
         c_enums;
+        c_arraytypedefs;
         c_typedefs;
+        c_ptrtypedefs;
         c_vars(display[1].fname, nil);
         c_newline;
         gblvarsdone := true
@@ -9674,7 +9896,7 @@ end;
     curmod := mtprogram;
     if sy = modulesy then curmod := mtmodule;
     if (sy = progsy) or (sy = modulesy) then
-      begin insymbol;
+      begin pastprogram := true; insymbol;
         if sy <> ident then error(2) else begin
           strcopy(nammod, id); { place module name }
           strcopy(display[top].modnam, id);
@@ -10499,6 +10721,8 @@ begin
   usemath := false;
   typemapcount := 0;
   enummapcount := 0;
+  ptrmapcount := 0;
+  arrmapcount := 0;
   intypedef := false;
   stmttop := nil;
   stmtfree := nil;
@@ -10512,6 +10736,7 @@ begin
   cmtqueue := nil;
   cmtqtail := nil;
   headercmt := nil;
+  pastprogram := false;
 
   nvalid := false; { set no lookahead }
   { init for lookahead }
