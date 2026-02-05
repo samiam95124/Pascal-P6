@@ -1,0 +1,621 @@
+================================================================================
+                    PASCAL-P6 PARSER THEORY OF OPERATIONS
+================================================================================
+
+                                  Overview
+                                  --------
+
+The Pascal-P6 parser (parser.pas) is a syntax follower derived from the full
+Pascal-P6 compiler (pcom.pas) with code generation stripped out. It performs
+lexical analysis, parsing, and semantic analysis without producing any output
+code. This makes it useful as a base for tools that need to understand Pascal
+source without compiling it, such as:
+
+  - p2c: Pascal to C translator
+  - Syntax checkers and linters
+  - Documentation generators
+  - Code analysis tools
+
+The parser is approximately 8200 lines of Pascal and shares the same symbol
+table management, scoping rules, and identifier handling as the full compiler.
+
+================================================================================
+                              RELATIONSHIP TO PCOM
+================================================================================
+
+parser.pas is pcom.pas with these sections removed:
+
+  - P-code generation procedures (gen0, gen1, gen2, etc.)
+  - Code generation calls within parsing procedures
+  - P-code output file handling
+  - Instruction-specific logic
+
+What remains is:
+
+  - Complete lexical analyzer (insymbol)
+  - Complete recursive descent parser
+  - Full symbol table management
+  - Type checking and semantic analysis
+  - Error handling and recovery
+  - Memory management (recycling system)
+
+Any changes to symbol table handling, scoping, or identifier management in
+pcom.pas should be mirrored in parser.pas and vice versa.
+
+================================================================================
+                           CORE DATA STRUCTURES
+================================================================================
+
+Identifier Records (ctp):
+-------------------------
+Each declared identifier is stored in a variant record:
+
+  ctp = ^identifier;
+  identifier = record
+    name: strvsp;           { identifier name string }
+    llink, rlink: ctp;      { binary search tree links }
+    idtype: stp;            { pointer to type structure }
+    refer: boolean;         { was this identifier referenced? }
+    keep: boolean;          { prevent disposal in putnams? }
+    klass: idclass;         { types, konst, vars, field, proc, func, alias }
+    { ... class-specific variant fields }
+  end;
+
+The `klass` field determines the variant:
+  - types: Type identifier
+  - konst: Constant identifier
+  - vars: Variable identifier
+  - field: Record field identifier
+  - proc/func: Procedure/function identifier
+  - alias: Reference to identifier in outer scope
+
+The Alias Class (ISO 7185 sections 6.2.2.4, 6.2.2.5, 6.2.2.9, 6.2.2.11):
+------------------------------------------------------------------------
+Per ISO 7185 section 6.2.2.4, identifiers from outer scopes are visible in
+nested scopes. Section 6.2.2.11 requires an identifier to denote the same
+thing at all applied occurrences.
+
+Aliases are an IMPLEMENTATION technique (not required by the standard) to:
+  1. Track which outer-scope identifiers are referenced from nested procedures
+  2. Enable code generators (like p2c) to identify "uplevel" variable access
+  3. Enforce section 6.2.2.5 (shadowing) and 6.2.2.9 (forward reference errors)
+
+When an identifier from an outer scope is referenced within a nested procedure,
+an alias record is created and inserted into the current scope's symbol table:
+
+  alias: (actid: ctp)       { pointer to the actual identifier }
+
+Key points:
+  - The alias shares the name pointer with the original: lcp1^.name := lcp^.name
+  - The alias is entered into the current scope's BST
+  - When the scope ends, the alias is disposed but the original remains
+  - If code later tries to define the same name locally, it finds the alias
+    and reports a duplicate identifier error (enforcing 6.2.2.5 and 6.2.2.9)
+
+Display (Scope Stack):
+----------------------
+The display array manages lexical scopes:
+
+  display: array [disprange] of disprec;
+
+  disprec = record
+    fname: ctp;             { root of identifier BST for this scope }
+    flabel: lbp;            { list of labels in this scope }
+    fconst: csp;            { list of constants in this scope }
+    fstruct: stp;           { list of structures in this scope }
+    occur: where;           { type of scope: blck, crec, vrec, rec }
+    define: boolean;        { whether this is a defining scope }
+    { ... additional fields }
+  end;
+
+  top: disprange;           { current top of display }
+  level: levrange;          { current lexical level }
+
+The display stacks with the lexical scopes. Each procedure, function or record
+reference stacks a new scope level onto the display.
+
+Pile (Scope catalog)
+----------------------
+The pile is also made up of disprec entries, but it has no particular order. 
+When a scope block terminates, but we still need to reference it, instead of
+tearing down the display, we put it onto the pile. This how joined modules or
+objects are kept so they can be referenced by qualidents.
+
+Type Structures (stp):
+----------------------
+Types are represented by variant records based on `form`:
+  - scalar: Enumeration types
+  - subrange: Subrange of ordinal type
+  - pointer: Pointer types
+  - power: Set types
+  - arrays/arrayc: Static and container arrays
+  - records: Record types with field lists
+  - files: File types
+  - objects: Object types (Pascaline extension)
+
+================================================================================
+                         MEMORY MANAGEMENT (RECYCLING)
+================================================================================
+
+The parser uses a recycling system to track memory allocation and detect leaks.
+This is critical for ensuring the symbol table is properly cleaned up.
+
+Allocation Counters:
+--------------------
+  cspcnt: integer;          { constant record count }
+  stpcnt: integer;          { structure record count }
+  ctpcnt: integer;          { identifier record count }
+  lbpcnt: integer;          { label record count }
+  filcnt: integer;          { file tracking count }
+  cipcnt: integer;          { case info record count }
+  ttpcnt: integer;          { tag tracking record count }
+  wtpcnt: integer;          { with tracking record count }
+
+Allocation Procedures:
+----------------------
+Initialization:
+  ininam(p: ctp)            { initialize identifier, increment ctpcnt }
+  inidsp(var dr: disprec)   { initialize display entry }
+
+Disposal (decrement corresponding counter):
+  putcst(p: csp)            { dispose constant }
+  putstc(p: stp)            { dispose structure }
+  putnam(p: ctp)            { dispose identifier }
+  putnams(p: ctp)           { dispose identifier BST (recursive) }
+  putparlst(p: ctp)         { dispose parameter list }
+  putlab(p: lbp)            { dispose label }
+  putfil(p: extfilep)       { dispose file entry }
+  putcas(p: cip)            { dispose case info entry }
+  puttag(p: ttp)            { dispose tag tracking entry }
+
+Block Teardown:
+  putdsp(var dr: disprec)   { dispose entire scope }
+  putdsps(l: disprange)     { dispose multiple scopes (top down to l) }
+  putpile                   { dispose all pile entries }
+
+The putnams Procedure:
+----------------------
+  procedure putnams(p: ctp);
+  begin
+    if p <> nil then begin
+      putnams(p^.llink);    { release left subtree }
+      putnams(p^.rlink);    { release right subtree }
+      if not p^.keep then putnam(p)  { release if not kept }
+    end
+  end;
+
+The `keep` flag prevents disposal - used for parameters that belong to their
+procedure/function entry rather than the current scope.
+
+Block Teardown (putdsp):
+------------------------
+When a scope ends, putdsp releases all resources:
+
+  procedure putdsp(var dr: disprec);
+  begin
+    putnams(dr.fname);      { dispose identifier tree }
+    { dispose label list }
+    { dispose constant list }
+    { dispose structure list }
+    { dispose module name }
+    { dispose operator procedures }
+  end;
+
+Balance Checking:
+-----------------
+At program end, all counters should be zero. Non-zero values indicate leaks:
+
+  if ctpcnt <> 0 then
+    writeln('*** Error: identifier recycle balance: ', ctpcnt:1);
+
+================================================================================
+                           IDENTIFIER LOOKUP
+================================================================================
+
+The searchid procedure finds identifiers across all scopes:
+
+  procedure searchid(fidcls: setofids; var fcp: ctp);
+
+Search order:
+1. Current scope's BST (display[top].fname)
+2. Enclosing scopes (display[top-1] down to display[0])
+3. Module pile (for qualified module.identifier references)
+
+When an identifier is found in an outer scope (disx <> top) within a defining
+block, an alias is created:
+
+  if (disx <> top) and (display[top].define) and not pdf then begin
+    { downlevel, create an alias and link to bottom }
+    new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
+    lcp1^.name := lcp^.name; lcp1^.actid := lcp;
+    enterid(lcp1)
+  end
+
+This ensures the outer-scope identifier is accessible via local BST lookup.
+
+================================================================================
+                              FILE STRUCTURE
+================================================================================
+
+Lines 1-99:       Header comments, licensing, authors
+Lines 100-110:    Program header, joins/uses clauses
+Lines 112-260:    Constants
+Lines 262-420:    Type definitions
+Lines 422-530:    Variable declarations
+Lines 532-730:    String handling utilities
+Lines 730-970:    Memory management (ininam, putnam, putnams, putdsp)
+Lines 970-1040:   Bitwise operations (bnot, bor, band, bxor)
+Lines 1040-1545:  Error handling, input processing
+Lines 1546-1987:  Lexical analyzer (insymbol)
+Lines 1988-2400:  Symbol table management (enterid, searchid)
+Lines 2400-3190:  Label and constant management
+Lines 3190-4450:  Type utilities, compatibility checking
+Lines 4450-4925:  Expression parsing
+Lines 4926-6488:  Declaration parsing
+Lines 6488-7080:  Statement parsing (body, statement)
+Lines 7080-7750:  Module and external handling
+Lines 7750-8100:  Standard identifier initialization
+Lines 8100-8241:  Main program
+
+================================================================================
+                           ERROR HANDLING
+================================================================================
+
+Skip Sets (fsys parameter):
+---------------------------
+Each parsing procedure takes an `fsys` parameter (follow-set or skip-set):
+
+  procedure expression(fsys: setofsys; threaten: boolean);
+  procedure statement(fsys: setofsys);
+  procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
+
+The fsys set contains tokens that are expected to legally follow the construct
+being parsed. When a syntax error occurs, the parser uses this set to resync
+with the input stream.
+
+The skip Procedure:
+-------------------
+  procedure skip(fsys: setofsys);
+  begin
+    if not eofinp then begin
+      while not(sy in fsys) and (not eofinp) do insymbol;
+      if not (sy in fsys) then insymbol
+    end
+  end;
+
+When an unexpected token is encountered, skip() consumes tokens until it finds
+one in the fsys set. This allows parsing to continue and find additional errors
+rather than stopping at the first problem.
+
+Typical Error Recovery Pattern:
+-------------------------------
+  if not(sy in constbegsys) then begin
+    error(50);                      { report the error }
+    skip(fsys+constbegsys)          { skip to recovery point }
+  end;
+  if sy in constbegsys then         { now try to parse normally }
+    ...
+
+The pattern is:
+  1. Check if current token is valid for this construct
+  2. If not, report an error
+  3. Skip forward until we find either:
+     - A token valid for this construct (try to parse it), or
+     - A token valid after this construct (let caller handle it)
+  4. Continue parsing if possible
+
+Set Composition:
+----------------
+Each parsing procedure builds fsys by combining:
+  - Tokens that can start the current construct (e.g., constbegsys)
+  - Tokens passed from the caller (what can follow after we're done)
+  - Tokens that can start subsequent constructs
+
+Example from statement parsing:
+  statement(fsys + [semicolon, endsy])
+
+This says: after parsing this statement, we expect either a semicolon (more
+statements) or 'end' (block termination).
+
+Predefined Token Sets:
+----------------------
+  constbegsys   - Tokens that can start a constant expression
+  simptypebegsys - Tokens that can start a simple type
+  typebegsys    - Tokens that can start any type
+  blockbegsys   - Tokens that can start a block
+  selectsys     - Tokens for selectors (., [, ^)
+  facbegsys     - Tokens that can start a factor
+  statbegsys    - Tokens that can start a statement
+
+================================================================================
+                           KEY PROCEDURES
+================================================================================
+
+Lexical Analysis:
+  insymbol          - Main scanner, sets sy/op/id/val globals
+
+Symbol Table:
+  enterid           - Insert identifier into current scope
+  searchid          - Find identifier across all scopes
+  searchidne        - Search without error on not found
+  searchsection     - Search single scope (for record fields)
+
+Memory Management:
+  ininam            - Allocate and initialize identifier
+  putnam            - Dispose single identifier
+  putnams           - Dispose identifier tree
+  putdsp            - Dispose entire scope (block teardown)
+  putdsps           - Dispose multiple scopes
+
+Parsing:
+  modulep           - Top-level program/module parsing
+  block             - Parse block (declarations + body)
+  body              - Parse statement part
+  statement         - Parse single statement
+  expression        - Parse expression
+
+Type Checking:
+  comptypes         - Check type compatibility
+  assigncompat      - Check assignment compatibility
+  getbounds         - Get bounds of ordinal type
+
+================================================================================
+                          DEBUGGING OPTIONS
+================================================================================
+
+Command-line options for debugging:
+
+  -l    List source with line numbers and ctp counts
+  -r    Print recycling tracking counts at end
+  -d    Dump display stack
+  -b    Dump labels
+
+The -l option shows ctp count at statement boundaries, useful for tracking
+identifier leaks:
+
+     1       -8 program test;
+     2       -8 var x: integer;
+     3       -8 begin
+     4        3 end.
+  ctp count: 170
+
+The -r option shows final recycling counters to verify all memory was freed.
+
+================================================================================
+                              COMMON ISSUES
+================================================================================
+
+Recycle Balance Errors:
+-----------------------
+When ctpcnt is non-zero at program end, identifiers were allocated but not
+freed. Common causes:
+
+1. Setting keep := true incorrectly (prevents putnams from freeing)
+2. Losing track of identifiers by not entering them in a scope
+3. Not calling putdsp/putdsps at block end
+
+See doc/recycle_debug.txt for debugging methodology.
+
+Alias Handling:
+---------------
+Aliases are created when referencing outer-scope identifiers from nested scopes.
+They are an IMPLEMENTATION technique, not required by the ISO 7185 standard.
+
+Why Aliases Exist:
+------------------
+The standard (ISO 7185 section 6.2.2.4) states that the scope of a defining-point
+includes "all regions enclosed by that region" - meaning identifiers from outer
+blocks are automatically visible in nested blocks. Section 6.2.2.11 requires that
+an identifier denotes the same thing at all applied occurrences.
+
+The compiler uses aliases to:
+  1. Track which outer-scope identifiers are referenced from nested procedures
+  2. Create a local BST entry that points to the actual identifier
+  3. Enable code generators (like p2c) to identify "uplevel" variable access -
+     where a nested procedure accesses variables from an enclosing stack frame
+
+Key invariants:
+
+1. Alias shares name pointer with original: lcp1^.name := lcp^.name
+2. Alias has actid pointing to original: lcp1^.actid := lcp
+3. Original is NOT marked with keep (would cause leak)
+4. Alias is disposed when scope ends, original remains in its scope
+
+Alias Lifetime Invariant:
+-------------------------
+Aliases are always created in inner scopes, while originals exist in outer
+scopes. Block teardown processes inner scopes before outer scopes (putdsps
+iterates from top downward). This guarantees:
+
+  - Aliases are always freed BEFORE the identifiers they reference
+  - The original identifier is valid for the entire lifetime of the alias
+  - No keep flag is needed on the original - scope ordering provides safety
+
+This is why setting keep := true on the original is wrong: it's unnecessary
+(the original naturally outlives the alias) and causes memory leaks (the
+original never gets freed).
+
+"Downlevel" References:
+-----------------------
+When searchid finds an identifier and disx <> top, the identifier was found
+in an outer scope (disx is the display level where it was found, top is the
+current scope level). In a defining block (display[top].define = true), this
+triggers alias creation:
+
+  if (disx <> top) and (display[top].define) and not pdf then begin
+    { downlevel, create an alias and link to bottom }
+    new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
+    lcp1^.name := lcp^.name; lcp1^.actid := lcp;
+    enterid(lcp1)
+  end
+
+Shadowing and Forward Reference Edge Case:
+------------------------------------------
+Consider this code:
+
+  procedure x;
+  const y = q;    { references q }
+        q = 42;   { tries to define q locally }
+
+Per ISO 7185 section 6.2.2.5, when an inner region defines an identifier, it
+shadows any outer definition for the ENTIRE region (not just from the definition
+point forward). Section 6.2.2.9 requires the defining-point to precede all
+applied occurrences.
+
+Therefore:
+  - The local q would shadow any outer q for the entire procedure block
+  - But y = q uses q before its defining-point
+  - This is an ERROR per the standard
+
+How the compiler catches this with aliases:
+
+  1. Parsing y = q: search finds q in outer scope, creates alias in current scope
+  2. Any further references to q: find the alias, follow actid to outer q (works)
+  3. Parsing q = 42: definition searches for existing identifier named q
+  4. Finds the ALIAS (not the outer q directly)
+  5. Duplicate identifier error - can't define q, an alias named q already exists
+
+The alias mechanism enforces the standard correctly! By inserting an alias when
+you reference an outer-scope identifier, any attempt to later define that same
+name locally is caught as a duplicate. The error message may differ slightly
+(found alias vs. found regular identifier), but the violation is detected.
+
+Name Pointer Sharing:
+---------------------
+In parser.pas, aliases share the name pointer with the original:
+
+  lcp1^.name := lcp^.name;  { alias points to same string }
+
+This means:
+  - The alias does NOT own its name string
+  - disposestr must skip aliases: if p^.klass <> alias then disposestr(p^.name)
+  - Only the original identifier frees the shared name string
+
+If a derived tool copies the name instead (strcopy), it must also adjust
+the disposal logic to free the alias's copy.
+
+================================================================================
+                      COMMON PITFALLS WHEN DERIVING
+================================================================================
+
+When creating tools derived from parser (like p2c), avoid these mistakes:
+
+1. Adding keep := true flags
+   - Don't add keep flags to "protect" identifiers from premature disposal
+   - Understand the lifetime relationship first - it's usually already safe
+   - Keep flags cause identifiers to never be freed (memory leaks)
+
+2. Changing name handling without adjusting disposal
+   - If you copy name strings instead of sharing, update disposestr logic
+   - If aliases get their own names, they must be disposed
+
+3. Adding defensive nil checks
+   - if p <> nil or if p^.actid <> nil checks may hide real bugs
+   - Understand WHY the pointer might be nil before adding guards
+   - These often mask problems that will resurface elsewhere
+
+4. Not comparing with parser.pas
+   - When debugging, always test the same input on parser.pas first
+   - If parser works but your tool doesn't, the bug is in your additions
+   - Use diff/grep to find what you changed in the relevant sections
+
+================================================================================
+                              REFERENCES
+================================================================================
+
+1. source/pcom_theops.txt - Full compiler theory of operations
+2. doc/recycle_debug.txt - Debugging identifier recycle balance errors
+3. "Pascal Implementation" by Pemberton and Daniels (ISBN 0-13-653-0311)
+
+================================================================================
+
+Debugging Identifier Recycle Balance Errors
+===========================================
+
+When parser reports "identifier recycle balance: N", it means N
+identifier records (ctps) were allocated via ininam but never freed via
+putnam. This indicates a memory accounting leak.
+
+Methodology
+-----------
+
+1. START WITH FACTS, NOT FIXES
+
+   Analysis starts with observations about what is happening. Do not attempt
+   quick fixes - they often treat symptoms and create new problems.
+
+2. ESTABLISH A BASELINE
+
+   Use the -l flag to see ctp counts during parsing:
+
+       source/parser test -l
+
+   This shows ctp count at the start of each statement. The count after
+   parsing system symbols (around 168-171) is the baseline.
+
+3. CREATE A MINIMAL TEST CASE
+
+   Reduce the failing program to the smallest case that reproduces the error:
+
+       program test;
+       begin
+       end.
+
+   If this has no error, add back elements one at a time:
+
+       program test;
+       var x: integer;
+       begin
+       end.
+
+   When the error appears, you've found the minimal causality.
+
+4. DIFF THE RELEVANT SECTIONS
+
+   Focus on:
+   - Block teardown (putdsp, putnams, putdsps)
+   - Identifier allocation (ininam calls)
+   - The keep flag (prevents disposal in putnams)
+   - Alias creation and disposal
+
+5. UNDERSTAND LIFETIMES
+
+   Before adding defensive code like:
+   - keep := true (prevents disposal)
+   - if p <> nil checks
+   - if p^.actid <> nil checks
+
+   First understand WHY a pointer might be nil or invalid. These guards
+   often mask the real problem and create new ones.
+
+Example Session
+---------------
+
+Problem: A tool derived from parser (e.g., p2c) reports "identifier recycle
+balance: 3" on roman.pas, but parser itself has no error.
+
+Step 1: Establish baseline
+    $ source/parser test -l     # minimal program, ctp count = 168, no error
+
+Step 2: Add variable declaration
+    $ source/parser test -l     # with "var x: integer;", still no error
+
+Step 3: Compare derived tool with parser
+    $ utils/p2c test -l         # same program, balance error = 1
+
+Conclusion: The bug is in code that the derived tool added, not in parser.
+
+Step 4: Search for differences
+    $ grep -n "keep := true" source/parser.pas utils/p2c.pas
+
+Finding: The derived tool has extra "lcp^.keep := true" when creating aliases
+that parser doesn't have. This prevents the original identifier from being
+freed.
+
+Key Lesson
+----------
+
+"Treating the symptom not the cause" - adding guards and flags to make
+crashes stop without understanding why they happen creates new bugs.
+Each band-aid fix can cause additional problems. Always analyze the
+root cause first.

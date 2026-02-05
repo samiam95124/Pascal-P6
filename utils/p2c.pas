@@ -373,6 +373,15 @@ type
                    refer:   boolean  { was referred to }
             end;
 
+     { comment preservation }
+     cmtptr = ^cmtrec;
+     cmtrec = record
+                next: cmtptr;           { linked list link }
+                linenum: integer;       { line number where comment appeared }
+                len: integer;           { length of comment text }
+                text: packed array [1..8000] of char  { comment text }
+              end;
+
      disprange = 0..displimit;
      disprec = record                      (*=blck:   id is variable id*)
                  fname: ctp; flabel: lbp;  (*=crec:   id is field id in record with*)
@@ -506,6 +515,13 @@ var
     nestbuf: packed array [1..nestbufmax] of char; { buffer for nested proc C output }
     nestbuflen: integer;            { current length of buffer }
     nestbuffering: boolean;         { true when buffering nested proc output }
+
+    { Comment preservation }
+    cmtqueue: cmtptr;               { queue of captured comments }
+    cmtqtail: cmtptr;               { tail pointer for efficient append }
+    headercmt: cmtptr;              { file header comment (first comment before program) }
+    incmt: boolean;                 { currently inside a comment }
+    cmttyp: char;                   { comment type: '{' or '(' }
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -855,8 +871,12 @@ var
   { recycle identifier entry }
   procedure putnam(p: ctp);
   var p1: ctp;
+      i: integer;
   begin
      if (p^.klass = proc) or (p^.klass = func) then begin
+        { clear any procuplevelproc entries pointing to this procedure }
+        for i := 1 to procuplevelcnt do
+          if procuplevelproc[i] = p then procuplevelproc[i] := nil;
         putparlst(p^.pflist); p^.pflist := nil;
         if p = p^.grppar then while p^.grpnxt <> nil do begin
           { scavenge the group list }
@@ -864,7 +884,7 @@ var
           putnam(p1) { release }
         end
      end;
-     if p^.klass <> alias then disposestr(p^.name); { release name string }
+     disposestr(p^.name); { release name string for all classes including alias }
      { release entry according to class }
      case p^.klass of
        types: dispose(p, types);
@@ -1358,6 +1378,76 @@ procedure h_ln(view s: string);
 { output string followed by newline to header file }
 begin
   h_str(s); h_newline
+end;
+
+{ Comment preservation procedures }
+
+procedure getcmt(var p: cmtptr);
+{ allocate a comment record }
+begin
+  new(p);
+  p^.next := nil;
+  p^.linenum := 0;
+  p^.len := 0
+end;
+
+procedure putcmt(p: cmtptr);
+{ release a comment record }
+begin
+  dispose(p)
+end;
+
+procedure enqueuecmt(p: cmtptr);
+{ add comment to end of queue }
+begin
+  if cmtqueue = nil then begin
+    cmtqueue := p;
+    cmtqtail := p
+  end else begin
+    cmtqtail^.next := p;
+    cmtqtail := p
+  end;
+  p^.next := nil
+end;
+
+procedure c_comment(p: cmtptr);
+(* output a comment in C style *)
+var i: integer;
+    instar: boolean;
+begin
+  if p <> nil then
+    if p^.len > 0 then begin
+      c_str('/* ');
+      instar := false;
+      for i := 1 to p^.len do begin
+        (* escape any star-slash sequences in comment to avoid premature close *)
+        if instar and (p^.text[i] = '/') then
+          c_chr(' '); (* insert space between star and slash *)
+        instar := (p^.text[i] = '*');
+        if p^.text[i] = chr(10) then begin
+          c_newline;
+          c_str('   ')
+        end else
+          c_chr(p^.text[i])
+      end;
+      c_str(' */')
+    end
+end;
+
+procedure flushcmts;
+{ output all pending comments and clear the queue }
+var p, p1: cmtptr;
+begin
+  p := cmtqueue;
+  while p <> nil do begin
+    c_comment(p);
+    c_newline;
+    p1 := p^.next;
+    putcmt(p);
+    p := p1
+  end;
+  cmtqueue := nil;
+  cmtqtail := nil
 end;
 
 { Statement context stack management }
@@ -2734,6 +2824,71 @@ end;
       until ch1 <> ','
     end (*options*) ;
 
+    procedure scancmt(paren: boolean);
+    (* scan and capture a comment *)
+    (* paren=true for paren-star style, false for brace style *)
+    var p: cmtptr;
+        iscmte: boolean;
+    begin
+      (* check for compiler directive *)
+      if ch = '$' then begin
+        options;
+        (* skip rest of comment without capturing *)
+        repeat
+          while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
+          iscmte := ch = '}'; nextch
+        until iscmte or (ch = ')') or eofinp;
+        if not iscmte then nextch
+      end else begin
+        (* capture the comment *)
+        getcmt(p);
+        p^.linenum := incstk^.linecount;
+        repeat
+          while (ch <> '}') and (ch <> '*') and not eofinp do begin
+            if eol then begin
+              (* insert newline for line boundary, then skip to next line *)
+              if p^.len < 8000 then begin
+                p^.len := p^.len + 1;
+                p^.text[p^.len] := chr(10)
+              end;
+              while eol and not eofinp do nextch
+            end else begin
+              if p^.len < 8000 then begin
+                p^.len := p^.len + 1;
+                p^.text[p^.len] := ch
+              end;
+              nextch
+            end
+          end;
+          iscmte := ch = '}';
+          if not iscmte and (ch = '*') then begin
+            (* might be end of paren-star comment, check for rparen *)
+            nextch;
+            if ch = ')' then begin
+              nextch;
+              iscmte := true
+            end else begin
+              (* not end, capture the star we saw *)
+              if p^.len < 8000 then begin
+                p^.len := p^.len + 1;
+                p^.text[p^.len] := '*'
+              end
+            end
+          end else if iscmte then
+            nextch (* skip closing brace *)
+        until iscmte or eofinp;
+        (* trim trailing whitespace *)
+        while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
+               or (p^.text[p^.len] = chr(10))) do
+          p^.len := p^.len - 1;
+        (* store as header comment if first comment, else enqueue *)
+        if headercmt = nil then
+          headercmt := p
+        else
+          enqueuecmt(p)
+      end
+    end (*scancmt*) ;
+
     function pwrten(e: integer): real;
     var t: real; { accumulator }
         p: real; { current power }
@@ -3021,12 +3176,8 @@ end;
        begin nextch;
          if ch = '*' then
            begin nextch;
-             if (ch = '$') and not incact then options;
-             repeat
-               while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
-               iscmte := ch = '}'; nextch
-             until iscmte or (ch = ')') or eofinp;
-             if not iscmte then nextch; goto 1
+             scancmt(true); (* capture paren-star comment *)
+             goto 1
            end
          else if ch = '.' then begin sy := lbrack; nextch end
          else sy := lparent;
@@ -3034,12 +3185,8 @@ end;
        end;
       chlcmt:
        begin nextch;
-         if ch = '$' then options;
-         repeat
-            while (ch <> '}') and (ch <> '*') and not eofinp do nextch;
-            iscmte := ch = '}'; nextch
-         until iscmte or (ch = ')') or eofinp;
-         if not iscmte then nextch; goto 1
+         scancmt(false); (* capture brace comment *)
+         goto 1
        end;
       chrem:
        begin chkstd;
@@ -9136,6 +9283,7 @@ end;
         c_newline;
         gblvarsdone := true
       end;
+      flushcmts; (* output any pending comments before main *)
       c_ln('int main(void)');
       c_ln('{');
       c_newline;
@@ -9176,6 +9324,7 @@ end;
         c_newline
       end else begin
         { top-level procedure - output header directly }
+        flushcmts; (* output any pending comments before procedure *)
         { output return type }
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
@@ -9570,6 +9719,13 @@ end;
         if sy = semicolon then insymbol
       end else error(3);
     { emit C file headers }
+    { output header comment from original Pascal source }
+    if headercmt <> nil then begin
+      c_comment(headercmt);
+      c_newline;
+      putcmt(headercmt);
+      headercmt := nil
+    end;
     c_ln('/*');
     c_str(' * Translated from Pascaline by p2c');
     c_newline;
@@ -10353,6 +10509,9 @@ begin
   nestbuflen := 0;
   nestbuffering := false;
   inopexpr := false;
+  cmtqueue := nil;
+  cmtqtail := nil;
+  headercmt := nil;
 
   nvalid := false; { set no lookahead }
   { init for lookahead }
