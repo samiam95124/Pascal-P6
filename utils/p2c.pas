@@ -1470,6 +1470,32 @@ begin
   cmtqtail := nil
 end;
 
+procedure flushcmts_before(line: integer);
+{ output comments with line numbers < line, keep the rest in queue }
+var p, prev, p1: cmtptr;
+begin
+  prev := nil;
+  p := cmtqueue;
+  while p <> nil do begin
+    p1 := p^.next;
+    if p^.linenum < line then begin
+      { output this comment }
+      c_comment(p);
+      c_newline;
+      { remove from queue }
+      if prev = nil then
+        cmtqueue := p1
+      else
+        prev^.next := p1;
+      if cmtqtail = p then
+        cmtqtail := prev;
+      putcmt(p)
+    end else
+      prev := p;
+    p := p1
+  end
+end;
+
 function getlinecmt(line: integer): cmtptr;
 { find and remove a comment with matching line number from queue }
 var p, prev: cmtptr;
@@ -1498,10 +1524,81 @@ begin
   end
 end;
 
+procedure scanaheadcmt(line: integer);
+{ look ahead on the current line for a trailing comment and capture it }
+{ this handles the case where a comment follows a statement on the same line }
+{ but hasn't been scanned yet by insymbol }
+var p: cmtptr;
+    i: integer;
+    c: char;
+    paren: boolean;
+    done: boolean;
+    found: boolean;
+begin
+  found := false;
+  if incstk <> nil then
+    if incstk^.linecount = line then begin
+      { scan from current position looking for comment start }
+      i := incstk^.si;
+      { skip whitespace but not past end of line }
+      while (i <= incstk^.sl) and (incstk^.sb[i] = ' ') do i := i + 1;
+      if i <= incstk^.sl then begin
+        c := incstk^.sb[i];
+        { check for comment start }
+        if c = '{' then begin
+          paren := false;
+          i := i + 1; { skip opening brace }
+          found := true
+        end else if (c = '(') and (i < incstk^.sl) and (incstk^.sb[i+1] = '*') then begin
+          paren := true;
+          i := i + 2; { skip (* }
+          found := true
+        end;
+        { skip compiler directive }
+        if found and (i <= incstk^.sl) and (incstk^.sb[i] = '$') then
+          found := false;
+        if found then begin
+          { capture comment text }
+          getcmt(p);
+          p^.linenum := line;
+          done := false;
+          while (i <= incstk^.sl) and not done do begin
+            c := incstk^.sb[i];
+            if not paren and (c = '}') then
+              done := true
+            else if paren and (c = '*') and (i < incstk^.sl) and (incstk^.sb[i+1] = ')') then begin
+              done := true;
+              i := i + 1 { skip the ) too }
+            end else begin
+              if p^.len < 8000 then begin
+                p^.len := p^.len + 1;
+                p^.text[p^.len] := c
+              end
+            end;
+            i := i + 1
+          end;
+          { trim trailing whitespace }
+          while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))) do
+            p^.len := p^.len - 1;
+          { add to queue }
+          if p^.len > 0 then
+            enqueuecmt(p)
+          else
+            putcmt(p);
+          { advance scanner position past the comment we captured }
+          incstk^.si := i
+        end
+      end
+    end
+end;
+
 procedure c_inlinecmt(line: integer);
 { output inline comment for given source line if one exists }
 var p: cmtptr;
 begin
+  { first try to capture any trailing comment on this line }
+  scanaheadcmt(line);
+  { now look for the comment in the queue }
   p := getlinecmt(line);
   if p <> nil then begin
     c_str(' ');
@@ -8677,7 +8774,9 @@ end;
             c_indent;
             for i := 1 to stmttop^.exprlen do
               c_chr(stmttop^.exprbuf[i]);
-            c_ln(';')
+            c_chr(';');
+            c_inlinecmt(stmttop^.startline);
+            c_newline
           end;
         popstmt
       end (*assignment*) ;
@@ -9359,7 +9458,9 @@ end;
                                 c_indent;
                                 for lii := 1 to stmttop^.exprlen do
                                   c_chr(stmttop^.exprbuf[lii]);
-                                c_ln(';')
+                                c_chr(';');
+                                c_inlinecmt(stmttop^.startline);
+                                c_newline
                               end;
                               popstmt
                             end
@@ -9376,7 +9477,9 @@ end;
                               c_indent;
                               for lii := 1 to stmttop^.exprlen do
                                 c_chr(stmttop^.exprbuf[lii]);
-                              c_ln(';')
+                              c_chr(';');
+                              c_inlinecmt(stmttop^.startline);
+                              c_newline
                             end;
                             popstmt
                           end
@@ -9546,7 +9649,7 @@ end;
         c_newline
       end else begin
         { top-level procedure - output header directly }
-        flushcmts; (* output any pending comments before procedure *)
+        flushcmts_before(fprocp^.srcline); (* output comments before procedure *)
         { output return type }
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
