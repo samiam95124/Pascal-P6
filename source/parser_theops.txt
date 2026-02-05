@@ -69,18 +69,28 @@ The `klass` field determines the variant:
   - proc/func: Procedure/function identifier
   - alias: Reference to identifier in outer scope
 
-The Alias Class:
-----------------
+The Alias Class (ISO 7185 sections 6.2.2.4, 6.2.2.5, 6.2.2.9, 6.2.2.11):
+------------------------------------------------------------------------
+Per ISO 7185 section 6.2.2.4, identifiers from outer scopes are visible in
+nested scopes. Section 6.2.2.11 requires an identifier to denote the same
+thing at all applied occurrences.
+
+Aliases are an IMPLEMENTATION technique (not required by the standard) to:
+  1. Track which outer-scope identifiers are referenced from nested procedures
+  2. Enable code generators (like p2c) to identify "uplevel" variable access
+  3. Enforce section 6.2.2.5 (shadowing) and 6.2.2.9 (forward reference errors)
+
 When an identifier from an outer scope is referenced within a nested procedure,
-an alias record is created and inserted into the current scope's symbol table.
-The alias contains:
+an alias record is created and inserted into the current scope's symbol table:
 
   alias: (actid: ctp)       { pointer to the actual identifier }
 
-The alias allows local lookup to find outer-scope identifiers. Key points:
+Key points:
   - The alias shares the name pointer with the original: lcp1^.name := lcp^.name
   - The alias is entered into the current scope's BST
   - When the scope ends, the alias is disposed but the original remains
+  - If code later tries to define the same name locally, it finds the alias
+    and reports a duplicate identifier error (enforcing 6.2.2.5 and 6.2.2.9)
 
 Display (Scope Stack):
 ----------------------
@@ -100,6 +110,16 @@ The display array manages lexical scopes:
 
   top: disprange;           { current top of display }
   level: levrange;          { current lexical level }
+
+The display stacks with the lexical scopes. Each procedure, function or record
+reference stacks a new scope level onto the display.
+
+Pile (Scope catalog)
+----------------------
+The pile is also made up of disprec entries, but it has no particular order. 
+When a scope block terminates, but we still need to reference it, instead of
+tearing down the display, we put it onto the pile. This how joined modules or
+objects are kept so they can be referenced by qualidents.
 
 Type Structures (stp):
 ----------------------
@@ -122,17 +142,36 @@ This is critical for ensuring the symbol table is properly cleaned up.
 
 Allocation Counters:
 --------------------
-  ctpcnt: integer;          { identifier record count }
-  stpcnt: integer;          { structure record count }
   cspcnt: integer;          { constant record count }
+  stpcnt: integer;          { structure record count }
+  ctpcnt: integer;          { identifier record count }
   lbpcnt: integer;          { label record count }
-  { ... other counters }
+  filcnt: integer;          { file tracking count }
+  cipcnt: integer;          { case info record count }
+  ttpcnt: integer;          { tag tracking record count }
+  wtpcnt: integer;          { with tracking record count }
 
 Allocation Procedures:
 ----------------------
+Initialization:
   ininam(p: ctp)            { initialize identifier, increment ctpcnt }
-  putnam(p: ctp)            { dispose identifier, decrement ctpcnt }
+  inidsp(var dr: disprec)   { initialize display entry }
+
+Disposal (decrement corresponding counter):
+  putcst(p: csp)            { dispose constant }
+  putstc(p: stp)            { dispose structure }
+  putnam(p: ctp)            { dispose identifier }
   putnams(p: ctp)           { dispose identifier BST (recursive) }
+  putparlst(p: ctp)         { dispose parameter list }
+  putlab(p: lbp)            { dispose label }
+  putfil(p: extfilep)       { dispose file entry }
+  putcas(p: cip)            { dispose case info entry }
+  puttag(p: ttp)            { dispose tag tracking entry }
+
+Block Teardown:
+  putdsp(var dr: disprec)   { dispose entire scope }
+  putdsps(l: disprange)     { dispose multiple scopes (top down to l) }
+  putpile                   { dispose all pile entries }
 
 The putnams Procedure:
 ----------------------
@@ -219,6 +258,76 @@ Lines 7750-8100:  Standard identifier initialization
 Lines 8100-8241:  Main program
 
 ================================================================================
+                           ERROR HANDLING
+================================================================================
+
+Skip Sets (fsys parameter):
+---------------------------
+Each parsing procedure takes an `fsys` parameter (follow-set or skip-set):
+
+  procedure expression(fsys: setofsys; threaten: boolean);
+  procedure statement(fsys: setofsys);
+  procedure typ(fsys: setofsys; var fsp: stp; var fsize: addrrange);
+
+The fsys set contains tokens that are expected to legally follow the construct
+being parsed. When a syntax error occurs, the parser uses this set to resync
+with the input stream.
+
+The skip Procedure:
+-------------------
+  procedure skip(fsys: setofsys);
+  begin
+    if not eofinp then begin
+      while not(sy in fsys) and (not eofinp) do insymbol;
+      if not (sy in fsys) then insymbol
+    end
+  end;
+
+When an unexpected token is encountered, skip() consumes tokens until it finds
+one in the fsys set. This allows parsing to continue and find additional errors
+rather than stopping at the first problem.
+
+Typical Error Recovery Pattern:
+-------------------------------
+  if not(sy in constbegsys) then begin
+    error(50);                      { report the error }
+    skip(fsys+constbegsys)          { skip to recovery point }
+  end;
+  if sy in constbegsys then         { now try to parse normally }
+    ...
+
+The pattern is:
+  1. Check if current token is valid for this construct
+  2. If not, report an error
+  3. Skip forward until we find either:
+     - A token valid for this construct (try to parse it), or
+     - A token valid after this construct (let caller handle it)
+  4. Continue parsing if possible
+
+Set Composition:
+----------------
+Each parsing procedure builds fsys by combining:
+  - Tokens that can start the current construct (e.g., constbegsys)
+  - Tokens passed from the caller (what can follow after we're done)
+  - Tokens that can start subsequent constructs
+
+Example from statement parsing:
+  statement(fsys + [semicolon, endsy])
+
+This says: after parsing this statement, we expect either a semicolon (more
+statements) or 'end' (block termination).
+
+Predefined Token Sets:
+----------------------
+  constbegsys   - Tokens that can start a constant expression
+  simptypebegsys - Tokens that can start a simple type
+  typebegsys    - Tokens that can start any type
+  blockbegsys   - Tokens that can start a block
+  selectsys     - Tokens for selectors (., [, ^)
+  facbegsys     - Tokens that can start a factor
+  statbegsys    - Tokens that can start a statement
+
+================================================================================
                            KEY PROCEDURES
 ================================================================================
 
@@ -290,6 +399,21 @@ See doc/recycle_debug.txt for debugging methodology.
 Alias Handling:
 ---------------
 Aliases are created when referencing outer-scope identifiers from nested scopes.
+They are an IMPLEMENTATION technique, not required by the ISO 7185 standard.
+
+Why Aliases Exist:
+------------------
+The standard (ISO 7185 section 6.2.2.4) states that the scope of a defining-point
+includes "all regions enclosed by that region" - meaning identifiers from outer
+blocks are automatically visible in nested blocks. Section 6.2.2.11 requires that
+an identifier denotes the same thing at all applied occurrences.
+
+The compiler uses aliases to:
+  1. Track which outer-scope identifiers are referenced from nested procedures
+  2. Create a local BST entry that points to the actual identifier
+  3. Enable code generators (like p2c) to identify "uplevel" variable access -
+     where a nested procedure accesses variables from an enclosing stack frame
+
 Key invariants:
 
 1. Alias shares name pointer with original: lcp1^.name := lcp^.name
@@ -325,16 +449,36 @@ triggers alias creation:
     enterid(lcp1)
   end
 
-Display vs Pile:
-----------------
-  - Display: Stack of lexical scopes within the current program/module.
-    Indexed by `top`, contains identifier BSTs for each nesting level.
+Shadowing and Forward Reference Edge Case:
+------------------------------------------
+Consider this code:
 
-  - Pile: Array of module entries for cross-module references.
-    Used when resolving qualified names (module.identifier).
-    Indexed by `ptop`.
+  procedure x;
+  const y = q;    { references q }
+        q = 42;   { tries to define q locally }
 
-Block teardown uses putdsp for display entries, putpile for the pile.
+Per ISO 7185 section 6.2.2.5, when an inner region defines an identifier, it
+shadows any outer definition for the ENTIRE region (not just from the definition
+point forward). Section 6.2.2.9 requires the defining-point to precede all
+applied occurrences.
+
+Therefore:
+  - The local q would shadow any outer q for the entire procedure block
+  - But y = q uses q before its defining-point
+  - This is an ERROR per the standard
+
+How the compiler catches this with aliases:
+
+  1. Parsing y = q: search finds q in outer scope, creates alias in current scope
+  2. Any further references to q: find the alias, follow actid to outer q (works)
+  3. Parsing q = 42: definition searches for existing identifier named q
+  4. Finds the ALIAS (not the outer q directly)
+  5. Duplicate identifier error - can't define q, an alias named q already exists
+
+The alias mechanism enforces the standard correctly! By inserting an alias when
+you reference an outer-scope identifier, any attempt to later define that same
+name locally is caught as a duplicate. The error message may differ slightly
+(found alias vs. found regular identifier), but the violation is detected.
 
 Name Pointer Sharing:
 ---------------------
