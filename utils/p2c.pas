@@ -479,6 +479,7 @@ var
     cindent: integer;               { current C indentation level }
     catbol: boolean;                { at beginning of line in C output }
     gblvarsdone: boolean;           { global C vars have been output }
+    curstmtline: integer;           { current statement's source line }
 
     { Track C features used - for minimal includes }
     usestdio: boolean;              { uses stdio.h (printf, etc.) }
@@ -904,7 +905,7 @@ var
           putnam(p1) { release }
         end
      end;
-     disposestr(p^.name); { release name string for all classes including alias }
+     if p^.klass <> alias then disposestr(p^.name); { release name string }
      { release entry according to class }
      case p^.klass of
        types: dispose(p, types);
@@ -1432,25 +1433,92 @@ end;
 
 procedure c_comment(p: cmtptr);
 (* output a comment in C style *)
-var i: integer;
-    instar: boolean;
+(* if the first line is all *s, output /***... instead of /* ***...         *)
+(* if the last line is all *s, output ***.../ instead of ***... star-slash  *)
+var i:                   integer;
+    instar:              boolean;
+    firstnl:             integer; (* position of first chr(10), 0 if none *)
+    lastnl:              integer; (* position of last chr(10), 0 if none *)
+    staropen:            boolean; (* first line is all *s *)
+    starclose:           boolean; (* last line is all *s *)
+    startpos, endpos:    integer;
 begin
   if p <> nil then
     if p^.len > 0 then begin
-      c_str('/* ');
-      instar := false;
-      for i := 1 to p^.len do begin
-        (* escape any star-slash sequences in comment to avoid premature close *)
-        if instar and (p^.text[i] = '/') then
-          c_chr(' '); (* insert space between star and slash *)
-        instar := (p^.text[i] = '*');
-        if p^.text[i] = chr(10) then begin
-          c_newline;
-          c_str('   ')
-        end else
-          c_chr(p^.text[i])
+      (* find first newline position *)
+      firstnl := 0;
+      i := 1;
+      while (i <= p^.len) and (firstnl = 0) do begin
+        if p^.text[i] = chr(10) then firstnl := i;
+        i := i + 1
       end;
-      c_str(' */')
+      (* find last newline position *)
+      lastnl := 0;
+      i := p^.len;
+      while (i >= 1) and (lastnl = 0) do begin
+        if p^.text[i] = chr(10) then lastnl := i;
+        i := i - 1
+      end;
+      (* check if first line is all *s *)
+      staropen := true;
+      if firstnl > 1 then begin
+        for i := 1 to firstnl - 1 do
+          if p^.text[i] <> '*' then staropen := false
+      end else if firstnl = 0 then begin
+        for i := 1 to p^.len do
+          if p^.text[i] <> '*' then staropen := false
+      end else
+        staropen := false;
+      (* check if last line is all *s *)
+      starclose := true;
+      if (lastnl > 0) and (lastnl < p^.len) then begin
+        for i := lastnl + 1 to p^.len do
+          if p^.text[i] <> '*' then starclose := false
+      end else if lastnl = 0 then
+        starclose := staropen
+      else
+        starclose := false;
+      if staropen and starclose and (firstnl = 0) then begin
+        (* single-line all-stars: output /***...***/  *)
+        c_chr('/');
+        for i := 1 to p^.len do c_chr('*');
+        c_chr('/')
+      end else begin
+        (* output opening *)
+        if staropen and (firstnl > 0) then begin
+          c_chr('/');
+          for i := 1 to firstnl - 1 do c_chr('*');
+          c_newline;
+          startpos := firstnl + 1
+        end else begin
+          c_str('/* ');
+          startpos := 1
+        end;
+        (* determine end position for middle section *)
+        if starclose and (lastnl > 0) then
+          endpos := lastnl - 1
+        else
+          endpos := p^.len;
+        (* output middle section *)
+        instar := false;
+        for i := startpos to endpos do begin
+          if instar and (p^.text[i] = '/') then
+            c_chr(' '); (* insert space between star and slash *)
+          instar := (p^.text[i] = '*');
+          if p^.text[i] = chr(10) then begin
+            c_newline;
+            if not staropen then c_str('   ')
+          end else
+            c_chr(p^.text[i])
+        end;
+        (* output closing *)
+        if starclose and (lastnl > 0) then begin
+          c_newline;
+          for i := lastnl + 1 to p^.len do c_chr('*');
+          c_chr('/')
+        end else
+          c_str(' */')
+      end
     end
 end;
 
@@ -2398,7 +2466,6 @@ end;
 procedure c_ptrtypedefs;
 var i: integer;
     fsp: stp;
-    tname: pstring;
 begin
   for i := 1 to ptrmapcount do begin
     c_str('typedef ');
@@ -3052,7 +3119,6 @@ end;
     var i,k,v,r: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
-        iscmte: boolean;
         ev: integer;
         rv: real;
         sgn: integer;
@@ -3137,9 +3203,8 @@ end;
       until ch1 <> ','
     end (*options*) ;
 
-    procedure scancmt(paren: boolean);
+    procedure scancmt;
     (* scan and capture a comment *)
-    (* paren=true for paren-star style, false for brace style *)
     var p: cmtptr;
         iscmte: boolean;
     begin
@@ -3489,7 +3554,7 @@ end;
        begin nextch;
          if ch = '*' then
            begin nextch;
-             scancmt(true); (* capture paren-star comment *)
+             scancmt; (* capture paren-star comment *)
              goto 1
            end
          else if ch = '.' then begin sy := lbrack; nextch end
@@ -3498,7 +3563,7 @@ end;
        end;
       chlcmt:
        begin nextch;
-         scancmt(false); (* capture brace comment *)
+         scancmt; (* capture brace comment *)
          goto 1
        end;
       chrem:
@@ -3671,9 +3736,7 @@ end;
       if (disx <> top) and (display[top].define) and not pdf then begin
         { downlevel, create an alias and link to bottom }
         new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
-        strcopy(lcp1^.name, lcp^.name^); { copy name string }
-        lcp1^.actid := lcp;
-        lcp^.keep := true; { prevent disposal while alias references it }
+        lcp1^.name := lcp^.name; lcp1^.actid := lcp;
         enterid(lcp1)
       end
     end else begin (*search not successful
@@ -8568,6 +8631,9 @@ end;
         printed: boolean;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
+        paramindent: integer; { indentation for multi-line parameters }
+        prevparamline: integer; { previous parameter's source line }
+        ii: integer; { loop index for param indent }
 
     { add statement level }
     procedure addlvl;
@@ -8771,6 +8837,7 @@ end;
         { output C assignment statement }
         if stmttop <> nil then
           if stmttop^.exprlen > 0 then begin
+            flushcmts_before(curstmtline);
             c_indent;
             for i := 1 to stmttop^.exprlen do
               c_chr(stmttop^.exprbuf[i]);
@@ -8849,6 +8916,7 @@ end;
         expression(fsys + [thensy], false);
         chkbool;
         { output C if header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('if (');
         if stmttop <> nil then
@@ -8910,6 +8978,7 @@ end;
           if (lsp^.form <> scalar) or (lsp = realptr) then
             begin error(144); lsp := nil end;
         { output C switch statement }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('switch (');
         if stmttop <> nil then
@@ -9072,6 +9141,7 @@ end;
         var i: integer;
       begin
         { output C do-while header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_ln('do {');
         c_newline;
@@ -9119,6 +9189,7 @@ end;
         expr_reset;
         expression(fsys + [dosy], false); chkbool;
         { output C while header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('while (');
         if stmttop <> nil then
@@ -9243,6 +9314,7 @@ end;
         else begin error(55); skip(fsys + [dosy]) end;
         if sy = dosy then insymbol else error(54);
         { output C for loop header }
+        flushcmts_before(curstmtline);
         c_indent;
         c_str('for (');
         { output variable name in lowercase }
@@ -9399,6 +9471,7 @@ end;
       end (*trystatement*) ;
 
     begin (*statement*)
+      curstmtline := incstk^.linecount; { capture statement start line }
       if (sy = intconst) or (sy = ident) then begin (*label*)
           { and here is why Wirth didn't include symbolic labels in Pascal.
             We are ambiguous with assigns and calls, so must look ahead for
@@ -9455,6 +9528,7 @@ end;
                               call(fsys,lcp,inherit,false);
                               { output the call - but not for standard procs (handled internally) }
                               if lcp^.pfdeckind <> standard then begin
+                                flushcmts_before(curstmtline);
                                 c_indent;
                                 for lii := 1 to stmttop^.exprlen do
                                   c_chr(stmttop^.exprbuf[lii]);
@@ -9474,6 +9548,7 @@ end;
                             call(fsys,lcp,inherit,false);
                             { output the call - but not for standard procs (handled internally) }
                             if lcp^.pfdeckind <> standard then begin
+                              flushcmts_before(curstmtline);
                               c_indent;
                               for lii := 1 to stmttop^.exprlen do
                                 c_chr(stmttop^.exprbuf[lii]);
@@ -9650,22 +9725,38 @@ end;
       end else begin
         { top-level procedure - output header directly }
         flushcmts_before(fprocp^.srcline); (* output comments before procedure *)
-        { output return type }
+        { output return type - also calculate indent for multi-line params }
+        paramindent := 0;
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
-          c_chr(' ')
-        end else
+          c_chr(' ');
+          paramindent := paramindent + 8  { approximate type length }
+        end else begin
           c_str('void ');
+          paramindent := 5
+        end;
         { output function name }
-        if fprocp^.name <> nil then c_pstr(fprocp^.name);
+        if fprocp^.name <> nil then begin
+          c_pstr(fprocp^.name);
+          paramindent := paramindent + max(fprocp^.name^)
+        end;
         { output parameter list }
         c_chr('(');
+        paramindent := paramindent + 1;
         lcp := fprocp^.pflist;
         if lcp = nil then
           c_str('void')
         else begin
+          prevparamline := 0;
           while lcp <> nil do begin
             if lcp^.klass = vars then begin
+              { check if parameter is on a new line }
+              if (prevparamline > 0) and (lcp^.srcline > prevparamline) then begin
+                { output newline and indent for continuation }
+                c_newline;
+                for ii := 1 to paramindent do c_chr(' ')
+              end;
+              prevparamline := lcp^.srcline;
               { output parameter type }
               if lcp^.vkind = formal then begin
                 { var parameter - use pointer, but not for arrays }
@@ -9683,10 +9774,12 @@ end;
               end;
               { output parameter name }
               if lcp^.name <> nil then c_pstr(lcp^.name);
-              c_arraydims(lcp^.idtype)
+              c_arraydims(lcp^.idtype);
+              { output inline comment for parameter }
+              c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
-            if lcp <> nil then c_str(', ')
+            if lcp <> nil then c_chr(',')
           end
         end;
         c_ln(')');
@@ -9742,22 +9835,38 @@ end;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
-        { output return type }
+        { output return type - calculate indent for multi-line params }
+        paramindent := 0;
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
-          c_chr(' ')
-        end else
+          c_chr(' ');
+          paramindent := paramindent + 8  { approximate type length }
+        end else begin
           c_str('void ');
+          paramindent := 5
+        end;
         { output function name }
-        if fprocp^.name <> nil then c_pstr(fprocp^.name);
+        if fprocp^.name <> nil then begin
+          c_pstr(fprocp^.name);
+          paramindent := paramindent + max(fprocp^.name^)
+        end;
         { output parameter list with uplevel params }
         c_chr('(');
+        paramindent := paramindent + 1;
         lcp := fprocp^.pflist;
         if (lcp = nil) and (uplevelcnt = 0) then
           c_str('void')
         else begin
+          prevparamline := 0;
           while lcp <> nil do begin
             if lcp^.klass = vars then begin
+              { check if parameter is on a new line }
+              if (prevparamline > 0) and (lcp^.srcline > prevparamline) then begin
+                { output newline and indent for continuation }
+                c_newline;
+                for ii := 1 to paramindent do c_chr(' ')
+              end;
+              prevparamline := lcp^.srcline;
               if lcp^.vkind = formal then begin
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
@@ -9770,10 +9879,12 @@ end;
                 c_chr(' ')
               end;
               if lcp^.name <> nil then c_pstr(lcp^.name);
-              c_arraydims(lcp^.idtype)
+              c_arraydims(lcp^.idtype);
+              { output inline comment for parameter }
+              c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
-            if lcp <> nil then c_str(', ')
+            if lcp <> nil then c_chr(',')
           end;
           { add extra params for uplevel variables }
           c_uplevel_params(fprocp^.pflist <> nil)
@@ -10767,7 +10878,7 @@ begin
   (************)
   initscalars; initsets; inittables;
 
-  write('P6 Pascal syntax follower vs. ', majorver:1, '.', minorver:1);
+  write('p2c Pascaline to C converter ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   if iso7185 then begin
@@ -10818,6 +10929,7 @@ begin
   cindent := 0;
   catbol := true;
   gblvarsdone := false;
+  curstmtline := 0;
   usestdio := false;
   usestdlib := false;
   usestring := false;
