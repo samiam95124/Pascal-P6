@@ -8569,6 +8569,9 @@ end;
         printed: boolean;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
+        paramindent: integer; { indentation for multi-line parameters }
+        prevparamline: integer; { previous parameter's source line }
+        ii: integer; { loop index for param indent }
 
     { add statement level }
     procedure addlvl;
@@ -9660,22 +9663,38 @@ end;
       end else begin
         { top-level procedure - output header directly }
         flushcmts_before(fprocp^.srcline); (* output comments before procedure *)
-        { output return type }
+        { output return type - also calculate indent for multi-line params }
+        paramindent := 0;
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
-          c_chr(' ')
-        end else
+          c_chr(' ');
+          paramindent := paramindent + 8  { approximate type length }
+        end else begin
           c_str('void ');
+          paramindent := 5
+        end;
         { output function name }
-        if fprocp^.name <> nil then c_pstr(fprocp^.name);
+        if fprocp^.name <> nil then begin
+          c_pstr(fprocp^.name);
+          paramindent := paramindent + max(fprocp^.name^)
+        end;
         { output parameter list }
         c_chr('(');
+        paramindent := paramindent + 1;
         lcp := fprocp^.pflist;
         if lcp = nil then
           c_str('void')
         else begin
+          prevparamline := 0;
           while lcp <> nil do begin
             if lcp^.klass = vars then begin
+              { check if parameter is on a new line }
+              if (prevparamline > 0) and (lcp^.srcline > prevparamline) then begin
+                { output newline and indent for continuation }
+                c_newline;
+                for ii := 1 to paramindent do c_chr(' ')
+              end;
+              prevparamline := lcp^.srcline;
               { output parameter type }
               if lcp^.vkind = formal then begin
                 { var parameter - use pointer, but not for arrays }
@@ -9698,7 +9717,7 @@ end;
               c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
-            if lcp <> nil then c_str(', ')
+            if lcp <> nil then c_chr(',')
           end
         end;
         c_ln(')');
@@ -9754,22 +9773,38 @@ end;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
-        { output return type }
+        { output return type - calculate indent for multi-line params }
+        paramindent := 0;
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
-          c_chr(' ')
-        end else
+          c_chr(' ');
+          paramindent := paramindent + 8  { approximate type length }
+        end else begin
           c_str('void ');
+          paramindent := 5
+        end;
         { output function name }
-        if fprocp^.name <> nil then c_pstr(fprocp^.name);
+        if fprocp^.name <> nil then begin
+          c_pstr(fprocp^.name);
+          paramindent := paramindent + max(fprocp^.name^)
+        end;
         { output parameter list with uplevel params }
         c_chr('(');
+        paramindent := paramindent + 1;
         lcp := fprocp^.pflist;
         if (lcp = nil) and (uplevelcnt = 0) then
           c_str('void')
         else begin
+          prevparamline := 0;
           while lcp <> nil do begin
             if lcp^.klass = vars then begin
+              { check if parameter is on a new line }
+              if (prevparamline > 0) and (lcp^.srcline > prevparamline) then begin
+                { output newline and indent for continuation }
+                c_newline;
+                for ii := 1 to paramindent do c_chr(' ')
+              end;
+              prevparamline := lcp^.srcline;
               if lcp^.vkind = formal then begin
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
@@ -9787,7 +9822,7 @@ end;
               c_inlinecmt(lcp^.srcline)
             end;
             lcp := lcp^.next;
-            if lcp <> nil then c_str(', ')
+            if lcp <> nil then c_chr(',')
           end;
           { add extra params for uplevel variables }
           c_uplevel_params(fprocp^.pflist <> nil)
