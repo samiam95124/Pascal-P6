@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Tue 03 Feb 2026 10:51:14 PM PST
+Mon Feb  2 05:28:27 PM PST 2026
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -9,7 +9,7 @@ pint run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
+*** sample_programs/startrek: compile/run fail
 0 sample_programs/basics.dif
 0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
@@ -33,7 +33,7 @@ pmach run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
+*** sample_programs/startrek: compile/run fail
 0 sample_programs/basics.dif
 0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
@@ -77,7 +77,7 @@ package run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
+*** sample_programs/startrek: compile/run fail
 0 sample_programs/basics.dif
 0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
@@ -99,7 +99,7 @@ pgen run ***************************************
 0 sample_programs/qsort.dif
 0 sample_programs/fbench.dif
 0 sample_programs/drystone.dif
-0 sample_programs/startrek.dif
+*** sample_programs/startrek: compile/run fail
 0 sample_programs/basics.dif
 0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
@@ -115,19 +115,20 @@ Pascaline run
 0 pascaline_tests/pascaline.dif
 
 Total differences: 0
-Fails: 0
-Tue 03 Feb 2026 10:58:47 PM PST
+Fails: 4
+*** Regression fails
+Mon Feb  2 05:41:40 PM PST 2026
 Files sha256sum ***************************************
 Source files
-106ecc658689033de92b7e6a7ef20a5151bf740c01f9d374d074e4bae9fc7fb9  -
+4cd0dc1b67a37692146543c0b7496cbba80b8548bba57ea1b59a68e78176cd8b  -
 batch files
-73007adf8a573ad9e890c84fa4f192a8d88e938967a90444e48cdd569a666280  -
+e9b6830e5820172ab496be179632ab532a4b3c21fc01fe89b4f7e19fa494d063  -
 P2 files
 1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
 p4 files
 c63ca632ff252538ab56aedcf0cce0493ae9b7932c7dcf18c8b3c4fe8d76f839  -
 Sample program test files
-3fa35c519ded1f0ba19650ae1400ca7523e140b6fcfbd954c2482d5af3b6a624  -
+3cffca8b51a0fcbc553ec7fbf49b829073a4350d4acce401306e41b515e88563  -
 standard test files
 85681dea5220b4d1baf2fbb1069305ff321278f26d6f7e1f87ddb2d125b536b3  -
 other files
