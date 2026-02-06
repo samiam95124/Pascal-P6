@@ -905,7 +905,7 @@ var
           putnam(p1) { release }
         end
      end;
-     disposestr(p^.name); { release name string for all classes including alias }
+     if p^.klass <> alias then disposestr(p^.name); { release name string }
      { release entry according to class }
      case p^.klass of
        types: dispose(p, types);
@@ -1433,25 +1433,92 @@ end;
 
 procedure c_comment(p: cmtptr);
 (* output a comment in C style *)
-var i: integer;
-    instar: boolean;
+(* if the first line is all *s, output /***... instead of /* ***...         *)
+(* if the last line is all *s, output ***.../ instead of ***... star-slash  *)
+var i:                   integer;
+    instar:              boolean;
+    firstnl:             integer; (* position of first chr(10), 0 if none *)
+    lastnl:              integer; (* position of last chr(10), 0 if none *)
+    staropen:            boolean; (* first line is all *s *)
+    starclose:           boolean; (* last line is all *s *)
+    startpos, endpos:    integer;
 begin
   if p <> nil then
     if p^.len > 0 then begin
-      c_str('/* ');
-      instar := false;
-      for i := 1 to p^.len do begin
-        (* escape any star-slash sequences in comment to avoid premature close *)
-        if instar and (p^.text[i] = '/') then
-          c_chr(' '); (* insert space between star and slash *)
-        instar := (p^.text[i] = '*');
-        if p^.text[i] = chr(10) then begin
-          c_newline;
-          c_str('   ')
-        end else
-          c_chr(p^.text[i])
+      (* find first newline position *)
+      firstnl := 0;
+      i := 1;
+      while (i <= p^.len) and (firstnl = 0) do begin
+        if p^.text[i] = chr(10) then firstnl := i;
+        i := i + 1
       end;
-      c_str(' */')
+      (* find last newline position *)
+      lastnl := 0;
+      i := p^.len;
+      while (i >= 1) and (lastnl = 0) do begin
+        if p^.text[i] = chr(10) then lastnl := i;
+        i := i - 1
+      end;
+      (* check if first line is all *s *)
+      staropen := true;
+      if firstnl > 1 then begin
+        for i := 1 to firstnl - 1 do
+          if p^.text[i] <> '*' then staropen := false
+      end else if firstnl = 0 then begin
+        for i := 1 to p^.len do
+          if p^.text[i] <> '*' then staropen := false
+      end else
+        staropen := false;
+      (* check if last line is all *s *)
+      starclose := true;
+      if (lastnl > 0) and (lastnl < p^.len) then begin
+        for i := lastnl + 1 to p^.len do
+          if p^.text[i] <> '*' then starclose := false
+      end else if lastnl = 0 then
+        starclose := staropen
+      else
+        starclose := false;
+      if staropen and starclose and (firstnl = 0) then begin
+        (* single-line all-stars: output /***...***/  *)
+        c_chr('/');
+        for i := 1 to p^.len do c_chr('*');
+        c_chr('/')
+      end else begin
+        (* output opening *)
+        if staropen and (firstnl > 0) then begin
+          c_chr('/');
+          for i := 1 to firstnl - 1 do c_chr('*');
+          c_newline;
+          startpos := firstnl + 1
+        end else begin
+          c_str('/* ');
+          startpos := 1
+        end;
+        (* determine end position for middle section *)
+        if starclose and (lastnl > 0) then
+          endpos := lastnl - 1
+        else
+          endpos := p^.len;
+        (* output middle section *)
+        instar := false;
+        for i := startpos to endpos do begin
+          if instar and (p^.text[i] = '/') then
+            c_chr(' '); (* insert space between star and slash *)
+          instar := (p^.text[i] = '*');
+          if p^.text[i] = chr(10) then begin
+            c_newline;
+            if not staropen then c_str('   ')
+          end else
+            c_chr(p^.text[i])
+        end;
+        (* output closing *)
+        if starclose and (lastnl > 0) then begin
+          c_newline;
+          for i := lastnl + 1 to p^.len do c_chr('*');
+          c_chr('/')
+        end else
+          c_str(' */')
+      end
     end
 end;
 
@@ -2399,7 +2466,6 @@ end;
 procedure c_ptrtypedefs;
 var i: integer;
     fsp: stp;
-    tname: pstring;
 begin
   for i := 1 to ptrmapcount do begin
     c_str('typedef ');
@@ -3053,7 +3119,6 @@ end;
     var i,k,v,r: integer;
         string: csstr;
         lvp: csp; test, ferr: boolean;
-        iscmte: boolean;
         ev: integer;
         rv: real;
         sgn: integer;
@@ -3138,9 +3203,8 @@ end;
       until ch1 <> ','
     end (*options*) ;
 
-    procedure scancmt(paren: boolean);
+    procedure scancmt;
     (* scan and capture a comment *)
-    (* paren=true for paren-star style, false for brace style *)
     var p: cmtptr;
         iscmte: boolean;
     begin
@@ -3490,7 +3554,7 @@ end;
        begin nextch;
          if ch = '*' then
            begin nextch;
-             scancmt(true); (* capture paren-star comment *)
+             scancmt; (* capture paren-star comment *)
              goto 1
            end
          else if ch = '.' then begin sy := lbrack; nextch end
@@ -3499,7 +3563,7 @@ end;
        end;
       chlcmt:
        begin nextch;
-         scancmt(false); (* capture brace comment *)
+         scancmt; (* capture brace comment *)
          goto 1
        end;
       chrem:
@@ -3672,9 +3736,7 @@ end;
       if (disx <> top) and (display[top].define) and not pdf then begin
         { downlevel, create an alias and link to bottom }
         new(lcp1, alias); ininam(lcp1); lcp1^.klass := alias;
-        strcopy(lcp1^.name, lcp^.name^); { copy name string }
-        lcp1^.actid := lcp;
-        lcp^.keep := true; { prevent disposal while alias references it }
+        lcp1^.name := lcp^.name; lcp1^.actid := lcp;
         enterid(lcp1)
       end
     end else begin (*search not successful
@@ -10816,7 +10878,7 @@ begin
   (************)
   initscalars; initsets; inittables;
 
-  write('P6 Pascal syntax follower vs. ', majorver:1, '.', minorver:1);
+  write('p2c Pascaline to C converter ', majorver:1, '.', minorver:1);
   if experiment then write('.x');
   writeln;
   if iso7185 then begin
