@@ -382,6 +382,7 @@ type
                 next: cmtptr;           { linked list link }
                 linenum: integer;       { line number where comment appeared }
                 len: integer;           { length of comment text }
+                claimed: boolean;       { claimed by typedef, skip in flushcmts }
                 text: packed array [1..8000] of char  { comment text }
               end;
 
@@ -1413,7 +1414,8 @@ begin
   new(p);
   p^.next := nil;
   p^.linenum := 0;
-  p^.len := 0
+  p^.len := 0;
+  p^.claimed := false
 end;
 
 procedure putcmt(p: cmtptr);
@@ -1550,7 +1552,7 @@ begin
   p := cmtqueue;
   while p <> nil do begin
     p1 := p^.next;
-    if p^.linenum < line then begin
+    if (p^.linenum < line) and not p^.claimed then begin
       { output this comment }
       c_comment(p);
       c_newline;
@@ -1565,6 +1567,17 @@ begin
     end else
       prev := p;
     p := p1
+  end
+end;
+
+procedure claimlinecmts(line: integer);
+{ mark all comments on given line as claimed so flushcmts_before skips them }
+var p: cmtptr;
+begin
+  p := cmtqueue;
+  while p <> nil do begin
+    if p^.linenum = line then p^.claimed := true;
+    p := p^.next
   end
 end;
 
@@ -1670,12 +1683,13 @@ var p: cmtptr;
 begin
   { first try to capture any trailing comment on this line }
   scanaheadcmt(line);
-  { now look for the comment in the queue }
+  { now output all comments in the queue for this line }
   p := getlinecmt(line);
-  if p <> nil then begin
+  while p <> nil do begin
     c_str(' ');
     c_comment(p);
-    putcmt(p)
+    putcmt(p);
+    p := getlinecmt(line)
   end
 end;
 
@@ -2381,6 +2395,7 @@ end;
 procedure claim_typedef_cmts;
 var i: integer;
     lcp: ctp;
+    fld: ctp;
     allsameline: boolean;
 begin
   { for enums: claim trailing comment only for single-line enums where all }
@@ -2397,11 +2412,28 @@ begin
     end;
     if allsameline then
       enummapcmt[i] := getlinecmt(enummapsrcline[i])
+    else begin
+      { multi-line enum: mark constant comments so flushcmts_before skips them }
+      lcp := enummapstp[i]^.fconst;
+      while lcp <> nil do begin
+        claimlinecmts(lcp^.srcline);
+        lcp := lcp^.next
+      end
+    end
   end;
   for i := 1 to arrmapcount do
     arrmapcmt[i] := getlinecmt(arrmapsrcline[i]);
-  for i := 1 to typemapcount do
+  for i := 1 to typemapcount do begin
     typemapcmt[i] := getlinecmt(typemapsrcline[i]);
+    { claim record field comments so flushcmts_before skips them }
+    if typemapstp[i] <> nil then begin
+      fld := typemapstp[i]^.fstfld;
+      while fld <> nil do begin
+        claimlinecmts(fld^.srcline);
+        fld := fld^.next
+      end
+    end
+  end;
   for i := 1 to ptrmapcount do
     ptrmapcmt[i] := getlinecmt(ptrmapsrcline[i])
 end;
@@ -2623,9 +2655,10 @@ begin
     if p^.klass = konst then begin
       isenumconst := false;
       if p^.idtype <> nil then
-        if p^.idtype^.form = scalar then
-          if p^.idtype^.scalkind = declared then
-            isenumconst := true;
+        if p^.idtype <> boolptr then
+          if p^.idtype^.form = scalar then
+            if p^.idtype^.scalkind = declared then
+              isenumconst := true;
       if not isenumconst then begin
         c_str('#define ');
         if p^.name <> nil then c_pstr(p^.name);
@@ -2639,8 +2672,8 @@ begin
           c_chr(chr(p^.values.ival));
           c_chr('''')
         end else if p^.idtype = boolptr then begin
-          if p^.values.ival = 0 then c_str('FALSE')
-          else c_str('TRUE')
+          if p^.values.ival = 0 then c_str('false')
+          else c_str('true')
         end else if p^.values.intval then
           c_int(p^.values.ival)
         else if p^.values.valp <> nil then
@@ -6510,8 +6543,8 @@ end;
                                 expr_chr(chr(values.ival));
                                 expr_chr('''')
                               end else if idtype = boolptr then begin
-                                if values.ival = 0 then expr_str('FALSE')
-                                else expr_str('TRUE')
+                                if values.ival = 0 then expr_str('false')
+                                else expr_str('true')
                               end else
                                 expr_pstr(lcp^.name)
                             end
@@ -9740,6 +9773,7 @@ end;
       if not gblvarsdone then begin
         claim_typedef_cmts;
         c_consts(display[top].fname);
+        c_newline;
         c_enums;
         c_arraytypedefs;
         c_typedefs;
@@ -9760,6 +9794,7 @@ end;
       if not gblvarsdone then begin
         claim_typedef_cmts;
         c_consts(display[1].fname);
+        c_newline;
         c_enums;
         c_arraytypedefs;
         c_typedefs;
@@ -10245,9 +10280,13 @@ end;
     c_newline;
     { Pascal runtime helper macros }
     c_ln('/* Pascal runtime helpers */');
-    c_ln('#define TRUE 1');
-    c_ln('#define FALSE 0');
-    c_ln('typedef int bool;');
+    c_ln('#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L');
+    c_ln('#include <stdbool.h>');
+    c_ln('#else');
+    c_ln('#define bool int');
+    c_ln('#define true 1');
+    c_ln('#define false 0');
+    c_ln('#endif');
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
     c_newline;
     { emit header file preamble }
