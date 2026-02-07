@@ -2,7 +2,7 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit:
-https://go.microsoft.com/fwlink/?linkid=830387
+    // https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -28,7 +28,13 @@ https://go.microsoft.com/fwlink/?linkid=830387
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "type": "pascaline",
+            "request": "launch",
+            "name": "Debug with pint",
+            "program": "${file}",
+            "stopOnEntry": true
         }
-
     ]
 }
