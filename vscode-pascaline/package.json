@@ -1,0 +1,40 @@
+{
+  "name": "pascaline",
+  "displayName": "Pascaline",
+  "description": "Language support for the Pascaline programming language (ISO 7185 Pascal extended)",
+  "version": "0.1.0",
+  "publisher": "pascal-p6",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samiam95124/Pascal-P6"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "pascaline",
+        "aliases": [
+          "Pascaline",
+          "Pascal",
+          "pascal"
+        ],
+        "extensions": [
+          ".pas"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pascaline",
+        "scopeName": "source.pascaline",
+        "path": "./syntaxes/pascaline.tmLanguage.json"
+      }
+    ]
+  }
+}

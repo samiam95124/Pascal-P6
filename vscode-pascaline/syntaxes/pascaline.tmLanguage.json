@@ -1,0 +1,346 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Pascaline",
+  "scopeName": "source.pascaline",
+  "fileTypes": ["pas"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#declarations" },
+    { "include": "#constants" },
+    { "include": "#keywords-control" },
+    { "include": "#keywords-structure" },
+    { "include": "#storage-types" },
+    { "include": "#storage-modifiers" },
+    { "include": "#operators-word" },
+    { "include": "#variable-language" },
+    { "include": "#support-types" },
+    { "include": "#support-functions" },
+    { "include": "#operators-symbolic" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.brace.pascaline",
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.comment.begin.pascaline" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.comment.end.pascaline" }
+          }
+        },
+        {
+          "name": "comment.block.parenthesis.pascaline",
+          "begin": "\\(\\*",
+          "end": "\\*\\)",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.comment.begin.pascaline" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.comment.end.pascaline" }
+          }
+        },
+        {
+          "name": "comment.line.exclamation.pascaline",
+          "begin": "!",
+          "end": "$",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.comment.pascaline" }
+          }
+        }
+      ]
+    },
+
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.pascaline",
+          "begin": "'",
+          "end": "'(?!')",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.pascaline" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.pascaline" }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.apostrophe.pascaline",
+              "match": "''"
+            },
+            {
+              "name": "constant.character.escape.hex.pascaline",
+              "match": "\\\\\\$[0-9a-fA-F_]+"
+            },
+            {
+              "name": "constant.character.escape.octal.pascaline",
+              "match": "\\\\&[0-7_]+"
+            },
+            {
+              "name": "constant.character.escape.binary.pascaline",
+              "match": "\\\\%[01_]+"
+            },
+            {
+              "name": "constant.character.escape.decimal.pascaline",
+              "match": "\\\\[0-9][0-9_]*"
+            },
+            {
+              "name": "constant.character.escape.named.pascaline",
+              "match": "\\\\(?i)(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|DC1|DC2|DC3|DC4|NAK|SYN|ETB|CAN|EM|SUB|ESC|FS|GS|RS|US|DEL)"
+            },
+            {
+              "name": "constant.character.escape.pascaline",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.real.pascaline",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*(?:[eE][+-]?[0-9][0-9_]*)?\\b"
+        },
+        {
+          "name": "constant.numeric.real.exponent.pascaline",
+          "match": "\\b[0-9][0-9_]*[eE][+-]?[0-9][0-9_]*\\b"
+        },
+        {
+          "name": "constant.numeric.hex.pascaline",
+          "match": "\\$[0-9a-fA-F][0-9a-fA-F_]*\\b"
+        },
+        {
+          "name": "constant.numeric.octal.pascaline",
+          "match": "&[0-7][0-7_]*\\b"
+        },
+        {
+          "name": "constant.numeric.binary.pascaline",
+          "match": "%[01][01_]*\\b"
+        },
+        {
+          "name": "constant.numeric.decimal.pascaline",
+          "match": "\\b[0-9][0-9_]*\\b"
+        }
+      ]
+    },
+
+    "declarations": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(program|module|process|monitor|share)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "keyword.other.module.pascaline" },
+            "2": { "name": "entity.name.class.pascaline" }
+          }
+        },
+        {
+          "match": "(?i)\\b(procedure|function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.type.function.pascaline" },
+            "2": { "name": "entity.name.function.pascaline" }
+          }
+        },
+        {
+          "match": "(?i)\\b(class|task|atom|stream)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.type.class.pascaline" },
+            "2": { "name": "entity.name.class.pascaline" }
+          }
+        },
+        {
+          "match": "(?i)\\b(operator)\\s+(not|[+\\-*/]|div|mod|and|or|xor|<>?|>=?|<=?|=|:=|in|is)\\b",
+          "captures": {
+            "1": { "name": "storage.type.operator.pascaline" },
+            "2": { "name": "entity.name.function.operator.pascaline" }
+          }
+        }
+      ]
+    },
+
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.pascaline",
+          "match": "(?i)\\b(nil|true|false|maxint)\\b"
+        }
+      ]
+    },
+
+    "keywords-control": {
+      "patterns": [
+        {
+          "name": "keyword.control.flow.pascaline",
+          "match": "(?i)\\b(if|then|else|while|do|for|to|downto|repeat|until|case|of|with|goto)\\b"
+        },
+        {
+          "name": "keyword.control.exception.pascaline",
+          "match": "(?i)\\b(try|except|on|throw)\\b"
+        },
+        {
+          "name": "keyword.control.block.pascaline",
+          "match": "(?i)\\b(begin|end)\\b"
+        }
+      ]
+    },
+
+    "keywords-structure": {
+      "patterns": [
+        {
+          "name": "keyword.other.module.pascaline",
+          "match": "(?i)\\b(program|module|uses|joins|private|forward|external|label)\\b"
+        }
+      ]
+    },
+
+    "storage-types": {
+      "patterns": [
+        {
+          "name": "storage.type.pascaline",
+          "match": "(?i)\\b(var|const|type|procedure|function|operator|property|class|record|array|set|file|packed|fixed|reference|instance|task|atom|stream|channel)\\b"
+        }
+      ]
+    },
+
+    "storage-modifiers": {
+      "patterns": [
+        {
+          "name": "storage.modifier.pascaline",
+          "match": "(?i)\\b(static|virtual|override|overload|inherited|view|out|extends|process|monitor|share|start)\\b"
+        }
+      ]
+    },
+
+    "operators-word": {
+      "patterns": [
+        {
+          "name": "keyword.operator.logical.pascaline",
+          "match": "(?i)\\b(and|or|not|xor)\\b"
+        },
+        {
+          "name": "keyword.operator.arithmetic.pascaline",
+          "match": "(?i)\\b(div|mod)\\b"
+        },
+        {
+          "name": "keyword.operator.relational.pascaline",
+          "match": "(?i)\\b(in|is)\\b"
+        }
+      ]
+    },
+
+    "variable-language": {
+      "patterns": [
+        {
+          "name": "variable.language.pascaline",
+          "match": "(?i)\\b(self|result)\\b"
+        }
+      ]
+    },
+
+    "support-types": {
+      "patterns": [
+        {
+          "name": "support.type.pascaline",
+          "match": "(?i)\\b(integer|linteger|cardinal|lcardinal|real|lreal|sreal|char|boolean|text|string|pstring|byte|abyte|vector|matrix)\\b"
+        }
+      ]
+    },
+
+    "support-functions": {
+      "patterns": [
+        {
+          "name": "support.function.io.pascaline",
+          "match": "(?i)\\b(read|readln|write|writeln|get|put|reset|rewrite|page)\\b(?=\\s*[\\(;]|\\s*$)"
+        },
+        {
+          "name": "support.function.memory.pascaline",
+          "match": "(?i)\\b(new|dispose|pack|unpack)\\b(?=\\s*\\()"
+        },
+        {
+          "name": "support.function.ordinal.pascaline",
+          "match": "(?i)\\b(ord|chr|succ|pred|odd)\\b(?=\\s*\\()"
+        },
+        {
+          "name": "support.function.math.pascaline",
+          "match": "(?i)\\b(abs|sqr|sqrt|sin|cos|arctan|exp|ln|trunc|round|max|min)\\b(?=\\s*\\()"
+        },
+        {
+          "name": "support.function.file.pascaline",
+          "match": "(?i)\\b(eof|eoln|assign|close|length|location|position|update|append|exists|delete|change)\\b(?=\\s*[\\(;]|\\s*$)"
+        },
+        {
+          "name": "support.function.other.pascaline",
+          "match": "(?i)\\b(halt|assert)\\b"
+        }
+      ]
+    },
+
+    "operators-symbolic": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.pascaline",
+          "match": ":="
+        },
+        {
+          "name": "keyword.operator.comparison.pascaline",
+          "match": "<>|<=|>=|<|>|="
+        },
+        {
+          "name": "keyword.operator.range.pascaline",
+          "match": "\\.\\."
+        },
+        {
+          "name": "keyword.operator.arithmetic.pascaline",
+          "match": "[+\\-*/]"
+        },
+        {
+          "name": "keyword.operator.pointer.pascaline",
+          "match": "@|\\^"
+        }
+      ]
+    },
+
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.statement.pascaline",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.comma.pascaline",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.colon.pascaline",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.accessor.dot.pascaline",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.section.parens.begin.pascaline",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.section.parens.end.pascaline",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.section.brackets.begin.pascaline",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.section.brackets.end.pascaline",
+          "match": "\\]"
+        }
+      ]
+    }
+  }
+}
