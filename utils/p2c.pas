@@ -373,7 +373,8 @@ type
                    ipcref:  boolean; { was referenced by another proc/func }
                    minlvl:  integer; { minimum goto reference statement lvl }
                    bact:    boolean; { containing block is active }
-                   refer:   boolean  { was referred to }
+                   refer:   boolean; { was referred to }
+                   jmpdeclared: boolean { jmp_buf declared for non-local }
             end;
 
      { comment preservation }
@@ -1380,6 +1381,14 @@ begin
         write(prc, '_')
     end
   end
+end;
+
+procedure c_labname(llp: lbp);
+{ output C label name: _l<labval> for numeric, _l<labid> for identifier }
+begin
+  c_str('_l');
+  if llp^.labid <> nil then c_pstr(llp^.labid)
+  else c_int(llp^.labval)
 end;
 
 procedure h_indent;
@@ -4391,7 +4400,7 @@ end;
             genlabel(lbname); defined := false; nextlab := flabel;
             labname := lbname; vlevel := level; slevel := 0;
             ipcref := false; minlvl := pmmaxint; bact := false;
-            refer := false
+            refer := false; jmpdeclared := false
           end;
         flabel := llp
       end
@@ -8850,6 +8859,7 @@ end;
         ii: integer; { loop index for param indent }
         minl, maxl: integer; { source line range for claiming comments }
         endline: integer; { source line of end keyword }
+        lv: integer; { loop variable for scanning display levels }
 
     { add statement level }
     procedure addlvl;
@@ -9103,6 +9113,23 @@ end;
               error(167); { undeclared label }
               newlabel(llp, sy = ident); { create dummy label in current context }
               llp^.refer := true
+            end;
+            { output C goto or longjmp }
+            if llp <> nil then begin
+              c_indent;
+              if llp^.ipcref then begin
+                { non-local goto: use longjmp }
+                c_str('longjmp(_jmpenv_');
+                c_int(llp^.labname);
+                c_str(', 1)')
+              end else begin
+                { local goto }
+                c_str('goto ');
+                c_labname(llp)
+              end;
+              c_chr(';');
+              c_inlinecmt(curstmtline);
+              c_newline
             end;
             insymbol
           end
@@ -9712,6 +9739,9 @@ end;
                { Label referenced by goto at lesser statement level or
                  differently nested statement }
                error(186);
+             { output C label }
+             c_labname(llp);
+             c_ln(':');
            end else begin { not found }
              error(167); { undeclared label }
              newlabel(llp, false) { create a dummy level }
@@ -9922,6 +9952,15 @@ end;
         c_ptrtypedefs;
         c_vars(display[1].fname, nil);
         c_newline;
+        { output jmp_buf declarations for all labels at program level }
+        llp := display[1].flabel;
+        while llp <> nil do begin
+          c_str('jmp_buf _jmpenv_');
+          c_int(llp^.labname);
+          c_ln(';');
+          llp^.jmpdeclared := true;
+          llp := llp^.nextlab
+        end;
         gblvarsdone := true
       end;
       { set up for uplevel variable detection }
@@ -10043,6 +10082,19 @@ end;
         c_newline
       end
     end;
+    { output setjmp dispatch for non-local goto targets in this scope }
+    llp := display[top].flabel;
+    while llp <> nil do begin
+      if llp^.ipcref then begin
+        c_indent;
+        c_str('if (setjmp(_jmpenv_');
+        c_int(llp^.labname);
+        c_str(')) goto ');
+        c_labname(llp);
+        c_ln(';')
+      end;
+      llp := llp^.nextlab
+    end;
     repeat
       repeat statement(fsys + [semicolon,endsy])
       until not (sy in statbegsys);
@@ -10084,6 +10136,19 @@ end;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
+        { declare jmp_buf for any non-local goto targets in enclosing scopes }
+        for lv := level-1 downto 1 do begin
+          llp := display[lv].flabel;
+          while llp <> nil do begin
+            if llp^.ipcref and not llp^.jmpdeclared then begin
+              c_str('jmp_buf _jmpenv_');
+              c_int(llp^.labname);
+              c_ln(';');
+              llp^.jmpdeclared := true
+            end;
+            llp := llp^.nextlab
+          end
+        end;
         { output comments belonging to this nested proc (not parent's) }
         flushcmts_before(fprocp^.srcline);
         c_newline;
@@ -10425,6 +10490,7 @@ end;
     c_ln('#include <stdio.h>');
     c_ln('#include <string.h>');
     c_ln('#include <math.h>');
+    c_ln('#include <setjmp.h>');
     c_newline;
     { Pascal runtime helper macros }
     c_ln('/* Pascal runtime helpers */');
