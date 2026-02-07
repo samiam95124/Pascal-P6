@@ -107,8 +107,8 @@ export class PascalineDebugSession extends LoggingDebugSession {
         args: LaunchRequestArguments
     ): Promise<void> {
         const programPath = args.program;
-        const pcPath = args.pc || 'pc';
-        const pintPath = args.pint || 'pint';
+        let pcPath = args.pc || 'pc';
+        let pintPath = args.pint || 'pint';
         const stopOnEntry = args.stopOnEntry !== false;
 
         // Validate source file exists
@@ -119,6 +119,20 @@ export class PascalineDebugSession extends LoggingDebugSession {
 
         this.sourceFile = path.resolve(programPath);
         this.sourceDir = path.dirname(this.sourceFile);
+
+        // If pc/pint paths are defaults, look in bin/ relative to source dir
+        if (pcPath === 'pc') {
+            const binPc = path.join(this.sourceDir, 'bin', 'pc');
+            if (fs.existsSync(binPc)) {
+                pcPath = binPc;
+            }
+        }
+        if (pintPath === 'pint') {
+            const binPint = path.join(this.sourceDir, 'bin', 'pint');
+            if (fs.existsSync(binPint)) {
+                pintPath = binPint;
+            }
+        }
         // Strip .pas extension for the program name
         this.programName = path.basename(this.sourceFile, '.pas');
 
@@ -136,8 +150,8 @@ export class PascalineDebugSession extends LoggingDebugSession {
         this.sendEvent(new OutputEvent(`Compilation successful.\n`, 'console'));
 
         // Step 2: Start pint in debug mode
-        const p6File = path.join(this.sourceDir, this.programName + '.p6');
-        const outFile = path.join(this.sourceDir, this.programName + '.out');
+        // pint takes: pint <name> <name> -debug -debugsrc
+        // where <name> is the program name without extension, run from source dir
 
         this.pintRunner = new PintRunner();
 
@@ -150,6 +164,10 @@ export class PascalineDebugSession extends LoggingDebugSession {
             this.sendEvent(new OutputEvent(text, 'stderr'));
         });
 
+        this.pintRunner.on('trace', (text: string) => {
+            this.sendEvent(new OutputEvent(text, 'console'));
+        });
+
         this.pintRunner.on('exited', (_code: number) => {
             this.sendEvent(new TerminatedEvent());
         });
@@ -159,28 +177,29 @@ export class PascalineDebugSession extends LoggingDebugSession {
         });
 
         try {
-            const startOutput = await this.pintRunner.start(pintPath, p6File, outFile);
-
-            // Parse initial source context to find the entry point line
-            const sourceLines = this.pintRunner.parseSourceLines(startOutput);
-            const currentLine = sourceLines.find(l => l.isCurrent);
+            this.sendEvent(new OutputEvent(`Starting: ${pintPath} ${this.programName} ${this.programName} -debug -debugsrc (cwd: ${this.sourceDir})\n`, 'console'));
+            const startOutput = await this.pintRunner.start(pintPath, this.programName, this.sourceDir);
+            this.sendEvent(new OutputEvent(`Pint started. Initial output:\n${startOutput}\n`, 'console'));
 
             this.sendResponse(response);
 
             // Wait for breakpoints to be configured
+            this.sendEvent(new OutputEvent('Waiting for configuration done...\n', 'console'));
             await this.waitForConfigDone();
+            this.sendEvent(new OutputEvent('Configuration done. Syncing breakpoints...\n', 'console'));
 
             // Set any pending breakpoints
             await this.syncBreakpoints();
 
-            if (stopOnEntry && currentLine) {
-                // Already stopped at entry point
+            if (stopOnEntry) {
+                // Step once to start execution and land on the first line
+                this.sendEvent(new OutputEvent('Sending step to land on first line...\n', 'console'));
+                await this.pintRunner.sendStep('s');
+                this.sendEvent(new OutputEvent('Stopped at entry.\n', 'console'));
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID));
-            } else if (!stopOnEntry) {
+            } else {
                 // Run to first breakpoint or completion
                 this.continueExecution();
-            } else {
-                this.sendEvent(new StoppedEvent('entry', THREAD_ID));
             }
         } catch (err: any) {
             this.sendEvent(new OutputEvent(`Failed to start pint: ${err.message}\n`, 'stderr'));
@@ -193,7 +212,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
      */
     private compile(pcPath: string, programName: string, cwd: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            execFile(pcPath, [programName, '--debugsrc', '-r'], { cwd }, (error, stdout, stderr) => {
+            execFile(pcPath, [programName, '-pint'], { cwd }, (error, stdout, stderr) => {
                 if (stdout) {
                     this.sendEvent(new OutputEvent(stdout, 'console'));
                 }
@@ -433,7 +452,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
 
         const output = await this.pintRunner.sendRun();
 
-        if (output.includes('program complete')) {
+        if (output.includes('program complete') || output.includes('Stop instruction hit')) {
             this.sendEvent(new TerminatedEvent());
         } else {
             // Parse the break context
@@ -485,7 +504,7 @@ export class PascalineDebugSession extends LoggingDebugSession {
 
         const output = await this.pintRunner.sendStep(cmd);
 
-        if (output.includes('program complete')) {
+        if (output.includes('program complete') || output.includes('Stop instruction hit')) {
             this.sendEvent(new TerminatedEvent());
         } else {
             const stopped = this.parseStoppedFromOutput(output);

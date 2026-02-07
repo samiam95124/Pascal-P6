@@ -64,14 +64,18 @@ export class PintRunner extends EventEmitter {
     /**
      * Spawn pint with debug mode enabled.
      * @param pintPath Path to the pint executable.
-     * @param p6File Path to the compiled .p6 intermediate file.
-     * @param outFile Path for program output file.
+     * @param programName Program name without extension.
+     * @param cwd Working directory (where .p6 file lives).
      */
-    async start(pintPath: string, p6File: string, outFile: string): Promise<string> {
+    async start(pintPath: string, programName: string, cwd: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            this.process = spawn(pintPath, [
-                p6File, outFile, '--debug', '--debugsrc'
-            ]);
+            // Pint is statically linked, so stdbuf won't work. Use script
+            // to create a pseudo-terminal, which forces line-buffered output
+            // so pint's "debug> " prompt gets flushed immediately.
+            const pintCmd = `${pintPath} ${programName} ${programName} -debug -debugsrc`;
+            this.process = spawn('script', [
+                '-qc', pintCmd, '/dev/null'
+            ], { cwd });
 
             if (!this.process.stdout || !this.process.stderr || !this.process.stdin) {
                 reject(new Error('Failed to create pint process streams'));
@@ -114,7 +118,11 @@ export class PintRunner extends EventEmitter {
         }
 
         return new Promise((resolve) => {
-            this.commandResolve = resolve;
+            this.commandResolve = (output: string) => {
+                this.emit('trace', `>> ${cmd}\n${output}`);
+                resolve(output);
+            };
+            this.emit('trace', `>> ${cmd}\n`);
             this.process!.stdin!.write(cmd + '\n');
         });
     }
@@ -179,7 +187,8 @@ export class PintRunner extends EventEmitter {
      * breaks, and completion.
      */
     private handleOutput(data: string): void {
-        this.outputBuffer += data;
+        // Strip carriage returns added by the script pty wrapper
+        this.outputBuffer += data.replace(/\r/g, '');
 
         // Check for the debug prompt which signals end of a command response
         const promptIndex = this.outputBuffer.indexOf('debug> ');
@@ -193,7 +202,7 @@ export class PintRunner extends EventEmitter {
             }
 
             // Check for program completion
-            if (response.includes('program complete')) {
+            if (response.includes('program complete') || response.includes('Stop instruction hit')) {
                 this.emit('exited', 0, null);
             }
 
@@ -227,6 +236,8 @@ export class PintRunner extends EventEmitter {
             if (line.match(/^\s*\d+:\s+\d+:/) ||     // source line format
                 line.includes('=== break ===') ||
                 line.includes('program complete') ||
+                line.includes('Stop instruction hit') ||
+                line.includes('No active module') ||
                 line.includes('P6 debug mode') ||
                 line.includes('*** Program stopped') ||
                 line.includes('Watch variable:') ||
