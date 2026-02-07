@@ -1,8 +1,8 @@
 {
   "name": "pascaline",
   "displayName": "Pascaline",
-  "description": "Language support for the Pascaline programming language (ISO 7185 Pascal extended)",
-  "version": "0.1.0",
+  "description": "Language support and debugging for the Pascaline programming language (ISO 7185 Pascal extended)",
+  "version": "0.2.0",
   "publisher": "pascal-p6",
   "repository": {
     "type": "git",
@@ -12,7 +12,13 @@
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onDebugResolve:pascaline",
+    "onDebugDynamicConfigurations:pascaline"
   ],
   "contributes": {
     "languages": [
@@ -35,6 +41,82 @@
         "scopeName": "source.pascaline",
         "path": "./syntaxes/pascaline.tmLanguage.json"
       }
+    ],
+    "breakpoints": [
+      {
+        "language": "pascaline"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "pascaline",
+        "label": "Pascaline Debug",
+        "languages": [
+          "pascaline"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to the .pas source file to debug."
+              },
+              "pc": {
+                "type": "string",
+                "description": "Path to the pc compiler. Defaults to 'pc' on PATH.",
+                "default": "pc"
+              },
+              "pint": {
+                "type": "string",
+                "description": "Path to the pint interpreter. Defaults to 'pint' on PATH.",
+                "default": "pint"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Stop at the first statement of the program.",
+                "default": true
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "pascaline",
+            "request": "launch",
+            "name": "Debug Pascal Program",
+            "program": "${file}",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Pascaline: Debug Program",
+            "description": "Debug a Pascaline/Pascal program using pint",
+            "body": {
+              "type": "pascaline",
+              "request": "launch",
+              "name": "Debug ${1:program}",
+              "program": "^\"\\${file}\"",
+              "stopOnEntry": true
+            }
+          }
+        ]
+      }
     ]
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@vscode/debugadapter": "^1.65.0"
   }
 }
