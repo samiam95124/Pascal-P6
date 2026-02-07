@@ -382,6 +382,7 @@ type
                 next: cmtptr;           { linked list link }
                 linenum: integer;       { line number where comment appeared }
                 len: integer;           { length of comment text }
+                claimed: boolean;       { claimed by typedef, skip in flushcmts }
                 text: packed array [1..8000] of char  { comment text }
               end;
 
@@ -492,6 +493,7 @@ var
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
     typemapsrcline: array [1..maxtypemap] of integer; { source lines }
+    typemapcmt: array [1..maxtypemap] of cmtptr; { attached comments }
     intypedef: boolean;             { inside typedef - use struct prefix }
 
     { Enum type name mapping for C output }
@@ -499,18 +501,21 @@ var
     enummapstp: array [1..maxenummap] of stp;    { enum type pointers }
     enummapname: array [1..maxenummap] of pstring; { enum type names }
     enummapsrcline: array [1..maxenummap] of integer; { source lines }
+    enummapcmt: array [1..maxenummap] of cmtptr; { attached comments }
 
     { Pointer type name mapping for C output }
     ptrmapcount: integer;           { number of pointer type mappings }
     ptrmapstp: array [1..maxptrmap] of stp;     { pointer type pointers }
     ptrmapname: array [1..maxptrmap] of pstring; { pointer type names }
     ptrmapsrcline: array [1..maxptrmap] of integer; { source lines }
+    ptrmapcmt: array [1..maxptrmap] of cmtptr; { attached comments }
 
     { Array type name mapping for C output }
     arrmapcount: integer;           { number of array type mappings }
     arrmapstp: array [1..maxarrmap] of stp;     { array type pointers }
     arrmapname: array [1..maxarrmap] of pstring; { array type names }
     arrmapsrcline: array [1..maxarrmap] of integer; { source lines }
+    arrmapcmt: array [1..maxarrmap] of cmtptr; { attached comments }
 
     { Statement context stack }
     stmttop: stmtctxptr;            { top of statement context stack }
@@ -1409,7 +1414,8 @@ begin
   new(p);
   p^.next := nil;
   p^.linenum := 0;
-  p^.len := 0
+  p^.len := 0;
+  p^.claimed := false
 end;
 
 procedure putcmt(p: cmtptr);
@@ -1546,7 +1552,7 @@ begin
   p := cmtqueue;
   while p <> nil do begin
     p1 := p^.next;
-    if p^.linenum < line then begin
+    if (p^.linenum < line) and not p^.claimed then begin
       { output this comment }
       c_comment(p);
       c_newline;
@@ -1561,6 +1567,17 @@ begin
     end else
       prev := p;
     p := p1
+  end
+end;
+
+procedure claimlinecmts(line: integer);
+{ mark all comments on given line as claimed so flushcmts_before skips them }
+var p: cmtptr;
+begin
+  p := cmtqueue;
+  while p <> nil do begin
+    if p^.linenum = line then p^.claimed := true;
+    p := p^.next
   end
 end;
 
@@ -1666,12 +1683,13 @@ var p: cmtptr;
 begin
   { first try to capture any trailing comment on this line }
   scanaheadcmt(line);
-  { now look for the comment in the queue }
+  { now output all comments in the queue for this line }
   p := getlinecmt(line);
-  if p <> nil then begin
+  while p <> nil do begin
     c_str(' ');
     c_comment(p);
-    putcmt(p)
+    putcmt(p);
+    p := getlinecmt(line)
   end
 end;
 
@@ -2024,7 +2042,8 @@ begin
       typemapcount := typemapcount + 1;
       typemapstp[typemapcount] := fsp;
       typemapname[typemapcount] := name;
-      typemapsrcline[typemapcount] := srcline
+      typemapsrcline[typemapcount] := srcline;
+      typemapcmt[typemapcount] := nil
     end
   end
 end;
@@ -2038,7 +2057,8 @@ begin
         enummapcount := enummapcount + 1;
         enummapstp[enummapcount] := fsp;
         enummapname[enummapcount] := name;
-        enummapsrcline[enummapcount] := srcline
+        enummapsrcline[enummapcount] := srcline;
+        enummapcmt[enummapcount] := nil
       end
     end
 end;
@@ -2051,7 +2071,8 @@ begin
       ptrmapcount := ptrmapcount + 1;
       ptrmapstp[ptrmapcount] := fsp;
       ptrmapname[ptrmapcount] := name;
-      ptrmapsrcline[ptrmapcount] := srcline
+      ptrmapsrcline[ptrmapcount] := srcline;
+      ptrmapcmt[ptrmapcount] := nil
     end
   end
 end;
@@ -2075,7 +2096,8 @@ begin
       arrmapcount := arrmapcount + 1;
       arrmapstp[arrmapcount] := fsp;
       arrmapname[arrmapcount] := name;
-      arrmapsrcline[arrmapcount] := srcline
+      arrmapsrcline[arrmapcount] := srcline;
+      arrmapcmt[arrmapcount] := nil
     end
   end
 end;
@@ -2249,7 +2271,7 @@ begin
   else if fsp = intptr then c_str('long')
   else if fsp = realptr then c_str('double')
   else if fsp = charptr then c_str('char')
-  else if fsp = boolptr then c_str('int')
+  else if fsp = boolptr then c_str('bool')
   else if fsp = byteptr then c_str('unsigned char')
   else case fsp^.form of
     subrange: begin
@@ -2368,38 +2390,100 @@ begin
   inpflist := found
 end;
 
-{ output enum declarations for all registered enum types }
-procedure c_enums;
+{ pre-extract inline comments for all typedef maps so flushcmts_before }
+{ does not prematurely flush them }
+procedure claim_typedef_cmts;
 var i: integer;
     lcp: ctp;
+    fld: ctp;
+    allsameline: boolean;
+begin
+  { for enums: claim trailing comment only for single-line enums where all }
+  { constants are on the same line as the type. Multi-line enum comments }
+  { belong to individual constants and are handled by c_inlinecmt. }
+  for i := 1 to enummapcount do begin
+    allsameline := true;
+    if enummapstp[i] <> nil then begin
+      lcp := enummapstp[i]^.fconst;
+      while lcp <> nil do begin
+        if lcp^.srcline <> enummapsrcline[i] then allsameline := false;
+        lcp := lcp^.next
+      end
+    end;
+    if allsameline then
+      enummapcmt[i] := getlinecmt(enummapsrcline[i])
+    else begin
+      { multi-line enum: mark constant comments so flushcmts_before skips them }
+      lcp := enummapstp[i]^.fconst;
+      while lcp <> nil do begin
+        claimlinecmts(lcp^.srcline);
+        lcp := lcp^.next
+      end
+    end
+  end;
+  for i := 1 to arrmapcount do
+    arrmapcmt[i] := getlinecmt(arrmapsrcline[i]);
+  for i := 1 to typemapcount do begin
+    typemapcmt[i] := getlinecmt(typemapsrcline[i]);
+    { claim record field comments so flushcmts_before skips them }
+    if typemapstp[i] <> nil then begin
+      fld := typemapstp[i]^.fstfld;
+      while fld <> nil do begin
+        claimlinecmts(fld^.srcline);
+        fld := fld^.next
+      end
+    end
+  end;
+  for i := 1 to ptrmapcount do
+    ptrmapcmt[i] := getlinecmt(ptrmapsrcline[i])
+end;
+
+{ output enum declarations for all registered enum types }
+procedure c_enums;
+const maxenumconst = 512;
+var i, j, cnt: integer;
+    lcp: ctp;
     fsp: stp;
-    first: boolean;
+    enumarr: array [1..maxenumconst] of ctp;
 begin
   for i := 1 to enummapcount do begin
+    flushcmts_before(enummapsrcline[i]);
     c_str('enum ');
     c_pstr(enummapname[i]);
-    c_ln('_e {');
+    c_ln(' {');
     cindent := cindent + 1;
-    { output enum constants with explicit ordinal values }
-    { they are linked in reverse order but explicit values make order irrelevant }
+    { collect enum constants into array (linked list is in reverse order) }
     fsp := enummapstp[i];
     if fsp <> nil then begin
-      first := true;
+      cnt := 0;
       lcp := fsp^.fconst;
       while lcp <> nil do begin
-        if not first then c_ln(',');
-        first := false;
-        c_indent;
-        if lcp^.name <> nil then c_pstr(lcp^.name);
-        c_str(' = ');
-        c_int(lcp^.values.ival);
-        c_inlinecmt(lcp^.srcline); { output inline comment if exists }
+        cnt := cnt + 1;
+        if cnt <= maxenumconst then
+          enumarr[cnt] := lcp;
         lcp := lcp^.next
+      end;
+      if cnt > maxenumconst then cnt := maxenumconst;
+      { output in original Pascal order (reverse of linked list) }
+      { C enums number from 0 like Pascal, so explicit values not needed }
+      for j := cnt downto 1 do begin
+        if j < cnt then c_ln(',');
+        c_indent;
+        lcp := enumarr[j];
+        if lcp^.name <> nil then c_pstr(lcp^.name);
+        c_inlinecmt(lcp^.srcline)
       end;
       c_newline
     end;
     cindent := cindent - 1;
-    c_ln('};');
+    c_str('};');
+    if enummapcmt[i] <> nil then begin
+      c_str(' ');
+      c_comment(enummapcmt[i]);
+      putcmt(enummapcmt[i]);
+      enummapcmt[i] := nil
+    end;
+    c_newline;
     c_newline
   end
 end;
@@ -2433,7 +2517,12 @@ begin
     c_str('typedef struct ');
     c_pstr(typemapname[i]);
     c_str(' {');
-    c_inlinecmt(typemapsrcline[i]); { output inline comment for type name }
+    if typemapcmt[i] <> nil then begin
+      c_str(' ');
+      c_comment(typemapcmt[i]);
+      putcmt(typemapcmt[i]);
+      typemapcmt[i] := nil
+    end;
     c_newline;
     cindent := cindent + 1;
     { output fields }
@@ -2479,7 +2568,12 @@ begin
         c_str('void* ');
     c_pstr(ptrmapname[i]);
     c_chr(';');
-    c_inlinecmt(ptrmapsrcline[i]); { output inline comment for pointer type }
+    if ptrmapcmt[i] <> nil then begin
+      c_str(' ');
+      c_comment(ptrmapcmt[i]);
+      putcmt(ptrmapcmt[i]);
+      ptrmapcmt[i] := nil
+    end;
     c_newline
   end;
   if ptrmapcount > 0 then c_newline
@@ -2540,7 +2634,12 @@ begin
       arrdimsdef(fsp) { output all dimensions }
     end;
     c_chr(';');
-    c_inlinecmt(arrmapsrcline[i]);
+    if arrmapcmt[i] <> nil then begin
+      c_str(' ');
+      c_comment(arrmapcmt[i]);
+      putcmt(arrmapcmt[i]);
+      arrmapcmt[i] := nil
+    end;
     c_newline
   end;
   if arrmapcount > 0 then c_newline
@@ -2556,9 +2655,10 @@ begin
     if p^.klass = konst then begin
       isenumconst := false;
       if p^.idtype <> nil then
-        if p^.idtype^.form = scalar then
-          if p^.idtype^.scalkind = declared then
-            isenumconst := true;
+        if p^.idtype <> boolptr then
+          if p^.idtype^.form = scalar then
+            if p^.idtype^.scalkind = declared then
+              isenumconst := true;
       if not isenumconst then begin
         c_str('#define ');
         if p^.name <> nil then c_pstr(p^.name);
@@ -2572,8 +2672,8 @@ begin
           c_chr(chr(p^.values.ival));
           c_chr('''')
         end else if p^.idtype = boolptr then begin
-          if p^.values.ival = 0 then c_chr('0')
-          else c_chr('1')
+          if p^.values.ival = 0 then c_str('false')
+          else c_str('true')
         end else if p^.values.intval then
           c_int(p^.values.ival)
         else if p^.values.valp <> nil then
@@ -6443,8 +6543,8 @@ end;
                                 expr_chr(chr(values.ival));
                                 expr_chr('''')
                               end else if idtype = boolptr then begin
-                                if values.ival = 0 then expr_str('0')
-                                else expr_str('1')
+                                if values.ival = 0 then expr_str('false')
+                                else expr_str('true')
                               end else
                                 expr_pstr(lcp^.name)
                             end
@@ -9671,7 +9771,9 @@ end;
       { main program body }
       { output typedefs and global variables before main if not done }
       if not gblvarsdone then begin
+        claim_typedef_cmts;
         c_consts(display[top].fname);
+        c_newline;
         c_enums;
         c_arraytypedefs;
         c_typedefs;
@@ -9690,7 +9792,9 @@ end;
       { procedure or function body }
       { before first procedure, output typedefs and global variables }
       if not gblvarsdone then begin
+        claim_typedef_cmts;
         c_consts(display[1].fname);
+        c_newline;
         c_enums;
         c_arraytypedefs;
         c_typedefs;
@@ -10155,13 +10259,6 @@ end;
         if sy = semicolon then insymbol
       end else error(3);
     { emit C file headers }
-    { output header comment from original Pascal source }
-    if headercmt <> nil then begin
-      c_comment(headercmt);
-      c_newline;
-      putcmt(headercmt);
-      headercmt := nil
-    end;
     c_ln('/*');
     c_str(' * Translated from Pascaline by p2c');
     c_newline;
@@ -10169,12 +10266,27 @@ end;
     c_newline;
     c_ln(' */');
     c_newline;
+    { output header comment from original Pascal source }
+    if headercmt <> nil then begin
+      c_comment(headercmt);
+      c_newline;
+      putcmt(headercmt);
+      headercmt := nil;
+      c_newline { blank line between header comment and includes }
+    end;
     c_ln('#include <stdio.h>');
     c_ln('#include <string.h>');
     c_ln('#include <math.h>');
     c_newline;
     { Pascal runtime helper macros }
     c_ln('/* Pascal runtime helpers */');
+    c_ln('#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L');
+    c_ln('#include <stdbool.h>');
+    c_ln('#else');
+    c_ln('#define bool int');
+    c_ln('#define true 1');
+    c_ln('#define false 0');
+    c_ln('#endif');
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
     c_newline;
     { emit header file preamble }
