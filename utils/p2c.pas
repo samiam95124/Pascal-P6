@@ -538,6 +538,7 @@ var
     nestbuf: packed array [1..nestbufmax] of char; { buffer for nested proc C output }
     nestbuflen: integer;            { current length of buffer }
     nestbuffering: boolean;         { true when buffering nested proc output }
+    nestcmtfloor: integer;          { min line for comment flushing during nesting }
 
     { Comment preservation }
     cmtqueue: cmtptr;               { queue of captured comments }
@@ -1495,6 +1496,7 @@ begin
           c_chr('/');
           for i := 1 to firstnl - 1 do c_chr('*');
           c_newline;
+          c_newline; { blank line after opening star line }
           startpos := firstnl + 1
         end else begin
           c_str('/* ');
@@ -1519,6 +1521,7 @@ begin
         end;
         (* output closing *)
         if starclose and (lastnl > 0) then begin
+          c_newline; { blank line before closing star line }
           c_newline;
           for i := lastnl + 1 to p^.len do c_chr('*');
           c_chr('/')
@@ -1534,9 +1537,11 @@ var p, p1: cmtptr;
 begin
   p := cmtqueue;
   while p <> nil do begin
-    c_comment(p);
-    c_newline;
     p1 := p^.next;
+    if not p^.claimed then begin
+      c_comment(p);
+      c_newline
+    end;
     putcmt(p);
     p := p1
   end;
@@ -1547,15 +1552,25 @@ end;
 procedure flushcmts_before(line: integer);
 { output comments with line numbers < line, keep the rest in queue }
 var p, prev, p1: cmtptr;
+    lastwasdeco: boolean;
 begin
   prev := nil;
+  lastwasdeco := false;
   p := cmtqueue;
   while p <> nil do begin
     p1 := p^.next;
-    if (p^.linenum < line) and not p^.claimed then begin
+    if (p^.linenum < line) and not p^.claimed and
+       (not nestbuffering or (p^.linenum >= nestcmtfloor)) then begin
+      { blank line before decoration comment blocks }
+      if (p^.len >= 2) and (p^.text[1] = '*') and (p^.text[2] = '*') then
+        c_newline
+      else if lastwasdeco then
+        c_newline; { blank line between decoration block and following comment }
       { output this comment }
       c_comment(p);
       c_newline;
+      lastwasdeco := (p^.len >= 2) and (p^.text[1] = '*') and
+                     (p^.text[2] = '*');
       { remove from queue }
       if prev = nil then
         cmtqueue := p1
@@ -2390,14 +2405,78 @@ begin
   inpflist := found
 end;
 
+{ claim comments for all fields in a record, including variant parts }
+procedure claim_recfldcmts(fsp: stp);
+  procedure claimvariants(vsp: stp); forward;
+  procedure claimfields(fld: ctp);
+  begin
+    while fld <> nil do begin
+      claimlinecmts(fld^.srcline);
+      fld := fld^.next
+    end
+  end;
+  procedure claimvariants(vsp: stp);
+  var vrnt: stp;
+  begin
+    if vsp = nil then { nothing }
+    else if vsp^.form = tagfld then begin
+      if vsp^.tagfieldp <> nil then
+        claimlinecmts(vsp^.tagfieldp^.srcline);
+      vrnt := vsp^.fstvar;
+      while vrnt <> nil do begin
+        if vrnt^.form = variant then begin
+          claimfields(vrnt^.varfld);
+          if vrnt^.subvar <> nil then claimvariants(vrnt^.subvar)
+        end;
+        vrnt := vrnt^.nxtvar
+      end
+    end
+  end;
+begin
+  if fsp <> nil then
+    if fsp^.form = records then begin
+      claimfields(fsp^.fstfld);
+      if fsp^.recvar <> nil then claimvariants(fsp^.recvar)
+    end
+end;
+
+{ find min/max source lines of all declarations in BST }
+procedure bst_srcrange(p: ctp; var minl, maxl: integer);
+begin
+  if p <> nil then begin
+    bst_srcrange(p^.llink, minl, maxl);
+    if (p^.klass = types) or (p^.klass = vars) or (p^.klass = konst) then begin
+      if p^.srcline < minl then minl := p^.srcline;
+      if p^.srcline > maxl then maxl := p^.srcline
+    end;
+    bst_srcrange(p^.rlink, minl, maxl)
+  end
+end;
+
+{ claim all comments within a source line range }
+procedure claimrangecmts(minl, maxl: integer);
+var p: cmtptr;
+begin
+  p := cmtqueue;
+  while p <> nil do begin
+    if (p^.linenum >= minl) and (p^.linenum <= maxl) then
+      p^.claimed := true;
+    p := p^.next
+  end
+end;
+
 { pre-extract inline comments for all typedef maps so flushcmts_before }
 { does not prematurely flush them }
-procedure claim_typedef_cmts;
+procedure claim_typedef_cmts(bst: ctp);
 var i: integer;
     lcp: ctp;
-    fld: ctp;
     allsameline: boolean;
+    minl, maxl: integer;
 begin
+  { claim all comments in the declaration section range }
+  minl := maxint; maxl := 0;
+  bst_srcrange(bst, minl, maxl);
+  if minl <= maxl then claimrangecmts(minl, maxl);
   { for enums: claim trailing comment only for single-line enums where all }
   { constants are on the same line as the type. Multi-line enum comments }
   { belong to individual constants and are handled by c_inlinecmt. }
@@ -2425,14 +2504,8 @@ begin
     arrmapcmt[i] := getlinecmt(arrmapsrcline[i]);
   for i := 1 to typemapcount do begin
     typemapcmt[i] := getlinecmt(typemapsrcline[i]);
-    { claim record field comments so flushcmts_before skips them }
-    if typemapstp[i] <> nil then begin
-      fld := typemapstp[i]^.fstfld;
-      while fld <> nil do begin
-        claimlinecmts(fld^.srcline);
-        fld := fld^.next
-      end
-    end
+    { claim record field comments including variant parts }
+    claim_recfldcmts(typemapstp[i])
   end;
   for i := 1 to ptrmapcount do
     ptrmapcmt[i] := getlinecmt(ptrmapsrcline[i])
@@ -5200,7 +5273,11 @@ end;
                        typtr := filtype;
                     end else error(141);
               insymbol;
-              lastptr := true { set last was ptr op }
+              lastptr := true; { set last was ptr op }
+              { set needarrow for next field access if result is record }
+              if gattr.typtr <> nil then
+                if gattr.typtr^.form = records then
+                  needarrow := true
             end;
         if not (sy in fsys + selectsys) then
           begin error(6); skip(fsys + selectsys) end
@@ -5778,6 +5855,7 @@ end;
       var lsp,lsp1,lsp2,lsp3: stp; varts: integer;
           lsize: addrrange; lval: valu; tagc: integer; tagrec: boolean;
           ct: boolean; cc,pc: integer;
+          ptrtyp: stp; varnamelen, i: integer;
     begin
       if disp then begin
         expression(fsys + [comma, rparent], false);
@@ -5786,6 +5864,10 @@ end;
         variable(fsys + [comma,rparent], false);
         loadaddress
       end;
+      { save pointer type and variable name for C output }
+      ptrtyp := gattr.typtr;
+      if stmttop <> nil then varnamelen := stmttop^.exprlen
+      else varnamelen := 0;
       ct := false;
       if gattr.typtr <> nil then
         if gattr.typtr^.form = pointer then
@@ -5847,6 +5929,34 @@ end;
                       end
                     else error(116);
       1:  end (*while*) ;
+      end;
+      { generate C output }
+      if stmttop <> nil then begin
+        if disp then begin
+          { dispose(p) -> free(p) }
+          flushcmts_before(curstmtline);
+          c_indent;
+          c_str('free(');
+          for i := 1 to varnamelen do
+            c_chr(stmttop^.exprbuf[i]);
+          c_str(');');
+          c_inlinecmt(stmttop^.startline);
+          c_newline
+        end else begin
+          { new(p) -> p = malloc(sizeof(type)) }
+          flushcmts_before(curstmtline);
+          c_indent;
+          for i := 1 to varnamelen do
+            c_chr(stmttop^.exprbuf[i]);
+          c_str(' = malloc(sizeof(');
+          if ptrtyp <> nil then
+            if ptrtyp^.form = pointer then
+              if ptrtyp^.eltype <> nil then
+                c_basetype(ptrtyp^.eltype);
+          c_str('));');
+          c_inlinecmt(stmttop^.startline);
+          c_newline
+        end
       end
     end (*newdisposeprocedure*) ;
 
@@ -6815,6 +6925,7 @@ end;
                            begin typtr := nilptr; kind := cst;
                                  cval.intval := true;
                                  cval.ival := nilval;
+                                 if wantexpr then expr_str('NULL');
                                  insymbol
                            end
               end (*case*) ;
@@ -7770,6 +7881,7 @@ end;
           searchlabel(llp, top, sy = ident); { search preexisting label }
           if llp <> nil then error(166) { multideclared label }
           else newlabel(llp, sy = ident);
+          claimlinecmts(incstk^.linecount); { no C output for labels }
           insymbol
         end else if iso7185 then error(15) else error(22);
         if not ( sy in fsys + [comma, semicolon] ) then
@@ -8659,6 +8771,8 @@ end;
       end;
       if (forw and (lcp^.pfattr <> fpaoverload)) or form then begin
         { forward, toss current entry and keep original }
+        { update srcline to actual definition for comment placement }
+        if incstk <> nil then lcp1^.srcline := incstk^.linecount;
         putnam(lcp); lcp := lcp1; lcp1 := nil; lcp^.forwdecl := false
       end;
       if not forwn and not extn then { process actual block}
@@ -8734,6 +8848,8 @@ end;
         paramindent: integer; { indentation for multi-line parameters }
         prevparamline: integer; { previous parameter's source line }
         ii: integer; { loop index for param indent }
+        minl, maxl: integer; { source line range for claiming comments }
+        endline: integer; { source line of end keyword }
 
     { add statement level }
     procedure addlvl;
@@ -9283,7 +9399,9 @@ end;
 
       procedure whilestatement;
         var i: integer;
+            whileline: integer; { source line of while statement }
       begin
+        whileline := curstmtline; { save before sub-statement overwrites }
         { push context to capture condition expression }
         pushstmt(stk_while);
         expr_reset;
@@ -9303,11 +9421,13 @@ end;
         addlvl;
         statement(fsys);
         sublvl;
-        { output closing brace }
+        { output closing brace with inline comment }
         c_newline;
         cindent := cindent - 1;
         c_indent;
-        c_ln('}')
+        c_str('}');
+        c_inlinecmt(whileline);
+        c_newline
       end (*whilestatement*) ;
 
       procedure forstatement;
@@ -9572,6 +9692,7 @@ end;
 
     begin (*statement*)
       curstmtline := incstk^.linecount; { capture statement start line }
+      flushcmts_before(curstmtline); { flush any pending comments before this stmt }
       if (sy = intconst) or (sy = ident) then begin (*label*)
           { and here is why Wirth didn't include symbolic labels in Pascal.
             We are ambiguous with assigns and calls, so must look ahead for
@@ -9771,7 +9892,7 @@ end;
       { main program body }
       { output typedefs and global variables before main if not done }
       if not gblvarsdone then begin
-        claim_typedef_cmts;
+        claim_typedef_cmts(display[top].fname);
         c_consts(display[top].fname);
         c_newline;
         c_enums;
@@ -9792,7 +9913,7 @@ end;
       { procedure or function body }
       { before first procedure, output typedefs and global variables }
       if not gblvarsdone then begin
-        claim_typedef_cmts;
+        claim_typedef_cmts(display[1].fname);
         c_consts(display[1].fname);
         c_newline;
         c_enums;
@@ -9809,6 +9930,22 @@ end;
       clear_uplevelrefs;
       if level > 2 then begin
         { nested procedure - buffer body, delay header until uplevel refs known }
+        { claim parent procedure's declaration comments so they are not flushed
+          during nested body parsing - they belong with the parent's output }
+        minl := maxint; maxl := 0;
+        if display[top-1].bname <> nil then begin
+          lcp := display[top-1].bname^.pflist;
+          while lcp <> nil do begin
+            if lcp^.klass = vars then begin
+              if lcp^.srcline < minl then minl := lcp^.srcline;
+              if lcp^.srcline > maxl then maxl := lcp^.srcline
+            end;
+            lcp := lcp^.next
+          end
+        end;
+        bst_srcrange(display[top-1].fname, minl, maxl);
+        if minl <= maxl then claimrangecmts(minl, maxl);
+        nestcmtfloor := fprocp^.srcline;
         nestbuflen := 0;
         nestbuffering := true;
         { buffer opening brace and local vars }
@@ -9829,6 +9966,7 @@ end;
       end else begin
         { top-level procedure - output header directly }
         flushcmts_before(fprocp^.srcline); (* output comments before procedure *)
+        c_newline; { blank line after function header comment }
         { output return type - also calculate indent for multi-line params }
         paramindent := 0;
         if fprocp^.klass = func then begin
@@ -9918,13 +10056,18 @@ end;
         ilp := ilp^.ininxt end
     end;
     sublvl;
+    endline := incstk^.linecount; { save end keyword line }
     if sy = endsy then insymbol else error(13);
+    { flush trailing comments before closing brace }
+    flushcmts_before(incstk^.linecount);
     { emit C function closing }
     if (level = 1) and (fprocp = nil) then begin
       { main program body closing - no return needed, C99 defaults to 0 }
       c_newline;
       cindent := cindent - 1;
-      c_ln('}')
+      c_str('}');
+      c_inlinecmt(endline);
+      c_newline
     end else if fprocp <> nil then begin
       { procedure/function closing }
       c_newline;
@@ -9935,10 +10078,15 @@ end;
         c_ln('__result;')
       end;
       cindent := cindent - 1;
-      c_ln('}');
+      c_str('}');
+      c_inlinecmt(endline);
+      c_newline;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
+        { output comments belonging to this nested proc (not parent's) }
+        flushcmts_before(fprocp^.srcline);
+        c_newline;
         { output return type - calculate indent for multi-line params }
         paramindent := 0;
         if fprocp^.klass = func then begin
@@ -11059,6 +11207,7 @@ begin
   procuplevelcnt := 0;
   nestbuflen := 0;
   nestbuffering := false;
+  nestcmtfloor := 0;
   inopexpr := false;
   cmtqueue := nil;
   cmtqtail := nil;
