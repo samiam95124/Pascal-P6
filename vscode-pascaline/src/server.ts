@@ -16,7 +16,21 @@ import {
     Range,
     DocumentSymbol,
     DocumentSymbolParams,
-    SymbolKind
+    SymbolKind,
+    SignatureHelp,
+    SignatureHelpParams,
+    SignatureInformation,
+    ParameterInformation,
+    CompletionItem,
+    CompletionItemKind,
+    CompletionParams,
+    InsertTextFormat,
+    CallHierarchyItem,
+    CallHierarchyIncomingCall,
+    CallHierarchyOutgoingCall,
+    CallHierarchyIncomingCallsParams,
+    CallHierarchyOutgoingCallsParams,
+    CallHierarchyPrepareParams
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -80,12 +94,19 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             textDocumentSync: {
                 openClose: true,
                 save: true,
-                change: TextDocumentSyncKind.None
+                change: TextDocumentSyncKind.Incremental
             },
             definitionProvider: !!symRunner,
             referencesProvider: !!symRunner,
             hoverProvider: !!symRunner,
-            documentSymbolProvider: !!symRunner
+            documentSymbolProvider: !!symRunner,
+            signatureHelpProvider: symRunner ? {
+                triggerCharacters: ['(', ',']
+            } : undefined,
+            completionProvider: symRunner ? {
+                triggerCharacters: ['.']
+            } : undefined,
+            callHierarchyProvider: !!symRunner
         }
     };
 });
@@ -352,19 +373,438 @@ connection.onHover((params: HoverParams): Hover | null => {
 
 // Document symbols (Outline view)
 connection.onDocumentSymbol(async (params: DocumentSymbolParams): Promise<DocumentSymbol[] | null> => {
+    try {
+        const document = documents.get(params.textDocument.uri);
+        if (!document) return null;
+
+        // If symbols aren't cached yet (passym still running), trigger and wait
+        let cached = symbolCache.get(document.uri);
+        if (!cached && symRunner) {
+            await updateSymbols(document);
+            cached = symbolCache.get(document.uri);
+        }
+        if (!cached || cached.symbols.length === 0) return null;
+
+        return buildDocumentSymbols(cached.symbols, document);
+    } catch (e: any) {
+        connection.console.error(`Pascaline: documentSymbol failed: ${e.message}`);
+        return null;
+    }
+});
+
+// Signature help (parameter hints)
+connection.onSignatureHelp((params: SignatureHelpParams): SignatureHelp | null => {
     const document = documents.get(params.textDocument.uri);
     if (!document) return null;
 
-    // If symbols aren't cached yet (passym still running), trigger and wait
-    let cached = symbolCache.get(document.uri);
-    if (!cached && symRunner) {
-        await updateSymbols(document);
-        cached = symbolCache.get(document.uri);
-    }
+    const cached = symbolCache.get(document.uri);
     if (!cached || cached.symbols.length === 0) return null;
 
-    return buildDocumentSymbols(cached.symbols, document);
+    // Get text from start of document to cursor
+    const textToCursor = document.getText(
+        Range.create(0, 0, params.position.line, params.position.character)
+    );
+
+    // Walk backward to find the enclosing open '(' and the function name
+    const callInfo = findCallContext(textToCursor);
+    if (!callInfo) return null;
+
+    // Look up the function/procedure in symbol cache
+    const nameLower = callInfo.name.toLowerCase();
+    const cursorLine1 = params.position.line + 1;
+    const matches = cached.symbols.filter(
+        s => s.name.toLowerCase() === nameLower &&
+            (s.klass === 'proc' || s.klass === 'func')
+    );
+    if (matches.length === 0) return null;
+
+    // Pick innermost scope match declared before cursor
+    let best: SymbolInfo | undefined;
+    for (const sym of matches) {
+        if (sym.line <= cursorLine1) {
+            if (!best || sym.level > best.level ||
+                (sym.level === best.level && sym.line > best.line)) {
+                best = sym;
+            }
+        }
+    }
+    if (!best) best = matches[0];
+
+    if (!best.typeName) return null;
+
+    // Parse the parameter signature
+    const paramGroups = parseParamSignature(best.typeName);
+    if (paramGroups.length === 0) return null;
+
+    // Build the full label and parameter info
+    const keyword = best.klass === 'func' ? 'function' : 'procedure';
+    const label = `${keyword} ${best.name}${best.typeName}`;
+
+    const parameters: ParameterInformation[] = paramGroups.map(p => {
+        // Find the parameter substring in the label
+        const start = label.indexOf(p.label);
+        const paramLabel: [number, number] = start >= 0
+            ? [start, start + p.label.length]
+            : [0, 0];
+        return ParameterInformation.create(paramLabel);
+    });
+
+    const sig = SignatureInformation.create(label, undefined, ...parameters);
+
+    return {
+        signatures: [sig],
+        activeSignature: 0,
+        activeParameter: Math.min(callInfo.argIndex, paramGroups.length - 1)
+    };
 });
+
+// Code completion
+connection.onCompletion((params: CompletionParams): CompletionItem[] | null => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+
+    const cached = symbolCache.get(document.uri);
+    if (!cached || cached.symbols.length === 0) return null;
+
+    const cursorLine1 = params.position.line + 1;
+    const items: CompletionItem[] = [];
+    const seen = new Set<string>();
+
+    for (const sym of cached.symbols) {
+        if (sym.klass === 'alias') continue;
+
+        // Skip symbols declared after cursor (except level 0 standard predefines)
+        if (sym.level > 0 && sym.line > cursorLine1) continue;
+
+        // Deduplicate by lowercase name — keep the innermost/latest declaration
+        const key = sym.name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const item: CompletionItem = {
+            label: sym.name,
+            kind: klassToCompletionKind(sym.klass),
+            detail: completionDetail(sym),
+            insertText: sym.name,
+            insertTextFormat: InsertTextFormat.PlainText
+        };
+
+        items.push(item);
+    }
+
+    return items.length > 0 ? items : null;
+});
+
+// Call Hierarchy
+connection.languages.callHierarchy.onPrepare((params: CallHierarchyPrepareParams): CallHierarchyItem[] | null => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+
+    const cached = symbolCache.get(document.uri);
+    if (!cached || cached.symbols.length === 0) return null;
+
+    const line = document.getText(
+        Range.create(params.position.line, 0, params.position.line + 1, 0)
+    );
+    const word = getWordAt(line, params.position.character);
+    if (!word) return null;
+
+    const wordLower = word.toLowerCase();
+    const matches = cached.symbols.filter(
+        s => s.name.toLowerCase() === wordLower &&
+            (s.klass === 'proc' || s.klass === 'func')
+    );
+    if (matches.length === 0) return null;
+
+    return matches.map(sym => {
+        const declLine = sym.line - 1;
+        const lineText = document.getText(Range.create(declLine, 0, declLine + 1, 0));
+        const lineLen = lineText.replace(/\r?\n$/, '').length;
+        const col = findIdentifierColumn(lineText, sym.name);
+        const endLine = sym.endLine ? sym.endLine - 1 : declLine;
+        return {
+            name: sym.name,
+            kind: SymbolKind.Function,
+            uri: document.uri,
+            range: Range.create(declLine, 0, endLine, lineLen),
+            selectionRange: Range.create(declLine, col, declLine, col + sym.name.length),
+            detail: sym.typeName || undefined,
+            data: { declLine: sym.line, level: sym.level }
+        } as CallHierarchyItem;
+    });
+});
+
+connection.languages.callHierarchy.onIncomingCalls((params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | null => {
+    const uri = params.item.uri;
+    const cached = symbolCache.get(uri);
+    if (!cached) return null;
+
+    const document = documents.get(uri);
+    if (!document) return null;
+
+    const targetName = params.item.name.toLowerCase();
+
+    // Build sorted list of proc/func symbols with ranges for containment lookup
+    const funcs = cached.symbols
+        .filter(s => (s.klass === 'proc' || s.klass === 'func') && s.endLine)
+        .sort((a, b) => a.line - b.line);
+
+    // Find all references to the target function
+    const targetRefs = cached.references.filter(
+        r => r.name.toLowerCase() === targetName
+    );
+
+    // Group references by containing function
+    const callerMap = new Map<string, { sym: typeof funcs[0]; fromRanges: Range[] }>();
+
+    for (const ref of targetRefs) {
+        const container = findContainingFunc(funcs, ref.refLine);
+        if (!container) continue;
+
+        const key = `${container.name.toLowerCase()}:${container.line}`;
+        if (!callerMap.has(key)) {
+            callerMap.set(key, { sym: container, fromRanges: [] });
+        }
+
+        const refLine0 = ref.refLine - 1;
+        const refLineText = document.getText(Range.create(refLine0, 0, refLine0 + 1, 0));
+        const col = findIdentifierColumn(refLineText, ref.name);
+        callerMap.get(key)!.fromRanges.push(
+            Range.create(refLine0, col, refLine0, col + ref.name.length)
+        );
+    }
+
+    const results: CallHierarchyIncomingCall[] = [];
+    for (const { sym, fromRanges } of callerMap.values()) {
+        const declLine = sym.line - 1;
+        const lineText = document.getText(Range.create(declLine, 0, declLine + 1, 0));
+        const lineLen = lineText.replace(/\r?\n$/, '').length;
+        const col = findIdentifierColumn(lineText, sym.name);
+        const endLine = sym.endLine ? sym.endLine - 1 : declLine;
+
+        results.push({
+            from: {
+                name: sym.name,
+                kind: SymbolKind.Function,
+                uri: uri,
+                range: Range.create(declLine, 0, endLine, lineLen),
+                selectionRange: Range.create(declLine, col, declLine, col + sym.name.length),
+                detail: sym.typeName || undefined
+            },
+            fromRanges
+        });
+    }
+
+    return results.length > 0 ? results : null;
+});
+
+connection.languages.callHierarchy.onOutgoingCalls((params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | null => {
+    const uri = params.item.uri;
+    const cached = symbolCache.get(uri);
+    if (!cached) return null;
+
+    const document = documents.get(uri);
+    if (!document) return null;
+
+    const data = params.item.data as { declLine: number; level: number } | undefined;
+    const callerLine = data?.declLine ?? (params.item.selectionRange.start.line + 1);
+
+    // Find the caller symbol to get its line range
+    const caller = cached.symbols.find(
+        s => s.name.toLowerCase() === params.item.name.toLowerCase() &&
+            (s.klass === 'proc' || s.klass === 'func') &&
+            s.line === callerLine
+    );
+    if (!caller || !caller.endLine) return null;
+
+    // Build a lookup of proc/func symbols by lowercase name
+    const funcMap = new Map<string, SymbolInfo[]>();
+    for (const sym of cached.symbols) {
+        if (sym.klass === 'proc' || sym.klass === 'func') {
+            const key = sym.name.toLowerCase();
+            if (!funcMap.has(key)) funcMap.set(key, []);
+            funcMap.get(key)!.push(sym);
+        }
+    }
+
+    // Find all references within the caller's body that point to proc/func symbols
+    const calleeMap = new Map<string, { sym: SymbolInfo; fromRanges: Range[] }>();
+
+    for (const ref of cached.references) {
+        if (ref.refLine < caller.line || ref.refLine > caller.endLine) continue;
+
+        const targets = funcMap.get(ref.name.toLowerCase());
+        if (!targets || targets.length === 0) continue;
+
+        // Pick the best matching declaration
+        const target = targets.find(t => t.line === ref.declLine) || targets[0];
+        const key = `${target.name.toLowerCase()}:${target.line}`;
+
+        if (!calleeMap.has(key)) {
+            calleeMap.set(key, { sym: target, fromRanges: [] });
+        }
+
+        const refLine0 = ref.refLine - 1;
+        const refLineText = document.getText(Range.create(refLine0, 0, refLine0 + 1, 0));
+        const col = findIdentifierColumn(refLineText, ref.name);
+        calleeMap.get(key)!.fromRanges.push(
+            Range.create(refLine0, col, refLine0, col + ref.name.length)
+        );
+    }
+
+    const results: CallHierarchyOutgoingCall[] = [];
+    for (const { sym, fromRanges } of calleeMap.values()) {
+        const declLine = sym.line - 1;
+        const lineText = document.getText(Range.create(declLine, 0, declLine + 1, 0));
+        const lineLen = lineText.replace(/\r?\n$/, '').length;
+        const col = findIdentifierColumn(lineText, sym.name);
+        const endLine = sym.endLine ? sym.endLine - 1 : declLine;
+
+        results.push({
+            to: {
+                name: sym.name,
+                kind: SymbolKind.Function,
+                uri: uri,
+                range: Range.create(declLine, 0, endLine, lineLen),
+                selectionRange: Range.create(declLine, col, declLine, col + sym.name.length),
+                detail: sym.typeName || undefined
+            },
+            fromRanges
+        });
+    }
+
+    return results.length > 0 ? results : null;
+});
+
+/** Find the proc/func that contains a given line number (1-indexed) */
+function findContainingFunc(funcs: SymbolInfo[], line: number): SymbolInfo | undefined {
+    let best: SymbolInfo | undefined;
+    for (const f of funcs) {
+        if (f.line <= line && f.endLine && f.endLine >= line) {
+            // Pick innermost (highest level, or latest declaration)
+            if (!best || f.level > best.level ||
+                (f.level === best.level && f.line > best.line)) {
+                best = f;
+            }
+        }
+    }
+    return best;
+}
+
+function klassToCompletionKind(klass: string): CompletionItemKind {
+    switch (klass) {
+        case 'proc':   return CompletionItemKind.Function;
+        case 'func':   return CompletionItemKind.Function;
+        case 'types':  return CompletionItemKind.Struct;
+        case 'konst':  return CompletionItemKind.Constant;
+        case 'vars':   return CompletionItemKind.Variable;
+        case 'field':  return CompletionItemKind.Field;
+        case 'fixedt': return CompletionItemKind.TypeParameter;
+        default:       return CompletionItemKind.Text;
+    }
+}
+
+function completionDetail(sym: SymbolInfo): string {
+    if (sym.klass === 'konst' && sym.value) {
+        return sym.typeName ? `${sym.typeName} = ${sym.value}` : `= ${sym.value}`;
+    }
+    if (sym.klass === 'proc' || sym.klass === 'func') {
+        return sym.typeName || '';
+    }
+    return sym.typeName || '';
+}
+
+/** Walk backward through text to find the function call context at cursor */
+function findCallContext(text: string): { name: string; argIndex: number } | null {
+    let depth = 0;
+    let argIndex = 0;
+    let i = text.length - 1;
+
+    // Walk backward, tracking parenthesis depth and counting commas
+    while (i >= 0) {
+        const ch = text[i];
+        if (ch === ')') {
+            depth++;
+        } else if (ch === '(') {
+            if (depth === 0) {
+                // Found our open paren — extract the identifier before it
+                let end = i;
+                // Skip whitespace before '('
+                while (end > 0 && /\s/.test(text[end - 1])) end--;
+                let start = end;
+                while (start > 0 && isIdentChar(text[start - 1])) start--;
+                const name = text.substring(start, end);
+                if (name.length > 0) {
+                    return { name, argIndex };
+                }
+                return null;
+            }
+            depth--;
+        } else if (ch === ',' && depth === 0) {
+            argIndex++;
+        }
+        // Skip string literals (walk backward past '...')
+        if (ch === "'" && i > 0) {
+            i--;
+            while (i > 0 && text[i] !== "'") i--;
+        }
+        i--;
+    }
+    return null;
+}
+
+/** Parse a Pascal parameter signature like "(var x: integer; y, z: real): boolean" into parameter groups */
+function parseParamSignature(sig: string): { label: string }[] {
+    // Extract content between outer parens
+    const openParen = sig.indexOf('(');
+    if (openParen < 0) return [];
+    const closeParen = sig.lastIndexOf(')');
+    if (closeParen < 0) return [];
+    const inner = sig.substring(openParen + 1, closeParen).trim();
+    if (inner.length === 0) return [];
+
+    // Split on ';' respecting nested parens
+    const groups: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < inner.length; i++) {
+        if (inner[i] === '(') depth++;
+        else if (inner[i] === ')') depth--;
+        else if (inner[i] === ';' && depth === 0) {
+            groups.push(inner.substring(start, i).trim());
+            start = i + 1;
+        }
+    }
+    groups.push(inner.substring(start).trim());
+
+    // Expand groups with multiple names (e.g., "x, y: integer" -> two params)
+    const params: { label: string }[] = [];
+    for (const group of groups) {
+        const colonIdx = group.indexOf(':');
+        if (colonIdx < 0) {
+            // No type (unlikely but handle it)
+            params.push({ label: group });
+            continue;
+        }
+        const namesStr = group.substring(0, colonIdx).trim();
+        const typeStr = group.substring(colonIdx).trim(); // includes ": type"
+
+        // Check for var/out prefix
+        let prefix = '';
+        let names = namesStr;
+        const prefixMatch = namesStr.match(/^(var|out)\s+/i);
+        if (prefixMatch) {
+            prefix = prefixMatch[1] + ' ';
+            names = namesStr.substring(prefixMatch[0].length);
+        }
+
+        const nameList = names.split(',').map(n => n.trim()).filter(n => n.length > 0);
+        for (const name of nameList) {
+            params.push({ label: `${prefix}${name}${typeStr}` });
+        }
+    }
+    return params;
+}
 
 function klassToSymbolKind(klass: string): SymbolKind {
     switch (klass) {
@@ -389,21 +829,26 @@ function symbolDetail(sym: SymbolInfo): string {
 function buildDocumentSymbols(symbols: SymbolInfo[], document: TextDocument): DocumentSymbol[] {
     const roots: DocumentSymbol[] = [];
     const stack: { level: number; node: DocumentSymbol }[] = [];
+    const lineCount = document.lineCount;
 
     for (const sym of symbols) {
         // Skip aliases and standard-library symbols (level 0)
         if (sym.klass === 'alias' || sym.level === 0) continue;
 
         const line = sym.line - 1; // 0-indexed
+        if (line < 0 || line >= lineCount) continue;
+
         const lineText = document.getText(Range.create(line, 0, line + 1, 0));
+        const lineLen = lineText.replace(/\r?\n$/, '').length;
         const col = findIdentifierColumn(lineText, sym.name);
+        const selEnd = Math.min(col + sym.name.length, lineLen);
 
         const node: DocumentSymbol = {
             name: sym.name,
             detail: symbolDetail(sym),
             kind: klassToSymbolKind(sym.klass),
-            range: Range.create(line, 0, line, lineText.length),
-            selectionRange: Range.create(line, col, line, col + sym.name.length),
+            range: Range.create(line, 0, line, lineLen),
+            selectionRange: Range.create(line, col, line, selEnd),
             children: []
         };
 

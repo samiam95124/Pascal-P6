@@ -317,6 +317,7 @@ type
                 sklass: idclass;   { identifier class }
                 slevel: integer;   { scope level at entry }
                 sline: integer;    { source line at entry }
+                sendline: integer; { source line at end of body }
                 stypename: pstring; { resolved type name }
                 shasval: boolean;  { has a displayable constant value }
                 svalint: boolean;  { value is integer (vs real) }
@@ -2072,7 +2073,7 @@ end;
     if fcp^.name <> nil then begin
       nl := len(fcp^.name); sp^.sname := strl(fcp^.name^, nl)
     end else sp^.sname := nil;
-    sp^.slevel := top; sp^.sline := fcp^.srcline;
+    sp^.slevel := top; sp^.sline := fcp^.srcline; sp^.sendline := 0;
     sp^.stypename := nil; sp^.shasval := false; sp^.next := nil;
     if symtail <> nil then symtail^.next := sp else symhead := sp;
     symtail := sp
@@ -6628,6 +6629,8 @@ end;
           lcp^.locspc := lcp^.locstr-lc;
           lcs := lcp^.locspc;
           body(fsys + [semicolon],lcp);
+          if procmark <> nil then
+            procmark^.sendline := incstk^.linecount;
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;
               if iso7185 then begin { handle according to standard }
@@ -8353,6 +8356,8 @@ begin
           if p^.svalint then write(p^.sival:1)
           else write(p^.srval)
         end;
+        write(chr(9));
+        if p^.sendline > 0 then write(p^.sendline:1);
         writeln
       end
     end;
