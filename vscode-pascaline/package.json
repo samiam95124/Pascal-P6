@@ -70,8 +70,28 @@
           "type": "string",
           "default": "",
           "description": "Path to the passym executable. If empty, looks for utils/passym in the workspace."
+        },
+        "pascaline.pasdocPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the pasdoc executable. If empty, looks for bin/pasdoc in the workspace."
         }
       }
+    },
+    "commands": [
+      {
+        "command": "pascaline.openDocumentation",
+        "title": "Open Pasdoc Documentation"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pascaline.openDocumentation",
+          "when": "editorLangId == pascaline",
+          "group": "navigation@100"
+        }
+      ]
     },
     "debuggers": [
       {

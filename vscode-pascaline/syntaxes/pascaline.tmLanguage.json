@@ -91,7 +91,7 @@
             },
             {
               "name": "constant.character.escape.named.pascaline",
-              "match": "\\\\(?i)(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|DC1|DC2|DC3|DC4|NAK|SYN|ETB|CAN|EM|SUB|ESC|FS|GS|RS|US|DEL)"
+              "match": "\\\\(?i:(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|DC1|DC2|DC3|DC4|NAK|SYN|ETB|CAN|EM|SUB|ESC|FS|GS|RS|US|DEL))"
             },
             {
               "name": "constant.character.escape.pascaline",
@@ -134,28 +134,28 @@
     "declarations": {
       "patterns": [
         {
-          "match": "(?i)\\b(program|module|process|monitor|share)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "match": "(?i:\\b(program|module|process|monitor|share)\\s+([a-zA-Z_][a-zA-Z0-9_]*))",
           "captures": {
             "1": { "name": "keyword.other.module.pascaline" },
             "2": { "name": "entity.name.class.pascaline" }
           }
         },
         {
-          "match": "(?i)\\b(procedure|function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "match": "(?i:\\b(procedure|function)\\s+([a-zA-Z_][a-zA-Z0-9_]*))",
           "captures": {
             "1": { "name": "storage.type.function.pascaline" },
             "2": { "name": "entity.name.function.pascaline" }
           }
         },
         {
-          "match": "(?i)\\b(class|task|atom|stream)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+          "match": "(?i:\\b(class|task|atom|stream)\\s+([a-zA-Z_][a-zA-Z0-9_]*))",
           "captures": {
             "1": { "name": "storage.type.class.pascaline" },
             "2": { "name": "entity.name.class.pascaline" }
           }
         },
         {
-          "match": "(?i)\\b(operator)\\s+(not|[+\\-*/]|div|mod|and|or|xor|<>?|>=?|<=?|=|:=|in|is)\\b",
+          "match": "(?i:\\b(operator)\\s+(not|[+\\-*/]|div|mod|and|or|xor|<>?|>=?|<=?|=|:=|in|is)\\b)",
           "captures": {
             "1": { "name": "storage.type.operator.pascaline" },
             "2": { "name": "entity.name.function.operator.pascaline" }
@@ -168,7 +168,7 @@
       "patterns": [
         {
           "name": "constant.language.pascaline",
-          "match": "(?i)\\b(nil|true|false|maxint)\\b"
+          "match": "(?i:\\b(nil|true|false|maxint)\\b)"
         }
       ]
     },
@@ -177,15 +177,15 @@
       "patterns": [
         {
           "name": "keyword.control.flow.pascaline",
-          "match": "(?i)\\b(if|then|else|while|do|for|to|downto|repeat|until|case|of|with|goto)\\b"
+          "match": "(?i:\\b(if|then|else|while|do|for|to|downto|repeat|until|case|of|with|goto)\\b)"
         },
         {
           "name": "keyword.control.exception.pascaline",
-          "match": "(?i)\\b(try|except|on|throw)\\b"
+          "match": "(?i:\\b(try|except|on|throw)\\b)"
         },
         {
           "name": "keyword.control.block.pascaline",
-          "match": "(?i)\\b(begin|end)\\b"
+          "match": "(?i:\\b(begin|end)\\b)"
         }
       ]
     },
@@ -194,7 +194,7 @@
       "patterns": [
         {
           "name": "keyword.other.module.pascaline",
-          "match": "(?i)\\b(program|module|uses|joins|private|forward|external|label)\\b"
+          "match": "(?i:\\b(program|module|uses|joins|private|forward|external|label)\\b)"
         }
       ]
     },
@@ -203,7 +203,7 @@
       "patterns": [
         {
           "name": "storage.type.pascaline",
-          "match": "(?i)\\b(var|const|type|procedure|function|operator|property|class|record|array|set|file|packed|fixed|reference|instance|task|atom|stream|channel)\\b"
+          "match": "(?i:\\b(var|const|type|procedure|function|operator|property|class|record|array|set|file|packed|fixed|reference|instance|task|atom|stream|channel)\\b)"
         }
       ]
     },
@@ -212,7 +212,7 @@
       "patterns": [
         {
           "name": "storage.modifier.pascaline",
-          "match": "(?i)\\b(static|virtual|override|overload|inherited|view|out|extends|process|monitor|share|start)\\b"
+          "match": "(?i:\\b(static|virtual|override|overload|inherited|view|out|extends|process|monitor|share|start)\\b)"
         }
       ]
     },
@@ -221,15 +221,15 @@
       "patterns": [
         {
           "name": "keyword.operator.logical.pascaline",
-          "match": "(?i)\\b(and|or|not|xor)\\b"
+          "match": "(?i:\\b(and|or|not|xor)\\b)"
         },
         {
           "name": "keyword.operator.arithmetic.pascaline",
-          "match": "(?i)\\b(div|mod)\\b"
+          "match": "(?i:\\b(div|mod)\\b)"
         },
         {
           "name": "keyword.operator.relational.pascaline",
-          "match": "(?i)\\b(in|is)\\b"
+          "match": "(?i:\\b(in|is)\\b)"
         }
       ]
     },
@@ -238,7 +238,7 @@
       "patterns": [
         {
           "name": "variable.language.pascaline",
-          "match": "(?i)\\b(self|result)\\b"
+          "match": "(?i:\\b(self|result)\\b)"
         }
       ]
     },
@@ -247,7 +247,7 @@
       "patterns": [
         {
           "name": "support.type.pascaline",
-          "match": "(?i)\\b(integer|linteger|cardinal|lcardinal|real|lreal|sreal|char|boolean|text|string|pstring|byte|abyte|vector|matrix)\\b"
+          "match": "(?i:\\b(integer|linteger|cardinal|lcardinal|real|lreal|sreal|char|boolean|text|string|pstring|byte|abyte|vector|matrix)\\b)"
         }
       ]
     },
@@ -256,27 +256,27 @@
       "patterns": [
         {
           "name": "support.function.io.pascaline",
-          "match": "(?i)\\b(read|readln|write|writeln|get|put|reset|rewrite|page)\\b(?=\\s*[\\(;]|\\s*$)"
+          "match": "(?i:\\b(read|readln|write|writeln|get|put|reset|rewrite|page)\\b(?=\\s*[\\(;]|\\s*$))"
         },
         {
           "name": "support.function.memory.pascaline",
-          "match": "(?i)\\b(new|dispose|pack|unpack)\\b(?=\\s*\\()"
+          "match": "(?i:\\b(new|dispose|pack|unpack)\\b(?=\\s*\\())"
         },
         {
           "name": "support.function.ordinal.pascaline",
-          "match": "(?i)\\b(ord|chr|succ|pred|odd)\\b(?=\\s*\\()"
+          "match": "(?i:\\b(ord|chr|succ|pred|odd)\\b(?=\\s*\\())"
         },
         {
           "name": "support.function.math.pascaline",
-          "match": "(?i)\\b(abs|sqr|sqrt|sin|cos|arctan|exp|ln|trunc|round|max|min)\\b(?=\\s*\\()"
+          "match": "(?i:\\b(abs|sqr|sqrt|sin|cos|arctan|exp|ln|trunc|round|max|min)\\b(?=\\s*\\())"
         },
         {
           "name": "support.function.file.pascaline",
-          "match": "(?i)\\b(eof|eoln|assign|close|length|location|position|update|append|exists|delete|change)\\b(?=\\s*[\\(;]|\\s*$)"
+          "match": "(?i:\\b(eof|eoln|assign|close|length|location|position|update|append|exists|delete|change)\\b(?=\\s*[\\(;]|\\s*$))"
         },
         {
           "name": "support.function.other.pascaline",
-          "match": "(?i)\\b(halt|assert)\\b"
+          "match": "(?i:\\b(halt|assert)\\b)"
         }
       ]
     },
