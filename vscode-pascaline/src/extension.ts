@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execFile } from 'child_process';
 import { PascalineDebugSession } from './pascalineDebug';
 import {
     LanguageClient,
@@ -11,39 +10,6 @@ import {
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient | undefined;
-
-function findPasdoc(workspaceRoot?: string): string | undefined {
-    const config = vscode.workspace.getConfiguration('pascaline');
-    const settingsPath = config.get<string>('pasdocPath');
-    if (settingsPath && fs.existsSync(settingsPath)) {
-        return settingsPath;
-    }
-    if (workspaceRoot) {
-        const rel = path.join(workspaceRoot, 'bin', 'pasdoc');
-        if (fs.existsSync(rel)) {
-            return rel;
-        }
-    }
-    return undefined;
-}
-
-function runPasdoc(pasdocPath: string, filePath: string,
-    wsRoot: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        // Run from workspace root with relative path (no .pas extension)
-        const relPath = path.relative(wsRoot, filePath)
-            .replace(/\.pas$/, '');
-        execFile(pasdocPath, [relPath], { cwd: wsRoot, timeout: 30000 },
-            (error, stdout, stderr) => {
-                if (error) {
-                    reject(new Error(
-                        stderr || stdout || error.message));
-                } else {
-                    resolve();
-                }
-            });
-    });
-}
 
 function openPasdocWebview(htmlPath: string, symbolName: string) {
     const content = fs.readFileSync(htmlPath, 'utf-8');
@@ -120,31 +86,11 @@ export function activate(context: vscode.ExtensionContext) {
             const base = path.basename(filePath, '.pas');
             const htmlPath = path.join(dir, base + '.html');
 
-            // Generate if missing
             if (!fs.existsSync(htmlPath)) {
-                const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-                const pasdocPath = findPasdoc(wsRoot);
-                if (!pasdocPath) {
-                    vscode.window.showErrorMessage(
-                        'Cannot find pasdoc executable. Set pascaline.pasdocPath or ensure bin/pasdoc exists in workspace.');
-                    return;
-                }
-                try {
-                    await vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: 'Generating documentation...',
-                        cancellable: false
-                    }, () => runPasdoc(pasdocPath, filePath, wsRoot!));
-                } catch (e: any) {
-                    vscode.window.showErrorMessage(
-                        'pasdoc failed: ' + e.message);
-                    return;
-                }
-                if (!fs.existsSync(htmlPath)) {
-                    vscode.window.showErrorMessage(
-                        'pasdoc did not generate ' + base + '.html');
-                    return;
-                }
+                vscode.window.showErrorMessage(
+                    'No documentation found. Run pc with pasdoc to generate '
+                    + base + '.html');
+                return;
             }
 
             openPasdocWebview(htmlPath, symbolName);

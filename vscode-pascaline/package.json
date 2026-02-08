@@ -70,11 +70,6 @@
           "type": "string",
           "default": "",
           "description": "Path to the passym executable. If empty, looks for utils/passym in the workspace."
-        },
-        "pascaline.pasdocPath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to the pasdoc executable. If empty, looks for bin/pasdoc in the workspace."
         }
       }
     },
