@@ -9,6 +9,7 @@ export interface SymbolInfo {
     level: number;    // scope level (0=standard, 1=program, 2+=nested)
     typeName?: string; // resolved type name (e.g., "integer", "char", "array")
     value?: string;   // constant value (for konst class)
+    endLine?: number; // 1-indexed end line of body (for proc/func)
 }
 
 export interface ReferenceInfo {
@@ -71,7 +72,10 @@ export class SymRunner {
                 if (!name || isNaN(lineNum) || isNaN(level)) continue;
                 const typeName = parts.length >= 6 && parts[5] ? parts[5] : undefined;
                 const value = parts.length >= 7 && parts[6] ? parts[6].trim() : undefined;
-                symbols.push({ name, klass, line: lineNum, level, typeName, value });
+                const endLineStr = parts.length >= 8 && parts[7] ? parts[7].trim() : undefined;
+                const endLine = endLineStr ? parseInt(endLineStr, 10) : undefined;
+                symbols.push({ name, klass, line: lineNum, level, typeName, value,
+                    endLine: endLine && !isNaN(endLine) ? endLine : undefined });
             } else if (line.startsWith('REF\t')) {
                 const parts = line.split('\t');
                 if (parts.length < 5) continue;
