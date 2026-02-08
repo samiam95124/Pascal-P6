@@ -17,6 +17,7 @@
   ],
   "main": "./out/extension.js",
   "activationEvents": [
+    "onLanguage:pascaline",
     "onDebugResolve:pascaline",
     "onDebugDynamicConfigurations:pascaline"
   ],
@@ -47,6 +48,31 @@
         "language": "pascaline"
       }
     ],
+    "configuration": {
+      "title": "Pascaline",
+      "properties": {
+        "pascaline.parserPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the parser executable. If empty, looks for source/parser in the workspace."
+        },
+        "pascaline.checkOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the parser to check for errors on file save."
+        },
+        "pascaline.checkOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the parser to check for errors when a file is opened."
+        },
+        "pascaline.symPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the passym executable. If empty, looks for utils/passym in the workspace."
+        }
+      }
+    },
     "debuggers": [
       {
         "type": "pascaline",
@@ -117,6 +143,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@vscode/debugadapter": "^1.65.0"
+    "@vscode/debugadapter": "^1.65.0",
+    "vscode-languageclient": "^9.0.0",
+    "vscode-languageserver": "^9.0.0",
+    "vscode-languageserver-textdocument": "^1.0.0"
   }
 }
