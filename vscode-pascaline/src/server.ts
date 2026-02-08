@@ -13,7 +13,10 @@ import {
     Hover,
     MarkupKind,
     Location,
-    Range
+    Range,
+    DocumentSymbol,
+    DocumentSymbolParams,
+    SymbolKind
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -81,7 +84,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             },
             definitionProvider: !!symRunner,
             referencesProvider: !!symRunner,
-            hoverProvider: !!symRunner
+            hoverProvider: !!symRunner,
+            documentSymbolProvider: !!symRunner
         }
     };
 });
@@ -345,6 +349,83 @@ connection.onHover((params: HoverParams): Hover | null => {
         }
     };
 });
+
+// Document symbols (Outline view)
+connection.onDocumentSymbol(async (params: DocumentSymbolParams): Promise<DocumentSymbol[] | null> => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) return null;
+
+    // If symbols aren't cached yet (passym still running), trigger and wait
+    let cached = symbolCache.get(document.uri);
+    if (!cached && symRunner) {
+        await updateSymbols(document);
+        cached = symbolCache.get(document.uri);
+    }
+    if (!cached || cached.symbols.length === 0) return null;
+
+    return buildDocumentSymbols(cached.symbols, document);
+});
+
+function klassToSymbolKind(klass: string): SymbolKind {
+    switch (klass) {
+        case 'proc':   return SymbolKind.Function;
+        case 'func':   return SymbolKind.Function;
+        case 'types':  return SymbolKind.Struct;
+        case 'konst':  return SymbolKind.Constant;
+        case 'vars':   return SymbolKind.Variable;
+        case 'field':  return SymbolKind.Field;
+        case 'fixedt': return SymbolKind.TypeParameter;
+        default:       return SymbolKind.Variable;
+    }
+}
+
+function symbolDetail(sym: SymbolInfo): string {
+    if (sym.klass === 'konst' && sym.value) {
+        return sym.typeName ? `${sym.typeName} = ${sym.value}` : `= ${sym.value}`;
+    }
+    return sym.typeName || '';
+}
+
+function buildDocumentSymbols(symbols: SymbolInfo[], document: TextDocument): DocumentSymbol[] {
+    const roots: DocumentSymbol[] = [];
+    const stack: { level: number; node: DocumentSymbol }[] = [];
+
+    for (const sym of symbols) {
+        // Skip aliases and standard-library symbols (level 0)
+        if (sym.klass === 'alias' || sym.level === 0) continue;
+
+        const line = sym.line - 1; // 0-indexed
+        const lineText = document.getText(Range.create(line, 0, line + 1, 0));
+        const col = findIdentifierColumn(lineText, sym.name);
+
+        const node: DocumentSymbol = {
+            name: sym.name,
+            detail: symbolDetail(sym),
+            kind: klassToSymbolKind(sym.klass),
+            range: Range.create(line, 0, line, lineText.length),
+            selectionRange: Range.create(line, col, line, col + sym.name.length),
+            children: []
+        };
+
+        // Pop stack until we find a parent with level < this symbol's level
+        while (stack.length > 0 && stack[stack.length - 1].level >= sym.level) {
+            stack.pop();
+        }
+
+        if (stack.length > 0) {
+            stack[stack.length - 1].node.children!.push(node);
+        } else {
+            roots.push(node);
+        }
+
+        // Types, procs, and funcs can contain children
+        if (sym.klass === 'proc' || sym.klass === 'func' || sym.klass === 'types') {
+            stack.push({ level: sym.level, node });
+        }
+    }
+
+    return roots;
+}
 
 /** Extract a trailing Pascal comment from a source line: { ... } or (* ... *) */
 function extractComment(lineText: string): string | undefined {
