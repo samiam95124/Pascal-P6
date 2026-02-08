@@ -2,13 +2,14 @@
   "name": "pascaline",
   "displayName": "Pascaline",
   "description": "Language support and debugging for the Pascaline programming language (ISO 7185 Pascal extended)",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "pascal-p6",
   "repository": {
     "type": "git",
     "url": "https://github.com/samiam95124/Pascal-P6"
   },
   "license": "BSD-2-Clause",
+  "icon": "icon.png",
   "keywords": [
     "pascal",
     "pascaline",
