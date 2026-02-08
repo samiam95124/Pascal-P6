@@ -8,6 +8,13 @@
     "type": "git",
     "url": "https://github.com/samiam95124/Pascal-P6"
   },
+  "license": "BSD-2-Clause",
+  "keywords": [
+    "pascal",
+    "pascaline",
+    "iso7185",
+    "debugger"
+  ],
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -149,12 +156,16 @@
     ]
   },
   "scripts": {
+    "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.75.0",
+    "@vscode/vsce": "^2.15.0",
+    "cheerio": "^1.0.0-rc.12",
     "typescript": "^5.0.0"
   },
   "dependencies": {
