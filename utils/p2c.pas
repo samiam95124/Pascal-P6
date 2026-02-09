@@ -491,6 +491,7 @@ var
 
     { Record type name mapping for C output }
     typemapcount: integer;          { number of type mappings }
+    typedefsout: integer;            { number of typedefs already output }
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
     typemapsrcline: array [1..maxtypemap] of integer; { source lines }
@@ -513,6 +514,7 @@ var
 
     { Array type name mapping for C output }
     arrmapcount: integer;           { number of array type mappings }
+    arrdefsout: integer;             { number of array typedefs already output }
     arrmapstp: array [1..maxarrmap] of stp;     { array type pointers }
     arrmapname: array [1..maxarrmap] of pstring; { array type names }
     arrmapsrcline: array [1..maxarrmap] of integer; { source lines }
@@ -1505,7 +1507,6 @@ begin
           c_chr('/');
           for i := 1 to firstnl - 1 do c_chr('*');
           c_newline;
-          c_newline; { blank line after opening star line }
           startpos := firstnl + 1
         end else begin
           c_str('/* ');
@@ -1530,7 +1531,6 @@ begin
         end;
         (* output closing *)
         if starclose and (lastnl > 0) then begin
-          c_newline; { blank line before closing star line }
           c_newline;
           for i := lastnl + 1 to p^.len do c_chr('*');
           c_chr('/')
@@ -2589,13 +2589,78 @@ begin
   end
 end;
 
+{ output variant record part as C union }
+procedure c_variantpart(vsp: stp);
+var vrnt: stp;
+    lastln: integer;
+    fld: ctp;
+    fldcount: integer;
+begin
+  if vsp = nil then { nothing }
+  else if vsp^.form = tagfld then begin
+    { output tag field if discriminated (has a name) }
+    if (vsp^.tagfieldp <> nil) and (vsp^.tagfieldp^.name <> nil) then begin
+      c_indent;
+      c_type(vsp^.tagfieldp^.idtype);
+      c_chr(' ');
+      c_pstr(vsp^.tagfieldp^.name);
+      c_chr(';');
+      c_inlinecmt(vsp^.tagfieldp^.srcline);
+      c_newline
+    end;
+    { output union for variant alternatives }
+    c_indent; c_str('union {'); c_newline;
+    cindent := cindent + 1;
+    lastln := -1;
+    vrnt := vsp^.fstvar;
+    while vrnt <> nil do begin
+      if (vrnt^.form = variant) and (vrnt^.varln <> lastln) then begin
+        lastln := vrnt^.varln;
+        { count fields in this variant }
+        fldcount := 0;
+        fld := vrnt^.varfld;
+        while fld <> nil do begin
+          fldcount := fldcount + 1; fld := fld^.next
+        end;
+        if fldcount > 1 then begin
+          { multiple fields: wrap in anonymous struct }
+          c_indent; c_str('struct {'); c_newline;
+          cindent := cindent + 1
+        end;
+        fld := vrnt^.varfld;
+        while fld <> nil do begin
+          c_indent;
+          c_type(fld^.idtype);
+          c_chr(' ');
+          if fld^.name <> nil then c_pstr(fld^.name);
+          c_arraydims(fld^.idtype);
+          c_chr(';');
+          c_inlinecmt(fld^.srcline);
+          c_newline;
+          fld := fld^.next
+        end;
+        if fldcount > 1 then begin
+          cindent := cindent - 1;
+          c_indent; c_str('};'); c_newline
+        end;
+        { handle nested variants }
+        if vrnt^.subvar <> nil then
+          c_variantpart(vrnt^.subvar)
+      end;
+      vrnt := vrnt^.nxtvar
+    end;
+    cindent := cindent - 1;
+    c_indent; c_str('};'); c_newline
+  end
+end;
+
 { output typedef declarations for all registered record types }
 procedure c_typedefs;
 var i: integer;
     fld: ctp;
     fsp: stp;
 begin
-  for i := 1 to typemapcount do begin
+  for i := typedefsout + 1 to typemapcount do begin
     c_str('typedef struct ');
     c_pstr(typemapname[i]);
     c_str(' {');
@@ -2613,16 +2678,23 @@ begin
       intypedef := true;
       fld := fsp^.fstfld;
       while fld <> nil do begin
-        c_indent;
-        c_type(fld^.idtype);
-        c_chr(' ');
-        if fld^.name <> nil then c_pstr(fld^.name);
-        c_arraydims(fld^.idtype);
-        c_chr(';');
-        c_inlinecmt(fld^.srcline); { output inline comment for field }
-        c_newline;
+        { skip variant fields (taglvl > 1) and tag fields - they are
+          output by c_variantpart }
+        if (fld^.taglvl <= 1) and not fld^.tagfield then begin
+          c_indent;
+          c_type(fld^.idtype);
+          c_chr(' ');
+          if fld^.name <> nil then c_pstr(fld^.name);
+          c_arraydims(fld^.idtype);
+          c_chr(';');
+          c_inlinecmt(fld^.srcline); { output inline comment for field }
+          c_newline
+        end;
         fld := fld^.next
       end;
+      { output variant part as union if present }
+      if fsp^.recvar <> nil then
+        c_variantpart(fsp^.recvar);
       intypedef := false
     end;
     cindent := cindent - 1;
@@ -2630,7 +2702,8 @@ begin
     c_pstr(typemapname[i]);
     c_ln(';');
     c_newline
-  end
+  end;
+  typedefsout := typemapcount
 end;
 
 { output typedef declarations for all registered pointer types }
@@ -2706,7 +2779,7 @@ procedure c_arraytypedefs;
 var i: integer;
     fsp: stp;
 begin
-  for i := 1 to arrmapcount do begin
+  for i := arrdefsout + 1 to arrmapcount do begin
     c_str('typedef ');
     fsp := arrmapstp[i];
     if fsp <> nil then begin
@@ -2724,7 +2797,8 @@ begin
     end;
     c_newline
   end;
-  if arrmapcount > 0 then c_newline
+  if arrmapcount > arrdefsout then c_newline;
+  arrdefsout := arrmapcount
 end;
 
 { output constant declarations from identifier BST }
@@ -3389,6 +3463,7 @@ end;
     (* scan and capture a comment *)
     var p: cmtptr;
         iscmte: boolean;
+        ll, li: integer;
     begin
       (* check for compiler directive *)
       if ch = '$' then begin
@@ -3411,7 +3486,14 @@ end;
                 p^.len := p^.len + 1;
                 p^.text[p^.len] := chr(10)
               end;
-              while eol and not eofinp do nextch
+              ll := incstk^.linecount;
+              while eol and not eofinp do nextch;
+              (* insert additional newlines for blank lines that were skipped *)
+              for li := ll + 1 to incstk^.linecount - 1 do
+                if p^.len < 8000 then begin
+                  p^.len := p^.len + 1;
+                  p^.text[p^.len] := chr(10)
+                end
             end else begin
               if p^.len < 8000 then begin
                 p^.len := p^.len + 1;
@@ -7963,6 +8045,7 @@ end;
     procedure vardeclaration;
       var lcp,nxt: ctp; lsp, lsp1: stp; lsize: addrrange;
           test: boolean; maxpar, curpar: integer; cc: integer;
+          tname: pstring;
     begin nxt := nil;
       repeat { id:type group }
         maxpar := 0;
@@ -8019,9 +8102,12 @@ end;
         if (lsp <> nil) and (nxt <> nil) then begin
           find_record_type(lsp, lsp1);
           if lsp1 <> nil then
-            if lookup_typename(lsp1) = nil then
-              { generate name based on first variable name }
-              register_typename(lsp1, nxt^.name, nxt^.srcline)
+            if lookup_typename(lsp1) = nil then begin
+              { generate name based on first variable name with _t suffix
+                to avoid shadowing when var and type share the same name }
+              tname := cat(nxt^.name, '_t');
+              register_typename(lsp1, tname, nxt^.srcline)
+            end
         end;
         cc := containers(lsp); { find # containers }
         if cc > 0 then
@@ -8902,6 +8988,7 @@ end;
 
     procedure statement(fsys: setofsys);
       var lcp, lcp2: ctp; llp: lbp; inherit: boolean; lii: integer;
+          elseifchain: boolean;
 
       procedure assignment(fcp: ctp; skp: boolean);
         var lattr, lattr2: attr; tagasc, schrcst: boolean; fcp2: ctp;
@@ -9159,8 +9246,11 @@ end;
         expression(fsys + [thensy], false);
         chkbool;
         { output C if header }
-        flushcmts_before(curstmtline);
-        c_indent;
+        if not elseifchain then begin
+          flushcmts_before(curstmtline);
+          c_indent
+        end;
+        elseifchain := false;
         c_str('if (');
         if stmttop <> nil then
           for i := 1 to stmttop^.exprlen do
@@ -9178,12 +9268,20 @@ end;
         cindent := cindent - 1;
         c_indent;
         c_chr('}');
-        if sy = elsesy then
-          begin
+        if sy = elsesy then begin
+          insymbol;
+          if sy = ifsy then begin
+            { else-if chain: output flat without extra block/indent }
+            c_str(' else ');
+            insymbol; { consume 'if' }
+            elseifchain := true;
+            addlvl;
+            ifstatement;
+            sublvl
+          end else begin
             c_ln(' else {');
             c_newline;
             cindent := cindent + 1;
-            insymbol;
             addlvl;
             statement(fsys);
             sublvl;
@@ -9192,6 +9290,7 @@ end;
             c_indent;
             c_ln('}')
           end
+        end
         else
           c_ln('')
       end (*ifstatement*) ;
@@ -9718,6 +9817,7 @@ end;
       end (*trystatement*) ;
 
     begin (*statement*)
+      elseifchain := false;
       curstmtline := incstk^.linecount; { capture statement start line }
       flushcmts_before(curstmtline); { flush any pending comments before this stmt }
       if (sy = intconst) or (sy = ident) then begin (*label*)
@@ -9991,6 +10091,8 @@ end;
         c_ln('{');
         c_newline;
         cindent := cindent + 1;
+        c_arraytypedefs;
+        c_typedefs;
         lcp := display[top].fname;
         c_vars(lcp, fprocp^.pflist);
         if fprocp^.klass = func then begin
@@ -10067,6 +10169,9 @@ end;
         c_ln('{');
         c_newline;
         cindent := cindent + 1;
+        { output local typedefs for procedure-local record/array types }
+        c_arraytypedefs;
+        c_typedefs;
         { output local variable declarations }
         lcp := display[top].fname;
         c_vars(lcp, fprocp^.pflist);
@@ -11261,9 +11366,11 @@ begin
   usestring := false;
   usemath := false;
   typemapcount := 0;
+  typedefsout := 0;
   enummapcount := 0;
   ptrmapcount := 0;
   arrmapcount := 0;
+  arrdefsout := 0;
   intypedef := false;
   stmttop := nil;
   stmtfree := nil;
