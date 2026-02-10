@@ -2,17 +2,33 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build My Project",
+            "label": "Build Pascal",
             "type": "shell",
-            "command": "pc ${fileBasenameNoExtension}", // Or your build command like 'npm run build', 'msbuild', etc.
-            "args": [],
+            "command": "pc ${fileBasenameNoExtension}",
             "group": {
                 "kind": "build",
-                "isDefault": true // Set as default build task
+                "isDefault": true
             },
-            "problemMatcher": [
-                "$gcc" // Example problem matcher for GCC
-            ]
+            "options": {
+                "cwd": "${fileDirname}",
+                "env": {
+                    "PATH": "${workspaceFolder}/bin:${env:PATH}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build and Run",
+            "type": "shell",
+            "command": "pc ${fileBasenameNoExtension} && pint ${fileBasenameNoExtension} ${fileBasenameNoExtension}",
+            "group": "test",
+            "options": {
+                "cwd": "${fileDirname}",
+                "env": {
+                    "PATH": "${workspaceFolder}/bin:${env:PATH}"
+                }
+            },
+            "problemMatcher": []
         }
     ]
 }
