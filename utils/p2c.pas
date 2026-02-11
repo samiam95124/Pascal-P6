@@ -1571,6 +1571,8 @@ var i:                   integer;
 begin
   if p <> nil then
     if p^.len > 0 then begin
+      (* safety: cap length at array bounds *)
+      if p^.len > 8000 then p^.len := 8000;
       (* find first newline position *)
       firstnl := 0;
       i := 1;
@@ -1794,9 +1796,15 @@ begin
             end;
             i := i + 1
           end;
-          { trim trailing whitespace }
-          while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))) do
-            p^.len := p^.len - 1;
+          { safety: cap length at array bounds before trimming }
+          if p^.len > 8000 then p^.len := 8000;
+          { trim trailing whitespace - avoid array access when p^.len = 0 }
+          while p^.len > 0 do begin
+            if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9)) then
+              p^.len := p^.len - 1
+            else
+              p^.len := 0 { force exit }
+          end;
           { add to queue }
           if p^.len > 0 then
             enqueuecmt(p)
@@ -3702,10 +3710,16 @@ end;
           end else if iscmte then
             nextch (* skip closing brace *)
         until iscmte or eofinp;
-        (* trim trailing whitespace *)
-        while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
-               or (p^.text[p^.len] = chr(10))) do
-          p^.len := p^.len - 1;
+        (* safety: cap length at array bounds before trimming *)
+        if p^.len > 8000 then p^.len := 8000;
+        (* trim trailing whitespace - avoid array access when p^.len = 0 *)
+        while p^.len > 0 do begin
+          if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
+             or (p^.text[p^.len] = chr(10)) then
+            p^.len := p^.len - 1
+          else
+            p^.len := 0 (* force exit *)
+        end;
         (* store as header comment only if before program keyword, else enqueue *)
         if (headercmt = nil) and not pastprogram then
           headercmt := p
