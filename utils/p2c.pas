@@ -1571,6 +1571,8 @@ var i:                   integer;
 begin
   if p <> nil then
     if p^.len > 0 then begin
+      (* safety: cap length at array bounds *)
+      if p^.len > 8000 then p^.len := 8000;
       (* find first newline position *)
       firstnl := 0;
       i := 1;
@@ -1794,9 +1796,15 @@ begin
             end;
             i := i + 1
           end;
-          { trim trailing whitespace }
-          while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))) do
-            p^.len := p^.len - 1;
+          { safety: cap length at array bounds before trimming }
+          if p^.len > 8000 then p^.len := 8000;
+          { trim trailing whitespace - avoid array access when p^.len = 0 }
+          while p^.len > 0 do begin
+            if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9)) then
+              p^.len := p^.len - 1
+            else
+              p^.len := 0 { force exit }
+          end;
           { add to queue }
           if p^.len > 0 then
             enqueuecmt(p)
@@ -3702,10 +3710,16 @@ end;
           end else if iscmte then
             nextch (* skip closing brace *)
         until iscmte or eofinp;
-        (* trim trailing whitespace *)
-        while (p^.len > 0) and ((p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
-               or (p^.text[p^.len] = chr(10))) do
-          p^.len := p^.len - 1;
+        (* safety: cap length at array bounds before trimming *)
+        if p^.len > 8000 then p^.len := 8000;
+        (* trim trailing whitespace - avoid array access when p^.len = 0 *)
+        while p^.len > 0 do begin
+          if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
+             or (p^.text[p^.len] = chr(10)) then
+            p^.len := p^.len - 1
+          else
+            p^.len := 0 (* force exit *)
+        end;
         (* store as header comment only if before program keyword, else enqueue *)
         if (headercmt = nil) and not pastprogram then
           headercmt := p
@@ -6942,6 +6956,9 @@ end;
         { for strncmp 1-based array offset tracking }
         str_rhs_pos: integer;
         str_lmin, str_lmax: integer;
+        { for devolved constant set 'in' comparison chain }
+        runstart, runend: integer;
+        firstelt, ischartype, found: boolean;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -7734,24 +7751,96 @@ end;
                 { For constant sets, generate inline bit test using shift }
                 { Format: ((set_bits >> value) & 1) }
                 if in_set_cst then begin
-                  { constant set - generate inline check }
-                  { discard any constructor text, keep prefix }
+                  { constant set - devolve to comparison chain }
                   stmttop^.exprlen := expr_lhs_start;
-                  { Generate: (((set_expr) >> left_expr) & 1) }
-                  { For set [5], output: (((1ULL << 5) >> 5) & 1) }
-                  expr_str('(((0ULL');
-                  { Add each element as | (1ULL << n) }
-                  for lsizspc := 0 to 63 do
-                    if lsizspc in in_set_val then begin
-                      expr_str(' | (1ULL << ');
-                      expr_int(lsizspc);
-                      expr_chr(')')
+                  { determine if char type for literal output }
+                  ischartype := false;
+                  if lattr.typtr <> nil then
+                    if (lattr.typtr = charptr) or
+                       ((lattr.typtr^.form = subrange) and
+                        (lattr.typtr^.rangetype = charptr)) then
+                      ischartype := true;
+                  { find first set member }
+                  lsizspc := 0;
+                  while (lsizspc <= 255) and not (lsizspc in in_set_val) do
+                    lsizspc := lsizspc + 1;
+                  if lsizspc > 255 then
+                    expr_chr('0') { empty set }
+                  else begin
+                    expr_chr('(');
+                    firstelt := true;
+                    while lsizspc <= 255 do begin
+                      if lsizspc in in_set_val then begin
+                        runstart := lsizspc;
+                        runend := lsizspc;
+                        { extend run while consecutive }
+                        found := true;
+                        while (runend < 255) and found do begin
+                          if (runend + 1) in in_set_val then
+                            runend := runend + 1
+                          else found := false
+                        end;
+                        if not firstelt then expr_str(' || ');
+                        firstelt := false;
+                        if runstart = runend then begin
+                          { single element }
+                          for lsize := 1 to in_left_len do
+                            expr_chr(in_left_buf[lsize]);
+                          expr_str(' == ');
+                          if ischartype and (runstart >= 32) and
+                             (runstart <= 126) then begin
+                            expr_chr(chr(39));
+                            if runstart = 39 then begin
+                              expr_chr(chr(92)); expr_chr(chr(39))
+                            end else if runstart = 92 then begin
+                              expr_chr(chr(92)); expr_chr(chr(92))
+                            end else
+                              expr_chr(chr(runstart));
+                            expr_chr(chr(39))
+                          end else
+                            expr_int(runstart)
+                        end else begin
+                          { range }
+                          expr_chr('(');
+                          for lsize := 1 to in_left_len do
+                            expr_chr(in_left_buf[lsize]);
+                          expr_str(' >= ');
+                          if ischartype and (runstart >= 32) and
+                             (runstart <= 126) then begin
+                            expr_chr(chr(39));
+                            if runstart = 39 then begin
+                              expr_chr(chr(92)); expr_chr(chr(39))
+                            end else if runstart = 92 then begin
+                              expr_chr(chr(92)); expr_chr(chr(92))
+                            end else
+                              expr_chr(chr(runstart));
+                            expr_chr(chr(39))
+                          end else
+                            expr_int(runstart);
+                          expr_str(' && ');
+                          for lsize := 1 to in_left_len do
+                            expr_chr(in_left_buf[lsize]);
+                          expr_str(' <= ');
+                          if ischartype and (runend >= 32) and
+                             (runend <= 126) then begin
+                            expr_chr(chr(39));
+                            if runend = 39 then begin
+                              expr_chr(chr(92)); expr_chr(chr(39))
+                            end else if runend = 92 then begin
+                              expr_chr(chr(92)); expr_chr(chr(92))
+                            end else
+                              expr_chr(chr(runend));
+                            expr_chr(chr(39))
+                          end else
+                            expr_int(runend);
+                          expr_chr(')')
+                        end;
+                        lsizspc := runend + 1
+                      end else
+                        lsizspc := lsizspc + 1
                     end;
-                  expr_str(') >> (');
-                  { output saved left expression }
-                  for lsizspc := 1 to in_left_len do
-                    expr_chr(in_left_buf[lsizspc]);
-                  expr_str(')) & 1)')
+                    expr_chr(')')
+                  end
                 end else begin
                   { variable set - use runtime call }
                   set_rhs_len :=
@@ -8749,8 +8838,9 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt, form: boolean; 
-          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
+          forw,forwn,extn,opr,isvirt, form: boolean;
+          needproto: boolean; { need explicit params in forward prototype }
+          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean;
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
 
       procedure pushlvl(lcp: ctp);
@@ -9282,7 +9372,22 @@ end;
             c_type(lcp^.idtype); c_chr(' ')
           end else c_str('void ');
           if lcp^.name <> nil then c_pstr(lcp^.name);
-          c_ln('();')
+          c_chr('(');
+          lcp3 := lcp2;
+          if lcp3 = nil then c_str('void')
+          else begin
+            while lcp3 <> nil do begin
+              if lcp3^.klass = vars then begin
+                if lcp3^.vkind = formal then begin
+                  c_type(lcp3^.idtype);
+                  if (lcp3^.idtype <> nil) and
+                     (lcp3^.idtype^.form <> arrays) then c_chr('*')
+                end else                  c_type(lcp3^.idtype)              end;
+              lcp3 := lcp3^.next;
+              if lcp3 <> nil then c_chr(',')
+            end
+          end;
+          c_ln(');')
         end
       end;
       { now the proc/func is completely defined }
@@ -9368,7 +9473,46 @@ end;
               c_type(lcp^.idtype); c_chr(' ')
             end else c_str('void ');
             if lcp^.name <> nil then c_pstr(lcp^.name);
-            c_ln('();')
+            { check if any value param has narrow type requiring explicit proto }
+            needproto := false;
+            lcp3 := lcp^.pflist;
+            while (lcp3 <> nil) and not needproto do begin
+              if lcp3^.klass = vars then
+                if lcp3^.vkind <> formal then { value param }
+                  if lcp3^.idtype <> nil then
+                    if lcp3^.idtype^.form <> arrays then begin
+                      if (lcp3^.idtype^.form = subrange) or
+                         (lcp3^.idtype = charptr) or
+                         (lcp3^.idtype = boolptr) or
+                         (lcp3^.idtype = byteptr) then
+                        needproto := true
+                    end;
+              lcp3 := lcp3^.next
+            end;
+            if needproto then begin
+              c_chr('(');
+              lcp3 := lcp^.pflist;
+              while lcp3 <> nil do begin
+                if lcp3^.klass = vars then begin
+                  if lcp3^.vkind = formal then begin
+                    c_type(lcp3^.idtype);
+                    if (lcp3^.idtype <> nil) and
+                       (lcp3^.idtype^.form <> arrays) then
+                      c_str('* ')
+                    else c_chr(' ')
+                  end else begin
+                    c_type(lcp3^.idtype);
+                    c_chr(' ')
+                  end;
+                  if lcp3^.name <> nil then c_pstr(lcp3^.name);
+                  c_arraydims(lcp3^.idtype)
+                end;
+                lcp3 := lcp3^.next;
+                if lcp3 <> nil then c_chr(',')
+              end;
+              c_ln(');')
+            end else
+              c_ln('();')
           end;
           display[top].bname := lcp;
           { now we change to a block with defining points }
