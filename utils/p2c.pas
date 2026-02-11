@@ -188,6 +188,8 @@ const
    maxuplevel = 100; { maximum uplevel variable references per procedure }
    maxprocuplevel = 100; { max nested procs with uplevel refs }
    nestbufmax = 100000; { max size of nested procedure buffer }
+   fwdbufmax = 20000; { max size of forward declaration buffer }
+   maxhdrfuncs = 500; { max global functions for .h generation }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -474,6 +476,8 @@ var
     prd: text;                      { input source file }
     prc: text;                      { output C source file }
     prh: text;                      { output C header file }
+    c_target: integer;              { output target: 0=.c, 1=.h }
+    hdr_included: boolean;           { self-include emitted }
 
     prdval: boolean;                { input source file parsed }
 
@@ -542,6 +546,14 @@ var
     nestbuflen: integer;            { current length of buffer }
     nestbuffering: boolean;         { true when buffering nested proc output }
     nestcmtfloor: integer;          { min line for comment flushing during nesting }
+
+    { Forward declaration buffer for static prototypes }
+    fwdbuf: packed array [1..fwdbufmax] of char;
+    fwdbuflen: integer;
+
+    { Deferred .h generation: collect global functions }
+    hdrfuncs: array [1..maxhdrfuncs] of ctp;
+    hdrfunccnt: integer;
 
     { Comment preservation }
     cmtqueue: cmtptr;               { queue of captured comments }
@@ -644,6 +656,11 @@ var
 
     display:                        (*where:   means:*)
       array [disprange] of disprec;
+
+    with_cnt: integer;              { with pointer counter for C output }
+    with_idx:                       { display level -> with pointer number }
+      array [disprange] of integer;
+    sel_deref: boolean;             { last selector op was ^ (ptr deref) }
 
     pile:                           { pile of joined/class contexts }
       array [disprange] of disprec;
@@ -1215,7 +1232,14 @@ end;
 procedure c_newline;
 { output newline to C file or buffer }
 begin
-  if nestbuffering then begin
+  if c_target = 1 then
+    writeln(prh)
+  else if c_target = 2 then begin
+    if fwdbuflen < fwdbufmax then begin
+      fwdbuflen := fwdbuflen + 1;
+      fwdbuf[fwdbuflen] := chr(10)
+    end
+  end else if nestbuffering then begin
     if nestbuflen < nestbufmax then begin
       nestbuflen := nestbuflen + 1;
       nestbuf[nestbuflen] := chr(10) { newline }
@@ -1229,28 +1253,47 @@ procedure c_str(view s: string);
 { output string to C file or buffer }
 var i: integer;
 begin
-  if catbol then begin c_indent; catbol := false end;
-  if nestbuffering then begin
+  if c_target = 1 then begin
+    for i := 1 to max(s) do write(prh, s[i])
+  end else if c_target = 2 then begin
     for i := 1 to max(s) do
-      if nestbuflen < nestbufmax then begin
-        nestbuflen := nestbuflen + 1;
-        nestbuf[nestbuflen] := s[i]
+      if fwdbuflen < fwdbufmax then begin
+        fwdbuflen := fwdbuflen + 1;
+        fwdbuf[fwdbuflen] := s[i]
       end
-  end else
-    write(prc, s)
+  end else begin
+    if catbol then begin c_indent; catbol := false end;
+    if nestbuffering then begin
+      for i := 1 to max(s) do
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := s[i]
+        end
+    end else
+      write(prc, s)
+  end
 end;
 
 procedure c_chr(c: char);
 { output character to C file or buffer }
 begin
-  if catbol then begin c_indent; catbol := false end;
-  if nestbuffering then begin
-    if nestbuflen < nestbufmax then begin
-      nestbuflen := nestbuflen + 1;
-      nestbuf[nestbuflen] := c
+  if c_target = 1 then
+    write(prh, c)
+  else if c_target = 2 then begin
+    if fwdbuflen < fwdbufmax then begin
+      fwdbuflen := fwdbuflen + 1;
+      fwdbuf[fwdbuflen] := c
     end
-  end else
-    write(prc, c)
+  end else begin
+    if catbol then begin c_indent; catbol := false end;
+    if nestbuffering then begin
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := c
+      end
+    end else
+      write(prc, c)
+  end
 end;
 
 procedure c_int(i: integer);
@@ -1258,6 +1301,36 @@ procedure c_int(i: integer);
 var s: packed array [1..20] of char;
     n, j: integer;
 begin
+  if c_target = 1 then
+    write(prh, i:1)
+  else if c_target = 2 then begin
+    { convert integer to string and buffer to fwdbuf }
+    if i = 0 then begin
+      if fwdbuflen < fwdbufmax then begin
+        fwdbuflen := fwdbuflen + 1;
+        fwdbuf[fwdbuflen] := '0'
+      end
+    end else begin
+      if i < 0 then begin
+        if fwdbuflen < fwdbufmax then begin
+          fwdbuflen := fwdbuflen + 1;
+          fwdbuf[fwdbuflen] := '-'
+        end;
+        i := -i
+      end;
+      n := 0;
+      while i > 0 do begin
+        n := n + 1;
+        s[n] := chr(ord('0') + i mod 10);
+        i := i div 10
+      end;
+      for j := n downto 1 do
+        if fwdbuflen < fwdbufmax then begin
+          fwdbuflen := fwdbuflen + 1;
+          fwdbuf[fwdbuflen] := s[j]
+        end
+    end
+  end else begin
   if catbol then begin c_indent; catbol := false end;
   if nestbuffering then begin
     { convert integer to string and buffer it }
@@ -1291,6 +1364,7 @@ begin
     end
   end else
     write(prc, i:1)
+  end { c_target else }
 end;
 
 procedure c_real(r: real);
@@ -1360,6 +1434,31 @@ var i, l: integer; c: char;
 begin
   if (p <> nil) then begin
     l := max(p^);
+    if c_target = 1 then begin
+      for i := 1 to l do begin
+        c := p^[i];
+        if (c >= 'A') and (c <= 'Z') then
+          c := chr(ord(c) - ord('A') + ord('a'));
+        if c <> ' ' then write(prh, c)
+      end;
+      if is_c_reserved(p) then write(prh, '_')
+    end else if c_target = 2 then begin
+      for i := 1 to l do begin
+        c := p^[i];
+        if (c >= 'A') and (c <= 'Z') then
+          c := chr(ord(c) - ord('A') + ord('a'));
+        if c <> ' ' then
+          if fwdbuflen < fwdbufmax then begin
+            fwdbuflen := fwdbuflen + 1;
+            fwdbuf[fwdbuflen] := c
+          end
+      end;
+      if is_c_reserved(p) then
+        if fwdbuflen < fwdbufmax then begin
+          fwdbuflen := fwdbuflen + 1;
+          fwdbuf[fwdbuflen] := '_'
+        end
+    end else begin
     for i := 1 to l do begin
       c := p^[i];
       if (c >= 'A') and (c <= 'Z') then
@@ -1382,6 +1481,7 @@ begin
       end else
         write(prc, '_')
     end
+    end { c_target else }
   end
 end;
 
@@ -1391,6 +1491,14 @@ begin
   c_str('_l');
   if llp^.labid <> nil then c_pstr(llp^.labid)
   else c_int(llp^.labval)
+end;
+
+procedure c_fwdflush;
+{ flush forward declaration buffer to .c output }
+var i: integer;
+begin
+  for i := 1 to fwdbuflen do write(prc, fwdbuf[i]);
+  fwdbuflen := 0
 end;
 
 procedure h_indent;
@@ -1816,7 +1924,8 @@ begin
   if not inopexpr then
     if stmttop <> nil then begin
       k := stmttop^.kind;
-      wantexpr := k in [stk_write, stk_writeln, stk_assign, stk_expr,
+      wantexpr := k in [stk_write, stk_writeln, stk_read, stk_readln,
+                        stk_assign, stk_expr,
                         stk_if, stk_while, stk_repeat, stk_for, stk_case,
                         stk_call]
     end
@@ -1876,6 +1985,35 @@ begin
   end
 end;
 
+procedure expr_real(r: real);
+{ append real constant to expression buffer }
+var intpart: integer;
+    frac: real;
+    d, last_nz: integer;
+    neg: boolean;
+    dbuf: packed array [1..20] of char;
+begin
+  if stmttop <> nil then begin
+    neg := r < 0.0;
+    if neg then begin r := -r; expr_chr('-') end;
+    intpart := trunc(r);
+    frac := r - intpart;
+    expr_int(intpart);
+    expr_chr('.');
+    { output fractional digits }
+    last_nz := 1; { keep at least one digit after decimal }
+    for d := 1 to 15 do begin
+      frac := frac * 10.0;
+      intpart := trunc(frac);
+      if intpart > 9 then intpart := 9;
+      dbuf[d] := chr(ord('0') + intpart);
+      if intpart <> 0 then last_nz := d;
+      frac := frac - intpart
+    end;
+    for d := 1 to last_nz do expr_chr(dbuf[d])
+  end
+end;
+
 procedure expr_pstr(p: pstring);
 { append pstring identifier to expression in current context (lowercase) }
 var i, l: integer; c: char;
@@ -1891,6 +2029,17 @@ begin
     { add underscore suffix if C reserved word }
     if is_c_reserved(p) then expr_chr('_')
   end
+end;
+
+procedure expr_withfield(fcp: ctp);
+{ output field reference with with-pointer prefix for C }
+begin
+  if (disx > 0) and (display[disx].occur in [crec, vrec]) then begin
+    expr_str('_with');
+    expr_int(with_idx[disx]);
+    expr_str('->')
+  end;
+  expr_pstr(fcp^.name)
 end;
 
 procedure expr_mathfn(p: pstring);
@@ -2051,6 +2200,29 @@ begin
         c_chr(stmttop^.argbuf[i])
     end;
     c_ln(');')
+  end
+end;
+
+procedure rdt_emit;
+{ emit the collected scanf call for read/readln context }
+var i: integer;
+begin
+  if stmttop <> nil then begin
+    if stmttop^.fmtlen > 0 then begin
+      c_str('scanf("');
+      for i := 1 to stmttop^.fmtlen do
+        c_chr(stmttop^.fmtbuf[i]);
+      c_str('"');
+      if stmttop^.arglen > 0 then begin
+        c_str(', ');
+        for i := 1 to stmttop^.arglen do
+          c_chr(stmttop^.argbuf[i])
+      end;
+      c_ln(');')
+    end;
+    if stmttop^.kind = stk_readln then begin
+      c_str('scanf("%*[^'); c_chr(chr(92)); c_ln('n]"); scanf("%*c");')
+    end
   end
 end;
 
@@ -2331,7 +2503,7 @@ begin
       end
     end;
     scalar:  c_str('int');  { enumerated types map to int }
-    power:   c_str('unsigned char');  { sets are byte arrays }
+    power:   c_str('p2c_settype');  { sets use setopr.h type }
     arrays: begin
       tname := lookup_arrname(fsp);
       if tname <> nil then
@@ -2395,9 +2567,7 @@ begin
       end
     end
     else if fsp^.form = power then begin
-      c_chr('[');
-      c_int(setsize);
-      c_chr(']')
+      { p2c_settype already includes [32], no dimensions needed }
     end
   end
 end;
@@ -2585,6 +2755,19 @@ begin
       c_str('* ');
       if vcp^.name <> nil then c_pstr(vcp^.name);
       c_str('__up')
+    end
+  end
+end;
+
+procedure h_funcproto(fprocp: ctp; isstatic: boolean);
+{ For global functions: collect for deferred .h generation.
+  Static functions are handled at the Pascal forward declaration point. }
+begin
+  if not isstatic then begin
+    { collect global function for deferred .h generation }
+    if hdrfunccnt < maxhdrfuncs then begin
+      hdrfunccnt := hdrfunccnt + 1;
+      hdrfuncs[hdrfunccnt] := fprocp
     end
   end
 end;
@@ -5157,6 +5340,7 @@ end;
   begin { selector }
     lastptr := false; { set last index op not ptr }
     needarrow := false; { init for C output }
+    sel_deref := false; { init: no ptr deref yet }
     with fcp^, gattr do
       begin symptr := nil; typtr := idtype; spv := false; kind := varbl;
         packing := false; packcom := false; tagfield := false; ptrref := false;
@@ -5286,7 +5470,8 @@ end;
               else gattr.typtr := nil
             until sy <> comma;
             if sy = rbrack then insymbol else error(12);
-            lastptr := false { set not pointer op }
+            lastptr := false; { set not pointer op }
+            sel_deref := false { array subscript, not ptr deref }
           end (*if sy = lbrack*)
         else
   (*.*)   if sy = period then
@@ -5343,7 +5528,8 @@ end;
                     end (*sy = ident*)
                   else error(2)
                 end; (*with gattr*)
-              lastptr := false { set last not ptr op }
+              lastptr := false; { set last not ptr op }
+              sel_deref := false { field access, not ptr deref }
             end (*if sy = period*)
           else
   (*^*)     begin
@@ -5365,6 +5551,7 @@ end;
                     end else error(141);
               insymbol;
               lastptr := true; { set last was ptr op }
+              sel_deref := true; { last op was pointer deref }
               { set needarrow for next field access if result is record }
               if gattr.typtr <> nil then
                 if gattr.typtr^.form = records then
@@ -5431,8 +5618,12 @@ end;
                 expr_chr(')')
               end else
                 expr_pstr(lcp^.name)
-            end else
-              expr_pstr(lcp^.name)
+            end else begin
+              if lcp^.klass = field then
+                expr_withfield(lcp)
+              else
+                expr_pstr(lcp^.name)
+            end
           end;
       selector(fsys,lcp, false);
       if gattr.kind = expr then error(287)
@@ -5482,14 +5673,66 @@ end;
           cp: boolean;
           cststr: boolean;
           r: integer; { radix of read }
+
+      procedure add_rdt_arg;
+      { add current variable to scanf format/args based on type }
+      var ltp: stp; i: integer;
+          fmin, fmax: integer;
+
+        procedure arg_addr;
+        { add &expr to arguments }
+        var j: integer;
+        begin
+          if stmttop^.arglen > 0 then arg_str(', ');
+          arg_chr('&');
+          for j := 1 to stmttop^.exprlen do
+            arg_chr(stmttop^.exprbuf[j])
+        end;
+
+      begin
+        ltp := basetype(lsp);
+        if ltp = intptr then begin
+          fmt_str('%ld');
+          arg_addr
+        end else if ltp = realptr then begin
+          fmt_str('%lg');
+          arg_addr
+        end else if ltp = charptr then begin
+          fmt_str('%c');
+          arg_addr
+        end else if stringt(ltp) then begin
+          if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
+            getbounds(ltp^.inxtype, fmin, fmax);
+            fmt_chr('%');
+            i := fmax - fmin + 1;
+            if i >= 100 then fmt_chr(chr(ord('0') + i div 100));
+            if i >= 10 then fmt_chr(chr(ord('0') + (i div 10) mod 10));
+            fmt_chr(chr(ord('0') + i mod 10));
+            fmt_chr('c');
+            if fmin >= 1 then begin
+              if stmttop^.arglen > 0 then arg_str(', ');
+              arg_chr('&');
+              for i := 1 to stmttop^.exprlen do
+                arg_chr(stmttop^.exprbuf[i]);
+              arg_str('[1]')
+            end else
+              arg_addr
+          end
+        end
+      end;
+
     begin
       txt := true; deffil := true; cp := false;
+      if lkey = 11 then pushstmt(stk_readln)
+      else pushstmt(stk_read);
       if sy  = lparent then
         begin insymbol; chkhdr; cststr := false;
-          if sy = stringconst then begin chkstd; cststr := true; 
+          if sy = stringconst then begin chkstd; cststr := true;
             expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
-          end else 
-            variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
+          end else begin
+            expr_reset;
+            variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true)
+          end;
           if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc;
           lsp := gattr.typtr; test := false;
           if lsp <> nil then
@@ -5512,8 +5755,10 @@ end;
                     begin insymbol; cststr := false;
                       if sy = stringconst then begin chkstd; cststr := true;
                         expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
-                      end else 
-                        variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
+                      end else begin
+                        expr_reset;
+                        variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true)
+                      end;
                       if gattr.typtr <> nil then 
                         cp := gattr.typtr^.form = arrayc
                     end
@@ -5565,25 +5810,34 @@ end;
                       end else if stringt(lsp) then begin
                       end else error(153)
                 else error(116);
+              if txt then add_rdt_arg;
             end else begin { binary file }
               if not comptypes(gattr.typtr,lsp^.filtype) then error(129)
             end;
             test := sy <> comma;
             if not test then
-              begin insymbol; cststr := false; 
+              begin insymbol; cststr := false;
                 if sy = stringconst then begin chkstd; cststr := true;
                   expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
-                end else 
-                  variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
+                end else begin
+                  expr_reset;
+                  variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true)
+                end;
                 if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc
               end
           until test;
-          if sy = rparent then insymbol else error(4)
+          if sy = rparent then insymbol else error(4);
+          if txt then rdt_emit
         end
       else begin
         if not inputptr^.hdr then error(175);
         if lkey = 5 then error(116);
-      end
+        { bare readln - consume rest of line }
+        if lkey = 11 then begin
+          c_str('scanf("%*[^'); c_chr(chr(92)); c_ln('n]"); scanf("%*c");')
+        end
+      end;
+      popstmt
     end (*read*) ;
 
     procedure writeprocedure;
@@ -5679,9 +5933,10 @@ end;
           if w <> 1 then fmt_width(w);
           if hasfldprec then begin
             fmt_chr('.');
-            fmt_width(fldprec)
-          end;
-          fmt_chr('g');
+            fmt_width(fldprec);
+            fmt_chr('f')
+          end else
+            fmt_chr('g');
           arg_add
         end else if ltp = charptr then begin
           if wascst and savedcval.intval then begin
@@ -6676,17 +6931,32 @@ end;
         { saved set constant for 'in' operator }
         in_set_cst: boolean;
         in_set_val: setty;
+        { buffer for set operation RHS }
+        set_rhs_buf: packed array [1..2000] of char;
+        set_rhs_len: integer;
+        { buffer for set constructor element text (separate from in_left_buf) }
+        set_lhs_buf: packed array [1..2000] of char;
+        set_lhs_len: integer;
+        { start position of LHS in expression for in/comparison ops }
+        expr_lhs_start: integer;
+        { for strncmp 1-based array offset tracking }
+        str_rhs_pos: integer;
+        str_lmin, str_lmax: integer;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
+          set_lhs_start, set_i: integer;
 
       procedure term(fsys: setofsys; threaten: boolean);
         var lattr: attr; lop: operatort; fcp: ctp;
+            set_lhs_start, set_i: integer;
 
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
               cstpart: setty; lsp: stp; tattr, rattr: attr; test: boolean;
               k: integer; lc: char;
+              set_cstr: boolean; set_elem_start: integer;
+              set_lo_end: integer; set_ii: integer;
         begin
           if not (sy in facbegsys) then
             begin error(58); skip(fsys + facbegsys);
@@ -6805,8 +7075,12 @@ end;
                                   expr_chr(')')
                                 end else
                                   expr_pstr(lcp^.name)
-                              end else
-                                expr_pstr(lcp^.name)
+                              end else begin
+                                if lcp^.klass = field then
+                                  expr_withfield(lcp)
+                                else
+                                  expr_pstr(lcp^.name)
+                              end
                             end;
                             selector(fsys,lcp,false);
                             if threaten and (lcp^.klass = vars) then with lcp^ do begin
@@ -6834,11 +7108,8 @@ end;
                       begin typtr := realptr; kind := cst;
                         cval := val
                       end;
-                    if wantexpr then begin
-                      { output real constant - write numeric value to expr buffer }
-                      { for now just output a placeholder - real handling TODO }
-                      expr_str('/* real */0.0')
-                    end;
+                    if wantexpr then
+                      expr_real(val.valp^.rval);
                     insymbol
                   end;
                   stringconst:
@@ -6914,6 +7185,12 @@ end;
                     with lsp^ do
                       begin form:=power; elset:=nil;size:=setsize;
                             packing := false; matchpack := false end;
+                    { start set constructor C output }
+                    set_cstr := false;
+                    if wantexpr then begin
+                      set_cstr := true;
+                      expr_str('(p2c_sclr(_stmp2), ')
+                    end;
                     if sy = rbrack then
                       begin
                         with gattr do
@@ -6923,16 +7200,63 @@ end;
                     else
                       begin
                         repeat
+                          { save exprbuf position before element }
+                          set_elem_start := 0;
+                          if set_cstr and (stmttop <> nil) then
+                            set_elem_start := stmttop^.exprlen;
                           expression(fsys + [comma,range,rbrack], false);
                           rattr.typtr := nil;
                           if sy = range then begin insymbol;
+                            { save position after lo expression }
+                            set_lo_end := 0;
+                            if set_cstr and (stmttop <> nil) then
+                              set_lo_end := stmttop^.exprlen;
                             { if the left side is not constant, load it
                               and coerce it to integer now }
                             if gattr.kind <> cst then
                               load;
                             tattr := gattr;
                             expression(fsys + [comma,rbrack], false);
+                            { wrap range as p2c_radd call }
+                            if set_cstr and (stmttop <> nil) then begin
+                              { lo text: set_elem_start+1..set_lo_end }
+                              { hi text: set_lo_end+1..exprlen }
+                              { save hi text to set_rhs_buf }
+                              set_rhs_len := stmttop^.exprlen - set_lo_end;
+                              for set_ii := 1 to set_rhs_len do
+                                set_rhs_buf[set_ii] :=
+                                  stmttop^.exprbuf[set_lo_end + set_ii];
+                              { save lo text to set_lhs_buf }
+                              set_lhs_len := set_lo_end - set_elem_start;
+                              for set_ii := 1 to set_lhs_len do
+                                set_lhs_buf[set_ii] :=
+                                  stmttop^.exprbuf[set_elem_start + set_ii];
+                              { truncate to before element }
+                              stmttop^.exprlen := set_elem_start;
+                              { output p2c_radd call }
+                              expr_str('p2c_radd(_stmp2, ');
+                              for set_ii := 1 to set_lhs_len do
+                                expr_chr(set_lhs_buf[set_ii]);
+                              expr_str(', ');
+                              for set_ii := 1 to set_rhs_len do
+                                expr_chr(set_rhs_buf[set_ii]);
+                              expr_str('), ')
+                            end;
                             rattr := gattr; gattr := tattr;
+                          end else begin
+                            { single element - wrap as p2c_sadd call }
+                            if set_cstr and (stmttop <> nil) then begin
+                              set_lhs_len :=
+                                stmttop^.exprlen - set_elem_start;
+                              for set_ii := 1 to set_lhs_len do
+                                set_lhs_buf[set_ii] :=
+                                  stmttop^.exprbuf[set_elem_start + set_ii];
+                              stmttop^.exprlen := set_elem_start;
+                              expr_str('p2c_sadd(_stmp2, ');
+                              for set_ii := 1 to set_lhs_len do
+                                expr_chr(set_lhs_buf[set_ii]);
+                              expr_str('), ')
+                            end
                           end;
                           if gattr.typtr <> nil then
                             if (gattr.typtr^.form <> scalar) and
@@ -6994,6 +7318,8 @@ end;
                         until test;
                         if sy = rbrack then insymbol else error(12)
                       end;
+                    { close set constructor comma expression }
+                    if set_cstr then expr_str('_stmp2)');
                     if varpart then
                       begin
                         if cstpart <> [ ] then
@@ -7026,6 +7352,8 @@ end;
         end (*factor*) ;
 
       begin (*term*)
+        set_lhs_start := 0;
+        if stmttop <> nil then set_lhs_start := stmttop^.exprlen;
         factor(fsys + [mulop], threaten);
         while sy = mulop do
           begin
@@ -7035,6 +7363,18 @@ end;
             lattr := gattr; lop := op;
             { output C operator }
             if wantexpr then begin
+              if (lattr.typtr <> nil) and (lattr.typtr^.form = power)
+                 and (lop = mul) then begin
+                { set intersection: save LHS, don't output * }
+                if stmttop <> nil then begin
+                  set_lhs_len :=
+                    stmttop^.exprlen - set_lhs_start;
+                  for set_i := 1 to set_lhs_len do
+                    set_lhs_buf[set_i] :=
+                      stmttop^.exprbuf[set_lhs_start + set_i];
+                  stmttop^.exprlen := set_lhs_start
+                end else set_lhs_len := 0
+              end else
               case lop of
                 mul:   expr_str(' * ');
                 rdiv:  expr_str(' / ');
@@ -7065,6 +7405,25 @@ end;
                                (gattr.typtr=realptr) then
                             else if (lattr.typtr^.form=power) and
                                     comptypes(lattr.typtr,gattr.typtr) then
+                              begin
+                                { generate set intersection }
+                                if wantexpr and (set_lhs_len > 0) then begin
+                                  set_rhs_len :=
+                                    stmttop^.exprlen - set_lhs_start;
+                                  for set_i := 1 to set_rhs_len do
+                                    set_rhs_buf[set_i] :=
+                                      stmttop^.exprbuf[set_lhs_start+set_i];
+                                  stmttop^.exprlen := set_lhs_start;
+                                  expr_str('(p2c_scpy(_stmp1, ');
+                                  for set_i := 1 to set_lhs_len do
+                                    expr_chr(set_lhs_buf[set_i]);
+                                  expr_str('), p2c_sint(_stmp1, ');
+                                  for set_i := 1 to set_rhs_len do
+                                    expr_chr(set_rhs_buf[set_i]);
+                                  expr_str('), _stmp1)');
+                                  set_lhs_len := 0
+                                end
+                              end
                             else begin error(134); gattr.typtr:=nil end
                           end
                   end
@@ -7115,6 +7474,8 @@ end;
         end;
         insymbol
       end;
+      set_lhs_start := 0;
+      if stmttop <> nil then set_lhs_start := stmttop^.exprlen;
       term(fsys + [addop], threaten);
       if (fsy = addop) and (fop in [plus, minus]) then begin
         if gattr.kind <> expr then
@@ -7140,6 +7501,18 @@ end;
           lattr := gattr; lop := op;
           { output C operator }
           if wantexpr then begin
+            if (lattr.typtr <> nil) and (lattr.typtr^.form = power)
+               and (lop in [plus, minus]) then begin
+              { set union/difference: save LHS, don't output op }
+              if stmttop <> nil then begin
+                set_lhs_len :=
+                  stmttop^.exprlen - set_lhs_start;
+                for set_i := 1 to set_lhs_len do
+                  set_lhs_buf[set_i] :=
+                    stmttop^.exprbuf[set_lhs_start + set_i];
+                stmttop^.exprlen := set_lhs_start
+              end else set_lhs_len := 0
+            end else
             case lop of
               plus:  expr_str(' + ');
               minus: expr_str(' - ');
@@ -7167,6 +7540,28 @@ end;
                         (gattr.typtr = realptr) then
                      else if (lattr.typtr^.form=power) and
                                  comptypes(lattr.typtr,gattr.typtr) then
+                       begin
+                         { generate set union/difference }
+                         if wantexpr and (set_lhs_len > 0) then begin
+                           set_rhs_len :=
+                             stmttop^.exprlen - set_lhs_start;
+                           for set_i := 1 to set_rhs_len do
+                             set_rhs_buf[set_i] :=
+                               stmttop^.exprbuf[set_lhs_start + set_i];
+                           stmttop^.exprlen := set_lhs_start;
+                           expr_str('(p2c_scpy(_stmp1, ');
+                           for set_i := 1 to set_lhs_len do
+                             expr_chr(set_lhs_buf[set_i]);
+                           if lop = plus then
+                             expr_str('), p2c_suni(_stmp1, ')
+                           else
+                             expr_str('), p2c_sdif(_stmp1, ');
+                           for set_i := 1 to set_rhs_len do
+                             expr_chr(set_rhs_buf[set_i]);
+                           expr_str('), _stmp1)');
+                           set_lhs_len := 0
+                         end
+                       end
                      else begin error(134); gattr.typtr:=nil end
                    end
                  end
@@ -7186,6 +7581,8 @@ end;
 
   begin (*expression*)
     revcmp := false;
+    expr_lhs_start := 0;
+    if stmttop <> nil then expr_lhs_start := stmttop^.exprlen;
     simpleexpression(fsys + [relop], threaten);
     lschrcst := ischrcst(gattr);
       if lschrcst then lc := chr(gattr.cval.ival);
@@ -7230,10 +7627,58 @@ end;
               lsizspc := lsizspc + 1
             end;
             expr_str('strncmp(');
+            { check if left operand needs 1-based array offset }
+            str_lmin := 0;
+            if (lattr.typtr <> nil) and (lattr.typtr^.form = arrays)
+               and (lattr.typtr^.inxtype <> nil) then
+              getbounds(lattr.typtr^.inxtype, str_lmin, str_lmax);
+            if str_lmin >= 1 then expr_chr('&');
             { output rest of expression (after leading parens) }
             for lsize := lsizspc to in_left_len do
               expr_chr(in_left_buf[lsize]);
-            expr_str(', ')
+            if str_lmin >= 1 then expr_str('[1]');
+            expr_str(', ');
+            { save position for RHS 1-based array offset check }
+            str_rhs_pos := 0;
+            if stmttop <> nil then
+              str_rhs_pos := stmttop^.exprlen
+          end else
+            in_left_len := 0
+        end else if (gattr.typtr <> nil) and (gattr.typtr^.form = power)
+                    and (lop in [eqop, neop, leop, geop]) then begin
+          { set comparison - save LHS and output function prefix }
+          if stmttop <> nil then begin
+            in_left_len := stmttop^.exprlen - expr_lhs_start;
+            for lsize := 1 to in_left_len do
+              in_left_buf[lsize] :=
+                stmttop^.exprbuf[expr_lhs_start + lsize];
+            stmttop^.exprlen := expr_lhs_start;
+            case lop of
+              eqop: begin
+                expr_str('p2c_sequ(');
+                for lsize := 1 to in_left_len do
+                  expr_chr(in_left_buf[lsize]);
+                expr_str(', ')
+              end;
+              neop: begin
+                expr_str('!p2c_sequ(');
+                for lsize := 1 to in_left_len do
+                  expr_chr(in_left_buf[lsize]);
+                expr_str(', ')
+              end;
+              leop: begin
+                { A <= B means A subset of B = p2c_sinc(B, A) }
+                { output prefix, RHS goes next, then append LHS }
+                expr_str('p2c_sinc(')
+              end;
+              geop: begin
+                { A >= B means B subset of A = p2c_sinc(A, B) }
+                expr_str('p2c_sinc(');
+                for lsize := 1 to in_left_len do
+                  expr_chr(in_left_buf[lsize]);
+                expr_str(', ')
+              end
+            end
           end else
             in_left_len := 0
         end else begin
@@ -7248,10 +7693,11 @@ end;
             inop: begin
               { save left expression and clear buffer for 'in' handling }
               if stmttop <> nil then begin
-                in_left_len := stmttop^.exprlen;
+                in_left_len := stmttop^.exprlen - expr_lhs_start;
                 for lsize := 1 to in_left_len do
-                  in_left_buf[lsize] := stmttop^.exprbuf[lsize];
-                stmttop^.exprlen := 0 { clear for regeneration }
+                  in_left_buf[lsize] :=
+                    stmttop^.exprbuf[expr_lhs_start + lsize];
+                stmttop^.exprlen := expr_lhs_start
               end else
                 in_left_len := 0
             end
@@ -7259,10 +7705,7 @@ end;
         end
       end else
         in_left_len := 0;
-      { suppress expr output during 'in' operator right side parsing }
-      if lop = inop then inopexpr := true;
       insymbol; simpleexpression(fsys, threaten);
-      if lop = inop then inopexpr := false;
       rschrcst := ischrcst(gattr);
       if rschrcst then rc := chr(gattr.cval.ival);
       { save set constant info before load changes gattr.kind }
@@ -7292,6 +7735,8 @@ end;
                 { Format: ((set_bits >> value) & 1) }
                 if in_set_cst then begin
                   { constant set - generate inline check }
+                  { discard any constructor text, keep prefix }
+                  stmttop^.exprlen := expr_lhs_start;
                   { Generate: (((set_expr) >> left_expr) & 1) }
                   { For set [5], output: (((1ULL << 5) >> 5) & 1) }
                   expr_str('(((0ULL');
@@ -7308,8 +7753,20 @@ end;
                     expr_chr(in_left_buf[lsizspc]);
                   expr_str(')) & 1)')
                 end else begin
-                  { variable set - need runtime call - TODO }
-                  expr_str('/* TODO: in var set */ 0')
+                  { variable set - use runtime call }
+                  set_rhs_len :=
+                    stmttop^.exprlen - expr_lhs_start;
+                  for lsizspc := 1 to set_rhs_len do
+                    set_rhs_buf[lsizspc] :=
+                      stmttop^.exprbuf[expr_lhs_start + lsizspc];
+                  stmttop^.exprlen := expr_lhs_start;
+                  expr_str('p2c_sisin(');
+                  for lsizspc := 1 to in_left_len do
+                    expr_chr(in_left_buf[lsizspc]);
+                  expr_str(', ');
+                  for lsizspc := 1 to set_rhs_len do
+                    expr_chr(set_rhs_buf[lsizspc]);
+                  expr_chr(')')
                 end
               end
             end else begin error(130); gattr.typtr := nil end
@@ -7347,7 +7804,18 @@ end;
                       end;
                     power:
                       begin if lop in [ltop,gtop] then error(132);
-                        typind := 's'
+                        typind := 's';
+                        { close set comparison function call }
+                        if wantexpr and (in_left_len > 0) then begin
+                          if lop = leop then begin
+                            { p2c_sinc(RHS, LHS) - append LHS }
+                            expr_str(', ');
+                            for lsize := 1 to in_left_len do
+                              expr_chr(in_left_buf[lsize])
+                          end;
+                          expr_chr(')');
+                          in_left_len := 0
+                        end
                       end;
                     arrays, arrayc:
                       begin
@@ -7363,6 +7831,18 @@ end;
                         end;
                         { close strncmp call for string comparison }
                         if wantexpr and (in_left_len > 0) then begin
+                          { check if right operand needs 1-based offset }
+                          str_lmin := 0;
+                          if (gattr.typtr <> nil) and
+                             (gattr.typtr^.form = arrays) and
+                             (gattr.typtr^.inxtype <> nil) then
+                            getbounds(gattr.typtr^.inxtype,
+                                      str_lmin, str_lmax);
+                          if (str_lmin >= 1) and
+                             (str_rhs_pos > 0) then begin
+                            expr_insert('&', str_rhs_pos + 1);
+                            expr_str('[1]')
+                          end;
                           expr_str(', ');
                           expr_int(lsize);
                           expr_chr(')');
@@ -8794,7 +9274,16 @@ end;
         insymbol;
         if sy = semicolon then insymbol else error(14);
         if not (sy in fsys) then
-          begin error(6); skip(fsys) end
+          begin error(6); skip(fsys) end;
+        { emit C forward declaration for nested forward-declared functions }
+        if forwn and (level > 2) then begin
+          c_str('static ');
+          if lcp^.klass = func then begin
+            c_type(lcp^.idtype); c_chr(' ')
+          end else c_str('void ');
+          if lcp^.name <> nil then c_pstr(lcp^.name);
+          c_ln('();')
+        end
       end;
       { now the proc/func is completely defined }
       forw := false; { set not forwarded }
@@ -8872,6 +9361,15 @@ end;
       end;
       if not forwn and not extn then { process actual block}
         begin
+          { emit C forward declaration for nested functions }
+          if level > 2 then begin
+            c_str('static ');
+            if lcp^.klass = func then begin
+              c_type(lcp^.idtype); c_chr(' ')
+            end else c_str('void ');
+            if lcp^.name <> nil then c_pstr(lcp^.name);
+            c_ln('();')
+          end;
           display[top].bname := lcp;
           { now we change to a block with defining points }
           display[top].define := true;
@@ -9024,7 +9522,10 @@ end;
               end else
                 expr_pstr(fcp^.name)
             end else begin
-              expr_pstr(fcp^.name);
+              if fcp^.klass = field then
+                expr_withfield(fcp)
+              else
+                expr_pstr(fcp^.name);
               { if function result assignment, add __result suffix }
               if fcp^.klass = func then
                 expr_str('__result')
@@ -9078,10 +9579,28 @@ end;
                   { if tag checking, bypass normal store }
                   case lattr.typtr^.form of
                     scalar,
-                    subrange,
-                    power: begin
+                    subrange: begin
                                 if debug then checkbnds(lattr.typtr);
                                 store(lattr)
+                              end;
+                    power: begin
+                                if debug then checkbnds(lattr.typtr);
+                                store(lattr);
+                                { transform "lhs = rhs" to "p2c_scpy(lhs, rhs)" }
+                                if stmttop <> nil then begin
+                                  i := 1;
+                                  while (i <= stmttop^.exprlen) and
+                                        (stmttop^.exprbuf[i] <> '=') do
+                                    i := i + 1;
+                                  if i <= stmttop^.exprlen then begin
+                                    expr_insert('p2c_scpy(', 1);
+                                    i := i + 9; { adjust for insert }
+                                    { replace " = " with ", " }
+                                    stmttop^.exprbuf[i - 1] := ',';
+                                    expr_del(i, 2); { remove "= " }
+                                    expr_chr(')')
+                                  end
+                                end
                               end;
                     pointer: begin
                                store(lattr)
@@ -9119,6 +9638,13 @@ end;
                             { replace " = " with ", " }
                             stmttop^.exprbuf[i - 1] := ',';
                             expr_del(i, 2); { remove "= " }
+                            { also offset RHS for 1-based array source }
+                            if lmin >= 1 then
+                              if i <= stmttop^.exprlen then
+                                if stmttop^.exprbuf[i] <> '"' then begin
+                                  expr_insert('&', i);
+                                  expr_str('[1]')
+                                end;
                             { add length parameter }
                             expr_str(', ');
                             expr_int(lmax - lmin + 1);
@@ -9712,12 +10238,33 @@ end;
             test: boolean;
             wbscnt: integer;
             wthadr: stkoff; { with variable value temp }
+            rectyp: stp; { record type for C pointer decl }
+            wi: integer; { expression buffer loop var }
       begin lcnt1 := 0; wbscnt := 0;
         repeat
+          { push expression context to capture with-variable text }
+          pushstmt(stk_expr);
+          expr_reset;
           if sy = ident then
             begin searchid([vars,field],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
+          { output variable name to expression buffer }
+          if lcp <> nil then
+            if lcp^.name <> nil then begin
+              if lcp^.klass = vars then begin
+                if (lcp^.vkind = formal) and (lcp^.idtype <> nil) and
+                   (lcp^.idtype^.form in [scalar, subrange]) then begin
+                  expr_str('(*'); expr_pstr(lcp^.name); expr_chr(')')
+                end else
+                  expr_pstr(lcp^.name)
+              end else if lcp^.klass = field then
+                expr_withfield(lcp)
+              else
+                expr_pstr(lcp^.name)
+            end;
           selector(fsys + [comma,dosy],lcp,false);
+          { save type before display push }
+          rectyp := gattr.typtr;
           if gattr.kind = expr then error(287);
           if gattr.typtr <> nil then
             if gattr.typtr^.form = records then
@@ -9740,24 +10287,39 @@ end;
                         begin wbscnt := wbscnt+1; pshwth(stalvl) end;
                       with display[top] do
                         begin occur := vrec; vdspl := wthadr end
-                    end
+                    end;
+                  { assign with pointer index }
+                  with_cnt := with_cnt + 1;
+                  with_idx[top] := with_cnt;
+                  { emit C pointer declaration: { type *_withN = &(expr); }
+                  c_str('{ ');
+                  c_type(rectyp);
+                  c_str(' *_with'); c_int(with_cnt); c_str(' = &(');
+                  if sel_deref then c_chr('*');
+                  for wi := 1 to stmttop^.exprlen do
+                    c_chr(stmttop^.exprbuf[wi]);
+                  c_ln(');');
+                  addlvl
                 end
               else error(250)
             else error(140);
+          { pop expression capture context }
+          popstmt;
           test := sy <> comma;
           if not test then insymbol
         until test;
         if sy = dosy then insymbol else error(54);
-        addlvl;
         statement(fsys);
-        sublvl;
           while wbscnt > 0 do begin wbscnt := wbscnt-1; popwth end;
-        { purge display levels }
+        { close with scopes and purge display levels }
         while lcnt1 > 0 do begin
+           sublvl;
+           c_ln('}');
            { don't recycle the record context }
            display[top].fname := nil;
            putdsp(display[top]); { purge }
            top := top-1; lcnt1 := lcnt1-1; { count off }
+           with_cnt := with_cnt - 1
         end
       end (*withstatement*) ;
 
@@ -9841,7 +10403,7 @@ end;
                error(186);
              { output C label }
              c_labname(llp);
-             c_ln(':');
+             c_ln(': ;');
            end else begin { not found }
              error(167); { undeclared label }
              newlabel(llp, false) { create a dummy level }
@@ -10106,6 +10668,7 @@ end;
         c_newline
       end else begin
         { top-level procedure - output header directly }
+        h_funcproto(fprocp, false); { collect global prototype for .h }
         flushcmts_before(fprocp^.srcline); (* output comments before procedure *)
         c_newline; { blank line after function header comment }
         { output return type - also calculate indent for multi-line params }
@@ -10255,10 +10818,12 @@ end;
           end
         end;
         { output comments belonging to this nested proc (not parent's) }
+        h_funcproto(fprocp, true); { static: no-op, handled at forward point }
         flushcmts_before(fprocp^.srcline);
         c_newline;
         { output return type - calculate indent for multi-line params }
         paramindent := 0;
+        c_str('static '); { nested functions are file-local }
         if fprocp^.klass = func then begin
           c_type(fprocp^.idtype);
           c_chr(' ');
@@ -10523,7 +11088,8 @@ end;
   end;
 
   procedure modulep(fsys:setofsys);
-    var extfp,newfl:extfilep; extname: integer;
+    var extfp,newfl:extfilep; extname, fi: integer;
+        ai, gi, ni, nlen: integer; lcp: ctp; fsp: stp; needed: boolean;
   begin
     nammod := nil;
     genlabel(extname);
@@ -10596,6 +11162,13 @@ end;
     c_ln('#include <string.h>');
     c_ln('#include <math.h>');
     c_ln('#include <setjmp.h>');
+    c_ln('#include "setopr.h"');
+    { compute trimmed length of filename base }
+    nlen := max(n);
+    while (nlen > 0) and (n[nlen] = ' ') do nlen := nlen - 1;
+    c_str('#include "');
+    for ni := 1 to nlen do c_chr(n[ni]);
+    c_ln('.h"');
     c_newline;
     { Pascal runtime helper macros }
     c_ln('/* Pascal runtime helpers */');
@@ -10607,15 +11180,21 @@ end;
     c_ln('#define false 0');
     c_ln('#endif');
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
+    c_ln('static p2c_settype _stmp1, _stmp2;');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
-    h_str(' * Header for '); if nammod <> nil then h_str(nammod^);
+    h_str(' * Header for ');
+    for ni := 1 to nlen do write(prh, n[ni]);
     h_newline;
     h_ln(' */');
     h_newline;
-    h_str('#ifndef '); if nammod <> nil then h_str(nammod^); h_ln('_H');
-    h_str('#define '); if nammod <> nil then h_str(nammod^); h_ln('_H');
+    h_str('#ifndef ');
+    for ni := 1 to nlen do write(prh, n[ni]);
+    h_ln('_H');
+    h_str('#define ');
+    for ni := 1 to nlen do write(prh, n[ni]);
+    h_ln('_H');
     h_newline;
     { must process joins first so that the module (1) display level is clean.
       Otherwise this could create a situation where joins rely on other
@@ -10635,9 +11214,120 @@ end;
       end
     end;
     if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
+    { generate .h content: typedefs needed by global functions, then prototypes }
+    if hdrfunccnt > 0 then begin
+      { emit stdbool.h include for bool support }
+      h_ln('#include <stdbool.h>');
+      h_newline;
+      { emit typedefs referenced by global function signatures }
+      c_target := 1; { redirect c_ output to .h }
+      { emit all array typedefs referenced by any global function }
+      for ai := 1 to arrmapcount do begin
+          needed := false;
+          for gi := 1 to hdrfunccnt do begin
+            { check return type }
+            if hdrfuncs[gi]^.klass = func then
+              if hdrfuncs[gi]^.idtype = arrmapstp[ai] then
+                needed := true;
+            { check parameter types }
+            lcp := hdrfuncs[gi]^.pflist;
+            while lcp <> nil do begin
+              if lcp^.klass = vars then
+                if lcp^.idtype = arrmapstp[ai] then
+                  needed := true;
+              lcp := lcp^.next
+            end
+          end;
+          if needed then begin
+            c_str('typedef ');
+            c_basetype(arrmapstp[ai]^.aeltype);
+            c_chr(' ');
+            c_pstr(arrmapname[ai]);
+            { emit array dimensions }
+            if arrmapstp[ai]^.inxtype <> nil then
+              if arrmapstp[ai]^.inxtype^.form = subrange then begin
+                c_chr('[');
+                if arrmapstp[ai]^.inxtype^.min.ival >= 1 then
+                  c_int(arrmapstp[ai]^.inxtype^.max.ival + 1)
+                else
+                  c_int(arrmapstp[ai]^.inxtype^.max.ival -
+                        arrmapstp[ai]^.inxtype^.min.ival + 1);
+                c_chr(']')
+              end;
+            c_str(';'); c_newline
+          end
+        end;
+        { emit record typedefs referenced by any global function }
+        for ai := 1 to typemapcount do begin
+          needed := false;
+          for gi := 1 to hdrfunccnt do begin
+            if hdrfuncs[gi]^.klass = func then
+              if hdrfuncs[gi]^.idtype = typemapstp[ai] then
+                needed := true;
+            lcp := hdrfuncs[gi]^.pflist;
+            while lcp <> nil do begin
+              if lcp^.klass = vars then begin
+                if lcp^.idtype = typemapstp[ai] then
+                  needed := true;
+                { also check if param type is a pointer to this record }
+                if lcp^.idtype <> nil then
+                  if lcp^.idtype^.form = pointer then
+                    if lcp^.idtype^.eltype = typemapstp[ai] then
+                      needed := true
+              end;
+              lcp := lcp^.next
+            end
+          end;
+          if needed then begin
+            { emit forward struct typedef (full definition is in .c) }
+            c_str('typedef struct ');
+            c_pstr(typemapname[ai]);
+            c_chr(' ');
+            c_pstr(typemapname[ai]);
+            c_str(';'); c_newline
+          end
+        end;
+      { check if any typedefs were emitted, add blank line }
+      h_newline;
+      { emit function prototypes }
+      for fi := 1 to hdrfunccnt do begin
+        if hdrfuncs[fi]^.klass = func then begin
+          c_type(hdrfuncs[fi]^.idtype); c_chr(' ')
+        end else
+          c_str('void ');
+        if hdrfuncs[fi]^.name <> nil then
+          c_pstr(hdrfuncs[fi]^.name);
+        c_chr('(');
+        lcp := hdrfuncs[fi]^.pflist;
+        if lcp = nil then
+          c_str('void')
+        else begin
+          while lcp <> nil do begin
+            if lcp^.klass = vars then begin
+              if lcp^.vkind = formal then begin
+                c_type(lcp^.idtype);
+                if (lcp^.idtype <> nil) and
+                   (lcp^.idtype^.form <> arrays) then c_str('* ')
+                else c_chr(' ')
+              end else begin
+                c_type(lcp^.idtype); c_chr(' ')
+              end;
+              if lcp^.name <> nil then c_pstr(lcp^.name);
+              c_arraydims(lcp^.idtype)
+            end;
+            lcp := lcp^.next;
+            if lcp <> nil then c_str(', ')
+          end
+        end;
+        c_str(');'); c_newline
+      end;
+      c_target := 0 { restore output to .c }
+    end;
     { close header guard }
     h_newline;
-    h_str('#endif /* '); if nammod <> nil then h_str(nammod^); h_ln('_H */');
+    h_str('#endif /* ');
+    for ni := 1 to nlen do write(prh, n[ni]);
+    h_ln('_H */');
     if list then writeln;
     if errinx <> 0 then endofline;
     disposestr(nammod) { release module name }
@@ -11322,7 +12012,7 @@ begin
 
   (*enter standard names and standard types:*)
   (******************************************)
-  level := 0; top := 0; ptop := 0;
+  level := 0; top := 0; ptop := 0; with_cnt := 0;
   with display[0] do
     begin inidsp(display[0]); define := true; occur := blck; bname := nil end;
   enterstdtypes; stdnames; entstdnames; enterundecl;
@@ -11380,6 +12070,10 @@ begin
   procuplevelcnt := 0;
   nestbuflen := 0;
   nestbuffering := false;
+  c_target := 0;
+  hdr_included := false;
+  fwdbuflen := 0;
+  hdrfunccnt := 0;
   nestcmtfloor := 0;
   inopexpr := false;
   cmtqueue := nil;
