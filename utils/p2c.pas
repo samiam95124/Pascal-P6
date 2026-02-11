@@ -6360,17 +6360,47 @@ end;
     end (*sqr*) ;
 
     procedure truncfunction;
+    var i, argstart, arglen: integer;
+        saved: packed array [1..2000] of char;
     begin
       if gattr.typtr <> nil then
         if gattr.typtr <> realptr then error(125);
-      gattr.typtr := intptr
+      gattr.typtr := intptr;
+      { wrap expression with (int)trunc(...) for C }
+      if wantexpr and (stmttop <> nil) then begin
+        { extract just the argument (from prearglen+1 to current length) }
+        argstart := prearglen + 1;
+        arglen := stmttop^.exprlen - prearglen;
+        for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
+        { truncate buffer back to before argument }
+        stmttop^.exprlen := prearglen;
+        { output (int)trunc(arg) }
+        expr_str('(int)trunc(');
+        for i := 1 to arglen do expr_chr(saved[i]);
+        expr_chr(')')
+      end
     end (*trunc*) ;
 
     procedure roundfunction;
+    var i, argstart, arglen: integer;
+        saved: packed array [1..2000] of char;
     begin
       if gattr.typtr <> nil then
         if gattr.typtr <> realptr then error(125);
-      gattr.typtr := intptr
+      gattr.typtr := intptr;
+      { wrap expression with (int)round(...) for C }
+      if wantexpr and (stmttop <> nil) then begin
+        { extract just the argument (from prearglen+1 to current length) }
+        argstart := prearglen + 1;
+        arglen := stmttop^.exprlen - prearglen;
+        for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
+        { truncate buffer back to before argument }
+        stmttop^.exprlen := prearglen;
+        { output (int)round(arg) }
+        expr_str('(int)round(');
+        for i := 1 to arglen do expr_chr(saved[i]);
+        expr_chr(')')
+      end
     end (*round*) ;
 
     procedure oddfunction;
