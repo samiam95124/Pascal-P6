@@ -6316,7 +6316,6 @@ end;
           c_newline
         end else begin
           { new(p) -> p = malloc(sizeof(type)) }
-          usestdlib := true;  { malloc requires stdlib.h }
           flushcmts_before(curstmtline);
           c_indent;
           for i := 1 to varnamelen do
