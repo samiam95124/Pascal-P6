@@ -11427,21 +11427,30 @@ end;
             end
           end;
           if needed then begin
+            { emit array typedef with all dimensions }
+            fsp := arrmapstp[ai];
             c_str('typedef ');
-            c_basetype(arrmapstp[ai]^.aeltype);
+            { find base element type by following aeltype chain }
+            while (fsp <> nil) and (fsp^.form = arrays) do
+              fsp := fsp^.aeltype;
+            c_basetype(fsp); { base element type }
             c_chr(' ');
             c_pstr(arrmapname[ai]);
-            { emit array dimensions }
-            if arrmapstp[ai]^.inxtype <> nil then
-              if arrmapstp[ai]^.inxtype^.form = subrange then begin
-                c_chr('[');
-                if arrmapstp[ai]^.inxtype^.min.ival >= 1 then
-                  c_int(arrmapstp[ai]^.inxtype^.max.ival + 1)
-                else
-                  c_int(arrmapstp[ai]^.inxtype^.max.ival -
-                        arrmapstp[ai]^.inxtype^.min.ival + 1);
-                c_chr(']')
-              end;
+            { now emit all dimensions from outermost to innermost }
+            fsp := arrmapstp[ai];
+            while (fsp <> nil) and (fsp^.form = arrays) do begin
+              if fsp^.inxtype <> nil then
+                if fsp^.inxtype^.form = subrange then begin
+                  c_chr('[');
+                  if fsp^.inxtype^.min.ival >= 1 then
+                    c_int(fsp^.inxtype^.max.ival + 1)
+                  else
+                    c_int(fsp^.inxtype^.max.ival -
+                          fsp^.inxtype^.min.ival + 1);
+                  c_chr(']')
+                end;
+              fsp := fsp^.aeltype
+            end;
             c_str(';'); c_newline
           end
         end;
