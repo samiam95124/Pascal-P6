@@ -6316,6 +6316,7 @@ end;
           c_newline
         end else begin
           { new(p) -> p = malloc(sizeof(type)) }
+          usestdlib := true;  { malloc requires stdlib.h }
           flushcmts_before(curstmtline);
           c_indent;
           for i := 1 to varnamelen do
@@ -9703,7 +9704,7 @@ end;
               { check if var param of simple type needs dereference }
               else if (fcp^.vkind = formal) and
                  (fcp^.idtype <> nil) and
-                 (fcp^.idtype^.form in [scalar, subrange]) then begin
+                 (fcp^.idtype^.form in [scalar, subrange, pointer]) then begin
                 expr_str('(*');
                 expr_pstr(fcp^.name);
                 expr_chr(')')
@@ -11347,6 +11348,7 @@ end;
       c_newline { blank line between header comment and includes }
     end;
     c_ln('#include <stdio.h>');
+    c_ln('#include <stdlib.h>');
     c_ln('#include <string.h>');
     c_ln('#include <math.h>');
     c_ln('#include <setjmp.h>');
