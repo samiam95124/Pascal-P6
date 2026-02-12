@@ -528,6 +528,7 @@ var
     stmttop: stmtctxptr;            { top of statement context stack }
     stmtfree: stmtctxptr;           { free list for recycling }
     inopexpr: boolean;              { suppress expr output during in operator }
+    fromordchr: boolean;            { intptr from ord/chr function (use %d not %ld) }
 
     { Uplevel variable tracking for nested procedures }
     uplevelcnt: integer;            { count of uplevel variable refs }
@@ -5708,6 +5709,10 @@ end;
         if ltp = intptr then begin
           fmt_str('%ld');
           arg_addr
+        end else if (ltp <> nil) and (ltp^.form = scalar) then begin
+          { enumeration types map to int in C, not long }
+          fmt_str('%d');
+          arg_addr
         end else if ltp = realptr then begin
           fmt_str('%lg');
           arg_addr
@@ -5855,7 +5860,7 @@ end;
     end (*read*) ;
 
     procedure writeprocedure;
-      var lsp,lsp1: stp; default, default1: boolean; llkey: 1..15;
+      var lsp,lsp1,lsp_orig: stp; default, default1: boolean; llkey: 1..15;
           len:addrrange;
           txt: boolean; { is a text file }
           byt: boolean; { is a byte file }
@@ -5870,6 +5875,7 @@ end;
           fldwidth: integer; { field width for output }
           fldprec: integer; { decimal precision for reals }
           hasfldprec: boolean; { precision was specified }
+          fromord: boolean; { integer from ord() function }
 
       procedure fmt_width(w: integer);
       { output field width digits to format string }
@@ -5932,10 +5938,13 @@ end;
           end else
             w := fldwidth;
           if w <> 1 then fmt_width(w);  { width 1 = C default, no specifier }
-          if wascst then
-            fmt_chr('d')  { constants are int in C }
+          { use %d for: constants, ord/chr results, or subranges (map to char/short/int) }
+          if wascst or fromord or
+             ((lsp_orig <> nil) and (lsp_orig <> intptr) and
+              (lsp_orig^.form = subrange)) then
+            fmt_chr('d')
           else
-            fmt_str('ld');  { variables are long }
+            fmt_str('ld');  { base integer variables are long }
           arg_add
         end else if ltp = realptr then begin
           fmt_chr('%');
@@ -6051,7 +6060,10 @@ end;
         { save constant info before load/loadaddress changes gattr.kind }
         wascst := gattr.kind = cst;
         if wascst then savedcval := gattr.cval;
+        fromord := fromordchr;  { save flag for this expression }
+        fromordchr := false;     { clear for next expression }
         lsp := gattr.typtr;
+        lsp_orig := lsp; { save original type before basetype strips it }
         if lsp <> nil then
           if lsp^.form <= subrange then load else loadaddress;
         lsp := basetype(lsp); { remove any subrange }
@@ -6414,14 +6426,16 @@ end;
     begin
       if gattr.typtr <> nil then
         if gattr.typtr^.form >= power then error(125);
-      gattr.typtr := intptr
+      gattr.typtr := intptr;
+      fromordchr := true  { mark that this intptr came from ord() }
     end (*ord*) ;
 
     procedure chrfunction;
     begin
       if gattr.typtr <> nil then
         if gattr.typtr <> intptr then error(125);
-      gattr.typtr := charptr
+      gattr.typtr := charptr;
+      fromordchr := true  { mark conversion (though less relevant for charptr) }
     end (*chr*) ;
 
     procedure predsuccfunction;
