@@ -11461,6 +11461,37 @@ end;
             c_str(';'); c_newline
           end
         end;
+        { emit pointer typedefs referenced by any global function }
+        for ai := 1 to ptrmapcount do begin
+          needed := false;
+          for gi := 1 to hdrfunccnt do begin
+            { check return type }
+            if hdrfuncs[gi]^.klass = func then
+              if hdrfuncs[gi]^.idtype = ptrmapstp[ai] then
+                needed := true;
+            { check parameter types }
+            lcp := hdrfuncs[gi]^.pflist;
+            while lcp <> nil do begin
+              if lcp^.klass = vars then
+                if lcp^.idtype = ptrmapstp[ai] then
+                  needed := true;
+              lcp := lcp^.next
+            end
+          end;
+          if needed then begin
+            { emit pointer typedef }
+            c_str('typedef ');
+            fsp := ptrmapstp[ai];
+            if fsp <> nil then
+              if fsp^.eltype <> nil then begin
+                c_type(fsp^.eltype);
+                c_str('* ')
+              end else
+                c_str('void* ');
+            c_pstr(ptrmapname[ai]);
+            c_str(';'); c_newline
+          end
+        end;
       { check if any typedefs were emitted, add blank line }
       h_newline;
       { emit function prototypes }
