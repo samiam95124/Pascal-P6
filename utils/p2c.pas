@@ -484,6 +484,7 @@ var
     { C output state }
     cindent: integer;               { current C indentation level }
     catbol: boolean;                { at beginning of line in C output }
+    c_blanks: integer;              { consecutive blank lines emitted }
     gblvarsdone: boolean;           { global C vars have been output }
     curstmtline: integer;           { current statement's source line }
 
@@ -1233,20 +1234,44 @@ end;
 procedure c_newline;
 { output newline to C file or buffer }
 begin
-  if c_target = 1 then
-    writeln(prh)
-  else if c_target = 2 then begin
-    if fwdbuflen < fwdbufmax then begin
-      fwdbuflen := fwdbuflen + 1;
-      fwdbuf[fwdbuflen] := chr(10)
+  if catbol then begin
+    { this would be a blank line - suppress if already had one }
+    c_blanks := c_blanks + 1;
+    if c_blanks > 1 then
+      { do nothing, suppress consecutive blank line }
+    else begin
+      if c_target = 1 then
+        writeln(prh)
+      else if c_target = 2 then begin
+        if fwdbuflen < fwdbufmax then begin
+          fwdbuflen := fwdbuflen + 1;
+          fwdbuf[fwdbuflen] := chr(10)
+        end
+      end else if nestbuffering then begin
+        if nestbuflen < nestbufmax then begin
+          nestbuflen := nestbuflen + 1;
+          nestbuf[nestbuflen] := chr(10)
+        end
+      end else
+        writeln(prc)
     end
-  end else if nestbuffering then begin
-    if nestbuflen < nestbufmax then begin
-      nestbuflen := nestbuflen + 1;
-      nestbuf[nestbuflen] := chr(10) { newline }
-    end
-  end else
-    writeln(prc);
+  end else begin
+    c_blanks := 0;
+    if c_target = 1 then
+      writeln(prh)
+    else if c_target = 2 then begin
+      if fwdbuflen < fwdbufmax then begin
+        fwdbuflen := fwdbuflen + 1;
+        fwdbuf[fwdbuflen] := chr(10)
+      end
+    end else if nestbuffering then begin
+      if nestbuflen < nestbufmax then begin
+        nestbuflen := nestbuflen + 1;
+        nestbuf[nestbuflen] := chr(10)
+      end
+    end else
+      writeln(prc)
+  end;
   catbol := true
 end;
 
@@ -1398,7 +1423,7 @@ begin
 end;
 
 function is_c_reserved(p: pstring): boolean;
-{ check if identifier is a C reserved word }
+{ check if identifier is a C reserved word or standard library name }
 var l: integer;
     res: boolean;
     { check if pstring p matches a given string (ignoring case) }
@@ -1424,6 +1449,12 @@ begin
        nameis('short') or nameis('signed') or nameis('sizeof') or nameis('static') or
        nameis('struct') or nameis('switch') or nameis('typedef') or nameis('union') or
        nameis('unsigned') or nameis('void') or nameis('volatile') or nameis('while')
+    then res := true;
+    { check against C standard library names from headers p2c includes }
+    if nameis('random') or nameis('srandom') or nameis('abort') or
+       nameis('index') or nameis('remove') or nameis('signal') or
+       nameis('time') or nameis('main') or nameis('getchar') or
+       nameis('putchar') or nameis('printf') or nameis('scanf')
     then res := true
   end;
   is_c_reserved := res
@@ -5709,15 +5740,15 @@ end;
         if ltp = intptr then begin
           fmt_str('%ld');
           arg_addr
-        end else if (ltp <> nil) and (ltp^.form = scalar) then begin
-          { enumeration types map to int in C, not long }
-          fmt_str('%d');
+        end else if ltp = charptr then begin
+          fmt_str('%c');
           arg_addr
         end else if ltp = realptr then begin
           fmt_str('%lg');
           arg_addr
-        end else if ltp = charptr then begin
-          fmt_str('%c');
+        end else if (ltp <> nil) and (ltp^.form = scalar) then begin
+          { enumeration types map to int in C, not long }
+          fmt_str('%d');
           arg_addr
         end else if stringt(ltp) then begin
           if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
@@ -6024,6 +6055,7 @@ end;
       else pushstmt(stk_write);
       if sy = lparent then
       begin insymbol; chkhdr;
+      fromordchr := false; { clear stale flag from prior ord/chr calls }
       expr_reset;
       expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false);
       onstk := gattr.kind = expr;
@@ -6386,8 +6418,8 @@ end;
         for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
         { truncate buffer back to before argument }
         stmttop^.exprlen := prearglen;
-        { output (int)trunc(arg) }
-        expr_str('(int)trunc(');
+        { output (long)(arg) - C int conversion truncates toward zero }
+        expr_str('(long)(');
         for i := 1 to arglen do expr_chr(saved[i]);
         expr_chr(')')
       end
@@ -6408,8 +6440,8 @@ end;
         for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
         { truncate buffer back to before argument }
         stmttop^.exprlen := prearglen;
-        { output (int)round(arg) }
-        expr_str('(int)round(');
+        { output lround(arg) - returns long, matching Pascal integer }
+        expr_str('lround(');
         for i := 1 to arglen do expr_chr(saved[i]);
         expr_chr(')')
       end
@@ -12303,6 +12335,7 @@ begin
   assign(prh, houtfil); rewrite(prh);
   cindent := 0;
   catbol := true;
+  c_blanks := 0;
   gblvarsdone := false;
   curstmtline := 0;
   usestdio := false;
