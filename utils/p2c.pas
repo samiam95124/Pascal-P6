@@ -9682,6 +9682,7 @@ end;
             len: addrrange;
             i: integer;
             lmin, lmax: integer;
+            lhs_deref: boolean; { LHS ended with pointer dereference }
       begin
         { push assignment context for C output }
         pushstmt(stk_assign);
@@ -9721,6 +9722,7 @@ end;
             end
           end;
         tagasc := false; selector(fsys + [becomes],fcp,skp);
+        lhs_deref := sel_deref; { save: LHS ends with ptr dereference }
         if (sy = becomes) or skp then
           begin
             if gattr.kind = expr then error(287);
@@ -9852,8 +9854,31 @@ end;
                       end
                     end;
                     records: begin
-                      { onstack from expr }
-                      if gattr.kind = expr then store(lattr)
+                      { record assignment }
+                      if gattr.kind = expr then
+                        store(lattr)
+                      else if lhs_deref or sel_deref then begin
+                        { pointer dereference on LHS and/or RHS }
+                        { need * prefix for struct assignment: *p = *q }
+                        if stmttop <> nil then begin
+                          { find = position in buffer }
+                          i := 1;
+                          while (i <= stmttop^.exprlen) and
+                                (stmttop^.exprbuf[i] <> '=') do i := i + 1;
+                          if i <= stmttop^.exprlen then begin
+                            if lhs_deref then begin
+                              expr_insert('*', 1);
+                              i := i + 1 { adjust for insert }
+                            end;
+                            { find start of RHS (after "= ") }
+                            while (i <= stmttop^.exprlen) and
+                                  (stmttop^.exprbuf[i] in [' ', '=']) do i := i + 1;
+                            if sel_deref then
+                              if i <= stmttop^.exprlen then
+                                expr_insert('*', i)
+                          end
+                        end
+                      end
                     end;
                     files: error(146)
                   end;
