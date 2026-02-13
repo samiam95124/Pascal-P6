@@ -2471,9 +2471,12 @@ begin
     if vcp <> nil then begin
       if needcomma then c_str(', ');
       needcomma := true;
-      { pass address of uplevel variable; sets are arrays, already pointers }
+      { pass address of uplevel variable; sets/arrays already pointers;
+        var params of record/array type already pointers too }
       if vcp^.idtype <> nil then begin
-        if vcp^.idtype^.form <> power then c_chr('&')
+        if not (vcp^.idtype^.form in [power, arrays]) and
+           not ((vcp^.vkind = formal) and
+                (vcp^.idtype^.form in [records])) then c_chr('&')
       end else c_chr('&');
       if vcp^.name <> nil then c_pstr(vcp^.name)
     end
@@ -2511,9 +2514,12 @@ var i, j, n: integer;
         if vcp^.name <> nil then c_pstr(vcp^.name);
         c_str('__up')
       end else begin
-        { sets are arrays in C - already pointers, no & needed }
+        { sets and arrays are already pointers in C, no & needed;
+          var params of record/array type are already pointers too }
         if vcp^.idtype <> nil then begin
-          if vcp^.idtype^.form <> power then c_chr('&')
+          if not (vcp^.idtype^.form in [power, arrays]) and
+             not ((vcp^.vkind = formal) and
+                  (vcp^.idtype^.form in [records])) then c_chr('&')
         end else c_chr('&');
         if vcp^.name <> nil then c_pstr(vcp^.name)
       end
@@ -2569,9 +2575,12 @@ var i, j, n: integer;
         if vcp^.name <> nil then expr_pstr(vcp^.name);
         expr_str('__up')
       end else begin
-        { sets are arrays in C - already pointers, no & needed }
+        { sets and arrays are already pointers in C, no & needed;
+          var params of record/array type are already pointers too }
         if vcp^.idtype <> nil then begin
-          if vcp^.idtype^.form <> power then expr_chr('&')
+          if not (vcp^.idtype^.form in [power, arrays]) and
+             not ((vcp^.vkind = formal) and
+                  (vcp^.idtype^.form in [records])) then expr_chr('&')
         end else expr_chr('&');
         if vcp^.name <> nil then expr_pstr(vcp^.name)
       end
@@ -6955,16 +6964,31 @@ end;
             else
               begin varp := false;
                 if nxt <> nil then varp := (nxt^.vkind = formal) and (nxt^.part <> ptview);
-                { output & for var params in C (but not for arrays which decay to pointers) }
+                { save expr buf position before argument for var-param & and string fixup }
+                argstart := 0;
+                if stmttop <> nil then argstart := stmttop^.exprlen;
+                expression(fsys + [comma,rparent], varp);
+                { insert & for var params in C (arrays decay to pointers, skip &;
+                  var params of record/array type are already pointers, skip &) }
                 if wantexpr and varp then
                   if nxt <> nil then
                     if nxt^.idtype <> nil then
                       if nxt^.idtype^.form <> arrays then
-                        expr_chr('&');
-                { save expr buf position before argument for string fixup }
-                argstart := 0;
-                if stmttop <> nil then argstart := stmttop^.exprlen;
-                expression(fsys + [comma,rparent], varp);
+                        if stmttop <> nil then begin
+                          ai := 1; { assume & needed }
+                          if gattr.symptr <> nil then
+                            if gattr.symptr^.vkind = formal then
+                              if gattr.symptr^.idtype <> nil then
+                                if gattr.symptr^.idtype^.form
+                                   in [records, arrays] then
+                                  ai := 0;
+                          if ai = 1 then begin
+                            for ai := stmttop^.exprlen downto argstart+1 do
+                              stmttop^.exprbuf[ai+1] := stmttop^.exprbuf[ai];
+                            stmttop^.exprbuf[argstart+1] := '&';
+                            stmttop^.exprlen := stmttop^.exprlen + 1
+                          end
+                        end;
                 { find the appropriate overload }
                 match := false;
                 repeat
