@@ -509,6 +509,8 @@ var
     enummapname: array [1..maxenummap] of pstring; { enum type names }
     enummapsrcline: array [1..maxenummap] of integer; { source lines }
     enummapcmt: array [1..maxenummap] of cmtptr; { attached comments }
+    enumsout: integer;              { number of enums already output }
+    anonenum: integer;              { counter for anonymous enum names }
 
     { Pointer type name mapping for C output }
     ptrmapcount: integer;           { number of pointer type mappings }
@@ -2318,6 +2320,20 @@ begin
     end
 end;
 
+function lookup_enumname(fsp: stp): pstring;
+{ lookup an enum type to find its registered name }
+var i: integer; found: boolean;
+begin
+  lookup_enumname := nil;
+  i := 1; found := false;
+  while (i <= enummapcount) and not found do begin
+    if enummapstp[i] = fsp then begin
+      lookup_enumname := enummapname[i]; found := true
+    end;
+    i := i + 1
+  end
+end;
+
 procedure register_ptrtype(fsp: stp; name: pstring; srcline: integer);
 { register a type name for a pointer type }
 begin
@@ -2646,8 +2662,8 @@ begin
             else c_int(lmax - lmin + 1);
             c_chr(']')
           end else if fsp^.inxtype^.form = scalar then begin
-            { enum index type - count the enum constants }
             if fsp^.inxtype^.scalkind = declared then begin
+              { declared enum index - count the enum constants }
               enumcnt := 0;
               lcp := fsp^.inxtype^.fconst;
               while lcp <> nil do begin
@@ -2657,6 +2673,10 @@ begin
               c_chr('[');
               c_int(enumcnt);
               c_chr(']')
+            end else begin
+              { standard scalar index: char=256, boolean=2 }
+              if fsp^.inxtype = charptr then c_str('[256]')
+              else if fsp^.inxtype = boolptr then c_str('[2]')
             end
           end
         end;
@@ -2795,7 +2815,7 @@ var i, j, cnt: integer;
     fsp: stp;
     enumarr: array [1..maxenumconst] of ctp;
 begin
-  for i := 1 to enummapcount do begin
+  for i := enumsout + 1 to enummapcount do begin
     flushcmts_before(enummapsrcline[i]);
     c_str('enum ');
     c_pstr(enummapname[i]);
@@ -2834,7 +2854,8 @@ begin
     end;
     c_newline;
     c_newline
-  end
+  end;
+  enumsout := enummapcount
 end;
 
 procedure c_uplevel_params(needcomma: boolean);
@@ -8833,6 +8854,16 @@ end;
               register_typename(lsp1, tname, nxt^.srcline)
             end
         end;
+        { register anonymous enum types from var declarations }
+        if lsp <> nil then
+          if lsp^.form = scalar then
+            if lsp^.scalkind = declared then
+              if lsp <> boolptr then
+              if lookup_enumname(lsp) = nil then begin
+                anonenum := anonenum + 1;
+                tname := cat('_enum_', ints(anonenum));
+                register_enumtype(lsp, tname, nxt^.srcline)
+              end;
         cc := containers(lsp); { find # containers }
         if cc > 0 then
           { change variable from size of base to pointer+template for containers }
@@ -10963,8 +10994,9 @@ end;
         bst_srcrange(display[top-1].fname, minl, maxl);
         if minl <= maxl then claimrangecmts(minl, maxl);
         nestcmtfloor := fprocp^.srcline;
-        { emit consts and typedefs at file scope before buffering starts }
+        { emit consts, enums and typedefs at file scope before buffering starts }
         c_consts(display[top].fname);
+        c_enums;
         c_arraytypedefs;
         c_typedefs;
         nestbuflen := 0;
@@ -11050,7 +11082,8 @@ end;
         c_ln('{');
         c_newline;
         cindent := cindent + 1;
-        { output local typedefs for procedure-local record/array types }
+        { output local enums and typedefs for procedure-local types }
+        c_enums;
         c_arraytypedefs;
         c_typedefs;
         { output local variable declarations }
@@ -12421,6 +12454,8 @@ begin
   typemapcount := 0;
   typedefsout := 0;
   enummapcount := 0;
+  enumsout := 0;
+  anonenum := 0;
   ptrmapcount := 0;
   arrmapcount := 0;
   arrdefsout := 0;
