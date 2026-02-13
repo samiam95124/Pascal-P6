@@ -10956,9 +10956,22 @@ end;
     procedure c_fileinit;
     var i: integer;
     begin
-      for i := 1 to hdrfilecnt do begin
-        c_indent; c_pstr(hdrfiles[i]^.name);
-        c_str(' = fopen(argv['); c_int(i); c_ln('], "r");')
+      if hdrfilecnt > 0 then begin
+        c_indent; c_str('if (argc < '); c_int(hdrfilecnt + 1);
+        c_ln(') {');
+        cindent := cindent + 1;
+        c_indent; c_str('fprintf(stderr, "Usage: %s');
+        for i := 1 to hdrfilecnt do begin
+          c_str(' <'); c_pstr(hdrfiles[i]^.name); c_str('>')
+        end;
+        c_ln('\\n", argv[0]);');
+        c_indent; c_ln('return 1;');
+        cindent := cindent - 1;
+        c_indent; c_ln('}');
+        for i := 1 to hdrfilecnt do begin
+          c_indent; c_pstr(hdrfiles[i]^.name);
+          c_str(' = fopen(argv['); c_int(i); c_ln('], "r");')
+        end
       end
     end;
 
