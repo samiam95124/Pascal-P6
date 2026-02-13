@@ -26,7 +26,7 @@ for inp in *.inp; do
 done
 
 echo "========================================"
-printf "%-12s %-10s %-10s %s\n" "Program" "p2c" "gcc" "dif"
+printf "%-12s %-10s %-10s %-10s %s\n" "Program" "p2c" "gcc" "warn" "dif"
 echo "----------------------------------------"
 cat "$P2C_RESULTS"
 echo "----------------------------------------"
