@@ -59,15 +59,16 @@ fi
 
 # Run the program
 echo "Running ${prog}_c"
-if [ -f "${prog}.inp" ]; then
-    # Check if program takes command-line file args (main with argc/argv)
-    if grep -q 'int main(int argc' ${prog}.c; then
-        ./${prog}_c ${prog}.inp > ${prog}.lst 2>&1
-    else
-        ./${prog}_c < ${prog}.inp > ${prog}.lst 2>&1
-    fi
+# Build command-line args from .dat file if program uses argc/argv
+if grep -q 'int main(int argc' ${prog}.c && [ -f "${prog}.dat" ]; then
+    args="${prog}.dat"
 else
-    ./${prog}_c > ${prog}.lst 2>&1
+    args=""
+fi
+if [ -f "${prog}.inp" ]; then
+    ./${prog}_c $args < ${prog}.inp > ${prog}.lst 2>&1
+else
+    ./${prog}_c $args > ${prog}.lst 2>&1
 fi
 if [ $? -ne 0 ]; then
     result_line "$prog" "$p2cerrs" "$gccerrs" "FAIL"
