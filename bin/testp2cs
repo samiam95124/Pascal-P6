@@ -8,6 +8,7 @@
 pass=0
 fail=0
 total=0
+export P2C_RESULTS=$(mktemp)
 
 for inp in *.inp; do
     prog=${inp%.inp}
@@ -25,4 +26,9 @@ for inp in *.inp; do
 done
 
 echo "========================================"
+printf "%-12s %-10s %-10s %s\n" "Program" "p2c" "gcc" "dif"
+echo "----------------------------------------"
+cat "$P2C_RESULTS"
+echo "----------------------------------------"
 echo "Results: $pass passed, $fail failed, $total total"
+rm -f "$P2C_RESULTS"

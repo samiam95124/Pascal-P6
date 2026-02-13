@@ -11,6 +11,8 @@
 #
 # Errors from p2c and gcc are collected in <program>.err.
 #
+# If P2C_RESULTS is set, the summary table line is also appended to that file.
+#
 
 if [ $# -ne 1 ]; then
     echo "Usage: testp2c <program>"
@@ -19,6 +21,14 @@ if [ $# -ne 1 ]; then
 fi
 
 prog=$1
+
+# output a result line to stdout and optionally to P2C_RESULTS file
+result_line() {
+    printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$@"
+    if [ -n "$P2C_RESULTS" ]; then
+        printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$@" >> "$P2C_RESULTS"
+    fi
+}
 
 # Check source exists
 if [ ! -f "${prog}.pas" ]; then
@@ -34,28 +44,33 @@ echo "Translating ${prog}.pas"
 ../bin/p2c $prog >> ${prog}.err 2>&1
 p2cerrs=$(grep "Errors in program:" ${prog}.err | sed 's/.*: //' | tr -d ' ')
 if [ "$p2cerrs" != "0" ]; then
-    printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$prog" "$p2cerrs" "n/a" "n/a"
+    result_line "$prog" "$p2cerrs" "n/a" "n/a"
     exit 1
 fi
 
 # Compile with gcc
 echo "Compiling ${prog}.c"
-gcc -o ${prog}_c ${prog}.c -I../libs -lm 2>>${prog}.err
+gcc -o ${prog}_c ${prog}.c -I../libs ../libs/setopr.o -lm 2>>${prog}.err
 gccerrs=$(grep -c "error:" ${prog}.err)
 if [ "$gccerrs" -gt 0 ]; then
-    printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$prog" "$p2cerrs" "$gccerrs" "n/a"
+    result_line "$prog" "$p2cerrs" "$gccerrs" "n/a"
     exit 1
 fi
 
 # Run the program
 echo "Running ${prog}_c"
 if [ -f "${prog}.inp" ]; then
-    ./${prog}_c < ${prog}.inp > ${prog}.lst 2>&1
+    # Check if program takes command-line file args (main with argc/argv)
+    if grep -q 'int main(int argc' ${prog}.c; then
+        ./${prog}_c ${prog}.inp > ${prog}.lst 2>&1
+    else
+        ./${prog}_c < ${prog}.inp > ${prog}.lst 2>&1
+    fi
 else
     ./${prog}_c > ${prog}.lst 2>&1
 fi
 if [ $? -ne 0 ]; then
-    printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$prog" "$p2cerrs" "$gccerrs" "FAIL"
+    result_line "$prog" "$p2cerrs" "$gccerrs" "FAIL"
     exit 1
 fi
 
@@ -70,7 +85,7 @@ if [ -f "${prog}.cmp" ]; then
     rm -f ${prog}.lst.strp ${prog}.cmp.strp
 fi
 
-printf "%-12s p2c: %3s  gcc: %5s  dif: %s\n" "$prog" "$p2cerrs" "$gccerrs" "$diflines"
+result_line "$prog" "$p2cerrs" "$gccerrs" "$diflines"
 if [ "$diflines" -gt 0 ]; then
     exit 1
 fi

@@ -559,6 +559,10 @@ var
     hdrfuncs: array [1..maxhdrfuncs] of ctp;
     hdrfunccnt: integer;
 
+    { Program header file parameters (for C main argv initialization) }
+    hdrfilecnt: integer;
+    hdrfiles: array [1..10] of ctp;
+
     { Comment preservation }
     cmtqueue: cmtptr;               { queue of captured comments }
     cmtqtail: cmtptr;               { tail pointer for efficient append }
@@ -2428,8 +2432,10 @@ begin
     if vcp <> nil then begin
       if needcomma then c_str(', ');
       needcomma := true;
-      { pass address of uplevel variable }
-      c_chr('&');
+      { pass address of uplevel variable; sets are arrays, already pointers }
+      if vcp^.idtype <> nil then begin
+        if vcp^.idtype^.form <> power then c_chr('&')
+      end else c_chr('&');
       if vcp^.name <> nil then c_pstr(vcp^.name)
     end
   end
@@ -2466,7 +2472,10 @@ var i, j, n: integer;
         if vcp^.name <> nil then c_pstr(vcp^.name);
         c_str('__up')
       end else begin
-        c_chr('&');
+        { sets are arrays in C - already pointers, no & needed }
+        if vcp^.idtype <> nil then begin
+          if vcp^.idtype^.form <> power then c_chr('&')
+        end else c_chr('&');
         if vcp^.name <> nil then c_pstr(vcp^.name)
       end
     end
@@ -2521,7 +2530,10 @@ var i, j, n: integer;
         if vcp^.name <> nil then expr_pstr(vcp^.name);
         expr_str('__up')
       end else begin
-        expr_chr('&');
+        { sets are arrays in C - already pointers, no & needed }
+        if vcp^.idtype <> nil then begin
+          if vcp^.idtype^.form <> power then expr_chr('&')
+        end else expr_chr('&');
         if vcp^.name <> nil then expr_pstr(vcp^.name)
       end
     end
@@ -2868,9 +2880,12 @@ begin
     if vcp <> nil then begin
       if needcomma then c_str(', ');
       needcomma := true;
-      { all uplevel vars are passed as pointers }
+      { uplevel vars passed as pointers; sets are arrays, already pointers }
       c_type(vcp^.idtype);
-      c_str('* ');
+      if vcp^.idtype <> nil then begin
+        if vcp^.idtype^.form <> power then c_str('* ')
+        else c_chr(' ')
+      end else c_str('* ');
       if vcp^.name <> nil then c_pstr(vcp^.name);
       c_str('__up')
     end
@@ -5553,7 +5568,17 @@ end;
                 end;
               loadaddress;
               { output [ for C array subscript }
-              if wantexpr then expr_chr('[');
+              if wantexpr then begin
+                expr_chr('[');
+                { cast char index to unsigned to suppress -Wchar-subscripts }
+                if lattr.typtr <> nil then
+                  if lattr.typtr^.form = arrays then
+                    if lattr.typtr^.inxtype <> nil then
+                      if (lattr.typtr^.inxtype = charptr) or
+                         ((lattr.typtr^.inxtype^.form = subrange) and
+                          (lattr.typtr^.inxtype^.rangetype = charptr)) then
+                        expr_str('(unsigned char)')
+              end;
               insymbol; expression(fsys + [comma,rbrack], false);
               { output ] for C array subscript }
               if wantexpr then expr_chr(']');
@@ -5724,14 +5749,28 @@ end;
       if wantexpr then
         if lcp <> nil then
           if lcp^.name <> nil then begin
-            if lcp^.klass = vars then begin
+            { map program file params to C stdio streams }
+            if lcp = inputptr then begin expr_str('stdin'); usestdio := true end
+            else if lcp = outputptr then begin expr_str('stdout'); usestdio := true end
+            else if lcp^.klass = vars then begin
               { check if uplevel variable reference in nested procedure }
               if (lcp^.vlev < level) and
                  (lcp^.vlev > 1) and nestbuffering then begin
-                { use __up parameter pointer }
-                expr_str('(*');
-                expr_pstr(lcp^.name);
-                expr_str('__up)')
+                { use __up parameter pointer.
+                  VAR params of record/array type are already pointers,
+                  so __up is the same pointer - no dereference needed.
+                  Local arrays and sets decay to pointers too. }
+                if ((lcp^.vkind = formal) and (lcp^.idtype <> nil) and
+                    (lcp^.idtype^.form in [records, arrays])) or
+                   ((lcp^.vkind = actual) and (lcp^.idtype <> nil) and
+                    (lcp^.idtype^.form in [arrays, power])) then begin
+                  expr_pstr(lcp^.name);
+                  expr_str('__up')
+                end else begin
+                  expr_str('(*');
+                  expr_pstr(lcp^.name);
+                  expr_str('__up)')
+                end
               end
               { check if var param of simple type needs dereference }
               else if (lcp^.vkind = formal) and
@@ -6047,12 +6086,20 @@ end;
           end else
             w := fldwidth;
           if w <> 1 then fmt_width(w);  { width 1 = C default, no specifier }
-          { use %d for: constants, ord/chr results, or subranges (map to char/short/int) }
-          if wascst or fromord or
-             ((lsp_orig <> nil) and (lsp_orig <> intptr) and
-              (lsp_orig^.form = subrange)) then
+          { use %d for: constants, ord/chr results, enums, or small subranges.
+            Large subranges map to long and need %ld }
+          if wascst or fromord then
             fmt_chr('d')
-          else
+          else if (lsp_orig <> nil) and (lsp_orig <> intptr) then begin
+            if lsp_orig^.form = subrange then begin
+              if (lsp_orig^.min.ival >= -32768) and
+                 (lsp_orig^.max.ival <= 65535) then
+                fmt_chr('d')
+              else fmt_str('ld')
+            end else if lsp_orig^.form = scalar then
+              fmt_chr('d')  { enum types are int }
+            else fmt_str('ld')
+          end else
             fmt_str('ld');  { base integer variables are long }
           arg_add
         end else if ltp = realptr then begin
@@ -7233,9 +7280,17 @@ end;
                                 { check if uplevel variable reference in nested procedure }
                                 if (lcp^.vlev < level) and
                                    (lcp^.vlev > 1) and nestbuffering then begin
-                                  expr_str('(*');
-                                  expr_pstr(lcp^.name);
-                                  expr_str('__up)')
+                                  if ((lcp^.vkind = formal) and (lcp^.idtype <> nil) and
+                                      (lcp^.idtype^.form in [records, arrays])) or
+                                     ((lcp^.vkind = actual) and (lcp^.idtype <> nil) and
+                                      (lcp^.idtype^.form in [arrays, power])) then begin
+                                    expr_pstr(lcp^.name);
+                                    expr_str('__up')
+                                  end else begin
+                                    expr_str('(*');
+                                    expr_pstr(lcp^.name);
+                                    expr_str('__up)')
+                                  end
                                 end
                                 { check if var param of simple type needs dereference }
                                 else if (lcp^.vkind = formal) and
@@ -9831,9 +9886,17 @@ end;
               { check if uplevel variable reference in nested procedure }
               if (fcp^.vlev < level) and
                  (fcp^.vlev > 1) and nestbuffering then begin
-                expr_str('(*');
-                expr_pstr(fcp^.name);
-                expr_str('__up)')
+                if ((fcp^.vkind = formal) and (fcp^.idtype <> nil) and
+                    (fcp^.idtype^.form in [records, arrays])) or
+                   ((fcp^.vkind = actual) and (fcp^.idtype <> nil) and
+                    (fcp^.idtype^.form in [arrays, power])) then begin
+                  expr_pstr(fcp^.name);
+                  expr_str('__up')
+                end else begin
+                  expr_str('(*');
+                  expr_pstr(fcp^.name);
+                  expr_str('__up)')
+                end
               end
               { check if var param of simple type needs dereference }
               else if (fcp^.vkind = formal) and
@@ -10874,12 +10937,29 @@ end;
                 toterr := toterr+1
               end
           else begin { process header file }
-            llcp^.hdr := true { appears in header }
+            llcp^.hdr := true; { appears in header }
+            { save file var pointer for C main argv initialization }
+            if (llcp <> inputptr) and (llcp <> outputptr) then
+              if llcp^.idtype <> nil then
+                if llcp^.idtype^.form = files then begin
+                  hdrfilecnt := hdrfilecnt + 1;
+                  hdrfiles[hdrfilecnt] := llcp
+                end
           end
         end;
         fp := fextfilep; fextfilep := fextfilep^.nextfile; putfil(fp)
       end;
       id := saveid
+    end;
+
+    { emit fopen initialization for program header file parameters }
+    procedure c_fileinit;
+    var i: integer;
+    begin
+      for i := 1 to hdrfilecnt do begin
+        c_indent; c_pstr(hdrfiles[i]^.name);
+        c_str(' = fopen(argv['); c_int(i); c_ln('], "r");')
+      end
     end;
 
   begin (*body*)
@@ -10944,10 +11024,13 @@ end;
         gblvarsdone := true
       end;
       flushcmts; (* output any pending comments before main *)
-      c_ln('int main(void)');
+      if hdrfilecnt > 0 then
+        c_ln('int main(int argc, char* argv[])')
+      else c_ln('int main(void)');
       c_ln('{');
       c_newline;
-      cindent := cindent + 1
+      cindent := cindent + 1;
+      c_fileinit
     end else if fprocp <> nil then begin
       { procedure or function body }
       { before first procedure, output typedefs and global variables }
@@ -11535,7 +11618,7 @@ end;
     c_ln('#define false 0');
     c_ln('#endif');
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
-    c_ln('static p2c_settype _stmp1, _stmp2;');
+    c_ln('static p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
@@ -12459,6 +12542,7 @@ begin
   ptrmapcount := 0;
   arrmapcount := 0;
   arrdefsout := 0;
+  hdrfilecnt := 0;
   intypedef := false;
   stmttop := nil;
   stmtfree := nil;
