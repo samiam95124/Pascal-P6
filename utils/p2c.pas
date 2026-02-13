@@ -466,7 +466,10 @@ type
        forvar: ctp;             { control variable }
        fordown: boolean;        { downto (true) or to (false) }
        forlimconst: boolean;    { are loop limits constant? }
-       forlow, forhigh: integer { constant limits if known }
+       forlow, forhigh: integer; { constant limits if known }
+       { read/write file variable }
+       filvarlen: integer;      { 0 = default file (stdin/stdout) }
+       filvarbuf: packed array [1..100] of char
      end;
 
 (*-------------------------------------------------------------------------*)
@@ -1904,7 +1907,8 @@ begin
   p^.fordown := false;
   p^.forlimconst := false;
   p^.forlow := 0;
-  p^.forhigh := 0
+  p^.forhigh := 0;
+  p^.filvarlen := 0
 end;
 
 procedure putstmt(p: stmtctxptr);
@@ -2269,24 +2273,59 @@ begin
 end;
 
 procedure rdt_emit;
-{ emit the collected scanf call for read/readln context }
+{ emit the collected scanf/fscanf call for read/readln context }
 var i: integer;
+
+  procedure emit_scanfn;
+  { emit scanf or fscanf(filvar, depending on file variable }
+  var j: integer;
+  begin
+    if stmttop^.filvarlen > 0 then begin
+      c_str('fscanf(');
+      for j := 1 to stmttop^.filvarlen do
+        c_chr(stmttop^.filvarbuf[j]);
+      c_str(', ')
+    end else
+      c_str('scanf(')
+  end;
+
 begin
   if stmttop <> nil then begin
     if stmttop^.fmtlen > 0 then begin
-      c_str('scanf("');
-      for i := 1 to stmttop^.fmtlen do
-        c_chr(stmttop^.fmtbuf[i]);
-      c_str('"');
-      if stmttop^.arglen > 0 then begin
+      { check for single %c read: use p2c_readc for eoln-to-space }
+      if (stmttop^.fmtlen = 2) and
+         (stmttop^.fmtbuf[1] = '%') and (stmttop^.fmtbuf[2] = 'c') and
+         (stmttop^.arglen > 1) and (stmttop^.argbuf[1] = '&') then begin
+        c_str('p2c_readc(');
+        if stmttop^.filvarlen > 0 then begin
+          for i := 1 to stmttop^.filvarlen do
+            c_chr(stmttop^.filvarbuf[i])
+        end else
+          c_str('stdin');
         c_str(', ');
-        for i := 1 to stmttop^.arglen do
-          c_chr(stmttop^.argbuf[i])
-      end;
-      c_ln(');')
+        { emit var name without leading & }
+        for i := 2 to stmttop^.arglen do
+          c_chr(stmttop^.argbuf[i]);
+        c_ln(');')
+      end else begin
+        emit_scanfn;
+        c_chr('"');
+        for i := 1 to stmttop^.fmtlen do
+          c_chr(stmttop^.fmtbuf[i]);
+        c_str('"');
+        if stmttop^.arglen > 0 then begin
+          c_str(', ');
+          for i := 1 to stmttop^.arglen do
+            c_chr(stmttop^.argbuf[i])
+        end;
+        c_ln(');')
+      end
     end;
     if stmttop^.kind = stk_readln then begin
-      c_str('scanf("%*[^'); c_chr(chr(92)); c_ln('n]"); scanf("%*c");')
+      emit_scanfn;
+      c_str('"%*[^'); c_chr(chr(92)); c_str('n]"); ');
+      emit_scanfn;
+      c_ln('"%*c");')
     end
   end
 end;
@@ -2669,9 +2708,15 @@ begin
             lmin := fsp^.inxtype^.min.ival;
             lmax := fsp^.inxtype^.max.ival;
             c_chr('[');
-            { expand array by 1 for 1-based Pascal indexing }
-            if lmin >= 1 then c_int(lmax + 1)
-            else c_int(lmax - lmin + 1);
+            { expand array by 1 for 1-based Pascal indexing;
+              char arrays get +2 for null terminator slot }
+            if lmin >= 1 then begin
+              if fsp^.aeltype = charptr then c_int(lmax + 2)
+              else c_int(lmax + 1)
+            end else begin
+              if fsp^.aeltype = charptr then c_int(lmax - lmin + 2)
+              else c_int(lmax - lmin + 1)
+            end;
             c_chr(']')
           end else if fsp^.inxtype^.form = scalar then begin
             if fsp^.inxtype^.scalkind = declared then begin
@@ -3064,8 +3109,14 @@ procedure c_arraytypedefs;
             lmin := fsp^.inxtype^.min.ival;
             lmax := fsp^.inxtype^.max.ival;
             c_chr('[');
-            if lmin >= 1 then c_int(lmax + 1)
-            else c_int(lmax - lmin + 1);
+            { char arrays get +2 for null terminator slot }
+            if lmin >= 1 then begin
+              if fsp^.aeltype = charptr then c_int(lmax + 2)
+              else c_int(lmax + 1)
+            end else begin
+              if fsp^.aeltype = charptr then c_int(lmax - lmin + 2)
+              else c_int(lmax - lmin + 1)
+            end;
             c_chr(']')
           end else if fsp^.inxtype^.form = scalar then begin
             if fsp^.inxtype^.scalkind = declared then begin
@@ -5835,6 +5886,7 @@ end;
           fld, spad: boolean;
           cp: boolean;
           cststr: boolean;
+          fvi: integer; { file var save index }
           r: integer; { radix of read }
 
       procedure add_rdt_arg;
@@ -5909,6 +5961,12 @@ end;
                   txt := lsp = textptr;
                   if not txt and (lkey = 11) then error(116);
                   loadaddress; deffil := false;
+                  { save file variable name for fscanf }
+                  if stmttop <> nil then begin
+                    stmttop^.filvarlen := stmttop^.exprlen;
+                    for fvi := 1 to stmttop^.filvarlen do
+                      stmttop^.filvarbuf[fvi] := stmttop^.exprbuf[fvi]
+                  end;
                   if sy = rparent then
                     begin if lkey = 5 then error(116);
                       test := true
@@ -6782,6 +6840,8 @@ end;
           locpar, llc: addrrange; varp: boolean; lsize: addrrange;
           prcnt: integer; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
+          argstart: integer; { expr buf position before current argument }
+          ai: integer; { temp for buffer insertion }
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
       fcp = nil, nxt = nil for no next found. }
@@ -6901,6 +6961,9 @@ end;
                     if nxt^.idtype <> nil then
                       if nxt^.idtype^.form <> arrays then
                         expr_chr('&');
+                { save expr buf position before argument for string fixup }
+                argstart := 0;
+                if stmttop <> nil then argstart := stmttop^.exprlen;
                 expression(fsys + [comma,rparent], varp);
                 { find the appropriate overload }
                 match := false;
@@ -6950,6 +7013,22 @@ end;
                                   locpar := locpar+ptrsize*2;
                                   alignu(parmptr,locpar)
                                 end else begin
+                                  { string constant passed to packed array value
+                                    param: prepend \0 so 1-based indexing works }
+                                  if wantexpr and (gattr.kind = cst) and
+                                     stringt(lsp) and
+                                     (gattr.typtr <> nil) and
+                                     stringt(gattr.typtr) then
+                                    if stmttop <> nil then
+                                      if stmttop^.exprbuf[argstart+1] = '"' then
+                                      begin
+                                        { insert \0 after opening " }
+                                        for ai := stmttop^.exprlen downto argstart+2 do
+                                          stmttop^.exprbuf[ai+2] := stmttop^.exprbuf[ai];
+                                        stmttop^.exprbuf[argstart+2] := chr(92); { \ }
+                                        stmttop^.exprbuf[argstart+3] := '0';
+                                        stmttop^.exprlen := stmttop^.exprlen + 2
+                                      end;
                                   loadaddress;
                                   fixpar(lsp,gattr.typtr);
                                   if lsp^.form = arrayc then
@@ -7164,10 +7243,18 @@ end;
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
           set_lhs_start, set_i: integer;
+          { local buffer for set binary op LHS - must not share set_lhs_buf
+            because factor's set constructor clobbers it }
+          sop_lhs_buf: packed array [1..2000] of char;
+          sop_lhs_len: integer;
 
       procedure term(fsys: setofsys; threaten: boolean);
         var lattr: attr; lop: operatort; fcp: ctp;
             set_lhs_start, set_i: integer;
+            { local buffer for set binary op LHS - must not share set_lhs_buf
+              because factor's set constructor clobbers it }
+            sop_lhs_buf: packed array [1..2000] of char;
+            sop_lhs_len: integer;
 
         procedure factor(fsys: setofsys; threaten: boolean);
           var lcp,fcp: ctp; lvp: csp; varpart: boolean; inherit: boolean;
@@ -7593,13 +7680,13 @@ end;
                  and (lop = mul) then begin
                 { set intersection: save LHS, don't output * }
                 if stmttop <> nil then begin
-                  set_lhs_len :=
+                  sop_lhs_len :=
                     stmttop^.exprlen - set_lhs_start;
-                  for set_i := 1 to set_lhs_len do
-                    set_lhs_buf[set_i] :=
+                  for set_i := 1 to sop_lhs_len do
+                    sop_lhs_buf[set_i] :=
                       stmttop^.exprbuf[set_lhs_start + set_i];
                   stmttop^.exprlen := set_lhs_start
-                end else set_lhs_len := 0
+                end else sop_lhs_len := 0
               end else
               case lop of
                 mul:   expr_str(' * ');
@@ -7633,7 +7720,7 @@ end;
                                     comptypes(lattr.typtr,gattr.typtr) then
                               begin
                                 { generate set intersection }
-                                if wantexpr and (set_lhs_len > 0) then begin
+                                if wantexpr and (sop_lhs_len > 0) then begin
                                   set_rhs_len :=
                                     stmttop^.exprlen - set_lhs_start;
                                   for set_i := 1 to set_rhs_len do
@@ -7641,8 +7728,8 @@ end;
                                       stmttop^.exprbuf[set_lhs_start+set_i];
                                   stmttop^.exprlen := set_lhs_start;
                                   expr_str('(p2c_scpy(_stmp1, ');
-                                  for set_i := 1 to set_lhs_len do
-                                    expr_chr(set_lhs_buf[set_i]);
+                                  for set_i := 1 to sop_lhs_len do
+                                    expr_chr(sop_lhs_buf[set_i]);
                                   expr_str('), p2c_sint(_stmp1, ');
                                   for set_i := 1 to set_rhs_len do
                                     expr_chr(set_rhs_buf[set_i]);
@@ -7731,13 +7818,13 @@ end;
                and (lop in [plus, minus]) then begin
               { set union/difference: save LHS, don't output op }
               if stmttop <> nil then begin
-                set_lhs_len :=
+                sop_lhs_len :=
                   stmttop^.exprlen - set_lhs_start;
-                for set_i := 1 to set_lhs_len do
-                  set_lhs_buf[set_i] :=
+                for set_i := 1 to sop_lhs_len do
+                  sop_lhs_buf[set_i] :=
                     stmttop^.exprbuf[set_lhs_start + set_i];
                 stmttop^.exprlen := set_lhs_start
-              end else set_lhs_len := 0
+              end else sop_lhs_len := 0
             end else
             case lop of
               plus:  expr_str(' + ');
@@ -7768,7 +7855,7 @@ end;
                                  comptypes(lattr.typtr,gattr.typtr) then
                        begin
                          { generate set union/difference }
-                         if wantexpr and (set_lhs_len > 0) then begin
+                         if wantexpr and (sop_lhs_len > 0) then begin
                            set_rhs_len :=
                              stmttop^.exprlen - set_lhs_start;
                            for set_i := 1 to set_rhs_len do
@@ -7776,8 +7863,8 @@ end;
                                stmttop^.exprbuf[set_lhs_start + set_i];
                            stmttop^.exprlen := set_lhs_start;
                            expr_str('(p2c_scpy(_stmp1, ');
-                           for set_i := 1 to set_lhs_len do
-                             expr_chr(set_lhs_buf[set_i]);
+                           for set_i := 1 to sop_lhs_len do
+                             expr_chr(sop_lhs_buf[set_i]);
                            if lop = plus then
                              expr_str('), p2c_suni(_stmp1, ')
                            else
@@ -7785,7 +7872,7 @@ end;
                            for set_i := 1 to set_rhs_len do
                              expr_chr(set_rhs_buf[set_i]);
                            expr_str('), _stmp1)');
-                           set_lhs_len := 0
+                           sop_lhs_len := 0
                          end
                        end
                      else begin error(134); gattr.typtr:=nil end
@@ -11631,6 +11718,8 @@ end;
     c_ln('#define false 0');
     c_ln('#endif');
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
+    c_str('#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v==''');
+    c_chr(chr(92)); c_ln('n''?(v='' ''):0))');
     c_ln('static p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
     c_newline;
     { emit header file preamble }
@@ -11705,11 +11794,20 @@ end;
               if fsp^.inxtype <> nil then
                 if fsp^.inxtype^.form = subrange then begin
                   c_chr('[');
-                  if fsp^.inxtype^.min.ival >= 1 then
-                    c_int(fsp^.inxtype^.max.ival + 1)
-                  else
-                    c_int(fsp^.inxtype^.max.ival -
-                          fsp^.inxtype^.min.ival + 1);
+                  { char arrays get +2 for null terminator slot }
+                  if fsp^.inxtype^.min.ival >= 1 then begin
+                    if fsp^.aeltype = charptr then
+                      c_int(fsp^.inxtype^.max.ival + 2)
+                    else
+                      c_int(fsp^.inxtype^.max.ival + 1)
+                  end else begin
+                    if fsp^.aeltype = charptr then
+                      c_int(fsp^.inxtype^.max.ival -
+                            fsp^.inxtype^.min.ival + 2)
+                    else
+                      c_int(fsp^.inxtype^.max.ival -
+                            fsp^.inxtype^.min.ival + 1)
+                  end;
                   c_chr(']')
                 end;
               fsp := fsp^.aeltype
