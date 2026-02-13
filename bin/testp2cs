@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Run testp2c on all sample programs that have both .inp and .cmp files.
+#
+# Must be run from the sample_programs directory.
+#
+
+pass=0
+fail=0
+total=0
+
+for inp in *.inp; do
+    prog=${inp%.inp}
+    if [ -f "${prog}.pas" ] && [ -f "${prog}.cmp" ]; then
+        total=$((total + 1))
+        echo "========================================"
+        ../bin/testp2c $prog
+        if [ $? -eq 0 ]; then
+            pass=$((pass + 1))
+        else
+            fail=$((fail + 1))
+        fi
+        echo ""
+    fi
+done
+
+echo "========================================"
+echo "Results: $pass passed, $fail failed, $total total"
