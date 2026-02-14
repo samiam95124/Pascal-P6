@@ -6177,6 +6177,13 @@ end;
           fldprec: integer; { decimal precision for reals }
           hasfldprec: boolean; { precision was specified }
           fromord: boolean; { integer from ord() function }
+          fldwidth_var: boolean; { field width is a variable expression }
+          fldwidth_buf: packed array [1..200] of char;
+          fldwidth_buflen: integer;
+          fldprec_var: boolean; { precision is a variable expression }
+          fldprec_buf: packed array [1..200] of char;
+          fldprec_buflen: integer;
+          fwi: integer; { index for field width buffer copying }
 
       procedure fmt_width(w: integer);
       { output field width digits to format string }
@@ -6233,12 +6240,16 @@ end;
         ltp := lsp;
         if ltp = intptr then begin
           fmt_chr('%');
-          if fldwidth < 0 then begin
-            fmt_chr('-');  { left justify }
-            w := -fldwidth
-          end else
-            w := fldwidth;
-          if w <> 1 then fmt_width(w);  { width 1 = C default, no specifier }
+          if fldwidth_var then
+            fmt_chr('*')  { variable width: %*d or %*ld }
+          else begin
+            if fldwidth < 0 then begin
+              fmt_chr('-');  { left justify }
+              w := -fldwidth
+            end else
+              w := fldwidth;
+            if w <> 1 then fmt_width(w)
+          end;
           { use %d for: constants, ord/chr results, enums, or small subranges.
             Large subranges map to long and need %ld }
           if wascst or fromord then
@@ -6254,21 +6265,56 @@ end;
             else fmt_str('ld')
           end else
             fmt_str('ld');  { base integer variables are long }
+          if fldwidth_var then begin
+            { add width expression as printf argument before value }
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_chr(')')
+          end;
           arg_add
         end else if ltp = realptr then begin
           fmt_chr('%');
-          if fldwidth < 0 then begin
-            fmt_chr('-');
-            w := -fldwidth
-          end else
-            w := fldwidth;
-          if w <> 1 then fmt_width(w);
+          if fldwidth_var then
+            fmt_chr('*')
+          else begin
+            if fldwidth < 0 then begin
+              fmt_chr('-');
+              w := -fldwidth
+            end else
+              w := fldwidth;
+            if w <> 1 then fmt_width(w)
+          end;
           if hasfldprec then begin
             fmt_chr('.');
-            fmt_width(fldprec);
+            if fldprec_var then
+              fmt_chr('*')
+            else
+              fmt_width(fldprec);
             fmt_chr('f')
           end else
             fmt_chr('g');
+          if fldwidth_var then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_chr(')')
+          end;
+          if fldprec_var then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(int)(');
+            for i := 1 to fldprec_buflen do
+              arg_chr(fldprec_buf[i]);
+            arg_chr(')')
+          end;
           arg_add
         end else if ltp = charptr then begin
           if wascst and savedcval.intval then begin
@@ -6394,6 +6440,8 @@ end;
           spad := false; { set no padded string }
           ledz := false; { set no leading zero }
           hasfldprec := false;  { no precision yet }
+          fldwidth_var := false; { assume constant width }
+          fldprec_var := false;  { assume constant precision }
           { set default field width based on type }
           if lsp = intptr then fldwidth := intdeff
           else if lsp = realptr then fldwidth := reldeff
@@ -6408,12 +6456,19 @@ end;
               end else begin
                 if sy = numsy then
                   begin chkstd; ledz := true; insymbol end;
-                { push dummy context to suppress expression output for field width }
+                { push context to capture expression output for field width }
                 pushstmt(stk_expr);
                 expression(fsys + [comma,colon,rparent], false);
-                { capture constant field width - overrides default }
+                { capture field width - constant or variable expression }
                 if gattr.kind = cst then
-                  fldwidth := gattr.cval.ival;
+                  fldwidth := gattr.cval.ival
+                else begin
+                  fldwidth_var := true;
+                  fldwidth_buflen := stmttop^.exprlen;
+                  if fldwidth_buflen > 200 then fldwidth_buflen := 200;
+                  for fwi := 1 to fldwidth_buflen do
+                    fldwidth_buf[fwi] := stmttop^.exprbuf[fwi]
+                end;
                 popstmt;
                 if gattr.typtr <> nil then
                   if basetype(gattr.typtr) <> intptr then error(116);
@@ -6424,13 +6479,20 @@ end;
           else default := true;
           if sy = colon then
             begin insymbol;
-              { push dummy context to suppress expression output for decimal places }
+              { push context to capture expression output for decimal places }
               pushstmt(stk_expr);
               expression(fsys + [comma,rparent], false);
-              { capture constant precision }
+              { capture precision - constant or variable expression }
               if gattr.kind = cst then begin
                 hasfldprec := true;
                 fldprec := gattr.cval.ival
+              end else begin
+                hasfldprec := true;
+                fldprec_var := true;
+                fldprec_buflen := stmttop^.exprlen;
+                if fldprec_buflen > 200 then fldprec_buflen := 200;
+                for fwi := 1 to fldprec_buflen do
+                  fldprec_buf[fwi] := stmttop^.exprbuf[fwi]
               end;
               popstmt;
               if gattr.typtr <> nil then
