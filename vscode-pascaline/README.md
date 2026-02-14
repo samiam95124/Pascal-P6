@@ -42,18 +42,15 @@ selected symbol.
 
 This extension requires the Pascal-P6 toolchain to be installed:
 
-- `source/parser` -- used by the language server for diagnostics
-- `utils/passym` -- used by the language server for symbol information
+- `parser` -- used by the language server for diagnostics
+- `passym` -- used by the language server for symbol information
 - `pint` -- used by the debugger
 - `pc` -- used by the debugger to compile before debugging
 
-By default, the extension looks for these tools relative to the workspace root.
-Paths can be configured in settings.
+The bin directory in Pascal-P6 must be in the $PATH before vscode is executed.
 
 ## Extension Settings
 
-- `pascaline.parserPath` -- Path to the parser executable
-- `pascaline.symPath` -- Path to the passym executable
 - `pascaline.checkOnSave` -- Run parser on file save (default: true)
 - `pascaline.checkOnOpen` -- Run parser on file open (default: true)
 

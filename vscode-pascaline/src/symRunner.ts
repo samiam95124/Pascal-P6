@@ -93,20 +93,16 @@ export class SymRunner {
 
     /**
      * Find the passym executable. Checks:
-     * 1. Explicit path from settings
-     * 2. utils/passym relative to workspace root
-     * 3. undefined if not found
+     * 1. bin/passym relative to workspace root
+     * 2. 'passym' on PATH
      */
-    static findSym(settingsPath?: string, workspaceRoot?: string): string | undefined {
-        if (settingsPath && fs.existsSync(settingsPath)) {
-            return settingsPath;
-        }
+    static findSym(workspaceRoot?: string): string {
         if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'utils', 'passym');
+            const rel = path.join(workspaceRoot, 'bin', 'passym');
             if (fs.existsSync(rel)) {
                 return rel;
             }
         }
-        return undefined;
+        return 'passym';
     }
 }

@@ -48,8 +48,6 @@ let symRunner: SymRunner | undefined;
 const symbolCache = new Map<string, SymResult>();
 
 interface Settings {
-    parserPath?: string;
-    symPath?: string;
     checkOnSave: boolean;
     checkOnOpen: boolean;
 }
@@ -65,29 +63,14 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
         ? decodeURIComponent(workspaceFolders[0].uri.replace('file://', ''))
         : undefined;
 
-    // Try to find the parser
-    const parserPath = ParserRunner.findParser(settings.parserPath, workspaceRoot);
-    if (parserPath) {
-        parserRunner = new ParserRunner(parserPath);
-        connection.console.log(`Pascaline: using parser at ${parserPath}`);
-    } else {
-        connection.console.warn(
-            'Pascaline: parser executable not found. ' +
-            'Set pascaline.parserPath or ensure source/parser exists in workspace.'
-        );
-    }
+    // Find executables: workspace-relative first, then PATH
+    const parserPath = ParserRunner.findParser(workspaceRoot);
+    parserRunner = new ParserRunner(parserPath);
+    connection.console.log(`Pascaline: using parser at ${parserPath}`);
 
-    // Try to find passym
-    const symPath = SymRunner.findSym(settings.symPath, workspaceRoot);
-    if (symPath) {
-        symRunner = new SymRunner(symPath);
-        connection.console.log(`Pascaline: using passym at ${symPath}`);
-    } else {
-        connection.console.warn(
-            'Pascaline: passym executable not found. ' +
-            'Go-to-definition will be unavailable.'
-        );
-    }
+    const symPath = SymRunner.findSym(workspaceRoot);
+    symRunner = new SymRunner(symPath);
+    connection.console.log(`Pascaline: using passym at ${symPath}`);
 
     return {
         capabilities: {
@@ -114,25 +97,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 connection.onInitialized(() => {
     connection.workspace.getConfiguration('pascaline').then((config: any) => {
         if (config) {
-            if (config.parserPath) settings.parserPath = config.parserPath;
-            if (config.symPath) settings.symPath = config.symPath;
             if (config.checkOnSave !== undefined) settings.checkOnSave = config.checkOnSave;
             if (config.checkOnOpen !== undefined) settings.checkOnOpen = config.checkOnOpen;
-
-            if (config.parserPath && !parserRunner) {
-                const parserPath = ParserRunner.findParser(config.parserPath);
-                if (parserPath) {
-                    parserRunner = new ParserRunner(parserPath);
-                    connection.console.log(`Pascaline: using parser at ${parserPath}`);
-                }
-            }
-            if (config.symPath && !symRunner) {
-                const symPath = SymRunner.findSym(config.symPath);
-                if (symPath) {
-                    symRunner = new SymRunner(symPath);
-                    connection.console.log(`Pascaline: using passym at ${symPath}`);
-                }
-            }
         }
     });
 });

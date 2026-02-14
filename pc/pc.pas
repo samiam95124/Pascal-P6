@@ -769,6 +769,7 @@ end;
 
 begin
 
+   scanner.fansi := fiso7185; { set standard mode for scan }
    scanner.opnscn(f, fn); { open scan instance }
    { if it is a program, indicate }
    if f^.nxttlk = scanner.cprogram then fp^.pgm := true;

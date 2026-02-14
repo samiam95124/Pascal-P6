@@ -136,20 +136,16 @@ export class ParserRunner {
 
     /**
      * Find the parser executable. Checks:
-     * 1. Explicit path from settings
-     * 2. source/parser relative to workspace root
-     * 3. 'parser' on PATH
+     * 1. bin/parser relative to workspace root
+     * 2. 'parser' on PATH
      */
-    static findParser(settingsPath?: string, workspaceRoot?: string): string | undefined {
-        if (settingsPath && fs.existsSync(settingsPath)) {
-            return settingsPath;
-        }
+    static findParser(workspaceRoot?: string): string {
         if (workspaceRoot) {
-            const rel = path.join(workspaceRoot, 'source', 'parser');
+            const rel = path.join(workspaceRoot, 'bin', 'parser');
             if (fs.existsSync(rel)) {
                 return rel;
             }
         }
-        return undefined;
+        return 'parser';
     }
 }

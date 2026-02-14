@@ -120,17 +120,27 @@ export class PascalineDebugSession extends LoggingDebugSession {
         this.sourceFile = path.resolve(programPath);
         this.sourceDir = path.dirname(this.sourceFile);
 
-        // If pc/pint paths are defaults, look in bin/ relative to source dir
+        // If pc/pint paths are defaults, walk up from source dir to find bin/
         if (pcPath === 'pc') {
-            const binPc = path.join(this.sourceDir, 'bin', 'pc');
-            if (fs.existsSync(binPc)) {
-                pcPath = binPc;
+            let dir = this.sourceDir;
+            while (dir !== path.dirname(dir)) {
+                const binPc = path.join(dir, 'bin', 'pc');
+                if (fs.existsSync(binPc)) {
+                    pcPath = binPc;
+                    break;
+                }
+                dir = path.dirname(dir);
             }
         }
         if (pintPath === 'pint') {
-            const binPint = path.join(this.sourceDir, 'bin', 'pint');
-            if (fs.existsSync(binPint)) {
-                pintPath = binPint;
+            let dir = this.sourceDir;
+            while (dir !== path.dirname(dir)) {
+                const binPint = path.join(dir, 'bin', 'pint');
+                if (fs.existsSync(binPint)) {
+                    pintPath = binPint;
+                    break;
+                }
+                dir = path.dirname(dir);
             }
         }
         // Strip .pas extension for the program name
