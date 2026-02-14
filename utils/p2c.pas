@@ -188,6 +188,9 @@ const
    maxuplevel = 100; { maximum uplevel variable references per procedure }
    maxprocuplevel = 100; { max nested procs with uplevel refs }
    nestbufmax = 100000; { max size of nested procedure buffer }
+   deferredbufmax = 500000; { max total deferred children body buffer }
+   maxdeferredchildren = 50; { max deferred child procs }
+   maxdeferredfixups = 200; { max fixup entries for deferred calls }
    fwdbufmax = 20000; { max size of forward declaration buffer }
    maxhdrfuncs = 500; { max global functions for .h generation }
 
@@ -469,7 +472,8 @@ type
        forlow, forhigh: integer; { constant limits if known }
        { read/write file variable }
        filvarlen: integer;      { 0 = default file (stdin/stdout) }
-       filvarbuf: packed array [1..100] of char
+       filvarbuf: packed array [1..100] of char;
+       has_set_temps: boolean    { expression uses _stmp1/_stmp2 temporaries }
      end;
 
 (*-------------------------------------------------------------------------*)
@@ -503,6 +507,7 @@ var
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
     typemapsrcline: array [1..maxtypemap] of integer; { source lines }
+    typemapsnm: array [1..maxtypemap] of integer; { stp serial numbers }
     typemapcmt: array [1..maxtypemap] of cmtptr; { attached comments }
     intypedef: boolean;             { inside typedef - use struct prefix }
 
@@ -520,6 +525,7 @@ var
     ptrmapstp: array [1..maxptrmap] of stp;     { pointer type pointers }
     ptrmapname: array [1..maxptrmap] of pstring; { pointer type names }
     ptrmapsrcline: array [1..maxptrmap] of integer; { source lines }
+    ptrmapsnm: array [1..maxptrmap] of integer; { stp serial numbers }
     ptrmapcmt: array [1..maxptrmap] of cmtptr; { attached comments }
 
     { Array type name mapping for C output }
@@ -528,6 +534,7 @@ var
     arrmapstp: array [1..maxarrmap] of stp;     { array type pointers }
     arrmapname: array [1..maxarrmap] of pstring; { array type names }
     arrmapsrcline: array [1..maxarrmap] of integer; { source lines }
+    arrmapsnm: array [1..maxarrmap] of integer; { stp serial numbers }
     arrmapcmt: array [1..maxarrmap] of cmtptr; { attached comments }
 
     { Statement context stack }
@@ -547,12 +554,33 @@ var
     procuplevelproc: array [1..maxprocuplevel] of ctp; { procedure pointers }
     procuplevelnum:  array [1..maxprocuplevel] of integer; { count of uplevel refs }
     procuplevelrefs: array [1..maxprocuplevel, 1..maxuplevel] of ctp; { refs per proc }
+    procupleveldeferred: array [1..maxprocuplevel] of boolean; { true = preliminary }
 
     { Nested procedure C output buffering }
     nestbuf: packed array [1..nestbufmax] of char; { buffer for nested proc C output }
     nestbuflen: integer;            { current length of buffer }
     nestbuffering: boolean;         { true when buffering nested proc output }
     nestcmtfloor: integer;          { min line for comment flushing during nesting }
+
+    { Deferred child proc emission for uplevel ref forwarding }
+    has_unsaved_calls: boolean;     { current nested body calls unsaved proc }
+    deferredbuf: packed array [1..deferredbufmax] of char;
+    deferredbuflen: integer;
+    deferredchildcnt: integer;
+    deferredfloor: integer; { scope boundary: children <= floor belong to outer scope }
+    deferredbuffloor: integer; { deferredbuflen at scope entry, for safe reset }
+    deferredprocs: array [1..maxdeferredchildren] of ctp;
+    deferredstarts: array [1..maxdeferredchildren] of integer;
+    deferredlens: array [1..maxdeferredchildren] of integer;
+    deferredupcnts: array [1..maxdeferredchildren] of integer;
+    deferreduprefs: array [1..maxdeferredchildren, 1..maxuplevel] of ctp;
+    deferredfixstart: array [1..maxdeferredchildren] of integer;
+    deferredfixend: array [1..maxdeferredchildren] of integer;
+    { fixup table for unsaved-proc call markers in deferred bodies }
+    deffixupcnt: integer;
+    deffixupsave: integer; { fixup count at start of current nested body }
+    deffixupproc: array [1..maxdeferredfixups] of ctp;
+    deffixupcomma: array [1..maxdeferredfixups] of boolean;
 
     { Forward declaration buffer for static prototypes }
     fwdbuf: packed array [1..fwdbufmax] of char;
@@ -1908,7 +1936,8 @@ begin
   p^.forlimconst := false;
   p^.forlow := 0;
   p^.forhigh := 0;
-  p^.filvarlen := 0
+  p^.filvarlen := 0;
+  p^.has_set_temps := false
 end;
 
 procedure putstmt(p: stmtctxptr);
@@ -2343,6 +2372,7 @@ begin
       typemapstp[typemapcount] := fsp;
       typemapname[typemapcount] := name;
       typemapsrcline[typemapcount] := srcline;
+      typemapsnm[typemapcount] := fsp^.snm;
       typemapcmt[typemapcount] := nil
     end
   end
@@ -2386,6 +2416,7 @@ begin
       ptrmapstp[ptrmapcount] := fsp;
       ptrmapname[ptrmapcount] := name;
       ptrmapsrcline[ptrmapcount] := srcline;
+      ptrmapsnm[ptrmapcount] := fsp^.snm;
       ptrmapcmt[ptrmapcount] := nil
     end
   end
@@ -2398,7 +2429,8 @@ var i: integer;
 begin
   found := nil;
   for i := 1 to ptrmapcount do
-    if ptrmapstp[i] = fsp then found := ptrmapname[i];
+    if (ptrmapstp[i] = fsp) and (ptrmapsnm[i] = fsp^.snm) then
+      found := ptrmapname[i];
   lookup_ptrname := found
 end;
 
@@ -2411,6 +2443,7 @@ begin
       arrmapstp[arrmapcount] := fsp;
       arrmapname[arrmapcount] := name;
       arrmapsrcline[arrmapcount] := srcline;
+      arrmapsnm[arrmapcount] := fsp^.snm;
       arrmapcmt[arrmapcount] := nil
     end
   end
@@ -2423,7 +2456,8 @@ var i: integer;
 begin
   found := nil;
   for i := 1 to arrmapcount do
-    if arrmapstp[i] = fsp then found := arrmapname[i];
+    if (arrmapstp[i] = fsp) and (arrmapsnm[i] = fsp^.snm) then
+      found := arrmapname[i];
   lookup_arrname := found
 end;
 
@@ -2468,7 +2502,7 @@ var i: integer;
 begin
   for i := 1 to uplevelcnt do begin
     vcp := uplevelrefs[i];
-    if vcp <> nil then begin
+    if (vcp <> nil) and (vcp^.klass = vars) then begin
       if needcomma then c_str(', ');
       needcomma := true;
       { pass address of uplevel variable; sets/arrays already pointers;
@@ -2483,17 +2517,51 @@ begin
   end
 end;
 
-procedure save_proc_uplevelrefs(pcp: ctp);
-{ save the current uplevel refs for a procedure }
+procedure save_proc_uplevelrefs(pcp: ctp; deferred: boolean);
+{ save the current uplevel refs for a procedure (even if count is 0,
+  so we can distinguish "no refs needed" from "not yet saved").
+  If deferred=true, the entry is preliminary (refs may be incomplete);
+  call sites will emit markers instead of direct args. }
 var i: integer;
 begin
-  if (uplevelcnt > 0) and (procuplevelcnt < maxprocuplevel) then begin
+  if procuplevelcnt < maxprocuplevel then begin
     procuplevelcnt := procuplevelcnt + 1;
     procuplevelproc[procuplevelcnt] := pcp;
     procuplevelnum[procuplevelcnt] := uplevelcnt;
+    procupleveldeferred[procuplevelcnt] := deferred;
     for i := 1 to uplevelcnt do
       procuplevelrefs[procuplevelcnt, i] := uplevelrefs[i]
   end
+end;
+
+procedure propagate_child_uplevelrefs;
+{ After processing child declarations, pre-populate this proc's uplevel refs
+  from children that need forwarding of outer-scope variables.
+  Called after clear_uplevelrefs in body, before the body is parsed.
+  This ensures that calls from children to this proc (the parent) will find
+  the parent's uplevel refs already present, enabling correct arg forwarding. }
+
+  procedure scan(p: ctp);
+  var i, j: integer;
+      vcp: ctp;
+  begin
+    if p <> nil then begin
+      scan(p^.llink);
+      scan(p^.rlink);
+      if p^.klass in [proc, func] then
+        for i := 1 to procuplevelcnt do
+          if procuplevelproc[i] = p then
+            for j := 1 to procuplevelnum[i] do begin
+              vcp := procuplevelrefs[i, j];
+              if vcp <> nil then
+                if (vcp^.vlev < level) and (vcp^.vlev > 1) then
+                  add_uplevelref(vcp)
+            end
+    end
+  end;
+
+begin
+  scan(display[top].fname)
 end;
 
 procedure c_proc_uplevel_args(pcp: ctp; needcomma: boolean);
@@ -2504,7 +2572,7 @@ var i, j, n: integer;
 
   procedure emit_ref(vcp: ctp);
   begin
-    if vcp <> nil then begin
+    if (vcp <> nil) and (vcp^.klass = vars) then begin
       if needcomma then c_str(', ');
       needcomma := true;
       isuplevel := nestbuffering and (vcp^.vlev < level)
@@ -2542,7 +2610,8 @@ begin
 end;
 
 function has_proc_uplevelrefs(pcp: ctp): boolean;
-{ check if a procedure has stored uplevel refs }
+{ check if a procedure has stored uplevel refs with count > 0.
+  Skip deferred (preliminary) entries - their refs are incomplete. }
 var i: integer;
     found: boolean;
 begin
@@ -2553,8 +2622,24 @@ begin
   else
     for i := 1 to procuplevelcnt do
       if procuplevelproc[i] = pcp then
-        if procuplevelnum[i] > 0 then found := true;
+        if (procuplevelnum[i] > 0) and not procupleveldeferred[i] then
+          found := true;
   has_proc_uplevelrefs := found
+end;
+
+function is_proc_uplevelrefs_saved(pcp: ctp): boolean;
+{ check if a procedure's uplevel refs have been saved (even if count is 0).
+  Deferred (preliminary) entries are treated as unsaved. }
+var i: integer;
+    found: boolean;
+begin
+  found := false;
+  if pcp = uplevelproc then found := true
+  else
+    for i := 1 to procuplevelcnt do
+      if (procuplevelproc[i] = pcp) and not procupleveldeferred[i] then
+        found := true;
+  is_proc_uplevelrefs_saved := found
 end;
 
 procedure expr_proc_uplevel_args(pcp: ctp; needcomma: boolean);
@@ -2565,7 +2650,7 @@ var i, j, n: integer;
 
   procedure emit_ref(vcp: ctp);
   begin
-    if vcp <> nil then begin
+    if (vcp <> nil) and (vcp^.klass = vars) then begin
       if needcomma then expr_str(', ');
       needcomma := true;
       isuplevel := nestbuffering and (vcp^.vlev < level)
@@ -2609,7 +2694,8 @@ var i: integer;
 begin
   found := nil;
   for i := 1 to typemapcount do
-    if typemapstp[i] = fsp then found := typemapname[i];
+    if (typemapstp[i] = fsp) and (typemapsnm[i] = fsp^.snm) then
+      found := typemapname[i];
   lookup_typename := found
 end;
 
@@ -7093,7 +7179,21 @@ end;
           lc := llc;
           { add uplevel args for nested proc calls }
           if has_proc_uplevelrefs(fcp) then
-            expr_proc_uplevel_args(fcp, true); { comma before args }
+            expr_proc_uplevel_args(fcp, true) { comma before args }
+          else if nestbuffering and (fcp^.klass in [proc, func])
+                  and (fcp^.pflev > 1)
+                  and not is_proc_uplevelrefs_saved(fcp) then begin
+            { callee is unsaved nested proc (e.g. parent) - emit marker }
+            has_unsaved_calls := true;
+            if deffixupcnt < maxdeferredfixups then begin
+              deffixupcnt := deffixupcnt + 1;
+              deffixupproc[deffixupcnt] := fcp;
+              deffixupcomma[deffixupcnt] := true
+            end;
+            expr_str('/*@UPL:');
+            expr_int(deffixupcnt);
+            expr_str('@*/')
+          end;
           expr_chr(')');  { output closing paren for C call }
           if sy = rparent then insymbol else error(4)
         end (*if lparent*)
@@ -7103,6 +7203,19 @@ end;
           expr_chr('(');
           expr_proc_uplevel_args(fcp, false); { no comma before first arg }
           expr_chr(')')
+        end else if nestbuffering and (fcp^.klass in [proc, func])
+                    and (fcp^.pflev > 1)
+                    and not is_proc_uplevelrefs_saved(fcp) then begin
+          { callee is unsaved nested proc - emit marker }
+          has_unsaved_calls := true;
+          if deffixupcnt < maxdeferredfixups then begin
+            deffixupcnt := deffixupcnt + 1;
+            deffixupproc[deffixupcnt] := fcp;
+            deffixupcomma[deffixupcnt] := false
+          end;
+          expr_str('(/*@UPL:');
+          expr_int(deffixupcnt);
+          expr_str('@*/)')
         end else
           expr_str('()')
       end;
@@ -7526,6 +7639,8 @@ end;
                     set_cstr := false;
                     if wantexpr then begin
                       set_cstr := true;
+                      if stmttop <> nil then
+                        stmttop^.has_set_temps := true;
                       expr_str('(p2c_sclr(_stmp2), ')
                     end;
                     if sy = rbrack then
@@ -7745,6 +7860,8 @@ end;
                               begin
                                 { generate set intersection }
                                 if wantexpr and (sop_lhs_len > 0) then begin
+                                  if stmttop <> nil then
+                                    stmttop^.has_set_temps := true;
                                   set_rhs_len :=
                                     stmttop^.exprlen - set_lhs_start;
                                   for set_i := 1 to set_rhs_len do
@@ -7880,6 +7997,8 @@ end;
                        begin
                          { generate set union/difference }
                          if wantexpr and (sop_lhs_len > 0) then begin
+                           if stmttop <> nil then
+                             stmttop^.has_set_temps := true;
                            set_rhs_len :=
                              stmttop^.exprlen - set_lhs_start;
                            for set_i := 1 to set_rhs_len do
@@ -9194,6 +9313,8 @@ end;
           needproto: boolean; { need explicit params in forward prototype }
           oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean;
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
+          saveddeffloor: integer;
+          saveddefbuffloor: integer;
 
       procedure pushlvl(lcp: ctp);
       begin
@@ -9825,6 +9946,9 @@ end;
               c_type(lcp^.idtype); c_chr(' ')
             end else c_str('void ');
             c_idname(lcp);
+            { check if any value param has a narrow type that undergoes
+              default argument promotion (char, bool, byte, subrange).
+              These conflict with K&R () declarations in GCC. }
             needproto := false;
             lcp3 := lcp^.pflist;
             while (lcp3 <> nil) and not needproto do begin
@@ -9840,6 +9964,8 @@ end;
               lcp3 := lcp3^.next
             end;
             if needproto then begin
+              { emit full prototype for known params (uplevel params
+                not yet known, but narrow types require explicit proto) }
               c_chr('(');
               lcp3 := lcp^.pflist;
               while lcp3 <> nil do begin
@@ -9856,15 +9982,24 @@ end;
               end;
               c_ln(');')
             end else
+              { use () - uplevel params not yet known }
               c_ln('();')
           end;
           display[top].bname := lcp;
           { now we change to a block with defining points }
           display[top].define := true;
+          { save deferred scope: children from outer scope must not be flushed
+            by this proc's body processing }
+          saveddeffloor := deferredfloor;
+          saveddefbuffloor := deferredbuffloor;
+          deferredfloor := deferredchildcnt;
+          deferredbuffloor := deferredbuflen;
           declare(fsys);
           lcp^.locspc := lcp^.locstr-lc;
           lcs := lcp^.locspc;
           body(fsys + [semicolon],lcp);
+          deferredfloor := saveddeffloor;
+          deferredbuffloor := saveddefbuffloor;
           if sy = semicolon then
             begin if prtables then printtables(false); insymbol;
               if iso7185 then begin { handle according to standard }
@@ -10199,9 +10334,13 @@ end;
           if stmttop^.exprlen > 0 then begin
             flushcmts_before(curstmtline);
             c_indent;
+            if stmttop^.has_set_temps then
+              c_str('{ p2c_settype _stmp1, _stmp2; ');
             for i := 1 to stmttop^.exprlen do
               c_chr(stmttop^.exprbuf[i]);
             c_chr(';');
+            if stmttop^.has_set_temps then
+              c_str(' }');
             c_inlinecmt(stmttop^.startline);
             c_newline
           end;
@@ -10286,16 +10425,28 @@ end;
 
       procedure ifstatement;
         var i: integer;
+            set_block: boolean;
       begin
         { push context to capture condition expression }
         pushstmt(stk_if);
         expr_reset;
         expression(fsys + [thensy], false);
         chkbool;
+        { check if condition uses set temporaries }
+        set_block := false;
+        if stmttop <> nil then
+          if stmttop^.has_set_temps then set_block := true;
         { output C if header }
         if not elseifchain then begin
           flushcmts_before(curstmtline);
+          if set_block then begin
+            c_indent;
+            c_ln('{ p2c_settype _stmp1, _stmp2;')
+          end;
           c_indent
+        end else begin
+          if set_block then
+            c_str('{ p2c_settype _stmp1, _stmp2; ')
         end;
         elseifchain := false;
         c_str('if (');
@@ -10339,7 +10490,11 @@ end;
           end
         end
         else
-          c_ln('')
+          c_ln('');
+        if set_block then begin
+          c_indent;
+          c_ln('}')
+        end
       end (*ifstatement*) ;
 
       procedure casestatement;
@@ -10556,14 +10711,28 @@ end;
             expression(fsys, false);
             chkbool;
             { output closing with negated condition }
-            c_newline;
-            cindent := cindent - 1;
-            c_indent;
-            c_str('} while (!(');
-            if stmttop <> nil then
+            if (stmttop <> nil) and stmttop^.has_set_temps then begin
+              { condition uses set temps - use break pattern so temps
+                can be block-scoped }
+              c_indent;
+              c_str('{ p2c_settype _stmp1, _stmp2; if (');
               for i := 1 to stmttop^.exprlen do
                 c_chr(stmttop^.exprbuf[i]);
-            c_ln('));');
+              c_ln(') break; }');
+              c_newline;
+              cindent := cindent - 1;
+              c_indent;
+              c_ln('} while (1);')
+            end else begin
+              c_newline;
+              cindent := cindent - 1;
+              c_indent;
+              c_str('} while (!(');
+              if stmttop <> nil then
+                for i := 1 to stmttop^.exprlen do
+                  c_chr(stmttop^.exprbuf[i]);
+              c_ln('));')
+            end;
             popstmt
           end
         else error(53);
@@ -10573,14 +10742,23 @@ end;
       procedure whilestatement;
         var i: integer;
             whileline: integer; { source line of while statement }
+            set_block: boolean;
       begin
         whileline := curstmtline; { save before sub-statement overwrites }
         { push context to capture condition expression }
         pushstmt(stk_while);
         expr_reset;
         expression(fsys + [dosy], false); chkbool;
+        { check if condition uses set temporaries }
+        set_block := false;
+        if stmttop <> nil then
+          if stmttop^.has_set_temps then set_block := true;
         { output C while header }
         flushcmts_before(curstmtline);
+        if set_block then begin
+          c_indent;
+          c_ln('{ p2c_settype _stmp1, _stmp2;')
+        end;
         c_indent;
         c_str('while (');
         if stmttop <> nil then
@@ -10600,7 +10778,11 @@ end;
         c_indent;
         c_str('}');
         c_inlinecmt(whileline);
-        c_newline
+        c_newline;
+        if set_block then begin
+          c_indent;
+          c_ln('}')
+        end
       end (*whilestatement*) ;
 
       procedure forstatement;
@@ -10964,9 +11146,13 @@ end;
                               if lcp^.pfdeckind <> standard then begin
                                 flushcmts_before(curstmtline);
                                 c_indent;
+                                if stmttop^.has_set_temps then
+                                  c_str('{ p2c_settype _stmp1, _stmp2; ');
                                 for lii := 1 to stmttop^.exprlen do
                                   c_chr(stmttop^.exprbuf[lii]);
                                 c_chr(';');
+                                if stmttop^.has_set_temps then
+                                  c_str(' }');
                                 c_inlinecmt(stmttop^.startline);
                                 c_newline
                               end;
@@ -10984,9 +11170,13 @@ end;
                             if lcp^.pfdeckind <> standard then begin
                               flushcmts_before(curstmtline);
                               c_indent;
+                              if stmttop^.has_set_temps then
+                                c_str('{ p2c_settype _stmp1, _stmp2; ');
                               for lii := 1 to stmttop^.exprlen do
                                 c_chr(stmttop^.exprbuf[lii]);
                               c_chr(';');
+                              if stmttop^.has_set_temps then
+                                c_str(' }');
                               c_inlinecmt(stmttop^.startline);
                               c_newline
                             end;
@@ -11086,6 +11276,350 @@ end;
       end
     end;
 
+    { emit deferred child procs whose calls to parent need fixup }
+    procedure flush_deferred_children;
+    var di, i, j, k, m, ii: integer;
+        saveduplevelcnt: integer;
+        saveduplevelrefs: array [1..maxuplevel] of ctp;
+        saveduplevelproc: ctp;
+        childproc, vcp: ctp;
+        found: boolean;
+        bodystart, bodylen: integer;
+        markerbuf: packed array [1..20] of char;
+        markerlen, markeridx: integer;
+        inmrk: boolean;
+        skipcount: integer;
+        ch: char;
+    begin
+      if deferredchildcnt <= deferredfloor then begin end else begin
+      { save current uplevel state (the parent's) }
+      saveduplevelcnt := uplevelcnt;
+      for i := 1 to maxuplevel do saveduplevelrefs[i] := nil;
+      for i := 1 to uplevelcnt do
+        saveduplevelrefs[i] := uplevelrefs[i];
+      saveduplevelproc := uplevelproc;
+      for di := deferredfloor + 1 to deferredchildcnt do begin
+        childproc := deferredprocs[di];
+        { restore child's uplevel refs }
+        uplevelcnt := deferredupcnts[di];
+        for i := 1 to maxuplevel do uplevelrefs[i] := nil;
+        for i := 1 to uplevelcnt do
+          uplevelrefs[i] := deferreduprefs[di, i];
+        uplevelproc := childproc;
+        { add parent's forwarding refs to child's uplevel refs }
+        for i := 1 to saveduplevelcnt do begin
+          vcp := saveduplevelrefs[i];
+          if (vcp <> nil) and (vcp^.klass = vars) then begin
+            found := false;
+            for j := 1 to uplevelcnt do
+              if uplevelrefs[j] = vcp then found := true;
+            if not found then
+              if uplevelcnt < maxuplevel then begin
+                uplevelcnt := uplevelcnt + 1;
+                uplevelrefs[uplevelcnt] := vcp
+              end
+          end
+        end;
+        { add callee refs: scan this child's fixup entries,
+          look up each callee's saved refs, add missing ones to child.
+          If the callee is the parent proc (not yet saved to procuplevelproc),
+          use the parent's current refs directly. }
+        for i := deferredfixstart[di] to deferredfixend[di] do
+          if deffixupproc[i] <> nil then begin
+            if deffixupproc[i] = saveduplevelproc then begin
+              { callee is parent proc - use parent's current refs }
+              for m := 1 to saveduplevelcnt do begin
+                vcp := saveduplevelrefs[m];
+                if (vcp <> nil) and (vcp^.klass = vars) then begin
+                  found := false;
+                  for j := 1 to uplevelcnt do
+                    if uplevelrefs[j] = vcp then found := true;
+                  if not found then
+                    if uplevelcnt < maxuplevel then begin
+                      uplevelcnt := uplevelcnt + 1;
+                      uplevelrefs[uplevelcnt] := vcp
+                    end
+                end
+              end
+            end else
+              for k := 1 to procuplevelcnt do
+                if procuplevelproc[k] = deffixupproc[i] then
+                  for m := 1 to procuplevelnum[k] do begin
+                    vcp := procuplevelrefs[k, m];
+                    if (vcp <> nil) and (vcp^.klass = vars) then begin
+                      found := false;
+                      for j := 1 to uplevelcnt do
+                        if uplevelrefs[j] = vcp then found := true;
+                      if not found then
+                        if uplevelcnt < maxuplevel then begin
+                          uplevelcnt := uplevelcnt + 1;
+                          uplevelrefs[uplevelcnt] := vcp
+                        end
+                    end
+                  end
+          end;
+        { update saved entry for this child in procuplevelproc and
+          clear deferred flag so call sites can now use direct args }
+        for i := 1 to procuplevelcnt do
+          if procuplevelproc[i] = childproc then begin
+            procuplevelnum[i] := uplevelcnt;
+            for j := 1 to uplevelcnt do
+              procuplevelrefs[i, j] := uplevelrefs[j];
+            procupleveldeferred[i] := false
+          end;
+        { emit header for deferred child }
+        h_funcproto(childproc, true);
+        flushcmts_before(childproc^.srcline);
+        c_newline;
+        paramindent := 0;
+        c_str('static ');
+        if childproc^.klass = func then begin
+          c_type(childproc^.idtype);
+          c_chr(' ');
+          paramindent := paramindent + 8
+        end else begin
+          c_str('void ');
+          paramindent := 5
+        end;
+        if childproc^.name <> nil then begin
+          c_idname(childproc);
+          if childproc^.cname <> nil then
+            paramindent := paramindent + max(childproc^.cname^)
+          else
+            paramindent := paramindent + max(childproc^.name^)
+        end;
+        c_chr('(');
+        paramindent := paramindent + 1;
+        lcp := childproc^.pflist;
+        if (lcp = nil) and (uplevelcnt = 0) then
+          c_str('void')
+        else begin
+          prevparamline := 0;
+          while lcp <> nil do begin
+            if lcp^.klass = vars then begin
+              if (prevparamline > 0) and
+                 (lcp^.srcline > prevparamline) then begin
+                c_newline;
+                for ii := 1 to paramindent do c_chr(' ')
+              end;
+              prevparamline := lcp^.srcline;
+              if lcp^.vkind = formal then begin
+                c_type(lcp^.idtype);
+                if (lcp^.idtype <> nil) and
+                   (lcp^.idtype^.form <> arrays) then
+                  c_str('* ')
+                else c_chr(' ')
+              end else begin
+                c_type(lcp^.idtype);
+                c_chr(' ')
+              end;
+              if lcp^.name <> nil then c_pstr(lcp^.name);
+              c_arraydims(lcp^.idtype);
+              c_inlinecmt(lcp^.srcline)
+            end;
+            lcp := lcp^.next;
+            if lcp <> nil then c_chr(',')
+          end;
+          c_uplevel_params(childproc^.pflist <> nil)
+        end;
+        c_ln(')');
+        { flush deferred body, replacing /*@UPL:NNN@*/ markers }
+        bodystart := deferredstarts[di];
+        bodylen := deferredlens[di];
+        inmrk := false; markerlen := 0; skipcount := 0;
+        for i := bodystart to bodystart + bodylen - 1 do begin
+          ch := deferredbuf[i];
+          if skipcount > 0 then
+            skipcount := skipcount - 1
+          else if inmrk then begin
+            if ch = '@' then begin
+              { end of marker index, parse index from markerbuf }
+              markeridx := 0;
+              for k := 1 to markerlen do
+                markeridx := markeridx * 10 +
+                  (ord(markerbuf[k]) - ord('0'));
+              { emit uplevel args for the callee proc.
+                If callee is parent (not yet in procuplevelproc),
+                use parent's saved refs directly. }
+              if (markeridx >= 1) and
+                 (markeridx <= deffixupcnt) then begin
+                if deffixupproc[markeridx] = saveduplevelproc then begin
+                  { callee is parent proc - use parent's current refs }
+                  for m := 1 to saveduplevelcnt do begin
+                    vcp := saveduplevelrefs[m];
+                    if (vcp <> nil) and (vcp^.klass = vars) then begin
+                      if deffixupcomma[markeridx] then
+                        write(prc, ', ')
+                      else deffixupcomma[markeridx] := true;
+                      if vcp^.name <> nil then
+                        for j := 1 to max(vcp^.name^) do
+                          write(prc, vcp^.name^[j]);
+                      write(prc, '__up')
+                    end
+                  end
+                end else
+                { look up the callee's saved uplevel refs }
+                for k := 1 to procuplevelcnt do
+                  if procuplevelproc[k] = deffixupproc[markeridx] then
+                    for m := 1 to procuplevelnum[k] do begin
+                      vcp := procuplevelrefs[k, m];
+                      if (vcp <> nil) and (vcp^.klass = vars) then begin
+                        if deffixupcomma[markeridx] then
+                          write(prc, ', ')
+                        else deffixupcomma[markeridx] := true;
+                        if vcp^.name <> nil then
+                          for j := 1 to max(vcp^.name^) do
+                            write(prc, vcp^.name^[j]);
+                        write(prc, '__up')
+                      end
+                    end
+              end;
+              inmrk := false;
+              skipcount := 2 { skip closing '*/' }
+            end else begin
+              markerlen := markerlen + 1;
+              if markerlen <= 20 then
+                markerbuf[markerlen] := ch
+            end
+          end else begin
+            { check for start of marker: /*@UPL: }
+            if (ch = '/') and
+               (i + 6 <= bodystart + bodylen - 1) and
+               (deferredbuf[i+1] = '*') and
+               (deferredbuf[i+2] = '@') and
+               (deferredbuf[i+3] = 'U') and
+               (deferredbuf[i+4] = 'P') and
+               (deferredbuf[i+5] = 'L') and
+               (deferredbuf[i+6] = ':') then begin
+              inmrk := true;
+              markerlen := 0;
+              skipcount := 6 { skip '*@UPL:' }
+            end else
+              write(prc, ch)
+          end
+        end
+      end; { for each deferred child }
+      { restore parent's uplevel state }
+      uplevelcnt := saveduplevelcnt;
+      for i := 1 to maxuplevel do uplevelrefs[i] := nil;
+      for i := 1 to uplevelcnt do
+        uplevelrefs[i] := saveduplevelrefs[i];
+      uplevelproc := saveduplevelproc;
+      deferredchildcnt := deferredfloor;
+      deferredbuflen := deferredbuffloor
+      end { if deferredchildcnt > deferredfloor }
+    end; { flush_deferred_children }
+
+    procedure copy_nestbuf_resolving_markers;
+    { Copy nestbuf to deferredbuf, resolving /*@UPL:NNN@*/ markers for
+      callees whose uplevel refs are now known (non-deferred). Resolved
+      markers are replaced with actual uplevel arg text. Unresolved markers
+      (for still-unsaved callees) are copied verbatim.
+      This must be called BEFORE putdsp recycles CTP records, so that all
+      CTP pointers in deffixupproc and procuplevelrefs are still valid. }
+    var ci, cj, ck, cm: integer;
+        inmrk: boolean;
+        mbuf: packed array [1..20] of char;
+        mbuflen, midx: integer;
+        mskip: integer;
+        mvcp: ctp;
+        mneedcomma: boolean;
+        mresolved: boolean;
+        misup: boolean;
+
+      procedure d_chr(c: char);
+      begin
+        if deferredbuflen < deferredbufmax then begin
+          deferredbuflen := deferredbuflen + 1;
+          deferredbuf[deferredbuflen] := c
+        end
+      end;
+
+    begin
+      inmrk := false;
+      mbuflen := 0;
+      mskip := 0;
+      for ci := 1 to nestbuflen do begin
+        if mskip > 0 then
+          mskip := mskip - 1
+        else if inmrk then begin
+          if nestbuf[ci] = '@' then begin
+            { end of marker index, parse it }
+            midx := 0;
+            for ck := 1 to mbuflen do
+              midx := midx * 10 + (ord(mbuf[ck]) - ord('0'));
+            { check if callee's refs are now saved (non-deferred) }
+            mresolved := false;
+            if (midx >= 1) and (midx <= deffixupcnt) then
+              if deffixupproc[midx] <> nil then
+                if is_proc_uplevelrefs_saved(deffixupproc[midx]) then
+                  mresolved := true;
+            if mresolved then begin
+              { emit resolved uplevel args to deferredbuf }
+              mneedcomma := deffixupcomma[midx];
+              for ck := 1 to procuplevelcnt do
+                if procuplevelproc[ck] = deffixupproc[midx] then
+                  for cm := 1 to procuplevelnum[ck] do begin
+                    mvcp := procuplevelrefs[ck, cm];
+                    if (mvcp <> nil) and (mvcp^.klass = vars) then begin
+                      if mneedcomma then begin
+                        d_chr(','); d_chr(' ')
+                      end;
+                      mneedcomma := true;
+                      misup := (mvcp^.vlev < level) and (mvcp^.vlev > 1);
+                      if misup then begin
+                        { uplevel var: add to current proc's refs for forwarding }
+                        add_uplevelref(mvcp);
+                        if mvcp^.name <> nil then
+                          for cj := 1 to max(mvcp^.name^) do
+                            d_chr(mvcp^.name^[cj]);
+                        d_chr('_'); d_chr('_');
+                        d_chr('u'); d_chr('p')
+                      end else begin
+                        { local var: emit & prefix for non-set/array vars }
+                        if mvcp^.idtype <> nil then begin
+                          if not (mvcp^.idtype^.form in [power, arrays]) and
+                             not ((mvcp^.vkind = formal) and
+                                  (mvcp^.idtype^.form in [records])) then
+                            d_chr('&')
+                        end else d_chr('&');
+                        if mvcp^.name <> nil then
+                          for cj := 1 to max(mvcp^.name^) do
+                            d_chr(mvcp^.name^[cj])
+                      end
+                    end
+                  end;
+              { null out fixup entry to prevent stale CTP access later }
+              deffixupproc[midx] := nil;
+              mskip := 2 { skip closing */ }
+            end else begin
+              { unresolved: copy original marker text verbatim }
+              d_chr('/'); d_chr('*'); d_chr('@');
+              d_chr('U'); d_chr('P'); d_chr('L'); d_chr(':');
+              for ck := 1 to mbuflen do d_chr(mbuf[ck]);
+              d_chr('@')
+              { let */ pass through as normal chars }
+            end;
+            inmrk := false
+          end else begin
+            mbuflen := mbuflen + 1;
+            if mbuflen <= 20 then mbuf[mbuflen] := nestbuf[ci]
+          end
+        end else begin
+          { detect marker start: /*@UPL: }
+          if (nestbuf[ci] = '/') and (ci + 6 <= nestbuflen) and
+             (nestbuf[ci+1] = '*') and (nestbuf[ci+2] = '@') and
+             (nestbuf[ci+3] = 'U') and (nestbuf[ci+4] = 'P') and
+             (nestbuf[ci+5] = 'L') and (nestbuf[ci+6] = ':') then begin
+            inmrk := true;
+            mbuflen := 0;
+            mskip := 6 { skip *@UPL: }
+          end else
+            d_chr(nestbuf[ci])
+        end
+      end
+    end; { copy_nestbuf_resolving_markers }
+
   begin (*body*)
     stalvl := 0; { clear statement nesting level }
     { if processing procedure/function, use that entry label, otherwise set
@@ -11183,6 +11717,15 @@ end;
       uplevelproc := fprocp;
       uplevellev := level - 1; { detect vars from enclosing scope }
       clear_uplevelrefs;
+      { pre-populate from children: if any child accesses vars from scopes
+        above us, we also need those as uplevel params to forward them }
+      propagate_child_uplevelrefs;
+      { flush deferred children: for top-level procs (level <= 2), flush now
+        since they don't need uplevel refs from their parent. For nested procs
+        (level > 2), defer the flush to after body parsing (line 11781) so
+        that the parent's uplevel refs are known when resolving child markers. }
+      if level <= 2 then
+        flush_deferred_children;
       if level > 2 then begin
         { nested procedure - buffer body, delay header until uplevel refs known }
         { claim parent procedure's declaration comments so they are not flushed
@@ -11208,6 +11751,8 @@ end;
         c_typedefs;
         nestbuflen := 0;
         nestbuffering := true;
+        has_unsaved_calls := false;
+        deffixupsave := deffixupcnt;
         { buffer opening brace and local vars }
         c_ln('{');
         c_newline;
@@ -11362,6 +11907,31 @@ end;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
+        { emit any deferred children that were waiting for our refs }
+        flush_deferred_children;
+        if has_unsaved_calls then begin
+          { this child calls an unsaved parent proc - defer emission }
+          if deferredchildcnt < maxdeferredchildren then begin
+            deferredchildcnt := deferredchildcnt + 1;
+            deferredprocs[deferredchildcnt] := fprocp;
+            deferredstarts[deferredchildcnt] := deferredbuflen + 1;
+            { copy nestbuf to deferred buffer, resolving known markers }
+            copy_nestbuf_resolving_markers;
+            deferredlens[deferredchildcnt] :=
+              deferredbuflen - deferredstarts[deferredchildcnt] + 1;
+            { save fixup range for this child }
+            deferredfixstart[deferredchildcnt] := deffixupsave + 1;
+            deferredfixend[deferredchildcnt] := deffixupcnt;
+            { save uplevel refs for this child }
+            deferredupcnts[deferredchildcnt] := uplevelcnt;
+            for ii := 1 to uplevelcnt do
+              deferreduprefs[deferredchildcnt, ii] := uplevelrefs[ii]
+          end;
+          { save refs as preliminary (deferred=true): call sites will emit
+            markers instead of direct args since refs are incomplete }
+          save_proc_uplevelrefs(fprocp, true)
+        end else begin
+        { normal (non-deferred) nested proc emission }
         { declare jmp_buf for any non-local goto targets in enclosing scopes }
         for lv := level-1 downto 1 do begin
           llp := display[lv].flabel;
@@ -11441,7 +12011,8 @@ end;
         { now flush the buffered body }
         flush_nestbuf;
         { save uplevel refs for this procedure so call sites can use them }
-        save_proc_uplevelrefs(fprocp)
+        save_proc_uplevelrefs(fprocp, false)
+        end { normal nested proc }
       end
     end;
     llp := display[top].flabel; (*test for undefined and unreferenced labels*)
@@ -11744,7 +12315,6 @@ end;
     c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
     c_str('#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v==''');
     c_chr(chr(92)); c_ln('n''?(v='' ''):0))');
-    c_ln('static p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
@@ -12687,6 +13257,12 @@ begin
   procuplevelcnt := 0;
   nestbuflen := 0;
   nestbuffering := false;
+  has_unsaved_calls := false;
+  deferredbuflen := 0;
+  deferredchildcnt := 0;
+  deferredfloor := 0;
+  deferredbuffloor := 0;
+  deffixupcnt := 0;
   c_target := 0;
   hdr_included := false;
   fwdbuflen := 0;
