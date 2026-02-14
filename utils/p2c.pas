@@ -11969,6 +11969,21 @@ end;
       { for nested procedures, now output header with uplevel params and flush body }
       if nestbuffering then begin
         nestbuffering := false; { stop buffering to output header }
+        { declare jmp_buf for any non-local goto targets in enclosing scopes.
+          Must happen before deferred/non-deferred split since both paths need it,
+          and display labels are only available now (before scope is unwound). }
+        for lv := level-1 downto 1 do begin
+          llp := display[lv].flabel;
+          while llp <> nil do begin
+            if llp^.ipcref and not llp^.jmpdeclared then begin
+              c_str('jmp_buf _jmpenv_');
+              c_int(llp^.labname);
+              c_ln(';');
+              llp^.jmpdeclared := true
+            end;
+            llp := llp^.nextlab
+          end
+        end;
         { emit any deferred children that were waiting for our refs }
         flush_deferred_children;
         if has_unsaved_calls then begin
@@ -11994,19 +12009,6 @@ end;
           save_proc_uplevelrefs(fprocp, true)
         end else begin
         { normal (non-deferred) nested proc emission }
-        { declare jmp_buf for any non-local goto targets in enclosing scopes }
-        for lv := level-1 downto 1 do begin
-          llp := display[lv].flabel;
-          while llp <> nil do begin
-            if llp^.ipcref and not llp^.jmpdeclared then begin
-              c_str('jmp_buf _jmpenv_');
-              c_int(llp^.labname);
-              c_ln(';');
-              llp^.jmpdeclared := true
-            end;
-            llp := llp^.nextlab
-          end
-        end;
         { output comments belonging to this nested proc (not parent's) }
         h_funcproto(fprocp, true); { static: no-op, handled at forward point }
         flushcmts_before(fprocp^.srcline);
