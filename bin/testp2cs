@@ -39,9 +39,9 @@ for prog in "${programs[@]}"; do
 done
 
 echo "========================================"
-printf "%-20s %-10s %-10s %-10s %s\n" "Program" "p2c" "gcc" "warn" "dif"
-echo "----------------------------------------"
+printf "%-30s %-10s %-10s %-10s %s\n" "Program" "p2c" "gcc" "warn" "dif"
+echo "----------------------------------------------------------------------"
 cat "$P2C_RESULTS"
-echo "----------------------------------------"
+echo "----------------------------------------------------------------------"
 echo "Results: $pass passed, $fail failed, $total total"
 rm -f "$P2C_RESULTS"
