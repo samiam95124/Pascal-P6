@@ -58,7 +58,7 @@ fi
 
 # Compile with gcc
 echo "Compiling ${dir}/${prog}.c"
-gcc -o ${prog}_c ${prog}.c -I"${root}/libs" "${root}/libs/setopr.o" -lm 2>>${prog}.err
+gcc -o ${prog}_c ${prog}.c -I"${root}/libs" "${root}/libs/pas2csup.o" -lm 2>>${prog}.err
 gccerrs=$(grep -c "error:" ${prog}.err)
 gccwarns=$(grep -c "warning:" ${prog}.err)
 if [ "$gccerrs" -gt 0 ]; then

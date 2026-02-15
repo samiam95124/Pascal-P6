@@ -702,6 +702,7 @@ var
     with_idx:                       { display level -> with pointer number }
       array [disprange] of integer;
     sel_deref: boolean;             { last selector op was ^ (ptr deref) }
+    sel_varstart: integer;          { exprbuf pos before var name for file ^ }
 
     pile:                           { pile of joined/class contexts }
       array [disprange] of disprec;
@@ -2780,6 +2781,60 @@ procedure c_type(fsp: stp);
 { output C type for given Pascal type }
 forward;
 
+procedure expr_typename(fsp: stp);
+{ write C type name into expression buffer - mirrors c_basetype }
+  var tname: pstring;
+begin
+  if fsp = nil then expr_str('void')
+  else if fsp = intptr then expr_str('long')
+  else if fsp = realptr then expr_str('double')
+  else if fsp = charptr then expr_str('char')
+  else if fsp = boolptr then expr_str('unsigned char')
+  else if fsp = byteptr then expr_str('unsigned char')
+  else case fsp^.form of
+    subrange: begin
+      if fsp^.rangetype = charptr then expr_str('char')
+      else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 255) then
+        expr_str('unsigned char')
+      else if (fsp^.min.ival >= -128) and (fsp^.max.ival <= 127) then
+        expr_str('signed char')
+      else if (fsp^.min.ival >= 0) and (fsp^.max.ival <= 65535) then
+        expr_str('unsigned short')
+      else if (fsp^.min.ival >= -32768) and (fsp^.max.ival <= 32767) then
+        expr_str('short')
+      else
+        expr_str('long')
+    end;
+    pointer: begin
+      tname := lookup_ptrname(fsp);
+      if tname <> nil then expr_pstr(tname)
+      else begin
+        tname := lookup_typename(fsp^.eltype);
+        if tname <> nil then begin
+          expr_pstr(tname); expr_chr('*')
+        end else begin
+          expr_typename(fsp^.eltype); expr_chr('*')
+        end
+      end
+    end;
+    scalar:  expr_str('int');
+    power:   expr_str('p2c_settype');
+    arrays: begin
+      tname := lookup_arrname(fsp);
+      if tname <> nil then expr_pstr(tname)
+      else expr_typename(fsp^.aeltype)
+    end;
+    arrayc:  expr_typename(fsp^.abstype);
+    records: begin
+      tname := lookup_typename(fsp);
+      if tname <> nil then expr_pstr(tname)
+      else expr_str('struct')
+    end;
+    files:   if fsp = textptr then expr_str('FILE*')
+             else expr_str('p2c_file')
+  end
+end;
+
 procedure c_basetype(fsp: stp);
 { output base C type without array dimensions }
 var tname: pstring;
@@ -2840,7 +2895,8 @@ begin
       end else
         c_str('struct')  { anonymous - will cause C error }
     end;
-    files:   c_str('FILE*')
+    files:   if fsp = textptr then c_str('FILE*')
+             else c_str('p2c_file')
   end
 end;
 
@@ -2922,7 +2978,8 @@ begin
         c_type(plcp^.idtype);
         if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
            (plcp^.idtype^.form <> arrays) and
-           (plcp^.idtype^.form <> files) then c_str('*')
+           not ((plcp^.idtype^.form = files) and
+                (plcp^.idtype = textptr)) then c_str('*')
       end else if plcp^.klass in [proc, func] then
         c_funcptr_param(plcp);
       plcp := plcp^.next;
@@ -5696,6 +5753,8 @@ end;
   var lattr: attr; lcp: ctp; lsize: addrrange; lmin,lmax: integer;
       id: stp; lastptr: boolean; cc: integer; ct: boolean;
       needarrow: boolean; { for C output: use -> instead of . for var param records }
+      filebuflen, filebufi: integer;
+      filebufsav: packed array [1..200] of char;
   function schblk(fcp: ctp): boolean;
   var i: disprange; f: boolean;
   begin
@@ -5972,6 +6031,35 @@ end;
                     end
                   else
                     if form = files then begin loadaddress;
+                       if wantexpr and (stmttop <> nil) then begin
+                         { save only the variable name portion, not the
+                           prefix that precedes it in the expression buffer }
+                         filebuflen :=
+                           stmttop^.exprlen - sel_varstart;
+                         for filebufi := 1 to filebuflen do
+                           filebufsav[filebufi] :=
+                             stmttop^.exprbuf[sel_varstart+filebufi];
+                         { trim buffer back to prefix }
+                         stmttop^.exprlen := sel_varstart;
+                         if typtr <> textptr then begin
+                           { typed file buffer: prefix + cast varname.buf }
+                           expr_str('(*(');
+                           expr_typename(filtype);
+                           expr_str('*)');
+                           for filebufi := 1 to filebuflen do
+                             expr_chr(filebufsav[filebufi]);
+                           expr_str('.buf)')
+                         end else begin
+                           { text file buffer: peek at current char }
+                           expr_str('({int _c=getc(');
+                           for filebufi := 1 to filebuflen do
+                             expr_chr(filebufsav[filebufi]);
+                           expr_str(');ungetc(_c,');
+                           for filebufi := 1 to filebuflen do
+                             expr_chr(filebufsav[filebufi]);
+                           expr_str(');_c;})')
+                         end
+                       end;
                        typtr := filtype;
                     end else error(141);
               insymbol;
@@ -6030,6 +6118,9 @@ end;
         if (lcp^.vlev < level) and (lcp^.vlev > 1) then
           add_uplevelref(lcp);
       { output variable name for C before selector handles subscripts }
+      { record buffer position before variable name for file ^ transform }
+      sel_varstart := 0;
+      if stmttop <> nil then sel_varstart := stmttop^.exprlen;
       if wantexpr then
         if lcp <> nil then
           if lcp^.name <> nil then begin
@@ -6091,9 +6182,74 @@ end;
     end;
 
     procedure getputresetrewriteprocedure;
-    begin chkhdr; variable(fsys + [rparent], false); loadaddress;
+      var filtyp: stp; i: integer;
+    begin chkhdr;
+      pushstmt(stk_call); expr_reset;
+      variable(fsys + [rparent], true); loadaddress;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> files then error(116)
+        else begin
+          filtyp := gattr.typtr;
+          if filtyp <> textptr then begin
+            { typed file - use runtime functions }
+            c_indent;
+            case lkey of
+              1: begin { get }
+                   c_str('p2c_fget(&');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_ln(');')
+                 end;
+              2: begin { put }
+                   c_str('p2c_fput(&');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_ln(');')
+                 end;
+              3: begin { reset }
+                   c_str('p2c_freset(&');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_str(', sizeof(');
+                   c_type(filtyp^.filtype);
+                   c_ln('));')
+                 end;
+              4: begin { rewrite }
+                   c_str('p2c_frewrite(&');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_str(', sizeof(');
+                   c_type(filtyp^.filtype);
+                   c_ln('));')
+                 end
+            end
+          end else begin
+            { text file }
+            c_indent;
+            case lkey of
+              1: begin { get - advance to next char }
+                   c_str('fgetc(');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_ln(');')
+                 end;
+              2: begin { put - not commonly used for text }
+                 end;
+              3: begin { reset }
+                   c_str('rewind(');
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_ln(');')
+                 end;
+              4: begin { rewrite }
+                   for i := 1 to stmttop^.exprlen do
+                     c_chr(stmttop^.exprbuf[i]);
+                   c_ln(' = tmpfile();')
+                 end
+            end
+          end
+        end;
+      popstmt
     end (*getputresetrewrite*) ;
 
     procedure pageprocedure;
@@ -6270,7 +6426,22 @@ end;
                 else error(116);
               if txt then add_rdt_arg;
             end else begin { binary file }
-              if not comptypes(gattr.typtr,lsp^.filtype) then error(129)
+              if not comptypes(gattr.typtr,lsp^.filtype) then error(129);
+              { emit: x = cast from fi.buf; p2c_fget }
+              c_indent;
+              for fvi := 1 to stmttop^.exprlen do
+                c_chr(stmttop^.exprbuf[fvi]);
+              c_str(' = (*(');
+              c_type(lsp^.filtype);
+              c_str('*)');
+              for fvi := 1 to stmttop^.filvarlen do
+                c_chr(stmttop^.filvarbuf[fvi]);
+              c_ln('.buf);');
+              c_indent;
+              c_str('p2c_fget(&');
+              for fvi := 1 to stmttop^.filvarlen do
+                c_chr(stmttop^.filvarbuf[fvi]);
+              c_ln(');')
             end;
             test := sy <> comma;
             if not test then
@@ -6322,6 +6493,7 @@ end;
           fldprec_buf: packed array [1..200] of char;
           fldprec_buflen: integer;
           fwi: integer; { index for field width buffer copying }
+          fvi: integer; { index for file variable buffer }
 
       procedure fmt_width(w: integer);
       { output field width digits to format string }
@@ -6532,6 +6704,12 @@ end;
                 byt := isbyte(lsp^.filtype)
               end;
               loadaddress; deffil := false;
+              { save file variable name for binary file output }
+              if stmttop <> nil then begin
+                stmttop^.filvarlen := stmttop^.exprlen;
+                for fvi := 1 to stmttop^.filvarlen do
+                  stmttop^.filvarbuf[fvi] := stmttop^.exprbuf[fvi]
+              end;
               if sy = rparent then
                 begin if llkey = 6 then error(116);
                   test := true
@@ -6644,7 +6822,23 @@ end;
               if lsp^.form = scalar then error(236)
               else if not stringt(lsp) then error(116)
         end else begin { binary file }
-          if not comptypes(lsp1^.filtype,lsp) then error(129)
+          if not comptypes(lsp1^.filtype,lsp) then error(129);
+          { emit: cast fi.buf = expr; p2c_fput }
+          c_indent;
+          c_str('(*(');
+          c_type(lsp1^.filtype);
+          c_str('*)');
+          for fvi := 1 to stmttop^.filvarlen do
+            c_chr(stmttop^.filvarbuf[fvi]);
+          c_str('.buf) = ');
+          for fvi := 1 to stmttop^.exprlen do
+            c_chr(stmttop^.exprbuf[fvi]);
+          c_ln(';');
+          c_indent;
+          c_str('p2c_fput(&');
+          for fvi := 1 to stmttop^.filvarlen do
+            c_chr(stmttop^.filvarbuf[fvi]);
+          c_ln(');')
         end;
         { add this value to printf }
         if txt then add_wrt_arg;
@@ -6981,15 +7175,28 @@ end;
 
     procedure eofeolnfunction;
     var hasarg: boolean;
+        savepos: integer;
     begin
       hasarg := false;
       if sy = lparent then
         begin insymbol; hasarg := true;
-          { output function name before parsing arg }
+          { save position before emitting function name }
+          if stmttop <> nil then savepos := stmttop^.exprlen
+          else savepos := 0;
           if lkey = 9 then expr_str('feof(')
           else expr_str('p2c_eoln(');
           variable(fsys + [rparent], false);
           if sy = rparent then insymbol else error(4);
+          { check if typed file - need p2c_feof(&fi) instead }
+          if (lkey = 9) and (gattr.typtr <> nil) then
+            if (gattr.typtr^.form = files) and
+               (gattr.typtr <> textptr) then begin
+              { replace feof( with p2c_feof(& }
+              if stmttop <> nil then begin
+                expr_del(savepos + 1, 5); { remove 'feof(' }
+                expr_insert('p2c_feof(&', savepos + 1)
+              end
+            end;
           expr_chr(')');
           loadaddress
         end
@@ -7284,12 +7491,14 @@ end;
                 expression(fsys + [comma,rparent], varp);
                 { insert & for var params in C (arrays decay to pointers, skip &;
                   var params of record/array type are already pointers, skip &;
-                  file params are FILE* already, skip &) }
+                  text file params are FILE* already, skip &;
+                  typed file params are p2c_file struct, need &) }
                 if wantexpr and varp then
                   if nxt <> nil then
                     if nxt^.idtype <> nil then
                       if (nxt^.idtype^.form <> arrays) and
-                         (nxt^.idtype^.form <> files) then
+                         not ((nxt^.idtype^.form = files) and
+                              (nxt^.idtype = textptr)) then
                         if stmttop <> nil then begin
                           ai := 1; { assume & needed }
                           { ptr^ dereference cancels & for var params:
@@ -7731,6 +7940,10 @@ end;
                               if (lcp^.vlev < level) and
                                  (lcp^.vlev > 1) then
                                 add_uplevelref(lcp);
+                            { record buffer position before variable name }
+                            sel_varstart := 0;
+                            if stmttop <> nil then
+                              sel_varstart := stmttop^.exprlen;
                             { output variable identifier BEFORE selector }
                             if wantexpr then begin
                               if lcp^.klass = vars then begin
@@ -10376,6 +10589,9 @@ end;
         if (fcp <> nil) and (fcp^.klass = vars) then
           if (fcp^.vlev < level) and (fcp^.vlev > 1) then
             add_uplevelref(fcp);
+        { record buffer position before variable name for file ^ transform }
+        sel_varstart := 0;
+        if stmttop <> nil then sel_varstart := stmttop^.exprlen;
         { output variable name to expression buffer BEFORE selector }
         if fcp <> nil then
           if fcp^.name <> nil then begin
@@ -11269,6 +11485,9 @@ end;
           if sy = ident then
             begin searchid([vars,field],lcp); insymbol end
           else begin error(2); lcp := uvarptr end;
+          { record buffer position before variable name }
+          sel_varstart := 0;
+          if stmttop <> nil then sel_varstart := stmttop^.exprlen;
           { output variable name to expression buffer }
           if lcp <> nil then
             if lcp^.name <> nil then begin
@@ -11725,7 +11944,8 @@ end;
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
                    (lcp^.idtype^.form <> arrays) and
-                   (lcp^.idtype^.form <> files) then
+                   not ((lcp^.idtype^.form = files) and
+                        (lcp^.idtype = textptr)) then
                   c_str('* ')
                 else c_chr(' ')
               end else begin
@@ -12136,13 +12356,15 @@ end;
               prevparamline := lcp^.srcline;
               { output parameter type }
               if lcp^.vkind = formal then begin
-                { var parameter - use pointer, but not for arrays or files }
+                { var parameter - use pointer, but not for arrays or text files }
                 { arrays decay to pointers naturally in C function params }
-                { files are already FILE* pointers, no double indirection }
+                { text files are FILE* (already pointers), no double indirection }
+                { typed files are p2c_file (struct), need * for var params }
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
                    (lcp^.idtype^.form <> arrays) and
-                   (lcp^.idtype^.form <> files) then
+                   not ((lcp^.idtype^.form = files) and
+                        (lcp^.idtype = textptr)) then
                   c_str('* ')
                 else
                   c_chr(' ')
@@ -12328,7 +12550,8 @@ end;
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
                    (lcp^.idtype^.form <> arrays) and
-                   (lcp^.idtype^.form <> files) then
+                   not ((lcp^.idtype^.form = files) and
+                        (lcp^.idtype = textptr)) then
                   c_str('* ')
                 else
                   c_chr(' ')
@@ -12635,7 +12858,7 @@ end;
     c_ln('#include <string.h>');
     c_ln('#include <math.h>');
     c_ln('#include <setjmp.h>');
-    c_ln('#include "setopr.h"');
+    c_ln('#include "pas2csup.h"');
     { compute trimmed length of filename base }
     nlen := max(n);
     while (nlen > 0) and (n[nlen] = ' ') do nlen := nlen - 1;
@@ -12831,7 +13054,8 @@ end;
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
                    (lcp^.idtype^.form <> arrays) and
-                   (lcp^.idtype^.form <> files) then c_str('* ')
+                   not ((lcp^.idtype^.form = files) and
+                        (lcp^.idtype = textptr)) then c_str('* ')
                 else c_chr(' ')
               end else begin
                 c_type(lcp^.idtype); c_chr(' ')
