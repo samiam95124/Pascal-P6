@@ -504,6 +504,7 @@ var
     { Record type name mapping for C output }
     typemapcount: integer;          { number of type mappings }
     typedefsout: integer;            { number of typedefs already output }
+    fwdtypedefsout: integer;         { number of fwd decls already output }
     typemapstp: array [1..maxtypemap] of stp;    { type pointers }
     typemapname: array [1..maxtypemap] of pstring; { type names }
     typemapsrcline: array [1..maxtypemap] of integer; { source lines }
@@ -1492,7 +1493,9 @@ begin
     if nameis('random') or nameis('srandom') or nameis('abort') or
        nameis('index') or nameis('remove') or nameis('signal') or
        nameis('time') or nameis('main') or nameis('getchar') or
-       nameis('putchar') or nameis('printf') or nameis('scanf')
+       nameis('putchar') or nameis('printf') or nameis('scanf') or
+       nameis('rand') or nameis('srand') or
+       nameis('execl') or nameis('execv') or nameis('execve')
     then res := true
   end;
   is_c_reserved := res
@@ -2506,11 +2509,10 @@ begin
       if needcomma then c_str(', ');
       needcomma := true;
       { pass address of uplevel variable; sets/arrays already pointers;
-        var params of record/array type already pointers too }
+        var params are already pointers in C too }
       if vcp^.idtype <> nil then begin
         if not (vcp^.idtype^.form in [power, arrays]) and
-           not ((vcp^.vkind = formal) and
-                (vcp^.idtype^.form in [records])) then c_chr('&')
+           not (vcp^.vkind = formal) then c_chr('&')
       end else c_chr('&');
       if vcp^.name <> nil then c_pstr(vcp^.name)
     end
@@ -2583,11 +2585,10 @@ var i, j, n: integer;
         c_str('__up')
       end else begin
         { sets and arrays are already pointers in C, no & needed;
-          var params of record/array type are already pointers too }
+          var params are already pointers in C too }
         if vcp^.idtype <> nil then begin
           if not (vcp^.idtype^.form in [power, arrays]) and
-             not ((vcp^.vkind = formal) and
-                  (vcp^.idtype^.form in [records])) then c_chr('&')
+             not (vcp^.vkind = formal) then c_chr('&')
         end else c_chr('&');
         if vcp^.name <> nil then c_pstr(vcp^.name)
       end
@@ -2661,11 +2662,10 @@ var i, j, n: integer;
         expr_str('__up')
       end else begin
         { sets and arrays are already pointers in C, no & needed;
-          var params of record/array type are already pointers too }
+          var params are already pointers in C too }
         if vcp^.idtype <> nil then begin
           if not (vcp^.idtype^.form in [power, arrays]) and
-             not ((vcp^.vkind = formal) and
-                  (vcp^.idtype^.form in [records])) then expr_chr('&')
+             not (vcp^.vkind = formal) then expr_chr('&')
         end else expr_chr('&');
         if vcp^.name <> nil then expr_pstr(vcp^.name)
       end
@@ -3021,7 +3021,12 @@ begin
       if needcomma then c_str(', ');
       needcomma := true;
       { uplevel vars passed as pointers; sets are arrays, already pointers }
-      c_type(vcp^.idtype);
+      { for arrays, use element type so param is pointer-to-element,
+        allowing name__up[i] to index elements correctly }
+      if (vcp^.idtype <> nil) and (vcp^.idtype^.form = arrays) then
+        c_basetype(vcp^.idtype^.aeltype)
+      else
+        c_type(vcp^.idtype);
       if vcp^.idtype <> nil then begin
         if vcp^.idtype^.form <> power then c_str('* ')
         else c_chr(' ')
@@ -3110,6 +3115,20 @@ begin
   end
 end;
 
+{ output forward struct declarations for all registered record types }
+procedure c_fwd_typedefs;
+var i: integer;
+begin
+  for i := fwdtypedefsout + 1 to typemapcount do begin
+    c_str('typedef struct ');
+    c_pstr(typemapname[i]);
+    c_chr(' ');
+    c_pstr(typemapname[i]);
+    c_ln(';')
+  end;
+  fwdtypedefsout := typemapcount
+end;
+
 { output typedef declarations for all registered record types }
 procedure c_typedefs;
 var i: integer;
@@ -3117,9 +3136,16 @@ var i: integer;
     fsp: stp;
 begin
   for i := typedefsout + 1 to typemapcount do begin
-    c_str('typedef struct ');
-    c_pstr(typemapname[i]);
-    c_str(' {');
+    if i <= fwdtypedefsout then begin
+      { forward declaration was already emitted, just define the struct }
+      c_str('struct ');
+      c_pstr(typemapname[i]);
+      c_str(' {')
+    end else begin
+      c_str('typedef struct ');
+      c_pstr(typemapname[i]);
+      c_str(' {')
+    end;
     if typemapcmt[i] <> nil then begin
       c_str(' ');
       c_comment(typemapcmt[i]);
@@ -3154,9 +3180,13 @@ begin
       intypedef := false
     end;
     cindent := cindent - 1;
-    c_str('} ');
-    c_pstr(typemapname[i]);
-    c_ln(';');
+    if i <= fwdtypedefsout then
+      c_ln('};')
+    else begin
+      c_str('} ');
+      c_pstr(typemapname[i]);
+      c_ln(';')
+    end;
     c_newline
   end;
   typedefsout := typemapcount
@@ -5918,10 +5948,10 @@ end;
                   expr_str('__up)')
                 end
               end
-              { check if var param of simple type needs dereference }
+              { check if var param of simple/pointer type needs dereference }
               else if (lcp^.vkind = formal) and
                  (lcp^.idtype <> nil) and
-                 (lcp^.idtype^.form in [scalar, subrange]) then begin
+                 (lcp^.idtype^.form in [scalar, subrange, pointer]) then begin
                 expr_str('(*');
                 expr_pstr(lcp^.name);
                 expr_chr(')')
@@ -6788,10 +6818,22 @@ end;
     end (*round*) ;
 
     procedure oddfunction;
+    var i, argstart, arglen: integer;
+        saved: packed array [1..2000] of char;
     begin
       if gattr.typtr <> nil then
         if gattr.typtr <> intptr then error(125);
-      gattr.typtr := boolptr
+      gattr.typtr := boolptr;
+      { wrap expression with ((arg) & 1) for C }
+      if wantexpr and (stmttop <> nil) then begin
+        argstart := prearglen + 1;
+        arglen := stmttop^.exprlen - prearglen;
+        for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
+        stmttop^.exprlen := prearglen;
+        expr_str('((');
+        for i := 1 to arglen do expr_chr(saved[i]);
+        expr_str(') & 1)')
+      end
     end (*odd*) ;
 
     procedure ordfunction;
@@ -6813,7 +6855,13 @@ end;
     procedure predsuccfunction;
     begin
       if gattr.typtr <> nil then
-        if gattr.typtr^.form <> scalar then error(125)
+        if gattr.typtr^.form <> scalar then error(125);
+      { wrap expression with +1 or -1 for C output }
+      if wantexpr then begin
+        expr_insert('(', 1);
+        if lkey = 7 then expr_str(' - 1)')
+        else expr_str(' + 1)')
+      end
     end (*predsucc*) ;
 
     procedure eofeolnfunction;
@@ -7117,13 +7165,18 @@ end;
                 if stmttop <> nil then argstart := stmttop^.exprlen;
                 expression(fsys + [comma,rparent], varp);
                 { insert & for var params in C (arrays decay to pointers, skip &;
-                  var params of record/array type are already pointers, skip &) }
+                  var params of record/array type are already pointers, skip &;
+                  file params are FILE* already, skip &) }
                 if wantexpr and varp then
                   if nxt <> nil then
                     if nxt^.idtype <> nil then
-                      if nxt^.idtype^.form <> arrays then
+                      if (nxt^.idtype^.form <> arrays) and
+                         (nxt^.idtype^.form <> files) then
                         if stmttop <> nil then begin
                           ai := 1; { assume & needed }
+                          { ptr^ dereference cancels & for var params:
+                            the pointer value in the buffer IS the address }
+                          if sel_deref then ai := 0;
                           if gattr.symptr <> nil then
                             if gattr.symptr^.vkind = formal then
                               if gattr.symptr^.idtype <> nil then
@@ -7563,8 +7616,14 @@ end;
                             { output variable identifier BEFORE selector }
                             if wantexpr then begin
                               if lcp^.klass = vars then begin
+                                { map program file params to C stdio streams }
+                                if lcp = inputptr then begin
+                                  expr_str('stdin'); usestdio := true
+                                end else if lcp = outputptr then begin
+                                  expr_str('stdout'); usestdio := true
+                                end
                                 { check if uplevel variable reference in nested procedure }
-                                if (lcp^.vlev < level) and
+                                else if (lcp^.vlev < level) and
                                    (lcp^.vlev > 1) and nestbuffering then begin
                                   if ((lcp^.vkind = formal) and (lcp^.idtype <> nil) and
                                       (lcp^.idtype^.form in [records, arrays])) or
@@ -7581,7 +7640,8 @@ end;
                                 { check if var param of simple type needs dereference }
                                 else if (lcp^.vkind = formal) and
                                    (lcp^.idtype <> nil) and
-                                   (lcp^.idtype^.form in [scalar, subrange]) then begin
+                                   (lcp^.idtype^.form in
+                                     [scalar, subrange, pointer]) then begin
                                   expr_str('(*');
                                   expr_pstr(lcp^.name);
                                   expr_chr(')')
@@ -8132,23 +8192,8 @@ end;
         if stringt(gattr.typtr) and (lop in [eqop, neop, ltop, leop, gtop, geop]) then begin
           { string comparison - save left expr and wrap with strncmp }
           if stmttop <> nil then begin
-            { find start of current comparison - scan backwards for && or || }
-            lsizspc := stmttop^.exprlen;
-            rschrcst := false; { reuse as "found" flag }
-            while (lsizspc > 1) and not rschrcst do begin
-              if (stmttop^.exprbuf[lsizspc] = '&') and
-                 (stmttop^.exprbuf[lsizspc-1] = '&') then begin
-                lsizspc := lsizspc + 2; { start after && and space }
-                rschrcst := true
-              end
-              else if (stmttop^.exprbuf[lsizspc] = '|') and
-                 (stmttop^.exprbuf[lsizspc-1] = '|') then begin
-                lsizspc := lsizspc + 2;
-                rschrcst := true
-              end
-              else lsizspc := lsizspc - 1
-            end;
-            if not rschrcst then lsizspc := 1; { use entire buffer }
+            { use expr_lhs_start to find where comparison LHS begins }
+            lsizspc := expr_lhs_start + 1;
             { copy from lsizspc to end into in_left_buf }
             in_left_len := stmttop^.exprlen - lsizspc + 1;
             for lsize := 1 to in_left_len do
@@ -8634,6 +8679,7 @@ end;
             minsize,maxsize,lsize: addrrange; lvalu,rvalu: valu;
             test: boolean; mm: boolean; varlnm, varcn, varcmx: varinx;
             varcof: boolean; tagp,tagl: ttp; mint, maxt: integer; ferr: boolean;
+            tname: pstring;
         procedure ordertag(var tp: ttp);
           var lp, p, p2, p3: ttp;
         begin
@@ -8680,6 +8726,16 @@ end;
             typ(fsys + [casesy,semicolon],lsp,lsize);
             if lsp <> nil then
               if lsp^.form = arrayc then error(272);
+            { register anonymous enum types from record fields }
+            if lsp <> nil then
+              if lsp^.form = scalar then
+                if lsp^.scalkind = declared then
+                  if lsp <> boolptr then
+                  if lookup_enumname(lsp) = nil then begin
+                    anonenum := anonenum + 1;
+                    tname := cat('_enum_', ints(anonenum));
+                    register_enumtype(lsp, tname, nxt^.srcline)
+                  end;
             while nxt <> nxt1 do
               with nxt^ do
                 begin alignu(lsp,displ);
@@ -10016,18 +10072,11 @@ end;
       if not forwn and not extn then { process actual block}
         begin
           { emit C forward declaration for nested functions.
-            Use () unless a narrow-type value param needs explicit proto
-            (char/bool/byte/subrange get promoted in () declarations).
-            Uplevel params are not yet known so cannot be included. }
+            Use () for procs without narrow-type value params.
+            Skip for procs with narrow types (char/bool/byte/subrange)
+            since () conflicts with narrow types in GCC, and the
+            definition will include uplevel params not yet known. }
           if level > 2 then begin
-            c_str('static ');
-            if lcp^.klass = func then begin
-              c_type(lcp^.idtype); c_chr(' ')
-            end else c_str('void ');
-            c_idname(lcp);
-            { check if any value param has a narrow type that undergoes
-              default argument promotion (char, bool, byte, subrange).
-              These conflict with K&R () declarations in GCC. }
             needproto := false;
             lcp3 := lcp^.pflist;
             while (lcp3 <> nil) and not needproto do begin
@@ -10042,27 +10091,14 @@ end;
                         needproto := true;
               lcp3 := lcp3^.next
             end;
-            if needproto then begin
-              { emit full prototype for known params (uplevel params
-                not yet known, but narrow types require explicit proto) }
-              c_chr('(');
-              lcp3 := lcp^.pflist;
-              while lcp3 <> nil do begin
-                if lcp3^.klass = vars then begin
-                  if lcp3^.vkind = formal then begin
-                    c_type(lcp3^.idtype);
-                    if (lcp3^.idtype <> nil) and
-                       (lcp3^.idtype^.form <> arrays) then c_chr('*')
-                  end else
-                    c_type(lcp3^.idtype)
-                end;
-                lcp3 := lcp3^.next;
-                if lcp3 <> nil then c_chr(',')
-              end;
-              c_ln(');')
-            end else
-              { use () - uplevel params not yet known }
+            if not needproto then begin
+              c_str('static ');
+              if lcp^.klass = func then begin
+                c_type(lcp^.idtype); c_chr(' ')
+              end else c_str('void ');
+              c_idname(lcp);
               c_ln('();')
+            end
           end;
           display[top].bname := lcp;
           { now we change to a block with defining points }
@@ -10876,6 +10912,7 @@ end;
             for_limit: packed array [1..500] of char;
             for_limit_len: integer;
             ii: integer;
+            narrowt: boolean;
       begin lcp := nil;
         for_var_len := 0; for_init_len := 0; for_limit_len := 0;
         with lattr do
@@ -10969,6 +11006,12 @@ end;
         if sy = dosy then insymbol else error(54);
         { output C for loop header }
         flushcmts_before(curstmtline);
+        { Pascal for-loop evaluates limit once; save in a temp to avoid }
+        { re-evaluation in C for condition when body modifies limit vars }
+        c_indent;
+        c_str('{ long _forlim = ');
+        for ii := 1 to for_limit_len do c_chr(for_limit[ii]);
+        c_ln(';');
         c_indent;
         c_str('for (');
         { output variable name in lowercase }
@@ -10988,7 +11031,7 @@ end;
             c_chr(for_var[ii])
         end;
         if lsy = tosy then c_str(' <= ') else c_str(' >= ');
-        for ii := 1 to for_limit_len do c_chr(for_limit[ii]);
+        c_str('_forlim');
         c_str('; ');
         for ii := 1 to for_var_len do begin
           if (for_var[ii] >= 'A') and (for_var[ii] <= 'Z') then
@@ -11002,11 +11045,42 @@ end;
         addlvl;
         statement(fsys);
         sublvl;
+        { for narrow C types (unsigned char, signed char, short, etc), }
+        { add overflow guard to prevent infinite loop when the loop }
+        { variable wraps around at the C type boundary on increment }
+        narrowt := false;
+        if lattr.typtr <> nil then begin
+          if (lattr.typtr = boolptr) or (lattr.typtr = charptr) or
+             (lattr.typtr = byteptr) then
+            narrowt := true
+          else if lattr.typtr^.form = subrange then begin
+            if lattr.typtr^.rangetype = charptr then
+              narrowt := true
+            else if (lattr.typtr^.min.ival >= -32768) and
+                    (lattr.typtr^.max.ival <= 65535) then
+              narrowt := true
+          end
+        end;
+        if narrowt then begin
+          c_indent;
+          c_str('if (');
+          for ii := 1 to for_var_len do begin
+            if (for_var[ii] >= 'A') and (for_var[ii] <= 'Z') then
+              c_chr(chr(ord(for_var[ii]) - ord('A') + ord('a')))
+            else
+              c_chr(for_var[ii])
+          end;
+          c_str(' == ');
+          c_str('_forlim');
+          c_ln(') break;');
+        end;
         { output closing brace }
         c_newline;
         cindent := cindent - 1;
         c_indent;
         c_ln('}');
+        c_indent;
+        c_ln('}'); { close _forlim scope }
         gattr := lattr; load;
         if debug and (lattr.typtr <> nil) then
           checkbnds(lattr.typtr);
@@ -11485,7 +11559,8 @@ end;
               if lcp^.vkind = formal then begin
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
-                   (lcp^.idtype^.form <> arrays) then
+                   (lcp^.idtype^.form <> arrays) and
+                   (lcp^.idtype^.form <> files) then
                   c_str('* ')
                 else c_chr(' ')
               end else begin
@@ -11752,9 +11827,10 @@ end;
         c_consts(display[top].fname);
         c_newline;
         c_enums;
-        c_arraytypedefs;
-        c_typedefs;
+        c_fwd_typedefs;
         c_ptrtypedefs;
+        c_typedefs;
+        c_arraytypedefs;
         lcp := display[top].fname;
         c_vars(lcp, nil);
         c_newline;
@@ -11776,9 +11852,10 @@ end;
         c_consts(display[1].fname);
         c_newline;
         c_enums;
-        c_arraytypedefs;
-        c_typedefs;
+        c_fwd_typedefs;
         c_ptrtypedefs;
+        c_typedefs;
+        c_arraytypedefs;
         c_vars(display[1].fname, nil);
         c_newline;
         { output jmp_buf declarations for all labels at program level }
@@ -11826,8 +11903,10 @@ end;
         { emit consts, enums and typedefs at file scope before buffering starts }
         c_consts(display[top].fname);
         c_enums;
-        c_arraytypedefs;
+        c_fwd_typedefs;
+        c_ptrtypedefs;
         c_typedefs;
+        c_arraytypedefs;
         nestbuflen := 0;
         nestbuffering := true;
         has_unsaved_calls := false;
@@ -11886,11 +11965,13 @@ end;
               prevparamline := lcp^.srcline;
               { output parameter type }
               if lcp^.vkind = formal then begin
-                { var parameter - use pointer, but not for arrays }
+                { var parameter - use pointer, but not for arrays or files }
                 { arrays decay to pointers naturally in C function params }
+                { files are already FILE* pointers, no double indirection }
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
-                   (lcp^.idtype^.form <> arrays) then
+                   (lcp^.idtype^.form <> arrays) and
+                   (lcp^.idtype^.form <> files) then
                   c_str('* ')
                 else
                   c_chr(' ')
@@ -11915,8 +11996,10 @@ end;
         cindent := cindent + 1;
         { output local enums and typedefs for procedure-local types }
         c_enums;
-        c_arraytypedefs;
+        c_fwd_typedefs;
+        c_ptrtypedefs;
         c_typedefs;
+        c_arraytypedefs;
         { output local variable declarations }
         lcp := display[top].fname;
         c_vars(lcp, fprocp^.pflist);
@@ -12069,7 +12152,8 @@ end;
               if lcp^.vkind = formal then begin
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
-                   (lcp^.idtype^.form <> arrays) then
+                   (lcp^.idtype^.form <> arrays) and
+                   (lcp^.idtype^.form <> files) then
                   c_str('* ')
                 else
                   c_chr(' ')
@@ -12571,7 +12655,8 @@ end;
               if lcp^.vkind = formal then begin
                 c_type(lcp^.idtype);
                 if (lcp^.idtype <> nil) and
-                   (lcp^.idtype^.form <> arrays) then c_str('* ')
+                   (lcp^.idtype^.form <> arrays) and
+                   (lcp^.idtype^.form <> files) then c_str('* ')
                 else c_chr(' ')
               end else begin
                 c_type(lcp^.idtype); c_chr(' ')
@@ -13322,6 +13407,7 @@ begin
   usemath := false;
   typemapcount := 0;
   typedefsout := 0;
+  fwdtypedefsout := 0;
   enummapcount := 0;
   enumsout := 0;
   anonenum := 0;
