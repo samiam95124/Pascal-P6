@@ -1,11 +1,13 @@
 #!/bin/bash
 #
-# Test p2c translation, compilation, and execution of a sample program.
+# Test p2c translation, compilation, and execution of a program.
 #
-# Usage: testp2c <program>
-#   e.g.: testp2c hello
+# Usage: testp2c <dir/program>
+#   e.g.: testp2c sample_programs/hello
+#         testp2c basic/basic
+#         testp2c standard_tests/iso7185pat
 #
-# Must be run from the sample_programs directory.
+# Must be run from the project root directory.
 # Translates <program>.pas to C, compiles, runs with <program>.inp,
 # and diffs the output against <program>.cmp.
 #
@@ -15,51 +17,57 @@
 #
 
 if [ $# -ne 1 ]; then
-    echo "Usage: testp2c <program>"
-    echo "  e.g.: testp2c hello"
+    echo "Usage: testp2c <dir/program>"
+    echo "  e.g.: testp2c sample_programs/hello"
     exit 1
 fi
 
-prog=$1
+# split into directory and base name
+dir=$(dirname "$1")
+prog=$(basename "$1")
+root=$(pwd)
 
 # output a result line to stdout and optionally to P2C_RESULTS file
 result_line() {
-    printf "%-12s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@"
+    printf "%-20s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@"
     if [ -n "$P2C_RESULTS" ]; then
-        printf "%-12s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@" >> "$P2C_RESULTS"
+        printf "%-20s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@" >> "$P2C_RESULTS"
     fi
 }
 
 # Check source exists
-if [ ! -f "${prog}.pas" ]; then
-    echo "Error: ${prog}.pas not found"
+if [ ! -f "${dir}/${prog}.pas" ]; then
+    echo "Error: ${dir}/${prog}.pas not found"
     exit 1
 fi
+
+# Work in the program's directory (p2c must run from source dir)
+cd "$dir"
 
 # Clear error file
 > ${prog}.err
 
 # Translate with p2c
-echo "Translating ${prog}.pas"
-../bin/p2c $prog >> ${prog}.err 2>&1
+echo "Translating ${dir}/${prog}.pas"
+"${root}/bin/p2c" $prog >> ${prog}.err 2>&1
 p2cerrs=$(grep "Errors in program:" ${prog}.err | sed 's/.*: //' | tr -d ' ')
 if [ "$p2cerrs" != "0" ]; then
-    result_line "$prog" "$p2cerrs" "n/a" "n/a" "n/a"
+    result_line "${dir}/${prog}" "$p2cerrs" "n/a" "n/a" "n/a"
     exit 1
 fi
 
 # Compile with gcc
-echo "Compiling ${prog}.c"
-gcc -o ${prog}_c ${prog}.c -I../libs ../libs/setopr.o -lm 2>>${prog}.err
+echo "Compiling ${dir}/${prog}.c"
+gcc -o ${prog}_c ${prog}.c -I"${root}/libs" "${root}/libs/setopr.o" -lm 2>>${prog}.err
 gccerrs=$(grep -c "error:" ${prog}.err)
 gccwarns=$(grep -c "warning:" ${prog}.err)
 if [ "$gccerrs" -gt 0 ]; then
-    result_line "$prog" "$p2cerrs" "$gccerrs" "$gccwarns" "n/a"
+    result_line "${dir}/${prog}" "$p2cerrs" "$gccerrs" "$gccwarns" "n/a"
     exit 1
 fi
 
 # Run the program
-echo "Running ${prog}_c"
+echo "Running ${dir}/${prog}_c"
 # Build command-line args from .dat file if program uses argc/argv
 if grep -q 'int main(int argc' ${prog}.c && [ -f "${prog}.dat" ]; then
     args="${prog}.dat"
@@ -72,22 +80,22 @@ else
     ./${prog}_c $args > ${prog}.lst 2>&1
 fi
 if [ $? -ne 0 ]; then
-    result_line "$prog" "$p2cerrs" "$gccerrs" "$gccwarns" "FAIL"
+    result_line "${dir}/${prog}" "$p2cerrs" "$gccerrs" "$gccwarns" "FAIL"
     exit 1
 fi
 
 # Compare output (strip interpreter decorations from both sides)
 diflines=0
 if [ -f "${prog}.cmp" ]; then
-    echo "Comparing ${prog}.lst to ${prog}.cmp"
-    ../bin/strip ${prog}.lst ${prog}.lst.strp
-    ../bin/strip ${prog}.cmp ${prog}.cmp.strp
+    echo "Comparing ${dir}/${prog}.lst to ${dir}/${prog}.cmp"
+    "${root}/bin/strip" ${prog}.lst ${prog}.lst.strp
+    "${root}/bin/strip" ${prog}.cmp ${prog}.cmp.strp
     diff ${prog}.lst.strp ${prog}.cmp.strp > ${prog}.dif
     diflines=$(grep -c "^[<>]" ${prog}.dif)
     rm -f ${prog}.lst.strp ${prog}.cmp.strp
 fi
 
-result_line "$prog" "$p2cerrs" "$gccerrs" "$gccwarns" "$diflines"
+result_line "${dir}/${prog}" "$p2cerrs" "$gccerrs" "$gccwarns" "$diflines"
 if [ "$diflines" -gt 0 ]; then
     exit 1
 fi

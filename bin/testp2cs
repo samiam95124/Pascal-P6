@@ -1,32 +1,45 @@
 #!/bin/bash
 #
-# Run testp2c on all sample programs that have both .inp and .cmp files.
+# Run p2c regression tests on all testable programs.
 #
-# Must be run from the sample_programs directory.
+# Must be run from the project root directory.
 #
+
+# list of testable programs (dir/progname, relative to project root)
+programs=(
+    sample_programs/hello
+    sample_programs/prime
+    sample_programs/qsort
+    sample_programs/roman
+    sample_programs/match
+    sample_programs/fbench
+    sample_programs/drystone
+    sample_programs/startrek
+    sample_programs/pascals
+    sample_programs/basics
+    basic/basic
+    standard_tests/iso7185pat
+)
 
 pass=0
 fail=0
 total=0
 export P2C_RESULTS=$(mktemp)
 
-for inp in *.inp; do
-    prog=${inp%.inp}
-    if [ -f "${prog}.pas" ] && [ -f "${prog}.cmp" ]; then
-        total=$((total + 1))
-        echo "========================================"
-        ../bin/testp2c $prog
-        if [ $? -eq 0 ]; then
-            pass=$((pass + 1))
-        else
-            fail=$((fail + 1))
-        fi
-        echo ""
+for prog in "${programs[@]}"; do
+    total=$((total + 1))
+    echo "========================================"
+    bin/testp2c "$prog"
+    if [ $? -eq 0 ]; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1))
     fi
+    echo ""
 done
 
 echo "========================================"
-printf "%-12s %-10s %-10s %-10s %s\n" "Program" "p2c" "gcc" "warn" "dif"
+printf "%-20s %-10s %-10s %-10s %s\n" "Program" "p2c" "gcc" "warn" "dif"
 echo "----------------------------------------"
 cat "$P2C_RESULTS"
 echo "----------------------------------------"
