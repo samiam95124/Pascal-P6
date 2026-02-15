@@ -7891,7 +7891,24 @@ end;
               end else
               case lop of
                 mul:   expr_str(' * ');
-                rdiv:  expr_str(' / ');
+                rdiv: begin
+                  if (lattr.typtr = intptr) and
+                     (stmttop <> nil) then begin
+                    { Pascal / always does real division; C / does
+                      integer division when both operands are integer.
+                      Cast left operand to double. }
+                    sop_lhs_len :=
+                      stmttop^.exprlen - set_lhs_start;
+                    for set_i := 1 to sop_lhs_len do
+                      sop_lhs_buf[set_i] :=
+                        stmttop^.exprbuf[set_lhs_start + set_i];
+                    stmttop^.exprlen := set_lhs_start;
+                    expr_str('(double)(');
+                    for set_i := 1 to sop_lhs_len do
+                      expr_chr(sop_lhs_buf[set_i]);
+                    expr_str(') / ')
+                  end else expr_str(' / ')
+                end;
                 idiv:  expr_str(' / ');
                 imod:  expr_str(' % ');
                 andop: expr_str(' && ')
