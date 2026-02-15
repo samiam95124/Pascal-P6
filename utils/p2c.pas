@@ -520,6 +520,7 @@ var
     enummapcmt: array [1..maxenummap] of cmtptr; { attached comments }
     enumsout: integer;              { number of enums already output }
     anonenum: integer;              { counter for anonymous enum names }
+    anonrec: integer;               { counter for anonymous record names }
 
     { Pointer type name mapping for C output }
     ptrmapcount: integer;           { number of pointer type mappings }
@@ -1494,7 +1495,8 @@ begin
        nameis('index') or nameis('remove') or nameis('signal') or
        nameis('time') or nameis('main') or nameis('getchar') or
        nameis('putchar') or nameis('printf') or nameis('scanf') or
-       nameis('rand') or nameis('srand') or
+       nameis('rand') or nameis('srand') or nameis('true') or
+       nameis('false') or
        nameis('execl') or nameis('execv') or nameis('execve')
     then res := true
   end;
@@ -2078,31 +2080,52 @@ begin
 end;
 
 procedure expr_real(r: real);
-{ append real constant to expression buffer }
-var intpart: integer;
+{ append real constant to expression buffer in scientific notation }
+var digit: integer;
     frac: real;
-    d, last_nz: integer;
+    d, last_nz, exp: integer;
     neg: boolean;
     dbuf: packed array [1..20] of char;
 begin
   if stmttop <> nil then begin
     neg := r < 0.0;
     if neg then begin r := -r; expr_chr('-') end;
-    intpart := trunc(r);
-    frac := r - intpart;
-    expr_int(intpart);
-    expr_chr('.');
-    { output fractional digits }
-    last_nz := 1; { keep at least one digit after decimal }
-    for d := 1 to 15 do begin
-      frac := frac * 10.0;
-      intpart := trunc(frac);
-      if intpart > 9 then intpart := 9;
-      dbuf[d] := chr(ord('0') + intpart);
-      if intpart <> 0 then last_nz := d;
-      frac := frac - intpart
-    end;
-    for d := 1 to last_nz do expr_chr(dbuf[d])
+    if r = 0.0 then
+      expr_str('0.0')
+    else begin
+      { normalize: find exponent so that 1.0 <= r < 10.0 }
+      exp := 0;
+      if r >= 1.0 then begin
+        while r >= 1.0e10 do begin r := r * 1.0e-10; exp := exp + 10 end;
+        while r >= 10.0 do begin r := r / 10.0; exp := exp + 1 end
+      end else begin
+        while r < 1.0e-9 do begin r := r * 1.0e10; exp := exp - 10 end;
+        while r < 1.0 do begin r := r * 10.0; exp := exp - 1 end
+      end;
+      { now 1.0 <= r < 10.0, value = r * 10^exp }
+      digit := trunc(r);
+      if digit > 9 then digit := 9; { guard against rounding }
+      frac := r - digit;
+      expr_chr(chr(ord('0') + digit));
+      expr_chr('.');
+      { output fractional digits }
+      last_nz := 1; { keep at least one digit after decimal }
+      for d := 1 to 15 do begin
+        frac := frac * 10.0;
+        digit := trunc(frac);
+        if digit > 9 then digit := 9;
+        dbuf[d] := chr(ord('0') + digit);
+        if digit <> 0 then last_nz := d;
+        frac := frac - digit
+      end;
+      for d := 1 to last_nz do expr_chr(dbuf[d]);
+      if exp <> 0 then begin
+        expr_chr('e');
+        if exp < 0 then begin expr_chr('-'); exp := -exp end
+        else expr_chr('+');
+        expr_int(exp)
+      end
+    end
   end
 end;
 
@@ -2475,7 +2498,7 @@ procedure add_uplevelref(vcp: ctp);
 var i: integer;
     found: boolean;
 begin
-  if (vcp <> nil) and (vcp^.klass = vars) then begin
+  if (vcp <> nil) and (vcp^.klass in [vars, func]) then begin
     { check if already in list }
     found := false;
     for i := 1 to uplevelcnt do
@@ -2505,16 +2528,24 @@ var i: integer;
 begin
   for i := 1 to uplevelcnt do begin
     vcp := uplevelrefs[i];
-    if (vcp <> nil) and (vcp^.klass = vars) then begin
-      if needcomma then c_str(', ');
-      needcomma := true;
-      { pass address of uplevel variable; sets/arrays already pointers;
-        var params are already pointers in C too }
-      if vcp^.idtype <> nil then begin
-        if not (vcp^.idtype^.form in [power, arrays]) and
-           not (vcp^.vkind = formal) then c_chr('&')
-      end else c_chr('&');
-      if vcp^.name <> nil then c_pstr(vcp^.name)
+    if vcp <> nil then begin
+      if vcp^.klass = func then begin
+        if needcomma then c_str(', ');
+        needcomma := true;
+        c_chr('&');
+        if vcp^.name <> nil then c_pstr(vcp^.name);
+        c_str('__result')
+      end else if vcp^.klass = vars then begin
+        if needcomma then c_str(', ');
+        needcomma := true;
+        { pass address of uplevel variable; sets/arrays already pointers;
+          var params are already pointers in C too }
+        if vcp^.idtype <> nil then begin
+          if not (vcp^.idtype^.form in [power, arrays]) and
+             not (vcp^.vkind = formal) then c_chr('&')
+        end else c_chr('&');
+        if vcp^.name <> nil then c_pstr(vcp^.name)
+      end
     end
   end
 end;
@@ -2555,9 +2586,14 @@ procedure propagate_child_uplevelrefs;
           if procuplevelproc[i] = p then
             for j := 1 to procuplevelnum[i] do begin
               vcp := procuplevelrefs[i, j];
-              if vcp <> nil then
-                if (vcp^.vlev < level) and (vcp^.vlev > 1) then
-                  add_uplevelref(vcp)
+              if vcp <> nil then begin
+                if vcp^.klass = func then begin
+                  if vcp^.pflev + 1 < level then
+                    add_uplevelref(vcp)
+                end else
+                  if (vcp^.vlev < level) and (vcp^.vlev > 1) then
+                    add_uplevelref(vcp)
+              end
             end
     end
   end;
@@ -2574,7 +2610,20 @@ var i, j, n: integer;
 
   procedure emit_ref(vcp: ctp);
   begin
-    if (vcp <> nil) and (vcp^.klass = vars) then begin
+    if (vcp <> nil) and (vcp^.klass = func) then begin
+      if needcomma then c_str(', ');
+      needcomma := true;
+      isuplevel := nestbuffering and (vcp^.pflev + 1 < level);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then c_pstr(vcp^.name);
+        c_str('__result__up')
+      end else begin
+        c_chr('&');
+        if vcp^.name <> nil then c_pstr(vcp^.name);
+        c_str('__result')
+      end
+    end else if (vcp <> nil) and (vcp^.klass = vars) then begin
       if needcomma then c_str(', ');
       needcomma := true;
       isuplevel := nestbuffering and (vcp^.vlev < level)
@@ -2651,7 +2700,20 @@ var i, j, n: integer;
 
   procedure emit_ref(vcp: ctp);
   begin
-    if (vcp <> nil) and (vcp^.klass = vars) then begin
+    if (vcp <> nil) and (vcp^.klass = func) then begin
+      if needcomma then expr_str(', ');
+      needcomma := true;
+      isuplevel := nestbuffering and (vcp^.pflev + 1 < level);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result__up')
+      end else begin
+        expr_chr('&');
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result')
+      end
+    end else if (vcp <> nil) and (vcp^.klass = vars) then begin
       if needcomma then expr_str(', ');
       needcomma := true;
       isuplevel := nestbuffering and (vcp^.vlev < level)
@@ -2841,6 +2903,35 @@ begin
   end
 end;
 
+{ emit C function pointer parameter for procedural/functional parameter }
+procedure c_funcptr_param(lcp: ctp);
+var plcp: ctp;
+begin
+  if lcp^.klass = func then begin
+    c_type(lcp^.idtype); c_str(' ')
+  end else
+    c_str('void ');
+  c_str('(*');
+  if lcp^.name <> nil then c_pstr(lcp^.name);
+  c_str(')(');
+  plcp := lcp^.pflist;
+  if plcp = nil then c_str('void')
+  else begin
+    while plcp <> nil do begin
+      if plcp^.klass = vars then begin
+        c_type(plcp^.idtype);
+        if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
+           (plcp^.idtype^.form <> arrays) and
+           (plcp^.idtype^.form <> files) then c_str('*')
+      end else if plcp^.klass in [proc, func] then
+        c_funcptr_param(plcp);
+      plcp := plcp^.next;
+      if plcp <> nil then c_str(', ')
+    end
+  end;
+  c_chr(')')
+end;
+
 { check if an identifier is in a parameter list }
 function inpflist(id: ctp; pfl: ctp): boolean;
 var found: boolean;
@@ -3020,19 +3111,27 @@ begin
     if vcp <> nil then begin
       if needcomma then c_str(', ');
       needcomma := true;
-      { uplevel vars passed as pointers; sets are arrays, already pointers }
-      { for arrays, use element type so param is pointer-to-element,
-        allowing name__up[i] to index elements correctly }
-      if (vcp^.idtype <> nil) and (vcp^.idtype^.form = arrays) then
-        c_basetype(vcp^.idtype^.aeltype)
-      else
+      if vcp^.klass = func then begin
+        { function result uplevel: type* funcname__result__up }
         c_type(vcp^.idtype);
-      if vcp^.idtype <> nil then begin
-        if vcp^.idtype^.form <> power then c_str('* ')
-        else c_chr(' ')
-      end else c_str('* ');
-      if vcp^.name <> nil then c_pstr(vcp^.name);
-      c_str('__up')
+        c_str('* ');
+        if vcp^.name <> nil then c_pstr(vcp^.name);
+        c_str('__result__up')
+      end else begin
+        { uplevel vars passed as pointers; sets are arrays, already pointers }
+        { for arrays, use element type so param is pointer-to-element,
+          allowing name__up[i] to index elements correctly }
+        if (vcp^.idtype <> nil) and (vcp^.idtype^.form = arrays) then
+          c_basetype(vcp^.idtype^.aeltype)
+        else
+          c_type(vcp^.idtype);
+        if vcp^.idtype <> nil then begin
+          if vcp^.idtype^.form <> power then c_str('* ')
+          else c_chr(' ')
+        end else c_str('* ');
+        if vcp^.name <> nil then c_pstr(vcp^.name);
+        c_str('__up')
+      end
     end
   end
 end;
@@ -5868,7 +5967,8 @@ end;
                           packing := false; packcom := false;
                           tagfield := false; ptrref := true; vartl := -1;
                           pickup := false; dblptr := false;
-                        end
+                        end;
+                      sel_deref := true { pointer deref needs * in C }
                     end
                   else
                     if form = files then begin loadaddress;
@@ -5876,11 +5976,19 @@ end;
                     end else error(141);
               insymbol;
               lastptr := true; { set last was ptr op }
-              sel_deref := true; { last op was pointer deref }
-              { set needarrow for next field access if result is record }
-              if gattr.typtr <> nil then
+              if gattr.typtr <> nil then begin
+                { for compound types (arrays, sets), wrap with (*...) so that
+                  subsequent [i] subscript works correctly: (*pta)[i] not pta[i] }
+                if gattr.typtr^.form in [arrays, power] then begin
+                  if wantexpr and (stmttop <> nil) then begin
+                    expr_insert('(*', 1);
+                    expr_chr(')')
+                  end
+                end;
+                { set needarrow for next field access if result is record }
                 if gattr.typtr^.form = records then
                   needarrow := true
+              end
             end;
         if not (sy in fsys + selectsys) then
           begin error(6); skip(fsys + selectsys) end
@@ -6865,7 +6973,7 @@ end;
         if gattr.typtr^.form <> scalar then error(125);
       { wrap expression with +1 or -1 for C output }
       if wantexpr then begin
-        expr_insert('(', 1);
+        expr_insert('(', prearglen + 1);
         if lkey = 7 then expr_str(' - 1)')
         else expr_str(' + 1)')
       end
@@ -7159,6 +7267,9 @@ end;
                       if not cmpparlst(nxt^.pflist, lcp^.pflist) then
                         if not e then error(189);
                     locpar := locpar+ptrsize*2;
+                    { emit proc/func identifier to expression buffer }
+                    if wantexpr then
+                      if lcp <> nil then expr_idname(lcp);
                     insymbol;
                     if not (sy in fsys + [comma,rparent]) then
                       begin error(6); skip(fsys + [comma,rparent]) end
@@ -7785,7 +7896,11 @@ end;
                           set_elem_start := 0;
                           if set_cstr and (stmttop <> nil) then
                             set_elem_start := stmttop^.exprlen;
+                          sel_deref := false;
                           expression(fsys + [comma,range,rbrack], false);
+                          { apply pointer dereference * for set element }
+                          if sel_deref and set_cstr and (stmttop <> nil) then
+                            expr_insert('*', set_elem_start + 1);
                           rattr.typtr := nil;
                           if sy = range then begin insymbol;
                             { save position after lo expression }
@@ -7797,7 +7912,11 @@ end;
                             if gattr.kind <> cst then
                               load;
                             tattr := gattr;
+                            sel_deref := false;
                             expression(fsys + [comma,rbrack], false);
+                            { apply pointer dereference * for hi expression }
+                            if sel_deref and set_cstr and (stmttop <> nil) then
+                              expr_insert('*', set_lo_end + 1);
                             { wrap range as p2c_radd call }
                             if set_cstr and (stmttop <> nil) then begin
                               { lo text: set_elem_start+1..set_lo_end }
@@ -8070,7 +8189,7 @@ end;
       if (sy = addop) and (op in [plus,minus]) then begin
         { output unary operator }
         if wantexpr then begin
-          if fop = minus then expr_chr('-')
+          if fop = minus then expr_str('- ')
         end;
         insymbol
       end;
@@ -8743,6 +8862,16 @@ end;
                     tname := cat('_enum_', ints(anonenum));
                     register_enumtype(lsp, tname, nxt^.srcline)
                   end;
+            { register anonymous record types from record fields }
+            if lsp <> nil then begin
+              find_record_type(lsp, lsp1);
+              if lsp1 <> nil then
+                if lookup_typename(lsp1) = nil then begin
+                  anonrec := anonrec + 1;
+                  tname := cat('_rec_', ints(anonrec));
+                  register_typename(lsp1, tname, nxt^.srcline)
+                end
+            end;
             while nxt <> nxt1 do
               with nxt^ do
                 begin alignu(lsp,displ);
@@ -10278,11 +10407,21 @@ end;
             end else begin
               if fcp^.klass = field then
                 expr_withfield(fcp)
-              else
-                expr_idname(fcp);
-              { if function result assignment, add __result suffix }
-              if fcp^.klass = func then
-                expr_str('__result')
+              else begin
+                { if function result assignment from nested scope, use uplevel }
+                if (fcp^.klass = func) and nestbuffering and
+                   (fcp^.pflev + 1 < level) then begin
+                  add_uplevelref(fcp);
+                  expr_str('(*');
+                  expr_idname(fcp);
+                  expr_str('__result__up)')
+                end else begin
+                  expr_idname(fcp);
+                  { if function result assignment, add __result suffix }
+                  if fcp^.klass = func then
+                    expr_str('__result')
+                end
+              end
             end
           end;
         tagasc := false; selector(fsys + [becomes],fcp,skp);
@@ -10336,6 +10475,9 @@ end;
                     scalar,
                     subrange: begin
                                 if debug then checkbnds(lattr.typtr);
+                                if lhs_deref then
+                                  if stmttop <> nil then
+                                    expr_insert('*', 1);
                                 store(lattr)
                               end;
                     power: begin
@@ -10358,6 +10500,9 @@ end;
                                 end
                               end;
                     pointer: begin
+                               if lhs_deref then
+                                 if stmttop <> nil then
+                                   expr_insert('*', 1);
                                store(lattr)
                              end;
                     arrays, arrayc: begin
@@ -10412,9 +10557,22 @@ end;
                         if gattr.kind = expr then begin
                           len := gattr.typtr^.size; alignu(parmptr,len)
                         end
-                      end else begin { standard array assign }
-                        { onstack from expr }
-                        if gattr.kind = expr then store(lattr)
+                      end else begin { standard array assign - need memmove }
+                        store(lattr);
+                        if stmttop <> nil then begin
+                          i := 1;
+                          while (i <= stmttop^.exprlen) and
+                                (stmttop^.exprbuf[i] <> '=') do i := i + 1;
+                          if i <= stmttop^.exprlen then begin
+                            expr_insert('memmove(', 1);
+                            i := i + 8;
+                            stmttop^.exprbuf[i - 1] := ',';
+                            expr_del(i, 2);
+                            expr_str(', ');
+                            expr_int(lattr.typtr^.size);
+                            expr_chr(')')
+                          end
+                        end
                       end
                     end;
                     records: begin
@@ -11469,7 +11627,7 @@ end;
         { add parent's forwarding refs to child's uplevel refs }
         for i := 1 to saveduplevelcnt do begin
           vcp := saveduplevelrefs[i];
-          if (vcp <> nil) and (vcp^.klass = vars) then begin
+          if (vcp <> nil) and (vcp^.klass in [vars, func]) then begin
             found := false;
             for j := 1 to uplevelcnt do
               if uplevelrefs[j] = vcp then found := true;
@@ -11490,7 +11648,7 @@ end;
               { callee is parent proc - use parent's current refs }
               for m := 1 to saveduplevelcnt do begin
                 vcp := saveduplevelrefs[m];
-                if (vcp <> nil) and (vcp^.klass = vars) then begin
+                if (vcp <> nil) and (vcp^.klass in [vars, func]) then begin
                   found := false;
                   for j := 1 to uplevelcnt do
                     if uplevelrefs[j] = vcp then found := true;
@@ -11506,7 +11664,7 @@ end;
                 if procuplevelproc[k] = deffixupproc[i] then
                   for m := 1 to procuplevelnum[k] do begin
                     vcp := procuplevelrefs[k, m];
-                    if (vcp <> nil) and (vcp^.klass = vars) then begin
+                    if (vcp <> nil) and (vcp^.klass in [vars, func]) then begin
                       found := false;
                       for j := 1 to uplevelcnt do
                         if uplevelrefs[j] = vcp then found := true;
@@ -11577,6 +11735,8 @@ end;
               if lcp^.name <> nil then c_pstr(lcp^.name);
               c_arraydims(lcp^.idtype);
               c_inlinecmt(lcp^.srcline)
+            end else if lcp^.klass in [proc, func] then begin
+              c_funcptr_param(lcp)
             end;
             lcp := lcp^.next;
             if lcp <> nil then c_chr(',')
@@ -11850,6 +12010,8 @@ end;
       c_ln('{');
       c_newline;
       cindent := cindent + 1;
+      c_indent;
+      c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
       c_fileinit
     end else if fprocp <> nil then begin
       { procedure or function body }
@@ -11932,6 +12094,8 @@ end;
           c_str('__result');
           c_ln(';')
         end;
+        c_indent;
+        c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
         c_newline
       end else begin
         { top-level procedure - output header directly }
@@ -11992,6 +12156,8 @@ end;
               c_arraydims(lcp^.idtype);
               { output inline comment for parameter }
               c_inlinecmt(lcp^.srcline)
+            end else if lcp^.klass in [proc, func] then begin
+              c_funcptr_param(lcp)
             end;
             lcp := lcp^.next;
             if lcp <> nil then c_chr(',')
@@ -12019,6 +12185,8 @@ end;
           c_str('__result');
           c_ln(';')
         end;
+        c_indent;
+        c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
         c_newline
       end
     end;
@@ -12670,6 +12838,8 @@ end;
               end;
               if lcp^.name <> nil then c_pstr(lcp^.name);
               c_arraydims(lcp^.idtype)
+            end else if lcp^.klass in [proc, func] then begin
+              c_funcptr_param(lcp)
             end;
             lcp := lcp^.next;
             if lcp <> nil then c_str(', ')
@@ -13418,6 +13588,7 @@ begin
   enummapcount := 0;
   enumsout := 0;
   anonenum := 0;
+  anonrec := 0;
   ptrmapcount := 0;
   arrmapcount := 0;
   arrdefsout := 0;
