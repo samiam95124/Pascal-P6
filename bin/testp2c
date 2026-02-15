@@ -29,9 +29,9 @@ root=$(pwd)
 
 # output a result line to stdout and optionally to P2C_RESULTS file
 result_line() {
-    printf "%-20s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@"
+    printf "%-30s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@"
     if [ -n "$P2C_RESULTS" ]; then
-        printf "%-20s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@" >> "$P2C_RESULTS"
+        printf "%-30s p2c: %3s  gcc: %5s  warn: %4s  dif: %s\n" "$@" >> "$P2C_RESULTS"
     fi
 }
 
