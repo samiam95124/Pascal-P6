@@ -6735,16 +6735,23 @@ end;
     end (*newdisposeprocedure*) ;
 
     procedure absfunction;
+    var i, argstart, arglen: integer;
+        saved: packed array [1..2000] of char;
     begin
       if gattr.typtr <> nil then
         if (gattr.typtr <> intptr) and (gattr.typtr <> realptr) then
           begin error(125); gattr.typtr := intptr end;
       { wrap expression with appropriate abs function for C }
-      if wantexpr then begin
+      if wantexpr and (stmttop <> nil) then begin
+        argstart := prearglen + 1;
+        arglen := stmttop^.exprlen - prearglen;
+        for i := 1 to arglen do saved[i] := stmttop^.exprbuf[argstart + i - 1];
+        stmttop^.exprlen := prearglen;
         if gattr.typtr = realptr then
-          expr_insert('fabs(', 1)
+          expr_str('fabs(')
         else
-          expr_insert('labs(', 1);
+          expr_str('labs(');
+        for i := 1 to arglen do expr_chr(saved[i]);
         expr_chr(')')
       end
     end (*abs*) ;
