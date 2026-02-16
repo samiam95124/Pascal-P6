@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title>IP Pascal User Manual</title>
+	<meta name="generator" content="LibreOffice 7.3.7.2 (Linux)"/>
+	<meta name="author" content="samiam"/>
+	<meta name="created" content="2016-12-09T16:37:00"/>
+	<meta name="changed" content="2026-02-16T10:04:23.819398713"/>
+	<meta name="AppVersion" content="14.0000"/>
+	<style type="text/css">
+		p { line-height: 115%; text-align: left; orphans: 2; widows: 2; margin-bottom: 0.1in; direction: ltr; background: transparent }
+		p.western { font-family: "Times New Roman", serif }
+		h1 { color: #5ea226; line-height: 100%; text-align: left; page-break-inside: avoid; orphans: 2; widows: 2; margin-top: 0.33in; margin-bottom: 0.08in; direction: ltr; background: transparent; page-break-after: avoid }
+		h1.western { font-family: "Arial", serif; font-size: 14pt; font-weight: bold }
+		h1.cjk { font-family: "Corbel"; font-size: 14pt; font-weight: bold }
+		h1.ctl { font-family: "DejaVu Sans"; font-size: 14pt; font-weight: bold }
+		h2 { color: #7fd13b; line-height: 100%; text-align: left; page-break-inside: avoid; orphans: 2; widows: 2; margin-top: 0.08in; margin-bottom: 0.08in; direction: ltr; background: transparent; page-break-after: avoid }
+		h2.western { font-family: "Arial", serif; font-size: 13pt; font-weight: bold }
+		h2.cjk { font-family: "Corbel"; font-size: 13pt; font-weight: bold }
+		h2.ctl { font-family: "DejaVu Sans"; font-size: 13pt; font-weight: bold }
+		h3 { color: #7fd13b; line-height: 100%; text-align: left; page-break-inside: avoid; orphans: 2; widows: 2; margin-top: 0.08in; margin-bottom: 0.08in; direction: ltr; background: transparent; page-break-after: avoid }
+		h3.western { font-family: "Arial", serif; font-weight: bold }
+		h3.cjk { font-family: "Corbel"; font-weight: bold }
+		h3.ctl { font-family: "DejaVu Sans"; font-weight: bold }
+		a:link { color: #eb8803; text-decoration: underline }
+		a:visited { color: #5f7791; text-decoration: underline }
+	</style>
+</head>
+<body lang="en-US" link="#eb8803" vlink="#5f7791" dir="ltr" style="border: none; padding: 0in">
+<div title="header">
+	<table width="100%" cellpadding="7" cellspacing="0">
+		<col width="218*"/>
+
+		<col width="38*"/>
+
+		<tr>
+			<td width="85%" height="18" bgcolor="#00addc" style="background: #00addc; border: none; padding: 0in"><p align="right" style="text-transform: uppercase; orphans: 0; widows: 0">
+				<font color="#ffffff"><font face="Arial, serif">Pascal
+				implementation: the P5 compiler</font></font></p>
+			</td>
+			<td width="15%" bgcolor="#000000" style="background: #000000; border: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
+				<font color="#ffffff">A</font><font color="#ffffff">ugust 29,
+				2014</font></p>
+			</td>
+		</tr>
+	</table>
+	<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+	</p>
+</div><p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<font face="Arial Black, serif"><font size="5" style="font-size: 18pt">P5</font></font></p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<font face="Arial Black, serif"><font size="5" style="font-size: 18pt">ISO
+7185 Basic interpreter</font></font></p>
+<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
+<font face="Arial Black, serif"><font size="3" style="font-size: 12pt">Scott
+A. Franco</font></font></p>
+<p class="western" style="line-height: 115%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<div id="Table of Contents1" dir="ltr"><p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in; page-break-before: always">
+	<a href="#__RefHeading___Toc3332_2468851717">1 Introduction	4</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3334_2468851717">2 Beta software
+	warning	4</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3336_2468851717">3 Syntax notation
+	used	4</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3338_2468851717">4 Format of source	5</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3340_2468851717">4.1.1 Line entry	5</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3342_2468851717">4.1.2 File entry	5</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3344_2468851717">4.1.3 Identifiers	5</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3346_2468851717">4.1.4 Numeric
+	constants	6</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3348_2468851717">4.1.5 String
+	constants	6</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3350_2468851717">4.1.6 Comments	7</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3352_2468851717">4.1.7 Internal format	7</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3354_2468851717">5 Variables	7</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3356_2468851717">5.1 Real	7</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3358_2468851717">5.2 Integer	7</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3360_2468851717">5.3 String	7</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3362_2468851717">5.4 Arrays	8</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3364_2468851717">5.4.1 Sparse arrays	8</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3366_2468851717">5.4.2 Function
+	precedence over arrays	8</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3368_2468851717">5.5 Records	8</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3370_2468851717">5.6 Files	9</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3372_2468851717">6 Statements	9</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3374_2468851717">6.1 Input statement	9</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3376_2468851717">6.2 print statement	10</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3378_2468851717">6.3 goto statement	12</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3380_2468851717">6.4 on statement	12</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3382_2468851717">6.5 if statement	12</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3384_2468851717">6.6 rem statement	13</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3386_2468851717">6.7 stop statement	14</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3388_2468851717">6.8 run statement	14</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3390_2468851717">6.9 list statement	14</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3392_2468851717">6.10 new statement	14</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3394_2468851717">6.11 let statement	14</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3396_2468851717">6.12 load statement	15</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3398_2468851717">6.13 save statement	15</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3400_2468851717">6.14 data statement	15</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3402_2468851717">6.15 read statement	15</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3404_2468851717">6.16 restore
+	statement	15</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3406_2468851717">6.17 gosub statement	16</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3408_2468851717">6.18 return
+	statement	16</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3410_2468851717">6.19 For/next
+	statement	16</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3412_2468851717">6.20 while statement	18</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3414_2468851717">6.21 repeat
+	statement	19</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3416_2468851717">6.22 select
+	statement	19</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3418_2468851717">6.23 open statement	20</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3420_2468851717">6.24 close statement	21</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3422_2468851717">6.25 end statement	21</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3424_2468851717">6.26 dim statement	21</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3426_2468851717">6.27 def statement	21</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3428_2468851717">6.28 Function/endfunc
+	statement	22</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3430_2468851717">6.29 procedure
+	statement	22</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3432_2468851717">6.30 randomize
+	statement	23</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3434_2468851717">6.31 trace statement	23</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3436_2468851717">6.32 notrace
+	statement	23</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3438_2468851717">6.33 bye statement	23</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3440_2468851717">7 Expressions	23</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3442_2468851717">7.1 Standard
+	functions	24</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3444_2468851717">8 ISO 7185 extension
+	routines	26</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3446_2468851717">8.1 Routines	26</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3448_2468851717">8.1.1 Named file
+	input	26</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3450_2468851717">8.1.2 Boolean bit
+	operations	26</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3452_2468851717">9 Using ISO 7185
+	mode	27</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3454_2468851717">9.1 Batch mode	27</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3456_2468851717">9.2 Cut and paste	27</a></p>
+	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
+	<a href="#__RefHeading___Toc3458_2468851717">10 BNF Grammar
+	Specification	27</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3460_2468851717">10.1 Program
+	Structure	27</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3462_2468851717">10.2 Statements	28</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3464_2468851717">10.3 Expression
+	Hierarchy	29</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3466_2468851717">10.4 Variables and
+	Literals	30</a></p>
+	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3468_2468851717">10.4.1 Literals	30</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3470_2468851717">10.5 Grammar Notes	31</a></p>
+</div>
+<p class="western" style="line-height: 115%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 115%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<h1 class="western" style="page-break-before: always">1Introduction</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
+manual covers the Basic language interpreter that comes with the
+Pascal-P5 porting kit. The interpreter is written entirely in ISO
+7185 Pascal, but contains extensions that are normally commented out
+to provide named file I/O.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+language of the basic interpreter was in common use in the late
+1970’s/early 1980’s. When the first microprocessors were used
+widely to create hobby computers, the Basic language was popular as
+the programming language. Because the most popular previous
+implementation was DEC PDP-11 Basic, those Basic implementations
+often appeared as cut down versions of that Basic interpreter to
+enable porting of various programs from that machine. This includes
+implementations such as MBasic-80 by Microsoft, and others.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Basic roughly implements MBasic-80, but a subset of that. The test
+material for it is the “Creative Computing” set of Basic language
+games that were published in the 1970s. Please see:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#eb8803"><u><a href="http://www.classicbasicgames.org/">http://www.classicbasicgames.org/</a></u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
+P5 Basic, for the most part, implements the set of features necessary
+to implement that set of programs. However, P5 Basic implements
+several features to enable a better programming style than those
+original Basics, including:</p>
+<ul>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Programs
+	without leading line numbers.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Full
+	alphanumeric identifiers, including goto targets.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Structured
+	statements.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Free form,
+	multiline constructs.</p>
+</ul>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
+has been implemented in a manner backwards compatible to the base
+language.</p>
+<h1 class="western">2Beta software warning</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Basic is beta software at this time (version &lt; 1). It should not
+be considered reliable for production use.</p>
+<h1 class="western">3Syntax notation used</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+notation used to introduce language syntax elements is:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[option]		An
+optional item that may or may not exist.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">repeated…	An
+item that may be repeated any number of times from 1 to n.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[option]…	An
+item that may be repeated any number of times from 0 to n.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a|b		Two
+alternatives, IE, a or b but not both.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">‘literal’		Literally,
+the characters in single quotes.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">“string”		A
+constant string of characters.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>keyword</b></font></font>	A
+language keyword.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">(group)		A
+group of items, usually for purposes of repeating.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">(group)…	A
+repeated group, 1 to n times.</p>
+<h1 class="western">4Format of source</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+P5 basic program consists of a series of text lines. Each line may or
+may not have a leading number, which is ignored while the program is
+being executed. Lines can be blank.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0in">10
+print “hi”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0in">20</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">30
+end</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Case
+is not significant except within strings.</p>
+<h3 class="western">4.1.1Line entry</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
+lines are entered on the console, the “line oriented editor” mode
+is used. The format of a console line is:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[number]
+program text…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
+a line is entered, and it has a leading number, that line is matched
+to the lines in the current program store. If the line number order
+is:</p>
+<ul>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Between
+	existing lines: it is inserted between those lines.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Equal to an
+	existing line: the line is replaced.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">After any
+	line in the program: the new line is added above the program.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Before any
+	line in the program: the new line is added before the program.</p>
+</ul>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+a line number is entered alone, it signifies that any existing line
+is to be deleted. If a space or spaces exist after the number, then a
+blank line is assumed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">All
+leading spaces before the line number are removed. This is the only
+time the formatting of source lines is changed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+no line number appears on the entered line, then the line is
+considered to be immediately executable.</p>
+<h3 class="western">4.1.2File entry</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+a source file is read, each line is treated as if it were directly
+entered on the console. However, if no line number appears, the line
+is simply appended to the current program. In this manner, it is
+possible to enter a program without line numbers.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
+a source file is written, it is output as is, with out without a
+leading line number.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
+directly saving and restoring program files allows free form
+programming.</p>
+<h3 class="western">4.1.3Identifiers</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Identifiers
+in P5 Basic are of the form:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[_,a-z,A-Z][_,a-z,A-Z]…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">An
+identifier starts with any of _, a through z and A through Z,
+followed by any number of characters in _, a though z, A through Z,
+or 0 through 9. Note that this also means the legacy basic
+identifiers are valid labels, thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a1</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a10</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">MyVariable</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Are
+all valid identifiers.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Note
+that case is irrelevant in P5 Basic. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">MyVar</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">And</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Myvar</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Are
+the same identifier.</p>
+<h3 class="western">4.1.4Numeric constants</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Numberic
+constants can be simple integer, or real:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1.2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1.2e5</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">.5</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">-0.5</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Integer
+constants can also be input in hex, octal or binary:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">$10	Hexadecimal
+16</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">&amp;10	Octal
+8</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">%0101	Binary
+5</p>
+<h3 class="western">4.1.5String constants</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">String
+constants are characters between double quotes:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">“hi
+there”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+a double quote is wanted within the string, a “quote image” is
+used, consisting of two back to back quotes:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">“and
+he said “”what is going on”” there?”</p>
+<h3 class="western">4.1.6Comments</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Pascal features both a comment statement, <font face="Arial, serif"><b>rem</b></font>,
+as well as a comment character, ‘!’. The difference is, besides
+being shorter, ! is not a statement and can appear anywhere on the
+line. Like the <font face="Arial, serif"><b>rem</b></font> statement,
+it ignores all further text on the line.</p>
+<h3 class="western">4.1.7Internal format</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Basic reformats the source language into an internal, tolkenized
+format that is more efficient, both to store as well as to interpret.
+It tries hard to maintain the original format of the source. For
+example, the spacing of the original program is maintained. However,
+there is one change, and that is of numeric formats. Numbers are
+simplified, with leading zeros removed, and floating point constants
+are normalized.</p>
+<h1 class="western">5Variables</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Basic allows for 7 different kinds of variables</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x		Real
+(floating point)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x%		Integer</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x$		String</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x(n[,n]…)	Real
+array</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x%(n,[n]…)	Integer
+array</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x$(n,[n]…)	String
+array</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x.y		Record</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Each
+form of variable contains different data. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">And</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x$</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Refer
+to two completely different variables.</p>
+<h2 class="western">5.1Real</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Real
+valued variables can take any value, with any fraction. They can be
+used for integer math, but take longer to calculate than integer
+based variables.</p>
+<h2 class="western">5.2Integer</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Integer
+valued variables always assume integer only values, no fractional
+part. They are generally faster and more compact than reals.</p>
+<h2 class="western">5.3String</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">String
+valued variables take a series of characters and can be any length up
+to 250 characters.</p>
+<h2 class="western">5.4Arrays</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Each
+of real, integer and string can be expressed as an array, and that
+array can have any number of dimensions. For example:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">x(10,
+14, 12, 31, 42)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Is
+a valid array. Index values range from 0 to n, where n is any number
+between 0 and 1000.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Arrays
+are distinct from other variable types, but not from each other. Once
+an array with a given identifier is used with a given number of
+dimensions, the number of dimensions used to access it cannot change.
+Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a(10)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Cannot
+later be used as:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a(10,
+10)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Arrays
+can be dimensioned by the dim statement, but more typically the size
+and index characteristics of the array are determined automatically
+from its first encountered form.</p>
+<h3 class="western">5.4.1Sparse arrays</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
+P5 Basic, arrays are automatically sparse. If the statements appear:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A$(1)
+= “hi”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A$(10)
+= “there”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+resulting array is not 10 units long, but 2. P5 Basic does not
+allocate array elements until they are used.</p>
+<h3 class="western">5.4.2Function precedence over arrays</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
+Basic, array notation a(x) and function notation f(y) are inherently
+ambiguous with respect to each other. When a name is used to
+introduce a function, any array definition by that same name is
+essentially masked by the function definition. The previous contents
+of the array will not be usable.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Naming
+functions and arrays the same is to be avoided for this reason.</p>
+<h2 class="western">5.5Records</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+record is a collection of named fields, each of which can have a
+different type:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.b
+= 1</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.b$
+= “hi there”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.b(5)
+= 62</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.c%
+= 7</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">There
+is no limit to the number of fields each record can have. Records can
+contain records:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.b.c$
+= “hello world”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">is
+a record a, with field b which is a record, which contains field c.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">However,
+in this version of P5 Basic, arrays of records are not possible.</p>
+<h2 class="western">5.6Files</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Separate
+from variables, P5 Basic can operate on a number of text files
+referenced by number, from 1 to n where n is a maximum of 100. <font face="Arial, serif"><b>input</b></font>
+or <font face="Arial, serif"><b>print</b></font> statements can be
+used with files. Two file numbers, 1 and 2 are reserved:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1	Standard
+input file.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">2	Standard
+output file.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">So
+the default file for input statements is #1, and the default file for
+print statements is #2. 
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Files
+are text only, and structured into lines. <font face="Arial, serif"><b>input</b></font>
+statements read whole lines from a file. <font face="Arial, serif"><b>print</b></font>
+statements write whole lines to a file.</p>
+<h1 class="western">6Statements</h1>
+<h2 class="western">6.1Input statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>input</b></font>
+[#file,] [prompt[;|,]] variable[,variable]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+input statement reads some number of variables from either a file or
+the standard input. The file number can be specified, or the default
+file #1 used (standard input). If a prompt string is specified, then
+that will be output to the standard output before the input is
+performed. This mode is not valid if a file number was specified
+(even if it is the standard input). The prompt string is a simple
+constant string. No string expression can be specified.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+no prompt string is not present, then “? “ will be output as the
+standard prompt (question mark followed by space). The prompt is
+terminated by either ‘;’ or ‘,’. Which character terminates
+the prompt determines:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">;	Specifies
+to output the standard prompt (“? “) <i>after</i> the prompt
+string is output.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">,	Specifies
+to <i>not</i> output the standard prompt after the prompt string is
+output.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+input statement reads an entire line from the text file or standard
+input. If multiple variables appear, then the input line is separated
+into fields by the ‘,’ character. For example:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>input</b></font>
+a, b, c</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Given
+an input line “1, 2, 3” would give the results:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a
+= 1</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">b
+= 2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">c
+= 3</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">String
+values are also delimited by ‘,’ if more than one variable
+appears on the input statement. However, if only one string variable
+appears, the entire input line will be assigned to the given variable
+without regard to embedded ‘,’ characters.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Note
+that input from a file is not available if named file handling is not
+enabled.</p>
+<h2 class="western">6.2print statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>print</b></font></font>
+[#file] ([<font color="#000000"><font face="Arial, serif"><b>tab</b></font></font>(number)]
+[<font color="#000000"><font face="Arial, serif"><b>using</b></font></font>
+“format”] [expression [,|;] [expression[,|;]])…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Print
+a series of expressions, of any type, integer, string or real, on one
+output line. The print statement starts with an optional file number,
+the a series of “print groups”, containing <font color="#000000"><font face="Arial, serif"><b>tab</b></font></font>,
+<font color="#000000"><font face="Arial, serif"><b>using</b></font></font>,
+and then expressions, ending with a print format character.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+a file number is specified, then the output is redirected to that
+file. The default file is #2, the standard output.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Each
+group must be separated from the next by ‘,’ or ‘;’. The
+separation of each printed field from the next is determined by the
+character used to separate the fields. The ‘,’ character causes
+each field to be placed in 15<sup> </sup>character spaces. The ‘;’
+character causes each field to be placed separated by 2 spaces. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">print
+1,2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">
+1           2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">print
+1;2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">
+1  2</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+the print group starts with a <font color="#000000"><font face="Arial, serif"><b>tab</b></font></font><font color="#000000"><font face="Arial, serif"><font color="#000000"><font face="Times New Roman, serif"><span style="font-weight: normal">
+</span></font></font></font></font>expression, it will contain a
+numeric expression that evaluates to a tab location on the line, from
+1 to n, where n is the character location on the line. The print
+location will be padded with that number of spaces to reach the tab
+position. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">print
+tab(20) &quot;hi&quot;</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"> 
+                 hi</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">To
+allow more flexibility in output formatting the <font face="Arial, serif"><b>using</b></font>
+facility is available. Using takes a string expression. The string
+specifies a series of characters to determine how the expression to
+be printed is laid out on the line. The following character meanings
+exist:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">&amp;	Print
+a string</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">$	Print
+‘$’ if at the left of the most significant digit in number,
+otherwise ‘ ‘ (space).</p>
+<p class="western" style="line-height: 100%; margin-left: 0.5in; text-indent: -0.5in; margin-bottom: 0.14in">
+,	Divide digits in a number. Prints ‘,’ if within significant
+digits of the number, otherwise ‘ ‘ (space).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">#	Print
+digit in this position or space if not significant.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">0	Print
+digit or zero if not significant.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">-	Print
+sign if negative before most significant digit.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">+	Print
+any sign before non-zero digits.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">.	Place
+decimal point.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">^	Print
+exponent.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Any
+other character than what appears above is simply printed in place.
+The idea of using is to present an “image” of what the number
+looks like in its field. Each character of the format indicates what
+happens in that digit position. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">print
+using &quot;The string is: &amp;&quot; &quot;hi&quot;</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+string is: hi</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;####&quot; 5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">   <font face="Courier New, serif">5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;0000&quot; 5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">0005</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;$$$#&quot; 5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">  <font face="Courier New, serif">$5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+formatter starts by finding the decimal point in the format. This is
+either explicitly the ‘.’ decimal point format character or the
+position to the right of any of the digit format characters. If the
+number is integer, it is considered to be a whole number with only
+0’s as the fraction.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Having
+found the decimal position, each number format character to the left
+of the decimal position is matched to a digit in the whole part of
+the number, and each number format character to the right of the
+decimal position is matched to a a digit in the fractional part of
+the number. Thus:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;###.###&quot; 5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">  <font face="Courier New, serif">5.000</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+usign &quot;###.###&quot; 5.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">  <font face="Courier New, serif">5.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;###,###.###&quot; 5.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">      <font face="Courier New, serif">5.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;###,###.###&quot; 1465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">  <font face="Courier New, serif">1,465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;000,000.###&quot; 1465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">001,465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;$$$,$$#.###&quot; 1465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">$1,465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;---,--#.###&quot; 1465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">  <font face="Courier New, serif">1,465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+using &quot;---,--#.###&quot; -1465.123</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-1,465.123</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if there are more than one ‘.’ (decimal) format
+characters in the <font face="Arial, serif"><b>using</b></font>
+string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
+real numbers are printed, the most space efficient format is used.
+Generally if the number can be represented without an exponent in 10
+characters, it is printed that way. If it takes more than 10
+characters, the exponent format is used.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">To
+get the exact format you want, it is recommended that <font face="Arial, serif"><b>print</b></font>
+<font face="Arial, serif"><b>using</b></font> be utilized.</p>
+<h2 class="western">6.3goto statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>goto</b></font>
+[line number|label]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">label:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+goto statement causes program execution to stop and then continue at
+a new location. If a line number is specified, then that is found and
+executed. If, instead an identifier appears, then the execution
+continues after the indicated label. It is an error if the line
+number or label is not found.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+ability to specify an identifier instead of a line number enables
+free format code with or without line numbers. To enable this, a
+label must be present in the code. It must appear first on the line
+before any statements. The line containing the label may or may not
+also have a line number on it.</p>
+<h2 class="western">6.4on statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0in"><font face="Arial, serif"><b>on</b></font>
+expression <font face="Arial, serif"><b>goto</b></font> label|lineno
+[,label|lineno]…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>on</b></font>
+expression <font face="Arial, serif"><b>gosub</b></font> label|lineno
+[,label|lineno]…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>on</b></font> statement parses an
+expression and uses the value to select from a list of line numbers
+or labels. If the expression is 1, the first in list is matched. If
+2, the second, etc. If no item in the list is matched, execution
+simply continues.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+target line may be a <font face="Arial, serif"><b>goto</b></font> or
+<font face="Arial, serif"><b>gosub</b></font>. If <font face="Arial, serif"><b>goto</b></font>,
+the execution simply transfers to the target line (see the <font face="Arial, serif"><b>goto</b></font>
+statement). If <font face="Arial, serif"><b>gosub</b></font>, the
+target statement is executed, and a ensuing <font face="Arial, serif"><b>return</b></font>
+statement will cause it to return to the next statement after the <font face="Arial, serif"><b>on</b></font>
+(see <font face="Arial, serif"><b>gosub</b></font> statement).</p>
+<h2 class="western">6.5if statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+condition <font face="Arial, serif"><b>then</b></font> statement
+[<font face="Arial, serif"><b>else</b></font> statement]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+condition <font face="Arial, serif"><b>goto</b></font>
+[line|identifier]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+condition <font face="Arial, serif"><b>then</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[else]</p>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>Endif</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+if statement controls execution according to a given condition. It
+comes in several forms, and may either complete on a single line, or
+span many lines.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+condition must evaluate to 0 or non-zero. If the condition is zero,
+then the condition is false. If the condition is non-zero, then it is
+true.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+first form gives a statement to execute if the condition is true,
+optionally followed by a statement to execute if the condition is
+false. A side effect is that the rest of the line after the statement
+is executed along with the last active part of the <font face="Arial, serif"><b>if</b></font>
+statement. Thus:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+1 <font face="Arial, serif"><b>then</b></font> <font face="Arial, serif"><b>print</b></font>
+“hi”: <font face="Arial, serif"><b>print</b></font> “how are
+you”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Prints:</p>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>hi</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">how
+are you</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Because
+the last part of the if statement is the true clause. If the
+condition is not true, none of the rest of the line is executed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+this if is executed:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+ 1 <font face="Arial, serif"><b>then</b></font> <font face="Arial, serif"><b>print</b></font>
+“hi” <font face="Arial, serif"><b>else</b></font> <font face="Arial, serif"><b>print</b></font>
+“lo”: <font face="Arial, serif"><b>print</b></font> “how are
+you”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Prints:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">hi</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">And
+then terminates the line, because the else or false clause controls
+the rest of the line. The statement:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
+ 0 <font face="Arial, serif"><b>then</b></font> <font face="Arial, serif"><b>print</b></font>
+“hi” <font face="Arial, serif"><b>else</b></font> <font face="Arial, serif"><b>print</b></font>
+“lo”: <font face="Arial, serif"><b>print</b></font> “how are
+you”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Prints:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">lo</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">How
+are you</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Bcause
+the else or false clause enables the rest of the line.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[note:
+I don’t think this is correct behavior according to MBasic-80]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+rules for continuation on the same line using <font face="Arial, serif"><b>if</b></font>
+are a bit complex. The recommendation is to only use <font face="Arial, serif"><b>if</b></font>
+for a single statement on the line.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+second form of if gives shorthand for gotos. If the condition is
+true, then the goto is executed (see the goto statement). The rest of
+the line is not executed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
+the final form, the <font face="Arial, serif"><b>if</b></font>
+statement spans multiple lines. This form of <font face="Arial, serif"><b>if</b></font>
+is more appropriate for free-form program code. The if statement
+multiline mode is activated if there is nothing on the line past the
+then keyword. When this occurs, the if is not terminated until <font face="Arial, serif"><b>endif</b></font>
+is encountered. If an <font face="Arial, serif"><b>else</b></font> is
+encountered and the condition is false, then that is executed. In
+both true and false cases, the <font face="Arial, serif"><b>if</b></font>
+statement ends after the <font face="Arial, serif"><b>endif</b></font>
+is encountered.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<h2 class="western" style="page-break-inside: auto; page-break-after: auto">
+6.6rem statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>rem</b></font>
+some text…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+rem statement causes the rest of the line to be ignored, and
+execution continues with the next line. Thus:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">rem
+this is a comment</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Another
+way to introduce a comment is with the ‘!’ character. This can be
+placed anywhere on the line, not just where a statement is expected:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
+“hi there” ! do my print here</font></p>
+<h2 class="western">6.7stop statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>stop</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Causes
+the program to halt and enter command mode. In this version of P5, it
+is functionally identical to the <font face="Arial, serif"><b>end</b></font>
+statement (see <font face="Arial, serif"><b>end</b></font>
+statement).</p>
+<h2 class="western">6.8run statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>run</b></font>
+[filename]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Runs
+the current program or a program from a file. The variables, current
+tabbing, and the random number generator are cleared and reset, and
+the program runs from the first line in the program. If a filename is
+specified, then that program file is loaded and the current one
+completely cleared.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if a filename is specified and named file I/O is not
+enabled.</p>
+<h2 class="western">6.9list statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>list</b></font>
+[start line[,end line]]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Lists
+the current program to the console. If no starting or ending line is
+specified, then the entire program from start to finish is listed. If
+only a starting line is specified, then that line from the end of the
+program is listed. If both the start and end are specified, then the
+program is listed from the starting line to the ending line,
+inclusive.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">To
+be able to specify starting and ending lines, the source lines
+indicated must have numbers.</p>
+<h2 class="western">6.10new statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>new</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Clears
+the program store and variables. Used to start editing on a new
+program.</p>
+<h2 class="western">6.11let statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[let]
+variable = expression</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Assigns
+an expression to a variable. The variable assumes the value of the
+expression. The let keyword is optional. Examples:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">Let
+a = 10.67</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">A$(10)
+= “hi”</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">a.b%(5)
+= 3</font></p>
+<h2 class="western">6.12load statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>load</b></font>
+filename</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Loads
+a new program. The file by the given filename is loaded into the
+current program store. Any previous program is erased.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+is an error if named file I/O is not enabled.</p>
+<h2 class="western">6.13save statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>save</b></font>
+filename</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Saves
+the current program to the given file by filename. The current
+program in store is unmodified.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+is an error if named file I/O is not enabled.</p>
+<h2 class="western">6.14data statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>data</b></font>
+[value[,value]]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Introduce
+data into the program. The data statement introduces a series of data
+values into the program:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">data
+1, “hi”, 3.1414</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Data
+statements can be placed anywhere in the program, and are simply
+no-ops when run. The values in the data statement are placed in
+variables by the <font face="Arial, serif"><b>read</b></font>
+statement (see <font face="Arial, serif"><b>read</b></font>
+statement). All of the data statements in the program are considered
+a list from start to finish. The <font face="Arial, serif"><b>read</b></font>
+statement will read each in turn until there are no more data
+statements in the program.</p>
+<h2 class="western">6.15read statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>read</b></font>
+variable[,variable]…</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Reads
+from the current <font face="Arial, serif"><b>data</b></font>
+statement (see <font face="Arial, serif"><b>data</b></font>
+statement) into the list of given variables. The data types must
+match in type, just as if an assignment were being made. Integers can
+be assigned to real, and vice versa, but strings cannot be read to
+integer or real, and integer or real cannot be read to a string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+current data position to read from starts from the first <font face="Arial, serif"><b>data</b></font>
+statement in the program and moves sequentially to the last data item
+on the last <font face="Arial, serif"><b>data</b></font> statement in
+the program. The position of where data is to be read can be set with
+the <font face="Arial, serif"><b>restore</b></font> statement (see
+the <font face="Arial, serif"><b>restore</b></font> statement).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if there are no more data values in the program to read
+to the current variable.</p>
+<h2 class="western">6.16restore statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>restore</b></font>
+[linenumber|label]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Restores
+the data position used by the next <font face="Arial, serif"><b>read</b></font>
+statement (see <font face="Arial, serif"><b>read</b></font>
+statement) to either the beginning of the program, or to a specified
+line by number or label.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is not an error to restore the data position if there are no <font face="Arial, serif"><b>data</b></font>
+statements in the program. However, the next <font face="Arial, serif"><b>read</b></font>
+statement will cause an error.</p>
+<h2 class="western">6.17gosub statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>gosub</b></font>
+linenumber|label</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Transfers
+control to the line specified by the linenumber or label. The
+position of the program execution after the gosub is saved, and
+restored by a later return statement (see return statement). <font face="Arial, serif"><b>gosub</b></font>s
+can be nested to any level.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Example:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+gosub 30: print “done”</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+end</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30
+print “hi”: return</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">hi</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">done</font></p>
+<h2 class="western">6.18return statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>return</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Returns
+to the program position just after the last <font face="Arial, serif"><b>gosub</b></font>
+statement was executed (see <font face="Arial, serif"><b>gosub</b></font>
+statement).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if there is no last <font face="Arial, serif"><b>gosub</b></font>
+executed.</p>
+<h2 class="western">6.19For/next statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>for</b></font>
+variable = start expression <font face="Arial, serif"><b>to</b></font>
+end expression [<font face="Arial, serif"><b>step</b></font>
+expression]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>for</b></font>
+variable = expression [,expression]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>next</b></font>
+[variable]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Loops
+a code sequence with a series of values in a variable. The variable
+is assigned a series of values from the starting expression to the
+ending expression. The following statements are executed with that
+variable value until a <font face="Arial, serif"><b>next</b></font>
+statement is encountered (see <font face="Arial, serif"><b>next</b></font>
+statement). Then the loop is repeated with the variable incremented
+by either the default 1, or by the increment specified in the
+optional step expression.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>step</b></font> can be any value,
+including negative and fractional. The loop will continue as long as
+the variable value is between the starting and ending expressions.
+The start and end expressions are evaluated only when the <font face="Arial, serif"><b>for</b></font>
+loop is started.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Examples:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">for
+i = 1 to 10: print i: next</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">3</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">4</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">6</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">7</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">9</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">for
+i = 1 to -10 step -0.45: print i: next i</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">.55</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">.1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-.35</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-.8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-1.25</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-1.7</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-2.15</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-2.6</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-3.05</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-3.5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-3.95</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-4.4</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-4.85</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-5.3</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-5.75</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-6.2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-6.65</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-7.1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-7.55</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-8.45</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-8.9</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-9.35</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">-9.8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+second form of the <font face="Arial, serif"><b>for</b></font> loop
+can be used called “sequence of values”. Instead of specifying
+how the variable is to be incremented, a series of values are given:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">for
+i = 1, 3, 5, 2, 0: print i: next</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">3</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">0</font></p>
+<p style="font-weight: normal; line-height: 100%; margin-bottom: 0.14in">
+<br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
+form of the <font face="Arial, serif"><b>for</b></font> loop also
+allows string variables to be iterated:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">for
+i$ = &quot;one&quot;, &quot;two&quot;, &quot;three&quot;, &quot;four&quot;,
+&quot;five&quot;: print i$: next</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">one</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">two</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">three</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">four</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">five</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+<font face="Arial, serif"><b>next</b></font> statement can be
+specified with or without a variable. With no variable, it terminates
+whatever for statement was last executed. The <font face="Arial, serif"><b>for</b></font>
+statement is executed again, and that continues until the values of
+the <font face="Arial, serif"><b>for</b></font> loop are satisfied.
+Then execution continues after the <font face="Arial, serif"><b>next</b></font>
+statement.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+the <font face="Arial, serif"><b>next</b></font> statement has a
+variable, then only the <font face="Arial, serif"><b>for</b></font>
+statement that matches that variable is reexecuted. If the last <font face="Arial, serif"><b>for</b></font>
+statement does not match, then all previous active for statements
+that do not match the variable are simply canceled. This allows for
+special situations:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">for
+y := 1 to 10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">for
+x = 1 to 10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">        <font face="Courier New, serif">print
+x, y</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">        <font face="Courier New, serif">if
+x &gt; 5 goto exit</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">next
+x</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">exit:</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">next
+y</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Here
+the inner loop is terminated early. If the <font face="Arial, serif"><b>next</b></font>
+statements were anonymous (no variable specified), then the last next
+would simply continue the inner loop. Instead, the inner loop is
+cancelled and the outer loop continues.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>for</b></font>
+statements can be nested to any level, and be spread over any number
+of lines.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+rule should be followed that next statements follow the <font face="Arial, serif"><b>for</b></font>
+statements they are matched with. This example of “tricky code”:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+goto 30</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+next</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30
+for I = 1 to 10: print i: goto 20</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Would
+function in an interpretive environment, but would not work in a
+compiler, in case you ever want to generate fast binaries. Thus these
+kinds of styles should be avoided.</p>
+<h2 class="western">6.20while statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>while</b></font>
+expression … <font face="Arial, serif"><b>wend</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>while</b></font> and <font face="Arial, serif"><b>wend</b></font>
+statements form a loop controlled by the expression of the <font face="Arial, serif"><b>while</b></font>
+statement. Unlike a <font face="Arial, serif"><b>for</b></font>
+statement, the controlling expression is evaluated every time the
+loop iterates. As long as the expression evaluates to true or
+non-zero, the statements in the <font face="Arial, serif"><b>while</b></font>
+loop are executed. When the expression value is false or 0, the body
+of statements in the <font face="Arial, serif"><b>while</b></font>
+loop are skipped and execution continues after the <font face="Arial, serif"><b>wend</b></font>
+statement. Thus a while loop may not execute the contents of the loop
+at all.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Example:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+i = 1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+while i &lt;= 10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">40
+    print i</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50
+    i = i+1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">60</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">70
+wend</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">3</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">4</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">6</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">7</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">9</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>while</b></font>
+loops can be nested with other while loops and other control
+structures to any level. The <font face="Arial, serif"><b>wend</b></font>
+statement must be located in the program source after the <font face="Arial, serif"><b>while</b></font>
+statement. This is because if the <font face="Arial, serif"><b>while</b></font>
+condition is false, statements are skipped, not executed, until the
+<font face="Arial, serif"><b>wend</b></font> statement is found.</p>
+<h2 class="western">6.21repeat statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>repeat</b></font>
+… <font face="Arial, serif"><b>until</b></font> expression</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>repeat</b></font> and <font face="Arial, serif"><b>until</b></font>
+statements form a loop that is controlled by the <font face="Arial, serif"><b>until</b></font>
+expression. Unlike a <font face="Arial, serif"><b>for</b></font>
+statement, the controlling expression is evaluated every time the
+loop iterates. As long as the expression evaluates to false or zero,
+the statements in the <font face="Arial, serif"><b>repeat</b></font>
+loop are executed. When the expression value is true or non-zero, the
+<font face="Arial, serif"><b>repeat</b></font> loop exits and
+execution continues after the <font face="Arial, serif"><b>until</b></font>
+statement.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Example:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+i = 1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+repeat</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">40
+   print i</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50
+   i = i+1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">60</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">70
+until i = 10</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">3</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">4</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">5</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">6</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">7</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">8</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">9</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>repeat</b></font>
+loops can be nested with other while loops and other control
+structures to any level. The <font face="Arial, serif"><b>until</b></font>
+statement should located in the program source after the <font face="Arial, serif"><b>repeat</b></font>
+statement.</p>
+<h2 class="western">6.22select statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>select</b></font>
+expression .. <font face="Arial, serif"><b>case</b></font>
+expression: [<font face="Arial, serif"><b>other</b></font>:] <font face="Arial, serif"><b>endsel</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+<font face="Arial, serif"><b>select</b></font> statement gives a
+means to execute different alternative program paths depending on the
+value of an expression. It is like the <font face="Arial, serif"><b>on</b></font>
+… <font face="Arial, serif"><b>goto</b></font> statement except
+that it is a true multiline capable programming structure.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>select</b></font> expression is
+evaluated, then each ensuing <font face="Arial, serif"><b>case</b></font>
+statement is examined to see if it contains the matching value by
+evaluating the <font face="Arial, serif"><b>case</b></font>
+expression and checking for equal with the <font face="Arial, serif"><b>select</b></font>
+expression result. If the <font face="Arial, serif"><b>case</b></font>
+statement is matched, then the statements following the <font face="Arial, serif"><b>case</b></font>
+statement are executed until the next <font face="Arial, serif"><b>case</b></font>
+statement is found. The rest of the <font face="Arial, serif"><b>case</b></font>
+statements are then skipped until <font face="Arial, serif"><b>endsel</b></font>
+is found, and execution continues with the next statement after that.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+an <font face="Arial, serif"><b>other</b></font> clause exists, then
+that will match any <font face="Arial, serif"><b>select</b></font>
+expression result. This allows a single case to handle all other
+possible <font face="Arial, serif"><b>select</b></font> expression
+values. The <font face="Arial, serif"><b>other</b></font> clause
+behaves just as a <font face="Arial, serif"><b>case</b></font>
+statement.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>select</b></font>
+and <font face="Arial, serif"><b>case</b></font> expressions can be
+integer, real or string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Examples:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">select
+1</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+1: print &quot;one&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+2: print &quot;two&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+3: print &quot;three&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">other:
+ print &quot;something&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">endsel</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">one</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">select
+1.2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+1.1: print &quot;point 1&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+1.2: print &quot;point 2&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+1.3: print &quot;point 3&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">endsel</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">point
+2</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">select
+&quot;fork&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+&quot;knife&quot;: print &quot;its a knife&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+&quot;spoon&quot;: print &quot;its a spoon&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">case
+&quot;fork&quot;:  print &quot;its a fork&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in">    <font face="Courier New, serif">other:
+       print &quot;don't know what it is&quot;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">endsel</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">its
+a fork</font></p>
+<h2 class="western">6.23open statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>open</b></font>
+filename <font face="Arial, serif"><b>for</b></font> <font face="Arial, serif"><b>input</b></font>|<font face="Arial, serif"><b>output</b></font>
+<font face="Arial, serif"><b>as</b></font> #number</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Opens
+a text file by filename for either input or output using the given
+file number as a handle. File numbers can be in the range 3 to 100.
+The file numbers 1 and 2 are reserved for standard input an standard
+output.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
+a file is open for reading, it is positioned to the start of the file
+and made ready to read. When a file is open for writing, it is set to
+zero length and writing starts at the beginning. P5 Basic only allows
+reading or writing to a text file, not both at the same time.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if the file is opened for reading, but a file by that
+name does not exist.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
+the file by number is already open, it is automatically closed, then
+reopened under the new name.</p>
+<h2 class="western">6.24close statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>close</b></font>
+#number</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Closes
+a text file by filenumber. The file number is then free to be used
+for other files. It is an error to close either the standard input
+file (1), or the standard output file (2).</p>
+<h2 class="western">6.25end statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>end</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>end</b></font> statement terminates the
+program and causes it to stop and enter interactive mode.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is considered poor form not to have the <font face="Arial, serif"><b>end</b></font>
+statement as the final statement in a program, from a program
+readability standpoint. If you wish to have the program stop in the
+middle, the normal practice is to use the <font face="Arial, serif"><b>stop</b></font>
+statement (see <font face="Arial, serif"><b>stop</b></font>
+statement), or <font face="Arial, serif"><b>goto</b></font> the final
+line containing the <font face="Arial, serif"><b>end</b></font>
+statement.</p>
+<h2 class="western">6.26dim statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>dim</b></font>
+variable[,variable]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+<font face="Arial, serif"><b>dim</b></font> statement defines the
+exact dimensions of arrays in P5 Basic. P5 Basic automatically
+declares variables when they are used. However, the default string
+length of 250 characters may be excessive, especially in large arrays
+of strings. Thus it is often useful to set the exact string length
+used.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
+each variable defined as an array, the subscript used with dim is the
+total size of the array, not an index value:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+<font face="Courier New, serif">dim</font> a$(100), b.c(10, 10)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Here
+the size of the string a$ is set at 100 characters, and the size of
+the matrix c in record b is set to 10x10.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Using
+a dim statement can also help code size and speed when P5 Basic is
+complied (sometimes dramatically). The dynamic creation of variables
+in code without dim statements can be a source of considerable
+runtime overhead.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error to <font face="Arial, serif"><b>dim</b></font> variables
+after their use. It is an error to dim the same variable multiple
+times.</p>
+<h2 class="western">6.27def statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>def</b></font>
+functionname[(parameter[,parameter]…) = expression</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Defines
+a single line function. The function name, which can be any
+identifier (not “fn…” of older Basics) is registered as a
+function with optional parameters. Each parameter is a variable
+declaration for a variable that exists only while the function is
+being executed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+expression on the right hand side supplies the definition of the
+function. Each parameter may appear in the expression and behaves as
+a variable that was loaded with the data passed by the caller. Thus:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+def add(a, b) = a+b</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+print add(1, 2)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"> <font face="Courier New, serif">3</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+result returned by the function is the result of the expression that
+defines it.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+function definition must be executed or appear before it is called.
+In a compiled environment, it must appear first in source regardless
+of execution order.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+appearance of a function overrides the function name use as an array.
+If an array was definined when the function is defined, the contents
+of the array become unusable. Naming functions and arrays the same is
+to be avoided.</p>
+<h2 class="western">6.28Function/endfunc statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>function</b></font>
+functionname[(parameter[,parameter]…) … <font face="Arial, serif"><b>endfunc</b></font>
+expression</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Introduces
+a multiline function. The function name, which can be any identifier
+is registered as a function with optional parameters. Each parameter
+is a variable declaration for a variable that exists only while the
+function is being executed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+statements defining the function are terminated by an endfunc
+statement. Any number of lines can constitute the function. The
+expression evaluated by the endfunc statement defines the result of
+the function:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+function min(a, b)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30
+    if a &gt; b then a = b</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">40</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50
+endfunc a</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+function definition must be executed or appear before it is called.
+In a compiled environment, it must appear first in source regardless
+of execution order.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+appearance of a function overrides the function name use as an array.
+If an array was definined when the function is defined, the contents
+of the array become unusable. Naming functions and arrays the same is
+to be avoided.</p>
+<h2 class="western">6.29procedure statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>procedure</b></font>
+procedurename[(parameter[,parameter]…) … <font face="Arial, serif"><b>endproc</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Introduces
+a multiline procedure. The procedure name, which can be any
+identifier is registered as a procedure with optional parameters.
+Each parameter is a variable declaration for a variable that exists
+only while the procedure is being executed.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+statements defining the procedure are terminated by an endproc
+statement. Any number of lines can constitute the procedure:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+procedure printit(a, b)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30
+    print “a”; a; “b”; b</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">40</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50
+endproc</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+procedure definition must be executed or appear before it is called.
+In a compiled environment, it must appear first in source regardless
+of execution order.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+appearance of a procedure overrides the procedure name use as an
+array. If an array was definined when the procedure is defined, the
+contents of the array become unusable. Naming procedures and arrays
+the same is to be avoided.</p>
+<h2 class="western">6.30randomize statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>randomize</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Overrides
+the reset of the random number generator used in <font face="Arial, serif"><b>rnd</b></font>().
+The pseudo-random number generator normally gives a series of random
+numbers that is the same series each time the program is run. This
+can be overridden by the <font face="Arial, serif"><b>randomize</b></font>
+statement, which causes it to continue with the series instead of
+restarting.</p>
+<h2 class="western">6.31trace statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>trace</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Turns
+on trace mode. In trace mode, each time a statement is executed, the
+line the statement comes from is printed. This can help debug
+programs.</p>
+<h2 class="western">6.32notrace statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>notrace</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Turns
+off <font face="Arial, serif"><b>trace</b></font> mode. See the <font face="Arial, serif"><b>trace</b></font>
+statement.</p>
+<h2 class="western">6.33bye statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>bye</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Exits
+the P5 Basic interpreter.</p>
+<h1 class="western">7Expressions</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Expressions
+in P5 Basic consist of standard operators, standard functions, and
+user defined functions. The operators are, in order from lowest to
+highest precedence, in groups of equal precidence:</p>
+<p style="line-height: 100%; margin-bottom: 0in">a <font color="#000000"><font face="Arial, serif"><b>and</b></font></font>
+b		Find the bit or logical and of a and b.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a <font color="#000000"><font face="Arial, serif"><b>or</b></font></font>
+b		Find the bit or logical or of a and b.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>xor</b></font></font>		Find
+the bit or logical xor of a and b.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a = b		Equals.
+Returns -1 if a = b, otherwise 0.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a &lt;&gt; b		Not
+equals. Returns -1 if a &lt;&gt; b, otherwise 0.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a &lt; b		Less than.
+Returns -1 if a &lt; b, otherwise 0.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a &gt; b		Greater
+than. Returns -1 if a &gt; b, otherwise 0.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a &lt;= b		Less than
+or equal. Returns -1 if a &lt;= b, otherwise 0.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a
+&gt;= b		Greater than or equal. Returns -1 if a &gt;= b, otherwise 0.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a + b		Add a and b</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a
+– b		Subtract b from a.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a*b		Multiply a and
+b.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a/b		Divide a by b.</p>
+<p style="line-height: 100%; margin-bottom: 0in">a <font color="#000000"><font face="Arial, serif"><b>mod</b></font></font>
+b	Find a modulo b</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a
+<font color="#000000"><font face="Arial, serif"><b>div</b></font></font>
+b		Divide a by b in integer mode.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a^b		Exponential.
+Find a to the b power.</p>
+<p style="line-height: 100%; margin-bottom: 0in">+a		Positivition.
+Find a.</p>
+<p style="line-height: 100%; margin-bottom: 0in">-a		Negation. Find
+–a.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font color="#000000"><font face="Arial, serif"><b>not</b></font></font>
+a		Logical bit not of a.</p>
+<p style="line-height: 100%; margin-bottom: 0in">(a)		Subexpression.
+Find a.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">func(a)		Find
+function.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Logical
+values are always returned as true = -1 and false = 0, because -1 is
+2’s complement notation for all bits high in the integer result.
+This is convienent in conjuction with Boolean math. For example:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1
+= 1 and 1 &lt;&gt; 2 	is 0, because -1 and 0 are 0.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1
+= 1 and 2 = 2		is -1, because -1 and -1 is -1.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1
+= 1 and 2	`	is 2 because -1 and any value is the same value.</p>
+<h2 class="western">7.1Standard functions</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>left</b></font></font>$(string,
+length)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the length number of characters at the left of the string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>right</b></font></font>$(string,
+length)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the length number of characters at the right of the string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>mid</b></font></font>$(string,
+position, length)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+length number of characters starting at the position, which is 1 to
+n.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>chr</b></font></font>$(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the ASCII character corresponding to the character code value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>asc</b></font></font>(string)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the ASCII character code corresponding to the first character in the
+string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>len</b></font></font>(string)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the length, in number of characters, of the string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>val</b></font></font>(string)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the value of a number in the string (parses and converts the number).
+The value can be integer or real, and may contain an exponent.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>str</b></font></font>$(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Converts
+the number value to its equivalent string. Real or integer can be
+converted. The same comments as <font color="#000000"><font face="Arial, serif"><b>print</b></font></font>
+values apply here (see <font color="#000000"><font face="Arial, serif"><b>print</b></font></font>
+statement).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>rnd</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the next random number from the pseudo-random number generator in the
+range 0 to 1.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>int</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the integer value of real. The fraction is truncated.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>sqr</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the square root of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>abs</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the absolute value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>sgn</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Find
+sign of value, which is 1 if the value is positive, or -1 if the
+value is negative.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>sin</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Find
+the sine of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>cos</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the cosine of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>tan</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the tangent of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>atn</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the arctangent of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>log</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the log of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>exp</b></font></font>(value)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the exponential of the value.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>lcase</b></font></font>(string)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the lower case equivalent of the string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>ucase</b></font></font>(string)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the upper case equivalent of the string.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>eof</b></font></font>(#filenumber)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+if the file by filenumber is at the end of that file. Returns -1 if
+so, otherwise 0.</p>
+<h1 class="western">8ISO 7185 extension routines</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+Basic provides for several extentions to the ISO 7185 standard for
+use in the language. These include named file I/O and more efficient
+Boolean bit math. Most ISO 7185 Pascal implementations (actually at
+this writing all) have this functionality. The routines to enable
+this functionality are arranged at the top of the Basic source
+program and are easily configured for the target Pascal
+implementation.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
+named file I/O, the routines enable the entire set of:</p>
+<ul>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">Basic
+	program read and save from/to a file.</p>
+	<li><p style="line-height: 100%; margin-bottom: 0.14in">File I/O
+	operations within Basic.</p>
+</ul>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+Boolean math routines that are standard with P5 Basic are functional,
+but not efficient. You can replace them, but this is for the purposes
+of efficiency only.</p>
+<h2 class="western">8.1Routines</h2>
+<h3 class="western">8.1.1Named file input</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
+all of the following procedure/functions, filnam is declared:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">Filnam
+= packed array [1..maxfln] of char;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">and
+is an array of characters containing the filename, which is padded on
+the right side with spaces, and the filename starts at array position
+1. The exact formatting of the filename, what characters, what path
+or other special characters is system specific. P5 Basic specifies
+filenames in quotes and will pass all characters given down to the
+following routines unmodified.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
+existsfile(var fn: filnam): boolean;</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Checks
+if the file exists. Returns true if the file exists, otherwise false.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
+openread(var f: text; var fn: filnam);</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Open
+file for reading. The given text file is opened for reading with the
+filename. Usually this means that reset() or equivalent is applied to
+the file, which sets the file at the start and ready for reading.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
+openwrite(var f: text; var fn: filnam);</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Open
+file for writing. The given text file is opened for writing with the
+filename. Usually this means that rewrite() or equivalent is applied
+to the file, which sets the file as empty and ready for writing.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
+closefile(var f: text);</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Closes
+the file. The file is disassociated from its file by name, and the
+file is made ready for another openread() or openwrite() call.</p>
+<h3 class="western">8.1.2Boolean bit operations</h3>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
+bnot(a: integer): integer;</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the bitwise ‘not’ of the bits in the integer. This is then
+returned. Must be able to perform this operation on negative, 2’s
+complement format integers.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
+bor(a, b: integer): integer;</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the bitwise ‘or’ of the bits in two integers. The result is then
+returned. Must be able to perform this operation on negative, 2’s
+complement format integers.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
+band(a, b: integer): integer;</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the bitwise ‘or’ of the bits in two integers. The result is then
+returned. Must be able to perform this operation on negative, 2’s
+complement format integers.</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
+bxor(a, b: integer): integer;</u></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
+the bitwise ‘or’ of the bits in two integers. The result is then
+returned. Must be able to perform this operation on negative, 2’s
+complement format integers.</p>
+<h1 class="western">9Using ISO 7185 mode</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
+ISO 7185 strict mode, there is no named file I/O, and program files
+cannot be directly loaded and saved to disk. However, there are two
+ways in which programs can be loaded and run, and also saved to disk.</p>
+<h2 class="western">9.1Batch mode</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">By
+completely running P5 Basic in batch mode, a fully automated program
+run can be made. The input is redirected from a file, and the output
+is redirected to a file (or simply printed to console):</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+basic &lt; infile &gt; outfile</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
+a sample input file would be:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0in">10
+print “hi”</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">20
+end</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Run</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Then
+the output file would be:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">hi</p>
+<h2 class="western">9.2Cut and paste</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
+program can also be entered by copying it to the clipboard, then
+pasting it onto the window running P5 Basic. The program will need
+line numbers to do this, since console line input mode is being used.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Similarly,
+the program can be saved by using list to print it, then copying the
+result to the clipboard, then pasting to an editor and saving.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
+this way a fully interactive session can be created.</p>
+<h1 class="western">10BNF Grammar Specification</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
+chapter provides a complete BNF (Backus-Naur Form) grammar
+specification for the P5 BASIC language. The grammar is organized
+hierarchically, starting with program structure and proceeding
+through statements, expressions, variables, and lexical elements.</p>
+<h2 class="western">10.1Program Structure</h2>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;program&gt;
+::= &lt;line&gt;*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;line&gt;
+::= [&lt;line-number&gt;] &lt;statement-list&gt; &lt;end-of-line&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+[&lt;line-number&gt;] &lt;end-of-line&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;label&gt; &quot;:&quot; &lt;statement-list&gt; &lt;end-of-line&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;line-number&gt;
+::= &lt;digit&gt;+</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;label&gt;
+::= &lt;identifier&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;statement-list&gt;
+::= &lt;statement&gt; [&quot;:&quot; &lt;statement&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;end-of-line&gt;
+::= &lt;newline&gt; | &lt;eof&gt;</font></p>
+<h2 class="western">10.2Statements</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+complete statement syntax includes:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;statement&gt;
+::= &lt;input-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;print-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;goto-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;on-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;if-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;rem-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;stop-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;run-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;list-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;new-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;let-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;load-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;save-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;data-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;read-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;restore-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;gosub-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;return-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;for-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;next-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;while-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;wend-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;repeat-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;until-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;select-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;case-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;other-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;endsel-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;open-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;close-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;end-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;dim-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;def-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;function-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;endfunc-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;procedure-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;endproc-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;randomize-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;trace-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;notrace-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;bye-stmt&gt;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&lt;procedure-call&gt;</font></p>
+<h2 class="western">10.3Expression Hierarchy</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Expressions
+are parsed according to the following precedence hierarchy (from
+lowest to highest precedence):</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">1.
+Logical operations (and, or, xor)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">2.
+Relational operations (=, &lt;&gt;, &lt;, &gt;, &lt;=, &gt;=)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">3.
+Additive operations (+, -)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">4.
+Multiplicative operations (*, /, mod, div)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">5.
+Exponentiation (^)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">6.
+Unary operations (+, -, not)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">7.
+Primary expressions (literals, variables, functions, parentheses)</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;expression&gt;
+::= &lt;logical-expr&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;logical-expr&gt;
+::= &lt;relational-expr&gt; [&lt;logical-op&gt; &lt;relational-expr&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;logical-op&gt;
+::= &quot;and&quot; | &quot;or&quot; | &quot;xor&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;relational-expr&gt;
+::= &lt;additive-expr&gt; [&lt;relational-op&gt; &lt;additive-expr&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;relational-op&gt;
+::= &quot;=&quot; | &quot;&lt;&gt;&quot; | &quot;&lt;&quot; | &quot;&gt;&quot;
+| &quot;&lt;=&quot; | &quot;&gt;=&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;additive-expr&gt;
+::= &lt;multiplicative-expr&gt; [&lt;additive-op&gt;
+&lt;multiplicative-expr&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;additive-op&gt;
+::= &quot;+&quot; | &quot;-&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;multiplicative-expr&gt;
+::= &lt;exponential-expr&gt; [&lt;multiplicative-op&gt;
+&lt;exponential-expr&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;multiplicative-op&gt;
+::= &quot;*&quot; | &quot;/&quot; | &quot;mod&quot; | &quot;div&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;exponential-expr&gt;
+::= &lt;unary-expr&gt; [&quot;^&quot; &lt;unary-expr&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;unary-expr&gt;
+::= [&lt;unary-op&gt;] &lt;primary-expr&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;unary-op&gt;
+::= &quot;+&quot; | &quot;-&quot; | &quot;not&quot;</font></p>
+<h2 class="western">10.4Variables and Literals</h2>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;variable&gt;
+::= &lt;simple-variable&gt; | &lt;array-variable&gt; |
+&lt;record-variable&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;simple-variable&gt;
+::= &lt;identifier&gt; [&lt;type-suffix&gt;]</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;array-variable&gt;
+::= &lt;identifier&gt; [&lt;type-suffix&gt;] &quot;(&quot;
+&lt;expression&gt; [&quot;,&quot; &lt;expression&gt;]* &quot;)&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;record-variable&gt;
+::= &lt;identifier&gt; &quot;.&quot; &lt;identifier&gt; [&quot;.&quot;
+&lt;identifier&gt;]*</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;type-suffix&gt;
+::= &quot;%&quot; | &quot;$&quot;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Where
+% indicates integer type, $ indicates string type, and no suffix
+indicates real type.</p>
+<h3 class="western">10.4.1Literals</h3>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;integer-literal&gt;
+::= [&lt;sign&gt;] &lt;digit&gt;+</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&quot;$&quot; &lt;hex-digit&gt;+ (* hexadecimal *)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&quot;&amp;&quot; &lt;octal-digit&gt;+ (* octal *)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+&quot;%&quot; &lt;binary-digit&gt;+ (* binary *)</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;real-literal&gt;
+::= [&lt;sign&gt;] &lt;digit&gt;+ &quot;.&quot; [&lt;digit&gt;*]
+[&lt;exponent&gt;]</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+[&lt;sign&gt;] [&lt;digit&gt;*] &quot;.&quot; &lt;digit&gt;+
+[&lt;exponent&gt;]</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
+[&lt;sign&gt;] &lt;digit&gt;+ &lt;exponent&gt;</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;string-literal&gt;
+::= '&quot;' &lt;string-char&gt;* '&quot;'</font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;identifier&gt;
+::= &lt;letter&gt; [&lt;letter&gt; | &lt;digit&gt;]*</font></p>
+<h2 class="western">10.5Grammar Notes</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+Case is not significant except within string literals</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+Line numbers range from 0 to 9999</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+String maximum length is 250 characters</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+Maximum 255 variables in a program</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+File numbers range from 1 to 100, with 1=stdin and 2=stdout</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
+Identifiers can be fully alphanumeric with underscores, unlike
+classic BASIC</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
+complete syntax details of individual statements, see the
+corresponding sections in earlier chapters.</p>
+<div title="footer">
+	<table width="100%" cellpadding="7" cellspacing="0">
+		<col width="179*"/>
+
+		<col width="77*"/>
+
+		<tr valign="top">
+			<td width="70%" height="9" style="border-top: 1px solid #00addc; border-bottom: none; border-left: none; border-right: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
+				<br/>
+
+				</p>
+			</td>
+			<td width="30%" bgcolor="#00addc" style="background: #00addc; border-top: 1px solid #00addc; border-bottom: none; border-left: none; border-right: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
+				<span style="background: #c0c0c0"><sdfield type=PAGE subtype=RANDOM format=PAGE>1</sdfield></span></p>
+			</td>
+		</tr>
+	</table>
+	<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+	</p>
+</div>
+</body>
+</html>
