@@ -781,42 +781,6 @@ var
 
 (*-------------------------------------------------------------------------*)
 
-  { compare pstring to fixed string (padded comparison) }
-  function comppf(a: pstring; var b: idstr): boolean;
-  var ld, ls, i: integer; r: boolean;
-  begin
-    ld := max(a^);  { length of pstring }
-    ls := len(b);  { padded length of fixed string }
-    if ld <> ls then comppf := false
-    else begin
-      r := true;
-      for i := 1 to ld do
-        if lcase(a^[i]) <> lcase(b[i]) then r := false;
-      comppf := r
-    end
-  end;
-
-  { compare pstring to fixed string, a < b (padded comparison) }
-  function gtrpf(a: pstring; var b: idstr): boolean;
-  label 1;
-  var ld, ls, i: integer; ca, cb: char;
-  begin
-    ld := max(a^);  { length of pstring }
-    ls := len(b);  { padded length of fixed string }
-    i := 1;
-    while (i <= ld) or (i <= ls) do begin
-      if i <= ld then ca := lcase(a^[i]) else ca := ' ';
-      if i <= ls then cb := lcase(b[i]) else cb := ' ';
-      if ca <> cb then begin
-        gtrpf := ca < cb;
-        goto 1
-      end;
-      i := i + 1
-    end;
-    gtrpf := false; { strings are equal }
-    1:
-  end;
-
   { safe dispose for pstring }
   procedure disposestr(p: pstring);
   begin
@@ -830,14 +794,6 @@ var
     copy(a, b)
   end;
 
-  { create pstring from string with explicit length }
-  function strl(view s: string; l: integer): pstring;
-  var p: pstring; i: integer;
-  begin
-    new(p, l);
-    for i := 1 to l do p^[i] := s[i];
-    strl := p
-  end;
 
   { concatenate string to pstring in place }
   procedure strcat(var a: pstring; view b: string);
@@ -4556,7 +4512,7 @@ end;
             if lgth > strglgth then
               begin error(26); lgth := strglgth end;
             with lvp^ do
-              begin slgth := lgth; sval := strl(string, lgth) end;
+              begin slgth := lgth; sval := extract(string, 1, lgth) end;
             val.intval := false;
             val.valp := lvp
           end
@@ -4686,8 +4642,8 @@ end;
      label 1;
   begin
     while fcp <> nil do
-      if comppf(fcp^.name, id) then goto 1
-      else if gtrpf(fcp^.name, id) then fcp := fcp^.rlink
+      if compp(fcp^.name^, id) then goto 1
+      else if gtrp(fcp^.name^, id) then fcp := fcp^.rlink
         else fcp := fcp^.llink;
 1:  if fcp <> nil then
       if fcp^.klass = alias then fcp := fcp^.actid;
@@ -4715,13 +4671,13 @@ end;
   begin
     mm := false; fcp := nil;
     while lcp <> nil do begin
-      if comppf(lcp^.name, id) then begin
+      if compp(lcp^.name^, id) then begin
         lcp1 := lcp; if lcp1^.klass = alias then lcp1 := lcp1^.actid;
         lcp1 := inclass(lcp1);
         if lcp1 <> nil then begin fcp := lcp1; lcp := nil end
         else begin mm := true; lcp := lcp^.rlink end
       end else
-        if gtrpf(lcp^.name, id) then lcp := lcp^.rlink
+        if gtrp(lcp^.name^, id) then lcp := lcp^.rlink
         else lcp := lcp^.llink
     end
   end (*searchidnenm*) ;
@@ -4761,7 +4717,7 @@ end;
     if lcp = nil then begin
       { search module leader in the pile }
       if ptop > 0 then for pn := ptop-1 downto 0 do
-        if comppf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
+        if compp(pile[pn].modnam^, id) then begin fpn := pn; pdf := true end;
       if pdf then begin { module name was found }
         insymbol; if sy <> period then error(21) else insymbol;
         if sy <> ident then error(2)
@@ -5231,7 +5187,7 @@ end;
     llp := display[level].flabel; { index top of label list }
     while llp <> nil do begin { traverse }
       if isid and (llp^.labid <> nil) then begin { id type label }
-        if comppf(llp^.labid, id) then begin
+        if compp(llp^.labid^, id) then begin
           fllp := llp; { set entry found }
           llp := nil { stop }
         end else llp := llp^.nextlab { next in list }
