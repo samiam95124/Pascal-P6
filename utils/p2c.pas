@@ -2756,6 +2756,82 @@ begin
       end
 end;
 
+procedure expr_proc_uplevel_single_arg(pcp: ctp);
+{ emit a single uplevel ref argument for use as proc param context pointer }
+var i, j, n, cnt: integer;
+    vcp: ctp;
+    isuplevel: boolean;
+
+  procedure emit_one_ref(vcp: ctp);
+  begin
+    if (vcp <> nil) and (vcp^.klass = func) then begin
+      isuplevel := nestbuffering and (vcp^.pflev + 1 < level);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result__up')
+      end else begin
+        expr_chr('&');
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result')
+      end
+    end else if (vcp <> nil) and (vcp^.klass = vars) then begin
+      isuplevel := nestbuffering and (vcp^.vlev < level)
+                   and (vcp^.vlev > 1);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__up')
+      end else begin
+        if vcp^.idtype <> nil then begin
+          if not (vcp^.idtype^.form in [power, arrays]) then
+            if not (vcp^.vkind = formal) then expr_chr('&')
+        end else expr_chr('&');
+        if vcp^.name <> nil then expr_pstr(vcp^.name)
+      end
+    end
+  end;
+
+begin
+  { count uplevel refs }
+  cnt := 0;
+  if pcp = uplevelproc then
+    cnt := uplevelcnt
+  else
+    for i := 1 to procuplevelcnt do
+      if procuplevelproc[i] = pcp then
+        cnt := procuplevelnum[i];
+
+  if cnt = 1 then begin
+    { single ref: emit directly }
+    if pcp = uplevelproc then
+      emit_one_ref(uplevelrefs[1])
+    else
+      for i := 1 to procuplevelcnt do
+        if procuplevelproc[i] = pcp then
+          emit_one_ref(procuplevelrefs[i, 1])
+  end else if cnt > 1 then begin
+    { multiple refs: emit array literal }
+    expr_str('(void*[]){');
+    if pcp = uplevelproc then begin
+      for j := 1 to uplevelcnt do begin
+        if j > 1 then expr_str(', ');
+        emit_one_ref(uplevelrefs[j])
+      end
+    end else
+      for i := 1 to procuplevelcnt do
+        if procuplevelproc[i] = pcp then begin
+          n := procuplevelnum[i];
+          for j := 1 to n do begin
+            if j > 1 then expr_str(', ');
+            emit_one_ref(procuplevelrefs[i, j])
+          end
+        end;
+    expr_chr('}')
+  end else
+    expr_str('NULL')
+end;
+
 function lookup_typename(fsp: stp): pstring;
 { lookup the name for a record type, returns nil if not found }
 var i: integer;
@@ -2862,12 +2938,41 @@ begin
            not ((plcp^.idtype^.form = files) and
                 (plcp^.idtype = textptr)) then expr_chr('*')
       end else if plcp^.klass in [proc, func] then
-        expr_str('void (*)(void)');
+        expr_str('p2c_procptr');
       plcp := plcp^.next;
       if plcp <> nil then expr_str(', ')
     end
   end;
   expr_str('))')
+end;
+
+procedure expr_procparam_callcast(fcp: ctp);
+{ emit cast prefix for calling through a procedure parameter }
+var plcp: ctp;
+begin
+  expr_str('((');
+  if fcp^.klass = func then begin
+    expr_typename(fcp^.idtype); expr_chr(' ')
+  end else
+    expr_str('void ');
+  expr_str('(*)(');
+  plcp := fcp^.pflist;
+  while plcp <> nil do begin
+    if plcp^.klass = vars then begin
+      expr_typename(plcp^.idtype);
+      if (plcp^.idtype <> nil) then
+        if (plcp^.vkind = formal) then
+          if (plcp^.idtype^.form <> arrays) then
+            if not ((plcp^.idtype^.form = files) and
+                    (plcp^.idtype = textptr)) then expr_chr('*')
+    end else if plcp^.klass in [proc, func] then
+      expr_str('p2c_procptr');
+    plcp := plcp^.next;
+    if plcp <> nil then expr_str(', ')
+  end;
+  { add void* context as last param }
+  if fcp^.pflist <> nil then expr_str(', ');
+  expr_str('void*))')
 end;
 
 procedure c_basetype(fsp: stp);
@@ -2996,32 +3101,10 @@ end;
 
 { emit C function pointer parameter for procedural/functional parameter }
 procedure c_funcptr_param(lcp: ctp);
-var plcp: ctp;
+{ emit procedure/function parameter declaration as p2c_procptr struct }
 begin
-  if lcp^.klass = func then begin
-    c_type(lcp^.idtype); c_str(' ')
-  end else
-    c_str('void ');
-  c_str('(*');
-  if lcp^.name <> nil then c_pstr(lcp^.name);
-  c_str(')(');
-  plcp := lcp^.pflist;
-  if plcp = nil then c_str('void')
-  else begin
-    while plcp <> nil do begin
-      if plcp^.klass = vars then begin
-        c_type(plcp^.idtype);
-        if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
-           (plcp^.idtype^.form <> arrays) and
-           not ((plcp^.idtype^.form = files) and
-                (plcp^.idtype = textptr)) then c_str('*')
-      end else if plcp^.klass in [proc, func] then
-        c_funcptr_param(plcp);
-      plcp := plcp^.next;
-      if plcp <> nil then c_str(', ')
-    end
-  end;
-  c_chr(')')
+  c_str('p2c_procptr ');
+  if lcp^.name <> nil then c_pstr(lcp^.name)
 end;
 
 { check if an identifier is in a parameter list }
@@ -7731,11 +7814,23 @@ end;
                     { emit proc/func identifier to expression buffer }
                     if wantexpr then
                       if lcp <> nil then begin
-                        { cast needed when nested proc has uplevel params }
-                        if (lcp^.pflev > 1) and
-                           has_proc_uplevelrefs(lcp) then
-                          expr_funcptr_cast(nxt);
-                        expr_idname(lcp)
+                        if (lcp^.pfdeckind = declared) and
+                           (lcp^.pfkind = formal) then
+                          { forwarding a proc param — already a p2c_procptr }
+                          expr_idname(lcp)
+                        else begin
+                          { wrap in p2c_procptr struct literal }
+                          expr_str('(p2c_procptr){(void(*)())');
+                          expr_idname(lcp);
+                          expr_str(', ');
+                          if (lcp^.pflev > 1) and
+                             has_proc_uplevelrefs(lcp) then begin
+                            expr_str('(void*)');
+                            expr_proc_uplevel_single_arg(lcp)
+                          end else
+                            expr_str('NULL');
+                          expr_chr('}')
+                        end
                       end;
                     insymbol;
                     if not (sy in fsys + [comma,rparent]) then
@@ -7879,8 +7974,14 @@ end;
             end;
           until test;
           lc := llc;
-          { add uplevel args for nested proc calls }
-          if has_proc_uplevelrefs(fcp) then
+          { add context or uplevel args after regular args }
+          if (fcp^.pfdeckind = declared) and (fcp^.pfkind = formal) then
+          begin
+            { calling through proc param — add .ctx as last arg }
+            expr_str(', ');
+            expr_idname(fcp);
+            expr_str('.ctx')
+          end else if has_proc_uplevelrefs(fcp) then
             expr_proc_uplevel_args(fcp, true) { comma before args }
           else if nestbuffering and (fcp^.klass in [proc, func])
                   and (fcp^.pflev > 1)
@@ -7900,8 +8001,14 @@ end;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*)
       else begin
-        { no parameters - output parens with any uplevel args }
-        if has_proc_uplevelrefs(fcp) then begin
+        { no parameters - output parens with context or uplevel args }
+        if (fcp^.pfdeckind = declared) and (fcp^.pfkind = formal) then
+        begin
+          { calling through proc param — emit (name.ctx) }
+          expr_chr('(');
+          expr_idname(fcp);
+          expr_str('.ctx)')
+        end else if has_proc_uplevelrefs(fcp) then begin
           expr_chr('(');
           expr_proc_uplevel_args(fcp, false); { no comma before first arg }
           expr_chr(')')
@@ -8134,7 +8241,13 @@ end;
                                 if lcp^.sysrot then varpart := true;
                           if varpart then
                             expr_mathfn(lcp^.name)
-                          else
+                          else if (lcp^.pfdeckind = declared) and
+                                  (lcp^.pfkind = formal) then begin
+                            { call through proc param: ((cast)name.fn) }
+                            expr_procparam_callcast(lcp);
+                            expr_idname(lcp);
+                            expr_str('.fn)')
+                          end else
                             expr_idname(lcp)
                         end;
                         call(fsys,lcp, inherit, true);
@@ -11954,8 +12067,15 @@ end;
                               pushstmt(stk_call);
                               expr_reset;
                               { output function name for non-standard procs (lowercase) }
-                              if lcp^.pfdeckind <> standard then
-                                expr_idname(lcp);
+                              if lcp^.pfdeckind <> standard then begin
+                                if (lcp^.pfdeckind = declared) and
+                                   (lcp^.pfkind = formal) then begin
+                                  expr_procparam_callcast(lcp);
+                                  expr_idname(lcp);
+                                  expr_str('.fn)')
+                                end else
+                                  expr_idname(lcp)
+                              end;
                               call(fsys,lcp,inherit,false);
                               { output the call - but not for standard procs (handled internally) }
                               if lcp^.pfdeckind <> standard then begin
@@ -11978,8 +12098,15 @@ end;
                             pushstmt(stk_call);
                             expr_reset;
                             { output function name for non-standard procs (lowercase) }
-                            if lcp^.pfdeckind <> standard then
-                              expr_idname(lcp);
+                            if lcp^.pfdeckind <> standard then begin
+                              if (lcp^.pfdeckind = declared) and
+                                 (lcp^.pfkind = formal) then begin
+                                expr_procparam_callcast(lcp);
+                                expr_idname(lcp);
+                                expr_str('.fn)')
+                              end else
+                                expr_idname(lcp)
+                            end;
                             call(fsys,lcp,inherit,false);
                             { output the call - but not for standard procs (handled internally) }
                             if lcp^.pfdeckind <> standard then begin
@@ -13266,11 +13393,13 @@ end;
       end
     end;
     if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
+    { emit p2c_procptr type in header - always needed for proc param support }
+    h_ln('#include <stdbool.h>');
+    h_newline;
+    h_ln('typedef struct { void (*fn)(); void *ctx; } p2c_procptr;');
+    h_newline;
     { generate .h content: typedefs needed by global functions, then prototypes }
     if hdrfunccnt > 0 then begin
-      { emit stdbool.h include for bool support }
-      h_ln('#include <stdbool.h>');
-      h_newline;
       { emit typedefs referenced by global function signatures }
       c_target := 1; { redirect c_ output to .h }
       { emit all array typedefs referenced by any global function }
