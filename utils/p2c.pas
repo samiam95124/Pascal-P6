@@ -7437,7 +7437,7 @@ end;
           { save position before emitting function name }
           if stmttop <> nil then savepos := stmttop^.exprlen
           else savepos := 0;
-          if lkey = 9 then expr_str('feof(')
+          if lkey = 9 then expr_str('p2c_eof(')
           else expr_str('p2c_eoln(');
           variable(fsys + [rparent], false);
           if sy = rparent then insymbol else error(4);
@@ -7445,9 +7445,9 @@ end;
           if (lkey = 9) and (gattr.typtr <> nil) then
             if (gattr.typtr^.form = files) and
                (gattr.typtr <> textptr) then begin
-              { replace feof( with p2c_feof(& }
+              { replace p2c_eof( with p2c_feof(& }
               if stmttop <> nil then begin
-                expr_del(savepos + 1, 5); { remove 'feof(' }
+                expr_del(savepos + 1, 8); { remove 'p2c_eof(' }
                 expr_insert('p2c_feof(&', savepos + 1)
               end
             end;
@@ -7458,7 +7458,7 @@ end;
         if not inputptr^.hdr then error(175);
         gattr.typtr := textptr;
         { no arg - use stdin }
-        if lkey = 9 then expr_str('feof(stdin)')
+        if lkey = 9 then expr_str('p2c_eof(stdin)')
         else expr_str('p2c_eoln(stdin)')
       end;
       if gattr.typtr <> nil then
@@ -13218,9 +13218,21 @@ end;
     c_ln('#define true 1');
     c_ln('#define false 0');
     c_ln('#endif');
-    c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
-    c_str('#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v==''');
-    c_chr(chr(92)); c_ln('n''?(v='' ''):0))');
+    { Pascal text file eof: true when past the last eoln (including implicit).
+      If at C EOF and previous char was not newline, there is an implicit eoln
+      pending, so eof returns false. Uses fseek to check previous char. }
+    c_str('#define p2c_eof(f) ({int _r;if(feof(f)){_r=1;}');
+    c_str('else{int _c=getc(f);if(_c==EOF){long _p=ftell(f);');
+    c_str('if(_p>0){fseek(f,_p-1,SEEK_SET);');
+    c_str('int _pv=getc(f);_r=(_pv==''');
+    c_chr(chr(92)); c_str('n'');}');
+    c_ln('else _r=1;}else{ungetc(_c,f);_r=0;}}_r;})');
+    { Pascal text file eoln: true at newline or EOF (implicit eoln) }
+    c_ln('#define p2c_eoln(f) ({int _c=getc(f);ungetc(_c,f);_c==10||_c==EOF;})');
+    { Pascal read(f,ch): reads one char, eoln->space, EOF(implicit eoln)->space }
+    c_str('#define p2c_readc(f,v) ({int _c=getc(f);');
+    c_str('if(_c==EOF||_c==''');
+    c_chr(chr(92)); c_ln('n'')v='' '';else v=(char)_c;})');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
