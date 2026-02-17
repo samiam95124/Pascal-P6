@@ -6655,13 +6655,18 @@ end;
         end else if ltp = realptr then begin
           fmt_chr('%');
           if fldwidth_var then
-            fmt_chr('*')
+            fmt_str('*.*')
           else begin
             if fldwidth < 0 then begin
               fmt_chr('-');
               w := -fldwidth
             end else
               w := fldwidth;
+            { ISO 7185 6.9.3.4.1: ActWidth = max(TotalWidth, ExpDigits+6)
+              For scientific notation, enforce minimum width of 8 }
+            if not hasfldprec then begin
+              if w < 8 then w := 8
+            end;
             if w <> 1 then fmt_width(w)
           end;
           if hasfldprec then begin
@@ -6671,16 +6676,45 @@ end;
             else
               fmt_width(fldprec);
             fmt_chr('f')
-          end else
-            fmt_str('.15e');
+          end else begin
+            { ISO 7185 6.9.3.4.1: DecPlaces = ActWidth - ExpDigits - 5
+              where ExpDigits = 2 and ActWidth = max(TotalWidth, 8) }
+            if not fldwidth_var then begin
+              w := abs(fldwidth);
+              if w < 8 then w := 8;
+              fmt_chr('.');
+              fmt_width(w - 7);
+              fmt_chr('e')
+            end else
+              fmt_chr('e')
+          end;
           if fldwidth_var then begin
             if stmttop^.arglen > 0 then begin
               arg_chr(','); arg_chr(' ')
             end;
-            arg_str('(int)(');
-            for i := 1 to fldwidth_buflen do
-              arg_chr(fldwidth_buf[i]);
-            arg_chr(')')
+            if not hasfldprec then begin
+              { ISO 7185: ActWidth = max(w,8), pass as field width }
+              arg_str('(int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') : 8)');
+              { ISO 7185: DecPlaces = max(w,8) - 7 for %*.*e }
+              arg_str(', (int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') - 7 : 1)')
+            end else begin
+              arg_str('(int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_chr(')')
+            end
           end;
           if fldprec_var then begin
             if stmttop^.arglen > 0 then begin

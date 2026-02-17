@@ -629,7 +629,7 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     long i;
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    printf("%ld %5.5s %c %ld %ld %ld %15.15e %10.10s\n", (long)(a), (b) ? "true" : "false", (int)(c), (long)(e), (long)(es), (long)(s), r, &st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(a), (b) ? "true" : "false", (int)(c), (long)(e), (long)(es), (long)(s), r, &st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -638,7 +638,7 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     }
     }
     printf("\n");
-    printf("%ld %5.5s %c %ld %ld %ld %15.15e %10.10s\n", (long)(rc.i), (rc.b) ? "true" : "false", (int)(rc.c), (long)(rc.e), (long)(rc.es), (long)(rc.s), rc.r, &rc.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(rc.i), (rc.b) ? "true" : "false", (int)(rc.c), (long)(rc.e), (long)(rc.es), (long)(rc.s), rc.r, &rc.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -2048,21 +2048,21 @@ int main(void)
     printf("******************* Reals ******************************\n");
     printf("\n");
 
-    printf("Real1:   %15.15e s/b  1.554000e+00\n", 1.554);
-    printf("Real2:   %15.15e s/b  3.340000e-03\n", 3.339999999999999e-3);
-    printf("Real3:   %15.15e s/b  3.340000e-24\n", 3.34e-24);
-    printf("Real4:   %15.15e s/b  4.000000e-45\n", 4.0e-45);
-    printf("Real5:   %15.15e s/b -5.565000e+00\n", - 5.565);
-    printf("Real6:   %15.15e s/b -9.440000e-03\n", - 9.440000000000001e-3);
-    printf("Real7:   %15.15e s/b -6.364000e+29\n", - 6.363999999999998e+29);
-    printf("Real8:   %15.15e s/b -2.000000e-14\n", - 2.0e-14);
+    printf("Real1:   %15.8e s/b  1.554000e+00\n", 1.554);
+    printf("Real2:   %15.8e s/b  3.340000e-03\n", 3.339999999999999e-3);
+    printf("Real3:   %15.8e s/b  3.340000e-24\n", 3.34e-24);
+    printf("Real4:   %15.8e s/b  4.000000e-45\n", 4.0e-45);
+    printf("Real5:   %15.8e s/b -5.565000e+00\n", - 5.565);
+    printf("Real6:   %15.8e s/b -9.440000e-03\n", - 9.440000000000001e-3);
+    printf("Real7:   %15.8e s/b -6.364000e+29\n", - 6.363999999999998e+29);
+    printf("Real8:   %15.8e s/b -2.000000e-14\n", - 2.0e-14);
     printf("Real9:\n");
     printf("         11111111112222222222333333333344444444445\n");
     printf("12345678901234567890123456789012345678901234567890\n");
     { long _forlim = 14;
     for (i = 1; i <= _forlim; i++) {
 
-        printf("%*.15e\n", (int)(i), 1.234567890123456);
+        printf("%*.*e\n", (int)((i) >= 8 ? (i) : 8), (int)((i) >= 8 ? (i) - 7 : 1), 1.234567890123456);
 
     }
     }
@@ -2110,10 +2110,10 @@ int main(void)
     rb = 9.836699999999998e+2;
     rc = rb;
     rd = 3.443e-1;
-    printf("Real11:  %15.15e s/b  1.418900e+03\n", ra + rb);
-    printf("Rea112:  %15.15e s/b  5.484399e+02\n", rb - ra);
-    printf("Real13:  %15.15e s/b  4.281227e+05\n", ra * rb);
-    printf("Real14:  %15.15e s/b  2.260115e+00\n", rb / ra);
+    printf("Real11:  %15.8e s/b  1.418900e+03\n", ra + rb);
+    printf("Rea112:  %15.8e s/b  5.484399e+02\n", rb - ra);
+    printf("Real13:  %15.8e s/b  4.281227e+05\n", ra * rb);
+    printf("Real14:  %15.8e s/b  2.260115e+00\n", rb / ra);
     printf("Real15:  %5.5s s/b true\n", (rc == rb) ? "true" : "false");
     printf("Real16:  %5.5s s/b false\n", (ra == rb) ? "true" : "false");
     printf("Real17:  %5.5s s/b true\n", (ra < rb) ? "true" : "false");
@@ -2128,21 +2128,21 @@ int main(void)
     printf("Real26:  %5.5s s/b true\n", (rb >= ra) ? "true" : "false");
     printf("Real27:  %5.5s s/b true\n", (rb >= rc) ? "true" : "false");
     printf("Real28:  %5.5s s/b false\n", (ra >= rb) ? "true" : "false");
-    printf("Real29:  %15.15e s/b  4.35230e+02\n", fabs(ra));
-    printf("Real30:  %15.15e s/b  1.89425e+05\n", ((ra)*(ra)));
-    printf("Real31:  %15.15e s/b  3.13635e+01\n", sqrt(rb));
-    printf("Real32:  %15.15e s/b -3.44290e-01\n", sin(rb));
-    printf("Real33:  %15.15e s/b  1.56850e+00\n", atan(ra));
-    printf("Real34:  %15.15e s/b  1.41100e+00\n", exp(rd));
-    printf("Real35:  %15.15e s/b  6.07587e+00\n", log(ra));
+    printf("Real29:  %15.8e s/b  4.35230e+02\n", fabs(ra));
+    printf("Real30:  %15.8e s/b  1.89425e+05\n", ((ra)*(ra)));
+    printf("Real31:  %15.8e s/b  3.13635e+01\n", sqrt(rb));
+    printf("Real32:  %15.8e s/b -3.44290e-01\n", sin(rb));
+    printf("Real33:  %15.8e s/b  1.56850e+00\n", atan(ra));
+    printf("Real34:  %15.8e s/b  1.41100e+00\n", exp(rd));
+    printf("Real35:  %15.8e s/b  6.07587e+00\n", log(ra));
     printf("Real36:  %ld s/b 435\n", (long)((long)(ra)));
     printf("Real37:  %ld s/b 984\n", (long)(lround(rb)));
     printf("Real38:  %ld s/b 435\n", (long)(lround(ra)));
 
-    printf("Real39:  %15.15e s/b  1.278052e+03\n", 3.44939e+2 + 9.331129999999999e+2);
-    printf("Real40:  %15.15e s/b  2.389460e+02\n", 8.838849999999998e+2 - 6.449389999999999e+2);
-    printf("Real41:  %15.15e s/b  1.047202e+05\n", 7.5474e+2 * 1.387499999999999e+2);
-    printf("Real42:  %15.15e s/b  7.259598e-03\n", 6.342999999999999e+2 / 8.737399000000001e+4);
+    printf("Real39:  %15.8e s/b  1.278052e+03\n", 3.44939e+2 + 9.331129999999999e+2);
+    printf("Real40:  %15.8e s/b  2.389460e+02\n", 8.838849999999998e+2 - 6.449389999999999e+2);
+    printf("Real41:  %15.8e s/b  1.047202e+05\n", 7.5474e+2 * 1.387499999999999e+2);
+    printf("Real42:  %15.8e s/b  7.259598e-03\n", 6.342999999999999e+2 / 8.737399000000001e+4);
     printf("Real43:  %5.5s s/b true\n", (7.743999999999999e+1 == 7.743999999999999e+1) ? "true" : "false");
     printf("Real44:  %5.5s s/b false\n", (7.339e+2 == 9.592e+2) ? "true" : "false");
     printf("Real45:  %5.5s s/b true\n", (8.8322e+2 < 8.383329999999999e+3) ? "true" : "false");
@@ -2157,36 +2157,36 @@ int main(void)
     printf("Real54:  %5.5s s/b true\n", (6.543439999999999e+3 >= 5.883329999999999e+3) ? "true" : "false");
     printf("Real55:  %5.5s s/b true\n", (3.24703e+3 >= 3.24703e+3) ? "true" : "false");
     printf("Real56:  %5.5s s/b false\n", (2.834322e+4 >= 3.004445e+4) ? "true" : "false");
-    printf("Real57:  %15.15e s/b  3.493000e+01\n", fabs(3.492999999999999e+1));
-    printf("Real58:  %15.15e s/b  5.475600e+00\n", ((2.339999999999999)*(2.339999999999999)));
-    printf("Real59:  %15.15e s/b  9.723333e+01\n", sqrt(9.454319999999999e+3));
-    printf("Real60:  %15.15e s/b  3.311461e-01\n", sin(3.421999999999999e+1));
-    printf("Real61:  %15.15e s/b  1.567883e+00\n", atan(3.431999999999999e+2));
-    printf("Real62:  %15.15e s/b  1.393753e+00\n", exp(3.32e-1));
-    printf("Real63:  %15.15e s/b  4.421488e+00\n", log(8.321999999999999e+1));
+    printf("Real57:  %15.8e s/b  3.493000e+01\n", fabs(3.492999999999999e+1));
+    printf("Real58:  %15.8e s/b  5.475600e+00\n", ((2.339999999999999)*(2.339999999999999)));
+    printf("Real59:  %15.8e s/b  9.723333e+01\n", sqrt(9.454319999999999e+3));
+    printf("Real60:  %15.8e s/b  3.311461e-01\n", sin(3.421999999999999e+1));
+    printf("Real61:  %15.8e s/b  1.567883e+00\n", atan(3.431999999999999e+2));
+    printf("Real62:  %15.8e s/b  1.393753e+00\n", exp(3.32e-1));
+    printf("Real63:  %15.8e s/b  4.421488e+00\n", log(8.321999999999999e+1));
     printf("Real64:  %ld s/b 24\n", (long)((long)(2.4344e+1)));
     printf("Real65:  %ld s/b 75\n", (long)(lround(7.456e+1)));
     printf("Real66:  %ld s/b 83\n", (long)(lround(8.323999999999999e+1)));
-    printf("Real67:  %15.15e s/b  4.333000e+01\n", rcnst);
+    printf("Real67:  %15.8e s/b  4.333000e+01\n", rcnst);
 
     ra = - 7.342e+2;
     rb = - 7.63452e+3;
     rc = ra;
     rd = 1.03454e+3;
     re = - 3.8483e-1;
-    printf("Real68:  %15.15e s/b  3.003400e+02\n", ra + rd);
-    printf("Real69:  %15.15e s/b  3.003400e+02\n", rd + ra);
-    printf("Real70:  %15.15e s/b -6.599980e+03\n", rb + rd);
-    printf("Real71:  %15.15e s/b -8.368720e+03\n", ra + rb);
-    printf("Real72:  %15.15e s/b  1.768740e+03\n", rd - ra);
-    printf("Real73:  %15.15e s/b -8.669061e+03\n", rb - rd);
-    printf("Real74:  %15.15e s/b -6.900320e+03\n", rb - ra);
-    printf("Real75:  %15.15e s/b -7.595593e+05\n", rd * ra);
-    printf("Real76:  %15.15e s/b -7.595593e+05\n", ra * rd);
-    printf("Real77:  %15.15e s/b  5.605265e+06\n", ra * rb);
-    printf("Real78:  %15.15e s/b -1.409071e+00\n", rd / ra);
-    printf("Real79:  %15.15e s/b -7.379627e+00\n", rb / rd);
-    printf("Real80:  %15.15e s/b  1.039842e+01\n", rb / ra);
+    printf("Real68:  %15.8e s/b  3.003400e+02\n", ra + rd);
+    printf("Real69:  %15.8e s/b  3.003400e+02\n", rd + ra);
+    printf("Real70:  %15.8e s/b -6.599980e+03\n", rb + rd);
+    printf("Real71:  %15.8e s/b -8.368720e+03\n", ra + rb);
+    printf("Real72:  %15.8e s/b  1.768740e+03\n", rd - ra);
+    printf("Real73:  %15.8e s/b -8.669061e+03\n", rb - rd);
+    printf("Real74:  %15.8e s/b -6.900320e+03\n", rb - ra);
+    printf("Real75:  %15.8e s/b -7.595593e+05\n", rd * ra);
+    printf("Real76:  %15.8e s/b -7.595593e+05\n", ra * rd);
+    printf("Real77:  %15.8e s/b  5.605265e+06\n", ra * rb);
+    printf("Real78:  %15.8e s/b -1.409071e+00\n", rd / ra);
+    printf("Real79:  %15.8e s/b -7.379627e+00\n", rb / rd);
+    printf("Real80:  %15.8e s/b  1.039842e+01\n", rb / ra);
     printf("Real81:  %5.5s s/b true\n", (ra == rc) ? "true" : "false");
     printf("Real82:  %5.5s s/b false\n", (ra == rb) ? "true" : "false");
     printf("Real83:  %5.5s s/b true\n", (ra != rb) ? "true" : "false");
@@ -2209,28 +2209,28 @@ int main(void)
     printf("Real100: %5.5s s/b true\n", (ra >= rc) ? "true" : "false");
     printf("Real101: %5.5s s/b false\n", (ra >= rd) ? "true" : "false");
     printf("Real102: %5.5s s/b false\n", (rb >= ra) ? "true" : "false");
-    printf("Real103: %15.15e s/b  7.34200e+02\n", fabs(ra));
-    printf("Real104: %15.15e s/b  5.39050e+05\n", ((ra)*(ra)));
-    printf("Real105: %15.15e s/b -4.34850e-01\n", sin(rb));
-    printf("Real106: %15.15e s/b -1.56943e+00\n", atan(ra));
-    printf("Real107: %15.15e s/b  6.80566e-01\n", exp(re));
+    printf("Real103: %15.8e s/b  7.34200e+02\n", fabs(ra));
+    printf("Real104: %15.8e s/b  5.39050e+05\n", ((ra)*(ra)));
+    printf("Real105: %15.8e s/b -4.34850e-01\n", sin(rb));
+    printf("Real106: %15.8e s/b -1.56943e+00\n", atan(ra));
+    printf("Real107: %15.8e s/b  6.80566e-01\n", exp(re));
     printf("Real108: %15ld s/b -734\n", (long)((long)(ra)));
     printf("Real109: %15ld s/b -7635\n", (long)(lround(rb)));
     printf("Real110: %15ld s/b -734\n", (long)(lround(ra)));
 
-    printf("Real111: %15.15e s/b  1.510000e+01\n", 4.593399999999999e+1 + (- 3.0834e+1));
-    printf("Real112: %15.15e s/b  4.513300e+01\n", - 2.573699999999999e+1 + 7.087e+1);
-    printf("Real113: %15.15e s/b -3.864000e+01\n", - 6.262999999999999e+1 + 2.399e+1);
-    printf("Real114: %15.15e s/b -3.658100e+01\n", - 2.0733e+1 + (- 1.584799999999999e+1));
-    printf("Real115: %15.15e s/b  3.554800e+01\n", 2.077399999999999e+1 - (- 1.477399999999999e+1));
-    printf("Real116: %15.15e s/b -4.939840e+01\n", - 3.4523e+1 - 1.48754e+1);
-    printf("Real117: %15.15e s/b -4.400100e+01\n", - 5.6664e+1 - (- 1.266299999999999e+1));
-    printf("Real118: %15.15e s/b -2.641223e+01\n", 5.663 * (- 4.663999999999999));
-    printf("Real119: %15.15e s/b -1.489041e+02\n", (- 1.862e+1) * 7.996999999999999);
-    printf("Real120: %15.15e s/b  5.585632e+02\n", (- 4.0552e+1) * (- 1.377399999999999e+1));
-    printf("Real121: %15.15e s/b -5.220157e+00\n", 3.06632e+1 / (- 5.873999999999999));
-    printf("Real122: %15.15e s/b -1.772163e+01\n", (- 5.0636e+1) / 2.8573);
-    printf("Real123: %15.15e s/b  4.274582e+00\n", (- 2.07631e+1) / (- 4.857339999999999));
+    printf("Real111: %15.8e s/b  1.510000e+01\n", 4.593399999999999e+1 + (- 3.0834e+1));
+    printf("Real112: %15.8e s/b  4.513300e+01\n", - 2.573699999999999e+1 + 7.087e+1);
+    printf("Real113: %15.8e s/b -3.864000e+01\n", - 6.262999999999999e+1 + 2.399e+1);
+    printf("Real114: %15.8e s/b -3.658100e+01\n", - 2.0733e+1 + (- 1.584799999999999e+1));
+    printf("Real115: %15.8e s/b  3.554800e+01\n", 2.077399999999999e+1 - (- 1.477399999999999e+1));
+    printf("Real116: %15.8e s/b -4.939840e+01\n", - 3.4523e+1 - 1.48754e+1);
+    printf("Real117: %15.8e s/b -4.400100e+01\n", - 5.6664e+1 - (- 1.266299999999999e+1));
+    printf("Real118: %15.8e s/b -2.641223e+01\n", 5.663 * (- 4.663999999999999));
+    printf("Real119: %15.8e s/b -1.489041e+02\n", (- 1.862e+1) * 7.996999999999999);
+    printf("Real120: %15.8e s/b  5.585632e+02\n", (- 4.0552e+1) * (- 1.377399999999999e+1));
+    printf("Real121: %15.8e s/b -5.220157e+00\n", 3.06632e+1 / (- 5.873999999999999));
+    printf("Real122: %15.8e s/b -1.772163e+01\n", (- 5.0636e+1) / 2.8573);
+    printf("Real123: %15.8e s/b  4.274582e+00\n", (- 2.07631e+1) / (- 4.857339999999999));
     printf("Real124: %5.5s s/b true\n", (- 5.775 == - 5.775) ? "true" : "false");
     printf("Real125: %5.5s s/b false\n", (- 5.6364 == 5.857499999999999) ? "true" : "false");
     printf("Real126: %5.5s s/b true\n", (- 2.16385e+1 != - 4.0764e+1) ? "true" : "false");
@@ -2253,18 +2253,18 @@ int main(void)
     printf("Real143: %5.5s s/b true\n", (- 1.362999999999999e+1 >= - 1.362999999999999e+1) ? "true" : "false");
     printf("Real144: %5.5s s/b false\n", (- 6.74 >= 6.74) ? "true" : "false");
     printf("Real145: %5.5s s/b false\n", (- 2.076229999999999e+1 >= - 1.057399999999999e+1) ? "true" : "false");
-    printf("Real146: %15.15e s/b  6.823000e+00\n", fabs(- 6.823));
-    printf("Real147  %15.15e s/b  1.212572e+05\n", ((- 3.4822e+2)*(- 3.4822e+2)));
-    printf("Real148: %15.15e s/b  9.421146e-01\n", sin(- 7.3322e+2));
-    printf("Real149: %15.15e s/b -1.570677e+00\n", atan(- 8.387219999999999e+3));
-    printf("Real150: %15.15e s/b  4.171539e-01\n", exp(- 8.743e-1));
+    printf("Real146: %15.8e s/b  6.823000e+00\n", fabs(- 6.823));
+    printf("Real147  %15.8e s/b  1.212572e+05\n", ((- 3.4822e+2)*(- 3.4822e+2)));
+    printf("Real148: %15.8e s/b  9.421146e-01\n", sin(- 7.3322e+2));
+    printf("Real149: %15.8e s/b -1.570677e+00\n", atan(- 8.387219999999999e+3));
+    printf("Real150: %15.8e s/b  4.171539e-01\n", exp(- 8.743e-1));
     printf("Real151: %ld s/b -33\n", (long)((long)(- 3.342199999999999e+1)));
     printf("Real152: %ld s/b -843\n", (long)(lround(- 8.432199999999999e+2)));
     printf("Real153: %ld s/b -6244\n", (long)(lround(- 6.243759999999999e+3)));
-    printf("Real154: %15.15e s/b -8.422000e+01\n", rscst);
-    printf("Real155: %15.15e s/b  8.422000e+01\n", - rscst);
-    printf("Real156:  %15.15e s/b -4.333000e+01\n", rscst2);
-    printf("Real157: %15.15e s/b  8.422000e+01\n", rscst3);
+    printf("Real154: %15.8e s/b -8.422000e+01\n", rscst);
+    printf("Real155: %15.8e s/b  8.422000e+01\n", - rscst);
+    printf("Real156:  %15.8e s/b -4.333000e+01\n", rscst2);
+    printf("Real157: %15.8e s/b  8.422000e+01\n", rscst3);
 
     printf("\n");
     printf("******************* sets ******************************\n");
@@ -4243,7 +4243,7 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(arec.stc,(p2c_sclr(_stmp2), p2c_radd(_stmp2, 'b', 'e'), p2c_sadd(_stmp2, 'i'), _stmp2)); }
     arec.p = malloc(sizeof(long));
     *arec.p = 8454;
-    printf("%ld %5.5s %c %ld %ld %ld %15.15e %10.10s\n", (long)(arec.i), (arec.b) ? "true" : "false", (int)(arec.c), (long)(arec.e), (long)(arec.es), (long)(arec.s), arec.r, &arec.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(arec.i), (arec.b) ? "true" : "false", (int)(arec.c), (long)(arec.e), (long)(arec.es), (long)(arec.s), arec.r, &arec.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -4298,7 +4298,7 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(parec.stc,(p2c_sclr(_stmp2), p2c_radd(_stmp2, 'b', 'e'), p2c_sadd(_stmp2, 'i'), _stmp2)); }
     parec.p = malloc(sizeof(long));
     *parec.p = 8454;
-    printf("%ld %5.5s %c %ld %ld %ld %15.15e %10.10s\n", (long)(parec.i), (parec.b) ? "true" : "false", (int)(parec.c), (long)(parec.e), (long)(parec.es), (long)(parec.s), parec.r, &parec.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(parec.i), (parec.b) ? "true" : "false", (int)(parec.c), (long)(parec.e), (long)(parec.es), (long)(parec.s), parec.r, &parec.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -4811,9 +4811,9 @@ int main(void)
         printf("%c\n", (int)(ca));
         printf("q\n");
         ra = 1.234567799999999;
-        printf("%15.15e\n", ra);
+        printf("%15.8e\n", ra);
         printf("%.7f\n", ra);
-        printf("%15.15e\n", 5.689432099999999e+1);
+        printf("%15.8e\n", 5.689432099999999e+1);
         printf("%.8f\n", 9.3837632e-1);
         memmove(&s[1],"hi there !", 10);
         printf("%10.10s\n", &s[1]);
@@ -4871,16 +4871,16 @@ int main(void)
         printf("%c\n", (int)(ci));
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15.15e\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15.15e\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15.15e\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15.15e\n", rb);
+        printf("%15.8e\n", rb);
         printf("s/b:\n");
         printf("7384\n");
         printf("8342\n");
