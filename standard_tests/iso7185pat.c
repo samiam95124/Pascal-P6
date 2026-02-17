@@ -554,7 +554,7 @@ void junk3(string10 p)
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    printf("%10s", &p[1]);
+    printf("%10.10s", &p[1]);
 
 }
 
@@ -566,7 +566,7 @@ void junk4(string10 p)
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
     p[5] = '?';
-    printf("%10s", &p[1]);
+    printf("%10.10s", &p[1]);
 
 }
 
@@ -629,7 +629,7 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     long i;
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    printf("%ld %5s %c %ld %ld %ld %15g %10s\n", (long)(a), (b) ? "true" : "false", (int)(c), (long)(e), (long)(es), (long)(s), r, &st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(a), (b) ? "true" : "false", (int)(c), (long)(e), (long)(es), (long)(s), r, &st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -638,7 +638,7 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     }
     }
     printf("\n");
-    printf("%ld %5s %c %ld %ld %ld %15g %10s\n", (long)(rc.i), (rc.b) ? "true" : "false", (int)(rc.c), (long)(rc.e), (long)(rc.es), (long)(rc.s), rc.r, &rc.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(rc.i), (rc.b) ? "true" : "false", (int)(rc.c), (long)(rc.e), (long)(rc.es), (long)(rc.s), rc.r, &rc.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -666,14 +666,14 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     }
     printf("\n");
     printf("%ld\n", (long)(*rc.p));
-    printf("%ld %c %5s\n", (long)(rv.a), (int)(rv.b), (rv.c) ? "true" : "false");
+    printf("%ld %c %5.5s\n", (long)(rv.a), (int)(rv.b), (rv.c) ? "true" : "false");
     if (rv.c) {
 
         printf("%ld\n", (long)(rv.e));
 
     } else {
 
-        printf("%10s\n", &rv.d[1]);
+        printf("%10.10s\n", &rv.d[1]);
 
     }
     { long _forlim = 'j';
@@ -1047,14 +1047,14 @@ int main(void)
     printf("Real default output field\n");
     printf("         1111111111222222222233333333334\n");
     printf("1234567890123456789012345678901234567890\n");
-    printf("%22g\n", 1.199999999999999);
+    printf("%22.15e\n", 1.199999999999999);
     printf("Note that the exponent character 'e' or 'E' is implementation\n");
     printf("defined as well as the number of exponent digits\n");
     printf("Boolean default output field\n");
     printf("         1111111111222222222233333333334\n");
     printf("1234567890123456789012345678901234567890\n");
-    printf("%5s\n", (false) ? "true" : "false");
-    printf("%5s\n", (true) ? "true" : "false");
+    printf("%5.5s\n", (false) ? "true" : "false");
+    printf("%5.5s\n", (true) ? "true" : "false");
     printf("Note that the upper or lower case state of the characters in\n");
     printf("'true' and 'false' are implementation defined\n");
     printf("Char default output field\n");
@@ -1314,22 +1314,22 @@ int main(void)
     printf("Integer8:   %ld s/b 1849\n", (long)(((x)*(x))));
     printf("Integer9:   %c s/b N\n", (int)(y));
     printf("Integer10:  %ld s/b 43\n", (long)(x));
-    printf("Integer11:  %5s s/b true\n", (((x) & 1)) ? "true" : "false");
-    printf("Integer12:  %5s s/b false\n", (((y) & 1)) ? "true" : "false");
-    printf("Integer13:  %5s s/b true\n", (z == y) ? "true" : "false");
-    printf("Integer14:  %5s s/b false\n", (x == y) ? "true" : "false");
-    printf("Integer15:  %5s s/b true\n", (x < y) ? "true" : "false");
-    printf("Integer16:  %5s s/b false\n", (y < x) ? "true" : "false");
-    printf("Integer17:  %5s s/b true\n", (y > x) ? "true" : "false");
-    printf("Integer18:  %5s s/b false\n", (x > y) ? "true" : "false");
-    printf("Integer19:  %5s s/b true\n", (x != y) ? "true" : "false");
-    printf("Integer20:  %5s s/b false\n", (y != z) ? "true" : "false");
-    printf("Integer21:  %5s s/b true\n", (x <= y) ? "true" : "false");
-    printf("Integer22:  %5s s/b true\n", (z <= y) ? "true" : "false");
-    printf("Integer23:  %5s s/b false\n", (y <= x) ? "true" : "false");
-    printf("Integer24:  %5s s/b true\n", (y >= x) ? "true" : "false");
-    printf("Integer25:  %5s s/b true\n", (y >= z) ? "true" : "false");
-    printf("Integer26:  %5s s/b false\n", (x >= y) ? "true" : "false");
+    printf("Integer11:  %5.5s s/b true\n", (((x) & 1)) ? "true" : "false");
+    printf("Integer12:  %5.5s s/b false\n", (((y) & 1)) ? "true" : "false");
+    printf("Integer13:  %5.5s s/b true\n", (z == y) ? "true" : "false");
+    printf("Integer14:  %5.5s s/b false\n", (x == y) ? "true" : "false");
+    printf("Integer15:  %5.5s s/b true\n", (x < y) ? "true" : "false");
+    printf("Integer16:  %5.5s s/b false\n", (y < x) ? "true" : "false");
+    printf("Integer17:  %5.5s s/b true\n", (y > x) ? "true" : "false");
+    printf("Integer18:  %5.5s s/b false\n", (x > y) ? "true" : "false");
+    printf("Integer19:  %5.5s s/b true\n", (x != y) ? "true" : "false");
+    printf("Integer20:  %5.5s s/b false\n", (y != z) ? "true" : "false");
+    printf("Integer21:  %5.5s s/b true\n", (x <= y) ? "true" : "false");
+    printf("Integer22:  %5.5s s/b true\n", (z <= y) ? "true" : "false");
+    printf("Integer23:  %5.5s s/b false\n", (y <= x) ? "true" : "false");
+    printf("Integer24:  %5.5s s/b true\n", (y >= x) ? "true" : "false");
+    printf("Integer25:  %5.5s s/b true\n", (y >= z) ? "true" : "false");
+    printf("Integer26:  %5.5s s/b false\n", (x >= y) ? "true" : "false");
 
     printf("Integer27:  ");
     i = 546;
@@ -1345,22 +1345,22 @@ int main(void)
     printf("Integer36:  %c s/b A\n", (int)(65));
     printf("Integer37:  %ld s/b 65\n", (long)(65));
     printf("Integer38:  %ld s/b 768\n", (long)(768));
-    printf("Integer39:  %5s s/b true\n", (((5) & 1)) ? "true" : "false");
-    printf("Integer40:  %5s s/b false\n", (((8) & 1)) ? "true" : "false");
-    printf("Integer41:  %5s s/b true\n", (56 == 56) ? "true" : "false");
-    printf("Integer42:  %5s s/b false\n", (56 == 57) ? "true" : "false");
-    printf("Integer43:  %5s s/b true\n", (56 < 57) ? "true" : "false");
-    printf("Integer44:  %5s s/b false\n", (57 < 56) ? "true" : "false");
-    printf("Integer45:  %5s s/b true\n", (57 > 56) ? "true" : "false");
-    printf("Integer46:  %5s s/b false\n", (56 > 57) ? "true" : "false");
-    printf("Integer47:  %5s s/b true\n", (56 != 57) ? "true" : "false");
-    printf("Integer48:  %5s s/b false\n", (56 != 56) ? "true" : "false");
-    printf("Integer49:  %5s s/b true\n", (55 <= 500) ? "true" : "false");
-    printf("Integer50:  %5s s/b true\n", (67 <= 67) ? "true" : "false");
-    printf("Integer51:  %5s s/b false\n", (56 <= 33) ? "true" : "false");
-    printf("Integer52:  %5s s/b true\n", (645 >= 4) ? "true" : "false");
-    printf("Integer53:  %5s s/b true\n", (23 >= 23) ? "true" : "false");
-    printf("Integer54:  %5s s/b false\n", (45 >= 123) ? "true" : "false");
+    printf("Integer39:  %5.5s s/b true\n", (((5) & 1)) ? "true" : "false");
+    printf("Integer40:  %5.5s s/b false\n", (((8) & 1)) ? "true" : "false");
+    printf("Integer41:  %5.5s s/b true\n", (56 == 56) ? "true" : "false");
+    printf("Integer42:  %5.5s s/b false\n", (56 == 57) ? "true" : "false");
+    printf("Integer43:  %5.5s s/b true\n", (56 < 57) ? "true" : "false");
+    printf("Integer44:  %5.5s s/b false\n", (57 < 56) ? "true" : "false");
+    printf("Integer45:  %5.5s s/b true\n", (57 > 56) ? "true" : "false");
+    printf("Integer46:  %5.5s s/b false\n", (56 > 57) ? "true" : "false");
+    printf("Integer47:  %5.5s s/b true\n", (56 != 57) ? "true" : "false");
+    printf("Integer48:  %5.5s s/b false\n", (56 != 56) ? "true" : "false");
+    printf("Integer49:  %5.5s s/b true\n", (55 <= 500) ? "true" : "false");
+    printf("Integer50:  %5.5s s/b true\n", (67 <= 67) ? "true" : "false");
+    printf("Integer51:  %5.5s s/b false\n", (56 <= 33) ? "true" : "false");
+    printf("Integer52:  %5.5s s/b true\n", (645 >= 4) ? "true" : "false");
+    printf("Integer53:  %5.5s s/b true\n", (23 >= 23) ? "true" : "false");
+    printf("Integer54:  %5.5s s/b false\n", (45 >= 123) ? "true" : "false");
 
     as = - 14;
     bs = - 32;
@@ -1386,30 +1386,30 @@ int main(void)
     printf("Integer68:  %ld s/b -13\n", (long)((as + 1)));
     printf("Integer69:  %ld s/b -33\n", (long)((bs - 1)));
     printf("Integer70: %ld s/b 196\n", (long)(((as)*(as))));
-    printf("Integer71:  %5s s/b false\n", (((as) & 1)) ? "true" : "false");
-    printf("Integer72:  %5s s/b true\n", (((es) & 1)) ? "true" : "false");
-    printf("Integer73:  %5s s/b true\n", (as == cs) ? "true" : "false");
-    printf("Integer74:  %5s s/b false\n", (as == bs) ? "true" : "false");
-    printf("Integer75:  %5s s/b true\n", (as != bs) ? "true" : "false");
-    printf("Integer76:  %5s s/b false\n", (as != cs) ? "true" : "false");
-    printf("Integer77:  %5s s/b true\n", (as < ds) ? "true" : "false");
-    printf("Integer78:  %5s s/b true\n", (bs < as) ? "true" : "false");
-    printf("Integer79:  %5s s/b false\n", (ds < as) ? "true" : "false");
-    printf("Integer80:  %5s s/b false\n", (as < bs) ? "true" : "false");
-    printf("Integer81:  %5s s/b true\n", (ds > as) ? "true" : "false");
-    printf("Integer82:  %5s s/b true\n", (as > bs) ? "true" : "false");
-    printf("Integer83:  %5s s/b false\n", (as > ds) ? "true" : "false");
-    printf("Integer84:  %5s s/b false\n", (bs > as) ? "true" : "false");
-    printf("Integer85:  %5s s/b true\n", (as <= ds) ? "true" : "false");
-    printf("Integer86:  %5s s/b true\n", (bs <= as) ? "true" : "false");
-    printf("Integer87:  %5s s/b true\n", (as <= cs) ? "true" : "false");
-    printf("Integer88:  %5s s/b false\n", (ds <= as) ? "true" : "false");
-    printf("Integer89:  %5s s/b false\n", (as <= bs) ? "true" : "false");
-    printf("Integer90:  %5s s/b true\n", (ds >= as) ? "true" : "false");
-    printf("Integer91:  %5s s/b true\n", (as >= bs) ? "true" : "false");
-    printf("Integer92:  %5s s/b true\n", (as >= cs) ? "true" : "false");
-    printf("Integer93:  %5s s/b false\n", (as >= ds) ? "true" : "false");
-    printf("Integer94:  %5s s/b false\n", (bs >= as) ? "true" : "false");
+    printf("Integer71:  %5.5s s/b false\n", (((as) & 1)) ? "true" : "false");
+    printf("Integer72:  %5.5s s/b true\n", (((es) & 1)) ? "true" : "false");
+    printf("Integer73:  %5.5s s/b true\n", (as == cs) ? "true" : "false");
+    printf("Integer74:  %5.5s s/b false\n", (as == bs) ? "true" : "false");
+    printf("Integer75:  %5.5s s/b true\n", (as != bs) ? "true" : "false");
+    printf("Integer76:  %5.5s s/b false\n", (as != cs) ? "true" : "false");
+    printf("Integer77:  %5.5s s/b true\n", (as < ds) ? "true" : "false");
+    printf("Integer78:  %5.5s s/b true\n", (bs < as) ? "true" : "false");
+    printf("Integer79:  %5.5s s/b false\n", (ds < as) ? "true" : "false");
+    printf("Integer80:  %5.5s s/b false\n", (as < bs) ? "true" : "false");
+    printf("Integer81:  %5.5s s/b true\n", (ds > as) ? "true" : "false");
+    printf("Integer82:  %5.5s s/b true\n", (as > bs) ? "true" : "false");
+    printf("Integer83:  %5.5s s/b false\n", (as > ds) ? "true" : "false");
+    printf("Integer84:  %5.5s s/b false\n", (bs > as) ? "true" : "false");
+    printf("Integer85:  %5.5s s/b true\n", (as <= ds) ? "true" : "false");
+    printf("Integer86:  %5.5s s/b true\n", (bs <= as) ? "true" : "false");
+    printf("Integer87:  %5.5s s/b true\n", (as <= cs) ? "true" : "false");
+    printf("Integer88:  %5.5s s/b false\n", (ds <= as) ? "true" : "false");
+    printf("Integer89:  %5.5s s/b false\n", (as <= bs) ? "true" : "false");
+    printf("Integer90:  %5.5s s/b true\n", (ds >= as) ? "true" : "false");
+    printf("Integer91:  %5.5s s/b true\n", (as >= bs) ? "true" : "false");
+    printf("Integer92:  %5.5s s/b true\n", (as >= cs) ? "true" : "false");
+    printf("Integer93:  %5.5s s/b false\n", (as >= ds) ? "true" : "false");
+    printf("Integer94:  %5.5s s/b false\n", (bs >= as) ? "true" : "false");
     printf("Integer95:  %ld s/b 14\n", (long)(labs(as)));
     printf("Integer96:  %ld s/b 0\n", (long)(gs + hs));
     printf("Integer97:  %ld s/b 0\n", (long)(gs - 9223372036854775807));
@@ -1433,30 +1433,30 @@ int main(void)
     printf("Integer114: %ld s/b -2\n", (long)((- 1 - 1)));
     printf("Integer115: %ld s/b 64\n", (long)(((- 8)*(- 8))));
     printf("Integer116: %ld s/b -55\n", (long)((- 54 - 1)));
-    printf("Integer117: %5s s/b false\n", (((- 20) & 1)) ? "true" : "false");
-    printf("Integer118: %5s s/b true\n", (((- 15) & 1)) ? "true" : "false");
-    printf("Integer119: %5s s/b true\n", (- 5 == - 5) ? "true" : "false");
-    printf("Integer120: %5s s/b false\n", (- 5 == 5) ? "true" : "false");
-    printf("Integer121: %5s s/b true\n", (- 21 != - 40) ? "true" : "false");
-    printf("Integer122: %5s s/b false\n", (- 21 != - 21) ? "true" : "false");
-    printf("Integer123: %5s s/b true\n", (- 3 < 5) ? "true" : "false");
-    printf("Integer124: %5s s/b true\n", (- 32 < - 20) ? "true" : "false");
-    printf("Integer125: %5s s/b false\n", (20 < - 20) ? "true" : "false");
-    printf("Integer126: %5s s/b false\n", (- 15 < - 40) ? "true" : "false");
-    printf("Integer127: %5s s/b true\n", (70 > - 4) ? "true" : "false");
-    printf("Integer128: %5s s/b true\n", (- 23 > - 34) ? "true" : "false");
-    printf("Integer129: %5s s/b false\n", (- 5 > 5) ? "true" : "false");
-    printf("Integer130: %5s s/b false\n", (- 60 > - 59) ? "true" : "false");
-    printf("Integer131: %5s s/b true\n", (- 12 <= 4) ? "true" : "false");
-    printf("Integer132: %5s s/b true\n", (- 14 <= - 5) ? "true" : "false");
-    printf("Integer133: %5s s/b true\n", (- 7 <= - 7) ? "true" : "false");
-    printf("Integer134: %5s s/b false\n", (5 <= - 5) ? "true" : "false");
-    printf("Integer135: %5s s/b false\n", (- 10 <= - 20) ? "true" : "false");
-    printf("Integer136: %5s s/b true\n", (9 >= - 3) ? "true" : "false");
-    printf("Integer137: %5s s/b true\n", (- 4 >= - 10) ? "true" : "false");
-    printf("Integer138: %5s s/b true\n", (- 13 >= - 13) ? "true" : "false");
-    printf("Integer139: %5s s/b false\n", (- 6 >= 6) ? "true" : "false");
-    printf("Integer140: %5s s/b false\n", (- 20 >= - 10) ? "true" : "false");
+    printf("Integer117: %5.5s s/b false\n", (((- 20) & 1)) ? "true" : "false");
+    printf("Integer118: %5.5s s/b true\n", (((- 15) & 1)) ? "true" : "false");
+    printf("Integer119: %5.5s s/b true\n", (- 5 == - 5) ? "true" : "false");
+    printf("Integer120: %5.5s s/b false\n", (- 5 == 5) ? "true" : "false");
+    printf("Integer121: %5.5s s/b true\n", (- 21 != - 40) ? "true" : "false");
+    printf("Integer122: %5.5s s/b false\n", (- 21 != - 21) ? "true" : "false");
+    printf("Integer123: %5.5s s/b true\n", (- 3 < 5) ? "true" : "false");
+    printf("Integer124: %5.5s s/b true\n", (- 32 < - 20) ? "true" : "false");
+    printf("Integer125: %5.5s s/b false\n", (20 < - 20) ? "true" : "false");
+    printf("Integer126: %5.5s s/b false\n", (- 15 < - 40) ? "true" : "false");
+    printf("Integer127: %5.5s s/b true\n", (70 > - 4) ? "true" : "false");
+    printf("Integer128: %5.5s s/b true\n", (- 23 > - 34) ? "true" : "false");
+    printf("Integer129: %5.5s s/b false\n", (- 5 > 5) ? "true" : "false");
+    printf("Integer130: %5.5s s/b false\n", (- 60 > - 59) ? "true" : "false");
+    printf("Integer131: %5.5s s/b true\n", (- 12 <= 4) ? "true" : "false");
+    printf("Integer132: %5.5s s/b true\n", (- 14 <= - 5) ? "true" : "false");
+    printf("Integer133: %5.5s s/b true\n", (- 7 <= - 7) ? "true" : "false");
+    printf("Integer134: %5.5s s/b false\n", (5 <= - 5) ? "true" : "false");
+    printf("Integer135: %5.5s s/b false\n", (- 10 <= - 20) ? "true" : "false");
+    printf("Integer136: %5.5s s/b true\n", (9 >= - 3) ? "true" : "false");
+    printf("Integer137: %5.5s s/b true\n", (- 4 >= - 10) ? "true" : "false");
+    printf("Integer138: %5.5s s/b true\n", (- 13 >= - 13) ? "true" : "false");
+    printf("Integer139: %5.5s s/b false\n", (- 6 >= 6) ? "true" : "false");
+    printf("Integer140: %5.5s s/b false\n", (- 20 >= - 10) ? "true" : "false");
     printf("Integer141: %ld s/b 6\n", (long)(labs(- 6)));
     printf("Integer142: %ld s/b -52\n", (long)(-52));
     printf("Integer143: %ld s/b 52\n", (long)(- -52));
@@ -1497,22 +1497,22 @@ int main(void)
     printf("Subrange7:   %ld s/b 42\n", (long)((srx - 1)));
     printf("Subrange8:   %c s/b N\n", (int)(sry));
     printf("Subrange9:   %ld s/b 43\n", (long)(srx));
-    printf("Subrange10:  %5s s/b true\n", (((srx) & 1)) ? "true" : "false");
-    printf("Subrange11:  %5s s/b false\n", (((sry) & 1)) ? "true" : "false");
-    printf("Subrange12:  %5s s/b true\n", (srz == sry) ? "true" : "false");
-    printf("Subrange13:  %5s s/b false\n", (srx == sry) ? "true" : "false");
-    printf("Subrange14:  %5s s/b true\n", (srx < sry) ? "true" : "false");
-    printf("Subrange15:  %5s s/b false\n", (sry < srx) ? "true" : "false");
-    printf("Subrange16:  %5s s/b true\n", (sry > srx) ? "true" : "false");
-    printf("Subrange17:  %5s s/b false\n", (srx > sry) ? "true" : "false");
-    printf("Subrange18:  %5s s/b true\n", (srx != sry) ? "true" : "false");
-    printf("Subrange19:  %5s s/b false\n", (sry != srz) ? "true" : "false");
-    printf("Subrange20:  %5s s/b true\n", (srx <= sry) ? "true" : "false");
-    printf("Subrange21:  %5s s/b true\n", (srz <= sry) ? "true" : "false");
-    printf("Subrange22:  %5s s/b false\n", (sry <= srx) ? "true" : "false");
-    printf("Subrange23:  %5s s/b true\n", (sry >= srx) ? "true" : "false");
-    printf("Subrange24:  %5s s/b true\n", (sry >= srz) ? "true" : "false");
-    printf("Subrange25:  %5s s/b false\n", (srx >= sry) ? "true" : "false");
+    printf("Subrange10:  %5.5s s/b true\n", (((srx) & 1)) ? "true" : "false");
+    printf("Subrange11:  %5.5s s/b false\n", (((sry) & 1)) ? "true" : "false");
+    printf("Subrange12:  %5.5s s/b true\n", (srz == sry) ? "true" : "false");
+    printf("Subrange13:  %5.5s s/b false\n", (srx == sry) ? "true" : "false");
+    printf("Subrange14:  %5.5s s/b true\n", (srx < sry) ? "true" : "false");
+    printf("Subrange15:  %5.5s s/b false\n", (sry < srx) ? "true" : "false");
+    printf("Subrange16:  %5.5s s/b true\n", (sry > srx) ? "true" : "false");
+    printf("Subrange17:  %5.5s s/b false\n", (srx > sry) ? "true" : "false");
+    printf("Subrange18:  %5.5s s/b true\n", (srx != sry) ? "true" : "false");
+    printf("Subrange19:  %5.5s s/b false\n", (sry != srz) ? "true" : "false");
+    printf("Subrange20:  %5.5s s/b true\n", (srx <= sry) ? "true" : "false");
+    printf("Subrange21:  %5.5s s/b true\n", (srz <= sry) ? "true" : "false");
+    printf("Subrange22:  %5.5s s/b false\n", (sry <= srx) ? "true" : "false");
+    printf("Subrange23:  %5.5s s/b true\n", (sry >= srx) ? "true" : "false");
+    printf("Subrange24:  %5.5s s/b true\n", (sry >= srz) ? "true" : "false");
+    printf("Subrange25:  %5.5s s/b false\n", (srx >= sry) ? "true" : "false");
 
     sras = - 14;
     srbs = - 32;
@@ -1534,30 +1534,30 @@ int main(void)
     printf("Subrange38:  %ld s/b 2\n", (long)(srbs / sras));
     printf("Subrange39:  %ld s/b -13\n", (long)((sras + 1)));
     printf("Subrange40:  %ld s/b -33\n", (long)((srbs - 1)));
-    printf("Subrange41:  %5s s/b false\n", (((sras) & 1)) ? "true" : "false");
-    printf("Subrange42:  %5s s/b true\n", (((sres) & 1)) ? "true" : "false");
-    printf("Subrange43:  %5s s/b true\n", (sras == srcs) ? "true" : "false");
-    printf("Subrange44:  %5s s/b false\n", (sras == srbs) ? "true" : "false");
-    printf("Subrange45:  %5s s/b true\n", (sras != srbs) ? "true" : "false");
-    printf("Subrange46:  %5s s/b false\n", (sras != srcs) ? "true" : "false");
-    printf("Subrange47:  %5s s/b true\n", (sras < srds) ? "true" : "false");
-    printf("Subrange48:  %5s s/b true\n", (srbs < sras) ? "true" : "false");
-    printf("Subrange49:  %5s s/b false\n", (srds < sras) ? "true" : "false");
-    printf("Subrange50:  %5s s/b false\n", (sras < srbs) ? "true" : "false");
-    printf("Subrange51:  %5s s/b true\n", (srds > sras) ? "true" : "false");
-    printf("Subrange52:  %5s s/b true\n", (sras > srbs) ? "true" : "false");
-    printf("Subrange53:  %5s s/b false\n", (sras > srds) ? "true" : "false");
-    printf("Subrange54:  %5s s/b false\n", (srbs > sras) ? "true" : "false");
-    printf("Subrange55:  %5s s/b true\n", (sras <= srds) ? "true" : "false");
-    printf("Subrange56:  %5s s/b true\n", (srbs <= sras) ? "true" : "false");
-    printf("Subrange57:  %5s s/b true\n", (sras <= srcs) ? "true" : "false");
-    printf("Subrange58:  %5s s/b false\n", (srds <= sras) ? "true" : "false");
-    printf("Subrange59:  %5s s/b false\n", (sras <= srbs) ? "true" : "false");
-    printf("Subrange60:  %5s s/b true\n", (srds >= sras) ? "true" : "false");
-    printf("Subrange61:  %5s s/b true\n", (sras >= srbs) ? "true" : "false");
-    printf("Subrange62:  %5s s/b true\n", (sras >= srcs) ? "true" : "false");
-    printf("Subrange63:  %5s s/b false\n", (sras >= srds) ? "true" : "false");
-    printf("Subrange64:  %5s s/b false\n", (srbs >= sras) ? "true" : "false");
+    printf("Subrange41:  %5.5s s/b false\n", (((sras) & 1)) ? "true" : "false");
+    printf("Subrange42:  %5.5s s/b true\n", (((sres) & 1)) ? "true" : "false");
+    printf("Subrange43:  %5.5s s/b true\n", (sras == srcs) ? "true" : "false");
+    printf("Subrange44:  %5.5s s/b false\n", (sras == srbs) ? "true" : "false");
+    printf("Subrange45:  %5.5s s/b true\n", (sras != srbs) ? "true" : "false");
+    printf("Subrange46:  %5.5s s/b false\n", (sras != srcs) ? "true" : "false");
+    printf("Subrange47:  %5.5s s/b true\n", (sras < srds) ? "true" : "false");
+    printf("Subrange48:  %5.5s s/b true\n", (srbs < sras) ? "true" : "false");
+    printf("Subrange49:  %5.5s s/b false\n", (srds < sras) ? "true" : "false");
+    printf("Subrange50:  %5.5s s/b false\n", (sras < srbs) ? "true" : "false");
+    printf("Subrange51:  %5.5s s/b true\n", (srds > sras) ? "true" : "false");
+    printf("Subrange52:  %5.5s s/b true\n", (sras > srbs) ? "true" : "false");
+    printf("Subrange53:  %5.5s s/b false\n", (sras > srds) ? "true" : "false");
+    printf("Subrange54:  %5.5s s/b false\n", (srbs > sras) ? "true" : "false");
+    printf("Subrange55:  %5.5s s/b true\n", (sras <= srds) ? "true" : "false");
+    printf("Subrange56:  %5.5s s/b true\n", (srbs <= sras) ? "true" : "false");
+    printf("Subrange57:  %5.5s s/b true\n", (sras <= srcs) ? "true" : "false");
+    printf("Subrange58:  %5.5s s/b false\n", (srds <= sras) ? "true" : "false");
+    printf("Subrange59:  %5.5s s/b false\n", (sras <= srbs) ? "true" : "false");
+    printf("Subrange60:  %5.5s s/b true\n", (srds >= sras) ? "true" : "false");
+    printf("Subrange61:  %5.5s s/b true\n", (sras >= srbs) ? "true" : "false");
+    printf("Subrange62:  %5.5s s/b true\n", (sras >= srcs) ? "true" : "false");
+    printf("Subrange63:  %5.5s s/b false\n", (sras >= srds) ? "true" : "false");
+    printf("Subrange64:  %5.5s s/b false\n", (srbs >= sras) ? "true" : "false");
     printf("Subrange65:  %ld s/b 14\n", (long)(labs(sras)));
 
     printf("\n");
@@ -1572,38 +1572,38 @@ int main(void)
     printf("Character3:   %c s/b f\n", (int)((cb - 1)));
     printf("Character4:   %ld s/b 103\n", (long)(ca));
     printf("Character5:   %c s/b u\n", (int)(cc));
-    printf("Character6:   %5s s/b true\n", (ca == cb) ? "true" : "false");
-    printf("Character7:   %5s s/b false\n", (ca == cc) ? "true" : "false");
-    printf("Character8:   %5s s/b true\n", (ca < cc) ? "true" : "false");
-    printf("Character9:   %5s s/b false\n", (cc < ca) ? "true" : "false");
-    printf("Character10:  %5s s/b true\n", (cc > ca) ? "true" : "false");
-    printf("Character11:  %5s s/b false\n", (ca > cc) ? "true" : "false");
-    printf("Character12:  %5s s/b true\n", (ca != cc) ? "true" : "false");
-    printf("Character13:  %5s s/b false\n", (ca != cb) ? "true" : "false");
-    printf("Character14:  %5s s/b true\n", (ca <= cc) ? "true" : "false");
-    printf("Character15:  %5s s/b true\n", (ca <= cb) ? "true" : "false");
-    printf("Character16:  %5s s/b false\n", (cc <= ca) ? "true" : "false");
-    printf("Character17:  %5s s/b true\n", (cc >= cb) ? "true" : "false");
-    printf("Character18:  %5s s/b true\n", (cb >= ca) ? "true" : "false");
-    printf("Character19:  %5s s/b false\n", (cb >= cc) ? "true" : "false");
+    printf("Character6:   %5.5s s/b true\n", (ca == cb) ? "true" : "false");
+    printf("Character7:   %5.5s s/b false\n", (ca == cc) ? "true" : "false");
+    printf("Character8:   %5.5s s/b true\n", (ca < cc) ? "true" : "false");
+    printf("Character9:   %5.5s s/b false\n", (cc < ca) ? "true" : "false");
+    printf("Character10:  %5.5s s/b true\n", (cc > ca) ? "true" : "false");
+    printf("Character11:  %5.5s s/b false\n", (ca > cc) ? "true" : "false");
+    printf("Character12:  %5.5s s/b true\n", (ca != cc) ? "true" : "false");
+    printf("Character13:  %5.5s s/b false\n", (ca != cb) ? "true" : "false");
+    printf("Character14:  %5.5s s/b true\n", (ca <= cc) ? "true" : "false");
+    printf("Character15:  %5.5s s/b true\n", (ca <= cb) ? "true" : "false");
+    printf("Character16:  %5.5s s/b false\n", (cc <= ca) ? "true" : "false");
+    printf("Character17:  %5.5s s/b true\n", (cc >= cb) ? "true" : "false");
+    printf("Character18:  %5.5s s/b true\n", (cb >= ca) ? "true" : "false");
+    printf("Character19:  %5.5s s/b false\n", (cb >= cc) ? "true" : "false");
     memmove(&sa[1],"porker    ", 10);
     memmove(&sb[1],"porker    ", 10);
     memmove(&sc[1],"parker    ", 10);
-    printf("Character20:  %10s%10s%10s s/b porker    porker    parker\n", &sa[1], &sb[1], &sc[1]);
-    printf("Character21:  %5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) == 0) ? "true" : "false");
-    printf("Character22:  %5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) == 0) ? "true" : "false");
-    printf("Character23:  %5s s/b true\n", (strncmp(&sc[1], &sa[1], 10) < 0) ? "true" : "false");
-    printf("Character24:  %5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) < 0) ? "true" : "false");
-    printf("Character25:  %5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) > 0) ? "true" : "false");
-    printf("Character26:  %5s s/b false\n", (strncmp(&sc[1], &sa[1], 10) > 0) ? "true" : "false");
-    printf("Character27:  %5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) != 0) ? "true" : "false");
-    printf("Character28:  %5s s/b false\n", (strncmp(&sa[1], &sb[1], 10) != 0) ? "true" : "false");
-    printf("Character29:  %5s s/b true\n", (strncmp(&sc[1], &sa[1], 10) <= 0) ? "true" : "false");
-    printf("Character30:  %5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) <= 0) ? "true" : "false");
-    printf("Character40:  %5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) <= 0) ? "true" : "false");
-    printf("Character41:  %5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) >= 0) ? "true" : "false");
-    printf("Character42:  %5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) >= 0) ? "true" : "false");
-    printf("Character43:  %5s s/b false\n", (strncmp(&sc[1], &sa[1], 10) >= 0) ? "true" : "false");
+    printf("Character20:  %10.10s%10.10s%10.10s s/b porker    porker    parker\n", &sa[1], &sb[1], &sc[1]);
+    printf("Character21:  %5.5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) == 0) ? "true" : "false");
+    printf("Character22:  %5.5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) == 0) ? "true" : "false");
+    printf("Character23:  %5.5s s/b true\n", (strncmp(&sc[1], &sa[1], 10) < 0) ? "true" : "false");
+    printf("Character24:  %5.5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) < 0) ? "true" : "false");
+    printf("Character25:  %5.5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) > 0) ? "true" : "false");
+    printf("Character26:  %5.5s s/b false\n", (strncmp(&sc[1], &sa[1], 10) > 0) ? "true" : "false");
+    printf("Character27:  %5.5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) != 0) ? "true" : "false");
+    printf("Character28:  %5.5s s/b false\n", (strncmp(&sa[1], &sb[1], 10) != 0) ? "true" : "false");
+    printf("Character29:  %5.5s s/b true\n", (strncmp(&sc[1], &sa[1], 10) <= 0) ? "true" : "false");
+    printf("Character30:  %5.5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) <= 0) ? "true" : "false");
+    printf("Character40:  %5.5s s/b false\n", (strncmp(&sa[1], &sc[1], 10) <= 0) ? "true" : "false");
+    printf("Character41:  %5.5s s/b true\n", (strncmp(&sa[1], &sc[1], 10) >= 0) ? "true" : "false");
+    printf("Character42:  %5.5s s/b true\n", (strncmp(&sa[1], &sb[1], 10) >= 0) ? "true" : "false");
+    printf("Character43:  %5.5s s/b false\n", (strncmp(&sc[1], &sa[1], 10) >= 0) ? "true" : "false");
     printf("Character44:  ");
     { long _forlim = 'z';
     for (ca = 'a'; ca <= _forlim; ca++) {
@@ -1648,7 +1648,7 @@ int main(void)
     r.rc = 'n';
     printf("Character47: %c s/b n\n", (int)(r.rc));
     memmove(&r.rs[1],"junky01234", 10);
-    printf("Character48: %10s s/b junky01234\n", &r.rs[1]);
+    printf("Character48: %10.10s s/b junky01234\n", &r.rs[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -1663,7 +1663,7 @@ int main(void)
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
-        printf("%10s\n", &sar[i][1]);
+        printf("%10.10s\n", &sar[i][1]);
 
     }
     }
@@ -1737,41 +1737,41 @@ int main(void)
     printf("Character53:  %c s/b y\n", (int)(('z' - 1)));
     printf("Character54:  %ld s/b 99\n", (long)('c'));
     printf("Character55:  %c s/b g\n", (int)('g'));
-    printf("Character56:  %5s s/b true\n", ('q' == 'q') ? "true" : "false");
-    printf("Character57:  %5s s/b false\n", ('r' == 'q') ? "true" : "false");
-    printf("Character58:  %5s s/b true\n", ('b' < 't') ? "true" : "false");
-    printf("Character59:  %5s s/b false\n", ('g' < 'c') ? "true" : "false");
-    printf("Character60:  %5s s/b true\n", ('f' > 'e') ? "true" : "false");
-    printf("Character61:  %5s s/b false\n", ('f' > 'g') ? "true" : "false");
-    printf("Character62:  %5s s/b true\n", ('h' != 'l') ? "true" : "false");
-    printf("Character63:  %5s s/b false\n", ('i' != 'i') ? "true" : "false");
-    printf("Character64:  %5s s/b true\n", ('v' <= 'y') ? "true" : "false");
-    printf("Character65:  %5s s/b true\n", ('y' <= 'y') ? "true" : "false");
-    printf("Character66:  %5s s/b false\n", ('z' <= 'y') ? "true" : "false");
-    printf("Character67:  %5s s/b true\n", ('l' >= 'b') ? "true" : "false");
-    printf("Character68:  %5s s/b true\n", ('l' >= 'l') ? "true" : "false");
-    printf("Character69:  %5s s/b false\n", ('l' >= 'm') ? "true" : "false");
-    printf("Character70:  %5s s/b true\n", (strncmp("finnork", "finnork", 7) == 0) ? "true" : "false");
-    printf("Character71:  %5s s/b false\n", (strncmp("finoork", "finnork", 7) == 0) ? "true" : "false");
-    printf("Character72:  %5s s/b true\n", (strncmp("oliab", "olibb", 5) < 0) ? "true" : "false");
-    printf("Character73:  %5s s/b false\n", (strncmp("olibb", "oliab", 5) < 0) ? "true" : "false");
-    printf("Character74:  %5s s/b true\n", (strncmp("olibb", "oliab", 5) > 0) ? "true" : "false");
-    printf("Character75:  %5s s/b false\n", (strncmp("oliab", "olibb", 5) > 0) ? "true" : "false");
-    printf("Character76:  %5s s/b true\n", (strncmp("fark ", "farks", 5) != 0) ? "true" : "false");
-    printf("Character77:  %5s s/b false\n", (strncmp("farks", "farks", 5) != 0) ? "true" : "false");
-    printf("Character78:  %5s s/b true\n", (strncmp("farka", "farkz", 5) <= 0) ? "true" : "false");
-    printf("Character79:  %5s s/b true\n", (strncmp("farks", "farks", 5) <= 0) ? "true" : "false");
-    printf("Character80:  %5s s/b false\n", (strncmp("farkz", "farks", 5) <= 0) ? "true" : "false");
-    printf("Character81:  %5s s/b true\n", (strncmp("topnat", "topcat", 6) >= 0) ? "true" : "false");
-    printf("Character82:  %5s s/b true\n", (strncmp("topcat", "topcat", 6) >= 0) ? "true" : "false");
-    printf("Character83:  %5s s/b false\n", (strncmp("topcat", "topzat", 6) >= 0) ? "true" : "false");
+    printf("Character56:  %5.5s s/b true\n", ('q' == 'q') ? "true" : "false");
+    printf("Character57:  %5.5s s/b false\n", ('r' == 'q') ? "true" : "false");
+    printf("Character58:  %5.5s s/b true\n", ('b' < 't') ? "true" : "false");
+    printf("Character59:  %5.5s s/b false\n", ('g' < 'c') ? "true" : "false");
+    printf("Character60:  %5.5s s/b true\n", ('f' > 'e') ? "true" : "false");
+    printf("Character61:  %5.5s s/b false\n", ('f' > 'g') ? "true" : "false");
+    printf("Character62:  %5.5s s/b true\n", ('h' != 'l') ? "true" : "false");
+    printf("Character63:  %5.5s s/b false\n", ('i' != 'i') ? "true" : "false");
+    printf("Character64:  %5.5s s/b true\n", ('v' <= 'y') ? "true" : "false");
+    printf("Character65:  %5.5s s/b true\n", ('y' <= 'y') ? "true" : "false");
+    printf("Character66:  %5.5s s/b false\n", ('z' <= 'y') ? "true" : "false");
+    printf("Character67:  %5.5s s/b true\n", ('l' >= 'b') ? "true" : "false");
+    printf("Character68:  %5.5s s/b true\n", ('l' >= 'l') ? "true" : "false");
+    printf("Character69:  %5.5s s/b false\n", ('l' >= 'm') ? "true" : "false");
+    printf("Character70:  %5.5s s/b true\n", (strncmp("finnork", "finnork", 7) == 0) ? "true" : "false");
+    printf("Character71:  %5.5s s/b false\n", (strncmp("finoork", "finnork", 7) == 0) ? "true" : "false");
+    printf("Character72:  %5.5s s/b true\n", (strncmp("oliab", "olibb", 5) < 0) ? "true" : "false");
+    printf("Character73:  %5.5s s/b false\n", (strncmp("olibb", "oliab", 5) < 0) ? "true" : "false");
+    printf("Character74:  %5.5s s/b true\n", (strncmp("olibb", "oliab", 5) > 0) ? "true" : "false");
+    printf("Character75:  %5.5s s/b false\n", (strncmp("oliab", "olibb", 5) > 0) ? "true" : "false");
+    printf("Character76:  %5.5s s/b true\n", (strncmp("fark ", "farks", 5) != 0) ? "true" : "false");
+    printf("Character77:  %5.5s s/b false\n", (strncmp("farks", "farks", 5) != 0) ? "true" : "false");
+    printf("Character78:  %5.5s s/b true\n", (strncmp("farka", "farkz", 5) <= 0) ? "true" : "false");
+    printf("Character79:  %5.5s s/b true\n", (strncmp("farks", "farks", 5) <= 0) ? "true" : "false");
+    printf("Character80:  %5.5s s/b false\n", (strncmp("farkz", "farks", 5) <= 0) ? "true" : "false");
+    printf("Character81:  %5.5s s/b true\n", (strncmp("topnat", "topcat", 6) >= 0) ? "true" : "false");
+    printf("Character82:  %5.5s s/b true\n", (strncmp("topcat", "topcat", 6) >= 0) ? "true" : "false");
+    printf("Character83:  %5.5s s/b false\n", (strncmp("topcat", "topzat", 6) >= 0) ? "true" : "false");
     printf("Character84:  this is a string s/b this is a string\n");
     printf("Character85:  v s/b v\n");
     printf("Character86:  \n");
     { long _forlim = 1;
     for (i = 15; i >= _forlim; i--) {
 
-        printf("hello, world\n");
+        printf("%*.*s\n", (int)(i), (int)(i), "hello, world");
 
     }
     }
@@ -1793,74 +1793,74 @@ int main(void)
     printf("h\n");
 
     printf("Character88: \n");
-    printf("%5s ", (('0' + 1) == '1') ? "true" : "false");
-    printf("%5s ", (('1' + 1) == '2') ? "true" : "false");
-    printf("%5s ", (('2' + 1) == '3') ? "true" : "false");
-    printf("%5s ", (('3' + 1) == '4') ? "true" : "false");
-    printf("%5s ", (('4' + 1) == '5') ? "true" : "false");
-    printf("%5s ", (('5' + 1) == '6') ? "true" : "false");
-    printf("%5s ", (('6' + 1) == '7') ? "true" : "false");
-    printf("%5s ", (('7' + 1) == '8') ? "true" : "false");
-    printf("%5s \n", (('8' + 1) == '9') ? "true" : "false");
+    printf("%5.5s ", (('0' + 1) == '1') ? "true" : "false");
+    printf("%5.5s ", (('1' + 1) == '2') ? "true" : "false");
+    printf("%5.5s ", (('2' + 1) == '3') ? "true" : "false");
+    printf("%5.5s ", (('3' + 1) == '4') ? "true" : "false");
+    printf("%5.5s ", (('4' + 1) == '5') ? "true" : "false");
+    printf("%5.5s ", (('5' + 1) == '6') ? "true" : "false");
+    printf("%5.5s ", (('6' + 1) == '7') ? "true" : "false");
+    printf("%5.5s ", (('7' + 1) == '8') ? "true" : "false");
+    printf("%5.5s \n", (('8' + 1) == '9') ? "true" : "false");
     printf("s/b\n");
     printf(" true  true  true  true  true  true  true  true  true\n");
 
     printf("Character89:\n");
-    printf("%5s ", ('a' < 'b') ? "true" : "false");
-    printf("%5s ", ('b' < 'c') ? "true" : "false");
-    printf("%5s ", ('c' < 'd') ? "true" : "false");
-    printf("%5s ", ('d' < 'e') ? "true" : "false");
-    printf("%5s ", ('e' < 'f') ? "true" : "false");
-    printf("%5s ", ('f' < 'g') ? "true" : "false");
-    printf("%5s ", ('g' < 'h') ? "true" : "false");
-    printf("%5s ", ('h' < 'i') ? "true" : "false");
-    printf("%5s ", ('i' < 'j') ? "true" : "false");
-    printf("%5s \n", ('j' < 'k') ? "true" : "false");
-    printf("%5s ", ('k' < 'l') ? "true" : "false");
-    printf("%5s ", ('l' < 'm') ? "true" : "false");
-    printf("%5s ", ('m' < 'n') ? "true" : "false");
-    printf("%5s ", ('n' < 'o') ? "true" : "false");
-    printf("%5s ", ('o' < 'p') ? "true" : "false");
-    printf("%5s ", ('p' < 'q') ? "true" : "false");
-    printf("%5s ", ('q' < 'r') ? "true" : "false");
-    printf("%5s ", ('r' < 's') ? "true" : "false");
-    printf("%5s ", ('s' < 't') ? "true" : "false");
-    printf("%5s \n", ('t' < 'u') ? "true" : "false");
-    printf("%5s ", ('u' < 'v') ? "true" : "false");
-    printf("%5s ", ('v' < 'w') ? "true" : "false");
-    printf("%5s ", ('w' < 'x') ? "true" : "false");
-    printf("%5s ", ('x' < 'y') ? "true" : "false");
-    printf("%5s \n", ('y' < 'z') ? "true" : "false");
+    printf("%5.5s ", ('a' < 'b') ? "true" : "false");
+    printf("%5.5s ", ('b' < 'c') ? "true" : "false");
+    printf("%5.5s ", ('c' < 'd') ? "true" : "false");
+    printf("%5.5s ", ('d' < 'e') ? "true" : "false");
+    printf("%5.5s ", ('e' < 'f') ? "true" : "false");
+    printf("%5.5s ", ('f' < 'g') ? "true" : "false");
+    printf("%5.5s ", ('g' < 'h') ? "true" : "false");
+    printf("%5.5s ", ('h' < 'i') ? "true" : "false");
+    printf("%5.5s ", ('i' < 'j') ? "true" : "false");
+    printf("%5.5s \n", ('j' < 'k') ? "true" : "false");
+    printf("%5.5s ", ('k' < 'l') ? "true" : "false");
+    printf("%5.5s ", ('l' < 'm') ? "true" : "false");
+    printf("%5.5s ", ('m' < 'n') ? "true" : "false");
+    printf("%5.5s ", ('n' < 'o') ? "true" : "false");
+    printf("%5.5s ", ('o' < 'p') ? "true" : "false");
+    printf("%5.5s ", ('p' < 'q') ? "true" : "false");
+    printf("%5.5s ", ('q' < 'r') ? "true" : "false");
+    printf("%5.5s ", ('r' < 's') ? "true" : "false");
+    printf("%5.5s ", ('s' < 't') ? "true" : "false");
+    printf("%5.5s \n", ('t' < 'u') ? "true" : "false");
+    printf("%5.5s ", ('u' < 'v') ? "true" : "false");
+    printf("%5.5s ", ('v' < 'w') ? "true" : "false");
+    printf("%5.5s ", ('w' < 'x') ? "true" : "false");
+    printf("%5.5s ", ('x' < 'y') ? "true" : "false");
+    printf("%5.5s \n", ('y' < 'z') ? "true" : "false");
     printf("s/b\n");
     printf(" true  true  true  true  true  true  true  true  true  true\n");
     printf(" true  true  true  true  true  true  true  true  true  true\n");
     printf(" true  true  true  true  true\n");
     printf("Character90:\n");
-    printf("%5s ", ('A' < 'B') ? "true" : "false");
-    printf("%5s ", ('B' < 'C') ? "true" : "false");
-    printf("%5s ", ('C' < 'D') ? "true" : "false");
-    printf("%5s ", ('D' < 'E') ? "true" : "false");
-    printf("%5s ", ('E' < 'F') ? "true" : "false");
-    printf("%5s ", ('F' < 'G') ? "true" : "false");
-    printf("%5s ", ('G' < 'H') ? "true" : "false");
-    printf("%5s ", ('H' < 'I') ? "true" : "false");
-    printf("%5s ", ('I' < 'J') ? "true" : "false");
-    printf("%5s \n", ('J' < 'K') ? "true" : "false");
-    printf("%5s ", ('K' < 'L') ? "true" : "false");
-    printf("%5s ", ('L' < 'M') ? "true" : "false");
-    printf("%5s ", ('M' < 'N') ? "true" : "false");
-    printf("%5s ", ('N' < 'O') ? "true" : "false");
-    printf("%5s ", ('O' < 'P') ? "true" : "false");
-    printf("%5s ", ('P' < 'Q') ? "true" : "false");
-    printf("%5s ", ('Q' < 'R') ? "true" : "false");
-    printf("%5s ", ('R' < 'S') ? "true" : "false");
-    printf("%5s ", ('S' < 'T') ? "true" : "false");
-    printf("%5s \n", ('T' < 'U') ? "true" : "false");
-    printf("%5s ", ('U' < 'V') ? "true" : "false");
-    printf("%5s ", ('V' < 'W') ? "true" : "false");
-    printf("%5s ", ('W' < 'X') ? "true" : "false");
-    printf("%5s ", ('X' < 'Y') ? "true" : "false");
-    printf("%5s \n", ('Y' < 'Z') ? "true" : "false");
+    printf("%5.5s ", ('A' < 'B') ? "true" : "false");
+    printf("%5.5s ", ('B' < 'C') ? "true" : "false");
+    printf("%5.5s ", ('C' < 'D') ? "true" : "false");
+    printf("%5.5s ", ('D' < 'E') ? "true" : "false");
+    printf("%5.5s ", ('E' < 'F') ? "true" : "false");
+    printf("%5.5s ", ('F' < 'G') ? "true" : "false");
+    printf("%5.5s ", ('G' < 'H') ? "true" : "false");
+    printf("%5.5s ", ('H' < 'I') ? "true" : "false");
+    printf("%5.5s ", ('I' < 'J') ? "true" : "false");
+    printf("%5.5s \n", ('J' < 'K') ? "true" : "false");
+    printf("%5.5s ", ('K' < 'L') ? "true" : "false");
+    printf("%5.5s ", ('L' < 'M') ? "true" : "false");
+    printf("%5.5s ", ('M' < 'N') ? "true" : "false");
+    printf("%5.5s ", ('N' < 'O') ? "true" : "false");
+    printf("%5.5s ", ('O' < 'P') ? "true" : "false");
+    printf("%5.5s ", ('P' < 'Q') ? "true" : "false");
+    printf("%5.5s ", ('Q' < 'R') ? "true" : "false");
+    printf("%5.5s ", ('R' < 'S') ? "true" : "false");
+    printf("%5.5s ", ('S' < 'T') ? "true" : "false");
+    printf("%5.5s \n", ('T' < 'U') ? "true" : "false");
+    printf("%5.5s ", ('U' < 'V') ? "true" : "false");
+    printf("%5.5s ", ('V' < 'W') ? "true" : "false");
+    printf("%5.5s ", ('W' < 'X') ? "true" : "false");
+    printf("%5.5s ", ('X' < 'Y') ? "true" : "false");
+    printf("%5.5s \n", ('Y' < 'Z') ? "true" : "false");
     printf("s/b\n");
     printf(" true  true  true  true  true  true  true  true  true  true\n");
     printf(" true  true  true  true  true  true  true  true  true  true\n");
@@ -1873,31 +1873,31 @@ int main(void)
     ba = true;
     bb = false;
     bc = true;
-    printf("Boolean1:   %5s %5s s/b true false\n", (ba) ? "true" : "false", (bb) ? "true" : "false");
-    printf("Boolean2:   %5s s/b true\n", ((bb + 1)) ? "true" : "false");
-    printf("Boolean3:   %5s s/b false\n", ((ba - 1)) ? "true" : "false");
+    printf("Boolean1:   %5.5s %5.5s s/b true false\n", (ba) ? "true" : "false", (bb) ? "true" : "false");
+    printf("Boolean2:   %5.5s s/b true\n", ((bb + 1)) ? "true" : "false");
+    printf("Boolean3:   %5.5s s/b false\n", ((ba - 1)) ? "true" : "false");
     printf("Boolean4:   %ld s/b 0\n", (long)(bb));
     printf("Boolean5:   %ld s/b 1\n", (long)(ba));
-    printf("Boolean6:   %5s s/b true\n", (ba == bc) ? "true" : "false");
-    printf("Boolean7:   %5s s/b true\n", (bb == bb) ? "true" : "false");
-    printf("Boolean8:   %5s s/b false\n", (ba == bb) ? "true" : "false");
-    printf("Boolean9:   %5s s/b true\n", (bb < ba) ? "true" : "false");
-    printf("Boolean10:  %5s s/b false\n", (ba < bb) ? "true" : "false");
-    printf("Boolean11:  %5s s/b true\n", (ba > bb) ? "true" : "false");
-    printf("Boolean12:  %5s s/b false\n", (bb > ba) ? "true" : "false");
-    printf("Boolean13:  %5s s/b true\n", (ba != bb) ? "true" : "false");
-    printf("Boolean14:  %5s s/b false\n", (ba != bc) ? "true" : "false");
-    printf("Boolean15:  %5s s/b true\n", (bb <= ba) ? "true" : "false");
-    printf("Boolean16:  %5s s/b true\n", (ba <= bc) ? "true" : "false");
-    printf("Boolean17:  %5s s/b false\n", (ba <= bb) ? "true" : "false");
-    printf("Boolean18:  %5s s/b true\n", (ba >= bb) ? "true" : "false");
-    printf("Boolean19:  %5s s/b true\n", (bb >= bb) ? "true" : "false");
-    printf("Boolean20:  %5s s/b false\n", (bb >= ba) ? "true" : "false");
+    printf("Boolean6:   %5.5s s/b true\n", (ba == bc) ? "true" : "false");
+    printf("Boolean7:   %5.5s s/b true\n", (bb == bb) ? "true" : "false");
+    printf("Boolean8:   %5.5s s/b false\n", (ba == bb) ? "true" : "false");
+    printf("Boolean9:   %5.5s s/b true\n", (bb < ba) ? "true" : "false");
+    printf("Boolean10:  %5.5s s/b false\n", (ba < bb) ? "true" : "false");
+    printf("Boolean11:  %5.5s s/b true\n", (ba > bb) ? "true" : "false");
+    printf("Boolean12:  %5.5s s/b false\n", (bb > ba) ? "true" : "false");
+    printf("Boolean13:  %5.5s s/b true\n", (ba != bb) ? "true" : "false");
+    printf("Boolean14:  %5.5s s/b false\n", (ba != bc) ? "true" : "false");
+    printf("Boolean15:  %5.5s s/b true\n", (bb <= ba) ? "true" : "false");
+    printf("Boolean16:  %5.5s s/b true\n", (ba <= bc) ? "true" : "false");
+    printf("Boolean17:  %5.5s s/b false\n", (ba <= bb) ? "true" : "false");
+    printf("Boolean18:  %5.5s s/b true\n", (ba >= bb) ? "true" : "false");
+    printf("Boolean19:  %5.5s s/b true\n", (bb >= bb) ? "true" : "false");
+    printf("Boolean20:  %5.5s s/b false\n", (bb >= ba) ? "true" : "false");
     printf("Boolean21:  ");
     { long _forlim = true;
     for (ba = false; ba <= _forlim; ba++) {
 
-        printf("%5s ", (ba) ? "true" : "false");
+        printf("%5.5s ", (ba) ? "true" : "false");
         if (ba == _forlim) break;
 
     }
@@ -1907,7 +1907,7 @@ int main(void)
     { long _forlim = false;
     for (bb = true; bb >= _forlim; bb--) {
 
-        printf("%5s ", (bb) ? "true" : "false");
+        printf("%5.5s ", (bb) ? "true" : "false");
         if (bb == _forlim) break;
 
     }
@@ -1915,36 +1915,36 @@ int main(void)
     printf("s/b true false\n");
     printf("Boolean23:  ");
     ba = 1 > 0;
-    printf("%5s s/b true\n", (ba) ? "true" : "false");
+    printf("%5.5s s/b true\n", (ba) ? "true" : "false");
     printf("Boolean24:  ");
     ba = 1 < 0;
-    printf("%5s s/b false\n", (ba) ? "true" : "false");
+    printf("%5.5s s/b false\n", (ba) ? "true" : "false");
 
-    printf("Boolean25:  %5s %5s s/b true false\n", (true) ? "true" : "false", (false) ? "true" : "false");
-    printf("Boolean26:  %5s s/b true\n", ((false + 1)) ? "true" : "false");
-    printf("Boolean27:  %5s s/b false\n", ((true - 1)) ? "true" : "false");
+    printf("Boolean25:  %5.5s %5.5s s/b true false\n", (true) ? "true" : "false", (false) ? "true" : "false");
+    printf("Boolean26:  %5.5s s/b true\n", ((false + 1)) ? "true" : "false");
+    printf("Boolean27:  %5.5s s/b false\n", ((true - 1)) ? "true" : "false");
     printf("Boolean28:  %ld s/b 0\n", (long)(false));
     printf("Boolean29:  %ld s/b 1\n", (long)(true));
-    printf("Boolean30:  %5s s/b true\n", (true == true) ? "true" : "false");
-    printf("Boolean31:  %5s s/b true\n", (false == false) ? "true" : "false");
-    printf("Boolean32:  %5s s/b false\n", (true == false) ? "true" : "false");
-    printf("Boolean33:  %5s s/b true\n", (false < true) ? "true" : "false");
-    printf("Boolean34:  %5s s/b false\n", (true < false) ? "true" : "false");
-    printf("Boolean35:  %5s s/b true\n", (true > false) ? "true" : "false");
-    printf("Boolean36:  %5s s/b false\n", (false > true) ? "true" : "false");
-    printf("Boolean37:  %5s s/b true\n", (true != false) ? "true" : "false");
-    printf("Boolean38:  %5s s/b false\n", (true != true) ? "true" : "false");
-    printf("Boolean39:  %5s s/b true\n", (false <= true) ? "true" : "false");
-    printf("Boolean40:  %5s s/b true\n", (true <= true) ? "true" : "false");
-    printf("Boolean41:  %5s s/b false\n", (true <= false) ? "true" : "false");
-    printf("Boolean42:  %5s s/b true\n", (true >= false) ? "true" : "false");
-    printf("Boolean43:  %5s s/b true\n", (false >= false) ? "true" : "false");
-    printf("Boolean44:  %5s s/b false\n", (false >= true) ? "true" : "false");
+    printf("Boolean30:  %5.5s s/b true\n", (true == true) ? "true" : "false");
+    printf("Boolean31:  %5.5s s/b true\n", (false == false) ? "true" : "false");
+    printf("Boolean32:  %5.5s s/b false\n", (true == false) ? "true" : "false");
+    printf("Boolean33:  %5.5s s/b true\n", (false < true) ? "true" : "false");
+    printf("Boolean34:  %5.5s s/b false\n", (true < false) ? "true" : "false");
+    printf("Boolean35:  %5.5s s/b true\n", (true > false) ? "true" : "false");
+    printf("Boolean36:  %5.5s s/b false\n", (false > true) ? "true" : "false");
+    printf("Boolean37:  %5.5s s/b true\n", (true != false) ? "true" : "false");
+    printf("Boolean38:  %5.5s s/b false\n", (true != true) ? "true" : "false");
+    printf("Boolean39:  %5.5s s/b true\n", (false <= true) ? "true" : "false");
+    printf("Boolean40:  %5.5s s/b true\n", (true <= true) ? "true" : "false");
+    printf("Boolean41:  %5.5s s/b false\n", (true <= false) ? "true" : "false");
+    printf("Boolean42:  %5.5s s/b true\n", (true >= false) ? "true" : "false");
+    printf("Boolean43:  %5.5s s/b true\n", (false >= false) ? "true" : "false");
+    printf("Boolean44:  %5.5s s/b false\n", (false >= true) ? "true" : "false");
     printf("Boolean45:\n");
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
-        printf("%*s\n", (int)(i), (false) ? "true" : "false");
+        printf("%*.*s\n", (int)(i), (int)(i), (false) ? "true" : "false");
 
     }
     }
@@ -1963,7 +1963,7 @@ int main(void)
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
-        printf("%*s\n", (int)(i), (true) ? "true" : "false");
+        printf("%*.*s\n", (int)(i), (int)(i), (true) ? "true" : "false");
 
     }
     }
@@ -1986,25 +1986,25 @@ int main(void)
     sva = wed;
     svb = mon;
     svc = wed;
-    printf("Scalar1:   %5s s/b true\n", ((svb + 1) == tue) ? "true" : "false");
-    printf("Scalar2:   %5s s/b true\n", ((sva - 1) == tue) ? "true" : "false");
+    printf("Scalar1:   %5.5s s/b true\n", ((svb + 1) == tue) ? "true" : "false");
+    printf("Scalar2:   %5.5s s/b true\n", ((sva - 1) == tue) ? "true" : "false");
     printf("Scalar3:   %ld s/b 0\n", (long)(svb));
     printf("Scalar4:   %ld s/b 2\n", (long)(sva));
-    printf("Scalar5:   %5s s/b true\n", (sva == svc) ? "true" : "false");
-    printf("Scalar6:   %5s s/b true\n", (svb == svb) ? "true" : "false");
-    printf("Scalar7:   %5s s/b false\n", (sva == svb) ? "true" : "false");
-    printf("Scalar8:   %5s s/b true\n", (svb < sva) ? "true" : "false");
-    printf("Scalar9:   %5s s/b false\n", (sva < svb) ? "true" : "false");
-    printf("Scalar10:  %5s s/b true\n", (sva > svb) ? "true" : "false");
-    printf("Scalar11:  %5s s/b false\n", (svb > sva) ? "true" : "false");
-    printf("Scalar12:  %5s s/b true\n", (sva != svb) ? "true" : "false");
-    printf("Scalar13:  %5s s/b false\n", (sva != svc) ? "true" : "false");
-    printf("Scalar14:  %5s s/b true\n", (svb <= sva) ? "true" : "false");
-    printf("Scalar15:  %5s s/b true\n", (sva <= svc) ? "true" : "false");
-    printf("Scalar16:  %5s s/b false\n", (sva <= svb) ? "true" : "false");
-    printf("Scalar17:  %5s s/b true\n", (sva >= svb) ? "true" : "false");
-    printf("Scalar18:  %5s s/b true\n", (svb >= svb) ? "true" : "false");
-    printf("Scalar19:  %5s s/b false\n", (svb >= sva) ? "true" : "false");
+    printf("Scalar5:   %5.5s s/b true\n", (sva == svc) ? "true" : "false");
+    printf("Scalar6:   %5.5s s/b true\n", (svb == svb) ? "true" : "false");
+    printf("Scalar7:   %5.5s s/b false\n", (sva == svb) ? "true" : "false");
+    printf("Scalar8:   %5.5s s/b true\n", (svb < sva) ? "true" : "false");
+    printf("Scalar9:   %5.5s s/b false\n", (sva < svb) ? "true" : "false");
+    printf("Scalar10:  %5.5s s/b true\n", (sva > svb) ? "true" : "false");
+    printf("Scalar11:  %5.5s s/b false\n", (svb > sva) ? "true" : "false");
+    printf("Scalar12:  %5.5s s/b true\n", (sva != svb) ? "true" : "false");
+    printf("Scalar13:  %5.5s s/b false\n", (sva != svc) ? "true" : "false");
+    printf("Scalar14:  %5.5s s/b true\n", (svb <= sva) ? "true" : "false");
+    printf("Scalar15:  %5.5s s/b true\n", (sva <= svc) ? "true" : "false");
+    printf("Scalar16:  %5.5s s/b false\n", (sva <= svb) ? "true" : "false");
+    printf("Scalar17:  %5.5s s/b true\n", (sva >= svb) ? "true" : "false");
+    printf("Scalar18:  %5.5s s/b true\n", (svb >= svb) ? "true" : "false");
+    printf("Scalar19:  %5.5s s/b false\n", (svb >= sva) ? "true" : "false");
     printf("Scalar20:  ");
     { long _forlim = sun;
     for (sva = mon; sva <= _forlim; sva++) {
@@ -2024,45 +2024,45 @@ int main(void)
     }
     printf("s/b 6 5 4 3 2 1 0\n");
 
-    printf("Scalar20:   %5s s/b true\n", ((mon + 1) == tue) ? "true" : "false");
-    printf("Scalar21:   %5s s/b true\n", ((fri - 1) == thur) ? "true" : "false");
+    printf("Scalar20:   %5.5s s/b true\n", ((mon + 1) == tue) ? "true" : "false");
+    printf("Scalar21:   %5.5s s/b true\n", ((fri - 1) == thur) ? "true" : "false");
     printf("Scalar22:   %ld s/b 2\n", (long)(wed));
     printf("Scalar23:   %ld s/b 6\n", (long)(sun));
-    printf("Scalar24:   %5s s/b true\n", (thur == thur) ? "true" : "false");
-    printf("Scalar25:   %5s s/b true\n", (fri == fri) ? "true" : "false");
-    printf("Scalar26:   %5s s/b false\n", (tue == wed) ? "true" : "false");
-    printf("Scalar27:   %5s s/b true\n", (mon < wed) ? "true" : "false");
-    printf("Scalar28:   %5s s/b false\n", (fri < fri) ? "true" : "false");
-    printf("Scalar29:  %5s s/b true\n", (sun > sat) ? "true" : "false");
-    printf("Scalar30:  %5s s/b false\n", (fri > sun) ? "true" : "false");
-    printf("Scalar31:  %5s s/b true\n", (thur != tue) ? "true" : "false");
-    printf("Scalar32:  %5s s/b false\n", (wed != wed) ? "true" : "false");
-    printf("Scalar33:  %5s s/b true\n", (mon <= fri) ? "true" : "false");
-    printf("Scalar34:  %5s s/b true\n", (fri <= fri) ? "true" : "false");
-    printf("Scalar35:  %5s s/b false\n", (sat <= fri) ? "true" : "false");
-    printf("Scalar36:  %5s s/b true\n", (fri >= tue) ? "true" : "false");
-    printf("Scalar37:  %5s s/b true\n", (tue >= tue) ? "true" : "false");
-    printf("Scalar38:  %5s s/b false\n", (tue >= sat) ? "true" : "false");
+    printf("Scalar24:   %5.5s s/b true\n", (thur == thur) ? "true" : "false");
+    printf("Scalar25:   %5.5s s/b true\n", (fri == fri) ? "true" : "false");
+    printf("Scalar26:   %5.5s s/b false\n", (tue == wed) ? "true" : "false");
+    printf("Scalar27:   %5.5s s/b true\n", (mon < wed) ? "true" : "false");
+    printf("Scalar28:   %5.5s s/b false\n", (fri < fri) ? "true" : "false");
+    printf("Scalar29:  %5.5s s/b true\n", (sun > sat) ? "true" : "false");
+    printf("Scalar30:  %5.5s s/b false\n", (fri > sun) ? "true" : "false");
+    printf("Scalar31:  %5.5s s/b true\n", (thur != tue) ? "true" : "false");
+    printf("Scalar32:  %5.5s s/b false\n", (wed != wed) ? "true" : "false");
+    printf("Scalar33:  %5.5s s/b true\n", (mon <= fri) ? "true" : "false");
+    printf("Scalar34:  %5.5s s/b true\n", (fri <= fri) ? "true" : "false");
+    printf("Scalar35:  %5.5s s/b false\n", (sat <= fri) ? "true" : "false");
+    printf("Scalar36:  %5.5s s/b true\n", (fri >= tue) ? "true" : "false");
+    printf("Scalar37:  %5.5s s/b true\n", (tue >= tue) ? "true" : "false");
+    printf("Scalar38:  %5.5s s/b false\n", (tue >= sat) ? "true" : "false");
 
     printf("\n");
     printf("******************* Reals ******************************\n");
     printf("\n");
 
-    printf("Real1:   %15g s/b  1.554000e+00\n", 1.554);
-    printf("Real2:   %15g s/b  3.340000e-03\n", 3.339999999999999e-3);
-    printf("Real3:   %15g s/b  3.340000e-24\n", 3.34e-24);
-    printf("Real4:   %15g s/b  4.000000e-45\n", 4.0e-45);
-    printf("Real5:   %15g s/b -5.565000e+00\n", - 5.565);
-    printf("Real6:   %15g s/b -9.440000e-03\n", - 9.440000000000001e-3);
-    printf("Real7:   %15g s/b -6.364000e+29\n", - 6.363999999999998e+29);
-    printf("Real8:   %15g s/b -2.000000e-14\n", - 2.0e-14);
+    printf("Real1:   %15.8e s/b  1.554000e+00\n", 1.554);
+    printf("Real2:   %15.8e s/b  3.340000e-03\n", 3.339999999999999e-3);
+    printf("Real3:   %15.8e s/b  3.340000e-24\n", 3.34e-24);
+    printf("Real4:   %15.8e s/b  4.000000e-45\n", 4.0e-45);
+    printf("Real5:   %15.8e s/b -5.565000e+00\n", - 5.565);
+    printf("Real6:   %15.8e s/b -9.440000e-03\n", - 9.440000000000001e-3);
+    printf("Real7:   %15.8e s/b -6.364000e+29\n", - 6.363999999999998e+29);
+    printf("Real8:   %15.8e s/b -2.000000e-14\n", - 2.0e-14);
     printf("Real9:\n");
     printf("         11111111112222222222333333333344444444445\n");
     printf("12345678901234567890123456789012345678901234567890\n");
     { long _forlim = 14;
     for (i = 1; i <= _forlim; i++) {
 
-        printf("%*g\n", (int)(i), 1.234567890123456);
+        printf("%*.*e\n", (int)((i) >= 8 ? (i) : 8), (int)((i) >= 8 ? (i) - 7 : 1), 1.234567890123456);
 
     }
     }
@@ -2110,161 +2110,161 @@ int main(void)
     rb = 9.836699999999998e+2;
     rc = rb;
     rd = 3.443e-1;
-    printf("Real11:  %15g s/b  1.418900e+03\n", ra + rb);
-    printf("Rea112:  %15g s/b  5.484399e+02\n", rb - ra);
-    printf("Real13:  %15g s/b  4.281227e+05\n", ra * rb);
-    printf("Real14:  %15g s/b  2.260115e+00\n", rb / ra);
-    printf("Real15:  %5s s/b true\n", (rc == rb) ? "true" : "false");
-    printf("Real16:  %5s s/b false\n", (ra == rb) ? "true" : "false");
-    printf("Real17:  %5s s/b true\n", (ra < rb) ? "true" : "false");
-    printf("Real18:  %5s s/b false\n", (rb < ra) ? "true" : "false");
-    printf("Real19:  %5s s/b true\n", (rb > ra) ? "true" : "false");
-    printf("Real20:  %5s s/b false\n", (ra > rb) ? "true" : "false");
-    printf("Real21:  %5s s/b true\n", (ra != rb) ? "true" : "false");
-    printf("Real22:  %5s s/b false\n", (rb != rc) ? "true" : "false");
-    printf("Real23:  %5s s/b true\n", (ra <= rb) ? "true" : "false");
-    printf("Real24:  %5s s/b true\n", (rc <= rb) ? "true" : "false");
-    printf("Real25:  %5s s/b false\n", (rb <= ra) ? "true" : "false");
-    printf("Real26:  %5s s/b true\n", (rb >= ra) ? "true" : "false");
-    printf("Real27:  %5s s/b true\n", (rb >= rc) ? "true" : "false");
-    printf("Real28:  %5s s/b false\n", (ra >= rb) ? "true" : "false");
-    printf("Real29:  %15g s/b  4.35230e+02\n", fabs(ra));
-    printf("Real30:  %15g s/b  1.89425e+05\n", ((ra)*(ra)));
-    printf("Real31:  %15g s/b  3.13635e+01\n", sqrt(rb));
-    printf("Real32:  %15g s/b -3.44290e-01\n", sin(rb));
-    printf("Real33:  %15g s/b  1.56850e+00\n", atan(ra));
-    printf("Real34:  %15g s/b  1.41100e+00\n", exp(rd));
-    printf("Real35:  %15g s/b  6.07587e+00\n", log(ra));
+    printf("Real11:  %15.8e s/b  1.418900e+03\n", ra + rb);
+    printf("Rea112:  %15.8e s/b  5.484399e+02\n", rb - ra);
+    printf("Real13:  %15.8e s/b  4.281227e+05\n", ra * rb);
+    printf("Real14:  %15.8e s/b  2.260115e+00\n", rb / ra);
+    printf("Real15:  %5.5s s/b true\n", (rc == rb) ? "true" : "false");
+    printf("Real16:  %5.5s s/b false\n", (ra == rb) ? "true" : "false");
+    printf("Real17:  %5.5s s/b true\n", (ra < rb) ? "true" : "false");
+    printf("Real18:  %5.5s s/b false\n", (rb < ra) ? "true" : "false");
+    printf("Real19:  %5.5s s/b true\n", (rb > ra) ? "true" : "false");
+    printf("Real20:  %5.5s s/b false\n", (ra > rb) ? "true" : "false");
+    printf("Real21:  %5.5s s/b true\n", (ra != rb) ? "true" : "false");
+    printf("Real22:  %5.5s s/b false\n", (rb != rc) ? "true" : "false");
+    printf("Real23:  %5.5s s/b true\n", (ra <= rb) ? "true" : "false");
+    printf("Real24:  %5.5s s/b true\n", (rc <= rb) ? "true" : "false");
+    printf("Real25:  %5.5s s/b false\n", (rb <= ra) ? "true" : "false");
+    printf("Real26:  %5.5s s/b true\n", (rb >= ra) ? "true" : "false");
+    printf("Real27:  %5.5s s/b true\n", (rb >= rc) ? "true" : "false");
+    printf("Real28:  %5.5s s/b false\n", (ra >= rb) ? "true" : "false");
+    printf("Real29:  %15.8e s/b  4.35230e+02\n", fabs(ra));
+    printf("Real30:  %15.8e s/b  1.89425e+05\n", ((ra)*(ra)));
+    printf("Real31:  %15.8e s/b  3.13635e+01\n", sqrt(rb));
+    printf("Real32:  %15.8e s/b -3.44290e-01\n", sin(rb));
+    printf("Real33:  %15.8e s/b  1.56850e+00\n", atan(ra));
+    printf("Real34:  %15.8e s/b  1.41100e+00\n", exp(rd));
+    printf("Real35:  %15.8e s/b  6.07587e+00\n", log(ra));
     printf("Real36:  %ld s/b 435\n", (long)((long)(ra)));
     printf("Real37:  %ld s/b 984\n", (long)(lround(rb)));
     printf("Real38:  %ld s/b 435\n", (long)(lround(ra)));
 
-    printf("Real39:  %15g s/b  1.278052e+03\n", 3.44939e+2 + 9.331129999999999e+2);
-    printf("Real40:  %15g s/b  2.389460e+02\n", 8.838849999999998e+2 - 6.449389999999999e+2);
-    printf("Real41:  %15g s/b  1.047202e+05\n", 7.5474e+2 * 1.387499999999999e+2);
-    printf("Real42:  %15g s/b  7.259598e-03\n", 6.342999999999999e+2 / 8.737399000000001e+4);
-    printf("Real43:  %5s s/b true\n", (7.743999999999999e+1 == 7.743999999999999e+1) ? "true" : "false");
-    printf("Real44:  %5s s/b false\n", (7.339e+2 == 9.592e+2) ? "true" : "false");
-    printf("Real45:  %5s s/b true\n", (8.8322e+2 < 8.383329999999999e+3) ? "true" : "false");
-    printf("Real46:  %5s s/b false\n", (4.75322e+2 < 2.3493e+2) ? "true" : "false");
-    printf("Real47:  %5s s/b true\n", (7.3743e+3 > 6.442339999999999e+3) ? "true" : "false");
-    printf("Real48:  %5s s/b false\n", (9.85562e+2 > 1.00195e+3) ? "true" : "false");
-    printf("Real49:  %5s s/b true\n", (3.011e+1 != 9.384400000000001e+2) ? "true" : "false");
-    printf("Real50:  %5s s/b false\n", (1.233 != 1.233) ? "true" : "false");
-    printf("Real51:  %5s s/b true\n", (8.484002e+3 <= 9.344003e+3) ? "true" : "false");
-    printf("Real52:  %5s s/b true\n", (9.109999999999999 <= 9.109999999999999) ? "true" : "false");
-    printf("Real53:  %5s s/b false\n", (9.3323e+1 <= 9.032299999999999e+1) ? "true" : "false");
-    printf("Real54:  %5s s/b true\n", (6.543439999999999e+3 >= 5.883329999999999e+3) ? "true" : "false");
-    printf("Real55:  %5s s/b true\n", (3.24703e+3 >= 3.24703e+3) ? "true" : "false");
-    printf("Real56:  %5s s/b false\n", (2.834322e+4 >= 3.004445e+4) ? "true" : "false");
-    printf("Real57:  %15g s/b  3.493000e+01\n", fabs(3.492999999999999e+1));
-    printf("Real58:  %15g s/b  5.475600e+00\n", ((2.339999999999999)*(2.339999999999999)));
-    printf("Real59:  %15g s/b  9.723333e+01\n", sqrt(9.454319999999999e+3));
-    printf("Real60:  %15g s/b  3.311461e-01\n", sin(3.421999999999999e+1));
-    printf("Real61:  %15g s/b  1.567883e+00\n", atan(3.431999999999999e+2));
-    printf("Real62:  %15g s/b  1.393753e+00\n", exp(3.32e-1));
-    printf("Real63:  %15g s/b  4.421488e+00\n", log(8.321999999999999e+1));
+    printf("Real39:  %15.8e s/b  1.278052e+03\n", 3.44939e+2 + 9.331129999999999e+2);
+    printf("Real40:  %15.8e s/b  2.389460e+02\n", 8.838849999999998e+2 - 6.449389999999999e+2);
+    printf("Real41:  %15.8e s/b  1.047202e+05\n", 7.5474e+2 * 1.387499999999999e+2);
+    printf("Real42:  %15.8e s/b  7.259598e-03\n", 6.342999999999999e+2 / 8.737399000000001e+4);
+    printf("Real43:  %5.5s s/b true\n", (7.743999999999999e+1 == 7.743999999999999e+1) ? "true" : "false");
+    printf("Real44:  %5.5s s/b false\n", (7.339e+2 == 9.592e+2) ? "true" : "false");
+    printf("Real45:  %5.5s s/b true\n", (8.8322e+2 < 8.383329999999999e+3) ? "true" : "false");
+    printf("Real46:  %5.5s s/b false\n", (4.75322e+2 < 2.3493e+2) ? "true" : "false");
+    printf("Real47:  %5.5s s/b true\n", (7.3743e+3 > 6.442339999999999e+3) ? "true" : "false");
+    printf("Real48:  %5.5s s/b false\n", (9.85562e+2 > 1.00195e+3) ? "true" : "false");
+    printf("Real49:  %5.5s s/b true\n", (3.011e+1 != 9.384400000000001e+2) ? "true" : "false");
+    printf("Real50:  %5.5s s/b false\n", (1.233 != 1.233) ? "true" : "false");
+    printf("Real51:  %5.5s s/b true\n", (8.484002e+3 <= 9.344003e+3) ? "true" : "false");
+    printf("Real52:  %5.5s s/b true\n", (9.109999999999999 <= 9.109999999999999) ? "true" : "false");
+    printf("Real53:  %5.5s s/b false\n", (9.3323e+1 <= 9.032299999999999e+1) ? "true" : "false");
+    printf("Real54:  %5.5s s/b true\n", (6.543439999999999e+3 >= 5.883329999999999e+3) ? "true" : "false");
+    printf("Real55:  %5.5s s/b true\n", (3.24703e+3 >= 3.24703e+3) ? "true" : "false");
+    printf("Real56:  %5.5s s/b false\n", (2.834322e+4 >= 3.004445e+4) ? "true" : "false");
+    printf("Real57:  %15.8e s/b  3.493000e+01\n", fabs(3.492999999999999e+1));
+    printf("Real58:  %15.8e s/b  5.475600e+00\n", ((2.339999999999999)*(2.339999999999999)));
+    printf("Real59:  %15.8e s/b  9.723333e+01\n", sqrt(9.454319999999999e+3));
+    printf("Real60:  %15.8e s/b  3.311461e-01\n", sin(3.421999999999999e+1));
+    printf("Real61:  %15.8e s/b  1.567883e+00\n", atan(3.431999999999999e+2));
+    printf("Real62:  %15.8e s/b  1.393753e+00\n", exp(3.32e-1));
+    printf("Real63:  %15.8e s/b  4.421488e+00\n", log(8.321999999999999e+1));
     printf("Real64:  %ld s/b 24\n", (long)((long)(2.4344e+1)));
     printf("Real65:  %ld s/b 75\n", (long)(lround(7.456e+1)));
     printf("Real66:  %ld s/b 83\n", (long)(lround(8.323999999999999e+1)));
-    printf("Real67:  %15g s/b  4.333000e+01\n", rcnst);
+    printf("Real67:  %15.8e s/b  4.333000e+01\n", rcnst);
 
     ra = - 7.342e+2;
     rb = - 7.63452e+3;
     rc = ra;
     rd = 1.03454e+3;
     re = - 3.8483e-1;
-    printf("Real68:  %15g s/b  3.003400e+02\n", ra + rd);
-    printf("Real69:  %15g s/b  3.003400e+02\n", rd + ra);
-    printf("Real70:  %15g s/b -6.599980e+03\n", rb + rd);
-    printf("Real71:  %15g s/b -8.368720e+03\n", ra + rb);
-    printf("Real72:  %15g s/b  1.768740e+03\n", rd - ra);
-    printf("Real73:  %15g s/b -8.669061e+03\n", rb - rd);
-    printf("Real74:  %15g s/b -6.900320e+03\n", rb - ra);
-    printf("Real75:  %15g s/b -7.595593e+05\n", rd * ra);
-    printf("Real76:  %15g s/b -7.595593e+05\n", ra * rd);
-    printf("Real77:  %15g s/b  5.605265e+06\n", ra * rb);
-    printf("Real78:  %15g s/b -1.409071e+00\n", rd / ra);
-    printf("Real79:  %15g s/b -7.379627e+00\n", rb / rd);
-    printf("Real80:  %15g s/b  1.039842e+01\n", rb / ra);
-    printf("Real81:  %5s s/b true\n", (ra == rc) ? "true" : "false");
-    printf("Real82:  %5s s/b false\n", (ra == rb) ? "true" : "false");
-    printf("Real83:  %5s s/b true\n", (ra != rb) ? "true" : "false");
-    printf("Real84:  %5s s/b false\n", (ra != rc) ? "true" : "false");
-    printf("Real85:  %5s s/b true\n", (ra < rd) ? "true" : "false");
-    printf("Real86:  %5s s/b true\n", (rb < ra) ? "true" : "false");
-    printf("Real87:  %5s s/b false\n", (rd < ra) ? "true" : "false");
-    printf("Real88:  %5s s/b false\n", (ra < rb) ? "true" : "false");
-    printf("Real89:  %5s s/b true\n", (rd > ra) ? "true" : "false");
-    printf("Real90:  %5s s/b true\n", (ra > rb) ? "true" : "false");
-    printf("Real91:  %5s s/b false\n", (ra > rd) ? "true" : "false");
-    printf("Real92:  %5s s/b false\n", (rb > ra) ? "true" : "false");
-    printf("Real93:  %5s s/b true\n", (ra <= rd) ? "true" : "false");
-    printf("Real94:  %5s s/b true\n", (rb <= ra) ? "true" : "false");
-    printf("Real95:  %5s s/b true\n", (ra <= rc) ? "true" : "false");
-    printf("Real96:  %5s s/b false\n", (rd <= ra) ? "true" : "false");
-    printf("Real97:  %5s s/b false\n", (ra <= rb) ? "true" : "false");
-    printf("Real98:  %5s s/b true\n", (rd >= ra) ? "true" : "false");
-    printf("Real99:  %5s s/b true\n", (ra >= rb) ? "true" : "false");
-    printf("Real100: %5s s/b true\n", (ra >= rc) ? "true" : "false");
-    printf("Real101: %5s s/b false\n", (ra >= rd) ? "true" : "false");
-    printf("Real102: %5s s/b false\n", (rb >= ra) ? "true" : "false");
-    printf("Real103: %15g s/b  7.34200e+02\n", fabs(ra));
-    printf("Real104: %15g s/b  5.39050e+05\n", ((ra)*(ra)));
-    printf("Real105: %15g s/b -4.34850e-01\n", sin(rb));
-    printf("Real106: %15g s/b -1.56943e+00\n", atan(ra));
-    printf("Real107: %15g s/b  6.80566e-01\n", exp(re));
+    printf("Real68:  %15.8e s/b  3.003400e+02\n", ra + rd);
+    printf("Real69:  %15.8e s/b  3.003400e+02\n", rd + ra);
+    printf("Real70:  %15.8e s/b -6.599980e+03\n", rb + rd);
+    printf("Real71:  %15.8e s/b -8.368720e+03\n", ra + rb);
+    printf("Real72:  %15.8e s/b  1.768740e+03\n", rd - ra);
+    printf("Real73:  %15.8e s/b -8.669061e+03\n", rb - rd);
+    printf("Real74:  %15.8e s/b -6.900320e+03\n", rb - ra);
+    printf("Real75:  %15.8e s/b -7.595593e+05\n", rd * ra);
+    printf("Real76:  %15.8e s/b -7.595593e+05\n", ra * rd);
+    printf("Real77:  %15.8e s/b  5.605265e+06\n", ra * rb);
+    printf("Real78:  %15.8e s/b -1.409071e+00\n", rd / ra);
+    printf("Real79:  %15.8e s/b -7.379627e+00\n", rb / rd);
+    printf("Real80:  %15.8e s/b  1.039842e+01\n", rb / ra);
+    printf("Real81:  %5.5s s/b true\n", (ra == rc) ? "true" : "false");
+    printf("Real82:  %5.5s s/b false\n", (ra == rb) ? "true" : "false");
+    printf("Real83:  %5.5s s/b true\n", (ra != rb) ? "true" : "false");
+    printf("Real84:  %5.5s s/b false\n", (ra != rc) ? "true" : "false");
+    printf("Real85:  %5.5s s/b true\n", (ra < rd) ? "true" : "false");
+    printf("Real86:  %5.5s s/b true\n", (rb < ra) ? "true" : "false");
+    printf("Real87:  %5.5s s/b false\n", (rd < ra) ? "true" : "false");
+    printf("Real88:  %5.5s s/b false\n", (ra < rb) ? "true" : "false");
+    printf("Real89:  %5.5s s/b true\n", (rd > ra) ? "true" : "false");
+    printf("Real90:  %5.5s s/b true\n", (ra > rb) ? "true" : "false");
+    printf("Real91:  %5.5s s/b false\n", (ra > rd) ? "true" : "false");
+    printf("Real92:  %5.5s s/b false\n", (rb > ra) ? "true" : "false");
+    printf("Real93:  %5.5s s/b true\n", (ra <= rd) ? "true" : "false");
+    printf("Real94:  %5.5s s/b true\n", (rb <= ra) ? "true" : "false");
+    printf("Real95:  %5.5s s/b true\n", (ra <= rc) ? "true" : "false");
+    printf("Real96:  %5.5s s/b false\n", (rd <= ra) ? "true" : "false");
+    printf("Real97:  %5.5s s/b false\n", (ra <= rb) ? "true" : "false");
+    printf("Real98:  %5.5s s/b true\n", (rd >= ra) ? "true" : "false");
+    printf("Real99:  %5.5s s/b true\n", (ra >= rb) ? "true" : "false");
+    printf("Real100: %5.5s s/b true\n", (ra >= rc) ? "true" : "false");
+    printf("Real101: %5.5s s/b false\n", (ra >= rd) ? "true" : "false");
+    printf("Real102: %5.5s s/b false\n", (rb >= ra) ? "true" : "false");
+    printf("Real103: %15.8e s/b  7.34200e+02\n", fabs(ra));
+    printf("Real104: %15.8e s/b  5.39050e+05\n", ((ra)*(ra)));
+    printf("Real105: %15.8e s/b -4.34850e-01\n", sin(rb));
+    printf("Real106: %15.8e s/b -1.56943e+00\n", atan(ra));
+    printf("Real107: %15.8e s/b  6.80566e-01\n", exp(re));
     printf("Real108: %15ld s/b -734\n", (long)((long)(ra)));
     printf("Real109: %15ld s/b -7635\n", (long)(lround(rb)));
     printf("Real110: %15ld s/b -734\n", (long)(lround(ra)));
 
-    printf("Real111: %15g s/b  1.510000e+01\n", 4.593399999999999e+1 + (- 3.0834e+1));
-    printf("Real112: %15g s/b  4.513300e+01\n", - 2.573699999999999e+1 + 7.087e+1);
-    printf("Real113: %15g s/b -3.864000e+01\n", - 6.262999999999999e+1 + 2.399e+1);
-    printf("Real114: %15g s/b -3.658100e+01\n", - 2.0733e+1 + (- 1.584799999999999e+1));
-    printf("Real115: %15g s/b  3.554800e+01\n", 2.077399999999999e+1 - (- 1.477399999999999e+1));
-    printf("Real116: %15g s/b -4.939840e+01\n", - 3.4523e+1 - 1.48754e+1);
-    printf("Real117: %15g s/b -4.400100e+01\n", - 5.6664e+1 - (- 1.266299999999999e+1));
-    printf("Real118: %15g s/b -2.641223e+01\n", 5.663 * (- 4.663999999999999));
-    printf("Real119: %15g s/b -1.489041e+02\n", (- 1.862e+1) * 7.996999999999999);
-    printf("Real120: %15g s/b  5.585632e+02\n", (- 4.0552e+1) * (- 1.377399999999999e+1));
-    printf("Real121: %15g s/b -5.220157e+00\n", 3.06632e+1 / (- 5.873999999999999));
-    printf("Real122: %15g s/b -1.772163e+01\n", (- 5.0636e+1) / 2.8573);
-    printf("Real123: %15g s/b  4.274582e+00\n", (- 2.07631e+1) / (- 4.857339999999999));
-    printf("Real124: %5s s/b true\n", (- 5.775 == - 5.775) ? "true" : "false");
-    printf("Real125: %5s s/b false\n", (- 5.6364 == 5.857499999999999) ? "true" : "false");
-    printf("Real126: %5s s/b true\n", (- 2.16385e+1 != - 4.0764e+1) ? "true" : "false");
-    printf("Real127: %5s s/b false\n", (- 2.1772e+1 != - 2.1772e+1) ? "true" : "false");
-    printf("Real128: %5s s/b true\n", (- 3.512 < 5.8467) ? "true" : "false");
-    printf("Real129: %5s s/b true\n", (- 3.264399999999999e+1 < - 2.090739999999999e+1) ? "true" : "false");
-    printf("Real130: %5s s/b false\n", (2.0763e+1 < - 2.0743e+1) ? "true" : "false");
-    printf("Real131: %5s s/b false\n", (- 1.5663e+1 < - 4.0784e+1) ? "true" : "false");
-    printf("Real132: %5s s/b true\n", (7.0766e+1 > - 4.974) ? "true" : "false");
-    printf("Real133: %5s s/b true\n", (- 2.365319999999999e+1 > - 3.4774e+1) ? "true" : "false");
-    printf("Real134: %5s s/b false\n", (- 5.772999999999999 > 5.9874) ? "true" : "false");
-    printf("Real135: %5s s/b false\n", (- 6.0663e+1 > - 5.977999999999999e+1) ? "true" : "false");
-    printf("Real136: %5s s/b true\n", (- 1.254199999999999e+1 <= 4.0848) ? "true" : "false");
-    printf("Real137: %5s s/b true\n", (- 1.48763e+1 <= - 5.084699999999999) ? "true" : "false");
-    printf("Real138: %5s s/b true\n", (- 7.837299999999999 <= - 7.837299999999999) ? "true" : "false");
-    printf("Real139: %5s s/b false\n", (5.4564 <= - 5.4564) ? "true" : "false");
-    printf("Real140: %5s s/b false\n", (- 1.072633e+1 <= - 2.0984e+1) ? "true" : "false");
-    printf("Real141: %5s s/b true\n", (9.833999999999999 >= - 3.938299999999999) ? "true" : "false");
-    printf("Real142: %5s s/b true\n", (- 4.562 >= - 1.074e+1) ? "true" : "false");
-    printf("Real143: %5s s/b true\n", (- 1.362999999999999e+1 >= - 1.362999999999999e+1) ? "true" : "false");
-    printf("Real144: %5s s/b false\n", (- 6.74 >= 6.74) ? "true" : "false");
-    printf("Real145: %5s s/b false\n", (- 2.076229999999999e+1 >= - 1.057399999999999e+1) ? "true" : "false");
-    printf("Real146: %15g s/b  6.823000e+00\n", fabs(- 6.823));
-    printf("Real147  %15g s/b  1.212572e+05\n", ((- 3.4822e+2)*(- 3.4822e+2)));
-    printf("Real148: %15g s/b  9.421146e-01\n", sin(- 7.3322e+2));
-    printf("Real149: %15g s/b -1.570677e+00\n", atan(- 8.387219999999999e+3));
-    printf("Real150: %15g s/b  4.171539e-01\n", exp(- 8.743e-1));
+    printf("Real111: %15.8e s/b  1.510000e+01\n", 4.593399999999999e+1 + (- 3.0834e+1));
+    printf("Real112: %15.8e s/b  4.513300e+01\n", - 2.573699999999999e+1 + 7.087e+1);
+    printf("Real113: %15.8e s/b -3.864000e+01\n", - 6.262999999999999e+1 + 2.399e+1);
+    printf("Real114: %15.8e s/b -3.658100e+01\n", - 2.0733e+1 + (- 1.584799999999999e+1));
+    printf("Real115: %15.8e s/b  3.554800e+01\n", 2.077399999999999e+1 - (- 1.477399999999999e+1));
+    printf("Real116: %15.8e s/b -4.939840e+01\n", - 3.4523e+1 - 1.48754e+1);
+    printf("Real117: %15.8e s/b -4.400100e+01\n", - 5.6664e+1 - (- 1.266299999999999e+1));
+    printf("Real118: %15.8e s/b -2.641223e+01\n", 5.663 * (- 4.663999999999999));
+    printf("Real119: %15.8e s/b -1.489041e+02\n", (- 1.862e+1) * 7.996999999999999);
+    printf("Real120: %15.8e s/b  5.585632e+02\n", (- 4.0552e+1) * (- 1.377399999999999e+1));
+    printf("Real121: %15.8e s/b -5.220157e+00\n", 3.06632e+1 / (- 5.873999999999999));
+    printf("Real122: %15.8e s/b -1.772163e+01\n", (- 5.0636e+1) / 2.8573);
+    printf("Real123: %15.8e s/b  4.274582e+00\n", (- 2.07631e+1) / (- 4.857339999999999));
+    printf("Real124: %5.5s s/b true\n", (- 5.775 == - 5.775) ? "true" : "false");
+    printf("Real125: %5.5s s/b false\n", (- 5.6364 == 5.857499999999999) ? "true" : "false");
+    printf("Real126: %5.5s s/b true\n", (- 2.16385e+1 != - 4.0764e+1) ? "true" : "false");
+    printf("Real127: %5.5s s/b false\n", (- 2.1772e+1 != - 2.1772e+1) ? "true" : "false");
+    printf("Real128: %5.5s s/b true\n", (- 3.512 < 5.8467) ? "true" : "false");
+    printf("Real129: %5.5s s/b true\n", (- 3.264399999999999e+1 < - 2.090739999999999e+1) ? "true" : "false");
+    printf("Real130: %5.5s s/b false\n", (2.0763e+1 < - 2.0743e+1) ? "true" : "false");
+    printf("Real131: %5.5s s/b false\n", (- 1.5663e+1 < - 4.0784e+1) ? "true" : "false");
+    printf("Real132: %5.5s s/b true\n", (7.0766e+1 > - 4.974) ? "true" : "false");
+    printf("Real133: %5.5s s/b true\n", (- 2.365319999999999e+1 > - 3.4774e+1) ? "true" : "false");
+    printf("Real134: %5.5s s/b false\n", (- 5.772999999999999 > 5.9874) ? "true" : "false");
+    printf("Real135: %5.5s s/b false\n", (- 6.0663e+1 > - 5.977999999999999e+1) ? "true" : "false");
+    printf("Real136: %5.5s s/b true\n", (- 1.254199999999999e+1 <= 4.0848) ? "true" : "false");
+    printf("Real137: %5.5s s/b true\n", (- 1.48763e+1 <= - 5.084699999999999) ? "true" : "false");
+    printf("Real138: %5.5s s/b true\n", (- 7.837299999999999 <= - 7.837299999999999) ? "true" : "false");
+    printf("Real139: %5.5s s/b false\n", (5.4564 <= - 5.4564) ? "true" : "false");
+    printf("Real140: %5.5s s/b false\n", (- 1.072633e+1 <= - 2.0984e+1) ? "true" : "false");
+    printf("Real141: %5.5s s/b true\n", (9.833999999999999 >= - 3.938299999999999) ? "true" : "false");
+    printf("Real142: %5.5s s/b true\n", (- 4.562 >= - 1.074e+1) ? "true" : "false");
+    printf("Real143: %5.5s s/b true\n", (- 1.362999999999999e+1 >= - 1.362999999999999e+1) ? "true" : "false");
+    printf("Real144: %5.5s s/b false\n", (- 6.74 >= 6.74) ? "true" : "false");
+    printf("Real145: %5.5s s/b false\n", (- 2.076229999999999e+1 >= - 1.057399999999999e+1) ? "true" : "false");
+    printf("Real146: %15.8e s/b  6.823000e+00\n", fabs(- 6.823));
+    printf("Real147  %15.8e s/b  1.212572e+05\n", ((- 3.4822e+2)*(- 3.4822e+2)));
+    printf("Real148: %15.8e s/b  9.421146e-01\n", sin(- 7.3322e+2));
+    printf("Real149: %15.8e s/b -1.570677e+00\n", atan(- 8.387219999999999e+3));
+    printf("Real150: %15.8e s/b  4.171539e-01\n", exp(- 8.743e-1));
     printf("Real151: %ld s/b -33\n", (long)((long)(- 3.342199999999999e+1)));
     printf("Real152: %ld s/b -843\n", (long)(lround(- 8.432199999999999e+2)));
     printf("Real153: %ld s/b -6244\n", (long)(lround(- 6.243759999999999e+3)));
-    printf("Real154: %15g s/b -8.422000e+01\n", rscst);
-    printf("Real155: %15g s/b  8.422000e+01\n", - rscst);
-    printf("Real156:  %15g s/b -4.333000e+01\n", rscst2);
-    printf("Real157: %15g s/b  8.422000e+01\n", rscst3);
+    printf("Real154: %15.8e s/b -8.422000e+01\n", rscst);
+    printf("Real155: %15.8e s/b  8.422000e+01\n", - rscst);
+    printf("Real156:  %15.8e s/b -4.333000e+01\n", rscst2);
+    printf("Real157: %15.8e s/b  8.422000e+01\n", rscst3);
 
     printf("\n");
     printf("******************* sets ******************************\n");
@@ -2369,20 +2369,20 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sta,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 4), p2c_sadd(_stmp2, 6), p2c_sadd(_stmp2, 8), p2c_sadd(_stmp2, 9), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 4), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 9), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 4), p2c_sadd(_stmp2, 6), p2c_sadd(_stmp2, 8), p2c_sadd(_stmp2, 9), _stmp2)); }
-    printf("Set5:  %5s s/b false\n", (p2c_sequ(sta, stb)) ? "true" : "false");
-    printf("Set6:  %5s s/b true\n", (p2c_sequ(sta, stc)) ? "true" : "false");
-    printf("Set7:  %5s s/b true\n", (!p2c_sequ(sta, stb)) ? "true" : "false");
-    printf("Set8:  %5s s/b false\n", (!p2c_sequ(sta, stc)) ? "true" : "false");
+    printf("Set5:  %5.5s s/b false\n", (p2c_sequ(sta, stb)) ? "true" : "false");
+    printf("Set6:  %5.5s s/b true\n", (p2c_sequ(sta, stc)) ? "true" : "false");
+    printf("Set7:  %5.5s s/b true\n", (!p2c_sequ(sta, stb)) ? "true" : "false");
+    printf("Set8:  %5.5s s/b false\n", (!p2c_sequ(sta, stc)) ? "true" : "false");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sta,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 2), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 7), p2c_sadd(_stmp2, 10), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 10), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 10), p2c_sadd(_stmp2, 6), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(std,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 2), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 7), p2c_sadd(_stmp2, 10), _stmp2)); }
-    printf("Set9:  %5s s/b true\n", (p2c_sinc(sta, stb)) ? "true" : "false");
-    printf("Set10: %5s s/b true\n", (p2c_sinc(std, stb)) ? "true" : "false");
-    printf("Set11: %5s s/b false\n", (p2c_sinc(sta, stc)) ? "true" : "false");
-    printf("Set12: %5s s/b true\n", (p2c_sinc(sta, stb)) ? "true" : "false");
-    printf("Set13: %5s s/b true\n", (p2c_sinc(std, stb)) ? "true" : "false");
-    printf("Set14: %5s s/b false\n", (p2c_sinc(sta, stc)) ? "true" : "false");
+    printf("Set9:  %5.5s s/b true\n", (p2c_sinc(sta, stb)) ? "true" : "false");
+    printf("Set10: %5.5s s/b true\n", (p2c_sinc(std, stb)) ? "true" : "false");
+    printf("Set11: %5.5s s/b false\n", (p2c_sinc(sta, stc)) ? "true" : "false");
+    printf("Set12: %5.5s s/b true\n", (p2c_sinc(sta, stb)) ? "true" : "false");
+    printf("Set13: %5.5s s/b true\n", (p2c_sinc(std, stb)) ? "true" : "false");
+    printf("Set14: %5.5s s/b false\n", (p2c_sinc(sta, stc)) ? "true" : "false");
     printf("Set15: ");
     i = 2;
     x = 4;
@@ -2409,7 +2409,7 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stf,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 2), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 7), _stmp2)); }
     p2c_scpy(stg,stf);
     i = 10;
-    printf("Set16: %5s s/b true\n", (p2c_sisin(5, (p2c_sclr(_stmp2), p2c_radd(_stmp2, 1, i), _stmp2))) ? "true" : "false");
+    printf("Set16: %5.5s s/b true\n", (p2c_sisin(5, (p2c_sclr(_stmp2), p2c_radd(_stmp2, 1, i), _stmp2))) ? "true" : "false");
 
     printf("Set17: ");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(csta,(p2c_sclr(_stmp2), _stmp2)); }
@@ -2515,20 +2515,20 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(csta,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'b'), p2c_sadd(_stmp2, 'd'), p2c_sadd(_stmp2, 'h'), p2c_sadd(_stmp2, 'j'), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'd'), p2c_sadd(_stmp2, 'h'), p2c_sadd(_stmp2, 'c'), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'b'), p2c_sadd(_stmp2, 'd'), p2c_sadd(_stmp2, 'h'), p2c_sadd(_stmp2, 'j'), _stmp2)); }
-    printf("Set21: %5s s/b false\n", (p2c_sequ(csta, cstb)) ? "true" : "false");
-    printf("Set22: %5s s/b true\n", (p2c_sequ(csta, cstc)) ? "true" : "false");
-    printf("Set23: %5s s/b true\n", (!p2c_sequ(csta, cstb)) ? "true" : "false");
-    printf("Set24: %5s s/b false\n", (!p2c_sequ(csta, cstc)) ? "true" : "false");
+    printf("Set21: %5.5s s/b false\n", (p2c_sequ(csta, cstb)) ? "true" : "false");
+    printf("Set22: %5.5s s/b true\n", (p2c_sequ(csta, cstc)) ? "true" : "false");
+    printf("Set23: %5.5s s/b true\n", (!p2c_sequ(csta, cstb)) ? "true" : "false");
+    printf("Set24: %5.5s s/b false\n", (!p2c_sequ(csta, cstc)) ? "true" : "false");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(csta,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'b'), p2c_sadd(_stmp2, 'f'), p2c_sadd(_stmp2, 'g'), p2c_sadd(_stmp2, 'j'), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'f'), p2c_sadd(_stmp2, 'g'), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'f'), p2c_sadd(_stmp2, 'g'), p2c_sadd(_stmp2, 'h'), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstd,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'b'), p2c_sadd(_stmp2, 'f'), p2c_sadd(_stmp2, 'g'), p2c_sadd(_stmp2, 'j'), _stmp2)); }
-    printf("Set25: %5s s/b true\n", (p2c_sinc(csta, cstb)) ? "true" : "false");
-    printf("Set26: %5s s/b true\n", (p2c_sinc(cstd, cstb)) ? "true" : "false");
-    printf("Set27: %5s s/b false\n", (p2c_sinc(csta, cstc)) ? "true" : "false");
-    printf("Set28: %5s s/b true\n", (p2c_sinc(csta, cstb)) ? "true" : "false");
-    printf("Set29: %5s s/b true\n", (p2c_sinc(cstd, cstb)) ? "true" : "false");
-    printf("Set30: %5s s/b false\n", (p2c_sinc(csta, cstc)) ? "true" : "false");
+    printf("Set25: %5.5s s/b true\n", (p2c_sinc(csta, cstb)) ? "true" : "false");
+    printf("Set26: %5.5s s/b true\n", (p2c_sinc(cstd, cstb)) ? "true" : "false");
+    printf("Set27: %5.5s s/b false\n", (p2c_sinc(csta, cstc)) ? "true" : "false");
+    printf("Set28: %5.5s s/b true\n", (p2c_sinc(csta, cstb)) ? "true" : "false");
+    printf("Set29: %5.5s s/b true\n", (p2c_sinc(cstd, cstb)) ? "true" : "false");
+    printf("Set30: %5.5s s/b false\n", (p2c_sinc(csta, cstc)) ? "true" : "false");
     printf("Set31: ");
     ci = 'a';
     i = 4;
@@ -2655,20 +2655,20 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sena,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, four), p2c_sadd(_stmp2, six), p2c_sadd(_stmp2, eight), p2c_sadd(_stmp2, nine), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(senb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, four), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, nine), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(senc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, four), p2c_sadd(_stmp2, six), p2c_sadd(_stmp2, eight), p2c_sadd(_stmp2, nine), _stmp2)); }
-    printf("Set36: %5s s/b false\n", (p2c_sequ(sena, senb)) ? "true" : "false");
-    printf("Set37: %5s s/b true\n", (p2c_sequ(sena, senc)) ? "true" : "false");
-    printf("Set38: %5s s/b true\n", (!p2c_sequ(sena, senb)) ? "true" : "false");
-    printf("Set39: %5s s/b false\n", (!p2c_sequ(sena, senc)) ? "true" : "false");
+    printf("Set36: %5.5s s/b false\n", (p2c_sequ(sena, senb)) ? "true" : "false");
+    printf("Set37: %5.5s s/b true\n", (p2c_sequ(sena, senc)) ? "true" : "false");
+    printf("Set38: %5.5s s/b true\n", (!p2c_sequ(sena, senb)) ? "true" : "false");
+    printf("Set39: %5.5s s/b false\n", (!p2c_sequ(sena, senc)) ? "true" : "false");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sena,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, two), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, seven), p2c_sadd(_stmp2, ten), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(senb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, ten), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(senc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, ten), p2c_sadd(_stmp2, six), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(send,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, two), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, seven), p2c_sadd(_stmp2, ten), _stmp2)); }
-    printf("Set40: %5s s/b true\n", (p2c_sinc(sena, senb)) ? "true" : "false");
-    printf("Set41: %5s s/b true\n", (p2c_sinc(send, senb)) ? "true" : "false");
-    printf("Set42: %5s s/b false\n", (p2c_sinc(sena, senc)) ? "true" : "false");
-    printf("Set43: %5s s/b true\n", (p2c_sinc(sena, senb)) ? "true" : "false");
-    printf("Set44: %5s s/b true\n", (p2c_sinc(send, senb)) ? "true" : "false");
-    printf("Set45: %5s s/b false\n", (p2c_sinc(sena, senc)) ? "true" : "false");
+    printf("Set40: %5.5s s/b true\n", (p2c_sinc(sena, senb)) ? "true" : "false");
+    printf("Set41: %5.5s s/b true\n", (p2c_sinc(send, senb)) ? "true" : "false");
+    printf("Set42: %5.5s s/b false\n", (p2c_sinc(sena, senc)) ? "true" : "false");
+    printf("Set43: %5.5s s/b true\n", (p2c_sinc(sena, senb)) ? "true" : "false");
+    printf("Set44: %5.5s s/b true\n", (p2c_sinc(send, senb)) ? "true" : "false");
+    printf("Set45: %5.5s s/b false\n", (p2c_sinc(sena, senc)) ? "true" : "false");
     printf("Set46: ");
     ei = two;
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sena,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, ei), p2c_sadd(_stmp2, (ei + 1)), _stmp2)); }
@@ -2799,20 +2799,20 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sba,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, true), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, false), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, true), _stmp2)); }
-    printf("Set51: %5s s/b false\n", (p2c_sequ(sba, sbb)) ? "true" : "false");
-    printf("Set52: %5s s/b true\n", (p2c_sequ(sba, sbc)) ? "true" : "false");
-    printf("Set53: %5s s/b true\n", (!p2c_sequ(sba, sbb)) ? "true" : "false");
-    printf("Set54: %5s s/b false\n", (!p2c_sequ(sba, sbc)) ? "true" : "false");
+    printf("Set51: %5.5s s/b false\n", (p2c_sequ(sba, sbb)) ? "true" : "false");
+    printf("Set52: %5.5s s/b true\n", (p2c_sequ(sba, sbc)) ? "true" : "false");
+    printf("Set53: %5.5s s/b true\n", (!p2c_sequ(sba, sbb)) ? "true" : "false");
+    printf("Set54: %5.5s s/b false\n", (!p2c_sequ(sba, sbc)) ? "true" : "false");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sba,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, true), p2c_sadd(_stmp2, false), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbb,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, false), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbc,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, true), _stmp2)); }
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbd,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, false), _stmp2)); }
-    printf("Set55: %5s s/b true\n", (p2c_sinc(sba, sbb)) ? "true" : "false");
-    printf("Set56: %5s s/b true\n", (p2c_sinc(sbd, sbb)) ? "true" : "false");
-    printf("Set57: %5s s/b false\n", (p2c_sinc(sbb, sbc)) ? "true" : "false");
-    printf("Set58: %5s s/b true\n", (p2c_sinc(sba, sbb)) ? "true" : "false");
-    printf("Set59: %5s s/b true\n", (p2c_sinc(sbd, sbb)) ? "true" : "false");
-    printf("Set60: %5s s/b false\n", (p2c_sinc(sbb, sbc)) ? "true" : "false");
+    printf("Set55: %5.5s s/b true\n", (p2c_sinc(sba, sbb)) ? "true" : "false");
+    printf("Set56: %5.5s s/b true\n", (p2c_sinc(sbd, sbb)) ? "true" : "false");
+    printf("Set57: %5.5s s/b false\n", (p2c_sinc(sbb, sbc)) ? "true" : "false");
+    printf("Set58: %5.5s s/b true\n", (p2c_sinc(sba, sbb)) ? "true" : "false");
+    printf("Set59: %5.5s s/b true\n", (p2c_sinc(sbd, sbb)) ? "true" : "false");
+    printf("Set60: %5.5s s/b false\n", (p2c_sinc(sbb, sbc)) ? "true" : "false");
     printf("Set61: ");
     ba = false;
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sba,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, ba), p2c_sadd(_stmp2, (ba + 1)), _stmp2)); }
@@ -2843,7 +2843,7 @@ int main(void)
     pi2 = malloc(sizeof(long));
     *pi1 = 3;
     *pi2 = 5;
-    printf("%5s", (p2c_sequ((p2c_sclr(_stmp2), p2c_radd(_stmp2, *pi1, *pi2), _stmp2), (p2c_sclr(_stmp2), p2c_radd(_stmp2, 3, 5), _stmp2))) ? "true" : "false");
+    printf("%5.5s", (p2c_sequ((p2c_sclr(_stmp2), p2c_radd(_stmp2, *pi1, *pi2), _stmp2), (p2c_sclr(_stmp2), p2c_radd(_stmp2, 3, 5), _stmp2))) ? "true" : "false");
     printf(" s/b true\n");
     printf("set63: ");
     srx = 1;
@@ -2878,11 +2878,11 @@ int main(void)
     printf("Pointer2:   ");
     ptb = malloc(sizeof(bool));
     *ptb = true;
-    printf("%5s s/b  true\n", (*ptb) ? "true" : "false");
+    printf("%5.5s s/b  true\n", (*ptb) ? "true" : "false");
     printf("Pointer3:   ");
     ptb = malloc(sizeof(bool));
     *ptb = false;
-    printf("%5s s/b false\n", (*ptb) ? "true" : "false");
+    printf("%5.5s s/b false\n", (*ptb) ? "true" : "false");
     printf("Pointer4:   ");
     ptc = malloc(sizeof(char));
     *ptc = 'p';
@@ -2906,7 +2906,7 @@ int main(void)
     printf("Pointer9:   ");
     ptst = malloc(sizeof(string10));
     memmove(&(*ptst)[1],"my word is", 10);
-    printf("%10s s/b my word is\n", &(*ptst)[1]);
+    printf("%10.10s s/b my word is\n", &(*ptst)[1]);
     printf("Pointer10:  ");
     pta = malloc(sizeof(arri));
     { long _forlim = 10;
@@ -2957,21 +2957,21 @@ int main(void)
 
     printf("Pointer14:  ");
     pti = NULL;
-    printf("%5s s/b  true\n", (pti == NULL) ? "true" : "false");
+    printf("%5.5s s/b  true\n", (pti == NULL) ? "true" : "false");
     printf("Pointer15:  ");
     pti = malloc(sizeof(long));
-    printf("%5s s/b false\n", (pti == NULL) ? "true" : "false");
+    printf("%5.5s s/b false\n", (pti == NULL) ? "true" : "false");
     printf("Pointer16:  ");
     pti1 = pti;
-    printf("%5s s/b true\n", (pti == pti1) ? "true" : "false");
+    printf("%5.5s s/b true\n", (pti == pti1) ? "true" : "false");
     printf("Pointer17:  ");
     pti1 = pti;
-    printf("%5s s/b false\n", (pti != pti1) ? "true" : "false");
+    printf("%5.5s s/b false\n", (pti != pti1) ? "true" : "false");
     printf("Pointer18:  ");
     pti1 = malloc(sizeof(long));
-    printf("%5s s/b false\n", (pti == pti1) ? "true" : "false");
+    printf("%5.5s s/b false\n", (pti == pti1) ? "true" : "false");
     printf("Pointer19:  ");
-    printf("%5s s/b  true\n", (pti != pti1) ? "true" : "false");
+    printf("%5.5s s/b  true\n", (pti != pti1) ? "true" : "false");
 
     pti2 = malloc(sizeof(long));
     free(frp());
@@ -3388,7 +3388,7 @@ int main(void)
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
-        printf("%5s ", (avb[i]) ? "true" : "false");
+        printf("%5.5s ", (avb[i]) ? "true" : "false");
 
     }
     }
@@ -3405,7 +3405,7 @@ int main(void)
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
-        printf("%5s ", (pavb[i]) ? "true" : "false");
+        printf("%5.5s ", (pavb[i]) ? "true" : "false");
 
     }
     }
@@ -3668,7 +3668,7 @@ int main(void)
     for (i = 1; i <= _forlim; i++) {
 
         avf[i] = tmpfile();
-        printf("%11ld\n", (long)(i + 10));
+        fprintf(avf[i], "%11ld\n", (long)(i + 10));
 
     }
     }
@@ -3688,7 +3688,7 @@ int main(void)
     for (i = 1; i <= _forlim; i++) {
 
         pavf[i] = tmpfile();
-        printf("%11ld\n", (long)(i + 10));
+        fprintf(pavf[i], "%11ld\n", (long)(i + 10));
 
     }
     }
@@ -4042,7 +4042,7 @@ int main(void)
 
     printf("Array37: \n");
     memmove(&pavc[1],"hello, guy", 10);
-    printf("%10s s/b hello, guy\n", &pavc[1]);
+    printf("%10.10s s/b hello, guy\n", &pavc[1]);
     printf("Array38: \n");
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
@@ -4243,7 +4243,7 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(arec.stc,(p2c_sclr(_stmp2), p2c_radd(_stmp2, 'b', 'e'), p2c_sadd(_stmp2, 'i'), _stmp2)); }
     arec.p = malloc(sizeof(long));
     *arec.p = 8454;
-    printf("%ld %5s %c %ld %ld %ld %15g %10s\n", (long)(arec.i), (arec.b) ? "true" : "false", (int)(arec.c), (long)(arec.e), (long)(arec.es), (long)(arec.s), arec.r, &arec.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(arec.i), (arec.b) ? "true" : "false", (int)(arec.c), (long)(arec.e), (long)(arec.es), (long)(arec.s), arec.r, &arec.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -4298,7 +4298,7 @@ int main(void)
     { p2c_settype _stmp1, _stmp2; p2c_scpy(parec.stc,(p2c_sclr(_stmp2), p2c_radd(_stmp2, 'b', 'e'), p2c_sadd(_stmp2, 'i'), _stmp2)); }
     parec.p = malloc(sizeof(long));
     *parec.p = 8454;
-    printf("%ld %5s %c %ld %ld %ld %15g %10s\n", (long)(parec.i), (parec.b) ? "true" : "false", (int)(parec.c), (long)(parec.e), (long)(parec.es), (long)(parec.s), parec.r, &parec.st[1]);
+    printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(parec.i), (parec.b) ? "true" : "false", (int)(parec.c), (long)(parec.e), (long)(parec.es), (long)(parec.s), parec.r, &parec.st[1]);
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
 
@@ -4345,7 +4345,7 @@ int main(void)
     vra.vt = vtb;
     vra.b = 427;
     vra.vdb = true;
-    printf("%ld %ld %5s %ld", (long)(vra.i), (long)(vra.vt), (vra.vdb) ? "true" : "false", (long)(vra.b));
+    printf("%ld %ld %5.5s %ld", (long)(vra.i), (long)(vra.vt), (vra.vdb) ? "true" : "false", (long)(vra.b));
     printf(" s/b 873 1  true 427\n");
     printf("Record5:   ");
     vra.i = 873;
@@ -4387,7 +4387,7 @@ int main(void)
     vra.vt = vtst;
     vra.h = 427;
     memmove(&vra.vdst[1],"this one ?", 10);
-    printf("%ld %ld %10s %ld", (long)(vra.i), (long)(vra.vt), &vra.vdst[1], (long)(vra.h));
+    printf("%ld %ld %10.10s %ld", (long)(vra.i), (long)(vra.vt), &vra.vdst[1], (long)(vra.h));
     printf(" s/b 873 7 this one ? 427\n");
     printf("Record11:  ");
     vra.i = 873;
@@ -4459,17 +4459,17 @@ int main(void)
     printf("Record16:  ");
     vvrs.vt = 19;
     vvrs.vb = true;
-    printf("%ld %5s", (long)(vvrs.vt), (vvrs.vb) ? "true" : "false");
+    printf("%ld %5.5s", (long)(vvrs.vt), (vvrs.vb) ? "true" : "false");
     printf(" s/b 19  true\n");
     printf("Record17:  ");
     vvrb.vt = true;
     vvrb.vi = 2343;
-    printf("%5s %ld", (vvrb.vt) ? "true" : "false", (long)(vvrb.vi));
+    printf("%5.5s %ld", (vvrb.vt) ? "true" : "false", (long)(vvrb.vi));
     printf(" s/b  true 2343\n");
     printf("Record18:  ");
     vvrb.vt = false;
     vvrb.vb = true;
-    printf("%5s %5s", (vvrb.vt) ? "true" : "false", (vvrb.vb) ? "true" : "false");
+    printf("%5.5s %5.5s", (vvrb.vt) ? "true" : "false", (vvrb.vb) ? "true" : "false");
     printf(" s/b false  true\n");
     printf("Record19:  ");
     vvre.vt = three;
@@ -4479,7 +4479,7 @@ int main(void)
     printf("Record20:  ");
     vvre.vt = eight;
     vvre.vb = true;
-    printf("%ld %5s", (long)(vvre.vt), (vvre.vb) ? "true" : "false");
+    printf("%ld %5.5s", (long)(vvre.vt), (vvre.vb) ? "true" : "false");
     printf(" s/b 7  true\n");
     printf("Record21:  ");
     vvres.vt = four;
@@ -4489,7 +4489,7 @@ int main(void)
     printf("Record22:  ");
     vvres.vt = five;
     vvres.vb = true;
-    printf("%ld %5s", (long)(vvres.vt), (vvres.vb) ? "true" : "false");
+    printf("%ld %5.5s", (long)(vvres.vt), (vvres.vb) ? "true" : "false");
     printf(" s/b 4  true\n");
 
     printf("Record23:  ");
@@ -4606,7 +4606,7 @@ int main(void)
     rpb->b = false;
     rpb->q = true;
     rpb->r = 1.233999999999999e+1;
-    printf("%ld %5s %5s %22g", (long)(rpb->i), (rpb->b) ? "true" : "false", (rpb->q) ? "true" : "false", rpb->r);
+    printf("%ld %5.5s %5.5s %22.15e", (long)(rpb->i), (rpb->b) ? "true" : "false", (rpb->q) ? "true" : "false", rpb->r);
     printf(" s/b 42 False True 1.234000000000000e+01\n");
     free(rpb);
     printf("Record30: ");
@@ -4682,7 +4682,7 @@ int main(void)
 
             ba = (*(bool*)fb.buf);
             p2c_fget(&fb);
-            printf("%5s ", (ba) ? "true" : "false");
+            printf("%5.5s ", (ba) ? "true" : "false");
 
         }
         }
@@ -4704,7 +4704,7 @@ int main(void)
 
             ba = (*(bool*)pfb.buf);
             p2c_fget(&pfb);
-            printf("%5s ", (ba) ? "true" : "false");
+            printf("%5.5s ", (ba) ? "true" : "false");
 
         }
         }
@@ -4802,23 +4802,23 @@ int main(void)
         printf("File9:\n");
         ft = tmpfile();
         x = 7384;
-        printf("%ld\n", (long)(x));
-        printf("%ld\n", (long)(8342));
+        fprintf(ft, "%ld\n", (long)(x));
+        fprintf(ft, "%ld\n", (long)(8342));
         ba = true;
-        printf("%5s\n", (ba) ? "true" : "false");
-        printf("%5s\n", (false) ? "true" : "false");
+        fprintf(ft, "%5.5s\n", (ba) ? "true" : "false");
+        fprintf(ft, "%5.5s\n", (false) ? "true" : "false");
         ca = 'm';
-        printf("%c\n", (int)(ca));
-        printf("q\n");
+        fprintf(ft, "%c\n", (int)(ca));
+        fprintf(ft, "q\n");
         ra = 1.234567799999999;
-        printf("%15g\n", ra);
-        printf("%.7f\n", ra);
-        printf("%15g\n", 5.689432099999999e+1);
-        printf("%.8f\n", 9.3837632e-1);
+        fprintf(ft, "%15.8e\n", ra);
+        fprintf(ft, "%.7f\n", ra);
+        fprintf(ft, "%15.8e\n", 5.689432099999999e+1);
+        fprintf(ft, "%.8f\n", 9.3837632e-1);
         memmove(&s[1],"hi there !", 10);
-        printf("%10s\n", &s[1]);
-        printf("%10s\n", &s[1]);
-        printf("%10s\n", &s[1]);
+        fprintf(ft, "%10.10s\n", &s[1]);
+        fprintf(ft, "%5.5s\n", &s[1]);
+        fprintf(ft, "%15.15s\n", &s[1]);
         rewind(ft);
         fgetc(ft);
         cc = ({int _c=getc(ft);ungetc(_c,ft);_c;});
@@ -4871,16 +4871,16 @@ int main(void)
         printf("%c\n", (int)(ci));
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15g\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15g\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15g\n", rb);
+        printf("%15.8e\n", rb);
         fscanf(ft, "%lg", &rb);
         fscanf(ft, "%*[^\n]"); fscanf(ft, "%*c");
-        printf("%15g\n", rb);
+        printf("%15.8e\n", rb);
         printf("s/b:\n");
         printf("7384\n");
         printf("8342\n");
@@ -4893,8 +4893,8 @@ int main(void)
 
         printf("file11:\n");
         ft = tmpfile();
-        printf("how now\n");
-        printf("brown cow\n");
+        fprintf(ft, "how now\n");
+        fprintf(ft, "brown cow\n");
         rewind(ft);
         printf("'");
         while (!feof(ft)) {
@@ -4912,8 +4912,8 @@ int main(void)
         printf(" s/b 'how now<eoln> brown cow<eoln> '\n");
         printf("file12:\n");
         ft = tmpfile();
-        printf("too much\n");
-        printf("too soon");
+        fprintf(ft, "too much\n");
+        fprintf(ft, "too soon");
         rewind(ft);
         printf("'");
         while (!feof(ft)) {
@@ -4988,7 +4988,7 @@ int main(void)
 
             ba = (*(unsigned char*)fb.buf);
             p2c_fget(&fb);
-            printf("%5s ", (ba) ? "true" : "false");
+            printf("%5.5s ", (ba) ? "true" : "false");
 
         }
         }
@@ -5010,7 +5010,7 @@ int main(void)
 
             ba = (*(unsigned char*)pfb.buf);
             p2c_fget(&pfb);
-            printf("%5s ", (ba) ? "true" : "false");
+            printf("%5.5s ", (ba) ? "true" : "false");
 
         }
         }
@@ -5106,14 +5106,14 @@ int main(void)
         printf("s/b 0 1 2 3 4 5 6 7 8 9\n");
         printf("File21:   ");
         ft = tmpfile();
-        printf("50\n");
+        fprintf(ft, "50\n");
         rewind(ft);
         fscanf(ft, "%hhu", &srx);
         printf("%ld", (long)(srx));
         printf(" s/b %ld\n", (long)(50));
         printf("File22:   ");
         ft = tmpfile();
-        printf("%5s s/b true\n", (feof(ft)) ? "true" : "false");
+        printf("%5.5s s/b true\n", (feof(ft)) ? "true" : "false");
 
     }
 
@@ -5137,7 +5137,7 @@ int main(void)
     memmove(&s[1],"total junk", 10);
     junk4(s);
     printf(" s/b tota? junk\n");
-    printf("                      %10s s/b total junk\n", &s[1]);
+    printf("                      %10.10s s/b total junk\n", &s[1]);
     printf("ProcedureFunction5:   ");
     printf("%ld s/b 35\n", (long)(junk5(34)));
     printf("ProcedureFunction6:   ");

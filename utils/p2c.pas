@@ -2315,7 +2315,13 @@ begin
       fmt_chr(chr(92)); { backslash }
       fmt_chr('n')
     end;
-    c_str('printf("');
+    if stmttop^.filvarlen > 0 then begin
+      c_str('fprintf(');
+      for i := 1 to stmttop^.filvarlen do
+        c_chr(stmttop^.filvarbuf[i]);
+      c_str(', "')
+    end else
+      c_str('printf("');
     for i := 1 to stmttop^.fmtlen do
       c_chr(stmttop^.fmtbuf[i]);
     c_str('"');
@@ -6566,12 +6572,34 @@ end;
           fmin, fmax: integer;
 
       procedure fmt_strspec;
-      { output %s or %Ns format for packed array of char }
+      { output %w.ws format for packed array of char.
+        Uses both width and precision so strings are truncated
+        when field width is less than string length. }
       begin
         fmt_chr('%');
-        if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
-          getbounds(ltp^.inxtype, fmin, fmax);
-          fmt_width(fmax - fmin + 1)
+        if fldwidth_var then
+          fmt_str('*.*')
+        else begin
+          if not default then begin
+            { explicit field width from write(s:n) }
+            if fldwidth < 0 then begin
+              fmt_chr('-');
+              w := -fldwidth
+            end else
+              w := fldwidth
+          end else begin
+            { default: use array declared length }
+            if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
+              getbounds(ltp^.inxtype, fmin, fmax);
+              w := fmax - fmin + 1
+            end else
+              w := 0
+          end;
+          if w > 0 then begin
+            fmt_width(w);
+            fmt_chr('.');
+            fmt_width(w)
+          end
         end;
         fmt_chr('s')
       end;
@@ -6633,13 +6661,18 @@ end;
         end else if ltp = realptr then begin
           fmt_chr('%');
           if fldwidth_var then
-            fmt_chr('*')
+            fmt_str('*.*')
           else begin
             if fldwidth < 0 then begin
               fmt_chr('-');
               w := -fldwidth
             end else
               w := fldwidth;
+            { ISO 7185 6.9.3.4.1: ActWidth = max(TotalWidth, ExpDigits+6)
+              For scientific notation, enforce minimum width of 8 }
+            if not hasfldprec then begin
+              if w < 8 then w := 8
+            end;
             if w <> 1 then fmt_width(w)
           end;
           if hasfldprec then begin
@@ -6649,16 +6682,45 @@ end;
             else
               fmt_width(fldprec);
             fmt_chr('f')
-          end else
-            fmt_chr('g');
+          end else begin
+            { ISO 7185 6.9.3.4.1: DecPlaces = ActWidth - ExpDigits - 5
+              where ExpDigits = 2 and ActWidth = max(TotalWidth, 8) }
+            if not fldwidth_var then begin
+              w := abs(fldwidth);
+              if w < 8 then w := 8;
+              fmt_chr('.');
+              fmt_width(w - 7);
+              fmt_chr('e')
+            end else
+              fmt_chr('e')
+          end;
           if fldwidth_var then begin
             if stmttop^.arglen > 0 then begin
               arg_chr(','); arg_chr(' ')
             end;
-            arg_str('(int)(');
-            for i := 1 to fldwidth_buflen do
-              arg_chr(fldwidth_buf[i]);
-            arg_chr(')')
+            if not hasfldprec then begin
+              { ISO 7185: ActWidth = max(w,8), pass as field width }
+              arg_str('(int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') : 8)');
+              { ISO 7185: DecPlaces = max(w,8) - 7 for %*.*e }
+              arg_str(', (int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') - 7 : 1)')
+            end else begin
+              arg_str('(int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_chr(')')
+            end
           end;
           if fldprec_var then begin
             if stmttop^.arglen > 0 then begin
@@ -6695,14 +6757,18 @@ end;
         end else if ltp = boolptr then begin
           fmt_chr('%');
           if fldwidth_var then
-            fmt_chr('*')
+            fmt_str('*.*')
           else begin
             if fldwidth < 0 then begin
               fmt_chr('-');
               w := -fldwidth
             end else
               w := fldwidth;
-            if w <> 1 then fmt_width(w)
+            if w > 0 then begin
+              fmt_width(w);
+              fmt_chr('.');
+              fmt_width(w)
+            end
           end;
           fmt_chr('s');
           if fldwidth_var then begin
@@ -6710,6 +6776,9 @@ end;
               arg_chr(','); arg_chr(' ')
             end;
             arg_str('(int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_str('), (int)(');
             for i := 1 to fldwidth_buflen do
               arg_chr(fldwidth_buf[i]);
             arg_chr(')')
@@ -6721,11 +6790,10 @@ end;
             arg_chr(stmttop^.exprbuf[i]);
           arg_str(') ? "true" : "false"')
         end else if stringt(ltp) then begin
-          { check if we have a string constant to embed }
-          if wascst then
+          { embed string constant directly in format only for default width }
+          if wascst and default and not fldwidth_var then
             if not savedcval.intval then
               if savedcval.valp <> nil then begin
-                { embed string constant directly in format string }
                 l := savedcval.valp^.slgth;
                 for i := 1 to l do begin
                   c := savedcval.valp^.sval^[i];
@@ -6748,6 +6816,19 @@ end;
             end
           else begin
             fmt_strspec;
+            { add variable width args twice for %*.*s }
+            if fldwidth_var then begin
+              if stmttop^.arglen > 0 then begin
+                arg_chr(','); arg_chr(' ')
+              end;
+              arg_str('(int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str('), (int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_chr(')')
+            end;
             arg_stradd
           end
         end else begin
