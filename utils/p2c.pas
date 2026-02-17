@@ -7027,7 +7027,13 @@ end;
 
     procedure packprocedure;
       var lsp,lsp1: stp; lb, bs: integer; lattr: attr;
-    begin variable(fsys + [comma,rparent], false); loadaddress;
+          abuf: packed array [1..200] of char; alen: integer;
+          ibuf: packed array [1..200] of char; ilen: integer;
+          zbuf: packed array [1..200] of char; zlen: integer;
+          zlb: integer; zcount: integer;
+          j: integer;
+    begin pushstmt(stk_call); expr_reset;
+      variable(fsys + [comma,rparent], false); loadaddress;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
       lattr := gattr;
       if gattr.typtr <> nil then
@@ -7039,13 +7045,23 @@ end;
               bs := aeltype^.size
             end
           else error(116);
+      { save unpacked array expression }
+      alen := stmttop^.exprlen;
+      if alen > 200 then alen := 200;
+      for j := 1 to alen do abuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       expression(fsys + [comma,rparent], false); load;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> scalar then error(116)
         else
           if not comptypes(lsp,gattr.typtr) then error(116);
+      { save index expression }
+      ilen := stmttop^.exprlen;
+      if ilen > 200 then ilen := 200;
+      for j := 1 to ilen do ibuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       variable(fsys + [rparent], false); loadaddress;
       if gattr.typtr <> nil then
         with gattr.typtr^ do
@@ -7053,19 +7069,72 @@ end;
             begin
               if not comptypes(aeltype,lsp1) then error(116)
             end
-          else error(116)
+          else error(116);
+      { save packed array expression and get its bounds }
+      zlen := stmttop^.exprlen;
+      if zlen > 200 then zlen := 200;
+      for j := 1 to zlen do zbuf[j] := stmttop^.exprbuf[j];
+      zlb := 1; zcount := 1;
+      if gattr.typtr <> nil then
+        with gattr.typtr^ do
+          if form = arrays then begin
+            if (inxtype = charptr) or (inxtype = boolptr) then zlb := 0
+            else if inxtype^.form = subrange then zlb := inxtype^.min.ival;
+            if inxtype <> nil then begin
+              if inxtype^.form = subrange then
+                zcount := inxtype^.max.ival - inxtype^.min.ival + 1
+              else if inxtype = charptr then zcount := 256
+              else if inxtype = boolptr then zcount := 2
+            end
+          end;
+      { emit: memcpy(&z[zlb], &a[i], sizeof(z[0]) * zcount) }
+      c_indent;
+      c_str('memcpy(&');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('['); c_int(zlb); c_str('], &');
+      for j := 1 to alen do c_chr(abuf[j]);
+      c_str('[');
+      for j := 1 to ilen do c_chr(ibuf[j]);
+      c_str('], sizeof(');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('[0]) * '); c_int(zcount); c_ln(');');
+      popstmt
     end (*pack*) ;
 
     procedure unpackprocedure;
       var lsp,lsp1: stp; lattr,lattr1: attr; lb, bs: integer;
-    begin variable(fsys + [comma,rparent], false); loadaddress;
+          zbuf: packed array [1..200] of char; zlen: integer;
+          abuf: packed array [1..200] of char; alen: integer;
+          ibuf: packed array [1..200] of char; ilen: integer;
+          zlb: integer; zcount: integer;
+          j: integer;
+    begin pushstmt(stk_call); expr_reset;
+      variable(fsys + [comma,rparent], false); loadaddress;
       lattr := gattr;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
       if gattr.typtr <> nil then
         with gattr.typtr^ do
           if form = arrays then lsp1 := aeltype
           else error(116);
+      { save packed array expression and get bounds }
+      zlen := stmttop^.exprlen;
+      if zlen > 200 then zlen := 200;
+      for j := 1 to zlen do zbuf[j] := stmttop^.exprbuf[j];
+      zlb := 1; zcount := 1;
+      if gattr.typtr <> nil then
+        with gattr.typtr^ do
+          if form = arrays then begin
+            if (inxtype = charptr) or (inxtype = boolptr) then zlb := 0
+            else if inxtype^.form = subrange then zlb := inxtype^.min.ival;
+            if inxtype <> nil then begin
+              if inxtype^.form = subrange then
+                zcount := inxtype^.max.ival - inxtype^.min.ival + 1
+              else if inxtype = charptr then zcount := 256
+              else if inxtype = boolptr then zcount := 2
+            end
+          end;
       if sy = comma then insymbol else error(20);
+      expr_reset;
       variable(fsys + [comma,rparent], false); loadaddress;
       lattr1 := gattr;
       if gattr.typtr <> nil then
@@ -7079,12 +7148,33 @@ end;
               lsp := inxtype;
             end
           else error(116);
+      { save unpacked array expression }
+      alen := stmttop^.exprlen;
+      if alen > 200 then alen := 200;
+      for j := 1 to alen do abuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       expression(fsys + [rparent], false); load;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> scalar then error(116)
         else
-          if not comptypes(lsp,gattr.typtr) then error(116)
+          if not comptypes(lsp,gattr.typtr) then error(116);
+      { save index expression }
+      ilen := stmttop^.exprlen;
+      if ilen > 200 then ilen := 200;
+      for j := 1 to ilen do ibuf[j] := stmttop^.exprbuf[j];
+      { emit: memcpy(&a[i], &z[zlb], sizeof(z[0]) * zcount) }
+      c_indent;
+      c_str('memcpy(&');
+      for j := 1 to alen do c_chr(abuf[j]);
+      c_str('[');
+      for j := 1 to ilen do c_chr(ibuf[j]);
+      c_str('], &');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('['); c_int(zlb); c_str('], sizeof(');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('[0]) * '); c_int(zcount); c_ln(');');
+      popstmt
     end (*unpack*) ;
 
     procedure newdisposeprocedure(disp: boolean);
@@ -7347,7 +7437,7 @@ end;
           { save position before emitting function name }
           if stmttop <> nil then savepos := stmttop^.exprlen
           else savepos := 0;
-          if lkey = 9 then expr_str('feof(')
+          if lkey = 9 then expr_str('p2c_eof(')
           else expr_str('p2c_eoln(');
           variable(fsys + [rparent], false);
           if sy = rparent then insymbol else error(4);
@@ -7355,9 +7445,9 @@ end;
           if (lkey = 9) and (gattr.typtr <> nil) then
             if (gattr.typtr^.form = files) and
                (gattr.typtr <> textptr) then begin
-              { replace feof( with p2c_feof(& }
+              { replace p2c_eof( with p2c_feof(& }
               if stmttop <> nil then begin
-                expr_del(savepos + 1, 5); { remove 'feof(' }
+                expr_del(savepos + 1, 8); { remove 'p2c_eof(' }
                 expr_insert('p2c_feof(&', savepos + 1)
               end
             end;
@@ -7368,7 +7458,7 @@ end;
         if not inputptr^.hdr then error(175);
         gattr.typtr := textptr;
         { no arg - use stdin }
-        if lkey = 9 then expr_str('feof(stdin)')
+        if lkey = 9 then expr_str('p2c_eof(stdin)')
         else expr_str('p2c_eoln(stdin)')
       end;
       if gattr.typtr <> nil then
@@ -10970,8 +11060,10 @@ end;
                             i := i + 8;
                             stmttop^.exprbuf[i - 1] := ',';
                             expr_del(i, 2);
-                            expr_str(', ');
-                            expr_int(lattr.typtr^.size);
+                            { use sizeof(type) to include C array padding }
+                            expr_str(', sizeof(');
+                            expr_typename(lattr.typtr);
+                            expr_chr(')');
                             expr_chr(')')
                           end
                         end
@@ -12138,7 +12230,14 @@ end;
                 c_type(lcp^.idtype);
                 c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               c_inlinecmt(lcp^.srcline)
             end else if lcp^.klass in [proc, func] then begin
@@ -12502,6 +12601,28 @@ end;
         end;
         c_indent;
         c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
+        { emit memcpy for value-parameter arrays }
+        lcp := fprocp^.pflist;
+        while lcp <> nil do begin
+          if lcp^.klass = vars then
+            if lcp^.vkind = actual then
+              if lcp^.idtype <> nil then
+                if lcp^.idtype^.form = arrays then begin
+                  c_indent;
+                  c_type(lcp^.idtype);
+                  c_chr(' ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_arraydims(lcp^.idtype);
+                  c_str('; memcpy(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str(', ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str('_, sizeof(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_ln('));')
+                end;
+          lcp := lcp^.next
+        end;
         c_newline
       end else begin
         { top-level procedure - output header directly }
@@ -12560,7 +12681,14 @@ end;
                 c_chr(' ')
               end;
               { output parameter name }
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               { output inline comment for parameter }
               c_inlinecmt(lcp^.srcline)
@@ -12595,6 +12723,28 @@ end;
         end;
         c_indent;
         c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
+        { emit memcpy for value-parameter arrays }
+        lcp := fprocp^.pflist;
+        while lcp <> nil do begin
+          if lcp^.klass = vars then
+            if lcp^.vkind = actual then
+              if lcp^.idtype <> nil then
+                if lcp^.idtype^.form = arrays then begin
+                  c_indent;
+                  c_type(lcp^.idtype);
+                  c_chr(' ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_arraydims(lcp^.idtype);
+                  c_str('; memcpy(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str(', ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str('_, sizeof(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_ln('));')
+                end;
+          lcp := lcp^.next
+        end;
         c_newline
       end
     end;
@@ -12745,7 +12895,14 @@ end;
                 c_type(lcp^.idtype);
                 c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               { output inline comment for parameter }
               c_inlinecmt(lcp^.srcline)
@@ -13061,9 +13218,21 @@ end;
     c_ln('#define true 1');
     c_ln('#define false 0');
     c_ln('#endif');
-    c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
-    c_str('#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v==''');
-    c_chr(chr(92)); c_ln('n''?(v='' ''):0))');
+    { Pascal text file eof: true when past the last eoln (including implicit).
+      If at C EOF and previous char was not newline, there is an implicit eoln
+      pending, so eof returns false. Uses fseek to check previous char. }
+    c_str('#define p2c_eof(f) ({int _r;if(feof(f)){_r=1;}');
+    c_str('else{int _c=getc(f);if(_c==EOF){long _p=ftell(f);');
+    c_str('if(_p>0){fseek(f,_p-1,SEEK_SET);');
+    c_str('int _pv=getc(f);_r=(_pv==''');
+    c_chr(chr(92)); c_str('n'');}');
+    c_ln('else _r=1;}else{ungetc(_c,f);_r=0;}}_r;})');
+    { Pascal text file eoln: true at newline or EOF (implicit eoln) }
+    c_ln('#define p2c_eoln(f) ({int _c=getc(f);ungetc(_c,f);_c==10||_c==EOF;})');
+    { Pascal read(f,ch): reads one char, eoln->space, EOF(implicit eoln)->space }
+    c_str('#define p2c_readc(f,v) ({int _c=getc(f);');
+    c_str('if(_c==EOF||_c==''');
+    c_chr(chr(92)); c_ln('n'')v='' '';else v=(char)_c;})');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
@@ -13246,7 +13415,13 @@ end;
               end else begin
                 c_type(lcp^.idtype); c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                  c_chr('_')
+              end;
               c_arraydims(lcp^.idtype)
             end else if lcp^.klass in [proc, func] then begin
               c_funcptr_param(lcp)

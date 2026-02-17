@@ -558,12 +558,13 @@ void junk3(string10 p)
 
 }
 
-void junk4(string10 p)
+void junk4(string10 p_)
 {
 
     typedef long* iptr;
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
+    string10 p; memcpy(p, p_, sizeof(p));
 
     p[5] = '?';
     printf("%10.10s", &p[1]);
@@ -619,7 +620,7 @@ long junk7(long a,long b,long c)
 }
 
 void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
-           double r,string10 st,arri ar,rec rc,recv rv,p2c_settype stc,
+           double r,string10 st_,arri ar_,rec rc,recv rv,p2c_settype stc,
            iptr p)
 {
 
@@ -628,6 +629,8 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
     char ci;
     long i;
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
+    string10 st; memcpy(st, st_, sizeof(st));
+    arri ar; memcpy(ar, ar_, sizeof(ar));
 
     printf("%ld %5.5s %c %ld %ld %ld %15.8e %10.10s\n", (long)(a), (b) ? "true" : "false", (int)(c), (long)(e), (long)(es), (long)(s), r, &st[1]);
     { long _forlim = 10;
@@ -4051,7 +4054,7 @@ int main(void)
 
     }
     }
-    memmove(avi2,avi, 80);
+    memmove(avi2,avi, sizeof(arri));
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
@@ -4100,7 +4103,7 @@ int main(void)
 
     }
     }
-    memmove(mdar2,mdar, 512);
+    memmove(mdar2,mdar, sizeof(arrim));
     { long _forlim = 1;
     for (i = 2; i >= _forlim; i--) {
 
@@ -4157,6 +4160,7 @@ int main(void)
 
     }
     }
+    memcpy(&avi[1], &pavi[1], sizeof(pavi[0]) * 10);
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
@@ -4173,6 +4177,7 @@ int main(void)
 
     }
     }
+    memcpy(&pavi[1], &avi[1], sizeof(pavi[0]) * 10);
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
@@ -4189,6 +4194,7 @@ int main(void)
 
     }
     }
+    memcpy(&cia['g'], &pavi[1], sizeof(pavi[0]) * 10);
     { long _forlim = 'g';
     for (ci = 'p'; ci >= _forlim; ci--) {
 
@@ -4209,6 +4215,7 @@ int main(void)
 
     }
     }
+    memcpy(&pavi[1], &cia['m'], sizeof(pavi[0]) * 10);
     { long _forlim = 1;
     for (i = 10; i >= _forlim; i--) {
 
