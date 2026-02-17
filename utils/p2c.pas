@@ -6693,7 +6693,27 @@ end;
             end
           end
         end else if ltp = boolptr then begin
-          fmt_str('%s');
+          fmt_chr('%');
+          if fldwidth_var then
+            fmt_chr('*')
+          else begin
+            if fldwidth < 0 then begin
+              fmt_chr('-');
+              w := -fldwidth
+            end else
+              w := fldwidth;
+            if w <> 1 then fmt_width(w)
+          end;
+          fmt_chr('s');
+          if fldwidth_var then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_chr(')')
+          end;
           { wrap expression: (expr) ? "true" : "false" }
           if stmttop^.arglen > 0 then arg_str(', ');
           arg_chr('(');
