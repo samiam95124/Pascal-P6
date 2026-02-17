@@ -6494,6 +6494,7 @@ end;
           fldprec_buflen: integer;
           fwi: integer; { index for field width buffer copying }
           fvi: integer; { index for file variable buffer }
+          wrt_deref: boolean; { sel_deref saved before field width processing }
 
       procedure fmt_width(w: integer);
       { output field width digits to format string }
@@ -6560,21 +6561,7 @@ end;
               w := fldwidth;
             if w <> 1 then fmt_width(w)
           end;
-          { use %d for: constants, ord/chr results, enums, or small subranges.
-            Large subranges map to long and need %ld }
-          if wascst or fromord then
-            fmt_chr('d')
-          else if (lsp_orig <> nil) and (lsp_orig <> intptr) then begin
-            if lsp_orig^.form = subrange then begin
-              if (lsp_orig^.min.ival >= -32768) and
-                 (lsp_orig^.max.ival <= 65535) then
-                fmt_chr('d')
-              else fmt_str('ld')
-            end else if lsp_orig^.form = scalar then
-              fmt_chr('d')  { enum types are int }
-            else fmt_str('ld')
-          end else
-            fmt_str('ld');  { base integer variables are long }
+          fmt_str('ld');  { always %ld with (long) cast }
           if fldwidth_var then begin
             { add width expression as printf argument before value }
             if stmttop^.arglen > 0 then begin
@@ -6585,7 +6572,16 @@ end;
               arg_chr(fldwidth_buf[i]);
             arg_chr(')')
           end;
-          arg_add
+          { cast to (long) to match %ld format }
+          if stmttop <> nil then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(long)(');
+            for i := 1 to stmttop^.exprlen do
+              arg_chr(stmttop^.exprbuf[i]);
+            arg_chr(')')
+          end
         end else if ltp = realptr then begin
           fmt_chr('%');
           if fldwidth_var then
@@ -6637,7 +6633,16 @@ end;
             else fmt_chr(c)
           end else begin
             fmt_str('%c');
-            arg_add
+            { cast to (int) to match %c format }
+            if stmttop <> nil then begin
+              if stmttop^.arglen > 0 then begin
+                arg_chr(','); arg_chr(' ')
+              end;
+              arg_str('(int)(');
+              for i := 1 to stmttop^.exprlen do
+                arg_chr(stmttop^.exprbuf[i]);
+              arg_chr(')')
+            end
           end
         end else if ltp = boolptr then begin
           fmt_str('%s');
@@ -6738,6 +6743,8 @@ end;
         lsp_orig := lsp; { save original type before basetype strips it }
         if lsp <> nil then
           if lsp^.form <= subrange then load else loadaddress;
+        wrt_deref := sel_deref;
+        sel_deref := false;
         lsp := basetype(lsp); { remove any subrange }
         if stringt(lsp) and not complext(lsp) then
           len := lsp^.size div charmax;
@@ -6841,6 +6848,11 @@ end;
           c_ln(');')
         end;
         { add this value to printf }
+        { insert * for pointer dereference on scalar types only;
+          arrays/strings use C pointer-to-array equivalence }
+        if wrt_deref and (stmttop <> nil) then
+          if (lsp <> nil) and (lsp^.form <= subrange) then
+            expr_insert('*', 1);
         if txt then add_wrt_arg;
         test := sy <> comma;
         if not test then
@@ -7818,6 +7830,9 @@ end;
         { for devolved constant set 'in' comparison chain }
         runstart, runend: integer;
         firstelt, ischartype, found: boolean;
+        { for pointer dereference in comparisons }
+        lhs_deref, rhs_deref: boolean;
+        rhs_start: integer;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -8524,6 +8539,7 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
+      lhs_deref := sel_deref;
       lattr := gattr; lop := op;
       { output C relational operator }
       if wantexpr then begin
@@ -8624,6 +8640,8 @@ end;
         end
       end else
         in_left_len := 0;
+      rhs_start := 0;
+      if stmttop <> nil then rhs_start := stmttop^.exprlen;
       insymbol; simpleexpression(fsys, threaten);
       rschrcst := ischrcst(gattr);
       if rschrcst then rc := chr(gattr.cval.ival);
@@ -8640,6 +8658,16 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
+      rhs_deref := sel_deref;
+      { insert * for pointer dereference in default comparisons
+        (in_left_len = 0 means not string/set/in comparison paths
+         which rebuild the buffer differently) }
+      if wantexpr and (in_left_len = 0) then begin
+        if rhs_deref and (stmttop <> nil) and (rhs_start > 0) then
+          expr_insert('*', rhs_start + 1);
+        if lhs_deref and (stmttop <> nil) then
+          expr_insert('*', expr_lhs_start + 1)
+      end;
       if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
         fndopr2(lop, lattr, fcp);
         if fcp <> nil then callop2(fcp, lattr) else begin
