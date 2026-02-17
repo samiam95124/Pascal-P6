@@ -8251,6 +8251,8 @@ end;
                             expr_idname(lcp)
                         end;
                         call(fsys,lcp, inherit, true);
+                        if lcp^.pfdeckind <> standard then
+                          sel_deref := false;
                         with gattr do
                           begin kind := expr;
                             if typtr <> nil then
