@@ -1883,12 +1883,13 @@ begin
           end;
           { safety: cap length at array bounds before trimming }
           if p^.len > 8000 then p^.len := 8000;
-          { trim trailing whitespace - avoid array access when p^.len = 0 }
-          while p^.len > 0 do begin
+          { trim trailing whitespace }
+          done := false;
+          while (p^.len > 0) and (not done) do begin
             if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9)) then
               p^.len := p^.len - 1
             else
-              p^.len := 0 { force exit }
+              done := true
           end;
           { add to queue }
           if p^.len > 0 then
@@ -4228,7 +4229,7 @@ end;
     procedure scancmt;
     (* scan and capture a comment *)
     var p: cmtptr;
-        iscmte: boolean;
+        iscmte, done: boolean;
         ll, li: integer;
     begin
       (* check for compiler directive *)
@@ -4287,13 +4288,14 @@ end;
         until iscmte or eofinp;
         (* safety: cap length at array bounds before trimming *)
         if p^.len > 8000 then p^.len := 8000;
-        (* trim trailing whitespace - avoid array access when p^.len = 0 *)
-        while p^.len > 0 do begin
+        (* trim trailing whitespace *)
+        done := false;
+        while (p^.len > 0) and (not done) do begin
           if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
              or (p^.text[p^.len] = chr(10)) then
             p^.len := p^.len - 1
           else
-            p^.len := 0 (* force exit *)
+            done := true
         end;
         (* store as header comment only if before program keyword, else enqueue *)
         if (headercmt = nil) and not pastprogram then
