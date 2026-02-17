@@ -52,7 +52,7 @@ label 88, 77, 99;
 
 const
 
-   maxpwr  = 1000000000; { maximum power of 10 that fits into integer }
+   maxpwr  = 1000000000000000000; { maximum power of 10 that fits into integer }
    maxnum  = 9999;  { maximum line number }
    maxstr  = 250;   { maximum length of string }
    maxstk  = 100;   { maximum temp count }
@@ -61,7 +61,7 @@ const
    maxvec  = 1000;  { maximum number of vector indexes }
    maxfil  = 100;   { maximum number of files available }
    maxfln  = 250;   { maximum length of filename (must be >= maxstr) }
-   intdig  = 11;    { number of digits in integer (to get around SVS bug) }
+   intdig  = 20;    { number of digits in integer (to get around SVS bug) }
    hasnfio = true{false}; { implements named file I/O procedures }
 
 type
@@ -3944,7 +3944,7 @@ begin { factor }
       factor;
       cvtint; { convert to integer }
       if temp[top].typ <> tint then prterr(einte); { integer expected }
-      if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
+      if temp[top].int < 0 then prterr(ebolneg);
       temp[top].int := bnot(temp[top].int)
 
    end else if k = cstrc then loadstr { load string constant }
@@ -4063,12 +4063,12 @@ begin { factor }
       if temp[top].typ <> tint then prterr(einte); { integer expected }
       if temp[top].int < 0 then prterr(estrinx); { index is negative }
       skpspc; { skip spaces }
-      if c <> chr(ord(cmid)) then begin { left$ or right$ }
+      if k <> cmid then begin { left$ or right$ }
 
          if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
          getchr; { skip ')' }
          if temp[top].int > temp[top-1].bstr.len then prterr(estrinx);
-         if c = chr(ord(cright)) then { right$ }
+         if k = cright then { right$ }
             for i := 1 to temp[top].int do { move string left }
                temp[top-1].bstr.str[i] :=
                   temp[top-1].bstr.str[i+temp[top-1]
@@ -7046,18 +7046,21 @@ begin
    expr; { parse ending expression }
    cvtint; { convert to integer }
    if temp[top].typ <> tint then prterr(eexmi); { check integer }
-   if temp[top].int = 0 then begin { false }
+   if temp[top].int = 0 then begin { false, continue looping }
 
       top := top-1; { purge value }
       curprg := ctlstk^.line; { restore old position }
       linec := ctlstk^.chrp;
       skpspc; { check for optional ':' }
       if chkchr = chr(ord(ccln)) then getchr; { skip ':' }
-      popctl; { remove control block }
       goto 1 { re-enter same line }
 
-   end else { true }
-      top := top-1 { purge value }
+   end else begin { true, exit loop }
+
+      top := top-1; { purge value }
+      popctl { remove control block }
+
+   end
 
 end;
 
@@ -7401,11 +7404,14 @@ begin
    { place position of function }
    vartbl[x]^.line := curprg;
    vartbl[x]^.chrp := linec;
-   if ml then { skip multiline }
+   if ml then begin { skip multiline }
+
       while not (ktrans[chkchr] in [cendfunc, cendproc, cpend]) do skptlkl;
-   { check matching termination }
-   if proc and (chkchr <> chr(ord(cendproc))) then prterr(enoendp);
-   if not proc and (chkchr <> chr(ord(cendfunc))) then prterr(enoendf);
+      { check matching termination }
+      if proc and (chkchr <> chr(ord(cendproc))) then prterr(enoendp);
+      if not proc and (chkchr <> chr(ord(cendfunc))) then prterr(enoendf)
+
+   end;
    while not chksend do skptlk { skip to end of statement }
 
 end;
