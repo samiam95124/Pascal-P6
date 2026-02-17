@@ -6743,9 +6743,10 @@ end;
           end
         end else if ltp = realptr then begin
           fmt_chr('%');
-          if fldwidth_var then
-            fmt_str('*.*')
-          else begin
+          if fldwidth_var then begin
+            if hasfldprec then fmt_chr('*')
+            else fmt_str('*.*')
+          end else begin
             if fldwidth < 0 then begin
               fmt_chr('-');
               w := -fldwidth
