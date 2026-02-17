@@ -5471,7 +5471,8 @@ begin
    if filtab[fn] = nil then prterr(efilnop); { file already closed }
    if filtab[fn]^.st = stclose then prterr(efilnop); { file already closed }
    close(filtab[fn]^.f); { close the file }
-   putfil(filtab[fn]) { release file entry }
+   putfil(filtab[fn]); { release file entry }
+   filtab[fn] := nil { clear slot to prevent double close at exit }
 
 end;
 
