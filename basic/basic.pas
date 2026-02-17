@@ -553,6 +553,101 @@ end;
 
 {******************************************************************************
 
+Find bit 'not' of integer.
+
+Finds two's complement bitwise not. Handles negative operands, which the
+Pascaline not operator does not accept.
+
+******************************************************************************}
+
+function bnot(a: integer): integer;
+
+begin
+
+   bnot := -(a+1) { two's complement identity }
+
+end;
+
+{******************************************************************************
+
+Find bit 'and' of integers.
+
+Finds two's complement bitwise and. Handles negative operands by separating
+the sign bit from the lower bits, operating on the non-negative lower parts
+with the Pascaline and operator, and reconstructing.
+
+******************************************************************************}
+
+function band(a, b: integer): integer;
+
+var al, bl, rl: integer; { lower 63 bits }
+    sa, sb:     boolean;  { sign bits }
+
+begin
+
+   sa := a < 0; sb := b < 0;
+   if sa then al := a+maxint+1 else al := a;
+   if sb then bl := b+maxint+1 else bl := b;
+   rl := al and bl;
+   if sa and sb then band := rl-maxint-1
+   else band := rl
+
+end;
+
+{******************************************************************************
+
+Find bit 'or' of integers.
+
+Finds two's complement bitwise or. Handles negative operands by separating
+the sign bit from the lower bits, operating on the non-negative lower parts
+with the Pascaline or operator, and reconstructing.
+
+******************************************************************************}
+
+function bor(a, b: integer): integer;
+
+var al, bl, rl: integer; { lower 63 bits }
+    sa, sb:     boolean;  { sign bits }
+
+begin
+
+   sa := a < 0; sb := b < 0;
+   if sa then al := a+maxint+1 else al := a;
+   if sb then bl := b+maxint+1 else bl := b;
+   rl := al or bl;
+   if sa or sb then bor := rl-maxint-1
+   else bor := rl
+
+end;
+
+{******************************************************************************
+
+Find bit 'xor' of integers.
+
+Finds two's complement bitwise xor. Handles negative operands by separating
+the sign bit from the lower bits, operating on the non-negative lower parts
+with the Pascaline xor operator, and reconstructing.
+
+******************************************************************************}
+
+function bxor(a, b: integer): integer;
+
+var al, bl, rl: integer; { lower 63 bits }
+    sa, sb:     boolean;  { sign bits }
+
+begin
+
+   sa := a < 0; sb := b < 0;
+   if sa then al := a+maxint+1 else al := a;
+   if sb then bl := b+maxint+1 else bl := b;
+   rl := al xor bl;
+   if sa <> sb then bxor := rl-maxint-1
+   else bxor := rl
+
+end;
+
+{******************************************************************************
+
 Find stacked type
 
 Removes all entries from the control stack until the top one matches the
@@ -1414,7 +1509,6 @@ begin
    fp^.next := fnsstk; { push onto control stack }
    fnsstk := fp;
    fp^.vs := nil; { clear variables list }
-   fp^.next := nil; { clear next }
    fp^.endf := false { set end of function not found }
 
 end;
@@ -3670,8 +3764,7 @@ begin { factor }
       factor;
       cvtint; { convert to integer }
       if temp[top].typ <> tint then prterr(einte); { integer expected }
-      if temp[top].int < 0 then prterr(ebolneg);
-      temp[top].int := not(temp[top].int)
+      temp[top].int := bnot(temp[top].int)
 
    end else if k = cstrc then loadstr { load string constant }
    else if k = cintc then begin
@@ -3695,7 +3788,7 @@ begin { factor }
       y := ord(chkchr); { get variable character }
       getchr; { skip }
       if vartbl[y]^.fnc then { is a function }
-         parfnc(vartbl[y], crlv) { parse function reference }
+         parfnc(vartbl[y], k) { parse function reference }
       else begin { variable }
 
          { record handles (r.) are typeless, and so become default reals by
@@ -4518,8 +4611,7 @@ begin { expr }
             cvtints; { convert second to integer }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
-            if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := temp[top-1].int and temp[top].int;
+            temp[top-1].int := band(temp[top-1].int, temp[top].int);
             top := top-1
 
          end;
@@ -4532,8 +4624,7 @@ begin { expr }
             cvtints; { convert second to integer }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
-            if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := temp[top-1].int xor temp[top].int;
+            temp[top-1].int := bxor(temp[top-1].int, temp[top].int);
             top := top-1
 
          end;
@@ -4546,8 +4637,7 @@ begin { expr }
             cvtints; { convert second to integer }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
-            if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := temp[top-1].int or temp[top].int;
+            temp[top-1].int := bor(temp[top-1].int, temp[top].int);
             top := top-1
 
          end
