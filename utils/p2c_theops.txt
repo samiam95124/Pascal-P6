@@ -533,7 +533,240 @@ and fopen() calls to connect Pascal file variables to command-line filenames.
 All records use explicit new/dispose with recycling counters checked at exit.
 
 
-19. Relationship to Other Programs
+19. Debugging Guide
+--------------------
+
+This section documents common failure modes encountered during p2c development
+and the techniques used to diagnose them.
+
+
+19.1 CTP Pointer Recycling (Use After Free)
+
+The single most dangerous class of bugs in p2c. When a scope is exited,
+putdsp() calls putnams() which walks the identifier BST and calls putnam()
+to dispose each CTP record. After putnam(), the pointer is invalid — but
+other data structures may still hold it.
+
+This has caused real bugs in two subsystems:
+
+  Nested procedure flattening: copy_nestbuf_resolving_markers() resolves
+  /*@UPL:NNN@*/ markers by looking up CTP records in procuplevelproc[] and
+  procuplevelrefs[][]. If copy_nestbuf_resolving_markers is called AFTER
+  putdsp(top), the CTP pointers are stale and the resolved uplevel argument
+  lists contain garbage. The fix: always resolve markers BEFORE putdsp
+  recycles the scope.
+
+  passym (LSP symbol table): The symrec output code originally held CTP
+  name pointers across scope boundaries. After putdsp, the pstring pointed
+  to by name was freed. Fix: copy the name string value, don't just hold
+  the pointer.
+
+When putnam() recycles a proc/func CTP, it also clears any matching entry
+in procuplevelproc[] (setting it to nil). This defensive measure prevents
+stale pointers from lingering in the uplevel tracking tables.
+
+Symptom: Garbled identifier names, wrong uplevel arguments, segfaults.
+Diagnosis: Add writeln() before/after putdsp to identify the scope being
+recycled. Check if any code between putdsp and the end of the function
+references CTPs from that scope.
+
+
+19.2 Serial Numbers (snm fields)
+
+Every CTP and STP record has an snm (serial number) field, assigned
+sequentially by ininam() and pshstc() via the global counters ctpsnm and
+stpsnm. These are invaluable for debugging because they uniquely identify
+each record across the program's lifetime.
+
+Use cases:
+
+  Type map deduplication: The typemap, ptrmap, and arrmap tables store
+  snm values (typemapsnm[], ptrmapsnm[], arrmapsnm[]) alongside STP
+  pointers. This allows detecting when two different STP pointers actually
+  refer to the same logical type (same snm = same registration).
+
+  Diagnostic dumps: The -t (prttables) option prints all identifier and
+  structure tables with snm values. The -x (prtlex) option includes snm
+  in lexical dumps. When debugging a type mismatch or missing typedef,
+  grep the dump output for the snm of interest.
+
+  Recycling verification: At program exit, p2c checks that all recycling
+  counters (cspcnt, stpcnt, ctpcnt, lbpcnt, filcnt, cipcnt, ttpcnt,
+  wtpcnt) are zero. A nonzero count means a record was allocated but never
+  freed (leak) or freed without being allocated (double-free). The error
+  message "identifier recycle balance: N" appears at exit. Note: a small
+  positive ctpcnt is a known pre-existing issue on most files.
+
+Technique: When a record is suspect, print its snm early in the pipeline,
+then search for that snm in later output to track its lifecycle.
+
+
+19.3 sel_deref Flag Leakage
+
+The sel_deref boolean tracks when the last selector operation was a pointer
+dereference (^). In C, Pascal's p^ becomes *p, and sel_deref tells the
+expression emitter to prepend *. The flag is set in selector() when ^ is
+parsed, and cleared on array subscript or field access.
+
+The bug: sel_deref was not reset after user-defined function calls. If a
+function argument included a pointer dereference (e.g., ord(ptr^)), the
+sel_deref flag leaked through the call and was applied to the function's
+return value, generating *func() instead of func(). This produced invalid
+C (unary * on a non-pointer return type).
+
+The fix had to be precise: reset sel_deref after call() returns, but ONLY
+for non-standard (user-defined) functions. Standard functions like ord()
+need the deref from their argument to be visible (ord(ptr^) must dereference
+ptr before passing to ord). The condition is:
+
+  if lcp^.pfdeckind <> standard then sel_deref := false;
+
+Symptom: gcc errors like "invalid type argument of unary '*'" on function
+return values. Appears when the function's arguments contain ^ dereferences.
+Diagnosis: Search the generated .c file for *functionname( patterns.
+
+
+19.4 Expression Buffer Clobbering
+
+The expression buffer (stmttop^.exprbuf) is shared across all levels of
+expression parsing (expression, simpleexpression, term, factor). This
+creates problems for operators that need to capture the LHS before
+generating code for the RHS:
+
+  Set binary operations (+, -, *): The LHS must be saved to set_lhs_buf
+  before the RHS is evaluated, because the RHS evaluation overwrites
+  exprbuf. A separate buffer (set_lhs_buf) is used rather than the
+  general-purpose in_left_buf, because in_left_buf can itself be
+  overwritten by nested set operations.
+
+  The 'in' operator with 'not': For "not (x in s)", the expression
+  buffer contains "!" from the not, then x from the LHS. The expr_lhs_start
+  variable tracks where the LHS actually begins (after any prefix operators).
+  Without this, the generated code puts the negation inside the function
+  call arguments: p2c_sisin(!(x), s) instead of !(p2c_sisin(x, s)).
+
+Symptom: Wrong C code for set expressions, misplaced operators, garbled
+arguments. Usually manifests as gcc errors or wrong runtime behavior.
+Diagnosis: Add temporary writeln() calls in the expression parser to dump
+exprbuf contents at each level of the operator precedence hierarchy.
+
+
+19.5 Comment Trimming Loop Destruction
+
+The comment capture system (scancmt) trims trailing whitespace from stored
+comments. The original trimming loop used "p^.len := 0" to force exit from
+a while loop when a non-space character was found:
+
+  while p^.len > 0 do begin
+    if (p^.text[p^.len] = ' ') ... then p^.len := p^.len - 1
+    else p^.len := 0   { WRONG: destroys the comment }
+  end;
+
+This zeroed out every comment's length, so c_comment() saw empty comments
+and output nothing. The fix uses a boolean flag for proper loop exit:
+
+  done := false;
+  while (p^.len > 0) and (not done) do begin
+    if (p^.text[p^.len] = ' ') ... then p^.len := p^.len - 1
+    else done := true
+  end;
+
+This is a instance of a general Pascal gotcha: since Pascal and/or do NOT
+short-circuit, using a variable as both the loop condition and exit mechanism
+requires care. The pattern "set the controlling variable to force exit" is
+dangerous when the variable has other semantic meaning.
+
+
+19.6 Non-Short-Circuit Boolean Evaluation
+
+Standard Pascal (and Pascaline) evaluates BOTH operands of and/or regardless
+of the first operand's value. This differs from C's && and || which short-
+circuit. This has caused bugs in p2c itself:
+
+  while (i >= 1) and (p^.text[i] <> chr(10)) do ...
+
+When i reaches 0, both conditions are still evaluated, so p^.text[0] is
+accessed — an out-of-bounds array reference.
+
+Fix: use a flag variable:
+
+  while (i >= 1) and (lastnl = 0) do begin
+    if p^.text[i] = chr(10) then lastnl := i;
+    i := i - 1
+  end;
+
+This pattern must be used throughout p2c whenever a loop condition combines
+a bounds check with a data-dependent test.
+
+
+19.7 Printf Format String Errors
+
+When translating Pascal write statements with field width and precision
+specifiers, p2c must generate the correct printf format. Pascal's write(x:w:p)
+becomes printf("%w.pf", x), but when w or p are variable expressions rather
+than constants, they become printf("%*.*f", w, p, x).
+
+The bug: when both variable width (fldwidth_var) and explicit precision
+(hasfldprec) were true, the code generated "%*.*.*f" — three * specifiers
+when printf only supports two. The fix: when hasfldprec is true, emit only
+"*" for width (not "*.*") since the explicit precision replaces the default.
+
+Symptom: gcc warnings about format string mismatches, wrong output formatting.
+Diagnosis: Search the generated .c for printf/fprintf calls and count the
+format specifiers vs. arguments.
+
+
+19.8 Deferred Buffer Scope Contamination
+
+The deferredbuf holds bodies of nested procedures whose uplevel argument
+lists aren't yet known. When exiting a scope, deferredbuflen must be reset
+to deferredbuffloor (the value at scope entry), NOT to zero. Resetting to
+zero would destroy deferred bodies from outer scopes that are still needed.
+
+Similarly, deferredfloor marks which entries in the deferredprocs[] table
+belong to the current scope. Only entries above the floor are cleared on
+scope exit.
+
+Symptom: Missing or garbled function bodies in the generated C, typically
+for deeply nested procedures (3+ levels). The outer procedure's deferred
+children get overwritten by inner scope's data.
+Diagnosis: Add writeln() calls at scope entry/exit showing deferredbuflen,
+deferredbuffloor, deferredfloor, and deferredchildcnt.
+
+
+19.9 General Debugging Techniques
+
+  Build cycle: bin/pc utils/p2c && cp utils/p2c bin/p2c
+  Always rebuild and copy before testing.
+
+  Regression testing: bin/testp2cs from the project root runs all 12 test
+  programs. Baseline is: 11 pass (0 gcc errors, 0 warnings, 0 dif lines),
+  iso7185pat with 4 dif lines (floating-point rounding only).
+
+  Comparing output: The .cmp files contain expected output. Use diff or
+  the dif utility to compare actual vs. expected: bin/dif file.lst file.cmp
+
+  Isolating failures: Run p2c on a single file to see translation errors:
+    bin/p2c sample_programs/hello
+  Then compile the generated C:
+    gcc -o hello_c hello.c -I../libs ../libs/setopr.o ../libs/psystem.a -lm
+
+  The -l (list) option: bin/p2c -list file produces a source listing with
+  line numbers interleaved with any error messages, helpful for locating
+  where the parser lost sync.
+
+  Diagnostic options: -prttables dumps the symbol table, -prtlex dumps
+  the lexer output. These can help identify where a type or identifier
+  went wrong.
+
+  Bisecting with writeln: Since p2c is compiled by the P6 compiler (not gcc),
+  traditional debuggers are less useful. The primary debugging tool is
+  writeln() calls inserted into p2c.pas, then rebuilding. Place them at
+  procedure entry/exit, before/after putdsp, or at expression buffer
+  flush points to trace execution.
+
+
+20. Relationship to Other Programs
 ------------------------------------
 
   parser.pas    Base parser (pcom minus code generation). p2c is derived from
