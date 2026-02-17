@@ -3,6 +3,82 @@
  * Source: iso7185pat
  */
 
+/******************************************************************************
+*                                                                             *
+*                      TEST SUITE FOR ISO 7185 PASCAL                         *
+*                                                                             *
+*                       The "PASCAL ACCEPTANCE TEST"                          *
+*                                                                             *
+*                              Version 1.1                                    *
+*                                                                             *
+*            Copyright (C) 2010 S. A. Moore - All rights reserved             *
+*                                                                             *
+* This program attempts to use and display the results of each feature of     *
+* standard pascal. It is a "positive" test in that it should compile and run  *
+* error free, and thus does not check error conditions/detection.             *
+*                                                                             *
+* Each test is labeled and numbered, and the expected result also output, so  *
+* that the output can be self evidently hand checked.                         *
+*                                                                             *
+* The output can be redirected to a printer or a file to facillitate such     *
+* checking.                                                                   *
+*                                                                             *
+* The output can also be automatically checked by comparing a known good file *
+* to the generated file. To this end, we have regularized the output,         *
+* specifying all output field widths that are normally compiler dependent.    *
+*                                                                             *
+* Only the following factors exist that are allowed to be compiler dependent, *
+* but could cause a miscompare of the output:                                 *
+*                                                                             *
+*    1. The case of output booleans. We have choosen a standard format of     *
+*       LOWER case for such output. Note that compilers can choose any case,  *
+*       or mixture of cases.                                                  *
+*                                                                             *
+* Because of this, it may be required to return to hand checking when         *
+* encountering a differing compiler system.                                   *
+*                                                                             *
+* Notes:                                                                      *
+*                                                                             *
+* 1. This test will not run or compile unless "set of char" is possible.      *
+* This does not mean that compilers lacking in "set of char" capability are   *
+* not standard. However, in the authors opinion, this is a crippling          *
+* limitation for any Pascal compiler.                                         *
+*                                                                             *
+* 2. Because there is no "close" function in ISO 7185 Pascal, the file        *
+* handling contained with is likely to generate a large number of open        *
+* temporary files. This may cause some implementations to trip a limit on the *
+* number of total open files. If this occurs, turn the constant "testfile"    *
+* below to "false". This will cause the temporary files test to be skipped.   *
+*                                                                             *
+* 3. The test assumes that both upper and lower case characters are           *
+* available, both in source and in the text files that are processed. The     *
+* ISO 7185 standard does not technically require this.                        *
+*                                                                             *
+* The following sections need to be completed:                                *
+*                                                                             *
+* 1. Buffer variables. The full suite of handing tests need to be applied to  *
+* file buffer variables as well. This means all integer, character, boolean,  *
+* etc.                                                                        *
+*                                                                             *
+* 2. Arrays, records and pointers containing files.                           *
+*                                                                             *
+* 3. Pointer variables, array variables, and other complex accesses need to   *
+* subjected to the same extentive tests that base variables are.              *
+*                                                                             *
+* 4. Need a test for access to locals of a surrounding procedure. This tests  *
+* access to a procedure that is local, but not in the same scope.             *
+*                                                                             *
+* 5. Need a dynamic storage test that allocates various sizes, not just       *
+* integers.                                                                   *
+*                                                                             *
+* 6. Tests for reads from the "input" file, as well as explictly specifying   *
+* the output file.                                                            *
+*                                                                             *
+* 7. Test for page. This would just perform it, and leave it up to the reader *
+* as to what the effect is, since the action is undefined.                    *
+*                                                                             *
+******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,8 +95,9 @@
 #define true 1
 #define false 0
 #endif
-#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})
-#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v=='\n'?(v=' '):0))
+#define p2c_eof(f) ({int _r;if(feof(f)){_r=1;}else{int _c=getc(f);if(_c==EOF){long _p=ftell(f);if(_p>0){fseek(f,_p-1,SEEK_SET);int _pv=getc(f);_r=(_pv=='\n');}else _r=1;}else{ungetc(_c,f);_r=0;}}_r;})
+#define p2c_eoln(f) ({int _c=getc(f);ungetc(_c,f);_c==10||_c==EOF;})
+#define p2c_readc(f,v) ({int _c=getc(f);if(_c==EOF||_c=='\n')v=' ';else v=(char)_c;})
 
 #define ccst 'v'
 #define cone 1
@@ -37,6 +114,9 @@
 #define tsncst2 -768
 #define tsncst3 52
 
+/*  flags to control run */
+/*  the pointer torture test takes time and isn't run for interpreted
+           systems */
 enum enum_ {
     one,
     two,
@@ -700,15 +780,15 @@ void junk8(long a,bool b,char c,int e,unsigned char es,unsigned char s,
 
 }
 
-void junk9(void (*junk9)(long, long, char),long (*y)(long))
+void junk9(p2c_procptr junk9,p2c_procptr y)
 {
 
     typedef long* iptr;
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    junk9(9834, 8383, 'j');
-    printf(" %ld", (long)(y(743)));
+    ((void (*)(long, long, char, void*))junk9.fn)(9834, 8383, 'j', junk9.ctx);
+    printf(" %ld", (long)(((long (*)(long, void*))y.fn)(743, y.ctx)));
 
 }
 
@@ -736,25 +816,25 @@ long junk11(long x)
     return junk11__result;
 }
 
-void junk12(void (*xq)(long (*yq)(long)),long (*q)(long))
+void junk12(p2c_procptr xq,p2c_procptr q)
 {
 
     typedef long* iptr;
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    xq(q);
+    ((void (*)(p2c_procptr, void*))xq.fn)(q, xq.ctx);
 
 }
 
-void junk13(long (*xz)(long))
+void junk13(p2c_procptr xz)
 {
 
     typedef long* iptr;
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    printf("%ld", (long)(xz(941)));
+    printf("%ld", (long)(((long (*)(long, void*))xz.fn)(941, xz.ctx)));
 
 }
 static void junk14_junk15();
@@ -806,21 +886,22 @@ static void junk17_junk18(long* i__up)
 
 }
 
-void junk17(void (*x)(void),long i)
+void junk17(p2c_procptr x,long i)
 {
 
     typedef long* iptr;
 
     p2c_settype __attribute__((unused)) _stmp1, _stmp2;
 
-    x();
+    ((void (*)(void*))x.fn)(x.ctx);
     if (i == 52) {
 
-        junk17((void (*)(void))junk17_junk18, 83);
+        junk17((p2c_procptr){(void(*)())junk17_junk18, (void*)&i}, 83);
 
     }
 
 }
+/*  test preference of pointer bonding to current scope */
 
 void junk19(void)
 {
@@ -841,6 +922,7 @@ static long junk20_inner();
 typedef long* iptr;
 typedef char* junk19_pt;
 
+/*  test ability to assign function result to nested function */
 
 static long junk20_inner(long* junk20__result__up)
 {
@@ -906,7 +988,7 @@ long random_(long low,long hi)
     random___result = rndseq / (9223372036854775807 / (hi - low + 1)) + low;
 
     return random___result;
-} 
+} /* of random */
 
 long junk21(void)
 {
@@ -1008,6 +1090,19 @@ int main(void)
     printf("***************\n");
     printf("\n");
 
+    /******************************************************************************
+
+                              Reference dangling defines
+
+    ******************************************************************************/
+
+    /*  unused declarations are always a problem, because it is always concievable
+         that there is a compiler test that will reveal they are not used. We use
+         assign to references here because a simple read of a variable could fault
+         on an undefined reference. Its also possible that a never used fault could
+         occur (written, but never used), in which case the code would have to be
+         more complex. The best solution, of course, is to write a real test that
+         uses the variables. */
     a[1] = 1;
     esia[two] = 1;
     pesia[two] = 1;
@@ -1031,6 +1126,11 @@ int main(void)
     rcast.rcastt = true;
     intaliasv = 1;
 
+    /******************************************************************************
+
+                                     Metering
+
+    ******************************************************************************/
     printf("The following are implementation defined characteristics\n");
     printf("\n");
     printf("Maxint: %ld\n", (long)(9223372036854775807));
@@ -1074,6 +1174,11 @@ int main(void)
 
     }
 
+    /******************************************************************************
+
+                               Control structures
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Control structures tests *******************\n");
     printf("\n");
@@ -1100,7 +1205,7 @@ int main(void)
     while (i <= 10) {
 
         printf("%ld ", (long)(i));
-        i = i + 1; 
+        i = i + 1; /* comment */
 
     }
     printf("s/b 1 2 3 4 5 6 7 8 9 10\n");
@@ -1114,7 +1219,7 @@ int main(void)
     } while (!(i > 10));
     printf("s/b 1 2 3 4 5 6 7 8 9 10\n");
     printf("Control5: ");
-    i = 1;
+    i = 1; /* comment*) */
     _l0: ;
     printf("%ld ", (long)(i));
     i = i + 1;
@@ -1125,7 +1230,7 @@ int main(void)
     }
     printf("s/b 1 2 3 4 5 6 7 8 9 10\n");
     printf("Control6: ");
-
+    /* comment */
     if (true) {
 
         printf("yes");
@@ -1135,7 +1240,7 @@ int main(void)
         printf("no");
 
     }
-
+    /* comment */
     printf(" s/b yes\n");
     printf("Control7: ");
     if (false) {
@@ -1164,7 +1269,7 @@ int main(void)
     }
     printf("stop");
     printf(" s/b stop\n");
-
+    /* )comment */
     printf("Control10: ");
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
@@ -1227,7 +1332,7 @@ int main(void)
     _l3: ;
     printf("stop s/b start stop\n");
     printf("Control13: start ");
-
+    /*  self defined fors */
     i = 10;
     { long _forlim = i;
     for (i = 1; i <= _forlim; i++) {
@@ -1238,7 +1343,7 @@ int main(void)
     }
     printf(" s/b start  1  2  3  4  5  6  7  8  9 10\n");
     printf("Control14: start ");
-
+    /*  self defined fors */
     i = 10;
     { long _forlim = 1;
     for (i = i; i >= _forlim; i--) {
@@ -1249,7 +1354,7 @@ int main(void)
     }
     printf(" s/b start 10  9  8  7  6  5  4  3  2  1\n");
     printf("Control15: start ");
-
+    /*  for against 0 */
     { long _forlim = 9;
     for (i = 0; i <= _forlim; i++) {
 
@@ -1259,7 +1364,7 @@ int main(void)
     }
     printf(" s/b start 0 1 2 3 4 5 6 7 8 9\n");
     printf("Control16: start ");
-
+    /*  for against 0 */
     { long _forlim = 0;
     for (i = 9; i >= _forlim; i--) {
 
@@ -1268,13 +1373,13 @@ int main(void)
     }
     }
     printf(" s/b start 9 8 7 6 5 4 3 2 1 0\n");
-
+    /*  wide spread of case statements */
     printf("Control17: start ");
     i = 10000;
     switch (i) {
 
     case 1:
-
+        /* comment{comment */
         printf("*** bad ***");
         break;
 
@@ -1287,6 +1392,7 @@ int main(void)
     printf("Control18: start ");
     do {
 
+        /* comment(*comment */
         goto _l4;
         printf("!! BAD !!");
         _l4: ;
@@ -1300,10 +1406,15 @@ int main(void)
 
     } while (!(true));
 
+    /******************************************************************************
+
+                                Integers
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Integers *******************\n");
     printf("\n");
-
+    /*  integer variables */
     x = 43;
     y = 78;
     z = y;
@@ -1333,7 +1444,7 @@ int main(void)
     printf("Integer24:  %5.5s s/b true\n", (y >= x) ? "true" : "false");
     printf("Integer25:  %5.5s s/b true\n", (y >= z) ? "true" : "false");
     printf("Integer26:  %5.5s s/b false\n", (x >= y) ? "true" : "false");
-
+    /*  unsigned integer constants */
     printf("Integer27:  ");
     i = 546;
     printf("%ld s/b 546\n", (long)(i));
@@ -1364,7 +1475,7 @@ int main(void)
     printf("Integer52:  %5.5s s/b true\n", (645 >= 4) ? "true" : "false");
     printf("Integer53:  %5.5s s/b true\n", (23 >= 23) ? "true" : "false");
     printf("Integer54:  %5.5s s/b false\n", (45 >= 123) ? "true" : "false");
-
+    /*  signed integer variables */
     as = - 14;
     bs = - 32;
     cs = - 14;
@@ -1417,7 +1528,7 @@ int main(void)
     printf("Integer96:  %ld s/b 0\n", (long)(gs + hs));
     printf("Integer97:  %ld s/b 0\n", (long)(gs - 9223372036854775807));
     printf("Integer98:  %ld s/b 0\n", (long)(gs + vnum));
-
+    /*  signed integer constants */
     printf("Integer99:  %ld s/b 15\n", (long)(45 + (- 30)));
     printf("Integer100:  %ld s/b 45\n", (long)(- 25 + 70));
     printf("Integer101: %ld s/b -39\n", (long)(- 62 + 23));
@@ -1466,7 +1577,7 @@ int main(void)
     printf("Integer144: %ld s/b -768\n", (long)(-768));
     printf("Integer145: %ld s/b 52\n", (long)(52));
     printf("Integer146: %ld s/b 0\n", (long)(9223372036854775807 + -9223372036854775807));
-
+    /*  other integer */
     myowninteger = 42;
     printf("Integer147: %ld s/b 42\n", (long)(myowninteger));
     myvar = 1;
@@ -1484,10 +1595,15 @@ int main(void)
     myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar = 13;
     printf("Integer148: %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld s/b 1 2 3 4 5 6 7 8 9 10 11 12 13\n", (long)(myvar), (long)(myvarmyvar), (long)(myvarmyvarmyvar), (long)(myvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar), (long)(myvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvarmyvar));
 
+    /******************************************************************************
+
+                                Subranges
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Subranges *******************\n");
     printf("\n");
-
+    /*  subrange unsigned variables */
     srx = 43;
     sry = 78;
     srz = sry;
@@ -1516,7 +1632,7 @@ int main(void)
     printf("Subrange23:  %5.5s s/b true\n", (sry >= srx) ? "true" : "false");
     printf("Subrange24:  %5.5s s/b true\n", (sry >= srz) ? "true" : "false");
     printf("Subrange25:  %5.5s s/b false\n", (srx >= sry) ? "true" : "false");
-
+    /*  signed subrange variables */
     sras = - 14;
     srbs = - 32;
     srcs = - 14;
@@ -1563,10 +1679,15 @@ int main(void)
     printf("Subrange64:  %5.5s s/b false\n", (srbs >= sras) ? "true" : "false");
     printf("Subrange65:  %ld s/b 14\n", (long)(labs(sras)));
 
+    /******************************************************************************
+
+                             Characters
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Characters*******************\n");
     printf("\n");
-
+    /*  character variables */
     ca = 'g';
     cb = 'g';
     cc = 'u';
@@ -1734,7 +1855,7 @@ int main(void)
     }
     printf("\n");
     printf(" s/b zero one two three four five six seven eight nine\n");
-
+    /*  character constants */
     printf("Character51:  a s/b a\n");
     printf("Character52:  %c s/b b\n", (int)(('a' + 1)));
     printf("Character53:  %c s/b y\n", (int)(('z' - 1)));
@@ -1794,7 +1915,7 @@ int main(void)
     printf("hel\n");
     printf("he\n");
     printf("h\n");
-
+    /*  ordering */
     printf("Character88: \n");
     printf("%5.5s ", (('0' + 1) == '1') ? "true" : "false");
     printf("%5.5s ", (('1' + 1) == '2') ? "true" : "false");
@@ -1807,7 +1928,8 @@ int main(void)
     printf("%5.5s \n", (('8' + 1) == '9') ? "true" : "false");
     printf("s/b\n");
     printf(" true  true  true  true  true  true  true  true  true\n");
-
+    /*  Note it is possible for only one case to be present, but likely this whole
+            test would fail if that were true */
     printf("Character89:\n");
     printf("%5.5s ", ('a' < 'b') ? "true" : "false");
     printf("%5.5s ", ('b' < 'c') ? "true" : "false");
@@ -1869,10 +1991,15 @@ int main(void)
     printf(" true  true  true  true  true  true  true  true  true  true\n");
     printf(" true  true  true  true  true\n");
 
+    /******************************************************************************
+
+                                Booleans
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Booleans *******************\n");
     printf("\n");
-
+    /*  boolean variables */
     ba = true;
     bb = false;
     bc = true;
@@ -1922,7 +2049,7 @@ int main(void)
     printf("Boolean24:  ");
     ba = 1 < 0;
     printf("%5.5s s/b false\n", (ba) ? "true" : "false");
-
+    /*  boolean constants */
     printf("Boolean25:  %5.5s %5.5s s/b true false\n", (true) ? "true" : "false", (false) ? "true" : "false");
     printf("Boolean26:  %5.5s s/b true\n", ((false + 1)) ? "true" : "false");
     printf("Boolean27:  %5.5s s/b false\n", ((true - 1)) ? "true" : "false");
@@ -1982,10 +2109,15 @@ int main(void)
     printf("tr\n");
     printf("t\n");
 
+    /******************************************************************************
+
+                                Scalar variables
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Scalar *******************\n");
     printf("\n");
-
+    /*  scalar variables */
     sva = wed;
     svb = mon;
     svc = wed;
@@ -2026,7 +2158,7 @@ int main(void)
     }
     }
     printf("s/b 6 5 4 3 2 1 0\n");
-
+    /*  scalar constants */
     printf("Scalar20:   %5.5s s/b true\n", ((mon + 1) == tue) ? "true" : "false");
     printf("Scalar21:   %5.5s s/b true\n", ((fri - 1) == thur) ? "true" : "false");
     printf("Scalar22:   %ld s/b 2\n", (long)(wed));
@@ -2047,10 +2179,15 @@ int main(void)
     printf("Scalar37:  %5.5s s/b true\n", (tue >= tue) ? "true" : "false");
     printf("Scalar38:  %5.5s s/b false\n", (tue >= sat) ? "true" : "false");
 
+    /******************************************************************************
+
+                                Reals
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Reals ******************************\n");
     printf("\n");
-
+    /*  formats, input (compiler) and output */
     printf("Real1:   %15.8e s/b  1.554000e+00\n", 1.554);
     printf("Real2:   %15.8e s/b  3.340000e-03\n", 3.339999999999999e-3);
     printf("Real3:   %15.8e s/b  3.340000e-24\n", 3.34e-24);
@@ -2108,7 +2245,7 @@ int main(void)
     printf("12.234567890123\n");
     printf("13.2345678901234\n");
     printf("14.23456789012345\n");
-
+    /*  unsigned variables */
     ra = 4.3523e+2;
     rb = 9.836699999999998e+2;
     rc = rb;
@@ -2141,7 +2278,7 @@ int main(void)
     printf("Real36:  %ld s/b 435\n", (long)((long)(ra)));
     printf("Real37:  %ld s/b 984\n", (long)(lround(rb)));
     printf("Real38:  %ld s/b 435\n", (long)(lround(ra)));
-
+    /*  unsigned constants */
     printf("Real39:  %15.8e s/b  1.278052e+03\n", 3.44939e+2 + 9.331129999999999e+2);
     printf("Real40:  %15.8e s/b  2.389460e+02\n", 8.838849999999998e+2 - 6.449389999999999e+2);
     printf("Real41:  %15.8e s/b  1.047202e+05\n", 7.5474e+2 * 1.387499999999999e+2);
@@ -2171,7 +2308,7 @@ int main(void)
     printf("Real65:  %ld s/b 75\n", (long)(lround(7.456e+1)));
     printf("Real66:  %ld s/b 83\n", (long)(lround(8.323999999999999e+1)));
     printf("Real67:  %15.8e s/b  4.333000e+01\n", rcnst);
-
+    /*  signed variables */
     ra = - 7.342e+2;
     rb = - 7.63452e+3;
     rc = ra;
@@ -2220,7 +2357,7 @@ int main(void)
     printf("Real108: %15ld s/b -734\n", (long)((long)(ra)));
     printf("Real109: %15ld s/b -7635\n", (long)(lround(rb)));
     printf("Real110: %15ld s/b -734\n", (long)(lround(ra)));
-
+    /*  signed constants */
     printf("Real111: %15.8e s/b  1.510000e+01\n", 4.593399999999999e+1 + (- 3.0834e+1));
     printf("Real112: %15.8e s/b  4.513300e+01\n", - 2.573699999999999e+1 + 7.087e+1);
     printf("Real113: %15.8e s/b -3.864000e+01\n", - 6.262999999999999e+1 + 2.399e+1);
@@ -2269,10 +2406,15 @@ int main(void)
     printf("Real156:  %15.8e s/b -4.333000e+01\n", rscst2);
     printf("Real157: %15.8e s/b  8.422000e+01\n", rscst3);
 
+    /******************************************************************************
+
+                                Sets
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* sets ******************************\n");
     printf("\n");
-
+    /*  sets of integers */
     printf("Set1:  ");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sta,(p2c_sclr(_stmp2), _stmp2)); }
     { long _forlim = 10;
@@ -2407,13 +2549,13 @@ int main(void)
     }
     printf(" s/b ");
     printf("0101010000\n");
-
+    /*  these are just compile time tests */
     p2c_scpy(ste,std);
     { p2c_settype _stmp1, _stmp2; p2c_scpy(stf,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 1), p2c_sadd(_stmp2, 2), p2c_sadd(_stmp2, 5), p2c_sadd(_stmp2, 7), _stmp2)); }
     p2c_scpy(stg,stf);
     i = 10;
     printf("Set16: %5.5s s/b true\n", (p2c_sisin(5, (p2c_sclr(_stmp2), p2c_radd(_stmp2, 1, i), _stmp2))) ? "true" : "false");
-
+    /*  sets of characters */
     printf("Set17: ");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(csta,(p2c_sclr(_stmp2), _stmp2)); }
     { long _forlim = 'j';
@@ -2554,11 +2696,11 @@ int main(void)
     }
     printf(" s/b ");
     printf("a___e_____\n");
-
+    /*  these are just compile time tests */
     p2c_scpy(cste,cstd);
     { p2c_settype _stmp1, _stmp2; p2c_scpy(cstf,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, 'a'), p2c_sadd(_stmp2, 'b'), p2c_sadd(_stmp2, 'e'), p2c_sadd(_stmp2, 'f'), _stmp2)); }
     p2c_scpy(cstg,cstf);
-
+    /*  sets of enumerated */
     printf("Set32: ");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sena,(p2c_sclr(_stmp2), _stmp2)); }
     { long _forlim = ten;
@@ -2692,12 +2834,12 @@ int main(void)
     }
     printf(" s/b ");
     printf("0110000000\n");
-
+    /*  these are just compile time tests */
     { p2c_settype _stmp1, _stmp2; p2c_scpy(send,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, two), p2c_sadd(_stmp2, five), _stmp2)); }
     p2c_scpy(sene,send);
     { p2c_settype _stmp1, _stmp2; p2c_scpy(senf,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, one), p2c_sadd(_stmp2, two), p2c_sadd(_stmp2, five), p2c_sadd(_stmp2, seven), _stmp2)); }
     p2c_scpy(seng,senf);
-
+    /*  sets of boolean */
     printf("Set47: ");
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sba,(p2c_sclr(_stmp2), _stmp2)); }
     { long _forlim = true;
@@ -2837,7 +2979,7 @@ int main(void)
     }
     printf(" s/b ");
     printf("11\n");
-
+    /*  these are just compile time tests */
     p2c_scpy(sbe,sbd);
     { p2c_settype _stmp1, _stmp2; p2c_scpy(sbf,(p2c_sclr(_stmp2), p2c_sadd(_stmp2, true), _stmp2)); }
     p2c_scpy(sbg,sbf);
@@ -2870,10 +3012,15 @@ int main(void)
     }
     printf(" s/b 1000000001\n");
 
+    /******************************************************************************
+
+                                Pointers
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* Pointers ******************************\n");
     printf("\n");
-
+    /*  pointers to types */
     printf("Pointer1:   ");
     pti = malloc(sizeof(long));
     *pti = 4594;
@@ -2957,7 +3104,7 @@ int main(void)
     *ptp = malloc(sizeof(long));
     **ptp = 3732;
     printf("%ld s/b 3732\n", (long)(**ptp));
-
+    /*  equality/inequality, nil */
     printf("Pointer14:  ");
     pti = NULL;
     printf("%5.5s s/b  true\n", (pti == NULL) ? "true" : "false");
@@ -2975,10 +3122,11 @@ int main(void)
     printf("%5.5s s/b false\n", (pti == pti1) ? "true" : "false");
     printf("Pointer19:  ");
     printf("%5.5s s/b  true\n", (pti != pti1) ? "true" : "false");
-
+    /*  test dispose takes expression (this one does not print) */
     pti2 = malloc(sizeof(long));
     free(frp());
-
+    /*  dynamic allocation stress tests */
+    /*  allocate top to bottom, then free from top to bottom */
     printf("Pointer20:  ");
     ipa = malloc(sizeof(long));
     ipb = malloc(sizeof(long));
@@ -2987,7 +3135,7 @@ int main(void)
     free(ipb);
     free(ipc);
     printf("done s/b done\n");
-
+    /*  allocate top to bottom, then free from bottom to top */
     printf("Pointer21:  ");
     ipa = malloc(sizeof(long));
     ipb = malloc(sizeof(long));
@@ -2995,7 +3143,7 @@ int main(void)
     free(ipc);
     free(ipb);
     free(ipa);
-
+    /*  free 2 middle blocks to test coalesce */
     printf("Pointer22:  ");
     ipa = malloc(sizeof(long));
     ipb = malloc(sizeof(long));
@@ -3006,7 +3154,7 @@ int main(void)
     free(ipa);
     free(ipd);
     printf("done s/b done\n");
-
+    /*  free 3 middle blocks to test coalesce */
     printf("Pointer23:  ");
     ipa = malloc(sizeof(long));
     ipb = malloc(sizeof(long));
@@ -3021,6 +3169,7 @@ int main(void)
     printf("done s/b done\n");
     if (false) {
 
+        /*  linear torture test */
         printf("Pointer24:  \n");
         { long _forlim = 100;
         for (cnt = 1; cnt <= _forlim; cnt++) {
@@ -3170,6 +3319,7 @@ int main(void)
 
     } else {
 
+        /*  keep listing equal for compare */
         printf("Pointer24:  \n");
         printf("  1   2   3   4   5   6   7   8   9  10 \n");
         printf(" 11  12  13  14  15  16  17  18  19  20 \n");
@@ -3199,7 +3349,7 @@ int main(void)
     if (false) {
 
         rndseq = 1;
-
+        /*  random block torture test */
         printf("Pointer25:  \n");
         { long _forlim = 100;
         for (i = 1; i <= _forlim; i++) {
@@ -3220,10 +3370,11 @@ int main(void)
             { long _forlim = 100;
             for (cnt = 1; cnt <= _forlim; cnt++) {
 
-                rn = random_(1, 100);
+                /*  allocate random */
+                rn = random_(1, 100); /*  choose random pointer */
                 iap[rn] = malloc(sizeof(long));
-
-                *iap[rn] = rn;
+                /*  allocate */
+                *iap[rn] = rn; /*  set number */
                 { long _forlim = 100;
                 for (i = 1; i <= _forlim; i++) {
 
@@ -3239,14 +3390,14 @@ int main(void)
 
                 }
                 }
-
-                rn = random_(1, 100);
+                /*  deallocate random */
+                rn = random_(1, 100); /*  choose random pointer */
                 if (iap[rn] != NULL) {
 
                     free(iap[rn]);
 
                 }
-
+                /*  deallocate */
                 iap[rn] = NULL;
                 { long _forlim = 100;
                 for (i = 1; i <= _forlim; i++) {
@@ -3285,6 +3436,7 @@ int main(void)
 
     } else {
 
+        /*  keep listing equal for comparision */
         printf("Pointer25:  \n");
         printf("  1   2   3   4   5   6   7   8   9  10 \n");
         printf(" 11  12  13  14  15  16  17  18  19  20 \n");
@@ -3312,10 +3464,15 @@ int main(void)
 
     }
 
+    /******************************************************************************
+
+                                Arrays
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* arrays ******************************\n");
     printf("\n");
-
+    /*  single demension, integer index */
     printf("Array1:   ");
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
@@ -3740,7 +3897,7 @@ int main(void)
     }
     }
     printf("s/b 20 19 18 17 16 15 14 13 12 11\n");
-
+    /*  indexing tests */
     printf("Array25:  ");
     { long _forlim = true;
     for (ba = false; ba <= _forlim; ba++) {
@@ -3913,7 +4070,7 @@ int main(void)
     }
     }
     printf(" s/b  5 4 3 2 1\n");
-
+    /*  multidementional arrays */
     printf("Array35:\n");
     z = 0;
     { long _forlim = 10;
@@ -4042,7 +4199,7 @@ int main(void)
     printf("23 22 21 20 19 18 17 16\n");
     printf("15 14 13 12 11 10  9  8\n");
     printf(" 7  6  5  4  3  2  1  0\n");
-
+    /*  assignments */
     printf("Array37: \n");
     memmove(&pavc[1],"hello, guy", 10);
     printf("%10.10s s/b hello, guy\n", &pavc[1]);
@@ -4151,7 +4308,7 @@ int main(void)
     printf("23 22 21 20 19 18 17 16\n");
     printf("15 14 13 12 11 10  9  8\n");
     printf(" 7  6  5  4  3  2  1  0\n");
-
+    /*  transfer procedures */
     printf("Array40: \n");
     { long _forlim = 10;
     for (i = 1; i <= _forlim; i++) {
@@ -4225,10 +4382,15 @@ int main(void)
     }
     printf("s/b 22 21 20 19 18 17 16 15 14 13\n");
 
+    /******************************************************************************
+
+                                Records
+
+    ******************************************************************************/
     printf("\n");
     printf("******************* records ******************************\n");
     printf("\n");
-
+    /*  types in records */
     printf("Record1:   \n");
     arec.i = 64;
     arec.b = false;
@@ -4339,7 +4501,7 @@ int main(void)
     printf("2324 y\n");
     printf("_bcde___i_\n");
     printf("8454\n");
-
+    /*  types in variants, and border clipping */
     printf("Record3:   ");
     vra.i = 873;
     vra.vt = vti;
@@ -4457,7 +4619,7 @@ int main(void)
     *vra.vdp = 2394;
     printf("%ld %ld %ld %ld", (long)(vra.i), (long)(vra.vt), (long)(*vra.vdp), (long)(vra.m));
     printf(" s/b 873 11 2394 427\n");
-
+    /*  types of variant tags */
     printf("Record15:  ");
     vvrs.vt = 10;
     vvrs.vi = 2343;
@@ -4498,7 +4660,7 @@ int main(void)
     vvres.vb = true;
     printf("%ld %5.5s", (long)(vvres.vt), (vvres.vb) ? "true" : "false");
     printf(" s/b 4  true\n");
-
+    /*  change to another tag constant in same variant */
     printf("Record23:  ");
     vvrs.vt = 10;
     vvrs.vi = 42;
@@ -4506,7 +4668,7 @@ int main(void)
     vvrs.vt = 11;
     i = vvrs.vi;
     printf("%ld s/b 42\n", (long)(i));
-
+    /*  nested records */
     printf("Record24:  ");
     nvr.i = 1;
     nvr.r.i = 2;
@@ -4519,7 +4681,7 @@ int main(void)
     nvr.r.r.r.r.r.r.r.r.i = 9;
     nvr.r.r.r.r.r.r.r.r.r.i = 10;
     printf("%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld s/b 1 2 3 4 5 6 7 8 9 10\n", (long)(nvr.i), (long)(nvr.r.i), (long)(nvr.r.r.i), (long)(nvr.r.r.r.i), (long)(nvr.r.r.r.r.i), (long)(nvr.r.r.r.r.r.i), (long)(nvr.r.r.r.r.r.r.i), (long)(nvr.r.r.r.r.r.r.r.i), (long)(nvr.r.r.r.r.r.r.r.r.i), (long)(nvr.r.r.r.r.r.r.r.r.r.i));
-
+    /*  'with' statements */
     printf("Record25:  ");
     { nvr_t *_with1 = &(nvr);
     _with1->i = 10;
@@ -4625,12 +4787,17 @@ int main(void)
     printf(" s/b 185\n");
     free(rpc);
 
+    /******************************************************************************
+
+                                Files
+
+    ******************************************************************************/
     if (true) {
 
         printf("\n");
         printf("******************* files ******************************\n");
         printf("\n");
-
+        /*  file base types */
         printf("File1:   ");
         p2c_frewrite(&fi, sizeof(long));
         { long _forlim = 10;
@@ -4805,7 +4972,7 @@ int main(void)
         }
         }
         printf("s/b 0 1 2 3 4 5 6 7 8 9\n");
-
+        /*  types written to text */
         printf("File9:\n");
         ft = tmpfile();
         x = 7384;
@@ -4830,7 +4997,7 @@ int main(void)
         fgetc(ft);
         cc = ({int _c=getc(ft);ungetc(_c,ft);_c;});
         rewind(ft);
-        while (!feof(ft)) {
+        while (!p2c_eof(ft)) {
 
             if (p2c_eoln(ft)) {
 
@@ -4859,7 +5026,7 @@ int main(void)
         printf("hi there !\n");
         printf("hi th\n");
         printf("     hi there !\n");
-
+        /*  types read from text */
         printf("file10:\n");
         rewind(ft);
         fscanf(ft, "%ld", &y);
@@ -4897,14 +5064,14 @@ int main(void)
         printf(" 1.2345678000e+00\n");
         printf(" 5.6894321000e+01\n");
         printf(" 9.3837632000e-01\n");
-
+        /*  line and file endings in text */
         printf("file11:\n");
         ft = tmpfile();
         fprintf(ft, "how now\n");
         fprintf(ft, "brown cow\n");
         rewind(ft);
         printf("'");
-        while (!feof(ft)) {
+        while (!p2c_eof(ft)) {
 
             if (p2c_eoln(ft)) {
 
@@ -4923,7 +5090,7 @@ int main(void)
         fprintf(ft, "too soon");
         rewind(ft);
         printf("'");
-        while (!feof(ft)) {
+        while (!p2c_eof(ft)) {
 
             if (p2c_eoln(ft)) {
 
@@ -4936,7 +5103,7 @@ int main(void)
         }
         printf("'");
         printf(" s/b 'too much<eoln> too soon<eoln> '\n");
-
+        /*  get/put and buffer variables */
         printf("File13:   ");
         p2c_frewrite(&fi, sizeof(long));
         { long _forlim = 10;
@@ -5120,10 +5287,15 @@ int main(void)
         printf(" s/b %ld\n", (long)(50));
         printf("File22:   ");
         ft = tmpfile();
-        printf("%5.5s s/b true\n", (feof(ft)) ? "true" : "false");
+        printf("%5.5s s/b true\n", (p2c_eof(ft)) ? "true" : "false");
 
     }
 
+    /******************************************************************************
+
+                             Procedures and functions
+
+    ******************************************************************************/
     printf("\n");
     printf("************ Procedures and functions ******************\n");
     printf("\n");
@@ -5199,16 +5371,16 @@ int main(void)
     printf("abcd___h__\n");
     printf("734\n");
     printf("ProcedureFunction8:   ");
-    junk9(junk10, junk11);
+    junk9((p2c_procptr){(void(*)())junk10, NULL}, (p2c_procptr){(void(*)())junk11, NULL});
     printf(" s/b 9834 8383 j 744\n");
     printf("ProcedureFunction9:   ");
-    junk12(junk13, junk11);
+    junk12((p2c_procptr){(void(*)())junk13, NULL}, (p2c_procptr){(void(*)())junk11, NULL});
     printf(" s/b 942\n");
     printf("ProcedureFunction10:   ");
     junk14();
     printf(" s/b 62 76\n");
     printf("ProcedureFunction11:   ");
-    junk17(junk16, 52);
+    junk17((p2c_procptr){(void(*)())junk16, NULL}, 52);
     printf(" s/b 52\n");
     printf("ProcedureFunction12:   ");
     junk19();
