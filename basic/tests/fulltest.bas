@@ -708,9 +708,83 @@
 9010 print "Section 41 complete"
 9020 print
 9100 rem ============================================================
-9110 rem  Summary
+9110 rem  Section 42: File output and input
 9120 rem ============================================================
-9130 print "============================================================"
-9140 print "All test sections completed."
-9150 print "============================================================"
-9160 end
+9130 print "=== Section 42: File output and input ==="
+9140 open "testfile.tmp" for output as #3
+9150 print #3, "Hello from file"
+9160 print #3, "Second line"
+9170 close #3
+9180 open "testfile.tmp" for input as #3
+9190 input #3, a$
+9200 input #3, b$
+9210 close #3
+9220 print "Line 1: "; a$
+9230 print "Line 2: "; b$
+9240 print "Section 42 complete"
+9250 print
+9300 rem ============================================================
+9310 rem  Section 43: File close and reopen
+9320 rem ============================================================
+9330 print "=== Section 43: File close and reopen ==="
+9340 open "testfile2.tmp" for output as #4
+9350 print #4, "data1"
+9360 close #4
+9370 open "testfile3.tmp" for output as #4
+9380 print #4, "data2"
+9390 close #4
+9400 open "testfile2.tmp" for input as #4
+9410 input #4, a$
+9420 close #4
+9430 open "testfile3.tmp" for input as #4
+9440 input #4, b$
+9450 close #4
+9460 print "File 1: "; a$
+9470 print "File 2: "; b$
+9480 print "Section 43 complete"
+9490 print
+9500 rem ============================================================
+9510 rem  Section 44: EOF detection
+9520 rem ============================================================
+9530 print "=== Section 44: EOF detection ==="
+9540 open "testeof.tmp" for output as #3
+9550 print #3, "only line"
+9560 close #3
+9570 open "testeof.tmp" for input as #3
+9580 c% = 0
+9590 while not eof(#3)
+9600    input #3, a$
+9610    c% = c% + 1
+9620 wend
+9630 close #3
+9640 print "Lines read:"; c%
+9650 print "Last line: "; a$
+9660 print "Section 44 complete"
+9670 print
+9700 rem ============================================================
+9710 rem  Section 45: Multiple files open simultaneously
+9720 rem ============================================================
+9730 print "=== Section 45: Multiple files open simultaneously ==="
+9740 open "testmf1.tmp" for output as #3
+9750 open "testmf2.tmp" for output as #4
+9760 print #3, "file three"
+9770 print #4, "file four"
+9780 close #4
+9790 close #3
+9800 open "testmf1.tmp" for input as #3
+9810 open "testmf2.tmp" for input as #4
+9820 input #3, a$
+9830 input #4, b$
+9840 close #3
+9850 close #4
+9860 print "File #3: "; a$
+9870 print "File #4: "; b$
+9880 print "Section 45 complete"
+9890 print
+9900 rem ============================================================
+9910 rem  Summary
+9920 rem ============================================================
+9930 print "============================================================"
+9940 print "All test sections completed."
+9950 print "============================================================"
+9960 end
