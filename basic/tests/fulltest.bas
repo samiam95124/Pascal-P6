@@ -572,12 +572,20 @@
 7310 rem  Section 33: Mixed type DATA/READ
 7320 rem ============================================================
 7330 print "=== Section 33: Mixed type DATA/READ ==="
-7340 data 42, 3.14, -7
+7335 rem Restore to beginning of global data stream (sec 16 data: 10,20,30,
+7336 rem "hello","world",3.14,2.72) and read across types
+7340 restore
 7350 read a%
-7360 read x
-7370 read b%
-7380 print "Read mixed:"; a%; x; b%
-7390 print "Section 33 complete"
+7360 read b%
+7365 read c%
+7370 print "Read 3 ints:"; a%; b%; c%
+7374 read a$
+7376 read b$
+7378 print "Read 2 strs: "; a$; " "; b$
+7382 read x
+7384 read y
+7386 print "Read 2 reals:"; x; y
+7395 print "Section 33 complete"
 7400 print
 7500 rem ============================================================
 7510 rem  Section 34: Nested IF/ELSE/ENDIF
@@ -658,7 +666,7 @@
 8510 rem  Section 39: Multiple DATA statements
 8520 rem ============================================================
 8530 print "=== Section 39: Multiple DATA statements ==="
-8540 restore
+8535 rem Continues from global data pointer (sec 33 consumed sec 16 data via restore)
 8550 data 100, 200, 300
 8560 data 400, 500
 8570 rem Read across DATA statement boundaries
