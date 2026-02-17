@@ -3668,7 +3668,7 @@ int main(void)
     for (i = 1; i <= _forlim; i++) {
 
         avf[i] = tmpfile();
-        printf("%11ld\n", (long)(i + 10));
+        fprintf(avf[i], "%11ld\n", (long)(i + 10));
 
     }
     }
@@ -3688,7 +3688,7 @@ int main(void)
     for (i = 1; i <= _forlim; i++) {
 
         pavf[i] = tmpfile();
-        printf("%11ld\n", (long)(i + 10));
+        fprintf(pavf[i], "%11ld\n", (long)(i + 10));
 
     }
     }
@@ -4802,23 +4802,23 @@ int main(void)
         printf("File9:\n");
         ft = tmpfile();
         x = 7384;
-        printf("%ld\n", (long)(x));
-        printf("%ld\n", (long)(8342));
+        fprintf(ft, "%ld\n", (long)(x));
+        fprintf(ft, "%ld\n", (long)(8342));
         ba = true;
-        printf("%5.5s\n", (ba) ? "true" : "false");
-        printf("%5.5s\n", (false) ? "true" : "false");
+        fprintf(ft, "%5.5s\n", (ba) ? "true" : "false");
+        fprintf(ft, "%5.5s\n", (false) ? "true" : "false");
         ca = 'm';
-        printf("%c\n", (int)(ca));
-        printf("q\n");
+        fprintf(ft, "%c\n", (int)(ca));
+        fprintf(ft, "q\n");
         ra = 1.234567799999999;
-        printf("%15.8e\n", ra);
-        printf("%.7f\n", ra);
-        printf("%15.8e\n", 5.689432099999999e+1);
-        printf("%.8f\n", 9.3837632e-1);
+        fprintf(ft, "%15.8e\n", ra);
+        fprintf(ft, "%.7f\n", ra);
+        fprintf(ft, "%15.8e\n", 5.689432099999999e+1);
+        fprintf(ft, "%.8f\n", 9.3837632e-1);
         memmove(&s[1],"hi there !", 10);
-        printf("%10.10s\n", &s[1]);
-        printf("%5.5s\n", &s[1]);
-        printf("%15.15s\n", &s[1]);
+        fprintf(ft, "%10.10s\n", &s[1]);
+        fprintf(ft, "%5.5s\n", &s[1]);
+        fprintf(ft, "%15.15s\n", &s[1]);
         rewind(ft);
         fgetc(ft);
         cc = ({int _c=getc(ft);ungetc(_c,ft);_c;});
@@ -4893,8 +4893,8 @@ int main(void)
 
         printf("file11:\n");
         ft = tmpfile();
-        printf("how now\n");
-        printf("brown cow\n");
+        fprintf(ft, "how now\n");
+        fprintf(ft, "brown cow\n");
         rewind(ft);
         printf("'");
         while (!feof(ft)) {
@@ -4912,8 +4912,8 @@ int main(void)
         printf(" s/b 'how now<eoln> brown cow<eoln> '\n");
         printf("file12:\n");
         ft = tmpfile();
-        printf("too much\n");
-        printf("too soon");
+        fprintf(ft, "too much\n");
+        fprintf(ft, "too soon");
         rewind(ft);
         printf("'");
         while (!feof(ft)) {
@@ -5106,7 +5106,7 @@ int main(void)
         printf("s/b 0 1 2 3 4 5 6 7 8 9\n");
         printf("File21:   ");
         ft = tmpfile();
-        printf("50\n");
+        fprintf(ft, "50\n");
         rewind(ft);
         fscanf(ft, "%hhu", &srx);
         printf("%ld", (long)(srx));

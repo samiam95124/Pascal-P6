@@ -2315,7 +2315,13 @@ begin
       fmt_chr(chr(92)); { backslash }
       fmt_chr('n')
     end;
-    c_str('printf("');
+    if stmttop^.filvarlen > 0 then begin
+      c_str('fprintf(');
+      for i := 1 to stmttop^.filvarlen do
+        c_chr(stmttop^.filvarbuf[i]);
+      c_str(', "')
+    end else
+      c_str('printf("');
     for i := 1 to stmttop^.fmtlen do
       c_chr(stmttop^.fmtbuf[i]);
     c_str('"');
