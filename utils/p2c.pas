@@ -2835,6 +2835,35 @@ begin
   end
 end;
 
+procedure expr_funcptr_cast(nxt: ctp);
+{ emit function pointer type cast to expression buffer }
+var plcp: ctp;
+begin
+  expr_chr('(');
+  if nxt^.klass = func then begin
+    expr_typename(nxt^.idtype); expr_chr(' ')
+  end else
+    expr_str('void ');
+  expr_str('(*)(');
+  plcp := nxt^.pflist;
+  if plcp = nil then expr_str('void')
+  else begin
+    while plcp <> nil do begin
+      if plcp^.klass = vars then begin
+        expr_typename(plcp^.idtype);
+        if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
+           (plcp^.idtype^.form <> arrays) and
+           not ((plcp^.idtype^.form = files) and
+                (plcp^.idtype = textptr)) then expr_chr('*')
+      end else if plcp^.klass in [proc, func] then
+        expr_str('void (*)(void)');
+      plcp := plcp^.next;
+      if plcp <> nil then expr_str(', ')
+    end
+  end;
+  expr_str('))')
+end;
+
 procedure c_basetype(fsp: stp);
 { output base C type without array dimensions }
 var tname: pstring;
@@ -6021,6 +6050,9 @@ end;
                   if form = pointer then
                     begin load;
                       typtr := eltype;
+                      { if sel_deref already set, flush the pending * now }
+                      if sel_deref and wantexpr and (stmttop <> nil) then
+                        expr_insert('*', sel_varstart + 1);
                       with gattr do
                         begin kind := varbl; access := indrct; idplmt := 0;
                           packing := false; packcom := false;
@@ -6296,7 +6328,23 @@ end;
       begin
         ltp := basetype(lsp);
         if ltp = intptr then begin
-          fmt_str('%ld');
+          { use format matching actual C type for subranges }
+          if (lsp <> nil) and (lsp^.form = subrange) then begin
+            if (lsp^.min.ival >= 0) and (lsp^.max.ival <= 255) then
+              fmt_str('%hhu')
+            else if (lsp^.min.ival >= -128) and
+                    (lsp^.max.ival <= 127) then
+              fmt_str('%hhd')
+            else if (lsp^.min.ival >= 0) and
+                    (lsp^.max.ival <= 65535) then
+              fmt_str('%hu')
+            else if (lsp^.min.ival >= -32768) and
+                    (lsp^.max.ival <= 32767) then
+              fmt_str('%hd')
+            else
+              fmt_str('%ld')
+          end else
+            fmt_str('%ld');
           arg_addr
         end else if ltp = charptr then begin
           fmt_str('%c');
@@ -6944,6 +6992,7 @@ end;
           lsize: addrrange; lval: valu; tagc: integer; tagrec: boolean;
           ct: boolean; cc,pc: integer;
           ptrtyp: stp; varnamelen, i: integer;
+          new_deref: boolean;
     begin
       if disp then begin
         expression(fsys + [comma, rparent], false);
@@ -6952,8 +7001,9 @@ end;
         variable(fsys + [comma,rparent], false);
         loadaddress
       end;
-      { save pointer type and variable name for C output }
+      { save pointer type, deref flag, and variable name for C output }
       ptrtyp := gattr.typtr;
+      new_deref := sel_deref; sel_deref := false;
       if stmttop <> nil then varnamelen := stmttop^.exprlen
       else varnamelen := 0;
       ct := false;
@@ -7034,6 +7084,7 @@ end;
           { new(p) -> p = malloc(sizeof(type)) }
           flushcmts_before(curstmtline);
           c_indent;
+          if new_deref then c_chr('*');
           for i := 1 to varnamelen do
             c_chr(stmttop^.exprbuf[i]);
           c_str(' = malloc(sizeof(');
@@ -7488,7 +7539,13 @@ end;
                     locpar := locpar+ptrsize*2;
                     { emit proc/func identifier to expression buffer }
                     if wantexpr then
-                      if lcp <> nil then expr_idname(lcp);
+                      if lcp <> nil then begin
+                        { cast needed when nested proc has uplevel params }
+                        if (lcp^.pflev > 1) and
+                           has_proc_uplevelrefs(lcp) then
+                          expr_funcptr_cast(nxt);
+                        expr_idname(lcp)
+                      end;
                     insymbol;
                     if not (sy in fsys + [comma,rparent]) then
                       begin error(6); skip(fsys + [comma,rparent]) end
