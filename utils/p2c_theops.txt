@@ -1,0 +1,790 @@
+Theory of Operations: p2c — Pascaline to C Translator
+======================================================
+
+1. Overview
+-----------
+
+p2c is a source-to-source translator that converts Pascaline (extended Pascal)
+source code to ANSI C. Given an input file foo.pas, it produces foo.c and foo.h.
+The generated C code can then be compiled with any standard C compiler (gcc, clang,
+etc.) and linked against the p2c runtime library (setopr for set operations, psystem
+for Pascal runtime support).
+
+p2c is derived from parser.pas, the Pascal-P6 base parser, which itself descends
+from pcom.pas (the full P6 compiler). Where pcom generates P-code for interpretation
+or native code generation, p2c replaces the code generation backend with a C output
+subsystem. The parser, symbol table, type system, and scanner are shared heritage
+with pcom.
+
+The program is approximately 14,500 lines of Pascaline and is self-hosting: it is
+compiled by the Pascal-P6 compiler (bin/pc utils/p2c).
+
+
+2. Architecture
+---------------
+
+p2c is a single-pass, recursive descent translator. It reads source left to right,
+parsing declarations and statements, and emits C code as it goes. There is no
+intermediate representation or AST — the parser directly drives C output.
+
+The major subsystems are:
+
+  Scanner          Reads characters, produces tokens (symbols).
+  Parser           Recursive descent parser for full Pascaline syntax.
+  Symbol Table     BST-based identifier management with scoped display stack.
+  Type System      Structure (STP) records describing all Pascal types.
+  C Output         Buffered emission of C source to .c and .h files.
+  Expression       Buffer-based expression construction for C expressions.
+  Nested Procs     Flattening of Pascal nested procedures to flat C functions.
+  Comment Handler  Captures Pascal comments and re-emits them in C output.
+  Module System    Handles Pascaline uses/joins module inclusion.
+
+Control flows top-down: the main program initializes tables, parses command-line
+options, opens the source file, and calls modulep() which drives the entire
+translation. On return, output files are closed and an error report is printed.
+
+
+3. Scanner
+----------
+
+The scanner (insymbol, line ~4109) reads characters from a line buffer and produces
+tokens. Each call to insymbol sets the global variables:
+
+  sy      Current symbol (token type: ident, intconst, beginsy, plusop, etc.)
+  op      Operator classification (for mulop/addop/relop symbols)
+  id      Identifier string (for ident symbols)
+  val     Constant value (for intconst/realconst/stringconst)
+  lgth    String length (for stringconst)
+
+Source is read through a buffered line system. The procedure readline reads a full
+source line into an internal buffer. The procedures ch, bufnxt, and readinp provide
+character-level access. This buffering supports the include file system — when a
+module is opened, a new buffer frame is pushed onto the include stack (incstk).
+
+The scanner handles:
+  - Reserved words (66 keywords mapped via a hash table in inittables)
+  - Numeric literals (integer, real, hex, octal, binary via Annex C)
+  - String literals with Annex E escape sequences (\lf, \10, etc.)
+  - Operator symbols and compound operators (:=, <=, >=, <>, .., etc.)
+  - Compiler directives ({$option+/-}) via the nested options procedure
+  - Comment capture via scancmt (see Section 11)
+
+One-symbol pushback is supported (pushback/nvalid) for lookahead.
+
+
+4. Parser
+---------
+
+The parser is recursive descent, following the Pascaline grammar. The top-level
+entry point is modulep (line ~13231), which handles both program and module
+declarations. It dispatches to:
+
+  usesjoins       Process uses/joins clauses, opening module files
+  declare         Parse label/const/type/var/proc/func declarations
+  body            Parse procedure/function bodies (statement part)
+
+Declarations:
+
+  labeldeclaration    Numeric and identifier labels
+  constdeclaration    Named constants (including constant expressions)
+  typedeclaration     Type definitions (registers in type map for C output)
+  vardeclaration      Variable declarations (emitted as C declarations)
+  fixeddeclaration    Fixed-size object declarations (Pascaline extension)
+  procdeclaration     Procedure/function declarations with parameter lists
+
+Statement parsing (procedure statement) dispatches by symbol:
+
+  assignment          var := expr  -->  var = expr;
+  compoundstatement   begin..end   -->  { ... }
+  ifstatement         if..then..else --> if (...) { } else { }
+  casestatement       case..of     -->  switch (...) { case: ... }
+  repeatstatement     repeat..until --> do { ... } while (!(...));
+  whilestatement      while..do    -->  while (...) { ... }
+  forstatement        for..to/downto --> for (v=lo; v<=hi; v++) { ... }
+  withstatement       with..do     -->  { type *_withN = &rec; ... }
+  gotostatement       goto label   -->  goto _lN;
+  trystatement        try..except  -->  setjmp/longjmp
+
+Expression parsing follows operator precedence via mutual recursion:
+
+  expression          Comparison operators (=, <>, <, >, <=, >=, in)
+   simpleexpression   Additive operators (+, -, or, xor)
+    term              Multiplicative operators (*, /, div, mod, and)
+     factor           Atoms: literals, identifiers, (expr), not, function calls
+
+The procedure selector handles postfix operations on variables: array indexing
+([i]), field selection (.field), and pointer dereference (^).
+
+
+5. Symbol Table
+---------------
+
+Identifiers are stored in binary search trees (BSTs), one per scope level. The
+display array (display[0..displimit]) holds the scope stack:
+
+  display[0]    Predefined identifiers (integer, boolean, writeln, etc.)
+  display[1]    Program/module-level identifiers
+  display[2+]   Nested procedure/function/with/record scopes
+
+Each display entry (disprec) holds:
+  fname     Root of the BST for this scope
+  flabel    Label list
+  fconst    Constant list (for recycling)
+  fstruct   Structure list (for recycling)
+  define    Whether this is a defining scope
+  occur     Scope kind (blck, crec, vrec, rec)
+  oprprc    Operator overload table
+
+Identifier records (CTP = ^identifier) contain:
+  name      Pascal name (pstring)
+  cname     C name (pstring, coined if different from Pascal)
+  klass     Identifier class: types, konst, vars, field, proc, func, alias
+  idtype    Pointer to type descriptor (STP)
+  llink/rlink  BST children
+  next      Chain for parameters, record fields, etc.
+
+Procedures enterid and searchid manage insertion and lookup. Search proceeds
+from the current scope outward (top-down through display). The pile array holds
+additional scopes from joined modules and class contexts.
+
+Memory management uses explicit new/dispose with recycling counters (cspcnt,
+stpcnt, ctpcnt, etc.) that are checked at program exit for balance.
+
+
+6. Type System
+--------------
+
+Types are described by structure records (STP = ^structure). The form field
+discriminates among:
+
+  scalar      Ordinal types (integer, boolean, char, declared enumerations)
+  subrange    Ranges with min/max bounds
+  pointer     Pointer to element type
+  power       Set types (set of base type)
+  arrays      Array with index type and element type
+  arrayc      Conformant array descriptor
+  records     Record with field list and optional variant part
+  files       File of element type
+  tagfld      Variant record tag field descriptor
+  variant     Individual variant case branch
+  exceptf     Exception type
+
+Standard types are entered at startup (enterstdtypes): intptr, realptr, charptr,
+boolptr, nilptr, textptr, stringptr, etc.
+
+Type compatibility is checked by comptypes (structural equivalence with some
+name-based rules for records and enums) and cmptyp (relaxed compatibility for
+assignment).
+
+
+7. C Output Subsystem
+---------------------
+
+C code is emitted through a family of output procedures:
+
+  c_str(s)        Write string to current output target
+  c_chr(c)        Write character
+  c_int(i)        Write integer
+  c_ln(s)         Write string followed by newline
+  c_indent        Write indentation (4 spaces per level)
+  c_newline       Write newline with indentation
+  c_pstr(p)       Write pstring as lowercase identifier
+  c_idname(cp)    Write identifier's C name
+
+Output is routed by the c_target variable:
+  0   Write to .c file (prc), or to nestbuf if nestbuffering is active
+  1   Write to .h file (prh)
+  2   Write to forward declaration buffer (fwdbuf)
+
+The .h file receives: forward struct declarations, enum definitions, struct
+typedefs, pointer typedefs, array typedefs, and function prototypes for
+exported (non-static) functions. The .c file receives everything else.
+
+Indentation is tracked by cindent (incremented on { , decremented on }).
+Consecutive blank lines are suppressed (c_blanks counter).
+
+The C code tracks which standard headers are needed (usestdio, usestdlib,
+usestring, usemath) and emits #include directives accordingly.
+
+
+8. Expression Buffer System
+----------------------------
+
+C expressions are not emitted directly during parsing. Instead, they are
+accumulated in a per-statement buffer (stmttop^.exprbuf) and flushed when a
+complete statement is ready. This is necessary because:
+
+  - Pascal operator precedence differs from C in places
+  - Write/read statements require printf/scanf format string assembly
+  - Set operations require rewriting to runtime library calls
+  - Type casts and conversions must wrap sub-expressions
+
+The expression buffer procedures are:
+
+  expr_reset      Clear the buffer
+  expr_str(s)     Append string
+  expr_chr(c)     Append character
+  expr_int(i)     Append integer
+  expr_idname(cp) Append identifier's C name
+  expr_insert(s,p) Insert at position
+  expr_del(p,n)   Delete from position
+
+For write/writeln statements, separate format (fmtbuf) and argument (argbuf)
+buffers accumulate the printf format string and argument list independently.
+At statement end, wrt_emit combines them into a printf() call.
+
+For read/readln, similar buffers produce scanf() calls via rdt_emit.
+
+
+9. Type Mapping and Typedef Generation
+---------------------------------------
+
+Pascal named types must be mapped to C typedefs. p2c maintains four mapping
+tables:
+
+  typemap     Record/struct types     (up to 500 entries)
+  enummap     Enumeration types       (up to 100 entries)
+  ptrmap      Pointer types           (up to 500 entries)
+  arrmap      Array types             (up to 500 entries)
+
+When the parser encounters a type declaration (typedeclaration), it calls
+register_typename, register_enumtype, etc. to record the Pascal type pointer
+(STP), C name, source line, and any attached comment.
+
+At the start of each block's C output, the type maps are flushed:
+
+  c_fwd_typedefs    Forward struct declarations (struct foo;)
+  c_enums           Enum definitions (enum { ... };)
+  c_typedefs        Full struct definitions (typedef struct { ... } foo;)
+  c_ptrtypedefs     Pointer typedefs (typedef foo *fooptr;)
+  c_arraytypedefs   Array typedefs (typedef int arr[10];)
+
+The ordering ensures that forward references resolve correctly: forward struct
+declarations come first, then enums (which may be referenced by structs), then
+full struct bodies, then pointer and array types that reference them.
+
+The c_basetype procedure maps Pascal types to C base types:
+
+  integer       long int (or int for subranges fitting in int)
+  real          double
+  char          char
+  boolean       int (with true/false)
+  enumeration   enum typename
+  record        struct typename
+  pointer       typename *
+  set           p2c_settype (32-byte array, from setopr.h)
+  file          FILE *
+  string        char[] (packed array of char)
+
+
+10. Nested Procedure Flattening
+--------------------------------
+
+Pascal allows nested procedures that access variables from enclosing scopes.
+C does not support nested functions. p2c solves this by:
+
+  1. Flattening: All nested procedures become top-level C functions.
+
+  2. Uplevel parameters: Variables from enclosing scopes accessed by a nested
+     procedure are passed as extra pointer parameters (the __up suffix
+     convention). For example:
+
+       procedure outer;
+       var x: integer;
+         procedure inner;       { accesses x }
+         begin x := 1 end;
+       begin inner end;
+
+     becomes:
+
+       void inner(long int *_x__up) { *_x__up = 1; }
+       void outer(void) {
+         long int x;
+         inner(&x);
+       }
+
+  3. Uplevel tracking: As the parser processes nested procedures, it records
+     which variables are referenced from inner scopes (uplevelrefs array,
+     procuplevelrefs table). This information drives the extra parameter
+     generation.
+
+  4. Output buffering: Nested procedure bodies are buffered in nestbuf
+     (100KB) rather than emitted directly. When nestbuffering is true, all
+     c_* output goes to nestbuf instead of the .c file. This allows the
+     enclosing procedure's declaration to be emitted first.
+
+  5. Deferred emission: When a nested procedure A calls another nested
+     procedure B that hasn't been fully analyzed yet, the call site emits
+     a marker (/*@UPL:NNN@*/) in place of the uplevel arguments. Later,
+     copy_nestbuf_resolving_markers replaces these markers with the actual
+     uplevel argument lists once all procedures in the scope are known.
+
+  6. Deferred children buffer: Bodies that need marker resolution are copied
+     to deferredbuf (500KB). The deferredfloor and deferredbuffloor variables
+     maintain scope boundaries so that exiting a scope doesn't destroy data
+     belonging to outer scopes.
+
+  7. Procedure parameters: When a procedure is passed as a parameter, p2c
+     generates a p2c_procptr struct containing both a function pointer and a
+     context pointer (for carrying uplevel references).
+
+
+11. Comment Preservation
+-------------------------
+
+p2c captures Pascal comments during scanning and re-emits them in the C output.
+
+During lexing, when a comment delimiter ({ or (*) is encountered, scancmt
+stores the comment text (without delimiters) in a cmtrec record (up to 8000
+characters). Trailing whitespace and the comment delimiters are stripped.
+Multi-line comments preserve internal newlines as chr(10).
+
+Comments are enqueued (enqueuecmt) in a FIFO queue (cmtqueue/cmtqtail).
+The first comment in the file (before the program keyword) is saved separately
+as headercmt for special handling.
+
+At C output time:
+  - flushcmts_before(line) emits all queued comments whose source line is
+    before the given line number.
+  - c_comment(p) converts a comment to C style, outputting /* ... */.
+  - Star-decorated lines ({***...) are converted to C star comments
+    (/***...***/), preserving the visual formatting.
+  - Comments can be "claimed" by typedef declarations (typemapcmt) so they
+    appear adjacent to the struct/enum definition rather than floating.
+  - c_inlinecmt(line) emits a trailing // style comment for the given line.
+
+
+12. Set Operations
+------------------
+
+Pascal set types are translated to 32-byte arrays (p2c_settype) and manipulated
+through a runtime library (setopr.h / setopr.c). The translation is:
+
+  Set constructor [a, lo..hi]
+    p2c_sclr(_stmp2)              Clear temp
+    p2c_sadd(_stmp2, a)           Add scalar element
+    p2c_radd(_stmp2, lo, hi)      Add range
+    Result is _stmp2
+
+  Set union (s1 + s2)
+    p2c_scpy(_stmp1, s1)          Copy LHS to temp
+    p2c_suni(_stmp1, s2)          Union RHS into temp
+    Result is _stmp1
+
+  Set difference (s1 - s2)
+    p2c_scpy(_stmp1, s1); p2c_sdif(_stmp1, s2)
+
+  Set intersection (s1 * s2)
+    p2c_scpy(_stmp1, s1); p2c_sint(_stmp1, s2)
+
+  Set equality (s1 = s2)
+    p2c_sequ(s1, s2)              Returns boolean
+
+  Set inclusion (s1 <= s2)
+    p2c_sinc(s1, s2)              Returns boolean
+
+  Membership (x in s)
+    Constant sets: inline bit-shift expression
+    Variable sets: p2c_sisin(x, s)
+
+  Set assignment (s := expr)
+    p2c_scpy(s, expr)
+
+Temporary variables _stmp1 and _stmp2 are declared at procedure scope level
+as p2c_settype with __attribute__((unused)).
+
+
+13. Module System
+-----------------
+
+Pascaline extends standard Pascal with a module system:
+
+  joins     Textual inclusion of module interface — the module source is
+            parsed inline, and its declarations become visible. Used for
+            libraries that need source-level integration (services, parse).
+
+  uses      Separate compilation — the module is compiled independently
+            and linked. Its public declarations are visible but the source
+            is not re-parsed. Used for utility libraries (strings, mpb).
+
+p2c handles modules through an include file stack (incstk). When a joins or
+uses clause names a module, p2c searches the module path (incbuf, a colon-
+separated list of directories) for the module source file. The module path
+is set by the -modulepath/-mp command-line option or by instruction files
+(.ins files read by the compiler shell).
+
+For each module, a filrec is pushed onto incstk. The filrec contains the
+file handle, name, line buffer, and bookkeeping. When the module's text is
+exhausted, closeinput pops the stack and resumes the parent file.
+
+The private keyword in a module causes subsequent declarations to be invisible
+to importers.
+
+
+14. Statement Context Stack
+----------------------------
+
+p2c maintains a stack of statement contexts (stmtctx records) to track the
+current statement being translated. Each context contains:
+
+  kind        Statement type (stk_assign, stk_if, stk_write, stk_for, etc.)
+  exprbuf     Expression buffer for building the C expression
+  fmtbuf      Format buffer (for printf/scanf format strings)
+  argbuf      Argument buffer (for printf/scanf arguments)
+  forvar      For loop variable (for stk_for contexts)
+  prev        Link to enclosing context
+
+pushstmt and popstmt manage the stack. This design allows nested expressions
+and statements to each have their own buffer space without interference.
+
+The wantexpr function checks whether the current context wants expression
+output — some contexts (like 'in' operator evaluation) suppress output
+temporarily while sub-expressions are evaluated.
+
+
+15. Error Handling
+------------------
+
+Errors are reported by calling error(n) where n is an error code (1-519).
+Each call records the error position (character on line) and code. Up to 10
+errors per source line are recorded. The running total (toterr) is tracked.
+
+Error messages are printed by errmsg, which maps codes to descriptive text.
+At program end, a summary lists all error codes that occurred, their counts,
+and the source lines where they appeared.
+
+The error return code of the process is set to the total error count via
+seterr(toterr), allowing build scripts to detect translation failures.
+
+p2c inherits its error code set from pcom/parser.pas. Not all errors from the
+full compiler apply to the translator, but the numbering is preserved for
+compatibility with the compiler's error documentation.
+
+
+16. Command-Line Interface
+--------------------------
+
+p2c uses the parse library (joined) for command-line parsing, following the
+same pattern as the pc compiler shell. The command line is:
+
+  p2c [options] <inputfile>
+
+Options use -name to enable and -nname to negate. Both short and long forms
+are accepted. The 28 options correspond to the standard Pascaline compiler
+option set:
+
+  -b / -prtlab         Print labels
+  -d / -chk            Enable debug checks
+  -l / -list           Source listing
+  -s / -iso7185        ISO 7185 strict mode
+  -t / -prttables      Print symbol tables
+  -v / -chkvar         Check variant records
+  -x / -prtlex         Dump lexical output
+  -y / -prtdisplay     Dump display
+  -md=path / -mp=path  Set module search path
+  (and others)
+
+Many options set flag variables that are not yet active in p2c but are
+reserved for future implementation. The option infrastructure is shared with
+the in-source {$option} directive handler, which processes compiler directives
+embedded in Pascal source files.
+
+
+17. Output File Structure
+--------------------------
+
+For an input file foo.pas, p2c generates:
+
+  foo.h     Type declarations and function prototypes
+              - #ifndef FOO_H / #define FOO_H guard
+              - #include for standard C headers (stdio.h, stdlib.h, etc.)
+              - Forward struct declarations
+              - Enum definitions
+              - Struct/record typedefs
+              - Pointer and array typedefs
+              - Function prototypes for non-static functions
+
+  foo.c     Implementation
+              - #include "foo.h"
+              - #include "setopr.h" (if sets are used)
+              - Global variable declarations
+              - Function definitions (all procedures flattened to top level)
+              - main() function (translating the program's main begin..end)
+              - Pascal file parameters mapped to command-line argv
+
+The main() function includes argc/argv handling when the Pascal program
+declares external file parameters. p2c generates argument count checking
+and fopen() calls to connect Pascal file variables to command-line filenames.
+
+
+18. Key Data Structures Summary
+--------------------------------
+
+  STP (^structure)    Type descriptors: form, size, packing, variant fields
+  CTP (^identifier)   Symbol table entries: name, class, type, scope info
+  CSP (^constant)     Compile-time constants: real, set, or string values
+  cmtrec              Comment records: text, line number, claimed flag
+  stmtctx             Statement context: kind, expression/format/arg buffers
+  filrec              Include file stack entries: buffer, position, module name
+  disprec             Display entries: symbol BST root, labels, scope kind
+  attr                Expression attributes: type, value category, access mode
+  labl                Label records: value, defined flag, scope level
+
+All records use explicit new/dispose with recycling counters checked at exit.
+
+
+19. Debugging Guide
+--------------------
+
+This section documents common failure modes encountered during p2c development
+and the techniques used to diagnose them.
+
+
+19.1 CTP Pointer Recycling (Use After Free)
+
+The single most dangerous class of bugs in p2c. When a scope is exited,
+putdsp() calls putnams() which walks the identifier BST and calls putnam()
+to dispose each CTP record. After putnam(), the pointer is invalid — but
+other data structures may still hold it.
+
+This has caused real bugs in two subsystems:
+
+  Nested procedure flattening: copy_nestbuf_resolving_markers() resolves
+  /*@UPL:NNN@*/ markers by looking up CTP records in procuplevelproc[] and
+  procuplevelrefs[][]. If copy_nestbuf_resolving_markers is called AFTER
+  putdsp(top), the CTP pointers are stale and the resolved uplevel argument
+  lists contain garbage. The fix: always resolve markers BEFORE putdsp
+  recycles the scope.
+
+  passym (LSP symbol table): The symrec output code originally held CTP
+  name pointers across scope boundaries. After putdsp, the pstring pointed
+  to by name was freed. Fix: copy the name string value, don't just hold
+  the pointer.
+
+When putnam() recycles a proc/func CTP, it also clears any matching entry
+in procuplevelproc[] (setting it to nil). This defensive measure prevents
+stale pointers from lingering in the uplevel tracking tables.
+
+Symptom: Garbled identifier names, wrong uplevel arguments, segfaults.
+Diagnosis: Add writeln() before/after putdsp to identify the scope being
+recycled. Check if any code between putdsp and the end of the function
+references CTPs from that scope.
+
+
+19.2 Serial Numbers (snm fields)
+
+Every CTP and STP record has an snm (serial number) field, assigned
+sequentially by ininam() and pshstc() via the global counters ctpsnm and
+stpsnm. These are invaluable for debugging because they uniquely identify
+each record across the program's lifetime.
+
+Use cases:
+
+  Type map deduplication: The typemap, ptrmap, and arrmap tables store
+  snm values (typemapsnm[], ptrmapsnm[], arrmapsnm[]) alongside STP
+  pointers. This allows detecting when two different STP pointers actually
+  refer to the same logical type (same snm = same registration).
+
+  Diagnostic dumps: The -t (prttables) option prints all identifier and
+  structure tables with snm values. The -x (prtlex) option includes snm
+  in lexical dumps. When debugging a type mismatch or missing typedef,
+  grep the dump output for the snm of interest.
+
+  Recycling verification: At program exit, p2c checks that all recycling
+  counters (cspcnt, stpcnt, ctpcnt, lbpcnt, filcnt, cipcnt, ttpcnt,
+  wtpcnt) are zero. A nonzero count means a record was allocated but never
+  freed (leak) or freed without being allocated (double-free). The error
+  message "identifier recycle balance: N" appears at exit. Note: a small
+  positive ctpcnt is a known pre-existing issue on most files.
+
+Technique: When a record is suspect, print its snm early in the pipeline,
+then search for that snm in later output to track its lifecycle.
+
+
+19.3 sel_deref Flag Leakage
+
+The sel_deref boolean tracks when the last selector operation was a pointer
+dereference (^). In C, Pascal's p^ becomes *p, and sel_deref tells the
+expression emitter to prepend *. The flag is set in selector() when ^ is
+parsed, and cleared on array subscript or field access.
+
+The bug: sel_deref was not reset after user-defined function calls. If a
+function argument included a pointer dereference (e.g., ord(ptr^)), the
+sel_deref flag leaked through the call and was applied to the function's
+return value, generating *func() instead of func(). This produced invalid
+C (unary * on a non-pointer return type).
+
+The fix had to be precise: reset sel_deref after call() returns, but ONLY
+for non-standard (user-defined) functions. Standard functions like ord()
+need the deref from their argument to be visible (ord(ptr^) must dereference
+ptr before passing to ord). The condition is:
+
+  if lcp^.pfdeckind <> standard then sel_deref := false;
+
+Symptom: gcc errors like "invalid type argument of unary '*'" on function
+return values. Appears when the function's arguments contain ^ dereferences.
+Diagnosis: Search the generated .c file for *functionname( patterns.
+
+
+19.4 Expression Buffer Clobbering
+
+The expression buffer (stmttop^.exprbuf) is shared across all levels of
+expression parsing (expression, simpleexpression, term, factor). This
+creates problems for operators that need to capture the LHS before
+generating code for the RHS:
+
+  Set binary operations (+, -, *): The LHS must be saved to set_lhs_buf
+  before the RHS is evaluated, because the RHS evaluation overwrites
+  exprbuf. A separate buffer (set_lhs_buf) is used rather than the
+  general-purpose in_left_buf, because in_left_buf can itself be
+  overwritten by nested set operations.
+
+  The 'in' operator with 'not': For "not (x in s)", the expression
+  buffer contains "!" from the not, then x from the LHS. The expr_lhs_start
+  variable tracks where the LHS actually begins (after any prefix operators).
+  Without this, the generated code puts the negation inside the function
+  call arguments: p2c_sisin(!(x), s) instead of !(p2c_sisin(x, s)).
+
+Symptom: Wrong C code for set expressions, misplaced operators, garbled
+arguments. Usually manifests as gcc errors or wrong runtime behavior.
+Diagnosis: Add temporary writeln() calls in the expression parser to dump
+exprbuf contents at each level of the operator precedence hierarchy.
+
+
+19.5 Comment Trimming Loop Destruction
+
+The comment capture system (scancmt) trims trailing whitespace from stored
+comments. The original trimming loop used "p^.len := 0" to force exit from
+a while loop when a non-space character was found:
+
+  while p^.len > 0 do begin
+    if (p^.text[p^.len] = ' ') ... then p^.len := p^.len - 1
+    else p^.len := 0   { WRONG: destroys the comment }
+  end;
+
+This zeroed out every comment's length, so c_comment() saw empty comments
+and output nothing. The fix uses a boolean flag for proper loop exit:
+
+  done := false;
+  while (p^.len > 0) and (not done) do begin
+    if (p^.text[p^.len] = ' ') ... then p^.len := p^.len - 1
+    else done := true
+  end;
+
+This is a instance of a general Pascal gotcha: since Pascal and/or do NOT
+short-circuit, using a variable as both the loop condition and exit mechanism
+requires care. The pattern "set the controlling variable to force exit" is
+dangerous when the variable has other semantic meaning.
+
+
+19.6 Non-Short-Circuit Boolean Evaluation
+
+Standard Pascal (and Pascaline) evaluates BOTH operands of and/or regardless
+of the first operand's value. This differs from C's && and || which short-
+circuit. This has caused bugs in p2c itself:
+
+  while (i >= 1) and (p^.text[i] <> chr(10)) do ...
+
+When i reaches 0, both conditions are still evaluated, so p^.text[0] is
+accessed — an out-of-bounds array reference.
+
+Fix: use a flag variable:
+
+  while (i >= 1) and (lastnl = 0) do begin
+    if p^.text[i] = chr(10) then lastnl := i;
+    i := i - 1
+  end;
+
+This pattern must be used throughout p2c whenever a loop condition combines
+a bounds check with a data-dependent test.
+
+
+19.7 Printf Format String Errors
+
+When translating Pascal write statements with field width and precision
+specifiers, p2c must generate the correct printf format. Pascal's write(x:w:p)
+becomes printf("%w.pf", x), but when w or p are variable expressions rather
+than constants, they become printf("%*.*f", w, p, x).
+
+The bug: when both variable width (fldwidth_var) and explicit precision
+(hasfldprec) were true, the code generated "%*.*.*f" — three * specifiers
+when printf only supports two. The fix: when hasfldprec is true, emit only
+"*" for width (not "*.*") since the explicit precision replaces the default.
+
+Symptom: gcc warnings about format string mismatches, wrong output formatting.
+Diagnosis: Search the generated .c for printf/fprintf calls and count the
+format specifiers vs. arguments.
+
+
+19.8 Deferred Buffer Scope Contamination
+
+The deferredbuf holds bodies of nested procedures whose uplevel argument
+lists aren't yet known. When exiting a scope, deferredbuflen must be reset
+to deferredbuffloor (the value at scope entry), NOT to zero. Resetting to
+zero would destroy deferred bodies from outer scopes that are still needed.
+
+Similarly, deferredfloor marks which entries in the deferredprocs[] table
+belong to the current scope. Only entries above the floor are cleared on
+scope exit.
+
+Symptom: Missing or garbled function bodies in the generated C, typically
+for deeply nested procedures (3+ levels). The outer procedure's deferred
+children get overwritten by inner scope's data.
+Diagnosis: Add writeln() calls at scope entry/exit showing deferredbuflen,
+deferredbuffloor, deferredfloor, and deferredchildcnt.
+
+
+19.9 General Debugging Techniques
+
+  Build cycle: bin/pc utils/p2c && cp utils/p2c bin/p2c
+  Always rebuild and copy before testing.
+
+  Regression testing: bin/testp2cs from the project root runs all 12 test
+  programs. Baseline is: 11 pass (0 gcc errors, 0 warnings, 0 dif lines),
+  iso7185pat with 4 dif lines (floating-point rounding only).
+
+  Comparing output: The .cmp files contain expected output. Use diff or
+  the dif utility to compare actual vs. expected: bin/dif file.lst file.cmp
+
+  Isolating failures: Run p2c on a single file to see translation errors:
+    bin/p2c sample_programs/hello
+  Then compile the generated C:
+    gcc -o hello_c hello.c -I../libs ../libs/setopr.o ../libs/psystem.a -lm
+
+  The -l (list) option: bin/p2c -list file produces a source listing with
+  line numbers interleaved with any error messages, helpful for locating
+  where the parser lost sync.
+
+  Diagnostic options: -prttables dumps the symbol table, -prtlex dumps
+  the lexer output. These can help identify where a type or identifier
+  went wrong.
+
+  Bisecting with writeln: Since p2c is compiled by the P6 compiler (not gcc),
+  traditional debuggers are less useful. The primary debugging tool is
+  writeln() calls inserted into p2c.pas, then rebuilding. Place them at
+  procedure entry/exit, before/after putdsp, or at expression buffer
+  flush points to trace execution.
+
+
+20. Relationship to Other Programs
+------------------------------------
+
+  parser.pas    Base parser (pcom minus code generation). p2c is derived from
+                this. Changes to parser.pas syntax handling should be reflected
+                in p2c for consistency.
+
+  pcom.pas      Full compiler with P-code generation. Parser.pas and p2c are
+                derived from pcom by removing or replacing the code generation.
+
+  passym.pas    Symbol table generator for LSP support. Also derived from
+                parser.pas. Emits symbol records instead of code.
+
+  pc.pas        Compiler shell. Orchestrates compilation, manages dependencies.
+                p2c follows pc.pas patterns for command-line parsing (parse
+                library, setflg, paropt).
+
+  setopr.c/h    Runtime library for set operations. p2c generates calls to
+                these functions for any Pascal set manipulation.
+
+  psystem.c     Pascal runtime system. Provides Pascal I/O, memory management,
+                and other runtime support for the generated C code.

@@ -114,12 +114,12 @@
 
 program p2c(output,command);
 
-joins services; { system services }
+joins services, { system services }
+      parse;    { command line parsing }
 
 uses strings,  { string handling }
      mpb,      { machine parameter block }
-     version,  { current version number }
-     parcmd;   { command line parsing }
+     version;  { current version number }
 
 label 99; { terminate immediately }
 
@@ -193,6 +193,9 @@ const
    maxdeferredfixups = 200; { max fixup entries for deferred calls }
    fwdbufmax = 20000; { max size of forward declaration buffer }
    maxhdrfuncs = 500; { max global functions for .h generation }
+   maxlin = 20000; { size of source line buffer }
+   maxopt = 28;  { number of options }
+   optlen = 10;  { maximum length of option words }
 
    { default field sizes for write }
    intdeff    = 11; { default field length for integer }
@@ -296,6 +299,10 @@ type
      expstr = packed array [1..explen] of char;
      csstr = packed array [1..strglgth] of char;
      keyrng = 1..33; { range of standard call keys }
+     lininx = 1..maxlin; { index for source line buffer }
+     linbuf = packed array [lininx] of char; { buffer for source lines }
+     optinx = 1..optlen;
+     optstr = packed array [optinx] of char;
      filnam = packed array [1..fillen] of char; { filename strings }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: pstring; f: text;
@@ -775,47 +782,19 @@ var
     fp: filptr;
     ii: lininx;
 
+    { command line parsing }
+    cmdhan: parse.parhan; { parse handle for command line }
+    option: array [1..maxopt] of boolean; { option array }
+    options: array [1..maxopt] of boolean; { option was set array }
+    opts: array [1..maxopt] of optstr;
+    optsl: array [1..maxopt] of optstr;
+    incbuf: linbuf; { include file buffer }
+
 (*-------------------------------------------------------------------------*)
 
                         { pstring helper functions }
 
 (*-------------------------------------------------------------------------*)
-
-  { compare pstring to fixed string (padded comparison) }
-  function comppf(a: pstring; var b: idstr): boolean;
-  var ld, ls, i: integer; r: boolean;
-  begin
-    ld := max(a^);  { length of pstring }
-    ls := len(b);  { padded length of fixed string }
-    if ld <> ls then comppf := false
-    else begin
-      r := true;
-      for i := 1 to ld do
-        if lcase(a^[i]) <> lcase(b[i]) then r := false;
-      comppf := r
-    end
-  end;
-
-  { compare pstring to fixed string, a < b (padded comparison) }
-  function gtrpf(a: pstring; var b: idstr): boolean;
-  label 1;
-  var ld, ls, i: integer; ca, cb: char;
-  begin
-    ld := max(a^);  { length of pstring }
-    ls := len(b);  { padded length of fixed string }
-    i := 1;
-    while (i <= ld) or (i <= ls) do begin
-      if i <= ld then ca := lcase(a^[i]) else ca := ' ';
-      if i <= ls then cb := lcase(b[i]) else cb := ' ';
-      if ca <> cb then begin
-        gtrpf := ca < cb;
-        goto 1
-      end;
-      i := i + 1
-    end;
-    gtrpf := false; { strings are equal }
-    1:
-  end;
 
   { safe dispose for pstring }
   procedure disposestr(p: pstring);
@@ -830,14 +809,6 @@ var
     copy(a, b)
   end;
 
-  { create pstring from string with explicit length }
-  function strl(view s: string; l: integer): pstring;
-  var p: pstring; i: integer;
-  begin
-    new(p, l);
-    for i := 1 to l do p^[i] := s[i];
-    strl := p
-  end;
 
   { concatenate string to pstring in place }
   procedure strcat(var a: pstring; view b: string);
@@ -1883,12 +1854,13 @@ begin
           end;
           { safety: cap length at array bounds before trimming }
           if p^.len > 8000 then p^.len := 8000;
-          { trim trailing whitespace - avoid array access when p^.len = 0 }
-          while p^.len > 0 do begin
+          { trim trailing whitespace }
+          done := false;
+          while (p^.len > 0) and (not done) do begin
             if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9)) then
               p^.len := p^.len - 1
             else
-              p^.len := 0 { force exit }
+              done := true
           end;
           { add to queue }
           if p^.len > 0 then
@@ -2315,7 +2287,13 @@ begin
       fmt_chr(chr(92)); { backslash }
       fmt_chr('n')
     end;
-    c_str('printf("');
+    if stmttop^.filvarlen > 0 then begin
+      c_str('fprintf(');
+      for i := 1 to stmttop^.filvarlen do
+        c_chr(stmttop^.filvarbuf[i]);
+      c_str(', "')
+    end else
+      c_str('printf("');
     for i := 1 to stmttop^.fmtlen do
       c_chr(stmttop^.fmtbuf[i]);
     c_str('"');
@@ -2750,6 +2728,82 @@ begin
       end
 end;
 
+procedure expr_proc_uplevel_single_arg(pcp: ctp);
+{ emit a single uplevel ref argument for use as proc param context pointer }
+var i, j, n, cnt: integer;
+    vcp: ctp;
+    isuplevel: boolean;
+
+  procedure emit_one_ref(vcp: ctp);
+  begin
+    if (vcp <> nil) and (vcp^.klass = func) then begin
+      isuplevel := nestbuffering and (vcp^.pflev + 1 < level);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result__up')
+      end else begin
+        expr_chr('&');
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__result')
+      end
+    end else if (vcp <> nil) and (vcp^.klass = vars) then begin
+      isuplevel := nestbuffering and (vcp^.vlev < level)
+                   and (vcp^.vlev > 1);
+      if isuplevel then begin
+        add_uplevelref(vcp);
+        if vcp^.name <> nil then expr_pstr(vcp^.name);
+        expr_str('__up')
+      end else begin
+        if vcp^.idtype <> nil then begin
+          if not (vcp^.idtype^.form in [power, arrays]) then
+            if not (vcp^.vkind = formal) then expr_chr('&')
+        end else expr_chr('&');
+        if vcp^.name <> nil then expr_pstr(vcp^.name)
+      end
+    end
+  end;
+
+begin
+  { count uplevel refs }
+  cnt := 0;
+  if pcp = uplevelproc then
+    cnt := uplevelcnt
+  else
+    for i := 1 to procuplevelcnt do
+      if procuplevelproc[i] = pcp then
+        cnt := procuplevelnum[i];
+
+  if cnt = 1 then begin
+    { single ref: emit directly }
+    if pcp = uplevelproc then
+      emit_one_ref(uplevelrefs[1])
+    else
+      for i := 1 to procuplevelcnt do
+        if procuplevelproc[i] = pcp then
+          emit_one_ref(procuplevelrefs[i, 1])
+  end else if cnt > 1 then begin
+    { multiple refs: emit array literal }
+    expr_str('(void*[]){');
+    if pcp = uplevelproc then begin
+      for j := 1 to uplevelcnt do begin
+        if j > 1 then expr_str(', ');
+        emit_one_ref(uplevelrefs[j])
+      end
+    end else
+      for i := 1 to procuplevelcnt do
+        if procuplevelproc[i] = pcp then begin
+          n := procuplevelnum[i];
+          for j := 1 to n do begin
+            if j > 1 then expr_str(', ');
+            emit_one_ref(procuplevelrefs[i, j])
+          end
+        end;
+    expr_chr('}')
+  end else
+    expr_str('NULL')
+end;
+
 function lookup_typename(fsp: stp): pstring;
 { lookup the name for a record type, returns nil if not found }
 var i: integer;
@@ -2833,6 +2887,64 @@ begin
     files:   if fsp = textptr then expr_str('FILE*')
              else expr_str('p2c_file')
   end
+end;
+
+procedure expr_funcptr_cast(nxt: ctp);
+{ emit function pointer type cast to expression buffer }
+var plcp: ctp;
+begin
+  expr_chr('(');
+  if nxt^.klass = func then begin
+    expr_typename(nxt^.idtype); expr_chr(' ')
+  end else
+    expr_str('void ');
+  expr_str('(*)(');
+  plcp := nxt^.pflist;
+  if plcp = nil then expr_str('void')
+  else begin
+    while plcp <> nil do begin
+      if plcp^.klass = vars then begin
+        expr_typename(plcp^.idtype);
+        if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
+           (plcp^.idtype^.form <> arrays) and
+           not ((plcp^.idtype^.form = files) and
+                (plcp^.idtype = textptr)) then expr_chr('*')
+      end else if plcp^.klass in [proc, func] then
+        expr_str('p2c_procptr');
+      plcp := plcp^.next;
+      if plcp <> nil then expr_str(', ')
+    end
+  end;
+  expr_str('))')
+end;
+
+procedure expr_procparam_callcast(fcp: ctp);
+{ emit cast prefix for calling through a procedure parameter }
+var plcp: ctp;
+begin
+  expr_str('((');
+  if fcp^.klass = func then begin
+    expr_typename(fcp^.idtype); expr_chr(' ')
+  end else
+    expr_str('void ');
+  expr_str('(*)(');
+  plcp := fcp^.pflist;
+  while plcp <> nil do begin
+    if plcp^.klass = vars then begin
+      expr_typename(plcp^.idtype);
+      if (plcp^.idtype <> nil) then
+        if (plcp^.vkind = formal) then
+          if (plcp^.idtype^.form <> arrays) then
+            if not ((plcp^.idtype^.form = files) and
+                    (plcp^.idtype = textptr)) then expr_chr('*')
+    end else if plcp^.klass in [proc, func] then
+      expr_str('p2c_procptr');
+    plcp := plcp^.next;
+    if plcp <> nil then expr_str(', ')
+  end;
+  { add void* context as last param }
+  if fcp^.pflist <> nil then expr_str(', ');
+  expr_str('void*))')
 end;
 
 procedure c_basetype(fsp: stp);
@@ -2961,32 +3073,10 @@ end;
 
 { emit C function pointer parameter for procedural/functional parameter }
 procedure c_funcptr_param(lcp: ctp);
-var plcp: ctp;
+{ emit procedure/function parameter declaration as p2c_procptr struct }
 begin
-  if lcp^.klass = func then begin
-    c_type(lcp^.idtype); c_str(' ')
-  end else
-    c_str('void ');
-  c_str('(*');
-  if lcp^.name <> nil then c_pstr(lcp^.name);
-  c_str(')(');
-  plcp := lcp^.pflist;
-  if plcp = nil then c_str('void')
-  else begin
-    while plcp <> nil do begin
-      if plcp^.klass = vars then begin
-        c_type(plcp^.idtype);
-        if (plcp^.idtype <> nil) and (plcp^.vkind = formal) and
-           (plcp^.idtype^.form <> arrays) and
-           not ((plcp^.idtype^.form = files) and
-                (plcp^.idtype = textptr)) then c_str('*')
-      end else if plcp^.klass in [proc, func] then
-        c_funcptr_param(plcp);
-      plcp := plcp^.next;
-      if plcp <> nil then c_str(', ')
-    end
-  end;
-  c_chr(')')
+  c_str('p2c_procptr ');
+  if lcp^.name <> nil then c_pstr(lcp^.name)
 end;
 
 { check if an identifier is in a parameter list }
@@ -4110,7 +4200,7 @@ end;
     procedure scancmt;
     (* scan and capture a comment *)
     var p: cmtptr;
-        iscmte: boolean;
+        iscmte, done: boolean;
         ll, li: integer;
     begin
       (* check for compiler directive *)
@@ -4169,13 +4259,14 @@ end;
         until iscmte or eofinp;
         (* safety: cap length at array bounds before trimming *)
         if p^.len > 8000 then p^.len := 8000;
-        (* trim trailing whitespace - avoid array access when p^.len = 0 *)
-        while p^.len > 0 do begin
+        (* trim trailing whitespace *)
+        done := false;
+        while (p^.len > 0) and (not done) do begin
           if (p^.text[p^.len] = ' ') or (p^.text[p^.len] = chr(9))
              or (p^.text[p^.len] = chr(10)) then
             p^.len := p^.len - 1
           else
-            p^.len := 0 (* force exit *)
+            done := true
         end;
         (* store as header comment only if before program keyword, else enqueue *)
         if (headercmt = nil) and not pastprogram then
@@ -4436,7 +4527,7 @@ end;
             if lgth > strglgth then
               begin error(26); lgth := strglgth end;
             with lvp^ do
-              begin slgth := lgth; sval := strl(string, lgth) end;
+              begin slgth := lgth; sval := extract(string, 1, lgth) end;
             val.intval := false;
             val.valp := lvp
           end
@@ -4566,8 +4657,8 @@ end;
      label 1;
   begin
     while fcp <> nil do
-      if comppf(fcp^.name, id) then goto 1
-      else if gtrpf(fcp^.name, id) then fcp := fcp^.rlink
+      if compp(fcp^.name^, id) then goto 1
+      else if gtrp(fcp^.name^, id) then fcp := fcp^.rlink
         else fcp := fcp^.llink;
 1:  if fcp <> nil then
       if fcp^.klass = alias then fcp := fcp^.actid;
@@ -4595,13 +4686,13 @@ end;
   begin
     mm := false; fcp := nil;
     while lcp <> nil do begin
-      if comppf(lcp^.name, id) then begin
+      if compp(lcp^.name^, id) then begin
         lcp1 := lcp; if lcp1^.klass = alias then lcp1 := lcp1^.actid;
         lcp1 := inclass(lcp1);
         if lcp1 <> nil then begin fcp := lcp1; lcp := nil end
         else begin mm := true; lcp := lcp^.rlink end
       end else
-        if gtrpf(lcp^.name, id) then lcp := lcp^.rlink
+        if gtrp(lcp^.name^, id) then lcp := lcp^.rlink
         else lcp := lcp^.llink
     end
   end (*searchidnenm*) ;
@@ -4641,7 +4732,7 @@ end;
     if lcp = nil then begin
       { search module leader in the pile }
       if ptop > 0 then for pn := ptop-1 downto 0 do
-        if comppf(pile[pn].modnam, id) then begin fpn := pn; pdf := true end;
+        if compp(pile[pn].modnam^, id) then begin fpn := pn; pdf := true end;
       if pdf then begin { module name was found }
         insymbol; if sy <> period then error(21) else insymbol;
         if sy <> ident then error(2)
@@ -5111,7 +5202,7 @@ end;
     llp := display[level].flabel; { index top of label list }
     while llp <> nil do begin { traverse }
       if isid and (llp^.labid <> nil) then begin { id type label }
-        if comppf(llp^.labid, id) then begin
+        if compp(llp^.labid^, id) then begin
           fllp := llp; { set entry found }
           llp := nil { stop }
         end else llp := llp^.nextlab { next in list }
@@ -6021,6 +6112,9 @@ end;
                   if form = pointer then
                     begin load;
                       typtr := eltype;
+                      { if sel_deref already set, flush the pending * now }
+                      if sel_deref and wantexpr and (stmttop <> nil) then
+                        expr_insert('*', sel_varstart + 1);
                       with gattr do
                         begin kind := varbl; access := indrct; idplmt := 0;
                           packing := false; packcom := false;
@@ -6296,7 +6390,23 @@ end;
       begin
         ltp := basetype(lsp);
         if ltp = intptr then begin
-          fmt_str('%ld');
+          { use format matching actual C type for subranges }
+          if (lsp <> nil) and (lsp^.form = subrange) then begin
+            if (lsp^.min.ival >= 0) and (lsp^.max.ival <= 255) then
+              fmt_str('%hhu')
+            else if (lsp^.min.ival >= -128) and
+                    (lsp^.max.ival <= 127) then
+              fmt_str('%hhd')
+            else if (lsp^.min.ival >= 0) and
+                    (lsp^.max.ival <= 65535) then
+              fmt_str('%hu')
+            else if (lsp^.min.ival >= -32768) and
+                    (lsp^.max.ival <= 32767) then
+              fmt_str('%hd')
+            else
+              fmt_str('%ld')
+          end else
+            fmt_str('%ld');
           arg_addr
         end else if ltp = charptr then begin
           fmt_str('%c');
@@ -6494,6 +6604,7 @@ end;
           fldprec_buflen: integer;
           fwi: integer; { index for field width buffer copying }
           fvi: integer; { index for file variable buffer }
+          wrt_deref: boolean; { sel_deref saved before field width processing }
 
       procedure fmt_width(w: integer);
       { output field width digits to format string }
@@ -6517,12 +6628,34 @@ end;
           fmin, fmax: integer;
 
       procedure fmt_strspec;
-      { output %s or %Ns format for packed array of char }
+      { output %w.ws format for packed array of char.
+        Uses both width and precision so strings are truncated
+        when field width is less than string length. }
       begin
         fmt_chr('%');
-        if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
-          getbounds(ltp^.inxtype, fmin, fmax);
-          fmt_width(fmax - fmin + 1)
+        if fldwidth_var then
+          fmt_str('*.*')
+        else begin
+          if not default then begin
+            { explicit field width from write(s:n) }
+            if fldwidth < 0 then begin
+              fmt_chr('-');
+              w := -fldwidth
+            end else
+              w := fldwidth
+          end else begin
+            { default: use array declared length }
+            if (ltp^.form = arrays) and (ltp^.inxtype <> nil) then begin
+              getbounds(ltp^.inxtype, fmin, fmax);
+              w := fmax - fmin + 1
+            end else
+              w := 0
+          end;
+          if w > 0 then begin
+            fmt_width(w);
+            fmt_chr('.');
+            fmt_width(w)
+          end
         end;
         fmt_chr('s')
       end;
@@ -6560,21 +6693,7 @@ end;
               w := fldwidth;
             if w <> 1 then fmt_width(w)
           end;
-          { use %d for: constants, ord/chr results, enums, or small subranges.
-            Large subranges map to long and need %ld }
-          if wascst or fromord then
-            fmt_chr('d')
-          else if (lsp_orig <> nil) and (lsp_orig <> intptr) then begin
-            if lsp_orig^.form = subrange then begin
-              if (lsp_orig^.min.ival >= -32768) and
-                 (lsp_orig^.max.ival <= 65535) then
-                fmt_chr('d')
-              else fmt_str('ld')
-            end else if lsp_orig^.form = scalar then
-              fmt_chr('d')  { enum types are int }
-            else fmt_str('ld')
-          end else
-            fmt_str('ld');  { base integer variables are long }
+          fmt_str('ld');  { always %ld with (long) cast }
           if fldwidth_var then begin
             { add width expression as printf argument before value }
             if stmttop^.arglen > 0 then begin
@@ -6585,17 +6704,32 @@ end;
               arg_chr(fldwidth_buf[i]);
             arg_chr(')')
           end;
-          arg_add
+          { cast to (long) to match %ld format }
+          if stmttop <> nil then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(long)(');
+            for i := 1 to stmttop^.exprlen do
+              arg_chr(stmttop^.exprbuf[i]);
+            arg_chr(')')
+          end
         end else if ltp = realptr then begin
           fmt_chr('%');
-          if fldwidth_var then
-            fmt_chr('*')
-          else begin
+          if fldwidth_var then begin
+            if hasfldprec then fmt_chr('*')
+            else fmt_str('*.*')
+          end else begin
             if fldwidth < 0 then begin
               fmt_chr('-');
               w := -fldwidth
             end else
               w := fldwidth;
+            { ISO 7185 6.9.3.4.1: ActWidth = max(TotalWidth, ExpDigits+6)
+              For scientific notation, enforce minimum width of 8 }
+            if not hasfldprec then begin
+              if w < 8 then w := 8
+            end;
             if w <> 1 then fmt_width(w)
           end;
           if hasfldprec then begin
@@ -6605,16 +6739,45 @@ end;
             else
               fmt_width(fldprec);
             fmt_chr('f')
-          end else
-            fmt_chr('g');
+          end else begin
+            { ISO 7185 6.9.3.4.1: DecPlaces = ActWidth - ExpDigits - 5
+              where ExpDigits = 2 and ActWidth = max(TotalWidth, 8) }
+            if not fldwidth_var then begin
+              w := abs(fldwidth);
+              if w < 8 then w := 8;
+              fmt_chr('.');
+              fmt_width(w - 7);
+              fmt_chr('e')
+            end else
+              fmt_chr('e')
+          end;
           if fldwidth_var then begin
             if stmttop^.arglen > 0 then begin
               arg_chr(','); arg_chr(' ')
             end;
-            arg_str('(int)(');
-            for i := 1 to fldwidth_buflen do
-              arg_chr(fldwidth_buf[i]);
-            arg_chr(')')
+            if not hasfldprec then begin
+              { ISO 7185: ActWidth = max(w,8), pass as field width }
+              arg_str('(int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') : 8)');
+              { ISO 7185: DecPlaces = max(w,8) - 7 for %*.*e }
+              arg_str(', (int)((');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') >= 8 ? (');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str(') - 7 : 1)')
+            end else begin
+              arg_str('(int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_chr(')')
+            end
           end;
           if fldprec_var then begin
             if stmttop^.arglen > 0 then begin
@@ -6637,10 +6800,46 @@ end;
             else fmt_chr(c)
           end else begin
             fmt_str('%c');
-            arg_add
+            { cast to (int) to match %c format }
+            if stmttop <> nil then begin
+              if stmttop^.arglen > 0 then begin
+                arg_chr(','); arg_chr(' ')
+              end;
+              arg_str('(int)(');
+              for i := 1 to stmttop^.exprlen do
+                arg_chr(stmttop^.exprbuf[i]);
+              arg_chr(')')
+            end
           end
         end else if ltp = boolptr then begin
-          fmt_str('%s');
+          fmt_chr('%');
+          if fldwidth_var then
+            fmt_str('*.*')
+          else begin
+            if fldwidth < 0 then begin
+              fmt_chr('-');
+              w := -fldwidth
+            end else
+              w := fldwidth;
+            if w > 0 then begin
+              fmt_width(w);
+              fmt_chr('.');
+              fmt_width(w)
+            end
+          end;
+          fmt_chr('s');
+          if fldwidth_var then begin
+            if stmttop^.arglen > 0 then begin
+              arg_chr(','); arg_chr(' ')
+            end;
+            arg_str('(int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_str('), (int)(');
+            for i := 1 to fldwidth_buflen do
+              arg_chr(fldwidth_buf[i]);
+            arg_chr(')')
+          end;
           { wrap expression: (expr) ? "true" : "false" }
           if stmttop^.arglen > 0 then arg_str(', ');
           arg_chr('(');
@@ -6648,11 +6847,10 @@ end;
             arg_chr(stmttop^.exprbuf[i]);
           arg_str(') ? "true" : "false"')
         end else if stringt(ltp) then begin
-          { check if we have a string constant to embed }
-          if wascst then
+          { embed string constant directly in format only for default width }
+          if wascst and default and not fldwidth_var then
             if not savedcval.intval then
               if savedcval.valp <> nil then begin
-                { embed string constant directly in format string }
                 l := savedcval.valp^.slgth;
                 for i := 1 to l do begin
                   c := savedcval.valp^.sval^[i];
@@ -6675,6 +6873,19 @@ end;
             end
           else begin
             fmt_strspec;
+            { add variable width args twice for %*.*s }
+            if fldwidth_var then begin
+              if stmttop^.arglen > 0 then begin
+                arg_chr(','); arg_chr(' ')
+              end;
+              arg_str('(int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_str('), (int)(');
+              for i := 1 to fldwidth_buflen do
+                arg_chr(fldwidth_buf[i]);
+              arg_chr(')')
+            end;
             arg_stradd
           end
         end else begin
@@ -6738,6 +6949,8 @@ end;
         lsp_orig := lsp; { save original type before basetype strips it }
         if lsp <> nil then
           if lsp^.form <= subrange then load else loadaddress;
+        wrt_deref := sel_deref;
+        sel_deref := false;
         lsp := basetype(lsp); { remove any subrange }
         if stringt(lsp) and not complext(lsp) then
           len := lsp^.size div charmax;
@@ -6841,6 +7054,11 @@ end;
           c_ln(');')
         end;
         { add this value to printf }
+        { insert * for pointer dereference on scalar types only;
+          arrays/strings use C pointer-to-array equivalence }
+        if wrt_deref and (stmttop <> nil) then
+          if (lsp <> nil) and (lsp^.form <= subrange) then
+            expr_insert('*', 1);
         if txt then add_wrt_arg;
         test := sy <> comma;
         if not test then
@@ -6866,7 +7084,13 @@ end;
 
     procedure packprocedure;
       var lsp,lsp1: stp; lb, bs: integer; lattr: attr;
-    begin variable(fsys + [comma,rparent], false); loadaddress;
+          abuf: packed array [1..200] of char; alen: integer;
+          ibuf: packed array [1..200] of char; ilen: integer;
+          zbuf: packed array [1..200] of char; zlen: integer;
+          zlb: integer; zcount: integer;
+          j: integer;
+    begin pushstmt(stk_call); expr_reset;
+      variable(fsys + [comma,rparent], false); loadaddress;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
       lattr := gattr;
       if gattr.typtr <> nil then
@@ -6878,13 +7102,23 @@ end;
               bs := aeltype^.size
             end
           else error(116);
+      { save unpacked array expression }
+      alen := stmttop^.exprlen;
+      if alen > 200 then alen := 200;
+      for j := 1 to alen do abuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       expression(fsys + [comma,rparent], false); load;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> scalar then error(116)
         else
           if not comptypes(lsp,gattr.typtr) then error(116);
+      { save index expression }
+      ilen := stmttop^.exprlen;
+      if ilen > 200 then ilen := 200;
+      for j := 1 to ilen do ibuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       variable(fsys + [rparent], false); loadaddress;
       if gattr.typtr <> nil then
         with gattr.typtr^ do
@@ -6892,19 +7126,72 @@ end;
             begin
               if not comptypes(aeltype,lsp1) then error(116)
             end
-          else error(116)
+          else error(116);
+      { save packed array expression and get its bounds }
+      zlen := stmttop^.exprlen;
+      if zlen > 200 then zlen := 200;
+      for j := 1 to zlen do zbuf[j] := stmttop^.exprbuf[j];
+      zlb := 1; zcount := 1;
+      if gattr.typtr <> nil then
+        with gattr.typtr^ do
+          if form = arrays then begin
+            if (inxtype = charptr) or (inxtype = boolptr) then zlb := 0
+            else if inxtype^.form = subrange then zlb := inxtype^.min.ival;
+            if inxtype <> nil then begin
+              if inxtype^.form = subrange then
+                zcount := inxtype^.max.ival - inxtype^.min.ival + 1
+              else if inxtype = charptr then zcount := 256
+              else if inxtype = boolptr then zcount := 2
+            end
+          end;
+      { emit: memcpy(&z[zlb], &a[i], sizeof(z[0]) * zcount) }
+      c_indent;
+      c_str('memcpy(&');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('['); c_int(zlb); c_str('], &');
+      for j := 1 to alen do c_chr(abuf[j]);
+      c_str('[');
+      for j := 1 to ilen do c_chr(ibuf[j]);
+      c_str('], sizeof(');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('[0]) * '); c_int(zcount); c_ln(');');
+      popstmt
     end (*pack*) ;
 
     procedure unpackprocedure;
       var lsp,lsp1: stp; lattr,lattr1: attr; lb, bs: integer;
-    begin variable(fsys + [comma,rparent], false); loadaddress;
+          zbuf: packed array [1..200] of char; zlen: integer;
+          abuf: packed array [1..200] of char; alen: integer;
+          ibuf: packed array [1..200] of char; ilen: integer;
+          zlb: integer; zcount: integer;
+          j: integer;
+    begin pushstmt(stk_call); expr_reset;
+      variable(fsys + [comma,rparent], false); loadaddress;
       lattr := gattr;
       lsp := nil; lsp1 := nil; lb := 1; bs := 1;
       if gattr.typtr <> nil then
         with gattr.typtr^ do
           if form = arrays then lsp1 := aeltype
           else error(116);
+      { save packed array expression and get bounds }
+      zlen := stmttop^.exprlen;
+      if zlen > 200 then zlen := 200;
+      for j := 1 to zlen do zbuf[j] := stmttop^.exprbuf[j];
+      zlb := 1; zcount := 1;
+      if gattr.typtr <> nil then
+        with gattr.typtr^ do
+          if form = arrays then begin
+            if (inxtype = charptr) or (inxtype = boolptr) then zlb := 0
+            else if inxtype^.form = subrange then zlb := inxtype^.min.ival;
+            if inxtype <> nil then begin
+              if inxtype^.form = subrange then
+                zcount := inxtype^.max.ival - inxtype^.min.ival + 1
+              else if inxtype = charptr then zcount := 256
+              else if inxtype = boolptr then zcount := 2
+            end
+          end;
       if sy = comma then insymbol else error(20);
+      expr_reset;
       variable(fsys + [comma,rparent], false); loadaddress;
       lattr1 := gattr;
       if gattr.typtr <> nil then
@@ -6918,12 +7205,33 @@ end;
               lsp := inxtype;
             end
           else error(116);
+      { save unpacked array expression }
+      alen := stmttop^.exprlen;
+      if alen > 200 then alen := 200;
+      for j := 1 to alen do abuf[j] := stmttop^.exprbuf[j];
       if sy = comma then insymbol else error(20);
+      expr_reset;
       expression(fsys + [rparent], false); load;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <> scalar then error(116)
         else
-          if not comptypes(lsp,gattr.typtr) then error(116)
+          if not comptypes(lsp,gattr.typtr) then error(116);
+      { save index expression }
+      ilen := stmttop^.exprlen;
+      if ilen > 200 then ilen := 200;
+      for j := 1 to ilen do ibuf[j] := stmttop^.exprbuf[j];
+      { emit: memcpy(&a[i], &z[zlb], sizeof(z[0]) * zcount) }
+      c_indent;
+      c_str('memcpy(&');
+      for j := 1 to alen do c_chr(abuf[j]);
+      c_str('[');
+      for j := 1 to ilen do c_chr(ibuf[j]);
+      c_str('], &');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('['); c_int(zlb); c_str('], sizeof(');
+      for j := 1 to zlen do c_chr(zbuf[j]);
+      c_str('[0]) * '); c_int(zcount); c_ln(');');
+      popstmt
     end (*unpack*) ;
 
     procedure newdisposeprocedure(disp: boolean);
@@ -6932,6 +7240,7 @@ end;
           lsize: addrrange; lval: valu; tagc: integer; tagrec: boolean;
           ct: boolean; cc,pc: integer;
           ptrtyp: stp; varnamelen, i: integer;
+          new_deref: boolean;
     begin
       if disp then begin
         expression(fsys + [comma, rparent], false);
@@ -6940,8 +7249,9 @@ end;
         variable(fsys + [comma,rparent], false);
         loadaddress
       end;
-      { save pointer type and variable name for C output }
+      { save pointer type, deref flag, and variable name for C output }
       ptrtyp := gattr.typtr;
+      new_deref := sel_deref; sel_deref := false;
       if stmttop <> nil then varnamelen := stmttop^.exprlen
       else varnamelen := 0;
       ct := false;
@@ -7022,6 +7332,7 @@ end;
           { new(p) -> p = malloc(sizeof(type)) }
           flushcmts_before(curstmtline);
           c_indent;
+          if new_deref then c_chr('*');
           for i := 1 to varnamelen do
             c_chr(stmttop^.exprbuf[i]);
           c_str(' = malloc(sizeof(');
@@ -7183,7 +7494,7 @@ end;
           { save position before emitting function name }
           if stmttop <> nil then savepos := stmttop^.exprlen
           else savepos := 0;
-          if lkey = 9 then expr_str('feof(')
+          if lkey = 9 then expr_str('p2c_eof(')
           else expr_str('p2c_eoln(');
           variable(fsys + [rparent], false);
           if sy = rparent then insymbol else error(4);
@@ -7191,9 +7502,9 @@ end;
           if (lkey = 9) and (gattr.typtr <> nil) then
             if (gattr.typtr^.form = files) and
                (gattr.typtr <> textptr) then begin
-              { replace feof( with p2c_feof(& }
+              { replace p2c_eof( with p2c_feof(& }
               if stmttop <> nil then begin
-                expr_del(savepos + 1, 5); { remove 'feof(' }
+                expr_del(savepos + 1, 8); { remove 'p2c_eof(' }
                 expr_insert('p2c_feof(&', savepos + 1)
               end
             end;
@@ -7204,7 +7515,7 @@ end;
         if not inputptr^.hdr then error(175);
         gattr.typtr := textptr;
         { no arg - use stdin }
-        if lkey = 9 then expr_str('feof(stdin)')
+        if lkey = 9 then expr_str('p2c_eof(stdin)')
         else expr_str('p2c_eoln(stdin)')
       end;
       if gattr.typtr <> nil then
@@ -7476,7 +7787,25 @@ end;
                     locpar := locpar+ptrsize*2;
                     { emit proc/func identifier to expression buffer }
                     if wantexpr then
-                      if lcp <> nil then expr_idname(lcp);
+                      if lcp <> nil then begin
+                        if (lcp^.pfdeckind = declared) and
+                           (lcp^.pfkind = formal) then
+                          { forwarding a proc param — already a p2c_procptr }
+                          expr_idname(lcp)
+                        else begin
+                          { wrap in p2c_procptr struct literal }
+                          expr_str('(p2c_procptr){(void(*)())');
+                          expr_idname(lcp);
+                          expr_str(', ');
+                          if (lcp^.pflev > 1) and
+                             has_proc_uplevelrefs(lcp) then begin
+                            expr_str('(void*)');
+                            expr_proc_uplevel_single_arg(lcp)
+                          end else
+                            expr_str('NULL');
+                          expr_chr('}')
+                        end
+                      end;
                     insymbol;
                     if not (sy in fsys + [comma,rparent]) then
                       begin error(6); skip(fsys + [comma,rparent]) end
@@ -7619,8 +7948,14 @@ end;
             end;
           until test;
           lc := llc;
-          { add uplevel args for nested proc calls }
-          if has_proc_uplevelrefs(fcp) then
+          { add context or uplevel args after regular args }
+          if (fcp^.pfdeckind = declared) and (fcp^.pfkind = formal) then
+          begin
+            { calling through proc param — add .ctx as last arg }
+            expr_str(', ');
+            expr_idname(fcp);
+            expr_str('.ctx')
+          end else if has_proc_uplevelrefs(fcp) then
             expr_proc_uplevel_args(fcp, true) { comma before args }
           else if nestbuffering and (fcp^.klass in [proc, func])
                   and (fcp^.pflev > 1)
@@ -7640,8 +7975,14 @@ end;
           if sy = rparent then insymbol else error(4)
         end (*if lparent*)
       else begin
-        { no parameters - output parens with any uplevel args }
-        if has_proc_uplevelrefs(fcp) then begin
+        { no parameters - output parens with context or uplevel args }
+        if (fcp^.pfdeckind = declared) and (fcp^.pfkind = formal) then
+        begin
+          { calling through proc param — emit (name.ctx) }
+          expr_chr('(');
+          expr_idname(fcp);
+          expr_str('.ctx)')
+        end else if has_proc_uplevelrefs(fcp) then begin
           expr_chr('(');
           expr_proc_uplevel_args(fcp, false); { no comma before first arg }
           expr_chr(')')
@@ -7818,6 +8159,9 @@ end;
         { for devolved constant set 'in' comparison chain }
         runstart, runend: integer;
         firstelt, ischartype, found: boolean;
+        { for pointer dereference in comparisons }
+        lhs_deref, rhs_deref: boolean;
+        rhs_start: integer;
 
     procedure simpleexpression(fsys: setofsys; threaten: boolean);
       var lattr: attr; lop: operatort; fsy: symbol; fop: operatort; fcp: ctp;
@@ -7871,10 +8215,18 @@ end;
                                 if lcp^.sysrot then varpart := true;
                           if varpart then
                             expr_mathfn(lcp^.name)
-                          else
+                          else if (lcp^.pfdeckind = declared) and
+                                  (lcp^.pfkind = formal) then begin
+                            { call through proc param: ((cast)name.fn) }
+                            expr_procparam_callcast(lcp);
+                            expr_idname(lcp);
+                            expr_str('.fn)')
+                          end else
                             expr_idname(lcp)
                         end;
                         call(fsys,lcp, inherit, true);
+                        if lcp^.pfdeckind <> standard then
+                          sel_deref := false;
                         with gattr do
                           begin kind := expr;
                             if typtr <> nil then
@@ -8524,6 +8876,7 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
+      lhs_deref := sel_deref;
       lattr := gattr; lop := op;
       { output C relational operator }
       if wantexpr then begin
@@ -8624,6 +8977,8 @@ end;
         end
       end else
         in_left_len := 0;
+      rhs_start := 0;
+      if stmttop <> nil then rhs_start := stmttop^.exprlen;
       insymbol; simpleexpression(fsys, threaten);
       rschrcst := ischrcst(gattr);
       if rschrcst then rc := chr(gattr.cval.ival);
@@ -8640,6 +8995,16 @@ end;
       if gattr.typtr <> nil then
         if gattr.typtr^.form <= power then load
         else loadaddress;
+      rhs_deref := sel_deref;
+      { insert * for pointer dereference in default comparisons
+        (in_left_len = 0 means not string/set/in comparison paths
+         which rebuild the buffer differently) }
+      if wantexpr and (in_left_len = 0) then begin
+        if rhs_deref and (stmttop <> nil) and (rhs_start > 0) then
+          expr_insert('*', rhs_start + 1);
+        if lhs_deref and (stmttop <> nil) then
+          expr_insert('*', expr_lhs_start + 1)
+      end;
       if (lattr.typtr <> nil) and (gattr.typtr <> nil) then begin
         fndopr2(lop, lattr, fcp);
         if fcp <> nil then callop2(fcp, lattr) else begin
@@ -10784,8 +11149,10 @@ end;
                             i := i + 8;
                             stmttop^.exprbuf[i - 1] := ',';
                             expr_del(i, 2);
-                            expr_str(', ');
-                            expr_int(lattr.typtr^.size);
+                            { use sizeof(type) to include C array padding }
+                            expr_str(', sizeof(');
+                            expr_typename(lattr.typtr);
+                            expr_chr(')');
                             expr_chr(')')
                           end
                         end
@@ -11676,8 +12043,15 @@ end;
                               pushstmt(stk_call);
                               expr_reset;
                               { output function name for non-standard procs (lowercase) }
-                              if lcp^.pfdeckind <> standard then
-                                expr_idname(lcp);
+                              if lcp^.pfdeckind <> standard then begin
+                                if (lcp^.pfdeckind = declared) and
+                                   (lcp^.pfkind = formal) then begin
+                                  expr_procparam_callcast(lcp);
+                                  expr_idname(lcp);
+                                  expr_str('.fn)')
+                                end else
+                                  expr_idname(lcp)
+                              end;
                               call(fsys,lcp,inherit,false);
                               { output the call - but not for standard procs (handled internally) }
                               if lcp^.pfdeckind <> standard then begin
@@ -11700,8 +12074,15 @@ end;
                             pushstmt(stk_call);
                             expr_reset;
                             { output function name for non-standard procs (lowercase) }
-                            if lcp^.pfdeckind <> standard then
-                              expr_idname(lcp);
+                            if lcp^.pfdeckind <> standard then begin
+                              if (lcp^.pfdeckind = declared) and
+                                 (lcp^.pfkind = formal) then begin
+                                expr_procparam_callcast(lcp);
+                                expr_idname(lcp);
+                                expr_str('.fn)')
+                              end else
+                                expr_idname(lcp)
+                            end;
                             call(fsys,lcp,inherit,false);
                             { output the call - but not for standard procs (handled internally) }
                             if lcp^.pfdeckind <> standard then begin
@@ -11952,7 +12333,14 @@ end;
                 c_type(lcp^.idtype);
                 c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               c_inlinecmt(lcp^.srcline)
             end else if lcp^.klass in [proc, func] then begin
@@ -12316,6 +12704,28 @@ end;
         end;
         c_indent;
         c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
+        { emit memcpy for value-parameter arrays }
+        lcp := fprocp^.pflist;
+        while lcp <> nil do begin
+          if lcp^.klass = vars then
+            if lcp^.vkind = actual then
+              if lcp^.idtype <> nil then
+                if lcp^.idtype^.form = arrays then begin
+                  c_indent;
+                  c_type(lcp^.idtype);
+                  c_chr(' ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_arraydims(lcp^.idtype);
+                  c_str('; memcpy(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str(', ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str('_, sizeof(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_ln('));')
+                end;
+          lcp := lcp^.next
+        end;
         c_newline
       end else begin
         { top-level procedure - output header directly }
@@ -12374,7 +12784,14 @@ end;
                 c_chr(' ')
               end;
               { output parameter name }
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               { output inline comment for parameter }
               c_inlinecmt(lcp^.srcline)
@@ -12409,6 +12826,28 @@ end;
         end;
         c_indent;
         c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
+        { emit memcpy for value-parameter arrays }
+        lcp := fprocp^.pflist;
+        while lcp <> nil do begin
+          if lcp^.klass = vars then
+            if lcp^.vkind = actual then
+              if lcp^.idtype <> nil then
+                if lcp^.idtype^.form = arrays then begin
+                  c_indent;
+                  c_type(lcp^.idtype);
+                  c_chr(' ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_arraydims(lcp^.idtype);
+                  c_str('; memcpy(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str(', ');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_str('_, sizeof(');
+                  if lcp^.name <> nil then c_pstr(lcp^.name);
+                  c_ln('));')
+                end;
+          lcp := lcp^.next
+        end;
         c_newline
       end
     end;
@@ -12559,7 +12998,14 @@ end;
                 c_type(lcp^.idtype);
                 c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                { value-param arrays: rename to name_ in C signature }
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                      c_chr('_')
+              end;
               c_arraydims(lcp^.idtype);
               { output inline comment for parameter }
               c_inlinecmt(lcp^.srcline)
@@ -12875,9 +13321,21 @@ end;
     c_ln('#define true 1');
     c_ln('#define false 0');
     c_ln('#endif');
-    c_ln('#define p2c_eoln(f) ({int c=getc(f);ungetc(c,f);c==10||c==EOF;})');
-    c_str('#define p2c_readc(f,v) (fscanf(f,"%c",&v),(v==''');
-    c_chr(chr(92)); c_ln('n''?(v='' ''):0))');
+    { Pascal text file eof: true when past the last eoln (including implicit).
+      If at C EOF and previous char was not newline, there is an implicit eoln
+      pending, so eof returns false. Uses fseek to check previous char. }
+    c_str('#define p2c_eof(f) ({int _r;if(feof(f)){_r=1;}');
+    c_str('else{int _c=getc(f);if(_c==EOF){long _p=ftell(f);');
+    c_str('if(_p>0){fseek(f,_p-1,SEEK_SET);');
+    c_str('int _pv=getc(f);_r=(_pv==''');
+    c_chr(chr(92)); c_str('n'');}');
+    c_ln('else _r=1;}else{ungetc(_c,f);_r=0;}}_r;})');
+    { Pascal text file eoln: true at newline or EOF (implicit eoln) }
+    c_ln('#define p2c_eoln(f) ({int _c=getc(f);ungetc(_c,f);_c==10||_c==EOF;})');
+    { Pascal read(f,ch): reads one char, eoln->space, EOF(implicit eoln)->space }
+    c_str('#define p2c_readc(f,v) ({int _c=getc(f);');
+    c_str('if(_c==EOF||_c==''');
+    c_chr(chr(92)); c_ln('n'')v='' '';else v=(char)_c;})');
     c_newline;
     { emit header file preamble }
     h_ln('/*');
@@ -12911,11 +13369,13 @@ end;
       end
     end;
     if (sy <> period) and not inpriv then begin error(21); skip([period]) end;
+    { emit p2c_procptr type in header - always needed for proc param support }
+    h_ln('#include <stdbool.h>');
+    h_newline;
+    h_ln('typedef struct { void (*fn)(); void *ctx; } p2c_procptr;');
+    h_newline;
     { generate .h content: typedefs needed by global functions, then prototypes }
     if hdrfunccnt > 0 then begin
-      { emit stdbool.h include for bool support }
-      h_ln('#include <stdbool.h>');
-      h_newline;
       { emit typedefs referenced by global function signatures }
       c_target := 1; { redirect c_ output to .h }
       { emit all array typedefs referenced by any global function }
@@ -13060,7 +13520,13 @@ end;
               end else begin
                 c_type(lcp^.idtype); c_chr(' ')
               end;
-              if lcp^.name <> nil then c_pstr(lcp^.name);
+              if lcp^.name <> nil then begin
+                c_pstr(lcp^.name);
+                if lcp^.vkind = actual then
+                  if lcp^.idtype <> nil then
+                    if lcp^.idtype^.form = arrays then
+                  c_chr('_')
+              end;
               c_arraydims(lcp^.idtype)
             end else if lcp^.klass in [proc, func] then begin
               c_funcptr_param(lcp)
@@ -13505,6 +13971,103 @@ end;
     putnam(ufctptr);
   end (*exitundecl*) ;
 
+  { parse command line options }
+  procedure paropt;
+  var w(fillen): string; { word holder }
+      err: boolean; { error flag }
+      optfnd: boolean; { option found }
+      ii: lininx; { index for incbuf }
+
+  { set true/false flag }
+  procedure setflg(view a, n: string; var f, s: boolean);
+  var ts: packed array [1..40] of char;
+  begin
+    if compp(w, n) or ((a[1] <> ' ') and compp(w, a)) then begin
+      f := true; s := true; optfnd := true
+    end else begin
+      copy(ts, 'n'); cat(ts, n);
+      if compp(w, ts) then begin
+        f := false; s := true; optfnd := true
+      end else if a[1] <> ' ' then begin
+        copy(ts, 'n'); cat(ts, a);
+        if compp(w, ts) then begin
+          f := false; s := true; optfnd := true
+        end
+      end
+    end
+  end;
+
+  begin
+    parse.skpspc(cmdhan);
+    while parse.chkchr(cmdhan) = services.optchr do begin
+      optfnd := false;
+      parse.getchr(cmdhan); { skip option char }
+      if parse.chkchr(cmdhan) = services.optchr then
+        parse.getchr(cmdhan); { skip optional double dash }
+      parse.parlab(cmdhan, w, err);
+      if err then begin
+        writeln('*** No valid option found'); goto 99
+      end;
+      setflg('a',  'debugflt',   option[1],  options[1]);
+      setflg('b',  'prtlab',     option[2],  options[2]);
+      setflg('c',  'lstcod',     option[3],  options[3]);
+      setflg('d',  'chk',        option[4],  options[4]);
+      setflg('e',  'machdeck',   option[5],  options[5]);
+      setflg('f',  'debugsrc',   option[6],  options[6]);
+      setflg('g',  'prtlabdef',  option[7],  options[7]);
+      setflg('h',  'sourceset',  option[8],  options[8]);
+      setflg('i',  'varblk',     option[9],  options[9]);
+      setflg('ee', 'experror',   option[10], options[10]);
+      setflg('',   'echoline',   option[11], options[11]);
+      setflg('l',  'list',       option[12], options[12]);
+      setflg('m',  'breakheap',  option[13], options[13]);
+      setflg('n',  'recycle',    option[14], options[14]);
+      setflg('o',  'chkoverflo', option[15], options[15]);
+      setflg('p',  'chkreuse',   option[16], options[16]);
+      setflg('q',  'chkundef',   option[17], options[17]);
+      setflg('r',  'reference',  option[18], options[18]);
+      setflg('s',  'iso7185',    option[19], options[19]);
+      setflg('t',  'prttables',  option[20], options[20]);
+      setflg('u',  'undestag',   option[21], options[21]);
+      setflg('v',  'chkvar',     option[22], options[22]);
+      setflg('w',  'debug',      option[23], options[23]);
+      setflg('x',  'prtlex',     option[24], options[24]);
+      setflg('y',  'prtdisplay', option[25], options[25]);
+      setflg('z',  'lineinfo',   option[26], options[26]);
+      { module path: -md=path or -modules=path or -mp=path }
+      if compp(w, 'md') or compp(w, 'modules') or
+         compp(w, 'modulepath') or compp(w, 'mp') then begin
+        optfnd := true;
+        parse.skpspc(cmdhan);
+        if parse.chkchr(cmdhan) <> '=' then begin
+          writeln('*** Missing "=" for module path'); goto 99
+        end;
+        parse.getchr(cmdhan); { skip '=' }
+        { append to incbuf with : separator }
+        ii := maxlin;
+        while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1;
+        if incbuf[ii] <> ' ' then begin
+          if ii < maxlin then ii := ii+1;
+          if ii < maxlin-1 then begin incbuf[ii] := ':'; ii := ii+1 end
+        end;
+        while (parse.chkchr(cmdhan) <> ' ') and
+              not parse.endlin(cmdhan) do begin
+          if ii >= maxlin then begin
+            writeln('*** Include path too long'); goto 99
+          end;
+          incbuf[ii] := parse.chkchr(cmdhan);
+          parse.getchr(cmdhan);
+          ii := ii+1
+        end
+      end;
+      setflg('mal', 'mrkasslin', option[28], options[28]);
+      if not optfnd then begin
+        writeln('*** Unknown option'); goto 99
+      end;
+      parse.skpspc(cmdhan)
+    end
+  end;
+
   { place options in flags }
   procedure plcopt;
   var oi: 1..maxopt;
@@ -13534,8 +14097,37 @@ end;
   procedure initscalars;
   var i: integer; oi: 1..maxopt;
   begin fwptr := nil; 
-    for oi := 1 to maxopt do 
+    for oi := 1 to maxopt do
       begin option[oi] := false; options[oi] := false end;
+    { initialize option name tables }
+    opts[1]  := 'a         '; opts[2]  := 'b         ';
+    opts[3]  := 'c         '; opts[4]  := 'd         ';
+    opts[5]  := 'e         '; opts[6]  := 'f         ';
+    opts[7]  := 'g         '; opts[8]  := 'h         ';
+    opts[9]  := 'i         '; opts[10] := 'ee        ';
+    opts[11] := '          '; opts[12] := 'l         ';
+    opts[13] := 'm         '; opts[14] := 'n         ';
+    opts[15] := 'o         '; opts[16] := 'p         ';
+    opts[17] := 'q         '; opts[18] := 'r         ';
+    opts[19] := 's         '; opts[20] := 't         ';
+    opts[21] := 'u         '; opts[22] := 'v         ';
+    opts[23] := 'w         '; opts[24] := 'x         ';
+    opts[25] := 'y         '; opts[26] := 'z         ';
+    opts[27] := 'md        '; opts[28] := 'mal       ';
+    optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
+    optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
+    optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
+    optsl[7]  := 'prtlabdef '; optsl[8]  := 'sourceset ';
+    optsl[9]  := 'varblk    '; optsl[10] := 'experror  ';
+    optsl[11] := 'echoline  '; optsl[12] := 'list      ';
+    optsl[13] := 'breakheap '; optsl[14] := 'recycle   ';
+    optsl[15] := 'chkoverflo'; optsl[16] := 'chkreuse  ';
+    optsl[17] := 'chkundef  '; optsl[18] := 'reference ';
+    optsl[19] := 'iso7185   '; optsl[20] := 'prttables ';
+    optsl[21] := 'undestag  '; optsl[22] := 'chkvar    ';
+    optsl[23] := 'debug     '; optsl[24] := 'prtlex    ';
+    optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
+    optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
     prtables := false; option[20] := false; list := false; option[12] := false;
     debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
@@ -13772,12 +14364,21 @@ begin
 
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
 
-  { get command line }
-  getcommandline;
-  cmdpos := 1;
-  paroptions; { parse command line options }
-  { parse header files }
-  parhdrfilnam(prd, prdval, srcfil, '.pas');
+  { parse command line }
+  parse.openpar(cmdhan);
+  parse.opencommand(cmdhan, 250);
+  paropt; { parse command line options }
+  { parse source filename }
+  parse.skpspc(cmdhan);
+  if parse.endlin(cmdhan) then begin
+    writeln('*** Error: input filename not found');
+    goto 99
+  end;
+  if parse.chkchr(cmdhan) = '"' then
+    parse.parstr(cmdhan, srcfil, prdval)
+  else
+    parse.parfil(cmdhan, srcfil, false, prdval);
+  prdval := not prdval; { parfil returns err=true on failure }
   if not prdval then begin
     writeln('*** Error: input filename not found');
     goto 99
@@ -13788,7 +14389,8 @@ begin
   { create output filenames }
   services.maknam(coutfil, p, n, 'c');
   services.maknam(houtfil, p, n, 'h');
-  paroptions; { parse command line options }
+  assign(prd, srcfil);
+  paropt; { parse command line options }
   plcopt; { place options in flags }
 
   (*parse:*)

@@ -1,4 +1,4 @@
-{$l-,s+,u-}
+{$u-}
 {*******************************************************************************
 *                                                                              *
 *                             BASIC INTERPRETER                                *
@@ -52,7 +52,7 @@ label 88, 77, 99;
 
 const
 
-   maxpwr  = 1000000000; { maximum power of 10 that fits into integer }
+   maxpwr  = 1000000000000000000; { maximum power of 10 that fits into integer }
    maxnum  = 9999;  { maximum line number }
    maxstr  = 250;   { maximum length of string }
    maxstk  = 100;   { maximum temp count }
@@ -61,7 +61,7 @@ const
    maxvec  = 1000;  { maximum number of vector indexes }
    maxfil  = 100;   { maximum number of files available }
    maxfln  = 250;   { maximum length of filename (must be >= maxstr) }
-   intdig  = 11;    { number of digits in integer (to get around SVS bug) }
+   intdig  = 20;    { number of digits in integer (to get around SVS bug) }
    hasnfio = true{false}; { implements named file I/O procedures }
 
 type
@@ -346,280 +346,6 @@ var
    keycodc: array [0..255] of keycod; { keycod converter array }
 
 procedure prterr(err: errcod); forward;
-
-{******************************************************************************
-
-The following functions allow for file access by name in supported systems.
-Leaving them as errors allows compilation on ISO 7185 systems, but without
-file I/O based functions.
-
-******************************************************************************}
-
-{******************************************************************************
-
-Check file exists
-
-Checks if the given file exists with right padded filename. Used to wrap the
-operating system function.
-
-******************************************************************************}
-
-function existsfile(var fn: filnam): boolean;
-
-{
-var f: bindable text;
-    b: bindingtype;
-    i, l: integer;
-    fe: boolean;
-}
-
-begin
-
-   { GPC }
-
-   {
-   unbind(f);
-   b := binding(f);
-   l := maxstr;
-   while (fn[l] = ' ') and (l > 1) do l := l-1;
-   b.name := '';
-   for i := 1 to l do b.name := b.name+fn[i];
-   bind(f, b);
-   fe := b.bound;
-   unbind(f);
-   existsfile := fe;
-   }
-
-   fn[1] := fn[1]; { shut up compiler }
-   existsfile := true
-
-end;
-
-{******************************************************************************
-
-Open file for reading
-
-Opens a given file by name for reading.
-
-******************************************************************************}
-
-procedure openread(var f: text; var fn: filnam);
-
-{
-var s: string(maxstr);
-    i, l: integer;
-}
-
-begin
-
-   { GPC/FPC/Borland }
-
-   {
-   l := maxstr;
-   while (fn[l] = ' ') and (l > 1) do l := l-1;
-   s := '';
-   for i := 1 to l do s := s+fn[i];
-   assign(f, s);
-   reset(f)
-   }
-
-   fn[1] := fn[1]; { shut up compiler }
-   reset(f)
-
-end;
-
-{******************************************************************************
-
-Open file for writing
-
-Opens a given file by name for writing.
-
-******************************************************************************}
-
-procedure openwrite(var f: text; var fn: filnam);
-
-{
-var s: string(maxstr);
-    i, l: integer;
-}
-
-begin
-
-   { GPC }
-
-   {
-   l := maxstr;
-   while (fn[l] = ' ') and (l > 1) do l := l-1;
-   s := '';
-   for i := 1 to l do s := s+fn[i];
-   assign(f, s);
-   rewrite(f)
-   }
-
-   fn[1] := fn[1]; { shut up compiler }
-   reset(f)
-
-end;
-
-{******************************************************************************
-
-Close file
-
-Closes the given file so it can be reused.
-
-******************************************************************************}
-
-procedure closefile(var f: text);
-
-begin
-
-   { GPC/FPC/Borland/IP Pascal }
-
-   {
-   close(f)
-   }
-
-   reset(f); { shut up compiler }
-
-end;
-
-{******************************************************************************
-
-End of named file functions.
-
-******************************************************************************}
-
-{******************************************************************************
-
-Bitwise integer instructions. These can be replaced by direct operations if
-your Pascal installation has them.
-
-******************************************************************************}
-
-{******************************************************************************
-
-Find bit 'not' of integer.
-
-Finds bit 'not' of an integer. Only works on positive integers.
-
-******************************************************************************}
-
-function bnot(a: integer): integer;
-
-var i, r, p: integer;
-
-begin
-
-   r := 0; { clear result }
-   p := 1; { set 1st power }
-   i := maxint; { set maximium positive number }
-   while i <> 0 do begin
-
-      if not odd(a) then r := r+p; { add in power }
-          a := a div 2; { set next bits of operands }
-          i := i div 2; { count bits }
-      if i > 0 then p := p*2; { find next power }
-
-   end;
-   bnot := r { return result }
-
-end;
-
-{******************************************************************************
-
-Find bit 'or' of integers.
-
-Finds bit 'or' of two integers. Only works on positive integers.
-
-******************************************************************************}
-
-function bor(a, b: integer): integer;
-
-var i, r, p: integer;
-
-begin
-
-   r := 0; { clear result }
-   p := 1; { set 1st power }
-   i := maxint; { set maximium positive number }
-   while i <> 0 do begin
-
-      if odd(a) or odd(b) then r := r+p; { add in power }
-          a := a div 2; { set next bits of operands }
-          b := b div 2;
-          i := i div 2; { count bits }
-      if i > 0 then p := p*2; { find next power }
-
-   end;
-   bor := r { return result }
-
-end;
-
-{******************************************************************************
-
-Find bit 'and' of integers.
-
-Finds bit 'and' of two integers. Only works on positive integers.
-
-******************************************************************************}
-
-function band(a, b: integer): integer;
-
-var i, r, p: integer;
-
-begin
-
-   r := 0; { clear result }
-   p := 1; { set 1st power }
-   i := maxint; { set maximium positive number }
-   while i <> 0 do begin
-
-      if odd(a) and odd(b) then r := r+p; { add in power }
-          a := a div 2; { set next bits of operands }
-          b := b div 2;
-          i := i div 2; { count bits }
-      if i > 0 then p := p*2; { find next power }
-
-   end;
-   band := r { return result }
-
-end;
-
-{******************************************************************************
-
-Find bit 'xor' of integers.
-
-Finds bit 'xor' of two integers. Only works on positive integers.
-
-******************************************************************************}
-
-function bxor(a, b: integer): integer;
-
-var i, r, p: integer;
-
-begin
-
-   r := 0; { clear result }
-   p := 1; { set 1st power }
-   i := maxint; { set maximium positive number }
-   while i <> 0 do begin
-
-      if odd(a) <> odd(b) then r := r+p; { add in power }
-          a := a div 2; { set next bits of operands }
-          b := b div 2;
-          i := i div 2; { count bits }
-      if i > 0 then p := p*2; { find next power }
-
-   end;
-   bxor := r { return result }
-
-end;
-
-{******************************************************************************
-
-End of bitwise integer operations.
-
-******************************************************************************}
 
 {******************************************************************************
 
@@ -1561,7 +1287,7 @@ begin
       esyserr:  writeln('System error: contact program vendor');
 
    end;
-   if fsrcop then closefile(source); { close source file }
+   if fsrcop then close(source); { close source file }
    goto 88 { loop to ready }
 
 end;
@@ -3944,8 +3670,8 @@ begin { factor }
       factor;
       cvtint; { convert to integer }
       if temp[top].typ <> tint then prterr(einte); { integer expected }
-      if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-      temp[top].int := bnot(temp[top].int)
+      if temp[top].int < 0 then prterr(ebolneg);
+      temp[top].int := not(temp[top].int)
 
    end else if k = cstrc then loadstr { load string constant }
    else if k = cintc then begin
@@ -4063,12 +3789,12 @@ begin { factor }
       if temp[top].typ <> tint then prterr(einte); { integer expected }
       if temp[top].int < 0 then prterr(estrinx); { index is negative }
       skpspc; { skip spaces }
-      if c <> chr(ord(cmid)) then begin { left$ or right$ }
+      if k <> cmid then begin { left$ or right$ }
 
          if chkchr <> chr(ord(crpar)) then prterr(erpe); { ')' expected }
          getchr; { skip ')' }
          if temp[top].int > temp[top-1].bstr.len then prterr(estrinx);
-         if c = chr(ord(cright)) then { right$ }
+         if k = cright then { right$ }
             for i := 1 to temp[top].int do { move string left }
                temp[top-1].bstr.str[i] :=
                   temp[top-1].bstr.str[i+temp[top-1]
@@ -4793,7 +4519,7 @@ begin { expr }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
             if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := band(temp[top-1].int, temp[top].int);
+            temp[top-1].int := temp[top-1].int and temp[top].int;
             top := top-1
 
          end;
@@ -4807,7 +4533,7 @@ begin { expr }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
             if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := bxor(temp[top-1].int, temp[top].int);
+            temp[top-1].int := temp[top-1].int xor temp[top].int;
             top := top-1
 
          end;
@@ -4821,7 +4547,7 @@ begin { expr }
             if (temp[top].typ <> tint) or
                (temp[top-1].typ <> tint) then prterr(ewtyp);
             if (temp[top-1].int < 0) or (temp[top].int < 0) then prterr(ebolneg);
-            temp[top-1].int := bor(temp[top-1].int, temp[top].int);
+            temp[top-1].int := temp[top-1].int or temp[top].int;
             top := top-1
 
          end
@@ -5394,7 +5120,7 @@ begin
    while not (fchkchr in ['&', '$', ',', '#', '-', '+', '0', '.', '^']) and
          (fi <= fl) do begin
 
-      if fchkchr = '\' then begin { process force sequence }
+      if fchkchr = '\\' then begin { process force sequence }
 
          fi := fi+1;
          if fi <= fl then begin
@@ -5606,20 +5332,22 @@ begin
    if filtab[fn] = nil then getfil(filtab[fn]);
    if filtab[fn]^.st <> stclose then begin { file open, close it automatically }
 
-      closefile(filtab[fn]^.f); { close the file }
+      close(filtab[fn]^.f); { close the file }
       filtab[fn]^.st := stclose { set closed }
 
    end;
    if io then { input mode }
-      if not existsfile(ts) then prterr(efilnfd); { file not found }
+      if not exists(ts) then prterr(efilnfd); { file not found }
    if io then begin { input mode }
 
-      openread(filtab[fn]^.f, ts); { open file }
+      assign(filtab[fn]^.f, ts); { open file }
+      reset(filtab[fn]^.f);
       filtab[fn]^.st := stopenrd { set open for read }
 
    end else begin { output mode }
 
-      openwrite(filtab[fn]^.f, ts); { open file }
+      assign(filtab[fn]^.f, ts); { open file }
+      rewrite(filtab[fn]^.f);
       filtab[fn]^.st := stopenwr { set open for write }
 
    end
@@ -5652,7 +5380,7 @@ begin
    if fn < 3 then prterr(esysfnum); { cannot close system file }
    if filtab[fn] = nil then prterr(efilnop); { file already closed }
    if filtab[fn]^.st = stclose then prterr(efilnop); { file already closed }
-   closefile(filtab[fn]^.f); { close the file }
+   close(filtab[fn]^.f); { close the file }
    putfil(filtab[fn]) { release file entry }
 
 end;
@@ -5910,8 +5638,9 @@ begin
       for i := 1 to maxfln do ts[i] := ' '; { clear target }
       { copy }
       for i := 1 to temp[top].bstr.len do ts[i] := temp[top].bstr.str[i];
-      if not existsfile(ts) then prterr(efnfnd); { not found }
-      openread(source, ts); { open the file }
+      if not exists(ts) then prterr(efnfnd); { not found }
+      assign(source, ts); { open the file }
+      reset(source);
       fsrcop := true; { set source file is open }
       top := top-1; { clean stack }
       clear; { clear present program }
@@ -5930,7 +5659,7 @@ begin
          linbuf := nil { clear line buffer }
 
       end;
-      closefile(source); { close input file }
+      close(source); { close input file }
       fsrcop := false; { set source file is closed }
 
    end;
@@ -5972,7 +5701,8 @@ begin
       for i := 1 to maxstr do ts[i] := ' '; { clear target }
       { copy }
       for i := 1 to temp[top].bstr.len do ts[i] := temp[top].bstr.str[i];
-      openwrite(source, ts); { open the file }
+      assign(source, ts); { open the file }
+      rewrite(source);
       top := top-1 { clean stack }
 
    end;
@@ -6001,7 +5731,7 @@ begin
       else sl := sl^.next { next line }
 
    end;
-   if cmd = csave then closefile(source)
+   if cmd = csave then close(source)
 
 end;
 
@@ -6031,8 +5761,9 @@ begin
    for i := 1 to maxfln do ts[i] := ' '; { clear target }
    { copy }
    for i := 1 to temp[top].bstr.len do ts[i] := temp[top].bstr.str[i];
-   if not existsfile(ts) then prterr(efnfnd); { not found }
-   openread(source, ts); { open the file }
+   if not exists(ts) then prterr(efnfnd); { not found }
+   assign(source, ts); { open the file }
+   reset(source);
    fsrcop := true; { set source file is open }
    top := top-1; { clean stack }
    clear; { clear present program }
@@ -6051,7 +5782,7 @@ begin
       linbuf := nil { clear line buffer }
 
    end;
-   closefile(source); { close input file }
+   close(source); { close input file }
    fsrcop := false; { set source file is closed }
    goto 88 { return to command }
 
@@ -7046,18 +6777,21 @@ begin
    expr; { parse ending expression }
    cvtint; { convert to integer }
    if temp[top].typ <> tint then prterr(eexmi); { check integer }
-   if temp[top].int = 0 then begin { false }
+   if temp[top].int = 0 then begin { false, continue looping }
 
       top := top-1; { purge value }
       curprg := ctlstk^.line; { restore old position }
       linec := ctlstk^.chrp;
       skpspc; { check for optional ':' }
       if chkchr = chr(ord(ccln)) then getchr; { skip ':' }
-      popctl; { remove control block }
       goto 1 { re-enter same line }
 
-   end else { true }
-      top := top-1 { purge value }
+   end else begin { true, exit loop }
+
+      top := top-1; { purge value }
+      popctl { remove control block }
+
+   end
 
 end;
 
@@ -7401,11 +7135,14 @@ begin
    { place position of function }
    vartbl[x]^.line := curprg;
    vartbl[x]^.chrp := linec;
-   if ml then { skip multiline }
+   if ml then begin { skip multiline }
+
       while not (ktrans[chkchr] in [cendfunc, cendproc, cpend]) do skptlkl;
-   { check matching termination }
-   if proc and (chkchr <> chr(ord(cendproc))) then prterr(enoendp);
-   if not proc and (chkchr <> chr(ord(cendfunc))) then prterr(enoendf);
+      { check matching termination }
+      if proc and (chkchr <> chr(ord(cendproc))) then prterr(enoendp);
+      if not proc and (chkchr <> chr(ord(cendfunc))) then prterr(enoendf)
+
+   end;
    while not chksend do skptlk { skip to end of statement }
 
 end;
@@ -7937,6 +7674,6 @@ begin { executive }
    { close and release all files }
    for fi := 1 to maxfil do if filtab[fi] <> nil then
       if filtab[fi]^.st <> stclose then
-         if filtab[fi]^.ty = tyoth then closefile(filtab[fi]^.f)
+         if filtab[fi]^.ty = tyoth then close(filtab[fi]^.f)
 
 end.
