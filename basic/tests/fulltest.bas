@@ -707,84 +707,136 @@
 9000 print "d%(d%(2)) = d%(4) = 16:"; d%(d%(2))
 9010 print "Section 41 complete"
 9020 print
-9100 rem ============================================================
-9110 rem  Section 42: File output and input
-9120 rem ============================================================
-9130 print "=== Section 42: File output and input ==="
-9140 open "testfile.tmp" for output as #3
-9150 print #3, "Hello from file"
-9160 print #3, "Second line"
-9170 close #3
-9180 open "testfile.tmp" for input as #3
-9190 input #3, a$
-9200 input #3, b$
-9210 close #3
-9220 print "Line 1: "; a$
-9230 print "Line 2: "; b$
-9240 print "Section 42 complete"
-9250 print
-9300 rem ============================================================
-9310 rem  Section 43: File close and reopen
-9320 rem ============================================================
-9330 print "=== Section 43: File close and reopen ==="
-9340 open "testfile2.tmp" for output as #4
-9350 print #4, "data1"
-9360 close #4
-9370 open "testfile3.tmp" for output as #4
-9380 print #4, "data2"
-9390 close #4
-9400 open "testfile2.tmp" for input as #4
-9410 input #4, a$
-9420 close #4
-9430 open "testfile3.tmp" for input as #4
-9440 input #4, b$
-9450 close #4
-9460 print "File 1: "; a$
-9470 print "File 2: "; b$
-9480 print "Section 43 complete"
-9490 print
-9500 rem ============================================================
-9510 rem  Section 44: EOF detection
-9520 rem ============================================================
-9530 print "=== Section 44: EOF detection ==="
-9540 open "testeof.tmp" for output as #3
-9550 print #3, "only line"
-9560 close #3
-9570 open "testeof.tmp" for input as #3
-9580 c% = 0
-9590 while not eof(#3)
-9600    input #3, a$
-9610    c% = c% + 1
-9620 wend
-9630 close #3
-9640 print "Lines read:"; c%
-9650 print "Last line: "; a$
-9660 print "Section 44 complete"
-9670 print
-9700 rem ============================================================
-9710 rem  Section 45: Multiple files open simultaneously
-9720 rem ============================================================
-9730 print "=== Section 45: Multiple files open simultaneously ==="
-9740 open "testmf1.tmp" for output as #3
-9750 open "testmf2.tmp" for output as #4
-9760 print #3, "file three"
-9770 print #4, "file four"
-9780 close #4
-9790 close #3
-9800 open "testmf1.tmp" for input as #3
-9810 open "testmf2.tmp" for input as #4
-9820 input #3, a$
-9830 input #4, b$
-9840 close #3
-9850 close #4
-9860 print "File #3: "; a$
-9870 print "File #4: "; b$
-9880 print "Section 45 complete"
-9890 print
+9100 rem === Section 42: File output and input ===
+9101 print "=== Section 42: File output and input ==="
+9102 open "testfile.tmp" for output as #3
+9103 print #3, "Hello from file"
+9104 print #3, "Second line"
+9105 close #3
+9106 open "testfile.tmp" for input as #3
+9107 input #3, a$
+9108 input #3, b$
+9109 close #3
+9110 print "Line 1: "; a$
+9111 print "Line 2: "; b$
+9112 print "Section 42 complete"
+9113 print
+9200 rem === Section 43: File close and reopen ===
+9201 print "=== Section 43: File close and reopen ==="
+9202 open "testfile2.tmp" for output as #4
+9203 print #4, "data1"
+9204 close #4
+9205 open "testfile3.tmp" for output as #4
+9206 print #4, "data2"
+9207 close #4
+9208 open "testfile2.tmp" for input as #4
+9209 input #4, a$
+9210 close #4
+9211 open "testfile3.tmp" for input as #4
+9212 input #4, b$
+9213 close #4
+9214 print "File 1: "; a$
+9215 print "File 2: "; b$
+9216 print "Section 43 complete"
+9217 print
+9300 rem === Section 44: EOF detection ===
+9301 print "=== Section 44: EOF detection ==="
+9302 open "testeof.tmp" for output as #3
+9303 print #3, "only line"
+9304 close #3
+9305 open "testeof.tmp" for input as #3
+9306 c% = 0
+9307 while not eof(#3)
+9308    input #3, a$
+9309    c% = c% + 1
+9310 wend
+9311 close #3
+9312 print "Lines read:"; c%
+9313 print "Last line: "; a$
+9314 print "Section 44 complete"
+9315 print
+9400 rem === Section 45: Multiple files open simultaneously ===
+9401 print "=== Section 45: Multiple files open simultaneously ==="
+9402 open "testmf1.tmp" for output as #3
+9403 open "testmf2.tmp" for output as #4
+9404 print #3, "file three"
+9405 print #4, "file four"
+9406 close #4
+9407 close #3
+9408 open "testmf1.tmp" for input as #3
+9409 open "testmf2.tmp" for input as #4
+9410 input #3, a$
+9411 input #4, b$
+9412 close #3
+9413 close #4
+9414 print "File #3: "; a$
+9415 print "File #4: "; b$
+9416 print "Section 45 complete"
+9417 print
+9500 rem === Section 46: Nested function definitions ===
+9501 print "=== Section 46: Nested function definitions ==="
+9502 function outer(a)
+9503    function inner(b)
+9504    endfunc b * 2
+9505    endfunc inner(a) + 1
+9506 print "outer(5) = inner(5)+1 = 11:"; outer(5)
+9507 rem Test nested procedure inside function
+9508 function outer2(a)
+9509    procedure innerp(x)
+9510       g% = x * 3
+9511    endproc
+9512    innerp(a)
+9513    endfunc g%
+9514 print "outer2(7) = 7*3 = 21:"; outer2(7)
+9515 print "Section 46 complete"
+9516 print
+9600 rem === Section 47: LOCAL statement ===
+9601 print "=== Section 47: LOCAL statement ==="
+9602 x = 100
+9603 x% = 200
+9604 x$ = "global"
+9605 procedure testlocal(a)
+9606    local x
+9607    x = a
+9608    x% = a + 1
+9609    x$ = "local"
+9610    print "Inside: x ="; x; "x% ="; x%; "x$ = "; x$
+9611 endproc
+9612 testlocal(42)
+9613 print "After: x ="; x; "x% ="; x%; "x$ = "; x$
+9614 rem Test multiple locals on one line
+9615 y = 50
+9616 z = 60
+9617 procedure testmulti(a)
+9618    local y, z
+9619    y = a
+9620    z = a + 10
+9621    print "Inside multi: y ="; y; "z ="; z
+9622 endproc
+9623 testmulti(1)
+9624 print "After multi: y ="; y; "z ="; z
+9625 print "Section 47 complete"
+9626 print
+9700 rem === Section 48: Nested locals ===
+9701 print "=== Section 48: Nested locals ==="
+9702 r = 999
+9703 procedure outerp(a)
+9704    local r
+9705    r = a
+9706    procedure innerp2(b)
+9707       local r
+9708       r = b
+9709       print "Inner r ="; r
+9710    endproc
+9711    innerp2(a * 10)
+9712    print "Outer r ="; r
+9713 endproc
+9714 outerp(5)
+9715 print "Global r ="; r
+9716 print "Section 48 complete"
+9717 print
 9900 rem ============================================================
-9910 rem  Summary
-9920 rem ============================================================
-9930 print "============================================================"
-9940 print "All test sections completed."
-9950 print "============================================================"
-9960 end
+9901 print "============================================================"
+9902 print "All test sections completed."
+9903 print "============================================================"
+9999 end

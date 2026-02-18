@@ -130,6 +130,7 @@ type
              crand,        { randomize number generator }
              ctrace,       { trace on }
              cnotrace,     { trace off }
+             clocal,       { local variable declaration }
              cas,          { as noise word }
              coutput,      { output mode word }
              cbye,         { exit basic }
@@ -304,7 +305,7 @@ type
                  einvimm, enoif, emismif, ecasmat, enfact, enoendf,
                  enpact, enoendp, eprctyp, einvfld, etypfld, esysvar,
                  eglbdef, elabimm, eevtexp, eeleiexp, enonfio, ebolneg,
-                 esyserr);
+                 elocnfp, esyserr);
 
 var
 
@@ -1163,7 +1164,7 @@ begin { prtlin }
          cgosub, creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat,
          cuntil, cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv,
          cdumpp, cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand,
-         ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+         ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
          cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
          cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd, cint,
          csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase, cucase,
@@ -1379,6 +1380,7 @@ begin
       eeleiexp: writeln('"else" or "endif" expected');
       enonfio:  writeln('No named file I/O implemented this version');
       ebolneg:  writeln('Cannot use bit operation on negative');
+      elocnfp:  writeln('"local" only valid inside procedure/function');
       esyserr:  writeln('System error: contact program vendor');
 
    end;
@@ -1658,7 +1660,7 @@ begin
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
       cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
-      ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+      ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
       cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd,
       cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase,
@@ -1856,7 +1858,7 @@ begin
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
       cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
-      ctrace, cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+      ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
       cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn,
       crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof,
@@ -3200,7 +3202,7 @@ begin
          creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil,
          cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv, cdumpp,
          cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand, ctrace,
-         cnotrace, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, cgtn,
+         cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, cgtn,
          cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
          cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn,
          crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof,
@@ -7127,6 +7129,7 @@ procedure sdef(ml:   boolean;  { true if multiline }
 
 var c:          char;
     x, y:       integer;
+    nl:         integer;
     varp, varl: varptr;
 
 begin
@@ -7140,6 +7143,15 @@ begin
    getchr; { skip }
    x := ord(chkchr); { get variable }
    getchr; { skip }
+   { if inside function/procedure, save variable for restore on return }
+   if fnsstk <> nil then begin
+      varp := vartbl[x]; { save old entry }
+      getvarp(vartbl[x]); { create new empty entry }
+      vartbl[x]^.nam := varp^.nam; { place name }
+      vartbl[x]^.inx := varp^.inx; { place index }
+      varp^.next := fnsstk^.vs; { push old onto save list }
+      fnsstk^.vs := varp
+   end;
    if vartbl[x]^.fnc or vartbl[x]^.prc then
       prterr(edupdef); { duplicate definition }
    { note that once the function flag is set, the name is overridden as
@@ -7228,7 +7240,13 @@ begin
    vartbl[x]^.chrp := linec;
    if ml then begin { skip multiline }
 
-      while not (ktrans[chkchr] in [cendfunc, cendproc, cpend]) do skptlkl;
+      nl := 0; { nesting level for nested function/procedure definitions }
+      while not ((nl = 0) and
+            (ktrans[chkchr] in [cendfunc, cendproc, cpend])) do begin
+         if ktrans[chkchr] in [cfunction, cprocedure] then nl := nl + 1
+         else if ktrans[chkchr] in [cendfunc, cendproc] then nl := nl - 1;
+         skptlkl
+      end;
       { check matching termination }
       if proc and (chkchr <> chr(ord(cendproc))) then prterr(enoendp);
       if not proc and (chkchr <> chr(ord(cendfunc))) then prterr(enoendf)
@@ -7276,6 +7294,46 @@ begin
    fnsstk^.endf := true; { set function terminated }
    curprg := nil; { terminate }
    goto 2
+
+end;
+
+{******************************************************************************
+
+Local
+
+Handles the 'local' statement. Creates variables that are only valid during the
+execution of the enclosing procedure or function. The old variable is saved on
+the function stack and automatically restored when the function returns.
+
+******************************************************************************}
+
+procedure slocal;
+
+var x:  integer; { variable index }
+    vp: varptr;  { variable pointer }
+    c:  char;    { separator character }
+
+begin
+
+   getchr; { skip 'local' }
+   if fnsstk = nil then prterr(elocnfp); { must be inside function/procedure }
+   repeat
+      skpspc; { skip spaces }
+      if not (ktrans[chkchr] in [cstrv, cintv, crlv]) then prterr(evare);
+      getchr; { skip type token }
+      x := ord(chkchr); { get variable index }
+      getchr; { skip variable index }
+      { save old variable, create fresh local }
+      vp := vartbl[x]; { index old variable }
+      getvarp(vartbl[x]); { create a new one }
+      vartbl[x]^.nam := vp^.nam; { place name }
+      vartbl[x]^.inx := vp^.inx; { place index }
+      vp^.next := fnsstk^.vs; { push old onto save list }
+      fnsstk^.vs := vp;
+      skpspc; { skip spaces }
+      c := chkchr; { save separator }
+      if c = chr(ord(ccma)) then getchr { skip ',' }
+   until c <> chr(ord(ccma))
 
 end;
 
@@ -7447,7 +7505,7 @@ begin { stat }
                    cwend, crepeat, cuntil, cselect, ccase, cother, cendsel,
                    copen, cclose, cend, cdumpv, cdumpp, cdim, cdef, cfunction,
                    cendfunc, cprocedure, cendproc, crand, ctrace,
-                   cnotrace, cbye, cintv, cstrv, crlv]) then
+                   cnotrace, clocal, cbye, cintv, cstrv, crlv]) then
       prterr(estate);
    case cmd of { statement }
 
@@ -7497,6 +7555,7 @@ begin { stat }
       cdumpp:       sdumpp;         { dump program encoded diagnostic }
       ctrace:       strace;         { trace enable }
       cnotrace:     snotrace;       { trace disable }
+      clocal:       slocal;         { local variable declaration }
       copen:        sopen;          { open file }
       cclose:       sclose;         { close file }
       cbye:         goto 99         { exit basic }
@@ -7631,6 +7690,7 @@ begin { executive }
    keywd[cas]          := 'as          ';
    keywd[coutput]      := 'output      ';
    keywd[cnotrace]     := 'notrace     ';
+   keywd[clocal]       := 'local       ';
    keywd[cbye]         := 'bye         ';
    keywd[cmod]         := 'mod         ';
    keywd[cidiv]        := 'div         ';
