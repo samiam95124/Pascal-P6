@@ -3283,17 +3283,19 @@ begin (* main *)
     goto 99
   end;
   paroptions; { parse command line options }
-  parhdrfil(prr, prrval, '.out');
-  if not prdval then begin
-    writeln('*** Error: output filename not found');
-    goto 99
+  while not eolncommand and not eofcommand and (bufcommand = ' ') do getcommand;
+  if not eolncommand then begin
+    parhdrfil(prr, prrval, '.out ');
+    if not prrval then begin
+      writeln('*** Error: input filename not found');
+      goto 99
+    end;
+    paroptions; { parse command line options }
   end;
-  { load command line options }
-  paroptions;
   plcopt; { place options }
   
   reset(prd);
-  rewrite(prr);
+  if prrval then rewrite(prr);
 
   { construct bit equivalence table }
   i := 1;

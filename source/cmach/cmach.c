@@ -3263,6 +3263,7 @@ int main (int argc, char *argv[])
 {
     FILE* fp;
     address i;
+    char fname[FILLEN];
 
     printf("P6 Pascal cmach interpreter vs. %d.%d", MAJORVER, MINORVER);
     if (EXPERIMENT) printf(".x");
@@ -3317,7 +3318,11 @@ int main (int argc, char *argv[])
         printf("*** Usage: cmach <codefile> [<params>]...\n");
         finish(1);
     }
-    fp = fopen(*argv, "r");
+    if (!strchr(*argv, '.')) {
+      strcpy(fname, *argv);
+      strcat(fname, ".p6");
+      fp = fopen(fname, "r");
+    } else fp = fopen(*argv, "r");
     if (!fp) {
         printf("*** Cannot open file %s\n", *argv);
         finish(1);
