@@ -536,6 +536,7 @@ var
     ptrmapsrcline: array [1..maxptrmap] of integer; { source lines }
     ptrmapsnm: array [1..maxptrmap] of integer; { stp serial numbers }
     ptrmapcmt: array [1..maxptrmap] of cmtptr; { attached comments }
+    ptrdefsout: integer;            { number of ptr typedefs already output }
 
     { Array type name mapping for C output }
     arrmapcount: integer;           { number of array type mappings }
@@ -3443,7 +3444,7 @@ procedure c_ptrtypedefs;
 var i: integer;
     fsp: stp;
 begin
-  for i := 1 to ptrmapcount do begin
+  for i := ptrdefsout + 1 to ptrmapcount do begin
     c_str('typedef ');
     { output the target type }
     fsp := ptrmapstp[i];
@@ -3463,7 +3464,8 @@ begin
     end;
     c_newline
   end;
-  if ptrmapcount > 0 then c_newline
+  if ptrmapcount > ptrdefsout then c_newline;
+  ptrdefsout := ptrmapcount
 end;
 
 { output typedef declarations for all registered array types }
@@ -12619,7 +12621,6 @@ end;
       c_newline;
       cindent := cindent + 1;
       c_indent;
-      c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
       c_fileinit
     end else if fprocp <> nil then begin
       { procedure or function body }
@@ -12703,7 +12704,6 @@ end;
           c_ln(';')
         end;
         c_indent;
-        c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
         { emit memcpy for value-parameter arrays }
         lcp := fprocp^.pflist;
         while lcp <> nil do begin
@@ -12825,7 +12825,6 @@ end;
           c_ln(';')
         end;
         c_indent;
-        c_ln('p2c_settype __attribute__((unused)) _stmp1, _stmp2;');
         { emit memcpy for value-parameter arrays }
         lcp := fprocp^.pflist;
         while lcp <> nil do begin
@@ -14416,6 +14415,7 @@ begin
   anonenum := 0;
   anonrec := 0;
   ptrmapcount := 0;
+  ptrdefsout := 0;
   arrmapcount := 0;
   arrdefsout := 0;
   hdrfilecnt := 0;
