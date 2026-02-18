@@ -11,8 +11,8 @@ dif [-w|-nw] file1 file2
 
 Options:
 
--w   Ignore whitespace (default)
--nw  Exact comparison
+-w   Ignore whitespace
+-nw  Exact comparison (default)
 
 Returns:
 
@@ -191,7 +191,7 @@ procedure parsecmd(
 
 begin
 
-    ignorewhite := true;
+    ignorewhite := false;
     file1 := nil;
     file2 := nil;
     skipspace;
@@ -782,8 +782,8 @@ begin
     if (file1 = nil) or (file2 = nil) then begin
 
         writeln('Usage: dif [-w|-nw] file1 file2');
-        writeln('  -w   Ignore whitespace (default)');
-        writeln('  -nw  Exact comparison');
+        writeln('  -w   Ignore whitespace');
+        writeln('  -nw  Exact comparison (default)');
         halt
 
     end;

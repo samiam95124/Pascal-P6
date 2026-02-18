@@ -6,7 +6,7 @@
 #
 # Execution:
 #
-# Compile [--pmach|--cmach] <file>
+# Compile [<options>] <file>
 #
 # <file> is the filename without extention.
 #
@@ -26,6 +26,7 @@
 # --pint    Generate mach code and run the result through pint.
 # --package Generate a unified executable with mach code and interpreter.
 # --pgen    Generate assembly code via pgen for the current machine (default).
+# --noerrmsg Do not output failure message on compile, the .err file is sufficient.
 #
 pint=0
 pmach=0

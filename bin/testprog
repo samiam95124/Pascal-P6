@@ -265,7 +265,8 @@ if [ $? -eq 0 ]; then
     #
     strip $progfile.lst tmp1
     strip $cmpfile.cmp tmp2
-    diff -B tmp1 tmp2 > $progfile.dif
+    # diff -B tmp1 tmp2 > $progfile.dif
+    dif -w tmp1 tmp2 > $progfile.dif
     rm -f tmp1
     rm -f tmp2
     ls -l $progfile.dif > $progfile.tmp
