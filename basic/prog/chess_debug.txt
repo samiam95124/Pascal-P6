@@ -4,17 +4,39 @@ Last updated: 2026-02-18
 
 STATUS
 ------
-chess.bas loads, draws the board with ANSI colored ASCII art pieces, accepts
-a color choice (W/B), and reaches the move input prompt. The computer makes
-its first move successfully. The major interpreter bugs that blocked execution
-have been fixed and merged (PR #381).
+chess.bas is playable. The game loads, draws the board with ANSI colored ASCII
+art pieces, accepts a color choice (W/B), and plays a full game. Tested through
+4+ move exchanges as both White and Black. The computer's alpha-beta search at
+depth 3 works correctly, including captures and piece development. Move
+validation correctly rejects illegal moves (including when in check). Check
+detection works (tested: computer gave check, human's non-blocking move was
+rejected as illegal).
 
-KNOWN REMAINING ISSUE
+The binary must be rebuilt after source changes: the stale binary from before
+PR #381 still had the sdim bug.
+
+KNOWN REMAINING ISSUES
 ---------------------
-The game has not yet been tested through a full playthrough to checkmate.
-After the first move exchange there may be additional runtime errors lurking
-in deeper code paths (compmove's alpha-beta search, castling, en passant,
-promotion, checkmate/stalemate detection).
+The following have NOT been tested through actual gameplay:
+- Castling (code exists but no game reached a castling position)
+- En passant capture (code exists but no game triggered it)
+- Pawn promotion (code exists but no game reached 8th rank)
+- Checkmate detection (checkend% exists but no game reached checkmate)
+- Stalemate detection (checkend% handles it but no game reached stalemate)
+These are all coded and structurally correct but await interactive testing.
+
+BUGS FIXED (in chess.bas)
+-------------------------
+5. findch% string indexing error on empty/exhausted input:
+   - Root cause: IP Basic's `and` does NOT short-circuit (same as Pascal).
+     `while i% <= len(s$) and mid$(s$, i%, 1) <> c$` evaluates BOTH sides
+     even when `i% > len(s$)`, causing `mid$` to index past string end.
+   - Fix: Use a flag variable to avoid the out-of-bounds access:
+     ```
+     while i% <= len(s$) and f% = 0
+         if mid$(s$, i%, 1) = c$ then f% = 1 else i% = i% + 1
+     wend
+     ```
 
 BUGS FIXED (in basic.pas, merged to master)
 --------------------------------------------
@@ -56,16 +78,17 @@ EARLIER BUGS FIXED (in previous sessions, also on master)
 
 HOW TO BUILD AND RUN
 --------------------
-Compile interpreter:
-  cd basic && PATH=$HOME/projects/pascal-p6/bin:$PATH pc basic
+Compile interpreter (from project root):
+  bin/pc basic/basic
 
 Run chess game interactively:
   cd basic && ./basic
   load "prog/chess"
   run
 
-Run with piped input for testing:
-  printf 'load "prog/chess"\nrun\nw\n7,5 5,5\n' | ./basic
+Run with piped input for testing (as Black, 3 moves):
+  cd basic
+  printf 'load "prog/chess"\nrun\nb\n\n\n2,5 4,5\n\n2,4 4,4\n\n1,2 3,3\n\n' | timeout 300 ./basic
 
 Capture trace output:
   Add "trace" before the suspect line in chess.bas, then:
@@ -83,15 +106,15 @@ CHESS.BAS STRUCTURE
 Lines 1-50:     Global variables, escape code strings, piece encoding constants
 Lines 51-120:   DATA statements for ASCII art pieces (6 types x 4 rows)
 Lines 121-170:  Piece art loading, utility procedures (cls, moveto, resetcol)
-Lines 171-200:  findch% helper function (find char in string)
-Lines 201-310:  drawboard procedure (ANSI colored ASCII art board display)
-Lines 311-355:  Move accessor functions (gmfr%, gmfc%, gmtr%, gmtc%)
+Lines 162-170:  findch% helper function (find char in string)
+Lines 219-301:  drawboard procedure (ANSI colored ASCII art board display)
+Lines 307-351:  Move accessor functions (gmfr%, gmfc%, gmtr%, gmtc%)
 Lines 357-500:  genmoves procedure (pseudo-legal move generation for all pieces)
-Lines 501-570:  incheck% function (checks if a side's king is attacked)
-Lines 571-640:  makemove procedure (execute move with special move handling)
-Lines 641-690:  unmake procedure (reverse a move)
+Lines 506-569:  incheck% function (checks if a side's king is attacked)
+Lines 575-646:  makemove procedure (execute move with special move handling)
+Lines 652-686:  unmake procedure (reverse a move)
 Lines 692-698:  islegal% function (make/check/unmake wrapper)
-Lines 700-800:  evaluate% function (material + positional scoring)
+Lines 704-748:  evaluate% function (material + positional scoring)
 Lines 805-849:  compmove procedure (alpha-beta search, depth 3)
 Lines 855-932:  getmove procedure (human move input and validation)
 Lines 938-955:  checkend% function (checkmate/stalemate detection)
@@ -101,6 +124,9 @@ Lines 990-1028: Main game loop
 IP BASIC GOTCHAS
 ----------------
 - "to" is a reserved word (for...to). Don't use as variable name.
+- IP Basic's `and`/`or` does NOT short-circuit. Both operands are always
+  evaluated. Avoid array/string indexing in while conditions -- use a flag
+  variable instead (same fix as for Pascal).
 - Max 255 variables total. Chess.bas uses many; be careful adding more.
 - Strings max 250 chars.
 - No built-in terminal control -- use raw ANSI escapes via chr$(27).
@@ -111,6 +137,8 @@ IP BASIC GOTCHAS
   were the source of the major bug.
 - Arrays are sparse and auto-dimensioned.
 - Case insensitive.
+- Binary must be rebuilt after basic.pas changes (stale binary was the
+  cause of the initial "Wrong number of demensions" error).
 
 DEBUGGING TIPS
 --------------
