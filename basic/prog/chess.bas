@@ -160,12 +160,13 @@ procedure cls
 endproc
 
 function findch%(s$, c$)
-    local i
+    local i, f
     i% = 1
-    while i% <= len(s$) and mid$(s$, i%, 1) <> c$
-        i% = i% + 1
+    f% = 0
+    while i% <= len(s$) and f% = 0
+        if mid$(s$, i%, 1) = c$ then f% = 1 else i% = i% + 1
     wend
-    if i% > len(s$) then i% = 0
+    if f% = 0 then i% = 0
 endfunc i%
 
 rem =====================================================================
