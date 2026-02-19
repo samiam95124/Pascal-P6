@@ -263,6 +263,7 @@ type
       lin:  bstptr;  { position save }
       chr:  integer;
       endf: boolean; { end of function was found }
+      ctl:  ctlptr;  { control stack save }
       next: fnsptr   { next list entry }
 
    end;
@@ -1511,7 +1512,8 @@ begin
    fp^.next := fnsstk; { push onto control stack }
    fnsstk := fp;
    fp^.vs := nil; { clear variables list }
-   fp^.endf := false { set end of function not found }
+   fp^.endf := false; { set end of function not found }
+   fp^.ctl := ctlstk { save control stack state }
 
 end;
 
@@ -3694,6 +3696,8 @@ begin
          else prterr(enoendp); { no 'endproc' found }
 
    end else expr; { parse function expression }
+   { Note: control stack entries left by the function from goto jumping
+     out of if/endif blocks are handled by cansif for single-line ifs }
    curprg := fnsstk^.lin; { restore position }
    linec := fnsstk^.chr;
    { restore old variables }
@@ -5529,7 +5533,7 @@ begin
    getchr; { skip 'if' }
    pshctl; { push a control block }
    ctlstk^.typ := ctif; { set 'if' type }
-   ctlstk^.sif := true; { set single line }
+   ctlstk^.sif := false; { protect from cansif during expression evaluation }
    expr;
    c := chkchr; { save tolken }
    if (chkchr <> chr(ord(cthen))) and (chkchr <> chr(ord(cgoto))) then
@@ -5561,7 +5565,7 @@ begin
             { if the 'else' dangles, set as multiple line 'if' }
             skpspc; { skip to end }
             if ktrans[chkchr] in [cpend, clend] then ctlstk^.sif := false
-            else goto 1 { execute next statement }
+            else begin ctlstk^.sif := true; goto 1 end { execute next statement }
 
          end else if chkchr = chr(ord(cendif)) then begin
 
@@ -5579,6 +5583,7 @@ begin
             skpspc; { skip spaces }
             if chkchr = chr(ord(cintc)) then begin { it's a default goto }
 
+               ctlstk^.sif := true; { set single line for cansif cleanup }
                curprg := schlab(getint); { find the target label }
                goto 2 { go next line }
 
@@ -5586,7 +5591,7 @@ begin
             { if the 'else' dangles, set as multiple line 'if' }
             skpspc; { skip to end }
             if ktrans[chkchr] in [cpend, clend] then ctlstk^.sif := false
-            else goto 1 { execute next statement }
+            else begin ctlstk^.sif := true; goto 1 end { execute next statement }
 
          end else if chkchr = chr(ord(cendif)) then begin
 
@@ -5596,6 +5601,7 @@ begin
          end else begin { not found, skip to next line }
 
             { go next line }
+            ctlstk^.sif := true; { set single line for cansif cleanup }
             curprg := curprg^.next;
             goto 2
 
@@ -5616,8 +5622,8 @@ begin
       end else if c = chr(ord(cgoto)) then
          prterr(einte); { integer expected }
       { if the 'then' dangles, set as multiple line 'if' }
-      if chksend then ctlstk^.sif := false
-      else goto 1 { execute next statement on line }
+      if not chksend then
+         begin ctlstk^.sif := true; goto 1 end { single line, execute next }
 
    end
 
@@ -7095,11 +7101,11 @@ begin
             if y > 1 then begin { more than one index }
 
                { check already allocated }
-               if vp^.intv <> nil then prterr(earddim);
+               if vp^.strv <> nil then prterr(earddim);
                getvec(vp^.strv); { get the starting vector }
-               vp^.strv^.inx := y-1; { place index count }
+               vp^.strv^.inx := y; { place index count }
                { place type of first vector }
-               if y > 2 then vp^.strv^.vt := vvvec
+               if y > 1 then vp^.strv^.vt := vvvec
                else vp^.strv^.vt := vvstr;
                clrvec(vp^.strv) { clear that }
 
