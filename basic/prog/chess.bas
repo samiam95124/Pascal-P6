@@ -356,7 +356,7 @@ rem  Move generation
 rem =====================================================================
 
 procedure genmoves(s%, lv%)
-    local r, c, p, ap, tr, tc, d, nr, nc, fwd, blk
+    local r, c, p, ap, tr, tc, d, nr, nc, fwd, blk, ck
     nm%(lv%) = 0
     if s% > 0 then fwd% = -1 else fwd% = 1
     for r% = 1 to 8
@@ -472,25 +472,47 @@ procedure genmoves(s%, lv%)
                         endif
                     endif
                 next d%
-                rem castling
+                rem castling - cannot castle out of check or through check
                 if s% > 0 and r% = 8 and c% = 5 then
-                    rem white kingside
-                    if wkc% = 1 and board%(8, 6) = 0 and board%(8, 7) = 0 then
-                        addmove(8, 5, 8, 7, lv%)
-                    endif
-                    rem white queenside
-                    if wqc% = 1 and board%(8, 4) = 0 and board%(8, 3) = 0 and board%(8, 2) = 0 then
-                        addmove(8, 5, 8, 3, lv%)
+                    ck% = incheck%(s%)
+                    if ck% = 0 then
+                        rem white kingside
+                        if wkc% = 1 and board%(8, 6) = 0 and board%(8, 7) = 0 then
+                            rem check king doesn't pass through check on f1
+                            board%(8, 6) = s% * king%: board%(8, 5) = 0
+                            ck% = incheck%(s%)
+                            board%(8, 5) = s% * king%: board%(8, 6) = 0
+                            if ck% = 0 then addmove(8, 5, 8, 7, lv%)
+                        endif
+                        rem white queenside
+                        if wqc% = 1 and board%(8, 4) = 0 and board%(8, 3) = 0 and board%(8, 2) = 0 then
+                            rem check king doesn't pass through check on d1
+                            board%(8, 4) = s% * king%: board%(8, 5) = 0
+                            ck% = incheck%(s%)
+                            board%(8, 5) = s% * king%: board%(8, 4) = 0
+                            if ck% = 0 then addmove(8, 5, 8, 3, lv%)
+                        endif
                     endif
                 endif
                 if s% < 0 and r% = 1 and c% = 5 then
-                    rem black kingside
-                    if bkc% = 1 and board%(1, 6) = 0 and board%(1, 7) = 0 then
-                        addmove(1, 5, 1, 7, lv%)
-                    endif
-                    rem black queenside
-                    if bqc% = 1 and board%(1, 4) = 0 and board%(1, 3) = 0 and board%(1, 2) = 0 then
-                        addmove(1, 5, 1, 3, lv%)
+                    ck% = incheck%(s%)
+                    if ck% = 0 then
+                        rem black kingside
+                        if bkc% = 1 and board%(1, 6) = 0 and board%(1, 7) = 0 then
+                            rem check king doesn't pass through check on f8
+                            board%(1, 6) = s% * king%: board%(1, 5) = 0
+                            ck% = incheck%(s%)
+                            board%(1, 5) = s% * king%: board%(1, 6) = 0
+                            if ck% = 0 then addmove(1, 5, 1, 7, lv%)
+                        endif
+                        rem black queenside
+                        if bqc% = 1 and board%(1, 4) = 0 and board%(1, 3) = 0 and board%(1, 2) = 0 then
+                            rem check king doesn't pass through check on d8
+                            board%(1, 4) = s% * king%: board%(1, 5) = 0
+                            ck% = incheck%(s%)
+                            board%(1, 5) = s% * king%: board%(1, 4) = 0
+                            if ck% = 0 then addmove(1, 5, 1, 3, lv%)
+                        endif
                     endif
                 endif
             gmkgdone:

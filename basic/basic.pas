@@ -692,20 +692,27 @@ for all such 'if's.
 procedure cansif;
 
 var fnd: boolean; { found a single line if }
+    atb: boolean; { at function boundary }
 
 begin
 
    repeat { for all single line 'if's stacked }
 
       fnd := false; { set no single line 'if's found }
-      if ctlstk <> nil then { there is stack contents }
-         if ctlstk^.typ = ctif then { its an if }
-            if ctlstk^.sif then begin
+      if ctlstk <> nil then begin { there is stack contents }
+
+         { check if at function call boundary }
+         atb := false;
+         if fnsstk <> nil then
+            if ctlstk = fnsstk^.ctl then atb := true;
+         if not atb then
+            if ctlstk^.typ = ctif then { its an if }
+               if ctlstk^.sif then begin
 
          popctl; { remove top of stack on single line 'if' }
          fnd := true { set one was found }
 
-      end
+      end end
 
    until not fnd { until no more }
 
@@ -3696,8 +3703,8 @@ begin
          else prterr(enoendp); { no 'endproc' found }
 
    end else expr; { parse function expression }
-   { Note: control stack entries left by the function from goto jumping
-     out of if/endif blocks are handled by cansif for single-line ifs }
+   { clean up any stale control entries left by the function }
+   while ctlstk <> fnsstk^.ctl do popctl;
    curprg := fnsstk^.lin; { restore position }
    linec := fnsstk^.chr;
    { restore old variables }
@@ -6571,6 +6578,7 @@ begin
 
                end else begin { for loop terminates }
 
+                  popctl; { remove 'for' block }
                   curprg := pp; { restore after 'next' position }
                   linec := y
 
@@ -6590,7 +6598,7 @@ begin
                   curprg := ctlstk^.line; { reset position }
                   linec := ctlstk^.chrp
 
-               end
+               end else popctl { remove 'for' block, loop terminates }
 
             end
 
@@ -6620,6 +6628,7 @@ begin
 
                end else begin { for loop terminates }
 
+                  popctl; { remove 'for' block }
                   curprg := pp; { restore after 'next' position }
                   linec := y
 
@@ -6639,7 +6648,7 @@ begin
                   curprg := ctlstk^.line; { reset position }
                   linec := ctlstk^.chrp
 
-               end
+               end else popctl { remove 'for' block, loop terminates }
 
             end
 
@@ -6668,6 +6677,7 @@ begin
 
             end else begin { for loop terminates }
 
+               popctl; { remove 'for' block }
                curprg := pp; { restore after 'next' position }
                linec := y
 
