@@ -1,0 +1,130 @@
+Chess Game Debug Notes for IP Basic
+=====================================
+Last updated: 2026-02-18
+
+STATUS
+------
+chess.bas loads, draws the board with ANSI colored ASCII art pieces, accepts
+a color choice (W/B), and reaches the move input prompt. The computer makes
+its first move successfully. The major interpreter bugs that blocked execution
+have been fixed and merged (PR #381).
+
+KNOWN REMAINING ISSUE
+---------------------
+The game has not yet been tested through a full playthrough to checkmate.
+After the first move exchange there may be additional runtime errors lurking
+in deeper code paths (compmove's alpha-beta search, castling, en passant,
+promotion, checkmate/stalemate detection).
+
+BUGS FIXED (in basic.pas, merged to master)
+--------------------------------------------
+1. sif/cansif bug ("No if is active" at endif):
+   - Root cause: sif pushed ctif with sif=true BEFORE evaluating the condition
+     expression. Function calls in the expression (via parfnc -> execl) would
+     have endfunc do goto 2 -> cansif, which pops ALL ctif(sif=true) from the
+     top of the control stack -- including the CALLER's ctif.
+   - Fix: Initialize ctif with sif=false during expression evaluation (line
+     5536), then set sif=true only at confirmed single-line exit paths (lines
+     5568, 5586, 5593, 5604, 5625).
+   - This bug was triggered by checkend%'s "if islegal%(...) = 1 then" because
+     islegal% calls gmfr%/gmfc%/gmtr%/gmtc% accessor functions, and their
+     endfunc triggers cansif.
+
+2. sdim bug (multi-dimensional string arrays like dim pa$(6,4)):
+   - Three issues: checked intv instead of strv for already-allocated test,
+     off-by-one in index count (y-1 should be y), wrong threshold for vector
+     type (y>2 should be y>1).
+   - Lines ~7101-7107 in basic.pas.
+
+3. Control stack save in function frames:
+   - Added ctl:ctlptr field to fnsrec (line 266).
+   - pshfns saves ctlstk (line 516).
+   - Semicolon fix in pshfns (line 515).
+
+4. Reserved word conflict in chess.bas:
+   - "to" is a BASIC keyword (for...to loops). The local variable "to$" in
+     getmove caused "Variable expected". Renamed to "dest$".
+
+EARLIER BUGS FIXED (in previous sessions, also on master)
+---------------------------------------------------------
+- Empty parentheses on parameterless procedure calls
+- Multiple endfunc in function bodies
+- skpif couldn't skip over while/wend or for/next inside if/endif
+- Label names longer than 12 chars caused errors
+- goto out of if/endif blocks corrupted the control stack
+- Nil pointer dereference in popctl during control stack purging
+
+HOW TO BUILD AND RUN
+--------------------
+Compile interpreter:
+  cd basic && PATH=$HOME/projects/pascal-p6/bin:$PATH pc basic
+
+Run chess game interactively:
+  cd basic && ./basic
+  load "prog/chess"
+  run
+
+Run with piped input for testing:
+  printf 'load "prog/chess"\nrun\nw\n7,5 5,5\n' | ./basic
+
+Capture trace output:
+  Add "trace" before the suspect line in chess.bas, then:
+  printf 'load "prog/chess"\nrun\nw\n' | ./basic 2>&1 | tee /tmp/chess_trace.txt
+
+KEY FILES
+---------
+basic/basic.pas        - IP Basic interpreter source (Pascal)
+basic/prog/chess.bas   - Chess game source (~1028 lines)
+basic/basic            - Compiled interpreter binary
+doc/basic.odt          - IP Basic language reference
+
+CHESS.BAS STRUCTURE
+-------------------
+Lines 1-50:     Global variables, escape code strings, piece encoding constants
+Lines 51-120:   DATA statements for ASCII art pieces (6 types x 4 rows)
+Lines 121-170:  Piece art loading, utility procedures (cls, moveto, resetcol)
+Lines 171-200:  findch% helper function (find char in string)
+Lines 201-310:  drawboard procedure (ANSI colored ASCII art board display)
+Lines 311-355:  Move accessor functions (gmfr%, gmfc%, gmtr%, gmtc%)
+Lines 357-500:  genmoves procedure (pseudo-legal move generation for all pieces)
+Lines 501-570:  incheck% function (checks if a side's king is attacked)
+Lines 571-640:  makemove procedure (execute move with special move handling)
+Lines 641-690:  unmake procedure (reverse a move)
+Lines 692-698:  islegal% function (make/check/unmake wrapper)
+Lines 700-800:  evaluate% function (material + positional scoring)
+Lines 805-849:  compmove procedure (alpha-beta search, depth 3)
+Lines 855-932:  getmove procedure (human move input and validation)
+Lines 938-955:  checkend% function (checkmate/stalemate detection)
+Lines 960-988:  initboard, game setup, color choice
+Lines 990-1028: Main game loop
+
+IP BASIC GOTCHAS
+----------------
+- "to" is a reserved word (for...to). Don't use as variable name.
+- Max 255 variables total. Chess.bas uses many; be careful adding more.
+- Strings max 250 chars.
+- No built-in terminal control -- use raw ANSI escapes via chr$(27).
+- goto inside multiline if/endif can corrupt control stack (fixed in
+  interpreter, but best avoided in BASIC code -- use single-line
+  "if cond then goto label" pattern instead).
+- Function calls in if-condition expressions are now safe (fixed), but
+  were the source of the major bug.
+- Arrays are sparse and auto-dimensioned.
+- Case insensitive.
+
+DEBUGGING TIPS
+--------------
+- "trace" statement in BASIC turns on line-by-line trace output
+- "stop" statement halts execution at that point
+- Use tee to capture output: ./basic 2>&1 | tee /tmp/output.txt
+- prterr in basic.pas prints curprg (current line) BEFORE the error
+  message, so trace output may show a line twice -- the second occurrence
+  is prterr's diagnostic print, not actual re-execution.
+- Key interpreter procedures to understand:
+  - execl (line 3446): main execution loop, labels 1 and 2
+  - stat (line 3455): statement dispatcher, nested inside execl
+  - sif (line 5528): if statement handler
+  - cansif (line 692): cancels single-line if entries on control stack
+  - parfnc (line 3570): function/procedure call mechanism
+  - pshctl/popctl: control stack push/pop
+  - pshfns/popfns: function frame push/pop
