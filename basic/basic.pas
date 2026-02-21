@@ -139,6 +139,14 @@ type
              cas,          { as noise word }
              coutput,      { output mode word }
              cbye,         { exit basic }
+             cclear,       { clear variables and files }
+             ccont,        { continue after stop }
+             cdelete,      { delete program lines }
+             ckill,        { delete a file }
+             cmerge,       { merge program file }
+             cname,        { rename a file }
+             crenum,       { renumber program lines }
+             cdir,         { directory listing }
              cmod,         { mod }
              cidiv,        { div }
              cand,         { and }
@@ -358,6 +366,8 @@ var
    cmdfil: boolean;                        { command-line filename was provided }
    srcfil(maxfln): string;                 { source filename from command line }
    fnp(maxfln), fnn(maxfln), fne(maxfln): string; { filename components }
+   contprg:  bstptr;  { saved program position for CONT }
+   contlinec: integer; { saved character position for CONT }
 
 procedure prterr(err: errcod); forward;
 
@@ -1184,7 +1194,9 @@ begin { prtlin }
          cgosub, creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat,
          cuntil, cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv,
          cdumpp, cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand,
-         ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+         ctrace, cnotrace, clocal, cas, coutput, cbye, cclear, ccont, cdelete,
+         ckill, cmerge, cname, crenum, cdir,
+         clequ, cgequ, cequ, cnequ, cltn,
          cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
          cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd, cint,
          csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase, cucase,
@@ -1681,7 +1693,9 @@ begin
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
       cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
-      ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+      ctrace, cnotrace, clocal, cas, coutput, cbye,
+      cclear, ccont, cdelete, ckill, cmerge, cname, crenum, cdir,
+      clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
       cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn, crnd,
       cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof, clcase,
@@ -1879,7 +1893,9 @@ begin
       cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil, cselect, ccase,
       cother, cendsel, copen, cclose, cend, cdumpv, cdumpp, cdim, cdef,
       cfunction, cendfunc, cprocedure, cendproc, crand,
-      ctrace, cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn,
+      ctrace, cnotrace, clocal, cas, coutput, cbye,
+      cclear, ccont, cdelete, ckill, cmerge, cname, crenum, cdir,
+      clequ, cgequ, cequ, cnequ, cltn,
       cgtn, cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
       cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn,
       crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof,
@@ -3223,7 +3239,9 @@ begin
          creturn, cfor, cnext, cstep, cto, cwhile, cwend, crepeat, cuntil,
          cselect, ccase, cother, cendsel, copen, cclose, cend, cdumpv, cdumpp,
          cdim, cdef, cfunction, cendfunc, cprocedure, cendproc, crand, ctrace,
-         cnotrace, clocal, cas, coutput, cbye, clequ, cgequ, cequ, cnequ, cltn, cgtn,
+         cnotrace, clocal, cas, coutput, cbye, cclear, ccont, cdelete, ckill,
+         cmerge, cname, crenum, cdir,
+         clequ, cgequ, cequ, cnequ, cltn, cgtn,
          cadd, csub, cmult, cdiv, cexpn, cmod, cidiv, cand, cor, cxor, cnot,
          cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs, csgn,
          crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab, cusing, ceof,
@@ -5926,6 +5944,493 @@ end;
 
 {******************************************************************************
 
+Clear
+
+Handles the 'clear' statement. Resets all variables to zero/empty and closes
+all user-opened files.
+
+******************************************************************************}
+
+procedure sclear;
+
+var fi: filinx; { file index }
+    curprgs: bstptr; { save current program line }
+    linecs: integer; { save character position }
+
+begin
+
+   getchr; { skip 'clear' }
+   curprgs := curprg; { save execution position }
+   linecs := linec;
+   clrvars; { clear all variables }
+   curprg := curprgs; { restore execution position }
+   linec := linecs;
+   { close all user files (3 and above, 1 and 2 are system) }
+   for fi := 3 to maxfil do if filtab[fi] <> nil then begin
+
+      if filtab[fi]^.st <> stclose then close(filtab[fi]^.f);
+      putfil(filtab[fi]);
+      filtab[fi] := nil
+
+   end;
+   contprg := nil { invalidate continue position }
+
+end;
+
+{******************************************************************************
+
+Continue
+
+Handles the 'cont' statement. Continues execution after a STOP.
+
+******************************************************************************}
+
+procedure scont;
+
+begin
+
+   getchr; { skip 'cont' }
+   if contprg = nil then prterr(estate); { no continue position }
+   curprg := contprg;
+   linec := contlinec;
+   contprg := nil
+
+end;
+
+{******************************************************************************
+
+Delete
+
+Handles the 'delete' statement. Deletes program lines by number range.
+
+DELETE [startline][-endline]
+
+******************************************************************************}
+
+procedure sdelete;
+
+var sl, el: integer; { start and end line numbers }
+    pp, lp, np: bstptr; { program line pointers }
+    ln: integer; { line number }
+
+begin
+
+   getchr; { skip 'delete' }
+   skpspc; { skip spaces }
+   sl := 1; { default start: first possible line }
+   el := maxnum; { default end: last possible line }
+   if chkchr = chr(ord(cintc)) then begin { start line given }
+
+      sl := getint;
+      el := sl { default end to same as start }
+
+   end;
+   skpspc; { skip spaces }
+   if ktrans[chkchr] = csub then begin { '-' delimiter present }
+
+      getchr; { skip '-' }
+      skpspc; { skip spaces }
+      if chkchr = chr(ord(cintc)) then el := getint { end line given }
+      else el := maxnum { no end line, delete to end }
+
+   end;
+   { walk program list and delete matching lines }
+   pp := prglst;
+   lp := nil;
+   while pp <> nil do begin
+
+      ln := lint(pp^); { get line number }
+      np := pp^.next; { save next before possible deletion }
+      if (ln >= sl) and (ln <= el) then begin { in range }
+
+         frelin(pp); { free variable references }
+         if lp <> nil then lp^.next := np { gap over entry }
+         else prglst := np; { gap over first entry }
+         putstr(pp) { release line storage }
+
+      end else lp := pp; { advance last pointer }
+      pp := np { advance to next }
+
+   end
+
+end;
+
+{******************************************************************************
+
+Kill
+
+Handles the 'kill' statement. Deletes a file from disk.
+
+******************************************************************************}
+
+procedure skill;
+
+var ts: filnam; { holder for filename }
+    i:  1..maxfln; { index for same }
+
+begin
+
+   if not hasnfio then prterr(enonfio); { no named FIO this version }
+   getchr; { skip 'kill' }
+   expr; { parse file expression }
+   if temp[top].typ <> tstr then prterr(estre); { must be string }
+   addext(temp[top].bstr, 'bas'); { add '.bas' extension }
+   { copy basic string to common string }
+   for i := 1 to maxfln do ts[i] := ' '; { clear target }
+   for i := 1 to temp[top].bstr.len do ts[i] := temp[top].bstr.str[i];
+   if not exists(ts) then prterr(efnfnd); { not found }
+   top := top-1; { clean stack }
+   delete(ts) { delete the file }
+
+end;
+
+{******************************************************************************
+
+Merge
+
+Handles the 'merge' statement. Merges a program file into the current program.
+Lines from the file are entered one at a time, replacing existing lines with
+the same number.
+
+******************************************************************************}
+
+procedure smerge;
+
+var ts: filnam; { holder for filename }
+    i:  1..maxfln; { index for same }
+
+begin
+
+   if not hasnfio then prterr(enonfio); { no named FIO this version }
+   getchr; { skip 'merge' }
+   expr; { parse file expression }
+   if temp[top].typ <> tstr then prterr(estre); { must be string }
+   addext(temp[top].bstr, 'bas'); { add '.bas' extension }
+   { copy basic string to common string }
+   for i := 1 to maxfln do ts[i] := ' '; { clear target }
+   for i := 1 to temp[top].bstr.len do ts[i] := temp[top].bstr.str[i];
+   if not exists(ts) then prterr(efnfnd); { not found }
+   assign(source, ts); { open the file }
+   reset(source);
+   fsrcop := true; { set source file is open }
+   top := top-1; { clean stack }
+   { read file lines and enter each one into program }
+   while not eof(source) do begin
+
+      getstr(linbuf); { get a load string }
+      inpbstr(source, linbuf^); { input line from file }
+      keycom(linbuf); { compress }
+      enter(linbuf); { enter line into program }
+      linbuf := nil { clear line buffer }
+
+   end;
+   close(source); { close input file }
+   fsrcop := false { set source file is closed }
+
+end;
+
+{******************************************************************************
+
+Name
+
+Handles the 'name' statement. Renames a file.
+
+NAME <old filename> AS <new filename>
+
+******************************************************************************}
+
+procedure sname;
+
+var ots, nts: filnam; { old and new filename holders }
+    i:  1..maxfln; { index for same }
+
+begin
+
+   if not hasnfio then prterr(enonfio); { no named FIO this version }
+   getchr; { skip 'name' }
+   expr; { parse old file expression }
+   if temp[top].typ <> tstr then prterr(estre); { must be string }
+   addext(temp[top].bstr, 'bas'); { add '.bas' extension }
+   { copy to old filename }
+   for i := 1 to maxfln do ots[i] := ' '; { clear target }
+   for i := 1 to temp[top].bstr.len do ots[i] := temp[top].bstr.str[i];
+   top := top-1; { clean stack }
+   skpspc; { skip spaces }
+   if ktrans[chkchr] <> cas then prterr(easexp); { 'as' expected }
+   getchr; { skip 'as' }
+   expr; { parse new file expression }
+   if temp[top].typ <> tstr then prterr(estre); { must be string }
+   addext(temp[top].bstr, 'bas'); { add '.bas' extension }
+   { copy to new filename }
+   for i := 1 to maxfln do nts[i] := ' '; { clear target }
+   for i := 1 to temp[top].bstr.len do nts[i] := temp[top].bstr.str[i];
+   if not exists(ots) then prterr(efnfnd); { old file not found }
+   top := top-1; { clean stack }
+   change(nts, ots) { rename the file }
+
+end;
+
+{******************************************************************************
+
+Encode integer
+
+Writes an integer value into a bstringt at position i, in big endian, signed
+magnitude format (4 bytes). This is the inverse of dcdint.
+
+******************************************************************************}
+
+procedure encint(var str: bstringt; { string to write to }
+                 i:       integer;  { position to write at }
+                 v:       integer); { integer to write }
+
+var s: integer; { sign byte }
+    t: integer; { temp for division }
+
+begin
+
+   if v < 0 then s := 128 else s := 0; { set sign }
+   v := abs(v); { remove sign }
+   t := v div 16777216; { high byte }
+   str.str[i] := chr(t+s); { with sign }
+   v := v - (t * 16777216); { high middle }
+   t := v div 65536;
+   str.str[i+1] := chr(t);
+   v := v - (t * 65536); { low middle }
+   t := v div 256;
+   str.str[i+2] := chr(t);
+   v := v - (t * 256); { low }
+   str.str[i+3] := chr(v)
+
+end;
+
+{******************************************************************************
+
+Renum
+
+Handles the 'renum' statement. Renumbers program lines and updates all
+line number references in GOTO, GOSUB, THEN, and RESTORE statements.
+
+RENUM [[<new>][,<old>][,<increment>]]
+
+******************************************************************************}
+
+procedure srenum;
+
+var newnum, oldnum, incr: integer; { renumber parameters }
+    renmap: array [1..maxnum] of integer; { old to new line number map }
+    pp, rp: bstptr; { program line pointers }
+    ln, nn: integer; { line number, new number }
+    li, v: integer; { line index, value }
+    refmode: boolean; { reference mode (GOTO/GOSUB list) }
+    singleref: boolean; { single reference mode (THEN/RESTORE) }
+    k: keycod; { token code }
+    curprgs: bstptr; { save current program line }
+    linecs: integer; { save character position }
+
+begin
+
+   getchr; { skip 'renum' }
+   skpspc; { skip spaces }
+   { parse optional parameters: new, old, increment }
+   newnum := 10; { default new start }
+   oldnum := 0; { default: renumber from beginning }
+   incr := 10; { default increment }
+   if chkchr = chr(ord(cintc)) then begin { new start given }
+
+      newnum := getint;
+      skpspc
+
+   end;
+   if ktrans[chkchr] = ccma then begin { comma present }
+
+      getchr; { skip comma }
+      skpspc;
+      if chkchr = chr(ord(cintc)) then begin { old start given }
+
+         oldnum := getint;
+         skpspc
+
+      end;
+      if ktrans[chkchr] = ccma then begin { second comma }
+
+         getchr; { skip comma }
+         skpspc;
+         if chkchr = chr(ord(cintc)) then incr := getint { increment given }
+
+      end
+
+   end;
+   { initialize renumber map }
+   for ln := 1 to maxnum do renmap[ln] := 0;
+   { build mapping: walk program from oldnum onward }
+   nn := newnum;
+   pp := prglst;
+   while pp <> nil do begin
+
+      ln := lint(pp^);
+      if (ln >= oldnum) and (ln > 0) then begin
+
+         if nn > maxnum then prterr(elintl); { new number too large }
+         renmap[ln] := nn;
+         nn := nn+incr
+
+      end;
+      pp := pp^.next
+
+   end;
+   { check no overlap with unrenamed lines before oldnum }
+   pp := prglst;
+   while pp <> nil do begin
+
+      ln := lint(pp^);
+      if (ln < oldnum) and (ln > 0) then begin
+
+         { this line keeps its number; check it doesn't collide with
+           any new numbers that were assigned }
+         rp := prglst;
+         nn := newnum;
+         while rp <> nil do begin
+
+            v := lint(rp^);
+            if (v >= oldnum) and (v > 0) then begin
+
+               if ln = nn then prterr(elintl); { overlap }
+               nn := nn+incr
+
+            end;
+            rp := rp^.next
+
+         end
+
+      end;
+      pp := pp^.next
+
+   end;
+   { update line numbers in program listing }
+   pp := prglst;
+   while pp <> nil do begin
+
+      ln := lint(pp^);
+      if (ln > 0) and (ln <= maxnum) and (renmap[ln] > 0) then begin
+
+         { update leading line number }
+         li := 1;
+         { skip leading spaces }
+         while ((pp^.str[li] = chr(ord(cspc))) or
+                (pp^.str[li] = chr(ord(cspcs)))) and
+               (pp^.str[li] <> chr(ord(clend))) do
+            if pp^.str[li] = chr(ord(cspcs)) then li := li+2 else li := li+1;
+         if pp^.str[li] = chr(ord(cintc)) then
+            encint(pp^, li+1, renmap[ln]) { rewrite line number }
+
+      end;
+      pp := pp^.next
+
+   end;
+   { update line number references in all program lines }
+   pp := prglst;
+   while pp <> nil do begin
+
+      li := 1;
+      refmode := false;
+      singleref := false;
+      while pp^.str[li] <> chr(ord(clend)) do begin
+
+         k := ktrans[pp^.str[li]];
+         if k = cgoto then begin
+            li := li+1; refmode := true; singleref := false
+         end else if k = cgosub then begin
+            li := li+1; refmode := true; singleref := false
+         end else if k = cthen then begin
+            li := li+1; singleref := true; refmode := false
+         end else if k = crestore then begin
+            li := li+1; singleref := true; refmode := false
+         end else if k = cintc then begin { integer constant }
+
+            if refmode or singleref then begin { this is a line ref }
+
+               li := li+1; { skip cintc token }
+               dcdint(pp^, li, v); { read value (advances li past 4 bytes) }
+               if (v >= 1) and (v <= maxnum) then
+                  if renmap[v] > 0 then
+                     encint(pp^, li-4, renmap[v]); { rewrite }
+               if singleref then begin
+                  singleref := false; refmode := false
+               end
+
+            end else li := li+5 { skip non-ref integer }
+
+         end else if k = ccma then begin
+            li := li+1 { comma: keep refmode }
+         end else if k = cspc then begin
+            li := li+1 { space: keep flags }
+         end else if k = cspcs then begin
+            li := li+2 { spaces: keep flags }
+         end else if k = crlc then begin
+            li := li+9; refmode := false; singleref := false
+         end else if k in [cstrc, crem, crema] then begin
+            li := li+2+ord(pp^.str[li+1]);
+            refmode := false; singleref := false
+         end else if k in [cintv, crlv, cstrv] then begin
+            li := li+2; refmode := false; singleref := false
+         end else begin { all other simple tokens }
+            li := li+1; refmode := false; singleref := false
+         end
+
+      end;
+      pp := pp^.next
+
+   end;
+   { rebuild internal state }
+   curprgs := curprg; { save execution position }
+   linecs := linec;
+   clrvars;
+   nxtdat;
+   reglab;
+   curprg := curprgs; { restore execution position }
+   linec := linecs
+
+end;
+
+{******************************************************************************
+
+Dir
+
+Handles the 'dir' statement. Lists files in the current directory.
+
+******************************************************************************}
+
+procedure sdir;
+
+var l, p: filptr; { file list pointer }
+    col:  integer; { column counter }
+    i:    integer; { index }
+    s:    pstring; { name string }
+
+begin
+
+   getchr; { skip 'dir' }
+   list('*', l); { get directory listing }
+   col := 0; { start at column 0 }
+   p := l;
+   while p <> nil do begin
+
+      s := p^.name;
+      write(s^);
+      { pad to 20 character column }
+      for i := max(s^)+1 to 20 do write(' ');
+      if atdir in p^.attr then write('/') else write(' ');
+      col := col+1;
+      if col >= 4 then begin writeln; col := 0 end;
+      p := p^.next
+
+   end;
+   if col > 0 then writeln { finish last partial line }
+
+end;
+
+{******************************************************************************
+
 Data
 
 Handles the 'data' statement.
@@ -7533,7 +8038,8 @@ begin { stat }
                    cwend, crepeat, cuntil, cselect, ccase, cother, cendsel,
                    copen, cclose, cend, cdumpv, cdumpp, cdim, cdef, cfunction,
                    cendfunc, cprocedure, cendproc, crand, ctrace,
-                   cnotrace, clocal, cbye, cintv, cstrv, crlv]) then
+                   cnotrace, clocal, cbye, cclear, ccont, cdelete, ckill,
+                   cmerge, cname, crenum, cdir, cintv, cstrv, crlv]) then
       prterr(estate);
    case cmd of { statement }
 
@@ -7544,10 +8050,21 @@ begin { stat }
       celse:        selse;          { else conditional }
       cendif:       sendif;         { endif conditional }
       crem, crema:  srem;           { remark }
-      { stop/end program }
-      cstop,
-      cend:         if optexit then goto 99
-                    else goto 88;
+      { stop program }
+      cstop:        begin
+                       getchr; { skip 'stop' }
+                       contprg := curprg;
+                       contlinec := linec;
+                       if optexit then goto 99
+                       else goto 88
+                    end;
+      { end program }
+      cend:         begin
+                       getchr; { skip 'end' }
+                       contprg := nil;
+                       if optexit then goto 99
+                       else goto 88
+                    end;
       crun:         srun;           { run program }
       clist,
       csave:        slstsav(cmd);   { list or save program }
@@ -7587,7 +8104,15 @@ begin { stat }
       clocal:       slocal;         { local variable declaration }
       copen:        sopen;          { open file }
       cclose:       sclose;         { close file }
-      cbye:         goto 99         { exit basic }
+      cbye:         goto 99;        { exit basic }
+      cclear:       sclear;         { clear variables and files }
+      ccont:        scont;          { continue after stop }
+      cdelete:      sdelete;        { delete program lines }
+      ckill:        skill;          { delete a file }
+      cmerge:       smerge;         { merge program file }
+      cname:        sname;          { rename a file }
+      crenum:       srenum;         { renumber program lines }
+      cdir:         sdir            { directory listing }
 
    end
 
@@ -7750,6 +8275,14 @@ begin { executive }
    keywd[cnotrace]     := 'notrace     ';
    keywd[clocal]       := 'local       ';
    keywd[cbye]         := 'bye         ';
+   keywd[cclear]       := 'clear       ';
+   keywd[ccont]        := 'cont        ';
+   keywd[cdelete]      := 'delete      ';
+   keywd[ckill]        := 'kill        ';
+   keywd[cmerge]       := 'merge       ';
+   keywd[cname]        := 'name        ';
+   keywd[crenum]       := 'renum       ';
+   keywd[cdir]         := 'dir         ';
    keywd[cmod]         := 'mod         ';
    keywd[cidiv]        := 'div         ';
    keywd[cand]         := 'and         ';
@@ -7829,6 +8362,7 @@ begin { executive }
    newlin := true; { set printing on new line }
    trace := false; { set no execution trace }
    fsrcop := false; { set source file is not open }
+   contprg := nil; { clear continue position }
    { parse command line }
    optrun := false;
    optexit := false;
