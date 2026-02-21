@@ -11078,8 +11078,12 @@ begin
     else
       parse.parfil(cmdhan, desfil, false, prrval);
     prrval := not prrval { parfil returns err=true on failure }
-  end else
-    prrval := false;
+  end else begin
+    { no output file given, derive from source }
+    services.brknam(srcfil, p, n, e);
+    services.maknam(desfil, p, n, 'p6');
+    prrval := true
+  end;
   if prrval then begin
     services.brknam(desfil, p, n, e);
     services.maknam(desfil, p, n, 'p6');
