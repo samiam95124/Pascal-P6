@@ -100,12 +100,13 @@
 
 program pcom(output,command);
 
-joins services; { services }
+joins services, { services }
+      parse;    { command line parsing }
 
 uses endian,   { endian mode }
      mpb,      { machine parameter block }
      version,  { current version number }
-     parcmd;   { command line parsing }
+     strings;  { string handling }
 
 label 99; { terminate immediately }
 
@@ -178,6 +179,11 @@ const
    reldeff    = 22; { default field length for real }
    chrdeff    = 1;  { default field length for char (usually 1) }
    boldeff    = 5;  { default field length for boolean (usually 5 for 'false' }
+
+   { command line parsing }
+   maxlin     = 20000; { size of source line buffer }
+   maxopt     = 28;    { number of options }
+   optlen     = 10;    { maximum length of option words }
 
    { standard exceptions. Used for extension routines, this is a subset. }
    CommandLineTooLong      = 1;
@@ -284,6 +290,10 @@ type
      rlstr = packed array [1..maxrld] of char;
      keyrng = 1..33; { range of standard call keys }
      filnam = packed array [1..fillen] of char; { filename strings }
+     lininx = 1..maxlin; { index for source line buffer }
+     linbuf = packed array [lininx] of char; { buffer for source lines }
+     optinx = 1..optlen; { index for option name }
+     optstr = packed array [optinx] of char; { option name string }
      filptr = ^filrec;
      filrec = record next: filptr; fn: filnam; mn: strvsp; f: text;
                      priv: boolean; linecount, lineout: integer;
@@ -439,7 +449,9 @@ var
     prr: text;                      { output code file }
 
     prdval: boolean;                { input source file parsed }
-    prrval: boolean;                { output source file parsed }
+    prrval: boolean;                { output intermediate file parsed }
+    prdopn: boolean;                { input source file open }
+    prropn: boolean;                { output intermediate file open }
 
                                     (*returned by source program scanner
                                      insymbol:
@@ -621,6 +633,14 @@ var
 
     fp: filptr;
     ii: lininx;
+
+    { command line parsing }
+    cmdhan: parse.parhan; { parse handle for command line }
+    option: array [1..maxopt] of boolean; { option array }
+    options: array [1..maxopt] of boolean; { option was set array }
+    opts: array [1..maxopt] of optstr; { short option names }
+    optsl: array [1..maxopt] of optstr; { long option names }
+    incbuf: linbuf; { include file buffer }
 
 (*-------------------------------------------------------------------------*)
 
@@ -939,13 +959,6 @@ var
                 { character and string quanta functions }
 
 (*-------------------------------------------------------------------------*)
-
-  { find lower case of character }
-  function lcase(c: char): char;
-  begin
-    if c in ['A'..'Z'] then c := chr(ord(c)-ord('A')+ord('a'));
-    lcase := c
-  end { lcase };
 
   { find reserved word string equal to id string }
   function strequri(a: restr; var b: idstr): boolean;
@@ -10353,6 +10366,115 @@ end;
     putnam(ufctptr);
   end (*exitundecl*) ;
 
+  { parse command line options }
+  procedure paropt;
+  var w(fillen): string; { word holder }
+      err: boolean; { error flag }
+      optfnd: boolean; { option found }
+      ii: lininx; { index for incbuf }
+      setpos, setneg: boolean; { set flag positive or negative }
+
+  { set true/false flag }
+  procedure setflg(view a, n: string; var f, s: boolean);
+  var ts: packed array [1..40] of char;
+  begin
+    if compp(w, n) or compp(w, a) then begin
+      f := true; s := true; optfnd := true;
+      if setpos then f := true;
+      if setneg then f := false
+    end else begin
+      copy(ts, 'n'); cat(ts, n);
+      if compp(w, ts) then begin
+        f := false; s := true; optfnd := true;
+        if setpos then f := true;
+        if setneg then f := false
+      end else if len(a) >= 1 then begin
+        copy(ts, 'n'); cat(ts, a);
+        if compp(w, ts) then begin
+          f := false; s := true; optfnd := true;
+          if setpos then f := true;
+          if setneg then f := false
+        end
+      end
+    end
+  end;
+
+  begin
+    parse.skpspc(cmdhan);
+    while parse.chkchr(cmdhan) = services.optchr do begin
+      optfnd := false; setpos := false; setneg := false;
+      parse.getchr(cmdhan); { skip option char }
+      if parse.chkchr(cmdhan) = services.optchr then
+        parse.getchr(cmdhan); { skip optional double dash }
+      parse.parlab(cmdhan, w, err);
+      if err then begin
+        writeln('*** No valid option found'); goto 99
+      end;
+      { allow +/- at end of option for compatibility }
+      if (parse.chkchr(cmdhan) = '+') or (parse.chkchr(cmdhan) = '-') then begin
+        if parse.chkchr(cmdhan) = '+' then setpos := true else setneg := true;
+        parse.getchr(cmdhan)
+      end;
+      setflg('a',  'debugflt',   option[1],  options[1]);
+      setflg('b',  'prtlab',     option[2],  options[2]);
+      setflg('c',  'lstcod',     option[3],  options[3]);
+      setflg('d',  'chk',        option[4],  options[4]);
+      setflg('e',  'machdeck',   option[5],  options[5]);
+      setflg('f',  'debugsrc',   option[6],  options[6]);
+      setflg('g',  'prtlabdef',  option[7],  options[7]);
+      setflg('h',  'sourceset',  option[8],  options[8]);
+      setflg('i',  'varblk',     option[9],  options[9]);
+      setflg('ee', 'experror',   option[10], options[10]);
+      setflg('',   'echoline',   option[11], options[11]);
+      setflg('l',  'list',       option[12], options[12]);
+      setflg('m',  'breakheap',  option[13], options[13]);
+      setflg('n',  'recycle',    option[14], options[14]);
+      setflg('o',  'chkoverflo', option[15], options[15]);
+      setflg('p',  'chkreuse',   option[16], options[16]);
+      setflg('q',  'chkundef',   option[17], options[17]);
+      setflg('r',  'reference',  option[18], options[18]);
+      setflg('s',  'iso7185',    option[19], options[19]);
+      setflg('t',  'prttables',  option[20], options[20]);
+      setflg('u',  'undestag',   option[21], options[21]);
+      setflg('v',  'chkvar',     option[22], options[22]);
+      setflg('w',  'debug',      option[23], options[23]);
+      setflg('x',  'prtlex',     option[24], options[24]);
+      setflg('y',  'prtdisplay', option[25], options[25]);
+      setflg('z',  'lineinfo',   option[26], options[26]);
+      { module path: -md=path or -modules=path or -mp=path }
+      if compp(w, 'md') or compp(w, 'modules') or
+         compp(w, 'modulepath') or compp(w, 'mp') then begin
+        optfnd := true;
+        parse.skpspc(cmdhan);
+        if parse.chkchr(cmdhan) <> '=' then begin
+          writeln('*** Missing "=" for module path'); goto 99
+        end;
+        parse.getchr(cmdhan); { skip '=' }
+        { append to incbuf with : separator }
+        ii := maxlin;
+        while (incbuf[ii] = ' ') and (ii > 1) do ii := ii-1;
+        if incbuf[ii] <> ' ' then begin
+          if ii < maxlin then ii := ii+1;
+          if ii < maxlin-1 then begin incbuf[ii] := ':'; ii := ii+1 end
+        end;
+        while (parse.chkchr(cmdhan) <> ' ') and
+              not parse.endlin(cmdhan) do begin
+          if ii >= maxlin then begin
+            writeln('*** Include path too long'); goto 99
+          end;
+          incbuf[ii] := parse.chkchr(cmdhan);
+          parse.getchr(cmdhan);
+          ii := ii+1
+        end
+      end;
+      setflg('mal', 'mrkasslin', option[28], options[28]);
+      if not optfnd then begin
+        writeln('*** Unknown option ', w:*); goto 99
+      end;
+      parse.skpspc(cmdhan)
+    end
+  end;
+
   { place options in flags }
   procedure plcopt;
   var oi: 1..maxopt;
@@ -10383,8 +10505,37 @@ end;
   procedure initscalars;
   var i: integer; oi: 1..maxopt;
   begin fwptr := nil; 
-    for oi := 1 to maxopt do 
+    for oi := 1 to maxopt do
       begin option[oi] := false; options[oi] := false end;
+    { initialize option name tables }
+    opts[1]  := 'a         '; opts[2]  := 'b         ';
+    opts[3]  := 'c         '; opts[4]  := 'd         ';
+    opts[5]  := 'e         '; opts[6]  := 'f         ';
+    opts[7]  := 'g         '; opts[8]  := 'h         ';
+    opts[9]  := 'i         '; opts[10] := 'ee        ';
+    opts[11] := '          '; opts[12] := 'l         ';
+    opts[13] := 'm         '; opts[14] := 'n         ';
+    opts[15] := 'o         '; opts[16] := 'p         ';
+    opts[17] := 'q         '; opts[18] := 'r         ';
+    opts[19] := 's         '; opts[20] := 't         ';
+    opts[21] := 'u         '; opts[22] := 'v         ';
+    opts[23] := 'w         '; opts[24] := 'x         ';
+    opts[25] := 'y         '; opts[26] := 'z         ';
+    opts[27] := 'md        '; opts[28] := 'mal       ';
+    optsl[1]  := 'debugflt  '; optsl[2]  := 'prtlab    ';
+    optsl[3]  := 'lstcod    '; optsl[4]  := 'chk       ';
+    optsl[5]  := 'machdeck  '; optsl[6]  := 'debugsrc  ';
+    optsl[7]  := 'prtlabdef '; optsl[8]  := 'sourceset ';
+    optsl[9]  := 'varblk    '; optsl[10] := 'experror  ';
+    optsl[11] := 'echoline  '; optsl[12] := 'list      ';
+    optsl[13] := 'breakheap '; optsl[14] := 'recycle   ';
+    optsl[15] := 'chkoverflo'; optsl[16] := 'chkreuse  ';
+    optsl[17] := 'chkundef  '; optsl[18] := 'reference ';
+    optsl[19] := 'iso7185   '; optsl[20] := 'prttables ';
+    optsl[21] := 'undestag  '; optsl[22] := 'chkvar    ';
+    optsl[23] := 'debug     '; optsl[24] := 'prtlex    ';
+    optsl[25] := 'prtdisplay'; optsl[26] := 'lineinfo  ';
+    optsl[27] := 'modules   '; optsl[28] := 'mrkasslin ';
     prtables := false; option[20] := false; list := false; option[12] := false;
     prcode := true; option[3] := true; debug := true; option[4] := true;
     chkvar := true; option[22] := true; chkref := true; option[18] := true;
@@ -10864,6 +11015,9 @@ begin
   breakflag := false;
   if breakflag = true then;
 
+  prdopn := false; { set input and output files not open }
+  prropn := false;
+
   (*initialize*)
   (************)
   initscalars; initsets; inittables;
@@ -10892,12 +11046,21 @@ begin
 
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
 
-  { get command line }
-  getcommandline;
-  cmdpos := 1;
-  paroptions; { parse command line options }
-  { parse header files }
-  parhdrfilnam(prd, prdval, srcfil, '.pas');
+  { parse command line }
+  parse.openpar(cmdhan);
+  parse.opencommand(cmdhan, 2000);
+  paropt; { parse command line options }
+  { parse source filename }
+  parse.skpspc(cmdhan);
+  if parse.endlin(cmdhan) then begin
+    writeln('*** Error: input filename not found');
+    goto 99
+  end;
+  if parse.chkchr(cmdhan) = '"' then
+    parse.parstr(cmdhan, srcfil, prdval)
+  else
+    parse.parfil(cmdhan, srcfil, false, prdval);
+  prdval := not prdval; { parfil returns err=true on failure }
   if not prdval then begin
     writeln('*** Error: input filename not found');
     goto 99
@@ -10905,17 +11068,32 @@ begin
   services.brknam(srcfil, p, n, e); { form full filename }
   services.maknam(srcfil, p, n, 'pas');
   services.fulnam(srcfil);
-  paroptions; { parse command line options }
-  parhdrfilnam(prr, prrval, desfil, '.p6 ');
+  assign(prd, srcfil);
+  paropt; { parse command line options }
+  { parse destination filename }
+  parse.skpspc(cmdhan);
+  if not parse.endlin(cmdhan) then begin
+    if parse.chkchr(cmdhan) = '"' then
+      parse.parstr(cmdhan, desfil, prrval)
+    else
+      parse.parfil(cmdhan, desfil, false, prrval);
+    prrval := not prrval { parfil returns err=true on failure }
+  end else
+    prrval := false;
+  if prrval then begin
+    services.brknam(desfil, p, n, e);
+    services.maknam(desfil, p, n, 'p6');
+    assign(prr, desfil)
+  end;
   { if no output file exists, turn off output listing }
   if not prrval then prcode := false;
-  paroptions; { parse command line options }
+  paropt; { parse command line options }
   plcopt; { place options in flags }
 
   (*compile:*)
   (**********)
-  reset(prd); 
-  if prrval then rewrite(prr); { open output file }
+  reset(prd); prdopn := true;
+  if prrval then begin rewrite(prr); prropn := true end;
 
   { write generator comment }
   if prcode then begin
@@ -11040,7 +11218,8 @@ begin
              wtpcnt:1);
 
   99:
-   if prrval then begin
+   if prdopn then close(prd);
+   if prropn then begin
       close(prr);
       services.brknam(desfil, p, n, e); { place extension }
       services.maknam(desfil, p, n, 'p6');

@@ -13981,13 +13981,13 @@ end;
   procedure setflg(view a, n: string; var f, s: boolean);
   var ts: packed array [1..40] of char;
   begin
-    if compp(w, n) or ((a[1] <> ' ') and compp(w, a)) then begin
+    if compp(w, n) or compp(w, a) then begin
       f := true; s := true; optfnd := true
     end else begin
       copy(ts, 'n'); cat(ts, n);
       if compp(w, ts) then begin
         f := false; s := true; optfnd := true
-      end else if a[1] <> ' ' then begin
+      end else if len(a) >= 1 then begin
         copy(ts, 'n'); cat(ts, a);
         if compp(w, ts) then begin
           f := false; s := true; optfnd := true

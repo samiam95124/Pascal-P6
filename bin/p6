@@ -27,6 +27,7 @@
 # executable will be placed under the program name.
 #
 
+pint=0
 pmach=0
 cmach=0
 package=0
@@ -38,7 +39,11 @@ objects=""
 for param in "$@" 
 do
 
-    if [ "$param" = "--pmach" ]; then
+    if [ "$param" = "--pint" ]; then
+	
+        pint=1
+
+    elif [ "$param" = "--pmach" ]; then
 	
         pmach=1
         

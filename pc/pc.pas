@@ -1646,49 +1646,51 @@ begin
 
 end;
 
-procedure putflg(view s: string; e, f: boolean);
+procedure putflg(view s: string; e, f: boolean; prefix: boolean);
 
 begin
 
    if e then begin
   
       putstr(' -');
+      if prefix and not f then putchr('n');
       putstr(s);
-      if f then putchr('+') else putchr('-');
+      if not prefix then
+         if f then putchr('+') else putchr('-');
       putchr(' ')
 
    end
 
 end;
 
-procedure plcpass;
+procedure plcpass(prefix: boolean);
 
 begin
 
-      putflg('prtlabdef', sprtlabdef, fprtlabdef);
-      putflg('lstcod', slstcod, flstcod);
-      putflg('chk', schk, fchk);
-      putflg('sourceset', ssourceset, fsourceset);
-      putflg('varblk', svarblk, svarblk);
-      putflg('experror', sexperror, fexperror);
-      putflg('list', slist, flist);
-      putflg('breakheap', sbreakheap, fbreakheap);
-      putflg('recycle', srecycle, frecycle);
-      putflg('chkoverflo', schkoverflo, fchkoverflo);
-      putflg('chkreuse', schkreuse, fchkreuse);
-      putflg('chkundef', schkundef, fchkundef);
-      putflg('reference', sreference, freference);
-      putflg('iso7185', siso7185, fiso7185);
-      putflg('prttables', sprttables, fprttables);
-      putflg('undestag', sundestag, fundestag);
-      putflg('chkvar', schkvar, fchkvar);
-      putflg('debug', sdebug, fdebug);
-      putflg('debugflt', sdebugflt, fdebugflt);
-      putflg('debugsrc', sdebugsrc, fdebugsrc);
-      putflg('prtlex', sprtlex, fprtlex);
-      putflg('prtdisplay', sprtdisplay, fprtdisplay);
-      putflg('lineinfo', slineinfo, flineinfo);
-      putflg('mrkasslin', smrklin, fmrklin);
+      putflg('prtlabdef', sprtlabdef, fprtlabdef, prefix);
+      putflg('lstcod', slstcod, flstcod, prefix);
+      putflg('chk', schk, fchk, prefix);
+      putflg('sourceset', ssourceset, fsourceset, prefix);
+      putflg('varblk', svarblk, svarblk, prefix);
+      putflg('experror', sexperror, fexperror, prefix);
+      putflg('list', slist, flist, prefix);
+      putflg('breakheap', sbreakheap, fbreakheap, prefix);
+      putflg('recycle', srecycle, frecycle, prefix);
+      putflg('chkoverflo', schkoverflo, fchkoverflo, prefix);
+      putflg('chkreuse', schkreuse, fchkreuse, prefix);
+      putflg('chkundef', schkundef, fchkundef, prefix);
+      putflg('reference', sreference, freference, prefix);
+      putflg('iso7185', siso7185, fiso7185, prefix);
+      putflg('prttables', sprttables, fprttables, prefix);
+      putflg('undestag', sundestag, fundestag, prefix);
+      putflg('chkvar', schkvar, fchkvar, prefix);
+      putflg('debug', sdebug, fdebug, prefix);
+      putflg('debugflt', sdebugflt, fdebugflt, prefix);
+      putflg('debugsrc', sdebugsrc, fdebugsrc, prefix);
+      putflg('prtlex', sprtlex, fprtlex, prefix);
+      putflg('prtdisplay', sprtdisplay, fprtdisplay, prefix);
+      putflg('lineinfo', slineinfo, flineinfo, prefix);
+      putflg('mrkasslin', smrklin, fmrklin, prefix);
 
 end;
 
@@ -1751,7 +1753,7 @@ begin
          until pt[1] = ' ' { until path is empty }         
        
       end;
-      plcpass; { place pass through options }
+      plcpass(true); { place pass through options }
       excact(cmdbuf); { execute command buffer action }
 
       { build to assembly and generate object only if not interpreting }
@@ -1771,7 +1773,7 @@ begin
          services.maknam(fns, p, n, 's');
          services.fulnam(fns); { normalize it }
          putstr(fns);
-         plcpass; { place pass through options }
+         plcpass(false); { place pass through options }
          excact(cmdbuf); { execute command buffer action }
 
          i := 1; { set 1st command filename }

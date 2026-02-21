@@ -45,10 +45,10 @@ main_fault:
         jmp     2f                       # and go
 1:
         movq    $MasterException,%rdx    # load master fault error
-2:
-        andq    $0xfffffffffffffff0,%rsp # align stack
         leaq    modnam(%rip),%rdi        # set no module name
         movq    $0,%rsi                  # set no line number
+2:
+        andq    $0xfffffffffffffff0,%rsp # align stack
         call    psystem_errorv           # go handler
         jmp     .                        # soft halt
 #

@@ -185,6 +185,8 @@ do
 			
 			fi
     		#echo "Compiling $param..."
+            # clean any previous products
+            rm -f $param.lst $param.dif $param.ecd
     		compile $listoption --noerrmsg $options $pintoption $pmachoption \
                 $cmachoption $packageoption $pgenoption $param
     		if [ $? -ne 0 ]; then
@@ -265,7 +267,7 @@ if [ $? -eq 0 ]; then
     #
     strip $progfile.lst tmp1
     strip $cmpfile.cmp tmp2
-    # diff -B tmp1 tmp2 > $progfile.dif
+    # echo "Will execute: dif -w tmp1 tmp2 > $progfile.dif"
     dif -w tmp1 tmp2 > $progfile.dif
     rm -f tmp1
     rm -f tmp2

@@ -1845,7 +1845,7 @@ static void writeipf(pasfil* f, long i, long w, long r, long lz)
 
     int fn;
 
-    valfil(f);
+    valfilwm(f);
     fn = *f;
     if (w < 1 && ISO7185) 
         errore(modnam, __LINE__, INVALIDFIELDSPECIFICATION);
@@ -2442,6 +2442,10 @@ boolean psystem_eof(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
+
     return (eoffn(fn));
 
 }
@@ -2464,7 +2468,7 @@ boolean psystem_efb(
  
     fn = *f; /* get logical file no. */
 
-    valfilrm(f); /* validate file for reading */
+    valfil(f); /* validate file for reading */
     if (filstate[fn] == fswrite) return(TRUE);
     else 
       if (filstate[fn] == fsread) 
@@ -2489,7 +2493,7 @@ boolean psystem_eln(
 
     int fn;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     return (eolnfn(fn));
@@ -4666,6 +4670,9 @@ void psystem_clst(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
     if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
@@ -4693,6 +4700,9 @@ void psystem_clsb(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
     if (fclose(filtable[fn])) errore(modnam, __LINE__, FILECLOSEFAIL);
     /* if the file is temp, remove now */
     if (!filanamtab[fn]) remove(filnamtab[fn]);
@@ -4722,6 +4732,9 @@ void psystem_pos(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
     if (i < 1) errore(modnam, __LINE__, INVALIDFILEPOSITION);
     if (fseek(filtable[fn], i-1, SEEK_SET)) 
         errore(modnam, __LINE__, FILEPOSITIONFAIL);
@@ -4926,6 +4939,10 @@ long psystem_len(
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
 
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
+
     return (lengthfile(filtable[fn]));
 
 }
@@ -4951,6 +4968,10 @@ long psystem_loc(
 
     valfil(f); /* validate file */
     fn = *f; /* get logical file no. */
+
+    /* check file is open */
+    if (filstate[fn] != fsread && filstate[fn] != fswrite) 
+        errore(modnam, __LINE__, FILENOTOPEN);
 
     i = ftell(filtable[fn]);
     if (i < 0) errore(modnam, __LINE__, FILEPOSITIONFAIL);
@@ -5072,7 +5093,7 @@ void psystem_rds(
     int fn;
     long i;
 
-    valfil(f); /* validate file */
+    valfilrm(f); /* validate file */
     fn = *f; /* get logical file no. */
 
     reads(fn, s, l, LONG_MAX, FALSE);
