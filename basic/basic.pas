@@ -46,7 +46,12 @@
 *                                                                              *
 *******************************************************************************}
 
-program basic(input, output);
+program basic(input, output, command);
+
+joins parse,   { command line parsing }
+      strings; { string functions }
+
+uses services; { system services }
 
 label 88, 77, 99;
 
@@ -346,6 +351,13 @@ var
    fnsfre: fnsptr; { free function context stack }
    i:     varinx; { index for variables table }
    keycodc: array [0..255] of keycod; { keycod converter array }
+   pp:     bstptr; { program line pointer for loading }
+   cmdhan: parse.parhan;                   { parse handle for command line }
+   optrun: boolean;                        { -r/run: auto-run loaded program }
+   optexit: boolean;                       { -e/exit: auto-exit when program ends }
+   cmdfil: boolean;                        { command-line filename was provided }
+   srcfil(maxfln): string;                 { source filename from command line }
+   fnp(maxfln), fnn(maxfln), fne(maxfln): string; { filename components }
 
 procedure prterr(err: errcod); forward;
 
@@ -7534,7 +7546,8 @@ begin { stat }
       crem, crema:  srem;           { remark }
       { stop/end program }
       cstop,
-      cend:         goto 88;
+      cend:         if optexit then goto 99
+                    else goto 88;
       crun:         srun;           { run program }
       clist,
       csave:        slstsav(cmd);   { list or save program }
@@ -7646,6 +7659,35 @@ begin { execl }
    cansif { cancel single line 'if's }
 
 end; { execl }
+
+{ parse command line options }
+procedure paropt;
+var w(maxfln): string; { word holder }
+    err: boolean; { error flag }
+    optfnd: boolean; { option found }
+begin
+  parse.skpspc(cmdhan);
+  while parse.chkchr(cmdhan) = optchr do begin
+    optfnd := false;
+    parse.getchr(cmdhan); { skip option char }
+    if parse.chkchr(cmdhan) = optchr then
+      parse.getchr(cmdhan); { skip optional double dash }
+    parse.parlab(cmdhan, w, err);
+    if err then begin
+      writeln('*** No valid option found'); goto 99
+    end;
+    if strings.compp(w, 'r') or strings.compp(w, 'run') then begin
+      optrun := true; optfnd := true
+    end;
+    if strings.compp(w, 'e') or strings.compp(w, 'exit') then begin
+      optexit := true; optfnd := true
+    end;
+    if not optfnd then begin
+      writeln('*** Unknown option: ', w:*); goto 99
+    end;
+    parse.skpspc(cmdhan)
+  end
+end;
 
 begin { executive }
 
@@ -7787,6 +7829,23 @@ begin { executive }
    newlin := true; { set printing on new line }
    trace := false; { set no execution trace }
    fsrcop := false; { set source file is not open }
+   { parse command line }
+   optrun := false;
+   optexit := false;
+   cmdfil := false;
+   parse.openpar(cmdhan);
+   parse.opencommand(cmdhan, 2000);
+   paropt; { parse leading options }
+   parse.skpspc(cmdhan);
+   if not parse.endlin(cmdhan) then begin
+      parse.parfil(cmdhan, srcfil, false, cmdfil);
+      cmdfil := not cmdfil; { parfil returns err=true on failure }
+      if cmdfil then begin
+         brknam(srcfil, fnp, fnn, fne);
+         maknam(srcfil, fnp, fnn, 'bas')
+      end
+   end;
+   paropt; { parse trailing options }
    clear; { clear program }
    { open first two file entries for input and output, respectively }
    getfil(filtab[1]); { get an input file entry }
@@ -7797,6 +7856,42 @@ begin { executive }
    filtab[2]^.ty := tyout; { set up output file }
    filtab[2]^.cp := 1; { set 1st character position }
    filtab[2]^.st := stopenwr; { flag open for write }
+   if cmdfil then begin
+      { load file from command line }
+      if not exists(srcfil) then begin
+         writeln('*** File not found: ', srcfil:*);
+         goto 99
+      end;
+      assign(source, srcfil);
+      reset(source);
+      fsrcop := true;
+      pp := nil;
+      while not eof(source) do begin
+         getstr(linbuf);
+         inpbstr(source, linbuf^);
+         keycom(linbuf);
+         if pp = nil then prglst := linbuf
+         else pp^.next := linbuf;
+         pp := linbuf;
+         linbuf := nil
+      end;
+      close(source);
+      fsrcop := false;
+      if optrun then begin
+         clrvars;
+         nxtdat;
+         reglab;
+         curprg := prglst;
+         rndseq := 1;
+         rsttab(filtab[2]^);
+         top := 0;
+         repeat
+            linec := 1;
+            execl
+         until curprg = nil;
+         if optexit then goto 99
+      end
+   end;
 
    88: { return to interactive line entry }
    while true do begin
