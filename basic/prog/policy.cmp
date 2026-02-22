@@ -1,0 +1,101 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+
+HOW MANY PERIODS? 
+
+INITIAL AMOUNTS:
+
+
+INDICATOR      CURRENTLY      INCREASE       PCT. INC.
+ 101            976.5 
+ 102            197 
+ 103            80 
+ 104            18.2 
+ 105            3 
+ 106            82 
+ 107            54 
+ 108            3 
+ 109            140 
+ 110            4.5 
+ 111            25 
+ 112            8.19 
+ 113            30 
+ 114            116.3 
+ 115            142 
+ 116            5568 
+ 117            20 
+ 118            0 
+
+
+TAPE?(1=YES,0=NO)? 
+BUSINESS
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? ? 
+LABOR
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? 
+CIVIL RIGHTS
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? ? 
+MILITARY
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? 
+NATIONALISTS
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? ? 
+INTERNATIONALISTS
+
+TOTAL POINTS REMAINING :  100 
+MAXIMUM MINUS POINTS   :  50 
+INPUT POLICY NO.,POINTS
+
+? 
+PASSED : NONE
+
+
+END OF PERIOD  1 
+
+
+INDICATOR      CURRENTLY      INCREASE       PCT. INC.
+ 101            1015.56        39.06          4 
+ 102            198            1              .5 
+ 103            79.2           -.8            -1 
+ 104            18.01          -.19           -1.05 
+ 105            2.7            -.3            -10 
+ 106            82             0              0 
+ 107            54             0              0 
+ 108            3.03           3e-2           1 
+ 109            140            0              0 
+ 110            4.56           6e-2           1.33 
+ 111            24.75          -.25           -1 
+ 112            8.44           .24            2.92 
+ 113            29.4           -.61           -2.04 
+ 114            120.95         4.65           3.99 
+ 115            156.2          14.2           10 
+ 116            6570.24        1002.24        18 
+ 117            20             0              0 
+ 118            0              0              0 
+
+
+TAPE?(1=YES,0=NO)? 

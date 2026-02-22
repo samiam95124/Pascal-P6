@@ -1,0 +1,25 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+WHAT ARE YOUR LENGTH AND WIDTH (E. G. 13,10)? 
+:  :--:--:--:--:--:--:
+I     I        I     I
+:  :  :  :  :  :--:  :
+I  I     I  I  I     I
+:--:  :  :--:  :  :--:
+I     I     I  I  I  I
+:  :--:--:  :  :  :  :
+I        I  I     I  I
+:  :--:  :--:  :  :  :
+I  I  I     I  I  I  I
+:  :  :  :  :  :--:  :
+I     I  I  I  I     I
+:--:--:  :  :--:  :  :
+I        I        I  I
+:  :--:--:  :--:--:  :
+I        I        I  I
+:  :--:  :--:--:--:  :
+I     I     I        I
+:--:--:  :--:  :--:--:
+I        I           I
+:--:--:--:  :--:--:--:

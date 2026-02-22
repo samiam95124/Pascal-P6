@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# Test a single BASIC program run
+#
+# Execution:
+#
+# testbasicprog <file>.bas
+#
+# Tests the run of a single BASIC program. The basic interpreter must already
+# be built.
+#
+# To do this, there must be the files:
+#
+# <file>.bas - The BASIC program to run.
+# <file>.inp - Contains all input to the program.
+# <file>.cmp - Used to compare the <file>.lst output to.
+# <file>.dif - Will contain the differences in output of the run.
+# <file>.lst - Will contain the output of the run.
+#
+
+if [ "$1" = "" ]; then
+
+    echo "*** No BASIC program file was specified"
+    exit 1
+
+fi
+
+# strip .bas extension if provided
+progfile="${1%.bas}"
+
+if [ ! -f "$progfile.bas" ]; then
+
+    echo "*** Error: File $progfile.bas does not exist"
+    exit 1
+
+fi
+if [ ! -f "$progfile.inp" ]; then
+
+    echo "*** Error: Input file $progfile.inp does not exist"
+    exit 1
+
+fi
+if [ ! -f "$progfile.cmp" ]; then
+
+    echo "*** Error: Compare file $progfile.cmp does not exist"
+    exit 1
+
+fi
+
+# clean any previous products
+rm -f $progfile.lst $progfile.dif
+
+# run the BASIC program
+basic/basic $progfile.bas -run -exit < $progfile.inp > $progfile.lst
+if [ $? -ne 0 ]; then
+
+    echo "*** Run of $progfile failed"
+    exit 1
+
+fi
+
+#
+# Check output matches the compare file
+#
+diff $progfile.lst $progfile.cmp > $progfile.dif
+ls -l $progfile.dif
+## pass if diff file is empty
+if test -s $progfile.dif
+then
+    echo "*** FAIL"
+    exit 1
+else
+    echo "PASS"
+fi

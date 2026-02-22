@@ -1417,6 +1417,7 @@ begin
 
    end;
    if fsrcop then close(source); { close source file }
+   if optexit then goto 99; { exit on error in -exit mode }
    goto 88 { loop to ready }
 
 end;
@@ -5564,6 +5565,7 @@ next else or endif.
 procedure sif;
 
 var c: char;
+    d: integer; { dummy for discarded integer }
 
 begin
 
@@ -5613,6 +5615,24 @@ begin
 
       end else begin { process single line 'if' }
 
+         { check for 'then <linenum> :rest' implicit else pattern.
+           In BASIC-PLUS, ':' after 'then <linenum>' acts as an
+           implicit else: the rest of the line executes when the
+           condition is false }
+         if chkchr = chr(ord(cintc)) then begin
+
+            d := getint; { skip line number }
+            skpspc; { skip spaces }
+            if chkchr = chr(ord(ccln)) then begin
+
+               { ':' after line number acts as implicit else }
+               getchr; { skip ':' }
+               ctlstk^.sif := true; { set single line for cansif cleanup }
+               goto 1 { execute remaining statements }
+
+            end
+
+         end;
          skpif(true, true); { skip in line }
          if chkchr = chr(ord(celse)) then begin { found the 'else' }
 

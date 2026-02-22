@@ -1,0 +1,44 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+
+******************************************************************************
+
+TANK GAME
+
+******************************************************************************
+
+You are playing against several tanks on a field. "*" marks the edges of the
+field, "+" mark enemy tanks, "@" marks your position, and "#" mark the
+position of tank traps. You can move in any direction on your turn, including
+the diagonals. After you move, each of the enemy tanks will also move, in your
+direction. If they hit you, you lose. If they hit a tank trap, they are out
+of the game. If all the enemy tanks die in this fashion, you win the game.
+
+******************************
+*       #   #       #   ## ##*
+*       #                    *
+*  +    +  # + + +   +   #   *
+*   ++   #  +   #   +        *
+*  +   #                    +*
+*    + #       #             *
+* +                   #      *
+*       #   +  #            +*
+*       # +     #      #     *
+*      ++  ##   +      #   # *
+* # +#                   #   *
+*                            *
+*  #+     +               #+ *
+*#   +      ##               *
+*                  #  ##   # *
+*                  +         *
+*           #     #+         *
+*+  +   #      # + #@        *
+******************************
+
+8 1 2
+7 0 3
+6 5 4 Where 0 means stay put, 2 means up and right, etc.
+
+move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: move: 430 input "move: ", a%
+*** Invalid numeric format
