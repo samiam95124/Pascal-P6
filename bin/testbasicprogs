@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# Test all BASIC programs
+#
+# Execution:
+#
+# testbasicprogs
+#
+# Runs all BASIC programs that have test files (.inp, .cmp) through
+# testbasicprog and reports pass/fail counts.
+#
+
+passes=0
+fails=0
+total=0
+faillist=""
+
+for prog in \
+    basic/prog/awari \
+    basic/prog/blkjac \
+    basic/prog/buzzwd \
+    basic/prog/civilw \
+    basic/prog/craps \
+    basic/prog/dist \
+    basic/prog/eliza \
+    basic/prog/flip \
+    basic/prog/footbl \
+    basic/prog/geowar \
+    basic/prog/hamurs \
+    basic/prog/hanab \
+    basic/prog/hockey \
+    basic/prog/hun \
+    basic/prog/madlip \
+    basic/prog/market \
+    basic/prog/maze \
+    basic/prog/mstmnd \
+    basic/prog/nim \
+    basic/prog/poetry \
+    basic/prog/policy \
+    basic/prog/print \
+    basic/prog/rusrou \
+    basic/prog/shrink \
+    basic/prog/slots \
+    basic/prog/snoopy \
+    basic/prog/startrek \
+    basic/prog/swami \
+    basic/prog/tank \
+    basic/prog/test \
+    basic/prog/tictac \
+    basic/prog/wumpus \
+    basic/prog/wumpus2 \
+    basic/tests/fulltest
+do
+
+    name=$(basename $prog)
+    total=$(($total+1))
+    echo "Testing $name..."
+    testbasicprog $prog
+    if [ $? -ne 0 ]; then
+
+        fails=$(($fails+1))
+        faillist="$faillist $name"
+
+    else
+
+        passes=$(($passes+1))
+
+    fi
+
+done
+
+echo ""
+echo "Total: $total  Pass: $passes  Fail: $fails"
+if [ "$fails" != "0" ]; then
+
+    echo "Failed:$faillist"
+    exit 1
+
+fi

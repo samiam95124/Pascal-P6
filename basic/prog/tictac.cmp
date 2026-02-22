@@ -1,0 +1,32 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+TIC-TAC-TOE
+
+THE MOVE POSITIONS ARE:
+
+1 2 3
+4 5 6
+7 8 9
+
+
+
+
+--BEGIN GAME--
+YOU WILL BE 'X', I WILL BE 'O'
+TYPE 0 IF YOU WANT ME TO GO FIRST? - - - 
+- O - 
+- - - 
+
+YOUR MOVE? 
+
+YOUR MOVE? 
+
+- - X 
+- O O 
+- - - 
+
+YOUR MOVE? 
+
+I WIN
+TRY AGAIN (IF SO TYPE 0)? 

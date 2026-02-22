@@ -1,0 +1,29 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+               **************************
+                         ELIZA
+                   CREATIVE COMPUTING
+                 MORRISTOWN, NEW JERSEY
+
+                  ADAPTED FOR IBM PC BY
+                   PATRICIA DANIELSON AND PAUL HASHFIELD
+                    BE SURE THAT THE CAPS LOCK IS ON
+
+               PLEASE DON'T USE COMMAS OR PERIODS IN YOUR INPUTS
+
+               *************************
+
+
+
+HI! I'M ELIZA. WHAT'S YOUR PROBLEM?
+? DID YOU COME TO ME BECAUSE YOU ARE FEELING SAD TODAY   
+? DO YOU OFTEN FEEL THIS WAY   
+? SAY, DO YOU HAVE ANY PSYCHOLOGICAL PROBLEMS?
+? DO YOU REALLY THINK SO?
+? WHY DO YOU ASK?
+? WHAT DOES THAT SUGGEST TO YOU?
+? WHAT MAKES YOU THINK I AM RIGHT   
+? I SEE.
+? 200 input i$
+*** End of file encountered

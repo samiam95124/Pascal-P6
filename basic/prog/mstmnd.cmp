@@ -1,0 +1,22 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+THIS IS THE GAME OF MASTERMIND - WOULD YOU LIKE THE RULES(Y/N)? 
+   ** SCORES **
+
+MINE           YOURS          GUESSING AVERAGE
+               
+ 0              0                   0 
+   GUESS            RESULT
+
+          GUESS NUMBER  1 ? *?          GUESS NUMBER  2 ? *          GUESS NUMBER  3 ? ?          GUESS NUMBER  4 ? ??          GUESS NUMBER  5 ? ?          GUESS NUMBER  6 ? *          GUESS NUMBER  7 ? ??          GUESS NUMBER  8 ? *          GUESS NUMBER  9 ?           GUESS NUMBER  10 ? 
+
+ 0  1  7  4  WAS THE CORRECT NUMBER
+                      *** YOU WERE WRONG ***
+
+   ** SCORES **
+
+MINE           YOURS          GUESSING AVERAGE
+               
+ 1              0                   0 
+AGAIN(Y/N)? 

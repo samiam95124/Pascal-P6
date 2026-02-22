@@ -1,0 +1,50 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+DO YOU NEED INSTRUCTIONS (YES OR NO)? ? 
+HOW MANY PILES DO YOU WANT? ? 
+HOW MANY '*'S IN PILE  1 ? HOW MANY '*'S IN PILE  2 ? HOW MANY '*'S IN PILE  3 ? 
+
+DO YOU WANT TO GO FIRST (YES OR NO)? ?     PILE  1 : * * * 
+    PILE  2 : * * * * * 
+    PILE  3 : * * * * * * * 
+
+I MOVE 1 , 1 
+
+    PILE  1 : * * 
+    PILE  2 : * * * * * 
+    PILE  3 : * * * * * * * 
+
+YOUR MOVE: ? I MOVE 1 , 1 
+
+    PILE  1 : * 
+    PILE  2 : * * * * * 
+    PILE  3 : * * * * * * 
+
+YOUR MOVE: ? I MOVE 2 , 3 
+
+    PILE  1 : * 
+    PILE  2 : * * * * 
+    PILE  3 : * * * * 
+
+YOUR MOVE: ? I MOVE 2 , 2 
+
+    PILE  1 : * 
+    PILE  2 : * * 
+    PILE  3 : * * * 
+
+YOUR MOVE: ? I MOVE 2 , 3 
+
+    PILE  1 : * 
+    PILE  2 : * 
+    PILE  3 : * 
+
+YOUR MOVE: ? I MOVE 1 , 2 
+
+    PILE  1 : * 
+    PILE  2 : 
+    PILE  3 : 
+
+YOUR MOVE: ? 
+CONGRATULATIONS!  YOU WON  . . . 
+DO YOU WANT TO PLAY AGAIN (YES OR NO)? ? 

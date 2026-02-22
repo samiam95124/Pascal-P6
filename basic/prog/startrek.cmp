@@ -1,0 +1,39 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+              * * * STAR  TREK * * *
+
+YOUR ORDERS ARE AS FOLLOWS:
+   DESTROY THE  16  KLINGON WARSHIPS WHICH HAVE INVADED
+   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS
+   ON STARDATE  2030 ; THIS GIVES YOU  30  DAYS.  THERE IS 
+   1  STARBASE IN THE GALAXY FOR RESUPPLYING YOUR SHIP
+
+HIT 'RETURN' WHEN READY TO ASSUME COMMAND
+? 
+ YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED
+ IN THE GALACTIC QUADRANT, DENEB III.
+
+COMBAT AREA      CONDITION RED
+SHIELDS DANGEROUSLY LOW
+---------------------------------
+                                 
+                                         STARDATE        2000 
+                                         CONDITION       *RED* 
+                 <*>     +++             QUADRANT        2 , 7 
+                  *                      SECTOR          4 , 5 
+                      *                  TOTAL ENERGY    3000 
+          *                              PHOTON TORPEDOES 10 
+                              *          SHIELDS          0 
+ ---------------------------------
+COMMAND? COURSE (1-9)? WARP FACTOR(0-8)
+?  162 UNIT HIT ON ENTERPRISE FROM SECTOR 1 , 4 
+
+THE ENTERPRISE HAS BEEN DESTROYED. THE FEDERATION WILL BE CONQUERED
+IT IS STARDATE  2000 
+THERE WERE  16  KLINGONS LEFT AT THE END OF YOUR MISSION
+
+
+THE FEDERATION IS IN NEED OF A NEW STARSHIP COMMANDER 
+IS THERE A VOLUNTEER?
+LET HIM STEP FORWARD AND ENTER 'AYE'? 

@@ -1,0 +1,341 @@
+
+Basic interpreter vs. 0.1 Copyright (C) 1994 S. A. Moore
+
+=== Section 1: PRINT and basic output ===
+Hello, World!
+
+Line 1 Line 2
+Col1           Col2           Col3
+No newline at end ...continued
+Tab test:          at col 20
+Two values: 42  3.14 
+
+Section 1 complete
+
+=== Section 2: Variables and LET assignment ===
+Integer a% = 42 
+Integer b% = 100 
+Real c = 3.14159 
+Real d = 2.71828 
+String a$ = Hello
+String b$ = World
+a% reassigned to 99 
+Section 2 complete
+
+=== Section 3: Arithmetic operators ===
+10 + 3 = 13 
+10 - 3 = 7 
+10 * 3 = 30 
+10 / 3 = 3.33333333 
+10 div 3 = 3 
+10 mod 3 = 1 
+2 ^ 10 = 1024 
+2 + 3 * 4 = 14 
+(2 + 3) * 4 = 20 
+2 ^ 3 ^ 2 = 64 
+-5 + 10 = 5 
+-(3 + 4) = -7 
+5 + 2.5 = 7.5 
+10 / 4 = 2.5 
+Section 3 complete
+
+=== Section 4: Comparison operators ===
+5 = 5 is -1 
+5 = 6 is 0 
+5 <> 6 is -1 
+5 <> 5 is 0 
+3 < 5 is -1 
+5 < 3 is 0 
+5 > 3 is -1 
+3 > 5 is 0 
+3 <= 3 is -1 
+3 <= 5 is -1 
+5 <= 3 is 0 
+5 >= 5 is -1 
+5 >= 3 is -1 
+3 >= 5 is 0 
+abc = abc is -1 
+abc = def is 0 
+abc <> def is -1 
+Section 4 complete
+
+=== Section 5: Logical operators ===
+1 and 1 = 1 
+1 and 0 = 0 
+0 and 0 = 0 
+1 or 0 = 1 
+0 or 0 = 0 
+1 xor 0 = 1 
+1 xor 1 = 0 
+not 0 = -1 
+not 1 = -2 
+Section 5 complete
+
+=== Section 6: String operations ===
+Hello + World = Hello World
+len(Hello) = 5 
+left$(Hello, 3) = Hel
+right$(Hello, 3) = llo
+mid$(Hello, 2, 3) = ell
+asc(H) = 72 
+chr$(65) = A
+str$(42) = 42
+str$(3.14) = 3.14
+val(123) = 123 
+lcase$(HELLO) = hello
+ucase$(hello) = HELLO
+Section 6 complete
+
+=== Section 7: Math functions ===
+abs(-5) = 5 
+abs(5) = 5 
+abs(-3.7) = 3.7 
+sgn(-5) = -1 
+sgn(0) = 0 
+sgn(5) = 1 
+int(3.7) = 3 
+int(-3.7) = -4 
+sqr(25) = 5 
+sqr(2) = 1.41421356 
+sin(0) = 0 
+cos(0) = 1 
+tan(0) = 0 
+atn(0) = 0 
+log(1) = 0 
+exp(0) = 1 
+Section 7 complete
+
+=== Section 8: IF/THEN/ELSE single line ===
+IF 1 THEN: true (correct)
+1>0: true branch
+1<0: false branch
+GOTO from IF worked
+Section 8 complete
+
+=== Section 9: IF/THEN/ELSE/ENDIF multi-line ===
+Multi-line IF: true branch line 1
+Multi-line IF: true branch line 2
+Multi-line ELSE: correct branch
+Nested IF: inner true (correct)
+Section 9 complete
+
+=== Section 10: FOR/NEXT loops ===
+Count 1 to 5:  1   2   3   4   5 
+Even 2 to 10:  2   4   6   8   10 
+Count 5 to 1:  5   4   3   2   1 
+Real loop 0.0 to 1.0 step 0.5:  0   .5   1 
+Zero-trip loop (should print nothing between brackets): []
+Section 10 complete
+
+=== Section 11: WHILE/WEND ===
+While count 1 to 5:  1   2   3   4   5 
+While false (should print nothing between brackets): []
+Section 11 complete
+
+=== Section 12: REPEAT/UNTIL ===
+Repeat count 1 to 5:  1   2   3   4   5 
+Section 12 complete
+
+=== Section 13: GOSUB/RETURN ===
+Before gosub
+Inside subroutine
+After gosub returned
+Section 13 complete
+
+=== Section 14: ON GOTO and ON GOSUB ===
+ON GOTO selected 2 (correct)
+ON GOSUB subroutine called (correct)
+After ON GOSUB returned
+Section 14 complete
+
+=== Section 15: GOTO ===
+GOTO target reached (correct)
+Section 15 complete
+
+=== Section 16: DATA/READ/RESTORE ===
+Read integers: 10  20  30 
+Read strings: hello world
+Read reals: 3.14  2.72 
+After restore, re-read: 10 
+Section 16 complete
+
+=== Section 17: DIM (arrays) ===
+Integer array:  10   20   30   40   50 
+String array: one two three
+Real array: 1.1  2.2  3.3 
+Section 17 complete
+
+=== Section 18: DEF (single-line functions) ===
+fna(5) = x*x = 25 
+fnb(3, 4) = x+y = 7 
+fnc$(Hi) = x+! = Hi!
+fnd = 42: 42 
+Section 18 complete
+
+=== Section 19: Multi-line FUNCTION/ENDFUNC ===
+fne(10) = 10+20+30 = 60 
+fnf$(Good, Day) = Good Day
+Section 19 complete
+
+=== Section 20: Multi-line PROCEDURE/ENDPROC ===
+Procedure called with x = 99 
+Global g% set by procedure: 42 
+Section 20 complete
+
+=== Section 21: SELECT/CASE/OTHER/ENDSEL ===
+Case 2 (correct)
+Other/default (correct)
+Case hello (correct)
+Section 21 complete
+
+=== Section 22: Multi-statement lines ===
+a= 1 , b= 2 , c= 3 
+Line 1 Line 2
+Section 22 complete
+
+=== Section 23: REM and ! comments ===
+Comments were skipped (correct)
+Section 23 complete
+
+=== Section 24: Nested FOR loops ===
+  11   12   13   21   22   23   31   32   33 
+Section 24 complete
+
+=== Section 25: Nested GOSUB ===
+In outer subroutine
+In inner subroutine
+Back in outer subroutine
+Back at main level
+Section 25 complete
+
+=== Section 26: String expressions in conditions ===
+String equality: correct
+String inequality: correct
+Section 26 complete
+
+=== Section 27: Complex expressions ===
+((2+3)*4-6)/7 = 2 
+abs(sgn(-5)) = 1 
+len(chr$(65)+chr$(66)) = 2 
+val(str$(42)) = 42 
+left$(right$(Hello World, 5), 3) = Wor
+Section 27 complete
+
+=== Section 28: Edge cases ===
+Large: 1000000 * 1000 = 1000000000 
+0 * -1 = 0 
+len of empty string = 0 
+7 / 2 = 3.5 
+Section 28 complete
+
+=== Section 29: WHILE with complex condition ===
+  0   1   2   3   4 
+Section 29 complete
+
+=== Section 30: Miscellaneous ===
+Col1           Col2
++5 = 5 
+ABC
+Section 30 complete
+
+=== Section 31: Labels ===
+Reached goto target (correct)
+Section 31 complete
+
+=== Section 32: PRINT USING ===
+  3.14
+ 99.90
+$ 5.99
+42 
+42 
+- 99
+  99
+The answer is  42.
+Section 32 complete
+
+=== Section 33: Mixed type DATA/READ ===
+Read 3 ints: 10  20  30 
+Read 2 strs: hello world
+Read 2 reals: 3.14  2.72 
+Section 33 complete
+
+=== Section 34: Nested IF/ELSE/ENDIF ===
+Nested: a=1, b=2 (correct)
+Both else branches: correct
+Section 34 complete
+
+=== Section 35: REPEAT/UNTIL complex ===
+Sum 1..10 = 55 
+Section 35 complete
+
+=== Section 36: SELECT with expressions ===
+Case 10 = 5*2 (correct)
+Section 36 complete
+
+=== Section 37: Function calling function ===
+fnh(5) = (5+1)*2 = 12 
+Section 37 complete
+
+=== Section 38: Integer suffix variables ===
+x% + y% = 300 
+x% * y% = 20000 
+x% div y% = 0 
+Section 38 complete
+
+=== Section 39: Multiple DATA statements ===
+  100   200   300   400   500 
+Section 39 complete
+
+=== Section 40: Nested control structures ===
+First iteration
+Second iteration
+Third iteration
+Section 40 complete
+
+=== Section 41: Array with computed indices ===
+d%(3) = 3*3 = 9 
+d%(5+2) = 7*7 = 49 
+d%(d%(2)) = d%(4) = 16: 16 
+Section 41 complete
+
+=== Section 42: File output and input ===
+Line 1: Hello from file
+Line 2: Second line
+Section 42 complete
+
+=== Section 43: File close and reopen ===
+File 1: data1
+File 2: data2
+Section 43 complete
+
+=== Section 44: EOF detection ===
+Lines read: 1 
+Last line: only line
+Section 44 complete
+
+=== Section 45: Multiple files open simultaneously ===
+File #3: file three
+File #4: file four
+Section 45 complete
+
+=== Section 46: Nested function definitions ===
+outer(5) = inner(5)+1 = 11: 11 
+outer2(7) = 7*3 = 21: 21 
+Section 46 complete
+
+=== Section 47: LOCAL statement ===
+Inside: x = 42 x% = 43 x$ = local
+After: x = 100 x% = 200 x$ = global
+Inside multi: y = 1 z = 11 
+After multi: y = 50 z = 60 
+Section 47 complete
+
+=== Section 48: Nested locals ===
+Inner r = 50 
+Outer r = 5 
+Global r = 999 
+Section 48 complete
+
+============================================================
+All test sections completed.
+============================================================
