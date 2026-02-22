@@ -86,6 +86,7 @@ const
     { maximum lengths }
     maxids   = 250;   { maximum characters in id string }
     maxlinp  = 2000;  { maximum line length }
+    maxcmt   = 20000; { maximum comment length }
     cmdmax   = 250;   { maximum command line length }
     maxres   = 66;    { number of reserved words }
     reslen   = 9;     { maximum length of reserved words }
@@ -124,6 +125,7 @@ type
     restr = packed array [1..reslen] of char;
     filnam = packed array [1..fillen] of char;
     linbufp = packed array [1..maxlinp] of char;
+    cmtbufp = packed array [1..maxcmt] of char;
     csstr = packed array [1..strglgth] of char;
 
     { error tracking }
@@ -178,7 +180,7 @@ var
     lastsy:   symbol;            { last symbol output }
 
     { comment buffer }
-    cmtbuf:   linbufp;           { comment buffer }
+    cmtbuf:   cmtbufp;           { comment buffer }
     cmtlen:   integer;           { comment length }
     hascmt:   boolean;           { has pending comment }
     cmtlncmt: boolean;           { is a line comment }
@@ -630,20 +632,42 @@ end;
 
 procedure emit_comment;
 var i: integer;
+    multiline: boolean;
 begin
     if hascmt then begin
-        emit_space;
-        if cmtlncmt then begin
-            emit_char('{');
-            emit_char(' ')
-        end else
-            emit_char('{');
-        for i := 1 to cmtlen do emit_char(cmtbuf[i]);
-        if cmtlncmt then begin
-            emit_char(' ');
-            emit_char('}')
-        end else
-            emit_char('}');
+        { check if comment contains newlines }
+        multiline := false;
+        i := 1;
+        while (i <= cmtlen) and not multiline do begin
+            if cmtbuf[i] = chr(10) then multiline := true;
+            i := i + 1
+        end;
+        if multiline and not cmtlncmt then begin
+            { multi-line comment: flush current output, write verbatim }
+            flush_line;
+            write(prr, '{');
+            for i := 1 to cmtlen do begin
+                if cmtbuf[i] = chr(10) then writeln(prr)
+                else write(prr, cmtbuf[i])
+            end;
+            writeln(prr, '}');
+            writeln(prr);
+            atbol := true
+        end else begin
+            { single-line comment: emit through normal formatting }
+            emit_space;
+            if cmtlncmt then begin
+                emit_char('{');
+                emit_char(' ')
+            end else
+                emit_char('{');
+            for i := 1 to cmtlen do emit_char(cmtbuf[i]);
+            if cmtlncmt then begin
+                emit_char(' ');
+                emit_char('}')
+            end else
+                emit_char('}')
+        end;
         hascmt := false;
         cmtlen := 0
     end
@@ -736,6 +760,37 @@ begin
         { emit definition part }
         for i := 1 to p^.deflen do emit_char(p^.defpart[i]);
         emit_char(';');
+        emit_newline;
+        p := p^.next
+    end;
+    def_clear
+end;
+
+{ output joins/uses list with aligned comments }
+procedure def_output_ju;
+var p: defptr;
+    i, pad: integer;
+begin
+    defbufmode := 0;
+    p := defhead;
+    while p <> nil do begin
+        outlineno := p^.srclin;
+        atbol := false;
+        { emit name part }
+        for i := 1 to p^.namlen do emit_char(p^.nampart[i]);
+        { emit comment if present }
+        if p^.deflen > 0 then begin
+            if columnize then begin
+                pad := defmax - p^.namlen + 1;
+                while pad > 0 do begin
+                    outpos := outpos + 1;
+                    if outpos <= maxlinp then outlin[outpos] := ' ';
+                    pad := pad - 1
+                end
+            end else
+                emit_space;
+            for i := 1 to p^.deflen do emit_char(p^.defpart[i])
+        end;
         emit_newline;
         p := p^.next
     end;
@@ -947,18 +1002,26 @@ begin
                 cmtlen := 0; hascmt := true; cmtlncmt := false;
                 repeat
                     while (ch <> '*') and (ch <> '}') and not eofinp do begin
-                        if cmtlen < maxlinp then begin
+                        if cmtlen < maxcmt then begin
                             cmtlen := cmtlen + 1;
                             cmtbuf[cmtlen] := ch
                         end;
-                        nextch
+                        nextch;
+                        if eol then begin
+                            { preserve line break in comment }
+                            if cmtlen < maxcmt then begin
+                                cmtlen := cmtlen + 1;
+                                cmtbuf[cmtlen] := chr(10)
+                            end;
+                            nextch { reads next line }
+                        end
                     end;
                     if ch = '}' then begin nextch; goto 1 end;
                     if ch = '*' then begin
                         nextch;
                         if ch = ')' then begin nextch; goto 1 end
                         else begin
-                            if cmtlen < maxlinp then begin
+                            if cmtlen < maxcmt then begin
                                 cmtlen := cmtlen + 1;
                                 cmtbuf[cmtlen] := '*'
                             end
@@ -977,11 +1040,19 @@ begin
             nextch;
             cmtlen := 0; hascmt := true; cmtlncmt := false;
             while (ch <> '}') and not eofinp do begin
-                if cmtlen < maxlinp then begin
+                if cmtlen < maxcmt then begin
                     cmtlen := cmtlen + 1;
                     cmtbuf[cmtlen] := ch
                 end;
-                nextch
+                nextch;
+                if eol then begin
+                    { preserve line break in comment }
+                    if cmtlen < maxcmt then begin
+                        cmtlen := cmtlen + 1;
+                        cmtbuf[cmtlen] := chr(10)
+                    end;
+                    nextch { reads next line }
+                end
             end;
             if ch = '}' then nextch;
             goto 1
@@ -991,7 +1062,7 @@ begin
             cmtlen := 0; hascmt := true; cmtlncmt := true;
             nextch; { skip ! }
             while not eol and not eofinp do begin
-                if cmtlen < maxlinp then begin
+                if cmtlen < maxcmt then begin
                     cmtlen := cmtlen + 1;
                     cmtbuf[cmtlen] := ch
                 end;
@@ -1729,12 +1800,13 @@ procedure block(fsys: setofsys);
 begin
     { label declarations }
     if sy = labelsy then begin
+        emit_blank_line;
         emit_symbol; insymbol;
         while sy in [ident, intconst] do begin
             emit_symbol; insymbol;
             if sy = comma then begin emit_symbol; insymbol end
         end;
-        if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+        if sy = semicolon then begin emit_symbol; insymbol; emit_newline end
     end;
     { constant declarations }
     if sy = constsy then begin
@@ -1794,9 +1866,33 @@ begin
             def_startname;
             emit_comment; { include any preceding comment in name for columnize }
             emit_symbol; insymbol;
+            if (sy = lparent) and not iso7185 then begin
+                { parameterized type specification }
+                emit_symbol; insymbol;
+                expression(fsys+[comma,rparent]);
+                while sy = comma do begin
+                    emit_symbol; insymbol;
+                    expression(fsys+[comma,rparent])
+                end;
+                if sy = rparent then begin emit_symbol; insymbol end
+                else error(4)
+            end;
             while sy = comma do begin
                 emit_symbol; insymbol;
-                if sy = ident then begin emit_symbol; insymbol end
+                if sy = ident then begin
+                    emit_symbol; insymbol;
+                    if (sy = lparent) and not iso7185 then begin
+                        { parameterized type specification }
+                        emit_symbol; insymbol;
+                        expression(fsys+[comma,rparent]);
+                        while sy = comma do begin
+                            emit_symbol; insymbol;
+                            expression(fsys+[comma,rparent])
+                        end;
+                        if sy = rparent then begin emit_symbol; insymbol end
+                        else error(4)
+                    end
+                end
             end;
             if sy = colon then begin insymbol; def_startdef(':') end
             else error(5);
@@ -1847,22 +1943,50 @@ begin
     { joins clause }
     if sy = joinssy then begin
         emit_blank_line;
-        emit_symbol; insymbol;
+        emit_symbol; emit_newline; insymbol;
+        emit_blank_line;
+        def_clear;
         while sy = ident do begin
-            emit_symbol; insymbol;
-            if sy = comma then begin emit_symbol; insymbol end
+            def_startname;
+            emit_symbol; insymbol; { ident to namebuf, read comma or semi }
+            if sy = comma then begin
+                emit_symbol; { comma to namebuf }
+                def_startdef(' ');
+                insymbol; { auto-emits comment to defbuf, reads next token }
+                def_finish
+            end else if sy = semicolon then begin
+                emit_symbol; { semicolon to namebuf }
+                def_startdef(' ');
+                insymbol; { auto-emits comment to defbuf, reads next token }
+                def_finish
+            end else
+                def_finish
         end;
-        if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+        def_output_ju
     end;
     { uses clause }
     if sy = usessy then begin
         emit_blank_line;
-        emit_symbol; insymbol;
+        emit_symbol; emit_newline; insymbol;
+        emit_blank_line;
+        def_clear;
         while sy = ident do begin
-            emit_symbol; insymbol;
-            if sy = comma then begin emit_symbol; insymbol end
+            def_startname;
+            emit_symbol; insymbol; { ident to namebuf, read comma or semi }
+            if sy = comma then begin
+                emit_symbol; { comma to namebuf }
+                def_startdef(' ');
+                insymbol; { auto-emits comment to defbuf, reads next token }
+                def_finish
+            end else if sy = semicolon then begin
+                emit_symbol; { semicolon to namebuf }
+                def_startdef(' ');
+                insymbol; { auto-emits comment to defbuf, reads next token }
+                def_finish
+            end else
+                def_finish
         end;
-        if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
+        def_output_ju
     end;
     { private section }
     if sy = privatesy then begin
