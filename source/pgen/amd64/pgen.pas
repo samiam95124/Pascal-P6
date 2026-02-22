@@ -63,8 +63,10 @@ begin
   write(prr, '        .globl  '); write(prr, modnam^); writeln(prr);
   write(prr, '        .type   '); write(prr, modnam^); writeln(prr, ', @function');
   writeln(prr, modnam^, ':');
+  writeln(prr, '        .cfi_startproc');
   writeln(prr, '# Align stack');
   writeln(prr, '        pushq   %rax');
+  writeln(prr, '        .cfi_adjust_cfa_offset 8');
   writeln(prr, '# Set up default files');
   writeln(prr, '        movb    $inputfn,globals_start+inputoff(%rip)');
   writeln(prr, '        movb    $outputfn,globals_start+outputoff(%rip)');
@@ -76,8 +78,10 @@ begin
   writeln(prr, '# Call startup code');
   writeln(prr, '        call    1f');
   writeln(prr, '        popq    %rax');
+  writeln(prr, '        .cfi_adjust_cfa_offset -8');
   writeln(prr, '        sub     %rax,%rax');
   writeln(prr, '        ret');
+  writeln(prr, '        .cfi_endproc');
   writeln(prr, '1:');
 end;
 
@@ -2607,14 +2611,20 @@ begin { assemble }
           write(prr, '        .type    '); wrtblklng(blkstk); writeln(prr, ', @function');
           wrtblklabs(blkstk);
         end;
+      writeln(prr, '        .cfi_startproc');
       frereg := allreg;
       { We limit to the enter instruction }
       if p >= 32 then error('Too many nested levels');
       writeln(prr, '# generating: ', op:3, ': ', instab[op].instr);
       wrtins(' pushq $0 # place current ep');
+      writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' pushq $0 # place bottom of stack');
+      writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' pushq $0 # place previous ep');
+      writeln(prr, '        .cfi_adjust_cfa_offset 8');
       wrtins(' enterq $1,$0 # enter frame', p+1);
+      writeln(prr, '        .cfi_def_cfa rbp, 40');
+      writeln(prr, '        .cfi_offset rbp, -40');
       wrtins(' movq %rsp,%rax # copy sp');
       { find sp-locals }
       write(prr, '        subq    $'); write(prr, lclspc^); write(prr, '+'); 
@@ -2842,13 +2852,17 @@ begin { assemble }
       wrtins(' popq %r12');
       wrtins(' popq %rbx');
       wrtins(' leave # undo frame');
+      writeln(prr, '        .cfi_restore rbp');
+      writeln(prr, '        .cfi_def_cfa rsp, 32');
       wrtins(' addq $0,%rsp # remove frame data', marksize);
+      writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
       if op = 237{retm} then
         wrtins(' movq %rsp,%rax # index result in rax');
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
+      writeln(prr, '        .cfi_endproc');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2864,7 +2878,10 @@ begin { assemble }
       wrtins(' popq %r12');
       wrtins(' popq %rbx');
       wrtins(' leave # undo frame');
+      writeln(prr, '        .cfi_restore rbp');
+      writeln(prr, '        .cfi_def_cfa rsp, 32');
       wrtins(' addq $0,%rsp # remove frame data', marksize);
+      writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
       wrtins(' popq %rax # get qword result');
@@ -2872,6 +2889,7 @@ begin { assemble }
         wrtins(' andq $0,%rax # mask byte result', 255);
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
+      writeln(prr, '        .cfi_endproc');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2888,13 +2906,17 @@ begin { assemble }
       wrtins(' popq %r12');
       wrtins(' popq %rbx');
       wrtins(' leave # undo frame');
+      writeln(prr, '        .cfi_restore rbp');
+      writeln(prr, '        .cfi_def_cfa rsp, 32');
       wrtins(' addq $0,%rsp # remove frame data', marksize);
+      writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
       wrtins(' movsd (%rsp),%xmm0 # move real from stack to xmm0');
       wrtins(' addq $0,%rsp # remove real from stack', realsize);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
+      writeln(prr, '        .cfi_endproc');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2911,11 +2933,15 @@ begin { assemble }
       wrtins(' popq %r12');
       wrtins(' popq %rbx');
       wrtins(' leave # undo frame');
+      writeln(prr, '        .cfi_restore rbp');
+      writeln(prr, '        .cfi_def_cfa rsp, 32');
       wrtins(' addq $0,%rsp # remove frame data', marksize);
+      writeln(prr, '        .cfi_def_cfa rsp, 8');
       wrtins(' popq %rcx # get return address');
       wrtins(' addq $0,%rsp # remove caller parameters', q);
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
+      writeln(prr, '        .cfi_endproc');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
