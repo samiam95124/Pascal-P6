@@ -338,6 +338,27 @@ block        = record
                  btyp:    (btprog, btmod, btproc, btfunc);
                  en:      integer; { encounter number }
                  lvl:     integer; { level of block }
+                 fnendlab: integer; { function end label number for DWARF }
+               end;
+{ DWARF type deduplication entry }
+pdwtyp       = ^dwtyp;
+dwtyp        = record
+                 next:    pdwtyp;
+                 digest:  pstring; { digest string }
+                 labnum:  integer; { DWARF label number }
+               end;
+{ DWARF string table entry }
+pdwstr       = ^dwstr;
+dwstr        = record
+                 next:    pdwstr;
+                 s:       pstring; { string content }
+                 labnum:  integer; { label number in .debug_str }
+               end;
+{ DWARF digest parse control }
+dwparctl     = record
+                 b: pstring; { digest string }
+                 l: integer; { length }
+                 p: integer; { current position }
                end;
 { intermediate instruction table }
 inspar = array [instyp] of record
@@ -873,6 +894,16 @@ prdval      : boolean; { input source file parsed }
 prrval      : boolean; { output source file parsed }
 lindig      : boolean; { line diagnostic for gdb encountered }
 errret      : boolean; { error flagged }
+{ DWARF debug info state }
+dwtyps      : pdwtyp;  { type deduplication list }
+dwstrs      : pdwstr;  { string table list }
+dwlabnum    : integer; { DWARF label counter }
+fnendcnt    : integer; { function end label counter }
+{ pre-assigned label numbers for base types }
+dwlint      : integer; { integer type label }
+dwlbool     : integer; { boolean type label }
+dwlchar     : integer; { char type label }
+dwlreal     : integer; { real type label }
 
 word:           array[alfainx] of char;
 labeltab:       array[labelrg] of labelrec;
@@ -1305,6 +1336,14 @@ begin
    halt
 end;
 
+{ DWARF register number for frame base (e.g., 6 for rbp on AMD64) }
+virtual function dwarf_fbreg: integer;
+begin dwarf_fbreg := 0 end;
+
+{ address size in bytes (e.g., 8 for 64-bit) }
+virtual function dwarf_addr_size: integer;
+begin dwarf_addr_size := ptrsize end;
+
 procedure errorcode;
 begin
 
@@ -1701,6 +1740,7 @@ begin
               for i := 1 to 8 do begin cs[1] := ts[i]; bp^.tmpnam := cat(bp^.tmpnam, cs) end; 
               bp^.symbols := nil;
               bp^.incnxt := nil;
+              bp^.fnendlab := 0;
               case ch1 of { block type }
                 'p': bp^.btyp := btprog;
                 'm': bp^.btyp := btmod;
@@ -1912,8 +1952,12 @@ begin
              end;
              services.brknam(srcfil, p, n, e);
              if domrklin then begin
-             writeln(prr, '        .file   "',n:*, '.', e:*, '"'); 
-             writeln(prr, '        .file   1 "',srcfil:*, '"'); 
+             { place label at start of .debug_line for DW_AT_stmt_list }
+             writeln(prr, '        .section .debug_line,"",@progbits');
+             writeln(prr, '.Ldw_line_start:');
+             writeln(prr, '        .text');
+             writeln(prr, '        .file   "',n:*, '.', e:*, '"');
+             writeln(prr, '        .file   1 "',srcfil:*, '"');
              lindig := true; { set line diagnostic active for gdb }
              end
            end;
@@ -2379,6 +2423,881 @@ begin
 end;
 
 { translate intermediate file }
+{ *************************************************************************** }
+{                                                                             }
+{                         DWARF debug info generation                         }
+{                                                                             }
+{ *************************************************************************** }
+
+{ get next DWARF label number }
+function dwlnxt: integer;
+begin
+  dwlabnum := dwlabnum+1; dwlnxt := dwlabnum
+end;
+
+{ write a DWARF label definition }
+procedure dwldef(n: integer);
+begin
+  write(prr, '.Ldw', n:1, ':')
+end;
+
+{ write a DWARF label reference (4-byte section-relative) }
+procedure dwlref(n: integer);
+begin
+  writeln(prr, '        .long   .Ldw', n:1, ' - .Ldw_info_start')
+end;
+
+{ find or add string to DWARF string table, return label number }
+function dwaddstr(s: pstring): integer;
+var p: pdwstr; fnd: boolean;
+begin
+  p := dwstrs; fnd := false;
+  while (p <> nil) and not fnd do begin
+    if compcp(p^.s^, s^) then begin dwaddstr := p^.labnum; fnd := true end
+    else p := p^.next
+  end;
+  if not fnd then begin
+    { not found, add new entry }
+    new(p); p^.s := s; p^.labnum := dwlnxt;
+    p^.next := dwstrs; dwstrs := p;
+    dwaddstr := p^.labnum
+  end
+end;
+
+{ write a string reference attribute (DW_FORM_strp) }
+procedure dwstrref(s: pstring);
+begin
+  writeln(prr, '        .long   .Ldw', dwaddstr(s):1)
+end;
+
+{ DWARF abbreviation table constants }
+const
+  { abbreviation codes }
+  dwab_cu          = 1;  { compile unit }
+  dwab_bastyp      = 2;  { base type }
+  dwab_subprog     = 3;  { subprogram with children }
+  dwab_gvar        = 4;  { global variable }
+  dwab_lvar        = 5;  { local variable }
+  dwab_fparam      = 6;  { formal parameter }
+  dwab_ptrtyp      = 7;  { pointer type }
+  dwab_arrtyp      = 8;  { array type with children }
+  dwab_subrntyp    = 9;  { subrange type }
+  dwab_structyp    = 10; { structure/record type with children }
+  dwab_member      = 11; { record member }
+  dwab_enumtyp     = 12; { enumeration type with children }
+  dwab_enumer      = 13; { enumerator }
+  dwab_settyp      = 14; { set type }
+  dwab_filetyp     = 15; { file type }
+  dwab_varpart     = 16; { variant part with children }
+  dwab_variant     = 17; { variant with children }
+  dwab_subprogn    = 18; { subprogram without children }
+  dwab_unspectyp   = 19; { unspecified type }
+
+  { DWARF tag numbers }
+  dwtag_cu           = 17;  { DW_TAG_compile_unit: $11 }
+  dwtag_bastyp       = 36;  { DW_TAG_base_type: $24 }
+  dwtag_subprog      = 46;  { DW_TAG_subprogram: $2e }
+  dwtag_var          = 52;  { DW_TAG_variable: $34 }
+  dwtag_fparam       = 5;   { DW_TAG_formal_parameter: $05 }
+  dwtag_ptrtyp       = 15;  { DW_TAG_pointer_type: $0f }
+  dwtag_arrtyp       = 1;   { DW_TAG_array_type: $01 }
+  dwtag_subrntyp     = 33;  { DW_TAG_subrange_type: $21 }
+  dwtag_structyp     = 19;  { DW_TAG_structure_type: $13 }
+  dwtag_member       = 13;  { DW_TAG_member: $0d }
+  dwtag_enumtyp      = 4;   { DW_TAG_enumeration_type: $04 }
+  dwtag_enumer       = 40;  { DW_TAG_enumerator: $28 }
+  dwtag_settyp       = 32;  { DW_TAG_set_type: $20 }
+  dwtag_filetyp      = 29;  { DW_TAG_file_type: $1d }
+  dwtag_varpart      = 51;  { DW_TAG_variant_part: $33 }
+  dwtag_variant      = 25;  { DW_TAG_variant: $19 }
+  dwtag_unspectyp    = 59;  { DW_TAG_unspecified_type: $3b }
+
+  { DWARF attribute numbers }
+  dwat_name          = 3;   { DW_AT_name: $03 }
+  dwat_byte_size     = 11;  { DW_AT_byte_size: $0b }
+  dwat_low_pc        = 17;  { DW_AT_low_pc: $11 }
+  dwat_high_pc       = 18;  { DW_AT_high_pc: $12 }
+  dwat_language      = 19;  { DW_AT_language: $13 }
+  dwat_discr         = 21;  { DW_AT_discr: $15 }
+  dwat_discr_value   = 22;  { DW_AT_discr_value: $16 }
+  dwat_encoding      = 62;  { DW_AT_encoding: $3e }
+  { nb: DW_AT_encoding = $3e = 62 decimal }
+  dwat_frame_base    = 64;  { DW_AT_frame_base: $40 }
+  dwat_location      = 2;   { DW_AT_location: $02 }
+  dwat_type          = 73;  { DW_AT_type: $49 }
+  dwat_upper_bound   = 47;  { DW_AT_upper_bound: $2f }
+  dwat_lower_bound   = 34;  { DW_AT_lower_bound: $22 }
+  dwat_data_member_location = 56; { DW_AT_data_member_location: $38 }
+  dwat_const_value   = 28;  { DW_AT_const_value: $1c }
+  dwat_producer      = 37;  { DW_AT_producer: $25 }
+  dwat_stmt_list     = 16;  { DW_AT_stmt_list: $10 }
+
+  { DWARF form numbers }
+  dwform_addr        = 1;   { DW_FORM_addr: $01 }
+  dwform_data1       = 11;  { DW_FORM_data1: $0b }
+  dwform_data2       = 5;   { DW_FORM_data2: $05 }
+  dwform_sdata       = 13;  { DW_FORM_sdata: $0d }
+  dwform_udata       = 15;  { DW_FORM_udata: $0f }
+  dwform_ref4        = 19;  { DW_FORM_ref4: $13 }
+  dwform_strp        = 14;  { DW_FORM_strp: $0e }
+  dwform_exprloc     = 24;  { DW_FORM_exprloc: $18 }
+  dwform_sec_offset  = 23;  { DW_FORM_sec_offset: $17 }
+
+  { DWARF encoding values }
+  dwate_addr         = 1;   { DW_ATE_address }
+  dwate_boolean      = 2;   { DW_ATE_boolean }
+  dwate_float        = 4;   { DW_ATE_float }
+  dwate_signed       = 5;   { DW_ATE_signed }
+  dwate_unsigned_char = 8;  { DW_ATE_unsigned_char }
+
+  { DWARF children flag }
+  dw_children_no     = 0;
+  dw_children_yes    = 1;
+
+  { DWARF language }
+  dwlang_pascal83    = 2;   { DW_LANG_Pascal83 }
+
+  { DWARF ops }
+  dwop_addr          = 3;   { DW_OP_addr: $03 }
+  dwop_fbreg         = 145; { DW_OP_fbreg: $91 }
+  dwop_regx          = 144; { DW_OP_regx: $90 }
+
+{ emit .debug_abbrev section }
+procedure genabbrev;
+
+  { write one abbreviation entry: code, tag, children flag }
+  procedure abbhdr(code, tag, children: integer);
+  begin
+    writeln(prr, '        .uleb128 ', code:1, '  # abbreviation code');
+    writeln(prr, '        .uleb128 ', tag:1, '  # tag');
+    writeln(prr, '        .byte   ', children:1, '  # children')
+  end;
+
+  { write one attribute spec: attribute, form }
+  procedure abbattr(attr, form: integer);
+  begin
+    writeln(prr, '        .uleb128 ', attr:1);
+    writeln(prr, '        .uleb128 ', form:1)
+  end;
+
+  { terminate attribute list }
+  procedure abbend;
+  begin
+    writeln(prr, '        .byte   0');
+    writeln(prr, '        .byte   0')
+  end;
+
+begin { genabbrev }
+  writeln(prr);
+  writeln(prr, '#');
+  writeln(prr, '# DWARF abbreviation table');
+  writeln(prr, '#');
+  writeln(prr, '        .section .debug_abbrev,"",@progbits');
+  writeln(prr, '.Ldw_abbrev_start:');
+
+  { 1: compile unit }
+  abbhdr(dwab_cu, dwtag_cu, dw_children_yes);
+  abbattr(dwat_producer, dwform_strp);
+  abbattr(dwat_language, dwform_data2);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_low_pc, dwform_addr);
+  abbattr(dwat_high_pc, dwform_addr);
+  abbattr(dwat_stmt_list, dwform_sec_offset);
+  abbend;
+
+  { 2: base type }
+  abbhdr(dwab_bastyp, dwtag_bastyp, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_encoding, dwform_data1);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbend;
+
+  { 3: subprogram with children }
+  abbhdr(dwab_subprog, dwtag_subprog, dw_children_yes);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_frame_base, dwform_exprloc);
+  abbattr(dwat_low_pc, dwform_addr);
+  abbattr(dwat_high_pc, dwform_addr);
+  abbend;
+
+  { 4: global variable }
+  abbhdr(dwab_gvar, dwtag_var, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_location, dwform_exprloc);
+  abbend;
+
+  { 5: local variable }
+  abbhdr(dwab_lvar, dwtag_var, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_location, dwform_exprloc);
+  abbend;
+
+  { 6: formal parameter }
+  abbhdr(dwab_fparam, dwtag_fparam, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_location, dwform_exprloc);
+  abbend;
+
+  { 7: pointer type }
+  abbhdr(dwab_ptrtyp, dwtag_ptrtyp, dw_children_no);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbend;
+
+  { 8: array type with children }
+  abbhdr(dwab_arrtyp, dwtag_arrtyp, dw_children_yes);
+  abbattr(dwat_type, dwform_ref4);
+  abbend;
+
+  { 9: subrange type }
+  abbhdr(dwab_subrntyp, dwtag_subrntyp, dw_children_no);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_lower_bound, dwform_sdata);
+  abbattr(dwat_upper_bound, dwform_sdata);
+  abbend;
+
+  { 10: structure type with children }
+  abbhdr(dwab_structyp, dwtag_structyp, dw_children_yes);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_byte_size, dwform_udata);
+  abbend;
+
+  { 11: member }
+  abbhdr(dwab_member, dwtag_member, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_type, dwform_ref4);
+  abbattr(dwat_data_member_location, dwform_udata);
+  abbend;
+
+  { 12: enumeration type with children }
+  abbhdr(dwab_enumtyp, dwtag_enumtyp, dw_children_yes);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbend;
+
+  { 13: enumerator }
+  abbhdr(dwab_enumer, dwtag_enumer, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_const_value, dwform_sdata);
+  abbend;
+
+  { 14: set type }
+  abbhdr(dwab_settyp, dwtag_settyp, dw_children_no);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbattr(dwat_type, dwform_ref4);
+  abbend;
+
+  { 15: file type }
+  abbhdr(dwab_filetyp, dwtag_filetyp, dw_children_no);
+  abbattr(dwat_byte_size, dwform_data1);
+  abbattr(dwat_type, dwform_ref4);
+  abbend;
+
+  { 16: variant part with children }
+  abbhdr(dwab_varpart, dwtag_varpart, dw_children_yes);
+  abbattr(dwat_discr, dwform_ref4);
+  abbend;
+
+  { 17: variant with children }
+  abbhdr(dwab_variant, dwtag_variant, dw_children_yes);
+  abbattr(dwat_discr_value, dwform_sdata);
+  abbend;
+
+  { 18: subprogram without children }
+  abbhdr(dwab_subprogn, dwtag_subprog, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbattr(dwat_frame_base, dwform_exprloc);
+  abbattr(dwat_low_pc, dwform_addr);
+  abbattr(dwat_high_pc, dwform_addr);
+  abbend;
+
+  { 19: unspecified type }
+  abbhdr(dwab_unspectyp, dwtag_unspectyp, dw_children_no);
+  abbattr(dwat_name, dwform_strp);
+  abbend;
+
+  { terminate abbreviation table }
+  writeln(prr, '        .byte   0  # end abbreviation table')
+end; { genabbrev }
+
+{ emit .debug_str section }
+procedure gendbgstr;
+var p: pdwstr;
+begin
+  writeln(prr);
+  writeln(prr, '#');
+  writeln(prr, '# DWARF string table');
+  writeln(prr, '#');
+  writeln(prr, '        .section .debug_str,"MS",@progbits,1');
+  writeln(prr, '.Ldw_str_start:');
+  p := dwstrs;
+  while p <> nil do begin
+    dwldef(p^.labnum); writeln(prr);
+    write(prr, '        .asciz  "'); write(prr, p^.s^); writeln(prr, '"');
+    p := p^.next
+  end
+end; { gendbgstr }
+
+{ digest parse helpers }
+function dwchk(var pc: dwparctl): char;
+begin
+  if pc.p <= pc.l then dwchk := pc.b^[pc.p]
+  else dwchk := ' '
+end;
+
+procedure dwnxt(var pc: dwparctl);
+begin
+  if pc.p <= pc.l then pc.p := pc.p+1
+end;
+
+procedure dwsetpar(var pc: dwparctl; s: pstring);
+begin
+  pc.b := s; pc.l := max(s^); pc.p := 1
+end;
+
+procedure dwexpect(var pc: dwparctl; c: char);
+begin
+  if dwchk(pc) = c then dwnxt(pc)
+end;
+
+procedure dwskpspc(var pc: dwparctl);
+begin
+  while (dwchk(pc) = ' ') and (pc.p <= pc.l) do dwnxt(pc)
+end;
+
+function dwchkend(var pc: dwparctl): boolean;
+begin
+  dwchkend := pc.p > pc.l
+end;
+
+{ get integer from digest }
+procedure dwgetnum(var pc: dwparctl; var n: integer);
+var neg: boolean; d: integer;
+begin
+  n := 0; dwskpspc(pc); neg := false;
+  if dwchk(pc) = '-' then begin neg := true; dwnxt(pc) end;
+  while dwchk(pc) in ['0'..'9'] do begin
+    d := ord(dwchk(pc))-ord('0');
+    if n <= (maxint-d) div 10 then n := n*10+d
+    else n := maxint; { cap on overflow }
+    dwnxt(pc)
+  end;
+  if neg then n := -n
+end;
+
+{ get identifier from digest into sn buffer, return length }
+procedure dwgetsym(var pc: dwparctl; var sl: integer);
+var i: integer;
+begin
+  for i := 1 to lablen do sn[i] := ' '; sl := 0; dwskpspc(pc);
+  while dwchk(pc) in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do begin
+    sl := sl+1; if sl <= lablen then sn[sl] := dwchk(pc);
+    dwnxt(pc)
+  end
+end;
+
+{ parse subrange/enum: returns enum flag, start and end values.
+  For enums, emits the enumeration type DIE and returns its label. }
+procedure dwgetrng(var pc: dwparctl; var enum: boolean; var s, e: integer;
+                   var enumlab: integer);
+var c: char; sl, vi, el: integer; ns: pstring;
+begin
+  enum := false; enumlab := 0;
+  if dwchk(pc) = 'b' then begin s := 0; e := 1 end
+  else if dwchk(pc) = 'c' then begin s := ordminchar; e := ordmaxchar end
+  else if dwchk(pc) = 'i' then begin s := setlow; e := sethigh end
+  else begin
+    dwexpect(pc, 'x'); dwexpect(pc, '(');
+    if dwchk(pc) in ['0'..'9', '-'] then begin { subrange }
+      dwgetnum(pc, s); dwexpect(pc, ','); dwgetnum(pc, e); dwexpect(pc, ')')
+    end else begin { enumeration }
+      enum := true; s := 0; e := 0; vi := 0;
+      { emit enumeration type DIE }
+      el := dwlnxt; enumlab := el;
+      dwldef(el); writeln(prr);
+      writeln(prr, '        .uleb128 ', dwab_enumtyp:1, ' # DW_TAG_enumeration_type');
+      writeln(prr, '        .byte   ', intsize:1, ' # byte_size');
+      { emit enumerators }
+      while dwchk(pc) <> ')' do begin
+        dwgetsym(pc, sl);
+        ns := extract(sn, 1, sl);
+        writeln(prr, '        .uleb128 ', dwab_enumer:1, ' # DW_TAG_enumerator');
+        dwstrref(ns);
+        writeln(prr, '        .sleb128 ', vi:1, ' # const_value');
+        vi := vi+1;
+        c := dwchk(pc); if c = ',' then dwnxt(pc)
+      end;
+      dwexpect(pc, ')');
+      e := vi-1;
+      writeln(prr, '        .byte   0  # end enumeration children')
+    end
+  end
+end;
+
+{ forward declaration }
+procedure dwparsedigest(var pc: dwparctl; var labnum: integer); forward;
+
+{ compute size of type from digest (without emitting anything) }
+function dwsiztyp(var pc: dwparctl): integer;
+var sz, s, e: integer; enum: boolean; enumlab: integer;
+    savepc: dwparctl;
+begin
+  sz := 0;
+  if dwchk(pc) = 'i' then begin dwnxt(pc); sz := intsize end
+  else if dwchk(pc) = 'b' then begin dwnxt(pc); sz := boolsize end
+  else if dwchk(pc) = 'c' then begin dwnxt(pc); sz := charsize end
+  else if dwchk(pc) = 'n' then begin dwnxt(pc); sz := realsize end
+  else if dwchk(pc) = 'e' then begin dwnxt(pc); sz := exceptsize end
+  else if dwchk(pc) = 'x' then begin
+    savepc := pc;
+    dwgetrng(pc, enum, s, e, enumlab);
+    if enum then begin
+      if (s >= 0) and (e <= 255) then sz := 1 else sz := intsize
+    end else begin
+      if (s >= 0) and (e <= 255) then sz := 1 else sz := intsize;
+      dwnxt(pc)
+    end
+  end
+  else if dwchk(pc) = 'p' then begin dwnxt(pc); sz := ptrsize;
+    if dwchk(pc) in ['0'..'9'] then dwgetnum(pc, s)
+    else sz := ptrsize + dwsiztyp(pc) - dwsiztyp(pc)
+  end
+  else if dwchk(pc) = 's' then begin dwnxt(pc); sz := setsize; s := dwsiztyp(pc) end
+  else if dwchk(pc) = 'a' then begin dwnxt(pc); dwgetrng(pc, enum, s, e, enumlab);
+    if not enum then dwnxt(pc); sz := dwsiztyp(pc)*(e-s+1) end
+  else if dwchk(pc) = 'r' then begin dwnxt(pc); sz := 0;
+    dwexpect(pc, '(');
+    while dwchk(pc) <> ')' do begin
+      dwgetsym(pc, s); dwexpect(pc, ':'); dwgetnum(pc, e);
+      dwexpect(pc, ':'); sz := sz + dwsiztyp(pc);
+      if dwchk(pc) = '(' then begin
+        dwnxt(pc);
+        while dwchk(pc) <> ')' do begin
+          dwgetnum(pc, s);
+          dwexpect(pc, '(');
+          while dwchk(pc) <> ')' do begin
+            dwgetsym(pc, s); dwexpect(pc, ':');
+            dwgetnum(pc, e); dwexpect(pc, ':');
+            sz := sz + dwsiztyp(pc);
+            if dwchk(pc) = ',' then dwnxt(pc)
+          end;
+          dwexpect(pc, ')')
+        end;
+        dwexpect(pc, ')')
+      end;
+      if dwchk(pc) = ',' then dwnxt(pc)
+    end;
+    dwexpect(pc, ')')
+  end
+  else if dwchk(pc) = 'f' then begin dwnxt(pc); sz := filesize; s := dwsiztyp(pc) end
+  else if dwchk(pc) = '?' then begin dwnxt(pc); sz := 0 end
+  else if dwchk(pc) = 'v' then begin dwnxt(pc); sz := ptrsize end
+  else begin dwnxt(pc); sz := 0 end; { unknown type, skip }
+  dwsiztyp := sz
+end;
+
+{ parse one type from digest, emit DWARF DIEs, return label }
+procedure dwparsedigest{(var pc: dwparctl; var labnum: integer)};
+var tl, s, e, sl, vi, el, ixl, btl, enumlab: integer;
+    enum: boolean; ns: pstring; c: char;
+    savepc, szpc: dwparctl;
+    msz: integer; taglab: integer;
+    cs: packed array [1..1] of char;
+begin
+  c := dwchk(pc);
+  if c = 'i' then begin dwnxt(pc); labnum := dwlint end
+  else if c = 'b' then begin dwnxt(pc); labnum := dwlbool end
+  else if c = 'c' then begin dwnxt(pc); labnum := dwlchar end
+  else if c = 'n' then begin dwnxt(pc); labnum := dwlreal end
+  else if c = 'e' then begin { exception }
+    dwnxt(pc);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+    cs[1] := 'e';
+    dwstrref(extract(cs, 1, 1));
+    writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' # encoding');
+    writeln(prr, '        .byte   ', exceptsize:1, ' # byte_size')
+  end
+  else if c = '?' then begin { unspecified type }
+    dwnxt(pc);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_unspectyp:1,
+                 ' # DW_TAG_unspecified_type');
+    cs[1] := '?';
+    dwstrref(extract(cs, 1, 1))
+  end
+  else if c = 'x' then begin { subrange or enumeration }
+    savepc := pc;
+    dwgetrng(pc, enum, s, e, enumlab);
+    if enum then labnum := enumlab
+    else begin
+      dwparsedigest(pc, btl);
+      tl := dwlnxt; labnum := tl;
+      dwldef(tl); writeln(prr);
+      writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
+                   ' # DW_TAG_subrange_type');
+      dwlref(btl);
+      writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
+      writeln(prr, '        .sleb128 ', e:1, ' # upper_bound')
+    end
+  end
+  else if c = 'p' then begin { pointer }
+    dwnxt(pc);
+    tl := dwlnxt; labnum := tl;
+    if dwchk(pc) in ['0'..'9'] then begin
+      dwgetnum(pc, vi);
+      dwldef(tl); writeln(prr);
+      writeln(prr, '        .uleb128 ', dwab_ptrtyp:1,
+                   ' # DW_TAG_pointer_type');
+      dwlref(tl);
+      writeln(prr, '        .byte   ', ptrsize:1, ' # byte_size')
+    end else begin
+      dwparsedigest(pc, btl);
+      dwldef(tl); writeln(prr);
+      writeln(prr, '        .uleb128 ', dwab_ptrtyp:1,
+                   ' # DW_TAG_pointer_type');
+      dwlref(btl);
+      writeln(prr, '        .byte   ', ptrsize:1, ' # byte_size')
+    end
+  end
+  else if c = 's' then begin { set }
+    dwnxt(pc);
+    dwparsedigest(pc, btl);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_settyp:1,
+                 ' # DW_TAG_set_type');
+    writeln(prr, '        .byte   ', setsize:1, ' # byte_size');
+    dwlref(btl)
+  end
+  else if c = 'a' then begin { array }
+    dwnxt(pc);
+    dwgetrng(pc, enum, s, e, enumlab);
+    if enum then ixl := enumlab
+    else begin
+      dwnxt(pc);
+      ixl := dwlint
+    end;
+    dwparsedigest(pc, btl);
+    el := dwlnxt;
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
+                 ' # DW_TAG_array_type');
+    dwlref(btl);
+    dwldef(el); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
+                 ' # DW_TAG_subrange_type');
+    dwlref(ixl);
+    writeln(prr, '        .sleb128 ', s:1, ' # lower_bound');
+    writeln(prr, '        .sleb128 ', e:1, ' # upper_bound');
+    writeln(prr, '        .byte   0  # end array children')
+  end
+  else if c = 'v' then begin { variable-length array }
+    dwnxt(pc);
+    dwparsedigest(pc, btl);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_arrtyp:1,
+                 ' # DW_TAG_array_type');
+    dwlref(btl);
+    el := dwlnxt;
+    dwldef(el); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_subrntyp:1,
+                 ' # DW_TAG_subrange_type');
+    dwlref(dwlint);
+    writeln(prr, '        .sleb128 0 # lower_bound');
+    writeln(prr, '        .sleb128 0 # upper_bound');
+    writeln(prr, '        .byte   0  # end array children')
+  end
+  else if c = 'r' then begin { record }
+    dwnxt(pc);
+    szpc := pc; msz := dwsiztyp(szpc);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_structyp:1,
+                 ' # DW_TAG_structure_type');
+    cs[1] := 'r';
+    dwstrref(extract(cs, 1, 1));
+    writeln(prr, '        .uleb128 ', msz:1, ' # byte_size');
+    dwexpect(pc, '(');
+    while dwchk(pc) <> ')' do begin
+      dwgetsym(pc, sl);
+      ns := extract(sn, 1, sl);
+      dwexpect(pc, ':');
+      dwgetnum(pc, vi);
+      dwexpect(pc, ':');
+      dwparsedigest(pc, btl);
+      if dwchk(pc) = '(' then begin
+        taglab := dwlnxt;
+        dwldef(taglab); writeln(prr);
+        writeln(prr, '        .uleb128 ', dwab_member:1, ' # DW_TAG_member');
+        dwstrref(ns);
+        dwlref(btl);
+        writeln(prr, '        .uleb128 ', vi:1, ' # data_member_location');
+        dwnxt(pc);
+        el := dwlnxt;
+        dwldef(el); writeln(prr);
+        writeln(prr, '        .uleb128 ', dwab_varpart:1,
+                     ' # DW_TAG_variant_part');
+        dwlref(taglab);
+        while dwchk(pc) <> ')' do begin
+          dwgetnum(pc, s);
+          writeln(prr, '        .uleb128 ', dwab_variant:1,
+                       ' # DW_TAG_variant');
+          writeln(prr, '        .sleb128 ', s:1, ' # discr_value');
+          dwexpect(pc, '(');
+          while dwchk(pc) <> ')' do begin
+            dwgetsym(pc, sl);
+            ns := extract(sn, 1, sl);
+            dwexpect(pc, ':');
+            dwgetnum(pc, vi);
+            dwexpect(pc, ':');
+            dwparsedigest(pc, btl);
+            writeln(prr, '        .uleb128 ', dwab_member:1,
+                         ' # DW_TAG_member');
+            dwstrref(ns);
+            dwlref(btl);
+            writeln(prr, '        .uleb128 ', vi:1,
+                         ' # data_member_location');
+            if dwchk(pc) = ',' then dwnxt(pc)
+          end;
+          dwexpect(pc, ')');
+          writeln(prr, '        .byte   0  # end variant children')
+        end;
+        dwexpect(pc, ')');
+        writeln(prr, '        .byte   0  # end variant_part children')
+      end else begin
+        writeln(prr, '        .uleb128 ', dwab_member:1, ' # DW_TAG_member');
+        dwstrref(ns);
+        dwlref(btl);
+        writeln(prr, '        .uleb128 ', vi:1, ' # data_member_location')
+      end;
+      if dwchk(pc) = ',' then dwnxt(pc)
+    end;
+    dwexpect(pc, ')');
+    writeln(prr, '        .byte   0  # end structure children')
+  end
+  else if c = 'f' then begin { file }
+    dwnxt(pc);
+    dwparsedigest(pc, btl);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_filetyp:1,
+                 ' # DW_TAG_file_type');
+    writeln(prr, '        .byte   ', filesize:1, ' # byte_size');
+    dwlref(btl)
+  end
+  else begin { unknown type — emit unspecified }
+    dwnxt(pc);
+    tl := dwlnxt; labnum := tl;
+    dwldef(tl); writeln(prr);
+    writeln(prr, '        .uleb128 ', dwab_unspectyp:1,
+                 ' # DW_TAG_unspecified_type');
+    cs[1] := '?';
+    dwstrref(extract(cs, 1, 1))
+  end
+end; { dwparsedigest }
+
+{ emit location expression for a variable }
+procedure dwemitloc(sp: psymbol);
+var loclen, loclab: integer;
+begin
+  if sp^.styp = stglobal then begin
+    { global: DW_OP_addr + absolute address }
+    loclen := dwarf_addr_size; loclen := loclen + 1;
+    writeln(prr, '        .uleb128 ', loclen:1,
+                 ' # location expression length');
+    writeln(prr, '        .byte   ', dwop_addr:1, ' # DW_OP_addr');
+    writeln(prr, '        .quad   globals_start+', sp^.off:1)
+  end else begin
+    { local or parameter: DW_OP_fbreg + signed offset.
+      Use label arithmetic so assembler computes the length. }
+    loclab := dwlnxt;
+    write(prr, '        .uleb128 .Ldw_loc_end');
+    write(prr, loclab:1);
+    write(prr, ' - .Ldw_loc_start');
+    writeln(prr, loclab:1, ' # location length');
+    write(prr, '.Ldw_loc_start'); writeln(prr, loclab:1, ':');
+    writeln(prr, '        .byte   ', dwop_fbreg:1, ' # DW_OP_fbreg');
+    writeln(prr, '        .sleb128 ', sp^.off:1, ' # offset from frame base');
+    write(prr, '.Ldw_loc_end'); writeln(prr, loclab:1, ':')
+  end
+end;
+
+{ emit variable/parameter DIE }
+procedure dwemitvar(sp: psymbol);
+var pc: dwparctl; tl, abbcode: integer;
+begin
+  if (sp^.digest <> nil) and (max(sp^.digest^) > 0) then begin
+    { parse digest to get/emit type, get label }
+    dwsetpar(pc, sp^.digest);
+    dwparsedigest(pc, tl);
+    { choose abbreviation code }
+    if sp^.styp = stglobal then abbcode := dwab_gvar
+    else if sp^.styp = stparam then abbcode := dwab_fparam
+    else abbcode := dwab_lvar;
+    { emit variable DIE }
+    writeln(prr, '        .uleb128 ', abbcode:1, ' # variable/parameter');
+    dwstrref(sp^.name);
+    dwlref(tl);
+    dwemitloc(sp)
+  end
+end;
+
+{ write function's assembly label using parent chain (safe for blklst blocks) }
+procedure dwwrtblklng(bp: pblock);
+var fl: integer;
+begin
+  if bp <> nil then begin
+    wrtblks(bp^.parent, false, fl);
+    write(prr, bp^.name^)
+  end
+end;
+
+{ emit subprogram DIE for a block and its symbols }
+procedure dwemitblk(bp: pblock);
+var sp: psymbol; hassyms: boolean; abbcode, fbreg, opcode: integer;
+begin
+  { check if block has any symbols }
+  hassyms := bp^.symbols <> nil;
+  if hassyms then abbcode := dwab_subprog
+  else abbcode := dwab_subprogn;
+  { emit subprogram DIE }
+  writeln(prr, '        .uleb128 ', abbcode:1, ' # DW_TAG_subprogram');
+  dwstrref(bp^.bname);
+  { frame base: DW_OP_regX(fbreg) }
+  fbreg := dwarf_fbreg;
+  opcode := 80 + fbreg; { DW_OP_reg0 = 0x50 = 80 }
+  writeln(prr, '        .uleb128 1 # frame_base length');
+  writeln(prr, '        .byte   ', opcode:1,
+               ' # DW_OP_reg', fbreg:1);
+  { low_pc: function entry address }
+  write(prr, '        .quad   ');
+  dwwrtblklng(bp);
+  writeln(prr, ' # DW_AT_low_pc');
+  { high_pc: function end address }
+  if bp^.fnendlab > 0 then
+    writeln(prr, '        .quad   .Lfnend_', bp^.fnendlab:1, ' # DW_AT_high_pc')
+  else begin
+    write(prr, '        .quad   ');
+    dwwrtblklng(bp);
+    writeln(prr, ' # DW_AT_high_pc (no end label)')
+  end;
+  { emit children: variables and parameters }
+  if hassyms then begin
+    sp := bp^.symbols;
+    while sp <> nil do begin
+      dwemitvar(sp);
+      sp := sp^.next
+    end;
+    writeln(prr, '        .byte   0  # end subprogram children')
+  end
+end;
+
+{ main DWARF generation procedure }
+procedure gendwarf;
+var bp: pblock; ns: pstring;
+    cs: packed array [1..1] of char;
+    adrsz: integer;
+begin
+  if lindig then begin { only emit if debug info active }
+
+  { initialize base type labels }
+  dwlint := dwlnxt;
+  dwlbool := dwlnxt;
+  dwlchar := dwlnxt;
+  dwlreal := dwlnxt;
+
+  { emit .debug_info section }
+  writeln(prr);
+  writeln(prr, '#');
+  writeln(prr, '# DWARF debug info');
+  writeln(prr, '#');
+  writeln(prr, '        .section .debug_info,"",@progbits');
+  writeln(prr, '.Ldw_info_start:');
+  { compilation unit header }
+  writeln(prr, '        .long   .Ldw_info_end - .Ldw_info_hdr # unit length');
+  writeln(prr, '.Ldw_info_hdr:');
+  writeln(prr, '        .short  4  # DWARF version');
+  writeln(prr, '        .long   .Ldw_abbrev_start  # debug_abbrev offset');
+  adrsz := dwarf_addr_size;
+  writeln(prr, '        .byte   ', adrsz:1, ' # address size');
+
+  { compile unit DIE }
+  writeln(prr, '        .uleb128 ', dwab_cu:1, ' # DW_TAG_compile_unit');
+  cs[1] := 'P';
+  ns := extract(cs, 1, 1);
+  ns := cat(ns, copy('ascal-P6 pgen'));
+  dwstrref(ns);
+  writeln(prr, '        .short  ', dwlang_pascal83:1, ' # language');
+  dwstrref(modnam);
+  { CU address range: from module entry to last function end }
+  write(prr, '        .quad   ');
+  write(prr, modnam^);
+  writeln(prr, ' # DW_AT_low_pc');
+  if fnendcnt > 0 then
+    writeln(prr, '        .quad   .Lfnend_', fnendcnt:1, ' # DW_AT_high_pc')
+  else begin
+    write(prr, '        .quad   ');
+    write(prr, modnam^);
+    writeln(prr, ' # DW_AT_high_pc (no functions)')
+  end;
+  { line number table reference }
+  writeln(prr, '        .long   .Ldw_line_start # DW_AT_stmt_list');
+
+  { emit base type DIEs }
+  dwldef(dwlint); writeln(prr);
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  ns := copy('integer');
+  dwstrref(ns);
+  writeln(prr, '        .byte   ', dwate_signed:1, ' # DW_ATE_signed');
+  writeln(prr, '        .byte   ', intsize:1, ' # byte_size');
+
+  dwldef(dwlbool); writeln(prr);
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  ns := copy('boolean');
+  dwstrref(ns);
+  writeln(prr, '        .byte   ', dwate_boolean:1, ' # DW_ATE_boolean');
+  writeln(prr, '        .byte   ', boolsize:1, ' # byte_size');
+
+  dwldef(dwlchar); writeln(prr);
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  ns := copy('char');
+  dwstrref(ns);
+  writeln(prr, '        .byte   ', dwate_unsigned_char:1, ' # DW_ATE_unsigned_char');
+  writeln(prr, '        .byte   ', charsize:1, ' # byte_size');
+
+  dwldef(dwlreal); writeln(prr);
+  writeln(prr, '        .uleb128 ', dwab_bastyp:1, ' # DW_TAG_base_type');
+  ns := copy('real');
+  dwstrref(ns);
+  writeln(prr, '        .byte   ', dwate_float:1, ' # DW_ATE_float');
+  writeln(prr, '        .byte   ', realsize:1, ' # byte_size');
+
+  { emit subprogram and variable DIEs for each block }
+  bp := blklst;
+  while bp <> nil do begin
+    dwemitblk(bp);
+    bp := bp^.next
+  end;
+
+  { close compile unit }
+  writeln(prr, '        .byte   0  # end compile unit children');
+  writeln(prr, '.Ldw_info_end:');
+
+  { emit abbreviation table }
+  genabbrev;
+
+  { emit string table }
+  gendbgstr
+  end { if lindig }
+end; { gendwarf }
+
 procedure xlate;
 
 begin (*xlate*)
@@ -2434,6 +3353,8 @@ begin (*xlate*)
    writeln(prr, '#');
    writeln(prr, 'globals_start:');
    writeln(prr, '        .zero ', gblsiz:1);
+
+   gendwarf; { emit DWARF debug sections }
 
    if dodmplab then dmplabs { Debug: dump label definitions }
 
@@ -2543,6 +3464,10 @@ begin
   level := 0; { clear level count }
   lindig := false; { set no encounter line diagnostic }
   errret := false; { set no error on return }
+  dwtyps := nil; { clear DWARF type dedup list }
+  dwstrs := nil; { clear DWARF string table }
+  dwlabnum := 0; { reset DWARF label counter }
+  fnendcnt := 0; { reset function end label counter }
 
   { supress warning }
   refer(blklst);
