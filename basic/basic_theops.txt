@@ -1,0 +1,762 @@
+Theory of Operations for basic.pas - BASIC Interpreter
+======================================================
+
+1. Overview
+-----------
+
+basic.pas implements a full BASIC language interpreter in Pascaline (extended
+Pascal). The program is approximately 8500 lines and runs as a standalone
+executable that provides an interactive REPL (Read-Eval-Print Loop) as well as
+batch execution from the command line.
+
+The interpreter uses a token-based approach: source lines are fully tokenized
+when entered or loaded, then stored in that tokenized form. Execution walks
+the tokenized representation directly. Lines can be re-listed from their
+tokenized form; the only information lost during tokenization is letter case,
+leading/trailing zeros in numbers, and some real number formatting.
+
+The program is structured as a single monolithic Pascal program with nested
+procedures. The main execution loop and all statement handlers are nested
+inside the `execl` procedure, sharing access to its local state.
+
+External dependencies:
+  - `parse`    - Command-line parsing library
+  - `strings`  - String comparison functions
+  - `services` - System services (file operations, etc.)
+
+
+2. Global Labels and Control Flow
+----------------------------------
+
+Three global labels control the top-level flow:
+
+  label 88  -  "Ready" prompt: return to the interactive REPL. Error handlers
+               jump here after printing diagnostics. GOTO 88 in the BASIC
+               program itself returns to the REPL.
+
+  label 77  -  Re-enter line interpretation: used after entering a program line
+               to go back for more input without printing "Ready" again.
+
+  label 99  -  Exit the interpreter: closes all open files and terminates.
+               GOTO 99 in BASIC (or the BYE command) exits the program.
+
+
+3. Constants and Limits
+-----------------------
+
+  maxnum  = 9999    Maximum line number
+  maxstr  = 250     Maximum BASIC string length
+  maxvar  = 255     Maximum number of distinct variable names
+  maxvec  = 1000    Maximum number of array index slots per dimension
+  maxfil  = 100     Maximum number of open files
+  maxstk  = 100     Maximum depth of the expression evaluation stack
+
+
+4. Token System
+---------------
+
+4.1 Token Codes (keycod)
+
+The `keycod` enumeration defines every object that can appear in the
+tokenized intermediate code. Each token occupies a single byte in the
+tokenized line. Categories include:
+
+  Keywords:      cinput, cprint, cgoto, cif, cthen, celse, cendif, crem, cfor,
+                 cnext, cwhile, cwend, crepeat, cuntil, cselect, ccase, cendsel,
+                 cgosub, creturn, cdata, cread, crestore, copen, cclose, crun,
+                 clist, cnew, cload, csave, clet, cdim, cdef, cfunction,
+                 cprocedure, cendfunc, cendproc, clocal, cstop, cend, cbye,
+                 cclear, ccont, cdelete, ckill, cmerge, cname, crenum, cdir,
+                 crand, ctrace, cnotrace, cdumpv, cdumpp, con, cto, cstep,
+                 cother, cas, coutput, cusing
+
+  Operators:     cadd(+), csub(-), cmult(*), cdiv(/), cexpn(^), cmod(mod),
+                 cidiv(div), cand, cor, cxor, cnot
+
+  Comparisons:   cequ(=), cnequ(<>), cltn(<), cgtn(>), clequ(<=), cgequ(>=)
+
+  Punctuation:   cscn(;), ccln(:), clpar((), crpar()), ccma(,), cpnd(#),
+                 cperiod(.)
+
+  Functions:     cleft, cright, cmid, cstr, cval, cchr, casc, clen, csqr, cabs,
+                 csgn, crnd, cint, csin, ccos, ctan, catn, clog, cexp, ctab,
+                 ceof, clcase, cucase
+
+  Constants:     cintc (integer constant), cstrc (string constant),
+                 crlc (real constant)
+
+  Variables:     cintv (integer variable), cstrv (string variable),
+                 crlv (real variable)
+
+  Structure:     cspc (single space), cspcs (multiple spaces),
+                 clend (line end), cpend (program end)
+
+4.2 Multi-Byte Token Payloads
+
+Several tokens carry inline data following the token byte:
+
+  cintc   4 bytes, big-endian signed-magnitude integer.
+          Byte 0 bit 7 is the sign bit. Decoded by `dcdint`, encoded by
+          `encint`.
+
+  crlc    8 bytes, the real value stored via variant-record overlay of an
+          8-byte packed character array. Decoded by `dcdrl`.
+
+  cstrc   1 byte length, then that many bytes of character data.
+
+  cintv,  1 byte variable table index (1..maxvar), referencing vartbl[].
+  cstrv,
+  crlv
+
+  cspcs   1 byte space count.
+
+  crema    Remainder of the line is comment text (the `!` remark form).
+
+  crem     Remainder of the line is comment text.
+
+4.3 Tokenizer (keycom)
+
+The `keycom` procedure converts an ASCII source line (in a `bstringt` buffer)
+into its tokenized form in-place. It processes the line left to right:
+
+  1. Leading line number (if any) is preserved as ASCII digits.
+  2. Spaces are collapsed into cspc or cspcs tokens.
+  3. Keywords are matched by scanning the `keywd[]` table for the longest
+     match. The matched text is replaced by a single keycod byte.
+  4. Numeric literals are parsed by `parnum` (supporting decimal, $hex,
+     %binary, &octal, and floating-point with E-exponent notation) and
+     encoded as cintc or crlc payloads.
+  5. String literals (quoted with ") are encoded as cstrc payloads.
+  6. Identifiers not matching any keyword are resolved as variable names.
+     The suffix convention determines type: % = integer, $ = string,
+     no suffix = real. The variable is looked up (or created) in `vartbl`
+     and encoded as cintv/cstrv/crlv + 1-byte index.
+  7. Operators and punctuation are encoded as their single-byte tokens.
+
+The tokenizer handles special cases:
+  - REM and ! comments consume the rest of the line
+  - DATA statements preserve their payload as raw text tokens since DATA
+    values are parsed at READ time, not tokenization time
+  - The ordering of keycod entries ensures longer operators (<=, >=, <>)
+    are matched before shorter ones (<, >, =)
+
+4.4 Line Listing (prtlin)
+
+The `prtlin` procedure reverses the tokenization to reconstruct a human-
+readable source line from its tokenized form. It walks the token stream
+and emits the corresponding keyword text (from `keywd[]`), decoded constant
+values, variable names (from `vartbl[]`), and spaces.
+
+
+5. Program Storage
+------------------
+
+Tokenized lines are stored in a singly-linked list of `bstringt` records,
+sorted by line number. Each `bstringt` is a heap-allocated record:
+
+  bstringt = record
+    next: bstptr;                           { next line in program }
+    len:  integer;                          { length of tokenized data }
+    str:  packed array [1..maxstr] of char  { tokenized data }
+  end;
+
+The first characters of each line's `str` array hold the ASCII line number
+digits. After the digits, the token stream follows until `clend` marks the
+end of that line.
+
+Global `prglst` points to the first line. The `enter` procedure inserts or
+replaces a line in the list, maintaining sorted order by line number. If a
+line with only a number and no content is entered, the existing line with
+that number is deleted.
+
+The `clear` procedure releases the entire program list. The `frelin` procedure
+releases variable references held by a single line being deleted (decrementing
+reference counts on variable table entries).
+
+
+6. Variable System
+------------------
+
+6.1 Variable Table
+
+`vartbl` is an array [1..maxvar] of pointers to `varety` records. Each slot
+holds a variable accessible by its 1-byte index. The `fndvar` procedure looks
+up (or creates) a variable entry given a name and type.
+
+6.2 Variable Entry (varety)
+
+Each variable entry is a multi-purpose record:
+
+  varety = record
+    next:  varptr    { next in free/parameter list }
+    typ:   vartyp    { vtint, vtrl, vtstr }
+    ref:   integer   { reference count from tokenized lines }
+    nam:   string12  { name }
+    str:   bstptr    { string value }
+    int:   integer   { integer value }
+    rl:    real      { real value }
+    strv:  vvcptr    { string array values }
+    intv:  vvcptr    { integer array values }
+    rlv:   vvcptr    { real array values }
+    rec:   varptr    { record field chain }
+    fnc:   boolean   { is a function }
+    prc:   boolean   { is a procedure }
+    ml:    boolean   { multiline function/procedure }
+    par:   varptr    { parameter list }
+    line:  bstptr    { function body position }
+    chrp:  integer   { character position in function body }
+    inx:   varinx   { original parameter variable index }
+    sys:   boolean   { system variable }
+    gto:   boolean   { goto label }
+    glin:  bstptr   { goto label target line }
+  end;
+
+A single `varety` record is overloaded to represent:
+  - Scalar variables (int, rl, str fields)
+  - Array variables (intv, rlv, strv fields with varvec chains)
+  - User-defined functions/procedures (fnc, prc, ml, par, line, chrp)
+  - Record fields (rec chain)
+  - Goto labels (gto, glin)
+  - System variables (sys flag)
+
+6.3 Type Conventions
+
+Variable types are determined by the name suffix:
+  %   integer  (vtint)
+  $   string   (vtstr)
+  none  real   (vtrl)
+
+Type coercion between integer and real happens automatically in expressions
+via `cvtint` and `cvtrl`. String types are not coerced to numeric.
+
+6.4 Array Storage
+
+Arrays use a sparse, tree-structured storage model. Each dimension is
+represented by a `varvec` record:
+
+  varvec = record
+    next: vvcptr
+    inx:  integer
+    case vt: vvctyp of
+      vvint: (int: array [0..maxvec] of integer)
+      vvrl:  (rl:  array [0..maxvec] of real)
+      vvstr: (str: array [0..maxvec] of bstptr)
+      vvvec: (vec: array [0..maxvec] of vvcptr)
+  end;
+
+For multi-dimensional arrays, each level except the last uses the `vvvec`
+variant, creating a tree where intermediate nodes hold pointers to the next
+dimension's vectors. Only the leaf level holds actual values. Dimensions
+are allocated on demand (sparse allocation) so only populated index ranges
+consume memory.
+
+The `parvec` procedure handles array subscript parsing and navigation at
+runtime. The `DIM` statement pre-allocates vectors to specified sizes.
+
+
+7. Expression Evaluator
+-----------------------
+
+Expressions are evaluated by a recursive-descent parser that doubles as an
+evaluator. Each level of the grammar corresponds to a procedure:
+
+  expr    - Logical operators: AND, OR, XOR
+  eexpr   - Comparison: =, <>, <, >, <=, >=
+  sexpr   - Addition/subtraction: +, - (also string concatenation)
+  term    - Multiplication/division: *, /, MOD, DIV
+  expf    - Exponentiation: ^
+  factor  - Primary values: constants, variables, function calls,
+            parenthesized expressions, unary minus, NOT
+
+Results are pushed onto the expression stack (`temp[]` array, indexed by
+`top`). Each stack entry (`tmprec`) holds a type tag (tint/tstr/trl) and
+the corresponding value. The `binprp` helper promotes mixed integer/real
+operands so both sides have matching types before arithmetic.
+
+Built-in functions are evaluated directly in `factor`:
+  Math:    SQR, ABS, SGN, INT, SIN, COS, TAN, ATN, LOG, EXP, RND
+  String:  LEFT$, RIGHT$, MID$, LEN, ASC, CHR$, STR$, VAL,
+           LCASE$, UCASE$
+  I/O:     TAB, EOF
+
+User-defined functions are invoked via `parfnc`, which saves the calling
+context (variable values, execution position) on the function context stack,
+binds parameters, and executes the function body.
+
+
+8. Control Flow
+---------------
+
+8.1 Control Stack
+
+The control stack (`ctlstk`) is a linked list of `ctlrec` entries. It tracks
+active structured control constructs during execution:
+
+  ctif      - IF/THEN/ELSE/ENDIF blocks
+  ctfor     - FOR/NEXT loops (saves end value, step value, loop variable)
+  ctgosub   - GOSUB/RETURN (saves return position)
+  ctwhile   - WHILE/WEND loops (saves loop start position)
+  ctrepeat  - REPEAT/UNTIL loops (saves loop start position)
+  ctselect  - SELECT CASE (saves select expression value)
+
+When a block-starting statement is encountered, a control entry is pushed.
+The corresponding block-ending statement pops it and uses the saved
+information to determine what to do next (loop back, continue, etc.).
+
+The `fndctl` procedure searches the control stack for a matching entry type,
+used by NEXT, WEND, UNTIL, etc. to find their corresponding opener.
+
+8.2 IF/THEN/ELSE
+
+The IF statement implements both single-line and multi-line forms.
+
+Single-line IF:  IF <expr> THEN <statements> [ELSE <statements>]
+Multi-line IF:   IF <expr> THEN / ... / [ELSE / ...] / ENDIF
+
+The "dangling then-else" problem is handled by the `sif` flag on control
+stack entries. When a single-line IF's THEN clause is entered, `sif` is set
+true. The `cansif` procedure cancels any active single-line IF when a line
+boundary is crossed, ensuring single-line IF does not extend past its line.
+
+The `skpif` procedure handles forward-skipping over the false branch of an IF,
+correctly nesting through any contained IF/ELSE/ENDIF blocks.
+
+8.3 FOR/NEXT
+
+FOR pushes a control entry with the loop variable identity, end value, and
+step value. NEXT finds the matching FOR entry, increments the variable, tests
+the termination condition, and either loops back or pops the entry.
+
+FOR supports both integer and real loop variables. The `stepi`/`stepr` and
+`endi`/`endr` fields in the control record handle both types.
+
+8.4 GOSUB/RETURN
+
+GOSUB pushes the current execution position (line + character offset) onto
+the control stack as a ctgosub entry, then transfers to the target line.
+RETURN pops the entry and resumes at the saved position.
+
+8.5 WHILE/WEND and REPEAT/UNTIL
+
+WHILE pushes a ctwhile entry saving the loop start. WEND re-evaluates the
+condition and either loops or pops. REPEAT pushes a ctrepeat entry; UNTIL
+evaluates the condition and either continues or loops back.
+
+8.6 SELECT/CASE/OTHER/ENDSEL
+
+SELECT evaluates an expression and pushes a ctselect entry with the value.
+CASE compares the select value against case expressions. If no CASE matches,
+the `sov` (sequence of values) flag causes forward-skipping to the next CASE,
+OTHER, or ENDSEL.
+
+8.7 ON...GOTO / ON...GOSUB
+
+ON evaluates an expression to get an index, then selects from a comma-
+separated list of line numbers. ON...GOTO transfers unconditionally;
+ON...GOSUB pushes a return entry first.
+
+
+9. Function/Procedure System
+-----------------------------
+
+9.1 DEF (Single-Line Functions)
+
+  DEF FNname(params) = expression
+
+Creates a function variable entry. When called, the parameter variables are
+saved, the actual arguments are bound, the expression is evaluated, and the
+parameter variables are restored.
+
+9.2 FUNCTION/ENDFUNC and PROCEDURE/ENDPROC (Multi-Line)
+
+  FUNCTION name(params)
+    ...
+    name = result
+  ENDFUNC
+
+  PROCEDURE name(params)
+    ...
+  ENDPROC
+
+Multi-line definitions set the `ml` flag on the variable entry. When invoked,
+`parfnc` pushes a function context (`fnsrec`) saving:
+  - Variable save list (original values of parameter variables)
+  - Execution position (line and character offset)
+  - Control stack pointer (saved and restored)
+
+The function body executes until ENDFUNC/ENDPROC, which restores the saved
+context. For functions, the return value is whatever was assigned to the
+function name variable during execution.
+
+9.3 LOCAL Statement
+
+The LOCAL statement within a function/procedure body declares additional
+variables as local to the function scope. Their values are saved on the
+function context and restored when the function returns.
+
+9.4 Parameter Passing
+
+Parameters are passed by value. Each formal parameter occupies a variable
+table slot. Before the call, the variable's current value is saved. The
+actual argument value is assigned to the formal parameter variable. On return,
+the saved value is restored.
+
+
+10. Data System
+---------------
+
+DATA statements contain comma-separated constants embedded in the tokenized
+program. The global data pointer (`datac`/`datal`) tracks the current read
+position across all DATA statements in the program.
+
+  DATA    - Skipped during normal execution (data values are inline tokens)
+  READ    - Reads the next value from the current data pointer position,
+            advancing it. Values are type-coerced as needed.
+  RESTORE - Resets the data pointer to the beginning of the first DATA
+            statement, or to a specified line number.
+
+The `nxtdat` procedure advances the data pointer to find the next DATA
+statement, scanning through the tokenized program list. At program start
+(and after RUN), `nxtdat` is called to position to the first DATA statement.
+
+
+11. File I/O
+-------------
+
+Files are managed through the `filtab` array (1..maxfil) of `frcety` records.
+
+  filtab[1]   Reserved for standard input (tyinp)
+  filtab[2]   Reserved for standard output (tyout)
+  filtab[3+]  User files (tyoth)
+
+The OPEN statement creates a file entry and opens the underlying Pascal text
+file. File number is specified with the # prefix. Files can be opened for
+input or output (the AS INPUT/AS OUTPUT qualifiers). CLOSE releases the entry.
+
+INPUT #n reads from file n. PRINT #n writes to file n. EOF(n) tests for
+end of file. If no file number is given, operations default to files 1 and 2
+(stdin/stdout).
+
+File entries are recycled through the `filfre` free list. The KILL command
+deletes a file from disk. The NAME command renames a file.
+
+
+12. PRINT and Formatted Output
+-------------------------------
+
+12.1 Basic PRINT
+
+PRINT evaluates and outputs a comma-separated list of expressions. Semicolons
+between expressions suppress the inter-item spacing. A trailing semicolon
+suppresses the newline at the end.
+
+Comma-separated items are printed in tab zones (the `rsttab`/`tab` procedures
+manage tab stop positions). The `newlin` global tracks whether output is at
+the start of a new line.
+
+12.2 PRINT USING
+
+PRINT USING provides formatted output with a format string:
+
+  PRINT USING "format"; expr [, expr ...]
+
+Format characters:
+  #    Digit position
+  .    Decimal point location
+  ,    Insert comma grouping
+  +    Print sign (leading or trailing)
+  -    Print trailing minus for negative
+  ^    Scientific notation (use multiple ^ for exponent width)
+  &    Insert literal next character from expression
+  \    Literal next character in format
+  **   Fill leading blanks with asterisks
+  $$   Float dollar sign
+
+The format string is parsed character by character for each output value.
+Numeric values are formatted according to the digit/decimal/sign positions
+specified. String values fill character positions.
+
+
+13. Memory Management
+---------------------
+
+The interpreter uses free-list based memory management for its major data
+structures. Each type has a corresponding free list:
+
+  strfre  - Free bstringt records (string/line buffers)
+  vecfre  - Free varvec records (array vectors)
+  varfre  - Free varety records (variable entries)
+  ctlfre  - Free ctlrec records (control stack entries)
+  filfre  - Free frcety records (file table entries)
+  fnsfre  - Free fnsrec records (function context entries)
+
+Allocation (get*) checks the free list first; if empty, it allocates from the
+heap with `new`. Deallocation (put*) pushes the record onto the free list
+rather than disposing it. This amortizes heap allocation overhead when the
+same structures are repeatedly created and destroyed (e.g., across multiple
+RUN invocations).
+
+The `clrvar` procedure recursively frees a variable's substructures (arrays,
+strings, record fields, parameter lists). The `clrvars` procedure clears all
+variables, resets the execution state, and frees associated structures.
+
+
+14. Error Handling
+------------------
+
+Errors are reported through `prterr(err: errcod)`. The `errcod` enumeration
+defines all possible errors. When called, `prterr`:
+
+  1. Prints the current source line (via prtlin) with a pointer to the
+     approximate error position.
+  2. Prints the error message text.
+  3. Jumps to label 88 (return to REPL) or label 99 (exit), depending on
+     whether `optexit` is set.
+
+Errors are non-recoverable at the BASIC program level: any error aborts
+execution and returns to the REPL. This simplifies the interpreter since no
+error recovery mechanism is needed within the execution engine.
+
+
+15. Main Program and REPL
+--------------------------
+
+15.1 Initialization (lines 8237-8448)
+
+The main program block:
+  1. Prints the banner.
+  2. Initializes the keycode translation tables and keyword string table.
+  3. Clears all global state (variable table, control stack, free lists,
+     program list, file table, etc.).
+  4. Parses command-line options using the `parse` module.
+  5. If a filename was given on the command line, loads and optionally runs it.
+
+15.2 Command-Line Options
+
+  -r, --run     Auto-run the loaded program immediately
+  -e, --exit    Exit the interpreter when the program ends (batch mode)
+
+These combine for non-interactive execution: `basic -r -e program.bas`
+
+15.3 Interactive Loop (label 88, lines 8450-8487)
+
+The REPL operates as an infinite loop:
+  1. Prints "Ready".
+  2. Reads a line from the user.
+  3. Tokenizes it with `keycom`.
+  4. If the line has a line number (lint > 0): enters it into the program
+     store with `enter`, updates DATA pointers and labels, jumps to 77
+     for more input.
+  5. If no line number: sets the line as the immediate program (`immprg`),
+     executes it via `execl`, then releases the buffer.
+
+The distinction between lines with and without line numbers is fundamental:
+numbered lines are stored in the program; unnumbered lines execute immediately.
+
+15.4 Program Execution
+
+RUN (srun):
+  1. Calls `clrvars` to clear all variables.
+  2. Calls `nxtdat` to find the first DATA statement.
+  3. Calls `reglab` to register all goto labels.
+  4. Sets `curprg` to `prglst` (first program line).
+  5. The main repeat loop executes one line at a time via `execl`.
+
+STOP pauses execution and returns to the REPL (goto 88). CONT resumes
+from the saved position. END terminates execution (sets curprg to nil).
+BYE exits the interpreter entirely (goto 99).
+
+15.5 Statement Execution (execl)
+
+`execl` is the central execution procedure. For the current line:
+  1. Skips the line number.
+  2. Optionally traces execution (prints line number if trace mode is on).
+  3. Calls `stat` to execute the first statement.
+  4. If the line contains colon-separated statements (`:` is the statement
+     separator in BASIC), loops to execute each one.
+  5. At line end, advances `curprg` to the next line.
+
+The `stat` procedure reads the first token and dispatches to the appropriate
+statement handler (sif, sfor, sprint, slet, sgoto, etc.) via a case-like
+chain of if/else tests on the keycod value.
+
+
+16. Tokenizer Details and Line Editing
+--------------------------------------
+
+16.1 Line Entry
+
+When a line is entered (interactively or from a file), `keycom` tokenizes it.
+The tokenized form replaces the original text in the `bstringt` buffer.
+The line number portion remains as ASCII digits at the start.
+
+16.2 Program Editing Commands
+
+  LIST [start[-end]]   Lists program lines (or a range) by de-tokenizing
+  SAVE "filename"      Saves program by listing all lines to a file
+  LOAD "filename"      Clears the current program and loads from a file
+  MERGE "filename"     Loads from a file without clearing first
+  DELETE start-end     Deletes a range of program lines
+  RENUM [start[,inc]]  Renumbers all lines and updates GOTO/GOSUB references
+  NEW                  Clears the program and all variables
+
+SAVE writes the program by calling `prtlin` on each line, producing readable
+source. LOAD reads lines from a file and tokenizes each one with `keycom`.
+This means SAVE/LOAD round-trips are faithful except for the cosmetic changes
+that tokenization introduces (case normalization, number reformatting).
+
+RENUM (srenum) walks the entire program, rebuilding line numbers and patching
+all GOTO, GOSUB, ON...GOTO, RESTORE, and other line-number references. It
+decodes and re-encodes the integer constants following these keywords.
+
+
+17. Debugging
+-------------
+
+17.1 Built-in Debugging Commands
+
+The BASIC interpreter provides several built-in debugging facilities:
+
+  TRACE       Enables execution tracing. When active, each line's number
+              is printed before it executes, showing the flow of control.
+
+  NOTRACE     Disables execution tracing.
+
+  DUMPVAR     Dumps the variable table, showing all defined variables with
+              their current types and values. This is a diagnostic that
+              displays the internal state of the variable system.
+
+  DUMPPROG    Dumps the program store, showing the raw tokenized form of
+              each program line. Each token is printed as its keycod name
+              (from the keywd[] table), making the internal representation
+              visible. This is useful for understanding how the tokenizer
+              encoded a line.
+
+  STOP        Halts program execution and returns to the REPL with the
+              execution position saved. The user can then inspect variables
+              interactively (e.g., PRINT X, PRINT A$).
+
+  CONT        Resumes execution from where STOP halted, allowing the user
+              to continue after inspecting state.
+
+17.2 Interactive Debugging Workflow
+
+A typical debugging session uses STOP as a breakpoint:
+
+  1. Insert a STOP statement at the point of interest:
+       100 FOR I% = 1 TO 10
+       110 LET X = X + I%
+       120 STOP
+       130 NEXT I%
+
+  2. RUN the program. It halts at line 120.
+
+  3. At the "Ready" prompt, inspect variables:
+       PRINT X
+       PRINT I%
+
+  4. Continue execution:
+       CONT
+
+  5. The program resumes from where it stopped.
+
+After STOP, the execution position (line and character) is saved in
+`contprg`/`contlinec`. CONT restores this position and re-enters the
+execution loop.
+
+17.3 TRACE Output
+
+When TRACE is active, the interpreter prints the line number at the start
+of each line's execution. This produces a log of all lines visited:
+
+  RUN
+   10
+   20
+   30
+   20
+   30
+   20
+   40
+  Ready
+
+This is valuable for understanding loop behavior and diagnosing unexpected
+control flow.
+
+17.4 DUMPVAR Output
+
+DUMPVAR walks the variable table (vartbl[1..maxvar]) and prints each active
+entry with its name, type, and current value. For array variables, it shows
+the dimensioned ranges. For function/procedure variables, it shows the
+definition status.
+
+17.5 DUMPPROG Output
+
+DUMPPROG walks the program list (prglst) and for each line prints the
+line number followed by the internal token names. For example:
+
+  10: for int var next
+
+This reveals how the tokenizer encoded keywords, constants, variables, and
+operators, which is useful for diagnosing tokenizer bugs or understanding
+the intermediate representation.
+
+17.6 Error Diagnostics
+
+When a runtime error occurs, the error handler (prterr) displays:
+  1. The text of the line where the error occurred (de-tokenized).
+  2. A pointer (^) indicating the approximate position within the line.
+  3. The error message.
+
+This allows the user to identify both the line and the specific construct
+that caused the error. After the error, control returns to the REPL where
+the user can LIST the surrounding code, inspect variables, make corrections,
+and re-RUN.
+
+17.7 Debugging the Interpreter Itself
+
+For developers working on the interpreter source (basic.pas), the DUMPVAR
+and DUMPPROG commands are particularly useful as they expose the internal
+data structures without requiring a Pascal-level debugger. The token dump
+from DUMPPROG can be compared against expected encodings when testing
+tokenizer changes.
+
+The error code enumeration (errcod) provides fine-grained error classification
+with over 80 distinct error codes covering syntax errors, type mismatches,
+overflow conditions, file errors, and structural violations. Each error code
+maps to a specific diagnostic message in prterr.
+
+Since all errors jump to label 88 (or 99), no error recovery occurs within
+the execution engine. This simplifies the interpreter but means that adding
+ON ERROR style handling would require structural changes to the error flow.
+
+
+18. Miscellaneous
+------------------
+
+18.1 Random Numbers
+
+The RND function uses a linear congruential generator seeded by `rndseq`.
+RANDOMIZE resets the seed from the system clock or a user-supplied value.
+The `rand` procedure implements the actual generation.
+
+18.2 String Operations
+
+BASIC strings are stored in `bstringt` records with an explicit length field
+and a fixed-size character array. Concatenation (+) creates a new string.
+Comparison is lexicographic (strequ/strltn). String functions (LEFT$, RIGHT$,
+MID$, etc.) produce new string values on the expression stack.
+
+18.3 Bitwise Operations
+
+AND, OR, XOR, NOT operate on integers as bitwise operations when both
+operands are integer. They are also used as logical operators in boolean
+contexts (where 0 is false, nonzero is true). The implementation uses
+helper procedures bnot, band, bor, bxor that work bit by bit on the
+integer representation.
+
+18.4 Record Variables (Field Access)
+
+Variables can be treated as records using the dot (.) notation: A.X
+accesses field X of variable A. Fields are stored as a linked list of
+varety records attached via the `rec` pointer. The `fndfld` procedure
+searches the field chain by name.
