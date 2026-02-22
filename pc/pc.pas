@@ -183,6 +183,9 @@ fprtlex,     sprtlex:     boolean;
 fprtdisplay, sprtdisplay: boolean;
 flineinfo,   slineinfo:   boolean;
 fmrklin,     smrklin:     boolean;
+{ error file passthrough }
+errfil:      filnam;
+serrfil:     boolean;
 
 { head entry pointer }                     hp:      filept;
 { link order list }                        lnklst:  filnam;
@@ -357,6 +360,9 @@ begin
       if parse.chkchr(cmdhan) = services.optchr then parse.getchr(cmdhan);
       parse.parlab(cmdhan, w, err); { parse option label }
       if err then error('Invalid option "%"', w);
+      { allow +/- suffix on option for compatibility }
+      if (parse.chkchr(cmdhan) = '+') or
+         (parse.chkchr(cmdhan) = '-') then parse.getchr(cmdhan);
       setflg('v',  'verbose',  fverb); { verbose mode }
       setflg('t',  'tree',     ftree); { list dependency tree }
       setflg('a',  'action',   fact); { list actions }
@@ -412,7 +418,23 @@ begin
          parse.getchr(cmdhan); { skip '=' }
          parse.parwrd(cmdhan, modpth, err); { get path }
          if err then error('Invalid module path "%"', modpth)
-         
+
+      end;
+      { error file: passthrough to pcom only }
+      if compp(w, 'errfile') or compp(w, 'ef') then begin
+
+         optfnd := true;
+         parse.skpspc(cmdhan); { skip spaces }
+         if parse.chkchr(cmdhan) <> '=' then { should have '=' }
+            error('missing "="');
+         parse.getchr(cmdhan); { skip '=' }
+         if parse.chkchr(cmdhan) = '"' then
+            parse.parstr(cmdhan, errfil, err)
+         else
+            parse.parfil(cmdhan, errfil, false, err);
+         if err then error('Invalid error filename "%"', errfil);
+         serrfil := true
+
       end;
       if not optfnd then error('No option found'); { no option found }
       parse.skpspc(cmdhan) { skip spaces }
@@ -1691,6 +1713,12 @@ begin
       putflg('prtdisplay', sprtdisplay, fprtdisplay, prefix);
       putflg('lineinfo', slineinfo, flineinfo, prefix);
       putflg('mrkasslin', smrklin, fmrklin, prefix);
+      { error file: pcom only }
+      if prefix and serrfil then begin
+         putstr(' -errfile=');
+         putstr(errfil);
+         putchr(' ')
+      end;
 
 end;
 
@@ -2447,10 +2475,6 @@ end;
 
 begin
 
-   writeln;
-   writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
-   writeln;
-
    filstk := nil; { clear the files stack }
    services.filchr(valfch); { get the filename valid characters }
    clears(modpth); { clear module path }
@@ -2523,18 +2547,45 @@ begin
    sprtdisplay := false; 
    flineinfo := false;   
    slineinfo := false;   
-   fmrklin := false;     
-   smrklin := false;     
+   fmrklin := false;
+   smrklin := false;
+   serrfil := false;
 
    fngwin := false; { do not override graphical windows switch }
    fsymcof := false; { do not generate coff symbols }
    siolib := false; { set no serial library found }
    grawin := false; { set no graphical windowing library found }
    errexit := false; { set no error exit }
+
+   { process command line }
+   parse.openpar(cmdhan); { open parser }
+   parse.opencommand(cmdhan, cmdmax); { open command line level }
+   services.filchr(valfch); { get the filename valid characters }
+   valfch := valfch-['=','-']; { remove parsing characters }
+   parse.setfch(cmdhan, valfch); { set that for active parsing }
+   paropt; { parse command options }
+   if parse.endlin(cmdhan) then error('Filename expected');
+   parse.skpspc(cmdhan); { skip spaces }
+   if parse.chkchr(cmdhan) = '"' then { parse string }
+      parse.parstr(cmdhan, prgnam, err) { get string parameter }
+   else 
+      parse.parfil(cmdhan, prgnam, false, err); { parse filename }
+   if err then error('Invalid filename');
+   paropt; { parse command options }
+   parse.skpspc(cmdhan); { skip to end }
+
+   if fverb then begin
+
+      writeln;
+      writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
+      writeln
+
+   end;
+
+   if not parse.endlin(cmdhan) then error('Invalid command line');
    services.getenv('MODULEPATH', modpth); { get any module path }
    if fverb and (modpth[1] <> ' ') then 
       writeln('Environment module path: ', modpth:*);
-
    { find any instruction files for us }
    services.getpgm(pgmpath); { get the program path }
    services.getusr(usrpath); { get the user path }
@@ -2559,24 +2610,6 @@ begin
    end;
    if fverb and (modpth[1] <> ' ') then 
       writeln('Final module path: ', modpth:*);
-
-   { process command line }
-   parse.openpar(cmdhan); { open parser }
-   parse.opencommand(cmdhan, cmdmax); { open command line level }
-   services.filchr(valfch); { get the filename valid characters }
-   valfch := valfch-['=','-']; { remove parsing characters }
-   parse.setfch(cmdhan, valfch); { set that for active parsing }
-   paropt; { parse command options }
-   if parse.endlin(cmdhan) then error('Filename expected');
-   parse.skpspc(cmdhan); { skip spaces }
-   if parse.chkchr(cmdhan) = '"' then { parse string }
-      parse.parstr(cmdhan, prgnam, err) { get string parameter }
-   else 
-      parse.parfil(cmdhan, prgnam, false, err); { parse filename }
-   if err then error('Invalid filename');
-   paropt; { parse command options }
-   parse.skpspc(cmdhan); { skip to end }
-   if not parse.endlin(cmdhan) then error('Invalid command line');
    services.brknam(prgnam, tarpath, n, e); { add Pascal extention }
    services.maknam(prgnam, tarpath, n, 'pas');
    services.fulnam(prgnam); { expand relative }

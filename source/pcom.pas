@@ -627,9 +627,13 @@ var
     i: 1..maxftl; { index for error number tracking array }
     oi: 1..maxopt; oni: optinx;
     ep, epl: errptr; { error line pointers }
-    srcfil(fillen): string; { name of input source file } 
+    srcfil(fillen): string; { name of input source file }
     desfil(fillen): string; { name of output destination file }
+    errfil(fillen): string; { name of error output file }
     p(fillen), n(fillen), e(fillen): string; { filename components }
+    errf: text;             { error output file }
+    errfopn: boolean;       { error file is open }
+    errfval: boolean;       { error file was specified }
 
     fp: filptr;
     ii: lininx;
@@ -1380,269 +1384,269 @@ end;
 
   { ************************************************************************** }
 
-  procedure errmsg(ferrnr: integer);
+  procedure errmsg(var f: text; ferrnr: integer);
   begin case ferrnr of
-    1:   write('Error in simple type');
-    2:   write('Identifier expected');
-    3:   write('''program'' expected');
-    4:   write(''')'' expected');
-    5:   write(''':'' expected');
-    6:   write('Illegal symbol');
-    7:   write('Error in parameter list');
-    8:   write('''of'' expected');
-    9:   write('''('' expected');
-    10:  write('Error in type');
-    11:  write('''['' expected');
-    12:  write(''']'' expected');
-    13:  write('''end'' expected');
-    14:  write(''';'' expected');
-    15:  write('Integer expected');
-    16:  write('''='' expected');
-    17:  write('''begin'' expected');
-    18:  write('Error in declaration part');
-    19:  write('Error in field-list');
-    20:  write(''','' expected');
-    21:  write('''.'' expected');
-    22:  write('Integer or identifier expected');
-    23:  write('''except'' expected');
-    24:  write('''on'' or ''except'' expected');
-    25:  write('Illegal source character');
-    26:  write('String constant too long');
-    27:  write(''','' or '')'' expected');
-    28:  write('''array'' expected');
-    29:  write(''','' or ''end'' expected');
-    30:  write('''..'' expected');
+    1:   write(f, 'Error in simple type');
+    2:   write(f, 'Identifier expected');
+    3:   write(f, '''program'' expected');
+    4:   write(f, ''')'' expected');
+    5:   write(f, ''':'' expected');
+    6:   write(f, 'Illegal symbol');
+    7:   write(f, 'Error in parameter list');
+    8:   write(f, '''of'' expected');
+    9:   write(f, '''('' expected');
+    10:  write(f, 'Error in type');
+    11:  write(f, '''['' expected');
+    12:  write(f, ''']'' expected');
+    13:  write(f, '''end'' expected');
+    14:  write(f, ''';'' expected');
+    15:  write(f, 'Integer expected');
+    16:  write(f, '''='' expected');
+    17:  write(f, '''begin'' expected');
+    18:  write(f, 'Error in declaration part');
+    19:  write(f, 'Error in field-list');
+    20:  write(f, ''','' expected');
+    21:  write(f, '''.'' expected');
+    22:  write(f, 'Integer or identifier expected');
+    23:  write(f, '''except'' expected');
+    24:  write(f, '''on'' or ''except'' expected');
+    25:  write(f, 'Illegal source character');
+    26:  write(f, 'String constant too long');
+    27:  write(f, ''','' or '')'' expected');
+    28:  write(f, '''array'' expected');
+    29:  write(f, ''','' or ''end'' expected');
+    30:  write(f, '''..'' expected');
 
-    50:  write('Error in constant');
-    51:  write(''':='' expected');
-    52:  write('''then'' expected');
-    53:  write('''until'' expected');
-    54:  write('''do'' expected');
-    55:  write('''to''/''downto'' expected');
-    56:  write('''if'' expected');
-    57:  write('''file'' expected');
-    58:  write('Error in factor');
-    59:  write('Error in variable');
+    50:  write(f, 'Error in constant');
+    51:  write(f, ''':='' expected');
+    52:  write(f, '''then'' expected');
+    53:  write(f, '''until'' expected');
+    54:  write(f, '''do'' expected');
+    55:  write(f, '''to''/''downto'' expected');
+    56:  write(f, '''if'' expected');
+    57:  write(f, '''file'' expected');
+    58:  write(f, 'Error in factor');
+    59:  write(f, 'Error in variable');
 
-    101: write('Identifier declared twice');
-    102: write('Low bound exceeds highbound');
-    103: write('Identifier is not of appropriate class');
-    104: write('Identifier not declared');
-    105: write('Sign not allowed');
-    106: write('Number expected');
-    107: write('Incompatible subrange types');
-    109: write('Type must not be real');
-    110: write('Tagfield type must be scalar or subrange');
-    111: write('Incompatible with tagfield type');
-    112: write('Index type must not be real');
-    113: write('Index type must be scalar or subrange');
-    114: write('Base type must not be real');
-    115: write('Base type must be scalar or subrange');
-    116: write('Error in type of standard procedure parameter');
-    117: write('Unsatisfied forward reference');
-    118: write('Forward reference type identifier in variable declaration');
-    119: write('Forward declared; repetition of parameter list not allowed');
-    120: write('Function result type must be scalar, subrange or pointer');
-    121: write('File value parameter, or parameter containing file, not allowed');
-    122: write('Forward declared function; repetition of result type not allowed');
-    123: write('Missing result type in function declaration');
-    124: write('F-format for real only');
-    125: write('Error in type of standard function parameter');
-    126: write('Number of parameters does not agree with declaration');
-    127: write('Illegal parameter substitution');
-    128: write('Result type of parameter function does not agree with declaration');
-    129: write('Type conflict of operands');
-    130: write('Expression is not of set type');
-    131: write('Tests on equality allowed only');
-    132: write('Strict inclusion not allowed');
-    133: write('File comparison not allowed');
-    134: write('Illegal type of operand(s)');
-    135: write('Type of operand must be Boolean');
-    136: write('Set element type must be scalar or subrange');
-    137: write('Set element types not compatible');
-    138: write('Type of variable is not array');
-    139: write('Index type is not compatible with declaration');
-    140: write('Type of variable is not record');
-    141: write('Type of variable must be file or pointer');
-    142: write('Illegal parameter substitution');
-    143: write('Illegal type of loop control variable');
-    144: write('Illegal type of expression');
-    145: write('Type conflict');
-    146: write('Assignment of files not allowed');
-    147: write('Label type incompatible with selecting expression');
-    148: write('Subrange bounds must be scalar');
-    149: write('Index type must not be integer');
-    150: write('Assignment to standard function is not allowed');
-    151: write('Assignment to formal function is not allowed');
-    152: write('No such field in this record');
-    153: write('Type error in read');
-    154: write('Actual parameter must be a variable');
-    155: write('Control variable must not be declared on intermediate');
-    156: write('Multidefined case label');
-    157: write('Too many cases in case statement');
-    158: write('Missing corresponding variant declaration');
-    159: write('Real or string tagfields not allowed');
+    101: write(f, 'Identifier declared twice');
+    102: write(f, 'Low bound exceeds highbound');
+    103: write(f, 'Identifier is not of appropriate class');
+    104: write(f, 'Identifier not declared');
+    105: write(f, 'Sign not allowed');
+    106: write(f, 'Number expected');
+    107: write(f, 'Incompatible subrange types');
+    109: write(f, 'Type must not be real');
+    110: write(f, 'Tagfield type must be scalar or subrange');
+    111: write(f, 'Incompatible with tagfield type');
+    112: write(f, 'Index type must not be real');
+    113: write(f, 'Index type must be scalar or subrange');
+    114: write(f, 'Base type must not be real');
+    115: write(f, 'Base type must be scalar or subrange');
+    116: write(f, 'Error in type of standard procedure parameter');
+    117: write(f, 'Unsatisfied forward reference');
+    118: write(f, 'Forward reference type identifier in variable declaration');
+    119: write(f, 'Forward declared; repetition of parameter list not allowed');
+    120: write(f, 'Function result type must be scalar, subrange or pointer');
+    121: write(f, 'File value parameter, or parameter containing file, not allowed');
+    122: write(f, 'Forward declared function; repetition of result type not allowed');
+    123: write(f, 'Missing result type in function declaration');
+    124: write(f, 'F-format for real only');
+    125: write(f, 'Error in type of standard function parameter');
+    126: write(f, 'Number of parameters does not agree with declaration');
+    127: write(f, 'Illegal parameter substitution');
+    128: write(f, 'Result type of parameter function does not agree with declaration');
+    129: write(f, 'Type conflict of operands');
+    130: write(f, 'Expression is not of set type');
+    131: write(f, 'Tests on equality allowed only');
+    132: write(f, 'Strict inclusion not allowed');
+    133: write(f, 'File comparison not allowed');
+    134: write(f, 'Illegal type of operand(s)');
+    135: write(f, 'Type of operand must be Boolean');
+    136: write(f, 'Set element type must be scalar or subrange');
+    137: write(f, 'Set element types not compatible');
+    138: write(f, 'Type of variable is not array');
+    139: write(f, 'Index type is not compatible with declaration');
+    140: write(f, 'Type of variable is not record');
+    141: write(f, 'Type of variable must be file or pointer');
+    142: write(f, 'Illegal parameter substitution');
+    143: write(f, 'Illegal type of loop control variable');
+    144: write(f, 'Illegal type of expression');
+    145: write(f, 'Type conflict');
+    146: write(f, 'Assignment of files not allowed');
+    147: write(f, 'Label type incompatible with selecting expression');
+    148: write(f, 'Subrange bounds must be scalar');
+    149: write(f, 'Index type must not be integer');
+    150: write(f, 'Assignment to standard function is not allowed');
+    151: write(f, 'Assignment to formal function is not allowed');
+    152: write(f, 'No such field in this record');
+    153: write(f, 'Type error in read');
+    154: write(f, 'Actual parameter must be a variable');
+    155: write(f, 'Control variable must not be declared on intermediate');
+    156: write(f, 'Multidefined case label');
+    157: write(f, 'Too many cases in case statement');
+    158: write(f, 'Missing corresponding variant declaration');
+    159: write(f, 'Real or string tagfields not allowed');
     160: ;
-    161: write('Again forward declared');
-    162: write('Parameter size must be constant');
-    163: write('Missing variant in declaration');
-    164: write('Substitution of standard proc/func not allowed');
-    165: write('Multidefined label');
-    166: write('Multideclared label');
-    167: write('Undeclared label');
-    168: write('Undefined label');
-    169: write('Error in base set');
-    170: write('Value parameter expected');
-    171: write('Standard file was redeclared');
-    172: write('Undeclared external file');
-    173: write('Fortran procedure or function expected');
-    174: write('Pascal procedure or function expected');
-    175: write('Missing file "input" in program heading');
-    176: write('Missing file "output" in program heading');
-    177: write('Assiqnment to function identifier not allowed here');
-    178: write('Multidefined record variant');
-    179: write('X-opt of actual proc/funcdoes not match formal declaration');
-    180: write('Control variable must not be formal');
-    181: write('Constant part of address out of ranqe');
-    182: write('identifier too long');
-    183: write('For index variable must be local to this block');
-    184: write('Interprocedure goto does not reference outter block of destination');
-    185: write('Goto references deeper nested statement');
-    186: begin write('Label referenced by goto at lesser statement level or ');
-               write('differently nested statement') end;
-    187: write('Goto references label in different nested statement');
-    188: write('Label referenced by goto in different nested statement');
-    189: write('Parameter lists of formal and actual parameters not congruous');
-    190: write('File component may not contain other files');
-    191: write('Cannot assign from file or component containing files');
-    192: write('Assignment to function that is not active');
-    193: write('Function does not assign to result');
-    194: write('Exponent too large');
-    195: write('For loop index is threatened');
-    197: write('Var parameter cannot be packed');
-    198: write('Var parameter cannot be a tagfield');
-    199: write('Var parameter must be same type');
-    200: write('Tagfield constants must cover entire tagfield type');
-    201: write('Error in real constant: digit expected');
-    202: write('String constant must not exceed source line');
-    203: write('Integer constant exceeds range');
-    204: write('8 or 9 in octal number');
-    205: write('Zero string not allowed');
-    206: write('Integer part of real constant exceeds ranqe');
-    207: write('Digit beyond radix');
-    208: write('Type must be string');
-    209: write('''procedure'' or ''function'' expected');
-    210: write('No function active to set result');
-    211: write('Anonymous function result must be at function end');
-    212: write('Function result assigned before result given');
-    213: write('Cannot take boolean integer operation on negative');
-    214: write('Must apply $, & or % posfix modifier to integer');
-    215: write('Must apply * (padded string field) to string');
-    216: write('Original and forwarded procedure/function parameters not congruous');
-    217: write('Missing file ''prd'' in program heading');
-    218: write('Missing file ''prr'' in program heading');
-    219: write('Missing file ''error'' in program heading');
-    220: write('Missing file ''list'' in program heading');
-    221: write('Missing file ''command'' in program heading');
-    222: write('Value out of character range');
-    223: write('Type converter/restrictor must be scalar or subrange');
-    224: write('Type to be converted must be scalar or subrange');
-    225: write('In constant range first value must be less than or equal to second');
-    226: write('Type of variable is not exception');
-    227: write('Type too complex to track');
-    228: write('Cannot apply ''virtual'' attribute to nested procedure or function');
-    229: write('Cannot apply ''override'' attribute to nested procedure or function');
-    230: write('Cannot override virtual from same module, must be external');
-    231: write('No virtual found to override');
-    232: write('Cannot overload virtual procedure or function');
-    233: write('Inherited not applied to user procedure/function call');
-    234: write('Inherited applied to non-virtual procedure/function');
-    235: write('Override not defined for inherited call');
-    236: write('Type error in write');
-    237: write('Array size too large');
-    238: write('Invalid array length, must be >= 1');
-    239: write('Variant case exceeds allowable range');
-    240: write('Header parameter already included');
-    241: write('Invalid tolken separator');
-    242: write('Identifier referenced before defining point');
-    243: write('Initializer expression must be integer');
-    244: write('Type incorrect for fixed');
-    245: write('Initializer incompatible with fixed element');
-    246: write('Initializer out of range of fixed element type');
-    247: write('Incorrect number of initializers for type');
-    248: write('Fixed cannot contain variant record');
-    249: write('New overload ambiguous with previous');
-    250: write('Too many nested scopes of identifiers');
-    251: write('Too many nested procedures and/or functions');
-    252: write('Too many forward references of procedure entries');
-    253: write('Procedure too long');
-    254: write('Too many long constants in this procedure');
-    255: write('Too many errors on this source line');
-    256: write('Too many external references');
-    257: write('Too many externals');
-    258: write('Too many local files');
-    259: write('Expression too complicated');
-    260: write('Too many exit labels');
-    261: write('Label beyond valid integral value (>9999)');
-    262: write('Function/procedure cannot be applied to text files');
-    263: write('No function to open/close external files');
-    264: write('External file not found');
-    265: write('Filename too long');
-    266: write('''private'' has no meaning here');
-    267: write('Too many nested module joins');
-    268: write('Qualified identifier not found');
-    269: write('Number of initializers for parameterised declaration do not ',
+    161: write(f, 'Again forward declared');
+    162: write(f, 'Parameter size must be constant');
+    163: write(f, 'Missing variant in declaration');
+    164: write(f, 'Substitution of standard proc/func not allowed');
+    165: write(f, 'Multidefined label');
+    166: write(f, 'Multideclared label');
+    167: write(f, 'Undeclared label');
+    168: write(f, 'Undefined label');
+    169: write(f, 'Error in base set');
+    170: write(f, 'Value parameter expected');
+    171: write(f, 'Standard file was redeclared');
+    172: write(f, 'Undeclared external file');
+    173: write(f, 'Fortran procedure or function expected');
+    174: write(f, 'Pascal procedure or function expected');
+    175: write(f, 'Missing file "input" in program heading');
+    176: write(f, 'Missing file "output" in program heading');
+    177: write(f, 'Assiqnment to function identifier not allowed here');
+    178: write(f, 'Multidefined record variant');
+    179: write(f, 'X-opt of actual proc/funcdoes not match formal declaration');
+    180: write(f, 'Control variable must not be formal');
+    181: write(f, 'Constant part of address out of ranqe');
+    182: write(f, 'identifier too long');
+    183: write(f, 'For index variable must be local to this block');
+    184: write(f, 'Interprocedure goto does not reference outter block of destination');
+    185: write(f, 'Goto references deeper nested statement');
+    186: begin write(f, 'Label referenced by goto at lesser statement level or ');
+               write(f, 'differently nested statement') end;
+    187: write(f, 'Goto references label in different nested statement');
+    188: write(f, 'Label referenced by goto in different nested statement');
+    189: write(f, 'Parameter lists of formal and actual parameters not congruous');
+    190: write(f, 'File component may not contain other files');
+    191: write(f, 'Cannot assign from file or component containing files');
+    192: write(f, 'Assignment to function that is not active');
+    193: write(f, 'Function does not assign to result');
+    194: write(f, 'Exponent too large');
+    195: write(f, 'For loop index is threatened');
+    197: write(f, 'Var parameter cannot be packed');
+    198: write(f, 'Var parameter cannot be a tagfield');
+    199: write(f, 'Var parameter must be same type');
+    200: write(f, 'Tagfield constants must cover entire tagfield type');
+    201: write(f, 'Error in real constant: digit expected');
+    202: write(f, 'String constant must not exceed source line');
+    203: write(f, 'Integer constant exceeds range');
+    204: write(f, '8 or 9 in octal number');
+    205: write(f, 'Zero string not allowed');
+    206: write(f, 'Integer part of real constant exceeds ranqe');
+    207: write(f, 'Digit beyond radix');
+    208: write(f, 'Type must be string');
+    209: write(f, '''procedure'' or ''function'' expected');
+    210: write(f, 'No function active to set result');
+    211: write(f, 'Anonymous function result must be at function end');
+    212: write(f, 'Function result assigned before result given');
+    213: write(f, 'Cannot take boolean integer operation on negative');
+    214: write(f, 'Must apply $, & or % posfix modifier to integer');
+    215: write(f, 'Must apply * (padded string field) to string');
+    216: write(f, 'Original and forwarded procedure/function parameters not congruous');
+    217: write(f, 'Missing file ''prd'' in program heading');
+    218: write(f, 'Missing file ''prr'' in program heading');
+    219: write(f, 'Missing file ''error'' in program heading');
+    220: write(f, 'Missing file ''list'' in program heading');
+    221: write(f, 'Missing file ''command'' in program heading');
+    222: write(f, 'Value out of character range');
+    223: write(f, 'Type converter/restrictor must be scalar or subrange');
+    224: write(f, 'Type to be converted must be scalar or subrange');
+    225: write(f, 'In constant range first value must be less than or equal to second');
+    226: write(f, 'Type of variable is not exception');
+    227: write(f, 'Type too complex to track');
+    228: write(f, 'Cannot apply ''virtual'' attribute to nested procedure or function');
+    229: write(f, 'Cannot apply ''override'' attribute to nested procedure or function');
+    230: write(f, 'Cannot override virtual from same module, must be external');
+    231: write(f, 'No virtual found to override');
+    232: write(f, 'Cannot overload virtual procedure or function');
+    233: write(f, 'Inherited not applied to user procedure/function call');
+    234: write(f, 'Inherited applied to non-virtual procedure/function');
+    235: write(f, 'Override not defined for inherited call');
+    236: write(f, 'Type error in write');
+    237: write(f, 'Array size too large');
+    238: write(f, 'Invalid array length, must be >= 1');
+    239: write(f, 'Variant case exceeds allowable range');
+    240: write(f, 'Header parameter already included');
+    241: write(f, 'Invalid tolken separator');
+    242: write(f, 'Identifier referenced before defining point');
+    243: write(f, 'Initializer expression must be integer');
+    244: write(f, 'Type incorrect for fixed');
+    245: write(f, 'Initializer incompatible with fixed element');
+    246: write(f, 'Initializer out of range of fixed element type');
+    247: write(f, 'Incorrect number of initializers for type');
+    248: write(f, 'Fixed cannot contain variant record');
+    249: write(f, 'New overload ambiguous with previous');
+    250: write(f, 'Too many nested scopes of identifiers');
+    251: write(f, 'Too many nested procedures and/or functions');
+    252: write(f, 'Too many forward references of procedure entries');
+    253: write(f, 'Procedure too long');
+    254: write(f, 'Too many long constants in this procedure');
+    255: write(f, 'Too many errors on this source line');
+    256: write(f, 'Too many external references');
+    257: write(f, 'Too many externals');
+    258: write(f, 'Too many local files');
+    259: write(f, 'Expression too complicated');
+    260: write(f, 'Too many exit labels');
+    261: write(f, 'Label beyond valid integral value (>9999)');
+    262: write(f, 'Function/procedure cannot be applied to text files');
+    263: write(f, 'No function to open/close external files');
+    264: write(f, 'External file not found');
+    265: write(f, 'Filename too long');
+    266: write(f, '''private'' has no meaning here');
+    267: write(f, 'Too many nested module joins');
+    268: write(f, 'Qualified identifier not found');
+    269: write(f, 'Number of initializers for parameterised declaration do not ',
                'match');
-    270: write('Container array type specified without initializer(s)');
-    271: write('Number of initializers does not match container array levels');
-    272: write('Cannot declare container array in fixed context');
-    273: write('Must be container array');
-    274: write('Function result type must be scalar, subrange, pointer, set, ',
+    270: write(f, 'Container array type specified without initializer(s)');
+    271: write(f, 'Number of initializers does not match container array levels');
+    272: write(f, 'Cannot declare container array in fixed context');
+    273: write(f, 'Must be container array');
+    274: write(f, 'Function result type must be scalar, subrange, pointer, set, ',
                'array or record');
-    275: write('Number of parameters does not agree with declaration of any ',
+    275: write(f, 'Number of parameters does not agree with declaration of any ',
                'overload');
-    276: write('Different overload parameters converge with different modes');
-    277: write('No overload found to match parameter');
-    278: write('Must be variable reference');
-    279: write('''procedure'', ''function'' or ''operator'' expected');
-    280: write('Attribute has no meaning used on operator overload');
-    281: write('Expression/assignment operator expected');
-    282: write('Overload operator is ambiguous with system operator');
-    283: write('New operator overload ambiguous with previous');
-    284: write('Different operator overload parameters converge with ',
+    276: write(f, 'Different overload parameters converge with different modes');
+    277: write(f, 'No overload found to match parameter');
+    278: write(f, 'Must be variable reference');
+    279: write(f, '''procedure'', ''function'' or ''operator'' expected');
+    280: write(f, 'Attribute has no meaning used on operator overload');
+    281: write(f, 'Expression/assignment operator expected');
+    282: write(f, 'Overload operator is ambiguous with system operator');
+    283: write(f, 'New operator overload ambiguous with previous');
+    284: write(f, 'Different operator overload parameters converge with ',
                'different modes');
-    285: write('Parameter type not allowed in operator overload parameter ');
-    286: write('Parameter mode not allowed in operator overload parameter ');
-    287: write('Variable reference is not addressable');
-    288: write('Left side of assignment overload operator must be out mode');
-    289: write('Var parameter must be compatible with parameter');
-    290: write('Cannot threaten view parameter');
-    291: write('Set element out of implementation range');
-    292: write('Function expected in this context');
-    293: write('Procedure expected in this context');
-    294: write('Cannot overload an external declaration');
-    295: write('procedure or function external property does not match');
-    296: write('Cannot apply field to constant string on read');
-    297: write('No procedure or function found to overload');
-    298: write('No matching forwarded overload');
+    285: write(f, 'Parameter type not allowed in operator overload parameter ');
+    286: write(f, 'Parameter mode not allowed in operator overload parameter ');
+    287: write(f, 'Variable reference is not addressable');
+    288: write(f, 'Left side of assignment overload operator must be out mode');
+    289: write(f, 'Var parameter must be compatible with parameter');
+    290: write(f, 'Cannot threaten view parameter');
+    291: write(f, 'Set element out of implementation range');
+    292: write(f, 'Function expected in this context');
+    293: write(f, 'Procedure expected in this context');
+    294: write(f, 'Cannot overload an external declaration');
+    295: write(f, 'procedure or function external property does not match');
+    296: write(f, 'Cannot apply field to constant string on read');
+    297: write(f, 'No procedure or function found to overload');
+    298: write(f, 'No matching forwarded overload');
 
-    300: write('Division by zero');
-    301: write('No case provided for this value');
-    302: write('Index expression out of bounds');
-    303: write('Value to be assigned is out of bounds');
-    304: write('Element expression out of range');
-    305: write('Cannot use non-decimal with real format');
-    306: write('Integer overflow');
+    300: write(f, 'Division by zero');
+    301: write(f, 'No case provided for this value');
+    302: write(f, 'Index expression out of bounds');
+    303: write(f, 'Value to be assigned is out of bounds');
+    304: write(f, 'Element expression out of range');
+    305: write(f, 'Cannot use non-decimal with real format');
+    306: write(f, 'Integer overflow');
 
-    397: write('Feature not valid in ISO 7185 Pascal');
-    398: write('Implementation restriction');
+    397: write(f, 'Feature not valid in ISO 7185 Pascal');
+    398: write(f, 'Implementation restriction');
     { as of the implementation of full ISO 7185, this error is no longer used }
-    399: write('Feature not implemented');
+    399: write(f, 'Feature not implemented');
 
     { * marks spared compiler errors }
     400,401,402,403,404,406,407, 500,501,502,503,
     504,505,506,507,508,509,510,511,512,513,514,515,
-    516,517,518,{*}519: write('Compiler internal error');
+    516,517,518,{*}519: write(f, 'Compiler internal error');
     end
   end;
 
@@ -1650,38 +1654,61 @@ end;
     var lastpos,freepos,currpos,currnmr,f,j,k: integer; df: boolean;
   begin
     if errinx > 0 then   (*output error messages*)
-      begin 
+      begin
         if not list then wrtsrclin;
-        write(incstk^.linecount:6,' ****  ':9);
+        if errfval then begin { write source line to error file }
+          if dolineinfo then begin
+            write(errf, incstk^.linecount:6,'  ':2);
+            if dp then write(errf, lc:7) else write(errf, ic:7);
+            write(errf, ' ')
+          end;
+          writeln(errf, incstk^.sb:incstk^.sl)
+        end;
+        if errfval then write(errf, incstk^.linecount:6,' ****  ':9)
+        else write(incstk^.linecount:6,' ****  ':9);
         lastpos := -1; freepos := 1;
         for k := 1 to errinx do
           begin
             with errlist[k] do
               begin currpos := pos; currnmr := nmr end;
-            if currpos = lastpos then write(',')
-            else
+            if currpos = lastpos then begin
+              if errfval then write(errf, ',')
+              else write(',')
+            end else
               begin
                 while freepos < currpos do
-                  begin write(' '); freepos := freepos + 1 end;
-                write('^');
+                  begin
+                  if errfval then write(errf, ' ')
+                  else write(' ');
+                  freepos := freepos + 1 end;
+                if errfval then write(errf, '^')
+                else write('^');
                 lastpos := currpos
               end;
             if currnmr < 10 then f := 1
             else if currnmr < 100 then f := 2
               else f := 3;
-            write(currnmr:f);
+            if errfval then write(errf, currnmr:f)
+            else write(currnmr:f);
             freepos := freepos + f + 1
           end;
-        writeln; 
+        if errfval then writeln(errf)
+        else writeln;
         if experr then begin
-          for k := 1 to errinx do 
+          for k := 1 to errinx do
             begin df := false;
-              for j := 1 to k-1 do 
+              for j := 1 to k-1 do
                 if errlist[j].nmr = errlist[k].nmr then df := true;
               if not df then begin
-                write(incstk^.linecount:6,' ****  ':9); 
-                write(errlist[k].nmr:3, ' ');
-                errmsg(errlist[k].nmr); writeln
+                if errfval then begin
+                  write(errf, incstk^.linecount:6,' ****  ':9);
+                  write(errf, errlist[k].nmr:3, ' ');
+                  errmsg(errf, errlist[k].nmr); writeln(errf)
+                end else begin
+                  write(incstk^.linecount:6,' ****  ':9);
+                  write(errlist[k].nmr:3, ' ');
+                  errmsg(output, errlist[k].nmr); writeln
+                end
               end
             end
         end;
@@ -10467,6 +10494,24 @@ end;
           ii := ii+1
         end
       end;
+      { error file: -errfile=file or -ef=file }
+      if compp(w, 'errfile') or compp(w, 'ef') then begin
+        optfnd := true;
+        parse.skpspc(cmdhan);
+        if parse.chkchr(cmdhan) <> '=' then begin
+          writeln('*** Missing "=" for error file'); goto 99
+        end;
+        parse.getchr(cmdhan); { skip '=' }
+        if parse.chkchr(cmdhan) = '"' then
+          parse.parstr(cmdhan, errfil, err)
+        else
+          parse.parfil(cmdhan, errfil, false, err);
+        err := not err;
+        if not err then begin
+          writeln('*** Error: error filename not found'); goto 99
+        end;
+        errfval := true
+      end;
       setflg('mal', 'mrkasslin', option[28], options[28]);
       if not optfnd then begin
         writeln('*** Unknown option ', w:*); goto 99
@@ -11045,6 +11090,7 @@ begin
     begin inidsp(display[1]); define := true; occur := blck; bname := nil end;
 
   for ii := 1 to maxlin do incbuf[ii] := ' '; { clear include line }
+  errfopn := false; errfval := false;
 
   { parse command line }
   parse.openpar(cmdhan);
@@ -11093,6 +11139,15 @@ begin
   if not prrval then prcode := false;
   paropt; { parse command line options }
   plcopt; { place options in flags }
+
+  { open error file if specified }
+  if errfval then begin
+    services.brknam(errfil, p, n, e);
+    services.maknam(errfil, p, n, 'err');
+    assign(errf, errfil);
+    rewrite(errf);
+    errfopn := true
+  end;
 
   (*compile:*)
   (**********)
@@ -11147,28 +11202,49 @@ begin
   { remove undeclared ids }
   exitundecl;
 
-  writeln('Errors in program: ', toterr:1);
+  if errfval then writeln(errf, 'Errors in program: ', toterr:1)
+  else writeln('Errors in program: ', toterr:1);
   { output error report as required }
   f := true;
   for i := 1 to maxftl do if errtbl[i] > 0 then begin
     if f then begin
-      writeln;
-      writeln('Error numbers in listing:');
-      writeln('-------------------------');
+      if errfval then begin
+        writeln(errf);
+        writeln(errf, 'Error numbers in listing:');
+        writeln(errf, '-------------------------')
+      end else begin
+        writeln;
+        writeln('Error numbers in listing:');
+        writeln('-------------------------')
+      end;
       f := false
     end;
-    write(i:3, ' ', errtbl[i]:3, ' '); 
-    epl := nil; 
-    while errltb[i] <> nil do begin ep := errltb[i]; errltb[i] := ep^.next; 
-      ep^.next := epl; epl := ep 
+    if errfval then write(errf, i:3, ' ', errtbl[i]:3, ' ')
+    else write(i:3, ' ', errtbl[i]:3, ' ');
+    epl := nil;
+    while errltb[i] <> nil do begin ep := errltb[i]; errltb[i] := ep^.next;
+      ep^.next := epl; epl := ep
     end;
     ep := epl;
-    while ep <> nil do begin write(ep^.errlin:1); ep := ep^.next;
-      if ep <> nil then write(',');
+    while ep <> nil do begin
+      if errfval then write(errf, ep^.errlin:1)
+      else write(ep^.errlin:1);
+      ep := ep^.next;
+      if ep <> nil then begin
+        if errfval then write(errf, ',')
+        else write(',')
+      end
     end;
-    write(' '); errmsg(i); writeln
+    if errfval then begin
+      write(errf, ' '); errmsg(errf, i); writeln(errf)
+    end else begin
+      write(' '); errmsg(output, i); writeln
+    end
   end;
-  if not f then writeln;
+  if not f then begin
+    if errfval then writeln(errf)
+    else writeln
+  end;
 
   if doprtryc then begin { print recyling tracking counts }
 
@@ -11229,6 +11305,7 @@ begin
       services.maknam(desfil, p, n, 'p6');
       if toterr > 0 then delete(desfil)
    end;
+   if errfopn then close(errf);
 
    { Return number of errors as return code. This does not match any standard,
      because there is no standard, so it might as well be useful. }

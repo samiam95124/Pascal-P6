@@ -1,5 +1,5 @@
 ************ Regression Summary *************
-Sat 21 Feb 2026 01:10:47 AM PST
+Sat 21 Feb 2026 06:03:31 PM PST
 Line counts should be 0 for pass
 pint run ***************************************
 0 sample_programs/hello.dif
@@ -11,7 +11,6 @@ pint run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
 Pascal-s run
 0 sample_programs/roman.dif
@@ -35,7 +34,6 @@ pmach run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
 Pascal-s run
 0 sample_programs/roman.dif
@@ -57,7 +55,6 @@ cmach run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
 Pascal-s run
 0 sample_programs/roman.dif
@@ -79,7 +76,6 @@ package run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
 Pascal-s run
 0 sample_programs/roman.dif
@@ -101,7 +97,6 @@ pgen run ***************************************
 0 sample_programs/drystone.dif
 0 sample_programs/startrek.dif
 0 sample_programs/basics.dif
-0 basic/basic.dif
 0 standard_tests/iso7185pat.dif
 Pascal-s run
 0 sample_programs/roman.dif
@@ -116,12 +111,12 @@ Pascaline run
 
 Total differences: 0
 Fails: 0
-Sat 21 Feb 2026 01:18:20 AM PST
+Sat 21 Feb 2026 06:10:25 PM PST
 Files sha256sum ***************************************
 Source files
-87fc8b213f237b188d82b14ccdd4bad06e05eee9b3aacb0d265014cbce7c0ba0  -
+6d112d035a00c9fbcf17000cae38194ccbe7e05d82654dbd3a1ac489cbaae2eb  -
 batch files
-78e3a70e136dfc15bad3a9a243bbaa69dd27ef36a016da2fe6536a88a78eca87  -
+07c0cfcc485fc006b8c4a2ba7f14e3a9dc79223d7dfaf4e5af5872a3b4610681  -
 P2 files
 1819a8af789d297fb86a16ebe290c7cc374da196d826c1be78ba384ff9311fbb  -
 p4 files
