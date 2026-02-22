@@ -89,6 +89,14 @@ override procedure postamble;
 begin
 end;
 
+{ AMD64 DWARF register number for frame base (rbp = 6) }
+override function dwarf_fbreg: integer;
+begin dwarf_fbreg := 6 end;
+
+{ AMD64 address size (64-bit = 8 bytes) }
+override function dwarf_addr_size: integer;
+begin dwarf_addr_size := 8 end;
+
 override procedure assemble; (*translate symbolic code into machine code and store*)
 
   var name :alfa; r :real; s :settype;
@@ -1736,7 +1744,7 @@ override procedure assemble; (*translate symbolic code into machine code and sto
           stkadrs := stkadr; { save stack track here }
           pshpar(ep^.pl); { process parameters first }
           if ep^.qs <> nil then wrtins(' call *@s(%rip) # call vectored', ep^.qs^)
-          else wrtins(' call *@g(%rip) # call vectored', q);
+          else wrtins(' call *@g(%rip) # call vectored', ep^.q);
           if ep^.op = 249{cvf} then begin
             if ep^.rc = 1 then begin
               if ep^.r1 <> rgxmm0 then
@@ -2352,13 +2360,13 @@ begin { assemble }
     end;
 
     {cvf}
-    249: begin 
+    249: begin
       skpspc;
       sp := nil;
-      if ch = 'l' then begin 
+      if ch = 'l' then begin
         labelsearch(def, val, sp, blk);
         getadr(q1); getadr(q2); getadr(q3); getadr(q4)
-      end else begin getadr(q1); getadr(q2); getadr(q3); getadr(q4) end;
+      end else begin getadr(q); getadr(q1); getadr(q2); getadr(q3); getadr(q4) end;
       getexp(ep); ep^.qs := sp; ep^.pn := q1; ep^.rc := q2;
       getpar(ep); pshstk(ep)
     end;
@@ -2863,6 +2871,8 @@ begin { assemble }
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
+      fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
+      writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2890,6 +2900,8 @@ begin { assemble }
       wrtins(' pushq %rcx # replace return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
+      fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
+      writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2917,6 +2929,8 @@ begin { assemble }
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
+      fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
+      writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
@@ -2942,6 +2956,8 @@ begin { assemble }
       wrtins(' pushq %rcx # restore return address');
       wrtins(' ret # return to caller');
       writeln(prr, '        .cfi_endproc');
+      fnendcnt := fnendcnt+1; blkstk^.fnendlab := fnendcnt;
+      writeln(prr, '.Lfnend_', fnendcnt:1, ':');
       write(prr, blkstk^.tmpnam^); writeln(prr, ' = ', tmpspc:1);
       botstk; deltmp
     end;
