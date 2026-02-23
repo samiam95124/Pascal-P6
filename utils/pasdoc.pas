@@ -7705,6 +7705,7 @@ end;
             cancelfwd(display[top].fname); closeinput
           end;
           list := lists; gc := gcs;
+          putstrs(nammod); { release sub-module name before restore }
           nammod := nammods; curmod := curmods
         end;
         insymbol; { skip id }
