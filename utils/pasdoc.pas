@@ -651,6 +651,8 @@ var
     hdrcmtcnt: integer;
     docfil:  text;
     docfilnam(fillen): string;
+    { cleanup temps }
+    dp1: docp; mp1: modentryp; xp1: xrefp; clp1: cmtlinep;
 
 (*-------------------------------------------------------------------------*)
 
@@ -6608,10 +6610,6 @@ end;
           if opr then begin
             if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
           end else if lcp1 = nil then enterid(lcp);
-          if level = 1 then begin
-            if fsy = procsy then docadd(lcp, dkproc)
-            else docadd(lcp, dkfunc)
-          end;
           if level = 1 then curproc := lcp^.name
         end;
         insymbol
@@ -6735,6 +6733,11 @@ end;
       if (forw and (lcp^.pfattr <> fpaoverload)) or form then begin
         { forward, toss current entry and keep original }
         putnam(lcp); lcp := lcp1; lcp1 := nil; lcp^.forwdecl := false
+      end;
+      { add doc entry after forward resolution so lcp is the surviving entry }
+      if (level = 1) and not forwn then begin
+        if lcp^.klass = proc then docadd(lcp, dkproc)
+        else docadd(lcp, dkfunc)
       end;
       if not forwn and not extn then { process actual block}
         begin 
@@ -9738,6 +9741,32 @@ begin
   rewrite(docfil);
   writedoc;
   close(docfil);
+
+  { release doc output lists }
+  while hdrcmt <> nil do
+    begin clp1 := hdrcmt; hdrcmt := clp1^.next; dispose(clp1) end;
+  while doclist <> nil do begin
+    dp1 := doclist; doclist := dp1^.next;
+    putstrs(dp1^.dname);
+    if dp1^.dmod <> nil then putstrs(dp1^.dmod);
+    while dp1^.dcmt <> nil do
+      begin clp1 := dp1^.dcmt; dp1^.dcmt := clp1^.next; dispose(clp1) end;
+    dispose(dp1)
+  end;
+  while modlist <> nil do begin
+    mp1 := modlist; modlist := mp1^.next;
+    putstrs(mp1^.mname);
+    while mp1^.mhdrcmt <> nil do
+      begin clp1 := mp1^.mhdrcmt; mp1^.mhdrcmt := clp1^.next; dispose(clp1) end;
+    dispose(mp1)
+  end;
+  while xreflist <> nil do begin
+    xp1 := xreflist; xreflist := xp1^.next;
+    putstrs(xp1^.idname);
+    if xp1^.refproc <> nil then putstrs(xp1^.refproc);
+    dispose(xp1)
+  end;
+
   putstrs(nammod); { release module name after doc output }
   { release file tracking entries }
   putinp(incstk); putinp(inclst);
