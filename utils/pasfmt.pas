@@ -144,6 +144,10 @@ type
         defpart: linbufp;     { definition part after = or : }
         deflen: integer;      { length of definition part }
         srclin: integer;      { source line number }
+        cmtpart: linbufp;     { trailing comment text (raw, no braces) }
+        cmtplen: integer;     { trailing comment length }
+        cmthascmt: boolean;   { has trailing comment }
+        cmtlncmt: boolean;    { trailing comment is line comment }
     end;
 
 var
@@ -177,6 +181,9 @@ var
     outlineno: integer;          { source line that started current output line }
     indent:   integer;           { current indent level }
     atbol:    boolean;           { at beginning of line }
+    lastlineblank: boolean;      { last line emitted was blank }
+    linepending: boolean;        { line written to prr, newline deferred }
+    pendEmitline: integer;       { source line of pending output line }
     lastsy:   symbol;            { last symbol output }
 
     { comment buffer }
@@ -217,6 +224,15 @@ var
     defbufmode: integer;         { 0=off, 1=name, 2=def }
     defsrclin:  integer;         { source line for current definition }
     defsep:     char;            { separator character (= or :) }
+    defdefmax:  integer;         { max definition length for comment column }
+    defcmtbuf:  linbufp;         { saved trailing comment buffer }
+    defcmtlen:  integer;         { saved trailing comment length }
+    defcmthascmt: boolean;       { has saved trailing comment }
+    defcmtlncmt: boolean;        { saved comment is line comment }
+    defsuppress: boolean;        { suppress emit_comment auto-emission }
+    defsemiline: integer;        { source line of semicolon for defsuppress }
+    cmtline:    integer;         { source line where comment was scanned }
+    syline:     integer;         { source line of current token }
 
     { command line parsing }
     cmdhan:   parse.parhan;      { command line parser handle }
@@ -321,6 +337,15 @@ end;
 ******************************************************************************}
 
 procedure def_output(sep: char); forward;
+procedure def_attachcmt; forward;
+
+procedure commit_line;
+begin
+    if linepending then begin
+        writeln(prr);
+        linepending := false
+    end
+end;
 
 procedure flush_line;
 var i: integer;
@@ -332,6 +357,7 @@ begin
             def_output(defsep);
             atbol := true
         end;
+        commit_line;
         { this is a multi-line definition, output directly without alignment }
         outlineno := defsrclin;
         if sourceline then write(prr, '{', outlineno:6, '} ');
@@ -356,16 +382,24 @@ begin
         { normal flush }
         { clamp outpos to valid range }
         if outpos > maxlinp then outpos := maxlinp;
-        { emit source line number as comment if sourceline option enabled }
-        if sourceline then write(prr, '{', outlineno:6, '} ');
         if outpos > 0 then begin
             { trim trailing spaces }
-            while (outpos > 0) and (outlin[outpos] = ' ') do
-                outpos := outpos - 1;
+            i := outpos; outpos := 0;
+            while i >= 1 do
+                if outlin[i] = ' ' then i := i - 1
+                else begin outpos := i; i := 0 end;
+            commit_line;
+            if sourceline then write(prr, '{', outlineno:6, '} ');
             for i := 1 to outpos do write(prr, outlin[i]);
+            { defer newline for trailing comment detection }
+            linepending := true;
+            pendEmitline := syline;
+            lastlineblank := false
+        end else begin
+            commit_line;
+            if sourceline then write(prr, '{', outlineno:6, '} ');
             writeln(prr)
-        end else
-            writeln(prr);
+        end;
         outpos := 0;
         for i := 1 to maxlinp do outlin[i] := ' ';
         atbol := true
@@ -444,8 +478,12 @@ end;
 procedure emit_blank_line;
 begin
     if not atbol then flush_line;
-    if sourceline then write(prr, '{', lineno:6, '} ');
-    writeln(prr)
+    commit_line;
+    if not lastlineblank then begin
+        if sourceline then write(prr, '{', lineno:6, '} ');
+        writeln(prr);
+        lastlineblank := true
+    end
 end;
 
 procedure emit_kw(s: restr; len: integer);
@@ -498,6 +536,7 @@ begin
         realconst: begin
             { real output - must be careful about buffer interleaving }
             { flush current buffer, write real directly, continue on same line }
+            commit_line;
             if atbol then outlineno := lineno;
             if sourceline and atbol then write(prr, '{', outlineno:6, '} ');
             if outpos > 0 then begin
@@ -631,10 +670,69 @@ begin
 end;
 
 procedure emit_comment;
-var i: integer;
+var i, j, wlen, col, wcol, indcol: integer;
     multiline: boolean;
+    ismulti: boolean;
+    isstruc: boolean;
+    flusheddef: boolean;
+    standalone: boolean;
 begin
+    flusheddef := false;
     if hascmt then begin
+        if defsuppress then begin
+            if (cmtline = defsemiline) and not defcmthascmt then begin
+                { trailing comment on same line as semicolon - save it }
+                for i := 1 to cmtlen do defcmtbuf[i] := cmtbuf[i];
+                defcmtlen := cmtlen;
+                defcmtlncmt := cmtlncmt;
+                defcmthascmt := true;
+                hascmt := false; cmtlen := 0
+            end else begin
+                { comment on different line or second comment -
+                  attach any saved trailing, flush buffer, emit normally }
+                if defcmthascmt then def_attachcmt;
+                defsuppress := false;
+                if defhead <> nil then begin
+                    if linepending then commit_line;
+                    if bracketbreak then emit_blank_line;
+                    def_output(defsep);
+                    atbol := true
+                end;
+                flusheddef := true
+                { hascmt still true - fall through to normal emission }
+            end
+        end;
+        { check for trailing comment on pending output line }
+        if hascmt and linepending and (cmtline = pendEmitline) then begin
+            ismulti := false;
+            i := 1;
+            while (i <= cmtlen) and not ismulti do begin
+                if cmtbuf[i] = chr(10) then ismulti := true;
+                i := i + 1
+            end;
+            if not ismulti then begin
+                { append single-line comment to pending output line }
+                write(prr, ' {');
+                if cmtlncmt then write(prr, ' ');
+                for i := 1 to cmtlen do write(prr, cmtbuf[i]);
+                if cmtlncmt then write(prr, ' ');
+                write(prr, '}');
+                writeln(prr);
+                linepending := false;
+                hascmt := false;
+                cmtlen := 0;
+                lastlineblank := false
+            end
+        end;
+        if hascmt then begin
+        { blank separator after flushed defs before heading comment }
+        if flusheddef then begin
+            if not atbol then flush_line;
+            commit_line;
+            writeln(prr); { blank line }
+            atbol := true;
+            lastlineblank := true
+        end;
         { check if comment contains newlines }
         multiline := false;
         i := 1;
@@ -643,18 +741,85 @@ begin
             i := i + 1
         end;
         if multiline and not cmtlncmt then begin
-            { multi-line comment: flush current output, write verbatim }
-            flush_line;
-            write(prr, '{');
-            for i := 1 to cmtlen do begin
-                if cmtbuf[i] = chr(10) then writeln(prr)
-                else write(prr, cmtbuf[i])
+            { multi-line comment: flush current output, reformat }
+            if not atbol then flush_line;
+            commit_line;
+            { check if structured comment, line starts with star }
+            isstruc := (cmtlen > 0) and (cmtbuf[1] = '*');
+            if not isstruc then begin
+                i := 1;
+                while (i < cmtlen) and not isstruc do begin
+                    if cmtbuf[i] = chr(10) then begin
+                        j := i + 1;
+                        while (j <= cmtlen) and (cmtbuf[j] = ' ') do
+                            j := j + 1;
+                        if (j <= cmtlen) and (cmtbuf[j] = '*') then
+                            isstruc := true
+                    end;
+                    i := i + 1
+                end
             end;
-            writeln(prr, '}');
-            writeln(prr);
-            atbol := true
+            indcol := indent * lindent;
+            if isstruc then begin
+                { structured comment: output verbatim with indent }
+                for i := 1 to indcol do write(prr, ' ');
+                write(prr, '{');
+                for i := 1 to cmtlen do begin
+                    if cmtbuf[i] = chr(10) then begin
+                        writeln(prr);
+                        for j := 1 to indcol do write(prr, ' ')
+                    end else
+                        write(prr, cmtbuf[i])
+                end;
+                writeln(prr, '}')
+            end else begin
+                { text comment: word-wrap reflow at current indent }
+                wcol := wrapcolumn;
+                if wcol = 0 then wcol := 80;
+                col := indcol + 2; { position after "{ " }
+                for i := 1 to indcol do write(prr, ' ');
+                write(prr, '{ ');
+                i := 1;
+                while i <= cmtlen do begin
+                    { skip whitespace }
+                    while (i <= cmtlen) and
+                          ((cmtbuf[i] = ' ') or
+                           (cmtbuf[i] = chr(10))) do
+                        i := i + 1;
+                    if i <= cmtlen then begin
+                        { find word end }
+                        j := i;
+                        while (j <= cmtlen) and (cmtbuf[j] <> ' ') and
+                              (cmtbuf[j] <> chr(10)) do
+                            j := j + 1;
+                        wlen := j - i;
+                        { check if word fits on current line }
+                        if (col + 1 + wlen + 2 > wcol) and
+                           (col > indcol + 2) then begin
+                            { wrap to next line }
+                            writeln(prr);
+                            for col := 1 to indcol + 2 do
+                                write(prr, ' ');
+                            col := indcol + 2
+                        end else if col > indcol + 2 then begin
+                            write(prr, ' ');
+                            col := col + 1
+                        end;
+                        { write word }
+                        while i < j do begin
+                            write(prr, cmtbuf[i]);
+                            i := i + 1
+                        end;
+                        col := col + wlen
+                    end
+                end;
+                writeln(prr, ' }')
+            end;
+            atbol := true;
+            lastlineblank := false
         end else begin
             { single-line comment: emit through normal formatting }
+            standalone := (outpos = 0) and (defbufmode = 0);
             emit_space;
             if cmtlncmt then begin
                 emit_char('{');
@@ -666,10 +831,12 @@ begin
                 emit_char(' ');
                 emit_char('}')
             end else
-                emit_char('}')
+                emit_char('}');
+            if standalone or (flusheddef and not multiline) then emit_newline
         end;
         hascmt := false;
         cmtlen := 0
+        end
     end
 end;
 
@@ -691,7 +858,8 @@ begin
     end;
     defhead := nil;
     deftail := nil;
-    defmax := 0
+    defmax := 0;
+    defdefmax := 0
 end;
 
 { add entry to definition list }
@@ -709,11 +877,14 @@ begin
     p^.namlen := nlen;
     p^.deflen := dlen;
     p^.srclin := slin;
+    p^.cmthascmt := false;
+    p^.cmtplen := 0;
     p^.next := nil;
     if deftail = nil then defhead := p
     else deftail^.next := p;
     deftail := p;
-    if nlen > defmax then defmax := nlen
+    if nlen > defmax then defmax := nlen;
+    if dlen > defdefmax then defdefmax := dlen
 end;
 
 { output definition list with alignment }
@@ -721,12 +892,50 @@ procedure def_output(sep: char);
 var p: defptr;
     i, pad: integer;
     savemode: integer;
+    declwidth, cmtwidth, totalwidth: integer;
+    cmtoverflows: boolean;
 begin
     { save and reset buffer mode so emit_* functions output directly }
     savemode := defbufmode;
     defbufmode := 0;
     p := defhead;
     while p <> nil do begin
+        { check if trailing comment would overflow line }
+        cmtoverflows := false;
+        if p^.cmthascmt and (wrapcolumn > 0) then begin
+            { compute declaration width }
+            if not flushleft and (indent > 0) then
+                declwidth := indent * lindent
+            else
+                declwidth := 0;
+            if columnize then
+                declwidth := declwidth + defmax + 3 + defdefmax + 1
+                    { name(padded) + sep(3) + def(padded) + ; }
+            else
+                declwidth := declwidth + p^.namlen + 3 + p^.deflen + 1;
+            { compute comment width: braces + content + leading spaces }
+            cmtwidth := p^.cmtplen + 2;
+            if p^.cmtlncmt then cmtwidth := cmtwidth + 2; { spaces }
+            if columnize then
+                totalwidth := declwidth + (defdefmax - p^.deflen + 2) + cmtwidth
+            else
+                totalwidth := declwidth + 1 + cmtwidth;
+            cmtoverflows := totalwidth > wrapcolumn
+        end;
+        { emit comment on preceding line if it overflows }
+        if cmtoverflows then begin
+            outlineno := p^.srclin;
+            if p^.cmtlncmt then begin
+                emit_char('{'); emit_char(' ')
+            end else
+                emit_char('{');
+            for i := 1 to p^.cmtplen do emit_char(p^.cmtpart[i]);
+            if p^.cmtlncmt then begin
+                emit_char(' '); emit_char('}')
+            end else
+                emit_char('}');
+            emit_newline
+        end;
         { record source line for output }
         outlineno := p^.srclin;
         { emit indent if needed }
@@ -760,6 +969,28 @@ begin
         { emit definition part }
         for i := 1 to p^.deflen do emit_char(p^.defpart[i]);
         emit_char(';');
+        { emit trailing comment inline if present and not overflowing }
+        if p^.cmthascmt and not cmtoverflows then begin
+            if columnize then begin
+                { pad to aligned comment column }
+                pad := defdefmax - p^.deflen + 2;
+                while pad > 0 do begin
+                    outpos := outpos + 1;
+                    if outpos <= maxlinp then outlin[outpos] := ' ';
+                    pad := pad - 1
+                end
+            end else
+                emit_space;
+            if p^.cmtlncmt then begin
+                emit_char('{'); emit_char(' ')
+            end else
+                emit_char('{');
+            for i := 1 to p^.cmtplen do emit_char(p^.cmtpart[i]);
+            if p^.cmtlncmt then begin
+                emit_char(' '); emit_char('}')
+            end else
+                emit_char('}')
+        end;
         emit_newline;
         p := p^.next
     end;
@@ -797,6 +1028,55 @@ begin
     def_clear
 end;
 
+{ output definitions: inline if single short entry, else multi-line }
+procedure def_output_sect(sep: char; kwlen: integer);
+var p: defptr;
+    i, totalwidth: integer;
+begin
+    p := defhead;
+    { check if single entry that fits inline with keyword }
+    if linepending then
+        if p <> nil then
+            if p^.next = nil then begin
+        { single entry with keyword line still pending - try inline }
+        { width: keyword + space + name + sep(2 for :, 3 for =) + def + ; }
+        totalwidth := kwlen + 1 + p^.namlen + p^.deflen + 1;
+        if sep = ':' then totalwidth := totalwidth + 2
+        else totalwidth := totalwidth + 3;
+        if p^.cmthascmt then begin
+            totalwidth := totalwidth + 1 + p^.cmtplen + 2;
+            if p^.cmtlncmt then totalwidth := totalwidth + 2
+        end;
+        if (wrapcolumn = 0) or (totalwidth <= wrapcolumn) then begin
+            { inline: append declaration to pending keyword line }
+            write(prr, ' ');
+            for i := 1 to p^.namlen do write(prr, p^.nampart[i]);
+            if sep = ':' then write(prr, ': ')
+            else write(prr, ' ', sep, ' ');
+            for i := 1 to p^.deflen do write(prr, p^.defpart[i]);
+            write(prr, ';');
+            if p^.cmthascmt then begin
+                write(prr, ' {');
+                if p^.cmtlncmt then write(prr, ' ');
+                for i := 1 to p^.cmtplen do write(prr, p^.cmtpart[i]);
+                if p^.cmtlncmt then write(prr, ' ');
+                write(prr, '}')
+            end;
+            writeln(prr);
+            linepending := false;
+            lastlineblank := false;
+            def_clear;
+            p := nil { signal handled }
+        end
+    end;
+    if p <> nil then begin
+        { multi-line format: multiple entries, too wide, or multi-line defs }
+        if linepending then commit_line;
+        if bracketbreak then emit_blank_line;
+        def_output(sep)
+    end
+end;
+
 { start buffering name part }
 procedure def_startname;
 var i: integer;
@@ -829,6 +1109,20 @@ begin
     { if defbufmode is already 0, definition was already output as multi-line }
 end;
 
+{ attach saved trailing comment to last definition entry }
+procedure def_attachcmt;
+var i: integer;
+begin
+    if defcmthascmt and (deftail <> nil) then begin
+        for i := 1 to defcmtlen do
+            deftail^.cmtpart[i] := defcmtbuf[i];
+        deftail^.cmtplen := defcmtlen;
+        deftail^.cmthascmt := true;
+        deftail^.cmtlncmt := defcmtlncmt
+    end;
+    defcmthascmt := false
+end;
+
 {******************************************************************************
 
                               Scanner (insymbol)
@@ -844,16 +1138,37 @@ var i, k, v, r: integer;
     ev: integer;
     rv: real;
     sgn: integer;
+    blankcnt: integer;
 begin
 1:
     { Skip spaces and controls }
+    blankcnt := 0;
     while (ch <= ' ') and not eofinp do begin
         if eol then begin
+            if (blankcnt >= 2) and not lastlineblank then begin
+                { blank source line detected - preserve it }
+                commit_line;
+                writeln(prr);
+                atbol := true;
+                lastlineblank := true
+            end;
             endofline; { output any errors from previous line }
-            if hascmt then emit_comment
+            if hascmt then begin
+                emit_comment;
+                blankcnt := 1 { comment line consumed }
+            end else
+                blankcnt := blankcnt + 1
         end;
         nextch
     end;
+    if (blankcnt >= 2) and not lastlineblank then begin
+        { trailing blank line before token - preserve it }
+        commit_line;
+        writeln(prr);
+        atbol := true;
+        lastlineblank := true
+    end;
+    syline := lineno; { record line of current token }
 
     if eofinp then begin
         sy := eofsy; op := noop
@@ -999,7 +1314,7 @@ begin
             if ch = '*' then begin
                 { comment - collect it }
                 nextch;
-                cmtlen := 0; hascmt := true; cmtlncmt := false;
+                cmtlen := 0; hascmt := true; cmtlncmt := false; cmtline := lineno;
                 repeat
                     while (ch <> '*') and (ch <> '}') and not eofinp do begin
                         if cmtlen < maxcmt then begin
@@ -1038,7 +1353,7 @@ begin
         chlcmt: begin
             (* brace comment *)
             nextch;
-            cmtlen := 0; hascmt := true; cmtlncmt := false;
+            cmtlen := 0; hascmt := true; cmtlncmt := false; cmtline := lineno;
             while (ch <> '}') and not eofinp do begin
                 if cmtlen < maxcmt then begin
                     cmtlen := cmtlen + 1;
@@ -1059,7 +1374,7 @@ begin
         end;
         chrem: begin
             { ! line comment }
-            cmtlen := 0; hascmt := true; cmtlncmt := true;
+            cmtlen := 0; hascmt := true; cmtlncmt := true; cmtline := lineno;
             nextch; { skip ! }
             while not eol and not eofinp do begin
                 if cmtlen < maxcmt then begin
@@ -1249,10 +1564,24 @@ begin
             lparent: begin
                 emit_symbol; insymbol;
                 if sy <> rparent then begin
-                    expression(fsys + [rparent, comma]);
+                    expression(fsys + [rparent, comma, colon]);
+                    while sy = colon do begin
+                        emit_symbol; insymbol;
+                        if (sy = mulop) and (op = mul) then begin
+                            emit_symbol; insymbol
+                        end else
+                            expression(fsys + [rparent, comma, colon])
+                    end;
                     while sy = comma do begin
                         emit_symbol; insymbol;
-                        expression(fsys + [rparent, comma])
+                        expression(fsys + [rparent, comma, colon]);
+                        while sy = colon do begin
+                            emit_symbol; insymbol;
+                            if (sy = mulop) and (op = mul) then begin
+                                emit_symbol; insymbol
+                            end else
+                                expression(fsys + [rparent, comma, colon])
+                        end
                     end
                 end;
                 if sy = rparent then begin emit_symbol; insymbol end
@@ -1435,7 +1764,12 @@ begin
     if sy in typebegsys then
     case sy of
         ident: begin
-            emit_symbol; insymbol
+            emit_symbol; insymbol;
+            if sy = period then begin
+                { module-qualified type name: ident.ident }
+                emit_symbol; insymbol;
+                if sy = ident then begin emit_symbol; insymbol end
+            end
         end;
         packedsy: begin
             emit_symbol; insymbol;
@@ -1577,10 +1911,16 @@ begin
     end else error(52);
     if sy = elsesy then begin
         emit_newline;
-        emit_symbol; emit_newline; insymbol;
-        indent := indent + 1;
-        statement(fsys);
-        indent := indent - 1
+        emit_symbol; { else }
+        insymbol;
+        if sy = ifsy then
+            ifstatement(fsys) { else-if chain: same indent, same line }
+        else begin
+            emit_newline;
+            indent := indent + 1;
+            statement(fsys);
+            indent := indent - 1
+        end
     end
 end;
 
@@ -1611,10 +1951,8 @@ begin
                     skip(fsys + [colon, semicolon, endsy, elsesy])
                 end
             until sy in [colon, semicolon, endsy, elsesy, eofsy];
-            if sy = colon then begin emit_symbol; emit_newline; insymbol end;
-            indent := indent + 1;
-            statement(fsys + [semicolon, endsy, elsesy]);
-            indent := indent - 1
+            if sy = colon then begin emit_symbol; insymbol end;
+            statement(fsys + [semicolon, endsy, elsesy])
         end else begin
             { error - unexpected symbol in case statement }
             error(147);
@@ -1751,7 +2089,8 @@ end;
 procedure statement(fsys: setofsys);
 begin
     emit_comment;
-    if not (sy in statbegsys + [ident, intconst]) then begin
+    if not (sy in statbegsys + [ident, intconst, semicolon, endsy,
+                                 untilsy, elsesy, exceptsy]) then begin
         error(6); skip(fsys)
     end;
     if sy in statbegsys + [ident, intconst] then begin
@@ -1811,8 +2150,9 @@ begin
     { constant declarations }
     if sy = constsy then begin
         emit_blank_line;
-        emit_symbol; emit_newline; insymbol;
-        if bracketbreak then emit_blank_line; { blank line after const }
+        emit_symbol; emit_newline;
+        { defer bracketbreak until we know if single-line }
+        insymbol;
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
         def_clear;
         while sy = ident do begin
@@ -1823,16 +2163,24 @@ begin
             else error(16);
             constexpression(fsys + [semicolon]);
             def_finish;
-            if sy = semicolon then insymbol
+            defcmthascmt := false;
+            if sy = semicolon then begin
+                defsemiline := syline;
+                defsuppress := true;
+                insymbol;
+                defsuppress := false
+            end;
+            def_attachcmt
         end;
-        def_output('=');
+        def_output_sect('=', 5);
         if not flushleft then indent := indent - 1
     end;
     { type declarations }
     if sy = typesy then begin
         emit_blank_line;
-        emit_symbol; emit_newline; insymbol;
-        if bracketbreak then emit_blank_line; { blank line after type }
+        emit_symbol; emit_newline;
+        { defer bracketbreak until we know if single-line }
+        insymbol;
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
         def_clear;
         while sy = ident do begin
@@ -1846,20 +2194,28 @@ begin
             if defbufmode > 0 then begin
                 { single-line definition - add to list }
                 def_finish;
-                if sy = semicolon then insymbol
+                defcmthascmt := false;
+                if sy = semicolon then begin
+                    defsemiline := syline;
+                defsuppress := true;
+                    insymbol;
+                    defsuppress := false
+                end;
+                def_attachcmt
             end else begin
                 { multi-line definition was already output, just handle semicolon }
                 if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
             end
         end;
-        def_output('=');
+        def_output_sect('=', 4);
         if not flushleft then indent := indent - 1
     end;
     { variable declarations }
     if sy = varsy then begin
         emit_blank_line;
-        emit_symbol; emit_newline; insymbol;
-        if bracketbreak then emit_blank_line; { blank line after var }
+        emit_symbol; emit_newline;
+        { defer bracketbreak until we know if single-line }
+        insymbol;
         if not flushleft then indent := indent + 1; { skip indent if flushleft }
         def_clear;
         while sy = ident do begin
@@ -1901,13 +2257,20 @@ begin
             if defbufmode > 0 then begin
                 { single-line definition - add to list }
                 def_finish;
-                if sy = semicolon then insymbol
+                defcmthascmt := false;
+                if sy = semicolon then begin
+                    defsemiline := syline;
+                defsuppress := true;
+                    insymbol;
+                    defsuppress := false
+                end;
+                def_attachcmt
             end else begin
                 { multi-line definition was already output, just handle semicolon }
                 if sy = semicolon then begin emit_symbol; emit_newline; insymbol end
             end
         end;
-        def_output(':');
+        def_output_sect(':', 3);
         if not flushleft then indent := indent - 1
     end;
     { procedure and function declarations }
@@ -2389,13 +2752,25 @@ begin
     defhead := nil;
     deftail := nil;
     defmax := 0;
+    defdefmax := 0;
     defbufmode := 0;
     defnamelen := 0;
     defdeflen := 0;
-    for i := 1 to maxlinp do begin defnamebuf[i] := ' '; defdefbuf[i] := ' ' end;
+    defsuppress := false;
+    defsemiline := 0;
+    defcmthascmt := false;
+    defcmtlen := 0;
+    cmtline := 0;
+    syline := 0;
+    for i := 1 to maxlinp do begin
+        defnamebuf[i] := ' '; defdefbuf[i] := ' '; defcmtbuf[i] := ' '
+    end;
     hascmt := false;
     cmtlen := 0;
     cmtlncmt := false;
+    lastlineblank := false;
+    linepending := false;
+    pendEmitline := 0;
     lastsy := eofsy;
     for i := 1 to maxids do begin
         id[i] := ' ';
@@ -2457,6 +2832,7 @@ begin
     endofline; { flush any final errors }
     flush_line;
     if hascmt then begin emit_comment; emit_newline end;
+    commit_line; { commit any pending output line }
     writeln('Formatted output written to: ', dstfil);
 
     { output error summary }
