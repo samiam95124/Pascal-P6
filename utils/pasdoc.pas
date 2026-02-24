@@ -263,7 +263,9 @@ type
                 next:    docp;
                 dname:   strvsp;
                 dmod:    strvsp;
+                dparen:  strvsp;
                 dklass:  dockind;
+                dlevel:  integer;
                 dline:   integer;
                 dcmt:    cmtlinep;
                 dcmtcnt: integer;
@@ -647,6 +649,7 @@ var
     modlist: modentryp;
     xreflist: xrefp;
     curproc: strvsp;
+    docproc: strvsp;     { current proc name for doc parent tracking }
     hdrcmt:    cmtlinep;
     hdrcmtcnt: integer;
     docfil:  text;
@@ -1818,7 +1821,9 @@ end;
     strcpyvv(dp^.dname, lcp^.name);
     if incact then strcpyvv(dp^.dmod, nammod)
     else dp^.dmod := nil;
+    dp^.dparen := nil;
     dp^.dklass := dk;
+    dp^.dlevel := level;
     dp^.dline := incstk^.linecount;
     dp^.dcmtcnt := cmtcnt;
     dp^.idp := lcp;
@@ -6134,9 +6139,10 @@ end;
 
     procedure procdeclaration(fsy: symbol);
       var oldlev: 0..maxlevel; lcp,lcp1,lcp2,lcp3: ctp; lsp: stp;
-          forw,forwn,extn,opr,isvirt, form: boolean; 
-          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean; 
+          forw,forwn,extn,opr,isvirt, form: boolean;
+          oldtop: disprange; llc: stkoff; lbname: integer; plst: boolean;
           fpat: fpattr; ops: restr; opt: operatort; ids: idstr;
+          savedocproc: strvsp;
 
       procedure pushlvl(lcp: ctp);
       begin
@@ -6610,7 +6616,9 @@ end;
           if opr then begin
             if display[top].oprprc[op] = nil then display[top].oprprc[op] := lcp
           end else if lcp1 = nil then enterid(lcp);
-          if level = 1 then curproc := lcp^.name
+          if level = 1 then curproc := lcp^.name;
+          savedocproc := docproc; { save parent proc before overwriting }
+          docproc := lcp^.name { track parent for nested proc doc entries }
         end;
         insymbol
       end else begin
@@ -6735,12 +6743,16 @@ end;
         putnam(lcp); lcp := lcp1; lcp1 := nil; lcp^.forwdecl := false
       end;
       { add doc entry after forward resolution so lcp is the surviving entry }
-      if (level = 1) and not forwn then begin
+      if not forwn then begin
         if lcp^.klass = proc then docadd(lcp, dkproc)
-        else docadd(lcp, dkfunc)
+        else docadd(lcp, dkfunc);
+        { nested procs: CTP freed on scope exit, clear idp to avoid dangling }
+        if level > 1 then doctail^.idp := nil;
+        { set parent name for nested proc sidebar tree }
+        if level > 2 then strcpyvv(doctail^.dparen, savedocproc)
       end;
       if not forwn and not extn then { process actual block}
-        begin 
+        begin
           display[top].bname := lcp;
           { now we change to a block with defining points }
           display[top].define := true;
@@ -6766,7 +6778,8 @@ end;
                 error(193) { no function result assign }
         end;
       level := oldlev; putdsps(oldtop); top := oldtop; lc := llc;
-      curproc := nil
+      curproc := nil;
+      docproc := savedocproc { restore parent proc for doc tracking }
     end (*procdeclaration*) ;
 
   begin (*declare*)
@@ -7705,7 +7718,6 @@ end;
             cancelfwd(display[top].fname); closeinput
           end;
           list := lists; gc := gcs;
-          putstrs(nammod); { release sub-module name before restore }
           nammod := nammods; curmod := curmods
         end;
         insymbol; { skip id }
@@ -8300,7 +8312,7 @@ end;
     doclist := nil; doctail := nil;
     modlist := nil;
     xreflist := nil;
-    curproc := nil;
+    curproc := nil; docproc := nil;
     hdrcmt := nil; hdrcmtcnt := 0
   end (*initscalars*) ;
 
@@ -8487,7 +8499,22 @@ end;
       writeln(docfil, '<style>');
       { Base styles - Doxygen-inspired colors }
       writeln(docfil, 'body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; }');
-      writeln(docfil, '.container { max-width: 1000px; margin: 0 auto; padding: 20px; }');
+      writeln(docfil, '.page-wrapper { display: flex; min-height: 100vh; }');
+      writeln(docfil, '.sidebar { width: 280px; min-width: 280px; background: #f5f5f5; border-right: 1px solid #ddd; padding: 10px 0; overflow-y: auto; position: sticky; top: 0; height: 100vh; font-size: 13px; }');
+      writeln(docfil, '.sidebar-tabs { display: flex; border-bottom: 1px solid #ddd; }');
+      writeln(docfil, '.sidebar-tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; background: #e8e8e8; border: none; font-size: 13px; }');
+      writeln(docfil, '.sidebar-tab.active { background: #f5f5f5; font-weight: bold; }');
+      writeln(docfil, '.sidebar-content { display: none; padding: 5px 10px; }');
+      writeln(docfil, '.sidebar-content.active { display: block; }');
+      writeln(docfil, '.tree-item { padding: 2px 0; }');
+      writeln(docfil, '.tree-toggle { cursor: pointer; user-select: none; display: inline-block; width: 16px; font-size: 10px; }');
+      writeln(docfil, '.tree-children { padding-left: 16px; }');
+      writeln(docfil, '.tree-children.collapsed { display: none; }');
+      writeln(docfil, '.tree-link { text-decoration: none; color: #333; }');
+      writeln(docfil, '.tree-link:hover { color: #4070a0; text-decoration: underline; }');
+      writeln(docfil, '.tree-proc { color: #1a1a6e; }');
+      writeln(docfil, '.tree-func { color: #6e1a1a; }');
+      writeln(docfil, '.container { flex: 1; max-width: 900px; padding: 20px; }');
       writeln(docfil, 'h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }');
       writeln(docfil, 'h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }');
       writeln(docfil, 'h3 { color: #333; font-size: 100%; margin-top: 20px; }');
@@ -8541,12 +8568,30 @@ end;
       writeln(docfil, '</style>');
       writeln(docfil, '</head>');
       writeln(docfil, '<body>');
-      writeln(docfil, '<div class="container">')
+      writeln(docfil, '<div class="page-wrapper">')
     end;
 
     procedure htmlftr;
     begin
-      writeln(docfil, '</div>');
+      writeln(docfil, '</div>'); { close container }
+      writeln(docfil, '</div>'); { close page-wrapper }
+      writeln(docfil, '<script>');
+      writeln(docfil, 'function switchTab(name) {');
+      writeln(docfil, '  var tabs = document.querySelectorAll(''.sidebar-tab'');');
+      writeln(docfil, '  var contents = document.querySelectorAll(''.sidebar-content'');');
+      writeln(docfil, '  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove(''active'');');
+      writeln(docfil, '  for (var i = 0; i < contents.length; i++) contents[i].classList.remove(''active'');');
+      writeln(docfil, '  event.target.classList.add(''active'');');
+      writeln(docfil, '  document.getElementById(''tab-''+name).classList.add(''active'');');
+      writeln(docfil, '}');
+      writeln(docfil, 'function toggleTree(el) {');
+      writeln(docfil, '  var children = el.parentElement.querySelector(''.tree-children'');');
+      writeln(docfil, '  if (children) {');
+      writeln(docfil, '    children.classList.toggle(''collapsed'');');
+      writeln(docfil, '    el.innerHTML = children.classList.contains(''collapsed'') ? ''&#9654;'' : ''&#9660;'';');
+      writeln(docfil, '  }');
+      writeln(docfil, '}');
+      writeln(docfil, '</script>');
       writeln(docfil, '</body>');
       writeln(docfil, '</html>')
     end;
@@ -8987,9 +9032,95 @@ end;
       else modmatch := strequvv(dp^.dmod, mod1)
     end;
 
+    procedure writesidebar;
+    var dp2: docp; mp2: modentryp;
+
+      function haschildren(parnam: strvsp; parlev: integer): boolean;
+      var dp3: docp; f: boolean;
+      begin
+        f := false;
+        dp3 := doclist;
+        while dp3 <> nil do begin
+          if (dp3^.dklass in [dkproc, dkfunc]) and (dp3^.dmod = nil) and
+             (dp3^.dlevel = parlev + 1) then begin
+            if ((parnam = nil) and (dp3^.dparen = nil)) or
+               ((parnam <> nil) and (dp3^.dparen <> nil) and
+                strequvv(dp3^.dparen, parnam)) then f := true
+          end;
+          dp3 := dp3^.next
+        end;
+        haschildren := f
+      end;
+
+      procedure writeproctree(parlev: integer; parnam: strvsp);
+      var dp3: docp; match: boolean;
+      begin
+        dp3 := doclist;
+        while dp3 <> nil do begin
+          if (dp3^.dklass in [dkproc, dkfunc]) and (dp3^.dmod = nil) and
+             (dp3^.dlevel = parlev) then begin
+            { check if parent matches }
+            if parlev = 2 then match := dp3^.dparen = nil
+            else match := (parnam <> nil) and (dp3^.dparen <> nil) and
+                          strequvv(dp3^.dparen, parnam);
+            if match then begin
+              write(docfil, '<div class="tree-item">');
+              if haschildren(dp3^.dname, parlev) then begin
+                write(docfil, '<span class="tree-toggle" ');
+                writeln(docfil, 'onclick="toggleTree(this)">&#9660;</span>');
+              end else
+                write(docfil, '<span class="tree-toggle">&#8226;</span>');
+              write(docfil, '<a class="tree-link ');
+              if dp3^.dklass = dkproc then write(docfil, 'tree-proc')
+              else write(docfil, 'tree-func');
+              write(docfil, '" href="#detail-', dp3^.dline:1, '">');
+              writenameplain(dp3^.dname);
+              write(docfil, '</a>');
+              if haschildren(dp3^.dname, parlev) then begin
+                writeln(docfil, '<div class="tree-children">');
+                writeproctree(parlev + 1, dp3^.dname);
+                writeln(docfil, '</div>')
+              end;
+              writeln(docfil, '</div>')
+            end
+          end;
+          dp3 := dp3^.next
+        end
+      end;
+
+    begin { writesidebar }
+      writeln(docfil, '<div class="sidebar">');
+      { Tab buttons }
+      writeln(docfil, '<div class="sidebar-tabs">');
+      write(docfil, '<button class="sidebar-tab active" ');
+      writeln(docfil, 'onclick="switchTab(''files'')">Files</button>');
+      write(docfil, '<button class="sidebar-tab" ');
+      writeln(docfil, 'onclick="switchTab(''procs'')">Procedures</button>');
+      writeln(docfil, '</div>');
+      { Files panel }
+      writeln(docfil, '<div class="sidebar-content active" id="tab-files">');
+      mp2 := modlist;
+      while mp2 <> nil do begin
+        write(docfil, '<div class="tree-item">');
+        write(docfil, '<span class="tree-toggle">&#8226;</span>');
+        write(docfil, '<a class="tree-link" href="#sec-modules">');
+        writenameplain(mp2^.mname);
+        writeln(docfil, '</a></div>');
+        mp2 := mp2^.next
+      end;
+      writeln(docfil, '</div>');
+      { Procedures panel }
+      writeln(docfil, '<div class="sidebar-content" id="tab-procs">');
+      writeproctree(2, nil);
+      writeln(docfil, '</div>');
+      writeln(docfil, '</div>')
+    end;
+
   begin { writedoc }
     { HTML header }
-    if fhtml then htmlhdr;
+    if fhtml then begin htmlhdr; writesidebar end;
+    { open content container }
+    if fhtml then writeln(docfil, '<div class="container">');
 
     { Section 1: Summary }
     if fhtml then begin
@@ -9017,7 +9148,7 @@ end;
     if not fhtml then writeln(docfil);
 
     { Modules }
-    if fhtml then writeln(docfil, '<h2>Modules</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-modules">Modules</h2>')
     else writeln(docfil, 'MODULES');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9045,7 +9176,7 @@ end;
     else writeln(docfil);
 
     { Constants }
-    if fhtml then writeln(docfil, '<h2>Constants</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-constants">Constants</h2>')
     else writeln(docfil, 'CONSTANTS');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9068,7 +9199,7 @@ end;
     else writeln(docfil);
 
     { Types }
-    if fhtml then writeln(docfil, '<h2>Types</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-types">Types</h2>')
     else writeln(docfil, 'TYPES');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9091,7 +9222,7 @@ end;
     else writeln(docfil);
 
     { Fixed }
-    if fhtml then writeln(docfil, '<h2>Fixed</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-fixed">Fixed</h2>')
     else writeln(docfil, 'FIXED');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9119,7 +9250,7 @@ end;
     else writeln(docfil);
 
     { Variables }
-    if fhtml then writeln(docfil, '<h2>Variables</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-variables">Variables</h2>')
     else writeln(docfil, 'VARIABLES');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9148,7 +9279,7 @@ end;
     else writeln(docfil);
 
     { Procedures and Functions }
-    if fhtml then writeln(docfil, '<h2>Procedures and Functions</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-procedures">Procedures and Functions</h2>')
     else writeln(docfil, 'PROCEDURES AND FUNCTIONS');
     wrtsep;
     if fhtml then writeln(docfil, '<div class="section">');
@@ -9160,8 +9291,9 @@ end;
           if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
           else write(docfil, '<span class="keyword">function</span> ');
           writenameplain(dp^.dname);
-          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-            writeparams(dp^.idp^.pflist);
+          if dp^.idp <> nil then
+            if dp^.idp^.klass in [proc, func] then
+              writeparams(dp^.idp^.pflist);
           if dp^.dklass = dkfunc then begin
             write(docfil, ': ');
             if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
@@ -9173,8 +9305,9 @@ end;
           if dp^.dklass = dkproc then write(docfil, 'procedure ')
           else write(docfil, 'function ');
           writename(dp^.dname);
-          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-            writeparams(dp^.idp^.pflist);
+          if dp^.idp <> nil then
+            if dp^.idp^.klass in [proc, func] then
+              writeparams(dp^.idp^.pflist);
           if dp^.dklass = dkfunc then begin
             write(docfil, ': ');
             if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
@@ -9189,7 +9322,7 @@ end;
     else writeln(docfil);
 
     { Section 2: Detail }
-    if fhtml then writeln(docfil, '<h2>Detail</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-detail">Detail</h2>')
     else begin
       for i := 1 to 70 do write(docfil, '=');
       writeln(docfil);
@@ -9204,7 +9337,9 @@ end;
       if dp^.dmod = nil then begin
         if fhtml and (dp^.dklass in [dkproc, dkfunc]) then begin
           { Doxygen-style memitem for procedures/functions }
-          writeln(docfil, '<div class="memitem">');
+          write(docfil, '<div class="memitem" id="detail-');
+          write(docfil, dp^.dline:1);
+          writeln(docfil, '">');
           { memproto - signature header }
           write(docfil, '<div class="memproto">');
           if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
@@ -9212,8 +9347,9 @@ end;
           write(docfil, '<span class="memname">');
           writenameplain(dp^.dname);
           write(docfil, '</span>');
-          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-            writeparams(dp^.idp^.pflist);
+          if dp^.idp <> nil then
+            if dp^.idp^.klass in [proc, func] then
+              writeparams(dp^.idp^.pflist);
           if dp^.dklass = dkfunc then begin
             write(docfil, ': ');
             if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
@@ -9238,8 +9374,9 @@ end;
             writeln(docfil, '</div>')
           end;
           { 4. Parameters }
-          if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-            writeparamtable(dp^.idp^.pflist);
+          if dp^.idp <> nil then
+            if dp^.idp^.klass in [proc, func] then
+              writeparamtable(dp^.idp^.pflist);
           { 5. Definition location }
           writeln(docfil, '<div class="definition">');
           write(docfil, 'Definition at line <span class="filename">', dp^.dline:1, '</span>');
@@ -9254,7 +9391,9 @@ end;
           writeln(docfil, '</div>') { close memitem }
         end else if fhtml then begin
           { Non-procedure/function items }
-          writeln(docfil, '<div class="memitem">');
+          write(docfil, '<div class="memitem" id="detail-');
+          write(docfil, dp^.dline:1);
+          writeln(docfil, '">');
           write(docfil, '<div class="memproto"><span class="memname">');
           writenameplain(dp^.dname);
           write(docfil, '</span>');
@@ -9286,7 +9425,8 @@ end;
           end;
           writeln(docfil);
           if dp^.dklass in [dkproc, dkfunc] then begin
-            if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then begin
+            if dp^.idp <> nil then
+              if dp^.idp^.klass in [proc, func] then begin
               write(docfil, '    ');
               if dp^.dklass = dkproc then write(docfil, 'procedure ')
               else write(docfil, 'function ');
@@ -9315,7 +9455,7 @@ end;
     end;
 
     { Section 3: Cross-reference }
-    if fhtml then writeln(docfil, '<h2>Cross-Reference</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-xref">Cross-Reference</h2>')
     else begin
       for i := 1 to 70 do write(docfil, '=');
       writeln(docfil);
@@ -9382,7 +9522,7 @@ end;
     if fhtml then writeln(docfil, '</div>');
 
     { Section 4: External module sections }
-    if fhtml then writeln(docfil, '<h2>External Modules</h2>')
+    if fhtml then writeln(docfil, '<h2 id="sec-extmodules">External Modules</h2>')
     else begin
       writeln(docfil);
       for i := 1 to 70 do write(docfil, '=');
@@ -9539,8 +9679,9 @@ end;
                 if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
                 else write(docfil, '<span class="keyword">function</span> ');
                 writenameplain(dp^.dname);
-                if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-                  writeparams(dp^.idp^.pflist);
+                if dp^.idp <> nil then
+                  if dp^.idp^.klass in [proc, func] then
+                    writeparams(dp^.idp^.pflist);
                 if dp^.dklass = dkfunc then begin
                   write(docfil, ': ');
                   if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
@@ -9552,8 +9693,9 @@ end;
                 if dp^.dklass = dkproc then write(docfil, 'procedure ')
                 else write(docfil, 'function ');
                 writename(dp^.dname);
-                if (dp^.idp <> nil) and (dp^.idp^.klass in [proc, func]) then
-                  writeparams(dp^.idp^.pflist);
+                if dp^.idp <> nil then
+                  if dp^.idp^.klass in [proc, func] then
+                    writeparams(dp^.idp^.pflist);
                 if dp^.dklass = dkfunc then begin
                   write(docfil, ': ');
                   if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
@@ -9690,7 +9832,7 @@ begin
   parse.openpar(cmdhan);
   parse.opencommand(cmdhan, cmdmax);
   services.filchr(valfch); { get valid filename characters }
-  valfch := valfch - ['=', '-']; { remove parsing characters }
+  valfch := valfch - ['=']; { remove parsing characters }
   parse.setfch(cmdhan, valfch);
   paropt; { parse command line options }
   if parse.endlin(cmdhan) then begin
@@ -9750,6 +9892,7 @@ begin
     dp1 := doclist; doclist := dp1^.next;
     putstrs(dp1^.dname);
     if dp1^.dmod <> nil then putstrs(dp1^.dmod);
+    if dp1^.dparen <> nil then putstrs(dp1^.dparen);
     while dp1^.dcmt <> nil do
       begin clp1 := dp1^.dcmt; dp1^.dcmt := clp1^.next; dispose(clp1) end;
     dispose(dp1)
