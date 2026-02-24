@@ -146,6 +146,9 @@ var
 { list actions }                           fact:    boolean;
 { do not perform actions }                 fdry:    boolean;
 { rebuild all }                            frebld:  boolean;
+{ generate documentation }                 fdoc:    boolean;
+{ generate html documentation }            fhtml:   boolean;
+{ print help }                             fhelp:   boolean;
 { no graphical windows mode }              fngwin:  boolean;
 { default to terminal mode }               fdeftrm: boolean;
 { default to graphical mode }              fdefgra: boolean;
@@ -368,6 +371,9 @@ begin
       setflg('a',  'action',   fact); { list actions }
       setflg('d',  'dry',      fdry); { don't perform actions }
       setflg('r',  'rebuild',  frebld); { rebuild everything }
+      setflg('doc', 'document', fdoc); { generate documentation }
+      setflg('html', fhtml); { generate html documentation }
+      setflg('h', 'help', fhelp); { print help }
       setflg('pint', fpint); { compile for pint (interpreter) }
       setflg('pmach', fpmach); { compile for pmach (interpreter) }
       setflg('cmach', fcmach); { compile for cmach (interpreter) }
@@ -1824,6 +1830,56 @@ begin
          excact(cmdbuf); { execute command buffer action }
 
       end;
+
+      { generate documentation if requested }
+      if fdoc then begin
+
+         i := 1; { set 1st command filename }
+         clears(cmdbuf); { clear command buffer }
+         putstr('pasdoc');
+         if fhtml then putstr(' -html');
+         putchr(' ');
+         { reconstruct .pas filename }
+         services.brknam(fns, p, n, e);
+         services.maknam(fns, p, n, 'pas');
+         services.fulnam(fns);
+         putstr(fns);
+         putchr(' ');
+         { place target path }
+         putstr(' --modules=');
+         if len(tarpath) = 0 then putstr('.') else putstr(tarpath);
+         putchr(' ');
+         { place module paths, if defined here }
+         if len(modpth) > 0 then begin
+
+            copy(pt, modpth); { copy module path }
+            repeat { try path components }
+
+               { extract a single path from the module path }
+               x := indexp(pt, ':'); { find location of path divider }
+               if x = 0 then begin { only one path left, use the whole thing }
+
+                  copy(w, pt); { place }
+                  clears(pt) { clear out the rest }
+
+               end else begin { extract single path }
+
+                  extract(w, pt, 1, x-1); { get the path }
+                  extract(pt, pt, x+1, len(pt)) { remove from module path }
+
+               end;
+               { output this path }
+               putstr(' --modules=');
+               putstr(w);
+               putchr(' ')
+
+            until pt[1] = ' ' { until path is empty }
+
+         end;
+         excact(cmdbuf) { execute command buffer action }
+
+      end;
+
       actcnt := actcnt+1 { count actions }
 
    end
@@ -2491,6 +2547,9 @@ begin
    fact := false; { list actions }
    fdry := false; { do not perform actions }
    frebld := false; { rebuild all }
+   fdoc := false; { generate documentation }
+   fhtml := false; { generate html documentation }
+   fhelp := false; { print help }
    fdeftrm := false; { set no default to terminal mode }
    fdefgra := false; { set no default to graphical mode }
    fpint := false; { set no pint (interpreter) }
@@ -2564,6 +2623,45 @@ begin
    valfch := valfch-['=','-']; { remove parsing characters }
    parse.setfch(cmdhan, valfch); { set that for active parsing }
    paropt; { parse command options }
+   if fhelp then begin
+
+      writeln('PC compiler shell vs. 1.14 Copyright (C) 2025 S. A. Franco');
+      writeln;
+      writeln('Usage: pc [options] <filename> [options]');
+      writeln;
+      writeln('Options:');
+      writeln('  -h   -help                Print this help message');
+      writeln('  -v   -verbose             Verbose mode');
+      writeln('  -t   -tree                List dependency tree');
+      writeln('  -a   -action              List actions');
+      writeln('  -d   -dry                 Do not perform actions');
+      writeln('  -r   -rebuild             Rebuild all');
+      writeln('  -doc -document            Generate documentation');
+      writeln('       -html                Generate HTML documentation');
+      writeln('       -pint                Compile for pint (interpreter)');
+      writeln('       -pmach               Compile for pmach (interpreter)');
+      writeln('       -cmach               Compile for cmach (compiler)');
+      writeln('       -package             Compile for package mode');
+      writeln('       -pgen                Compile for pgen mode (executable)');
+      writeln('  -ktw -keepterminalwindow  Keep terminal window');
+      writeln('  -sc  -symcoff             Generate COFF symbols');
+      writeln('  -dt  -defaultterminal     Default to terminal mode');
+      writeln('  -dg  -defaultgraphical    Default to graphical mode');
+      writeln('  -mp  -modulepath=<path>   Set module search path');
+      writeln('  -ef  -errfile=<file>      Set error output file');
+      writeln;
+      writeln('Passthrough options (passed to compiler):');
+      writeln('  -l   -list                Generate listing');
+      writeln('  -s   -iso7185             ISO 7185 standard mode');
+      writeln('  -o   -chkoverflo          Check overflow');
+      writeln('  -a   -debugflt            Debug filter');
+      writeln('  -f   -debugsrc            Debug source');
+      writeln('       -chk                 Enable checking');
+      writeln('       -debug               Enable debug mode');
+      writeln('       -reference           Check references');
+      goto 99
+
+   end;
    if parse.endlin(cmdhan) then error('Filename expected');
    parse.skpspc(cmdhan); { skip spaces }
    if parse.chkchr(cmdhan) = '"' then { parse string }

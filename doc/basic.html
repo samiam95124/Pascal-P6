@@ -3,10 +3,10 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 	<title>IP Pascal User Manual</title>
-	<meta name="generator" content="LibreOffice 7.3.7.2 (Linux)"/>
+	<meta name="generator" content="LibreOffice 7.6.7.2 (Linux)"/>
 	<meta name="author" content="samiam"/>
 	<meta name="created" content="2016-12-09T16:37:00"/>
-	<meta name="changed" content="2026-02-16T10:04:23.819398713"/>
+	<meta name="changed" content="2026-02-21T14:27:39.099310156"/>
 	<meta name="AppVersion" content="14.0000"/>
 	<style type="text/css">
 		p { line-height: 115%; text-align: left; orphans: 2; widows: 2; margin-bottom: 0.1in; direction: ltr; background: transparent }
@@ -31,13 +31,11 @@
 <div title="header">
 	<table width="100%" cellpadding="7" cellspacing="0">
 		<col width="218*"/>
-
 		<col width="38*"/>
-
 		<tr>
 			<td width="85%" height="18" bgcolor="#00addc" style="background: #00addc; border: none; padding: 0in"><p align="right" style="text-transform: uppercase; orphans: 0; widows: 0">
-				<font color="#ffffff"><font face="Arial, serif">Pascal
-				implementation: the P5 compiler</font></font></p>
+				<font color="#ffffff"><font face="Arial, serif">IP Basic
+				Interpreter</font></font></p>
 			</td>
 			<td width="15%" bgcolor="#000000" style="background: #000000; border: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
 				<font color="#ffffff">A</font><font color="#ffffff">ugust 29,
@@ -74,10 +72,8 @@
 
 </p>
 <p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
-<font face="Arial Black, serif"><font size="5" style="font-size: 18pt">P5</font></font></p>
-<p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
-<font face="Arial Black, serif"><font size="5" style="font-size: 18pt">ISO
-7185 Basic interpreter</font></font></p>
+<font face="Arial Black, serif"><font size="5" style="font-size: 18pt">IP
+Basic interpreter</font></font></p>
 <p class="western" align="center" style="line-height: 100%; margin-bottom: 0.14in">
 <font face="Arial Black, serif"><font size="3" style="font-size: 12pt">Scott
 A. Franco</font></font></p>
@@ -143,7 +139,7 @@ A. Franco</font></font></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3382_2468851717">6.5 if statement	12</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3384_2468851717">6.6 rem statement	13</a></p>
+	<a href="#__RefHeading___Toc3384_2468851717">6.6 rem statement	14</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3386_2468851717">6.7 stop statement	14</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
@@ -153,7 +149,7 @@ A. Franco</font></font></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3392_2468851717">6.10 new statement	14</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3394_2468851717">6.11 let statement	14</a></p>
+	<a href="#__RefHeading___Toc3394_2468851717">6.11 let statement	15</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3396_2468851717">6.12 load statement	15</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
@@ -164,7 +160,7 @@ A. Franco</font></font></p>
 	<a href="#__RefHeading___Toc3402_2468851717">6.15 read statement	15</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3404_2468851717">6.16 restore
-	statement	15</a></p>
+	statement	16</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3406_2468851717">6.17 gosub statement	16</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
@@ -180,9 +176,9 @@ A. Franco</font></font></p>
 	statement	19</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3416_2468851717">6.22 select
-	statement	19</a></p>
+	statement	20</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3418_2468851717">6.23 open statement	20</a></p>
+	<a href="#__RefHeading___Toc3418_2468851717">6.23 open statement	21</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3420_2468851717">6.24 close statement	21</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
@@ -190,64 +186,68 @@ A. Franco</font></font></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3424_2468851717">6.26 dim statement	21</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3426_2468851717">6.27 def statement	21</a></p>
+	<a href="#__RefHeading___Toc3426_2468851717">6.27 def statement	22</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3428_2468851717">6.28 Function/endfunc
 	statement	22</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3430_2468851717">6.29 procedure
-	statement	22</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3432_2468851717">6.30 randomize
 	statement	23</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3434_2468851717">6.31 trace statement	23</a></p>
+	<a href="#__RefHeading___Toc3811_2150240208">6.30 Local statement	23</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3436_2468851717">6.32 notrace
-	statement	23</a></p>
+	<a href="#__RefHeading___Toc3432_2468851717">6.31 randomize
+	statement	24</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3438_2468851717">6.33 bye statement	23</a></p>
+	<a href="#__RefHeading___Toc3434_2468851717">6.32 trace statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3436_2468851717">6.33 notrace
+	statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3438_2468851717">6.34 bye statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9001_new">6.35 clear statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9002_new">6.36 cont statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9003_new">6.37 delete statement	24</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9004_new">6.38 kill statement	25</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9005_new">6.39 merge statement	25</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9006_new">6.40 name statement	25</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9007_new">6.41 renum statement	25</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc9008_new">6.42 dir statement	26</a></p>
 	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
-	<a href="#__RefHeading___Toc3440_2468851717">7 Expressions	23</a></p>
+	<a href="#__RefHeading___Toc3440_2468851717">7 Expressions	26</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
 	<a href="#__RefHeading___Toc3442_2468851717">7.1 Standard
-	functions	24</a></p>
+	functions	27</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3454_2468851717">7.2 Batch mode	28</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3456_2468851717">7.3 Cut and paste	29</a></p>
 	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
-	<a href="#__RefHeading___Toc3444_2468851717">8 ISO 7185 extension
-	routines	26</a></p>
+	<a href="#__RefHeading___Toc3458_2468851717">8 BNF Grammar
+	Specification	30</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3446_2468851717">8.1 Routines	26</a></p>
+	<a href="#__RefHeading___Toc3460_2468851717">8.1 Program
+	Structure	30</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3462_2468851717">8.2 Statements	30</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3464_2468851717">8.3 Expression
+	Hierarchy	31</a></p>
+	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
+	<a href="#__RefHeading___Toc3466_2468851717">8.4 Variables and
+	Literals	32</a></p>
 	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3448_2468851717">8.1.1 Named file
-	input	26</a></p>
-	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3450_2468851717">8.1.2 Boolean bit
-	operations	26</a></p>
-	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
-	<a href="#__RefHeading___Toc3452_2468851717">9 Using ISO 7185
-	mode	27</a></p>
+	<a href="#__RefHeading___Toc3468_2468851717">8.4.1 Literals	32</a></p>
 	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3454_2468851717">9.1 Batch mode	27</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3456_2468851717">9.2 Cut and paste	27</a></p>
-	<p style="line-height: 100%; margin-top: 0.17in; margin-bottom: 0.17in">
-	<a href="#__RefHeading___Toc3458_2468851717">10 BNF Grammar
-	Specification	27</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3460_2468851717">10.1 Program
-	Structure	27</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3462_2468851717">10.2 Statements	28</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3464_2468851717">10.3 Expression
-	Hierarchy	29</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3466_2468851717">10.4 Variables and
-	Literals	30</a></p>
-	<p style="line-height: 100%; margin-left: 0.31in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3468_2468851717">10.4.1 Literals	30</a></p>
-	<p style="line-height: 100%; margin-left: 0.15in; margin-bottom: 0in">
-	<a href="#__RefHeading___Toc3470_2468851717">10.5 Grammar Notes	31</a></p>
+	<a href="#__RefHeading___Toc3470_2468851717">8.5 Grammar Notes	33</a></p>
 </div>
 <p class="western" style="line-height: 115%; margin-bottom: 0.14in"><br/>
 <br/>
@@ -257,12 +257,10 @@ A. Franco</font></font></p>
 <br/>
 
 </p>
-<h1 class="western" style="page-break-before: always">1Introduction</h1>
+<h1 class="western" style="page-break-before: always"><a name="__RefHeading___Toc3332_2468851717"></a><a name="_Toc320481114"></a><a name="_Toc501575432"></a><a name="_Ref371924773"></a><a name="_Ref371924703"></a><a name="_Ref371924702"></a><a name="_Ref371924699"></a>
+1Introduction</h1>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
-manual covers the Basic language interpreter that comes with the
-Pascal-P5 porting kit. The interpreter is written entirely in ISO
-7185 Pascal, but contains extensions that are normally commented out
-to provide named file I/O.</p>
+manual covers the IP Basic language interpreter.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 language of the basic interpreter was in common use in the late
 1970’s/early 1980’s. When the first microprocessors were used
@@ -272,34 +270,37 @@ implementation was DEC PDP-11 Basic, those Basic implementations
 often appeared as cut down versions of that Basic interpreter to
 enable porting of various programs from that machine. This includes
 implementations such as MBasic-80 by Microsoft, and others.</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">IP
 Basic roughly implements MBasic-80, but a subset of that. The test
 material for it is the “Creative Computing” set of Basic language
 games that were published in the 1970s. Please see:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#eb8803"><u><a href="http://www.classicbasicgames.org/">http://www.classicbasicgames.org/</a></u></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
-P5 Basic, for the most part, implements the set of features necessary
-to implement that set of programs. However, P5 Basic implements
+IP Basic, for the most part, implements the set of features necessary
+to implement that set of programs. However, IP Basic implements
 several features to enable a better programming style than those
 original Basics, including:</p>
 <ul>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Programs
-	without leading line numbers.</p>
+	without leading line numbers.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Full
-	alphanumeric identifiers, including goto targets.</p>
+	alphanumeric identifiers, including goto targets.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Structured
-	statements.</p>
+	statements.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Free form,
-	multiline constructs.</p>
+	multiline constructs.</p></li>
 </ul>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
 has been implemented in a manner backwards compatible to the base
-language.</p>
-<h1 class="western">2Beta software warning</h1>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+language. It also retains the ability to run command lines
+immediately from the console.</p>
+<h1 class="western"><a name="__RefHeading___Toc3334_2468851717"></a><a name="_Toc501575433"></a>
+2Beta software warning</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">IP
 Basic is beta software at this time (version &lt; 1). It should not
 be considered reliable for production use.</p>
-<h1 class="western">3Syntax notation used</h1>
+<h1 class="western"><a name="__RefHeading___Toc3336_2468851717"></a><a name="_Toc501575434"></a>
+3Syntax notation used</h1>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 notation used to introduce language syntax elements is:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">[option]		An
@@ -320,9 +321,10 @@ language keyword.</p>
 group of items, usually for purposes of repeating.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">(group)…	A
 repeated group, 1 to n times.</p>
-<h1 class="western">4Format of source</h1>
+<h1 class="western"><a name="__RefHeading___Toc3338_2468851717"></a><a name="_Toc501575435"></a>
+4Format of source</h1>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
-P5 basic program consists of a series of text lines. Each line may or
+IP basic program consists of a series of text lines. Each line may or
 may not have a leading number, which is ignored while the program is
 being executed. Lines can be blank.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0in">10
@@ -332,7 +334,8 @@ print “hi”</p>
 end</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Case
 is not significant except within strings.</p>
-<h3 class="western">4.1.1Line entry</h3>
+<h3 class="western"><a name="__RefHeading___Toc3340_2468851717"></a><a name="_Toc501575436"></a>
+4.1.1Line entry</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
 lines are entered on the console, the “line oriented editor” mode
 is used. The format of a console line is:</p>
@@ -344,13 +347,13 @@ to the lines in the current program store. If the line number order
 is:</p>
 <ul>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Between
-	existing lines: it is inserted between those lines.</p>
+	existing lines: it is inserted between those lines.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Equal to an
-	existing line: the line is replaced.</p>
+	existing line: the line is replaced.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">After any
-	line in the program: the new line is added above the program.</p>
+	line in the program: the new line is added above the program.</p></li>
 	<li><p style="line-height: 100%; margin-bottom: 0.14in">Before any
-	line in the program: the new line is added before the program.</p>
+	line in the program: the new line is added before the program.</p></li>
 </ul>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 a line number is entered alone, it signifies that any existing line
@@ -362,7 +365,8 @@ time the formatting of source lines is changed.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 no line number appears on the entered line, then the line is
 considered to be immediately executable.</p>
-<h3 class="western">4.1.2File entry</h3>
+<h3 class="western"><a name="__RefHeading___Toc3342_2468851717"></a><a name="_Toc501575437"></a>
+4.1.2File entry</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 a source file is read, each line is treated as if it were directly
 entered on the console. However, if no line number appears, the line
@@ -374,9 +378,10 @@ leading line number.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
 directly saving and restoring program files allows free form
 programming.</p>
-<h3 class="western">4.1.3Identifiers</h3>
+<h3 class="western"><a name="__RefHeading___Toc3344_2468851717"></a><a name="_Toc501575438"></a>
+4.1.3Identifiers</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Identifiers
-in P5 Basic are of the form:</p>
+in IP Basic are of the form:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">[_,a-z,A-Z][_,a-z,A-Z]…</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">An
 identifier starts with any of _, a through z and A through Z,
@@ -390,13 +395,14 @@ identifiers are valid labels, thus:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Are
 all valid identifiers.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Note
-that case is irrelevant in P5 Basic. Thus:</p>
+that case is irrelevant in IP Basic. Thus:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">MyVar</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">And</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Myvar</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Are
 the same identifier.</p>
-<h3 class="western">4.1.4Numeric constants</h3>
+<h3 class="western"><a name="__RefHeading___Toc3346_2468851717"></a><a name="_Toc501575439"></a>
+4.1.4Numeric constants</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Numberic
 constants can be simple integer, or real:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">1</p>
@@ -412,7 +418,8 @@ constants can also be input in hex, octal or binary:</p>
 8</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">%0101	Binary
 5</p>
-<h3 class="western">4.1.5String constants</h3>
+<h3 class="western"><a name="__RefHeading___Toc3348_2468851717"></a><a name="_Toc501575440"></a>
+4.1.5String constants</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">String
 constants are characters between double quotes:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">“hi
@@ -422,15 +429,17 @@ a double quote is wanted within the string, a “quote image” is
 used, consisting of two back to back quotes:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">“and
 he said “”what is going on”” there?”</p>
-<h3 class="western">4.1.6Comments</h3>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+<h3 class="western"><a name="__RefHeading___Toc3350_2468851717"></a><a name="_Toc501575441"></a>
+4.1.6Comments</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">IP
 Pascal features both a comment statement, <font face="Arial, serif"><b>rem</b></font>,
 as well as a comment character, ‘!’. The difference is, besides
 being shorter, ! is not a statement and can appear anywhere on the
 line. Like the <font face="Arial, serif"><b>rem</b></font> statement,
 it ignores all further text on the line.</p>
-<h3 class="western">4.1.7Internal format</h3>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+<h3 class="western"><a name="__RefHeading___Toc3352_2468851717"></a><a name="_Toc501575442"></a>
+4.1.7Internal format</h3>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">IP
 Basic reformats the source language into an internal, tolkenized
 format that is more efficient, both to store as well as to interpret.
 It tries hard to maintain the original format of the source. For
@@ -438,8 +447,9 @@ example, the spacing of the original program is maintained. However,
 there is one change, and that is of numeric formats. Numbers are
 simplified, with leading zeros removed, and floating point constants
 are normalized.</p>
-<h1 class="western">5Variables</h1>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
+<h1 class="western"><a name="__RefHeading___Toc3354_2468851717"></a><a name="_Toc501575443"></a>
+5Variables</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">IP
 Basic allows for 7 different kinds of variables</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">x		Real
 (floating point)</p>
@@ -459,20 +469,24 @@ form of variable contains different data. Thus:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">x$</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Refer
 to two completely different variables.</p>
-<h2 class="western">5.1Real</h2>
+<h2 class="western"><a name="__RefHeading___Toc3356_2468851717"></a><a name="_Toc501575444"></a>
+5.1Real</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Real
 valued variables can take any value, with any fraction. They can be
 used for integer math, but take longer to calculate than integer
 based variables.</p>
-<h2 class="western">5.2Integer</h2>
+<h2 class="western"><a name="__RefHeading___Toc3358_2468851717"></a><a name="_Toc501575445"></a>
+5.2Integer</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Integer
 valued variables always assume integer only values, no fractional
 part. They are generally faster and more compact than reals.</p>
-<h2 class="western">5.3String</h2>
+<h2 class="western"><a name="__RefHeading___Toc3360_2468851717"></a><a name="_Toc501575446"></a>
+5.3String</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">String
 valued variables take a series of characters and can be any length up
 to 250 characters.</p>
-<h2 class="western">5.4Arrays</h2>
+<h2 class="western"><a name="__RefHeading___Toc3362_2468851717"></a><a name="_Toc501575447"></a>
+5.4Arrays</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Each
 of real, integer and string can be expressed as an array, and that
 array can have any number of dimensions. For example:</p>
@@ -495,17 +509,19 @@ later be used as:</p>
 can be dimensioned by the dim statement, but more typically the size
 and index characteristics of the array are determined automatically
 from its first encountered form.</p>
-<h3 class="western">5.4.1Sparse arrays</h3>
+<h3 class="western"><a name="__RefHeading___Toc3364_2468851717"></a><a name="_Toc501575448"></a>
+5.4.1Sparse arrays</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
-P5 Basic, arrays are automatically sparse. If the statements appear:</p>
+IP Basic, arrays are automatically sparse. If the statements appear:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">A$(1)
 = “hi”</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">A$(10)
 = “there”</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
-resulting array is not 10 units long, but 2. P5 Basic does not
+resulting array is not 10 units long, but 2. IP Basic does not
 allocate array elements until they are used.</p>
-<h3 class="western">5.4.2Function precedence over arrays</h3>
+<h3 class="western"><a name="__RefHeading___Toc3366_2468851717"></a><a name="_Toc501575449"></a>
+5.4.2Function precedence over arrays</h3>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
 Basic, array notation a(x) and function notation f(y) are inherently
 ambiguous with respect to each other. When a name is used to
@@ -514,7 +530,8 @@ essentially masked by the function definition. The previous contents
 of the array will not be usable.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Naming
 functions and arrays the same is to be avoided for this reason.</p>
-<h2 class="western">5.5Records</h2>
+<h2 class="western"><a name="__RefHeading___Toc3368_2468851717"></a><a name="_Toc501575450"></a>
+5.5Records</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
 record is a collection of named fields, each of which can have a
 different type:</p>
@@ -534,10 +551,23 @@ contain records:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">is
 a record a, with field b which is a record, which contains field c.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">However,
-in this version of P5 Basic, arrays of records are not possible.</p>
-<h2 class="western">5.6Files</h2>
+in this version of IP Basic, arrays of records are not possible.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">There
+is no special syntax to indicate a record. For each identifier, there
+exists a different form such as:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a	Float</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a%	Integer</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a$	String</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a(10)	Array
+of float</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">a.i	Record
+with field I, which is float.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">All
+of these forms can exist at once.</p>
+<h2 class="western"><a name="__RefHeading___Toc3370_2468851717"></a><a name="_Toc501575451"></a>
+5.6Files</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Separate
-from variables, P5 Basic can operate on a number of text files
+from variables, IP Basic can operate on a number of text files
 referenced by number, from 1 to n where n is a maximum of 100. <font face="Arial, serif"><b>input</b></font>
 or <font face="Arial, serif"><b>print</b></font> statements can be
 used with files. Two file numbers, 1 and 2 are reserved:</p>
@@ -553,8 +583,10 @@ print statements is #2.
 are text only, and structured into lines. <font face="Arial, serif"><b>input</b></font>
 statements read whole lines from a file. <font face="Arial, serif"><b>print</b></font>
 statements write whole lines to a file.</p>
-<h1 class="western">6Statements</h1>
-<h2 class="western">6.1Input statement</h2>
+<h1 class="western"><a name="__RefHeading___Toc3372_2468851717"></a><a name="_Toc501575452"></a>
+6Statements</h1>
+<h2 class="western"><a name="__RefHeading___Toc3374_2468851717"></a><a name="_Toc501575453"></a>
+6.1Input statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>input</b></font>
 [#file,] [prompt[;|,]] variable[,variable]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
@@ -598,7 +630,8 @@ without regard to embedded ‘,’ characters.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Note
 that input from a file is not available if named file handling is not
 enabled.</p>
-<h2 class="western">6.2print statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3376_2468851717"></a><a name="_Toc501575454"></a>
+6.2print statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>print</b></font></font>
 [#file] ([<font color="#000000"><font face="Arial, serif"><b>tab</b></font></font>(number)]
 [<font color="#000000"><font face="Arial, serif"><b>using</b></font></font>
@@ -648,7 +681,7 @@ a string</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">$	Print
 ‘$’ if at the left of the most significant digit in number,
 otherwise ‘ ‘ (space).</p>
-<p class="western" style="line-height: 100%; margin-left: 0.5in; text-indent: -0.5in; margin-bottom: 0.14in">
+<p class="western" style="line-height: 100%; text-indent: -0.5in; margin-left: 0.5in; margin-bottom: 0.14in">
 ,	Divide digits in a number. Prints ‘,’ if within significant
 digits of the number, otherwise ‘ ‘ (space).</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">#	Print
@@ -763,7 +796,8 @@ characters, the exponent format is used.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">To
 get the exact format you want, it is recommended that <font face="Arial, serif"><b>print</b></font>
 <font face="Arial, serif"><b>using</b></font> be utilized.</p>
-<h2 class="western">6.3goto statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3378_2468851717"></a><a name="_Toc501575455"></a>
+6.3goto statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>goto</b></font>
 [line number|label]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">label:</p>
@@ -779,7 +813,8 @@ free format code with or without line numbers. To enable this, a
 label must be present in the code. It must appear first on the line
 before any statements. The line containing the label may or may not
 also have a line number on it.</p>
-<h2 class="western">6.4on statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3380_2468851717"></a><a name="_Toc501575456"></a>
+6.4on statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0in"><font face="Arial, serif"><b>on</b></font>
 expression <font face="Arial, serif"><b>goto</b></font> label|lineno
 [,label|lineno]…</p>
@@ -800,7 +835,8 @@ statement). If <font face="Arial, serif"><b>gosub</b></font>, the
 target statement is executed, and a ensuing <font face="Arial, serif"><b>return</b></font>
 statement will cause it to return to the next statement after the <font face="Arial, serif"><b>on</b></font>
 (see <font face="Arial, serif"><b>gosub</b></font> statement).</p>
-<h2 class="western">6.5if statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3382_2468851717"></a><a name="_Toc501575457"></a>
+6.5if statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>if</b></font>
 condition <font face="Arial, serif"><b>then</b></font> statement
 [<font face="Arial, serif"><b>else</b></font> statement]</p>
@@ -857,10 +893,8 @@ you”</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">lo</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">How
 are you</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Bcause
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Because
 the else or false clause enables the rest of the line.</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">[note:
-I don’t think this is correct behavior according to MBasic-80]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 rules for continuation on the same line using <font face="Arial, serif"><b>if</b></font>
 are a bit complex. The recommendation is to only use <font face="Arial, serif"><b>if</b></font>
@@ -884,7 +918,7 @@ is encountered.</p>
 <br/>
 
 </p>
-<h2 class="western" style="page-break-inside: auto; page-break-after: auto">
+<h2 class="western" style="page-break-inside: auto; page-break-after: auto"><a name="__RefHeading___Toc3384_2468851717"></a><a name="_Toc501575458"></a>
 6.6rem statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>rem</b></font>
 some text…</p>
@@ -902,14 +936,16 @@ way to introduce a comment is with the ‘!’ character. This can be
 placed anywhere on the line, not just where a statement is expected:</p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">print
 “hi there” ! do my print here</font></p>
-<h2 class="western">6.7stop statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3386_2468851717"></a><a name="_Toc501575459"></a>
+6.7stop statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>stop</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Causes
-the program to halt and enter command mode. In this version of P5, it
-is functionally identical to the <font face="Arial, serif"><b>end</b></font>
+the program to halt and enter command mode. In this version of
+Pascal-P6, it is functionally identical to the <font face="Arial, serif"><b>end</b></font>
 statement (see <font face="Arial, serif"><b>end</b></font>
 statement).</p>
-<h2 class="western">6.8run statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3388_2468851717"></a><a name="_Toc501575460"></a>
+6.8run statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>run</b></font>
 [filename]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Runs
@@ -921,7 +957,8 @@ completely cleared.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
 is an error if a filename is specified and named file I/O is not
 enabled.</p>
-<h2 class="western">6.9list statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3390_2468851717"></a><a name="_Toc501575461"></a>
+6.9list statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>list</b></font>
 [start line[,end line]]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Lists
@@ -934,12 +971,14 @@ inclusive.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">To
 be able to specify starting and ending lines, the source lines
 indicated must have numbers.</p>
-<h2 class="western">6.10new statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3392_2468851717"></a><a name="_Toc501575462"></a>
+6.10new statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>new</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Clears
 the program store and variables. Used to start editing on a new
 program.</p>
-<h2 class="western">6.11let statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3394_2468851717"></a><a name="_Toc501575463"></a>
+6.11let statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">[let]
 variable = expression</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Assigns
@@ -951,7 +990,8 @@ a = 10.67</font></p>
 = “hi”</font></p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">a.b%(5)
 = 3</font></p>
-<h2 class="western">6.12load statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3396_2468851717"></a><a name="_Toc501575464"></a>
+6.12load statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>load</b></font>
 filename</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Loads
@@ -959,7 +999,8 @@ a new program. The file by the given filename is loaded into the
 current program store. Any previous program is erased.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 is an error if named file I/O is not enabled.</p>
-<h2 class="western">6.13save statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3398_2468851717"></a><a name="_Toc501575465"></a>
+6.13save statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>save</b></font>
 filename</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Saves
@@ -967,7 +1008,8 @@ the current program to the given file by filename. The current
 program in store is unmodified.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 is an error if named file I/O is not enabled.</p>
-<h2 class="western">6.14data statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3400_2468851717"></a><a name="_Toc501575466"></a>
+6.14data statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>data</b></font>
 [value[,value]]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Introduce
@@ -987,7 +1029,8 @@ statement). All of the data statements in the program are considered
 a list from start to finish. The <font face="Arial, serif"><b>read</b></font>
 statement will read each in turn until there are no more data
 statements in the program.</p>
-<h2 class="western">6.15read statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3402_2468851717"></a><a name="_Toc501575467"></a>
+6.15read statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>read</b></font>
 variable[,variable]…</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Reads
@@ -1007,7 +1050,8 @@ the <font face="Arial, serif"><b>restore</b></font> statement).</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
 is an error if there are no more data values in the program to read
 to the current variable.</p>
-<h2 class="western">6.16restore statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3404_2468851717"></a><a name="_Toc501575468"></a>
+6.16restore statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>restore</b></font>
 [linenumber|label]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Restores
@@ -1019,7 +1063,8 @@ line by number or label.</p>
 is not an error to restore the data position if there are no <font face="Arial, serif"><b>data</b></font>
 statements in the program. However, the next <font face="Arial, serif"><b>read</b></font>
 statement will cause an error.</p>
-<h2 class="western">6.17gosub statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3406_2468851717"></a><a name="_Toc501575469"></a>
+6.17gosub statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>gosub</b></font>
 linenumber|label</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Transfers
@@ -1036,7 +1081,8 @@ end</font></p>
 print “hi”: return</font></p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">hi</font></p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">done</font></p>
-<h2 class="western">6.18return statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3408_2468851717"></a><a name="_Toc501575470"></a>
+6.18return statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>return</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Returns
 to the program position just after the last <font face="Arial, serif"><b>gosub</b></font>
@@ -1045,7 +1091,8 @@ statement).</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
 is an error if there is no last <font face="Arial, serif"><b>gosub</b></font>
 executed.</p>
-<h2 class="western">6.19For/next statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3410_2468851717"></a><a name="_Toc501575471"></a>
+6.19For/next statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>for</b></font>
 variable = start expression <font face="Arial, serif"><b>to</b></font>
 end expression [<font face="Arial, serif"><b>step</b></font>
@@ -1200,7 +1247,8 @@ for I = 1 to 10: print i: goto 20</font></p>
 function in an interpretive environment, but would not work in a
 compiler, in case you ever want to generate fast binaries. Thus these
 kinds of styles should be avoided.</p>
-<h2 class="western">6.20while statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3412_2468851717"></a><a name="_Toc501575472"></a>
+6.20while statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>while</b></font>
 expression … <font face="Arial, serif"><b>wend</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
@@ -1251,7 +1299,8 @@ statement must be located in the program source after the <font face="Arial, ser
 statement. This is because if the <font face="Arial, serif"><b>while</b></font>
 condition is false, statements are skipped, not executed, until the
 <font face="Arial, serif"><b>wend</b></font> statement is found.</p>
-<h2 class="western">6.21repeat statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3414_2468851717"></a><a name="_Toc501575473"></a>
+6.21repeat statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>repeat</b></font>
 … <font face="Arial, serif"><b>until</b></font> expression</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
@@ -1298,7 +1347,8 @@ loops can be nested with other while loops and other control
 structures to any level. The <font face="Arial, serif"><b>until</b></font>
 statement should located in the program source after the <font face="Arial, serif"><b>repeat</b></font>
 statement.</p>
-<h2 class="western">6.22select statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3416_2468851717"></a><a name="_Toc501575474"></a>
+6.22select statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>select</b></font>
 expression .. <font face="Arial, serif"><b>case</b></font>
 expression: [<font face="Arial, serif"><b>other</b></font>:] <font face="Arial, serif"><b>endsel</b></font></p>
@@ -1401,7 +1451,8 @@ integer, real or string.</p>
 </p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">its
 a fork</font></p>
-<h2 class="western">6.23open statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3418_2468851717"></a><a name="_Toc501575475"></a>
+6.23open statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>open</b></font>
 filename <font face="Arial, serif"><b>for</b></font> <font face="Arial, serif"><b>input</b></font>|<font face="Arial, serif"><b>output</b></font>
 <font face="Arial, serif"><b>as</b></font> #number</p>
@@ -1413,7 +1464,7 @@ output.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">When
 a file is open for reading, it is positioned to the start of the file
 and made ready to read. When a file is open for writing, it is set to
-zero length and writing starts at the beginning. P5 Basic only allows
+zero length and writing starts at the beginning. IP Basic only allows
 reading or writing to a text file, not both at the same time.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
 is an error if the file is opened for reading, but a file by that
@@ -1421,14 +1472,16 @@ name does not exist.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">If
 the file by number is already open, it is automatically closed, then
 reopened under the new name.</p>
-<h2 class="western">6.24close statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3420_2468851717"></a><a name="_Toc501575476"></a>
+6.24close statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>close</b></font>
 #number</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Closes
 a text file by filenumber. The file number is then free to be used
 for other files. It is an error to close either the standard input
 file (1), or the standard output file (2).</p>
-<h2 class="western">6.25end statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3422_2468851717"></a><a name="_Toc501575477"></a>
+6.25end statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>end</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 <font face="Arial, serif"><b>end</b></font> statement terminates the
@@ -1442,12 +1495,13 @@ statement (see <font face="Arial, serif"><b>stop</b></font>
 statement), or <font face="Arial, serif"><b>goto</b></font> the final
 line containing the <font face="Arial, serif"><b>end</b></font>
 statement.</p>
-<h2 class="western">6.26dim statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3424_2468851717"></a><a name="_Toc501575478"></a>
+6.26dim statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>dim</b></font>
 variable[,variable]</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 <font face="Arial, serif"><b>dim</b></font> statement defines the
-exact dimensions of arrays in P5 Basic. P5 Basic automatically
+exact dimensions of arrays in IP Basic. IP Basic automatically
 declares variables when they are used. However, the default string
 length of 250 characters may be excessive, especially in large arrays
 of strings. Thus it is often useful to set the exact string length
@@ -1464,7 +1518,7 @@ total size of the array, not an index value:</p>
 the size of the string a$ is set at 100 characters, and the size of
 the matrix c in record b is set to 10x10.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Using
-a dim statement can also help code size and speed when P5 Basic is
+a dim statement can also help code size and speed when IP Basic is
 complied (sometimes dramatically). The dynamic creation of variables
 in code without dim statements can be a source of considerable
 runtime overhead.</p>
@@ -1472,7 +1526,8 @@ runtime overhead.</p>
 is an error to <font face="Arial, serif"><b>dim</b></font> variables
 after their use. It is an error to dim the same variable multiple
 times.</p>
-<h2 class="western">6.27def statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3426_2468851717"></a><a name="_Toc501575479"></a>
+6.27def statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>def</b></font>
 functionname[(parameter[,parameter]…) = expression</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Defines
@@ -1502,7 +1557,8 @@ appearance of a function overrides the function name use as an array.
 If an array was definined when the function is defined, the contents
 of the array become unusable. Naming functions and arrays the same is
 to be avoided.</p>
-<h2 class="western">6.28Function/endfunc statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3428_2468851717"></a><a name="_Toc501575480"></a>
+6.28Function/endfunc statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>function</b></font>
 functionname[(parameter[,parameter]…) … <font face="Arial, serif"><b>endfunc</b></font>
 expression</p>
@@ -1536,7 +1592,11 @@ appearance of a function overrides the function name use as an array.
 If an array was definined when the function is defined, the contents
 of the array become unusable. Naming functions and arrays the same is
 to be avoided.</p>
-<h2 class="western">6.29procedure statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Functions
+can be nested. The definition of a nested function will only be
+available inside the procedure it is nested within.</p>
+<h2 class="western"><a name="__RefHeading___Toc3430_2468851717"></a><a name="_Toc501575481"></a>
+6.29procedure statement</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>procedure</b></font>
 procedurename[(parameter[,parameter]…) … <font face="Arial, serif"><b>endproc</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Introduces
@@ -1567,7 +1627,50 @@ appearance of a procedure overrides the procedure name use as an
 array. If an array was definined when the procedure is defined, the
 contents of the array become unusable. Naming procedures and arrays
 the same is to be avoided.</p>
-<h2 class="western">6.30randomize statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Procedures
+can be nested. The definition of a nested procedure will only be
+available inside the procedure it is nested within.</p>
+<h2 class="western"><a name="__RefHeading___Toc3811_2150240208"></a>6.30Local
+statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Normally,
+variables used within a procedure or function are global. The
+external value of the variable is still present within the procedure
+or function, and if the variable is set within the function, that
+value is available outside the procedure or function as well.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+local statement creates a variable definition that is only present
+during the execution of the procedure or function is is contained in:</p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">10
+r = 42</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">20
+procedure doit(a, b)</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">30</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">40
+    local r, t;</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">50
+    print “r”; r</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">60</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">70
+endproc</font></p>
+<p style="line-height: 100%; margin-bottom: 0in"><br/>
+
+</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+identifiers contained in the local statement replace any global
+version of that identifier. Access to the global identifier, if there
+is one, is prevented or “shadowed” by the local version for the
+duration of execution of the procedure or function.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Local
+statements also nest. A local with the same name as an outer nested
+variable won’t be accessable, and the local will only be available
+during the execution of the nested procedure or function.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Locals
+are by identifier. That is, individual a%, a() or other type
+specifiers cannot be used. The entire identifier is shadowed by the
+local definition.</p>
+<h2 class="western"><a name="__RefHeading___Toc3432_2468851717"></a><a name="_Toc501575482"></a>
+6.31randomize statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>randomize</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Overrides
 the reset of the random number generator used in <font face="Arial, serif"><b>rnd</b></font>().
@@ -1576,24 +1679,148 @@ numbers that is the same series each time the program is run. This
 can be overridden by the <font face="Arial, serif"><b>randomize</b></font>
 statement, which causes it to continue with the series instead of
 restarting.</p>
-<h2 class="western">6.31trace statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3434_2468851717"></a><a name="_Toc501575483"></a>
+6.32trace statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>trace</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Turns
 on trace mode. In trace mode, each time a statement is executed, the
 line the statement comes from is printed. This can help debug
 programs.</p>
-<h2 class="western">6.32notrace statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3436_2468851717"></a><a name="_Toc501575484"></a>
+6.33notrace statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>notrace</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Turns
 off <font face="Arial, serif"><b>trace</b></font> mode. See the <font face="Arial, serif"><b>trace</b></font>
 statement.</p>
-<h2 class="western">6.33bye statement</h2>
+<h2 class="western"><a name="__RefHeading___Toc3438_2468851717"></a><a name="_Toc501575485"></a>
+6.34bye statement</h2>
 <p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>bye</b></font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Exits
-the P5 Basic interpreter.</p>
-<h1 class="western">7Expressions</h1>
+the IP Basic interpreter.</p>
+<h2 class="western"><a name="__RefHeading___Toc9001_new"></a><a name="_Toc_new_clear"></a>
+6.35clear statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>clear</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Resets
+all variables to their default values (numeric variables to zero,
+string variables to empty) and closes all user-opened files. The
+<font face="Arial, serif"><b>clear</b></font> statement also
+invalidates any saved position from a <font face="Arial, serif"><b>stop</b></font>
+statement, so a subsequent <font face="Arial, serif"><b>cont</b></font>
+will not be possible.</p>
+<h2 class="western"><a name="__RefHeading___Toc9002_new"></a><a name="_Toc_new_cont"></a>
+6.36cont statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>cont</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Continues
+program execution after a <font face="Arial, serif"><b>stop</b></font>
+statement has halted the program. Execution resumes from the point
+where the program was stopped. It is an error if no <font face="Arial, serif"><b>stop</b></font>
+statement has been executed, or if a <font face="Arial, serif"><b>clear</b></font>,
+<font face="Arial, serif"><b>new</b></font>, or <font face="Arial, serif"><b>end</b></font>
+statement has been executed since the last <font face="Arial, serif"><b>stop</b></font>.</p>
+<h2 class="western"><a name="__RefHeading___Toc9003_new"></a><a name="_Toc_new_delete"></a>
+6.37delete statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>delete</b></font>
+[startline][<font face="Arial, serif"><b>-</b></font>endline]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+program lines by line number or range. If a single line number is
+given, that line is deleted. If a range is given with a <font face="Arial, serif"><b>-</b></font>
+separator, all lines in the range are deleted inclusive. If no start
+line is given, deletion begins from the first line. If no end line is
+given after the <font face="Arial, serif"><b>-</b></font>, deletion
+continues to the last line.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Examples:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>delete</b></font>
+40</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+line 40.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>delete</b></font>
+40-100</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+lines 40 through 100.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>delete</b></font>
+-40</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+from the first line through line 40.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>delete</b></font>
+40-</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+from line 40 through the last line.</p>
+<h2 class="western"><a name="__RefHeading___Toc9004_new"></a><a name="_Toc_new_kill"></a>
+6.38kill statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>kill</b></font>
+filename</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Deletes
+a file from disk. The filename is a string expression. If the file
+does not have an extension, &quot;.bas&quot; is appended. It is an
+error if the file does not exist.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if named file I/O is not enabled.</p>
+<h2 class="western"><a name="__RefHeading___Toc9005_new"></a><a name="_Toc_new_merge"></a>
+6.39merge statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>merge</b></font>
+filename</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Merges
+a program file into the current program. Lines are read from the file
+and entered into the program one at a time. If a line in the file has
+the same number as an existing program line, the existing line is
+replaced. Lines with new numbers are inserted at the appropriate
+position. Unlike <font face="Arial, serif"><b>load</b></font>, the
+current program is not cleared first.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
+filename is a string expression. If the file does not have an
+extension, &quot;.bas&quot; is appended. It is an error if the file
+does not exist.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if named file I/O is not enabled.</p>
+<h2 class="western"><a name="__RefHeading___Toc9006_new"></a><a name="_Toc_new_name"></a>
+6.40name statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>name</b></font>
+oldfilename <font face="Arial, serif"><b>as</b></font> newfilename</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Renames
+a file on disk. Both the old and new filenames are string
+expressions. If either filename does not have an extension, &quot;.bas&quot;
+is appended. It is an error if the old file does not exist.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if named file I/O is not enabled.</p>
+<h2 class="western"><a name="__RefHeading___Toc9007_new"></a><a name="_Toc_new_renum"></a>
+6.41renum statement</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>renum</b></font>
+[[newstart][,oldstart][,increment]]</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Renumbers
+the lines of the current program. The optional parameters control the
+renumbering:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">newstart:
+The new starting line number (default 10).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">oldstart:
+The first old line number to renumber from (default: first line).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">increment:
+The increment between new line numbers (default 10).</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">All
+line number references in <font face="Arial, serif"><b>goto</b></font>,
+<font face="Arial, serif"><b>gosub</b></font>, <font face="Arial, serif"><b>then</b></font>,
+and <font face="Arial, serif"><b>restore</b></font> statements are
+updated to reflect the new line numbers.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">It
+is an error if the resulting line numbers would exceed the maximum
+line number or overlap with unrenumbered lines.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Examples:</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>renum</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Renumbers
+all lines starting at 10 with increment 10.</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>renum</b></font>
+100,,20</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Renumbers
+all lines starting at 100 with increment 20.</p>
+<h2 class="western"><a name="__RefHeading___Toc9008_new"></a><a name="_Toc_new_dir"></a>
+6.42dir statement</h2>
+<p style="line-height: 100%; margin-bottom: 0.14in"><font face="Arial, serif"><b>dir</b></font></p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Lists
+the files in the current directory in a columnar format. Directory
+entries are shown with a &quot;/&quot; suffix.</p>
+<h1 class="western"><a name="__RefHeading___Toc3440_2468851717"></a><a name="_Toc501575486"></a>
+7Expressions</h1>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Expressions
-in P5 Basic consist of standard operators, standard functions, and
+in IP Basic consist of standard operators, standard functions, and
 user defined functions. The operators are, in order from lowest to
 highest precedence, in groups of equal precidence:</p>
 <p style="line-height: 100%; margin-bottom: 0in">a <font color="#000000"><font face="Arial, serif"><b>and</b></font></font>
@@ -1647,7 +1874,8 @@ This is convienent in conjuction with Boolean math. For example:</p>
 = 1 and 2 = 2		is -1, because -1 and -1 is -1.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">1
 = 1 and 2	`	is 2 because -1 and any value is the same value.</p>
-<h2 class="western">7.1Standard functions</h2>
+<h2 class="western"><a name="__RefHeading___Toc3442_2468851717"></a><a name="_Toc501575487"></a>
+7.1Standard functions</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><font color="#000000"><font face="Arial, serif"><b>left</b></font></font>$(string,
 length)</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
@@ -1726,101 +1954,14 @@ the upper case equivalent of the string.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
 if the file by filenumber is at the end of that file. Returns -1 if
 so, otherwise 0.</p>
-<h1 class="western">8ISO 7185 extension routines</h1>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
-Basic provides for several extentions to the ISO 7185 standard for
-use in the language. These include named file I/O and more efficient
-Boolean bit math. Most ISO 7185 Pascal implementations (actually at
-this writing all) have this functionality. The routines to enable
-this functionality are arranged at the top of the Basic source
-program and are easily configured for the target Pascal
-implementation.</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
-named file I/O, the routines enable the entire set of:</p>
-<ul>
-	<li><p style="line-height: 100%; margin-bottom: 0.14in">Basic
-	program read and save from/to a file.</p>
-	<li><p style="line-height: 100%; margin-bottom: 0.14in">File I/O
-	operations within Basic.</p>
-</ul>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
-Boolean math routines that are standard with P5 Basic are functional,
-but not efficient. You can replace them, but this is for the purposes
-of efficiency only.</p>
-<h2 class="western">8.1Routines</h2>
-<h3 class="western">8.1.1Named file input</h3>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">For
-all of the following procedure/functions, filnam is declared:</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">Filnam
-= packed array [1..maxfln] of char;</font></p>
-<p style="line-height: 100%; margin-bottom: 0in"><br/>
-
-</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">and
-is an array of characters containing the filename, which is padded on
-the right side with spaces, and the filename starts at array position
-1. The exact formatting of the filename, what characters, what path
-or other special characters is system specific. P5 Basic specifies
-filenames in quotes and will pass all characters given down to the
-following routines unmodified.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
-existsfile(var fn: filnam): boolean;</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Checks
-if the file exists. Returns true if the file exists, otherwise false.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
-openread(var f: text; var fn: filnam);</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Open
-file for reading. The given text file is opened for reading with the
-filename. Usually this means that reset() or equivalent is applied to
-the file, which sets the file at the start and ready for reading.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
-openwrite(var f: text; var fn: filnam);</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Open
-file for writing. The given text file is opened for writing with the
-filename. Usually this means that rewrite() or equivalent is applied
-to the file, which sets the file as empty and ready for writing.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>procedure
-closefile(var f: text);</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Closes
-the file. The file is disassociated from its file by name, and the
-file is made ready for another openread() or openwrite() call.</p>
-<h3 class="western">8.1.2Boolean bit operations</h3>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
-bnot(a: integer): integer;</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
-the bitwise ‘not’ of the bits in the integer. This is then
-returned. Must be able to perform this operation on negative, 2’s
-complement format integers.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
-bor(a, b: integer): integer;</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
-the bitwise ‘or’ of the bits in two integers. The result is then
-returned. Must be able to perform this operation on negative, 2’s
-complement format integers.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
-band(a, b: integer): integer;</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
-the bitwise ‘or’ of the bits in two integers. The result is then
-returned. Must be able to perform this operation on negative, 2’s
-complement format integers.</p>
-<p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif"><u>function
-bxor(a, b: integer): integer;</u></font></p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">Finds
-the bitwise ‘or’ of the bits in two integers. The result is then
-returned. Must be able to perform this operation on negative, 2’s
-complement format integers.</p>
-<h1 class="western">9Using ISO 7185 mode</h1>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
-ISO 7185 strict mode, there is no named file I/O, and program files
-cannot be directly loaded and saved to disk. However, there are two
-ways in which programs can be loaded and run, and also saved to disk.</p>
-<h2 class="western">9.1Batch mode</h2>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">By
-completely running P5 Basic in batch mode, a fully automated program
-run can be made. The input is redirected from a file, and the output
-is redirected to a file (or simply printed to console):</p>
-<p class="western" style="line-height: 100%; margin-bottom: 0.14in">P5
-basic &lt; infile &gt; outfile</p>
+<h2 class="western"><a name="__RefHeading___Toc3454_2468851717"></a><a name="_Toc501575493"></a>
+7.2Batch mode</h2>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><a name="_GoBack"></a>
+By completely running IP Basic in batch mode, a fully automated
+program run can be made. The input is redirected from a file, and the
+output is redirected to a file (or simply printed to console):</p>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in">basic
+&lt; infile &gt; outfile</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Thus
 a sample input file would be:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0in">10
@@ -1831,23 +1972,30 @@ end</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Then
 the output file would be:</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">hi</p>
-<h2 class="western">9.2Cut and paste</h2>
+<h2 class="western"><a name="__RefHeading___Toc3456_2468851717"></a><a name="_Toc501575494"></a>
+7.3Cut and paste</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">A
 program can also be entered by copying it to the clipboard, then
-pasting it onto the window running P5 Basic. The program will need
+pasting it onto the window running IP Basic. The program will need
 line numbers to do this, since console line input mode is being used.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Similarly,
 the program can be saved by using list to print it, then copying the
 result to the clipboard, then pasting to an editor and saving.</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">In
 this way a fully interactive session can be created.</p>
-<h1 class="western">10BNF Grammar Specification</h1>
+<p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
+<br/>
+
+</p>
+<h1 class="western" style="page-break-before: always"><a name="__RefHeading___Toc3458_2468851717"></a>
+8BNF Grammar Specification</h1>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">This
 chapter provides a complete BNF (Backus-Naur Form) grammar
-specification for the P5 BASIC language. The grammar is organized
+specification for the IP BASIC language. The grammar is organized
 hierarchically, starting with program structure and proceeding
 through statements, expressions, variables, and lexical elements.</p>
-<h2 class="western">10.1Program Structure</h2>
+<h2 class="western"><a name="__RefHeading___Toc3460_2468851717"></a>8.1Program
+Structure</h2>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;program&gt;
 ::= &lt;line&gt;*</font></p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in"><br/>
@@ -1884,7 +2032,7 @@ through statements, expressions, variables, and lexical elements.</p>
 </p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;end-of-line&gt;
 ::= &lt;newline&gt; | &lt;eof&gt;</font></p>
-<h2 class="western">10.2Statements</h2>
+<h2 class="western"><a name="__RefHeading___Toc3462_2468851717"></a>8.2Statements</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">The
 complete statement syntax includes:</p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;statement&gt;
@@ -1971,7 +2119,8 @@ complete statement syntax includes:</p>
 &lt;bye-stmt&gt;</font></p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
 &lt;procedure-call&gt;</font></p>
-<h2 class="western">10.3Expression Hierarchy</h2>
+<h2 class="western"><a name="__RefHeading___Toc3464_2468851717"></a>8.3Expression
+Hierarchy</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Expressions
 are parsed according to the following precedence hierarchy (from
 lowest to highest precedence):</p>
@@ -2068,7 +2217,8 @@ Primary expressions (literals, variables, functions, parentheses)</p>
 </p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;unary-op&gt;
 ::= &quot;+&quot; | &quot;-&quot; | &quot;not&quot;</font></p>
-<h2 class="western">10.4Variables and Literals</h2>
+<h2 class="western"><a name="__RefHeading___Toc3466_2468851717"></a>8.4Variables
+and Literals</h2>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;variable&gt;
 ::= &lt;simple-variable&gt; | &lt;array-variable&gt; |
 &lt;record-variable&gt;</font></p>
@@ -2101,7 +2251,7 @@ Primary expressions (literals, variables, functions, parentheses)</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">Where
 % indicates integer type, $ indicates string type, and no suffix
 indicates real type.</p>
-<h3 class="western">10.4.1Literals</h3>
+<h3 class="western"><a name="__RefHeading___Toc3468_2468851717"></a>8.4.1Literals</h3>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;integer-literal&gt;
 ::= [&lt;sign&gt;] &lt;digit&gt;+</font></p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">|
@@ -2134,7 +2284,8 @@ indicates real type.</p>
 </p>
 <p style="line-height: 100%; margin-bottom: 0in"><font face="Courier New, serif">&lt;identifier&gt;
 ::= &lt;letter&gt; [&lt;letter&gt; | &lt;digit&gt;]*</font></p>
-<h2 class="western">10.5Grammar Notes</h2>
+<h2 class="western"><a name="__RefHeading___Toc3470_2468851717"></a>8.5Grammar
+Notes</h2>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
 Case is not significant except within string literals</p>
 <p class="western" style="line-height: 100%; margin-bottom: 0.14in">•
@@ -2158,9 +2309,7 @@ corresponding sections in earlier chapters.</p>
 <div title="footer">
 	<table width="100%" cellpadding="7" cellspacing="0">
 		<col width="179*"/>
-
 		<col width="77*"/>
-
 		<tr valign="top">
 			<td width="70%" height="9" style="border-top: 1px solid #00addc; border-bottom: none; border-left: none; border-right: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
 				<br/>
@@ -2168,7 +2317,7 @@ corresponding sections in earlier chapters.</p>
 				</p>
 			</td>
 			<td width="30%" bgcolor="#00addc" style="background: #00addc; border-top: 1px solid #00addc; border-bottom: none; border-left: none; border-right: none; padding: 0in"><p align="right" style="orphans: 0; widows: 0">
-				<span style="background: #c0c0c0"><sdfield type=PAGE subtype=RANDOM format=PAGE>1</sdfield></span></p>
+				<span style="background: #c0c0c0"><sdfield type=PAGE subtype=RANDOM format=PAGE>0</sdfield></span></p>
 			</td>
 		</tr>
 	</table>
