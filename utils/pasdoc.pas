@@ -784,9 +784,9 @@ var
           putnam(p1) { release }
         end
      end;
-     { disabled dispose for debugging use-after-free }
-     {if p^.klass <> alias then putstrs(p^.name);}
-     {case p^.klass of
+     if p^.klass <> alias then putstrs(p^.name); { release name string }
+     { release entry according to class }
+     case p^.klass of
        types: dispose(p, types);
        konst: dispose(p, konst);
        vars:  dispose(p, vars);
@@ -801,7 +801,7 @@ var
                                             dispose(p, func, declared, actual)
                                           else dispose(p, func, declared, formal);
        alias: dispose(p, alias)
-     end;}
+     end;
      ctpcnt := ctpcnt-1 { remove from count }
   end;
 
