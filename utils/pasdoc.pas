@@ -8484,7 +8484,20 @@ end;
       col, indent, ew, ln: integer;
 
     { HTML output helper procedures }
+
+    procedure htmlesc(c: char);
+    begin
+      if c = '<' then write(docfil, '&lt;')
+      else if c = '>' then write(docfil, '&gt;')
+      else if c = '&' then write(docfil, '&amp;')
+      else if c = '"' then write(docfil, '&quot;')
+      else write(docfil, c)
+    end;
+
     procedure htmlhdr;
+    var clph: cmtlinep;
+        lh, llh, flh: integer;
+        fndh, hasalphah: boolean;
     begin
       writeln(docfil, '<!DOCTYPE html>');
       writeln(docfil, '<html lang="en">');
@@ -8498,23 +8511,35 @@ end;
       writeln(docfil, '</title>');
       writeln(docfil, '<style>');
       { Base styles - Doxygen-inspired colors }
-      writeln(docfil, 'body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; }');
-      writeln(docfil, '.page-wrapper { display: flex; min-height: 100vh; }');
-      writeln(docfil, '.sidebar { width: 280px; min-width: 280px; background: #f5f5f5; border-right: 1px solid #ddd; padding: 10px 0; overflow-y: auto; position: sticky; top: 0; height: 100vh; font-size: 13px; }');
-      writeln(docfil, '.sidebar-tabs { display: flex; border-bottom: 1px solid #ddd; }');
-      writeln(docfil, '.sidebar-tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; background: #e8e8e8; border: none; font-size: 13px; }');
-      writeln(docfil, '.sidebar-tab.active { background: #f5f5f5; font-weight: bold; }');
-      writeln(docfil, '.sidebar-content { display: none; padding: 5px 10px; }');
+      writeln(docfil, 'body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }');
+      { Page layout }
+      writeln(docfil, '.page-header { padding: 10px 20px; border-bottom: 1px solid #C4CFE5; }');
+      writeln(docfil, '.page-title { font-size: 300%; color: #333; font-weight: bold; }');
+      writeln(docfil, '.page-desc { font-size: 13px; color: #555; }');
+      writeln(docfil, '.nav-bar { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 0; display: flex; align-items: center; line-height: 36px; }');
+      writeln(docfil, '.nav-tab { padding: 0 20px; cursor: pointer; background: transparent; border: none; color: #283A5D; font-size: 13px; font-weight: bold; text-shadow: 0px 1px 1px rgba(255,255,255,0.9); text-decoration: none; line-height: 36px; }');
+      writeln(docfil, '.nav-tab.active { background: linear-gradient(to bottom, #1C2941 0%, #415D96 50%, #4968A7 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }');
+      writeln(docfil, '.nav-tab:hover { background: linear-gradient(to bottom, #A9B9D9 0%, #9FB1D5 50%, #7D96C6 100%); color: #fff; text-shadow: 0px 1px 1px rgba(0,0,0,1.0); }');
+      writeln(docfil, '.nav-search { margin-left: auto; margin-right: 10px; padding: 3px 6px; border: 1px solid #A3B4D7; border-radius: 3px; font-size: 11px; background: #fff; width: 150px; }');
+      writeln(docfil, '.middle { display: flex; flex: 1; min-height: 0; overflow: hidden; }');
+      writeln(docfil, '.tree-panel { width: 280px; min-width: 280px; background: #FAFAFA; border-right: 1px solid #C4CFE5; padding: 5px 10px; overflow-y: auto; font-size: 13px; }');
+      writeln(docfil, '.container { flex: 1; max-width: 900px; padding: 20px; overflow-y: auto; }');
+      writeln(docfil, '.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 6px 20px; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }');
+      { Sidebar content and tree }
+      writeln(docfil, '.sidebar-content { display: none; }');
       writeln(docfil, '.sidebar-content.active { display: block; }');
-      writeln(docfil, '.tree-item { padding: 2px 0; }');
-      writeln(docfil, '.tree-toggle { cursor: pointer; user-select: none; display: inline-block; width: 16px; font-size: 10px; }');
+      writeln(docfil, '.tree-item { padding: 1px 0; white-space: nowrap; }');
+      writeln(docfil, '.tree-toggle { cursor: pointer; user-select: none; display: inline-block; width: 14px; font-size: 9px; color: #555; }');
       writeln(docfil, '.tree-children { padding-left: 16px; }');
       writeln(docfil, '.tree-children.collapsed { display: none; }');
-      writeln(docfil, '.tree-link { text-decoration: none; color: #333; }');
+      writeln(docfil, '.tree-link { text-decoration: none; color: #333; font-size: 12px; }');
       writeln(docfil, '.tree-link:hover { color: #4070a0; text-decoration: underline; }');
       writeln(docfil, '.tree-proc { color: #1a1a6e; }');
       writeln(docfil, '.tree-func { color: #6e1a1a; }');
-      writeln(docfil, '.container { flex: 1; max-width: 900px; padding: 20px; }');
+      { Content tabs }
+      writeln(docfil, '.content-tabs { display: flex; gap: 0; border-bottom: 1px solid #A8B8D9; margin: 10px 0 0 0; }');
+      writeln(docfil, '.content-tab { padding: 4px 12px; font-size: 12px; color: #3D578C; text-decoration: none; border: 1px solid #A8B8D9; border-bottom: none; border-radius: 4px 4px 0 0; background: #E2E8F2; margin-right: 2px; }');
+      writeln(docfil, '.content-tab:hover { background: #D8DFEE; }');
       writeln(docfil, 'h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }');
       writeln(docfil, 'h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }');
       writeln(docfil, 'h3 { color: #333; font-size: 100%; margin-top: 20px; }');
@@ -8568,16 +8593,63 @@ end;
       writeln(docfil, '</style>');
       writeln(docfil, '</head>');
       writeln(docfil, '<body>');
-      writeln(docfil, '<div class="page-wrapper">')
+      { page header with title and description }
+      writeln(docfil, '<div class="page-header">');
+      write(docfil, '<div class="page-title">');
+      if nammod <> nil then writevp(docfil, nammod)
+      else write(docfil, 'Documentation');
+      writeln(docfil, '</div>');
+      { first line of header comment as description }
+      if hdrcmtcnt > 0 then begin
+        clph := hdrcmt;
+        hasalphah := false;
+        while (clph <> nil) and not hasalphah do begin
+          for lh := 1 to maxcmtchr do
+            if (clph^.text[lh] >= 'A') and (clph^.text[lh] <= 'z') then
+              hasalphah := true;
+          if not hasalphah then clph := clph^.next
+        end;
+        if hasalphah then begin
+          flh := 1;
+          fndh := false;
+          while (flh <= maxcmtchr) and not fndh do
+            if (clph^.text[flh] <> ' ') and (clph^.text[flh] <> '*') then
+              fndh := true
+            else flh := flh + 1;
+          llh := maxcmtchr;
+          fndh := false;
+          while (llh > 0) and not fndh do
+            if (clph^.text[llh] <> ' ') and (clph^.text[llh] <> '*') then
+              fndh := true
+            else llh := llh - 1;
+          if llh >= flh then begin
+            write(docfil, '<div class="page-desc">');
+            for lh := flh to llh do htmlesc(clph^.text[lh]);
+            writeln(docfil, '</div>')
+          end
+        end
+      end;
+      writeln(docfil, '</div>')
     end;
 
     procedure htmlftr;
+    var ds: pstring;
     begin
       writeln(docfil, '</div>'); { close container }
-      writeln(docfil, '</div>'); { close page-wrapper }
+      writeln(docfil, '</div>'); { close middle }
+      { page footer }
+      writeln(docfil, '<div class="page-footer">');
+      write(docfil, '<span>');
+      if nammod <> nil then begin writevp(docfil, nammod); write(docfil, '.pas') end;
+      writeln(docfil, '</span>');
+      write(docfil, '<span>Generated on ');
+      ds := services.dates(services.time);
+      write(docfil, ds^);
+      writeln(docfil, ' by pasdoc vs. 0.4.x</span>');
+      writeln(docfil, '</div>');
       writeln(docfil, '<script>');
       writeln(docfil, 'function switchTab(name) {');
-      writeln(docfil, '  var tabs = document.querySelectorAll(''.sidebar-tab'');');
+      writeln(docfil, '  var tabs = document.querySelectorAll(''.nav-tab'');');
       writeln(docfil, '  var contents = document.querySelectorAll(''.sidebar-content'');');
       writeln(docfil, '  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove(''active'');');
       writeln(docfil, '  for (var i = 0; i < contents.length; i++) contents[i].classList.remove(''active'');');
@@ -8591,18 +8663,32 @@ end;
       writeln(docfil, '    el.innerHTML = children.classList.contains(''collapsed'') ? ''&#9654;'' : ''&#9660;'';');
       writeln(docfil, '  }');
       writeln(docfil, '}');
+      writeln(docfil, 'function filterTree() {');
+      writeln(docfil, '  var f = document.getElementById(''sidebar-filter'').value.toLowerCase();');
+      writeln(docfil, '  var panels = document.querySelectorAll(''.sidebar-content'');');
+      writeln(docfil, '  for (var p = 0; p < panels.length; p++) {');
+      writeln(docfil, '    var items = panels[p].querySelectorAll(''.tree-item'');');
+      writeln(docfil, '    for (var i = 0; i < items.length; i++) {');
+      writeln(docfil, '      var link = items[i].querySelector(''.tree-link'');');
+      writeln(docfil, '      if (!link) continue;');
+      writeln(docfil, '      var txt = link.textContent.toLowerCase();');
+      writeln(docfil, '      if (f === '''' || txt.indexOf(f) >= 0) {');
+      writeln(docfil, '        items[i].style.display = '''';');
+      writeln(docfil, '        var par = items[i].parentElement;');
+      writeln(docfil, '        while (par && par.classList) {');
+      writeln(docfil, '          if (par.classList.contains(''tree-children''))');
+      writeln(docfil, '            par.classList.remove(''collapsed'');');
+      writeln(docfil, '          par = par.parentElement;');
+      writeln(docfil, '        }');
+      writeln(docfil, '      } else {');
+      writeln(docfil, '        items[i].style.display = ''none'';');
+      writeln(docfil, '      }');
+      writeln(docfil, '    }');
+      writeln(docfil, '  }');
+      writeln(docfil, '}');
       writeln(docfil, '</script>');
       writeln(docfil, '</body>');
       writeln(docfil, '</html>')
-    end;
-
-    procedure htmlesc(c: char);
-    begin
-      if c = '<' then write(docfil, '&lt;')
-      else if c = '>' then write(docfil, '&gt;')
-      else if c = '&' then write(docfil, '&amp;')
-      else if c = '"' then write(docfil, '&quot;')
-      else write(docfil, c)
     end;
 
     procedure writename(s: strvsp);
@@ -9032,8 +9118,8 @@ end;
       else modmatch := strequvv(dp^.dmod, mod1)
     end;
 
-    procedure writesidebar;
-    var dp2: docp; mp2: modentryp;
+    procedure writenav;
+    var mp2: modentryp;
 
       function haschildren(parnam: strvsp; parlev: integer): boolean;
       var dp3: docp; f: boolean;
@@ -9088,15 +9174,20 @@ end;
         end
       end;
 
-    begin { writesidebar }
-      writeln(docfil, '<div class="sidebar">');
-      { Tab buttons }
-      writeln(docfil, '<div class="sidebar-tabs">');
-      write(docfil, '<button class="sidebar-tab active" ');
+    begin { writenav }
+      { Blue navigation bar }
+      writeln(docfil, '<div class="nav-bar">');
+      write(docfil, '<button class="nav-tab active" ');
       writeln(docfil, 'onclick="switchTab(''files'')">Files</button>');
-      write(docfil, '<button class="sidebar-tab" ');
+      write(docfil, '<button class="nav-tab" ');
       writeln(docfil, 'onclick="switchTab(''procs'')">Procedures</button>');
+      write(docfil, '<input type="text" id="sidebar-filter" class="nav-search" ');
+      writeln(docfil, 'placeholder="Search..." onkeyup="filterTree()">');
       writeln(docfil, '</div>');
+      { Open middle flex row }
+      writeln(docfil, '<div class="middle">');
+      { Tree panel }
+      writeln(docfil, '<div class="tree-panel">');
       { Files panel }
       writeln(docfil, '<div class="sidebar-content active" id="tab-files">');
       mp2 := modlist;
@@ -9113,22 +9204,17 @@ end;
       writeln(docfil, '<div class="sidebar-content" id="tab-procs">');
       writeproctree(2, nil);
       writeln(docfil, '</div>');
-      writeln(docfil, '</div>')
+      writeln(docfil, '</div>') { close tree-panel }
     end;
 
   begin { writedoc }
     { HTML header }
-    if fhtml then begin htmlhdr; writesidebar end;
+    if fhtml then begin htmlhdr; writenav end;
     { open content container }
     if fhtml then writeln(docfil, '<div class="container">');
 
     { Section 1: Summary }
-    if fhtml then begin
-      write(docfil, '<h1>');
-      if nammod <> nil then writenameplain(nammod)
-      else write(docfil, 'Documentation');
-      writeln(docfil, '</h1>')
-    end else begin
+    if not fhtml then begin
       writeln(docfil);
       write(docfil, 'DOCUMENTATION FOR: ');
       if nammod <> nil then writename(nammod)
@@ -9136,6 +9222,17 @@ end;
       writeln(docfil);
       for i := 1 to 70 do write(docfil, '=');
       writeln(docfil)
+    end;
+
+    { content section tabs }
+    if fhtml then begin
+      writeln(docfil, '<div class="content-tabs">');
+      writeln(docfil, '<a class="content-tab" href="#sec-modules">Modules</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-constants">Constants</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-types">Types</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-variables">Variables</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-procedures">Procedures</a>');
+      writeln(docfil, '</div>')
     end;
 
     { header comment }
