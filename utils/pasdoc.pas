@@ -168,7 +168,6 @@ const
    fillen     = maxids;
    extsrc     = '.pas'; { extention for source file }
    maxftl     = 519; { maximum fatal error }
-   maxcmtlin  = 100;    { maximum lines in comment buffer }
    maxcmtchr  = 250;    { maximum characters per comment line }
 
    { command line parsing }
@@ -221,7 +220,7 @@ type
                  str:   packed array [1..varsqt] of char; { data contained }
                  next:  strvsp { next }
                end;
-     cmtline = packed array [1..maxcmtchr] of char;
+     cmtwork = packed array [1..maxcmtchr] of char;
 
                                                             (*constants*)
                                                             (***********)
@@ -256,7 +255,7 @@ type
      cmtlinep = ^cmtlinerec;
      cmtlinerec = record
                     next: cmtlinep;
-                    text: cmtline
+                    s: pstring
                   end;
      docp = ^docrec;
      docrec = record
@@ -268,7 +267,6 @@ type
                 dlevel:  integer;
                 dline:   integer;
                 dcmt:    cmtlinep;
-                dcmtcnt: integer;
                 idp:     ctp
               end;
      modentryp = ^modentry;
@@ -276,8 +274,7 @@ type
                   next:    modentryp;
                   mname:   strvsp;
                   mkind:   symbol;
-                  mhdrcmt: cmtlinep;
-                  mhdrcnt: integer
+                  mhdrcmt: cmtlinep
                 end;
      xrefp = ^xrefrec;
      xrefrec = record
@@ -641,8 +638,8 @@ var
     ii: lininx;
 
     { documentation generator variables }
-    cmtbuf:  array [1..maxcmtlin] of cmtline;
-    cmtcnt:  integer;
+    cmthead, cmttail: cmtlinep;
+    cmtwrk:  cmtwork;
     cmtpos:  integer;
     doclist: docp;
     doctail: docp;
@@ -651,7 +648,6 @@ var
     curproc: strvsp;
     docproc: strvsp;     { current proc name for doc parent tracking }
     hdrcmt:    cmtlinep;
-    hdrcmtcnt: integer;
     docfil:  text;
     docfilnam(fillen): string;
     { cleanup temps }
@@ -1788,33 +1784,39 @@ end;
   { comment buffer helpers }
 
   procedure initcmtbuf;
-  var i: integer; j: integer;
+  var clp: cmtlinep; j: integer;
   begin
-    for i := 1 to maxcmtlin do
-      for j := 1 to maxcmtchr do cmtbuf[i][j] := ' ';
-    cmtcnt := 0; cmtpos := 0
+    while cmthead <> nil do begin
+      clp := cmthead; cmthead := clp^.next;
+      dispose(clp^.s); dispose(clp)
+    end;
+    cmttail := nil;
+    for j := 1 to maxcmtchr do cmtwrk[j] := ' ';
+    cmtpos := 0
   end;
 
   procedure cmtnewline;
-  var j: integer;
+  var clp: cmtlinep; j: integer;
   begin
-    if cmtcnt < maxcmtlin then begin
-      cmtcnt := cmtcnt + 1;
-      for j := 1 to maxcmtchr do cmtbuf[cmtcnt][j] := ' ';
-      cmtpos := 0
-    end
+    new(clp); clp^.next := nil;
+    new(clp^.s, maxcmtchr);
+    for j := 1 to maxcmtchr do clp^.s^[j] := ' ';
+    if cmthead = nil then cmthead := clp
+    else cmttail^.next := clp;
+    cmttail := clp;
+    cmtpos := 0
   end;
 
   procedure cmtaddch(c: char);
   begin
-    if (cmtcnt > 0) and (cmtpos < maxcmtchr) then begin
+    if (cmttail <> nil) and (cmtpos < maxcmtchr) then begin
       cmtpos := cmtpos + 1;
-      cmtbuf[cmtcnt][cmtpos] := c
+      cmttail^.s^[cmtpos] := c
     end
   end;
 
   procedure docadd(lcp: ctp; dk: dockind);
-  var dp: docp; clp, clt: cmtlinep; i: integer; j: integer;
+  var dp: docp;
   begin
     new(dp);
     dp^.next := nil;
@@ -1825,38 +1827,18 @@ end;
     dp^.dklass := dk;
     dp^.dlevel := level;
     dp^.dline := incstk^.linecount;
-    dp^.dcmtcnt := cmtcnt;
     dp^.idp := lcp;
-    dp^.dcmt := nil;
-    clt := nil;
-    for i := 1 to cmtcnt do begin
-      new(clp);
-      clp^.next := nil;
-      for j := 1 to maxcmtchr do clp^.text[j] := cmtbuf[i][j];
-      if dp^.dcmt = nil then dp^.dcmt := clp
-      else clt^.next := clp;
-      clt := clp
-    end;
+    dp^.dcmt := cmthead;
+    cmthead := nil; cmttail := nil;
     if doclist = nil then doclist := dp
     else doctail^.next := dp;
-    doctail := dp;
-    cmtcnt := 0
+    doctail := dp
   end;
 
   procedure savehdrcmt;
-  var clp, clt: cmtlinep; i: integer; j: integer;
   begin
-    hdrcmt := nil; hdrcmtcnt := cmtcnt;
-    clt := nil;
-    for i := 1 to cmtcnt do begin
-      new(clp);
-      clp^.next := nil;
-      for j := 1 to maxcmtchr do clp^.text[j] := cmtbuf[i][j];
-      if hdrcmt = nil then hdrcmt := clp
-      else clt^.next := clp;
-      clt := clp
-    end;
-    cmtcnt := 0
+    hdrcmt := cmthead;
+    cmthead := nil; cmttail := nil
   end;
 
   procedure xrefadd(lcp: ctp);
@@ -1887,7 +1869,6 @@ end;
       mp^.mkind := mknd;
       mp^.mname := nil;
       mp^.mhdrcmt := nil;
-      mp^.mhdrcnt := 0;
       strassvf(mp^.mname, id);
       mp^.next := modlist;
       modlist := mp
@@ -7658,7 +7639,6 @@ end;
   var sys: symbol; ff: boolean; eols: boolean;
       lists: boolean; nammods, modnams, thismod: strvsp; gcs: addrrange;
       curmods: modtyp; sym: symbol; dup: boolean; newm: boolean;
-      clp, clt: cmtlinep; ci, cj: integer;
   function schnam: boolean;
   var fn: filnam; i, nc, ec: 1..fillen; fp: filptr;
   begin schnam := false; fp := incstk;
@@ -7695,18 +7675,9 @@ end;
             readline; insymbol;
             { capture external module header comment }
             if newm then begin
-              modlist^.mhdrcnt := cmtcnt;
-              clt := nil;
-              for ci := 1 to cmtcnt do begin
-                new(clp);
-                clp^.next := nil;
-                for cj := 1 to maxcmtchr do clp^.text[cj] := cmtbuf[ci][cj];
-                if modlist^.mhdrcmt = nil then modlist^.mhdrcmt := clp
-                else clt^.next := clp;
-                clt := clp
-              end
+              modlist^.mhdrcmt := cmthead;
+              cmthead := nil; cmttail := nil
             end;
-            cmtcnt := 0;
             if sym = joinssy then
               { throw display for joined module }
               begin top := top+1; inidsp(display[top]);
@@ -8308,12 +8279,12 @@ end;
     ctpsnm := 0;
     stpsnm := 0;
 
-    cmtcnt := 0; cmtpos := 0;
+    cmthead := nil; cmttail := nil; cmtpos := 0;
     doclist := nil; doctail := nil;
     modlist := nil;
     xreflist := nil;
     curproc := nil; docproc := nil;
-    hdrcmt := nil; hdrcmtcnt := 0
+    hdrcmt := nil
   end (*initscalars*) ;
 
   procedure initsets;
@@ -8600,12 +8571,12 @@ end;
       else write(docfil, 'Documentation');
       writeln(docfil, '</div>');
       { first line of header comment as description }
-      if hdrcmtcnt > 0 then begin
+      if hdrcmt <> nil then begin
         clph := hdrcmt;
         hasalphah := false;
         while (clph <> nil) and not hasalphah do begin
           for lh := 1 to maxcmtchr do
-            if (clph^.text[lh] >= 'A') and (clph^.text[lh] <= 'z') then
+            if (clph^.s^[lh] >= 'A') and (clph^.s^[lh] <= 'z') then
               hasalphah := true;
           if not hasalphah then clph := clph^.next
         end;
@@ -8613,18 +8584,18 @@ end;
           flh := 1;
           fndh := false;
           while (flh <= maxcmtchr) and not fndh do
-            if (clph^.text[flh] <> ' ') and (clph^.text[flh] <> '*') then
+            if (clph^.s^[flh] <> ' ') and (clph^.s^[flh] <> '*') then
               fndh := true
             else flh := flh + 1;
           llh := maxcmtchr;
           fndh := false;
           while (llh > 0) and not fndh do
-            if (clph^.text[llh] <> ' ') and (clph^.text[llh] <> '*') then
+            if (clph^.s^[llh] <> ' ') and (clph^.s^[llh] <> '*') then
               fndh := true
             else llh := llh - 1;
           if llh >= flh then begin
             write(docfil, '<div class="page-desc">');
-            for lh := flh to llh do htmlesc(clph^.text[lh]);
+            for lh := flh to llh do htmlesc(clph^.s^[lh]);
             writeln(docfil, '</div>')
           end
         end
@@ -8777,26 +8748,33 @@ end;
         fnd: boolean;
         clp: cmtlinep;
         first: boolean;
+        blankcnt: integer;
     begin
       if fhtml then write(docfil, '<div class="comment">');
       clp := clst;
       first := true;
+      blankcnt := 0;
       while clp <> nil do begin
         ll := maxcmtchr;
         fnd := false;
         while (ll > 0) and not fnd do
-          if clp^.text[ll] <> ' ' then fnd := true
+          if clp^.s^[ll] <> ' ' then fnd := true
           else ll := ll - 1;
         if ll > 0 then begin
           if fhtml then begin
-            if not first then writeln(docfil);
-            for l := 1 to ll do htmlesc(clp^.text[l])
+            if not first and (blankcnt >= 2) then writeln(docfil, '<br><br>');
+            if not first and (blankcnt < 2) then writeln(docfil);
+            for l := 1 to ll do htmlesc(clp^.s^[l])
           end else begin
+            if not first and (blankcnt >= 2) then writeln(docfil);
             write(docfil, '    ');
-            for l := 1 to ll do write(docfil, clp^.text[l]);
+            for l := 1 to ll do write(docfil, clp^.s^[l]);
             writeln(docfil)
           end;
-          first := false
+          first := false;
+          blankcnt := 0
+        end else begin
+          if not first then blankcnt := blankcnt + 1
         end;
         clp := clp^.next
       end;
@@ -8815,31 +8793,31 @@ end;
         { check if line contains a letter }
         hasalpha := false;
         for l := 1 to maxcmtchr do
-          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+          if (clp^.s^[l] >= 'A') and (clp^.s^[l] <= 'z') then
             hasalpha := true;
         if hasalpha then begin
           { find first non-space, non-star character }
           fl := 1;
           fnd := false;
           while (fl <= maxcmtchr) and not fnd do
-            if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then
+            if (clp^.s^[fl] <> ' ') and (clp^.s^[fl] <> '*') then
               fnd := true
             else fl := fl + 1;
           { find last non-space, non-star character }
           ll := maxcmtchr;
           fnd := false;
           while (ll > 0) and not fnd do
-            if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then
+            if (clp^.s^[ll] <> ' ') and (clp^.s^[ll] <> '*') then
               fnd := true
             else ll := ll - 1;
           if ll >= fl then begin
             if fhtml then begin
               write(docfil, '<p>');
-              for l := fl to ll do htmlesc(clp^.text[l]);
+              for l := fl to ll do htmlesc(clp^.s^[l]);
               writeln(docfil, '</p>')
             end else begin
               write(docfil, '    ');
-              for l := fl to ll do write(docfil, clp^.text[l]);
+              for l := fl to ll do write(docfil, clp^.s^[l]);
               writeln(docfil)
             end
           end;
@@ -8868,20 +8846,20 @@ end;
       while clp <> nil do begin
         hasalpha := false;
         for l := 1 to maxcmtchr do
-          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+          if (clp^.s^[l] >= 'A') and (clp^.s^[l] <= 'z') then
             hasalpha := true;
         if hasalpha then begin
           fl := 1; fnd := false;
           while (fl <= maxcmtchr) and not fnd do
-            if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then fnd := true
+            if (clp^.s^[fl] <> ' ') and (clp^.s^[fl] <> '*') then fnd := true
             else fl := fl + 1;
           ll := maxcmtchr; fnd := false;
           while (ll > 0) and not fnd do
-            if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then fnd := true
+            if (clp^.s^[ll] <> ' ') and (clp^.s^[ll] <> '*') then fnd := true
             else ll := ll - 1;
           if ll >= fl then begin
             write(docfil, '<div class="brief">');
-            for l := fl to ll do htmlesc(clp^.text[l]);
+            for l := fl to ll do htmlesc(clp^.s^[l]);
             writeln(docfil, '</div>')
           end;
           clp := nil
@@ -8892,35 +8870,45 @@ end;
     { write detailed description - all lines after first }
     procedure writedetail(clst: cmtlinep);
     var l, ll, fl: integer;
-        fnd, hasalpha, skipped: boolean;
+        fnd, hasalpha, skipped, hadcontent: boolean;
+        blankcnt: integer;
         clp: cmtlinep;
     begin
       clp := clst;
       skipped := false;
+      hadcontent := false;
+      blankcnt := 0;
       write(docfil, '<div class="detail">');
       while clp <> nil do begin
         hasalpha := false;
         for l := 1 to maxcmtchr do
-          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+          if (clp^.s^[l] >= 'A') and (clp^.s^[l] <= 'z') then
             hasalpha := true;
         if hasalpha then begin
           if not skipped then begin skipped := true; clp := clp^.next end
           else begin
             fl := 1; fnd := false;
             while (fl <= maxcmtchr) and not fnd do
-              if (clp^.text[fl] <> ' ') and (clp^.text[fl] <> '*') then fnd := true
+              if (clp^.s^[fl] <> ' ') and (clp^.s^[fl] <> '*') then fnd := true
               else fl := fl + 1;
             ll := maxcmtchr; fnd := false;
             while (ll > 0) and not fnd do
-              if (clp^.text[ll] <> ' ') and (clp^.text[ll] <> '*') then fnd := true
+              if (clp^.s^[ll] <> ' ') and (clp^.s^[ll] <> '*') then fnd := true
               else ll := ll - 1;
             if ll >= fl then begin
-              for l := fl to ll do htmlesc(clp^.text[l]);
-              writeln(docfil, '<br>')
+              if hadcontent and (blankcnt >= 2) then
+                writeln(docfil, '<br><br>');
+              for l := fl to ll do htmlesc(clp^.s^[l]);
+              writeln(docfil);
+              hadcontent := true;
+              blankcnt := 0
             end;
             clp := clp^.next
           end
-        end else clp := clp^.next
+        end else begin
+          if hadcontent then blankcnt := blankcnt + 1;
+          clp := clp^.next
+        end
       end;
       writeln(docfil, '</div>')
     end;
@@ -8935,7 +8923,7 @@ end;
       while clp <> nil do begin
         hasalpha := false;
         for l := 1 to maxcmtchr do
-          if (clp^.text[l] >= 'A') and (clp^.text[l] <= 'z') then
+          if (clp^.s^[l] >= 'A') and (clp^.s^[l] <= 'z') then
             hasalpha := true;
         if hasalpha then cnt := cnt + 1;
         clp := clp^.next
@@ -9236,7 +9224,7 @@ end;
     end;
 
     { header comment }
-    if hdrcmtcnt > 0 then begin
+    if hdrcmt <> nil then begin
       if fhtml then writeln(docfil, '<div class="header-comment">')
       else writeln(docfil);
       writecmt(hdrcmt);
@@ -9456,9 +9444,9 @@ end;
           { memdoc - documentation content }
           writeln(docfil, '<div class="memdoc">');
           { 1. Brief description }
-          if dp^.dcmtcnt > 0 then writebrief(dp^.dcmt);
+          if dp^.dcmt <> nil then writebrief(dp^.dcmt);
           { 2. Detailed description }
-          if dp^.dcmtcnt > 0 then
+          if dp^.dcmt <> nil then
             if hasmultiline(dp^.dcmt) then writedetail(dp^.dcmt);
           { 3. Return type for functions }
           if dp^.dklass = dkfunc then begin
@@ -9506,7 +9494,7 @@ end;
           if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
           else write(docfil, '(unknown)');
           writeln(docfil, '</p>');
-          if dp^.dcmtcnt > 0 then writecmt(dp^.dcmt);
+          if dp^.dcmt <> nil then writecmt(dp^.dcmt);
           writeln(docfil, '</div>');
           writeln(docfil, '</div>')
         end else begin
@@ -9541,7 +9529,7 @@ end;
             else write(docfil, '(unknown)');
             writeln(docfil)
           end;
-          if dp^.dcmtcnt > 0 then begin
+          if dp^.dcmt <> nil then begin
             writeln(docfil);
             writecmt(dp^.dcmt)
           end;
@@ -9644,7 +9632,7 @@ end;
         writeln(docfil)
       end;
       { module header comment (first line only) }
-      if mp^.mhdrcnt > 0 then begin
+      if mp^.mhdrcmt <> nil then begin
         writecmt1(mp^.mhdrcmt);
         if not fhtml then writeln(docfil)
       end;
@@ -9984,21 +9972,24 @@ begin
 
   { release doc output lists }
   while hdrcmt <> nil do
-    begin clp1 := hdrcmt; hdrcmt := clp1^.next; dispose(clp1) end;
+    begin clp1 := hdrcmt; hdrcmt := clp1^.next;
+          dispose(clp1^.s); dispose(clp1) end;
   while doclist <> nil do begin
     dp1 := doclist; doclist := dp1^.next;
     putstrs(dp1^.dname);
     if dp1^.dmod <> nil then putstrs(dp1^.dmod);
     if dp1^.dparen <> nil then putstrs(dp1^.dparen);
     while dp1^.dcmt <> nil do
-      begin clp1 := dp1^.dcmt; dp1^.dcmt := clp1^.next; dispose(clp1) end;
+      begin clp1 := dp1^.dcmt; dp1^.dcmt := clp1^.next;
+            dispose(clp1^.s); dispose(clp1) end;
     dispose(dp1)
   end;
   while modlist <> nil do begin
     mp1 := modlist; modlist := mp1^.next;
     putstrs(mp1^.mname);
     while mp1^.mhdrcmt <> nil do
-      begin clp1 := mp1^.mhdrcmt; mp1^.mhdrcmt := clp1^.next; dispose(clp1) end;
+      begin clp1 := mp1^.mhdrcmt; mp1^.mhdrcmt := clp1^.next;
+            dispose(clp1^.s); dispose(clp1) end;
     dispose(mp1)
   end;
   while xreflist <> nil do begin
