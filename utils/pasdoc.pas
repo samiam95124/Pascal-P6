@@ -8275,6 +8275,12 @@ end;
 
     { HTML output helper procedures }
 
+    function lcase(c: char): char;
+    begin
+      if (c >= 'A') and (c <= 'Z') then lcase := chr(ord(c) + 32)
+      else lcase := c
+    end;
+
     procedure htmlesc(c: char);
     begin
       if c = '<' then write(docfil, '&lt;')
@@ -8390,6 +8396,20 @@ end;
       writeln(docfil, '.module-section h3 { color: #253555; margin-top: 0; }');
       { Code formatting }
       writeln(docfil, 'code { background: #F7F8FB; padding: 1px 4px; border-radius: 2px; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; }');
+      { Source view styles }
+      writeln(docfil, '.source-content { flex: 1; padding: 0; overflow-y: auto; }');
+      writeln(docfil, '.source-table { border-collapse: collapse; font-family: "Lucida Console", Monaco, monospace; font-size: 12px; line-height: 1.5; }');
+      writeln(docfil, '.source-table td { padding: 0 8px; vertical-align: top; white-space: pre; }');
+      writeln(docfil, '.src-linenum { color: #999; text-align: right; border-right: 1px solid #C4CFE5; user-select: none; background: #F8F9FA; min-width: 40px; }');
+      writeln(docfil, '.src-linenum a { color: #999; text-decoration: none; }');
+      writeln(docfil, '.src-linenum a:hover { color: #3D578C; }');
+      writeln(docfil, '.src-kw { color: #008000; font-weight: bold; }');
+      writeln(docfil, '.src-cmt { color: #808080; font-style: italic; }');
+      writeln(docfil, '.src-str { color: #a31515; }');
+      writeln(docfil, '.src-num { color: #098658; }');
+      writeln(docfil, '.src-dir { color: #808080; }');
+      writeln(docfil, '.src-idl { color: #3D578C; text-decoration: none; }');
+      writeln(docfil, '.src-idl:hover { text-decoration: underline; }');
       writeln(docfil, '</style>');
       writeln(docfil, '</head>');
       writeln(docfil, '<body>');
@@ -8432,6 +8452,230 @@ end;
       writeln(docfil, '</div>')
     end;
 
+    procedure writesource;
+    const idbufmax = 250;
+    var sf: text;
+        c: char;
+        linenum: integer;
+        idbuf: packed array [1..idbufmax] of char;
+        idlen: integer;
+        state: (snormal, sinstring, sinbrace, sinstar, sinline);
+        reprocess: boolean;
+
+      function isresword: boolean;
+      var i, j: integer;
+          match, fnd: boolean;
+          id: restr;
+      begin
+        isresword := false;
+        if idlen <= reslen then begin
+          for j := 1 to reslen do
+            if j <= idlen then id[j] := lcase(idbuf[j])
+            else id[j] := ' ';
+          fnd := false;
+          i := 1;
+          while (i <= maxres) and not fnd do begin
+            match := true;
+            for j := 1 to reslen do
+              if id[j] <> rw[i][j] then match := false;
+            if match then begin isresword := true; fnd := true end;
+            i := i + 1
+          end
+        end
+      end;
+
+      function finddoc: docp;
+      var dp: docp;
+          j, nl: integer;
+          match, fnd: boolean;
+      begin
+        finddoc := nil;
+        fnd := false;
+        dp := doclist;
+        while (dp <> nil) and not fnd do begin
+          nl := max(dp^.dname^);
+          if nl = idlen then begin
+            match := true;
+            for j := 1 to idlen do
+              if lcase(idbuf[j]) <> lcase(dp^.dname^[j]) then
+                match := false;
+            if match then begin finddoc := dp; fnd := true end
+          end;
+          if not fnd then dp := dp^.next
+        end
+      end;
+
+      procedure emitid;
+      var i: integer;
+          dp: docp;
+      begin
+        if idlen > 0 then begin
+        if isresword then begin
+          write(docfil, '<span class="src-kw">');
+          for i := 1 to idlen do htmlesc(idbuf[i]);
+          write(docfil, '</span>')
+        end else begin
+          dp := finddoc;
+          if dp <> nil then begin
+            write(docfil, '<a class="src-idl" href="#detail-');
+            write(docfil, dp^.dline:1);
+            write(docfil, '" onclick="switchToDoc(');
+            write(docfil, dp^.dline:1);
+            write(docfil, '); return false;">');
+            for i := 1 to idlen do htmlesc(idbuf[i]);
+            write(docfil, '</a>')
+          end else
+            for i := 1 to idlen do htmlesc(idbuf[i])
+        end;
+        idlen := 0
+        end
+      end;
+
+      procedure startline;
+      begin
+        write(docfil, '<tr id="src-');
+        write(docfil, linenum:1);
+        write(docfil, '"><td class="src-linenum"><a href="#src-');
+        write(docfil, linenum:1);
+        write(docfil, '">');
+        write(docfil, linenum:1);
+        write(docfil, '</a></td><td class="src-code">')
+      end;
+
+      procedure endline;
+      begin
+        writeln(docfil, '</td></tr>')
+      end;
+
+    begin { writesource }
+      writeln(docfil, '<table class="source-table">');
+      assign(sf, srcfil);
+      reset(sf);
+      linenum := 1;
+      state := snormal;
+      idlen := 0;
+      startline;
+      while not eof(sf) do begin
+        reprocess := false;
+        while not eoln(sf) or reprocess do begin
+          if not reprocess then read(sf, c);
+          reprocess := false;
+          if state = snormal then begin
+            if ((c >= 'a') and (c <= 'z')) or
+               ((c >= 'A') and (c <= 'Z')) or (c = '_') then begin
+              idlen := 1; idbuf[1] := c;
+              while (not eoln(sf)) and (not reprocess) do begin
+                read(sf, c);
+                if ((c >= 'a') and (c <= 'z')) or
+                   ((c >= 'A') and (c <= 'Z')) or
+                   ((c >= '0') and (c <= '9')) or (c = '_') then begin
+                  if idlen < idbufmax then begin
+                    idlen := idlen + 1; idbuf[idlen] := c
+                  end
+                end else begin
+                  emitid;
+                  reprocess := true
+                end
+              end;
+              if not reprocess then emitid
+            end else if (c >= '0') and (c <= '9') then begin
+              write(docfil, '<span class="src-num">');
+              htmlesc(c);
+              while (not eoln(sf)) and (not reprocess) do begin
+                read(sf, c);
+                if ((c >= '0') and (c <= '9')) or (c = '.') or
+                   (c = 'e') or (c = 'E') then
+                  htmlesc(c)
+                else begin
+                  write(docfil, '</span>');
+                  reprocess := true
+                end
+              end;
+              if not reprocess then write(docfil, '</span>')
+            end else if c = '''' then begin
+              write(docfil, '<span class="src-str">');
+              write(docfil, '&#39;');
+              state := sinstring
+            end else if c = '{' then begin
+              write(docfil, '<span class="src-cmt">');
+              htmlesc(c);
+              state := sinbrace;
+              if not eoln(sf) then begin
+                read(sf, c);
+                htmlesc(c);
+                if c = '}' then begin
+                  write(docfil, '</span>');
+                  state := snormal
+                end
+              end
+            end else if c = '(' then begin
+              if not eoln(sf) then begin
+                read(sf, c);
+                if c = '*' then begin
+                  write(docfil, '<span class="src-cmt">(*');
+                  state := sinstar
+                end else begin
+                  write(docfil, '(');
+                  reprocess := true
+                end
+              end else write(docfil, '(')
+            end else if c = '!' then begin
+              write(docfil, '<span class="src-cmt">');
+              htmlesc(c);
+              state := sinline
+            end else
+              htmlesc(c)
+          end else if state = sinstring then begin
+            if c = '''' then begin
+              write(docfil, '&#39;</span>');
+              state := snormal
+            end else htmlesc(c)
+          end else if state = sinbrace then begin
+            if c = '}' then begin
+              htmlesc(c);
+              write(docfil, '</span>');
+              state := snormal
+            end else htmlesc(c)
+          end else if state = sinstar then begin
+            if c = '*' then begin
+              if not eoln(sf) then begin
+                read(sf, c);
+                if c = ')' then begin
+                  write(docfil, '*)</span>');
+                  state := snormal
+                end else begin
+                  write(docfil, '*');
+                  htmlesc(c)
+                end
+              end else write(docfil, '*')
+            end else htmlesc(c)
+          end else if state = sinline then begin
+            htmlesc(c)
+          end
+        end;
+        readln(sf);
+        if state = sinline then begin
+          write(docfil, '</span>');
+          state := snormal
+        end else if (state = sinbrace) or (state = sinstar) or
+                    (state = sinstring) then
+          write(docfil, '</span>');
+        endline;
+        linenum := linenum + 1;
+        if not eof(sf) then begin
+          startline;
+          if state = sinbrace then
+            write(docfil, '<span class="src-cmt">')
+          else if state = sinstar then
+            write(docfil, '<span class="src-cmt">')
+          else if state = sinstring then
+            write(docfil, '<span class="src-str">')
+        end
+      end;
+      close(sf);
+      writeln(docfil, '</table>')
+    end;
+
     procedure htmlftr;
     var ds: pstring;
         theopsfil: text;
@@ -8447,6 +8691,12 @@ end;
       writeln(docfil, '<a class="content-tab" href="#sec-procedures">Procedures</a>');
       writeln(docfil, '</div>');
       writeln(docfil, '</div>'); { close doc-view }
+      { source view }
+      writeln(docfil, '<div id="view-source" class="view-panel">');
+      writeln(docfil, '<div class="source-content">');
+      writesource;
+      writeln(docfil, '</div>');
+      writeln(docfil, '</div>'); { close source-view }
       { theory of operations view }
       if ftheops then begin
         writeln(docfil, '<div id="view-theops" class="view-panel">');
@@ -8484,13 +8734,25 @@ end;
       writeln(docfil, '  event.target.classList.add(''active'');');
       writeln(docfil, '  document.getElementById(''tab-''+name).classList.add(''active'');');
       writeln(docfil, '}');
-      writeln(docfil, 'function switchView(name) {');
+      writeln(docfil, 'function switchViewByName(name) {');
       writeln(docfil, '  var tabs = document.querySelectorAll(''.view-tab'');');
       writeln(docfil, '  var views = document.querySelectorAll(''.view-panel'');');
       writeln(docfil, '  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove(''active'');');
       writeln(docfil, '  for (var i = 0; i < views.length; i++) views[i].classList.remove(''active'');');
-      writeln(docfil, '  event.target.classList.add(''active'');');
       writeln(docfil, '  document.getElementById(''view-''+name).classList.add(''active'');');
+      writeln(docfil, '  var tab = document.querySelector(''.view-tab[data-view="''+name+''"]'');');
+      writeln(docfil, '  if (tab) tab.classList.add(''active'');');
+      writeln(docfil, '}');
+      writeln(docfil, 'function switchView(name) { switchViewByName(name); }');
+      writeln(docfil, 'function switchToDoc(line) {');
+      writeln(docfil, '  switchViewByName(''doc'');');
+      writeln(docfil, '  var el = document.getElementById(''detail-'' + line);');
+      writeln(docfil, '  if (el) el.scrollIntoView({behavior: ''smooth''});');
+      writeln(docfil, '}');
+      writeln(docfil, 'function switchToSource(line) {');
+      writeln(docfil, '  switchViewByName(''source'');');
+      writeln(docfil, '  var el = document.getElementById(''src-'' + line);');
+      writeln(docfil, '  if (el) el.scrollIntoView({behavior: ''smooth''});');
       writeln(docfil, '}');
       writeln(docfil, 'function toggleTree(el) {');
       writeln(docfil, '  var children = el.parentElement.querySelector(''.tree-children'');');
@@ -9234,10 +9496,12 @@ end;
       writeln(docfil, '<div class="content-area">');
       { view switching tabs }
       writeln(docfil, '<div class="view-tabs">');
-      write(docfil, '<button class="view-tab active" ');
+      write(docfil, '<button class="view-tab active" data-view="doc" ');
       writeln(docfil, 'onclick="switchView(''doc'')">Documentation</button>');
+      write(docfil, '<button class="view-tab" data-view="source" ');
+      writeln(docfil, 'onclick="switchView(''source'')">Source</button>');
       if ftheops then begin
-        write(docfil, '<button class="view-tab" ');
+        write(docfil, '<button class="view-tab" data-view="theops" ');
         writeln(docfil, 'onclick="switchView(''theops'')">Theory of Operations</button>')
       end;
       writeln(docfil, '</div>');
@@ -9498,7 +9762,13 @@ end;
               writeparamtable(dp^.idp^.pflist);
           { 5. Definition location }
           writeln(docfil, '<div class="definition">');
-          write(docfil, 'Definition at line <span class="filename">', dp^.dline:1, '</span>');
+          write(docfil, 'Definition at line <a class="filename" href="#src-');
+          write(docfil, dp^.dline:1);
+          write(docfil, '" onclick="switchToSource(');
+          write(docfil, dp^.dline:1);
+          write(docfil, '); return false;">');
+          write(docfil, dp^.dline:1);
+          write(docfil, '</a>');
           write(docfil, ' of file <span class="filename">');
           write(docfil, nammod^);
           writeln(docfil, '.pas</span></div>');
