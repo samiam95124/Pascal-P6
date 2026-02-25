@@ -8314,7 +8314,7 @@ end;
       writeln(docfil, '.middle { display: flex; flex: 1; min-height: 0; overflow: hidden; }');
       writeln(docfil, '.tree-panel { width: 280px; min-width: 280px; background: #FAFAFA; border-right: 1px solid #C4CFE5; padding: 5px 10px; overflow-y: auto; font-size: 13px; }');
       writeln(docfil, '.content-area { display: flex; flex-direction: column; flex: 1; min-height: 0; }');
-      writeln(docfil, '.container { flex: 1; max-width: 900px; padding: 20px; overflow-y: auto; }');
+      writeln(docfil, '.container { flex: 1; padding: 20px; overflow-y: auto; }');
       writeln(docfil, '.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 6px 20px; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }');
       { Sidebar content and tree }
       writeln(docfil, '.sidebar-content { display: none; }');
@@ -8609,40 +8609,206 @@ end;
     end;
 
     procedure writecmt(clst: cmtlinep);
-    var l, ll: integer;
-        fnd: boolean;
-        clp: cmtlinep;
+    const cmtwidth = 72; { wrap width for text output }
+          wbufmax = 2500; { max word buffer size }
+    var clp: cmtlinep;
+        ll, ind: integer;
+        baseind: integer;
         first: boolean;
         blankcnt: integer;
-    begin
+        wbuf: packed array [1..wbufmax] of char;
+        wlen: integer;
+
+      function isdecorative(p: cmtlinep): boolean;
+      { true if line has decorative chars (stars/dashes/equals) only }
+      var i, tl, sl: integer; dec, fnd: boolean;
+      begin
+        if p^.s = nil then isdecorative := true
+        else begin
+          sl := max(p^.s^);
+          tl := sl;
+          fnd := false;
+          while (tl > 0) and not fnd do
+            if (p^.s^[tl] = ' ') or (p^.s^[tl] = chr(13)) then tl := tl - 1
+            else fnd := true;
+          if tl = 0 then isdecorative := false { blank line, not decorative }
+          else begin
+            dec := true;
+            for i := 1 to tl do
+              if not ((p^.s^[i] in ['*', '-', '=', ' ']) or
+                 (p^.s^[i] = chr(13))) then dec := false;
+            isdecorative := dec
+          end
+        end
+      end;
+
+      function findindent(p: cmtlinep): integer;
+      { returns 1-based column of first non-space/cr, 0 if blank }
+      var i, sl: integer; fnd: boolean;
+      begin
+        if p^.s = nil then findindent := 0
+        else begin
+          sl := max(p^.s^);
+          i := 1;
+          fnd := false;
+          while (i <= sl) and not fnd do
+            if (p^.s^[i] = ' ') or (p^.s^[i] = chr(13)) then i := i + 1
+            else fnd := true;
+          if i > sl then findindent := 0
+          else findindent := i
+        end
+      end;
+
+      function trimlen(p: cmtlinep): integer;
+      var i: integer; fnd: boolean;
+      begin
+        if p^.s = nil then trimlen := 0
+        else begin
+          i := max(p^.s^);
+          fnd := false;
+          while (i > 0) and not fnd do
+            if (p^.s^[i] = ' ') or (p^.s^[i] = chr(13)) then i := i - 1
+            else fnd := true;
+          trimlen := i
+        end
+      end;
+
+      procedure flushpara;
+      { emit accumulated word buffer as a paragraph }
+      var i, l, col, wstart, wend: integer;
+      begin
+        if wlen > 0 then begin
+          if fhtml then begin
+            write(docfil, '<p>');
+            for i := 1 to wlen do htmlesc(wbuf[i]);
+            writeln(docfil, '</p>')
+          end else begin
+            col := 0; i := 1;
+            while i <= wlen do begin
+              while (i <= wlen) and (wbuf[i] = ' ') do i := i + 1;
+              if i <= wlen then begin
+                wstart := i;
+                while (i <= wlen) and (wbuf[i] <> ' ') do i := i + 1;
+                wend := i - 1;
+                if (col > 0) and
+                   (col + 1 + (wend - wstart + 1) > cmtwidth) then begin
+                  writeln(docfil);
+                  write(docfil, '    ');
+                  col := 0
+                end;
+                if col > 0 then begin
+                  write(docfil, ' '); col := col + 1
+                end else begin
+                  write(docfil, '    ')
+                end;
+                for l := wstart to wend do begin
+                  write(docfil, wbuf[l]); col := col + 1
+                end
+              end
+            end;
+            if col > 0 then writeln(docfil)
+          end;
+          wlen := 0
+        end
+      end;
+
+      procedure addwords(p: cmtlinep; startcol, endcol: integer);
+      { add text from line to word buffer }
+      var i: integer;
+      begin
+        if wlen > 0 then begin
+          wlen := wlen + 1;
+          if wlen <= wbufmax then wbuf[wlen] := ' '
+        end;
+        for i := startcol to endcol do begin
+          wlen := wlen + 1;
+          if wlen <= wbufmax then wbuf[wlen] := p^.s^[i]
+        end
+      end;
+
+      procedure emitindented(p: cmtlinep; relind, tl: integer);
+      { emit a line preserving relative indentation }
+      var i: integer;
+      begin
+        if fhtml then begin
+          for i := 1 to relind do write(docfil, '&nbsp;');
+          for i := findindent(p) to tl do htmlesc(p^.s^[i]);
+          writeln(docfil, '<br>')
+        end else begin
+          write(docfil, '    ');
+          for i := 1 to relind do write(docfil, ' ');
+          for i := findindent(p) to tl do write(docfil, p^.s^[i]);
+          writeln(docfil)
+        end
+      end;
+
+    begin { writecmt }
       if fhtml then write(docfil, '<div class="comment">');
-      clp := clst;
+      wlen := 0;
       first := true;
       blankcnt := 0;
+
+      { find base indent: minimum indent of non-decorative, non-blank lines }
+      baseind := maxcmtchr;
+      clp := clst;
       while clp <> nil do begin
-        ll := maxcmtchr;
-        fnd := false;
-        while (ll > 0) and not fnd do
-          if clp^.s^[ll] <> ' ' then fnd := true
-          else ll := ll - 1;
-        if ll > 0 then begin
-          if fhtml then begin
-            if not first and (blankcnt >= 2) then writeln(docfil, '<br><br>');
-            if not first and (blankcnt < 2) then writeln(docfil);
-            for l := 1 to ll do htmlesc(clp^.s^[l])
-          end else begin
-            if not first and (blankcnt >= 2) then writeln(docfil);
-            write(docfil, '    ');
-            for l := 1 to ll do write(docfil, clp^.s^[l]);
-            writeln(docfil)
-          end;
-          first := false;
-          blankcnt := 0
-        end else begin
-          if not first then blankcnt := blankcnt + 1
+        if not isdecorative(clp) then begin
+          ind := findindent(clp);
+          if (ind > 0) and (ind < baseind) then baseind := ind
         end;
         clp := clp^.next
       end;
+      if baseind >= maxcmtchr then baseind := 1;
+
+      { process lines: the comment scanner inserts a spurious blank entry
+        at each source line boundary, so single blanks are ignored. only
+        runs of 2+ blank lines indicate a real blank source line. }
+      clp := clst;
+      while clp <> nil do begin
+        if isdecorative(clp) then begin
+          { rule 1: skip decorative lines, count as blank }
+          blankcnt := blankcnt + 1;
+          clp := clp^.next
+        end else begin
+          ll := trimlen(clp);
+          ind := findindent(clp);
+          if ind = 0 then begin
+            { blank line - count it }
+            blankcnt := blankcnt + 1;
+            clp := clp^.next
+          end else begin
+            { content line - check if accumulated blanks indicate break }
+            if blankcnt >= 2 then begin
+              { real blank source line(s) - rule 4: paragraph break }
+              if fhtml then begin
+                { only emit <br> if no <p> was flushed, since <p> has margins }
+                if wlen > 0 then flushpara
+                else begin
+                  if not first then writeln(docfil, '<br>');
+                  flushpara
+                end
+              end else begin
+                flushpara;
+                if not first then writeln(docfil)
+              end
+            end;
+            blankcnt := 0;
+            if ind <= baseind then begin
+              { flush-left line - rule 3: accumulate for word wrapping }
+              addwords(clp, ind, ll);
+              first := false;
+              clp := clp^.next
+            end else begin
+              { indented line - rule 5: preserve structure }
+              flushpara;
+              emitindented(clp, ind - baseind, ll);
+              first := false;
+              clp := clp^.next
+            end
+          end
+        end
+      end;
+      flushpara;
       if fhtml then writeln(docfil, '</div>')
     end;
 
