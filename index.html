@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pascal-P6</title>
+<style>
+body { font-family: "Lucida Grande", Geneva, Helvetica, Arial, sans-serif; font-size: 14px; margin: 0; padding: 0; background: #fff; color: #333; line-height: 1.6; }
+.page-header { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-bottom: 1px solid #A3B4D7; padding: 20px 40px; }
+.page-title { font-size: 280%; color: #1C2941; font-weight: bold; margin: 0; }
+.page-subtitle { font-size: 15px; color: #364D7C; margin-top: 4px; }
+.content { max-width: 900px; margin: 0 auto; padding: 30px 40px; }
+h2 { color: #253555; font-size: 150%; border-bottom: 2px solid #879ECB; padding-bottom: 6px; margin-top: 35px; }
+.section { margin: 15px 0 25px 0; }
+.link-item { padding: 6px 0; }
+.link-item a { color: #3D578C; text-decoration: none; font-size: 14px; }
+.link-item a:hover { text-decoration: underline; color: #1C2941; }
+.link-desc { color: #666; font-size: 13px; margin-left: 8px; }
+.link-path { color: #999; font-size: 11px; font-family: "Lucida Console", Monaco, monospace; margin-left: 8px; }
+p { margin: 10px 0; }
+.overview { background: #F9FAFC; border: 1px solid #C4CFE5; border-radius: 4px; padding: 15px 20px; margin: 20px 0; }
+.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 8px 40px; font-size: 11px; text-align: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="page-header">
+<div class="page-title">Pascal-P6</div>
+<div class="page-subtitle">A public domain Pascaline compiler and development system</div>
+</div>
+<div class="content">
+
+<div class="overview">
+<p>Pascal-P6 is the sixth generation of the Pascal-P portable Pascal compiler series,
+originally developed at ETH Zurich. P6 implements the Pascaline language, a modern
+extension of ISO 7185 Standard Pascal that adds modules, objects, exception handling,
+dynamic arrays, operator overloading, and other features while maintaining full
+backward compatibility with ISO 7185.</p>
+<p>The system includes a self-compiling compiler (pcom), a P-code interpreter (pint),
+a native AMD64 code generator (pgen), a build tool (pc), and documentation utilities.
+All components are written in Pascaline and compile with the P6 compiler itself.</p>
+</div>
+
+<h2>Standards and Manuals</h2>
+<div class="section">
+<div class="link-item">
+<a href="doc/iso7185.html">ISO 7185 Pascal Standard</a>
+<span class="link-desc">The ISO 7185 Standard Pascal language specification</span>
+</div>
+<div class="link-item">
+<a href="doc/iso7185rules.html">ISO 7185 Rules</a>
+<span class="link-desc">Compliance rules for ISO 7185 Standard Pascal</span>
+</div>
+<div class="link-item">
+<a href="doc/basic.html">BASIC Interpreter Manual</a>
+<span class="link-desc">User manual for the BASIC interpreter written in Pascaline</span>
+</div>
+</div>
+
+<h2>Source Documentation</h2>
+<div class="section">
+<div class="link-item">
+<a href="source/pcom.html">pcom &mdash; Pascal Compiler</a>
+<span class="link-desc">The Pascaline compiler front end</span>
+</div>
+<div class="link-item">
+<a href="pc/pc.html">pc &mdash; Build Tool</a>
+<span class="link-desc">The Pascal compilation command with automatic dependency tracking</span>
+</div>
+<div class="link-item">
+<a href="pc/scanner.html">scanner &mdash; Pascal Scanner</a>
+<span class="link-desc">Lexical scanner module for the pc build tool</span>
+</div>
+<div class="link-item">
+<a href="pc/restbl.html">restbl &mdash; Reserved Word Table</a>
+<span class="link-desc">Reserved word lookup table module</span>
+</div>
+<div class="link-item">
+<a href="pc/spctbl.html">spctbl &mdash; Special Character Table</a>
+<span class="link-desc">Special character and symbol lookup table module</span>
+</div>
+<div class="link-item">
+<a href="utils/pasdoc.html">pasdoc &mdash; Documentation Generator</a>
+<span class="link-desc">Pascal source documentation generator with hyperlinked source view</span>
+</div>
+</div>
+
+<h2>Sample Programs</h2>
+<div class="section">
+<div class="link-item">
+<a href="sample_programs/hello.html">hello &mdash; Hello World</a>
+<span class="link-desc">A simple introductory Pascaline program</span>
+</div>
+</div>
+
+<h2>P5 Compiler Documentation</h2>
+<div class="section">
+<div class="link-item">
+<a href="p5/doc/the_p5_compiler.html">The P5 Compiler</a>
+<span class="link-desc">Documentation for the fifth-generation Pascal-P compiler</span>
+</div>
+<div class="link-item">
+<a href="p5/doc/iso7185.html">P5 ISO 7185 Standard</a>
+<span class="link-desc">ISO 7185 standard reference for P5</span>
+</div>
+<div class="link-item">
+<a href="p5/doc/iso7185rules.html">P5 ISO 7185 Rules</a>
+<span class="link-desc">ISO 7185 compliance rules for P5</span>
+</div>
+</div>
+
+</div>
+<div class="page-footer">
+Pascal-P6 &mdash; Public Domain
+</div>
+</body>
+</html>

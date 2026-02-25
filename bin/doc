@@ -1,0 +1,32 @@
+#!/bin/bash
+
+################################################################################
+#
+# Open Pascal-P6 documentation index
+#
+# Finds an available web browser and opens index.html.
+#
+################################################################################
+
+# find project root (directory containing index.html)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+INDEX="$PROJECT_DIR/index.html"
+
+if [ ! -f "$INDEX" ]; then
+    echo "Error: $INDEX not found"
+    exit 1
+fi
+
+# list of browsers to try
+BROWSERS="google-chrome chromium-browser chromium firefox firefox-esr microsoft-edge opera vivaldi epiphany xdg-open open"
+
+for browser in $BROWSERS; do
+    if which "$browser" > /dev/null 2>&1; then
+        exec "$browser" "$INDEX"
+    fi
+done
+
+echo "Error: no web browser found"
+echo "Tried: $BROWSERS"
+exit 1
