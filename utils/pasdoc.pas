@@ -8267,7 +8267,7 @@ end;
   end (*inittables*) ;
 
   procedure writedoc;
-  var dp: docp;
+  var dp, dp2: docp;
       xp: xrefp;
       mp: modentryp;
       i: integer;
@@ -8288,6 +8288,21 @@ end;
       else if c = '&' then write(docfil, '&amp;')
       else if c = '"' then write(docfil, '&quot;')
       else write(docfil, c)
+    end;
+
+    function finddocname(name: pstring): docp;
+    var dp: docp;
+        fnd: boolean;
+    begin
+      finddocname := nil;
+      fnd := false;
+      dp := doclist;
+      while (dp <> nil) and not fnd do begin
+        if strequpp(dp^.dname, name) then begin
+          finddocname := dp; fnd := true
+        end;
+        if not fnd then dp := dp^.next
+      end
     end;
 
     procedure htmlhdr;
@@ -9290,7 +9305,12 @@ end;
                   first := false
                 end;
                 write(docfil, '<span class="callgraph-item">');
-                writenameplain(xp^.idname);
+                dp := finddocname(xp^.idname);
+                if dp <> nil then begin
+                  write(docfil, '<a href="#detail-', dp^.dline:1, '">');
+                  writenameplain(xp^.idname);
+                  write(docfil, '</a>')
+                end else writenameplain(xp^.idname);
                 write(docfil, '</span>')
               end
             end
@@ -9305,6 +9325,7 @@ end;
     var xp: xrefp;
         first: boolean;
         lastproc: pstring;
+        dp: docp;
     begin
       first := true;
       lastproc := nil;
@@ -9322,7 +9343,12 @@ end;
                   first := false
                 end;
                 write(docfil, '<span class="callgraph-item">');
-                writenameplain(xp^.refproc);
+                dp := finddocname(xp^.refproc);
+                if dp <> nil then begin
+                  write(docfil, '<a href="#detail-', dp^.dline:1, '">');
+                  writenameplain(xp^.refproc);
+                  write(docfil, '</a>')
+                end else writenameplain(xp^.refproc);
                 write(docfil, '</span>');
                 lastproc := xp^.refproc
               end
@@ -9568,7 +9594,9 @@ end;
       if (dp^.dklass = dkconst) and (dp^.dmod = nil) then begin
         if fhtml then begin
           write(docfil, '<div class="item">');
+          write(docfil, '<a href="#detail-', dp^.dline:1, '">');
           writenameplain(dp^.dname);
+          write(docfil, '</a>');
           writeln(docfil, '</div>')
         end else begin
           write(docfil, '    ');
@@ -9591,7 +9619,9 @@ end;
       if (dp^.dklass = dktype) and (dp^.dmod = nil) then begin
         if fhtml then begin
           write(docfil, '<div class="item">');
+          write(docfil, '<a href="#detail-', dp^.dline:1, '">');
           writenameplain(dp^.dname);
+          write(docfil, '</a>');
           writeln(docfil, '</div>')
         end else begin
           write(docfil, '    ');
@@ -9614,7 +9644,9 @@ end;
       if (dp^.dklass = dkfixed) and (dp^.dmod = nil) then begin
         if fhtml then begin
           write(docfil, '<div class="item">');
+          write(docfil, '<a href="#detail-', dp^.dline:1, '">');
           writenameplain(dp^.dname);
+          write(docfil, '</a>');
           write(docfil, ': ');
           writetypname(dp^.idp^.idtype);
           writeln(docfil, '</div>')
@@ -9642,7 +9674,9 @@ end;
       if (dp^.dklass = dkvar) and (dp^.dmod = nil) then begin
         if fhtml then begin
           write(docfil, '<div class="item">');
+          write(docfil, '<a href="#detail-', dp^.dline:1, '">');
           writenameplain(dp^.dname);
+          write(docfil, '</a>');
           write(docfil, ': ');
           if dp^.idp <> nil then writetypname(dp^.idp^.idtype)
           else write(docfil, '(unknown)');
@@ -9673,7 +9707,9 @@ end;
           write(docfil, '<div class="item"><code>');
           if dp^.dklass = dkproc then write(docfil, '<span class="keyword">procedure</span> ')
           else write(docfil, '<span class="keyword">function</span> ');
+          write(docfil, '<a href="#detail-', dp^.dline:1, '">');
           writenameplain(dp^.dname);
+          write(docfil, '</a>');
           if dp^.idp <> nil then
             if dp^.idp^.klass in [proc, func] then
               writeparams(dp^.idp^.pflist);
@@ -9799,6 +9835,17 @@ end;
           else write(docfil, '(unknown)');
           writeln(docfil, '</p>');
           if dp^.dcmt <> nil then writecmt(dp^.dcmt);
+          writeln(docfil, '<div class="definition">');
+          write(docfil, 'Definition at line <a class="filename" href="#src-');
+          write(docfil, dp^.dline:1);
+          write(docfil, '" onclick="switchToSource(');
+          write(docfil, dp^.dline:1);
+          write(docfil, '); return false;">');
+          write(docfil, dp^.dline:1);
+          write(docfil, '</a>');
+          write(docfil, ' of file <span class="filename">');
+          write(docfil, nammod^);
+          writeln(docfil, '.pas</span></div>');
           writeln(docfil, '</div>');
           writeln(docfil, '</div>')
         end else begin
@@ -9859,9 +9906,11 @@ end;
     while dp <> nil do begin
       if dp^.dmod = nil then begin
         if fhtml then begin
-          write(docfil, '<div class="item"><strong>');
+          write(docfil, '<div class="item"><strong><a href="#detail-');
+          write(docfil, dp^.dline:1);
+          write(docfil, '">');
           writenameplain(dp^.dname);
-          write(docfil, '</strong>:')
+          write(docfil, '</a></strong>:')
         end else begin
           writename(dp^.dname);
           write(docfil, ':')
@@ -9872,10 +9921,21 @@ end;
         while xp <> nil do begin
           if strequpp(xp^.idname, dp^.dname) then begin
             if fhtml then begin
-              write(docfil, ' <span class="xref-line">', xp^.refline:1, '</span>');
+              write(docfil, ' <a class="xref-line" href="#src-');
+              write(docfil, xp^.refline:1);
+              write(docfil, '" onclick="switchToSource(');
+              write(docfil, xp^.refline:1);
+              write(docfil, '); return false;">');
+              write(docfil, xp^.refline:1);
+              write(docfil, '</a>');
               if xp^.refproc <> nil then begin
                 write(docfil, '<span class="xref-proc">(');
-                writenameplain(xp^.refproc);
+                dp2 := finddocname(xp^.refproc);
+                if dp2 <> nil then begin
+                  write(docfil, '<a href="#detail-', dp2^.dline:1, '">');
+                  writenameplain(xp^.refproc);
+                  write(docfil, '</a>')
+                end else writenameplain(xp^.refproc);
                 write(docfil, ')</span>')
               end
             end else begin
