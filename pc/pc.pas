@@ -1,49 +1,50 @@
 {******************************************************************************
-*                                                                             *
-*                        PC - PASCAL COMPILER SHELL                           *
-*                                                                             *
-*                       Copyright (C) 2001 S. A. Moore                        *
-*                                                                             *
-*                              Written 4/01                                   *
-*                                                                             *
-* PC is a Pascal compilation shell. It examines the file given it, and forms  *
-* a dependency tree by looking at all the files that appear in "uses" or      *
-* "joins" statements. Then, the dates and times are checked against the       *
-* object files, and components rebuilt as required.                           *
-* The command line is:                                                        *
-*                                                                             *
-* pc program [-option]...                                                     *
-*                                                                             *
-* Options:                                                                    *
-*                                                                             *
-* -t or -tree - List the dependency tree.                                     *
-*                                                                             *
-* -a or -action - List the actions taken (commands performed)                 *
-*                                                                             *
-* -d or -dry - Do not actually perform anything. Used with -action to get a   *
-* list of what is going to happen before actually running the operation.      *
-*                                                                             *
-* -r or -rebuild - Treat all files as needing to be rebuilt.                  *
-*                                                                             *
-* -el or -errorlimit=n - Passthrough option to limit errors.                  *
-*                                                                             *
-* -nrf or -noreference - Passthrough option to remove reference checking.     *
-*                                                                             *
-* -u or -uses=path - Direct specification of uses path.                       *
-*                                                                             *
-* Currently contains some Windows dependencies, which need to be removed:     *
-*                                                                             *
-* 1. Relys on directly outputting windows commands.                           *
-*                                                                             *
-* 2. Relys on windows mode paths.                                             *
-*                                                                             *
-* Remaining "to do" items:                                                    *
-*                                                                             *
-* 1. Implement packages.                                                      *
-*                                                                             *
-* 2. Have pc check what type the target file is, and if a module, perform     *
-* a compile without a link.                                                   *
-*                                                                             *
+                                                                             
+PC - PASCAL COMPILER SHELL                           
+                                                                             
+Copyright (C) 2001 S. A. Moore                        
+                                                                             
+Written 4/01                                   
+                                                                             
+PC is a Pascal compilation shell. It examines the file given it, and forms  
+a dependency tree by looking at all the files that appear in "uses" or      
+"joins" statements. Then, the dates and times are checked against the       
+object files, and components rebuilt as required.                           
+The command line is:                                                        
+                                                                             
+pc program [-option]...                                                     
+                                                                             
+Options:                                                                    
+                                                                             
+    -t or -tree - List the dependency tree.                                     
+                                                                             
+    -a or -action - List the actions taken (commands performed)                 
+                                                                             
+    -d or -dry - Do not actually perform anything. Used with -action to get a   
+                 list of what is going to happen before actually running the
+                 operation.      
+                                                                             
+    -r or -rebuild - Treat all files as needing to be rebuilt.                  
+                                                                             
+    -el or -errorlimit=n - Passthrough option to limit errors.                  
+                                                                             
+    -nrf or -noreference - Passthrough option to remove reference checking.     
+                                                                             
+    -u or -uses=path - Direct specification of uses path.                       
+                                                                             
+ Currently contains some Windows dependencies, which need to be removed:     
+                                                                             
+    1. Relys on directly outputting windows commands.                           
+                                                                             
+    2. Relys on windows mode paths.                                             
+                                                                             
+ Remaining "to do" items:                                                    
+                                                                             
+    1. Implement packages.                                                      
+                                                                             
+    2. Have pc check what type the target file is, and if a module, perform     
+       a compile without a link.                                                   
+                                                                             
 ******************************************************************************}
 
 program pc(output, command);
