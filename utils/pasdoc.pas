@@ -642,6 +642,8 @@ var
     hdrcmt:    cmtlinep;
     docfil:  text;
     docfilnam(fillen): string;
+    theopsfn(fillen): string; { theory of operations filename }
+    ftheops: boolean; { true if theops file exists }
     { cleanup temps }
     dp1: docp; mp1: modentryp; xp1: xrefp; clp1: cmtlinep;
 
@@ -8311,6 +8313,7 @@ end;
       writeln(docfil, '.nav-search { margin-left: auto; margin-right: 10px; padding: 3px 6px; border: 1px solid #A3B4D7; border-radius: 3px; font-size: 11px; background: #fff; width: 150px; }');
       writeln(docfil, '.middle { display: flex; flex: 1; min-height: 0; overflow: hidden; }');
       writeln(docfil, '.tree-panel { width: 280px; min-width: 280px; background: #FAFAFA; border-right: 1px solid #C4CFE5; padding: 5px 10px; overflow-y: auto; font-size: 13px; }');
+      writeln(docfil, '.content-area { display: flex; flex-direction: column; flex: 1; min-height: 0; }');
       writeln(docfil, '.container { flex: 1; max-width: 900px; padding: 20px; overflow-y: auto; }');
       writeln(docfil, '.page-footer { background: linear-gradient(to bottom, #D5DDEC 0%, #CAD4E8 50%, #B2C0DD 100%); border-top: 1px solid #A3B4D7; color: #364D7C; padding: 6px 20px; font-size: 8pt; display: flex; justify-content: space-between; align-items: center; }');
       { Sidebar content and tree }
@@ -8325,9 +8328,18 @@ end;
       writeln(docfil, '.tree-proc { color: #1a1a6e; }');
       writeln(docfil, '.tree-func { color: #6e1a1a; }');
       { Content tabs }
-      writeln(docfil, '.content-tabs { display: flex; gap: 0; border-bottom: 1px solid #A8B8D9; margin: 10px 0 0 0; }');
-      writeln(docfil, '.content-tab { padding: 4px 12px; font-size: 12px; color: #3D578C; text-decoration: none; border: 1px solid #A8B8D9; border-bottom: none; border-radius: 4px 4px 0 0; background: #E2E8F2; margin-right: 2px; }');
+      writeln(docfil, '.content-tabs { display: flex; flex-direction: column; padding-top: 60px; }');
+      writeln(docfil, '.content-tab { writing-mode: vertical-rl; text-orientation: mixed; padding: 12px 6px; font-size: 12px; color: #3D578C; text-decoration: none; background: #E2E8F2; border: 1px solid #A8B8D9; border-left: none; border-radius: 0 4px 4px 0; margin-bottom: 2px; white-space: nowrap; }');
       writeln(docfil, '.content-tab:hover { background: #D8DFEE; }');
+      { View tabs and panels }
+      writeln(docfil, '.view-tabs { display: flex; gap: 0; border-bottom: 1px solid #A8B8D9; }');
+      writeln(docfil, '.view-tab { padding: 4px 12px; font-size: 12px; color: #3D578C; cursor: pointer; background: #E2E8F2; border: 1px solid #A8B8D9; border-bottom: none; border-radius: 4px 4px 0 0; margin-right: 2px; }');
+      writeln(docfil, '.view-tab.active { background: #fff; font-weight: bold; }');
+      writeln(docfil, '.view-tab:hover { background: #D8DFEE; }');
+      writeln(docfil, '.view-panel { display: none; flex: 1; min-height: 0; }');
+      writeln(docfil, '.view-panel.active { display: flex; }');
+      writeln(docfil, '.theops-content { flex: 1; padding: 20px; overflow-y: auto; }');
+      writeln(docfil, '.theops-content pre { font-family: "Lucida Console", Monaco, monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin: 0; }');
       writeln(docfil, 'h1 { color: #333; font-size: 150%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 0; }');
       writeln(docfil, 'h2 { color: #333; font-size: 120%; border-bottom: 1px solid #879ECB; padding-bottom: 4px; margin-top: 30px; }');
       writeln(docfil, 'h3 { color: #333; font-size: 100%; margin-top: 20px; }');
@@ -8422,8 +8434,36 @@ end;
 
     procedure htmlftr;
     var ds: pstring;
+        theopsfil: text;
+        c: char;
     begin
       writeln(docfil, '</div>'); { close container }
+      { content section tabs (vertical book tabs) }
+      writeln(docfil, '<div class="content-tabs">');
+      writeln(docfil, '<a class="content-tab" href="#sec-modules">Modules</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-constants">Constants</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-types">Types</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-variables">Variables</a>');
+      writeln(docfil, '<a class="content-tab" href="#sec-procedures">Procedures</a>');
+      writeln(docfil, '</div>');
+      writeln(docfil, '</div>'); { close doc-view }
+      { theory of operations view }
+      if ftheops then begin
+        writeln(docfil, '<div id="view-theops" class="view-panel">');
+        writeln(docfil, '<div class="theops-content"><pre>');
+        assign(theopsfil, theopsfn);
+        reset(theopsfil);
+        while not eof(theopsfil) do begin
+          while not eoln(theopsfil) do begin
+            read(theopsfil, c); htmlesc(c)
+          end;
+          readln(theopsfil); writeln(docfil)
+        end;
+        close(theopsfil);
+        writeln(docfil, '</pre></div>');
+        writeln(docfil, '</div>') { close theops-view }
+      end;
+      writeln(docfil, '</div>'); { close content-area }
       writeln(docfil, '</div>'); { close middle }
       { page footer }
       writeln(docfil, '<div class="page-footer">');
@@ -8443,6 +8483,14 @@ end;
       writeln(docfil, '  for (var i = 0; i < contents.length; i++) contents[i].classList.remove(''active'');');
       writeln(docfil, '  event.target.classList.add(''active'');');
       writeln(docfil, '  document.getElementById(''tab-''+name).classList.add(''active'');');
+      writeln(docfil, '}');
+      writeln(docfil, 'function switchView(name) {');
+      writeln(docfil, '  var tabs = document.querySelectorAll(''.view-tab'');');
+      writeln(docfil, '  var views = document.querySelectorAll(''.view-panel'');');
+      writeln(docfil, '  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove(''active'');');
+      writeln(docfil, '  for (var i = 0; i < views.length; i++) views[i].classList.remove(''active'');');
+      writeln(docfil, '  event.target.classList.add(''active'');');
+      writeln(docfil, '  document.getElementById(''view-''+name).classList.add(''active'');');
       writeln(docfil, '}');
       writeln(docfil, 'function toggleTree(el) {');
       writeln(docfil, '  var children = el.parentElement.querySelector(''.tree-children'');');
@@ -9015,8 +9063,22 @@ end;
   begin { writedoc }
     { HTML header }
     if fhtml then begin htmlhdr; writenav end;
-    { open content container }
-    if fhtml then writeln(docfil, '<div class="container">');
+    { open content area with view tabs and container }
+    if fhtml then begin
+      writeln(docfil, '<div class="content-area">');
+      { view switching tabs }
+      writeln(docfil, '<div class="view-tabs">');
+      write(docfil, '<button class="view-tab active" ');
+      writeln(docfil, 'onclick="switchView(''doc'')">Documentation</button>');
+      if ftheops then begin
+        write(docfil, '<button class="view-tab" ');
+        writeln(docfil, 'onclick="switchView(''theops'')">Theory of Operations</button>')
+      end;
+      writeln(docfil, '</div>');
+      { documentation view panel }
+      writeln(docfil, '<div id="view-doc" class="view-panel active">');
+      writeln(docfil, '<div class="container">')
+    end;
 
     { Section 1: Summary }
     if not fhtml then begin
@@ -9027,17 +9089,6 @@ end;
       writeln(docfil);
       for i := 1 to 70 do write(docfil, '=');
       writeln(docfil)
-    end;
-
-    { content section tabs }
-    if fhtml then begin
-      writeln(docfil, '<div class="content-tabs">');
-      writeln(docfil, '<a class="content-tab" href="#sec-modules">Modules</a>');
-      writeln(docfil, '<a class="content-tab" href="#sec-constants">Constants</a>');
-      writeln(docfil, '<a class="content-tab" href="#sec-types">Types</a>');
-      writeln(docfil, '<a class="content-tab" href="#sec-variables">Variables</a>');
-      writeln(docfil, '<a class="content-tab" href="#sec-procedures">Procedures</a>');
-      writeln(docfil, '</div>')
     end;
 
     { header comment }
@@ -9764,6 +9815,9 @@ begin
   { set output filename based on mode - must be after all paropt calls }
   if fhtml then services.maknam(docfilnam, p, n, 'html')
   else services.maknam(docfilnam, p, n, 'doc');
+  { check for theory of operations file }
+  services.maknam(theopsfn, p, n, 'theops.txt');
+  ftheops := exists(theopsfn);
 
   (*parse:*)
   (********)
