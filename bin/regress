@@ -121,11 +121,7 @@ function do_regress {
     dotestprog sample_programs sample_programs drystone
     dotestprog sample_programs sample_programs startrek
     dotestprog sample_programs sample_programs basics
-
-    #
-    # Test IP basic
-    #
-    # testbasic
+    #dotestprog basic basic basic
     #
     # Now run the ISO7185pat compliance test
     #
