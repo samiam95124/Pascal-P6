@@ -434,6 +434,13 @@ type
        off: stkoff; { stack offset }
        len: addrrange { length }
      end;
+     { rip label entries for forward reference resolution }
+     ripptr = ^ripety;
+     ripety = record
+       next: ripptr; { next entry in chain }
+       lab: integer; { label number }
+       off: addrrange { base offset (lcs+lsize+soff) }
+     end;
      errptr = ^errlin;
      errlin = record { line error tracking }
        next: errptr; { next entry }
@@ -605,6 +612,7 @@ var
     inclst: filptr; { discard list for includes }
     tmplst: tmpptr; { list of active temps }
     tmpfre: tmpptr; { free temp entries }
+    riplst: ripptr; { list of rip labels pending resolution }
 
     { Recycling tracking counters, used to check for new/dispose mismatches. }
     strcnt: integer; { strings }
@@ -3680,7 +3688,9 @@ end;
               begin write(prr,chr(fp2)); write(prr, ' ':4); fl := 0 end
             else if fop = 67 then 
               begin write(prr,' ':5, fp2:1); fl := digits(fp2) end
-            else if fop = 105 then begin 
+            else if fop = 105 then begin
+              write(prr,' ':5); fl := 0; prtlabelc(fp2, fl)
+            end else if fop = 32 then begin { rip uses label reference }
               write(prr,' ':5); fl := 0; prtlabelc(fp2, fl)
             end else if chkext(symptr) then begin
               write(prr,' ':5); fl := 0; prtflabelc(symptr, fl)
@@ -5216,8 +5226,10 @@ end;
           cp: boolean;
           cststr: boolean;
           r: integer; { radix of read }
+          filadr: stkoff; { temp for file address }
+          firstparam: boolean; { processing first parameter }
     begin
-      txt := true; deffil := true; cp := false;
+      txt := true; deffil := true; cp := false; filadr := 0;
       if sy  = lparent then
         begin insymbol; chkhdr; cststr := false;
           if sy = stringconst then begin chkstd; cststr := true; 
@@ -5233,6 +5245,9 @@ end;
                   txt := lsp = textptr;
                   if not txt and (lkey = 11) then error(116);
                   loadaddress; deffil := false;
+                  { store file address to temp }
+                  gettmp(filadr, ptrsize, false);
+                  gen2t(56(*str*),level,filadr,nilptr);
                   if sy = rparent then
                     begin if lkey = 5 then error(116);
                       test := true
@@ -5254,24 +5269,48 @@ end;
                   else test := true
                 end
             else if not inputptr^.hdr then error(175);
+         { if default file, allocate temp before loop }
+         if deffil then begin
+           gen1(37(*lao*),inputptr^.vaddr);
+           gettmp(filadr, ptrsize, false);
+           gen2t(56(*str*),level,filadr,nilptr);
+           deffil := false
+         end;
+         firstparam := true;
          if not test then
-          repeat loadaddress;
+          repeat
+            if firstparam then begin
+              { First param: gattr from pre-loop variable() call.
+                Address may already be on stack from variable(). }
+              loadaddress
+            end else begin
+              { Subsequent params: load file first, then parse param }
+              gen2t(54(*lod*),level,filadr,nilptr);
+              cststr := false;
+              if sy = stringconst then begin chkstd; cststr := true;
+                expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
+              end else
+                variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
+              if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc;
+              loadaddress
+            end;
             if stringt(gattr.typtr) and not complext(gattr.typtr) then begin
               { make common string pointer into complex }
               len := gattr.typtr^.size div charmax;
               gen2(51(*ldc*),1,len); gen1(72(*swp*),intsize);
               gen2(124(*mpc*),0,0)
             end;
-            if deffil then begin
-              { file was not loaded, we load and swap so that it ends up
-                on the bottom.}
-              gen1(37(*lao*),inputptr^.vaddr);
-              { note 2nd is always pointer }
-              if cp then gen1(72(*swp*),ptrsize+intsize) 
-              else gen1(72(*swp*),ptrsize);
-              deffil := false
+            if firstparam then begin
+              { First param: load file from temp and swap under param }
+              if gattr.typtr <> nil then begin
+                gen2t(54(*lod*),level,filadr,nilptr);
+                if cp or stringt(gattr.typtr) then
+                  gen1(72(*swp*),ptrsize+intsize)
+                else gen1(72(*swp*),ptrsize)
+              end;
+              firstparam := false
             end;
-            if txt then begin 
+            if txt then begin
               { check radix markers }
               r := 10;
               if sy = hexsy then begin r := 16; insymbol end
@@ -5377,14 +5416,7 @@ end;
               gen1(30(*csp*),35(*rbf*))
             end;
             test := sy <> comma;
-            if not test then
-              begin insymbol; cststr := false; 
-                if sy = stringconst then begin chkstd; cststr := true;
-                  expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false)
-                end else 
-                  variable(fsys + [comma,colon,rparent,hexsy,octsy,binsy], true);
-                if gattr.typtr <> nil then cp := gattr.typtr^.form = arrayc
-              end
+            if not test then insymbol
           until test;
           if sy = rparent then insymbol else error(4)
         end
@@ -5392,10 +5424,17 @@ end;
         if not inputptr^.hdr then error(175);
         if lkey = 5 then error(116);
         gen1(37(*lao*),inputptr^.vaddr);
+        { store default file address to temp }
+        gettmp(filadr, ptrsize, false);
+        gen2t(56(*str*),level,filadr,nilptr);
       end;
-      if lkey = 11 then gen1(30(*csp*),21(*rln*));
-      { remove the file pointer from stack }
-      gen1(71(*dmp*),ptrsize);
+      if lkey = 11 then begin
+        { push file from temp for readln }
+        gen2t(54(*lod*),level,filadr,nilptr);
+        gen1(30(*csp*),21(*rln*))
+      end;
+      { free the file temp }
+      puttmp(filadr)
     end (*read*) ;
 
     procedure writeprocedure;
@@ -5409,8 +5448,11 @@ end;
           spad: boolean; { write space padded string }
           ledz: boolean; { use leading zeros }
           onstk: boolean; { expression result on stack }
+          filadr: stkoff; { temp for file address }
+          firstparam: boolean; { processing first parameter }
           lsize: addrrange;
-    begin llkey := lkey; txt := true; deffil := true; byt := false; 
+    begin llkey := lkey; txt := true; deffil := true; byt := false;
+      filadr := 0;
       if sy = lparent then
       begin insymbol; chkhdr;
       expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy], false);
@@ -5426,6 +5468,9 @@ end;
                 byt := isbyte(lsp^.filtype)
               end;
               loadaddress; deffil := false;
+              { store file address to temp }
+              gettmp(filadr, ptrsize, false);
+              gen2t(56(*str*),level,filadr,nilptr);
               if sy = rparent then
                 begin if llkey = 6 then error(116);
                   test := true
@@ -5442,8 +5487,26 @@ end;
               else test := true
             end
         else if not outputptr^.hdr then error(176);
+      { if default file, allocate temp before loop }
+      if deffil then begin
+        gen1(37(*lao*),outputptr^.vaddr);
+        gettmp(filadr, ptrsize, false);
+        gen2t(56(*str*),level,filadr,nilptr);
+        deffil := false
+      end;
+      firstparam := true;
       if not test then
       repeat
+        if firstparam then begin
+          { First param: gattr from pre-loop expression() call.
+            Value may already be on stack from expression(). }
+        end else begin
+          { Subsequent params: load file first, then parse param }
+          gen2t(54(*lod*),level,filadr,nilptr);
+          expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy],
+                     false);
+          onstk := gattr.kind = expr
+        end;
         lsp := gattr.typtr;
         if lsp <> nil then
           if lsp^.form <= subrange then load else loadaddress;
@@ -5454,20 +5517,18 @@ end;
           gen1(72(*swp*),stackelsize); { swap ptr and len }
           gen2(124(*mpc*),0,0)
         end;
-        if deffil then begin
-          { file was not loaded, we load and swap so that it ends up
-            on the bottom.}
-          gen1(37(*lao*),outputptr^.vaddr);
+        if firstparam then begin
+          { First param: load file from temp and swap under param }
           if lsp <> nil then begin
+            gen2t(54(*lod*),level,filadr,nilptr);
             lsize := lsp^.size; alignau(stackal, lsize);
             if lsp^.form <= subrange then gen1(72(*swp*),lsize)
             else
-              { 2nd is pointer, either simple or complex }
-              if (lsp^.form = arrayc) or stringt(lsp) then 
+              if (lsp^.form = arrayc) or stringt(lsp) then
                 gen1(72(*swp*),ptrsize*2)
-              else gen1(72(*swp*),ptrsize);
+              else gen1(72(*swp*),ptrsize)
           end;
-          deffil := false
+          firstparam := false
         end;
         if txt then begin
           { check radix markers }
@@ -5571,23 +5632,24 @@ end;
                           end
         end;
         test := sy <> comma;
-        if not test then
-          begin insymbol;
-            expression(fsys + [comma,colon,rparent,hexsy,octsy,binsy],
-                       false);
-            onstk := gattr.kind = expr
-          end
+        if not test then insymbol
       until test;
       if sy = rparent then insymbol else error(4)
       end else begin
         if not outputptr^.hdr then error(176);
         if lkey = 6 then error(116);
         gen1(37(*lao*),outputptr^.vaddr);
+        { store default file address to temp }
+        gettmp(filadr, ptrsize, false);
+        gen2t(56(*str*),level,filadr,nilptr);
       end;
-      if llkey = 12 then (*writeln*)
-        gen1(30(*csp*),22(*wln*));
-      { remove the file pointer from stack }
-      gen1(71(*dmp*),ptrsize)
+      if llkey = 12 then begin (*writeln*)
+        { push file from temp for writeln }
+        gen2t(54(*lod*),level,filadr,nilptr);
+        gen1(30(*csp*),22(*wln*))
+      end;
+      { free the file temp }
+      puttmp(filadr)
     end (*write*) ;
 
     procedure packprocedure;
@@ -6046,6 +6108,7 @@ end;
           locpar, llc, soff: addrrange; varp: boolean; lsize: addrrange;
           frlab: integer; prcnt: integer; ovrl: boolean;
           test: boolean; match: boolean; e: boolean; mm: boolean;
+          riplbl: integer; rp: ripptr;
     { This overload does not match, sequence to the next, same parameter.
       Set sets fcp -> new proc/func, nxt -> next parameter in new list. 
       fcp = nil, nxt = nil for no next found. }
@@ -6310,7 +6373,11 @@ end;
         gen2(50(*lda*),level-(level-fcp^.pflev),fcp^.pfaddr);
         if fcp^.klass = func then gencipcif(123(*cif*), fcp)
         else gencipcif(67(*cip*), fcp);
-        gen1(32(*rip*),lcs+lsize+soff);
+        { rip offset is a forward reference: base offset + data segment size }
+        genlabel(riplbl);
+        new(rp); rp^.next := riplst; rp^.lab := riplbl;
+        rp^.off := lcs+lsize+soff; riplst := rp;
+        gen1(32(*rip*),riplbl);
         mesl(locpar); { remove stack parameters }
         mesl(-lsize)
       end;
@@ -8657,6 +8724,7 @@ end;
         printed: boolean;
         stalvl: integer; { statement nesting level }
         ilp: ctp;
+        rp: ripptr; { for rip label resolution }
 
     { add statement level }
     procedure addlvl;
@@ -9539,6 +9607,7 @@ end;
   begin (*body*)
     stalvl := 0; { clear statement nesting level }
     cstptrix := 0; topnew := 0; topmin := 0;
+    riplst := nil; { clear rip label list }
     { if processing procedure/function, use that entry label, otherwise set
       at program }
     if fprocp <> nil then prtlabel(fprocp^.pfname) else prtlabel(entname); 
@@ -9656,7 +9725,14 @@ end;
         alignd(parmptr,lc);
         if prcode then
           begin prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
-            prtlabel(stackbot); writeln(prr,'=',-topmin:1)
+            prtlabel(stackbot); writeln(prr,'=',-topmin:1);
+            { resolve rip forward reference labels }
+            rp := riplst;
+            while rp <> nil do begin
+              prtlabel(rp^.lab);
+              writeln(prr,'=',rp^.off+(-level*ptrsize-lc):1);
+              rp := rp^.next
+            end
           end
       end
     else
@@ -9665,7 +9741,14 @@ end;
         if prcode then
           begin
             prtlabel(segsize); writeln(prr,'=',-level*ptrsize-lc:1);
-            prtlabel(stackbot); writeln(prr,'=',-topmin:1)
+            prtlabel(stackbot); writeln(prr,'=',-topmin:1);
+            { resolve rip forward reference labels }
+            rp := riplst;
+            while rp <> nil do begin
+              prtlabel(rp^.lab);
+              writeln(prr,'=',rp^.off+(-level*ptrsize-lc):1);
+              rp := rp^.next
+            end
           end;
         ic := 0;
         if prtables then
@@ -10599,6 +10682,7 @@ end;
     maxpow10 := 1; while maxpow10 < mxint10 do maxpow10 := maxpow10*10;
     tmplst := nil; { clear temps list }
     tmpfre := nil; { clear temps free list }
+    riplst := nil; { clear rip label list }
 
     for i := 1 to maxftl do errtbl[i] := 0; { initialize error tracking }
     for i := 1 to maxftl do errltb[i] := nil;
@@ -10980,29 +11064,29 @@ end;
       cdxs[6][8] := +(adrsize*2+adrsize*2)-intsize; { equv/neqv/geqv/grtv/leqv/lesv }
 
       pdx[ 1]  := +adrsize;             pdx[ 2]  := +adrsize;
-      pdx[ 3]  := +adrsize;             pdx[ 4]  := +adrsize;
-      pdx[ 5]  := +adrsize;             pdx[ 6]  := +adrsize*2;
-      pdx[ 7]  := 0;                    pdx[ 8]  := +(realsize+intsize);
-      pdx[ 9]  := +intsize*2;           pdx[10]  := +(intsize+adrsize+intsize);
+      pdx[ 3]  := +adrsize*2;            pdx[ 4]  := +adrsize*2;
+      pdx[ 5]  := +adrsize*2;            pdx[ 6]  := +adrsize*3;
+      pdx[ 7]  := 0;                    pdx[ 8]  := +(realsize+intsize+adrsize);
+      pdx[ 9]  := +(intsize*2+adrsize); pdx[10]  := +(intsize+adrsize*2+intsize);
       pdx[11]  :=  0;                   pdx[12]  := +ptrsize*2;
       pdx[13]  :=  0;                   pdx[14]  := +adrsize-intsize;
       pdx[15]  :=  0;                   pdx[16]  :=  0;
       pdx[17]  :=  0;                   pdx[18]  :=  0;
       pdx[19]  :=  0;                   pdx[20]  :=  0;
-      pdx[21]  :=  0;                   pdx[22]  :=  0;
+      pdx[21]  := +adrsize;              pdx[22]  := +adrsize;
       pdx[23]  :=  0;                   pdx[24]  := +adrsize;
       pdx[25]  := +adrsize;             pdx[26]  := +adrsize;
-      pdx[27]  := +intsize*2;           pdx[28]  := +(realsize+intsize*2);
-      pdx[29]  := +adrsize*2;           pdx[30]  := +(adrsize+intsize);
-      pdx[31]  := +intsize;             pdx[32]  := +realsize;
-      pdx[33]  := +intsize;             pdx[34]  := +intsize;
-      pdx[35]  := +(intsize+adrsize);   pdx[36]  := +adrsize;
+      pdx[27]  := +(intsize*2+adrsize);  pdx[28]  := +(realsize+intsize*2+adrsize);
+      pdx[29]  := +adrsize*2;           pdx[30]  := +(adrsize*2+intsize);
+      pdx[31]  := +(intsize+adrsize);   pdx[32]  := +(realsize+adrsize);
+      pdx[33]  := +(intsize+adrsize);   pdx[34]  := +(intsize+adrsize);
+      pdx[35]  := +(intsize+adrsize*2); pdx[36]  := +adrsize;
       pdx[37]  := +adrsize;             pdx[38]  := +(intsize+adrsize);
-      pdx[39]  := +(intsize+adrsize);   pdx[40]  := +(adrsize+intsize*2);
-      pdx[41]  := +(adrsize+intsize*2); pdx[42]  := +(adrsize+intsize*2);
+      pdx[39]  := +(intsize+adrsize);   pdx[40]  := +(adrsize*2+intsize*2);
+      pdx[41]  := +(adrsize*2+intsize*2); pdx[42]  := +(adrsize+intsize*2);
       pdx[43]  := +(adrsize+intsize*2); pdx[44]  := +adrsize-intsize;
       pdx[45]  := +adrsize-intsize;     pdx[46]  :=  0;
-      pdx[47]  := +intsize;             pdx[48]  := +intsize;
+      pdx[47]  := +intsize;             pdx[48]  := +(intsize+adrsize);
       pdx[49]  := +adrsize*2+intsize;   pdx[50]  := +adrsize;
       pdx[51]  := +adrsize+intsize;     pdx[52]  := +adrsize;
       pdx[53]  := +adrsize;             pdx[54]  := +adrsize+intsize;
@@ -11011,31 +11095,31 @@ end;
       pdx[59]  := +adrsize*2+intsize;   pdx[60]  := +adrsize;
       pdx[61]  := +adrsize;             pdx[62]  := 0;
       pdx[63]  := +intsize;             pdx[64]  := +adrsize+intsize+intsize;
-      pdx[65]  := +adrsize*2;           pdx[66]  := +adrsize*2;
-      pdx[67]  := +adrsize*2;           pdx[68]  := +(adrsize+intsize);
-      pdx[69]  := +adrsize*2;           pdx[70]  := +adrsize*2;
-      pdx[71]  := +adrsize*2;           pdx[72]  := +adrsize*2;
-      pdx[73]  := +adrsize+intsize;     pdx[74]  := +(adrsize+intsize*3);
-      pdx[75]  := +adrsize+intsize;     pdx[76]  := +adrsize+intsize;
-      pdx[77]  := +(adrsize+intsize*3); pdx[78]  := +adrsize+intsize;
-      pdx[79]  := +adrsize+intsize*2;   pdx[80]  := +adrsize+intsize;
+      pdx[65]  := +adrsize*3;           pdx[66]  := +adrsize*3;
+      pdx[67]  := +adrsize*3;           pdx[68]  := +(adrsize*2+intsize);
+      pdx[69]  := +adrsize*3;           pdx[70]  := +adrsize*3;
+      pdx[71]  := +adrsize*3;           pdx[72]  := +adrsize*3;
+      pdx[73]  := +adrsize*2+intsize;    pdx[74]  := +(adrsize*2+intsize*3);
+      pdx[75]  := +adrsize*2+intsize;    pdx[76]  := +adrsize*2+intsize;
+      pdx[77]  := +(adrsize*2+intsize*3); pdx[78]  := +adrsize*2+intsize;
+      pdx[79]  := +adrsize*2+intsize*2;  pdx[80]  := +adrsize*2+intsize;
       pdx[81]  := +adrsize*2+intsize;   pdx[82]  := +adrsize*2+intsize;
       pdx[83]  := +adrsize*2+intsize;   pdx[84]  := +adrsize*2+intsize;
-      pdx[85]  := +adrsize;             pdx[86]  := +adrsize+intsize;
-      pdx[87]  := +adrsize;             pdx[88]  := +adrsize+intsize;
-      pdx[89]  := +(adrsize+intsize*2); pdx[90]  := +(adrsize+intsize*3);
-      pdx[91]  := +adrsize;             pdx[92]  := +adrsize;
-      pdx[93]  := +adrsize;             pdx[94]  := +adrsize+intsize;
-      pdx[95]  := +adrsize+intsize;     pdx[96]  := +adrsize+intsize;
-      pdx[97]  := +(adrsize+intsize*2); pdx[98]  := +(adrsize+intsize*2);
-      pdx[99]  := +(adrsize+intsize*2); pdx[100] := +(adrsize+intsize*3);
-      pdx[101] := +(adrsize+intsize*3); pdx[102] := +(adrsize+intsize*3);
-      pdx[103] := +adrsize;             pdx[104] := +adrsize;
-      pdx[105] := +adrsize;             pdx[106] := +adrsize+intsize;
-      pdx[107] := +adrsize+intsize;     pdx[108] := +adrsize+intsize;
-      pdx[109] := +(adrsize+intsize*2); pdx[110] := +(adrsize+intsize*2);
-      pdx[111] := +(adrsize+intsize*2); pdx[112] := +(adrsize+intsize*3);
-      pdx[113] := +(adrsize+intsize*3); pdx[114] := +(adrsize+intsize*3);
+      pdx[85]  := +adrsize;             pdx[86]  := +adrsize*2+intsize;
+      pdx[87]  := +adrsize*2;            pdx[88]  := +adrsize*2+intsize;
+      pdx[89]  := +(adrsize*2+intsize*2); pdx[90]  := +(adrsize*2+intsize*3);
+      pdx[91]  := +adrsize*2;            pdx[92]  := +adrsize*2;
+      pdx[93]  := +adrsize*2;            pdx[94]  := +adrsize*2+intsize;
+      pdx[95]  := +adrsize*2+intsize;    pdx[96]  := +adrsize*2+intsize;
+      pdx[97]  := +(adrsize*2+intsize*2); pdx[98]  := +(adrsize*2+intsize*2);
+      pdx[99]  := +(adrsize*2+intsize*2); pdx[100] := +(adrsize*2+intsize*3);
+      pdx[101] := +(adrsize*2+intsize*3); pdx[102] := +(adrsize*2+intsize*3);
+      pdx[103] := +adrsize*2;            pdx[104] := +adrsize*2;
+      pdx[105] := +adrsize*2;            pdx[106] := +adrsize*2+intsize;
+      pdx[107] := +adrsize*2+intsize;    pdx[108] := +adrsize*2+intsize;
+      pdx[109] := +(adrsize*2+intsize*2); pdx[110] := +(adrsize*2+intsize*2);
+      pdx[111] := +(adrsize*2+intsize*2); pdx[112] := +(adrsize*2+intsize*3);
+      pdx[113] := +(adrsize*2+intsize*3); pdx[114] := +(adrsize*2+intsize*3);
       pdx[115] := +intsize;
     end;
 

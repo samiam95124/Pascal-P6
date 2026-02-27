@@ -1965,7 +1965,7 @@ void callsp(void)
                          putfile(filtable[fn], ad, fn);
                     }
                     break;
-    case 3 /*rln*/: popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+    case 3 /*rln*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case INPUTFN: readline(INPUTFN); break;
                        case PRDFN: readline(PRDFN); break;
@@ -1997,7 +1997,7 @@ void callsp(void)
                         list of fixed consts */
                      popadr(ad1); putadr(ad1, ad+(i+l+1)*INTSIZE);
                      break;
-    case 5 /*wln*/: popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+    case 5 /*wln*/: popadr(ad); valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                        case OUTPUTFN: fprintf(stdout, "\n"); break;
                        case PRRFN: fprintf(filtable[PRRFN], "\n"); break;
@@ -2011,7 +2011,7 @@ void callsp(void)
                     }
                     break;
     case 6 /*wrs*/: popint(w); popadr(ad1); popint(l);
-                    popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+                    popadr(ad); valfil(ad); fn = store[ad];
                     if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                     if (l > labs(w)) l = labs(w); /* limit string to field */
                     if (fn <= COMMANDFN) switch (fn) {
@@ -2033,7 +2033,7 @@ void callsp(void)
                                  (char*)(store+ad1));
                     }
                     break;
-    case 65 /*wrsp*/: popadr(ad1); popint(l); popadr(ad); pshadr(ad);
+    case 65 /*wrsp*/: popadr(ad1); popint(l); popadr(ad);
                     valfil(ad); fn = store[ad];
                     if (fn <= COMMANDFN) switch (fn) {
                       case OUTPUTFN: writestrp(stdout, ad1, l); break;
@@ -2066,7 +2066,7 @@ void callsp(void)
     case 66 /*wiz*/:
     case 67 /*wizh*/:
     case 68 /*wizo*/:
-    case 69 /*wizb*/: popint(w); popint(i); popadr(ad); pshadr(ad);
+    case 69 /*wizb*/: popint(w); popint(i); popadr(ad);
                      rd = 10;
                      if (q == 62 || q == 67) rd = 16;
                      else if (q == 63 || q == 68) rd = 8;
@@ -2086,7 +2086,7 @@ void callsp(void)
                          writei(filtable[fn], i, w, rd, lz);
                      }
                      break;
-    case 9 /*wrr*/: popint(w); poprel(r); popadr(ad); pshadr(ad);
+    case 9 /*wrr*/: popint(w); poprel(r); popadr(ad);
                      valfil(ad); fn = store[ad];
                      if (w < 1) errore(INVALIDFIELDSPECIFICATION);
                      if (w < REALEF) w = REALEF; /* set minimum width */
@@ -2104,7 +2104,7 @@ void callsp(void)
                      };
                      break;
     case 10/*wrc*/: popint(w); popint(i); c = i; popadr(ad);
-                     pshadr(ad); valfil(ad); fn = store[ad];
+                     valfil(ad); fn = store[ad];
                      if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: fprintf(stdout, "%*c", (int)w, c); break;
@@ -2141,7 +2141,7 @@ void callsp(void)
                      else if (q == 88||q == 91||q == 100||q == 103) rx = 8;
                      else if (q == 89||q == 92||q == 101||q == 104) rx = 2;
                      if (fld) popint(w);
-                     popadr(ad1); popadr(ad); pshadr(ad);
+                     popadr(ad1); popadr(ad);
                      valfil(ad); fn = store[ad]; readi(fn, &i, &w, fld, rx);
                      if (q == 82||q == 83||q == 99||q == 100||q == 101||
                          q == 102||q == 103|| q == 104) {
@@ -2173,7 +2173,7 @@ void callsp(void)
                     else if (q == 95||q == 98||q == 107||q == 110) rx = 2;
                     popint(mx); popint(mn);
                     if (fld) popint(w); popadr(ad1); popadr(ad);
-                    pshadr(ad); valfil(ad); fn = store[ad];
+                    valfil(ad); fn = store[ad];
                     readi(fn, &i, &w, fld, rx);
                     if (i < mn || i > mx) errore(VALUEOUTOFRANGE);
                     /* note: value should be in byte range */
@@ -2185,20 +2185,20 @@ void callsp(void)
                     break;
     case 12/*rdr*/:
     case 73/*rdrf*/: w = LONG_MAX; fld = q == 73; if (fld) popint(w);
-                    popadr(ad1); popadr(ad); pshadr(ad);
+                    popadr(ad1); popadr(ad);
                     valfil(ad); fn = store[ad];
                     readr(fn, &r, w, fld); putrel(ad1, r);
                     break;
     case 13/*rdc*/:
     case 75/*rdcf*/: w = LONG_MAX; fld = q == 75; if (fld) popint(w);
-                    popadr(ad1); popadr(ad); pshadr(ad);
+                    popadr(ad1); popadr(ad);
                     valfil(ad); fn = store[ad];
                     readc(fn, (char*)&c, w, fld); putchr(ad1, c);
                     break;
     case 38/*rcb*/:
     case 74/*rcbf*/: w = LONG_MAX; fld = q == 74; popint(mx); popint(mn);
                      if (fld) popint(w); popadr(ad1); popadr(ad);
-                     pshadr(ad); valfil(ad);
+                     valfil(ad);
                      fn = store[ad];
                      readc(fn, (char*)&c, w, fld);
                      if (c < mn || c > mx) errore(VALUEOUTOFRANGE);
@@ -2250,7 +2250,7 @@ void callsp(void)
                     } else rewritefn(fn, FALSE);
                     break;
     case 24/*wrb*/: popint(w); popint(i); b = i != 0; popadr(ad);
-                     pshadr(ad); valfil(ad); fn = store[ad];
+                     valfil(ad); fn = store[ad];
                      if (w < 1) errore(INVALIDFIELDSPECIFICATION);
                      if (fn <= COMMANDFN) switch (fn) {
                           case OUTPUTFN: writeb(stdout, b, w); break;
@@ -2264,7 +2264,7 @@ void callsp(void)
                          writeb(filtable[fn], b, w);
                      }
                      break;
-    case 25/*wrf*/: popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
+    case 25/*wrf*/: popint(f); popint(w); poprel(r); popadr(ad);
                      valfil(ad); fn = store[ad];
                      if (w < 1 && iso7185) errore(INVALIDFIELDSPECIFICATION);
                      if (f < 1) errore(INVALIDFRACTIONSPECIFICATION);
@@ -2326,42 +2326,42 @@ void callsp(void)
                          putadr(ad-ADRSIZE, ADRSIZE);
                     }
                     break;
-    case 27/*wbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+    case 27/*wbf*/: popint(l); popadr(ad1); popadr(ad);
                     valfilwm(ad); fn = store[ad];
                     for (i = 0; i < l; i++) {
                        chkdef(ad1); fputc(store[ad1], filtable[fn]);
                        ad1 = ad1+1;
                     }
                     break;
-    case 28/*wbi*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
+    case 28/*wbi*/: popint(i); popadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < INTSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
                      popint(i);
                      break;
-    case 45/*wbx*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
+    case 45/*wbx*/: popint(i); popadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      fputc(store[sp], filtable[fn]); popint(i);
                      break;
-    case 29/*wbr*/: poprel(r); popadr(ad); pshadr(ad); pshrel(r);
+    case 29/*wbr*/: poprel(r); popadr(ad); pshrel(r);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < REALSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
                      poprel(r);
                      break;
-    case 30/*wbc*/: popint(i); c = i; popadr(ad); pshadr(ad); pshint(i);
+    case 30/*wbc*/: popint(i); c = i; popadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < CHARSIZE; i++)
                         fputc(store[sp+i], filtable[fn]);
                      popint(i);
                      break;
-    case 31/*wbb*/: popint(i); popadr(ad); pshadr(ad); pshint(i);
+    case 31/*wbb*/: popint(i); popadr(ad); pshint(i);
                      valfilwm(ad); fn = store[ad];
                      for (i = 0; i < BOOLSIZE; i++)
                          fputc(store[sp+i], filtable[fn]);
                      popint(i);
                      break;
-    case 32/*rbf*/: popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+    case 32/*rbf*/: popint(l); popadr(ad1); popadr(ad);
                      valfilrm(ad); fn = store[ad];
                      if (filbuff[fn]) /* buffer data exists */
                        for (i = 0; i < l; i++) {
@@ -2509,15 +2509,15 @@ void callsp(void)
     case 70/*rds*/:
     case 76/*rdsf*/: w = LONG_MAX; fld = q == 76;
                   if (fld) popint(w); popadr(ad1); popint(i);
-                  popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+                  popadr(ad); valfil(ad); fn = store[ad];
                   reads(fn, ad1, i, w, fld);
                   break;
-    case 77/*rdsp*/: popadr(ad1); popint(i); popadr(ad); pshadr(ad);
+    case 77/*rdsp*/: popadr(ad1); popint(i); popadr(ad);
                   valfil(ad); fn = store[ad];
                   readsp(fn, ad1, i);
                   break;
     case 86/*rdsc*/: popadr(ad1); popint(i); 
-                  popadr(ad); pshadr(ad); valfil(ad); fn = store[ad];
+                  popadr(ad); valfil(ad); fn = store[ad];
                   readsc(fn, ad1, i);
                   break;
     case 78/*aeft*/: popint(i); popadr(ad1); popadr(ad); valfil(ad);

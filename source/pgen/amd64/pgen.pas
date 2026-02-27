@@ -2534,7 +2534,10 @@ begin { assemble }
     end;
 
     {rip}
-    13: parq;
+    13: begin skpspc;
+      if ch = 'l' then labelsearch(def, val, sp, blk)
+      else parq
+    end;
 
     {stri,stra}
     2,70: begin parpq;

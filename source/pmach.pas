@@ -1906,7 +1906,7 @@ begin (*callsp*)
                                 putfile(filtable[fn], ad, fn)
                            end
                       end;
-           3 (*rln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+           3 (*rln*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
                               inputfn: begin
                                  if eof(input) then errore(EndOfFile);
@@ -1941,7 +1941,7 @@ begin (*callsp*)
                               end;
                             popadr(ad1); putadr(ad1, ad+(i+l+1)*intsize)
                       end;
-           5 (*wln*): begin popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+           5 (*wln*): begin popadr(ad); valfil(ad); fn := store[ad];
                            if fn <= commandfn then case fn of
                               outputfn: writeln(output); 
                               prrfn: writeln(prr);
@@ -1956,7 +1956,7 @@ begin (*callsp*)
                            end
                       end;
            6 (*wrs*): begin popint(w); popadr(ad1); popint(l); 
-                           popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+                           popadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
@@ -1973,7 +1973,7 @@ begin (*callsp*)
                            end;
                       end;
            65 (*wrsp*): begin popadr(ad1); popint(l);
-                           popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+                           popadr(ad); valfil(ad); fn := store[ad];
                            if (w < 1) and iso7185 then 
                              errore(InvalidFieldSpecification);
                            if fn <= commandfn then case fn of
@@ -2007,7 +2007,7 @@ begin (*callsp*)
            66 (*wiz*),
            67 (*wizh*),
            68 (*wizo*),
-           69 (*wizb*): begin popint(w); popint(i); popadr(ad); pshadr(ad);
+           69 (*wizb*): begin popint(w); popint(i); popadr(ad);
                             rd := 10;
                             if (q = 62) or (q = 67) then rd := 16
                             else if (q = 63) or (q = 68) then rd := 8
@@ -2030,7 +2030,7 @@ begin (*callsp*)
                                 writei(filtable[fn], i, w, rd, lz)
                             end
                       end;
-           9 (*wrr*): begin popint(w); poprel(r); popadr(ad); pshadr(ad);
+           9 (*wrr*): begin popint(w); poprel(r); popadr(ad);
                             valfil(ad); fn := store[ad];
                             if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
@@ -2048,7 +2048,7 @@ begin (*callsp*)
                             end;
                       end;
            10(*wrc*): begin popint(w); popint(i); c := chr(i); popadr(ad);
-                            pshadr(ad); valfil(ad); fn := store[ad];
+                            valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
@@ -2087,7 +2087,7 @@ begin (*callsp*)
                            else if q in [88,91,100,103] then rx := 8
                            else if q in [89,92,101,104] then rx := 2;
                            if fld then popint(w);
-                           popadr(ad1); popadr(ad); pshadr(ad);
+                           popadr(ad1); popadr(ad);
                            valfil(ad); fn := store[ad]; readi(fn, i, w, fld, rx);
                            if q in [82,83,99,100,101,102,103,104] then begin
                              if (i < 0) or (i > 255) then errore(ValueOutOfRange);
@@ -2117,7 +2117,7 @@ begin (*callsp*)
                            else if q in [95,98,107,110] then rx := 2;
                            popint(mx); popint(mn);
                            if fld then popint(w); popadr(ad1); popadr(ad);
-                           pshadr(ad); valfil(ad); fn := store[ad];
+                           valfil(ad); fn := store[ad];
                            readi(fn, i, w, fld, rx);
                            if (i < mn) or (i > mx) then
                              errore(ValueOutOfRange);
@@ -2127,20 +2127,20 @@ begin (*callsp*)
                       end;
            12(*rdr*),
            73(*rdrf*): begin w := maxint; fld := q = 73; if fld then popint(w);
-                           popadr(ad1); popadr(ad); pshadr(ad); 
+                           popadr(ad1); popadr(ad); 
                            valfil(ad); fn := store[ad];
                            readr(fn, r, w, fld); putrel(ad1, r)
                       end;
            13(*rdc*),
            75(*rdcf*): begin w := maxint; fld := q = 75; if fld then popint(w);
-                           popadr(ad1); popadr(ad); pshadr(ad); 
+                           popadr(ad1); popadr(ad); 
                            valfil(ad); fn := store[ad];
                            readc(fn, c, w, fld); putchr(ad1, c)
                       end;
            38(*rcb*),
            74(*rcbf*): begin w := maxint; fld := q = 74; popint(mx); popint(mn); 
                             if fld then popint(w); popadr(ad1); popadr(ad);
-                            pshadr(ad); valfil(ad);
+                            valfil(ad);
                             fn := store[ad];
                             readc(fn, c, w, fld);
                             if (ord(c) < mn) or (ord(c) > mx) then
@@ -2205,7 +2205,7 @@ begin (*callsp*)
                            end
                       end;
            24(*wrb*): begin popint(w); popint(i); b := i <> 0; popadr(ad);
-                            pshadr(ad); valfil(ad); fn := store[ad];
+                            valfil(ad); fn := store[ad];
                             if w < 1 then errore(InvalidFieldSpecification);
                             if fn <= commandfn then case fn of
                                  outputfn: write(output, b:w); 
@@ -2221,7 +2221,7 @@ begin (*callsp*)
                                 write(filtable[fn], b:w)
                             end
                       end;
-           25(*wrf*): begin popint(f); popint(w); poprel(r); popadr(ad); pshadr(ad);
+           25(*wrf*): begin popint(f); popint(w); poprel(r); popadr(ad);
                             valfil(ad); fn := store[ad];
                             if (w < 1) and iso7185 then 
                               errore(InvalidFieldSpecification);
@@ -2277,43 +2277,43 @@ begin (*callsp*)
                            if donorecpar then 
                              putadr(ad-adrsize, adrsize)
                       end;
-           27(*wbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+           27(*wbf*): begin popint(l); popadr(ad1); popadr(ad);
                            valfilwm(ad); fn := store[ad];
                            for i := 1 to l do begin
                               chkdef(ad1); write(bfiltable[fn], store[ad1]);
                               ad1 := ad1+1
                            end
                       end;
-           28(*wbi*): begin popint(i); popadr(ad); pshadr(ad); pshint(i);
+           28(*wbi*): begin popint(i); popadr(ad); pshint(i);
                             valfilwm(ad); fn := store[ad];
                             for i := 1 to intsize do
                                write(bfiltable[fn], store[sp+i-1]);
                             popint(i)
                       end;
-           45(*wbx*): begin popint(i); popadr(ad); pshadr(ad); pshint(i);
+           45(*wbx*): begin popint(i); popadr(ad); pshint(i);
                             valfilwm(ad); fn := store[ad];
                             write(bfiltable[fn], store[sp]);
                             popint(i)
                       end;
-           29(*wbr*): begin poprel(r); popadr(ad); pshadr(ad); pshrel(r);
+           29(*wbr*): begin poprel(r); popadr(ad); pshrel(r);
                             valfilwm(ad); fn := store[ad];
                             for i := 1 to realsize do
                                write(bfiltable[fn], store[sp+i-1]);
                             poprel(r)
                       end;
-           30(*wbc*): begin popint(i); c := chr(i); popadr(ad); pshadr(ad); pshint(i);
+           30(*wbc*): begin popint(i); c := chr(i); popadr(ad); pshint(i);
                             valfilwm(ad); fn := store[ad];
                             for i := 1 to charsize do
                                write(bfiltable[fn], store[sp+i-1]);
                             popint(i)
                       end;
-           31(*wbb*): begin popint(i); popadr(ad); pshadr(ad); pshint(i);
+           31(*wbb*): begin popint(i); popadr(ad); pshint(i);
                             valfilwm(ad); fn := store[ad];
                             for i := 1 to boolsize do
                                write(bfiltable[fn], store[sp+i-1]);
                             popint(i)
                       end;
-           32(*rbf*): begin popint(l); popadr(ad1); popadr(ad); pshadr(ad);
+           32(*rbf*): begin popint(l); popadr(ad1); popadr(ad);
                             valfilrm(ad); fn := store[ad];
                             if filbuff[fn] then
                             for i := 1 to l do begin
@@ -2448,15 +2448,15 @@ begin (*callsp*)
            70(*rds*),
            76(*rdsf*): begin w := pmmaxint; fld := q = 76; 
                          if fld then popint(w); popadr(ad1); popint(i); 
-                         popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+                         popadr(ad); valfil(ad); fn := store[ad];
                          reads(fn, ad1, i, w, fld);
                        end;
-           77(*rdsp*): begin popadr(ad1); popint(i); popadr(ad); pshadr(ad);
+           77(*rdsp*): begin popadr(ad1); popint(i); popadr(ad);
                          valfil(ad); fn := store[ad];
                          readsp(fn, ad1, i)
                        end;
            86(*rdsc*): begin popadr(ad1); popint(i); 
-                         popadr(ad); pshadr(ad); valfil(ad); fn := store[ad];
+                         popadr(ad); valfil(ad); fn := store[ad];
                          readsc(fn, ad1, i)
                       end;
            78(*aeft*): begin popint(i); popadr(ad1); popadr(ad); valfil(ad); 
